@@ -61,6 +61,14 @@ PostgreSQL is the canonical record for accounts, profiles, proposals, participat
 
 External systems such as FCM, Resend, Sentry, and PostHog are delivery or observation tools. They must not become the only record of product state.
 
+### Identity and transaction-local operational primitives
+
+Supabase Auth's `auth.users` row is the login identity. The matching `public.profiles` row is the stable PLANETS application identity anchor and uses the same UUID; profile fields and visibility rules remain deferred to plan 03. There is no signup trigger yet, so an Auth identity without a profile anchor is a valid transitional state and the authenticated application flow must create its own anchor explicitly.
+
+Raw Auth deletion is deliberately blocked while a profile or actor-linked audit record exists. The eventual account-deletion workflow must define cleanup, anonymization, and lawful retention before removing those restrictive relationships.
+
+`private.audit_events` stores append-oriented operational and security history, not product analytics. `private.outbox_events` stores transaction-local handoff records for later asynchronous work; it is not itself a queue or delivery implementation. Both remain outside the Data API with no direct client grants. Future domain operations can write them within the same transaction, while queue consumption and delivery remain owned by plan 06.
+
 ### Clients use shared operations rather than duplicate workflows
 
 Safe simple reads may query authorized views/tables directly. Multi-step or security-sensitive changes should use named backend operations, for example:
