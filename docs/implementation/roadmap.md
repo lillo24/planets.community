@@ -1,7 +1,7 @@
 # Implementation Roadmap
 
 **Status:** Planning baseline  
-**Current implementation:** Plan 00 repository bootstrap in progress
+**Current implementation:** Plan 00 repository bootstrap implemented; plan 01 not started
 
 This roadmap divides the first PLANETS build into reviewable Codex tasks. Each numbered item should normally become its own implementation prompt, branch, and pull request.
 
@@ -35,7 +35,7 @@ Do not begin a dependent plan until the prior plan is merged or its branch is ex
 
 | ID | Plan | Main result | Dependencies | Founder input expected | Status |
 | --- | --- | --- | --- | --- | --- |
-| 00 | Architecture and repository bootstrap | Runnable monorepo foundation, local tooling, initial CI, development docs | Documentation baseline | Tool/account installation only if automation cannot provide it | In progress |
+| 00 | Architecture and repository bootstrap | Runnable monorepo foundation, local tooling, initial CI, development docs | Documentation baseline | Tool/account installation only if automation cannot provide it | Implemented |
 | 01 | Database foundation and security model | Versioned Supabase schema conventions, identity/profile split, RLS/test harness, audit/outbox primitives | 00 | Confirm any security-critical ambiguity Codex cannot isolate | Not started |
 | 02 | Mobile and web application foundations | Flutter app shell, Next.js public/admin shells, environments, error handling, localization and monitoring foundations | 00–01 | No visual polish; only resolve navigation/product-shell ambiguity if material | Not started |
 | 03 | Authentication and profiles | Public browsing boundary, email OTP, profile setup, competences/preferences, privacy-ready profile data | 01–02 | Initial required profile fields, visibility rules, competence taxonomy strategy | Not started |
@@ -334,4 +334,4 @@ Major gates currently expected:
 
 ## Immediate next action
 
-Complete, validate, and merge **00 — Architecture and repository bootstrap** before beginning dependent roadmap work.
+Prepare and execute **01 — Database foundation and security model** against the merged plan 00 foundation.
