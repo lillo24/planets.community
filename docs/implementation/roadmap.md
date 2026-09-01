@@ -1,7 +1,7 @@
 # Implementation Roadmap
 
 **Status:** Planning baseline  
-**Current implementation:** Plan 00 implemented; plan 01A in progress; plan 01B not started
+**Current implementation:** Plan 00 and plan 01A implemented; plan 01B in progress
 
 This roadmap divides the first PLANETS build into reviewable Codex tasks. Each numbered item should normally become its own implementation prompt, branch, and pull request.
 
@@ -37,8 +37,8 @@ Do not begin a dependent plan until the prior plan is merged or its branch is ex
 | --- | --- | --- | --- | --- | --- |
 | 00 | Architecture and repository bootstrap | Runnable monorepo foundation, local tooling, initial CI, development docs | Documentation baseline | Tool/account installation only if automation cannot provide it | Implemented |
 | 01 | Database foundation and security model (parent) | Secure database workflow plus shared identity, audit, and outbox primitives | 00 | Confirm any security-critical ambiguity Codex cannot isolate | In progress |
-| 01A | Database workflow and security harness | Canonical migrations, fail-closed grants, public/private boundary, PostGIS, pgTAP, generated types, and CI replay | 00 | None expected | In progress |
-| 01B | Identity, audit, and outbox primitives | Auth/profile boundary and minimal shared audit/outbox foundations | 01A | Confirm any security-critical ambiguity Codex cannot isolate | Not started |
+| 01A | Database workflow and security harness | Canonical migrations, fail-closed grants, public/private boundary, PostGIS, pgTAP, generated types, and CI replay | 00 | None expected | Implemented |
+| 01B | Identity, audit, and outbox primitives | Auth/profile boundary and minimal shared audit/outbox foundations | 01A | Confirm any security-critical ambiguity Codex cannot isolate | In progress |
 | 02 | Mobile and web application foundations | Flutter app shell, Next.js public/admin shells, environments, error handling, localization and monitoring foundations | 00–01 | No visual polish; only resolve navigation/product-shell ambiguity if material | Not started |
 | 03 | Authentication and profiles | Public browsing boundary, email OTP, profile setup, competences/preferences, privacy-ready profile data | 01–02 | Initial required profile fields, visibility rules, competence taxonomy strategy | Not started |
 | 04 | Proposals and discovery | Draft/create/publish, proposal list/detail, requirements, location/filter foundations, public sanitized views | 03 | Proposal fields, lifecycle decisions, broad location behavior | Not started |
@@ -348,4 +348,4 @@ Major gates currently expected:
 
 ## Immediate next action
 
-Complete and merge **01A — Database workflow and security harness**, then prepare 01B against that merged foundation. Do not start plan 02 until the full parent plan 01 is implemented.
+Complete and merge **01B — Identity, audit, and outbox primitives**. Keep parent plan 01 in progress and do not start plan 02 until the 01B pull request is merged and the full parent plan is implemented.
