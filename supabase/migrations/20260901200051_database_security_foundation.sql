@@ -21,10 +21,15 @@ alter default privileges for role postgres in schema public
 alter default privileges for role postgres in schema public
   revoke all privileges on sequences from public, anon, authenticated, service_role;
 
--- PostgreSQL itself grants EXECUTE on new routines to PUBLIC. Revoking PUBLIC is essential:
--- revoking only anon/authenticated/service_role would still leave them access through PUBLIC.
-alter default privileges for role postgres in schema public
+-- PostgreSQL's built-in PUBLIC EXECUTE is a global creator default. A schema-scoped REVOKE cannot
+-- override it, so this creator-wide rule intentionally protects every future `postgres` function.
+alter default privileges for role postgres
   revoke all privileges on functions from public, anon, authenticated, service_role;
+
+-- Supabase's named Data API grants are schema-scoped and must also be removed in each PLANETS
+-- schema. Client-callable functions later opt in with an explicit per-function GRANT.
+alter default privileges for role postgres in schema public
+  revoke all privileges on functions from anon, authenticated, service_role;
 
 -- `private` is already unreachable without schema USAGE. Matching object defaults adds defense in
 -- depth if a future migration grants narrowly scoped schema access to another trusted role.
@@ -35,7 +40,7 @@ alter default privileges for role postgres in schema private
   revoke all privileges on sequences from public, anon, authenticated, service_role;
 
 alter default privileges for role postgres in schema private
-  revoke all privileges on functions from public, anon, authenticated, service_role;
+  revoke all privileges on functions from anon, authenticated, service_role;
 
 -- Spatial support belongs in the existing non-API extension schema. Product location tables and
 -- visibility rules are intentionally deferred to later plans.
