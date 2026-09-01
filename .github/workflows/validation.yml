@@ -66,9 +66,9 @@ jobs:
         run: npm run check:web
 
   supabase:
-    name: Supabase local smoke
+    name: Database
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 25
     steps:
       - name: Check out repository
         uses: actions/checkout@v7.0.1
@@ -85,8 +85,20 @@ jobs:
       - name: Start local Supabase
         run: npm run db:start
 
-      - name: Verify local Supabase status
-        run: npm run db:status
+      - name: Replay migrations and seed from zero
+        run: npm run db:reset
+
+      - name: Lint PLANETS schemas
+        run: npm run db:lint
+
+      - name: Run database security tests
+        run: npm run db:test
+
+      - name: Regenerate public database types
+        run: npm run db:types
+
+      - name: Check generated database type drift
+        run: git diff --exit-code -- apps/web/src/types/database.generated.ts
 
       - name: Stop local Supabase
         if: always()
