@@ -1,0 +1,35 @@
+{
+  "name": "planets-community",
+  "version": "0.0.0",
+  "private": true,
+  "packageManager": "npm@11.19.0",
+  "engines": {
+    "node": ">=24.0.0 <25",
+    "npm": ">=11.0.0 <12"
+  },
+  "workspaces": [
+    "apps/web"
+  ],
+  "scripts": {
+    "restore": "npm ci && npm run restore:mobile",
+    "restore:mobile": "cd apps/mobile && flutter pub get",
+    "dev:web": "npm run dev --workspace @planets/web",
+    "dev:mobile": "cd apps/mobile && flutter run",
+    "db:start": "supabase start",
+    "db:stop": "supabase stop",
+    "db:status": "supabase status",
+    "check:web": "npm run lint --workspace @planets/web && npm run typecheck --workspace @planets/web && npm run build --workspace @planets/web",
+    "check:mobile": "npm run format:check:mobile && cd apps/mobile && flutter analyze && flutter test",
+    "check": "npm run check:web && npm run check:mobile",
+    "format:web": "prettier --write \"apps/web/**/*.{js,jsx,ts,tsx,json,css,md}\" \"package.json\" \".github/workflows/*.{yml,yaml}\" \"README.md\" \"docs/development/**/*.md\" \"docs/architecture/decisions/**/*.md\"",
+    "format:mobile": "cd apps/mobile && dart format lib test",
+    "format": "npm run format:web && npm run format:mobile",
+    "format:check:web": "prettier --check \"apps/web/**/*.{js,jsx,ts,tsx,json,css,md}\" \"package.json\" \".github/workflows/*.{yml,yaml}\" \"README.md\" \"docs/development/**/*.md\" \"docs/architecture/decisions/**/*.md\"",
+    "format:check:mobile": "cd apps/mobile && dart format --output=none --set-exit-if-changed lib test",
+    "format:check": "npm run format:check:web && npm run format:check:mobile"
+  },
+  "devDependencies": {
+    "prettier": "3.9.6",
+    "supabase": "2.116.0"
+  }
+}

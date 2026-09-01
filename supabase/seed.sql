@@ -1,0 +1,1 @@
+-- Plan 00 intentionally defines no product schema or seed data.

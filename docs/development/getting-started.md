@@ -1,0 +1,144 @@
+# Getting started
+
+This guide reproduces the PLANETS repository foundation on Windows, macOS, or Linux. Normal commands do not require WSL, Git Bash, Make, or a cloud account.
+
+## Prerequisites
+
+Install:
+
+- Git;
+- Node.js 24.20.0 LTS with npm 11.19.0;
+- Flutter 3.47.2 stable, which includes Dart 3.13.2;
+- Docker Desktop or another Docker-compatible runtime supported by the Supabase CLI;
+- Android Studio/Android SDK only when running or building Android;
+- macOS and Xcode only when running or building iOS.
+
+The CI workflow uses these exact Node and Flutter versions. The root `package.json` accepts the Node 24/npm 11 release lines so compatible patch updates can be used locally, but using the recorded versions gives the closest reproduction.
+
+The repository enforces LF line endings through `.gitattributes` so formatting checks behave consistently across operating systems.
+
+The bootstrap was generated and validated with:
+
+| Tool/framework    | Version       |
+| ----------------- | ------------- |
+| Node.js           | 24.20.0 LTS   |
+| npm               | 11.19.0       |
+| Flutter           | 3.47.2 stable |
+| Dart              | 3.13.2        |
+| Next.js           | 16.3.4        |
+| React / React DOM | 19.2.8        |
+| Supabase CLI      | 2.116.0       |
+
+Confirm the local tools before setup:
+
+```text
+git --version
+node --version
+npm --version
+flutter --version
+flutter doctor
+docker version
+```
+
+Start the Docker engine before starting Supabase. Flutter may report missing Android or Xcode tooling when that platform is not installed; those tools are not required for the web application, local backend, Flutter formatting, static analysis, or widget tests.
+
+## First setup
+
+Clone and enter the repository:
+
+```text
+git clone https://github.com/lillo24/planets.community.git
+cd planets.community
+```
+
+Restore the root Node workspace and Flutter packages:
+
+```text
+npm ci
+npm run restore:mobile
+```
+
+The root lockfile covers `apps/web` and the project-scoped Supabase CLI. Do not install a global Supabase CLI or create a second lockfile under `apps/web`.
+
+## Local Supabase
+
+Start the development-only Supabase containers and inspect their status:
+
+```text
+npm run db:start
+npm run db:status
+```
+
+With the committed default configuration, the main local endpoints are:
+
+| Service            | Address                                                   |
+| ------------------ | --------------------------------------------------------- |
+| API                | `http://127.0.0.1:54321`                                  |
+| PostgreSQL         | `postgresql://postgres:postgres@127.0.0.1:54322/postgres` |
+| Studio             | `http://127.0.0.1:54323`                                  |
+| Local email viewer | `http://127.0.0.1:54324`                                  |
+
+`npm run db:status` is the authoritative source for active local endpoints and development credentials. These values are local-only and must never be reused as staging or production secrets.
+
+Stop the containers when finished:
+
+```text
+npm run db:stop
+```
+
+No remote Supabase project is linked, and plan 00 defines no product schema, migrations, policies, or seed data.
+
+## Run the applications
+
+Start the Next.js development server:
+
+```text
+npm run dev:web
+```
+
+Open `http://localhost:3000`.
+
+With an Android emulator, iOS Simulator, or physical device available, start Flutter:
+
+```text
+npm run dev:mobile
+```
+
+Use `flutter devices` to inspect available devices. iOS builds require macOS/Xcode; Android builds require a configured Android SDK.
+
+## Validate and format
+
+Run all ordinary web and mobile validation:
+
+```text
+npm run check
+```
+
+The command runs web linting, TypeScript checking, a production Next.js build, Dart formatting verification, Flutter analysis, and Flutter widget tests. Supabase startup is separate because it provisions local containers and is slower than the frequent validation loop.
+
+Useful focused commands are:
+
+```text
+npm run check:web
+npm run check:mobile
+npm run format
+npm run format:check
+npm run db:status
+```
+
+GitHub Actions separately validates mobile, web, and a clean local Supabase start/status/stop cycle on pull requests and pushes to `main`.
+
+## Environment and secrets
+
+The bootstrap applications consume no environment variables. For that reason, there are no placeholder `.env.example` files yet. Local `.env*` files and Supabase CLI state are ignored; add a documented example only when a future plan introduces a real configuration contract.
+
+Never commit provider credentials, production database URLs, service-role keys, signing material, or local machine state. No Firebase, Vercel, Cloudflare, Resend, Sentry, PostHog, or other cloud configuration is needed for this foundation.
+
+## Provisional mobile identifiers
+
+The official Flutter scaffold currently uses these deliberately provisional identifiers:
+
+- Android: `community.planets.bootstrap.planets_mobile`
+- iOS: `community.planets.bootstrap.planetsMobile`
+
+The visible application name is `PLANETS`. The founder/account owner must choose the final Android application ID and iOS bundle ID before Firebase/FCM registration, store provisioning, signing, or any other provider setup tied to application identity. Changing those identifiers is deferred; the current values do not claim ownership of a production namespace.

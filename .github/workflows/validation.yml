@@ -1,0 +1,93 @@
+name: Validation
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+concurrency:
+  group: validation-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  mobile:
+    name: Mobile
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7.0.1
+
+      - name: Install Flutter
+        uses: subosito/flutter-action@v2.23.0
+        with:
+          channel: stable
+          flutter-version: 3.47.2
+          cache: true
+
+      - name: Restore Flutter packages
+        working-directory: apps/mobile
+        run: flutter pub get
+
+      - name: Check Dart formatting
+        working-directory: apps/mobile
+        run: dart format --output=none --set-exit-if-changed lib test
+
+      - name: Analyze Flutter application
+        working-directory: apps/mobile
+        run: flutter analyze
+
+      - name: Test Flutter application
+        working-directory: apps/mobile
+        run: flutter test
+
+  web:
+    name: Web
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7.0.1
+
+      - name: Install Node.js
+        uses: actions/setup-node@v7.0.0
+        with:
+          node-version: 24.20.0
+          cache: npm
+
+      - name: Restore Node packages
+        run: npm ci
+
+      - name: Validate web application
+        run: npm run check:web
+
+  supabase:
+    name: Supabase local smoke
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7.0.1
+
+      - name: Install Node.js
+        uses: actions/setup-node@v7.0.0
+        with:
+          node-version: 24.20.0
+          cache: npm
+
+      - name: Restore Node packages
+        run: npm ci
+
+      - name: Start local Supabase
+        run: npm run db:start
+
+      - name: Verify local Supabase status
+        run: npm run db:status
+
+      - name: Stop local Supabase
+        if: always()
+        run: npm run db:stop
