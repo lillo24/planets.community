@@ -1,212 +1,355 @@
-# Instructions for Coding Agents
-
-This file applies to the whole repository unless a more specific `AGENTS.md` is added in a subdirectory.
+# PLANETS Project Context & Rules
 
 ## Project context
 
-PLANETS is an early-stage community platform for creating, discovering, and joining local collaborative activities/projects. The primary product will be a Flutter Android/iOS application using one shared Supabase backend. A Next.js application will provide the public website and a separate authenticated admin interface.
+PLANETS is an early-stage community platform/start-up for creating, discovering, and joining local collaborative activities and projects, such as public art, gardening, building things together, or initiatives whose proceeds are donated.
 
-The repository is currently in the architecture/bootstrap phase. Do not claim a product feature is implemented unless repository code and tests demonstrate it.
+The product is centered on:
 
-## Read before changing code
+- user profiles with competences, interests, preferences, and participation history;
+- local proposal/activity creation and discovery;
+- competence-based matching and notifications;
+- join requests and proposal membership;
+- proposal-specific group chat once its participation condition is satisfied;
+- reusable templates derived from previous proposals;
+- moderation, administration, and community statistics.
 
-1. the active task/implementation prompt;
-2. the current repository tree and relevant existing implementation;
-3. [`docs/architecture/core-stack.md`](docs/architecture/core-stack.md);
-4. [`docs/architecture/system-design.md`](docs/architecture/system-design.md);
-5. [`docs/implementation/roadmap.md`](docs/implementation/roadmap.md);
-6. relevant architecture decision records and feature documentation added later.
+The primary full user experience is the Android/iOS mobile app. The public website is mainly informational/discovery-oriented and is not expected to reproduce the entire mobile application. The admin interface is a separate authenticated surface for moderation and platform administration.
 
-Do not assume the repository still matches an older prompt or report. Inspect it.
+## PLANETS sources of truth
 
-## Sources of truth and conflicts
+Use these sources according to what is being decided:
 
-Use this order when deciding what currently exists:
+1. **Current implemented behavior:** repository code, migrations, configuration, and tests.
+2. **Accepted technical direction:** repository architecture documents and ADRs, especially:
+   - `docs/architecture/core-stack.md`
+   - `docs/architecture/system-design.md`
+3. **Current requested change:** the active implementation plan/prompt.
+4. **Broader product/design context:** the external Google Doc **Planets Community Design** and founder discussion.
 
-1. repository code, migrations, configuration, and tests;
-2. merged repository documentation and architecture decision records;
-3. the active task prompt for the requested change;
-4. external product/design material explicitly supplied with the task.
+The Google Doc contains a mixture of accepted ideas, tentative proposals, business/product thinking, and intermediate reasoning. It is not evidence that something is implemented.
 
-The external Google Doc **Planets Community Design** contains broad product thinking, including tentative ideas. It is not evidence that a feature exists. Do not assume access to it. When an implementation depends on external context that is unavailable, stop and report what is missing rather than guessing.
+When repository implementation and product/design material conflict about what currently exists, the repository wins for current behavior.
 
-When code and documentation disagree about implemented behavior, code/tests win for the current state. Report the mismatch and update stale documentation when it is within scope.
+Do not assume access to the Google Doc. If an implementation requires external context that is not available in the task or repository, report the missing dependency rather than inventing the product decision.
 
-## General working rules
+## Accepted architecture
 
-- Keep changes focused on the active plan.
-- Prefer simple, conventional implementations over speculative abstractions.
-- Preserve working behavior outside the task scope.
-- Do not redesign user-facing flows unless the task requires it.
-- Do not add major dependencies without explaining the concrete need.
-- Do not introduce a second tool that duplicates an established responsibility.
-- Avoid placeholder architecture that creates ongoing maintenance without serving current behavior.
-- Record important assumptions in the pull request/report and in repository documentation when they affect future work.
-- Mark deferred behavior explicitly; do not silently implement a different product interpretation.
-- Update tests and documentation together with behavior.
+Follow `docs/architecture/core-stack.md` and `docs/architecture/system-design.md` as the accepted technical baseline.
 
-## Architecture guardrails
+At the highest level, PLANETS uses:
 
-The accepted baseline is:
+- Flutter/Dart for the Android/iOS application;
+- Supabase/PostgreSQL as the canonical shared backend;
+- Next.js/TypeScript for the public website and admin interface.
 
-- Flutter/Dart mobile application;
-- Riverpod and `go_router`;
-- Supabase Cloud;
-- PostgreSQL and PostGIS;
-- Row Level Security;
-- database functions for atomic domain transitions;
-- Edge Functions for trusted external integrations;
-- outbox/queues for retryable external side effects;
-- Supabase Realtime for proposal-scoped chat;
-- Supabase Storage for media;
-- Firebase Cloud Messaging for push;
-- Next.js/TypeScript for the public website and admin interface;
-- Vercel for web deployment;
-- GitHub Actions for validation and Codemagic for mobile release builds.
+Do not replace an accepted technology or move a major responsibility across system boundaries as an incidental implementation choice. A material architecture change should be treated as an explicit architecture decision and should update the relevant architecture documentation.
 
-Do not replace these choices during ordinary implementation. A material change requires evidence, alternatives, migration/operational analysis, and an architecture-document/ADR update.
+In particular, all user-facing surfaces must use the same canonical backend/domain rules; do not create a competing set of business rules in one client.
 
-### Backend rules
+Features, infrastructure, and alternatives explicitly marked as deferred or out of scope in the architecture documents remain deferred unless the active task reopens that decision.
 
-- PostgreSQL is the canonical product record.
-- Enable and test RLS for every table exposed through Supabase APIs.
-- Security-sensitive defaults fail closed.
-- Use constraints for invariants that the database can express directly.
-- Use named backend operations for multi-step or security-sensitive transitions.
-- Make retried operations idempotent where duplication would cause harm.
-- Do not make clients coordinate partial writes that should be one transaction.
-- Do not put service-role credentials in Flutter, browser bundles, committed files, examples, logs, or test fixtures.
-- Treat Next.js as a client/delivery surface, not a competing domain backend.
-- Keep public views deliberately narrow; do not expose private columns and rely on UI hiding.
-- Keep broad public location separate from exact restricted meeting data.
-- Derive participation statistics from canonical history before adding mutable counters.
-- Queue external notification/email effects rather than coupling them to the domain transaction.
+## Implementation roadmap
 
-### Flutter rules
+Use `docs/implementation/roadmap.md` as the sequencing baseline for the initial build.
 
-- Organize primarily by feature.
-- Separate presentation, state/controller, and data access responsibilities where useful.
-- Use Riverpod as the state/dependency mechanism; do not add Bloc, Provider, or a service locator beside it without an approved reason.
-- Use `go_router` for navigation and deep links.
-- Prefer immutable typed models and explicit serialization.
-- Keep shared/core folders small and genuinely cross-feature.
-- Do not create generic base repositories, use cases, or wrappers mechanically.
-- Build accessible functional UI with centralized tokens; polished brand/design decisions may be deferred.
-- Handle loading, empty, recoverable error, and unauthorized states explicitly.
+The ordering is intentional: shared infrastructure, canonical data/security rules, and application foundations are established before dependent product features.
 
-### Next.js rules
+Do not begin a dependent roadmap plan until its required predecessor is merged, or the active task explicitly selects another branch/commit as the dependency base.
 
-- Keep public and admin routes visibly separated.
-- Prefer server components by default and client components only where interaction requires them.
-- Never expose server secrets to browser code.
-- Admin UI must call authorized canonical operations rather than edit sensitive tables through unrestricted client access.
-- Preserve ordinary web accessibility, semantic HTML, responsive behavior, and keyboard operation.
-- The public website is not required to reproduce the whole mobile app.
+Implementation prompts should extract only the context needed for their plan rather than reproducing the entire roadmap or product document.
 
-### Product-scope rules
+## Founder-owned product decisions
 
-Unless a task explicitly changes the decision, do not introduce:
+Do not silently finalize unresolved product/policy decisions merely to unblock implementation.
 
-- a general-purpose VPS or self-hosted production stack;
-- microservices, Kubernetes, Redis, or a dedicated search cluster;
-- full offline-first synchronization;
-- direct messaging unrelated to proposals;
-- built-in voice/video infrastructure;
-- AI matching or AI moderation;
-- direct payment/donation processing;
-- a visual map SDK as a foundation dependency;
-- advanced chat features such as reactions, typing indicators, or read receipts;
-- social login before its provider and store implications are intentionally addressed.
+Known decision areas include:
 
-## Testing and validation
+- competence/resource taxonomy;
+- proposal lifecycle and cancellation/completion semantics;
+- participation roles and threshold semantics;
+- whether the proposal creator counts toward participation thresholds;
+- broad versus exact location visibility;
+- profile and photo visibility;
+- notification categories and user-facing copy;
+- chat access after a participant leaves or is removed;
+- minimum age and identity expectations;
+- prohibited content, moderation, suspension, escalation, and appeals;
+- account deletion, anonymization, and lawful retention;
+- donation/payment behavior;
+- final visual identity and high-impact UX decisions.
 
-Run all checks relevant to the changed areas and report exact commands/results.
+If an active plan can safely isolate or defer one of these decisions, do so and continue.
 
-Expected categories as the repository is bootstrapped:
+If the decision is required to define authorization, irreversible data behavior, legal/policy behavior, or a central user flow, stop and surface the concrete alternatives instead of guessing.
 
-### Flutter
+## Supabase data and migration safety
 
-- formatting;
-- static analysis;
-- unit tests;
-- widget tests;
-- selected integration tests.
+PostgreSQL is the canonical product record.
 
-### Next.js/TypeScript
+For shared/staging/production database history:
 
-- formatting/linting;
-- TypeScript checks;
-- unit/component tests;
-- production build;
-- Playwright tests for critical flows when present.
+- do not rewrite an already-applied production migration to change history; add a new migration;
+- destructive schema/data operations against staging or production require explicit authorization;
+- seed/test data must be deterministic and contain no real personal data;
+- authorization-sensitive database changes must preserve the repository's RLS/security model;
+- public access must be deliberate; do not expose private data and rely on the UI to hide it.
 
-### Supabase/PostgreSQL
+Pre-production migration squashing is acceptable only when the active implementation plan explicitly permits it and no shared environment depends on the migration history.
 
-- start the local stack;
-- apply every migration from an empty database;
-- load deterministic seed data where relevant;
-- run pgTAP tests;
-- test RLS as the relevant actor types rather than only as an administrator/service role;
-- verify generated database types when schema changes affect them.
+## External services and account-owner actions
 
-### Edge Functions
+PLANETS may use external resources such as Supabase, Firebase/APNs, Vercel, Cloudflare, Resend, Sentry, PostHog, Codemagic, and Apple/Google developer services.
 
-- formatting/type checks;
-- unit tests with mocked providers;
-- retry and idempotency tests for background delivery.
+Do not fabricate credentials, account state, provider configuration, billing setup, domain ownership, signing material, or production resources.
 
-Do not state that checks passed if they were not run. Explain environment/tool limitations and distinguish them from failures.
+When an external account-owner action is required:
 
-## Migrations and data safety
+- implement everything that can be completed safely without the credential/resource;
+- leave configuration placeholders where appropriate;
+- provide precise remaining setup steps;
+- do not claim the external integration is configured unless it was verified.
 
-- Never edit an already-applied production migration to change history; add a new migration.
-- During pre-production bootstrap, squashing may be acceptable only when the active plan explicitly permits it and no shared environment depends on the history.
-- Make destructive changes explicit.
-- Include migration rollback/recovery implications in the report.
-- Seed data must be deterministic and contain no real personal data.
-- Do not run destructive commands against staging or production unless explicitly authorized.
+Production deployment, app-store submission, destructive production operations, billing commitments, and other irreversible external actions require explicit authorization.
 
-## External services, secrets, and production
 
-Coding agents may create configuration templates, scripts, and setup documentation. They must not fabricate or expose:
+# Code Organization for Multi-file Projects
+Use a clear **module / feature / package / subsystem boundary** as the main unit of abstraction, following the structure already established by the repository.
 
-- Supabase production keys;
-- Firebase/APNs credentials;
-- Vercel, Cloudflare, Resend, Sentry, or PostHog secrets;
-- Apple/Google developer credentials or signing material;
-- production database URLs;
-- domain ownership or billing configuration.
+- Each file should have a clear **abstract purpose** (what it owns / what it is responsible for).
 
-When manual account-owner action is required, provide precise steps and continue with everything that can be implemented safely without the credential.
+## Folder map policy
 
-Do not claim an external service is configured unless it was verified through an accessible tool or repository evidence.
+Use folder-level `README.md` files as **navigation maps for the source tree**, not as a ritual.
 
-## When to stop for a decision
+Keep it for folders that contain real logic, structure, or collaboration between files.
+Skip it for folders that are obvious storage buckets, generated output, or already clear from names alone (so repeating the directory listing)
 
-Stop and report before committing to an assumption that materially changes:
+Each folder README should briefly say:
 
-- authorization or exposure of personal data;
-- irreversible schema/data behavior;
-- proposal/participation state semantics;
-- chat access after membership changes;
-- moderation, retention, deletion, or minimum-age policy;
-- payment/legal behavior;
-- production infrastructure or significant recurring cost;
-- a central user-facing product flow.
+- what the folder owns
+- what each file does
+- how the files relate
 
-Do not stop for minor implementation details that can be selected consistently with the current architecture, task acceptance criteria, and common engineering practice.
+### Rule of thumb
 
-## Pull request and completion report
+Keep README files in folders that help humans navigate behavior, architecture, or responsibility.
+Skip them in folders that mainly store obvious content.
 
-A completed task should provide:
+—
 
-1. concise summary of what changed;
-2. relevant files/areas changed;
-3. architecture and product decisions made;
-4. migrations/security implications;
-5. commands and tests run, including failures or omissions;
-6. external/manual setup still required;
-7. known limitations and deferred work;
-8. any decision that should block the next roadmap plan.
+# Reproducibility and Traceability
+## Doc/Comment Sync (non-obvious changes)
 
-Keep the pull request focused. Do not combine unrelated roadmap plans merely because they touch the same repository.
+If you introduce or modify **non-obvious behavior** or **configuration**, you must update the closest appropriate documentation (or inline comments) in the same change.
+
+Examples that require an update:
+
+- new env vars / config keys / flags
+- default values that change behavior
+- implicit assumptions (paths, locale/timezone, encoding, auth, caching)
+- new required setup steps
+- behavior that differs across environments (dev vs prod, Windows vs Linux)
+
+Where to document:
+
+- prefer the nearest “source of truth”
+  E.g. README / “map.txt” / config schema-docs / docstring or comment at the interface
+
+Goal: someone can reproduce the behavior without reading the whole codebase.
+
+—
+
+# Handling Doubts & Architecture Fit
+## 1) Underspecified requirements: decide what you can safely assume
+
+If something important is unclear, do **not** silently guess.
+
+- **If multiple reasonable interpretations would materially change product behavior, security/privacy, data permanence, recurring cost, a public contract, or another consequential outcome:** stop and ask, or clearly surface the alternatives when the execution environment allows it.
+- **Otherwise, if there is a safe, conservative interpretation consistent with the repository and existing behavior:** proceed, but **state the assumption** explicitly when it matters.
+
+Examples of “important” ambiguity:
+
+- expected output format, business rules, edge-case handling
+- security/privacy implications
+- breaking changes to interfaces
+- performance/caching behavior
+
+**Never** introduce new features “because it might be useful”.
+
+## 2) Architecture quick-check (before editing)
+Inspect the current repository and the relevant implementation before making a non-trivial change. Do not assume an older prompt, report, or remembered structure still matches the code.
+
+Before making non-trivial changes:
+
+- Identify the **owner** of the responsibility you’re touching (which file/module is supposed to own it).
+- Check for existing patterns (how similar things are done elsewhere).
+- Keep changes consistent with the repo’s abstractions unless the request explicitly says to change them.
+
+If your change would violate an existing abstraction, either:
+
+- find the correct place to implement it, or
+- clearly propose the refactor as a separate step (do not blend it in silently), thus discuss it with the user
+
+—
+
+# GitHub Repo Workflow
+## Branching, Parallel Work, PR Merge, and Cleanup
+### Default workflow
+Use one **isolated branch/worktree** per `.md` implementation plan.
+If the execution environment already provides an isolated managed worktree, use it rather than creating a nested one unnecessarily.
+
+Do not mix unrelated plans in the same branch.
+
+After finishing a plan:
+
+- run checks
+- inspect the diff
+- commit only intended files
+- push the branch
+- open/merge a PR into `main`
+- delete the branch locally and remotely after merge when the repository/workflow expects manual cleanup
+
+Do not push directly to `main` unless the active user/task instruction explicitly authorizes it.
+
+### Parallel tasks
+Parallel Codex tasks must use separate branches/worktrees.
+The first finished task may merge first.
+Every later task must update from latest `main` before merging.
+
+When the coding environment manages worktrees automatically, preserve that isolation and focus on the integration rule above rather than recreating the worktree manually.
+
+—
+
+# Libraries and Dependencies
+
+## Follow the versioned documentation
+Inspect the dependency manifests, lockfiles, and existing code before relying on an API. When behavior is version-sensitive, use documentation compatible with the version actually resolved or required by the repository.
+
+If you want to use **bleeding-edge** or unreleased features, you must:
+- state it explicitly
+- explain why it’s worth the risk
+- provide a fallback (or avoid it)
+
+## Adding dependencies (be conservative)
+
+- Add a dependency only if it’s clearly justified and not already available in the stack.
+- Prefer well-maintained, widely used libraries.
+- Follow the repository’s dependency-version policy and package-manager conventions; commit/update lockfiles when the ecosystem expects them.
+
+## Removing dependencies (double-check usage)
+Before removing a dependency, run a repo-wide search for the dependency name and common import paths, and verify it is not used in:
+- runtime code imports
+- build scripts / CI
+- tooling configs (lint/format/test)
+- documentation examples
+
+—
+
+# Change Discipline (Minimize Unintended Damage)
+
+Default stance: **conservative edits**. Prefer correctness + stability over “improvements”.
+
+## 1) No Unrelated Changes
+
+Unless explicitly needed, do **not**:
+
+- rename files/folders/symbols
+- reformat code or reorder imports
+- reorganize modules
+- “modernize” patterns or style
+
+If formatting happens automatically, try to **limit it** to the smallest area.
+
+## 2) Respect Interfaces (Contracts)
+
+Treat public surfaces as fragile:
+
+- function signatures / return shapes / error behavior
+- file formats / schemas
+- CLI flags / config keys
+- endpoints + payloads (if any)
+
+If you must change a contract:
+
+- update **all** call sites in the same change
+- document the change at the interface boundary (docstring/comment + relevant docs)
+
+## 3) Preserve Behavior by Default
+
+- Keep existing behavior unless the request **explicitly** asks to change it.
+- If behavior changes, make it:
+  - intentional
+  - described (briefly) near the code
+  - verifiable (test or runnable example when applicable)
+
+## 4) Don’t “Fix” Tests Casually
+
+- Don’t edit tests unless the task requires it or the test encodes a wrong spec.
+- If something fails, try fixing **implementation first**.
+- If you do change tests, state **why** (what spec changed).
+
+—
+
+# Error Handling (Fail Loud, No “Success-Shaped” Failures)
+
+Default stance: a failure must look like a failure. Don’t hide errors behind “empty but valid” outputs.
+
+## 1) Catch only what you can handle
+- Inside domain/business logic, prefer narrow catches for failures you can meaningfully handle.
+- Broad catches are allowed at explicit process, request, application, CLI, or background-job boundaries when they report/log useful context and convert the exception into an explicit failure rather than swallowing it.
+
+- Catch specific exception types you expect (I/O, parse errors, network errors).
+- If you catch it, you must either:
+  - convert it into an explicit error result, or
+  - raise with added context (preferred).
+
+## 2) No silent defaults
+
+- Don’t invent fallback values that change behavior without telling anyone.
+- If a config value is required for correctness, missing/invalid config must error.
+- If a default is acceptable, it must be:
+  - explicitly documented near the interface (config schema/docstring), and
+  - stable (changing it counts as behavior change -> update docs/tests).
+
+## 3) No “success-shaped” fallbacks
+Never return an empty, placeholder, cached, or partial result **to conceal a failed operation**.
+
+Legitimate empty domain states such as `[]`, `{}`, or `""` are allowed when they are valid results and are distinguishable from failure.
+
+Examples of invalid success-shaped fallbacks include:
+- placeholder IDs or “OK” status after an operation failed
+- partial manifests presented as complete
+- “Use last cached result” unless the feature explicitly calls for it and is documented
+
+## 4) Errors must be actionable
+
+When failing, include minimal context:
+
+- which step failed (e.g., fetch, parse, chunk, embed)
+- target identifiers (URL/path/doc_id/revision_id)
+- what was expected vs what was found (brief)
+
+—
+
+# Last Check (Definition of Done)
+
+This file defines the minimum checks that must pass before a task is considered “done”.
+
+## Required
+- Run the smallest complete set of formatting, static-analysis, build, test, migration, integration, or smoke checks that validates **every changed area**.
+- Use the repository’s standard commands when they exist.
+- Full repository CI should pass before merge unless the repository explicitly defines a narrower merge policy.
+- Do not state that a check passed if it was not run.
+- If a required check cannot run because of an environment/tool limitation, report the limitation clearly and distinguish it from a failing check.
+
+## When behavior changes
+
+- Add/update tests to cover the new/changed behavior
+
+## If the repository is testless
+
+- Provide at least one of:
+  - a runnable example / smoke check command
+  - a minimal script that exercises the critical path
+  - a documented manual test procedure
