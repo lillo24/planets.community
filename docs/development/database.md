@@ -72,6 +72,6 @@ npm run db:types
 npm run db:types:check
 ```
 
-`db:lint` intentionally checks only `public` and `private`, avoiding warnings owned by Supabase-managed schemas or extensions. `db:types` regenerates `apps/web/src/types/database.generated.ts` from local `public`; the file is generated output and must not be hand-edited or formatted. `db:types:check` regenerates it and fails on a tracked diff.
+`db:lint` intentionally checks only `public` and `private`, avoiding warnings owned by Supabase-managed schemas or extensions. `db:types` regenerates `apps/web/src/types/database.generated.ts` from local `public`; its wrapper propagates CLI failures, rejects empty output, and normalizes only the terminal newline across hosts. The file is generated output and must not be hand-edited or formatted. `db:types:check` regenerates it and fails on a tracked diff.
 
 `npm run check:db` performs reset, lint, pgTAP, regeneration, and drift detection as one validation sequence. It assumes `npm run db:start` has already succeeded and leaves stack lifecycle to the caller. CI starts Supabase, runs the same underlying steps, and always stops it.
