@@ -86,7 +86,7 @@ Stop the containers when finished:
 npm run db:stop
 ```
 
-No remote Supabase project is linked, and plan 00 defines no product schema, migrations, policies, or seed data.
+No remote Supabase project is linked. The committed migrations establish only the database security foundation and PostGIS; there are no product tables, policies, or seed rows yet. See the [database development workflow](database.md) before changing the schema.
 
 ## Run the applications
 
@@ -126,7 +126,13 @@ npm run format:check
 npm run db:status
 ```
 
-GitHub Actions separately validates mobile, web, and a clean local Supabase start/status/stop cycle on pull requests and pushes to `main`.
+With the local Supabase stack running, validate a clean migration replay, schema lint, pgTAP security tests, and generated database types:
+
+```text
+npm run check:db
+```
+
+`check:db` assumes the stack is already running; it does not start or stop containers. GitHub Actions owns that lifecycle and separately validates mobile, web, and the full database workflow on pull requests and pushes to `main`.
 
 ## Environment and secrets
 

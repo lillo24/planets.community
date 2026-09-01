@@ -1,7 +1,7 @@
 # Implementation Roadmap
 
 **Status:** Planning baseline  
-**Current implementation:** Plan 00 repository bootstrap implemented; plan 01 not started
+**Current implementation:** Plan 00 implemented; plan 01A in progress; plan 01B not started
 
 This roadmap divides the first PLANETS build into reviewable Codex tasks. Each numbered item should normally become its own implementation prompt, branch, and pull request.
 
@@ -36,7 +36,9 @@ Do not begin a dependent plan until the prior plan is merged or its branch is ex
 | ID | Plan | Main result | Dependencies | Founder input expected | Status |
 | --- | --- | --- | --- | --- | --- |
 | 00 | Architecture and repository bootstrap | Runnable monorepo foundation, local tooling, initial CI, development docs | Documentation baseline | Tool/account installation only if automation cannot provide it | Implemented |
-| 01 | Database foundation and security model | Versioned Supabase schema conventions, identity/profile split, RLS/test harness, audit/outbox primitives | 00 | Confirm any security-critical ambiguity Codex cannot isolate | Not started |
+| 01 | Database foundation and security model (parent) | Secure database workflow plus shared identity, audit, and outbox primitives | 00 | Confirm any security-critical ambiguity Codex cannot isolate | In progress |
+| 01A | Database workflow and security harness | Canonical migrations, fail-closed grants, public/private boundary, PostGIS, pgTAP, generated types, and CI replay | 00 | None expected | In progress |
+| 01B | Identity, audit, and outbox primitives | Auth/profile boundary and minimal shared audit/outbox foundations | 01A | Confirm any security-critical ambiguity Codex cannot isolate | Not started |
 | 02 | Mobile and web application foundations | Flutter app shell, Next.js public/admin shells, environments, error handling, localization and monitoring foundations | 00–01 | No visual polish; only resolve navigation/product-shell ambiguity if material | Not started |
 | 03 | Authentication and profiles | Public browsing boundary, email OTP, profile setup, competences/preferences, privacy-ready profile data | 01–02 | Initial required profile fields, visibility rules, competence taxonomy strategy | Not started |
 | 04 | Proposals and discovery | Draft/create/publish, proposal list/detail, requirements, location/filter foundations, public sanitized views | 03 | Proposal fields, lifecycle decisions, broad location behavior | Not started |
@@ -83,21 +85,33 @@ The output should leave a new contributor able to clone the repository, install 
 
 **Goal:** Establish the conventions every later feature relies on.
 
+This parent plan is split into two independently reviewed pull requests. It remains in progress until both 01A and 01B are merged; completing 01A alone does not unblock plan 02.
+
+#### 01A — Database workflow and security harness
+
 Expected scope:
 
-- migration workflow and reset-from-zero validation;
+- canonical timestamped SQL migrations and reset-from-zero validation;
+- fail-closed `public` object grants and an unexposed `private` schema;
+- RLS and default-privilege pgTAP invariants;
+- PostGIS enablement in a non-public extension schema;
+- generated public database types and type-drift validation;
+- full local database validation in CI.
+
+Non-goals include identity/profile data, product tables, audit events, outbox records, notification behavior, and location records.
+
+#### 01B — Identity, audit, and outbox primitives
+
+Expected scope:
+
 - schema ownership and naming conventions;
 - Supabase Auth identity to application-profile relationship;
-- public/private schema strategy;
 - timestamps, identifiers, soft-delete/content-state conventions where justified;
-- RLS enabled by default for exposed tables;
 - role/test identities for policy testing;
-- pgTAP harness and CI execution;
 - audit-event and transactional-outbox primitives;
-- PostGIS enablement and location-type groundwork;
-- generated database types for TypeScript where appropriate.
+- policies and pgTAP coverage for the new shared primitives.
 
-This plan should not prematurely define every feature table. It should create the secure patterns and minimal shared primitives used by later domain migrations.
+01B depends on merged 01A and should not prematurely define feature tables or product behavior. Together, 01A and 01B create the secure patterns and minimal shared primitives used by later domain migrations.
 
 ### 02 — Mobile and web application foundations
 
@@ -334,4 +348,4 @@ Major gates currently expected:
 
 ## Immediate next action
 
-Prepare and execute **01 — Database foundation and security model** against the merged plan 00 foundation.
+Complete and merge **01A — Database workflow and security harness**, then prepare 01B against that merged foundation. Do not start plan 02 until the full parent plan 01 is implemented.
