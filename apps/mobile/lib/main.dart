@@ -1,40 +1,25 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
-void main() {
-  runApp(const PlanetsApp());
-}
+import 'app/startup_failure_app.dart';
+import 'bootstrap/bootstrap.dart';
+import 'core/config/app_config.dart';
 
-class PlanetsApp extends StatelessWidget {
-  const PlanetsApp({super.key});
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
 
-  @override
-  Widget build(BuildContext context) {
-    return const MaterialApp(
-      title: 'PLANETS',
-      debugShowCheckedModeBanner: false,
-      home: PlanetsBootstrapScreen(),
-    );
+  try {
+    await bootstrapApplication();
+  } on AppConfigException {
+    _launchFailure(StartupFailureKind.configuration);
+  } catch (_) {
+    _launchFailure(StartupFailureKind.backendInitialization);
   }
 }
 
-class PlanetsBootstrapScreen extends StatelessWidget {
-  const PlanetsBootstrapScreen({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return const Scaffold(
-      body: SafeArea(
-        child: Center(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text('PLANETS', style: TextStyle(fontSize: 32)),
-              SizedBox(height: 12),
-              Text('Mobile application bootstrap'),
-            ],
-          ),
-        ),
-      ),
-    );
+void _launchFailure(StartupFailureKind kind) {
+  if (kDebugMode) {
+    debugPrint('PLANETS startup failed (${kind.name}).');
   }
+  runApp(StartupFailureApp(kind: kind));
 }

@@ -1,0 +1,6 @@
+{
+  "APP_ENV": "production",
+  "SUPABASE_URL": "https://your-production-project.supabase.co",
+  "SUPABASE_PUBLISHABLE_KEY": "replace-with-production-publishable-key",
+  "SENTRY_DSN": ""
+}

@@ -19,6 +19,9 @@ ios/Pods/
 .env.*
 !.env.example
 !.env.*.example
+apps/mobile/config/local.json
+apps/mobile/config/staging.json
+apps/mobile/config/production.json
 
 # Supabase local CLI state
 supabase/.branches/

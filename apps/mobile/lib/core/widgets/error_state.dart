@@ -1,0 +1,53 @@
+import 'package:flutter/material.dart';
+
+import '../../l10n/generated/app_localizations.dart';
+import '../theme/app_tokens.dart';
+
+class ErrorState extends StatelessWidget {
+  const ErrorState({this.title, this.message, this.onRetry, super.key});
+
+  final String? title;
+  final String? message;
+  final VoidCallback? onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+
+    return Center(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: AppBreakpoints.compact),
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpacing.large),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ExcludeSemantics(
+                child: Icon(
+                  Icons.error_outline,
+                  size: 48,
+                  color: Theme.of(context).colorScheme.error,
+                ),
+              ),
+              const SizedBox(height: AppSpacing.medium),
+              Text(
+                title ?? l10n.errorStateTitle,
+                textAlign: TextAlign.center,
+                style: Theme.of(context).textTheme.titleLarge,
+              ),
+              const SizedBox(height: AppSpacing.small),
+              Text(
+                message ?? l10n.errorStateMessage,
+                textAlign: TextAlign.center,
+              ),
+              if (onRetry != null) ...[
+                const SizedBox(height: AppSpacing.medium),
+                FilledButton(onPressed: onRetry, child: Text(l10n.retryAction)),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}

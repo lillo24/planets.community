@@ -1,7 +1,7 @@
 # System Design and Responsibility Boundaries
 
 **Status:** Initial accepted design  
-**Implementation status:** Not yet implemented
+**Implementation status:** Repository/database baseline implemented; application foundations in progress
 
 This document describes how the major parts of PLANETS should interact. Technology choices are recorded separately in [`core-stack.md`](core-stack.md).
 
@@ -39,6 +39,12 @@ Flutter mobile application             Next.js public/admin application
 ```
 
 ## Core responsibility rules
+
+### Mobile client foundation
+
+The Flutter process validates typed `local`, `staging`, or `production` compile-time configuration before initializing one Supabase client. Riverpod is the dependency/state boundary and `go_router` owns navigation. Optional Sentry monitoring wraps launch but cannot prevent the application from starting when monitoring itself fails. Product state, auth redirects, deep links, and feature repositories remain outside this foundation.
+
+Mobile source is organized by real feature ownership, supported by narrow shared `core` modules for configuration, backend access, routing, theme, monitoring, and common state UI. New layers or abstractions should appear only when a feature has concrete behavior to place in them.
 
 ### The backend owns authorization and invariants
 
