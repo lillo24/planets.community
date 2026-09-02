@@ -2,7 +2,7 @@
 
 **Status:** Accepted baseline for initial implementation  
 **Recorded:** 2026-09-01  
-**Implementation status:** Repository/database baseline implemented; mobile application foundation in progress
+**Implementation status:** Repository/database and mobile foundations implemented; web/admin foundation in progress
 
 ## Decision summary
 

@@ -2,7 +2,7 @@
 
 PLANETS is a community platform for creating, discovering, and joining local collaborative activities and projects.
 
-> **Current status:** the repository and fail-closed database foundation are implemented. The Flutter application foundation is in progress, the Next.js foundation remains the second half of roadmap plan 02, and product behavior is intentionally deferred.
+> **Current status:** the repository, fail-closed database foundation, and Flutter application foundation are implemented. The Next.js public/admin foundation is in progress, and product behavior is intentionally deferred.
 
 ## Repository
 
@@ -28,7 +28,7 @@ npm run restore:mobile
 npm run check
 ```
 
-Use `npm run db:start`, `npm run mobile:config:local`, and `npm run dev:mobile` for the locally configured Flutter app. `npm run dev:web` starts the website. No cloud account is required for the local workflow.
+Use `npm run db:start`, `npm run mobile:config:local`, and `npm run dev:mobile` for the locally configured Flutter app. Use `npm run web:config:local` before `npm run dev:web` for the website. No cloud account is required for the local workflow.
 
 See [Getting started](docs/development/getting-started.md) for prerequisites, exact setup steps, local URLs, and troubleshooting. Database contributors should also read the [database development workflow](docs/development/database.md).
 

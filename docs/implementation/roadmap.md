@@ -1,7 +1,7 @@
 # Implementation Roadmap
 
 **Status:** Planning baseline  
-**Current implementation:** Plans 00 and 01 implemented; plan 02A in progress
+**Current implementation:** Plans 00, 01, and 02A implemented; plan 02B in progress
 
 This roadmap divides the first PLANETS build into reviewable Codex tasks. Each numbered item should normally become its own implementation prompt, branch, and pull request.
 
@@ -40,8 +40,8 @@ Do not begin a dependent plan until the prior plan is merged or its branch is ex
 | 01A | Database workflow and security harness | Canonical migrations, fail-closed grants, public/private boundary, PostGIS, pgTAP, generated types, and CI replay | 00 | None expected | Implemented |
 | 01B | Identity, audit, and outbox primitives | Auth/profile boundary and minimal shared audit/outbox foundations | 01A | Confirm any security-critical ambiguity Codex cannot isolate | Implemented |
 | 02 | Mobile and web application foundations (parent) | Flutter app shell, Next.js public/admin shells, environments, error handling, localization and monitoring foundations | 00–01 | No visual polish; only resolve navigation/product-shell ambiguity if material | In progress |
-| 02A | Mobile application foundation | Flutter startup, Riverpod/router, typed config, Supabase/Sentry, theme, localization, and state UI | 01 | None expected | In progress |
-| 02B | Web/admin application foundation | Next.js public/admin shells and web-side application foundations | 02A | None expected unless current tooling exposes a material ambiguity | Not started |
+| 02A | Mobile application foundation | Flutter startup, Riverpod/router, typed config, Supabase/Sentry, theme, localization, and state UI | 01 | None expected | Implemented |
+| 02B | Web/admin application foundation | Next.js public/admin shells and web-side application foundations | 02A | None expected unless current tooling exposes a material ambiguity | In progress |
 | 03 | Authentication and profiles | Public browsing boundary, email OTP, profile setup, competences/preferences, privacy-ready profile data | 01–02 | Initial required profile fields, visibility rules, competence taxonomy strategy | Not started |
 | 04 | Proposals and discovery | Draft/create/publish, proposal list/detail, requirements, location/filter foundations, public sanitized views | 03 | Proposal fields, lifecycle decisions, broad location behavior | Not started |
 | 05 | Participation lifecycle | Join requests, review decisions, membership, leave/cancel behavior, thresholds, derived participation stats | 04 | Threshold semantics, roles, removal/withdrawal rules | Not started |
@@ -363,4 +363,4 @@ Major gates currently expected:
 
 ## Immediate next action
 
-Complete and merge **02A — Mobile application foundation**, then prepare **02B — Web/admin application foundation** from the actual merged result. Keep parent plan 02 in progress and do not start plan 03 until both portions are merged.
+Complete, review, and merge **02B — Web/admin application foundation**. Keep parent plan 02 in progress and do not start plan 03 until 02B is merged.
