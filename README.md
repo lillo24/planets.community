@@ -2,7 +2,7 @@
 
 PLANETS is a community platform for creating, discovering, and joining local collaborative activities and projects.
 
-> **Current status:** the repository and fail-closed database workflow are bootstrapped. Minimal Flutter and Next.js applications run locally, and GitHub Actions validates the applications plus a clean Supabase migration replay and security harness. Product behavior is intentionally deferred to later roadmap plans.
+> **Current status:** the repository and fail-closed database foundation are implemented. The Flutter application foundation is in progress, the Next.js foundation remains the second half of roadmap plan 02, and product behavior is intentionally deferred.
 
 ## Repository
 
@@ -28,7 +28,7 @@ npm run restore:mobile
 npm run check
 ```
 
-Use `npm run db:start`, `npm run dev:web`, and `npm run dev:mobile` to start the local services and applications. No application environment variables or cloud accounts are required at this stage.
+Use `npm run db:start`, `npm run mobile:config:local`, and `npm run dev:mobile` for the locally configured Flutter app. `npm run dev:web` starts the website. No cloud account is required for the local workflow.
 
 See [Getting started](docs/development/getting-started.md) for prerequisites, exact setup steps, local URLs, and troubleshooting. Database contributors should also read the [database development workflow](docs/development/database.md).
 
@@ -38,6 +38,7 @@ See [Getting started](docs/development/getting-started.md) for prerequisites, ex
 - [System design and responsibility boundaries](docs/architecture/system-design.md)
 - [Architecture decision records](docs/architecture/decisions/README.md)
 - [Database development workflow](docs/development/database.md)
+- [Codex tooling policy](docs/development/codex-tooling.md)
 - [Implementation roadmap](docs/implementation/roadmap.md)
 - [Instructions for coding agents](AGENTS.md)
 

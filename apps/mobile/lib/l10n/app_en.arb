@@ -1,0 +1,55 @@
+{
+  "@@locale": "en",
+  "appTitle": "PLANETS",
+  "@appTitle": {
+    "description": "Application title."
+  },
+  "foundationTitle": "Mobile foundation ready",
+  "@foundationTitle": {
+    "description": "Heading on the neutral application foundation screen."
+  },
+  "foundationMessage": "The shared application services are ready for product features.",
+  "@foundationMessage": {
+    "description": "Supporting text on the neutral application foundation screen."
+  },
+  "routeNotFound": "This page is not available.",
+  "@routeNotFound": {
+    "description": "Safe message shown for an unknown route."
+  },
+  "startupFailureTitle": "The app could not start",
+  "@startupFailureTitle": {
+    "description": "Title shown when required startup work fails."
+  },
+  "startupConfigurationFailure": "The app configuration is unavailable. Check the setup and try again.",
+  "@startupConfigurationFailure": {
+    "description": "Safe startup message for invalid or missing configuration."
+  },
+  "startupServiceFailure": "A required service is unavailable. Please try again later.",
+  "@startupServiceFailure": {
+    "description": "Safe startup message for backend initialization failure."
+  },
+  "loadingMessage": "Loading…",
+  "@loadingMessage": {
+    "description": "Default accessible loading-state message."
+  },
+  "emptyStateTitle": "Nothing here yet",
+  "@emptyStateTitle": {
+    "description": "Default empty-state title."
+  },
+  "emptyStateMessage": "New information will appear here when it is available.",
+  "@emptyStateMessage": {
+    "description": "Default empty-state supporting message."
+  },
+  "errorStateTitle": "Something went wrong",
+  "@errorStateTitle": {
+    "description": "Default safe error-state title."
+  },
+  "errorStateMessage": "We could not load this information. Please try again.",
+  "@errorStateMessage": {
+    "description": "Default safe error-state message; it must not expose exception details."
+  },
+  "retryAction": "Try again",
+  "@retryAction": {
+    "description": "Label for a retry action."
+  }
+}

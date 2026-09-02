@@ -88,6 +88,37 @@ npm run db:stop
 
 No remote Supabase project is linked. The committed migrations establish only the database security foundation and PostGIS; there are no product tables, policies, or seed rows yet. See the [database development workflow](database.md) before changing the schema.
 
+## Mobile configuration
+
+The Flutter app accepts compile-time values through `--dart-define-from-file`. Its required keys are:
+
+| Key                        | Purpose                                                                               |
+| -------------------------- | ------------------------------------------------------------------------------------- |
+| `APP_ENV`                  | Exactly `local`, `staging`, or `production`                                           |
+| `SUPABASE_URL`             | Canonical Supabase API URL; staging and production require HTTPS                      |
+| `SUPABASE_PUBLISHABLE_KEY` | Client-safe Supabase publishable key (the local CLI may still call this the anon key) |
+| `SENTRY_DSN`               | Optional client DSN; an empty value keeps Sentry disabled                             |
+
+Committed examples live in `apps/mobile/config/*.example.json`. Actual `local.json`, `staging.json`, and `production.json` files are ignored. Never put a Supabase service-role key in a mobile config file.
+
+With local Supabase running, generate `apps/mobile/config/local.json` from the CLI's authoritative status output:
+
+```text
+npm run mobile:config:local
+```
+
+The helper writes the API URL and local client key without printing the key. For an Android emulator, replace the host-only loopback address with Android's host alias while preserving the CLI-reported port and credentials:
+
+```text
+npm run mobile:config:local -- --host 10.0.2.2
+```
+
+The default `127.0.0.1` URL is appropriate for an iOS Simulator on the same Mac. A physical device needs a reachable development-machine hostname and may require host firewall/local-network setup. Android and iOS allow local HTTP only in debug builds; Profile and Release retain their normal transport security.
+
+Sentry is disabled when `SENTRY_DSN` is empty. Supplying a DSN enables error monitoring, while personal-data collection, tracing, replay, screenshots, failed-request capture, and HTTP breadcrumbs are explicitly disabled in this foundation. No Sentry account is required locally.
+
+Flutter localization source is `apps/mobile/lib/l10n/app_en.arb`. Generated Dart files are ignored and must not be edited. `npm run restore:mobile`, `npm run mobile:l10n`, and CI run `flutter gen-l10n` deterministically before analysis/tests.
+
 ## Run the applications
 
 Start the Next.js development server:
@@ -104,7 +135,7 @@ With an Android emulator, iOS Simulator, or physical device available, start Flu
 npm run dev:mobile
 ```
 
-Use `flutter devices` to inspect available devices. iOS builds require macOS/Xcode; Android builds require a configured Android SDK.
+`dev:mobile` loads `apps/mobile/config/local.json`; generate it first as described above. Use `flutter devices` to inspect available devices. iOS builds require macOS/Xcode; Android builds require a configured Android SDK.
 
 ## Validate and format
 
@@ -136,9 +167,9 @@ npm run check:db
 
 ## Environment and secrets
 
-The bootstrap applications consume no environment variables. For that reason, there are no placeholder `.env.example` files yet. Local `.env*` files and Supabase CLI state are ignored; add a documented example only when a future plan introduces a real configuration contract.
+The mobile configuration contract is documented above. The web bootstrap still consumes no environment variables. Local `.env*` files, non-example mobile config files, and Supabase CLI state are ignored.
 
-Never commit provider credentials, production database URLs, service-role keys, signing material, or local machine state. No Firebase, Vercel, Cloudflare, Resend, Sentry, PostHog, or other cloud configuration is needed for this foundation.
+Never commit provider credentials, production database URLs, service-role keys, signing material, or local machine state. No Firebase, Vercel, Cloudflare, Resend, PostHog, or other cloud configuration is needed for this foundation; Sentry remains optional.
 
 ## Provisional mobile identifiers
 

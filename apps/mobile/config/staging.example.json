@@ -1,0 +1,6 @@
+{
+  "APP_ENV": "staging",
+  "SUPABASE_URL": "https://your-staging-project.supabase.co",
+  "SUPABASE_PUBLISHABLE_KEY": "replace-with-staging-publishable-key",
+  "SENTRY_DSN": ""
+}

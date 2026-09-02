@@ -33,6 +33,8 @@ When repository implementation and product/design material conflict about what c
 
 Do not assume access to the Google Doc. If an implementation requires external context that is not available in the task or repository, report the missing dependency rather than inventing the product decision.
 
+PLANETS-specific Codex plugin/skill authority and lifecycle rules are recorded in `docs/development/codex-tooling.md`; do not vendor external skill instructions into this repository.
+
 ## Accepted architecture
 
 Follow `docs/architecture/core-stack.md` and `docs/architecture/system-design.md` as the accepted technical baseline.

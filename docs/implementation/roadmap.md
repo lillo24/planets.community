@@ -1,7 +1,7 @@
 # Implementation Roadmap
 
 **Status:** Planning baseline  
-**Current implementation:** Plan 00 and plan 01A implemented; plan 01B in progress
+**Current implementation:** Plans 00 and 01 implemented; plan 02A in progress
 
 This roadmap divides the first PLANETS build into reviewable Codex tasks. Each numbered item should normally become its own implementation prompt, branch, and pull request.
 
@@ -36,10 +36,12 @@ Do not begin a dependent plan until the prior plan is merged or its branch is ex
 | ID | Plan | Main result | Dependencies | Founder input expected | Status |
 | --- | --- | --- | --- | --- | --- |
 | 00 | Architecture and repository bootstrap | Runnable monorepo foundation, local tooling, initial CI, development docs | Documentation baseline | Tool/account installation only if automation cannot provide it | Implemented |
-| 01 | Database foundation and security model (parent) | Secure database workflow plus shared identity, audit, and outbox primitives | 00 | Confirm any security-critical ambiguity Codex cannot isolate | In progress |
+| 01 | Database foundation and security model (parent) | Secure database workflow plus shared identity, audit, and outbox primitives | 00 | Confirm any security-critical ambiguity Codex cannot isolate | Implemented |
 | 01A | Database workflow and security harness | Canonical migrations, fail-closed grants, public/private boundary, PostGIS, pgTAP, generated types, and CI replay | 00 | None expected | Implemented |
-| 01B | Identity, audit, and outbox primitives | Auth/profile boundary and minimal shared audit/outbox foundations | 01A | Confirm any security-critical ambiguity Codex cannot isolate | In progress |
-| 02 | Mobile and web application foundations | Flutter app shell, Next.js public/admin shells, environments, error handling, localization and monitoring foundations | 00–01 | No visual polish; only resolve navigation/product-shell ambiguity if material | Not started |
+| 01B | Identity, audit, and outbox primitives | Auth/profile boundary and minimal shared audit/outbox foundations | 01A | Confirm any security-critical ambiguity Codex cannot isolate | Implemented |
+| 02 | Mobile and web application foundations (parent) | Flutter app shell, Next.js public/admin shells, environments, error handling, localization and monitoring foundations | 00–01 | No visual polish; only resolve navigation/product-shell ambiguity if material | In progress |
+| 02A | Mobile application foundation | Flutter startup, Riverpod/router, typed config, Supabase/Sentry, theme, localization, and state UI | 01 | None expected | In progress |
+| 02B | Web/admin application foundation | Next.js public/admin shells and web-side application foundations | 02A | None expected unless current tooling exposes a material ambiguity | Not started |
 | 03 | Authentication and profiles | Public browsing boundary, email OTP, profile setup, competences/preferences, privacy-ready profile data | 01–02 | Initial required profile fields, visibility rules, competence taxonomy strategy | Not started |
 | 04 | Proposals and discovery | Draft/create/publish, proposal list/detail, requirements, location/filter foundations, public sanitized views | 03 | Proposal fields, lifecycle decisions, broad location behavior | Not started |
 | 05 | Participation lifecycle | Join requests, review decisions, membership, leave/cancel behavior, thresholds, derived participation stats | 04 | Threshold semantics, roles, removal/withdrawal rules | Not started |
@@ -85,7 +87,7 @@ The output should leave a new contributor able to clone the repository, install 
 
 **Goal:** Establish the conventions every later feature relies on.
 
-This parent plan is split into two independently reviewed pull requests. It remains in progress until both 01A and 01B are merged; completing 01A alone does not unblock plan 02.
+This parent plan was completed through two independently reviewed pull requests. Both 01A and 01B are merged.
 
 #### 01A — Database workflow and security harness
 
@@ -117,20 +119,33 @@ Expected scope:
 
 **Goal:** Provide stable application shells that later plans can extend without redesigning architecture.
 
+This parent plan is split into two independently reviewed pull requests. It remains in progress until both 02A and 02B are merged; completing 02A alone does not unblock plan 03.
+
+#### 02A — Mobile application foundation
+
 Expected scope:
 
-- Flutter feature-first organization;
-- Riverpod and `go_router` foundations;
-- Material 3 theme tokens and responsive basics;
-- typed configuration for local/staging/production;
-- loading/error/empty-state conventions;
-- localization scaffold;
-- Supabase client initialization without product features;
+- restrained feature-first Flutter organization;
+- Riverpod 3 and `go_router` foundations;
+- typed local/staging/production configuration;
+- ordered Supabase initialization and optional privacy-safe Sentry startup;
+- neutral Material 3 tokens and responsive basics;
+- generated localization and reusable loading/error/empty states;
+- local configuration tooling, tests, CI, and mobile development documentation.
+
+02A intentionally excludes auth/profile/product behavior, final navigation, deep links, schema work, and final branding.
+
+#### 02B — Web/admin application foundation
+
+Expected scope:
+
 - Next.js public and admin route groups;
-- Tailwind/shadcn foundation where compatible with current generated tooling;
-- server/client boundary conventions;
-- Sentry wiring with privacy-safe defaults;
-- smoke tests and CI updates.
+- web-side typed environment and Supabase boundaries;
+- Tailwind/shadcn foundation where compatible with the installed Next.js version;
+- server/client rendering conventions;
+- privacy-safe web monitoring, common states, tests, CI, and documentation.
+
+02B must be prepared from the merged 02A result and current version-matched Next.js documentation rather than from older assumptions.
 
 ### 03 — Authentication and profiles
 
@@ -348,4 +363,4 @@ Major gates currently expected:
 
 ## Immediate next action
 
-Complete and merge **01B — Identity, audit, and outbox primitives**. Keep parent plan 01 in progress and do not start plan 02 until the 01B pull request is merged and the full parent plan is implemented.
+Complete and merge **02A — Mobile application foundation**, then prepare **02B — Web/admin application foundation** from the actual merged result. Keep parent plan 02 in progress and do not start plan 03 until both portions are merged.
