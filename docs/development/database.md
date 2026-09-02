@@ -24,7 +24,7 @@ There is no universal soft-delete or content-state convention. Deletion, anonymi
 
 ## Identity and shared operational primitives
 
-Supabase Auth owns login identity in `auth.users`. `public.profiles` is the one-to-one PLANETS application identity anchor and reuses that Auth UUID as its primary key. It currently contains only `id` and a database-generated `created_at`; plan 03 owns profile data and visibility. There is no automatic Auth signup trigger, so an Auth user without an application profile is valid until an authenticated application flow explicitly creates the anchor.
+Supabase Auth owns login identity in `auth.users`. `public.profiles` is the one-to-one PLANETS application identity anchor and reuses that Auth UUID as its primary key. It currently contains only `id` and a database-generated `created_at`; plan 03C owns profile data and visibility. There is no automatic Auth signup trigger, so an Auth user without an application profile is valid until an authenticated application flow explicitly creates the anchor.
 
 Authenticated users receive table-level `SELECT` plus column-level `INSERT (id)` and RLS limits both operations to their own UUID. `anon` and `service_role` receive no profile grant, and clients receive no update/delete path. The column-level insert grant keeps `created_at` canonical.
 
@@ -81,10 +81,13 @@ Run focused commands while the stack is already running:
 npm run db:reset
 npm run db:lint
 npm run db:test
+npm run auth:verify:local
 npm run db:types
 npm run db:types:check
 ```
 
 `db:lint` intentionally checks only `public` and `private`, avoiding warnings owned by Supabase-managed schemas or extensions. `db:types` regenerates `apps/web/src/types/database.generated.ts` from local `public`; its wrapper propagates CLI failures, rejects empty output, and normalizes only the terminal newline across hosts. The file is generated output and must not be hand-edited or formatted. `db:types:check` regenerates it and fails on a tracked diff.
 
-`npm run check:db` performs reset, lint, pgTAP, regeneration, and drift detection as one validation sequence. It assumes `npm run db:start` has already succeeded and leaves stack lifecycle to the caller. CI starts Supabase, runs the same underlying steps, and always stops it.
+`auth:verify:local` requests a numeric email OTP from local Auth, reads the new message through Mailpit's API, verifies the code, and inserts/reads the authenticated user's profile anchor through current RLS. It uses only deterministic `.invalid` test identity data and never prints the email, code, access token, or client key.
+
+`npm run check:db` performs reset, the local Auth integration check, lint, pgTAP, regeneration, and drift detection as one validation sequence. It assumes `npm run db:start` has already succeeded and leaves stack lifecycle to the caller. CI starts Supabase, runs the same underlying steps, and always stops it.

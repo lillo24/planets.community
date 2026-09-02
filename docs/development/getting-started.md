@@ -80,6 +80,18 @@ With the committed default configuration, the main local endpoints are:
 
 `npm run db:status` is the authoritative source for active local endpoints and development credentials. These values are local-only and must never be reused as staging or production secrets.
 
+Local Auth uses a PLANETS numeric-code template at `supabase/templates/magic_link.html`. Despite Supabase's template category name, it includes `{{ .Token }}` and deliberately omits `{{ .ConfirmationURL }}`, so the mobile flow does not require a magic-link or deep-link callback. Local codes are six digits and expire after one hour. Restart the local stack after changing Auth configuration or templates.
+
+To exercise the complete local flow without scraping the email viewer UI, run:
+
+```text
+npm run auth:verify:local
+```
+
+The script requests a code for deterministic `.invalid` test data, reads only the new Mailpit message through its API, verifies the code, and confirms the signed-in user can insert/read exactly one own profile anchor under RLS. It does not print the email, code, session token, publishable key, or raw message.
+
+For a manual check, run the mobile app, choose **Sign in**, enter a non-personal test address, and open the local email viewer at `http://127.0.0.1:54324`. Confirm the newest message shows a six-digit code and no sign-in link, paste the code into the app, verify the signed-in status, restart the app to check session restoration, then sign out. This native interaction is a manual QA step; the integration command verifies the backend behavior only.
+
 Stop the containers when finished:
 
 ```text
@@ -116,6 +128,8 @@ npm run mobile:config:local -- --host 10.0.2.2
 The default `127.0.0.1` URL is appropriate for an iOS Simulator on the same Mac. A physical device needs a reachable development-machine hostname and may require host firewall/local-network setup. Android and iOS allow local HTTP only in debug builds; Profile and Release retain their normal transport security.
 
 Sentry is disabled when `SENTRY_DSN` is empty. Supplying a DSN enables error monitoring, while personal-data collection, tracing, replay, screenshots, failed-request capture, and HTTP breadcrumbs are explicitly disabled in this foundation. No Sentry account is required locally.
+
+The mobile Auth feature does not log or report email addresses, OTPs, or session tokens. Its 30-second resend countdown is only a UI convenience; Supabase Auth remains authoritative for request and verification limits.
 
 Flutter localization source is `apps/mobile/lib/l10n/app_en.arb`. Generated Dart files are ignored and must not be edited. `npm run restore:mobile`, `npm run mobile:l10n`, and CI run `flutter gen-l10n` deterministically before analysis/tests.
 
@@ -188,6 +202,8 @@ npm run check:db
 ```
 
 `check:db` assumes the stack is already running; it does not start or stop containers. GitHub Actions owns that lifecycle and separately validates mobile, web, and the full database workflow on pull requests and pushes to `main`.
+
+Hosted email delivery is not configured by this repository. Before staging or production use, the account owner must configure a production SMTP provider and the equivalent numeric OTP template in the hosted Supabase project, then verify the hosted project's current Auth email restrictions and rate limits. Do not claim hosted Auth is ready from the local template alone.
 
 ## Environment and secrets
 

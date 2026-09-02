@@ -26,6 +26,14 @@ The narrow official Supabase/Postgres best-practices skill is persistent support
 npx skills add supabase/agent-skills --skill supabase-postgres-best-practices -g -a codex -y
 ```
 
+The official broad Supabase skill is also persistent because Auth, client SDK, CLI, Storage, Realtime, and Edge Function work recurs across the roadmap. It was added for plan 03A with:
+
+```text
+npx skills add supabase/agent-skills --skill supabase -g -a codex -y
+```
+
+Use the broad skill for Supabase product/client work. Load the narrower Postgres skill before any schema, migration, grant, RLS, function, or SQL-test edit. Plan 03A required no database migration or permission change, so its work used the broad skill only.
+
 PLANETS' Riverpod, restrained feature-first, routing, database, and security decisions override generic examples from either tool.
 
 ## Deferred tooling

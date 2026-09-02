@@ -4,6 +4,9 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:planets_mobile/app/planets_app.dart';
 import 'package:planets_mobile/bootstrap/bootstrap.dart';
 import 'package:planets_mobile/core/config/app_config.dart';
+import 'package:planets_mobile/features/auth/data/auth_gateway.dart';
+
+import '../support/fake_auth.dart';
 
 void main() {
   testWidgets(
@@ -36,7 +39,18 @@ void main() {
       expect(events, ['config', 'backend', 'monitoring', 'application']);
       expect(launchedApplication, isA<ProviderScope>());
 
-      await tester.pumpWidget(launchedApplication!);
+      final auth = FakeAuthGateway();
+      final profile = FakeProfileAnchorGateway();
+      addTearDown(auth.close);
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            authGatewayProvider.overrideWithValue(auth),
+            profileAnchorGatewayProvider.overrideWithValue(profile),
+          ],
+          child: launchedApplication!,
+        ),
+      );
       await tester.pumpAndSettle();
       final appContext = tester.element(find.byType(PlanetsApp));
       final container = ProviderScope.containerOf(appContext);
