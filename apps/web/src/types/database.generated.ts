@@ -165,6 +165,7 @@ export type Database = {
           p_bio_audience: string
           p_display_name: string
           p_display_name_audience: string
+          p_expected_profile_id: string
           p_skill_ids: string[]
           p_skills_audience: string
         }

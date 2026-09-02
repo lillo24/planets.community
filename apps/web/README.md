@@ -41,4 +41,4 @@ Successful verification leaves session persistence to the `@supabase/ssr` browse
 
 Server Components derive trusted identity with `getClaims()` and read only the minimal profile-readiness state needed by the UI. They do not trust `getSession()` for identity. Auth UI and logs do not render full email addresses, OTPs, tokens, cookies, or raw backend errors.
 
-`/profile` is also server-authenticated. It loads only owner-authorized profile/catalog data and passes no Auth email or user ID to the narrow interactive form. The browser submits one atomic `update_own_profile` call; PostgreSQL remains authoritative for trimming, validation, skill membership, and visibility.
+`/profile` is also server-authenticated. It loads only owner-authorized profile/catalog data and passes no Auth email to the narrow interactive form. It does pass the verified profile ID so the browser's atomic `update_own_profile` call can reject a stale form after a cross-tab account change. PostgreSQL remains authoritative for identity binding, trimming, validation, skill membership, and visibility.

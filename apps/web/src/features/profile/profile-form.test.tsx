@@ -71,6 +71,7 @@ describe("ProfileForm", () => {
 
     await waitFor(() => {
       expect(profileGateway.updateOwnProfile).toHaveBeenCalledWith({
+        expectedProfileId: "user-a",
         displayName: "Casey",
         bio: "",
         selectedSkillIds: ["skill-mural"],
@@ -101,6 +102,24 @@ describe("ProfileForm", () => {
     expect(document.body).not.toHaveTextContent(rawFailure);
     expect(screen.getByRole("button", { name: "Save profile" })).toBeEnabled();
   });
+
+  it("keeps a stale form bound to its server-rendered profile identity", async () => {
+    const profileGateway = gateway();
+    render(<ProfileForm initialData={fixture()} gateway={profileGateway} />);
+    fireEvent.change(screen.getByRole("textbox", { name: "Display name" }), {
+      target: { value: "Stale user A value" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Save profile" }));
+
+    await waitFor(() => {
+      expect(profileGateway.updateOwnProfile).toHaveBeenCalledWith(
+        expect.objectContaining({
+          expectedProfileId: "user-a",
+          displayName: "Stale user A value",
+        }),
+      );
+    });
+  });
 });
 
 function gateway(): WebProfileGateway {
@@ -110,6 +129,7 @@ function gateway(): WebProfileGateway {
 function fixture(): ProfileEditorData {
   return {
     profile: {
+      id: "user-a",
       displayName: null,
       bio: null,
       selectedSkillIds: [],

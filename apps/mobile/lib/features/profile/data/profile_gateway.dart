@@ -7,7 +7,7 @@ import '../domain/profile_models.dart';
 abstract interface class ProfileGateway {
   Future<ProfileEditorData> loadOwnProfile(String userId);
 
-  Future<void> updateOwnProfile(ProfileUpdate update);
+  Future<void> updateOwnProfile(String expectedProfileId, ProfileUpdate update);
 }
 
 class SupabaseProfileGateway implements ProfileGateway {
@@ -95,10 +95,14 @@ class SupabaseProfileGateway implements ProfileGateway {
   }
 
   @override
-  Future<void> updateOwnProfile(ProfileUpdate update) async {
+  Future<void> updateOwnProfile(
+    String expectedProfileId,
+    ProfileUpdate update,
+  ) async {
     await _client.rpc<void>(
       'update_own_profile',
       params: {
+        'p_expected_profile_id': expectedProfileId,
         'p_display_name': update.displayName,
         'p_bio': update.bio,
         'p_skill_ids': update.selectedSkillIds.toList(growable: false),

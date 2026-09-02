@@ -40,7 +40,7 @@ export async function readProfilePageData(
   ] = await Promise.all([
     client
       .from("profiles")
-      .select("display_name, bio")
+      .select("id, display_name, bio")
       .eq("id", userId)
       .maybeSingle(),
     client
@@ -58,7 +58,11 @@ export async function readProfilePageData(
       .eq("profile_id", userId),
   ]);
 
-  if (profileResult.error || profileResult.data === null) {
+  if (
+    profileResult.error ||
+    profileResult.data === null ||
+    profileResult.data.id !== userId
+  ) {
     return { status: "missing" };
   }
   if (
@@ -94,6 +98,7 @@ export async function readProfilePageData(
     status: "ready",
     data: {
       profile: {
+        id: profileResult.data.id,
         displayName: profileResult.data.display_name,
         bio: profileResult.data.bio,
         selectedSkillIds: selectedResult.data.map((row) => row.skill_id),

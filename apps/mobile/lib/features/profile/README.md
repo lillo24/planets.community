@@ -2,8 +2,8 @@
 
 This folder owns basic profile setup, owner display, controlled skill selection,
 and field-level public/private choices. PostgreSQL remains canonical: both mobile
-and web call `update_own_profile` so scalar fields, skills, and visibility commit
-atomically.
+and web call `update_own_profile` so the form's expected identity is verified
+before scalar fields, skills, and visibility commit atomically.
 
 - `domain/profile_models.dart` defines app-owned profile, catalog, visibility,
   editor, and safe state models.

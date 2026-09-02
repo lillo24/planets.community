@@ -234,7 +234,7 @@ select results_eq(
 );
 
 select ok(
-  to_regprocedure('public.update_own_profile(text,text,uuid[],text,text,text)') is not null,
+  to_regprocedure('public.update_own_profile(uuid,text,text,uuid[],text,text,text)') is not null,
   'the atomic owner update operation exists'
 );
 select ok(
@@ -245,7 +245,7 @@ select is(
   (
     select prosecdef
     from pg_proc
-    where oid = 'public.update_own_profile(text,text,uuid[],text,text,text)'::regprocedure
+    where oid = 'public.update_own_profile(uuid,text,text,uuid[],text,text,text)'::regprocedure
   ),
   false,
   'the owner update operation remains security invoker'
@@ -263,7 +263,7 @@ select is(
   (
     select array_to_string(proconfig, ',')
     from pg_proc
-    where oid = 'public.update_own_profile(text,text,uuid[],text,text,text)'::regprocedure
+    where oid = 'public.update_own_profile(uuid,text,text,uuid[],text,text,text)'::regprocedure
   ),
   'search_path=""',
   'the update operation has an empty fixed search path'
@@ -281,7 +281,7 @@ select is(
 select is(
   has_function_privilege(
     'authenticated',
-    'public.update_own_profile(text,text,uuid[],text,text,text)',
+    'public.update_own_profile(uuid,text,text,uuid[],text,text,text)',
     'EXECUTE'
   ),
   true,
@@ -290,7 +290,7 @@ select is(
 select is(
   has_function_privilege(
     'anon',
-    'public.update_own_profile(text,text,uuid[],text,text,text)',
+    'public.update_own_profile(uuid,text,text,uuid[],text,text,text)',
     'EXECUTE'
   ),
   false,
@@ -299,7 +299,7 @@ select is(
 select is(
   has_function_privilege(
     'service_role',
-    'public.update_own_profile(text,text,uuid[],text,text,text)',
+    'public.update_own_profile(uuid,text,text,uuid[],text,text,text)',
     'EXECUTE'
   ),
   false,
@@ -332,7 +332,7 @@ select is(
       where acl.grantee = 0 and acl.privilege_type = 'EXECUTE'
     )
     from pg_proc as p
-    where p.oid = 'public.update_own_profile(text,text,uuid[],text,text,text)'::regprocedure
+    where p.oid = 'public.update_own_profile(uuid,text,text,uuid[],text,text,text)'::regprocedure
   ),
   false,
   'PostgreSQL PUBLIC cannot execute the owner update'

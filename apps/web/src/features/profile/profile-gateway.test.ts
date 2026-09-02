@@ -14,6 +14,7 @@ describe("SupabaseWebProfileGateway", () => {
     const gateway = new SupabaseWebProfileGateway({ rpc } as never);
 
     await gateway.updateOwnProfile({
+      expectedProfileId: "user-a",
       displayName: "Casey",
       bio: "Ready to help.",
       selectedSkillIds: ["skill-mural", "skill-musician"],
@@ -25,6 +26,7 @@ describe("SupabaseWebProfileGateway", () => {
     });
 
     expect(rpc).toHaveBeenCalledWith("update_own_profile", {
+      p_expected_profile_id: "user-a",
       p_display_name: "Casey",
       p_bio: "Ready to help.",
       p_skill_ids: ["skill-mural", "skill-musician"],
@@ -41,6 +43,7 @@ describe("SupabaseWebProfileGateway", () => {
 
     await expect(
       gateway.updateOwnProfile({
+        expectedProfileId: "user-a",
         displayName: "Casey",
         bio: "",
         selectedSkillIds: [],

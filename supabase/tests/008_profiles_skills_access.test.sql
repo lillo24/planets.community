@@ -1,6 +1,6 @@
 begin;
 
-select plan(40);
+select plan(44);
 
 insert into auth.users (id, email)
 values
@@ -93,6 +93,7 @@ select throws_ok(
 select lives_ok(
   $$
     select public.update_own_profile(
+      '81000000-0000-4000-8000-000000000001',
       '  Casey Artist  ',
       '  Helps neighbors create public art.  ',
       array[
@@ -150,6 +151,7 @@ select col_not_null(
 select throws_ok(
   $$
     select public.update_own_profile(
+      '81000000-0000-4000-8000-000000000001',
       'Changed Name',
       'Changed bio',
       array['ffffffff-ffff-4fff-8fff-ffffffffffff'::uuid],
@@ -174,6 +176,7 @@ select is(
 select throws_ok(
   $$
     select public.update_own_profile(
+      '81000000-0000-4000-8000-000000000001',
       'Casey Artist',
       null,
       array[]::uuid[],
@@ -189,6 +192,7 @@ select throws_ok(
 select throws_ok(
   $$
     select public.update_own_profile(
+      '81000000-0000-4000-8000-000000000001',
       'X',
       null,
       array[]::uuid[],
@@ -204,6 +208,7 @@ select throws_ok(
 select throws_ok(
   $$
     select public.update_own_profile(
+      '81000000-0000-4000-8000-000000000001',
       'Casey Artist',
       repeat('b', 501),
       array[]::uuid[],
@@ -292,6 +297,50 @@ select lives_ok(
   $$insert into public.profiles (id) values ('82000000-0000-4000-8000-000000000002')$$,
   'user B can create the own profile anchor'
 );
+select throws_ok(
+  $$
+    select public.update_own_profile(
+      '81000000-0000-4000-8000-000000000001',
+      'Stale User A Value',
+      'Stale private bio',
+      array['d0000000-0000-4000-8001-000000000001'::uuid],
+      'private',
+      'private',
+      'private'
+    )
+  $$,
+  '42501',
+  'The authenticated user does not match the expected profile.',
+  'a user A form cannot mutate the newly authenticated user B profile'
+);
+select results_eq(
+  $$
+    select display_name, bio
+    from public.profiles
+    where id = '82000000-0000-4000-8000-000000000002'
+  $$,
+  $$values (null::text, null::text)$$,
+  'the rejected stale form leaves user B scalar fields unchanged'
+);
+select is(
+  (
+    select count(*)
+    from public.profile_skills
+    where profile_id = '82000000-0000-4000-8000-000000000002'
+  ),
+  0::bigint,
+  'the rejected stale form adds no skills to user B'
+);
+select is(
+  (
+    select count(*)
+    from public.profile_field_visibility
+    where profile_id = '82000000-0000-4000-8000-000000000002'
+      and audience = 'public'
+  ),
+  3::bigint,
+  'the rejected stale form leaves user B visibility unchanged'
+);
 select results_eq(
   'select id from public.profiles order by id',
   $$values ('82000000-0000-4000-8000-000000000002'::uuid)$$,
@@ -339,6 +388,7 @@ select is(
 select lives_ok(
   $$
     select public.update_own_profile(
+      '81000000-0000-4000-8000-000000000001',
       'Casey Artist',
       'Private owner note',
       array[

@@ -46,7 +46,9 @@ class ProfileController extends Notifier<ProfileState> {
 
     state = ProfileState(phase: ProfilePhase.saving, data: state.data);
     try {
-      await ref.read(profileGatewayProvider).updateOwnProfile(update);
+      await ref
+          .read(profileGatewayProvider)
+          .updateOwnProfile(identity.id, update);
       final data = await ref
           .read(profileGatewayProvider)
           .loadOwnProfile(identity.id);

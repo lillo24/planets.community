@@ -252,6 +252,7 @@ grant update (audience) on table public.profile_field_visibility to authenticate
 grant update (display_name, bio) on table public.profiles to authenticated;
 
 create function public.update_own_profile(
+  p_expected_profile_id uuid,
   p_display_name text,
   p_bio text,
   p_skill_ids uuid[],
@@ -273,6 +274,13 @@ begin
     raise exception using
       errcode = '42501',
       message = 'Authentication is required to update a profile.';
+  end if;
+
+  if p_expected_profile_id is null
+    or p_expected_profile_id <> current_profile_id then
+    raise exception using
+      errcode = '42501',
+      message = 'The authenticated user does not match the expected profile.';
   end if;
 
   if char_length(normalized_display_name) not between 2 and 60 then
@@ -349,8 +357,8 @@ begin
 end;
 $$;
 
-comment on function public.update_own_profile(text, text, uuid[], text, text, text) is
-  'Atomically updates the current user profile, controlled skills, and field visibility.';
+comment on function public.update_own_profile(uuid, text, text, uuid[], text, text, text) is
+  'Atomically updates the expected current-user profile, controlled skills, and field visibility.';
 
 create function public.get_public_profile(p_profile_id uuid)
 returns table (
@@ -418,12 +426,12 @@ revoke all privileges on function private.set_profile_updated_at()
   from public, anon, authenticated, service_role;
 revoke all privileges on function private.initialize_profile_visibility()
   from public, anon, authenticated, service_role;
-revoke all privileges on function public.update_own_profile(text, text, uuid[], text, text, text)
+revoke all privileges on function public.update_own_profile(uuid, text, text, uuid[], text, text, text)
   from public, anon, authenticated, service_role;
 revoke all privileges on function public.get_public_profile(uuid)
   from public, anon, authenticated, service_role;
 
-grant execute on function public.update_own_profile(text, text, uuid[], text, text, text)
+grant execute on function public.update_own_profile(uuid, text, text, uuid[], text, text, text)
   to authenticated;
 grant execute on function public.get_public_profile(uuid)
   to anon, authenticated;

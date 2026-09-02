@@ -15,6 +15,7 @@ export class SupabaseWebProfileGateway implements WebProfileGateway {
 
   async updateOwnProfile(update: ProfileUpdate): Promise<void> {
     const { error } = await this.client.rpc("update_own_profile", {
+      p_expected_profile_id: update.expectedProfileId,
       p_display_name: update.displayName,
       p_bio: update.bio,
       p_skill_ids: [...update.selectedSkillIds],

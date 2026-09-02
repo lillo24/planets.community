@@ -112,6 +112,7 @@ async function verifyWebEmailOtpSession() {
     const { error: completionError } = await supabase.rpc(
       "update_own_profile",
       {
+        p_expected_profile_id: userId,
         p_display_name: "Web Auth CI",
         p_bio: "",
         p_skill_ids: [],

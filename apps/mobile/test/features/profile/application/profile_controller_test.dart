@@ -44,6 +44,7 @@ void main() {
 
       expect(saved, isTrue);
       expect(profile.updateCount, 1);
+      expect(profile.lastExpectedProfileId, identity.id);
       expect(profile.loadCount, 2);
       expect(
         container.read(profileProvider).data?.profile.displayName,

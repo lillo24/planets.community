@@ -8,6 +8,7 @@ import {
 } from "@/features/profile/profile-models";
 
 const validUpdate: ProfileUpdate = {
+  expectedProfileId: "user-a",
   displayName: "Casey",
   bio: "Ready to help.",
   selectedSkillIds: ["skill-1"],

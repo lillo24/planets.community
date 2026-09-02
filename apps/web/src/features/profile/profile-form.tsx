@@ -76,6 +76,7 @@ export function ProfileForm({
       return;
     }
     const update = normalizeProfileUpdate({
+      expectedProfileId: initialData.profile.id,
       displayName,
       bio,
       selectedSkillIds: [...selectedSkillIds],

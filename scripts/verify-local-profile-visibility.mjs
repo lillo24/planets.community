@@ -30,6 +30,7 @@ async function verifyProfileVisibility() {
 
   const skillIds = skills.map((skill) => skill.id);
   const { error: updateError } = await userA.client.rpc("update_own_profile", {
+    p_expected_profile_id: userA.id,
     p_display_name: "  Profile Owner A  ",
     p_bio: "Private profile integration note",
     p_skill_ids: skillIds,
@@ -91,6 +92,54 @@ async function verifyProfileVisibility() {
     throw new Error("User B could update user A's profile row.");
   }
 
+  const { error: staleFormError } = await userB.client.rpc(
+    "update_own_profile",
+    {
+      p_expected_profile_id: userA.id,
+      p_display_name: "Stale User A Value",
+      p_bio: "Stale private bio",
+      p_skill_ids: skillIds,
+      p_display_name_audience: "private",
+      p_bio_audience: "private",
+      p_skills_audience: "private",
+    },
+  );
+  if (staleFormError?.code !== "42501") {
+    throw new Error(
+      "A stale user A form was not rejected for the current user B session.",
+    );
+  }
+
+  const [userBProfileResult, userBSkillsResult, userBVisibilityResult] =
+    await Promise.all([
+      userB.client
+        .from("profiles")
+        .select("display_name, bio")
+        .eq("id", userB.id)
+        .single(),
+      userB.client
+        .from("profile_skills")
+        .select("skill_id")
+        .eq("profile_id", userB.id),
+      userB.client
+        .from("profile_field_visibility")
+        .select("field_key, audience")
+        .eq("profile_id", userB.id),
+    ]);
+  if (
+    userBProfileResult.error ||
+    userBSkillsResult.error ||
+    userBVisibilityResult.error ||
+    !userBProfileResult.data ||
+    userBProfileResult.data.display_name !== null ||
+    userBProfileResult.data.bio !== null ||
+    userBSkillsResult.data?.length !== 0 ||
+    userBVisibilityResult.data?.length !== 3 ||
+    userBVisibilityResult.data.some((row) => row.audience !== "public")
+  ) {
+    throw new Error("The rejected stale form changed user B's profile state.");
+  }
+
   const anonymous = createClient(apiUrl, publishableKey, {
     auth: { persistSession: false },
   });
@@ -146,7 +195,7 @@ async function verifyProfileVisibility() {
   }
 
   console.log(
-    "Confirmed owner access, cross-user isolation, and exact-ID mixed-visibility sanitization.",
+    "Confirmed owner access, stale-form rejection, cross-user isolation, and exact-ID mixed-visibility sanitization.",
   );
 }
 

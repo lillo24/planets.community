@@ -37,6 +37,7 @@ describe("readProfilePageData", () => {
       status: "ready",
       data: {
         profile: {
+          id: "user-1",
           displayName: null,
           bio: null,
           selectedSkillIds: ["skill-musician"],
@@ -95,7 +96,7 @@ function configureReads({
         profileMissing
           ? { data: null, error: null }
           : {
-              data: { display_name: displayName, bio: null },
+              data: { id: "user-1", display_name: displayName, bio: null },
               error: null,
             },
       );

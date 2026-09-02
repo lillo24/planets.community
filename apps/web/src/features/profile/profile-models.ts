@@ -18,6 +18,7 @@ export type ProfileSkillCategory = Readonly<{
 }>;
 
 export type OwnProfile = Readonly<{
+  id: string;
   displayName: string | null;
   bio: string | null;
   selectedSkillIds: readonly string[];
@@ -30,6 +31,7 @@ export type ProfileEditorData = Readonly<{
 }>;
 
 export type ProfileUpdate = Readonly<{
+  expectedProfileId: string;
   displayName: string;
   bio: string;
   selectedSkillIds: readonly string[];
