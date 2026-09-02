@@ -119,15 +119,39 @@ Sentry is disabled when `SENTRY_DSN` is empty. Supplying a DSN enables error mon
 
 Flutter localization source is `apps/mobile/lib/l10n/app_en.arb`. Generated Dart files are ignored and must not be edited. `npm run restore:mobile`, `npm run mobile:l10n`, and CI run `flutter gen-l10n` deterministically before analysis/tests.
 
-## Run the applications
+## Web configuration
 
-Start the Next.js development server:
+The Next.js application validates these public environment values before initializing Supabase or optional monitoring:
+
+| Key                                    | Purpose                                                                               |
+| -------------------------------------- | ------------------------------------------------------------------------------------- |
+| `NEXT_PUBLIC_APP_ENV`                  | Exactly `local`, `staging`, or `production`                                           |
+| `NEXT_PUBLIC_SUPABASE_URL`             | Canonical Supabase API URL; staging and production require HTTPS                      |
+| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Client-safe Supabase publishable key (the local CLI may still call this the anon key) |
+| `NEXT_PUBLIC_SENTRY_DSN`               | Optional client DSN; an empty value keeps Sentry disabled                             |
+
+All four keys are deliberately public client configuration. Never substitute a Supabase service-role key or another secret. Next.js inlines `NEXT_PUBLIC_*` values at build time, so shared deployments must supply the correct environment when building. The current informational page can build without these values because it does not instantiate Supabase; requesting either Supabase factory without valid configuration fails with an actionable configuration error.
+
+The committed example is `apps/web/.env.example`; actual `.env*` files are ignored. With local Supabase running, generate `apps/web/.env.local` from the same authoritative CLI status parser used by the mobile helper:
 
 ```text
+npm run web:config:local
+```
+
+The helper writes the local API URL and client key without printing the key. Local Supabase may use HTTP. Staging and production configuration fails validation unless the Supabase URL uses HTTPS.
+
+Sentry is disabled when `NEXT_PUBLIC_SENTRY_DSN` is empty. When supplied, the web foundation captures unhandled Next.js errors but explicitly disables default PII, tracing, profiling integrations, and session replay. Source-map upload, tunneling, request/session capture customization, and provider provisioning remain out of scope.
+
+## Run the applications
+
+Generate web configuration, then start the Next.js development server:
+
+```text
+npm run web:config:local
 npm run dev:web
 ```
 
-Open `http://localhost:3000`.
+Open `http://localhost:3000`. The public root is informational. `/admin` intentionally returns a 404 until authentication and authorization are implemented in plan 03.
 
 With an Android emulator, iOS Simulator, or physical device available, start Flutter:
 
@@ -145,7 +169,7 @@ Run all ordinary web and mobile validation:
 npm run check
 ```
 
-The command runs web linting, TypeScript checking, a production Next.js build, Dart formatting verification, Flutter analysis, and Flutter widget tests. Supabase startup is separate because it provisions local containers and is slower than the frequent validation loop.
+The command runs web tooling/unit/component tests, linting, TypeScript checking, a production Next.js build, Dart formatting verification, Flutter analysis, and Flutter widget tests. Supabase startup is separate because it provisions local containers and is slower than the frequent validation loop.
 
 Useful focused commands are:
 
@@ -167,7 +191,7 @@ npm run check:db
 
 ## Environment and secrets
 
-The mobile configuration contract is documented above. The web bootstrap still consumes no environment variables. Local `.env*` files, non-example mobile config files, and Supabase CLI state are ignored.
+The mobile and web configuration contracts are documented above. Local `.env*` files, non-example mobile config files, and Supabase CLI state are ignored.
 
 Never commit provider credentials, production database URLs, service-role keys, signing material, or local machine state. No Firebase, Vercel, Cloudflare, Resend, PostHog, or other cloud configuration is needed for this foundation; Sentry remains optional.
 

@@ -46,6 +46,14 @@ The Flutter process validates typed `local`, `staging`, or `production` compile-
 
 Mobile source is organized by real feature ownership, supported by narrow shared `core` modules for configuration, backend access, routing, theme, monitoring, and common state UI. New layers or abstractions should appear only when a feature has concrete behavior to place in them.
 
+### Web client foundation
+
+The Next.js App Router separates public and admin routes with `(public)` and `(admin)` route groups while retaining one root layout. Pages and layouts remain Server Components unless an interaction or browser API requires a narrow Client Component boundary.
+
+The web foundation defines one public `local`, `staging`, or `production` environment contract. It exposes only the canonical Supabase URL and publishable key plus an optional Sentry client DSN; staging and production Supabase URLs require HTTPS. Supabase factories validate the full contract only when requested, so an informational page that makes no backend call can still build without backend configuration. Typed factories use the generated public `Database` type, a browser-only client, and a new cookie-backed server client per request. Authentication refresh, authorization, proxy logic, service-role access, and domain operations remain outside this foundation.
+
+The public `/` route is informational. The reserved `/admin` route fails closed with a 404 until plan 03 supplies authenticated identity and authorization. Optional Sentry instrumentation sends no default PII and disables tracing and replay; missing Sentry configuration is a valid disabled state.
+
 ### The backend owns authorization and invariants
 
 Clients may guide users and prevent invalid input early, but the backend must remain correct when a client is outdated, modified, interrupted, or malicious.

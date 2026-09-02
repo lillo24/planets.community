@@ -30,11 +30,20 @@ PLANETS' Riverpod, restrained feature-first, routing, database, and security dec
 
 ## Deferred tooling
 
-- Install Vercel Engineering's narrow `react-best-practices` skill when 02B starts React/Next.js implementation.
 - Use the version-matched Next.js documentation already exposed from the installed Next.js package; do not install an old standalone Next.js guidance pack.
-- Install the official shadcn skill only after shadcn/ui is actually initialized.
 - Defer Vercel bootstrap, deployment, and CLI plugins until provider provisioning or deployment is in scope.
 - Do not install broad clean-code, architecture, superpowers, or framework bundles that duplicate repository guidance.
+
+## Web foundation tooling
+
+Plan 02B initialized shadcn/ui before installing shadcn's official narrow skill, and installed Vercel Engineering's current narrow React guidance under its renamed `vercel-react-best-practices` identifier:
+
+```text
+npx skills add vercel-labs/agent-skills --skill vercel-react-best-practices -g -a codex -y
+npx skills add shadcn/ui --skill shadcn -g -a codex -y
+```
+
+These skills guide implementation but remain subordinate to the installed Next.js documentation and repository rules. No broad Vercel/deployment plugin or standalone Next.js skill is installed. Use `npx shadcn@latest info`, `docs`, `--dry-run`, and `--diff` before adding or updating shadcn source.
 
 ## Lifecycle and repository hygiene
 
