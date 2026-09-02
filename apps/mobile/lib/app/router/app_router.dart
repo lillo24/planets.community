@@ -8,6 +8,8 @@ import '../../features/auth/application/return_destination.dart';
 import '../../features/auth/domain/auth_models.dart';
 import '../../features/auth/presentation/request_code_screen.dart';
 import '../../features/auth/presentation/verify_code_screen.dart';
+import '../../features/profile/presentation/profile_edit_screen.dart';
+import '../../features/profile/presentation/profile_screen.dart';
 import '../../l10n/generated/app_localizations.dart';
 import '../foundation_screen.dart';
 
@@ -32,9 +34,23 @@ GoRouter createAppRouter({
       final isRequestRoute = path == '/auth';
       final isVerifyRoute = path == '/auth/verify';
       final isAuthRoute = isRequestRoute || isVerifyRoute;
+      final isProfileRoute = path == '/profile' || path == '/profile/edit';
 
       if (session.phase == AuthSessionPhase.restoring) {
         return null;
+      }
+
+      if (session.phase == AuthSessionPhase.signedOut && isProfileRoute) {
+        return Uri(
+          path: '/auth',
+          queryParameters: {'returnTo': state.uri.toString()},
+        ).toString();
+      }
+
+      if (session.phase == AuthSessionPhase.profileSetupRequired &&
+          session.hasProfileAnchor &&
+          path == '/profile') {
+        return '/profile/edit';
       }
 
       if (session.phase == AuthSessionPhase.ready && isAuthRoute) {
@@ -74,6 +90,14 @@ GoRouter createAppRouter({
       GoRoute(
         path: '/auth/verify',
         builder: (context, state) => const VerifyCodeScreen(),
+      ),
+      GoRoute(
+        path: '/profile',
+        builder: (context, state) => const ProfileScreen(),
+      ),
+      GoRoute(
+        path: '/profile/edit',
+        builder: (context, state) => const ProfileEditScreen(),
       ),
     ],
     errorBuilder: (context, state) => const _UnknownRouteScreen(),

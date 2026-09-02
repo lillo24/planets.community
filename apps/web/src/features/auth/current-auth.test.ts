@@ -24,10 +24,13 @@ describe("readCurrentAuth", () => {
     expect(profileRead).not.toHaveBeenCalled();
   });
 
-  it("returns ready only when the claimed identity has a profile anchor", async () => {
+  it("returns ready only when the claimed identity has a complete profile", async () => {
     const client = createClient({
       claims: { data: { claims: { sub: "user-1" } }, error: null },
-      profile: { data: { id: "user-1" }, error: null },
+      profile: {
+        data: { id: "user-1", display_name: "Casey" },
+        error: null,
+      },
     });
 
     await expect(readCurrentAuth(async () => client)).resolves.toEqual({
@@ -47,8 +50,24 @@ describe("readCurrentAuth", () => {
 
       await expect(readCurrentAuth(async () => client)).resolves.toEqual({
         status: "profileSetupRequired",
+        reason: "missing",
       });
     }
+  });
+
+  it("recognizes an existing skeletal profile as incomplete", async () => {
+    const client = createClient({
+      claims: { data: { claims: { sub: "user-1" } }, error: null },
+      profile: {
+        data: { id: "user-1", display_name: null },
+        error: null,
+      },
+    });
+
+    await expect(readCurrentAuth(async () => client)).resolves.toEqual({
+      status: "profileSetupRequired",
+      reason: "incomplete",
+    });
   });
 
   it("does not use the unverified getSession server API", () => {

@@ -55,7 +55,8 @@ class _VerifyCodeScreenState extends ConsumerState<VerifyCodeScreen> {
     final secondsRemaining = _secondsRemaining(command.resendAvailableAt);
     final error = command.failure;
     final needsProfileRetry =
-        session.phase == AuthSessionPhase.profileSetupRequired;
+        session.phase == AuthSessionPhase.profileSetupRequired &&
+        !session.hasProfileAnchor;
 
     return Scaffold(
       appBar: AppBar(title: Text(l10n.authVerifyTitle)),

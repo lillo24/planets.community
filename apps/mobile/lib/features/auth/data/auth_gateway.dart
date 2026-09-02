@@ -20,7 +20,7 @@ abstract interface class AuthGateway {
 }
 
 abstract interface class ProfileAnchorGateway {
-  Future<bool> existsFor(String userId);
+  Future<ProfileAnchorReadiness> readinessFor(String userId);
 
   Future<void> ensureFor(String userId);
 }
@@ -79,13 +79,18 @@ class SupabaseProfileAnchorGateway implements ProfileAnchorGateway {
   final SupabaseClient _client;
 
   @override
-  Future<bool> existsFor(String userId) async {
+  Future<ProfileAnchorReadiness> readinessFor(String userId) async {
     final row = await _client
         .from('profiles')
-        .select('id')
+        .select('id, display_name')
         .eq('id', userId)
         .maybeSingle();
-    return row != null;
+    if (row == null) {
+      return ProfileAnchorReadiness.missing;
+    }
+    return row['display_name'] is String
+        ? ProfileAnchorReadiness.complete
+        : ProfileAnchorReadiness.incomplete;
   }
 
   @override

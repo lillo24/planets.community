@@ -9,27 +9,167 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      profiles: {
+      profile_field_visibility: {
+        Row: {
+          audience: string
+          field_key: string
+          profile_id: string
+        }
+        Insert: {
+          audience?: string
+          field_key: string
+          profile_id: string
+        }
+        Update: {
+          audience?: string
+          field_key?: string
+          profile_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "profile_field_visibility_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profile_skills: {
         Row: {
           created_at: string
-          id: string
+          profile_id: string
+          skill_id: string
         }
         Insert: {
           created_at?: string
-          id: string
+          profile_id: string
+          skill_id: string
         }
         Update: {
           created_at?: string
+          profile_id?: string
+          skill_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "profile_skills_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profile_skills_skill_id_fkey"
+            columns: ["skill_id"]
+            isOneToOne: false
+            referencedRelation: "skills"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          bio: string | null
+          created_at: string
+          display_name: string | null
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          bio?: string | null
+          created_at?: string
+          display_name?: string | null
+          id: string
+          updated_at?: string
+        }
+        Update: {
+          bio?: string | null
+          created_at?: string
+          display_name?: string | null
           id?: string
+          updated_at?: string
         }
         Relationships: []
+      }
+      skill_categories: {
+        Row: {
+          id: string
+          label: string
+          slug: string
+          sort_order: number
+        }
+        Insert: {
+          id: string
+          label: string
+          slug: string
+          sort_order: number
+        }
+        Update: {
+          id?: string
+          label?: string
+          slug?: string
+          sort_order?: number
+        }
+        Relationships: []
+      }
+      skills: {
+        Row: {
+          category_id: string
+          id: string
+          label: string
+          slug: string
+          sort_order: number
+        }
+        Insert: {
+          category_id: string
+          id: string
+          label: string
+          slug: string
+          sort_order: number
+        }
+        Update: {
+          category_id?: string
+          id?: string
+          label?: string
+          slug?: string
+          sort_order?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "skills_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "skill_categories"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_public_profile: {
+        Args: { p_profile_id: string }
+        Returns: {
+          bio: string | null
+          display_name: string | null
+          profile_id: string
+          skills: Json
+        }[]
+      }
+      update_own_profile: {
+        Args: {
+          p_bio: string
+          p_bio_audience: string
+          p_display_name: string
+          p_display_name_audience: string
+          p_skill_ids: string[]
+          p_skills_audience: string
+        }
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never

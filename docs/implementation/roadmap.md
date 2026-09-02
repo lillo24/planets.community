@@ -1,7 +1,7 @@
 # Implementation Roadmap
 
 **Status:** Planning baseline  
-**Current implementation:** Plans 00–03B implemented; plan 03C blocked
+**Current implementation:** Plans 00–03B implemented; plan 03C in progress
 
 This roadmap divides the first PLANETS build into reviewable Codex tasks. Each numbered item should normally become its own implementation prompt, branch, and pull request.
 
@@ -45,7 +45,7 @@ Do not begin a dependent plan until the prior plan is merged or its branch is ex
 | 03 | Authentication and profiles (parent) | Public browsing boundary, mobile/web email OTP, profile setup, competences/preferences, privacy-ready profile data | 01–02 | Initial required profile fields, visibility rules, competence taxonomy strategy | In progress |
 | 03A | Mobile Email-OTP Authentication | Public-first mobile numeric email OTP, Supabase session state, sign-out, and minimal profile-anchor readiness | 02B | None expected | Implemented |
 | 03B | Web Email-OTP Authentication | Web email OTP and session behavior using the canonical backend | 03A | None expected for this scoped work | Implemented |
-| 03C | Profile Setup and Competence/Preference Model | Real profile onboarding, privacy-ready fields, competence and preference model | 03B | Required fields, identity/photo/location/public visibility, and competence/preference taxonomy decisions | Blocked |
+| 03C | Basic Profiles, Skills, and Visibility | Display-name onboarding, optional bio, controlled starter skills, and per-field public/private visibility | 03B | Initial required fields, starter taxonomy, and basic visibility resolved; advanced profile decisions remain deferred | In progress |
 | 04 | Proposals and discovery | Draft/create/publish, proposal list/detail, requirements, location/filter foundations, public sanitized views | 03 | Proposal fields, lifecycle decisions, broad location behavior | Not started |
 | 05 | Participation lifecycle | Join requests, review decisions, membership, leave/cancel behavior, thresholds, derived participation stats | 04 | Threshold semantics, roles, removal/withdrawal rules | Not started |
 | 06 | Notification backbone | In-app notifications, preferences, device registration, outbox/queue, FCM worker, retries and deep links | 03–05 | Notification categories, priority, and copy can remain provisional unless user-facing review is needed | Not started |
@@ -158,7 +158,7 @@ This parent plan is split into three independently reviewed portions:
 
 - **03A — Mobile Email-OTP Authentication:** implemented numeric-code mobile Auth, sessions, sign-out, and the minimal profile anchor;
 - **03B — Web Email-OTP Authentication:** implemented public-first web OTP and cookie-backed SSR session behavior;
-- **03C — Profile Setup and Competence/Preference Model:** blocked on founder decisions for required fields, identity/photo/location/public visibility, and the competence/preference taxonomy.
+- **03C — Basic Profiles, Skills, and Visibility:** in progress with display name as the only required field, optional bio, a controlled starter taxonomy, and independent public/private visibility for display name, bio, and skills.
 
 Parent plan 03 remains in progress until 03C is implemented. Completing the mobile and web authentication portions does not unblock plan 04 by itself.
 
@@ -364,7 +364,7 @@ A plan should pause before implementation when ambiguity can change security, ir
 
 Major gates currently expected:
 
-1. profile/location visibility before plans 03–04 are finalized;
+1. location visibility before plan 04 is finalized; basic profile-field visibility is defined in 03C;
 2. proposal and participation state semantics before plans 04–05;
 3. chat access after membership changes before plan 07;
 4. moderation/minimum-age policy before plan 09 is complete;
@@ -374,4 +374,4 @@ Major gates currently expected:
 
 ## Immediate next action
 
-Resolve the founder-owned decisions required for **03C — Profile Setup and Competence/Preference Model**, then prepare its implementation plan from the current merged repository. Keep parent plan 03 in progress and do not start plan 04 until 03C is implemented and parent plan 03 is complete.
+Review and validate the active **03C — Basic Profiles, Skills, and Visibility** pull request. Keep parent plan 03 in progress and plan 04 not started until 03C is merged and parent plan 03 is complete; location visibility remains a separate gate for plan 04.

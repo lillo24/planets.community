@@ -40,29 +40,46 @@ export function AuthStatusCard({ state, returnTo = "/" }: AuthStatusCardProps) {
   }
 
   const profileSetupRequired = state.status === "profileSetupRequired";
+  const incompleteProfile =
+    profileSetupRequired && state.reason === "incomplete";
 
   return (
     <Card className="w-full max-w-md" aria-labelledby="auth-status-title">
       <CardHeader>
         <CardTitle id="auth-status-title">
-          {profileSetupRequired ? "Session setup needed" : "Signed in"}
+          {incompleteProfile
+            ? "Complete your profile"
+            : profileSetupRequired
+              ? "Session setup needed"
+              : "Signed in"}
         </CardTitle>
         <CardDescription>
-          {profileSetupRequired
-            ? "Your session is active, but the application setup still needs to finish."
-            : "Your PLANETS session is ready."}
+          {incompleteProfile
+            ? "Add a display name to finish your basic profile."
+            : profileSetupRequired
+              ? "Your session is active, but the application setup still needs to finish."
+              : "Your PLANETS session is ready."}
         </CardDescription>
       </CardHeader>
       <CardContent>
-        {profileSetupRequired
-          ? "Retry the minimal account setup or sign out."
-          : "Public discovery remains available while you are signed in."}
+        {incompleteProfile
+          ? "Public browsing remains available while profile setup is incomplete."
+          : profileSetupRequired
+            ? "Retry the minimal account setup or sign out."
+            : "Public discovery remains available while you are signed in."}
       </CardContent>
       <CardFooter className="items-stretch">
-        <AuthSessionActions
-          profileSetupRequired={profileSetupRequired}
-          returnTo={returnTo}
-        />
+        <div className="flex w-full flex-col gap-3">
+          {incompleteProfile ? (
+            <Button render={<Link href="/profile" />} nativeButton={false}>
+              Complete profile
+            </Button>
+          ) : null}
+          <AuthSessionActions
+            profileSetupRequired={profileSetupRequired && !incompleteProfile}
+            returnTo={returnTo}
+          />
+        </div>
       </CardFooter>
     </Card>
   );

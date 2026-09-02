@@ -50,7 +50,11 @@ class AuthStatus extends ConsumerWidget {
           AuthSessionPhase.ready => _StatusBody(
             icon: const Icon(Icons.verified_user_outlined),
             message: l10n.authSignedInStatus,
-            action: OutlinedButton(
+            action: FilledButton(
+              onPressed: () => context.go('/profile'),
+              child: Text(l10n.profileViewAction),
+            ),
+            secondaryAction: TextButton(
               onPressed: command.isBusy
                   ? null
                   : () => ref.read(authCommandProvider.notifier).signOut(),
@@ -61,15 +65,27 @@ class AuthStatus extends ConsumerWidget {
                 : authFailureMessage(l10n, command.failure!),
           ),
           AuthSessionPhase.profileSetupRequired => _StatusBody(
-            icon: const Icon(Icons.sync_problem_outlined),
-            message: l10n.authProfileSetupFailure,
+            icon: Icon(
+              session.hasProfileAnchor
+                  ? Icons.person_add_alt_outlined
+                  : Icons.sync_problem_outlined,
+            ),
+            message: session.hasProfileAnchor
+                ? l10n.profileSetupRequired
+                : l10n.authProfileSetupFailure,
             action: FilledButton(
               onPressed: command.isBusy
                   ? null
+                  : session.hasProfileAnchor
+                  ? () => context.go('/profile/edit')
                   : () => ref
                         .read(authCommandProvider.notifier)
                         .retryProfileSetup(),
-              child: Text(l10n.retryAction),
+              child: Text(
+                session.hasProfileAnchor
+                    ? l10n.profileSetupAction
+                    : l10n.retryAction,
+              ),
             ),
             secondaryAction: TextButton(
               onPressed: command.isBusy

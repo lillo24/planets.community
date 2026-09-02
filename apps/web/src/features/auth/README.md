@@ -12,4 +12,4 @@ This folder owns ordinary-user web authentication and the minimum application-id
 - `update-session.ts` is the request Proxy helper that validates/refreshes Supabase cookies and propagates them without making authorization decisions.
 - Colocated `*.test.ts(x)` files cover these ownership boundaries with injected or mocked Supabase behavior.
 
-The feature intentionally has no durable pending-email/code storage, magic links, deep links, passwords, social providers, profile fields, or admin authorization.
+The feature intentionally has no durable pending-email/code storage, magic links, deep links, passwords, social providers, profile editing, or admin authorization. It derives readiness from the profile display name and delegates setup/editing to the Profile feature.

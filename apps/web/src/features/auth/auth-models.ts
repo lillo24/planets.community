@@ -13,7 +13,10 @@ export type AuthFailureKind =
 export type CurrentAuthState =
   | Readonly<{ status: "signedOut" }>
   | Readonly<{ status: "ready" }>
-  | Readonly<{ status: "profileSetupRequired" }>;
+  | Readonly<{
+      status: "profileSetupRequired";
+      reason: "missing" | "incomplete";
+    }>;
 
 type AuthFailureLike = Readonly<{
   code?: unknown;

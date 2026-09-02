@@ -76,7 +76,7 @@ void main() {
   });
 
   test(
-    'verifies the code, ensures one profile anchor, and becomes ready',
+    'verifies the code and recognizes a new skeletal profile as incomplete',
     () async {
       final auth = FakeAuthGateway();
       final profile = FakeProfileAnchorGateway();
@@ -96,7 +96,11 @@ void main() {
       expect(auth.verifiedToken, '123456');
       expect(profile.ensureCount, 1);
       expect(profile.lastUserId, 'user-1');
-      expect(container.read(authSessionProvider).phase, AuthSessionPhase.ready);
+      expect(
+        container.read(authSessionProvider).phase,
+        AuthSessionPhase.profileSetupRequired,
+      );
+      expect(container.read(authSessionProvider).hasProfileAnchor, isTrue);
       expect(container.read(pendingEmailOtpProvider), isNull);
     },
   );
@@ -127,7 +131,11 @@ void main() {
       await container.read(authCommandProvider.notifier).retryProfileSetup(),
       isTrue,
     );
-    expect(container.read(authSessionProvider).phase, AuthSessionPhase.ready);
+    expect(
+      container.read(authSessionProvider).phase,
+      AuthSessionPhase.profileSetupRequired,
+    );
+    expect(container.read(authSessionProvider).hasProfileAnchor, isTrue);
     expect(auth.verifyCount, 1);
     expect(profile.ensureCount, 2);
   });

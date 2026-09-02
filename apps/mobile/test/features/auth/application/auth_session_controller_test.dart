@@ -62,8 +62,26 @@ void main() {
       expect(state.phase, AuthSessionPhase.profileSetupRequired);
       expect(state.identity?.id, 'user-1');
       expect(state.isAuthenticated, isTrue);
+      expect(state.hasProfileAnchor, isFalse);
     },
   );
+
+  test('recognizes an existing skeletal profile as setup-required', () async {
+    final auth = FakeAuthGateway(
+      snapshot: const AuthSnapshot(identity: AuthIdentity(id: 'user-1')),
+    );
+    final profile = FakeProfileAnchorGateway()
+      ..readiness = ProfileAnchorReadiness.incomplete;
+    final container = _container(auth, profile);
+    addTearDown(container.dispose);
+    addTearDown(auth.close);
+
+    await container.read(authSessionProvider.notifier).start();
+
+    final state = container.read(authSessionProvider);
+    expect(state.phase, AuthSessionPhase.profileSetupRequired);
+    expect(state.hasProfileAnchor, isTrue);
+  });
 
   test('follows auth state transitions and treats an expired session as signed out', () async {
     final auth = FakeAuthGateway();

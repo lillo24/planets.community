@@ -1,14 +1,14 @@
 begin;
 
-select plan(22);
+select plan(24);
 
 select has_table('public', 'profiles', 'the application profile anchor exists');
 
 select columns_are(
   'public',
   'profiles',
-  array['id', 'created_at'],
-  'the profile anchor contains only settled identity fields'
+  array['id', 'created_at', 'display_name', 'bio', 'updated_at'],
+  'the profile anchor includes only the settled basic scalar fields'
 );
 
 select col_type_is('public', 'profiles', 'id', 'uuid', 'profile identifiers are UUIDs');
@@ -95,8 +95,8 @@ select is(
     where schemaname = 'public'
       and tablename = 'profiles'
   ),
-  2::bigint,
-  'profiles has only the two reviewed operation-specific policies'
+  3::bigint,
+  'profiles has only the three reviewed operation-specific policies'
 );
 
 select ok(
@@ -169,6 +169,18 @@ select is(
   has_column_privilege('authenticated', 'public.profiles', 'created_at', 'INSERT'),
   false,
   'authenticated cannot supply the canonical profile creation time'
+);
+
+select is(
+  has_column_privilege('authenticated', 'public.profiles', 'display_name', 'UPDATE'),
+  true,
+  'authenticated may update the own display name through the reviewed policy'
+);
+
+select is(
+  has_column_privilege('authenticated', 'public.profiles', 'updated_at', 'UPDATE'),
+  false,
+  'authenticated cannot supply the database-maintained update timestamp'
 );
 
 select is(
