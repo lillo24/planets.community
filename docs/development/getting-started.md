@@ -80,7 +80,7 @@ With the committed default configuration, the main local endpoints are:
 
 `npm run db:status` is the authoritative source for active local endpoints and development credentials. These values are local-only and must never be reused as staging or production secrets.
 
-Local Auth uses a PLANETS numeric-code template at `supabase/templates/magic_link.html`. Despite Supabase's template category name, it includes `{{ .Token }}` and deliberately omits `{{ .ConfirmationURL }}`, so the mobile flow does not require a magic-link or deep-link callback. Local codes are six digits and expire after one hour. Restart the local stack after changing Auth configuration or templates.
+Local Auth uses a PLANETS numeric-code template at `supabase/templates/magic_link.html`. Despite Supabase's template category name, it includes `{{ .Token }}` and deliberately omits `{{ .ConfirmationURL }}`, so the mobile and web flows do not require a magic-link or deep-link callback. Local codes are six digits and expire after one hour. Restart the local stack after changing Auth configuration or templates.
 
 To exercise the complete local flow without scraping the email viewer UI, run:
 
@@ -90,7 +90,19 @@ npm run auth:verify:local
 
 The script requests a code for deterministic `.invalid` test data, reads only the new Mailpit message through its API, verifies the code, and confirms the signed-in user can insert/read exactly one own profile anchor under RLS. It does not print the email, code, session token, publishable key, or raw message.
 
-For a manual check, run the mobile app, choose **Sign in**, enter a non-personal test address, and open the local email viewer at `http://127.0.0.1:54324`. Confirm the newest message shows a six-digit code and no sign-in link, paste the code into the app, verify the signed-in status, restart the app to check session restoration, then sign out. This native interaction is a manual QA step; the integration command verifies the backend behavior only.
+After generating web configuration and building the web application, the companion web check obtains its cookie state through `@supabase/ssr`, requests the running Next.js application, and proves the Server Component sees the authenticated session while `/admin` remains 404:
+
+```text
+npm run web:config:local
+npm run build --workspace @planets/web
+npm run auth:web:verify:local
+```
+
+Neither integration command automates browser UI interaction.
+
+For a manual mobile check, run the app, choose **Sign in**, enter a non-personal test address, and open the local email viewer at `http://127.0.0.1:54324`. Confirm the newest message shows a six-digit code and no sign-in link, paste the code into the app, verify the signed-in status, restart the app to check session restoration, then sign out. This native interaction is a manual QA step; the integration command verifies the backend behavior only.
+
+For a manual web check, open `/auth`, request and paste the newest local six-digit code, confirm `/` reports a ready signed-in session after navigation and refresh, then sign out. Refreshing during code entry intentionally returns to email entry because pending email/code state is memory-only. `/admin` must return 404 both before and after sign-in.
 
 Stop the containers when finished:
 
@@ -144,7 +156,7 @@ The Next.js application validates these public environment values before initial
 | `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Client-safe Supabase publishable key (the local CLI may still call this the anon key) |
 | `NEXT_PUBLIC_SENTRY_DSN`               | Optional client DSN; an empty value keeps Sentry disabled                             |
 
-All four keys are deliberately public client configuration. Never substitute a Supabase service-role key or another secret. Next.js inlines `NEXT_PUBLIC_*` values at build time, so shared deployments must supply the correct environment when building. The current informational page can build without these values because it does not instantiate Supabase; requesting either Supabase factory without valid configuration fails with an actionable configuration error.
+All four keys are deliberately public client configuration. Never substitute a Supabase service-role key or another secret. Next.js inlines `NEXT_PUBLIC_*` values at build time, so shared deployments must supply the correct environment when building. The production build can complete without these values, but running `/` or `/auth` instantiates the request-scoped Auth client and therefore requires valid configuration. Invalid configuration fails with an actionable error.
 
 The committed example is `apps/web/.env.example`; actual `.env*` files are ignored. With local Supabase running, generate `apps/web/.env.local` from the same authoritative CLI status parser used by the mobile helper:
 
@@ -165,7 +177,7 @@ npm run web:config:local
 npm run dev:web
 ```
 
-Open `http://localhost:3000`. The public root is informational. `/admin` intentionally returns a 404 until authentication and authorization are implemented in plan 03.
+Open `http://localhost:3000`. The root stays public and shows minimal session status; `/auth` provides numeric email-OTP sign-in. Pending email/code values remain only in memory, and server-rendered session state uses cookie-backed Supabase SSR with verified claims. The request Proxy only refreshes and propagates session cookies. `/admin` intentionally returns 404 even for an ordinary authenticated user until a later plan defines admin authorization.
 
 With an Android emulator, iOS Simulator, or physical device available, start Flutter:
 
@@ -201,7 +213,7 @@ With the local Supabase stack running, validate a clean migration replay, schema
 npm run check:db
 ```
 
-`check:db` assumes the stack is already running; it does not start or stop containers. GitHub Actions owns that lifecycle and separately validates mobile, web, and the full database workflow on pull requests and pushes to `main`.
+`check:db` assumes the stack is already running; it does not start or stop containers. GitHub Actions owns that lifecycle and separately validates mobile, web, the database workflow, and the built web Auth session check on pull requests and pushes to `main`.
 
 Hosted email delivery is not configured by this repository. Before staging or production use, the account owner must configure a production SMTP provider and the equivalent numeric OTP template in the hosted Supabase project, then verify the hosted project's current Auth email restrictions and rate limits. Do not claim hosted Auth is ready from the local template alone.
 

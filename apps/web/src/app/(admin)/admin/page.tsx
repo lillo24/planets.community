@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 
 export default function AdminPage(): never {
-  // Authentication and authorization are introduced by roadmap plan 03.
-  // Until then this route must not expose a plausible admin shell.
+  // Ordinary authentication is not admin authorization. Keep this route
+  // fail-closed until the moderation/admin plan defines least-privilege access.
   notFound();
 }

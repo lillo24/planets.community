@@ -1,7 +1,7 @@
 # Implementation Roadmap
 
 **Status:** Planning baseline  
-**Current implementation:** Plans 00–02 implemented; plan 03A in progress
+**Current implementation:** Plans 00–02 implemented; plans 03A–03B in progress
 
 This roadmap divides the first PLANETS build into reviewable Codex tasks. Each numbered item should normally become its own implementation prompt, branch, and pull request.
 
@@ -44,7 +44,7 @@ Do not begin a dependent plan until the prior plan is merged or its branch is ex
 | 02B | Web/admin application foundation | Next.js public/admin shells and web-side application foundations | 02A | None expected unless current tooling exposes a material ambiguity | Implemented |
 | 03 | Authentication and profiles (parent) | Public browsing boundary, mobile/web email OTP, profile setup, competences/preferences, privacy-ready profile data | 01–02 | Initial required profile fields, visibility rules, competence taxonomy strategy | In progress |
 | 03A | Mobile Email-OTP Authentication | Public-first mobile numeric email OTP, Supabase session state, sign-out, and minimal profile-anchor readiness | 02B | None expected | In progress |
-| 03B | Web Email-OTP Authentication | Web email OTP and session behavior using the canonical backend | 03A | None expected after 03A is merged | Not started |
+| 03B | Web Email-OTP Authentication | Web email OTP and session behavior using the canonical backend | 03A | None expected for this scoped work | In progress |
 | 03C | Profile Setup and Competence/Preference Model | Real profile onboarding, privacy-ready fields, competence and preference model | 03B | Required fields, identity/photo/location/public visibility, and competence/preference taxonomy decisions | Blocked |
 | 04 | Proposals and discovery | Draft/create/publish, proposal list/detail, requirements, location/filter foundations, public sanitized views | 03 | Proposal fields, lifecycle decisions, broad location behavior | Not started |
 | 05 | Participation lifecycle | Join requests, review decisions, membership, leave/cancel behavior, thresholds, derived participation stats | 04 | Threshold semantics, roles, removal/withdrawal rules | Not started |
@@ -157,7 +157,7 @@ Expected scope:
 This parent plan is split into three independently reviewed portions:
 
 - **03A — Mobile Email-OTP Authentication:** numeric-code mobile Auth, sessions, sign-out, and the minimal profile anchor;
-- **03B — Web Email-OTP Authentication:** prepared only after 03A is merged;
+- **03B — Web Email-OTP Authentication:** temporarily prepared as a stacked change on the reviewed 03A branch while its native QA remains open; it must not merge first;
 - **03C — Profile Setup and Competence/Preference Model:** blocked on founder decisions for required fields, identity/photo/location/public visibility, and the competence/preference taxonomy.
 
 Parent plan 03 remains in progress until all required portions are merged. Completing 03A alone does not unblock plan 04.
@@ -374,4 +374,4 @@ Major gates currently expected:
 
 ## Immediate next action
 
-Complete, review, and merge **03A — Mobile Email-OTP Authentication**. Prepare 03B only after 03A is merged; keep parent plan 03 in progress, leave 03C blocked on the recorded founder decisions, and do not start plan 04.
+Complete native QA and merge **03A — Mobile Email-OTP Authentication**. Keep 03B stacked and unmerged in the meantime. After 03A merges, rebase 03B onto current `main`, retarget its pull request, reconcile any genuine Auth-contract changes, and rerun full validation. Keep parent plan 03 in progress, leave 03C blocked on the recorded founder decisions, and do not start plan 04.

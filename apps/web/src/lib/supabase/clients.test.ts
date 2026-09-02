@@ -53,16 +53,38 @@ describe("Supabase client factories", () => {
     expect(options.cookies.getAll()).toEqual([
       { name: "session", value: "cookie-value" },
     ]);
-    options.cookies.setAll([
-      {
-        name: "session",
-        value: "new-value",
-        options: { httpOnly: true },
-      },
-    ]);
+    options.cookies.setAll(
+      [
+        {
+          name: "session",
+          value: "new-value",
+          options: { httpOnly: true },
+        },
+      ],
+      { "Cache-Control": "private, no-store" },
+    );
     expect(set).toHaveBeenCalledWith("session", "new-value", {
       httpOnly: true,
     });
+  });
+
+  it("lets Proxy own cookie writes when a Server Component cannot set them", async () => {
+    createServerClient.mockReturnValue({ kind: "server" });
+    set.mockImplementationOnce(() => {
+      throw new Error("Cookies can only be modified in a Server Action");
+    });
+    const { createSupabaseServerClient } =
+      await import("@/lib/supabase/server");
+
+    await createSupabaseServerClient();
+    const options = createServerClient.mock.calls.at(-1)?.[2];
+
+    expect(() =>
+      options.cookies.setAll(
+        [{ name: "session", value: "new-value", options: {} }],
+        { "Cache-Control": "private, no-store" },
+      ),
+    ).not.toThrow();
   });
 
   it("keeps browser/server markers explicit and references no privileged key", () => {

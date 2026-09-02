@@ -2,7 +2,7 @@
 
 **Status:** Accepted baseline for initial implementation  
 **Recorded:** 2026-09-01  
-**Implementation status:** Repository/database and mobile foundations implemented; web/admin foundation in progress
+**Implementation status:** Repository, database, and application foundations implemented; mobile and web authentication in progress
 
 ## Decision summary
 
@@ -103,7 +103,7 @@ Visitors should be able to browse sanitized public proposal data without signing
 
 Initial authentication should use verified email one-time codes. This avoids password-reset support and the configuration burden of launching Google and Apple sign-in together. Apple and Google sign-in can be added as a pair when onboarding evidence supports it.
 
-The mobile flow requests and verifies a six-digit code inside the app. Supabase Auth is the only session authority; the client does not persist a parallel login flag, pending email, or OTP. `/` stays public, while optional post-auth return locations must be sanitized internal paths. Magic-link/deep-link callbacks, social providers, and web/admin authentication remain outside mobile plan 03A.
+The mobile and web flows request and verify a six-digit code in their own UI. Supabase Auth is the only session authority; clients do not persist a parallel login flag, pending email, or OTP. `/` stays public, while optional post-auth return locations must be sanitized internal paths. Web sessions use `@supabase/ssr` cookies, Proxy performs refresh/propagation only, and trusted server identity comes from verified claims rather than `getSession()`. Magic-link/deep-link callbacks, passwords, social providers, and admin authorization remain deferred.
 
 ### Proposal-scoped chat only
 

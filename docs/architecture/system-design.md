@@ -1,7 +1,7 @@
 # System Design and Responsibility Boundaries
 
 **Status:** Initial accepted design  
-**Implementation status:** Repository, database, and application foundations implemented; mobile authentication in progress
+**Implementation status:** Repository, database, and application foundations implemented; mobile and web authentication in progress
 
 This document describes how the major parts of PLANETS should interact. Technology choices are recorded separately in [`core-stack.md`](core-stack.md).
 
@@ -50,9 +50,11 @@ Mobile source is organized by real feature ownership, supported by narrow shared
 
 The Next.js App Router separates public and admin routes with `(public)` and `(admin)` route groups while retaining one root layout. Pages and layouts remain Server Components unless an interaction or browser API requires a narrow Client Component boundary.
 
-The web foundation defines one public `local`, `staging`, or `production` environment contract. It exposes only the canonical Supabase URL and publishable key plus an optional Sentry client DSN; staging and production Supabase URLs require HTTPS. Supabase factories validate the full contract only when requested, so an informational page that makes no backend call can still build without backend configuration. Typed factories use the generated public `Database` type, a browser-only client, and a new cookie-backed server client per request. Authentication refresh, authorization, proxy logic, service-role access, and domain operations remain outside this foundation.
+The web application defines one public `local`, `staging`, or `production` environment contract. It exposes only the canonical Supabase URL and publishable key plus an optional Sentry client DSN; staging and production Supabase URLs require HTTPS. Typed factories use the generated public `Database` type, a browser-only client, and a new cookie-backed server client per request.
 
-The public `/` route is informational. The reserved `/admin` route fails closed with a 404 until plan 03 supplies authenticated identity and authorization. Optional Sentry instrumentation sends no default PII and disables tracing and replay; missing Sentry configuration is a valid disabled state.
+Ordinary web authentication uses an in-memory two-step numeric email-OTP flow. The browser `@supabase/ssr` client owns the cookie-backed session; Next.js Proxy validates/refreshes and propagates those cookies without authorizing or redirecting; Server Components derive trusted identity through `getClaims()`, not `getSession()`. Optional post-auth returns accept only sanitized internal paths. The application stores no pending email/code outside component memory and implements no magic-link callback, deep link, password, or social provider.
+
+The public `/` route remains informational and reports only minimal signed-out, ready, or profile-setup-required state. The reserved `/admin` route fails closed with a 404 for signed-out and ordinary authenticated users until a later plan defines admin authorization. Optional Sentry instrumentation sends no default PII and disables tracing and replay; missing Sentry configuration is a valid disabled state.
 
 ### The backend owns authorization and invariants
 
@@ -79,7 +81,7 @@ External systems such as FCM, Resend, Sentry, and PostHog are delivery or observ
 
 Supabase Auth's `auth.users` row is the login identity. The matching `public.profiles` row is the stable PLANETS application identity anchor and uses the same UUID; profile fields and visibility rules remain deferred to plan 03C. There is no signup trigger yet, so an Auth identity without a profile anchor is a valid transitional state and the authenticated application flow must create its own anchor explicitly.
 
-After mobile OTP verification, the application inserts the signed-in user's minimal profile anchor. It accepts only the expected `profiles_pkey` duplicate as idempotent success and does not use update-dependent upsert behavior. An unrelated failure leaves the Supabase session valid, marks profile setup as incomplete, and exposes an explicit retry before downstream authenticated features may assume profile readiness.
+After mobile or web OTP verification, the application inserts the signed-in user's minimal profile anchor. It accepts only the expected `profiles_pkey` duplicate as idempotent success and does not use update-dependent upsert behavior. An unrelated failure leaves the Supabase session valid, marks profile setup as incomplete, and exposes an explicit retry before downstream authenticated features may assume profile readiness. Restored web sessions perform the same readiness read and retry contract.
 
 Raw Auth deletion is deliberately blocked while a profile or actor-linked audit record exists. The eventual account-deletion workflow must define cleanup, anonymization, and lawful retention before removing those restrictive relationships.
 
