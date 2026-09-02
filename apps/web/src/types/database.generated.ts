@@ -153,8 +153,8 @@ export type Database = {
       get_public_profile: {
         Args: { p_profile_id: string }
         Returns: {
-          bio: string | null
-          display_name: string | null
+          bio: string
+          display_name: string
           profile_id: string
           skills: Json
         }[]
