@@ -41,20 +41,20 @@ class AuthCommandController extends Notifier<AuthCommandState> {
       return false;
     }
 
-    final normalizedEmail = email.trim().toLowerCase();
-    if (!_isValidEmail(normalizedEmail)) {
+    final trimmedEmail = email.trim();
+    if (!_isValidEmail(trimmedEmail)) {
       state = const AuthCommandState(failure: AuthFailureKind.invalidEmail);
       return false;
     }
 
     state = const AuthCommandState(phase: AuthCommandPhase.requestingCode);
     try {
-      await ref.read(authGatewayProvider).requestEmailOtp(normalizedEmail);
+      await ref.read(authGatewayProvider).requestEmailOtp(trimmedEmail);
       ref
           .read(pendingEmailOtpProvider.notifier)
           .set(
             PendingEmailOtp(
-              email: normalizedEmail,
+              email: trimmedEmail,
               returnTo: sanitizeReturnDestination(returnTo),
             ),
           );

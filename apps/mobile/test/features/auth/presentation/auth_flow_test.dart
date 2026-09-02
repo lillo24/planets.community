@@ -29,7 +29,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(auth.requestCount, 1);
-    expect(find.textContaining('p•••@example.com'), findsOneWidget);
+    expect(find.textContaining('P•••@Example.com'), findsOneWidget);
     expect(find.textContaining('Person@Example.com'), findsNothing);
     expect(find.byKey(const Key('auth-code-field')), findsOneWidget);
 

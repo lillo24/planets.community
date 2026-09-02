@@ -30,7 +30,7 @@ void main() {
     );
   });
 
-  test('normalizes email and rejects an external return destination', () async {
+  test('trims email without changing casing', () async {
     final auth = FakeAuthGateway();
     final profile = FakeProfileAnchorGateway();
     final container = _container(auth, profile);
@@ -45,10 +45,10 @@ void main() {
         );
 
     expect(sent, isTrue);
-    expect(auth.requestedEmail, 'person@example.com');
+    expect(auth.requestedEmail, 'Person@Example.COM');
     expect(
       container.read(pendingEmailOtpProvider)?.email,
-      'person@example.com',
+      'Person@Example.COM',
     );
     expect(container.read(pendingEmailOtpProvider)?.returnTo, '/');
   });
