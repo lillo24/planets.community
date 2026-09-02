@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../core/theme/app_tokens.dart';
+import '../features/auth/presentation/auth_status.dart';
 import '../l10n/generated/app_localizations.dart';
 
 class FoundationScreen extends StatelessWidget {
@@ -16,7 +17,7 @@ class FoundationScreen extends StatelessWidget {
         child: Center(
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: AppBreakpoints.compact),
-            child: Padding(
+            child: SingleChildScrollView(
               padding: const EdgeInsets.all(AppSpacing.large),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -38,6 +39,8 @@ class FoundationScreen extends StatelessWidget {
                     textAlign: TextAlign.center,
                     style: Theme.of(context).textTheme.bodyLarge,
                   ),
+                  const SizedBox(height: AppSpacing.large),
+                  const AuthStatus(),
                 ],
               ),
             ),

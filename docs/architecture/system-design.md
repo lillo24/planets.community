@@ -1,7 +1,7 @@
 # System Design and Responsibility Boundaries
 
 **Status:** Initial accepted design  
-**Implementation status:** Repository/database baseline implemented; application foundations in progress
+**Implementation status:** Repository, database, and application foundations implemented; mobile authentication in progress
 
 This document describes how the major parts of PLANETS should interact. Technology choices are recorded separately in [`core-stack.md`](core-stack.md).
 
@@ -42,7 +42,7 @@ Flutter mobile application             Next.js public/admin application
 
 ### Mobile client foundation
 
-The Flutter process validates typed `local`, `staging`, or `production` compile-time configuration before initializing one Supabase client. Riverpod is the dependency/state boundary and `go_router` owns navigation. Optional Sentry monitoring wraps launch but cannot prevent the application from starting when monitoring itself fails. Product state, auth redirects, deep links, and feature repositories remain outside this foundation.
+The Flutter process validates typed `local`, `staging`, or `production` compile-time configuration before initializing one Supabase client. Riverpod is the dependency/state boundary and `go_router` owns navigation. Optional Sentry monitoring wraps launch but cannot prevent the application from starting when monitoring itself fails. The public root does not require authentication. Mobile email-OTP request/verification, Supabase-derived session restoration, sign-out, and sanitized internal post-auth returns live in the Auth feature; magic-link/deep-link callbacks and social providers remain deferred.
 
 Mobile source is organized by real feature ownership, supported by narrow shared `core` modules for configuration, backend access, routing, theme, monitoring, and common state UI. New layers or abstractions should appear only when a feature has concrete behavior to place in them.
 
@@ -77,7 +77,9 @@ External systems such as FCM, Resend, Sentry, and PostHog are delivery or observ
 
 ### Identity and transaction-local operational primitives
 
-Supabase Auth's `auth.users` row is the login identity. The matching `public.profiles` row is the stable PLANETS application identity anchor and uses the same UUID; profile fields and visibility rules remain deferred to plan 03. There is no signup trigger yet, so an Auth identity without a profile anchor is a valid transitional state and the authenticated application flow must create its own anchor explicitly.
+Supabase Auth's `auth.users` row is the login identity. The matching `public.profiles` row is the stable PLANETS application identity anchor and uses the same UUID; profile fields and visibility rules remain deferred to plan 03C. There is no signup trigger yet, so an Auth identity without a profile anchor is a valid transitional state and the authenticated application flow must create its own anchor explicitly.
+
+After mobile OTP verification, the application inserts the signed-in user's minimal profile anchor. It accepts only the expected `profiles_pkey` duplicate as idempotent success and does not use update-dependent upsert behavior. An unrelated failure leaves the Supabase session valid, marks profile setup as incomplete, and exposes an explicit retry before downstream authenticated features may assume profile readiness.
 
 Raw Auth deletion is deliberately blocked while a profile or actor-linked audit record exists. The eventual account-deletion workflow must define cleanup, anonymization, and lawful retention before removing those restrictive relationships.
 

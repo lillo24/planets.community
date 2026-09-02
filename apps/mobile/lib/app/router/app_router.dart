@@ -2,21 +2,91 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../features/auth/application/auth_command_controller.dart';
+import '../../features/auth/application/auth_session_controller.dart';
+import '../../features/auth/application/return_destination.dart';
+import '../../features/auth/domain/auth_models.dart';
+import '../../features/auth/presentation/request_code_screen.dart';
+import '../../features/auth/presentation/verify_code_screen.dart';
 import '../../l10n/generated/app_localizations.dart';
 import '../foundation_screen.dart';
 
-GoRouter createAppRouter({String initialLocation = '/'}) {
+typedef AuthSessionReader = AuthSessionState Function();
+typedef PendingEmailOtpReader = PendingEmailOtp? Function();
+
+GoRouter createAppRouter({
+  String initialLocation = '/',
+  AuthSessionReader? readAuthSession,
+  PendingEmailOtpReader? readPendingEmailOtp,
+}) {
+  final sessionReader =
+      readAuthSession ?? () => const AuthSessionState.signedOut();
+  final pendingReader = readPendingEmailOtp ?? () => null;
+
   return GoRouter(
     initialLocation: initialLocation,
+    redirect: (context, state) {
+      final session = sessionReader();
+      final pending = pendingReader();
+      final path = state.uri.path;
+      final isRequestRoute = path == '/auth';
+      final isVerifyRoute = path == '/auth/verify';
+      final isAuthRoute = isRequestRoute || isVerifyRoute;
+
+      if (session.phase == AuthSessionPhase.restoring) {
+        return null;
+      }
+
+      if (session.phase == AuthSessionPhase.ready && isAuthRoute) {
+        return pending?.returnTo ??
+            sanitizeReturnDestination(state.uri.queryParameters['returnTo']);
+      }
+
+      if ((session.phase == AuthSessionPhase.checkingProfile ||
+              session.phase == AuthSessionPhase.profileSetupRequired) &&
+          isAuthRoute &&
+          !(isVerifyRoute && pending != null)) {
+        return '/';
+      }
+
+      if (isVerifyRoute && pending == null) {
+        final returnTo = sanitizeReturnDestination(
+          state.uri.queryParameters['returnTo'],
+        );
+        return Uri(
+          path: '/auth',
+          queryParameters: returnTo == '/' ? null : {'returnTo': returnTo},
+        ).toString();
+      }
+
+      return null;
+    },
     routes: [
       GoRoute(path: '/', builder: (context, state) => const FoundationScreen()),
+      GoRoute(
+        path: '/auth',
+        builder: (context, state) => RequestCodeScreen(
+          returnTo: sanitizeReturnDestination(
+            state.uri.queryParameters['returnTo'],
+          ),
+        ),
+      ),
+      GoRoute(
+        path: '/auth/verify',
+        builder: (context, state) => const VerifyCodeScreen(),
+      ),
     ],
     errorBuilder: (context, state) => const _UnknownRouteScreen(),
   );
 }
 
 final appRouterProvider = Provider<GoRouter>((ref) {
-  final router = createAppRouter();
+  final router = createAppRouter(
+    readAuthSession: () => ref.read(authSessionProvider),
+    readPendingEmailOtp: () => ref.read(pendingEmailOtpProvider),
+  );
+  ref.listen(authSessionProvider, (_, _) => router.refresh());
+  ref.listen(pendingEmailOtpProvider, (_, _) => router.refresh());
   ref.onDispose(router.dispose);
   return router;
 });

@@ -103,6 +103,8 @@ Visitors should be able to browse sanitized public proposal data without signing
 
 Initial authentication should use verified email one-time codes. This avoids password-reset support and the configuration burden of launching Google and Apple sign-in together. Apple and Google sign-in can be added as a pair when onboarding evidence supports it.
 
+The mobile flow requests and verifies a six-digit code inside the app. Supabase Auth is the only session authority; the client does not persist a parallel login flag, pending email, or OTP. `/` stays public, while optional post-auth return locations must be sanitized internal paths. Magic-link/deep-link callbacks, social providers, and web/admin authentication remain outside mobile plan 03A.
+
 ### Proposal-scoped chat only
 
 Chat belongs to a proposal and is enabled when that proposal satisfies its participation rule. General direct messaging, calls, reactions, typing indicators, and end-to-end encryption are outside the initial backbone.

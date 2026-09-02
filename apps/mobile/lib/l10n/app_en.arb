@@ -51,5 +51,127 @@
   "retryAction": "Try again",
   "@retryAction": {
     "description": "Label for a retry action."
+  },
+  "authRequestTitle": "Sign in with email",
+  "@authRequestTitle": {
+    "description": "Title for the email OTP request screen."
+  },
+  "authRequestDescription": "Enter your email and we'll send you a 6-digit sign-in code. The code expires after one hour.",
+  "@authRequestDescription": {
+    "description": "Explanation of the passwordless sign-in flow."
+  },
+  "authEmailLabel": "Email address",
+  "@authEmailLabel": {
+    "description": "Label for the sign-in email field."
+  },
+  "authEmailHint": "you@example.com",
+  "@authEmailHint": {
+    "description": "Non-personal example shown in the email field."
+  },
+  "authInvalidEmail": "Enter a valid email address.",
+  "@authInvalidEmail": {
+    "description": "Safe validation message for a malformed email."
+  },
+  "authSendCodeAction": "Send sign-in code",
+  "@authSendCodeAction": {
+    "description": "Action that requests an email OTP."
+  },
+  "authPrivacyNote": "We use this address to sign you in. Never share your sign-in code with anyone.",
+  "@authPrivacyNote": {
+    "description": "Privacy and security note on the OTP request screen."
+  },
+  "authVerifyTitle": "Enter your sign-in code",
+  "@authVerifyTitle": {
+    "description": "Title for the email OTP verification screen."
+  },
+  "authVerifyDescription": "We sent a 6-digit code to {maskedEmail}.",
+  "@authVerifyDescription": {
+    "description": "Verification guidance containing only a masked email address.",
+    "placeholders": {
+      "maskedEmail": {
+        "type": "String"
+      }
+    }
+  },
+  "authCodeLabel": "6-digit code",
+  "@authCodeLabel": {
+    "description": "Label for the email OTP field."
+  },
+  "authCodeHint": "000000",
+  "@authCodeHint": {
+    "description": "Non-secret example for the OTP field."
+  },
+  "authInvalidCode": "Enter the valid 6-digit code from your latest email.",
+  "@authInvalidCode": {
+    "description": "Safe invalid OTP message."
+  },
+  "authExpiredCode": "That code has expired. Request a new one and try again.",
+  "@authExpiredCode": {
+    "description": "Safe expired OTP message."
+  },
+  "authRateLimited": "Please wait before requesting or checking another code.",
+  "@authRateLimited": {
+    "description": "Safe auth rate-limit message."
+  },
+  "authNetworkUnavailable": "Check your connection and try again.",
+  "@authNetworkUnavailable": {
+    "description": "Safe network failure message for auth."
+  },
+  "authServiceUnavailable": "Sign-in is temporarily unavailable. Please try again later.",
+  "@authServiceUnavailable": {
+    "description": "Safe backend availability message for auth."
+  },
+  "authUnexpectedFailure": "We couldn't complete sign-in. Please try again.",
+  "@authUnexpectedFailure": {
+    "description": "Safe catch-all auth failure message."
+  },
+  "authProfileSetupFailure": "You're signed in, but we couldn't finish account setup. Try again without requesting another code.",
+  "@authProfileSetupFailure": {
+    "description": "Safe message when the authenticated user's profile anchor could not be ensured."
+  },
+  "authVerifyAction": "Verify code",
+  "@authVerifyAction": {
+    "description": "Action that verifies the entered OTP."
+  },
+  "authResendAction": "Send a new code",
+  "@authResendAction": {
+    "description": "Action that requests another email OTP."
+  },
+  "authResendCountdown": "Send a new code in {seconds} seconds",
+  "@authResendCountdown": {
+    "description": "UI-only resend countdown.",
+    "placeholders": {
+      "seconds": {
+        "type": "int"
+      }
+    }
+  },
+  "authUseDifferentEmailAction": "Use a different email",
+  "@authUseDifferentEmailAction": {
+    "description": "Action that abandons the pending OTP flow."
+  },
+  "authRestoringSession": "Checking your sign-in status…",
+  "@authRestoringSession": {
+    "description": "Status shown while the locally stored Supabase session is restored."
+  },
+  "authSignedOutStatus": "Browse publicly or sign in to use your account.",
+  "@authSignedOutStatus": {
+    "description": "Public-root status for a signed-out user."
+  },
+  "authSignInAction": "Sign in",
+  "@authSignInAction": {
+    "description": "Action that opens the sign-in flow."
+  },
+  "authCompletingProfile": "Finishing account setup…",
+  "@authCompletingProfile": {
+    "description": "Status while the profile anchor is checked or created."
+  },
+  "authSignedInStatus": "You're signed in.",
+  "@authSignedInStatus": {
+    "description": "Status for an authenticated user with a profile anchor."
+  },
+  "authSignOutAction": "Sign out",
+  "@authSignOutAction": {
+    "description": "Action that signs out the current user."
   }
 }

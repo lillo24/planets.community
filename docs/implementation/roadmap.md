@@ -1,7 +1,7 @@
 # Implementation Roadmap
 
 **Status:** Planning baseline  
-**Current implementation:** Plans 00, 01, and 02A implemented; plan 02B in progress
+**Current implementation:** Plans 00–02 implemented; plan 03A in progress
 
 This roadmap divides the first PLANETS build into reviewable Codex tasks. Each numbered item should normally become its own implementation prompt, branch, and pull request.
 
@@ -39,10 +39,13 @@ Do not begin a dependent plan until the prior plan is merged or its branch is ex
 | 01 | Database foundation and security model (parent) | Secure database workflow plus shared identity, audit, and outbox primitives | 00 | Confirm any security-critical ambiguity Codex cannot isolate | Implemented |
 | 01A | Database workflow and security harness | Canonical migrations, fail-closed grants, public/private boundary, PostGIS, pgTAP, generated types, and CI replay | 00 | None expected | Implemented |
 | 01B | Identity, audit, and outbox primitives | Auth/profile boundary and minimal shared audit/outbox foundations | 01A | Confirm any security-critical ambiguity Codex cannot isolate | Implemented |
-| 02 | Mobile and web application foundations (parent) | Flutter app shell, Next.js public/admin shells, environments, error handling, localization and monitoring foundations | 00–01 | No visual polish; only resolve navigation/product-shell ambiguity if material | In progress |
+| 02 | Mobile and web application foundations (parent) | Flutter app shell, Next.js public/admin shells, environments, error handling, localization and monitoring foundations | 00–01 | No visual polish; only resolve navigation/product-shell ambiguity if material | Implemented |
 | 02A | Mobile application foundation | Flutter startup, Riverpod/router, typed config, Supabase/Sentry, theme, localization, and state UI | 01 | None expected | Implemented |
-| 02B | Web/admin application foundation | Next.js public/admin shells and web-side application foundations | 02A | None expected unless current tooling exposes a material ambiguity | In progress |
-| 03 | Authentication and profiles | Public browsing boundary, email OTP, profile setup, competences/preferences, privacy-ready profile data | 01–02 | Initial required profile fields, visibility rules, competence taxonomy strategy | Not started |
+| 02B | Web/admin application foundation | Next.js public/admin shells and web-side application foundations | 02A | None expected unless current tooling exposes a material ambiguity | Implemented |
+| 03 | Authentication and profiles (parent) | Public browsing boundary, mobile/web email OTP, profile setup, competences/preferences, privacy-ready profile data | 01–02 | Initial required profile fields, visibility rules, competence taxonomy strategy | In progress |
+| 03A | Mobile Email-OTP Authentication | Public-first mobile numeric email OTP, Supabase session state, sign-out, and minimal profile-anchor readiness | 02B | None expected | In progress |
+| 03B | Web Email-OTP Authentication | Web email OTP and session behavior using the canonical backend | 03A | None expected after 03A is merged | Not started |
+| 03C | Profile Setup and Competence/Preference Model | Real profile onboarding, privacy-ready fields, competence and preference model | 03B | Required fields, identity/photo/location/public visibility, and competence/preference taxonomy decisions | Blocked |
 | 04 | Proposals and discovery | Draft/create/publish, proposal list/detail, requirements, location/filter foundations, public sanitized views | 03 | Proposal fields, lifecycle decisions, broad location behavior | Not started |
 | 05 | Participation lifecycle | Join requests, review decisions, membership, leave/cancel behavior, thresholds, derived participation stats | 04 | Threshold semantics, roles, removal/withdrawal rules | Not started |
 | 06 | Notification backbone | In-app notifications, preferences, device registration, outbox/queue, FCM worker, retries and deep links | 03–05 | Notification categories, priority, and copy can remain provisional unless user-facing review is needed | Not started |
@@ -119,7 +122,7 @@ Expected scope:
 
 **Goal:** Provide stable application shells that later plans can extend without redesigning architecture.
 
-This parent plan is split into two independently reviewed pull requests. It remains in progress until both 02A and 02B are merged; completing 02A alone does not unblock plan 03.
+This parent plan was completed through two independently reviewed pull requests. Both 02A and 02B are merged.
 
 #### 02A — Mobile application foundation
 
@@ -150,6 +153,14 @@ Expected scope:
 ### 03 — Authentication and profiles
 
 **Goal:** Introduce real users without forcing authentication for public discovery.
+
+This parent plan is split into three independently reviewed portions:
+
+- **03A — Mobile Email-OTP Authentication:** numeric-code mobile Auth, sessions, sign-out, and the minimal profile anchor;
+- **03B — Web Email-OTP Authentication:** prepared only after 03A is merged;
+- **03C — Profile Setup and Competence/Preference Model:** blocked on founder decisions for required fields, identity/photo/location/public visibility, and the competence/preference taxonomy.
+
+Parent plan 03 remains in progress until all required portions are merged. Completing 03A alone does not unblock plan 04.
 
 Expected scope:
 
@@ -363,4 +374,4 @@ Major gates currently expected:
 
 ## Immediate next action
 
-Complete, review, and merge **02B — Web/admin application foundation**. Keep parent plan 02 in progress and do not start plan 03 until 02B is merged.
+Complete, review, and merge **03A — Mobile Email-OTP Authentication**. Prepare 03B only after 03A is merged; keep parent plan 03 in progress, leave 03C blocked on the recorded founder decisions, and do not start plan 04.
