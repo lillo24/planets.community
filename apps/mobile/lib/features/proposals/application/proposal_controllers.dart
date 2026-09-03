@@ -150,9 +150,6 @@ class OwnProposalsController extends Notifier<OwnProposalsState> {
   OwnProposalsState build() => const OwnProposalsState();
 
   Future<void> load(String expectedCreatorId) async {
-    if (state.isBusy) {
-      return;
-    }
     final revision = ++_revision;
     state = OwnProposalsState(
       phase: ProposalLoadPhase.loading,

@@ -46,8 +46,13 @@ class _ProposalEditorScreenState extends ConsumerState<ProposalEditorScreen> {
     final l10n = AppLocalizations.of(context);
     final identity = ref.watch(authSessionProvider).identity;
     final state = ref.watch(proposalEditorProvider);
+    final proposalMatches =
+        state.phase == ProposalEditorPhase.failure ||
+        state.proposal?.id == widget.proposalId;
     final isCurrent =
-        identity != null && state.expectedCreatorId == identity.id;
+        identity != null &&
+        state.expectedCreatorId == identity.id &&
+        proposalMatches;
     if (identity != null && _requestedIdentity != identity.id) {
       Future<void>.microtask(_load);
     }

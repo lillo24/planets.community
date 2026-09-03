@@ -329,6 +329,15 @@ select is(
 );
 select is(
   (
+    select count(*)
+    from public.list_public_proposals()
+    where proposal_id = current_setting('test.restricted_proposal_id')::uuid
+  ),
+  1::bigint,
+  'the public list has safe defaults for omitted optional filters and cursor values'
+);
+select is(
+  (
     select derived_status
     from public.list_public_proposals(20, null, null, null, null)
     where proposal_id = current_setting('test.restricted_proposal_id')::uuid

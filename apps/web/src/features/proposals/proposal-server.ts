@@ -18,10 +18,10 @@ export async function listPublicProposals(
   const client = await createSupabaseServerClient();
   const { data, error } = await client.rpc("list_public_proposals", {
     p_limit: publicProposalPageSize,
-    p_cursor_starts_at: filters.cursor?.startsAt ?? null,
-    p_cursor_id: filters.cursor?.id ?? null,
-    p_locality: filters.locality?.trim() || null,
-    p_skill_ids: filters.skillId ? [filters.skillId] : null,
+    p_cursor_starts_at: filters.cursor?.startsAt,
+    p_cursor_id: filters.cursor?.id,
+    p_locality: filters.locality?.trim() || undefined,
+    p_skill_ids: filters.skillId ? [filters.skillId] : undefined,
   });
   if (error) throw error;
   return (data ?? []).map(parsePublicProposalSummary);

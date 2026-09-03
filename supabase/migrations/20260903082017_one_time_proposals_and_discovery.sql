@@ -821,11 +821,11 @@ end;
 $$;
 
 create function public.list_public_proposals(
-  p_limit integer,
-  p_cursor_starts_at timestamptz,
-  p_cursor_id uuid,
-  p_locality text,
-  p_skill_ids uuid[]
+  p_limit integer default 20,
+  p_cursor_starts_at timestamptz default null,
+  p_cursor_id uuid default null,
+  p_locality text default null,
+  p_skill_ids uuid[] default null
 )
 returns table (
   proposal_id uuid,
