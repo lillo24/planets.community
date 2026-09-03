@@ -187,6 +187,9 @@ select lives_ok(
   $$,
   'repeating publication is idempotent'
 );
+
+reset role;
+
 select is(
   (
     select count(*)
@@ -544,6 +547,9 @@ select is(
   'cancelled',
   'cancelled proposals remain canonical owner history'
 );
+
+reset role;
+
 select is(
   (
     select count(*)
