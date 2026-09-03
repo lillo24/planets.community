@@ -186,21 +186,38 @@ class _ProposalFormState extends ConsumerState<_ProposalForm> {
   }
 
   Future<void> _pickDateTime({required bool start}) async {
-    final initial =
-        (start ? _startsAt : _endsAt)?.toLocal() ??
-        DateTime.now().add(const Duration(days: 1));
+    // Never reinterpret a stored instant in the device timezone or an invalid
+    // in-progress field value. Keep the existing dates until a valid zone is set.
+    final timezoneName = _timezone.text.trim();
+    if (!isKnownProposalTimeZone(timezoneName)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(AppLocalizations.of(context).proposalTimezoneError),
+        ),
+      );
+      return;
+    }
+    final now = proposalUtcToWallTime(
+      ref.read(proposalClockProvider)(),
+      timezoneName,
+    );
+    final existing = start ? _startsAt : _endsAt;
+    final initial = existing == null
+        ? now.add(const Duration(days: 1))
+        : proposalUtcToWallTime(existing, timezoneName);
     final date = await showDatePicker(
       context: context,
       initialDate: initial,
-      firstDate: DateTime.now().subtract(const Duration(days: 1)),
-      lastDate: DateTime.now().add(const Duration(days: 3650)),
+      currentDate: now,
+      firstDate: now.subtract(const Duration(days: 1)),
+      lastDate: now.add(const Duration(days: 3650)),
     );
     if (date == null || !mounted) return;
     final time = await showTimePicker(
       context: context,
       initialTime: TimeOfDay.fromDateTime(initial),
     );
-    if (time == null) return;
+    if (time == null || !mounted) return;
     final wall = DateTime(
       date.year,
       date.month,
@@ -208,18 +225,8 @@ class _ProposalFormState extends ConsumerState<_ProposalForm> {
       time.hour,
       time.minute,
     );
-    try {
-      final utc = proposalWallTimeToUtc(wall, _timezone.text.trim());
-      setState(() => start ? _startsAt = utc : _endsAt = utc);
-    } on Object {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(AppLocalizations.of(context).proposalTimezoneError),
-          ),
-        );
-      }
-    }
+    final utc = proposalWallTimeToUtc(wall, timezoneName);
+    setState(() => start ? _startsAt = utc : _endsAt = utc);
   }
 
   @override
@@ -227,12 +234,6 @@ class _ProposalFormState extends ConsumerState<_ProposalForm> {
     final l10n = AppLocalizations.of(context);
     final state = ref.watch(proposalEditorProvider);
     final busy = state.isBusy;
-    String schedule(DateTime? value) => value == null
-        ? l10n.proposalDateNotSet
-        : proposalUtcToWallTime(
-            value,
-            _timezone.text.trim(),
-          ).toString().substring(0, 16);
     return Form(
       key: _formKey,
       child: ListView(
@@ -247,32 +248,67 @@ class _ProposalFormState extends ConsumerState<_ProposalForm> {
             required: true,
             lines: 6,
           ),
-          _field(_timezone, l10n.proposalTimezoneLabel, 100, required: true),
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  '${l10n.proposalStartLabel}: ${schedule(_startsAt)}',
-                ),
-              ),
-              TextButton(
-                key: const Key('proposal-pick-start'),
-                onPressed: busy ? null : () => _pickDateTime(start: true),
-                child: Text(l10n.proposalChooseAction),
-              ),
-            ],
+          _field(
+            _timezone,
+            l10n.proposalTimezoneLabel,
+            100,
+            fieldKey: const Key('proposal-timezone'),
+            validator: (value) => isKnownProposalTimeZone(value ?? '')
+                ? null
+                : l10n.proposalTimezoneError,
           ),
-          Row(
-            children: [
-              Expanded(
-                child: Text('${l10n.proposalEndLabel}: ${schedule(_endsAt)}'),
-              ),
-              TextButton(
-                key: const Key('proposal-pick-end'),
-                onPressed: busy ? null : () => _pickDateTime(start: false),
-                child: Text(l10n.proposalChooseAction),
-              ),
-            ],
+          ValueListenableBuilder<TextEditingValue>(
+            valueListenable: _timezone,
+            builder: (context, timezone, _) {
+              // Observe the controller itself, including when these rows are
+              // rebuilt after scrolling, and never convert unvalidated text.
+              final timezoneName = timezone.text.trim();
+              final validTimezone = isKnownProposalTimeZone(timezoneName);
+              String schedule(DateTime? value) => value == null
+                  ? l10n.proposalDateNotSet
+                  : !validTimezone
+                  ? l10n.proposalTimezoneError
+                  : proposalUtcToWallTime(
+                      value,
+                      timezoneName,
+                    ).toString().substring(0, 16);
+              return Column(
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          '${l10n.proposalStartLabel}: ${schedule(_startsAt)}',
+                        ),
+                      ),
+                      TextButton(
+                        key: const Key('proposal-pick-start'),
+                        onPressed: busy
+                            ? null
+                            : () => _pickDateTime(start: true),
+                        child: Text(l10n.proposalChooseAction),
+                      ),
+                    ],
+                  ),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          '${l10n.proposalEndLabel}: ${schedule(_endsAt)}',
+                        ),
+                      ),
+                      TextButton(
+                        key: const Key('proposal-pick-end'),
+                        onPressed: busy
+                            ? null
+                            : () => _pickDateTime(start: false),
+                        child: Text(l10n.proposalChooseAction),
+                      ),
+                    ],
+                  ),
+                ],
+              );
+            },
           ),
           _field(_country, l10n.proposalCountryLabel, 2, required: true),
           _field(_locality, l10n.proposalLocalityLabel, 120, required: true),
@@ -377,10 +413,12 @@ class _ProposalFormState extends ConsumerState<_ProposalForm> {
     int maxLength, {
     bool required = false,
     int lines = 1,
+    Key? fieldKey,
+    FormFieldValidator<String>? validator,
   }) => Padding(
     padding: const EdgeInsets.only(bottom: AppSpacing.medium),
     child: TextFormField(
-      key: Key('proposal-field-${label.hashCode}'),
+      key: fieldKey ?? Key('proposal-field-${label.hashCode}'),
       controller: controller,
       enabled: !ref.watch(proposalEditorProvider).isBusy,
       maxLength: maxLength,
@@ -390,11 +428,13 @@ class _ProposalFormState extends ConsumerState<_ProposalForm> {
         labelText: label,
         alignLabelWithHint: lines > 1,
       ),
-      validator: required
-          ? (value) => (value ?? '').trim().isEmpty
-                ? AppLocalizations.of(context).proposalRequiredField
-                : null
-          : null,
+      validator:
+          validator ??
+          (required
+              ? (value) => (value ?? '').trim().isEmpty
+                    ? AppLocalizations.of(context).proposalRequiredField
+                    : null
+              : null),
     ),
   );
 }

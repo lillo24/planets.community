@@ -124,6 +124,44 @@ void main() {
     expect(find.textContaining(raw), findsNothing);
     expect(find.textContaining("couldn't complete"), findsOneWidget);
   });
+
+  testWidgets('direct detail shows event schedule and Required/Useful skills', (
+    tester,
+  ) async {
+    final gateway = FakeProposalGateway()
+      ..publicDetail = proposalDetailFixture(
+        skills: [
+          ...proposalSummaryFixture().skills,
+          const ProposalSkill(
+            id: 'skill-gardening',
+            slug: 'gardening',
+            label: 'Gardening',
+            categoryId: 'category-outdoors',
+            categorySlug: 'outdoors',
+            categoryLabel: 'Outdoors',
+            importance: ProposalSkillImportance.useful,
+          ),
+        ],
+      );
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [proposalGatewayProvider.overrideWithValue(gateway)],
+        child: _localized(const ProposalDetailScreen(proposalId: 'proposal-1')),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(gateway.calls, ['public-detail:proposal-1']);
+    expect(find.text('Schedule'), findsOneWidget);
+    expect(find.text('Starts: Sep 10, 2026 12:00'), findsOneWidget);
+    expect(find.text('Ends: Sep 10, 2026 14:00'), findsOneWidget);
+    expect(find.text('Europe/Rome'), findsOneWidget);
+    await tester.scrollUntilVisible(find.text('Useful: Gardening'), 200);
+    expect(find.text('Skills for this proposal'), findsOneWidget);
+    expect(find.text('Required: Mural painting'), findsOneWidget);
+    expect(find.text('Useful: Gardening'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
 }
 
 Widget _localized(Widget child) => MaterialApp(

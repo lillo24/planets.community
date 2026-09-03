@@ -130,6 +130,7 @@ List<ProposalSkillCategory> proposalCategoriesFixture() => const [
 ProposalSummary proposalSummaryFixture({
   String id = 'proposal-1',
   ProposalStatus status = ProposalStatus.upcoming,
+  List<ProposalSkill>? skills,
 }) => ProposalSummary(
   id: id,
   title: 'Paint the square',
@@ -142,24 +143,27 @@ ProposalSummary proposalSummaryFixture({
   administrativeArea: 'Emilia-Romagna',
   publicLocationLabel: 'Central Bologna',
   status: status,
-  skills: const [
-    ProposalSkill(
-      id: 'skill-mural',
-      slug: 'mural',
-      label: 'Mural painting',
-      categoryId: 'category-art',
-      categorySlug: 'art',
-      categoryLabel: 'Art',
-      importance: ProposalSkillImportance.required,
-    ),
-  ],
+  skills:
+      skills ??
+      const [
+        ProposalSkill(
+          id: 'skill-mural',
+          slug: 'mural',
+          label: 'Mural painting',
+          categoryId: 'category-art',
+          categorySlug: 'art',
+          categoryLabel: 'Art',
+          importance: ProposalSkillImportance.required,
+        ),
+      ],
 );
 
 ProposalDetail proposalDetailFixture({
   bool restricted = true,
   ProposalStatus status = ProposalStatus.upcoming,
+  List<ProposalSkill>? skills,
 }) => ProposalDetail(
-  summary: proposalSummaryFixture(status: status),
+  summary: proposalSummaryFixture(status: status, skills: skills),
   creatorProfileId: 'user-1',
   creatorDisplayName: 'Casey',
   description: 'A full proposal description.',
@@ -167,13 +171,17 @@ ProposalDetail proposalDetailFixture({
   exactLocationRestricted: restricted,
 );
 
-ProposalInput proposalInputFixture() => ProposalInput(
+ProposalInput proposalInputFixture({
+  DateTime? startsAt,
+  DateTime? endsAt,
+  String eventTimezone = 'Europe/Rome',
+}) => ProposalInput(
   title: 'Paint the square',
   summary: 'Create a community mural together.',
   description: 'A full proposal description.',
-  startsAt: DateTime.utc(2026, 9, 10, 10),
-  endsAt: DateTime.utc(2026, 9, 10, 12),
-  eventTimezone: 'Europe/Rome',
+  startsAt: startsAt ?? DateTime.utc(2026, 9, 10, 10),
+  endsAt: endsAt ?? DateTime.utc(2026, 9, 10, 12),
+  eventTimezone: eventTimezone,
   countryCode: 'IT',
   locality: 'Bologna',
   administrativeArea: 'Emilia-Romagna',

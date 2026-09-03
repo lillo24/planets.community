@@ -51,14 +51,6 @@ class ProposalCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
-    final required = proposal.skills.where(
-      (skill) => skill.importance == ProposalSkillImportance.required,
-    );
-    final useful = proposal.skills.where(
-      (skill) => skill.importance == ProposalSkillImportance.useful,
-    );
-
     return Card(
       clipBehavior: Clip.antiAlias,
       child: InkWell(
@@ -98,29 +90,36 @@ class ProposalCard extends StatelessWidget {
               ),
               if (proposal.skills.isNotEmpty) ...[
                 const SizedBox(height: AppSpacing.medium),
-                Wrap(
-                  spacing: AppSpacing.small,
-                  runSpacing: AppSpacing.xSmall,
-                  children: [
-                    for (final skill in required)
-                      Chip(
-                        label: Text(
-                          '${l10n.proposalSkillRequired}: ${skill.label}',
-                        ),
-                      ),
-                    for (final skill in useful)
-                      Chip(
-                        label: Text(
-                          '${l10n.proposalSkillUseful}: ${skill.label}',
-                        ),
-                      ),
-                  ],
-                ),
+                ProposalSkillRequirements(skills: proposal.skills),
               ],
             ],
           ),
         ),
       ),
+    );
+  }
+}
+
+class ProposalSkillRequirements extends StatelessWidget {
+  const ProposalSkillRequirements({required this.skills, super.key});
+
+  final List<ProposalSkill> skills;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    return Wrap(
+      spacing: AppSpacing.small,
+      runSpacing: AppSpacing.xSmall,
+      children: [
+        for (final importance in ProposalSkillImportance.values)
+          for (final skill in skills.where((s) => s.importance == importance))
+            Chip(
+              label: Text(
+                '${importance == ProposalSkillImportance.required ? l10n.proposalSkillRequired : l10n.proposalSkillUseful}: ${skill.label}',
+              ),
+            ),
+      ],
     );
   }
 }

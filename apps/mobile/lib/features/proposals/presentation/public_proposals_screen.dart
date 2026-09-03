@@ -9,6 +9,7 @@ import '../../../core/widgets/loading_state.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../application/proposal_controllers.dart';
 import '../domain/proposal_models.dart';
+import '../domain/proposal_time.dart';
 import 'proposal_widgets.dart';
 
 class PublicProposalsScreen extends ConsumerStatefulWidget {
@@ -231,6 +232,28 @@ class _ProposalDetailScreenState extends ConsumerState<ProposalDetailScreen> {
                   ),
                   const SizedBox(height: AppSpacing.large),
                   Text(detail.description),
+                  const SizedBox(height: AppSpacing.large),
+                  Text(
+                    l10n.proposalScheduleTitle,
+                    style: Theme.of(context).textTheme.titleLarge,
+                  ),
+                  const SizedBox(height: AppSpacing.small),
+                  Text(
+                    '${l10n.proposalStartLabel}: ${formatProposalDateTime(detail.summary.startsAt, detail.summary.eventTimezone, Localizations.localeOf(context).toLanguageTag())}',
+                  ),
+                  Text(
+                    '${l10n.proposalEndLabel}: ${formatProposalDateTime(detail.summary.endsAt, detail.summary.eventTimezone, Localizations.localeOf(context).toLanguageTag())}',
+                  ),
+                  Text(detail.summary.eventTimezone),
+                  if (detail.summary.skills.isNotEmpty) ...[
+                    const SizedBox(height: AppSpacing.large),
+                    Text(
+                      l10n.proposalSkillsTitle,
+                      style: Theme.of(context).textTheme.titleLarge,
+                    ),
+                    const SizedBox(height: AppSpacing.small),
+                    ProposalSkillRequirements(skills: detail.summary.skills),
+                  ],
                   const SizedBox(height: AppSpacing.large),
                   ProposalLocation(detail: detail),
                   if (detail.creatorDisplayName != null) ...[

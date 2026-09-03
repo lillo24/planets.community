@@ -13,18 +13,26 @@ void _ensureTimeZonesInitialized() {
 }
 
 bool isKnownProposalTimeZone(String value) {
-  _ensureTimeZonesInitialized();
   try {
-    time_zone.getLocation(value.trim());
+    _proposalTimeZone(value);
     return true;
   } on time_zone.LocationNotFoundException {
     return false;
   }
 }
 
-DateTime proposalWallTimeToUtc(DateTime wallTime, String timeZoneName) {
+time_zone.Location _proposalTimeZone(String name) {
   _ensureTimeZonesInitialized();
-  final location = time_zone.getLocation(timeZoneName.trim());
+  final normalized = name.trim();
+  // UTC is accepted by the database and is the editor default, but the
+  // bundled IANA dataset omits this backward-compatible alias for Etc/UTC.
+  return normalized == 'UTC'
+      ? time_zone.UTC
+      : time_zone.getLocation(normalized);
+}
+
+DateTime proposalWallTimeToUtc(DateTime wallTime, String timeZoneName) {
+  final location = _proposalTimeZone(timeZoneName);
   return time_zone.TZDateTime(
     location,
     wallTime.year,
@@ -36,8 +44,7 @@ DateTime proposalWallTimeToUtc(DateTime wallTime, String timeZoneName) {
 }
 
 DateTime proposalUtcToWallTime(DateTime instant, String timeZoneName) {
-  _ensureTimeZonesInitialized();
-  final location = time_zone.getLocation(timeZoneName.trim());
+  final location = _proposalTimeZone(timeZoneName);
   final zoned = time_zone.TZDateTime.from(instant.toUtc(), location);
   return DateTime(zoned.year, zoned.month, zoned.day, zoned.hour, zoned.minute);
 }
