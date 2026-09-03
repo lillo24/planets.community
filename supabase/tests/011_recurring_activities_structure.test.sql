@@ -258,11 +258,11 @@ select is(
 );
 
 select ok(
-  to_regprocedure('public.create_recurring_activity_draft(uuid,text,text,text,text,text,text,text,text,text,text,text,smallint,smallint,time,integer,text,date)') is not null,
+  to_regprocedure('public.create_recurring_activity_draft(uuid,text,text,text,text,text,text,text,text,text,text,text,integer,integer,time,integer,text,date)') is not null,
   'the canonical recurring draft operation exists'
 );
 select ok(
-  to_regprocedure('public.update_own_recurring_activity(uuid,uuid,text,text,text,text,text,text,text,text,text,text,text,smallint,smallint,time,integer,text,date)') is not null,
+  to_regprocedure('public.update_own_recurring_activity(uuid,uuid,text,text,text,text,text,text,text,text,text,text,text,integer,integer,time,integer,text,date)') is not null,
   'the canonical expected-owner recurring update exists'
 );
 select ok(
@@ -307,8 +307,8 @@ select is(
     select bool_and(prosecdef)
     from pg_proc
     where oid in (
-      'public.create_recurring_activity_draft(uuid,text,text,text,text,text,text,text,text,text,text,text,smallint,smallint,time,integer,text,date)'::regprocedure,
-      'public.update_own_recurring_activity(uuid,uuid,text,text,text,text,text,text,text,text,text,text,text,smallint,smallint,time,integer,text,date)'::regprocedure,
+      'public.create_recurring_activity_draft(uuid,text,text,text,text,text,text,text,text,text,text,text,integer,integer,time,integer,text,date)'::regprocedure,
+      'public.update_own_recurring_activity(uuid,uuid,text,text,text,text,text,text,text,text,text,text,text,integer,integer,time,integer,text,date)'::regprocedure,
       'public.publish_recurring_activity(uuid,uuid)'::regprocedure,
       'public.pause_recurring_activity(uuid,uuid)'::regprocedure,
       'public.resume_recurring_activity(uuid,uuid)'::regprocedure,
@@ -328,8 +328,8 @@ select is(
     select bool_and(array_to_string(proconfig, ',') = 'search_path=""')
     from pg_proc
     where oid in (
-      'public.create_recurring_activity_draft(uuid,text,text,text,text,text,text,text,text,text,text,text,smallint,smallint,time,integer,text,date)'::regprocedure,
-      'public.update_own_recurring_activity(uuid,uuid,text,text,text,text,text,text,text,text,text,text,text,smallint,smallint,time,integer,text,date)'::regprocedure,
+      'public.create_recurring_activity_draft(uuid,text,text,text,text,text,text,text,text,text,text,text,integer,integer,time,integer,text,date)'::regprocedure,
+      'public.update_own_recurring_activity(uuid,uuid,text,text,text,text,text,text,text,text,text,text,text,integer,integer,time,integer,text,date)'::regprocedure,
       'public.publish_recurring_activity(uuid,uuid)'::regprocedure,
       'public.pause_recurring_activity(uuid,uuid)'::regprocedure,
       'public.resume_recurring_activity(uuid,uuid)'::regprocedure,
@@ -366,7 +366,7 @@ select is(
 select is(
   has_function_privilege(
     'anon',
-    'public.create_recurring_activity_draft(uuid,text,text,text,text,text,text,text,text,text,text,text,smallint,smallint,time,integer,text,date)',
+    'public.create_recurring_activity_draft(uuid,text,text,text,text,text,text,text,text,text,text,text,integer,integer,time,integer,text,date)',
     'EXECUTE'
   ),
   false,
@@ -375,7 +375,7 @@ select is(
 select is(
   has_function_privilege(
     'authenticated',
-    'public.create_recurring_activity_draft(uuid,text,text,text,text,text,text,text,text,text,text,text,smallint,smallint,time,integer,text,date)',
+    'public.create_recurring_activity_draft(uuid,text,text,text,text,text,text,text,text,text,text,text,integer,integer,time,integer,text,date)',
     'EXECUTE'
   ),
   true,

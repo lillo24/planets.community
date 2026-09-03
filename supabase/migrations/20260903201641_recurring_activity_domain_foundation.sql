@@ -492,8 +492,8 @@ create function private.apply_recurring_activity_schedule(
   p_recurring_activity_id uuid,
   p_lifecycle_state text,
   p_recurrence_type text,
-  p_weekday smallint,
-  p_day_of_month smallint,
+  p_weekday integer,
+  p_day_of_month integer,
   p_local_start_time time without time zone,
   p_duration_minutes integer,
   p_event_timezone text,
@@ -984,8 +984,8 @@ create function public.create_recurring_activity_draft(
   p_exact_meeting_text text,
   p_exact_location_visibility text,
   p_recurrence_type text,
-  p_weekday smallint,
-  p_day_of_month smallint,
+  p_weekday integer,
+  p_day_of_month integer,
   p_local_start_time time without time zone,
   p_duration_minutes integer,
   p_event_timezone text,
@@ -1050,8 +1050,8 @@ create function public.update_own_recurring_activity(
   p_exact_meeting_text text,
   p_exact_location_visibility text,
   p_recurrence_type text,
-  p_weekday smallint,
-  p_day_of_month smallint,
+  p_weekday integer,
+  p_day_of_month integer,
   p_local_start_time time without time zone,
   p_duration_minutes integer,
   p_event_timezone text,
@@ -1784,9 +1784,9 @@ comment on function private.next_recurring_activity_occurrence(uuid, timestamptz
   'Finds one future occurrence without expanding an unbounded recurring series.';
 comment on function private.derive_recurring_activity_occurrences(uuid, timestamptz, timestamptz, integer) is
   'Derives a finite occurrence window, capped at five years and 100 rows, from local wall-clock schedules.';
-comment on function public.create_recurring_activity_draft(uuid, text, text, text, text, text, text, text, text, text, text, text, smallint, smallint, time, integer, text, date) is
+comment on function public.create_recurring_activity_draft(uuid, text, text, text, text, text, text, text, text, text, text, text, integer, integer, time, integer, text, date) is
   'Creates a complete-profile owner draft with optional complete weekly/monthly schedule configuration.';
-comment on function public.update_own_recurring_activity(uuid, uuid, text, text, text, text, text, text, text, text, text, text, text, smallint, smallint, time, integer, text, date) is
+comment on function public.update_own_recurring_activity(uuid, uuid, text, text, text, text, text, text, text, text, text, text, text, integer, integer, time, integer, text, date) is
   'Updates expected-owner content and creates a future schedule version when a published or paused schedule changes.';
 comment on function public.publish_recurring_activity(uuid, uuid) is
   'Validates and idempotently publishes an own recurring draft with one minimal audit/outbox event.';
@@ -1817,7 +1817,7 @@ revoke all privileges on function private.require_complete_recurring_activity_pr
   from public, anon, authenticated, service_role;
 revoke all privileges on function private.replace_recurring_activity_content(uuid, text, text, text, text, text, text, text, text, text, text)
   from public, anon, authenticated, service_role;
-revoke all privileges on function private.apply_recurring_activity_schedule(uuid, text, text, smallint, smallint, time, integer, text, date)
+revoke all privileges on function private.apply_recurring_activity_schedule(uuid, text, text, integer, integer, time, integer, text, date)
   from public, anon, authenticated, service_role;
 revoke all privileges on function private.next_recurring_activity_occurrence(uuid, timestamptz)
   from public, anon, authenticated, service_role;
@@ -1826,9 +1826,9 @@ revoke all privileges on function private.derive_recurring_activity_occurrences(
 revoke all privileges on function private.assert_recurring_activity_publishable(uuid)
   from public, anon, authenticated, service_role;
 
-revoke all privileges on function public.create_recurring_activity_draft(uuid, text, text, text, text, text, text, text, text, text, text, text, smallint, smallint, time, integer, text, date)
+revoke all privileges on function public.create_recurring_activity_draft(uuid, text, text, text, text, text, text, text, text, text, text, text, integer, integer, time, integer, text, date)
   from public, anon, authenticated, service_role;
-revoke all privileges on function public.update_own_recurring_activity(uuid, uuid, text, text, text, text, text, text, text, text, text, text, text, smallint, smallint, time, integer, text, date)
+revoke all privileges on function public.update_own_recurring_activity(uuid, uuid, text, text, text, text, text, text, text, text, text, text, text, integer, integer, time, integer, text, date)
   from public, anon, authenticated, service_role;
 revoke all privileges on function public.publish_recurring_activity(uuid, uuid)
   from public, anon, authenticated, service_role;
@@ -1849,9 +1849,9 @@ revoke all privileges on function public.list_own_recurring_activities(uuid)
 revoke all privileges on function public.get_own_recurring_activity(uuid, uuid)
   from public, anon, authenticated, service_role;
 
-grant execute on function public.create_recurring_activity_draft(uuid, text, text, text, text, text, text, text, text, text, text, text, smallint, smallint, time, integer, text, date)
+grant execute on function public.create_recurring_activity_draft(uuid, text, text, text, text, text, text, text, text, text, text, text, integer, integer, time, integer, text, date)
   to authenticated;
-grant execute on function public.update_own_recurring_activity(uuid, uuid, text, text, text, text, text, text, text, text, text, text, text, smallint, smallint, time, integer, text, date)
+grant execute on function public.update_own_recurring_activity(uuid, uuid, text, text, text, text, text, text, text, text, text, text, text, integer, integer, time, integer, text, date)
   to authenticated;
 grant execute on function public.publish_recurring_activity(uuid, uuid)
   to authenticated;
