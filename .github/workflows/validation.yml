@@ -107,6 +107,9 @@ jobs:
       - name: Verify proposal ownership, lifecycle, and public privacy
         run: npm run proposal:verify:local
 
+      - name: Verify recurring activity ownership, recurrence, lifecycle, and privacy
+        run: npm run recurring:verify:local
+
       - name: Generate local web configuration
         run: npm run web:config:local
 
