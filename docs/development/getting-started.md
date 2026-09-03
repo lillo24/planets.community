@@ -98,6 +98,14 @@ npm run profile:verify:local
 
 This completes one profile with mixed visibility, confirms full owner access, rejects direct cross-user access and mutation, and checks that the exact-ID anonymous payload contains only public fields and no Auth email or visibility metadata.
 
+To prove the one-time proposal lifecycle and rough/exact location privacy contract with two complete authenticated users plus anon, run:
+
+```text
+npm run proposal:verify:local
+```
+
+This creates private drafts, rejects cross-user and stale-identity mutation, publishes restricted and public-location proposals, verifies sanitized list/detail behavior and controlled skills, then confirms cancellation removes a proposal from normal discovery. It does not print credentials, OTPs, session tokens, or restricted meeting values.
+
 After generating web configuration and building the web application, the companion web check obtains its cookie state through `@supabase/ssr`, requests the running Next.js application, and proves the Server Component sees the authenticated session while `/admin` remains 404:
 
 ```text
@@ -108,9 +116,9 @@ npm run auth:web:verify:local
 
 These integration commands do not automate browser or native UI interaction.
 
-For a manual mobile check, run the app, choose **Sign in**, enter a non-personal test address, and open the local email viewer at `http://127.0.0.1:54324`. Confirm the newest message shows a six-digit code and no sign-in link, paste the code into the app, and confirm a skeletal account is taken to profile setup. Save a mixed-visibility profile with categorized skills, reopen and edit it, restart the app to check completed-profile restoration, verify `/` remains public after sign-out, and confirm a signed-out `/profile` return resumes safely after sign-in. This native interaction is a manual QA step; the integration command verifies the backend behavior only.
+For a manual mobile check, run the app, choose **Sign in**, enter a non-personal test address, and open the local email viewer at `http://127.0.0.1:54324`. Confirm the newest message shows a six-digit code and no sign-in link, paste the code into the app, and confirm a skeletal account is taken to profile setup. Save a mixed-visibility profile with categorized skills, reopen and edit it, restart the app to check completed-profile restoration, verify `/` remains public after sign-out, and confirm a signed-out `/profile` return resumes safely after sign-in. Then verify signed-out proposal browse/detail, each temporal badge, restricted/public exact-location copy, filtering and pagination; sign in with a complete profile and exercise create/save draft/restore/edit/publish/cancel/my-proposals, including disabled post-start editing and a cross-account stale-form switch. This native interaction is a manual QA step; the integration command verifies the backend behavior only.
 
-For a manual web check, open `/profile` while signed out and confirm the return goes through `/auth`. Request and paste the newest local six-digit code, complete and edit the categorized profile form, exercise public/private choices, refresh `/profile` to confirm persistence, then sign out and confirm `/` remains public. Refreshing during code entry intentionally returns to email entry because pending email/code state is memory-only. `/admin` must return 404 both before and after sign-in.
+For a manual web check, open `/profile` while signed out and confirm the return goes through `/auth`. Request and paste the newest local six-digit code, complete and edit the categorized profile form, exercise public/private choices, refresh `/profile` to confirm persistence, then sign out and confirm `/` remains public. Check `/proposals` and an exact-ID detail signed out, including locality/skill filters, pagination, Just Finished styling, and both exact-location privacy modes. Refreshing during code entry intentionally returns to email entry because pending email/code state is memory-only. `/admin` must return 404 both before and after sign-in.
 
 Stop the containers when finished:
 
@@ -118,7 +126,7 @@ Stop the containers when finished:
 npm run db:stop
 ```
 
-No remote Supabase project is linked. The committed migrations establish the database security foundation, identity/audit/outbox primitives, basic profile fields, controlled skills, visibility rules, and PostGIS. See the [database development workflow](database.md) before changing the schema.
+No remote Supabase project is linked. The committed migrations establish the database security foundation, identity/audit/outbox primitives, basic profile fields, controlled skills, visibility rules, one-time proposals, and PostGIS. See the [database development workflow](database.md) before changing the schema.
 
 ## Mobile configuration
 
@@ -185,7 +193,7 @@ npm run web:config:local
 npm run dev:web
 ```
 
-Open `http://localhost:3000`. The root stays public and shows minimal session status; `/auth` provides numeric email-OTP sign-in; `/profile` provides authenticated basic profile setup/editing. Pending email/code values remain only in memory, and server-rendered session state uses cookie-backed Supabase SSR with verified claims. The request Proxy only refreshes and propagates session cookies. `/admin` intentionally returns 404 even for an ordinary authenticated user until a later plan defines admin authorization.
+Open `http://localhost:3000`. The root stays public and shows minimal session status; `/auth` provides numeric email-OTP sign-in; `/profile` provides authenticated basic profile setup/editing; `/proposals` and `/proposals/[id]` provide signed-out read-only one-time proposal discovery. Pending email/code values remain only in memory, and server-rendered session state uses cookie-backed Supabase SSR with verified claims. The request Proxy only refreshes and propagates session cookies. `/admin` intentionally returns 404 even for an ordinary authenticated user until a later plan defines admin authorization.
 
 With an Android emulator, iOS Simulator, or physical device available, start Flutter:
 
@@ -221,7 +229,7 @@ With the local Supabase stack running, validate a clean migration replay, schema
 npm run check:db
 ```
 
-`check:db` assumes the stack is already running; it does not start or stop containers. It includes the two-user mixed-visibility harness. GitHub Actions owns the stack lifecycle and separately validates mobile, web, the database workflow, and the built web Auth session check on pull requests and pushes to `main`.
+`check:db` assumes the stack is already running; it does not start or stop containers. It includes the two-user mixed-visibility and proposal privacy/lifecycle harnesses. GitHub Actions owns the stack lifecycle and separately validates mobile, web, the database workflow, and the built web Auth session check on pull requests and pushes to `main`.
 
 Hosted email delivery is not configured by this repository. Before staging or production use, the account owner must configure a production SMTP provider and the equivalent numeric OTP template in the hosted Supabase project, then verify the hosted project's current Auth email restrictions and rate limits. Do not claim hosted Auth is ready from the local template alone.
 

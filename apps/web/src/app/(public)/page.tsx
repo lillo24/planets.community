@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 import { AuthStatusCard } from "@/features/auth/auth-status-card";
 import { readCurrentAuth } from "@/features/auth/current-auth";
 
@@ -16,9 +18,14 @@ export default async function PublicHomePage() {
         </h1>
         <p className="max-w-xl text-lg text-muted-foreground">
           PLANETS is a community for creating, discovering, and joining local
-          collaborative activities. Public discovery features will arrive in a
-          later implementation phase.
+          collaborative activities.
         </p>
+        <Link
+          className="inline-flex h-9 w-fit items-center rounded-lg bg-primary px-4 text-sm font-medium text-primary-foreground hover:bg-primary/80"
+          href="/proposals"
+        >
+          Browse one-time proposals
+        </Link>
         <AuthStatusCard state={authState} />
       </section>
     </main>

@@ -8,7 +8,9 @@ class FakeProfileGateway implements ProfileGateway {
   ProfileEditorData data;
   Object? loadError;
   Object? updateError;
+  Future<void>? updateDelay;
   ProfileEditorData Function(String userId)? loadData;
+  Future<ProfileEditorData> Function(String userId)? loadResult;
   int loadCount = 0;
   int updateCount = 0;
   String? lastExpectedProfileId;
@@ -17,6 +19,7 @@ class FakeProfileGateway implements ProfileGateway {
   @override
   Future<ProfileEditorData> loadOwnProfile(String userId) async {
     loadCount += 1;
+    if (loadResult case final result?) return result(userId);
     if (loadError case final error?) {
       throw error;
     }
@@ -31,6 +34,7 @@ class FakeProfileGateway implements ProfileGateway {
     updateCount += 1;
     lastExpectedProfileId = expectedProfileId;
     lastUpdate = update;
+    if (updateDelay case final delay?) await delay;
     if (updateError case final error?) {
       throw error;
     }

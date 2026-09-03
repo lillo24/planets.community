@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 import '../core/theme/app_tokens.dart';
 import '../features/auth/presentation/auth_status.dart';
 import '../l10n/generated/app_localizations.dart';
+import 'router/app_navigation_shell.dart';
 
 class FoundationScreen extends StatelessWidget {
   const FoundationScreen({super.key});
@@ -40,6 +42,15 @@ class FoundationScreen extends StatelessWidget {
                     style: Theme.of(context).textTheme.bodyLarge,
                   ),
                   const SizedBox(height: AppSpacing.large),
+                  FilledButton.icon(
+                    key: const Key('browse-proposals-button'),
+                    onPressed: () =>
+                        StatefulNavigationShell.of(context)
+                            .goBranch(AppBranch.browse.index),
+                    icon: const Icon(Icons.explore_outlined),
+                    label: Text(l10n.proposalsBrowseAction),
+                  ),
+                  const SizedBox(height: AppSpacing.medium),
                   const AuthStatus(),
                 ],
               ),

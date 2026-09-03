@@ -10,8 +10,12 @@ import '../../features/auth/presentation/request_code_screen.dart';
 import '../../features/auth/presentation/verify_code_screen.dart';
 import '../../features/profile/presentation/profile_edit_screen.dart';
 import '../../features/profile/presentation/profile_screen.dart';
+import '../../features/proposals/presentation/own_proposals_screen.dart';
+import '../../features/proposals/presentation/proposal_editor_screen.dart';
+import '../../features/proposals/presentation/public_proposals_screen.dart';
 import '../../l10n/generated/app_localizations.dart';
 import '../foundation_screen.dart';
+import 'app_navigation_shell.dart';
 
 typedef AuthSessionReader = AuthSessionState Function();
 typedef PendingEmailOtpReader = PendingEmailOtp? Function();
@@ -21,12 +25,24 @@ GoRouter createAppRouter({
   AuthSessionReader? readAuthSession,
   PendingEmailOtpReader? readPendingEmailOtp,
 }) {
+  final configuration = _routingConfig(readAuthSession, readPendingEmailOtp);
+  return GoRouter(
+    initialLocation: initialLocation,
+    routes: configuration.routes,
+    redirect: configuration.redirect,
+    errorBuilder: (context, state) => const _UnknownRouteScreen(),
+  );
+}
+
+RoutingConfig _routingConfig(
+  AuthSessionReader? readAuthSession,
+  PendingEmailOtpReader? readPendingEmailOtp,
+) {
   final sessionReader =
       readAuthSession ?? () => const AuthSessionState.signedOut();
   final pendingReader = readPendingEmailOtp ?? () => null;
 
-  return GoRouter(
-    initialLocation: initialLocation,
+  return RoutingConfig(
     redirect: (context, state) {
       final session = sessionReader();
       final pending = pendingReader();
@@ -35,16 +51,26 @@ GoRouter createAppRouter({
       final isVerifyRoute = path == '/auth/verify';
       final isAuthRoute = isRequestRoute || isVerifyRoute;
       final isProfileRoute = path == '/profile' || path == '/profile/edit';
+      final isProposalManagementRoute =
+          path == '/proposals/mine' ||
+          path == '/proposals/create' ||
+          (path.startsWith('/proposals/') && path.endsWith('/edit'));
 
       if (session.phase == AuthSessionPhase.restoring) {
         return null;
       }
 
-      if (session.phase == AuthSessionPhase.signedOut && isProfileRoute) {
+      if (session.phase == AuthSessionPhase.signedOut &&
+          (isProfileRoute || isProposalManagementRoute)) {
         return Uri(
           path: '/auth',
           queryParameters: {'returnTo': state.uri.toString()},
         ).toString();
+      }
+
+      if (session.phase == AuthSessionPhase.profileSetupRequired &&
+          isProposalManagementRoute) {
+        return '/profile/edit';
       }
 
       if (session.phase == AuthSessionPhase.profileSetupRequired &&
@@ -78,7 +104,6 @@ GoRouter createAppRouter({
       return null;
     },
     routes: [
-      GoRoute(path: '/', builder: (context, state) => const FoundationScreen()),
       GoRoute(
         path: '/auth',
         builder: (context, state) => RequestCodeScreen(
@@ -91,27 +116,92 @@ GoRouter createAppRouter({
         path: '/auth/verify',
         builder: (context, state) => const VerifyCodeScreen(),
       ),
-      GoRoute(
-        path: '/profile',
-        builder: (context, state) => const ProfileScreen(),
-      ),
-      GoRoute(
-        path: '/profile/edit',
-        builder: (context, state) => const ProfileEditScreen(),
+      StatefulShellRoute.indexedStack(
+        builder: (context, state, shell) =>
+            AppNavigationShell(navigationShell: shell),
+        branches: [
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/profile',
+                builder: (context, state) => const ProfileScreen(),
+                routes: [
+                  GoRoute(
+                    path: 'edit',
+                    builder: (context, state) => const ProfileEditScreen(),
+                  ),
+                ],
+              ),
+            ],
+          ),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/proposals',
+                builder: (context, state) => const PublicProposalsScreen(),
+                routes: [
+                  GoRoute(
+                    path: 'mine',
+                    builder: (context, state) => const OwnProposalsScreen(),
+                  ),
+                  GoRoute(
+                    path: 'create',
+                    builder: (context, state) => const ProposalEditorScreen(),
+                  ),
+                  GoRoute(
+                    path: ':id',
+                    builder: (context, state) => ProposalDetailScreen(
+                      proposalId: state.pathParameters['id']!,
+                    ),
+                    routes: [
+                      GoRoute(
+                        path: 'edit',
+                        builder: (context, state) => ProposalEditorScreen(
+                          proposalId: state.pathParameters['id'],
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ],
+          ),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/',
+                builder: (context, state) => const FoundationScreen(),
+              ),
+            ],
+          ),
+        ],
       ),
     ],
-    errorBuilder: (context, state) => const _UnknownRouteScreen(),
   );
 }
 
 final appRouterProvider = Provider<GoRouter>((ref) {
-  final router = createAppRouter(
-    readAuthSession: () => ref.read(authSessionProvider),
-    readPendingEmailOtp: () => ref.read(pendingEmailOtpProvider),
+  RoutingConfig configuration() => _routingConfig(
+    () => ref.read(authSessionProvider),
+    () => ref.read(pendingEmailOtpProvider),
   );
-  ref.listen(authSessionProvider, (_, _) => router.refresh());
+  final routes = ValueNotifier(configuration());
+  final router = GoRouter.routingConfig(
+    routingConfig: routes,
+    initialLocation: '/',
+    errorBuilder: (context, state) => const _UnknownRouteScreen(),
+  );
+  ref.listen(authSessionProvider, (previous, next) {
+    if (previous?.identity?.id != next.identity?.id) {
+      // New shell/branch keys discard all retained forms and private stacks.
+      // Reparse the current URL instead of losing an in-flight OTP returnTo.
+      routes.value = configuration();
+    }
+    router.refresh();
+  });
   ref.listen(pendingEmailOtpProvider, (_, _) => router.refresh());
   ref.onDispose(router.dispose);
+  ref.onDispose(routes.dispose);
   return router;
 });
 

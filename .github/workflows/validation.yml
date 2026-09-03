@@ -104,6 +104,9 @@ jobs:
       - name: Verify profile ownership and mixed visibility
         run: npm run profile:verify:local
 
+      - name: Verify proposal ownership, lifecycle, and public privacy
+        run: npm run proposal:verify:local
+
       - name: Generate local web configuration
         run: npm run web:config:local
 

@@ -13,6 +13,15 @@ before scalar fields, skills, and visibility commit atomically.
   Auth readiness complete only after a valid profile reload.
 - `presentation/` contains the functional owner view and setup/edit form.
 
+Setup and edit share one canonical Save handler. Its AppBar action remains
+visible while scrolling, disables during requests and shows save progress.
+Safe save failures appear above the scrollable fields as a live-region message;
+validation still blocks invalid required names before any gateway call. A
+successful save/reload marks the current identity ready and returns to Profile.
+Switching tabs preserves the unsaved form; changing identity clears both the
+retained form and controller state. Late load/save completions cannot publish
+old data or mark a previous session ready, even after signing back in as the same ID.
+
 Display name is the only required field. Photo media, location, custom skills,
 proficiency, public profile search, and organizer/participant audiences remain
 deferred.

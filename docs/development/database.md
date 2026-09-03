@@ -1,6 +1,6 @@
 # Database development
 
-PostgreSQL is the canonical PLANETS product record. This guide owns the local schema-change, security-test, and generated-type workflow. The current schema includes application identity, basic profiles, a controlled starter skill catalog, field visibility, and private audit/outbox primitives.
+PostgreSQL is the canonical PLANETS product record. This guide owns the local schema-change, security-test, and generated-type workflow. The current schema includes application identity, basic profiles, a controlled starter skill catalog, field visibility, one-time proposals, and private audit/outbox primitives.
 
 ## Source of truth and daily workflow
 
@@ -40,7 +40,15 @@ The profile and audit-actor foreign keys restrict raw deletion from `auth.users`
 
 `private` owns non-API data and implementation details. It is deliberately absent from `[api].schemas`, and `anon`, `authenticated`, and `service_role` have neither `USAGE` nor `CREATE` on it. Do not grant `service_role` broad access as a convenience: it bypasses RLS, so any future access must be narrow, explicit, and justified by the owning plan.
 
-PostGIS is installed into the existing non-API `extensions` schema. Qualify spatial types and functions as `extensions.geometry`, `extensions.st_point`, and similar names in migrations and tests. Location tables, precision, and visibility rules are not defined by this foundation.
+PostGIS is installed into the existing non-API `extensions` schema. Qualify spatial types and functions as `extensions.geography`, `extensions.st_point`, and similar names in migrations and tests. One-time proposals reserve separate optional rough and exact geography points without implementing map input or geocoding; the exact point remains in the protected meeting record.
+
+## One-time proposals
+
+`public.proposals` stores creator, content, schedule, IANA event time zone, and structured rough location. `public.proposal_meeting_details` is a one-to-one protected record for exact meeting text/coordinates and `public.proposal_skills` relates the proposal to existing catalog skills as `required` or `useful`.
+
+Only `draft`, `published`, and `cancelled` are stored. `private.derive_proposal_status` derives Upcoming before `starts_at`, Happening from start until end, Just Finished from the end until exactly 24 hours later, and Completed thereafter. Normal discovery includes the first three derived states, while exact-ID detail retains published historical proposals. Retention does not create a Community template or make completed content mutable.
+
+Authenticated complete-profile owners call expected-identity-bound create/update/publish/cancel functions; client roles have no direct table mutation privileges. Public list/detail functions are explicitly granted to `anon` and `authenticated`. List output contains rough location only. Detail returns exact text only for `public` visibility; participant-restricted text is absent from the row payload and represented by a boolean restriction flag. Publish and cancel write only proposal/actor identifiers to audit/outbox primitives and do not deliver notifications.
 
 ## Fail-closed access
 
@@ -77,6 +85,7 @@ The native pgTAP files under `supabase/tests/` verify:
 - catalog/reference-data invariants, atomic profile updates, field defaults, grants, function hardening, and RLS policies;
 - two deterministic fake Auth identities exercising owner access, cross-user denial, and mixed-visibility sanitized reads;
 - audit/outbox constraints, defaults, indexes, restrictive actor deletion, and private client denial.
+- one-time proposal constraints, lifecycle/status boundaries, owner/cross-account access, expected-identity protection, rough/exact privacy, skill relationships, function hardening, pagination, and historical retention.
 
 Run focused commands while the stack is already running:
 
@@ -86,6 +95,7 @@ npm run db:lint
 npm run db:test
 npm run auth:verify:local
 npm run profile:verify:local
+npm run proposal:verify:local
 npm run db:types
 npm run db:types:check
 ```
@@ -96,6 +106,8 @@ npm run db:types:check
 
 `profile:verify:local` authenticates two deterministic local users, completes one profile through the canonical operation, and proves owner reads, cross-user denial, stale-form identity rejection, an ineffective cross-user update, and anonymous exact-ID sanitization under mixed visibility. It rejects email/private-field leakage and does not print OTPs, tokens, keys, or addresses.
 
+`proposal:verify:local` uses two complete authenticated identities plus anon to prove draft ownership, cross-user and stale-identity rejection, publish/cancel behavior, controlled skills, rough-location discovery, participant-restricted exact-location absence, and public exact-location detail. It never prints test addresses, OTPs, tokens, keys, or exact restricted content.
+
 `auth:web:verify:local` adds web-specific evidence after a locally configured production Next.js build. It obtains session cookies through supported `@supabase/ssr` callbacks, confirms the Server Component recognizes the authenticated session, rejects private-auth material in the rendered response, and confirms `/admin` returns 404 for signed-out and signed-in requests. It does not invent or log Supabase's cookie encoding.
 
-`npm run check:db` performs reset, lint, pgTAP, the mobile/backend Auth check, the two-user profile visibility check, type regeneration, and drift detection as one validation sequence. It assumes `npm run db:start` has already succeeded and leaves stack lifecycle to the caller. CI additionally generates local web configuration, builds Next.js, runs the web-session integration, and always stops Supabase.
+`npm run check:db` performs reset, lint, pgTAP, the mobile/backend Auth check, the two-user profile visibility check, the proposal privacy/lifecycle check, type regeneration, and drift detection as one validation sequence. It assumes `npm run db:start` has already succeeded and leaves stack lifecycle to the caller. CI additionally generates local web configuration, builds Next.js, runs the web-session integration, and always stops Supabase.

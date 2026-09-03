@@ -1,7 +1,7 @@
 # Implementation Roadmap
 
 **Status:** Planning baseline  
-**Current implementation:** Plans 00–03 implemented; plan 04 not started
+**Current implementation:** Plans 00–03 implemented; plan 04A in progress
 
 This roadmap divides the first PLANETS build into reviewable Codex tasks. Each numbered item should normally become its own implementation prompt, branch, and pull request.
 
@@ -33,28 +33,30 @@ Do not begin a dependent plan until the prior plan is merged or its branch is ex
 
 ## Ordered plans
 
-| ID | Plan | Main result | Dependencies | Founder input expected | Status |
-| --- | --- | --- | --- | --- | --- |
-| 00 | Architecture and repository bootstrap | Runnable monorepo foundation, local tooling, initial CI, development docs | Documentation baseline | Tool/account installation only if automation cannot provide it | Implemented |
-| 01 | Database foundation and security model (parent) | Secure database workflow plus shared identity, audit, and outbox primitives | 00 | Confirm any security-critical ambiguity Codex cannot isolate | Implemented |
-| 01A | Database workflow and security harness | Canonical migrations, fail-closed grants, public/private boundary, PostGIS, pgTAP, generated types, and CI replay | 00 | None expected | Implemented |
-| 01B | Identity, audit, and outbox primitives | Auth/profile boundary and minimal shared audit/outbox foundations | 01A | Confirm any security-critical ambiguity Codex cannot isolate | Implemented |
-| 02 | Mobile and web application foundations (parent) | Flutter app shell, Next.js public/admin shells, environments, error handling, localization and monitoring foundations | 00–01 | No visual polish; only resolve navigation/product-shell ambiguity if material | Implemented |
-| 02A | Mobile application foundation | Flutter startup, Riverpod/router, typed config, Supabase/Sentry, theme, localization, and state UI | 01 | None expected | Implemented |
-| 02B | Web/admin application foundation | Next.js public/admin shells and web-side application foundations | 02A | None expected unless current tooling exposes a material ambiguity | Implemented |
-| 03 | Authentication and profiles (parent) | Public browsing boundary, mobile/web email OTP, profile setup, competences/preferences, privacy-ready profile data | 01–02 | Initial required profile fields, visibility rules, competence taxonomy strategy | Implemented |
-| 03A | Mobile Email-OTP Authentication | Public-first mobile numeric email OTP, Supabase session state, sign-out, and minimal profile-anchor readiness | 02B | None expected | Implemented |
-| 03B | Web Email-OTP Authentication | Web email OTP and session behavior using the canonical backend | 03A | None expected for this scoped work | Implemented |
-| 03C | Basic Profiles, Skills, and Visibility | Display-name onboarding, optional bio, controlled starter skills, and per-field public/private visibility | 03B | Initial required fields, starter taxonomy, and basic visibility resolved; advanced profile decisions remain deferred | Implemented |
-| 04 | Proposals and discovery | Draft/create/publish, proposal list/detail, requirements, location/filter foundations, public sanitized views | 03 | Proposal fields, lifecycle decisions, broad location behavior | Not started |
-| 05 | Participation lifecycle | Join requests, review decisions, membership, leave/cancel behavior, thresholds, derived participation stats | 04 | Threshold semantics, roles, removal/withdrawal rules | Not started |
-| 06 | Notification backbone | In-app notifications, preferences, device registration, outbox/queue, FCM worker, retries and deep links | 03–05 | Notification categories, priority, and copy can remain provisional unless user-facing review is needed | Not started |
-| 07 | Proposal chat | Eligibility-based chat creation, membership authorization, persisted/realtime text, pagination, push events, meeting URL | 05–06 | Historical access and moderation behavior after leaving/removal | Not started |
-| 08 | Storage and media hardening | Purpose-specific buckets, upload restrictions, private/public access, media metadata, cleanup and processing hooks | 03–07 | Profile/proposal photo visibility and retention choices | Not started |
-| 09 | Safety, moderation and admin | Reporting, blocking, content states, admin roles, moderation queue/actions, audit trail and minimal custom admin UI | 04–08 | Community rules, prohibited content, escalation, suspension, appeals, minimum age | Not started |
-| 10 | Account deletion and privacy operations | In-app and web deletion paths, cleanup/anonymization jobs, export groundwork, privacy documentation inputs | 03–09 | Legal retention and anonymization policy; legal text remains founder/legal work | Not started |
-| 11 | Analytics and operational readiness | Explicit product events, privacy scrubbing, health checks, alerts, restore procedure and operational runbooks | 00–10 | Success metrics and analytics consent/legal choices | Not started |
-| 12 | Release pipeline and store readiness | Staging/production deployment, signed mobile builds, internal testing, approval gates and store checklists | 00–11 | Provider accounts, billing, certificates, store listings, policies and final approval | Not started |
+| ID  | Plan                                            | Main result                                                                                                              | Dependencies           | Founder input expected                                                                                               | Status      |
+| --- | ----------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ | ---------------------- | -------------------------------------------------------------------------------------------------------------------- | ----------- |
+| 00  | Architecture and repository bootstrap           | Runnable monorepo foundation, local tooling, initial CI, development docs                                                | Documentation baseline | Tool/account installation only if automation cannot provide it                                                       | Implemented |
+| 01  | Database foundation and security model (parent) | Secure database workflow plus shared identity, audit, and outbox primitives                                              | 00                     | Confirm any security-critical ambiguity Codex cannot isolate                                                         | Implemented |
+| 01A | Database workflow and security harness          | Canonical migrations, fail-closed grants, public/private boundary, PostGIS, pgTAP, generated types, and CI replay        | 00                     | None expected                                                                                                        | Implemented |
+| 01B | Identity, audit, and outbox primitives          | Auth/profile boundary and minimal shared audit/outbox foundations                                                        | 01A                    | Confirm any security-critical ambiguity Codex cannot isolate                                                         | Implemented |
+| 02  | Mobile and web application foundations (parent) | Flutter app shell, Next.js public/admin shells, environments, error handling, localization and monitoring foundations    | 00–01                  | No visual polish; only resolve navigation/product-shell ambiguity if material                                        | Implemented |
+| 02A | Mobile application foundation                   | Flutter startup, Riverpod/router, typed config, Supabase/Sentry, theme, localization, and state UI                       | 01                     | None expected                                                                                                        | Implemented |
+| 02B | Web/admin application foundation                | Next.js public/admin shells and web-side application foundations                                                         | 02A                    | None expected unless current tooling exposes a material ambiguity                                                    | Implemented |
+| 03  | Authentication and profiles (parent)            | Public browsing boundary, mobile/web email OTP, profile setup, competences/preferences, privacy-ready profile data       | 01–02                  | Initial required profile fields, visibility rules, competence taxonomy strategy                                      | Implemented |
+| 03A | Mobile Email-OTP Authentication                 | Public-first mobile numeric email OTP, Supabase session state, sign-out, and minimal profile-anchor readiness            | 02B                    | None expected                                                                                                        | Implemented |
+| 03B | Web Email-OTP Authentication                    | Web email OTP and session behavior using the canonical backend                                                           | 03A                    | None expected for this scoped work                                                                                   | Implemented |
+| 03C | Basic Profiles, Skills, and Visibility          | Display-name onboarding, optional bio, controlled starter skills, and per-field public/private visibility                | 03B                    | Initial required fields, starter taxonomy, and basic visibility resolved; advanced profile decisions remain deferred | Implemented |
+| 04  | Activity discovery/domain (parent)              | One-time proposals plus separately scoped recurring activities                                                           | 03                     | Proposal fields, lifecycle decisions, broad location behavior                                                        | In progress |
+| 04A | One-Time Proposals and Discovery                | Draft/create/publish/cancel, public list/detail, requirements, location privacy, and mobile/web discovery                | 03C                    | One-time lifecycle and rough/exact location behavior resolved                                                        | In progress |
+| 04B | Recurring Activities                            | Weekly/monthly activity definitions and recurring occurrences                                                            | 04A                    | Recurrence editing, exception, and occurrence semantics                                                              | Not started |
+| 05  | Participation lifecycle                         | Join requests, review decisions, membership, leave/cancel behavior, thresholds, derived participation stats              | 04A                    | Threshold semantics, roles, removal/withdrawal rules                                                                 | Not started |
+| 06  | Notification backbone                           | In-app notifications, preferences, device registration, outbox/queue, FCM worker, retries and deep links                 | 03–05                  | Notification categories, priority, and copy can remain provisional unless user-facing review is needed               | Not started |
+| 07  | Proposal chat                                   | Eligibility-based chat creation, membership authorization, persisted/realtime text, pagination, push events, meeting URL | 05–06                  | Historical access and moderation behavior after leaving/removal                                                      | Not started |
+| 08  | Storage and media hardening                     | Purpose-specific buckets, upload restrictions, private/public access, media metadata, cleanup and processing hooks       | 03–07                  | Profile/proposal photo visibility and retention choices                                                              | Not started |
+| 09  | Safety, moderation and admin                    | Reporting, blocking, content states, admin roles, moderation queue/actions, audit trail and minimal custom admin UI      | 04–08                  | Community rules, prohibited content, escalation, suspension, appeals, minimum age                                    | Not started |
+| 10  | Account deletion and privacy operations         | In-app and web deletion paths, cleanup/anonymization jobs, export groundwork, privacy documentation inputs               | 03–09                  | Legal retention and anonymization policy; legal text remains founder/legal work                                      | Not started |
+| 11  | Analytics and operational readiness             | Explicit product events, privacy scrubbing, health checks, alerts, restore procedure and operational runbooks            | 00–10                  | Success metrics and analytics consent/legal choices                                                                  | Not started |
+| 12  | Release pipeline and store readiness            | Staging/production deployment, signed mobile builds, internal testing, approval gates and store checklists               | 00–11                  | Provider accounts, billing, certificates, store listings, policies and final approval                                | Not started |
 
 ## Plan details
 
@@ -174,23 +176,43 @@ Expected scope:
 - profile edit and basic display screens;
 - authorization and RLS tests.
 
-### 04 — Proposals and discovery
+### 04 — Activity discovery/domain
 
-**Goal:** Implement the first core co-creation domain.
+**Goal:** Implement activity discovery through independently reviewable one-time and recurring models.
+
+Parent plan 04 remains in progress while recurring activities are outstanding. Plan 05 depends on implemented 04A one-time proposals, not on future 04B recurrence work.
+
+#### 04A — One-Time Proposals and Discovery
+
+**Status:** In progress in its focused pull request.
 
 Expected scope:
 
-- proposal schema and explicit lifecycle;
+- one-time proposal schema with stored `draft`, `published`, and `cancelled` lifecycle;
+- time-derived Upcoming, Happening, Just Finished, and Completed status, including the exact 24-hour Just Finished window;
 - draft creation and editing;
 - publish/cancel permissions as defined by scope;
-- competence/resource requirements;
-- broad and restricted location representation;
+- required/useful relationships to the existing controlled skill catalog;
+- separate public rough location and protected exact meeting records;
 - paginated public/authenticated list and detail queries;
-- useful filters, including competence relevance where the data permits;
-- sanitized public views;
-- template-source groundwork without full community-template publishing;
-- functional Flutter UI with limited design decisions;
+- locality and skill filters;
+- sanitized public list/detail functions and owner management functions;
+- historical retention as future template-source groundwork, without mutable template records;
+- functional Flutter browse/detail/create/edit/my-proposals UI and read-only Next.js discovery;
 - database, repository/controller, widget, and integration tests.
+
+#### 04B — Recurring Activities
+
+**Status:** Not started and not part of 04A.
+
+Expected future scope:
+
+- weekly/monthly recurrence definitions;
+- materialized or derived activity occurrences;
+- recurrence exceptions and edit semantics;
+- discovery integration without overloading the one-time proposal schema.
+
+04B is not a blocker for beginning plan 05 after 04A is merged.
 
 ### 05 — Participation lifecycle
 
@@ -363,8 +385,8 @@ A plan should pause before implementation when ambiguity can change security, ir
 
 Major gates currently expected:
 
-1. location visibility before plan 04 is finalized; basic profile-field visibility is defined in 03C;
-2. proposal and participation state semantics before plans 04–05;
+1. recurring-activity semantics before plan 04B; 04A rough/exact location visibility is resolved;
+2. participation state semantics before plan 05; one-time proposal lifecycle is resolved in 04A;
 3. chat access after membership changes before plan 07;
 4. moderation/minimum-age policy before plan 09 is complete;
 5. retention/anonymization policy before plan 10;
@@ -373,4 +395,4 @@ Major gates currently expected:
 
 ## Immediate next action
 
-Resolve the founder-owned decisions required for **04 — Proposals and discovery**, especially proposal lifecycle/fields and broad-versus-restricted location behavior, then prepare its implementation plan from current `main`. Keep plan 04 `Not started` until those decisions are explicit.
+Complete review and native mobile QA for **04A — One-Time Proposals and Discovery**, then merge its focused pull request. After 04A is implemented, plan 05 may begin independently of the separately deferred 04B recurring-activity work.

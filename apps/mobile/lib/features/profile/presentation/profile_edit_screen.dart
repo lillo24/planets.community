@@ -45,6 +45,13 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
     if (identity != null && _requestedUserId != identity.id) {
       Future<void>.microtask(_load);
     }
+    if (identity != null && data != null) {
+      return _ProfileEditForm(
+        key: ValueKey(identity.id),
+        data: data,
+        identityId: identity.id,
+      );
+    }
 
     return Scaffold(
       appBar: AppBar(
@@ -59,16 +66,10 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
             ? const SizedBox.shrink()
             : data == null && state.phase == ProfilePhase.loading
             ? LoadingState(message: l10n.profileLoading)
-            : data == null
-            ? ErrorState(
+            : ErrorState(
                 message: l10n.profileLoadError,
                 onRetry: () =>
                     ref.read(profileProvider.notifier).load(identity.id),
-              )
-            : _ProfileEditForm(
-                key: ValueKey(identity.id),
-                data: data,
-                identityId: identity.id,
               ),
       ),
     );
@@ -145,142 +146,167 @@ class _ProfileEditFormState extends ConsumerState<_ProfileEditForm> {
     final state = ref.watch(profileProvider);
     final error = state.failure;
 
-    return Center(
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.all(AppSpacing.large),
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: AppBreakpoints.compact),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Text(
-                  widget.data.profile.isComplete
-                      ? l10n.profileEditDescription
-                      : l10n.profileSetupDescription,
-                ),
-                const SizedBox(height: AppSpacing.large),
-                TextFormField(
-                  key: const Key('profile-display-name-field'),
-                  controller: _displayNameController,
-                  enabled: !state.isBusy,
-                  maxLength: 60,
-                  textInputAction: TextInputAction.next,
-                  decoration: InputDecoration(
-                    labelText: l10n.profileDisplayNameLabel,
-                  ),
-                  validator: (value) => isValidDisplayName(value ?? '')
-                      ? null
-                      : l10n.profileDisplayNameError,
-                ),
-                const SizedBox(height: AppSpacing.medium),
-                TextFormField(
-                  key: const Key('profile-bio-field'),
-                  controller: _bioController,
-                  enabled: !state.isBusy,
-                  maxLength: 500,
-                  maxLengthEnforcement: MaxLengthEnforcement.none,
-                  maxLines: 5,
-                  decoration: InputDecoration(
-                    labelText: l10n.profileBioLabel,
-                    hintText: l10n.profileBioHint,
-                    alignLabelWithHint: true,
-                  ),
-                  validator: (value) =>
-                      isValidBio(value ?? '') ? null : l10n.profileBioError,
-                ),
-                const SizedBox(height: AppSpacing.large),
-                Text(
-                  l10n.profileSkillsTitle,
-                  style: Theme.of(context).textTheme.titleLarge,
-                ),
-                const SizedBox(height: AppSpacing.xSmall),
-                Text(l10n.profileSkillsDescription),
-                const SizedBox(height: AppSpacing.medium),
-                for (final category in widget.data.categories) ...[
-                  Text(
-                    category.label,
-                    style: Theme.of(context).textTheme.titleMedium,
-                  ),
-                  for (final skill in category.skills)
-                    CheckboxListTile(
-                      key: Key('profile-skill-${skill.slug}'),
-                      contentPadding: EdgeInsets.zero,
-                      controlAffinity: ListTileControlAffinity.leading,
-                      title: Text(skill.label),
-                      value: _selectedSkillIds.contains(skill.id),
-                      onChanged: state.isBusy
-                          ? null
-                          : (selected) {
-                              setState(() {
-                                if (selected ?? false) {
-                                  _selectedSkillIds.add(skill.id);
-                                } else {
-                                  _selectedSkillIds.remove(skill.id);
-                                }
-                              });
-                            },
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(
+          widget.data.profile.isComplete
+              ? l10n.profileEditTitle
+              : l10n.profileSetupTitle,
+        ),
+        actions: [
+          TextButton(
+            key: const Key('profile-save-button'),
+            onPressed: state.isBusy ? null : _save,
+            child: state.phase == ProfilePhase.saving
+                ? SizedBox.square(
+                    dimension: 20,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      semanticsLabel: l10n.profileSaveAction,
                     ),
-                  const SizedBox(height: AppSpacing.medium),
-                ],
-                Text(
-                  l10n.profileVisibilityTitle,
-                  style: Theme.of(context).textTheme.titleLarge,
-                ),
-                const SizedBox(height: AppSpacing.xSmall),
-                Text(l10n.profileVisibilityDescription),
-                const SizedBox(height: AppSpacing.medium),
-                _VisibilityControl(
-                  fieldKey: ProfileFieldKey.displayName,
-                  label: l10n.profileDisplayNameLabel,
-                  value: _visibility[ProfileFieldKey.displayName]!,
-                  enabled: !state.isBusy,
-                  onChanged: _setVisibility,
-                ),
-                _VisibilityControl(
-                  fieldKey: ProfileFieldKey.bio,
-                  label: l10n.profileBioLabel,
-                  value: _visibility[ProfileFieldKey.bio]!,
-                  enabled: !state.isBusy,
-                  onChanged: _setVisibility,
-                ),
-                _VisibilityControl(
-                  fieldKey: ProfileFieldKey.skills,
-                  label: l10n.profileSkillsTitle,
-                  value: _visibility[ProfileFieldKey.skills]!,
-                  enabled: !state.isBusy,
-                  onChanged: _setVisibility,
-                ),
-                if (error != null &&
-                    error != ProfileFailureKind.invalidInput) ...[
-                  const SizedBox(height: AppSpacing.medium),
-                  Text(
+                  )
+                : Text(l10n.profileSaveAction),
+          ),
+        ],
+      ),
+      body: SafeArea(
+        child: Column(
+          children: [
+            if (error != null && error != ProfileFailureKind.invalidInput)
+              Padding(
+                padding: const EdgeInsets.all(AppSpacing.small),
+                child: Semantics(
+                  liveRegion: true,
+                  child: Text(
                     l10n.profileSaveError,
                     key: const Key('profile-safe-error'),
-                    textAlign: TextAlign.center,
                     style: TextStyle(
                       color: Theme.of(context).colorScheme.error,
                     ),
                   ),
-                ],
-                const SizedBox(height: AppSpacing.large),
-                FilledButton(
-                  key: const Key('profile-save-button'),
-                  onPressed: state.isBusy ? null : _save,
-                  child: state.phase == ProfilePhase.saving
-                      ? SizedBox.square(
-                          dimension: 20,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: Theme.of(context).colorScheme.onPrimary,
-                          ),
-                        )
-                      : Text(l10n.profileSaveAction),
                 ),
-              ],
+              ),
+            Expanded(
+              child: Center(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(AppSpacing.large),
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(
+                      maxWidth: AppBreakpoints.compact,
+                    ),
+                    child: Form(
+                      key: _formKey,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Text(
+                            widget.data.profile.isComplete
+                                ? l10n.profileEditDescription
+                                : l10n.profileSetupDescription,
+                          ),
+                          const SizedBox(height: AppSpacing.large),
+                          TextFormField(
+                            key: const Key('profile-display-name-field'),
+                            controller: _displayNameController,
+                            enabled: !state.isBusy,
+                            maxLength: 60,
+                            textInputAction: TextInputAction.next,
+                            decoration: InputDecoration(
+                              labelText: l10n.profileDisplayNameLabel,
+                            ),
+                            validator: (value) =>
+                                isValidDisplayName(value ?? '')
+                                ? null
+                                : l10n.profileDisplayNameError,
+                          ),
+                          const SizedBox(height: AppSpacing.medium),
+                          TextFormField(
+                            key: const Key('profile-bio-field'),
+                            controller: _bioController,
+                            enabled: !state.isBusy,
+                            maxLength: 500,
+                            maxLengthEnforcement: MaxLengthEnforcement.none,
+                            maxLines: 5,
+                            decoration: InputDecoration(
+                              labelText: l10n.profileBioLabel,
+                              hintText: l10n.profileBioHint,
+                              alignLabelWithHint: true,
+                            ),
+                            validator: (value) => isValidBio(value ?? '')
+                                ? null
+                                : l10n.profileBioError,
+                          ),
+                          const SizedBox(height: AppSpacing.large),
+                          Text(
+                            l10n.profileSkillsTitle,
+                            style: Theme.of(context).textTheme.titleLarge,
+                          ),
+                          const SizedBox(height: AppSpacing.xSmall),
+                          Text(l10n.profileSkillsDescription),
+                          const SizedBox(height: AppSpacing.medium),
+                          for (final category in widget.data.categories) ...[
+                            Text(
+                              category.label,
+                              style: Theme.of(context).textTheme.titleMedium,
+                            ),
+                            for (final skill in category.skills)
+                              CheckboxListTile(
+                                key: Key('profile-skill-${skill.slug}'),
+                                contentPadding: EdgeInsets.zero,
+                                controlAffinity:
+                                    ListTileControlAffinity.leading,
+                                title: Text(skill.label),
+                                value: _selectedSkillIds.contains(skill.id),
+                                onChanged: state.isBusy
+                                    ? null
+                                    : (selected) {
+                                        setState(() {
+                                          if (selected ?? false) {
+                                            _selectedSkillIds.add(skill.id);
+                                          } else {
+                                            _selectedSkillIds.remove(skill.id);
+                                          }
+                                        });
+                                      },
+                              ),
+                            const SizedBox(height: AppSpacing.medium),
+                          ],
+                          Text(
+                            l10n.profileVisibilityTitle,
+                            style: Theme.of(context).textTheme.titleLarge,
+                          ),
+                          const SizedBox(height: AppSpacing.xSmall),
+                          Text(l10n.profileVisibilityDescription),
+                          const SizedBox(height: AppSpacing.medium),
+                          _VisibilityControl(
+                            fieldKey: ProfileFieldKey.displayName,
+                            label: l10n.profileDisplayNameLabel,
+                            value: _visibility[ProfileFieldKey.displayName]!,
+                            enabled: !state.isBusy,
+                            onChanged: _setVisibility,
+                          ),
+                          _VisibilityControl(
+                            fieldKey: ProfileFieldKey.bio,
+                            label: l10n.profileBioLabel,
+                            value: _visibility[ProfileFieldKey.bio]!,
+                            enabled: !state.isBusy,
+                            onChanged: _setVisibility,
+                          ),
+                          _VisibilityControl(
+                            fieldKey: ProfileFieldKey.skills,
+                            label: l10n.profileSkillsTitle,
+                            value: _visibility[ProfileFieldKey.skills]!,
+                            enabled: !state.isBusy,
+                            onChanged: _setVisibility,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
             ),
-          ),
+          ],
         ),
       ),
     );
