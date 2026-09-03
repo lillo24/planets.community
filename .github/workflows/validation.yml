@@ -122,12 +122,6 @@ jobs:
       - name: Regenerate public database types
         run: npm run db:types
 
-      - name: Upload generated database types
-        uses: actions/upload-artifact@v4
-        with:
-          name: generated-database-types
-          path: apps/web/src/types/database.generated.ts
-
       - name: Check generated database type drift
         run: git diff --exit-code -- apps/web/src/types/database.generated.ts
 
