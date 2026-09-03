@@ -1,7 +1,7 @@
 # Implementation Roadmap
 
 **Status:** Planning baseline  
-**Current implementation:** Plans 00–03B implemented; plan 03C in progress
+**Current implementation:** Plans 00–03 implemented; plan 04 not started
 
 This roadmap divides the first PLANETS build into reviewable Codex tasks. Each numbered item should normally become its own implementation prompt, branch, and pull request.
 
@@ -42,10 +42,10 @@ Do not begin a dependent plan until the prior plan is merged or its branch is ex
 | 02 | Mobile and web application foundations (parent) | Flutter app shell, Next.js public/admin shells, environments, error handling, localization and monitoring foundations | 00–01 | No visual polish; only resolve navigation/product-shell ambiguity if material | Implemented |
 | 02A | Mobile application foundation | Flutter startup, Riverpod/router, typed config, Supabase/Sentry, theme, localization, and state UI | 01 | None expected | Implemented |
 | 02B | Web/admin application foundation | Next.js public/admin shells and web-side application foundations | 02A | None expected unless current tooling exposes a material ambiguity | Implemented |
-| 03 | Authentication and profiles (parent) | Public browsing boundary, mobile/web email OTP, profile setup, competences/preferences, privacy-ready profile data | 01–02 | Initial required profile fields, visibility rules, competence taxonomy strategy | In progress |
+| 03 | Authentication and profiles (parent) | Public browsing boundary, mobile/web email OTP, profile setup, competences/preferences, privacy-ready profile data | 01–02 | Initial required profile fields, visibility rules, competence taxonomy strategy | Implemented |
 | 03A | Mobile Email-OTP Authentication | Public-first mobile numeric email OTP, Supabase session state, sign-out, and minimal profile-anchor readiness | 02B | None expected | Implemented |
 | 03B | Web Email-OTP Authentication | Web email OTP and session behavior using the canonical backend | 03A | None expected for this scoped work | Implemented |
-| 03C | Basic Profiles, Skills, and Visibility | Display-name onboarding, optional bio, controlled starter skills, and per-field public/private visibility | 03B | Initial required fields, starter taxonomy, and basic visibility resolved; advanced profile decisions remain deferred | In progress |
+| 03C | Basic Profiles, Skills, and Visibility | Display-name onboarding, optional bio, controlled starter skills, and per-field public/private visibility | 03B | Initial required fields, starter taxonomy, and basic visibility resolved; advanced profile decisions remain deferred | Implemented |
 | 04 | Proposals and discovery | Draft/create/publish, proposal list/detail, requirements, location/filter foundations, public sanitized views | 03 | Proposal fields, lifecycle decisions, broad location behavior | Not started |
 | 05 | Participation lifecycle | Join requests, review decisions, membership, leave/cancel behavior, thresholds, derived participation stats | 04 | Threshold semantics, roles, removal/withdrawal rules | Not started |
 | 06 | Notification backbone | In-app notifications, preferences, device registration, outbox/queue, FCM worker, retries and deep links | 03–05 | Notification categories, priority, and copy can remain provisional unless user-facing review is needed | Not started |
@@ -154,13 +154,13 @@ Expected scope:
 
 **Goal:** Introduce real users without forcing authentication for public discovery.
 
-This parent plan is split into three independently reviewed portions:
+This parent plan was completed through three independently reviewed portions:
 
 - **03A — Mobile Email-OTP Authentication:** implemented numeric-code mobile Auth, sessions, sign-out, and the minimal profile anchor;
 - **03B — Web Email-OTP Authentication:** implemented public-first web OTP and cookie-backed SSR session behavior;
-- **03C — Basic Profiles, Skills, and Visibility:** in progress with display name as the only required field, optional bio, a controlled starter taxonomy, and independent public/private visibility for display name, bio, and skills.
+- **03C — Basic Profiles, Skills, and Visibility:** implemented display name as the only required field, optional bio, a controlled starter taxonomy, and independent public/private visibility for display name, bio, and skills.
 
-Parent plan 03 remains in progress until 03C is implemented. Completing the mobile and web authentication portions does not unblock plan 04 by itself.
+Parent plan 03 is implemented. Advanced profile media, location, organizer-only audiences, and notification preferences remain deferred to their dedicated later plans.
 
 Expected scope:
 
@@ -169,11 +169,10 @@ Expected scope:
 - application profile creation/completion;
 - logout/session recovery;
 - profile fields and private/public separation;
-- competence and interest relationships;
-- notification/privacy preference foundations;
+- competence/skill relationships;
+- profile visibility settings;
 - profile edit and basic display screens;
-- authorization and RLS tests;
-- account-deletion entry point may be a disabled/placeholder path until plan 10, but must not be forgotten.
+- authorization and RLS tests.
 
 ### 04 — Proposals and discovery
 
@@ -374,4 +373,4 @@ Major gates currently expected:
 
 ## Immediate next action
 
-Review and validate the active **03C — Basic Profiles, Skills, and Visibility** pull request. Keep parent plan 03 in progress and plan 04 not started until 03C is merged and parent plan 03 is complete; location visibility remains a separate gate for plan 04.
+Resolve the founder-owned decisions required for **04 — Proposals and discovery**, especially proposal lifecycle/fields and broad-versus-restricted location behavior, then prepare its implementation plan from current `main`. Keep plan 04 `Not started` until those decisions are explicit.
