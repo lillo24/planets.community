@@ -11,6 +11,7 @@ import '../application/proposal_controllers.dart';
 import '../domain/proposal_models.dart';
 import '../domain/proposal_time.dart';
 import 'proposal_widgets.dart';
+import 'skill_filter.dart';
 
 class PublicProposalsScreen extends ConsumerStatefulWidget {
   const PublicProposalsScreen({super.key});
@@ -26,7 +27,9 @@ class _PublicProposalsScreenState extends ConsumerState<PublicProposalsScreen> {
   @override
   void initState() {
     super.initState();
-    _localityController = TextEditingController();
+    _localityController = TextEditingController(
+      text: ref.read(publicProposalsProvider).locality,
+    );
     Future<void>.microtask(
       () => ref.read(publicProposalsProvider.notifier).load(),
     );
@@ -50,7 +53,7 @@ class _PublicProposalsScreenState extends ConsumerState<PublicProposalsScreen> {
           IconButton(
             key: const Key('my-proposals-action'),
             tooltip: l10n.proposalMyTitle,
-            onPressed: () => context.push('/proposals/mine'),
+            onPressed: () => context.go('/proposals/mine'),
             icon: const Icon(Icons.folder_outlined),
           ),
         ],
@@ -91,40 +94,16 @@ class _PublicProposalsScreenState extends ConsumerState<PublicProposalsScreen> {
                     ),
                     if (state.categories.isNotEmpty) ...[
                       const SizedBox(height: AppSpacing.medium),
-                      Text(l10n.proposalSkillsFilter),
-                      const SizedBox(height: AppSpacing.small),
-                      Wrap(
-                        spacing: AppSpacing.small,
-                        children: [
-                          for (final category in state.categories)
-                            for (final skill in category.skills)
-                              FilterChip(
-                                key: Key('proposal-filter-skill-${skill.slug}'),
-                                label: Text(skill.label),
-                                selected: state.selectedSkillIds.contains(
-                                  skill.id,
-                                ),
-                                onSelected: state.isBusy
-                                    ? null
-                                    : (selected) {
-                                        final selectedIds = {
-                                          ...state.selectedSkillIds,
-                                        };
-                                        selected
-                                            ? selectedIds.add(skill.id)
-                                            : selectedIds.remove(skill.id);
-                                        ref
-                                            .read(
-                                              publicProposalsProvider.notifier,
-                                            )
-                                            .applyFilters(
-                                              locality:
-                                                  _localityController.text,
-                                              skillIds: selectedIds,
-                                            );
-                                      },
-                              ),
-                        ],
+                      SkillFilter(
+                        categories: state.categories,
+                        selectedIds: state.selectedSkillIds,
+                        enabled: !state.isBusy,
+                        onApply: (selection) => ref
+                            .read(publicProposalsProvider.notifier)
+                            .applyFilters(
+                              locality: _localityController.text,
+                              skillIds: selection,
+                            ),
                       ),
                     ],
                     const SizedBox(height: AppSpacing.medium),
@@ -138,8 +117,7 @@ class _PublicProposalsScreenState extends ConsumerState<PublicProposalsScreen> {
                       for (final proposal in state.items) ...[
                         ProposalCard(
                           proposal: proposal,
-                          onTap: () =>
-                              context.push('/proposals/${proposal.id}'),
+                          onTap: () => context.go('/proposals/${proposal.id}'),
                         ),
                         const SizedBox(height: AppSpacing.small),
                       ],
@@ -167,7 +145,7 @@ class _PublicProposalsScreenState extends ConsumerState<PublicProposalsScreen> {
       ),
       floatingActionButton: FloatingActionButton.extended(
         key: const Key('proposal-create-action'),
-        onPressed: () => context.push('/proposals/create'),
+        onPressed: () => context.go('/proposals/create'),
         icon: const Icon(Icons.add),
         label: Text(l10n.proposalCreateTitle),
       ),

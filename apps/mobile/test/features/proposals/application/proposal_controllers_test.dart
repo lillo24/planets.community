@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:planets_mobile/features/auth/application/auth_session_controller.dart';
@@ -11,6 +13,90 @@ import '../../../support/fake_auth.dart';
 import '../../../support/fake_proposal.dart';
 
 void main() {
+  test(
+    'account switch invalidates pending editor and owner list loads',
+    () async {
+      final own = Completer<OwnProposal?>();
+      final list = Completer<List<OwnProposal>>();
+      final gateway = FakeProposalGateway()
+        ..ownResult = own.future
+        ..ownListResult = list.future;
+      final session = _readyContainer(gateway);
+      addTearDown(session.container.dispose);
+      addTearDown(session.auth.close);
+      final editorLoad = session.container
+          .read(proposalEditorProvider.notifier)
+          .load('user-1', 'proposal-1');
+      final listLoad = session.container
+          .read(ownProposalsProvider.notifier)
+          .load('user-1');
+      session.container
+          .read(authSessionProvider.notifier)
+          .markProfileReady(const AuthIdentity(id: 'user-2'));
+      own.complete(ownProposalFixture());
+      list.complete([ownProposalFixture()]);
+      await Future.wait([editorLoad, listLoad]);
+      expect(session.container.read(proposalEditorProvider).proposal, isNull);
+      expect(session.container.read(ownProposalsProvider).items, isEmpty);
+      expect(
+        session.container.read(proposalEditorProvider).expectedCreatorId,
+        isNull,
+      );
+    },
+  );
+
+  test(
+    'logout during draft creation prevents follow-up publish and stale results',
+    () async {
+      final pending = Completer<void>();
+      final gateway = FakeProposalGateway()..mutationDelay = pending.future;
+      final session = _readyContainer(gateway);
+      addTearDown(session.container.dispose);
+      addTearDown(session.auth.close);
+      final controller = session.container.read(
+        proposalEditorProvider.notifier,
+      );
+      await controller.load('user-1', null);
+      final saving = controller.publish('user-1', proposalInputFixture());
+      session.container.read(authSessionProvider.notifier).markSignedOut();
+      session.container
+          .read(authSessionProvider.notifier)
+          .markProfileReady(const AuthIdentity(id: 'user-1'));
+      pending.complete();
+      expect(await saving, isNull);
+      expect(gateway.calls, isNot(contains('publish:new-draft')));
+      expect(session.container.read(proposalEditorProvider).proposal, isNull);
+    },
+  );
+
+  for (final command in ['publish', 'cancel', 'edit', 'editor-cancel']) {
+    test('account switch rejects late $command completion', () async {
+      final pending = Completer<void>();
+      final gateway = FakeProposalGateway()..ownItems = [ownProposalFixture()];
+      final session = _readyContainer(gateway);
+      addTearDown(session.container.dispose);
+      addTearDown(session.auth.close);
+      final editor = session.container.read(proposalEditorProvider.notifier);
+      final owner = session.container.read(ownProposalsProvider.notifier);
+      await editor.load('user-1', 'proposal-1');
+      await owner.load('user-1');
+      gateway.mutationDelay = pending.future;
+      final Future<Object?> mutation = switch (command) {
+        'publish' => owner.publish('user-1', 'proposal-1'),
+        'cancel' => owner.cancel('user-1', 'proposal-1'),
+        'edit' => editor.saveDraft('user-1', proposalInputFixture()),
+        _ => editor.cancel('user-1'),
+      };
+      session.container
+          .read(authSessionProvider.notifier)
+          .markProfileReady(const AuthIdentity(id: 'user-2'));
+      pending.complete();
+      expect(await mutation, command == 'edit' ? isNull : isFalse);
+      expect(session.container.read(proposalEditorProvider).proposal, isNull);
+      expect(session.container.read(ownProposalsProvider).items, isEmpty);
+    });
+  }
+
   test('public filters and cursor pagination are preserved', () async {
     final gateway = FakeProposalGateway()
       ..publicItems = [proposalSummaryFixture()];

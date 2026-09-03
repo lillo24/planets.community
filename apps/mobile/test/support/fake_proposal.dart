@@ -7,6 +7,9 @@ class FakeProposalGateway implements ProposalGateway {
   ProposalDetail? publicDetail;
   List<OwnProposal> ownItems = [];
   Object? error;
+  Future<void>? mutationDelay;
+  Future<List<OwnProposal>>? ownListResult;
+  Future<OwnProposal?>? ownResult;
   final List<String> calls = [];
   String? lastExpectedIdentity;
   ProposalInput? lastInput;
@@ -46,7 +49,7 @@ class FakeProposalGateway implements ProposalGateway {
   Future<List<OwnProposal>> listOwnProposals(String expectedCreatorId) async {
     _throwIfNeeded();
     lastExpectedIdentity = expectedCreatorId;
-    return ownItems;
+    return ownListResult ?? Future.value(ownItems);
   }
 
   @override
@@ -56,7 +59,10 @@ class FakeProposalGateway implements ProposalGateway {
   ) async {
     _throwIfNeeded();
     lastExpectedIdentity = expectedCreatorId;
-    return ownItems.where((item) => item.id == proposalId).firstOrNull;
+    return ownResult ??
+        Future.value(
+          ownItems.where((item) => item.id == proposalId).firstOrNull,
+        );
   }
 
   @override
@@ -66,6 +72,7 @@ class FakeProposalGateway implements ProposalGateway {
   ) async {
     _throwIfNeeded();
     calls.add('create');
+    if (mutationDelay case final delay?) await delay;
     lastExpectedIdentity = expectedCreatorId;
     lastInput = input;
     ownItems = [ownProposalFixture(id: 'new-draft', input: input), ...ownItems];
@@ -80,6 +87,7 @@ class FakeProposalGateway implements ProposalGateway {
   ) async {
     _throwIfNeeded();
     calls.add('update:$proposalId');
+    if (mutationDelay case final delay?) await delay;
     lastExpectedIdentity = expectedCreatorId;
     lastInput = input;
   }
@@ -91,6 +99,7 @@ class FakeProposalGateway implements ProposalGateway {
   ) async {
     _throwIfNeeded();
     calls.add('publish:$proposalId');
+    if (mutationDelay case final delay?) await delay;
     lastExpectedIdentity = expectedCreatorId;
   }
 
@@ -101,6 +110,7 @@ class FakeProposalGateway implements ProposalGateway {
   ) async {
     _throwIfNeeded();
     calls.add('cancel:$proposalId');
+    if (mutationDelay case final delay?) await delay;
     lastExpectedIdentity = expectedCreatorId;
   }
 

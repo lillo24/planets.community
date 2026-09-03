@@ -6,7 +6,7 @@ This folder owns the Flutter application and its generated Android/iOS platform 
 
 - `lib/main.dart` is the process boundary. It reports startup failures without rendering configuration or exception details.
 - `lib/bootstrap/` orders validated configuration, Supabase initialization, optional monitoring, and application launch.
-- `lib/app/` owns the root `MaterialApp.router`, router, neutral foundation screen, and startup-failure application.
+- `lib/app/` owns the root `MaterialApp.router`, stateful Profile / Browse / Home shell, neutral foundation screen, and startup-failure application. See its [navigation contract](lib/app/README.md).
 - `lib/core/config/` owns the typed compile-time environment contract and its Riverpod provider.
 - `lib/core/backend/` initializes Supabase and exposes its client through an overrideable provider.
 - `lib/core/monitoring/` owns optional, privacy-safe Sentry startup.

@@ -1,5 +1,17 @@
 {
   "@@locale": "en",
+  "navigationProfile": "Profile",
+  "navigationBrowse": "Browse",
+  "navigationHome": "Home",
+  "skillFilterSearch": "Search skills",
+  "skillFilterNoMatches": "No matching skills",
+  "skillFilterClear": "Clear all",
+  "skillFilterApply": "Apply",
+  "skillFilterMore": "+{count} more",
+  "@skillFilterMore": {
+    "description": "Count of additional selected skills beyond the visible badges.",
+    "placeholders": { "count": { "type": "int" } }
+  },
   "appTitle": "PLANETS",
   "@appTitle": {
     "description": "Application title."

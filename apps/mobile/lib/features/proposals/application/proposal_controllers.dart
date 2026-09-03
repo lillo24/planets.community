@@ -147,7 +147,19 @@ class OwnProposalsController extends Notifier<OwnProposalsState> {
   var _revision = 0;
 
   @override
-  OwnProposalsState build() => const OwnProposalsState();
+  OwnProposalsState build() {
+    ref.listen(authSessionProvider.select((session) => session.identity?.id), (
+      _,
+      _,
+    ) {
+      _revision++;
+      state = const OwnProposalsState();
+    });
+    ref.onDispose(() => _revision++);
+    return const OwnProposalsState();
+  }
+
+  bool _isCurrent(int revision) => ref.mounted && revision == _revision;
 
   Future<void> load(String expectedCreatorId) async {
     final revision = ++_revision;
@@ -163,7 +175,7 @@ class OwnProposalsController extends Notifier<OwnProposalsState> {
       final items = await ref
           .read(proposalGatewayProvider)
           .listOwnProposals(expectedCreatorId);
-      if (revision == _revision) {
+      if (_isCurrent(revision)) {
         state = OwnProposalsState(
           phase: ProposalLoadPhase.ready,
           expectedCreatorId: expectedCreatorId,
@@ -171,7 +183,7 @@ class OwnProposalsController extends Notifier<OwnProposalsState> {
         );
       }
     } catch (error) {
-      if (revision == _revision) {
+      if (_isCurrent(revision)) {
         state = OwnProposalsState(
           phase: ProposalLoadPhase.failure,
           expectedCreatorId: expectedCreatorId,
@@ -186,6 +198,7 @@ class OwnProposalsController extends Notifier<OwnProposalsState> {
     if (state.isBusy) {
       return false;
     }
+    final revision = ++_revision;
     state = OwnProposalsState(
       phase: ProposalLoadPhase.loading,
       expectedCreatorId: expectedCreatorId,
@@ -196,9 +209,11 @@ class OwnProposalsController extends Notifier<OwnProposalsState> {
       await ref
           .read(proposalGatewayProvider)
           .publishProposal(expectedCreatorId, proposalId);
+      if (!_isCurrent(revision)) return false;
       final items = await ref
           .read(proposalGatewayProvider)
           .listOwnProposals(expectedCreatorId);
+      if (!_isCurrent(revision)) return false;
       state = OwnProposalsState(
         phase: ProposalLoadPhase.ready,
         expectedCreatorId: expectedCreatorId,
@@ -206,6 +221,7 @@ class OwnProposalsController extends Notifier<OwnProposalsState> {
       );
       return true;
     } catch (error) {
+      if (!_isCurrent(revision)) return false;
       state = OwnProposalsState(
         phase: ProposalLoadPhase.failure,
         expectedCreatorId: expectedCreatorId,
@@ -220,6 +236,7 @@ class OwnProposalsController extends Notifier<OwnProposalsState> {
     if (state.isBusy) {
       return false;
     }
+    final revision = ++_revision;
     state = OwnProposalsState(
       phase: ProposalLoadPhase.loading,
       expectedCreatorId: expectedCreatorId,
@@ -230,9 +247,11 @@ class OwnProposalsController extends Notifier<OwnProposalsState> {
       await ref
           .read(proposalGatewayProvider)
           .cancelProposal(expectedCreatorId, proposalId);
+      if (!_isCurrent(revision)) return false;
       final items = await ref
           .read(proposalGatewayProvider)
           .listOwnProposals(expectedCreatorId);
+      if (!_isCurrent(revision)) return false;
       state = OwnProposalsState(
         phase: ProposalLoadPhase.ready,
         expectedCreatorId: expectedCreatorId,
@@ -240,6 +259,7 @@ class OwnProposalsController extends Notifier<OwnProposalsState> {
       );
       return true;
     } catch (error) {
+      if (!_isCurrent(revision)) return false;
       state = OwnProposalsState(
         phase: ProposalLoadPhase.failure,
         expectedCreatorId: expectedCreatorId,
@@ -275,7 +295,19 @@ class ProposalEditorController extends Notifier<ProposalEditorState> {
   var _revision = 0;
 
   @override
-  ProposalEditorState build() => const ProposalEditorState();
+  ProposalEditorState build() {
+    ref.listen(authSessionProvider.select((session) => session.identity?.id), (
+      _,
+      _,
+    ) {
+      _revision++;
+      state = const ProposalEditorState();
+    });
+    ref.onDispose(() => _revision++);
+    return const ProposalEditorState();
+  }
+
+  bool _isCurrent(int revision) => ref.mounted && revision == _revision;
 
   Future<void> load(String expectedCreatorId, String? proposalId) async {
     final revision = ++_revision;
@@ -300,7 +332,7 @@ class ProposalEditorController extends Notifier<ProposalEditorState> {
               .read(proposalGatewayProvider)
               .getOwnProposal(expectedCreatorId, proposalId),
       ]);
-      if (revision != _revision) {
+      if (!_isCurrent(revision)) {
         return;
       }
       final proposal = results[1] as OwnProposal?;
@@ -316,7 +348,7 @@ class ProposalEditorController extends Notifier<ProposalEditorState> {
         ),
       );
     } catch (error) {
-      if (revision == _revision) {
+      if (_isCurrent(revision)) {
         state = ProposalEditorState(
           phase: ProposalEditorPhase.failure,
           expectedCreatorId: expectedCreatorId,
@@ -369,6 +401,7 @@ class ProposalEditorController extends Notifier<ProposalEditorState> {
     ProposalInput input, {
     required bool publish,
   }) async {
+    final revision = ++_revision;
     final existingProposal = state.proposal;
     state = ProposalEditorState(
       phase: publish
@@ -386,16 +419,20 @@ class ProposalEditorController extends Notifier<ProposalEditorState> {
           : existingProposal.isEditableAt(ref.read(proposalClockProvider)())
           ? existingProposal.id
           : throw const ProposalInvalidStateException();
+      if (!_isCurrent(revision)) return null;
       if (existingProposal != null) {
         await gateway.updateOwnProposal(expectedCreatorId, proposalId, input);
+        if (!_isCurrent(revision)) return null;
       }
       if (publish) {
         await gateway.publishProposal(expectedCreatorId, proposalId);
+        if (!_isCurrent(revision)) return null;
       }
       final proposal = await gateway.getOwnProposal(
         expectedCreatorId,
         proposalId,
       );
+      if (!_isCurrent(revision)) return null;
       if (proposal == null) {
         throw const ProposalNotFoundException();
       }
@@ -407,6 +444,7 @@ class ProposalEditorController extends Notifier<ProposalEditorState> {
       );
       return proposalId;
     } catch (error) {
+      if (!_isCurrent(revision)) return null;
       state = ProposalEditorState(
         phase: ProposalEditorPhase.failure,
         expectedCreatorId: expectedCreatorId,
@@ -423,6 +461,7 @@ class ProposalEditorController extends Notifier<ProposalEditorState> {
     if (state.isBusy || proposal == null) {
       return false;
     }
+    final revision = ++_revision;
     state = ProposalEditorState(
       phase: ProposalEditorPhase.cancelling,
       expectedCreatorId: expectedCreatorId,
@@ -434,9 +473,11 @@ class ProposalEditorController extends Notifier<ProposalEditorState> {
       await ref
           .read(proposalGatewayProvider)
           .cancelProposal(expectedCreatorId, proposal.id);
+      if (!_isCurrent(revision)) return false;
       final updated = await ref
           .read(proposalGatewayProvider)
           .getOwnProposal(expectedCreatorId, proposal.id);
+      if (!_isCurrent(revision)) return false;
       state = ProposalEditorState(
         phase: ProposalEditorPhase.ready,
         expectedCreatorId: expectedCreatorId,
@@ -445,6 +486,7 @@ class ProposalEditorController extends Notifier<ProposalEditorState> {
       );
       return true;
     } catch (error) {
+      if (!_isCurrent(revision)) return false;
       state = ProposalEditorState(
         phase: ProposalEditorPhase.failure,
         expectedCreatorId: expectedCreatorId,

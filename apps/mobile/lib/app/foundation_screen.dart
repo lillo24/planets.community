@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../core/theme/app_tokens.dart';
 import '../features/auth/presentation/auth_status.dart';
 import '../l10n/generated/app_localizations.dart';
+import 'router/app_navigation_shell.dart';
 
 class FoundationScreen extends StatelessWidget {
   const FoundationScreen({super.key});
@@ -43,7 +44,9 @@ class FoundationScreen extends StatelessWidget {
                   const SizedBox(height: AppSpacing.large),
                   FilledButton.icon(
                     key: const Key('browse-proposals-button'),
-                    onPressed: () => context.go('/proposals'),
+                    onPressed: () =>
+                        StatefulNavigationShell.of(context)
+                            .goBranch(AppBranch.browse.index),
                     icon: const Icon(Icons.explore_outlined),
                     label: Text(l10n.proposalsBrowseAction),
                   ),

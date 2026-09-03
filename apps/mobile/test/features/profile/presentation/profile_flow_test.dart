@@ -29,6 +29,10 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Art & Creativity'), findsOneWidget);
+    expect(
+      find.byKey(const Key('profile-save-button')).hitTestable(),
+      findsOneWidget,
+    );
     expect(find.text('Music'), findsOneWidget);
     await tester.enterText(
       find.byKey(const Key('profile-display-name-field')),
@@ -112,6 +116,10 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byKey(const Key('profile-safe-error')), findsOneWidget);
+    expect(
+      find.byKey(const Key('profile-safe-error')).hitTestable(),
+      findsOneWidget,
+    );
     expect(find.textContaining(rawFailure), findsNothing);
     expect(find.byKey(const Key('profile-save-button')), findsOneWidget);
   });
