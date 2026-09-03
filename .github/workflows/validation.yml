@@ -95,16 +95,6 @@ jobs:
       - name: Lint PLANETS schemas
         run: npm run db:lint
 
-      - name: Regenerate public database types for review
-        run: npm run db:types
-
-      - name: Upload regenerated database types for review
-        uses: actions/upload-artifact@v6.0.0
-        with:
-          name: database-types-review-${{ github.run_id }}
-          path: apps/web/src/types/database.generated.ts
-          retention-days: 1
-
       - name: Run database security tests
         run: npm run db:test
 
@@ -128,13 +118,6 @@ jobs:
 
       - name: Regenerate public database types
         run: npm run db:types
-
-      - name: Upload regenerated database types
-        uses: actions/upload-artifact@v6.0.0
-        with:
-          name: database-types-${{ github.run_id }}
-          path: apps/web/src/types/database.generated.ts
-          retention-days: 1
 
       - name: Check generated database type drift
         run: git diff --exit-code -- apps/web/src/types/database.generated.ts

@@ -92,6 +92,145 @@ export type Database = {
         }
         Relationships: []
       }
+      proposal_meeting_details: {
+        Row: {
+          exact_location: unknown
+          exact_location_visibility: string
+          exact_meeting_text: string | null
+          proposal_id: string
+          updated_at: string
+        }
+        Insert: {
+          exact_location?: unknown
+          exact_location_visibility?: string
+          exact_meeting_text?: string | null
+          proposal_id: string
+          updated_at?: string
+        }
+        Update: {
+          exact_location?: unknown
+          exact_location_visibility?: string
+          exact_meeting_text?: string | null
+          proposal_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "proposal_meeting_details_proposal_id_fkey"
+            columns: ["proposal_id"]
+            isOneToOne: true
+            referencedRelation: "proposals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      proposal_skills: {
+        Row: {
+          created_at: string
+          importance: string
+          proposal_id: string
+          skill_id: string
+        }
+        Insert: {
+          created_at?: string
+          importance: string
+          proposal_id: string
+          skill_id: string
+        }
+        Update: {
+          created_at?: string
+          importance?: string
+          proposal_id?: string
+          skill_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "proposal_skills_proposal_id_fkey"
+            columns: ["proposal_id"]
+            isOneToOne: false
+            referencedRelation: "proposals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "proposal_skills_skill_id_fkey"
+            columns: ["skill_id"]
+            isOneToOne: false
+            referencedRelation: "skills"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      proposals: {
+        Row: {
+          administrative_area: string | null
+          approximate_location: unknown
+          cancelled_at: string | null
+          country_code: string | null
+          created_at: string
+          creator_profile_id: string
+          description: string | null
+          ends_at: string | null
+          event_timezone: string | null
+          id: string
+          lifecycle_state: string
+          locality: string | null
+          public_location_label: string | null
+          published_at: string | null
+          starts_at: string | null
+          summary: string | null
+          title: string | null
+          updated_at: string
+        }
+        Insert: {
+          administrative_area?: string | null
+          approximate_location?: unknown
+          cancelled_at?: string | null
+          country_code?: string | null
+          created_at?: string
+          creator_profile_id: string
+          description?: string | null
+          ends_at?: string | null
+          event_timezone?: string | null
+          id?: string
+          lifecycle_state?: string
+          locality?: string | null
+          public_location_label?: string | null
+          published_at?: string | null
+          starts_at?: string | null
+          summary?: string | null
+          title?: string | null
+          updated_at?: string
+        }
+        Update: {
+          administrative_area?: string | null
+          approximate_location?: unknown
+          cancelled_at?: string | null
+          country_code?: string | null
+          created_at?: string
+          creator_profile_id?: string
+          description?: string | null
+          ends_at?: string | null
+          event_timezone?: string | null
+          id?: string
+          lifecycle_state?: string
+          locality?: string | null
+          public_location_label?: string | null
+          published_at?: string | null
+          starts_at?: string | null
+          summary?: string | null
+          title?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "proposals_creator_profile_id_fkey"
+            columns: ["creator_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       skill_categories: {
         Row: {
           id: string
@@ -150,6 +289,55 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      cancel_proposal: {
+        Args: { p_expected_creator_profile_id: string; p_proposal_id: string }
+        Returns: string
+      }
+      create_proposal_draft: {
+        Args: {
+          p_administrative_area: string
+          p_country_code: string
+          p_description: string
+          p_ends_at: string
+          p_event_timezone: string
+          p_exact_location_visibility: string
+          p_exact_meeting_text: string
+          p_expected_creator_profile_id: string
+          p_locality: string
+          p_public_location_label: string
+          p_skill_ids: string[]
+          p_skill_importances: string[]
+          p_starts_at: string
+          p_summary: string
+          p_title: string
+        }
+        Returns: string
+      }
+      get_own_proposal: {
+        Args: { p_expected_creator_profile_id: string; p_proposal_id: string }
+        Returns: {
+          administrative_area: string
+          cancelled_at: string
+          country_code: string
+          created_at: string
+          derived_status: string
+          description: string
+          ends_at: string
+          event_timezone: string
+          exact_location_visibility: string
+          exact_meeting_text: string
+          lifecycle_state: string
+          locality: string
+          proposal_id: string
+          public_location_label: string
+          published_at: string
+          skills: Json
+          starts_at: string
+          summary: string
+          title: string
+          updated_at: string
+        }[]
+      }
       get_public_profile: {
         Args: { p_profile_id: string }
         Returns: {
@@ -158,6 +346,80 @@ export type Database = {
           profile_id: string
           skills: Json
         }[]
+      }
+      get_public_proposal: {
+        Args: { p_proposal_id: string }
+        Returns: {
+          administrative_area: string
+          country_code: string
+          creator_display_name: string
+          creator_profile_id: string
+          derived_status: string
+          description: string
+          ends_at: string
+          event_timezone: string
+          exact_location_restricted: boolean
+          exact_meeting_text: string
+          locality: string
+          proposal_id: string
+          public_location_label: string
+          skills: Json
+          starts_at: string
+          summary: string
+          title: string
+        }[]
+      }
+      list_own_proposals: {
+        Args: { p_expected_creator_profile_id: string }
+        Returns: {
+          administrative_area: string
+          cancelled_at: string
+          country_code: string
+          created_at: string
+          derived_status: string
+          description: string
+          ends_at: string
+          event_timezone: string
+          exact_location_visibility: string
+          exact_meeting_text: string
+          lifecycle_state: string
+          locality: string
+          proposal_id: string
+          public_location_label: string
+          published_at: string
+          skills: Json
+          starts_at: string
+          summary: string
+          title: string
+          updated_at: string
+        }[]
+      }
+      list_public_proposals: {
+        Args: {
+          p_cursor_id?: string
+          p_cursor_starts_at?: string
+          p_limit?: number
+          p_locality?: string
+          p_skill_ids?: string[]
+        }
+        Returns: {
+          administrative_area: string
+          country_code: string
+          derived_status: string
+          ends_at: string
+          event_timezone: string
+          locality: string
+          proposal_id: string
+          public_location_label: string
+          skills: Json
+          starts_at: string
+          summary: string
+          title: string
+        }[]
+      }
+      publish_proposal: {
+        Args: { p_expected_creator_profile_id: string; p_proposal_id: string }
+        Returns: string
       }
       update_own_profile: {
         Args: {
@@ -170,6 +432,27 @@ export type Database = {
           p_skills_audience: string
         }
         Returns: undefined
+      }
+      update_own_proposal: {
+        Args: {
+          p_administrative_area: string
+          p_country_code: string
+          p_description: string
+          p_ends_at: string
+          p_event_timezone: string
+          p_exact_location_visibility: string
+          p_exact_meeting_text: string
+          p_expected_creator_profile_id: string
+          p_locality: string
+          p_proposal_id: string
+          p_public_location_label: string
+          p_skill_ids: string[]
+          p_skill_importances: string[]
+          p_starts_at: string
+          p_summary: string
+          p_title: string
+        }
+        Returns: string
       }
     }
     Enums: {
