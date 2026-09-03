@@ -69,21 +69,29 @@ class FakeAuthGateway implements AuthGateway {
 }
 
 class FakeProfileAnchorGateway implements ProfileAnchorGateway {
-  bool exists = false;
+  ProfileAnchorReadiness readiness = ProfileAnchorReadiness.missing;
   Object? existsError;
   Object? ensureError;
   int existsCount = 0;
   int ensureCount = 0;
   String? lastUserId;
 
+  bool get exists => readiness != ProfileAnchorReadiness.missing;
+
+  set exists(bool value) {
+    readiness = value
+        ? ProfileAnchorReadiness.complete
+        : ProfileAnchorReadiness.missing;
+  }
+
   @override
-  Future<bool> existsFor(String userId) async {
+  Future<ProfileAnchorReadiness> readinessFor(String userId) async {
     existsCount += 1;
     lastUserId = userId;
     if (existsError case final error?) {
       throw error;
     }
-    return exists;
+    return readiness;
   }
 
   @override
@@ -93,6 +101,8 @@ class FakeProfileAnchorGateway implements ProfileAnchorGateway {
     if (ensureError case final error?) {
       throw error;
     }
-    exists = true;
+    if (readiness == ProfileAnchorReadiness.missing) {
+      readiness = ProfileAnchorReadiness.incomplete;
+    }
   }
 }

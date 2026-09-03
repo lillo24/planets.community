@@ -46,18 +46,24 @@ class AuthSessionController extends Notifier<AuthSessionState> {
 
     state = AuthSessionState.checkingProfile(identity);
     try {
-      final exists = await ref
+      final readiness = await ref
           .read(profileAnchorGatewayProvider)
-          .existsFor(identity.id);
+          .readinessFor(identity.id);
       if (revision != _revision) {
         return;
       }
-      state = exists
+      state = readiness == ProfileAnchorReadiness.complete
           ? AuthSessionState.ready(identity)
-          : AuthSessionState.profileSetupRequired(identity);
+          : AuthSessionState.profileSetupRequired(
+              identity,
+              hasProfileAnchor: readiness == ProfileAnchorReadiness.incomplete,
+            );
     } catch (_) {
       if (revision == _revision) {
-        state = AuthSessionState.profileSetupRequired(identity);
+        state = AuthSessionState.profileSetupRequired(
+          identity,
+          hasProfileAnchor: false,
+        );
       }
     }
   }
@@ -72,9 +78,15 @@ class AuthSessionController extends Notifier<AuthSessionState> {
     state = AuthSessionState.ready(identity);
   }
 
-  void markProfileSetupRequired(AuthIdentity identity) {
+  void markProfileSetupRequired(
+    AuthIdentity identity, {
+    required bool hasProfileAnchor,
+  }) {
     _revision += 1;
-    state = AuthSessionState.profileSetupRequired(identity);
+    state = AuthSessionState.profileSetupRequired(
+      identity,
+      hasProfileAnchor: hasProfileAnchor,
+    );
   }
 
   void markSignedOut() {

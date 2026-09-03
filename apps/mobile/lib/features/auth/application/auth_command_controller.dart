@@ -124,10 +124,24 @@ class AuthCommandController extends Notifier<AuthCommandState> {
       );
       try {
         await ref.read(profileAnchorGatewayProvider).ensureFor(identity.id);
+        final readiness = await ref
+            .read(profileAnchorGatewayProvider)
+            .readinessFor(identity.id);
+        if (readiness == ProfileAnchorReadiness.complete) {
+          ref.read(authSessionProvider.notifier).markProfileReady(identity);
+        } else {
+          ref
+              .read(authSessionProvider.notifier)
+              .markProfileSetupRequired(
+                identity,
+                hasProfileAnchor:
+                    readiness == ProfileAnchorReadiness.incomplete,
+              );
+        }
       } catch (_) {
         ref
             .read(authSessionProvider.notifier)
-            .markProfileSetupRequired(identity);
+            .markProfileSetupRequired(identity, hasProfileAnchor: false);
         state = AuthCommandState(
           failure: AuthFailureKind.profileSetup,
           resendAvailableAt: state.resendAvailableAt,
@@ -135,7 +149,6 @@ class AuthCommandController extends Notifier<AuthCommandState> {
         return false;
       }
 
-      ref.read(authSessionProvider.notifier).markProfileReady(identity);
       ref.read(pendingEmailOtpProvider.notifier).clear();
       state = const AuthCommandState();
       return true;
@@ -161,12 +174,26 @@ class AuthCommandController extends Notifier<AuthCommandState> {
     state = const AuthCommandState(phase: AuthCommandPhase.completingProfile);
     try {
       await ref.read(profileAnchorGatewayProvider).ensureFor(identity.id);
-      ref.read(authSessionProvider.notifier).markProfileReady(identity);
+      final readiness = await ref
+          .read(profileAnchorGatewayProvider)
+          .readinessFor(identity.id);
+      if (readiness == ProfileAnchorReadiness.complete) {
+        ref.read(authSessionProvider.notifier).markProfileReady(identity);
+      } else {
+        ref
+            .read(authSessionProvider.notifier)
+            .markProfileSetupRequired(
+              identity,
+              hasProfileAnchor: readiness == ProfileAnchorReadiness.incomplete,
+            );
+      }
       ref.read(pendingEmailOtpProvider.notifier).clear();
       state = const AuthCommandState();
       return true;
     } catch (_) {
-      ref.read(authSessionProvider.notifier).markProfileSetupRequired(identity);
+      ref
+          .read(authSessionProvider.notifier)
+          .markProfileSetupRequired(identity, hasProfileAnchor: false);
       state = const AuthCommandState(failure: AuthFailureKind.profileSetup);
       return false;
     }

@@ -109,6 +109,24 @@ async function verifyWebEmailOtpSession() {
       );
     }
 
+    const { error: completionError } = await supabase.rpc(
+      "update_own_profile",
+      {
+        p_expected_profile_id: userId,
+        p_display_name: "Web Auth CI",
+        p_bio: "",
+        p_skill_ids: [],
+        p_display_name_audience: "public",
+        p_bio_audience: "public",
+        p_skills_audience: "public",
+      },
+    );
+    if (completionError) {
+      throw new Error(
+        `Could not complete the web profile anchor (code ${safeCode(completionError.code)}).`,
+      );
+    }
+
     const cookieHeader = [...cookieJar]
       .map(([name, value]) => serializeCookieHeader(name, value))
       .join("; ");

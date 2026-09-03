@@ -173,5 +173,109 @@
   "authSignOutAction": "Sign out",
   "@authSignOutAction": {
     "description": "Action that signs out the current user."
+  },
+  "profileTitle": "Your profile",
+  "@profileTitle": {
+    "description": "Title for the signed-in owner's basic profile."
+  },
+  "profileSetupTitle": "Set up your profile",
+  "@profileSetupTitle": {
+    "description": "Title for first-time basic profile setup."
+  },
+  "profileEditTitle": "Edit your profile",
+  "@profileEditTitle": {
+    "description": "Title for editing a completed profile."
+  },
+  "profileSetupDescription": "Add the name people should see. Your bio and skills are optional, and you control what is public.",
+  "@profileSetupDescription": {
+    "description": "Guidance shown during first-time profile setup."
+  },
+  "profileEditDescription": "Update your basic profile, skills, and public visibility.",
+  "@profileEditDescription": {
+    "description": "Guidance shown when editing a completed profile."
+  },
+  "profileSetupRequired": "You're signed in. Add a display name to complete your profile.",
+  "@profileSetupRequired": {
+    "description": "Public-root status for an authenticated user with a skeletal profile."
+  },
+  "profileSetupAction": "Complete profile",
+  "@profileSetupAction": {
+    "description": "Action that opens first-time profile setup."
+  },
+  "profileViewAction": "View profile",
+  "@profileViewAction": {
+    "description": "Action that opens the signed-in owner's profile."
+  },
+  "profileEditAction": "Edit profile",
+  "@profileEditAction": {
+    "description": "Action that opens the basic profile editor."
+  },
+  "profileDisplayNameLabel": "Display name",
+  "@profileDisplayNameLabel": {
+    "description": "Label for the required public-facing profile name."
+  },
+  "profileDisplayNameError": "Enter 2 to 60 characters after trimming surrounding spaces.",
+  "@profileDisplayNameError": {
+    "description": "Validation message for an invalid display name."
+  },
+  "profileBioLabel": "Bio",
+  "@profileBioLabel": {
+    "description": "Label for the optional profile biography."
+  },
+  "profileBioHint": "Share a little about how you like to contribute.",
+  "@profileBioHint": {
+    "description": "Non-personal hint for the optional biography."
+  },
+  "profileBioError": "Keep your bio to 500 characters or fewer.",
+  "@profileBioError": {
+    "description": "Validation message for an oversized biography."
+  },
+  "profileSkillsTitle": "Skills",
+  "@profileSkillsTitle": {
+    "description": "Heading for controlled profile skill selections."
+  },
+  "profileSkillsDescription": "Choose any capabilities you would enjoy bringing to community projects.",
+  "@profileSkillsDescription": {
+    "description": "Guidance for the categorized starter skill catalog."
+  },
+  "profileVisibilityTitle": "Public profile visibility",
+  "@profileVisibilityTitle": {
+    "description": "Heading for the simple field-level visibility controls."
+  },
+  "profileVisibilityDescription": "Choose whether ordinary public viewers can see each field. You always see your full profile.",
+  "@profileVisibilityDescription": {
+    "description": "Explanation of owner visibility and public/private choices."
+  },
+  "profileAudiencePublic": "Public",
+  "@profileAudiencePublic": {
+    "description": "Label for publicly visible profile data."
+  },
+  "profileAudiencePrivate": "Private",
+  "@profileAudiencePrivate": {
+    "description": "Label for owner-only profile data."
+  },
+  "profileSaveAction": "Save profile",
+  "@profileSaveAction": {
+    "description": "Action that atomically saves profile fields, skills, and visibility."
+  },
+  "profileNoBio": "No bio added yet.",
+  "@profileNoBio": {
+    "description": "Owner-profile message when the optional biography is empty."
+  },
+  "profileNoSkills": "No skills selected yet.",
+  "@profileNoSkills": {
+    "description": "Owner-profile message when no controlled skills are selected."
+  },
+  "profileLoading": "Loading your profile…",
+  "@profileLoading": {
+    "description": "Accessible loading message for owner profile data."
+  },
+  "profileLoadError": "We couldn't load your profile. Check your connection and try again.",
+  "@profileLoadError": {
+    "description": "Safe retryable owner-profile load failure."
+  },
+  "profileSaveError": "We couldn't save your profile. Your previous profile is unchanged; try again.",
+  "@profileSaveError": {
+    "description": "Safe retryable atomic profile-save failure."
   }
 }

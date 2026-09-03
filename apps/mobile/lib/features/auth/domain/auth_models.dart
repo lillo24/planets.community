@@ -19,8 +19,14 @@ class AuthSnapshot {
   final bool isExpired;
 }
 
+enum ProfileAnchorReadiness { missing, incomplete, complete }
+
 class AuthSessionState {
-  const AuthSessionState._({required this.phase, this.identity});
+  const AuthSessionState._({
+    required this.phase,
+    this.identity,
+    this.hasProfileAnchor = false,
+  });
 
   const AuthSessionState.restoring()
     : this._(phase: AuthSessionPhase.restoring);
@@ -34,11 +40,18 @@ class AuthSessionState {
   const AuthSessionState.ready(AuthIdentity identity)
     : this._(phase: AuthSessionPhase.ready, identity: identity);
 
-  const AuthSessionState.profileSetupRequired(AuthIdentity identity)
-    : this._(phase: AuthSessionPhase.profileSetupRequired, identity: identity);
+  const AuthSessionState.profileSetupRequired(
+    AuthIdentity identity, {
+    required bool hasProfileAnchor,
+  }) : this._(
+         phase: AuthSessionPhase.profileSetupRequired,
+         identity: identity,
+         hasProfileAnchor: hasProfileAnchor,
+       );
 
   final AuthSessionPhase phase;
   final AuthIdentity? identity;
+  final bool hasProfileAnchor;
 
   bool get isAuthenticated => switch (phase) {
     AuthSessionPhase.checkingProfile ||

@@ -9,7 +9,7 @@ type ClaimsResult = Readonly<{
 }>;
 
 type ProfileResult = Readonly<{
-  data: Readonly<{ id: string }> | null;
+  data: Readonly<{ display_name: string | null; id: string }> | null;
   error: unknown;
 }>;
 
@@ -18,7 +18,7 @@ export type CurrentAuthClient = Readonly<{
     getClaims(): Promise<ClaimsResult>;
   }>;
   from(table: "profiles"): {
-    select(columns: "id"): {
+    select(columns: "id, display_name"): {
       eq(
         column: "id",
         value: string,
@@ -33,8 +33,13 @@ export type CurrentAuthClientFactory = () => Promise<CurrentAuthClient>;
 
 const signedOutState = Object.freeze({ status: "signedOut" } as const);
 const readyState = Object.freeze({ status: "ready" } as const);
-const profileSetupRequiredState = Object.freeze({
+const missingProfileState = Object.freeze({
   status: "profileSetupRequired",
+  reason: "missing",
+} as const);
+const incompleteProfileState = Object.freeze({
+  status: "profileSetupRequired",
+  reason: "incomplete",
 } as const);
 
 export async function readCurrentAuth(
@@ -51,13 +56,14 @@ export async function readCurrentAuth(
 
   const { data: profile, error: profileError } = await client
     .from("profiles")
-    .select("id")
+    .select("id, display_name")
     .eq("id", userId)
     .maybeSingle();
 
-  return !profileError && profile?.id === userId
-    ? readyState
-    : profileSetupRequiredState;
+  if (profileError || profile?.id !== userId) {
+    return missingProfileState;
+  }
+  return profile.display_name === null ? incompleteProfileState : readyState;
 }
 
 async function createCurrentAuthClient(): Promise<CurrentAuthClient> {

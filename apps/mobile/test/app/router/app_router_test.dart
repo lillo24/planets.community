@@ -94,6 +94,39 @@ void main() {
     expect(find.text('Mobile foundation ready'), findsOneWidget);
     expect(find.text('This page is not available.'), findsNothing);
   });
+
+  testWidgets('requires Auth for profile editing with a safe return path', (
+    tester,
+  ) async {
+    final auth = FakeAuthGateway();
+    final profile = FakeProfileAnchorGateway();
+    addTearDown(auth.close);
+    const session = AuthSessionState.signedOut();
+    final router = createAppRouter(
+      initialLocation: '/profile/edit',
+      readAuthSession: () => session,
+    );
+    addTearDown(router.dispose);
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          appConfigProvider.overrideWithValue(_testConfig()),
+          appRouterProvider.overrideWithValue(router),
+          authGatewayProvider.overrideWithValue(auth),
+          profileAnchorGatewayProvider.overrideWithValue(profile),
+        ],
+        child: const PlanetsApp(),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('auth-email-field')), findsOneWidget);
+    expect(
+      router.routeInformationProvider.value.uri.queryParameters['returnTo'],
+      '/profile/edit',
+    );
+  });
 }
 
 AppConfig _testConfig() => AppConfig.fromValues(

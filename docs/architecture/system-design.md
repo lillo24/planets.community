@@ -1,7 +1,7 @@
 # System Design and Responsibility Boundaries
 
 **Status:** Initial accepted design  
-**Implementation status:** Repository, database, and application foundations implemented; mobile and web authentication in progress
+**Implementation status:** Repository, database, application, and email-OTP foundations implemented; basic profiles, controlled skills, and field visibility in progress
 
 This document describes how the major parts of PLANETS should interact. Technology choices are recorded separately in [`core-stack.md`](core-stack.md).
 
@@ -54,7 +54,7 @@ The web application defines one public `local`, `staging`, or `production` envir
 
 Ordinary web authentication uses an in-memory two-step numeric email-OTP flow. The browser `@supabase/ssr` client owns the cookie-backed session; Next.js Proxy validates/refreshes and propagates those cookies without authorizing or redirecting; Server Components derive trusted identity through `getClaims()`, not `getSession()`. Optional post-auth returns accept only sanitized internal paths. The application stores no pending email/code outside component memory and implements no magic-link callback, deep link, password, or social provider.
 
-The public `/` route remains informational and reports only minimal signed-out, ready, or profile-setup-required state. The reserved `/admin` route fails closed with a 404 for signed-out and ordinary authenticated users until a later plan defines admin authorization. Optional Sentry instrumentation sends no default PII and disables tracing and replay; missing Sentry configuration is a valid disabled state.
+The public `/` route remains informational and reports only minimal signed-out, ready, or profile-setup-required state. The authenticated `/profile` route server-loads owner-authorized settings and hands interaction to a narrow Client Component. The reserved `/admin` route fails closed with a 404 for signed-out and ordinary authenticated users until a later plan defines admin authorization. Optional Sentry instrumentation sends no default PII and disables tracing and replay; missing Sentry configuration is a valid disabled state.
 
 ### The backend owns authorization and invariants
 
@@ -79,9 +79,13 @@ External systems such as FCM, Resend, Sentry, and PostHog are delivery or observ
 
 ### Identity and transaction-local operational primitives
 
-Supabase Auth's `auth.users` row is the login identity. The matching `public.profiles` row is the stable PLANETS application identity anchor and uses the same UUID; profile fields and visibility rules remain deferred to plan 03C. There is no signup trigger yet, so an Auth identity without a profile anchor is a valid transitional state and the authenticated application flow must create its own anchor explicitly.
+Supabase Auth's `auth.users` row is the login identity. The matching `public.profiles` row is the stable PLANETS application identity anchor and uses the same UUID. It owns a casing-preserving display name, optional bio, and database-maintained timestamps. A profile is complete exactly when its display name is non-null after canonical validation; there is no writable completion flag. There is no signup trigger, so an Auth identity without a profile anchor remains a valid transitional state and the authenticated application flow must create its own anchor explicitly.
 
-After mobile or web OTP verification, the application inserts the signed-in user's minimal profile anchor. It accepts only the expected `profiles_pkey` duplicate as idempotent success and does not use update-dependent upsert behavior. An unrelated failure leaves the Supabase session valid, marks profile setup as incomplete, and exposes an explicit retry before downstream authenticated features may assume profile readiness. Restored web sessions perform the same readiness read and retry contract.
+After mobile or web OTP verification, the application inserts the signed-in user's skeletal profile anchor. It accepts only the expected `profiles_pkey` duplicate as idempotent success and does not use update-dependent upsert behavior. Missing anchors retain a focused retry; skeletal anchors route to profile setup; only a valid display name makes the profile ready. Restored mobile and web sessions perform the same derived readiness check.
+
+`skill_categories` and `skills` contain a deterministic, system-managed starter catalog. `profile_skills` represents owner selections and `profile_field_visibility` stores independent public/private choices for display name, bio, and skills. Defaults are public and owners retain full table access through RLS. Mobile and web both call `update_own_profile`, which binds the form's expected profile ID to the current `auth.uid()` before validating and atomically committing scalar values, deduplicated controlled skills, and all three audience choices.
+
+Anonymous users cannot select from `profiles`. `get_public_profile(profile_id)` is the narrow exact-ID boundary for completed profiles and returns only profile ID plus visibility-sanitized display name, bio, and controlled skill descriptors. It never returns Auth email, timestamps, visibility rows, or owner-only metadata and does not provide a directory. Photo media, location, custom skills, proficiency, and organizer/participant audiences remain deferred.
 
 Raw Auth deletion is deliberately blocked while a profile or actor-linked audit record exists. The eventual account-deletion workflow must define cleanup, anonymization, and lawful retention before removing those restrictive relationships.
 
@@ -138,7 +142,7 @@ The preferred sequence is:
 | Moderation | Reports, blocks, content status, actions, internal notes, appeals if introduced | Users, proposals, messages, media, administrators |
 | Audit/operations | Security-relevant and administrative action history | Actor, target, action, timestamps, metadata |
 
-The first schema plan must refine this model before implementation and record unresolved product choices instead of guessing them.
+Later schema plans must extend this model deliberately and record unresolved product choices instead of guessing them.
 
 ## Public and private data separation
 

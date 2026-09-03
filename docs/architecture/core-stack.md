@@ -2,7 +2,7 @@
 
 **Status:** Accepted baseline for initial implementation  
 **Recorded:** 2026-09-01  
-**Implementation status:** Repository, database, and application foundations implemented; mobile and web authentication in progress
+**Implementation status:** Repository, database, application, and email-OTP foundations implemented; basic profiles, controlled skills, and field visibility in progress
 
 ## Decision summary
 
@@ -105,6 +105,12 @@ Initial authentication should use verified email one-time codes. This avoids pas
 
 The mobile and web flows request and verify a six-digit code in their own UI. Supabase Auth is the only session authority; clients do not persist a parallel login flag, pending email, or OTP. `/` stays public, while optional post-auth return locations must be sanitized internal paths. Web sessions use `@supabase/ssr` cookies, Proxy performs refresh/propagation only, and trusted server identity comes from verified claims rather than `getSession()`. Magic-link/deep-link callbacks, passwords, social providers, and admin authorization remain deferred.
 
+### Basic profiles and controlled skills
+
+Profile completion is derived from a trimmed, valid display name rather than a writable completion flag. A bio and controlled starter skills are optional. Display name, bio, and skills each have an independent `public` or `private` audience, defaulting to public; owners always retain full access. Both clients use one atomic PostgreSQL operation for scalar fields, skills, and visibility. Anonymous profile reads use an exact profile ID and return only the sanitized public projection—never Auth email, owner-only rows, or visibility settings.
+
+The initial seven-category skill catalog is deliberately small and system-managed. Free-text skills, proficiency, search/directory behavior, photo media, location, and role-specific audiences remain later decisions rather than implicit extensions of this model.
+
 ### Proposal-scoped chat only
 
 Chat belongs to a proposal and is enabled when that proposal satisfies its participation rule. General direct messaging, calls, reactions, typing indicators, and end-to-end encryption are outside the initial backbone.
@@ -185,11 +191,11 @@ Participation statistics and future badges should be computed from canonical pro
 
 The technical baseline does not resolve founder-owned policy and design choices, including:
 
-- competence and resource taxonomy;
+- expanded competence/resource taxonomy and proficiency semantics;
 - proposal lifecycle states and cancellation/completion rules;
 - membership threshold semantics;
 - approximate versus exact location visibility;
-- profile and photo visibility;
+- profile photo and media visibility beyond the implemented basic field audiences;
 - notification categories and copy;
 - minimum age and identity expectations;
 - prohibited content, moderation actions, appeals, and response targets;
