@@ -29,3 +29,12 @@ The public client never reads proposal tables directly. Rough location is availa
 Public details are self-contained: they show the localized start/end schedule in the event's named timezone and the same Required/Useful skill labels as cards. The editor stores UTC instants, initializes both pickers from event-zone wall time, and keeps those instants unchanged while timezone text is invalid. Invalid timezone input displays a validation message and cannot open a picker; correcting the timezone refreshes the schedule without silently changing the instants.
 
 The time helpers explicitly support the existing `UTC` default as an alias for `Etc/UTC`, because the bundled timezone dataset excludes that legacy alias.
+
+In debug builds, new-proposal forms expose a **Fill sample data** action with
+synthetic values and a future schedule; the control is removed at compile time
+from release builds and never persists or sends data until the developer chooses
+Save draft or Publish. Save/publish validation shows a fixed field-name summary
+that remains visible while the form scrolls, inline errors for text, timezone,
+country and schedule controls, and brings the first mounted invalid field into
+view. Drafts keep their intentionally optional fields while still validating
+any values that were supplied.

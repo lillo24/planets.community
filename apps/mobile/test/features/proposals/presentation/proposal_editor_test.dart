@@ -33,12 +33,13 @@ void main() {
       await tester.pump(const Duration(seconds: 5));
       await tester.pumpAndSettle();
 
-      // Saving invalid input rebuilds the form from provider state as well.
+      // Saving invalid input reports the exact field and never reaches the gateway.
       await _tap(tester, find.byKey(const Key('proposal-save-draft')));
       expect(
-        find.byKey(const Key('proposal-editor-safe-error')),
+        find.byKey(const Key('proposal-validation-summary')),
         findsOneWidget,
       );
+      expect(find.textContaining('Time zone'), findsWidgets);
       expect(gateway.calls, isNot(contains('update:proposal-1')));
       expect(tester.takeException(), isNull);
 
@@ -67,6 +68,87 @@ void main() {
     await _reveal(tester, find.byKey(const Key('proposal-pick-start')));
     expect(find.textContaining('valid IANA time zone'), findsWidgets);
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('debug sample fills every publish field and can publish', (
+    tester,
+  ) async {
+    final gateway = await _pumpEditor(tester, null);
+    final fill = find.byKey(const Key('proposal-fill-sample'));
+    expect(fill, findsOneWidget);
+    await tester.tap(fill);
+    await tester.pumpAndSettle();
+
+    expect(
+      tester
+          .widget<TextFormField>(find.byKey(const Key('proposal-title')))
+          .controller!
+          .text,
+      'Community garden build day',
+    );
+    await _reveal(tester, find.byKey(const Key('proposal-pick-start')));
+    expect(find.text('Starts: 2026-09-10 00:00'), findsOneWidget);
+    expect(find.text('Ends: 2026-09-10 03:00'), findsOneWidget);
+    await _reveal(tester, find.byKey(const Key('proposal-skill-mural')));
+    expect(
+      tester
+          .widget<DropdownButton<ProposalSkillImportance?>>(
+            find.byKey(const Key('proposal-skill-mural')),
+          )
+          .value,
+      ProposalSkillImportance.required,
+    );
+
+    await _tap(tester, find.byKey(const Key('proposal-publish')));
+    expect(gateway.calls, containsAllInOrder(['create', 'publish:new-draft']));
+    expect(gateway.lastInput?.countryCode, 'IT');
+    expect(gateway.lastInput?.startsAt, DateTime.utc(2026, 9, 10));
+    expect(find.text('Saved proposal'), findsOneWidget);
+  });
+
+  testWidgets('publish names missing fields and shows inline red validation', (
+    tester,
+  ) async {
+    final gateway = await _pumpEditor(tester, null);
+    await _tap(tester, find.byKey(const Key('proposal-publish')));
+
+    final summary = find.byKey(const Key('proposal-validation-summary'));
+    expect(summary, findsOneWidget);
+    expect(
+      find.descendant(of: summary, matching: find.textContaining('Title')),
+      findsOneWidget,
+    );
+    expect(
+      find.descendant(of: summary, matching: find.textContaining('Starts')),
+      findsOneWidget,
+    );
+    expect(
+      find.descendant(
+        of: summary,
+        matching: find.textContaining('Country code'),
+      ),
+      findsOneWidget,
+    );
+    expect(find.text('This field is required to publish.'), findsWidgets);
+    expect(gateway.calls, isNot(contains('create')));
+
+    await _seek(tester, find.byKey(const Key('proposal-start-field')));
+    expect(find.text('Choose a start date and time.'), findsOneWidget);
+    expect(find.text('Choose an end date and time.'), findsOneWidget);
+
+    await _reveal(tester, find.byKey(const Key('proposal-title')), delta: -250);
+    await tester.enterText(find.byKey(const Key('proposal-title')), 'X');
+    await tester.pump();
+    expect(find.text('Enter at least 2 characters.'), findsOneWidget);
+    await tester.enterText(
+      find.byKey(const Key('proposal-title')),
+      'Valid title',
+    );
+    await tester.pump();
+    expect(
+      find.descendant(of: summary, matching: find.textContaining('Title')),
+      findsNothing,
+    );
   });
 
   // The two event zones are 24 hours apart: at least one differs from any
@@ -113,13 +195,13 @@ void main() {
 
 Future<FakeProposalGateway> _pumpEditor(
   WidgetTester tester,
-  ProposalInput input,
+  ProposalInput? input,
 ) async {
   final auth = FakeAuthGateway(
     snapshot: const AuthSnapshot(identity: AuthIdentity(id: 'user-1')),
   );
   final gateway = FakeProposalGateway()
-    ..ownItems = [ownProposalFixture(input: input)];
+    ..ownItems = input == null ? [] : [ownProposalFixture(input: input)];
   final container = ProviderContainer(
     overrides: [
       authGatewayProvider.overrideWithValue(auth),
@@ -138,7 +220,9 @@ Future<FakeProposalGateway> _pumpEditor(
     routes: [
       GoRoute(
         path: '/edit',
-        builder: (_, _) => const ProposalEditorScreen(proposalId: 'proposal-1'),
+        builder: (_, _) => ProposalEditorScreen(
+          proposalId: input == null ? null : 'proposal-1',
+        ),
       ),
       GoRoute(
         path: '/proposals/mine',
@@ -184,5 +268,30 @@ Future<void> _reveal(
 Future<void> _tap(WidgetTester tester, Finder finder) async {
   await _reveal(tester, finder);
   await tester.tap(finder);
+  await tester.pumpAndSettle();
+}
+
+Future<void> _seek(WidgetTester tester, Finder finder) async {
+  final scrollable = tester.state<ScrollableState>(
+    find
+        .descendant(
+          of: find.byType(ListView),
+          matching: find.byType(Scrollable),
+        )
+        .first,
+  );
+  scrollable.position.jumpTo(0);
+  await tester.pump();
+  for (var attempt = 0; finder.evaluate().isEmpty && attempt < 20; attempt++) {
+    scrollable.position.jumpTo(
+      (scrollable.position.pixels + 200).clamp(
+        0,
+        scrollable.position.maxScrollExtent,
+      ),
+    );
+    await tester.pump();
+  }
+  expect(finder, findsOneWidget);
+  await Scrollable.ensureVisible(finder.evaluate().single);
   await tester.pumpAndSettle();
 }

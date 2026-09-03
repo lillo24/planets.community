@@ -339,6 +339,33 @@
   "proposalSkillRequired": "Required",
   "proposalSkillUseful": "Useful",
   "proposalRequiredField": "This field is required to publish.",
+  "proposalFillSampleAction": "Fill sample data",
+  "@proposalFillSampleAction": { "description": "Debug-build-only action that fills the proposal editor with synthetic sample values." },
+  "proposalCheckFields": "Check these fields: {fields}.",
+  "@proposalCheckFields": {
+    "description": "Summary of fields that prevent saving or publishing.",
+    "placeholders": { "fields": { "type": "String" } }
+  },
+  "proposalMinimumLength": "Enter at least {count} characters.",
+  "@proposalMinimumLength": {
+    "description": "Inline validation when supplied text is shorter than its minimum.",
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "proposalMaximumLength": "Enter no more than {count} characters.",
+  "@proposalMaximumLength": {
+    "description": "Inline validation when supplied text exceeds its maximum.",
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "proposalCountryCodeError": "Enter a two-letter country code, for example IT.",
+  "@proposalCountryCodeError": { "description": "Inline validation for the proposal ISO country code." },
+  "proposalStartRequired": "Choose a start date and time.",
+  "@proposalStartRequired": { "description": "Inline validation for a missing proposal start." },
+  "proposalEndRequired": "Choose an end date and time.",
+  "@proposalEndRequired": { "description": "Inline validation for a missing proposal end." },
+  "proposalEndAfterStart": "End must be after start.",
+  "@proposalEndAfterStart": { "description": "Inline validation when a proposal does not end after it starts." },
+  "proposalTimezoneShortLabel": "Time zone",
+  "@proposalTimezoneShortLabel": { "description": "Short timezone field name used in validation summaries." },
   "proposalValidationError": "Complete every required field, use a valid schedule and IANA time zone, then try again.",
   "proposalSaveDraftAction": "Save draft",
   "proposalPublishAction": "Publish",
