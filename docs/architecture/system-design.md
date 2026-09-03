@@ -1,7 +1,7 @@
 # System Design and Responsibility Boundaries
 
 **Status:** Initial accepted design  
-**Implementation status:** Repository, database, application, and email-OTP foundations implemented; basic profiles, controlled skills, and field visibility in progress
+**Implementation status:** Repository, database, authentication, and basic profiles implemented; one-time proposals and public discovery in progress
 
 This document describes how the major parts of PLANETS should interact. Technology choices are recorded separately in [`core-stack.md`](core-stack.md).
 
@@ -89,6 +89,14 @@ Anonymous users cannot select from `profiles`. `get_public_profile(profile_id)` 
 
 Raw Auth deletion is deliberately blocked while a profile or actor-linked audit record exists. The eventual account-deletion workflow must define cleanup, anonymization, and lawful retention before removing those restrictive relationships.
 
+### One-time proposal domain
+
+`proposals` stores a creator-owned one-time activity, content, schedule, IANA event time zone, and rough public location. Its business lifecycle is only `draft`, `published`, or `cancelled`. Upcoming, Happening, Just Finished, and Completed are derived from `starts_at`, `ends_at`, and the current time; Just Finished begins exactly at the end and lasts until, but not including, 24 hours later. Completed proposals remain historical canonical records and may become sources for future explicit Community templates, but are not themselves mutable template records.
+
+`proposal_meeting_details` physically separates exact meeting text/coordinates from the rough public location. Public list payloads never include exact meeting data. Exact-ID public detail returns exact meeting text only for `public` visibility; `participants` visibility returns no protected value and an explicit restricted flag. Plan 05 may add a participant-authorized boundary without weakening this anonymous contract. `proposal_skills` reuses the controlled 03C catalog with `required` or `useful` meaning; no second or free-form taxonomy exists.
+
+Complete-profile creators manage proposals only through expected-identity-bound `create_proposal_draft`, `update_own_proposal`, `publish_proposal`, and `cancel_proposal` operations. Public clients use sanitized `list_public_proposals` and `get_public_proposal`; owners use separate complete owner reads. Published content freezes when an activity starts, cancellation is terminal and permitted only before its end, and publish/cancel record content-free audit/outbox identifiers without delivering notifications.
+
 `private.audit_events` stores append-oriented operational and security history, not product analytics. `private.outbox_events` stores transaction-local handoff records for later asynchronous work; it is not itself a queue or delivery implementation. Both remain outside the Data API with no direct client grants. Future domain operations can write them within the same transaction, while queue consumption and delivery remain owned by plan 06.
 
 ### Clients use shared operations rather than duplicate workflows
@@ -107,7 +115,7 @@ Safe simple reads may query authorized views/tables directly. Multi-step or secu
 - `report_content`
 - `delete_account`
 
-The exact names and signatures will be defined during schema implementation. The key rule is that Flutter and Next.js must call the same canonical transition rather than reproduce its steps independently.
+The remaining names and signatures will be defined during their schema plans. One-time proposal operations are now concrete as described above. The key rule is that Flutter and Next.js must call the same canonical transition rather than reproduce its steps independently.
 
 ### Next.js is a client and delivery surface
 
@@ -127,20 +135,21 @@ The preferred sequence is:
 
 ## Main data domains
 
-| Domain | Responsibility | Important relationships |
-| --- | --- | --- |
-| Authentication identity | Login identity, verified contact method, session | Linked one-to-one with an application profile |
-| Profiles | Display identity, competences, interests, preferences, visibility settings | User, skills, participation history, media |
-| Skills/competences | Controlled taxonomy used by users and proposals | Many-to-many with profiles and proposal requirements |
-| Proposals | Local activity/project, creator, content, location, lifecycle, participation rules | Creator, requirements, join requests, members, chat, media, template source |
-| Participation | Requests, decisions, membership, roles, history | User and proposal; source for stats and authorization |
-| Chat | One proposal-scoped conversation when eligible | Proposal and current authorized members |
-| Messages | Persisted communication within a proposal chat | Chat, sender, moderation/deletion state |
-| Notifications | In-app records, preferences, device tokens, delivery attempts | Recipient, source event, optional proposal/request/message |
-| Templates | Reusable proposal structure derived from approved past/community content | Source proposal, attribution, moderation/publication state |
-| Community statistics | Aggregated views over canonical activity and participation | Proposal type, location, participation, time |
-| Moderation | Reports, blocks, content status, actions, internal notes, appeals if introduced | Users, proposals, messages, media, administrators |
-| Audit/operations | Security-relevant and administrative action history | Actor, target, action, timestamps, metadata |
+| Domain                  | Responsibility                                                                                              | Important relationships                                                              |
+| ----------------------- | ----------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------ |
+| Authentication identity | Login identity, verified contact method, session                                                            | Linked one-to-one with an application profile                                        |
+| Profiles                | Display identity, competences, interests, preferences, visibility settings                                  | User, skills, participation history, media                                           |
+| Skills/competences      | Controlled taxonomy used by users and proposals                                                             | Many-to-many with profiles and proposal requirements                                 |
+| One-time proposals      | Creator-owned content, schedule, rough/exact location separation, stored lifecycle, derived temporal status | Creator, controlled skill requirements, future participation, future template source |
+| Recurring activities    | Future weekly/monthly activity definitions and occurrences                                                  | Deferred to 04B; does not overload one-time proposals                                |
+| Participation           | Requests, decisions, membership, roles, history                                                             | User and proposal; source for stats and authorization                                |
+| Chat                    | One proposal-scoped conversation when eligible                                                              | Proposal and current authorized members                                              |
+| Messages                | Persisted communication within a proposal chat                                                              | Chat, sender, moderation/deletion state                                              |
+| Notifications           | In-app records, preferences, device tokens, delivery attempts                                               | Recipient, source event, optional proposal/request/message                           |
+| Templates               | Reusable proposal structure derived from approved past/community content                                    | Source proposal, attribution, moderation/publication state                           |
+| Community statistics    | Aggregated views over canonical activity and participation                                                  | Proposal type, location, participation, time                                         |
+| Moderation              | Reports, blocks, content status, actions, internal notes, appeals if introduced                             | Users, proposals, messages, media, administrators                                    |
+| Audit/operations        | Security-relevant and administrative action history                                                         | Actor, target, action, timestamps, metadata                                          |
 
 Later schema plans must extend this model deliberately and record unresolved product choices instead of guessing them.
 
@@ -176,13 +185,13 @@ Examples include:
 
 Broad public location and exact operational location must not be represented as one value that the UI merely truncates. They should be distinct fields or records with independent policies.
 
-A typical model may include:
+The one-time proposal model includes:
 
 - country and administrative region;
 - municipality and/or postal code;
-- optional approximate PostGIS point for search;
+- optional approximate PostGIS point for future search;
 - a public display label;
-- optional exact meeting details visible only to authorized participants.
+- exact meeting details in a separate protected record, visible publicly only when explicitly configured; participant access is deferred to plan 05.
 
 Continuous location tracking is not part of the product foundation.
 

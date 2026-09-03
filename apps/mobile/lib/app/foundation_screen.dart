@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 import '../core/theme/app_tokens.dart';
 import '../features/auth/presentation/auth_status.dart';
@@ -40,6 +41,13 @@ class FoundationScreen extends StatelessWidget {
                     style: Theme.of(context).textTheme.bodyLarge,
                   ),
                   const SizedBox(height: AppSpacing.large),
+                  FilledButton.icon(
+                    key: const Key('browse-proposals-button'),
+                    onPressed: () => context.go('/proposals'),
+                    icon: const Icon(Icons.explore_outlined),
+                    label: Text(l10n.proposalsBrowseAction),
+                  ),
+                  const SizedBox(height: AppSpacing.medium),
                   const AuthStatus(),
                 ],
               ),

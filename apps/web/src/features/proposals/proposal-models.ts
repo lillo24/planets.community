@@ -1,0 +1,167 @@
+export type ProposalStatus =
+  "upcoming" | "happening" | "just_finished" | "completed";
+
+export type ProposalSkillImportance = "required" | "useful";
+
+export interface ProposalSkill {
+  id: string;
+  slug: string;
+  label: string;
+  category_id: string;
+  category_slug: string;
+  category_label: string;
+  importance: ProposalSkillImportance;
+}
+
+export interface PublicProposalSummary {
+  proposal_id: string;
+  title: string;
+  summary: string;
+  starts_at: string;
+  ends_at: string;
+  event_timezone: string;
+  country_code: string;
+  locality: string;
+  administrative_area: string | null;
+  public_location_label: string;
+  derived_status: ProposalStatus;
+  skills: ProposalSkill[];
+}
+
+export interface PublicProposalDetail extends PublicProposalSummary {
+  creator_profile_id: string;
+  creator_display_name: string | null;
+  description: string;
+  exact_meeting_text: string | null;
+  exact_location_restricted: boolean;
+}
+
+export interface ProposalCursor {
+  startsAt: string;
+  id: string;
+}
+
+export interface ProposalFilters {
+  locality?: string;
+  skillId?: string;
+  cursor?: ProposalCursor;
+}
+
+export interface SkillOption {
+  id: string;
+  label: string;
+}
+
+const statusValues = new Set<ProposalStatus>([
+  "upcoming",
+  "happening",
+  "just_finished",
+  "completed",
+]);
+
+export function parsePublicProposalSummary(
+  value: unknown,
+): PublicProposalSummary {
+  const row = record(value);
+  return {
+    proposal_id: text(row.proposal_id),
+    title: text(row.title),
+    summary: text(row.summary),
+    starts_at: instant(row.starts_at),
+    ends_at: instant(row.ends_at),
+    event_timezone: text(row.event_timezone),
+    country_code: text(row.country_code),
+    locality: text(row.locality),
+    administrative_area: nullableText(row.administrative_area),
+    public_location_label: text(row.public_location_label),
+    derived_status: status(row.derived_status),
+    skills: array(row.skills).map(parseSkill),
+  };
+}
+
+export function parsePublicProposalDetail(
+  value: unknown,
+): PublicProposalDetail {
+  const row = record(value);
+  return {
+    ...parsePublicProposalSummary(row),
+    creator_profile_id: text(row.creator_profile_id),
+    creator_display_name: nullableText(row.creator_display_name),
+    description: text(row.description),
+    exact_meeting_text: nullableText(row.exact_meeting_text),
+    exact_location_restricted: boolean(row.exact_location_restricted),
+  };
+}
+
+export function encodeProposalCursor(cursor: ProposalCursor): string {
+  return Buffer.from(JSON.stringify(cursor), "utf8").toString("base64url");
+}
+
+export function decodeProposalCursor(
+  value?: string,
+): ProposalCursor | undefined {
+  if (!value || value.length > 512) return undefined;
+  try {
+    const parsed = record(
+      JSON.parse(Buffer.from(value, "base64url").toString("utf8")),
+    );
+    return { startsAt: instant(parsed.startsAt), id: text(parsed.id) };
+  } catch {
+    return undefined;
+  }
+}
+
+function parseSkill(value: unknown): ProposalSkill {
+  const row = record(value);
+  const importance = text(row.importance);
+  if (importance !== "required" && importance !== "useful")
+    throw new TypeError("Invalid skill importance");
+  return {
+    id: text(row.id),
+    slug: text(row.slug),
+    label: text(row.label),
+    category_id: text(row.category_id),
+    category_slug: text(row.category_slug),
+    category_label: text(row.category_label),
+    importance,
+  };
+}
+
+function status(value: unknown): ProposalStatus {
+  const parsed = text(value) as ProposalStatus;
+  if (!statusValues.has(parsed)) throw new TypeError("Invalid proposal status");
+  return parsed;
+}
+
+function record(value: unknown): Record<string, unknown> {
+  if (!value || typeof value !== "object" || Array.isArray(value))
+    throw new TypeError("Expected object");
+  return value as Record<string, unknown>;
+}
+
+function array(value: unknown): unknown[] {
+  if (!Array.isArray(value)) throw new TypeError("Expected array");
+  return value;
+}
+
+function text(value: unknown): string {
+  if (typeof value !== "string" || value.length === 0)
+    throw new TypeError("Expected text");
+  return value;
+}
+
+function nullableText(value: unknown): string | null {
+  return value === null ? null : text(value);
+}
+
+function boolean(value: unknown): boolean {
+  if (typeof value !== "boolean") throw new TypeError("Expected boolean");
+  return value;
+}
+
+function instant(value: unknown): string {
+  const parsed = text(value);
+  if (Number.isNaN(Date.parse(parsed)))
+    throw new TypeError("Expected timestamp");
+  return parsed;
+}

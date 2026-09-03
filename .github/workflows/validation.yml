@@ -104,6 +104,9 @@ jobs:
       - name: Verify profile ownership and mixed visibility
         run: npm run profile:verify:local
 
+      - name: Verify proposal ownership, lifecycle, and public privacy
+        run: npm run proposal:verify:local
+
       - name: Generate local web configuration
         run: npm run web:config:local
 
@@ -115,6 +118,13 @@ jobs:
 
       - name: Regenerate public database types
         run: npm run db:types
+
+      - name: Upload regenerated database types
+        uses: actions/upload-artifact@v6.0.0
+        with:
+          name: database-types-${{ github.run_id }}
+          path: apps/web/src/types/database.generated.ts
+          retention-days: 1
 
       - name: Check generated database type drift
         run: git diff --exit-code -- apps/web/src/types/database.generated.ts

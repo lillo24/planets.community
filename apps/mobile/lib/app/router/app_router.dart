@@ -10,6 +10,9 @@ import '../../features/auth/presentation/request_code_screen.dart';
 import '../../features/auth/presentation/verify_code_screen.dart';
 import '../../features/profile/presentation/profile_edit_screen.dart';
 import '../../features/profile/presentation/profile_screen.dart';
+import '../../features/proposals/presentation/own_proposals_screen.dart';
+import '../../features/proposals/presentation/proposal_editor_screen.dart';
+import '../../features/proposals/presentation/public_proposals_screen.dart';
 import '../../l10n/generated/app_localizations.dart';
 import '../foundation_screen.dart';
 
@@ -35,16 +38,26 @@ GoRouter createAppRouter({
       final isVerifyRoute = path == '/auth/verify';
       final isAuthRoute = isRequestRoute || isVerifyRoute;
       final isProfileRoute = path == '/profile' || path == '/profile/edit';
+      final isProposalManagementRoute =
+          path == '/proposals/mine' ||
+          path == '/proposals/create' ||
+          (path.startsWith('/proposals/') && path.endsWith('/edit'));
 
       if (session.phase == AuthSessionPhase.restoring) {
         return null;
       }
 
-      if (session.phase == AuthSessionPhase.signedOut && isProfileRoute) {
+      if (session.phase == AuthSessionPhase.signedOut &&
+          (isProfileRoute || isProposalManagementRoute)) {
         return Uri(
           path: '/auth',
           queryParameters: {'returnTo': state.uri.toString()},
         ).toString();
+      }
+
+      if (session.phase == AuthSessionPhase.profileSetupRequired &&
+          isProposalManagementRoute) {
+        return '/profile/edit';
       }
 
       if (session.phase == AuthSessionPhase.profileSetupRequired &&
@@ -98,6 +111,28 @@ GoRouter createAppRouter({
       GoRoute(
         path: '/profile/edit',
         builder: (context, state) => const ProfileEditScreen(),
+      ),
+      GoRoute(
+        path: '/proposals',
+        builder: (context, state) => const PublicProposalsScreen(),
+      ),
+      GoRoute(
+        path: '/proposals/mine',
+        builder: (context, state) => const OwnProposalsScreen(),
+      ),
+      GoRoute(
+        path: '/proposals/create',
+        builder: (context, state) => const ProposalEditorScreen(),
+      ),
+      GoRoute(
+        path: '/proposals/:id/edit',
+        builder: (context, state) =>
+            ProposalEditorScreen(proposalId: state.pathParameters['id']),
+      ),
+      GoRoute(
+        path: '/proposals/:id',
+        builder: (context, state) =>
+            ProposalDetailScreen(proposalId: state.pathParameters['id']!),
       ),
     ],
     errorBuilder: (context, state) => const _UnknownRouteScreen(),

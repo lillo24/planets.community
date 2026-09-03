@@ -2,7 +2,7 @@
 
 PLANETS is a community platform for creating, discovering, and joining local collaborative activities and projects.
 
-> **Current status:** the repository, fail-closed database foundation, and Flutter application foundation are implemented. The Next.js public/admin foundation is in progress, and product behavior is intentionally deferred.
+> **Current status:** repository/application foundations, email OTP, and basic profiles are implemented. One-time proposals and public discovery are in progress; participation and recurring activities remain separate future work.
 
 ## Repository
 
