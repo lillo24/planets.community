@@ -338,11 +338,11 @@ select is(
   (
     select count(*)
     from public.list_public_recurring_activities(
+      '2026-03-24 00:00:00+00',
       20,
       null,
       null,
-      ' trento ',
-      '2026-03-24 00:00:00+00'
+      ' trento '
     )
     where recurring_activity_id = current_setting('test.weekly_recurring_id')::uuid
   ),
@@ -353,11 +353,11 @@ select results_eq(
   $$
     select next_starts_at, next_ends_at, event_timezone
     from public.list_public_recurring_activities(
+      '2026-03-24 00:00:00+00',
       20,
       null,
       null,
-      null,
-      '2026-03-24 00:00:00+00'
+      null
     )
     where recurring_activity_id = current_setting('test.weekly_recurring_id')::uuid
   $$,
@@ -376,11 +376,11 @@ select is(
       'Private room' in row_to_json(public_activity)::text
     )
     from public.list_public_recurring_activities(
+      '2026-03-24 00:00:00+00',
       20,
       null,
       null,
-      null,
-      '2026-03-24 00:00:00+00'
+      null
     ) as public_activity
     where recurring_activity_id = current_setting('test.weekly_recurring_id')::uuid
   ),
@@ -571,11 +571,11 @@ select is(
       'Piazza Pubblica' in row_to_json(public_activity)::text
     )
     from public.list_public_recurring_activities(
+      '2026-01-01 00:00:00+00',
       20,
       null,
       null,
-      null,
-      '2026-01-01 00:00:00+00'
+      null
     ) as public_activity
     where recurring_activity_id = current_setting('test.monthly_recurring_id')::uuid
   ),
@@ -587,11 +587,11 @@ select is(
   (
     select count(*)
     from public.list_public_recurring_activities(
+      '2026-01-01 00:00:00+00',
       1,
       null,
       null,
-      null,
-      '2026-01-01 00:00:00+00'
+      null
     )
   ),
   1::bigint,
@@ -600,12 +600,57 @@ select is(
 select throws_ok(
   $$
     select *
+    from public.list_public_recurring_activities(null)
+  $$,
+  '22023',
+  'Recurring activity discovery requires a reference time.',
+  'public recurring discovery requires an explicit reference-time snapshot'
+);
+select results_eq(
+  $$
+    select recurring_activity_id, next_starts_at
     from public.list_public_recurring_activities(
+      '2026-01-01 00:00:00+00',
+      1,
+      null,
+      null,
+      null
+    )
+  $$,
+  $$
+    select
+      current_setting('test.weekly_recurring_id')::uuid,
+      '2026-01-07 18:00:00+00'::timestamptz
+  $$,
+  'page one derives its cursor from the caller-owned reference-time snapshot'
+);
+select results_eq(
+  $$
+    select recurring_activity_id, next_starts_at
+    from public.list_public_recurring_activities(
+      '2026-01-01 00:00:00+00',
+      1,
+      '2026-01-07 18:00:00+00',
+      current_setting('test.weekly_recurring_id')::uuid,
+      null
+    )
+  $$,
+  $$
+    select
+      current_setting('test.monthly_recurring_id')::uuid,
+      '2026-01-12 17:30:00+00'::timestamptz
+  $$,
+  'page two reuses the page-one snapshot so a crossed occurrence boundary cannot duplicate or skip rows'
+);
+select throws_ok(
+  $$
+    select *
+    from public.list_public_recurring_activities(
+      '2026-01-01 00:00:00+00',
       51,
       null,
       null,
-      null,
-      '2026-01-01 00:00:00+00'
+      null
     )
   $$,
   '22023',
@@ -616,11 +661,11 @@ select throws_ok(
   $$
     select *
     from public.list_public_recurring_activities(
+      '2026-01-01 00:00:00+00',
       20,
       '2026-01-12 17:30:00+00',
       null,
-      null,
-      '2026-01-01 00:00:00+00'
+      null
     )
   $$,
   '22023',
@@ -727,6 +772,56 @@ select is(
   'owner detail exposes schedule history needed for safe future editing'
 );
 
+select lives_ok(
+  $$
+    select public.update_own_recurring_activity(
+      'a1000000-0000-4000-8000-000000000001',
+      current_setting('test.weekly_recurring_id')::uuid,
+      'Philosophy Table',
+      'Discuss one philosophical question every week.',
+      'A recurring local discussion with a rotating reading prompt.',
+      'Philosophy',
+      'IT',
+      'Trento',
+      'Povo',
+      'Trento · Povo',
+      'Private room beside the library entrance',
+      'participants',
+      'weekly',
+      4,
+      null,
+      '21:00'::time,
+      90,
+      'Europe/Rome',
+      '2099-01-01'::date
+    )
+  $$,
+  'a pending future schedule can be corrected at its existing effective date'
+);
+select is(
+  (
+    select count(*)
+    from public.recurring_activity_schedules
+    where recurring_activity_id = current_setting('test.weekly_recurring_id')::uuid
+  ),
+  2::bigint,
+  'correcting a pending schedule does not create a redundant history version'
+);
+select results_eq(
+  $$
+    select local_start_time, effective_from, effective_until, superseded_at is not null
+    from public.recurring_activity_schedules
+    where recurring_activity_id = current_setting('test.weekly_recurring_id')::uuid
+    order by effective_from
+  $$,
+  $$
+    values
+      ('19:00'::time, '2026-01-01'::date, '2099-01-01'::date, true),
+      ('21:00'::time, '2099-01-01'::date, null::date, false)
+  $$,
+  'pending correction preserves the already-effective version and updates only the future row'
+);
+
 reset role;
 
 select throws_ok(
@@ -768,25 +863,18 @@ select is(
     where action = 'recurring_activity.schedule_changed'
       and target_id = current_setting('test.weekly_recurring_id')::uuid
   ),
-  1::bigint,
-  'a material schedule change records one audit event'
+  2::bigint,
+  'initial scheduling and pending correction each record one audit event'
 );
 select is(
   (
-    select position(
-      'Private room' in coalesce(
-        (
-          select payload::text
-          from private.outbox_events
-          where event_type = 'recurring_activity.schedule_changed'
-            and payload ->> 'recurring_activity_id' =
-              current_setting('test.weekly_recurring_id')
-        ),
-        ''
-      )
-    )
+    select coalesce(bool_or(payload::text like '%Private room%'), false)
+    from private.outbox_events
+    where event_type = 'recurring_activity.schedule_changed'
+      and payload ->> 'recurring_activity_id' =
+        current_setting('test.weekly_recurring_id')
   ),
-  0,
+  false,
   'schedule-change outbox metadata contains no meeting or description content'
 );
 
@@ -833,11 +921,11 @@ select is(
   (
     select count(*)
     from public.list_public_recurring_activities(
+      '2026-03-24 00:00:00+00',
       20,
       null,
       null,
-      null,
-      '2026-03-24 00:00:00+00'
+      null
     )
     where recurring_activity_id = current_setting('test.weekly_recurring_id')::uuid
   ),
@@ -901,11 +989,11 @@ select is(
   (
     select count(*)
     from public.list_public_recurring_activities(
+      '2026-03-24 00:00:00+00',
       20,
       null,
       null,
-      null,
-      '2026-03-24 00:00:00+00'
+      null
     )
     where recurring_activity_id = current_setting('test.weekly_recurring_id')::uuid
   ),
@@ -982,11 +1070,11 @@ select is(
   (
     select count(*)
     from public.list_public_recurring_activities(
+      '2026-03-24 00:00:00+00',
       20,
       null,
       null,
-      null,
-      '2026-03-24 00:00:00+00'
+      null
     )
     where recurring_activity_id = current_setting('test.weekly_recurring_id')::uuid
   ),

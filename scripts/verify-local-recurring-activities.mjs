@@ -109,6 +109,20 @@ async function verifyRecurringActivities() {
       "Anonymous direct recurring-activity access did not fail closed.",
     );
   }
+  const { error: missingSnapshotError } = await anonymous.rpc(
+    "list_public_recurring_activities",
+    {
+      p_limit: 20,
+      p_cursor_next_starts_at: null,
+      p_cursor_id: null,
+      p_locality: null,
+    },
+  );
+  if (!missingSnapshotError) {
+    throw new Error(
+      "Recurring discovery accepted a request without a reference-time snapshot.",
+    );
+  }
 
   const { data: restrictedList, error: restrictedListError } =
     await anonymous.rpc("list_public_recurring_activities", {
@@ -210,6 +224,43 @@ async function verifyRecurringActivities() {
     );
   }
 
+  const { data: firstPage, error: firstPageError } = await anonymous.rpc(
+    "list_public_recurring_activities",
+    {
+      p_reference_time: referenceTime,
+      p_limit: 1,
+      p_cursor_next_starts_at: null,
+      p_cursor_id: null,
+      p_locality: null,
+    },
+  );
+  const firstCursor = firstPage?.[0];
+  const { data: secondPage, error: secondPageError } = firstCursor
+    ? await anonymous.rpc("list_public_recurring_activities", {
+        p_reference_time: referenceTime,
+        p_limit: 1,
+        p_cursor_next_starts_at: firstCursor.next_starts_at,
+        p_cursor_id: firstCursor.recurring_activity_id,
+        p_locality: null,
+      })
+    : { data: null, error: firstPageError };
+  if (
+    firstPageError ||
+    secondPageError ||
+    firstPage?.length !== 1 ||
+    secondPage?.length !== 1 ||
+    firstPage[0].recurring_activity_id ===
+      secondPage[0].recurring_activity_id ||
+    new Set([
+      firstPage[0].recurring_activity_id,
+      secondPage[0].recurring_activity_id,
+    ]).size !== 2
+  ) {
+    throw new Error(
+      "Recurring discovery did not preserve one reference-time snapshot across cursor pages.",
+    );
+  }
+
   await transition(userA, "pause_recurring_activity", restrictedActivityId);
   await assertListPresence(anonymous, restrictedActivityId, false);
   const { data: pausedDetail, error: pausedDetailError } = await anonymous.rpc(
@@ -263,6 +314,34 @@ async function verifyRecurringActivities() {
       scheduleChangeError,
     );
   }
+  const { error: scheduleCorrectionError } = await userA.client.rpc(
+    "update_own_recurring_activity",
+    recurringActivityParams(userA.id, restrictedActivityId, {
+      title: "Weekly philosophy table",
+      summary: "Discuss one philosophical question every Thursday.",
+      description:
+        "An open-ended local discussion with a rotating reading prompt.",
+      topic: "Philosophy",
+      countryCode: "IT",
+      locality: "Trento",
+      administrativeArea: "Povo",
+      publicLocationLabel: "Trento · Povo",
+      exactMeetingText: restrictedExactText,
+      exactLocationVisibility: "participants",
+      recurrenceType: "weekly",
+      weekday: 4,
+      localStartTime: "21:00:00",
+      durationMinutes: 90,
+      eventTimezone: "Europe/Rome",
+      effectiveFrom: "2031-01-01",
+    }),
+  );
+  if (scheduleCorrectionError) {
+    throw safeDatabaseFailure(
+      "correct the pending recurring schedule version",
+      scheduleCorrectionError,
+    );
+  }
   const { data: ownerDetails, error: ownerDetailError } =
     await userA.client.rpc("get_own_recurring_activity", {
       p_expected_creator_profile_id: userA.id,
@@ -275,10 +354,10 @@ async function verifyRecurringActivities() {
     !Array.isArray(ownerDetails[0].schedule_history) ||
     ownerDetails[0].schedule_history.length !== 2 ||
     ownerDetails[0].schedule_history[0].local_start_time !== "19:00:00" ||
-    ownerDetails[0].schedule_history[1].local_start_time !== "20:00:00"
+    ownerDetails[0].schedule_history[1].local_start_time !== "21:00:00"
   ) {
     throw new Error(
-      "A future schedule change did not preserve owner-visible schedule history.",
+      "A pending schedule correction did not preserve already-effective owner history.",
     );
   }
 
@@ -304,7 +383,7 @@ async function verifyRecurringActivities() {
   }
 
   console.log(
-    "Confirmed two-user recurring ownership, stale-identity rejection, weekly/monthly discovery, exact-location privacy, pause/resume/end lifecycle, and versioned future schedule history.",
+    "Confirmed two-user recurring ownership, stale-identity rejection, snapshot pagination, weekly/monthly discovery, exact-location privacy, pause/resume/end lifecycle, and correctable pending schedule history.",
   );
 }
 

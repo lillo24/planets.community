@@ -282,8 +282,17 @@ select ok(
   'the recurring terminal end transition exists'
 );
 select ok(
-  to_regprocedure('public.list_public_recurring_activities(integer,timestamptz,uuid,text,timestamptz)') is not null,
+  to_regprocedure('public.list_public_recurring_activities(timestamptz,integer,timestamptz,uuid,text)') is not null,
   'the sanitized public recurring list exists'
+);
+select results_eq(
+  $$
+    select proargnames[1], pronargdefaults::integer
+    from pg_proc
+    where oid = 'public.list_public_recurring_activities(timestamptz,integer,timestamptz,uuid,text)'::regprocedure
+  $$,
+  $$values ('p_reference_time'::text, 4::integer)$$,
+  'the public recurring list requires one snapshot while retaining optional page and filter arguments'
 );
 select ok(
   to_regprocedure('public.list_public_recurring_activity_occurrences(uuid,timestamptz,timestamptz,integer)') is not null,
@@ -313,7 +322,7 @@ select is(
       'public.pause_recurring_activity(uuid,uuid)'::regprocedure,
       'public.resume_recurring_activity(uuid,uuid)'::regprocedure,
       'public.end_recurring_activity(uuid,uuid)'::regprocedure,
-      'public.list_public_recurring_activities(integer,timestamptz,uuid,text,timestamptz)'::regprocedure,
+      'public.list_public_recurring_activities(timestamptz,integer,timestamptz,uuid,text)'::regprocedure,
       'public.list_public_recurring_activity_occurrences(uuid,timestamptz,timestamptz,integer)'::regprocedure,
       'public.get_public_recurring_activity(uuid,integer,timestamptz)'::regprocedure,
       'public.list_own_recurring_activities(uuid)'::regprocedure,
@@ -334,7 +343,7 @@ select is(
       'public.pause_recurring_activity(uuid,uuid)'::regprocedure,
       'public.resume_recurring_activity(uuid,uuid)'::regprocedure,
       'public.end_recurring_activity(uuid,uuid)'::regprocedure,
-      'public.list_public_recurring_activities(integer,timestamptz,uuid,text,timestamptz)'::regprocedure,
+      'public.list_public_recurring_activities(timestamptz,integer,timestamptz,uuid,text)'::regprocedure,
       'public.list_public_recurring_activity_occurrences(uuid,timestamptz,timestamptz,integer)'::regprocedure,
       'public.get_public_recurring_activity(uuid,integer,timestamptz)'::regprocedure,
       'public.list_own_recurring_activities(uuid)'::regprocedure,
@@ -348,7 +357,7 @@ select is(
 select is(
   has_function_privilege(
     'anon',
-    'public.list_public_recurring_activities(integer,timestamptz,uuid,text,timestamptz)',
+    'public.list_public_recurring_activities(timestamptz,integer,timestamptz,uuid,text)',
     'EXECUTE'
   ),
   true,

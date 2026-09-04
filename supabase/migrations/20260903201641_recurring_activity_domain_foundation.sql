@@ -610,18 +610,65 @@ begin
       message = 'The recurring activity has no current schedule to supersede.';
   end if;
 
+  current_local_date := (
+    statement_timestamp() at time zone current_schedule.event_timezone
+  )::date;
+
   if current_schedule.recurrence_type = normalized_recurrence_type
     and current_schedule.weekday is not distinct from p_weekday
     and current_schedule.day_of_month is not distinct from p_day_of_month
     and current_schedule.local_start_time = p_local_start_time
     and current_schedule.duration_minutes = p_duration_minutes
-    and current_schedule.event_timezone = normalized_timezone then
+    and current_schedule.event_timezone = normalized_timezone
+    and current_schedule.effective_from = p_effective_from then
     return current_schedule.id;
   end if;
 
-  current_local_date := (
-    statement_timestamp() at time zone current_schedule.event_timezone
-  )::date;
+  if current_schedule.effective_from > current_local_date
+    and current_schedule.effective_from = p_effective_from then
+    update public.recurring_activity_schedules
+    set
+      recurrence_type = normalized_recurrence_type,
+      weekday = p_weekday,
+      day_of_month = p_day_of_month,
+      local_start_time = p_local_start_time,
+      duration_minutes = p_duration_minutes,
+      event_timezone = normalized_timezone
+    where id = current_schedule.id;
+
+    insert into private.audit_events (
+      action,
+      actor_user_id,
+      target_type,
+      target_id,
+      metadata
+    )
+    values (
+      'recurring_activity.schedule_changed',
+      (select auth.uid()),
+      'recurring_activity',
+      p_recurring_activity_id,
+      jsonb_build_object(
+        'schedule_id', current_schedule.id,
+        'effective_from', p_effective_from,
+        'pending_version_corrected', true
+      )
+    );
+
+    insert into private.outbox_events (event_type, payload)
+    values (
+      'recurring_activity.schedule_changed',
+      jsonb_build_object(
+        'recurring_activity_id', p_recurring_activity_id,
+        'actor_id', (select auth.uid()),
+        'schedule_id', current_schedule.id,
+        'effective_from', p_effective_from,
+        'pending_version_corrected', true
+      )
+    );
+
+    return current_schedule.id;
+  end if;
 
   if p_effective_from <= current_local_date
     or p_effective_from <= current_schedule.effective_from then
@@ -1397,11 +1444,11 @@ end;
 $$;
 
 create function public.list_public_recurring_activities(
+  p_reference_time timestamptz,
   p_limit integer default 20,
   p_cursor_next_starts_at timestamptz default null,
   p_cursor_id uuid default null,
-  p_locality text default null,
-  p_reference_time timestamptz default statement_timestamp()
+  p_locality text default null
 )
 returns table (
   recurring_activity_id uuid,
@@ -1787,7 +1834,7 @@ comment on function private.derive_recurring_activity_occurrences(uuid, timestam
 comment on function public.create_recurring_activity_draft(uuid, text, text, text, text, text, text, text, text, text, text, text, integer, integer, time, integer, text, date) is
   'Creates a complete-profile owner draft with optional complete weekly/monthly schedule configuration.';
 comment on function public.update_own_recurring_activity(uuid, uuid, text, text, text, text, text, text, text, text, text, text, text, integer, integer, time, integer, text, date) is
-  'Updates expected-owner content and creates a future schedule version when a published or paused schedule changes.';
+  'Updates expected-owner content, creates future schedule versions, and corrects a still-pending version at its existing effective date.';
 comment on function public.publish_recurring_activity(uuid, uuid) is
   'Validates and idempotently publishes an own recurring draft with one minimal audit/outbox event.';
 comment on function public.pause_recurring_activity(uuid, uuid) is
@@ -1796,8 +1843,8 @@ comment on function public.resume_recurring_activity(uuid, uuid) is
   'Idempotently resumes an own paused recurring activity after revalidating its future schedule.';
 comment on function public.end_recurring_activity(uuid, uuid) is
   'Idempotently ends an own published or paused recurring activity while retaining canonical history.';
-comment on function public.list_public_recurring_activities(integer, timestamptz, uuid, text, timestamptz) is
-  'Returns bounded sanitized published Tavoli ordered by derived next occurrence and rough location.';
+comment on function public.list_public_recurring_activities(timestamptz, integer, timestamptz, uuid, text) is
+  'Returns bounded sanitized published Tavoli ordered by derived next occurrence and rough location; callers must reuse one explicit reference-time snapshot across cursor pages.';
 comment on function public.list_public_recurring_activity_occurrences(uuid, timestamptz, timestamptz, integer) is
   'Returns a bounded public occurrence window only for an active published recurring activity.';
 comment on function public.get_public_recurring_activity(uuid, integer, timestamptz) is
@@ -1838,7 +1885,7 @@ revoke all privileges on function public.resume_recurring_activity(uuid, uuid)
   from public, anon, authenticated, service_role;
 revoke all privileges on function public.end_recurring_activity(uuid, uuid)
   from public, anon, authenticated, service_role;
-revoke all privileges on function public.list_public_recurring_activities(integer, timestamptz, uuid, text, timestamptz)
+revoke all privileges on function public.list_public_recurring_activities(timestamptz, integer, timestamptz, uuid, text)
   from public, anon, authenticated, service_role;
 revoke all privileges on function public.list_public_recurring_activity_occurrences(uuid, timestamptz, timestamptz, integer)
   from public, anon, authenticated, service_role;
@@ -1865,7 +1912,7 @@ grant execute on function public.list_own_recurring_activities(uuid)
   to authenticated;
 grant execute on function public.get_own_recurring_activity(uuid, uuid)
   to authenticated;
-grant execute on function public.list_public_recurring_activities(integer, timestamptz, uuid, text, timestamptz)
+grant execute on function public.list_public_recurring_activities(timestamptz, integer, timestamptz, uuid, text)
   to anon, authenticated;
 grant execute on function public.list_public_recurring_activity_occurrences(uuid, timestamptz, timestamptz, integer)
   to anon, authenticated;

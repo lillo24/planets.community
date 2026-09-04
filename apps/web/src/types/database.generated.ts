@@ -693,7 +693,7 @@ export type Database = {
           p_cursor_next_starts_at?: string
           p_limit?: number
           p_locality?: string
-          p_reference_time?: string
+          p_reference_time: string
         }
         Returns: {
           administrative_area: string
