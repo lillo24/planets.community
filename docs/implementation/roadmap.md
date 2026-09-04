@@ -1,7 +1,7 @@
 # Implementation Roadmap
 
 **Status:** Planning baseline  
-**Current implementation:** Plans 00–03 implemented; plan 04A in progress
+**Current implementation:** Plans 00–04A implemented; plan 04B1 in progress
 
 This roadmap divides the first PLANETS build into reviewable Codex tasks. Each numbered item should normally become its own implementation prompt, branch, and pull request.
 
@@ -47,11 +47,14 @@ Do not begin a dependent plan until the prior plan is merged or its branch is ex
 | 03B | Web Email-OTP Authentication                    | Web email OTP and session behavior using the canonical backend                                                           | 03A                    | None expected for this scoped work                                                                                   | Implemented |
 | 03C | Basic Profiles, Skills, and Visibility          | Display-name onboarding, optional bio, controlled starter skills, and per-field public/private visibility                | 03B                    | Initial required fields, starter taxonomy, and basic visibility resolved; advanced profile decisions remain deferred | Implemented |
 | 04  | Activity discovery/domain (parent)              | One-time proposals plus separately scoped recurring activities                                                           | 03                     | Proposal fields, lifecycle decisions, broad location behavior                                                        | In progress |
-| 04A | One-Time Proposals and Discovery                | Draft/create/publish/cancel, public list/detail, requirements, location privacy, and mobile/web discovery                | 03C                    | One-time lifecycle and rough/exact location behavior resolved                                                        | In progress |
-| 04B | Recurring Activities                            | Weekly/monthly activity definitions and recurring occurrences                                                            | 04A                    | Recurrence editing, exception, and occurrence semantics                                                              | Not started |
-| 05  | Participation lifecycle                         | Join requests, review decisions, membership, leave/cancel behavior, thresholds, derived participation stats              | 04A                    | Threshold semantics, roles, removal/withdrawal rules                                                                 | Not started |
+| 04A | One-Time Proposals and Discovery                | Draft/create/publish/cancel, public list/detail, requirements, location privacy, and mobile/web discovery                | 03C                    | One-time lifecycle and rough/exact location behavior resolved                                                        | Implemented |
+| 04B | Tavoli / Recurring Activities (parent)          | Versioned weekly/monthly recurring domain plus later mobile/web experience                                                | 04A                    | Initial recurrence and lifecycle resolved; occurrence exceptions remain deferred                                     | In progress |
+| 04B1 | Tavoli / Recurring Activity Domain Foundation  | Separate recurring schema, schedule history, bounded occurrences, lifecycle, privacy, canonical APIs, and tests          | 04A                    | None expected for the defined weekly/monthly foundation                                                              | In progress |
+| 04B2 | Tavoli Mobile/Web Experience                   | Browse/list/detail/create/edit/manage UI over the canonical 04B1 backend                                                  | 04B1                   | Functional UX review; no recurrence expansion                                                                        | Not started |
+| 04C | Material Resources                              | Explicit requested/donated/loaned material-resource domain and later activity integration                               | 04A                    | Resource types, contribution/ownership semantics, visibility, and lifecycle                                           | Not started |
+| 05  | Participation lifecycle                         | Join requests, review decisions, membership, leave/cancel behavior, non-chat participation rules, derived stats          | 04A                    | Roles, removal/withdrawal rules, and any non-chat participation thresholds                                           | Not started |
 | 06  | Notification backbone                           | In-app notifications, preferences, device registration, outbox/queue, FCM worker, retries and deep links                 | 03–05                  | Notification categories, priority, and copy can remain provisional unless user-facing review is needed               | Not started |
-| 07  | Proposal chat                                   | Eligibility-based chat creation, membership authorization, persisted/realtime text, pagination, push events, meeting URL | 05–06                  | Historical access and moderation behavior after leaving/removal                                                      | Not started |
+| 07  | Proposal chat                                   | Automatic idempotent chat creation, membership authorization, persisted/realtime text, pagination, push, meeting URL     | 05–06                  | Triggering participation event plus access/moderation after leaving or removal                                       | Not started |
 | 08  | Storage and media hardening                     | Purpose-specific buckets, upload restrictions, private/public access, media metadata, cleanup and processing hooks       | 03–07                  | Profile/proposal photo visibility and retention choices                                                              | Not started |
 | 09  | Safety, moderation and admin                    | Reporting, blocking, content states, admin roles, moderation queue/actions, audit trail and minimal custom admin UI      | 04–08                  | Community rules, prohibited content, escalation, suspension, appeals, minimum age                                    | Not started |
 | 10  | Account deletion and privacy operations         | In-app and web deletion paths, cleanup/anonymization jobs, export groundwork, privacy documentation inputs               | 03–09                  | Legal retention and anonymization policy; legal text remains founder/legal work                                      | Not started |
@@ -184,7 +187,7 @@ Parent plan 04 remains in progress while recurring activities are outstanding. P
 
 #### 04A — One-Time Proposals and Discovery
 
-**Status:** In progress in its focused pull request.
+**Status:** Implemented in merged PR #10 (`38341f8e8f2febe09cb5ba05efdf6d448a3d3836`).
 
 Expected scope:
 
@@ -201,18 +204,45 @@ Expected scope:
 - functional Flutter browse/detail/create/edit/my-proposals UI and read-only Next.js discovery;
 - database, repository/controller, widget, and integration tests.
 
-#### 04B — Recurring Activities
+#### 04B — Tavoli / Recurring Activities
 
-**Status:** Not started and not part of 04A.
+**Status:** In progress through separately reviewed 04B1 and 04B2 portions.
 
-Expected future scope:
+##### 04B1 — Tavoli / Recurring Activity Domain Foundation
 
-- weekly/monthly recurrence definitions;
-- materialized or derived activity occurrences;
-- recurrence exceptions and edit semantics;
-- discovery integration without overloading the one-time proposal schema.
+**Status:** In progress in its focused backend/domain pull request.
 
-04B is not a blocker for beginning plan 05 after 04A is merged.
+Expected scope:
+
+- a recurring activity schema physically separate from one-time proposals;
+- `draft`, `published`, `paused`, and terminal `ended` lifecycle;
+- versioned weekly/monthly local-wall-clock schedules;
+- monthly days limited to 1–28 and centrally validated IANA time zones;
+- bounded next/window occurrence derivation with daylight-saving coverage;
+- separate rough public and protected exact meeting location;
+- expected-identity-bound owner mutations, sanitized public APIs, and owner history APIs;
+- pgTAP, real two-user/anonymous integration, generated types, and documentation;
+- no Tavoli mobile or web UI, participation, chat, notification delivery, or material resources.
+
+##### 04B2 — Tavoli Mobile/Web Experience
+
+**Status:** Not started; depends on reviewed and merged 04B1.
+
+Expected scope:
+
+- distinguish one-time Proposals and Tavoli in Browse;
+- mobile Tavoli list, detail, create, edit, pause/resume/end, and management flows;
+- read-only public web Tavoli discovery;
+- client tests against the canonical 04B1 contracts;
+- no free-form recurrence, occurrence exceptions, participation, or chat.
+
+#### 04C — Material Resources
+
+**Status:** Not started and not implemented by 04B1.
+
+PLANETS still needs an explicit domain for material resources that an activity may request, receive as donations, or use on loan. A later scoped plan must define resource types, contributor/owner relationships, handoff/return lifecycle, visibility, and historical behavior before schema or UI is introduced. This gap is recorded so it is not silently collapsed into skills or Tavoli topics.
+
+Neither 04B nor 04C is currently a hard dependency for beginning plan 05 after implemented 04A. A future accepted product decision may revise ordering, but this roadmap does not speculate that material resources must precede participation.
 
 ### 05 — Participation lifecycle
 
@@ -226,7 +256,7 @@ Expected scope:
 - leave, removal, and proposal-state interactions as decided;
 - owner review interface;
 - participant counts and history-derived stats;
-- configurable/default participation threshold;
+- any explicitly selected non-chat participation threshold or activation rule;
 - canonical backend functions for sensitive transitions;
 - outbox events for later notifications;
 - full RLS/state-transition tests.
@@ -254,9 +284,10 @@ Expected scope:
 
 Expected scope:
 
-- exactly one eligible chat per proposal;
-- transactional creation when the chosen threshold condition is reached;
+- exactly one automatically created eligible chat per proposal;
+- transactional idempotent creation at the participation event finalized with plans 05/07, without a fixed three-person gate or manual Create Chat action;
 - member authorization and historical-access behavior;
+- retention of chat/messages when a project ends;
 - persisted text messages and pagination;
 - Supabase Realtime subscription handling;
 - send deduplication/error recovery;
@@ -385,7 +416,7 @@ A plan should pause before implementation when ambiguity can change security, ir
 
 Major gates currently expected:
 
-1. recurring-activity semantics before plan 04B; 04A rough/exact location visibility is resolved;
+1. recurrence expansion/exception semantics before extending beyond the bounded 04B1 weekly/monthly model; 04A rough/exact location visibility is resolved;
 2. participation state semantics before plan 05; one-time proposal lifecycle is resolved in 04A;
 3. chat access after membership changes before plan 07;
 4. moderation/minimum-age policy before plan 09 is complete;
@@ -395,4 +426,4 @@ Major gates currently expected:
 
 ## Immediate next action
 
-Complete review and native mobile QA for **04A — One-Time Proposals and Discovery**, then merge its focused pull request. After 04A is implemented, plan 05 may begin independently of the separately deferred 04B recurring-activity work.
+Complete, validate, and review **04B1 — Tavoli / Recurring Activity Domain Foundation** without merging from the implementation task. After 04B1 merges, 04B2 may build the Tavoli client experience; plan 05 may proceed independently from implemented 04A.

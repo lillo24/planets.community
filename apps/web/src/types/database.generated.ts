@@ -231,6 +231,162 @@ export type Database = {
           },
         ]
       }
+      recurring_activities: {
+        Row: {
+          administrative_area: string | null
+          approximate_location: unknown
+          country_code: string | null
+          created_at: string
+          creator_profile_id: string
+          description: string | null
+          ended_at: string | null
+          id: string
+          lifecycle_state: string
+          locality: string | null
+          paused_at: string | null
+          public_location_label: string | null
+          published_at: string | null
+          resumed_at: string | null
+          summary: string | null
+          title: string | null
+          topic: string | null
+          updated_at: string
+        }
+        Insert: {
+          administrative_area?: string | null
+          approximate_location?: unknown
+          country_code?: string | null
+          created_at?: string
+          creator_profile_id: string
+          description?: string | null
+          ended_at?: string | null
+          id?: string
+          lifecycle_state?: string
+          locality?: string | null
+          paused_at?: string | null
+          public_location_label?: string | null
+          published_at?: string | null
+          resumed_at?: string | null
+          summary?: string | null
+          title?: string | null
+          topic?: string | null
+          updated_at?: string
+        }
+        Update: {
+          administrative_area?: string | null
+          approximate_location?: unknown
+          country_code?: string | null
+          created_at?: string
+          creator_profile_id?: string
+          description?: string | null
+          ended_at?: string | null
+          id?: string
+          lifecycle_state?: string
+          locality?: string | null
+          paused_at?: string | null
+          public_location_label?: string | null
+          published_at?: string | null
+          resumed_at?: string | null
+          summary?: string | null
+          title?: string | null
+          topic?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recurring_activities_creator_profile_id_fkey"
+            columns: ["creator_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      recurring_activity_meeting_details: {
+        Row: {
+          exact_location: unknown
+          exact_location_visibility: string
+          exact_meeting_text: string | null
+          recurring_activity_id: string
+          updated_at: string
+        }
+        Insert: {
+          exact_location?: unknown
+          exact_location_visibility?: string
+          exact_meeting_text?: string | null
+          recurring_activity_id: string
+          updated_at?: string
+        }
+        Update: {
+          exact_location?: unknown
+          exact_location_visibility?: string
+          exact_meeting_text?: string | null
+          recurring_activity_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recurring_activity_meeting_details_activity_id_fkey"
+            columns: ["recurring_activity_id"]
+            isOneToOne: true
+            referencedRelation: "recurring_activities"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      recurring_activity_schedules: {
+        Row: {
+          created_at: string
+          day_of_month: number | null
+          duration_minutes: number
+          effective_from: string
+          effective_until: string | null
+          event_timezone: string
+          id: string
+          local_start_time: string
+          recurrence_type: string
+          recurring_activity_id: string
+          superseded_at: string | null
+          weekday: number | null
+        }
+        Insert: {
+          created_at?: string
+          day_of_month?: number | null
+          duration_minutes: number
+          effective_from: string
+          effective_until?: string | null
+          event_timezone: string
+          id?: string
+          local_start_time: string
+          recurrence_type: string
+          recurring_activity_id: string
+          superseded_at?: string | null
+          weekday?: number | null
+        }
+        Update: {
+          created_at?: string
+          day_of_month?: number | null
+          duration_minutes?: number
+          effective_from?: string
+          effective_until?: string | null
+          event_timezone?: string
+          id?: string
+          local_start_time?: string
+          recurrence_type?: string
+          recurring_activity_id?: string
+          superseded_at?: string | null
+          weekday?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recurring_activity_schedules_activity_id_fkey"
+            columns: ["recurring_activity_id"]
+            isOneToOne: false
+            referencedRelation: "recurring_activities"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       skill_categories: {
         Row: {
           id: string
@@ -313,6 +469,36 @@ export type Database = {
         }
         Returns: string
       }
+      create_recurring_activity_draft: {
+        Args: {
+          p_administrative_area: string
+          p_country_code: string
+          p_day_of_month: number
+          p_description: string
+          p_duration_minutes: number
+          p_effective_from: string
+          p_event_timezone: string
+          p_exact_location_visibility: string
+          p_exact_meeting_text: string
+          p_expected_creator_profile_id: string
+          p_local_start_time: string
+          p_locality: string
+          p_public_location_label: string
+          p_recurrence_type: string
+          p_summary: string
+          p_title: string
+          p_topic: string
+          p_weekday: number
+        }
+        Returns: string
+      }
+      end_recurring_activity: {
+        Args: {
+          p_expected_creator_profile_id: string
+          p_recurring_activity_id: string
+        }
+        Returns: string
+      }
       get_own_proposal: {
         Args: { p_expected_creator_profile_id: string; p_proposal_id: string }
         Returns: {
@@ -335,6 +521,34 @@ export type Database = {
           starts_at: string
           summary: string
           title: string
+          updated_at: string
+        }[]
+      }
+      get_own_recurring_activity: {
+        Args: {
+          p_expected_creator_profile_id: string
+          p_recurring_activity_id: string
+        }
+        Returns: {
+          administrative_area: string
+          country_code: string
+          created_at: string
+          current_schedule: Json
+          description: string
+          ended_at: string
+          exact_location_visibility: string
+          exact_meeting_text: string
+          lifecycle_state: string
+          locality: string
+          paused_at: string
+          public_location_label: string
+          published_at: string
+          recurring_activity_id: string
+          resumed_at: string
+          schedule_history: Json
+          summary: string
+          title: string
+          topic: string
           updated_at: string
         }[]
       }
@@ -369,6 +583,37 @@ export type Database = {
           title: string
         }[]
       }
+      get_public_recurring_activity: {
+        Args: {
+          p_occurrence_limit?: number
+          p_recurring_activity_id: string
+          p_reference_time?: string
+        }
+        Returns: {
+          administrative_area: string
+          country_code: string
+          creator_display_name: string
+          creator_profile_id: string
+          day_of_month: number
+          description: string
+          duration_minutes: number
+          event_timezone: string
+          exact_location_restricted: boolean
+          exact_meeting_text: string
+          lifecycle_state: string
+          local_start_time: string
+          locality: string
+          next_occurrences: Json
+          public_location_label: string
+          recurrence_type: string
+          recurring_activity_id: string
+          schedule_effective_from: string
+          summary: string
+          title: string
+          topic: string
+          weekday: number
+        }[]
+      }
       list_own_proposals: {
         Args: { p_expected_creator_profile_id: string }
         Returns: {
@@ -391,6 +636,31 @@ export type Database = {
           starts_at: string
           summary: string
           title: string
+          updated_at: string
+        }[]
+      }
+      list_own_recurring_activities: {
+        Args: { p_expected_creator_profile_id: string }
+        Returns: {
+          administrative_area: string
+          country_code: string
+          created_at: string
+          current_schedule: Json
+          description: string
+          ended_at: string
+          exact_location_visibility: string
+          exact_meeting_text: string
+          lifecycle_state: string
+          locality: string
+          paused_at: string
+          public_location_label: string
+          published_at: string
+          recurring_activity_id: string
+          resumed_at: string
+          schedule_history: Json
+          summary: string
+          title: string
+          topic: string
           updated_at: string
         }[]
       }
@@ -417,8 +687,66 @@ export type Database = {
           title: string
         }[]
       }
+      list_public_recurring_activities: {
+        Args: {
+          p_cursor_id?: string
+          p_cursor_next_starts_at?: string
+          p_limit?: number
+          p_locality?: string
+          p_reference_time: string
+        }
+        Returns: {
+          administrative_area: string
+          country_code: string
+          event_timezone: string
+          locality: string
+          next_ends_at: string
+          next_starts_at: string
+          public_location_label: string
+          recurring_activity_id: string
+          summary: string
+          title: string
+          topic: string
+        }[]
+      }
+      list_public_recurring_activity_occurrences: {
+        Args: {
+          p_from: string
+          p_limit?: number
+          p_recurring_activity_id: string
+          p_until: string
+        }
+        Returns: {
+          ends_at: string
+          event_timezone: string
+          local_starts_at: string
+          recurring_activity_id: string
+          starts_at: string
+        }[]
+      }
+      pause_recurring_activity: {
+        Args: {
+          p_expected_creator_profile_id: string
+          p_recurring_activity_id: string
+        }
+        Returns: string
+      }
       publish_proposal: {
         Args: { p_expected_creator_profile_id: string; p_proposal_id: string }
+        Returns: string
+      }
+      publish_recurring_activity: {
+        Args: {
+          p_expected_creator_profile_id: string
+          p_recurring_activity_id: string
+        }
+        Returns: string
+      }
+      resume_recurring_activity: {
+        Args: {
+          p_expected_creator_profile_id: string
+          p_recurring_activity_id: string
+        }
         Returns: string
       }
       update_own_profile: {
@@ -451,6 +779,30 @@ export type Database = {
           p_starts_at: string
           p_summary: string
           p_title: string
+        }
+        Returns: string
+      }
+      update_own_recurring_activity: {
+        Args: {
+          p_administrative_area: string
+          p_country_code: string
+          p_day_of_month: number
+          p_description: string
+          p_duration_minutes: number
+          p_effective_from: string
+          p_event_timezone: string
+          p_exact_location_visibility: string
+          p_exact_meeting_text: string
+          p_expected_creator_profile_id: string
+          p_local_start_time: string
+          p_locality: string
+          p_public_location_label: string
+          p_recurrence_type: string
+          p_recurring_activity_id: string
+          p_summary: string
+          p_title: string
+          p_topic: string
+          p_weekday: number
         }
         Returns: string
       }

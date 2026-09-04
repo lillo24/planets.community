@@ -1,7 +1,7 @@
 # System Design and Responsibility Boundaries
 
 **Status:** Initial accepted design  
-**Implementation status:** Repository, database, authentication, and basic profiles implemented; one-time proposals and public discovery in progress
+**Implementation status:** Foundations, authentication, profiles, and one-time proposals implemented; recurring-activity domain foundation in progress
 
 This document describes how the major parts of PLANETS should interact. Technology choices are recorded separately in [`core-stack.md`](core-stack.md).
 
@@ -99,6 +99,16 @@ Complete-profile creators manage proposals only through expected-identity-bound 
 
 `private.audit_events` stores append-oriented operational and security history, not product analytics. `private.outbox_events` stores transaction-local handoff records for later asynchronous work; it is not itself a queue or delivery implementation. Both remain outside the Data API with no direct client grants. Future domain operations can write them within the same transaction, while queue consumption and delivery remain owned by plan 06.
 
+### Recurring activity domain
+
+`recurring_activities` stores persistent creator-owned Tavoli separately from one-time proposals. Its explicit lifecycle is `draft`, `published`, `paused`, or `ended`; clock time never completes a series. Published Tavoli remain open-ended until paused or ended, paused series retain their content/history without active discovery occurrences, and ended series are terminal historical records.
+
+`recurring_activity_schedules` stores non-overlapping versioned weekly or monthly rules as local wall-clock time plus a recognized IANA time zone. Weekly recurrence has one ISO weekday; monthly recurrence has one day from 1 through 28. A future schedule change closes the prior version at an exclusive local-date boundary and inserts a new version, so past meetings are never reinterpreted. Before that new version becomes effective, it may be corrected in place at the same boundary without creating redundant history or changing the already-effective row. Canonical helpers derive only bounded windows and calculate each UTC instant from its local date/time and zone, preserving the intended local time across daylight-saving changes.
+
+`recurring_activity_meeting_details` physically separates exact meeting text/coordinates from structured rough public location. Anonymous discovery uses narrow list/detail operations: normal list includes only published series and requires callers to reuse one explicit reference-time snapshot across cursor pages, while exact-ID detail may retain published, paused, or ended history. Participant-restricted exact data is absent from public payloads; participant-authorized access remains plan 05 work.
+
+Complete-profile creators use expected-identity-bound create/publish/resume operations; all owner mutations reject stale account-switch forms before changing data. Publication, schedule changes, pause, resume, and end record content-free audit/outbox metadata without implementing notification delivery. 04B1 intentionally exposes no Tavoli mobile or web UI; 04B2 owns those client experiences.
+
 ### Clients use shared operations rather than duplicate workflows
 
 Safe simple reads may query authorized views/tables directly. Multi-step or security-sensitive changes should use named backend operations, for example:
@@ -141,7 +151,7 @@ The preferred sequence is:
 | Profiles                | Display identity, competences, interests, preferences, visibility settings                                  | User, skills, participation history, media                                           |
 | Skills/competences      | Controlled taxonomy used by users and proposals                                                             | Many-to-many with profiles and proposal requirements                                 |
 | One-time proposals      | Creator-owned content, schedule, rough/exact location separation, stored lifecycle, derived temporal status | Creator, controlled skill requirements, future participation, future template source |
-| Recurring activities    | Future weekly/monthly activity definitions and occurrences                                                  | Deferred to 04B; does not overload one-time proposals                                |
+| Recurring activities    | Persistent Tavoli, versioned weekly/monthly schedules, bounded occurrences, rough/exact privacy, lifecycle  | Separate from one-time proposals; UI deferred to 04B2                                |
 | Participation           | Requests, decisions, membership, roles, history                                                             | User and proposal; source for stats and authorization                                |
 | Chat                    | One proposal-scoped conversation when eligible                                                              | Proposal and current authorized members                                              |
 | Messages                | Persisted communication within a proposal chat                                                              | Chat, sender, moderation/deletion state                                              |
@@ -223,11 +233,11 @@ Regardless of final state names:
 - deleting or suspending an account must not corrupt historical proposals;
 - templates must copy approved reusable fields rather than stay invisibly coupled to mutable source content.
 
-### Participation threshold
+### Participation and automatic chat
 
-The current product direction envisions chat after at least three people have joined. The implementation should not scatter the literal number across clients. Store a proposal or platform-level rule with a default, then enforce it through one backend operation.
+Proposal/project chat will be created automatically by an idempotent backend operation and is not gated by a fixed threshold of three. There is no user-facing manual Create Chat action, and project completion does not delete chat or message history.
 
-The founder must decide whether the creator counts toward the threshold and whether the threshold controls chat creation, proposal activation, or both.
+Plans 05/07 must still define the exact participation event that triggers automatic creation and authorization after a participant leaves, is removed, blocked, or suspended. Any future participation threshold for a different business rule must not be reused implicitly as the chat rule.
 
 ## Matching
 

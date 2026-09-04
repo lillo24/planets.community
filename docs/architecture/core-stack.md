@@ -2,7 +2,7 @@
 
 **Status:** Accepted baseline for initial implementation  
 **Recorded:** 2026-09-01  
-**Implementation status:** Repository, database, application, and email-OTP foundations implemented; basic profiles, controlled skills, and field visibility in progress
+**Implementation status:** Foundations, authentication, profiles, and one-time proposals implemented; recurring-activity domain foundation in progress
 
 ## Decision summary
 
@@ -113,7 +113,7 @@ The initial seven-category skill catalog is deliberately small and system-manage
 
 ### Proposal-scoped chat only
 
-Chat belongs to a proposal and is enabled when that proposal satisfies its participation rule. General direct messaging, calls, reactions, typing indicators, and end-to-end encryption are outside the initial backbone.
+Chat belongs to a proposal and will be created automatically by one idempotent backend operation. There is no manual Create Chat action, and no fixed three-person threshold controls availability. Plans 05/07 still own the exact participation event and post-membership authorization. Ending a project retains its chat and messages. General direct messaging, calls, reactions, typing indicators, and end-to-end encryption are outside the initial backbone.
 
 An optional meeting URL should be stored or exposed from the proposal chat. PLANETS should not implement video infrastructure or provider OAuth integrations initially.
 
