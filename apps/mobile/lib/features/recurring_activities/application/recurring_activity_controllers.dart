@@ -1,0 +1,466 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+
+import '../../auth/application/auth_session_controller.dart';
+import '../../auth/domain/auth_models.dart';
+import '../data/recurring_activity_gateway.dart';
+import '../domain/recurring_activity_models.dart';
+
+final recurringActivityClockProvider = Provider<DateTime Function()>(
+  (ref) => DateTime.now,
+);
+
+class PublicRecurringActivitiesController
+    extends Notifier<PublicRecurringActivitiesState> {
+  var _revision = 0;
+
+  @override
+  PublicRecurringActivitiesState build() =>
+      const PublicRecurringActivitiesState();
+
+  Future<void> load({bool reset = true}) async {
+    if (state.isBusy) return;
+    final revision = ++_revision;
+    final currentItems = reset
+        ? const <PublicRecurringActivitySummary>[]
+        : state.items;
+    final referenceTime = reset || state.referenceTime == null
+        ? ref.read(recurringActivityClockProvider)().toUtc()
+        : state.referenceTime!;
+    final locality = state.locality;
+    state = PublicRecurringActivitiesState(
+      phase: reset
+          ? RecurringActivityLoadPhase.loading
+          : RecurringActivityLoadPhase.loadingMore,
+      items: currentItems,
+      locality: locality,
+      referenceTime: referenceTime,
+      hasMore: state.hasMore,
+    );
+    try {
+      final page = await ref
+          .read(recurringActivityGatewayProvider)
+          .listPublicActivities(
+            referenceTime: referenceTime,
+            limit: recurringActivityPageSize,
+            cursor: reset || currentItems.isEmpty
+                ? null
+                : currentItems.last.cursor,
+            locality: locality.isEmpty ? null : locality,
+          );
+      if (revision != _revision ||
+          state.referenceTime != referenceTime ||
+          state.locality != locality) {
+        return;
+      }
+      state = PublicRecurringActivitiesState(
+        phase: RecurringActivityLoadPhase.ready,
+        items: List.unmodifiable([...currentItems, ...page]),
+        locality: locality,
+        referenceTime: referenceTime,
+        hasMore: page.length == recurringActivityPageSize,
+      );
+    } catch (error) {
+      if (revision == _revision) {
+        state = PublicRecurringActivitiesState(
+          phase: RecurringActivityLoadPhase.failure,
+          items: currentItems,
+          locality: locality,
+          referenceTime: referenceTime,
+          hasMore: state.hasMore,
+          failure: mapRecurringActivityFailure(error),
+        );
+      }
+    }
+  }
+
+  Future<void> applyLocality(String locality) async {
+    _revision++;
+    state = PublicRecurringActivitiesState(locality: locality.trim());
+    await load();
+  }
+}
+
+final publicRecurringActivitiesProvider =
+    NotifierProvider<
+      PublicRecurringActivitiesController,
+      PublicRecurringActivitiesState
+    >(PublicRecurringActivitiesController.new);
+
+class PublicRecurringActivityDetailController
+    extends Notifier<PublicRecurringActivityDetailState> {
+  var _revision = 0;
+
+  @override
+  PublicRecurringActivityDetailState build() =>
+      const PublicRecurringActivityDetailState();
+
+  Future<void> load(String activityId) async {
+    final revision = ++_revision;
+    final current = state.activityId == activityId ? state.detail : null;
+    state = PublicRecurringActivityDetailState(
+      phase: RecurringActivityLoadPhase.loading,
+      activityId: activityId,
+      detail: current,
+    );
+    try {
+      final detail = await ref
+          .read(recurringActivityGatewayProvider)
+          .getPublicActivity(
+            activityId,
+            referenceTime: ref.read(recurringActivityClockProvider)().toUtc(),
+          );
+      if (revision != _revision) return;
+      state = PublicRecurringActivityDetailState(
+        phase: RecurringActivityLoadPhase.ready,
+        activityId: activityId,
+        detail: detail,
+      );
+    } catch (error) {
+      if (revision == _revision) {
+        state = PublicRecurringActivityDetailState(
+          phase: RecurringActivityLoadPhase.failure,
+          activityId: activityId,
+          detail: current,
+          failure: mapRecurringActivityFailure(error),
+        );
+      }
+    }
+  }
+}
+
+final publicRecurringActivityDetailProvider =
+    NotifierProvider<
+      PublicRecurringActivityDetailController,
+      PublicRecurringActivityDetailState
+    >(PublicRecurringActivityDetailController.new);
+
+class OwnRecurringActivitiesController
+    extends Notifier<OwnRecurringActivitiesState> {
+  var _revision = 0;
+
+  @override
+  OwnRecurringActivitiesState build() {
+    ref.listen(authSessionProvider.select((value) => value.identity?.id), (
+      _,
+      _,
+    ) {
+      _revision++;
+      state = const OwnRecurringActivitiesState();
+    });
+    ref.onDispose(() => _revision++);
+    return const OwnRecurringActivitiesState();
+  }
+
+  bool _isCurrent(int revision) => ref.mounted && revision == _revision;
+
+  Future<void> load(String expectedCreatorId) async {
+    final revision = ++_revision;
+    state = OwnRecurringActivitiesState(
+      phase: RecurringActivityLoadPhase.loading,
+      expectedCreatorId: expectedCreatorId,
+      items: state.expectedCreatorId == expectedCreatorId
+          ? state.items
+          : const [],
+    );
+    try {
+      _requireCurrentIdentity(expectedCreatorId, requireReady: false);
+      final items = await ref
+          .read(recurringActivityGatewayProvider)
+          .listOwnActivities(expectedCreatorId);
+      if (!_isCurrent(revision)) return;
+      state = OwnRecurringActivitiesState(
+        phase: RecurringActivityLoadPhase.ready,
+        expectedCreatorId: expectedCreatorId,
+        items: List.unmodifiable(items),
+      );
+    } catch (error) {
+      if (_isCurrent(revision)) {
+        state = OwnRecurringActivitiesState(
+          phase: RecurringActivityLoadPhase.failure,
+          expectedCreatorId: expectedCreatorId,
+          items: state.items,
+          failure: mapRecurringActivityFailure(error),
+        );
+      }
+    }
+  }
+
+  Future<bool> publish(String creatorId, String activityId) =>
+      _mutate(creatorId, (gateway) => gateway.publish(creatorId, activityId));
+
+  Future<bool> pause(String creatorId, String activityId) =>
+      _mutate(creatorId, (gateway) => gateway.pause(creatorId, activityId));
+
+  Future<bool> resume(String creatorId, String activityId) =>
+      _mutate(creatorId, (gateway) => gateway.resume(creatorId, activityId));
+
+  Future<bool> end(String creatorId, String activityId) =>
+      _mutate(creatorId, (gateway) => gateway.end(creatorId, activityId));
+
+  Future<bool> _mutate(
+    String expectedCreatorId,
+    Future<void> Function(RecurringActivityGateway gateway) operation,
+  ) async {
+    if (state.isBusy) return false;
+    final revision = ++_revision;
+    state = OwnRecurringActivitiesState(
+      phase: RecurringActivityLoadPhase.loading,
+      expectedCreatorId: expectedCreatorId,
+      items: state.items,
+    );
+    try {
+      _requireCurrentIdentity(expectedCreatorId);
+      final gateway = ref.read(recurringActivityGatewayProvider);
+      await operation(gateway);
+      if (!_isCurrent(revision)) return false;
+      _requireCurrentIdentity(expectedCreatorId);
+      ref.invalidate(publicRecurringActivitiesProvider);
+      ref.invalidate(publicRecurringActivityDetailProvider);
+      final items = await gateway.listOwnActivities(expectedCreatorId);
+      if (!_isCurrent(revision)) return false;
+      state = OwnRecurringActivitiesState(
+        phase: RecurringActivityLoadPhase.ready,
+        expectedCreatorId: expectedCreatorId,
+        items: List.unmodifiable(items),
+      );
+      return true;
+    } catch (error) {
+      if (!_isCurrent(revision)) return false;
+      state = OwnRecurringActivitiesState(
+        phase: RecurringActivityLoadPhase.failure,
+        expectedCreatorId: expectedCreatorId,
+        items: state.items,
+        failure: mapRecurringActivityFailure(error),
+      );
+      return false;
+    }
+  }
+
+  void _requireCurrentIdentity(
+    String expectedCreatorId, {
+    bool requireReady = true,
+  }) {
+    final session = ref.read(authSessionProvider);
+    if (session.identity?.id != expectedCreatorId ||
+        (requireReady && session.phase != AuthSessionPhase.ready)) {
+      throw const RecurringActivityIdentityChangedException();
+    }
+  }
+}
+
+final ownRecurringActivitiesProvider =
+    NotifierProvider<
+      OwnRecurringActivitiesController,
+      OwnRecurringActivitiesState
+    >(OwnRecurringActivitiesController.new);
+
+class RecurringActivityEditorController
+    extends Notifier<RecurringActivityEditorState> {
+  var _revision = 0;
+
+  @override
+  RecurringActivityEditorState build() {
+    ref.listen(authSessionProvider.select((value) => value.identity?.id), (
+      _,
+      _,
+    ) {
+      _revision++;
+      state = const RecurringActivityEditorState();
+    });
+    ref.onDispose(() => _revision++);
+    return const RecurringActivityEditorState();
+  }
+
+  bool _isCurrent(int revision) => ref.mounted && revision == _revision;
+
+  Future<void> load(String expectedCreatorId, String? activityId) async {
+    final revision = ++_revision;
+    state = RecurringActivityEditorState(
+      phase: RecurringActivityEditorPhase.loading,
+      expectedCreatorId: expectedCreatorId,
+      activity:
+          state.expectedCreatorId == expectedCreatorId &&
+              state.activity?.id == activityId
+          ? state.activity
+          : null,
+    );
+    try {
+      _requireReadyIdentity(expectedCreatorId);
+      final activity = activityId == null
+          ? null
+          : await ref
+                .read(recurringActivityGatewayProvider)
+                .getOwnActivity(expectedCreatorId, activityId);
+      if (!_isCurrent(revision)) return;
+      if (activityId != null && activity == null) {
+        throw const RecurringActivityNotFoundException();
+      }
+      state = RecurringActivityEditorState(
+        phase: RecurringActivityEditorPhase.ready,
+        expectedCreatorId: expectedCreatorId,
+        activity: activity,
+      );
+    } catch (error) {
+      if (_isCurrent(revision)) {
+        state = RecurringActivityEditorState(
+          phase: RecurringActivityEditorPhase.failure,
+          expectedCreatorId: expectedCreatorId,
+          activity: state.activity,
+          failure: mapRecurringActivityFailure(error),
+        );
+      }
+    }
+  }
+
+  Future<String?> saveDraft(
+    String expectedCreatorId,
+    RecurringActivityInput input,
+  ) {
+    if (!isValidRecurringActivityDraft(input) ||
+        !isValidRecurringScheduleTransition(
+          state.activity,
+          input,
+          ref.read(recurringActivityClockProvider)(),
+        )) {
+      return _reject(expectedCreatorId);
+    }
+    return _save(expectedCreatorId, input, publishAfterSave: false);
+  }
+
+  Future<String?> publish(
+    String expectedCreatorId,
+    RecurringActivityInput input,
+  ) {
+    if (!isPublishableRecurringActivityInput(input) ||
+        !isValidRecurringScheduleTransition(
+          state.activity,
+          input,
+          ref.read(recurringActivityClockProvider)(),
+        )) {
+      return _reject(expectedCreatorId);
+    }
+    return _save(expectedCreatorId, input, publishAfterSave: true);
+  }
+
+  Future<String?> _reject(String expectedCreatorId) async {
+    state = RecurringActivityEditorState(
+      phase: RecurringActivityEditorPhase.failure,
+      expectedCreatorId: expectedCreatorId,
+      activity: state.activity,
+      failure: RecurringActivityFailureKind.invalidInput,
+    );
+    return null;
+  }
+
+  Future<String?> _save(
+    String expectedCreatorId,
+    RecurringActivityInput input, {
+    required bool publishAfterSave,
+  }) async {
+    if (state.isBusy) return null;
+    final revision = ++_revision;
+    final existing = state.activity;
+    state = RecurringActivityEditorState(
+      phase: publishAfterSave
+          ? RecurringActivityEditorPhase.publishing
+          : RecurringActivityEditorPhase.saving,
+      expectedCreatorId: expectedCreatorId,
+      activity: existing,
+    );
+    try {
+      _requireReadyIdentity(expectedCreatorId);
+      final gateway = ref.read(recurringActivityGatewayProvider);
+      final id = existing == null
+          ? await gateway.createDraft(expectedCreatorId, input)
+          : existing.isEditable
+          ? existing.id
+          : throw const RecurringActivityInvalidStateException();
+      if (!_isCurrent(revision)) return null;
+      _requireReadyIdentity(expectedCreatorId);
+      if (existing != null) {
+        await gateway.updateOwnActivity(expectedCreatorId, id, input);
+        if (!_isCurrent(revision)) return null;
+        _requireReadyIdentity(expectedCreatorId);
+      }
+      if (publishAfterSave) {
+        if (existing?.lifecycle == RecurringActivityLifecycle.paused ||
+            existing?.lifecycle == RecurringActivityLifecycle.published) {
+          // Saving active/paused edits must not invoke the draft-only publish RPC.
+        } else {
+          await gateway.publish(expectedCreatorId, id);
+          if (!_isCurrent(revision)) return null;
+          _requireReadyIdentity(expectedCreatorId);
+        }
+      }
+      final updated = await gateway.getOwnActivity(expectedCreatorId, id);
+      if (!_isCurrent(revision)) return null;
+      if (updated == null) throw const RecurringActivityNotFoundException();
+      state = RecurringActivityEditorState(
+        phase: RecurringActivityEditorPhase.ready,
+        expectedCreatorId: expectedCreatorId,
+        activity: updated,
+      );
+      return id;
+    } catch (error) {
+      if (!_isCurrent(revision)) return null;
+      state = RecurringActivityEditorState(
+        phase: RecurringActivityEditorPhase.failure,
+        expectedCreatorId: expectedCreatorId,
+        activity: existing,
+        failure: mapRecurringActivityFailure(error),
+      );
+      return null;
+    }
+  }
+
+  void _requireReadyIdentity(String expectedCreatorId) {
+    final session = ref.read(authSessionProvider);
+    if (session.phase != AuthSessionPhase.ready ||
+        session.identity?.id != expectedCreatorId) {
+      throw const RecurringActivityIdentityChangedException();
+    }
+  }
+}
+
+final recurringActivityEditorProvider =
+    NotifierProvider<
+      RecurringActivityEditorController,
+      RecurringActivityEditorState
+    >(RecurringActivityEditorController.new);
+
+RecurringActivityFailureKind mapRecurringActivityFailure(Object error) {
+  if (error is RecurringActivityIdentityChangedException) {
+    return RecurringActivityFailureKind.forbidden;
+  }
+  if (error is RecurringActivityInvalidStateException ||
+      error is RecurringActivityNotFoundException) {
+    return RecurringActivityFailureKind.invalidState;
+  }
+  if (error is FormatException || error is TypeError) {
+    return RecurringActivityFailureKind.unavailable;
+  }
+  if (error is PostgrestException) {
+    return switch (error.code) {
+      '22023' ||
+      '23514' ||
+      '23502' => RecurringActivityFailureKind.invalidInput,
+      '42501' => RecurringActivityFailureKind.forbidden,
+      '55000' => RecurringActivityFailureKind.invalidState,
+      _ => RecurringActivityFailureKind.unavailable,
+    };
+  }
+  return RecurringActivityFailureKind.unavailable;
+}
+
+class RecurringActivityIdentityChangedException implements Exception {
+  const RecurringActivityIdentityChangedException();
+}
+
+class RecurringActivityInvalidStateException implements Exception {
+  const RecurringActivityInvalidStateException();
+}
+
+class RecurringActivityNotFoundException implements Exception {
+  const RecurringActivityNotFoundException();
+}

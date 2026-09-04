@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../app/router/browse_activity_switcher.dart';
 import '../../../core/theme/app_tokens.dart';
 import '../../../core/widgets/empty_state.dart';
 import '../../../core/widgets/error_state.dart';
@@ -30,9 +31,11 @@ class _PublicProposalsScreenState extends ConsumerState<PublicProposalsScreen> {
     _localityController = TextEditingController(
       text: ref.read(publicProposalsProvider).locality,
     );
-    Future<void>.microtask(
-      () => ref.read(publicProposalsProvider.notifier).load(),
-    );
+    if (ref.read(publicProposalsProvider).phase == ProposalLoadPhase.idle) {
+      Future<void>.microtask(
+        () => ref.read(publicProposalsProvider.notifier).load(),
+      );
+    }
   }
 
   @override
@@ -73,6 +76,10 @@ class _PublicProposalsScreenState extends ConsumerState<PublicProposalsScreen> {
                 child: ListView(
                   padding: const EdgeInsets.all(AppSpacing.medium),
                   children: [
+                    const BrowseActivitySwitcher(
+                      selected: BrowseActivityType.proposals,
+                    ),
+                    const SizedBox(height: AppSpacing.medium),
                     TextField(
                       key: const Key('proposal-locality-filter'),
                       controller: _localityController,

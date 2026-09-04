@@ -1,7 +1,7 @@
 # Implementation Roadmap
 
 **Status:** Planning baseline  
-**Current implementation:** Plans 00–04B1 implemented; plan 04B2 not started
+**Current implementation:** Plans 00–04B1 implemented; plan 04B2A in progress
 
 This roadmap divides the first PLANETS build into reviewable Codex tasks. Each numbered item should normally become its own implementation prompt, branch, and pull request.
 
@@ -50,7 +50,9 @@ Do not begin a dependent plan until the prior plan is merged or its branch is ex
 | 04A | One-Time Proposals and Discovery                | Draft/create/publish/cancel, public list/detail, requirements, location privacy, and mobile/web discovery                | 03C                    | One-time lifecycle and rough/exact location behavior resolved                                                        | Implemented |
 | 04B | Tavoli / Recurring Activities (parent)          | Versioned weekly/monthly recurring domain plus later mobile/web experience                                                | 04A                    | Initial recurrence and lifecycle resolved; occurrence exceptions remain deferred                                     | In progress |
 | 04B1 | Tavoli / Recurring Activity Domain Foundation  | Separate recurring schema, schedule history, bounded occurrences, lifecycle, privacy, canonical APIs, and tests          | 04A                    | None expected for the defined weekly/monthly foundation                                                              | Implemented |
-| 04B2 | Tavoli Mobile/Web Experience                   | Browse/list/detail/create/edit/manage UI over the canonical 04B1 backend                                                  | 04B1                   | Functional UX review; no recurrence expansion                                                                        | Not started |
+| 04B2 | Tavoli Mobile/Web Experience (parent)          | Separate mobile and public-web clients over the canonical 04B1 backend                                                    | 04B1                   | Functional UX review; no recurrence expansion                                                                        | In progress |
+| 04B2A | Tavoli Mobile Experience and Browse Integration | Mobile browse/list/detail/create/edit/manage UI over the canonical 04B1 backend                                         | 04B1                   | Native interaction review                                                                                             | In progress |
+| 04B2B | Public Web Tavoli Discovery                   | Read-only public web Tavoli list and detail                                                                               | 04B2A                  | Functional public-web review                                                                                          | Not started |
 | 04C | Material Resources                              | Explicit requested/donated/loaned material-resource domain and later activity integration                               | 04A                    | Resource types, contribution/ownership semantics, visibility, and lifecycle                                           | Not started |
 | 05  | Participation lifecycle                         | Join requests, review decisions, membership, leave/cancel behavior, non-chat participation rules, derived stats          | 04A                    | Roles, removal/withdrawal rules, and any non-chat participation thresholds                                           | Not started |
 | 06  | Notification backbone                           | In-app notifications, preferences, device registration, outbox/queue, FCM worker, retries and deep links                 | 03–05                  | Notification categories, priority, and copy can remain provisional unless user-facing review is needed               | Not started |
@@ -206,7 +208,7 @@ Expected scope:
 
 #### 04B — Tavoli / Recurring Activities
 
-**Status:** In progress through separately reviewed 04B1 and 04B2 portions.
+**Status:** In progress through separately reviewed 04B1, 04B2A, and 04B2B portions.
 
 ##### 04B1 — Tavoli / Recurring Activity Domain Foundation
 
@@ -226,7 +228,7 @@ Expected scope:
 
 ##### 04B2 — Tavoli Mobile/Web Experience
 
-**Status:** Not started; depends on reviewed and merged 04B1.
+**Status:** In progress; split into independently reviewed mobile and web portions.
 
 Expected scope:
 
@@ -235,6 +237,21 @@ Expected scope:
 - read-only public web Tavoli discovery;
 - client tests against the canonical 04B1 contracts;
 - no free-form recurrence, occurrence exceptions, participation, or chat.
+
+###### 04B2A — Tavoli Mobile Experience and Browse Integration
+
+**Status:** In progress in the current implementation task.
+
+Owns the Flutter-only Browse integration, public Tavoli discovery, constrained
+weekly/monthly authoring, future/pending schedule correction, owner lifecycle
+management, identity-safe controllers, and the manual Android/iOS QA gate.
+
+###### 04B2B — Public Web Tavoli Discovery
+
+**Status:** Not started; follows reviewed 04B2A.
+
+Will own read-only public web Tavoli list/detail. It must not copy mobile owner
+management or introduce participation, chat, resources, or recurrence expansion.
 
 #### 04C — Material Resources
 
@@ -426,4 +443,4 @@ Major gates currently expected:
 
 ## Immediate next action
 
-Prepare **04B2 — Tavoli Mobile/Web Experience** from the reviewed 04B1 contracts. Plan 05 may still proceed independently from implemented 04A if product sequencing changes.
+Complete review and native QA for **04B2A — Tavoli Mobile Experience and Browse Integration**, then prepare **04B2B — Public Web Tavoli Discovery**. Plan 05 may still proceed independently from implemented 04A if product sequencing changes.

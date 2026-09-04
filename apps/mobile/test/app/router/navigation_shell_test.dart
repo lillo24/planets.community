@@ -11,10 +11,12 @@ import 'package:planets_mobile/features/auth/data/auth_gateway.dart';
 import 'package:planets_mobile/features/auth/domain/auth_models.dart';
 import 'package:planets_mobile/features/profile/data/profile_gateway.dart';
 import 'package:planets_mobile/features/proposals/data/proposal_gateway.dart';
+import 'package:planets_mobile/features/recurring_activities/data/recurring_activity_gateway.dart';
 
 import '../../support/fake_auth.dart';
 import '../../support/fake_profile.dart';
 import '../../support/fake_proposal.dart';
+import '../../support/fake_recurring_activity.dart';
 
 void main() {
   testWidgets('one shell selects every direct-entry branch and nested back', (
@@ -31,6 +33,11 @@ void main() {
       '/proposals/create': 1,
       '/proposals/proposal-1': 1,
       '/proposals/proposal-1/edit': 1,
+      '/tavoli': 1,
+      '/tavoli/mine': 1,
+      '/tavoli/create': 1,
+      '/tavoli/tavolo-1': 1,
+      '/tavoli/tavolo-1/edit': 1,
     }.entries) {
       router.go(entry.key);
       await tester.pumpAndSettle();
@@ -52,6 +59,103 @@ void main() {
     await tester.binding.handlePopRoute();
     await tester.pumpAndSettle();
     expect(router.routeInformationProvider.value.uri.path, '/proposals');
+    router.go('/tavoli/tavolo-1');
+    await tester.pumpAndSettle();
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+    expect(router.routeInformationProvider.value.uri.path, '/tavoli');
+  });
+
+  testWidgets('Browse switches between separate Proposal and Tavoli roots', (
+    tester,
+  ) async {
+    final proposals = FakeProposalGateway()
+      ..publicItems = [proposalSummaryFixture()];
+    final app = await _pump(tester, proposals: proposals);
+    await _tap(tester, 'nav-browse');
+    expect(find.text('One-time proposals'), findsOneWidget);
+    await tester.tap(find.text('Tavoli').last);
+    await tester.pumpAndSettle();
+    expect(
+      app.read(appRouterProvider).routeInformationProvider.value.uri.path,
+      '/tavoli',
+    );
+    expect(find.text('Neighborhood philosophy table'), findsOneWidget);
+    await tester.tap(find.text('Proposals').last);
+    await tester.pumpAndSettle();
+    expect(
+      app.read(appRouterProvider).routeInformationProvider.value.uri.path,
+      '/proposals',
+    );
+    expect(proposals.calls.where((call) => call == 'list-public').length, 1);
+    expect(
+      tester.widget<NavigationBar>(find.byType(NavigationBar)).destinations,
+      hasLength(3),
+    );
+  });
+
+  testWidgets('public Tavoli routes stay available signed out', (tester) async {
+    final app = await _pump(tester, signedIn: false);
+    final router = app.read(appRouterProvider);
+    router.go('/tavoli');
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('auth-email-field')), findsNothing);
+    router.go('/tavoli/tavolo-1');
+    await tester.pumpAndSettle();
+    expect(find.text('Tavolo details'), findsOneWidget);
+    router.go('/tavoli/create');
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('auth-email-field')), findsOneWidget);
+    expect(
+      router.routeInformationProvider.value.uri.queryParameters['returnTo'],
+      '/tavoli/create',
+    );
+  });
+
+  testWidgets('Tavoli static owner routes are guarded and not parsed as IDs', (
+    tester,
+  ) async {
+    final complete = await _pump(tester);
+    complete.read(appRouterProvider).go('/tavoli/mine');
+    await tester.pumpAndSettle();
+    expect(find.text('My Tavoli'), findsOneWidget);
+    expect(find.text('Tavolo details'), findsNothing);
+
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pumpAndSettle();
+    final incomplete = await _pump(tester, complete: false);
+    incomplete.read(appRouterProvider).go('/tavoli/create');
+    await tester.pumpAndSettle();
+    expect(
+      incomplete
+          .read(appRouterProvider)
+          .routeInformationProvider
+          .value
+          .uri
+          .path,
+      '/profile/edit',
+    );
+  });
+
+  testWidgets('account switch discards an inactive Tavoli editor', (
+    tester,
+  ) async {
+    final auth = FakeAuthGateway(
+      snapshot: const AuthSnapshot(identity: AuthIdentity(id: 'user-1')),
+    );
+    final app = await _pump(tester, auth: auth);
+    app.read(appRouterProvider).go('/tavoli/create');
+    await tester.pumpAndSettle();
+    await tester.enterText(
+      find.widgetWithText(TextFormField, 'Title'),
+      'Private Tavolo A',
+    );
+    await _tap(tester, 'nav-home');
+    auth.emit(const AuthSnapshot(identity: AuthIdentity(id: 'user-2')));
+    await tester.pumpAndSettle();
+    app.read(appRouterProvider).go('/tavoli/create');
+    await tester.pumpAndSettle();
+    expect(find.text('Private Tavolo A', skipOffstage: false), findsNothing);
   });
 
   testWidgets('tabs and Home CTA restore Browse details, filters and scroll', (
@@ -295,6 +399,7 @@ Future<ProviderContainer> _pump(
   FakeAuthGateway? auth,
   FakeProfileGateway? profile,
   FakeProposalGateway? proposals,
+  FakeRecurringActivityGateway? recurringActivities,
 }) async {
   final gateway =
       auth ??
@@ -330,6 +435,13 @@ Future<ProviderContainer> _pump(
               (FakeProposalGateway()
                 ..publicDetail = proposalDetailFixture()
                 ..ownItems = [ownProposalFixture()]),
+        ),
+        recurringActivityGatewayProvider.overrideWithValue(
+          recurringActivities ??
+              (FakeRecurringActivityGateway()
+                ..publicItems = [publicRecurringSummaryFixture()]
+                ..publicDetail = publicRecurringDetailFixture()
+                ..ownItems = [ownRecurringActivityFixture()]),
         ),
       ],
       child: const PlanetsApp(),
