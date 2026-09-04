@@ -285,13 +285,13 @@ select ok(
   to_regprocedure('public.list_public_recurring_activities(timestamptz,integer,timestamptz,uuid,text)') is not null,
   'the sanitized public recurring list exists'
 );
-select results_eq(
-  $$
-    select proargnames[1], pronargdefaults::integer
+select ok(
+  (
+    select proargnames[1] = 'p_reference_time'
+      and pronargdefaults = 4
     from pg_proc
     where oid = 'public.list_public_recurring_activities(timestamptz,integer,timestamptz,uuid,text)'::regprocedure
-  $$,
-  $$values ('p_reference_time'::text, 4::integer)$$,
+  ),
   'the public recurring list requires one snapshot while retaining optional page and filter arguments'
 );
 select ok(
