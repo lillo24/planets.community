@@ -15,15 +15,17 @@ This folder owns application startup presentation and navigation, not backend ru
 | Index / destination | Routes |
 | --- | --- |
 | 0 / Profile | `/profile`, nested `/profile/edit` |
-| 1 / Browse | `/proposals`, nested `mine`, `create`, `:id`, and `:id/edit` |
+| 1 / Browse | `/proposals` and `/tavoli`, each with nested `mine`, `create`, `:id`, and `:id/edit` |
 | 2 / Home | `/` |
 
-Static Browse children precede the dynamic proposal-ID route. Direct entry creates
+Static Browse children precede each dynamic activity-ID route. A route-backed
+Proposals/Tavoli switcher changes the public list within Browse without adding a
+fourth bottom destination. Each list's Riverpod state survives switching. Direct entry creates
 the matching nested stack and selects its owning destination. Nested AppBar and
 system Back pop within that stack. Branch switches use `goBranch`, restoring its
 last route, scroll and unsaved form state; re-tapping the active destination is a
 no-op. Browse root actions use `go` to build canonical nested stacks, including
-when a guard redirects Create/My proposals into a different branch.
+when a guard redirects Create/My activity routes into a different branch.
 
 `/auth` and `/auth/verify` live outside the shell and have no bottom navigation.
 Home and Browse list/detail remain public. Signed-out Profile/management access
@@ -41,7 +43,7 @@ discards every retained branch (including inactive private forms) without losing
 an in-flight Auth return destination. A same-identity token refresh does not reset
 the shell. No form data is persisted to disk for this behavior.
 
-Profile and proposal owner controllers also clear cached state and increment a
+Profile, proposal, and Tavoli owner controllers also clear cached state and increment a
 request revision on identity changes. Every async continuation checks that its
 revision is still current before publishing state or starting another operation.
 Thus A -> signed out -> A also rejects old work. Profile readiness cannot be

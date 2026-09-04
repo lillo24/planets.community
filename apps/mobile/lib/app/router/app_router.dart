@@ -13,6 +13,9 @@ import '../../features/profile/presentation/profile_screen.dart';
 import '../../features/proposals/presentation/own_proposals_screen.dart';
 import '../../features/proposals/presentation/proposal_editor_screen.dart';
 import '../../features/proposals/presentation/public_proposals_screen.dart';
+import '../../features/recurring_activities/presentation/own_recurring_activities_screen.dart';
+import '../../features/recurring_activities/presentation/public_recurring_activities_screen.dart';
+import '../../features/recurring_activities/presentation/recurring_activity_editor_screen.dart';
 import '../../l10n/generated/app_localizations.dart';
 import '../foundation_screen.dart';
 import 'app_navigation_shell.dart';
@@ -55,13 +58,19 @@ RoutingConfig _routingConfig(
           path == '/proposals/mine' ||
           path == '/proposals/create' ||
           (path.startsWith('/proposals/') && path.endsWith('/edit'));
+      final isTavoliManagementRoute =
+          path == '/tavoli/mine' ||
+          path == '/tavoli/create' ||
+          (path.startsWith('/tavoli/') && path.endsWith('/edit'));
+      final isActivityManagementRoute =
+          isProposalManagementRoute || isTavoliManagementRoute;
 
       if (session.phase == AuthSessionPhase.restoring) {
         return null;
       }
 
       if (session.phase == AuthSessionPhase.signedOut &&
-          (isProfileRoute || isProposalManagementRoute)) {
+          (isProfileRoute || isActivityManagementRoute)) {
         return Uri(
           path: '/auth',
           queryParameters: {'returnTo': state.uri.toString()},
@@ -69,7 +78,7 @@ RoutingConfig _routingConfig(
       }
 
       if (session.phase == AuthSessionPhase.profileSetupRequired &&
-          isProposalManagementRoute) {
+          isActivityManagementRoute) {
         return '/profile/edit';
       }
 
@@ -159,6 +168,39 @@ RoutingConfig _routingConfig(
                         builder: (context, state) => ProposalEditorScreen(
                           proposalId: state.pathParameters['id'],
                         ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+              GoRoute(
+                path: '/tavoli',
+                builder: (context, state) =>
+                    const PublicRecurringActivitiesScreen(),
+                routes: [
+                  GoRoute(
+                    path: 'mine',
+                    builder: (context, state) =>
+                        const OwnRecurringActivitiesScreen(),
+                  ),
+                  GoRoute(
+                    path: 'create',
+                    builder: (context, state) =>
+                        const RecurringActivityEditorScreen(),
+                  ),
+                  GoRoute(
+                    path: ':id',
+                    builder: (context, state) =>
+                        PublicRecurringActivityDetailScreen(
+                          activityId: state.pathParameters['id']!,
+                        ),
+                    routes: [
+                      GoRoute(
+                        path: 'edit',
+                        builder: (context, state) =>
+                            RecurringActivityEditorScreen(
+                              activityId: state.pathParameters['id'],
+                            ),
                       ),
                     ],
                   ),
