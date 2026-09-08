@@ -33,6 +33,30 @@ test("accepts the legacy local anon-key field", () => {
   );
 });
 
+test("returns the local service-role key only when status provides it", () => {
+  assert.equal(
+    parseLocalSupabaseStatus(
+      JSON.stringify({
+        API_URL: "http://127.0.0.1:54321",
+        PUBLISHABLE_KEY: "publishable-key",
+        SERVICE_ROLE_KEY: "local-service-role-key",
+        DB_URL: "postgresql://postgres:postgres@127.0.0.1:54322/postgres",
+      }),
+    ).serviceRoleKey,
+    "local-service-role-key",
+  );
+  assert.equal(
+    parseLocalSupabaseStatus(
+      JSON.stringify({
+        API_URL: "http://127.0.0.1:54321",
+        PUBLISHABLE_KEY: "publishable-key",
+        DB_URL: "postgresql://postgres:postgres@127.0.0.1:54322/postgres",
+      }),
+    ).databaseUrl,
+    "postgresql://postgres:postgres@127.0.0.1:54322/postgres",
+  );
+});
+
 test("fails loudly when the status contract is incomplete", () => {
   assert.throws(
     () => parseLocalSupabaseStatus(JSON.stringify({ API_URL: "http://x" })),

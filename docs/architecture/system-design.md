@@ -156,21 +156,21 @@ The preferred sequence is:
 
 ## Main data domains
 
-| Domain                  | Responsibility                                                                                              | Important relationships                                                              |
-| ----------------------- | ----------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------ |
-| Authentication identity | Login identity, verified contact method, session                                                            | Linked one-to-one with an application profile                                        |
-| Profiles                | Display identity, competences, interests, preferences, visibility settings                                  | User, skills, participation history, media                                           |
-| Skills/competences      | Controlled taxonomy used by users and proposals                                                             | Many-to-many with profiles and proposal requirements                                 |
-| One-time proposals      | Creator-owned content, schedule, rough/exact location separation, stored lifecycle, derived temporal status | Creator, controlled skill requirements, future participation, future template source |
+| Domain                  | Responsibility                                                                                              | Important relationships                                                                   |
+| ----------------------- | ----------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
+| Authentication identity | Login identity, verified contact method, session                                                            | Linked one-to-one with an application profile                                             |
+| Profiles                | Display identity, competences, interests, preferences, visibility settings                                  | User, skills, participation history, media                                                |
+| Skills/competences      | Controlled taxonomy used by users and proposals                                                             | Many-to-many with profiles and proposal requirements                                      |
+| One-time proposals      | Creator-owned content, schedule, rough/exact location separation, stored lifecycle, derived temporal status | Creator, controlled skill requirements, future participation, future template source      |
 | Recurring activities    | Persistent Tavoli, versioned weekly/monthly schedules, bounded occurrences, rough/exact privacy, lifecycle  | Separate from one-time proposals; Flutter experience and public web discovery implemented |
-| Participation           | Shared project identity, private requests/decisions, current membership and retained history                 | Profile and concrete one-time/recurring project; source for authorization and later stats |
-| Chat                    | One proposal-scoped conversation when eligible                                                              | Proposal and current authorized members                                              |
-| Messages                | Persisted communication within a proposal chat                                                              | Chat, sender, moderation/deletion state                                              |
-| Notifications           | In-app records, preferences, device tokens, delivery attempts                                               | Recipient, source event, optional proposal/request/message                           |
-| Templates               | Reusable proposal structure derived from approved past/community content                                    | Source proposal, attribution, moderation/publication state                           |
-| Community statistics    | Aggregated views over canonical activity and participation                                                  | Proposal type, location, participation, time                                         |
-| Moderation              | Reports, blocks, content status, actions, internal notes, appeals if introduced                             | Users, proposals, messages, media, administrators                                    |
-| Audit/operations        | Security-relevant and administrative action history                                                         | Actor, target, action, timestamps, metadata                                          |
+| Participation           | Shared project identity, private requests/decisions, current membership and retained history                | Profile and concrete one-time/recurring project; source for authorization and later stats |
+| Chat                    | One proposal-scoped conversation when eligible                                                              | Proposal and current authorized members                                                   |
+| Messages                | Persisted communication within a proposal chat                                                              | Chat, sender, moderation/deletion state                                                   |
+| Notifications           | Controlled categories/preferences and recipient in-app records; later device delivery                       | Recipient, per-consumer source event receipt, optional project/request/membership         |
+| Templates               | Reusable proposal structure derived from approved past/community content                                    | Source proposal, attribution, moderation/publication state                                |
+| Community statistics    | Aggregated views over canonical activity and participation                                                  | Proposal type, location, participation, time                                              |
+| Moderation              | Reports, blocks, content status, actions, internal notes, appeals if introduced                             | Users, proposals, messages, media, administrators                                         |
+| Audit/operations        | Security-relevant and administrative action history                                                         | Actor, target, action, timestamps, metadata                                               |
 
 Later schema plans must extend this model deliberately and record unresolved product choices instead of guessing them.
 
@@ -267,15 +267,27 @@ Notifications are a centralized domain, not custom preference logic embedded in 
 
 ### Canonical parts
 
-- notification categories;
-- per-user preferences;
-- in-app notification records;
-- device tokens and platform metadata;
-- outbox events;
-- delivery jobs/attempts;
-- idempotency keys;
-- deep-link target data;
-- delivery and read timestamps.
+- controlled notification categories and default channel settings;
+- sparse per-profile category overrides, with absent rows inheriting catalog defaults;
+- recipient-owned semantic in-app notification records and read timestamps;
+- private outbox events plus generic per-consumer receipts;
+- structured project targets that clients map to routes without storing client URLs;
+- later device tokens, platform metadata, delivery jobs/attempts, and delivery timestamps.
+
+The first notification projection owns the six participation events emitted by the
+shared project-participation domain. A service-only, concurrency-safe projector locks
+available source events with `SKIP LOCKED`, resolves recipients from canonical request,
+membership, and project rows, applies the recipient's effective in-app preference, and
+records the stable `notifications.v1` consumer receipt. Notification uniqueness and
+the receipt together make retries idempotent. The outbox `published_at` field is not a
+consumer acknowledgement: notification processing must not prevent future chat,
+analytics, or other independent consumers from observing the same event.
+
+Notification rows contain kinds and identifiers, not canonical English copy. The
+authenticated inbox resolves only safe current project title/kind and workflow-authorized
+actor display name. It never returns source JSON, join-request messages, exact meeting
+information, email, tokens, or audit metadata. Device registration, push delivery,
+matching/resource/chat notifications, and client inbox UI remain later work.
 
 ### Initial channels
 
