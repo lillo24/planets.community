@@ -65,6 +65,13 @@ describe("public proposal routes", () => {
     expect(
       screen.getByRole("button", { name: /Go to next page/i }),
     ).toHaveAttribute("href", expect.stringContaining("cursor="));
+    expect(
+      screen.getByRole("link", { name: "One-time Proposals" }),
+    ).toHaveAttribute("aria-current", "page");
+    expect(screen.getByRole("link", { name: "Tavoli" })).toHaveAttribute(
+      "href",
+      "/tavoli",
+    );
   });
 
   it("renders restricted and public exact locations without leaking hidden text", async () => {

@@ -26,6 +26,7 @@
     "db:test": "supabase test db --local",
     "auth:verify:local": "node scripts/verify-local-mobile-auth.mjs",
     "auth:web:verify:local": "node scripts/verify-local-web-auth.mjs",
+    "tavoli:web:verify:local": "node scripts/verify-local-web-tavoli.mjs",
     "profile:verify:local": "node scripts/verify-local-profile-visibility.mjs",
     "proposal:verify:local": "node scripts/verify-local-proposals.mjs",
     "recurring:verify:local": "node scripts/verify-local-recurring-activities.mjs",

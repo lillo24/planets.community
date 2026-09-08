@@ -119,6 +119,9 @@ jobs:
       - name: Verify local web email OTP session
         run: npm run auth:web:verify:local
 
+      - name: Verify public web Tavoli discovery and privacy
+        run: npm run tavoli:web:verify:local
+
       - name: Regenerate public database types
         run: npm run db:types
 

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { SearchXIcon } from "lucide-react";
 
+import { ActivityDiscoverySwitcher } from "@/components/activity-discovery-switcher";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -76,6 +77,7 @@ export default async function ProposalsPage({
           Find a local activity where people are building, growing, creating, or
           helping together.
         </p>
+        <ActivityDiscoverySwitcher active="proposals" />
       </header>
       <form
         className="grid gap-3 rounded-xl bg-muted/40 p-4 sm:grid-cols-[1fr_16rem_auto]"

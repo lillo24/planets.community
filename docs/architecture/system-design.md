@@ -1,7 +1,7 @@
 # System Design and Responsibility Boundaries
 
 **Status:** Initial accepted design  
-**Implementation status:** Foundations, authentication, profiles, and one-time proposals implemented; recurring-activity domain foundation in progress
+**Implementation status:** Foundations, authentication, profiles, one-time proposals, and Tavoli mobile experience implemented; public web Tavoli discovery in progress
 
 This document describes how the major parts of PLANETS should interact. Technology choices are recorded separately in [`core-stack.md`](core-stack.md).
 
@@ -107,7 +107,7 @@ Complete-profile creators manage proposals only through expected-identity-bound 
 
 `recurring_activity_meeting_details` physically separates exact meeting text/coordinates from structured rough public location. Anonymous discovery uses narrow list/detail operations: normal list includes only published series and requires callers to reuse one explicit reference-time snapshot across cursor pages, while exact-ID detail may retain published, paused, or ended history. Participant-restricted exact data is absent from public payloads; participant-authorized access remains plan 05 work.
 
-Complete-profile creators use expected-identity-bound create/publish/resume operations; all owner mutations reject stale account-switch forms before changing data. Publication, schedule changes, pause, resume, and end record content-free audit/outbox metadata without implementing notification delivery. 04B1 intentionally exposes no Tavoli mobile or web UI; 04B2 owns those client experiences.
+Complete-profile creators use expected-identity-bound create/publish/resume operations; all owner mutations reject stale account-switch forms before changing data. Publication, schedule changes, pause, resume, and end record content-free audit/outbox metadata without implementing notification delivery. 04B2A provides the full Flutter Tavoli experience. 04B2B provides signed-out, read-only Next.js discovery through only the sanitized public list/detail operations; its list cursor preserves one caller-owned reference-time snapshot across pages.
 
 ### Clients use shared operations rather than duplicate workflows
 
@@ -151,7 +151,7 @@ The preferred sequence is:
 | Profiles                | Display identity, competences, interests, preferences, visibility settings                                  | User, skills, participation history, media                                           |
 | Skills/competences      | Controlled taxonomy used by users and proposals                                                             | Many-to-many with profiles and proposal requirements                                 |
 | One-time proposals      | Creator-owned content, schedule, rough/exact location separation, stored lifecycle, derived temporal status | Creator, controlled skill requirements, future participation, future template source |
-| Recurring activities    | Persistent Tavoli, versioned weekly/monthly schedules, bounded occurrences, rough/exact privacy, lifecycle  | Separate from one-time proposals; UI deferred to 04B2                                |
+| Recurring activities    | Persistent Tavoli, versioned weekly/monthly schedules, bounded occurrences, rough/exact privacy, lifecycle  | Separate from one-time proposals; Flutter experience implemented and public web discovery in progress |
 | Participation           | Requests, decisions, membership, roles, history                                                             | User and proposal; source for stats and authorization                                |
 | Chat                    | One proposal-scoped conversation when eligible                                                              | Proposal and current authorized members                                              |
 | Messages                | Persisted communication within a proposal chat                                                              | Chat, sender, moderation/deletion state                                              |
