@@ -245,9 +245,8 @@ Expected scope:
 Owns the Flutter-only Browse integration, public Tavoli discovery, constrained
 weekly/monthly authoring, future/pending schedule correction, owner lifecycle
 management, identity-safe controllers, and the manual Android/iOS QA gate.
-Its native Android/iOS interaction QA was not independently marked passed and
-remains an explicit manual backlog item rather than an implementation-status
-qualification.
+Its native Android/iOS interaction QA was confirmed passed by the founder
+during the 04B2B review.
 
 ###### 04B2B — Public Web Tavoli Discovery
 
@@ -448,6 +447,6 @@ Major gates currently expected:
 
 ## Immediate next action
 
-Complete final browser review for **04B2B — Public Web Tavoli Discovery**. The
-independent 04B2A native Android/iOS QA backlog remains unclaimed. Plan 05 may
-still proceed independently from implemented 04A if product sequencing changes.
+Complete final browser review for **04B2B — Public Web Tavoli Discovery**.
+Plan 05 may still proceed independently from implemented 04A if product
+sequencing changes.
