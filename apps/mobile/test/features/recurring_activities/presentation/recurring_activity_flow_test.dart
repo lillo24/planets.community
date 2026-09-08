@@ -7,12 +7,15 @@ import 'package:planets_mobile/core/config/app_config.dart';
 import 'package:planets_mobile/features/auth/data/auth_gateway.dart';
 import 'package:planets_mobile/features/auth/domain/auth_models.dart';
 import 'package:planets_mobile/features/profile/data/profile_gateway.dart';
+import 'package:planets_mobile/features/participation/data/participation_gateway.dart';
+import 'package:planets_mobile/features/participation/domain/participation_models.dart';
 import 'package:planets_mobile/features/proposals/data/proposal_gateway.dart';
 import 'package:planets_mobile/features/recurring_activities/data/recurring_activity_gateway.dart';
 import 'package:planets_mobile/features/recurring_activities/domain/recurring_activity_models.dart';
 
 import '../../../support/fake_auth.dart';
 import '../../../support/fake_profile.dart';
+import '../../../support/fake_participation.dart';
 import '../../../support/fake_proposal.dart';
 import '../../../support/fake_recurring_activity.dart';
 
@@ -208,6 +211,13 @@ Future<ProviderContainer> _pump(
         ),
         profileGatewayProvider.overrideWithValue(
           FakeProfileGateway(data: profileFixture(complete: true)),
+        ),
+        participationGatewayProvider.overrideWithValue(
+          FakeParticipationGateway()
+            ..meetingDetails = meetingDetailsFixture(
+              projectId: 'tavolo-1',
+              projectKind: ProjectKind.recurring,
+            ),
         ),
         proposalGatewayProvider.overrideWithValue(FakeProposalGateway()),
         recurringActivityGatewayProvider.overrideWithValue(recurring),

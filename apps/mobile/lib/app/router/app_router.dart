@@ -10,6 +10,10 @@ import '../../features/auth/presentation/request_code_screen.dart';
 import '../../features/auth/presentation/verify_code_screen.dart';
 import '../../features/profile/presentation/profile_edit_screen.dart';
 import '../../features/profile/presentation/profile_screen.dart';
+import '../../features/participation/domain/participation_models.dart';
+import '../../features/participation/presentation/creator_participation_screen.dart';
+import '../../features/participation/presentation/join_request_screen.dart';
+import '../../features/participation/presentation/participation_routes.dart';
 import '../../features/proposals/presentation/own_proposals_screen.dart';
 import '../../features/proposals/presentation/proposal_editor_screen.dart';
 import '../../features/proposals/presentation/public_proposals_screen.dart';
@@ -62,8 +66,13 @@ RoutingConfig _routingConfig(
           path == '/tavoli/mine' ||
           path == '/tavoli/create' ||
           (path.startsWith('/tavoli/') && path.endsWith('/edit'));
+      final isParticipationRoute = ParticipationRoutes.isParticipationPath(
+        path,
+      );
       final isActivityManagementRoute =
-          isProposalManagementRoute || isTavoliManagementRoute;
+          isProposalManagementRoute ||
+          isTavoliManagementRoute ||
+          isParticipationRoute;
 
       if (session.phase == AuthSessionPhase.restoring) {
         return null;
@@ -73,6 +82,14 @@ RoutingConfig _routingConfig(
           (isProfileRoute || isActivityManagementRoute)) {
         return Uri(
           path: '/auth',
+          queryParameters: {'returnTo': state.uri.toString()},
+        ).toString();
+      }
+
+      if (session.phase == AuthSessionPhase.profileSetupRequired &&
+          isParticipationRoute) {
+        return Uri(
+          path: '/profile/edit',
           queryParameters: {'returnTo': state.uri.toString()},
         ).toString();
       }
@@ -91,6 +108,19 @@ RoutingConfig _routingConfig(
       if (session.phase == AuthSessionPhase.ready && isAuthRoute) {
         return pending?.returnTo ??
             sanitizeReturnDestination(state.uri.queryParameters['returnTo']);
+      }
+
+      if (session.phase == AuthSessionPhase.profileSetupRequired &&
+          isAuthRoute) {
+        final returnTo =
+            pending?.returnTo ??
+            sanitizeReturnDestination(state.uri.queryParameters['returnTo']);
+        if (ParticipationRoutes.isParticipationPath(returnTo)) {
+          return Uri(
+            path: '/profile/edit',
+            queryParameters: {'returnTo': returnTo},
+          ).toString();
+        }
       }
 
       if ((session.phase == AuthSessionPhase.checkingProfile ||
@@ -137,7 +167,13 @@ RoutingConfig _routingConfig(
                 routes: [
                   GoRoute(
                     path: 'edit',
-                    builder: (context, state) => const ProfileEditScreen(),
+                    builder: (context, state) => ProfileEditScreen(
+                      returnTo: state.uri.queryParameters['returnTo'] == null
+                          ? '/profile'
+                          : sanitizeReturnDestination(
+                              state.uri.queryParameters['returnTo'],
+                            ),
+                    ),
                   ),
                 ],
               ),
@@ -167,6 +203,20 @@ RoutingConfig _routingConfig(
                         path: 'edit',
                         builder: (context, state) => ProposalEditorScreen(
                           proposalId: state.pathParameters['id'],
+                        ),
+                      ),
+                      GoRoute(
+                        path: 'join',
+                        builder: (context, state) => JoinRequestScreen(
+                          projectId: state.pathParameters['id']!,
+                          projectKind: ProjectKind.oneTime,
+                        ),
+                      ),
+                      GoRoute(
+                        path: 'participants',
+                        builder: (context, state) => CreatorParticipationScreen(
+                          projectId: state.pathParameters['id']!,
+                          projectKind: ProjectKind.oneTime,
                         ),
                       ),
                     ],
@@ -201,6 +251,20 @@ RoutingConfig _routingConfig(
                             RecurringActivityEditorScreen(
                               activityId: state.pathParameters['id'],
                             ),
+                      ),
+                      GoRoute(
+                        path: 'join',
+                        builder: (context, state) => JoinRequestScreen(
+                          projectId: state.pathParameters['id']!,
+                          projectKind: ProjectKind.recurring,
+                        ),
+                      ),
+                      GoRoute(
+                        path: 'participants',
+                        builder: (context, state) => CreatorParticipationScreen(
+                          projectId: state.pathParameters['id']!,
+                          projectKind: ProjectKind.recurring,
+                        ),
                       ),
                     ],
                   ),

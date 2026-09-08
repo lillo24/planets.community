@@ -8,6 +8,8 @@ import '../../../core/widgets/empty_state.dart';
 import '../../../core/widgets/error_state.dart';
 import '../../../core/widgets/loading_state.dart';
 import '../../../l10n/generated/app_localizations.dart';
+import '../../participation/domain/participation_models.dart';
+import '../../participation/presentation/project_participation_section.dart';
 import '../application/proposal_controllers.dart';
 import '../domain/proposal_models.dart';
 import '../domain/proposal_time.dart';
@@ -240,7 +242,17 @@ class _ProposalDetailScreenState extends ConsumerState<ProposalDetailScreen> {
                     ProposalSkillRequirements(skills: detail.summary.skills),
                   ],
                   const SizedBox(height: AppSpacing.large),
-                  ProposalLocation(detail: detail),
+                  ProjectParticipationSection(
+                    projectId: detail.summary.id,
+                    projectKind: ProjectKind.oneTime,
+                    creatorProfileId: detail.creatorProfileId,
+                    acceptsNewRequests:
+                        detail.summary.status == ProposalStatus.upcoming ||
+                        detail.summary.status == ProposalStatus.happening,
+                    publicLocationLines: [detail.summary.publicLocationLabel],
+                    publicExactMeetingText: detail.exactMeetingText,
+                    exactLocationRestricted: detail.exactLocationRestricted,
+                  ),
                   if (detail.creatorDisplayName != null) ...[
                     const SizedBox(height: AppSpacing.large),
                     Text(

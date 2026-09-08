@@ -172,9 +172,10 @@ ProposalDetail proposalDetailFixture({
   bool restricted = true,
   ProposalStatus status = ProposalStatus.upcoming,
   List<ProposalSkill>? skills,
+  String creatorProfileId = 'user-1',
 }) => ProposalDetail(
   summary: proposalSummaryFixture(status: status, skills: skills),
-  creatorProfileId: 'user-1',
+  creatorProfileId: creatorProfileId,
   creatorDisplayName: 'Casey',
   description: 'A full proposal description.',
   exactMeetingText: restricted ? null : 'At the fountain, Piazza Maggiore',
