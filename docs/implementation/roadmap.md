@@ -53,8 +53,11 @@ Do not begin a dependent plan until the prior plan is merged or its branch is ex
 | 04B2 | Tavoli Mobile/Web Experience (parent)          | Separate mobile and public-web clients over the canonical 04B1 backend                                                    | 04B1                   | Functional UX review; no recurrence expansion                                                                        | Implemented |
 | 04B2A | Tavoli Mobile Experience and Browse Integration | Mobile browse/list/detail/create/edit/manage UI over the canonical 04B1 backend                                         | 04B1                   | Native interaction review                                                                                             | Implemented |
 | 04B2B | Public Web Tavoli Discovery                   | Read-only public web Tavoli list and detail                                                                               | 04B2A                  | Functional public-web review                                                                                          | Implemented |
-| 04C | Material Resources                              | Explicit requested/donated/loaned material-resource domain and later activity integration                               | 04A                    | Resource types, contribution/ownership semantics, visibility, and lifecycle                                           | Not started |
-| 05  | Participation lifecycle                         | Join requests, review decisions, membership, leave/cancel behavior, non-chat participation rules, derived stats          | 04A                    | Roles, removal/withdrawal rules, and any non-chat participation thresholds                                           | Not started |
+| 04C | Resources + Scambio-Dona                        | Project needs/contributions plus donation/exchange listings and later matching/notifications                            | 04A                    | Resource types, ownership/handoff/return semantics, visibility, listing lifecycle, and matching                       | Not started |
+| 05  | Participation lifecycle (parent)                | Shared project participation foundation, later mobile experience, and verified-contribution review                       | 04A, 04B1              | Capacity/fullness and later contribution/resource semantics remain unresolved                                        | In progress |
+| 05A | Project Participation Domain Foundation         | Shared identity, private join requests, canonical membership history, protected meeting access, events, and tests        | 04A, 04B1              | No blocking decision; exact chat trigger remains Plan 07                                                             | In review |
+| 05B | Mobile Project Participation Experience         | Join/status/withdraw, creator review, member state, leave/remove, and protected meeting UI                               | 05A                    | Functional/native UX review                                                                                           | Not started |
+| 05C | Verified Project Contribution / Completion Review | Creator confirmation of actual contribution for later stats/badges/resource attribution                               | 05A, 04C               | Contribution taxonomy, resource attribution, dispute/correction rules, and credit semantics                           | Not started |
 | 06  | Notification backbone                           | In-app notifications, preferences, device registration, outbox/queue, FCM worker, retries and deep links                 | 03–05                  | Notification categories, priority, and copy can remain provisional unless user-facing review is needed               | Not started |
 | 07  | Proposal chat                                   | Automatic idempotent chat creation, membership authorization, persisted/realtime text, pagination, push, meeting URL     | 05–06                  | Triggering participation event plus access/moderation after leaving or removal                                       | Not started |
 | 08  | Storage and media hardening                     | Purpose-specific buckets, upload restrictions, private/public access, media metadata, cleanup and processing hooks       | 03–07                  | Profile/proposal photo visibility and retention choices                                                              | Not started |
@@ -185,7 +188,7 @@ Expected scope:
 
 **Goal:** Implement activity discovery through independently reviewable one-time and recurring models.
 
-Parent plan 04 remains in progress while recurring activities are outstanding. Plan 05 depends on implemented 04A one-time proposals, not on future 04B recurrence work.
+Parent plan 04 is implemented through 04A and 04B. Shared participation depends on both concrete domain foundations while 04C remains separate.
 
 #### 04A — One-Time Proposals and Discovery
 
@@ -257,26 +260,66 @@ navigation, snapshot-safe pagination, named-zone rendering, and public-location
 privacy over the canonical 04B1 APIs. It does not copy mobile owner management
 or introduce participation, chat, resources, or recurrence expansion.
 
-#### 04C — Material Resources
+#### 04C — Resources + Scambio-Dona
 
 **Status:** Not started and not implemented by 04B1.
 
-PLANETS still needs an explicit domain for material resources that an activity may request, receive as donations, or use on loan. A later scoped plan must define resource types, contributor/owner relationships, handoff/return lifecycle, visibility, and historical behavior before schema or UI is introduced. This gap is recorded so it is not silently collapsed into skills or Tavoli topics.
+PLANETS still needs an explicit domain for material resources that a project may request, receive as donations, exchange, or use on loan. The accepted Scambio-Dona direction also includes standalone donation and exchange listings, with saved searches/notifications and matching between listings and project needs considered later. A scoped plan must first define resource types, contributor/owner relationships, handoff/return lifecycle, listing visibility/history, and matching semantics. This gap is recorded so resources are not silently collapsed into skills, Tavoli topics, or free-form join-request fields.
 
-Neither 04B nor 04C is currently a hard dependency for beginning plan 05 after implemented 04A. A future accepted product decision may revise ordering, but this roadmap does not speculate that material resources must precede participation.
+04C is not a dependency for the 05A participation foundation or 05B mobile participation UI. Stable join-request IDs allow future resource-offer rows to attach without equating contribution with membership. The 05C verified-contribution plan does depend on resolving relevant contribution/resource semantics.
 
 ### 05 — Participation lifecycle
 
-**Goal:** Make proposals collaborative through one canonical state machine.
+**Goal:** Make one-time Projects and Tavoli collaborative through one canonical participation model while keeping their content/lifecycle tables separate.
 
-Expected scope:
+#### 05A — Project Participation Domain Foundation
+
+**Status:** In review on the focused 05A pull request; not merged at the time of this roadmap update.
+
+Owns:
+
+- a private shared project identity whose UUID equals the concrete Proposal/Tavolo UUID;
+- source backfill and insert/delete/ownership invariants without a content mega-table;
+- private, bounded-message join-request attempts and retained decision history;
+- acceptance-backed membership history with one current membership per project/profile;
+- expected-identity-bound request/withdraw/accept/reject/leave/remove operations;
+- concrete lifecycle eligibility, including one-time end-time and Tavolo pause/end behavior;
+- requester/creator/member private reads and creator/current-member protected meeting access;
+- identifier-only audit/outbox events, pgTAP, real multi-user integration, and generated types.
+
+05A does not implement UI, notification delivery, chat, capacity/fullness, resources, online/in-person schema, contribution verification, badges, or denormalized counters. `project.join_request_accepted` is a stable Plan 07 candidate event, but Plan 07 still owns the exact automatic-chat trigger and access after membership changes.
+
+#### 05B — Mobile Project Participation Experience
+
+**Status:** Not started; depends on merged 05A.
+
+Future mobile scope:
+
+- Join with an optional request message;
+- own request status and withdrawal;
+- creator request review and accept/reject;
+- current/historical member state;
+- participant leave and creator removal;
+- participant-authorized operational meeting information.
+
+This client must consume the 05A operations and must not reproduce participation rules locally.
+
+#### 05C — Verified Project Contribution / Completion Review
+
+**Status:** Not started.
+
+Future scope records the 08/09 direction that the creator confirms who actually contributed after completion. It may later support contribution history, derived statistics, badges, and resource/help attribution, but membership acceptance alone is not proof. Taxonomy, resource linkage, correction/dispute behavior, and credit semantics remain founder-owned decisions; 05C must not be inferred from 05A history.
+
+Future project-presentation work must also represent Tavoli as a Progetti type/filter in the final information architecture and implement the accepted Online/In-Presence mode. Neither is a participation-table field in 05A.
+
+The former combined Plan 05 scope is now split across the three portions above. Remaining parent outcomes include:
 
 - join request creation, withdrawal, acceptance, and rejection;
 - duplicate/race protection;
 - membership and role records;
 - leave, removal, and proposal-state interactions as decided;
-- owner review interface;
-- participant counts and history-derived stats;
+- owner review interface (05B);
+- participant counts and history-derived stats after their product semantics are selected;
 - any explicitly selected non-chat participation threshold or activation rule;
 - canonical backend functions for sensitive transitions;
 - outbox events for later notifications;
@@ -438,7 +481,7 @@ A plan should pause before implementation when ambiguity can change security, ir
 Major gates currently expected:
 
 1. recurrence expansion/exception semantics before extending beyond the bounded 04B1 weekly/monthly model; 04A rough/exact location visibility is resolved;
-2. participation state semantics before plan 05; one-time proposal lifecycle is resolved in 04A;
+2. capacity/fullness before introducing limits; the core request/membership state semantics are resolved in 05A;
 3. chat access after membership changes before plan 07;
 4. moderation/minimum-age policy before plan 09 is complete;
 5. retention/anonymization policy before plan 10;
@@ -447,6 +490,4 @@ Major gates currently expected:
 
 ## Immediate next action
 
-Select the next founder-prioritized roadmap item. **04C — Material Resources**
-remains separately not started, while **05 — Participation lifecycle** is
-independently available from implemented 04A.
+Complete review and merge of **05A — Project Participation Domain Foundation**. After 05A is merged, **05B — Mobile Project Participation Experience** is the direct continuation. **04C — Resources + Scambio-Dona** remains independently available; 05C waits for contribution/resource decisions.

@@ -1,6 +1,6 @@
 # Database development
 
-PostgreSQL is the canonical PLANETS product record. This guide owns the local schema-change, security-test, and generated-type workflow. The current schema includes application identity, basic profiles, a controlled starter skill catalog, field visibility, one-time proposals, the Tavoli recurring-activity domain, and private audit/outbox primitives.
+PostgreSQL is the canonical PLANETS product record. This guide owns the local schema-change, security-test, and generated-type workflow. The current schema includes application identity, basic profiles, a controlled starter skill catalog, field visibility, one-time proposals, the Tavoli recurring-activity domain, shared project participation, and private audit/outbox primitives.
 
 ## Source of truth and daily workflow
 
@@ -48,7 +48,7 @@ PostGIS is installed into the existing non-API `extensions` schema. Qualify spat
 
 Only `draft`, `published`, and `cancelled` are stored. `private.derive_proposal_status` derives Upcoming before `starts_at`, Happening from start until end, Just Finished from the end until exactly 24 hours later, and Completed thereafter. Normal discovery includes the first three derived states, while exact-ID detail retains published historical proposals. Retention does not create a Community template or make completed content mutable.
 
-Authenticated complete-profile owners call expected-identity-bound create/update/publish/cancel functions; client roles have no direct table mutation privileges. Public list/detail functions are explicitly granted to `anon` and `authenticated`. List output contains rough location only. Detail returns exact text only for `public` visibility; participant-restricted text is absent from the row payload and represented by a boolean restriction flag. Publish and cancel write only proposal/actor identifiers to audit/outbox primitives and do not deliver notifications.
+Authenticated complete-profile owners call expected-identity-bound create/update/publish/cancel functions; client roles have no direct table mutation privileges. Public list/detail functions are explicitly granted to `anon` and `authenticated`. List output contains rough location only. Detail returns exact text only for `public` visibility; participant-restricted text is absent from the public row payload and represented by a boolean restriction flag. The shared participation meeting operation separately authorizes creators/current members. Publish and cancel write only proposal/actor identifiers to audit/outbox primitives and do not deliver notifications.
 
 ## Tavoli / recurring activities
 
@@ -58,9 +58,19 @@ Authenticated complete-profile owners call expected-identity-bound create/update
 
 `private.next_recurring_activity_occurrence` computes one finite next occurrence without expanding an infinite series. `private.derive_recurring_activity_occurrences` accepts only an increasing `[from, until)` window of at most five years and a limit from 1 through 100. Each candidate local date/time is converted with its stored IANA zone, so weekly and monthly wall-clock times remain stable across daylight-saving changes instead of adding fixed UTC weeks.
 
-`public.list_public_recurring_activities` returns only active published Tavoli, ordered by derived next occurrence and deterministic ID cursor, with rough location only. Its non-null `p_reference_time` is required: a caller chooses one snapshot for page one and must reuse that exact value with every cursor from that pagination session, so occurrence boundaries cannot reorder rows between pages. `public.get_public_recurring_activity` is exact-ID detail for published, paused, or ended history; paused/ended rows have no active next occurrences. `public.list_public_recurring_activity_occurrences` exposes only bounded occurrences for currently published series. Public exact meeting text is detail-only when visibility is `public`; `participants` returns no protected value and an explicit restricted indicator. Participant-authorized reads remain plan 05 work.
+`public.list_public_recurring_activities` returns only active published Tavoli, ordered by derived next occurrence and deterministic ID cursor, with rough location only. Its non-null `p_reference_time` is required: a caller chooses one snapshot for page one and must reuse that exact value with every cursor from that pagination session, so occurrence boundaries cannot reorder rows between pages. `public.get_public_recurring_activity` is exact-ID detail for published, paused, or ended history; paused/ended rows have no active next occurrences. `public.list_public_recurring_activity_occurrences` exposes only bounded occurrences for currently published series. Public exact meeting text is detail-only when visibility is `public`; `participants` returns no protected value and an explicit restricted indicator. The shared participation meeting operation separately authorizes creators/current members.
 
 Owners use expected-identity-bound create/update/publish/pause/resume/end and owner read operations. Repeated publish, pause, resume, and end calls are idempotent in their already-achieved state and do not duplicate audit/outbox events. Ended activities are immutable. Flutter provides the ordinary-user Tavoli experience. The public website consumes only the sanitized public list/detail functions and keeps authoring and owner management mobile-only.
+
+## Shared project participation
+
+`public.projects` is a private identity registry whose UUID equals one concrete `proposals.id` or `recurring_activities.id`. It stores only the concrete kind, synchronized creator, and source creation timestamp. Insert triggers register every future trusted source insert; ownership/ID changes are rejected; deletion removes the registry only when no request or membership history exists. It is not a public directory.
+
+`public.project_join_requests` preserves private attempts with one of `pending`, `accepted`, `rejected`, or `withdrawn`. Optional requester messages are trimmed and capped at 500 characters. `public.project_memberships` records exactly one accepted request origin and preserves current, voluntarily-left, and creator-removed history. Partial unique indexes enforce at most one pending request and one current membership for each project/profile.
+
+Authenticated clients use `request_to_join_project`, `withdraw_project_join_request`, `accept_project_join_request`, `reject_project_join_request`, `leave_project`, and `remove_project_member`; the tables themselves have no client privileges or RLS policies. All operations bind an expected rendered identity to `auth.uid()`, validate creator/requester/member ownership, and lock in a consistent source-project-row order. Request/accept eligibility uses the concrete lifecycle: a published one-time project accepts strictly before `ends_at`; a Tavolo accepts only while published. Pause/end/completion preserve membership history.
+
+Requester, creator-review, own-membership, and creator-member-history reads are separate narrow operations. Request messages never become public, and the creator projection contains display name but no Auth email. `get_project_participant_meeting_details` returns only exact operational meeting text/point and concrete kind to the creator or a current accepted participant. Every transition adds an identifier-only audit/outbox event; no delivery, chat, resource contribution, capacity, badge, or contribution verification is implemented here.
 
 ## Fail-closed access
 
@@ -99,6 +109,7 @@ The native pgTAP files under `supabase/tests/` verify:
 - audit/outbox constraints, defaults, indexes, restrictive actor deletion, and private client denial.
 - one-time proposal constraints, lifecycle/status boundaries, owner/cross-account access, expected-identity protection, rough/exact privacy, skill relationships, function hardening, pagination, and historical retention.
 - recurring activity constraints, owner isolation, stale expected identity, weekly/monthly wall-clock recurrence, Rome DST changes, bounded occurrence windows, non-overlapping schedule history, pause/resume/end transitions, public privacy, and function hardening.
+- shared project registry synchronization, request/membership state and uniqueness, concrete lifecycle eligibility, stale identity, private read projections, participant meeting authorization, retained history, deletion protection, and content-free audit/outbox events.
 
 Run focused commands while the stack is already running:
 
@@ -110,6 +121,7 @@ npm run auth:verify:local
 npm run profile:verify:local
 npm run proposal:verify:local
 npm run recurring:verify:local
+npm run participation:verify:local
 npm run db:types
 npm run db:types:check
 ```
@@ -124,8 +136,10 @@ npm run db:types:check
 
 `recurring:verify:local` uses two complete authenticated identities plus anon to prove Tavolo draft ownership, cross-user and stale-identity rejection, required snapshot pagination, weekly/monthly discovery, participant-restricted exact-location absence, public detail-only exact location, pause/resume/end visibility, preservation of an old schedule when a future version is added, and in-place correction of that pending version. Reference windows are deterministic; the harness performs no realtime waits and never prints addresses, OTPs, tokens, keys, or protected meeting content.
 
+`participation:verify:local` uses a creator, requester, unrelated authenticated user, and anon across one future Proposal and Tavolo. It proves private request review, stale-identity rejection, single acceptance, leave/re-request/reject, pause/resume membership preservation, creator removal/re-request, end-history preservation, protected meeting authorization, and unchanged anonymous detail privacy. It never logs OTPs, tokens, request messages, or protected meeting values.
+
 `auth:web:verify:local` adds web-specific evidence after a locally configured production Next.js build. It obtains session cookies through supported `@supabase/ssr` callbacks, confirms the Server Component recognizes the authenticated session, rejects private-auth material in the rendered response, and confirms `/admin` returns 404 for signed-out and signed-in requests. It does not invent or log Supabase's cookie encoding.
 
 `tavoli:web:verify:local` uses synthetic local OTP data and the production Next.js server to prove signed-out Tavoli list/detail rendering, rough-location and next-meeting output, exclusion of paused/ended rows from discovery, retained sanitized historical detail, exact-ID 404 behavior, and detail-only public/restricted exact-location handling. It never prints test addresses, tokens, keys, or protected meeting content.
 
-`npm run check:db` performs reset, lint, pgTAP, the mobile/backend Auth check, the two-user profile visibility check, the proposal privacy/lifecycle check, the recurring activity recurrence/privacy/lifecycle check, type regeneration, and drift detection as one validation sequence. It assumes `npm run db:start` has already succeeded and leaves stack lifecycle to the caller. CI additionally generates local web configuration, builds Next.js, runs the web-session and public Tavoli integrations, and always stops Supabase.
+`npm run check:db` performs reset, lint, pgTAP, the mobile/backend Auth check, the two-user profile visibility check, the proposal privacy/lifecycle check, the recurring activity recurrence/privacy/lifecycle check, the multi-user project-participation check, type regeneration, and drift detection as one validation sequence. It assumes `npm run db:start` has already succeeded and leaves stack lifecycle to the caller. CI additionally generates local web configuration, builds Next.js, runs the web-session and public Tavoli integrations, and always stops Supabase.

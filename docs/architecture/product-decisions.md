@@ -13,3 +13,16 @@ Current product direction:
 - Authorization after a participant leaves, is removed, blocked, or suspended remains a separate decision for plan 07. Retention after project completion is already decided; completion alone must not delete chat history.
 
 This decision supersedes the older tentative `chat after at least three people` wording in `docs/architecture/system-design.md` and the threshold-gated chat wording in `docs/implementation/roadmap.md`. Future implementation plans must use this decision unless it is explicitly revised.
+
+## Projects and participation
+
+Current product direction from the 08/09 founder discussion:
+
+- **Progetti** is the user-facing umbrella concept for both one-time Projects and recurring Tavoli. Their concrete backend models remain separate because their lifecycle and scheduling rules differ.
+- Participation is one shared project-level domain across both concrete types. A join request is an attempt; creator acceptance creates canonical membership history. Creators remain organizers through ownership rather than duplicate membership rows.
+- Participation and resources/contributions are related but separate. Future resource offers may attach to a stable join-request ID, but membership does not imply resource ownership or delivery.
+- Accepted membership is not proof of contribution. A future 05C flow should let the creator confirm who actually contributed after completion before contribution credit, badges, or resource attribution are derived.
+- Online and In-Presence project modes are accepted future direction. Current project schemas remain physical-location oriented; the participation model stays location agnostic until a focused project-presentation/schema plan implements the mode.
+- Capacity and **Pieno** behavior remain unresolved. There is no maximum-participant rule, waitlist, automatic fullness, or role quota yet.
+
+Ordinary withdrawal, voluntary leave, and creator removal are not permanent bans. A person may submit a fresh request while the project is eligible and they have no pending request or current membership. Blocking and moderation remain later work.
