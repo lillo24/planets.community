@@ -2,7 +2,7 @@
 
 PLANETS is a community platform for creating, discovering, and joining local collaborative activities and projects.
 
-> **Current status:** repository/application foundations, email OTP, and basic profiles are implemented. One-time proposals and public discovery are in progress; participation and recurring activities remain separate future work.
+> **Current status:** repository/application foundations, email OTP, basic profiles, one-time Proposals, and the Tavoli backend/mobile experience are implemented. Public web Tavoli discovery is in progress; participation remains future work.
 
 ## Repository
 

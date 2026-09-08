@@ -20,12 +20,20 @@ export default async function PublicHomePage() {
           PLANETS is a community for creating, discovering, and joining local
           collaborative activities.
         </p>
-        <Link
-          className="inline-flex h-9 w-fit items-center rounded-lg bg-primary px-4 text-sm font-medium text-primary-foreground hover:bg-primary/80"
-          href="/proposals"
-        >
-          Browse one-time proposals
-        </Link>
+        <div className="flex flex-wrap gap-3">
+          <Link
+            className="inline-flex h-9 w-fit items-center rounded-lg bg-primary px-4 text-sm font-medium text-primary-foreground hover:bg-primary/80"
+            href="/proposals"
+          >
+            Browse one-time proposals
+          </Link>
+          <Link
+            className="inline-flex h-9 w-fit items-center rounded-lg border border-border bg-background px-4 text-sm font-medium text-foreground hover:bg-muted"
+            href="/tavoli"
+          >
+            Browse Tavoli
+          </Link>
+        </div>
         <AuthStatusCard state={authState} />
       </section>
     </main>
