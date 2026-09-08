@@ -9,6 +9,8 @@ import '../../../core/widgets/empty_state.dart';
 import '../../../core/widgets/error_state.dart';
 import '../../../core/widgets/loading_state.dart';
 import '../../../l10n/generated/app_localizations.dart';
+import '../../participation/domain/participation_models.dart';
+import '../../participation/presentation/project_participation_section.dart';
 import '../application/recurring_activity_controllers.dart';
 import '../domain/recurring_activity_models.dart';
 import 'recurring_activity_widgets.dart';
@@ -263,20 +265,19 @@ class _PublicRecurringActivityDetailScreenState
                   ),
                 ),
             const SizedBox(height: AppSpacing.large),
-            Text(
-              l10n.tavoliLocationTitle,
-              style: Theme.of(context).textTheme.titleLarge,
+            ProjectParticipationSection(
+              projectId: detail.id,
+              projectKind: ProjectKind.recurring,
+              creatorProfileId: detail.creatorProfileId,
+              acceptsNewRequests:
+                  detail.lifecycle == RecurringActivityLifecycle.published,
+              publicLocationLines: [
+                '${detail.publicLocationLabel} · ${detail.locality}',
+                ?detail.administrativeArea,
+              ],
+              publicExactMeetingText: detail.exactMeetingText,
+              exactLocationRestricted: detail.exactLocationRestricted,
             ),
-            const SizedBox(height: AppSpacing.small),
-            Text('${detail.publicLocationLabel} · ${detail.locality}'),
-            if (detail.administrativeArea case final area?) Text(area),
-            if (detail.exactMeetingText case final exact?)
-              Text(exact, key: const Key('tavoli-public-exact-location'))
-            else if (detail.exactLocationRestricted)
-              Text(
-                l10n.tavoliExactLocationRestricted,
-                key: const Key('tavoli-restricted-location'),
-              ),
             if (detail.creatorDisplayName case final creator?) ...[
               const SizedBox(height: AppSpacing.large),
               Text(l10n.tavoliOrganizedBy(creator)),

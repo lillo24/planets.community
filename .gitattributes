@@ -2,3 +2,6 @@
 
 *.ico binary
 *.png binary
+
+# Attached implementation prompts are archived byte-for-byte and may contain Markdown hard breaks.
+history-implementations/*.md whitespace=-trailing-space

@@ -12,7 +12,9 @@ import '../application/profile_controller.dart';
 import '../domain/profile_models.dart';
 
 class ProfileEditScreen extends ConsumerStatefulWidget {
-  const ProfileEditScreen({super.key});
+  const ProfileEditScreen({this.returnTo = '/profile', super.key});
+
+  final String returnTo;
 
   @override
   ConsumerState<ProfileEditScreen> createState() => _ProfileEditScreenState();
@@ -47,9 +49,10 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
     }
     if (identity != null && data != null) {
       return _ProfileEditForm(
-        key: ValueKey(identity.id),
+        key: ValueKey('${identity.id}:${widget.returnTo}'),
         data: data,
         identityId: identity.id,
+        returnTo: widget.returnTo,
       );
     }
 
@@ -80,11 +83,13 @@ class _ProfileEditForm extends ConsumerStatefulWidget {
   const _ProfileEditForm({
     required this.data,
     required this.identityId,
+    required this.returnTo,
     super.key,
   });
 
   final ProfileEditorData data;
   final String identityId;
+  final String returnTo;
 
   @override
   ConsumerState<_ProfileEditForm> createState() => _ProfileEditFormState();
@@ -136,7 +141,7 @@ class _ProfileEditFormState extends ConsumerState<_ProfileEditForm> {
           ),
         );
     if (saved && mounted) {
-      context.go('/profile');
+      context.go(widget.returnTo);
     }
   }
 

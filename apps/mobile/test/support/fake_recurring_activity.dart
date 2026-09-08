@@ -185,9 +185,10 @@ PublicRecurringActivityDetail publicRecurringDetailFixture({
   RecurringActivityLifecycle lifecycle = RecurringActivityLifecycle.published,
   bool restricted = true,
   RecurrenceType type = RecurrenceType.weekly,
+  String creatorProfileId = 'user-1',
 }) => PublicRecurringActivityDetail(
   id: 'tavolo-1',
-  creatorProfileId: 'user-1',
+  creatorProfileId: creatorProfileId,
   creatorDisplayName: 'Casey',
   lifecycle: lifecycle,
   title: 'Neighborhood philosophy table',

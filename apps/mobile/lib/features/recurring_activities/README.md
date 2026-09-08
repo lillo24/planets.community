@@ -2,8 +2,9 @@
 
 This feature owns the Flutter experience for Tavoli, the recurring-activity
 domain introduced by 04B1. It is deliberately separate from one-time
-Proposals and does not define participation, chat, notifications, resources,
-or occurrence-level editing.
+Proposals and does not define the shared participation state machine, chat,
+notifications, resources, or occurrence-level editing. The sibling
+`participation/` feature adds Tavolo request/member actions by project ID/kind.
 
 ## Source map
 
@@ -26,6 +27,11 @@ switcher. Tavoli own `/tavoli`, `/tavoli/:id`, `/tavoli/mine`,
 `/tavoli/create`, and `/tavoli/:id/edit`. Static children are declared before
 the ID route. Public list/detail work signed out; owner routes use existing Auth
 `returnTo` and complete-profile guards.
+
+Tavolo detail delegates its location/action area to the shared participation
+feature. Anonymous, pending, and historical participants retain the restricted
+location explanation; creator/current-member operational text comes only from
+the protected 05A RPC and is not copied into Tavolo public models.
 
 The first page, explicit refresh, or locality change captures one UTC reference
 time. Every page in that session reuses it with the returned

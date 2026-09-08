@@ -1,7 +1,7 @@
 # Implementation Roadmap
 
 **Status:** Planning baseline  
-**Current implementation:** Plans 00–04B2B implemented; 04C remains separately not started
+**Current implementation:** Plans 00–04B2B and 05A implemented; 05B in progress; 04C remains separately not started
 
 This roadmap divides the first PLANETS build into reviewable Codex tasks. Each numbered item should normally become its own implementation prompt, branch, and pull request.
 
@@ -55,8 +55,8 @@ Do not begin a dependent plan until the prior plan is merged or its branch is ex
 | 04B2B | Public Web Tavoli Discovery                   | Read-only public web Tavoli list and detail                                                                               | 04B2A                  | Functional public-web review                                                                                          | Implemented |
 | 04C | Resources + Scambio-Dona                        | Project needs/contributions plus donation/exchange listings and later matching/notifications                            | 04A                    | Resource types, ownership/handoff/return semantics, visibility, listing lifecycle, and matching                       | Not started |
 | 05  | Participation lifecycle (parent)                | Shared project participation foundation, later mobile experience, and verified-contribution review                       | 04A, 04B1              | Capacity/fullness and later contribution/resource semantics remain unresolved                                        | In progress |
-| 05A | Project Participation Domain Foundation         | Shared identity, private join requests, canonical membership history, protected meeting access, events, and tests        | 04A, 04B1              | No blocking decision; exact chat trigger remains Plan 07                                                             | In review |
-| 05B | Mobile Project Participation Experience         | Join/status/withdraw, creator review, member state, leave/remove, and protected meeting UI                               | 05A                    | Functional/native UX review                                                                                           | Not started |
+| 05A | Project Participation Domain Foundation         | Shared identity, private join requests, canonical membership history, protected meeting access, events, and tests        | 04A, 04B1              | No blocking decision; exact chat trigger remains Plan 07                                                             | Implemented |
+| 05B | Mobile Project Participation Experience         | Join/status/withdraw, creator review, member state, leave/remove, and protected meeting UI                               | 05A                    | Functional/native UX review                                                                                           | In progress |
 | 05C | Verified Project Contribution / Completion Review | Creator confirmation of actual contribution for later stats/badges/resource attribution                               | 05A, 04C               | Contribution taxonomy, resource attribution, dispute/correction rules, and credit semantics                           | Not started |
 | 06  | Notification backbone                           | In-app notifications, preferences, device registration, outbox/queue, FCM worker, retries and deep links                 | 03–05                  | Notification categories, priority, and copy can remain provisional unless user-facing review is needed               | Not started |
 | 07  | Proposal chat                                   | Automatic idempotent chat creation, membership authorization, persisted/realtime text, pagination, push, meeting URL     | 05–06                  | Triggering participation event plus access/moderation after leaving or removal                                       | Not started |
@@ -274,7 +274,7 @@ PLANETS still needs an explicit domain for material resources that a project may
 
 #### 05A — Project Participation Domain Foundation
 
-**Status:** In review on the focused 05A pull request; not merged at the time of this roadmap update.
+**Status:** Implemented in merged PR #15 (`4e73849c297ccedf10c296940675ee01bd11785b`).
 
 Owns:
 
@@ -291,9 +291,9 @@ Owns:
 
 #### 05B — Mobile Project Participation Experience
 
-**Status:** Not started; depends on merged 05A.
+**Status:** In progress in PR #16, based on merged 05A; native QA remains required before merge.
 
-Future mobile scope:
+Mobile scope:
 
 - Join with an optional request message;
 - own request status and withdrawal;
@@ -490,4 +490,4 @@ Major gates currently expected:
 
 ## Immediate next action
 
-Complete review and merge of **05A — Project Participation Domain Foundation**. After 05A is merged, **05B — Mobile Project Participation Experience** is the direct continuation. **04C — Resources + Scambio-Dona** remains independently available; 05C waits for contribution/resource decisions.
+Complete automated review and native Android/iOS QA for **05B — Mobile Project Participation Experience** before merge. **04C — Resources + Scambio-Dona** remains independently available; 05C waits for contribution/resource decisions. Plan 06 remains sequenced after Plan 05, and Plan 07 still requires the exact automatic-chat trigger and post-membership access decisions.

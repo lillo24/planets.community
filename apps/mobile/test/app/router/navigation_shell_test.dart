@@ -10,11 +10,13 @@ import 'package:planets_mobile/features/auth/application/auth_session_controller
 import 'package:planets_mobile/features/auth/data/auth_gateway.dart';
 import 'package:planets_mobile/features/auth/domain/auth_models.dart';
 import 'package:planets_mobile/features/profile/data/profile_gateway.dart';
+import 'package:planets_mobile/features/participation/data/participation_gateway.dart';
 import 'package:planets_mobile/features/proposals/data/proposal_gateway.dart';
 import 'package:planets_mobile/features/recurring_activities/data/recurring_activity_gateway.dart';
 
 import '../../support/fake_auth.dart';
 import '../../support/fake_profile.dart';
+import '../../support/fake_participation.dart';
 import '../../support/fake_proposal.dart';
 import '../../support/fake_recurring_activity.dart';
 
@@ -33,11 +35,15 @@ void main() {
       '/proposals/create': 1,
       '/proposals/proposal-1': 1,
       '/proposals/proposal-1/edit': 1,
+      '/proposals/proposal-1/join': 1,
+      '/proposals/proposal-1/participants': 1,
       '/tavoli': 1,
       '/tavoli/mine': 1,
       '/tavoli/create': 1,
       '/tavoli/tavolo-1': 1,
       '/tavoli/tavolo-1/edit': 1,
+      '/tavoli/tavolo-1/join': 1,
+      '/tavoli/tavolo-1/participants': 1,
     }.entries) {
       router.go(entry.key);
       await tester.pumpAndSettle();
@@ -109,6 +115,118 @@ void main() {
     expect(
       router.routeInformationProvider.value.uri.queryParameters['returnTo'],
       '/tavoli/create',
+    );
+  });
+
+  testWidgets('signed-out participation routes preserve exact Auth returnTo', (
+    tester,
+  ) async {
+    final app = await _pump(tester, signedIn: false);
+    final router = app.read(appRouterProvider);
+    for (final destination in [
+      '/proposals/proposal-1/join',
+      '/tavoli/tavolo-1/join',
+    ]) {
+      router.go(destination);
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('auth-email-field')), findsOneWidget);
+      expect(
+        router.routeInformationProvider.value.uri.queryParameters['returnTo'],
+        destination,
+      );
+    }
+  });
+
+  testWidgets('profile completion recovers the intended participation route', (
+    tester,
+  ) async {
+    final proposals = FakeProposalGateway()
+      ..publicDetail = proposalDetailFixture(creatorProfileId: 'user-9');
+    final app = await _pump(tester, complete: false, proposals: proposals);
+    final router = app.read(appRouterProvider);
+    router.go('/proposals/proposal-1/join');
+    await tester.pumpAndSettle();
+    expect(router.routeInformationProvider.value.uri.path, '/profile/edit');
+    expect(
+      router.routeInformationProvider.value.uri.queryParameters['returnTo'],
+      '/proposals/proposal-1/join',
+    );
+    await tester.enterText(
+      find.byKey(const Key('profile-display-name-field')),
+      'Casey',
+    );
+    await _tap(tester, 'profile-save-button');
+    expect(
+      router.routeInformationProvider.value.uri.path,
+      '/proposals/proposal-1/join',
+    );
+    expect(
+      find.byKey(const Key('participation-message-field')),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('OTP and incomplete profile preserve Proposal join intent', (
+    tester,
+  ) async {
+    final app = await _pump(tester, signedIn: false, complete: false);
+    final router = app.read(appRouterProvider);
+    router.go('/proposals/proposal-1/join');
+    await tester.pumpAndSettle();
+    await tester.enterText(
+      find.byKey(const Key('auth-email-field')),
+      'Person@Example.COM',
+    );
+    await _tap(tester, 'auth-request-button');
+    await tester.enterText(find.byKey(const Key('auth-code-field')), '123456');
+    await _tap(tester, 'auth-verify-button');
+    expect(router.routeInformationProvider.value.uri.path, '/profile/edit');
+    expect(
+      router.routeInformationProvider.value.uri.queryParameters['returnTo'],
+      '/proposals/proposal-1/join',
+    );
+    await tester.enterText(
+      find.byKey(const Key('profile-display-name-field')),
+      'Casey',
+    );
+    await _tap(tester, 'profile-save-button');
+    expect(
+      router.routeInformationProvider.value.uri.path,
+      '/proposals/proposal-1/join',
+    );
+  });
+
+  testWidgets('account switch discards an inactive private join message', (
+    tester,
+  ) async {
+    final auth = FakeAuthGateway(
+      snapshot: const AuthSnapshot(identity: AuthIdentity(id: 'user-1')),
+    );
+    final app = await _pump(tester, auth: auth);
+    final router = app.read(appRouterProvider);
+    router.go('/proposals/proposal-1/join');
+    await tester.pumpAndSettle();
+    await tester.enterText(
+      find.byKey(const Key('participation-message-field')),
+      'Private message from A',
+    );
+    await _tap(tester, 'nav-home');
+    auth.emit(const AuthSnapshot(identity: AuthIdentity(id: 'user-2')));
+    await tester.pumpAndSettle();
+    router.go('/proposals/proposal-1/join');
+    await tester.pumpAndSettle();
+    expect(
+      find.text('Private message from A', skipOffstage: false),
+      findsNothing,
+    );
+    expect(
+      tester
+          .widget<TextFormField>(
+            find.byKey(const Key('participation-message-field')),
+          )
+          .controller
+          ?.text,
+      isEmpty,
     );
   });
 
@@ -400,6 +518,7 @@ Future<ProviderContainer> _pump(
   FakeProfileGateway? profile,
   FakeProposalGateway? proposals,
   FakeRecurringActivityGateway? recurringActivities,
+  FakeParticipationGateway? participation,
 }) async {
   final gateway =
       auth ??
@@ -429,6 +548,11 @@ Future<ProviderContainer> _pump(
         profileGatewayProvider.overrideWithValue(
           profile ??
               FakeProfileGateway(data: profileFixture(complete: complete)),
+        ),
+        participationGatewayProvider.overrideWithValue(
+          participation ??
+              (FakeParticipationGateway()
+                ..meetingDetails = meetingDetailsFixture()),
         ),
         proposalGatewayProvider.overrideWithValue(
           proposals ??

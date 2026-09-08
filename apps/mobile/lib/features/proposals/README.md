@@ -24,7 +24,7 @@ checks after each await reject late loads/mutations and prevent an old draft
 creation from proceeding to publish in a later session. Every owner RPC still
 receives the form's expected identity; no database rule changes are made here.
 
-The public client never reads proposal tables directly. Rough location is available on public cards; exact meeting text is rendered only when the sanitized detail RPC returns it. Recurring activities, participation, maps and media remain outside this feature.
+The public client never reads proposal tables directly. Rough location is available on public cards; exact meeting text is rendered only when the sanitized detail RPC returns it. The shared `participation/` feature adds request/member actions and may replace the restricted explanation with participant-authorized operational meeting text without adding that data to Proposal models. Recurring activities, maps and media remain outside this feature.
 
 Public details are self-contained: they show the localized start/end schedule in the event's named timezone and the same Required/Useful skill labels as cards. The editor stores UTC instants, initializes both pickers from event-zone wall time, and keeps those instants unchanged while timezone text is invalid. Invalid timezone input displays a validation message and cannot open a picker; correcting the timezone refreshes the schedule without silently changing the instants.
 
