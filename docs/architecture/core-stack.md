@@ -2,7 +2,7 @@
 
 **Status:** Accepted baseline for initial implementation  
 **Recorded:** 2026-09-01  
-**Implementation status:** Foundations, authentication, profiles, one-time proposals, and Tavoli mobile experience implemented; public web Tavoli discovery in progress
+**Implementation status:** Foundations, authentication, profiles, one-time proposals, and Tavoli mobile/public-web discovery implemented
 
 ## Decision summary
 

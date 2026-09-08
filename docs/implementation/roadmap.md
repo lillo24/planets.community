@@ -1,7 +1,7 @@
 # Implementation Roadmap
 
 **Status:** Planning baseline  
-**Current implementation:** Plans 00–04B2A implemented; plan 04B2B in progress
+**Current implementation:** Plans 00–04B2B implemented; 04C remains separately not started
 
 This roadmap divides the first PLANETS build into reviewable Codex tasks. Each numbered item should normally become its own implementation prompt, branch, and pull request.
 
@@ -46,13 +46,13 @@ Do not begin a dependent plan until the prior plan is merged or its branch is ex
 | 03A | Mobile Email-OTP Authentication                 | Public-first mobile numeric email OTP, Supabase session state, sign-out, and minimal profile-anchor readiness            | 02B                    | None expected                                                                                                        | Implemented |
 | 03B | Web Email-OTP Authentication                    | Web email OTP and session behavior using the canonical backend                                                           | 03A                    | None expected for this scoped work                                                                                   | Implemented |
 | 03C | Basic Profiles, Skills, and Visibility          | Display-name onboarding, optional bio, controlled starter skills, and per-field public/private visibility                | 03B                    | Initial required fields, starter taxonomy, and basic visibility resolved; advanced profile decisions remain deferred | Implemented |
-| 04  | Activity discovery/domain (parent)              | One-time proposals plus separately scoped recurring activities                                                           | 03                     | Proposal fields, lifecycle decisions, broad location behavior                                                        | In progress |
+| 04  | Activity discovery/domain (parent)              | One-time proposals plus separately scoped recurring activities                                                           | 03                     | Proposal fields, lifecycle decisions, broad location behavior                                                        | Implemented |
 | 04A | One-Time Proposals and Discovery                | Draft/create/publish/cancel, public list/detail, requirements, location privacy, and mobile/web discovery                | 03C                    | One-time lifecycle and rough/exact location behavior resolved                                                        | Implemented |
-| 04B | Tavoli / Recurring Activities (parent)          | Versioned weekly/monthly recurring domain plus later mobile/web experience                                                | 04A                    | Initial recurrence and lifecycle resolved; occurrence exceptions remain deferred                                     | In progress |
+| 04B | Tavoli / Recurring Activities (parent)          | Versioned weekly/monthly recurring domain plus later mobile/web experience                                                | 04A                    | Initial recurrence and lifecycle resolved; occurrence exceptions remain deferred                                     | Implemented |
 | 04B1 | Tavoli / Recurring Activity Domain Foundation  | Separate recurring schema, schedule history, bounded occurrences, lifecycle, privacy, canonical APIs, and tests          | 04A                    | None expected for the defined weekly/monthly foundation                                                              | Implemented |
-| 04B2 | Tavoli Mobile/Web Experience (parent)          | Separate mobile and public-web clients over the canonical 04B1 backend                                                    | 04B1                   | Functional UX review; no recurrence expansion                                                                        | In progress |
+| 04B2 | Tavoli Mobile/Web Experience (parent)          | Separate mobile and public-web clients over the canonical 04B1 backend                                                    | 04B1                   | Functional UX review; no recurrence expansion                                                                        | Implemented |
 | 04B2A | Tavoli Mobile Experience and Browse Integration | Mobile browse/list/detail/create/edit/manage UI over the canonical 04B1 backend                                         | 04B1                   | Native interaction review                                                                                             | Implemented |
-| 04B2B | Public Web Tavoli Discovery                   | Read-only public web Tavoli list and detail                                                                               | 04B2A                  | Functional public-web review                                                                                          | In progress |
+| 04B2B | Public Web Tavoli Discovery                   | Read-only public web Tavoli list and detail                                                                               | 04B2A                  | Functional public-web review                                                                                          | Implemented |
 | 04C | Material Resources                              | Explicit requested/donated/loaned material-resource domain and later activity integration                               | 04A                    | Resource types, contribution/ownership semantics, visibility, and lifecycle                                           | Not started |
 | 05  | Participation lifecycle                         | Join requests, review decisions, membership, leave/cancel behavior, non-chat participation rules, derived stats          | 04A                    | Roles, removal/withdrawal rules, and any non-chat participation thresholds                                           | Not started |
 | 06  | Notification backbone                           | In-app notifications, preferences, device registration, outbox/queue, FCM worker, retries and deep links                 | 03–05                  | Notification categories, priority, and copy can remain provisional unless user-facing review is needed               | Not started |
@@ -208,7 +208,7 @@ Expected scope:
 
 #### 04B — Tavoli / Recurring Activities
 
-**Status:** In progress through separately reviewed 04B1, 04B2A, and 04B2B portions.
+**Status:** Implemented through separately reviewed 04B1, 04B2A, and 04B2B portions.
 
 ##### 04B1 — Tavoli / Recurring Activity Domain Foundation
 
@@ -228,7 +228,7 @@ Expected scope:
 
 ##### 04B2 — Tavoli Mobile/Web Experience
 
-**Status:** In progress; split into independently reviewed mobile and web portions.
+**Status:** Implemented through independently reviewed mobile and web portions.
 
 Expected scope:
 
@@ -250,7 +250,7 @@ during the 04B2B review.
 
 ###### 04B2B — Public Web Tavoli Discovery
 
-**Status:** In progress in the current public-web implementation task.
+**Status:** Implemented in merged PR #13 (`ccee48f68699702efeaeda160db1f27115a4d5df`).
 
 Owns read-only public web Tavoli list/detail, route-backed Proposal/Tavoli
 navigation, snapshot-safe pagination, named-zone rendering, and public-location
@@ -447,6 +447,6 @@ Major gates currently expected:
 
 ## Immediate next action
 
-Complete final browser review for **04B2B — Public Web Tavoli Discovery**.
-Plan 05 may still proceed independently from implemented 04A if product
-sequencing changes.
+Select the next founder-prioritized roadmap item. **04C — Material Resources**
+remains separately not started, while **05 — Participation lifecycle** is
+independently available from implemented 04A.
