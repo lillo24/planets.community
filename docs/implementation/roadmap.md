@@ -291,7 +291,7 @@ Owns:
 
 #### 05B — Mobile Project Participation Experience
 
-**Status:** In progress on the focused 05B mobile implementation branch, based on merged 05A; native QA remains required before merge.
+**Status:** In progress in PR #16, based on merged 05A; native QA remains required before merge.
 
 Mobile scope:
 
