@@ -1,7 +1,7 @@
 # System Design and Responsibility Boundaries
 
 **Status:** Initial accepted design  
-**Implementation status:** Foundations, authentication, profiles, one-time proposals, and Tavoli mobile/public-web discovery implemented
+**Implementation status:** Foundations, authentication, profiles, one-time proposals, Tavoli mobile/public-web discovery, and the shared project-participation backend implemented
 
 This document describes how the major parts of PLANETS should interact. Technology choices are recorded separately in [`core-stack.md`](core-stack.md).
 
@@ -93,7 +93,7 @@ Raw Auth deletion is deliberately blocked while a profile or actor-linked audit 
 
 `proposals` stores a creator-owned one-time activity, content, schedule, IANA event time zone, and rough public location. Its business lifecycle is only `draft`, `published`, or `cancelled`. Upcoming, Happening, Just Finished, and Completed are derived from `starts_at`, `ends_at`, and the current time; Just Finished begins exactly at the end and lasts until, but not including, 24 hours later. Completed proposals remain historical canonical records and may become sources for future explicit Community templates, but are not themselves mutable template records.
 
-`proposal_meeting_details` physically separates exact meeting text/coordinates from the rough public location. Public list payloads never include exact meeting data. Exact-ID public detail returns exact meeting text only for `public` visibility; `participants` visibility returns no protected value and an explicit restricted flag. Plan 05 may add a participant-authorized boundary without weakening this anonymous contract. `proposal_skills` reuses the controlled 03C catalog with `required` or `useful` meaning; no second or free-form taxonomy exists.
+`proposal_meeting_details` physically separates exact meeting text/coordinates from the rough public location. Public list payloads never include exact meeting data. Exact-ID public detail returns exact meeting text only for `public` visibility; `participants` visibility returns no protected value and an explicit restricted flag. The shared participant boundary returns protected operational meeting information only to the creator or a current accepted participant without weakening this anonymous contract. `proposal_skills` reuses the controlled 03C catalog with `required` or `useful` meaning; no second or free-form taxonomy exists.
 
 Complete-profile creators manage proposals only through expected-identity-bound `create_proposal_draft`, `update_own_proposal`, `publish_proposal`, and `cancel_proposal` operations. Public clients use sanitized `list_public_proposals` and `get_public_proposal`; owners use separate complete owner reads. Published content freezes when an activity starts, cancellation is terminal and permitted only before its end, and publish/cancel record content-free audit/outbox identifiers without delivering notifications.
 
@@ -105,27 +105,38 @@ Complete-profile creators manage proposals only through expected-identity-bound 
 
 `recurring_activity_schedules` stores non-overlapping versioned weekly or monthly rules as local wall-clock time plus a recognized IANA time zone. Weekly recurrence has one ISO weekday; monthly recurrence has one day from 1 through 28. A future schedule change closes the prior version at an exclusive local-date boundary and inserts a new version, so past meetings are never reinterpreted. Before that new version becomes effective, it may be corrected in place at the same boundary without creating redundant history or changing the already-effective row. Canonical helpers derive only bounded windows and calculate each UTC instant from its local date/time and zone, preserving the intended local time across daylight-saving changes.
 
-`recurring_activity_meeting_details` physically separates exact meeting text/coordinates from structured rough public location. Anonymous discovery uses narrow list/detail operations: normal list includes only published series and requires callers to reuse one explicit reference-time snapshot across cursor pages, while exact-ID detail may retain published, paused, or ended history. Participant-restricted exact data is absent from public payloads; participant-authorized access remains plan 05 work.
+`recurring_activity_meeting_details` physically separates exact meeting text/coordinates from structured rough public location. Anonymous discovery uses narrow list/detail operations: normal list includes only published series and requires callers to reuse one explicit reference-time snapshot across cursor pages, while exact-ID detail may retain published, paused, or ended history. Participant-restricted exact data is absent from public payloads and is available to the creator/current accepted participant only through the shared project meeting boundary.
 
 Complete-profile creators use expected-identity-bound create/publish/resume operations; all owner mutations reject stale account-switch forms before changing data. Publication, schedule changes, pause, resume, and end record content-free audit/outbox metadata without implementing notification delivery. 04B2A provides the full Flutter Tavoli experience. 04B2B provides signed-out, read-only Next.js discovery through only the sanitized public list/detail operations; its list cursor preserves one caller-owned reference-time snapshot across pages.
+
+### Shared project participation domain
+
+`projects` is a private, narrow identity registry across `proposals` and `recurring_activities`. Its UUID equals the concrete activity UUID and it stores only kind, synchronized creator, and creation time. Source insert/delete triggers preserve the one-to-one invariant for migration replay and trusted fixtures; content, lifecycle, schedules, skills, and location remain solely in the concrete tables. A source with request or membership history cannot be deleted.
+
+`project_join_requests` preserves each private `pending`, `accepted`, `rejected`, or `withdrawn` attempt and an optional trimmed 500-character requester message. A complete non-creator may request a published one-time project strictly before its end or a currently published Tavolo. There may be at most one pending attempt and no request while the person is a current member. Terminal attempts remain history, so withdrawal, rejection, voluntary leave, or creator removal permits a fresh request whenever eligibility returns.
+
+`project_memberships` is acceptance history, not contribution proof. Acceptance atomically closes the request and creates one current membership; creator ownership is separate. Leave/removal ends a membership without deleting it, and pause/end/completion does not rewrite history. One current membership per project/profile is enforced centrally. Capacity, waitlists, participation roles, resources, badges, and creator-verified contribution remain deferred.
+
+All mutations and private reads use expected-identity-bound project RPCs. Tables have RLS but no client grants/policies. Request messages are visible only to the requester and project creator; creator review exposes a narrow authenticated display identity but never Auth email. Protected meeting details are available only to the creator or a current accepted member. Each successful transition writes identifier-only audit/outbox events; `project.join_request_accepted` is a stable candidate input for Plan 07, but Plan 07 still owns the exact automatic-chat trigger and post-membership chat access rules.
 
 ### Clients use shared operations rather than duplicate workflows
 
 Safe simple reads may query authorized views/tables directly. Multi-step or security-sensitive changes should use named backend operations, for example:
 
 - `publish_proposal`
-- `request_to_join_proposal`
-- `withdraw_join_request`
-- `accept_join_request`
-- `reject_join_request`
-- `leave_proposal`
+- `request_to_join_project`
+- `withdraw_project_join_request`
+- `accept_project_join_request`
+- `reject_project_join_request`
+- `leave_project`
+- `remove_project_member`
 - `cancel_proposal`
 - `complete_proposal`
 - `block_user`
 - `report_content`
 - `delete_account`
 
-The remaining names and signatures will be defined during their schema plans. One-time proposal operations are now concrete as described above. The key rule is that Flutter and Next.js must call the same canonical transition rather than reproduce its steps independently.
+The participation operations above and one-time proposal operations are concrete. Remaining names and signatures will be defined during their owning schema plans. The key rule is that Flutter and Next.js must call the same canonical transition rather than reproduce its steps independently.
 
 ### Next.js is a client and delivery surface
 
@@ -152,7 +163,7 @@ The preferred sequence is:
 | Skills/competences      | Controlled taxonomy used by users and proposals                                                             | Many-to-many with profiles and proposal requirements                                 |
 | One-time proposals      | Creator-owned content, schedule, rough/exact location separation, stored lifecycle, derived temporal status | Creator, controlled skill requirements, future participation, future template source |
 | Recurring activities    | Persistent Tavoli, versioned weekly/monthly schedules, bounded occurrences, rough/exact privacy, lifecycle  | Separate from one-time proposals; Flutter experience and public web discovery implemented |
-| Participation           | Requests, decisions, membership, roles, history                                                             | User and proposal; source for stats and authorization                                |
+| Participation           | Shared project identity, private requests/decisions, current membership and retained history                 | Profile and concrete one-time/recurring project; source for authorization and later stats |
 | Chat                    | One proposal-scoped conversation when eligible                                                              | Proposal and current authorized members                                              |
 | Messages                | Persisted communication within a proposal chat                                                              | Chat, sender, moderation/deletion state                                              |
 | Notifications           | In-app records, preferences, device tokens, delivery attempts                                               | Recipient, source event, optional proposal/request/message                           |
@@ -201,7 +212,7 @@ The one-time proposal model includes:
 - municipality and/or postal code;
 - optional approximate PostGIS point for future search;
 - a public display label;
-- exact meeting details in a separate protected record, visible publicly only when explicitly configured; participant access is deferred to plan 05.
+- exact meeting details in a separate protected record, visible publicly only when explicitly configured or through the creator/current-participant operation.
 
 Continuous location tracking is not part of the product foundation.
 
@@ -237,7 +248,7 @@ Regardless of final state names:
 
 Proposal/project chat will be created automatically by an idempotent backend operation and is not gated by a fixed threshold of three. There is no user-facing manual Create Chat action, and project completion does not delete chat or message history.
 
-Plans 05/07 must still define the exact participation event that triggers automatic creation and authorization after a participant leaves, is removed, blocked, or suspended. Any future participation threshold for a different business rule must not be reused implicitly as the chat rule.
+The participation foundation emits `project.join_request_accepted` as a stable candidate event without creating chat. Plan 07 must still finalize which participation event triggers automatic creation and authorization after a participant leaves, is removed, blocked, or suspended. Any future participation threshold for a different business rule must not be reused implicitly as the chat rule.
 
 ## Matching
 

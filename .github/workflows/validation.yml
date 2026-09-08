@@ -110,6 +110,9 @@ jobs:
       - name: Verify recurring activity ownership, recurrence, lifecycle, and privacy
         run: npm run recurring:verify:local
 
+      - name: Verify project participation state, privacy, and lifecycle integration
+        run: npm run participation:verify:local
+
       - name: Generate local web configuration
         run: npm run web:config:local
 

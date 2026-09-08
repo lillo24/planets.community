@@ -92,6 +92,156 @@ export type Database = {
         }
         Relationships: []
       }
+      project_join_requests: {
+        Row: {
+          created_at: string
+          id: string
+          project_id: string
+          request_message: string | null
+          requester_profile_id: string
+          resolved_at: string | null
+          resolved_by_profile_id: string | null
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          project_id: string
+          request_message?: string | null
+          requester_profile_id: string
+          resolved_at?: string | null
+          resolved_by_profile_id?: string | null
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          project_id?: string
+          request_message?: string | null
+          requester_profile_id?: string
+          resolved_at?: string | null
+          resolved_by_profile_id?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_join_requests_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_join_requests_requester_profile_id_fkey"
+            columns: ["requester_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_join_requests_resolved_by_profile_id_fkey"
+            columns: ["resolved_by_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      project_memberships: {
+        Row: {
+          id: string
+          joined_at: string
+          left_at: string | null
+          originating_request_id: string
+          participant_profile_id: string
+          project_id: string
+          removed_at: string | null
+          removed_by_profile_id: string | null
+        }
+        Insert: {
+          id?: string
+          joined_at: string
+          left_at?: string | null
+          originating_request_id: string
+          participant_profile_id: string
+          project_id: string
+          removed_at?: string | null
+          removed_by_profile_id?: string | null
+        }
+        Update: {
+          id?: string
+          joined_at?: string
+          left_at?: string | null
+          originating_request_id?: string
+          participant_profile_id?: string
+          project_id?: string
+          removed_at?: string | null
+          removed_by_profile_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_memberships_originating_request_fkey"
+            columns: [
+              "originating_request_id",
+              "project_id",
+              "participant_profile_id",
+            ]
+            isOneToOne: false
+            referencedRelation: "project_join_requests"
+            referencedColumns: ["id", "project_id", "requester_profile_id"]
+          },
+          {
+            foreignKeyName: "project_memberships_participant_profile_id_fkey"
+            columns: ["participant_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_memberships_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_memberships_removed_by_profile_id_fkey"
+            columns: ["removed_by_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      projects: {
+        Row: {
+          created_at: string
+          creator_profile_id: string
+          id: string
+          project_kind: string
+        }
+        Insert: {
+          created_at: string
+          creator_profile_id: string
+          id: string
+          project_kind: string
+        }
+        Update: {
+          created_at?: string
+          creator_profile_id?: string
+          id?: string
+          project_kind?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "projects_creator_profile_id_fkey"
+            columns: ["creator_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       proposal_meeting_details: {
         Row: {
           exact_location: unknown
@@ -445,6 +595,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      accept_project_join_request: {
+        Args: { p_expected_creator_profile_id: string; p_request_id: string }
+        Returns: string
+      }
       cancel_proposal: {
         Args: { p_expected_creator_profile_id: string; p_proposal_id: string }
         Returns: string
@@ -552,6 +706,15 @@ export type Database = {
           updated_at: string
         }[]
       }
+      get_project_participant_meeting_details: {
+        Args: { p_expected_profile_id: string; p_project_id: string }
+        Returns: {
+          exact_location: unknown
+          exact_meeting_text: string
+          project_id: string
+          project_kind: string
+        }[]
+      }
       get_public_profile: {
         Args: { p_profile_id: string }
         Returns: {
@@ -614,6 +777,38 @@ export type Database = {
           weekday: number
         }[]
       }
+      leave_project: {
+        Args: {
+          p_expected_participant_profile_id: string
+          p_membership_id: string
+        }
+        Returns: string
+      }
+      list_own_project_join_requests: {
+        Args: { p_expected_requester_profile_id: string }
+        Returns: {
+          created_at: string
+          project_id: string
+          project_kind: string
+          request_id: string
+          request_message: string
+          resolved_at: string
+          status: string
+        }[]
+      }
+      list_own_project_memberships: {
+        Args: { p_expected_participant_profile_id: string }
+        Returns: {
+          joined_at: string
+          left_at: string
+          membership_id: string
+          membership_status: string
+          originating_request_id: string
+          project_id: string
+          project_kind: string
+          removed_at: string
+        }[]
+      }
       list_own_proposals: {
         Args: { p_expected_creator_profile_id: string }
         Returns: {
@@ -662,6 +857,33 @@ export type Database = {
           title: string
           topic: string
           updated_at: string
+        }[]
+      }
+      list_project_join_requests: {
+        Args: { p_expected_creator_profile_id: string; p_project_id: string }
+        Returns: {
+          created_at: string
+          request_id: string
+          request_message: string
+          requester_display_name: string
+          requester_profile_id: string
+          resolved_at: string
+          resolved_by_profile_id: string
+          status: string
+        }[]
+      }
+      list_project_members: {
+        Args: { p_expected_creator_profile_id: string; p_project_id: string }
+        Returns: {
+          joined_at: string
+          left_at: string
+          membership_id: string
+          membership_status: string
+          originating_request_id: string
+          participant_display_name: string
+          participant_profile_id: string
+          removed_at: string
+          removed_by_profile_id: string
         }[]
       }
       list_public_proposals: {
@@ -742,6 +964,22 @@ export type Database = {
         }
         Returns: string
       }
+      reject_project_join_request: {
+        Args: { p_expected_creator_profile_id: string; p_request_id: string }
+        Returns: string
+      }
+      remove_project_member: {
+        Args: { p_expected_creator_profile_id: string; p_membership_id: string }
+        Returns: string
+      }
+      request_to_join_project: {
+        Args: {
+          p_expected_requester_profile_id: string
+          p_project_id: string
+          p_request_message?: string
+        }
+        Returns: string
+      }
       resume_recurring_activity: {
         Args: {
           p_expected_creator_profile_id: string
@@ -804,6 +1042,10 @@ export type Database = {
           p_topic: string
           p_weekday: number
         }
+        Returns: string
+      }
+      withdraw_project_join_request: {
+        Args: { p_expected_requester_profile_id: string; p_request_id: string }
         Returns: string
       }
     }
