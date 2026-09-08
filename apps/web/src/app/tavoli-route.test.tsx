@@ -48,7 +48,7 @@ describe("public Tavoli routes", () => {
         recurring_activity_id: `00000000-0000-4000-8000-${String(index + 1).padStart(12, "0")}`,
       })),
     );
-    const { default: Page } = await import("@/app/(public)/tavoli/page");
+    const { default: Page } = await import("@/app/tavoli/page");
     render(
       await Page({
         searchParams: Promise.resolve({ locality: " Trento " }),
@@ -82,7 +82,7 @@ describe("public Tavoli routes", () => {
   });
 
   it("renders empty and safe list failure states", async () => {
-    const { default: Page } = await import("@/app/(public)/tavoli/page");
+    const { default: Page } = await import("@/app/tavoli/page");
     listPublicRecurringActivities.mockResolvedValueOnce([]);
     const empty = render(
       await Page({ searchParams: Promise.resolve(Object.create(null)) }),
@@ -102,7 +102,7 @@ describe("public Tavoli routes", () => {
 
   it("renders active detail with schedule, occurrences, and restricted copy", async () => {
     getPublicRecurringActivity.mockResolvedValue(detail);
-    const { default: Page } = await import("@/app/(public)/tavoli/[id]/page");
+    const { default: Page } = await import("@/app/tavoli/[id]/page");
     render(await Page({ params: Promise.resolve({ id: activityId }) }));
 
     expect(getPublicRecurringActivity).toHaveBeenCalledWith(
@@ -119,7 +119,7 @@ describe("public Tavoli routes", () => {
   });
 
   it("renders public exact detail and omits upcoming meetings for paused and ended history", async () => {
-    const { default: Page } = await import("@/app/(public)/tavoli/[id]/page");
+    const { default: Page } = await import("@/app/tavoli/[id]/page");
     getPublicRecurringActivity.mockResolvedValueOnce({
       ...detail,
       lifecycle_state: "paused",
@@ -147,7 +147,7 @@ describe("public Tavoli routes", () => {
   });
 
   it("preserves not-found behavior and sanitizes operational detail failures", async () => {
-    const { default: Page } = await import("@/app/(public)/tavoli/[id]/page");
+    const { default: Page } = await import("@/app/tavoli/[id]/page");
     await expect(
       Page({ params: Promise.resolve({ id: "not-a-uuid" }) }),
     ).rejects.toThrow("NEXT_NOT_FOUND");
@@ -181,14 +181,10 @@ describe("public Tavoli routes", () => {
       "/tavoli",
     );
     expect(
-      existsSync(
-        resolve(process.cwd(), "src/app/(public)/tavoli/create/page.tsx"),
-      ),
+      existsSync(resolve(process.cwd(), "src/app/tavoli/create/page.tsx")),
     ).toBe(false);
     expect(
-      existsSync(
-        resolve(process.cwd(), "src/app/(public)/tavoli/mine/page.tsx"),
-      ),
+      existsSync(resolve(process.cwd(), "src/app/tavoli/mine/page.tsx")),
     ).toBe(false);
   });
 });

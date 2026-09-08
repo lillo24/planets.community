@@ -12,6 +12,10 @@ separate from one-time Proposals and contains no owner management or authoring.
 - `recurring-activity-components.tsx` renders cards, lifecycle badges,
   recurrence wording, and occurrence times in the named event time zone.
 
+The route files live under `src/app/tavoli/`, outside the shared public
+`loading.tsx` boundary. This keeps the signed-out URLs unchanged while allowing
+invalid and missing exact IDs to resolve to a real HTTP 404 before streaming.
+
 The first list request captures one UTC reference time. Every opaque cursor
 binds that snapshot to its normalized locality and carries the backend's
 `(next_starts_at, recurring_activity_id)` position. A missing, malformed, or
