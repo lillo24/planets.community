@@ -28,6 +28,10 @@ try {
 }
 
 async function verifyNotifications() {
+  // Earlier integration harnesses intentionally create valid participation events.
+  // Drain that known local backlog before establishing this harness's exact counts.
+  await drainExistingNotificationEvents();
+
   const [creator, requester, unrelated] = await Promise.all([
     signInWithLocalOtp("notifications-local-a@planets.invalid"),
     signInWithLocalOtp("notifications-local-b@planets.invalid"),
@@ -267,6 +271,18 @@ async function verifyNotifications() {
   );
 }
 
+async function drainExistingNotificationEvents() {
+  for (let batch = 0; batch < 20; batch += 1) {
+    const result = await processNotificationBatch();
+    if (result.processed_count === 0) {
+      return;
+    }
+  }
+  throw new Error(
+    "The local notification backlog did not drain within 20 projector batches.",
+  );
+}
+
 async function processNotificationBatch() {
   const { data, error } = await serviceClient.rpc(
     "process_notification_outbox_batch",
@@ -300,7 +316,7 @@ function assertBatchTotals(results, expected) {
     totals.suppressed !== expected.suppressed
   ) {
     throw new Error(
-      "Notification projector operational counts were unexpected.",
+      `Notification projector counts were ${totals.processed}/${totals.created}/${totals.suppressed}; expected ${expected.processed}/${expected.created}/${expected.suppressed}.`,
     );
   }
 }
