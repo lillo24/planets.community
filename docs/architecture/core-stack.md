@@ -44,7 +44,7 @@ The stack should:
 | External integrations | Supabase Edge Functions | FCM, email, and other server-only service calls |
 | Background processing | Supabase Queues and Cron | Durable delivery, retries, cleanup, and scheduled jobs |
 | Authentication | Supabase Auth | Email one-time code initially; social login only when justified |
-| Realtime proposal chat | Supabase Realtime with PostgreSQL persistence | Proposal-scoped messaging without a separate chat vendor |
+| Realtime project chat | Supabase Realtime with PostgreSQL persistence | Project-scoped group messaging without a separate chat vendor |
 | Media | Supabase Storage | Profile and proposal files with policy-controlled access |
 | Push notifications | Firebase Cloud Messaging | Android and iOS push delivery; iOS uses APNs through FCM |
 | Transactional email | Resend | Authentication, security, and exceptional account messages |
@@ -111,11 +111,11 @@ Profile completion is derived from a trimmed, valid display name rather than a w
 
 The initial seven-category skill catalog is deliberately small and system-managed. Free-text skills, proficiency, search/directory behavior, photo media, location, and role-specific audiences remain later decisions rather than implicit extensions of this model.
 
-### Proposal-scoped chat only
+### Structured request Messages and project-scoped chat
 
-Chat belongs to a proposal and will be created automatically by one idempotent backend operation. There is no manual Create Chat action, and no fixed three-person threshold controls availability. Plans 05/07 still own the exact participation event and post-membership authorization. Ending a project retains its chat and messages. General direct messaging, calls, reactions, typing indicators, and end-to-end encryption are outside the initial backbone.
+A future Messages surface will present join requests as persistent structured actionable items backed by canonical participation state; notifications are alerts, and requests do not become free-form chat messages. Project group chat is separate and will be created automatically by one idempotent backend operation. There is no manual Create Chat action, and no fixed three-person threshold controls availability. Plan 07 still owns the exact participation event and post-membership authorization. Ending a project retains its chat and messages. General direct messaging, calls, reactions, typing indicators, and end-to-end encryption are outside the initial backbone.
 
-An optional meeting URL should be stored or exposed from the proposal chat. PLANETS should not implement video infrastructure or provider OAuth integrations initially.
+An optional meeting URL should be stored or exposed from the project chat. PLANETS should not implement video infrastructure or provider OAuth integrations initially.
 
 ### Notification delivery uses an outbox and queue
 

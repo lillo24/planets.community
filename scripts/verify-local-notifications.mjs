@@ -76,7 +76,8 @@ async function verifyNotifications() {
     requestReceived[0].actor_profile_id !== requester.id ||
     requestReceived[0].actor_display_name !== "Notification Requester" ||
     requestReceived[0].project_kind !== "one_time" ||
-    requestReceived[0].destination_kind !== "project_participation"
+    requestReceived[0].destination_kind !== "participation_request" ||
+    requestReceived[0].request_id !== requestId
   ) {
     throw new Error(
       "Concurrent projection did not create exactly one canonical request notification.",
@@ -118,7 +119,8 @@ async function verifyNotifications() {
     accepted.actor_profile_id !== creator.id ||
     accepted.actor_display_name !== "Notification Creator" ||
     accepted.project_title !== "Integration notification proposal" ||
-    accepted.destination_kind !== "project_detail"
+    accepted.destination_kind !== "participation_request" ||
+    accepted.request_id !== requestId
   ) {
     throw new Error(
       "The accepted notification returned unsafe or incomplete context.",
@@ -187,6 +189,16 @@ async function verifyNotifications() {
     created: 1,
     suppressed: 0,
   });
+  const withdrawn = (await listNotifications(creator)).find(
+    (notification) =>
+      notification.notification_kind === "participation_request_withdrawn" &&
+      notification.request_id === suppressedRequestId,
+  );
+  if (!withdrawn || withdrawn.destination_kind !== "participation_request") {
+    throw new Error(
+      "The withdrawal event did not preserve its structured request target.",
+    );
+  }
 
   const rejectedRequestId = await requestToJoin(unrelated, projectId, null);
   await rejectRequest(creator, rejectedRequestId);
@@ -196,13 +208,18 @@ async function verifyNotifications() {
     suppressed: 0,
   });
   const rejectedInbox = await listNotifications(unrelated);
+  const rejected = rejectedInbox.filter(
+    (notification) =>
+      notification.notification_kind === "participation_request_rejected" &&
+      notification.request_id === rejectedRequestId,
+  );
   if (
-    rejectedInbox.filter(
-      (notification) =>
-        notification.notification_kind === "participation_request_rejected",
-    ).length !== 1
+    rejected.length !== 1 ||
+    rejected[0].destination_kind !== "participation_request"
   ) {
-    throw new Error("The rejection event did not map exactly once.");
+    throw new Error(
+      "The rejection event did not map exactly once to its structured request target.",
+    );
   }
 
   await leaveMembership(requester, membershipId);
@@ -212,10 +229,12 @@ async function verifyNotifications() {
     suppressed: 0,
   });
   const finalCreatorInbox = await listNotifications(creator);
+  const participantLeft = finalCreatorInbox.filter(
+    (notification) => notification.notification_kind === "participant_left",
+  );
   if (
-    finalCreatorInbox.filter(
-      (notification) => notification.notification_kind === "participant_left",
-    ).length !== 1
+    participantLeft.length !== 1 ||
+    participantLeft[0].destination_kind !== "project_participation"
   ) {
     throw new Error("The participant-left event did not map exactly once.");
   }
@@ -267,7 +286,7 @@ async function verifyNotifications() {
   }
 
   console.log(
-    "Confirmed private notification projection, concurrent idempotency, six-event participation mapping paths, preference suppression, structured inbox context, read state, and independent consumer receipts.",
+    "Confirmed private notification projection, concurrent idempotency, six-event participation mapping, stable request targets, preference suppression, safe inbox context, read state, and independent consumer receipts.",
   );
 }
 

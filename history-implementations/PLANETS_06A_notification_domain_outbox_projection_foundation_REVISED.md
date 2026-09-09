@@ -1,10 +1,13 @@
-# PLANETS 06A — Notification Domain and Outbox Projection Foundation
+# PLANETS 06A — Notification Domain and Outbox Projection Foundation (Revised Messages Alignment)
 
 **Roadmap area:** PLANETS 06 — Notification Backbone  
 **Task type:** Canonical backend/domain foundation before notification UI or external push delivery  
 **Repository:** `lillo24/planets.community`  
 **Required implementation base:** latest merged `main`  
 **Known merged 05B base when this prompt was written:** `09d62276faec4c50ab5d45cd3930975c5a49a6b7`
+
+> **Supersedes the earlier 06A prompt.** Use this revised file, not the previous version.  
+> The revision incorporates the accepted 08/09 interaction decision that join requests **arrive in Messages as persistent actionable structured items**, while Notifications are alerts and the Participation screen is a secondary organizer overview/history surface.
 
 ## Objective
 
@@ -28,7 +31,9 @@ After this task:
 - notification records contain semantic IDs/state, not private request messages or protected meeting data;
 - inbox reads can expose only safe presentation context such as project title/kind and authorized actor display name;
 - unsupported outbox event types are ignored without blocking or being falsely consumed by the notification projector;
-- no push delivery, FCM, device token, Flutter inbox, email notification, matching notification, resource notification, or chat notification is implemented yet.
+- notification records remain **alerts**, not the canonical actionable join-request/message object;
+- request-specific notifications preserve stable `request_id` + project context so the future Messages surface can open the corresponding structured participation-request item;
+- no push delivery, FCM, device token, Flutter inbox, Messages UI, participation-request message item, email notification, matching notification, resource notification, or chat notification is implemented yet.
 
 Split Plan 06 into:
 
@@ -41,7 +46,7 @@ Do not merge the PR from the implementation task.
 Before implementation, preserve this exact prompt unchanged at:
 
 ```text
-history-implementations/PLANETS_06A_notification_domain_outbox_projection_foundation.md
+history-implementations/PLANETS_06A_notification_domain_outbox_projection_foundation_REVISED.md
 ```
 
 ---
@@ -96,6 +101,76 @@ Important current facts:
 - No `supabase/functions` feature exists yet; do not add external worker infrastructure merely because a later plan will need it.
 
 Use Supabase/Postgres skills and current official guidance where useful, but repository contracts and tests are authoritative.
+
+---
+
+# Product interaction ownership — accepted direction
+
+This is a critical product boundary from the 08/09 meeting and the follow-up founder clarification.
+
+## Join requests arrive in Messages
+
+When someone requests to join a project, the persistent user-facing arrival should eventually be a **structured actionable item inside Messages**, analogous to marketplace/tutoring platforms that show a templated request card.
+
+Conceptually:
+
+```text
+Messages
+└── Mario wants to join “Community Garden”
+    “Ciao, posso aiutare sabato…”
+    [Accept] [Reject]
+```
+
+The request is **not** merely a free-form chat message.
+
+The canonical source remains:
+
+```text
+project_join_requests
+```
+
+Accept/Reject must continue to call the canonical 05A participation transitions. The future Messages item references the request and renders canonical state; it must not duplicate or reinterpret acceptance logic.
+
+## Notifications are alerts, not the primary request surface
+
+A notification may say:
+
+```text
+Mario requested to join Community Garden
+```
+
+but it is only an alert/entry point. It is not the only persistent representation of the request and does not own Accept/Reject.
+
+For request-specific events, preserve enough semantic target information for future navigation to the corresponding Messages/request item.
+
+## Participation screen remains a secondary organizer overview
+
+The existing 05B Participation screen remains valid as the full organizer view for:
+
+- all requests/history;
+- current/historical participants;
+- manual accept/reject/remove operations.
+
+It should not be treated as the primary place where a new request “arrives”.
+
+Later, once project group chat exists, Participation should be reachable from the group conversation/group information area. The exact UX remains deferred:
+
+- direct top-right Participation action; or
+- group-info screen → Participation.
+
+Do **not** redesign that navigation in 06A.
+
+## Project group chat remains later work
+
+Group chat is a separate project-scoped conversation for accepted/eligible participants. It is not the same thing as the pre-acceptance structured participation-request item.
+
+There is still:
+
+- no manual Create Chat button;
+- no fixed-three-person chat threshold;
+- no final automatic-chat trigger selected yet.
+
+Plan 07 owns the Messages/chat implementation and exact chat trigger.
 
 ---
 
@@ -241,6 +316,7 @@ At minimum preserve:
 - optional project ID;
 - optional actor profile ID;
 - optional request/membership IDs when genuinely needed;
+- structured destination kind;
 - created timestamp;
 - read timestamp.
 
@@ -332,8 +408,10 @@ requester
 Suggested structured destination:
 
 ```text
-project_participation
+participation_request
 ```
+
+Include the canonical `request_id` as target context. The future client may route this to the Messages/request item; 06A must not hard-code a Flutter route.
 
 ## `project.join_request_withdrawn`
 
@@ -352,8 +430,10 @@ requester
 Destination:
 
 ```text
-project_participation
+participation_request
 ```
+
+Include the canonical `request_id`; the target represents the structured request item even when its current state is withdrawn.
 
 ## `project.join_request_accepted`
 
@@ -372,8 +452,10 @@ project creator
 Destination:
 
 ```text
-project_detail
+participation_request
 ```
+
+Include the canonical `request_id`. The future Messages surface may show the request as accepted/resolved and provide navigation onward to the project/group experience.
 
 ## `project.join_request_rejected`
 
@@ -392,8 +474,10 @@ project creator
 Destination:
 
 ```text
-project_detail
+participation_request
 ```
+
+Include the canonical `request_id`. The future Messages surface may show the request as rejected/resolved.
 
 ## `project.participant_left`
 
@@ -415,6 +499,8 @@ Destination:
 project_participation
 ```
 
+This is an organizer-management event rather than a join-request arrival, so it may target the Participation overview rather than Messages.
+
 ## `project.participant_removed`
 
 Recipient:
@@ -435,36 +521,53 @@ Destination:
 project_detail
 ```
 
+This is a membership-state alert, not a new join-request item.
+
 Do not generate a notification when recipient resolution is impossible or contradicts canonical state.
 
 Fail safely and surface the projection problem to the trusted caller/tests rather than sending to a guessed recipient.
 
 ---
 
-# 5. Structured deep-link target
+# 5. Structured semantic target
 
 Do not store literal Flutter URLs as canonical notification data.
 
-Store/derive a small structured target such as:
+Store/derive a small structured target independent of current navigation.
+
+At minimum support semantic destination kinds equivalent to:
 
 ```text
-destination_kind = project_detail | project_participation
+participation_request
+project_participation
+project_detail
+```
+
+With target context such as:
+
+```text
 project_id
 project_kind
+request_id?   -- required for participation_request
 ```
 
-`project_kind` is already available through the shared `projects` registry.
+Rules:
 
-06B will map this structured target onto current concrete routes:
+- `participation_request` identifies the canonical join-request workflow/item and is the intended future bridge into **Messages**;
+- `project_participation` identifies the organizer overview/history;
+- `project_detail` identifies the concrete Project/Tavolo detail.
 
-```text
-/proposals/:id
-/tavoli/:id
-/proposals/:id/participants
-/tavoli/:id/participants
-```
+06A must **not** create a Messages table or literal route.
 
-This keeps backend notification semantics independent of later Progetti UI reorganization.
+06B may display notifications and map safe project destinations where appropriate, but request-specific notification navigation should remain compatible with the future Messages/request surface.
+
+Plan 07 will own the real Messages surface and map `participation_request` onto its final route/item model.
+
+This keeps backend notification semantics independent of:
+
+- the current Proposal/Tavolo split;
+- later unified Progetti navigation;
+- the future group-chat/group-info layout.
 
 Do not implement deep-link navigation in 06A.
 
@@ -811,6 +914,7 @@ Do not add Flutter notification inbox/settings yet.
 
 Do not add:
 
+- Messages screen or participation-request message card;
 - bell icon;
 - unread badge;
 - notification route;
@@ -1071,7 +1175,37 @@ Clarify that 06A depends on implemented participation events (05A) and core iden
 
 04C Resources + Scambio-Dona remains independent.
 
-Plan 07 chat should depend on the required completed notification portions, but do not decide its exact trigger in 06A.
+Plan 07 should be reconciled from the old narrow **Proposal chat** wording into a broader **Messages + Project Chat** parent.
+
+Record future slices equivalent to:
+
+### 07A — Messages Surface and Structured Participation Request Items
+
+Future scope:
+
+- authenticated Messages inbox/surface;
+- persistent actionable join-request item backed by canonical `project_join_requests`;
+- requester message display;
+- request state changes reflected without duplicating participation state;
+- Accept/Reject actions calling 05A transitions;
+- notification target `participation_request` resolving into this surface;
+- no requirement that the request itself become a free-form chat message.
+
+### 07B — Project Group Chat
+
+Future scope:
+
+- automatic idempotent project group-conversation creation;
+- current authorized participant access;
+- persisted/realtime text;
+- pagination;
+- group information;
+- access after leave/removal/block/suspension;
+- external meeting link.
+
+The existing Participation overview remains a secondary organizer-management surface. Once 07B exists, it should be reachable from group chat/group information; exact placement (top-right action vs group-info page) remains a later UI choice.
+
+Do not decide the exact automatic group-chat trigger in 06A.
 
 ---
 
@@ -1080,6 +1214,8 @@ Plan 07 chat should depend on the required completed notification portions, but 
 Do not implement:
 
 - Flutter notification UI;
+- Messages UI or structured participation-request item UI;
+- project group chat;
 - web notification UI;
 - push/device registration;
 - FCM/APNs;
@@ -1110,7 +1246,10 @@ Do not implement:
 - [ ] current six participation event types have explicit notification mapping;
 - [ ] unsupported event types are not accidentally consumed;
 - [ ] notification rows contain semantic safe state, not private source content;
-- [ ] structured project destination is backend-route-agnostic;
+- [ ] structured notification destination is backend-route-agnostic;
+- [ ] request-related notification kinds carry `request_id` and semantic target `participation_request`;
+- [ ] notifications remain alerts and do not become the canonical Accept/Reject surface;
+- [ ] no Messages/request-item UI is implemented in 06A;
 - [ ] generic per-consumer outbox receipts exist;
 - [ ] notification processing does not prevent future independent consumers;
 - [ ] projector is concurrency-safe and idempotent;
@@ -1152,6 +1291,8 @@ Stop and report before:
 - granting projector to authenticated/anon;
 - adding Firebase/device infrastructure;
 - adding Flutter notification UI;
+- implementing Messages/request items or group chat in 06A;
+- routing join-request notifications permanently to the Participation overview instead of preserving request semantics;
 - changing participation event semantics;
 - implementing matching/resource/chat notifications;
 - making 05C a prerequisite for 06A;
@@ -1213,7 +1354,11 @@ Return:
 22. **05B roadmap reconciliation**
 23. **06B handoff**
 24. **06C handoff**
-25. **Warnings/blockers for Plan 07**
-26. **Commit/PR reference**
+25. **Messages / structured participation-request alignment**
+26. **07A Messages handoff**
+27. **07B group-chat handoff**
+28. **Warnings/blockers for Plan 07**
+29. **Commit/PR reference**
 
 Do not report Flutter notification UI, FCM/device delivery, matching/resource/chat notifications, 05C, or 04C as implemented.
+

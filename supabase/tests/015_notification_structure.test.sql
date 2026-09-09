@@ -157,6 +157,34 @@ select ok(
     select 1
     from pg_constraint
     where conrelid = 'public.notifications'::regclass
+      and conname = 'notifications_destination_kind_valid'
+      and contype = 'c'
+      and pg_get_constraintdef(oid) like '%participation_request%'
+  ),
+  'semantic destination kinds include the structured participation-request target'
+);
+select ok(
+  exists (
+    select 1
+    from pg_constraint
+    where conrelid = 'public.notifications'::regclass
+      and conname = 'notifications_destination_matches_kind'
+      and contype = 'c'
+      and pg_get_constraintdef(oid) like '%participation_request%'
+  ),
+  'notification kinds are constrained to their canonical semantic destination'
+);
+select ok(
+  pg_get_function_result(
+    'public.list_own_notifications(uuid,integer,timestamptz,uuid)'::regprocedure
+  ) like '%request_id uuid%',
+  'the inbox contract returns the canonical request target identifier'
+);
+select ok(
+  exists (
+    select 1
+    from pg_constraint
+    where conrelid = 'public.notifications'::regclass
       and conname = 'notifications_source_outbox_event_id_fkey'
       and contype = 'f'
   ),

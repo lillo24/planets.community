@@ -972,6 +972,7 @@ export type Database = {
           project_kind: string
           project_title: string
           read_at: string
+          request_id: string
         }[]
       }
       list_own_project_join_requests: {

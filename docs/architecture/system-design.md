@@ -66,7 +66,7 @@ Use database constraints, Row Level Security, and named server operations for ru
 - who can edit, publish, cancel, or complete a proposal;
 - whether a join request is valid;
 - whether a user can become or remain a proposal member;
-- when a proposal chat exists;
+- when a project group chat exists;
 - who can read or write that chat;
 - which moderation actions an administrator can perform;
 - whether repeated requests are safely idempotent.
@@ -164,8 +164,8 @@ The preferred sequence is:
 | One-time proposals      | Creator-owned content, schedule, rough/exact location separation, stored lifecycle, derived temporal status | Creator, controlled skill requirements, future participation, future template source      |
 | Recurring activities    | Persistent Tavoli, versioned weekly/monthly schedules, bounded occurrences, rough/exact privacy, lifecycle  | Separate from one-time proposals; Flutter experience and public web discovery implemented |
 | Participation           | Shared project identity, private requests/decisions, current membership and retained history                | Profile and concrete one-time/recurring project; source for authorization and later stats |
-| Chat                    | One proposal-scoped conversation when eligible                                                              | Proposal and current authorized members                                                   |
-| Messages                | Persisted communication within a proposal chat                                                              | Chat, sender, moderation/deletion state                                                   |
+| Messages                | Future authenticated surface for structured participation-request items and project conversations           | Canonical join requests plus project chat/message state                                   |
+| Project chat            | One project-scoped group conversation when its future trigger and access rules are defined                   | Project and authorized participants                                                       |
 | Notifications           | Controlled categories/preferences and recipient in-app records; later device delivery                       | Recipient, per-consumer source event receipt, optional project/request/membership         |
 | Templates               | Reusable proposal structure derived from approved past/community content                                    | Source proposal, attribution, moderation/publication state                                |
 | Community statistics    | Aggregated views over canonical activity and participation                                                  | Proposal type, location, participation, time                                              |
@@ -226,7 +226,7 @@ The product document establishes the following general flow:
 4. matching may notify users whose competences are relevant;
 5. the proposal owner reviews participation requests;
 6. accepted users become members;
-7. the proposal-specific chat becomes available after its participation condition is met;
+7. the project group chat becomes available after the future Plan 07 trigger is satisfied;
 8. participants coordinate and may share an external meeting link;
 9. a completed proposal can contribute to templates and aggregate community information.
 
@@ -271,7 +271,7 @@ Notifications are a centralized domain, not custom preference logic embedded in 
 - sparse per-profile category overrides, with absent rows inheriting catalog defaults;
 - recipient-owned semantic in-app notification records and read timestamps;
 - private outbox events plus generic per-consumer receipts;
-- structured project targets that clients map to routes without storing client URLs;
+- structured semantic targets that clients map to workflow items or routes without storing client URLs;
 - later device tokens, platform metadata, delivery jobs/attempts, and delivery timestamps.
 
 The first notification projection owns the six participation events emitted by the
@@ -289,6 +289,15 @@ actor display name. It never returns source JSON, join-request messages, exact m
 information, email, tokens, or audit metadata. Device registration, push delivery,
 matching/resource/chat notifications, and client inbox UI remain later work.
 
+The request received, withdrawn, accepted, and rejected notifications retain the
+canonical `request_id` and use the `participation_request` destination. That target is
+the backend-route-agnostic bridge to a future persistent actionable item in Messages;
+the notification remains an alert and never owns Accept/Reject. `participant_left`
+targets the creator's `project_participation` overview, while `participant_removed`
+targets `project_detail`. The current Participation screen remains the creator's
+secondary overview/history surface rather than the primary arrival point for a new
+request.
+
 ### Initial channels
 
 - **In-app:** canonical ordinary notification experience.
@@ -297,11 +306,18 @@ matching/resource/chat notifications, and client inbox UI remain later work.
 
 A failed push does not remove the in-app notification or roll back the domain action.
 
-## Proposal chat
+## Messages and project chat
 
-Chat is intentionally narrow:
+Messages will eventually provide an authenticated communication surface containing
+both structured participation-request items and project group conversations. A join
+request item is backed directly by `project_join_requests`, may show its private
+requester message to the authorized creator, and reflects canonical request state.
+Accept/Reject continues to call the participation transition functions; the item is
+not copied into a free-form chat message.
 
-- one conversation per eligible proposal;
+Project group chat remains a distinct, intentionally narrow later domain:
+
+- one conversation per eligible project;
 - persisted text messages;
 - paginated history;
 - realtime updates;

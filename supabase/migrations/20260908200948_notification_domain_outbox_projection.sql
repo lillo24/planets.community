@@ -137,7 +137,11 @@ create table public.notifications (
       references public.project_memberships (id) on delete restrict,
   destination_kind text not null
     constraint notifications_destination_kind_valid check (
-      destination_kind in ('project_detail', 'project_participation')
+      destination_kind in (
+        'participation_request',
+        'project_participation',
+        'project_detail'
+      )
     ),
   created_at timestamptz not null,
   read_at timestamptz,
@@ -152,16 +156,17 @@ create table public.notifications (
       notification_kind in (
         'participation_request_received',
         'participation_request_withdrawn',
-        'participant_left'
+        'participation_request_accepted',
+        'participation_request_rejected'
       )
+      and destination_kind = 'participation_request'
+    )
+    or (
+      notification_kind = 'participant_left'
       and destination_kind = 'project_participation'
     )
     or (
-      notification_kind in (
-        'participation_request_accepted',
-        'participation_request_rejected',
-        'participant_removed'
-      )
+      notification_kind = 'participant_removed'
       and destination_kind = 'project_detail'
     )
   ),
@@ -196,7 +201,7 @@ create table public.notifications (
 comment on table public.notifications is
   'Recipient-owned semantic notification state projected from private outbox events; private source payloads are never copied.';
 comment on column public.notifications.destination_kind is
-  'Backend-route-agnostic target interpreted by a future client together with project_id and the project registry kind.';
+  'Backend-route-agnostic semantic target interpreted with project_id, project kind, and request_id when the target is participation_request.';
 comment on column public.notifications.source_outbox_event_id is
   'Projection provenance and idempotency identity; omitted from ordinary inbox API results.';
 
@@ -397,6 +402,7 @@ returns table (
   project_id uuid,
   project_kind text,
   destination_kind text,
+  request_id uuid,
   project_title text,
   actor_profile_id uuid,
   actor_display_name text
@@ -433,6 +439,7 @@ begin
     notification.project_id,
     project.project_kind,
     notification.destination_kind,
+    notification.request_id,
     case
       when project.project_kind = 'one_time' then proposal.title
       when project.project_kind = 'recurring' then activity.title
@@ -642,12 +649,12 @@ begin
         v_recipient_profile_id := request_record.creator_profile_id;
         v_actor_profile_id := request_record.requester_profile_id;
         v_notification_kind := 'participation_request_received';
-        v_destination_kind := 'project_participation';
+        v_destination_kind := 'participation_request';
       elsif source_event.event_type = 'project.join_request_withdrawn' then
         v_recipient_profile_id := request_record.creator_profile_id;
         v_actor_profile_id := request_record.requester_profile_id;
         v_notification_kind := 'participation_request_withdrawn';
-        v_destination_kind := 'project_participation';
+        v_destination_kind := 'participation_request';
       elsif source_event.event_type = 'project.join_request_accepted' then
         select membership.id
         into v_membership_id
@@ -669,12 +676,12 @@ begin
         v_recipient_profile_id := request_record.requester_profile_id;
         v_actor_profile_id := request_record.creator_profile_id;
         v_notification_kind := 'participation_request_accepted';
-        v_destination_kind := 'project_detail';
+        v_destination_kind := 'participation_request';
       else
         v_recipient_profile_id := request_record.requester_profile_id;
         v_actor_profile_id := request_record.creator_profile_id;
         v_notification_kind := 'participation_request_rejected';
-        v_destination_kind := 'project_detail';
+        v_destination_kind := 'participation_request';
       end if;
     else
       select
@@ -841,6 +848,6 @@ comment on function public.list_own_notification_preferences(uuid) is
 comment on function public.set_own_notification_preference(uuid, text, boolean, boolean) is
   'Upserts one future-facing category/channel override for the expected authenticated profile.';
 comment on function public.list_own_notifications(uuid, integer, timestamptz, uuid) is
-  'Returns a keyset-paginated private inbox with safe current project and actor presentation context, never raw source payload.';
+  'Returns a keyset-paginated private inbox with semantic request/project targets plus safe current presentation context, never raw source payload.';
 comment on function public.process_notification_outbox_batch(integer) is
   'Service-only, concurrency-safe notifications.v1 projector for the six Plan 05A participation events.';

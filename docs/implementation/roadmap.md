@@ -59,10 +59,12 @@ Do not begin a dependent plan until the prior plan is merged or its branch is ex
 | 05B   | Mobile Project Participation Experience              | Join/status/withdraw, creator review, member state, leave/remove, and protected meeting UI                            | 05A                    | Functional/native UX review                                                                                          | Implemented |
 | 05C   | Verified Project Contribution / Completion Review    | Creator confirmation of actual contribution for later stats/badges/resource attribution                               | 05A, 04C               | Contribution taxonomy, resource attribution, dispute/correction rules, and credit semantics                          | Not started |
 | 06    | Notification backbone (parent)                       | Canonical notification projection, later mobile inbox/preferences, then device registration and push delivery         | 03–05A                 | User-facing notification UX/copy and push behavior remain later review points                                        | In progress |
-| 06A   | Notification Domain and Outbox Projection Foundation | Categories/preferences, semantic inbox records, multi-consumer receipts, participation projection, and secure APIs    | 01B, 05A               | None expected for the defined participation foundation                                                               | In progress |
-| 06B   | Mobile In-App Notifications and Preferences          | Flutter inbox, unread state, preference controls, and structured project navigation                                   | 06A                    | Functional/native UX review and user-facing copy                                                                     | Not started |
+| 06A   | Notification Domain and Outbox Projection Foundation | Categories/preferences, semantic inbox records/targets, multi-consumer receipts, participation projection, secure APIs | 01B, 05A               | None expected for the defined participation foundation                                                               | In progress |
+| 06B   | Mobile In-App Notifications and Preferences          | Flutter inbox, unread state, preference controls, and structured project/request navigation                           | 06A                    | Functional/native UX review and user-facing copy                                                                     | Not started |
 | 06C   | Device Registration and FCM Push Delivery            | Installation tokens, delivery jobs/attempts, FCM worker, retries, safe previews, and environment protections          | 06A, 06B               | Push permission timing, preview policy, and provider/account-owner setup                                             | Not started |
-| 07    | Proposal chat                                        | Automatic idempotent chat creation, membership authorization, persisted/realtime text, pagination, push, meeting URL  | 05–06                  | Triggering participation event plus access/moderation after leaving or removal                                       | Not started |
+| 07    | Messages + Project Chat (parent)                      | Structured participation-request items plus automatic project group conversations                                     | 05A, 06A               | Exact chat trigger and access/moderation after leaving or removal                                                     | Not started |
+| 07A   | Messages Surface and Structured Participation Requests | Authenticated Messages inbox with canonical actionable join-request items                                            | 05A, 06A               | Functional/native UX review and final Messages information architecture                                               | Not started |
+| 07B   | Project Group Chat                                   | Automatic idempotent group chat, membership authorization, realtime text, group info, and meeting link                | 05A, 07A               | Triggering participation event plus access/moderation after leaving or removal                                       | Not started |
 | 08    | Storage and media hardening                          | Purpose-specific buckets, upload restrictions, private/public access, media metadata, cleanup and processing hooks    | 03–07                  | Profile/proposal photo visibility and retention choices                                                              | Not started |
 | 09    | Safety, moderation and admin                         | Reporting, blocking, content states, admin roles, moderation queue/actions, audit trail and minimal custom admin UI   | 04–08                  | Community rules, prohibited content, escalation, suspension, appeals, minimum age                                    | Not started |
 | 10    | Account deletion and privacy operations              | In-app and web deletion paths, cleanup/anonymization jobs, export groundwork, privacy documentation inputs            | 03–09                  | Legal retention and anonymization policy; legal text remains founder/legal work                                      | Not started |
@@ -341,7 +343,7 @@ The former combined Plan 05 scope is now split across the three portions above. 
 Owns:
 
 - controlled categories, default in-app/future-push settings, and sparse per-profile overrides;
-- canonical recipient-specific semantic notification records and structured project targets;
+- canonical recipient-specific semantic notification records and structured request/project targets;
 - generic private per-consumer outbox receipts without treating `published_at` as a global consume switch;
 - service-only, concurrency-safe/idempotent projection for the six 05A participation events;
 - preference suppression that still records successful notification-consumer processing;
@@ -360,6 +362,7 @@ Future scope:
 - mark-one/mark-all interactions;
 - category preference UI;
 - structured Proposal/Tavolo project navigation and deep links;
+- request-specific target handling that remains compatible with the future Messages item;
 - safe refresh or realtime strategy.
 
 #### 06C — Device Registration and FCM Push Delivery
@@ -377,25 +380,46 @@ Future scope:
 - safe previews that avoid private content leakage;
 - local/staging behavior that cannot accidentally notify production users.
 
-Plan 07 chat depends on the notification portions it actually needs, but it still owns the exact automatic-chat trigger and post-membership authorization. 06A does not turn `project.join_request_accepted` into a chat rule.
+Request-specific 06A notifications carry `request_id` and the semantic `participation_request` target for the future Messages item. They remain alerts and do not own Accept/Reject. Plan 07 owns the persistent request surface and group-chat behavior; 06A does not turn `project.join_request_accepted` into a chat rule.
 
-### 07 — Proposal chat
+### 07 — Messages + Project Chat
 
-**Goal:** Enable narrow, proposal-specific coordination.
+**Goal:** Give users one authenticated communication area for structured participation requests and later project-group coordination without duplicating canonical participation state.
 
-Expected scope:
+**Status:** Not started. This parent is split between the request-oriented Messages surface and the distinct accepted-participant group chat.
 
-- exactly one automatically created eligible chat per proposal;
+#### 07A — Messages Surface and Structured Participation Request Items
+
+Future scope:
+
+- authenticated Messages inbox/surface;
+- persistent actionable join-request items backed by canonical `project_join_requests`;
+- authorized requester-message display;
+- request state changes rendered without duplicating participation state;
+- Accept/Reject actions calling the existing 05A transitions;
+- resolution of the notification `participation_request` target to the corresponding item;
+- no requirement that a request become a free-form chat message.
+
+The existing Participation overview remains the organizer's secondary full-history and member-management surface.
+
+#### 07B — Project Group Chat
+
+Future scope:
+
+- exactly one automatically created eligible group conversation per project;
 - transactional idempotent creation at the participation event finalized with plans 05/07, without a fixed three-person gate or manual Create Chat action;
 - member authorization and historical-access behavior;
 - retention of chat/messages when a project ends;
 - persisted text messages and pagination;
 - Supabase Realtime subscription handling;
 - send deduplication/error recovery;
+- group information with a route to the Participation overview;
 - message reporting/deletion-state groundwork;
 - push-notification events;
 - optional externally created meeting URL;
 - no direct messages, calls, reactions, typing indicators, or end-to-end encryption.
+
+The exact automatic group-chat trigger and whether Participation is a direct group action or a group-info action remain deferred to 07B.
 
 ### 08 — Storage and media hardening
 
@@ -491,7 +515,7 @@ Codex can usually implement:
 - CRUD and pagination;
 - join-request mechanics;
 - notification/outbox/queue infrastructure;
-- proposal-scoped chat infrastructure;
+- structured request Messages and project-scoped chat infrastructure;
 - storage policies;
 - moderation/admin mechanics;
 - CI, documentation, fixtures, and runbooks.
@@ -519,7 +543,7 @@ Major gates currently expected:
 
 1. recurrence expansion/exception semantics before extending beyond the bounded 04B1 weekly/monthly model; 04A rough/exact location visibility is resolved;
 2. capacity/fullness before introducing limits; the core request/membership state semantics are resolved in 05A;
-3. chat access after membership changes before plan 07;
+3. group-chat trigger and access after membership changes before plan 07B;
 4. moderation/minimum-age policy before plan 09 is complete;
 5. retention/anonymization policy before plan 10;
 6. success metrics and analytics legal basis before plan 11;
@@ -527,4 +551,4 @@ Major gates currently expected:
 
 ## Immediate next action
 
-Complete automated review and native Android/iOS QA for **05B — Mobile Project Participation Experience** before merge. **04C — Resources + Scambio-Dona** remains independently available; 05C waits for contribution/resource decisions. Plan 06 remains sequenced after Plan 05, and Plan 07 still requires the exact automatic-chat trigger and post-membership access decisions.
+Review **06A — Notification Domain and Outbox Projection Foundation** without merging until explicitly approved. **04C — Resources + Scambio-Dona** remains independently available; 05C waits for contribution/resource decisions. The repository records no 05B native-QA result. Plan 07A can build the structured Messages request surface on 05A plus 06A semantics, while 07B still requires the exact automatic-chat trigger and post-membership access decisions.

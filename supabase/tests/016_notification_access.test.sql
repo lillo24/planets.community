@@ -434,32 +434,48 @@ select results_eq(
         'participation_request_accepted'::text,
         'e2000000-0000-4000-8000-000000000002'::uuid,
         'e1000000-0000-4000-8000-000000000001'::uuid,
-        'project_detail'::text,
+        'participation_request'::text,
         'one_time'::text
       ),
       (
         'participation_request_received'::text,
         'e1000000-0000-4000-8000-000000000001'::uuid,
         'e2000000-0000-4000-8000-000000000002'::uuid,
-        'project_participation'::text,
+        'participation_request'::text,
         'one_time'::text
       ),
       (
         'participation_request_rejected'::text,
         'e2000000-0000-4000-8000-000000000002'::uuid,
         'e1000000-0000-4000-8000-000000000001'::uuid,
-        'project_detail'::text,
+        'participation_request'::text,
         'recurring'::text
       ),
       (
         'participation_request_withdrawn'::text,
         'e1000000-0000-4000-8000-000000000001'::uuid,
         'e2000000-0000-4000-8000-000000000002'::uuid,
-        'project_participation'::text,
+        'participation_request'::text,
         'recurring'::text
       )
   $$,
-  'every current event has the canonical recipient, actor, destination, and project kind'
+  'every current event has the canonical recipient, actor, semantic destination, and project kind'
+);
+select is(
+  (
+    select count(*)
+    from public.notifications as notification
+    where notification.notification_kind in (
+      'participation_request_received',
+      'participation_request_withdrawn',
+      'participation_request_accepted',
+      'participation_request_rejected'
+    )
+      and notification.destination_kind = 'participation_request'
+      and notification.request_id is not null
+  ),
+  4::bigint,
+  'request notifications retain their canonical request target for the future Messages item'
 );
 select is(
   (
@@ -519,9 +535,10 @@ select ok(
       and notification.project_title = 'Notification proposal'
       and notification.project_kind = 'one_time'
       and notification.actor_display_name = 'Notification Creator'
-      and notification.destination_kind = 'project_detail'
+      and notification.destination_kind = 'participation_request'
+      and notification.request_id = 'a3000000-0000-4000-8000-000000000003'
   ),
-  'the inbox resolves authorized actor and structured current project context'
+  'the inbox resolves authorized actor and structured participation-request context'
 );
 select ok(
   not exists (

@@ -2,7 +2,7 @@
 
 **Status:** Accepted product decisions that supersede older tentative wording until the owning implementation plans fold them into canonical domain documentation.
 
-## Proposal chat
+## Project group chat
 
 Current product direction:
 
@@ -26,3 +26,13 @@ Current product direction from the 08/09 founder discussion:
 - Capacity and **Pieno** behavior remain unresolved. There is no maximum-participant rule, waitlist, automatic fullness, or role quota yet.
 
 Ordinary withdrawal, voluntary leave, and creator removal are not permanent bans. A person may submit a fresh request while the project is eligible and they have no pending request or current membership. Blocking and moderation remain later work.
+
+## Messages, participation requests, and notification alerts
+
+Current product direction from the 08/09 founder discussion and follow-up clarification:
+
+- A join request will eventually arrive as a persistent structured actionable item in an authenticated Messages surface, backed by canonical `project_join_requests` state rather than copied into a free-form chat message.
+- The structured request item may display its private requester message to the authorized creator. Accept/Reject actions must continue to call the canonical participation transitions and render the resulting request state.
+- A participation notification is only an alert and entry point. Request-specific notifications retain `request_id` and use a semantic `participation_request` target so a future client can open the corresponding Messages item without storing a Flutter route in PostgreSQL.
+- The existing Participation screen remains the organizer's secondary overview for all request history and member management. It is not the primary arrival surface for new requests.
+- Project group chat is separate from pre-acceptance request items. Plan 07 owns both the Messages surface and project chat, including the final automatic chat trigger and post-membership access rules.
