@@ -43,6 +43,16 @@ export function parseLocalSupabaseStatus(output) {
     "anon_key",
     "anonKey",
   ]);
+  const serviceRoleKey = readStatusValue(status, [
+    "SERVICE_ROLE_KEY",
+    "service_role_key",
+    "serviceRoleKey",
+  ]);
+  const databaseUrl = readStatusValue(status, [
+    "DB_URL",
+    "db_url",
+    "databaseUrl",
+  ]);
 
   if (!apiUrl || !publishableKey) {
     throw new Error(
@@ -67,6 +77,8 @@ export function parseLocalSupabaseStatus(output) {
   return Object.freeze({
     apiUrl: configuredUrl.toString().replace(/\/$/, ""),
     publishableKey,
+    ...(serviceRoleKey ? { serviceRoleKey } : {}),
+    ...(databaseUrl ? { databaseUrl } : {}),
   });
 }
 

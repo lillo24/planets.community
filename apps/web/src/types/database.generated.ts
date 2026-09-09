@@ -9,6 +9,118 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      notification_categories: {
+        Row: {
+          default_in_app_enabled: boolean
+          default_push_enabled: boolean
+          slug: string
+          sort_order: number
+          user_configurable: boolean
+        }
+        Insert: {
+          default_in_app_enabled: boolean
+          default_push_enabled: boolean
+          slug: string
+          sort_order: number
+          user_configurable?: boolean
+        }
+        Update: {
+          default_in_app_enabled?: boolean
+          default_push_enabled?: boolean
+          slug?: string
+          sort_order?: number
+          user_configurable?: boolean
+        }
+        Relationships: []
+      }
+      notifications: {
+        Row: {
+          actor_profile_id: string | null
+          category_slug: string
+          created_at: string
+          destination_kind: string
+          id: string
+          membership_id: string | null
+          notification_kind: string
+          project_id: string | null
+          read_at: string | null
+          recipient_profile_id: string
+          request_id: string | null
+          source_outbox_event_id: string
+        }
+        Insert: {
+          actor_profile_id?: string | null
+          category_slug: string
+          created_at: string
+          destination_kind: string
+          id?: string
+          membership_id?: string | null
+          notification_kind: string
+          project_id?: string | null
+          read_at?: string | null
+          recipient_profile_id: string
+          request_id?: string | null
+          source_outbox_event_id: string
+        }
+        Update: {
+          actor_profile_id?: string | null
+          category_slug?: string
+          created_at?: string
+          destination_kind?: string
+          id?: string
+          membership_id?: string | null
+          notification_kind?: string
+          project_id?: string | null
+          read_at?: string | null
+          recipient_profile_id?: string
+          request_id?: string | null
+          source_outbox_event_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notifications_actor_profile_id_fkey"
+            columns: ["actor_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notifications_category_slug_fkey"
+            columns: ["category_slug"]
+            isOneToOne: false
+            referencedRelation: "notification_categories"
+            referencedColumns: ["slug"]
+          },
+          {
+            foreignKeyName: "notifications_membership_id_fkey"
+            columns: ["membership_id"]
+            isOneToOne: false
+            referencedRelation: "project_memberships"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notifications_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notifications_recipient_profile_id_fkey"
+            columns: ["recipient_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notifications_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "project_join_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profile_field_visibility: {
         Row: {
           audience: string
@@ -28,6 +140,48 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "profile_field_visibility_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profile_notification_preferences: {
+        Row: {
+          category_slug: string
+          created_at: string
+          in_app_enabled: boolean
+          profile_id: string
+          push_enabled: boolean
+          updated_at: string
+        }
+        Insert: {
+          category_slug: string
+          created_at?: string
+          in_app_enabled: boolean
+          profile_id: string
+          push_enabled: boolean
+          updated_at?: string
+        }
+        Update: {
+          category_slug?: string
+          created_at?: string
+          in_app_enabled?: boolean
+          profile_id?: string
+          push_enabled?: boolean
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "profile_notification_preferences_category_slug_fkey"
+            columns: ["category_slug"]
+            isOneToOne: false
+            referencedRelation: "notification_categories"
+            referencedColumns: ["slug"]
+          },
+          {
+            foreignKeyName: "profile_notification_preferences_profile_id_fkey"
             columns: ["profile_id"]
             isOneToOne: false
             referencedRelation: "profiles"
@@ -706,6 +860,10 @@ export type Database = {
           updated_at: string
         }[]
       }
+      get_own_unread_notification_count: {
+        Args: { p_expected_profile_id: string }
+        Returns: number
+      }
       get_project_participant_meeting_details: {
         Args: { p_expected_profile_id: string; p_project_id: string }
         Returns: {
@@ -783,6 +941,39 @@ export type Database = {
           p_membership_id: string
         }
         Returns: string
+      }
+      list_own_notification_preferences: {
+        Args: { p_expected_profile_id: string }
+        Returns: {
+          category_slug: string
+          has_override: boolean
+          in_app_enabled: boolean
+          push_enabled: boolean
+          sort_order: number
+          user_configurable: boolean
+        }[]
+      }
+      list_own_notifications: {
+        Args: {
+          p_cursor_created_at?: string
+          p_cursor_id?: string
+          p_expected_profile_id: string
+          p_limit?: number
+        }
+        Returns: {
+          actor_display_name: string
+          actor_profile_id: string
+          category_slug: string
+          created_at: string
+          destination_kind: string
+          notification_id: string
+          notification_kind: string
+          project_id: string
+          project_kind: string
+          project_title: string
+          read_at: string
+          request_id: string
+        }[]
       }
       list_own_project_join_requests: {
         Args: { p_expected_requester_profile_id: string }
@@ -946,12 +1137,28 @@ export type Database = {
           starts_at: string
         }[]
       }
+      mark_all_notifications_read: {
+        Args: { p_expected_profile_id: string }
+        Returns: number
+      }
+      mark_notification_read: {
+        Args: { p_expected_profile_id: string; p_notification_id: string }
+        Returns: string
+      }
       pause_recurring_activity: {
         Args: {
           p_expected_creator_profile_id: string
           p_recurring_activity_id: string
         }
         Returns: string
+      }
+      process_notification_outbox_batch: {
+        Args: { p_limit?: number }
+        Returns: {
+          notifications_created: number
+          notifications_suppressed: number
+          processed_count: number
+        }[]
       }
       publish_proposal: {
         Args: { p_expected_creator_profile_id: string; p_proposal_id: string }
@@ -986,6 +1193,15 @@ export type Database = {
           p_recurring_activity_id: string
         }
         Returns: string
+      }
+      set_own_notification_preference: {
+        Args: {
+          p_category_slug: string
+          p_expected_profile_id: string
+          p_in_app_enabled: boolean
+          p_push_enabled: boolean
+        }
+        Returns: undefined
       }
       update_own_profile: {
         Args: {

@@ -1,6 +1,6 @@
 # Database development
 
-PostgreSQL is the canonical PLANETS product record. This guide owns the local schema-change, security-test, and generated-type workflow. The current schema includes application identity, basic profiles, a controlled starter skill catalog, field visibility, one-time proposals, the Tavoli recurring-activity domain, shared project participation, and private audit/outbox primitives.
+PostgreSQL is the canonical PLANETS product record. This guide owns the local schema-change, security-test, and generated-type workflow. The current schema includes application identity, basic profiles, a controlled starter skill catalog, field visibility, one-time proposals, the Tavoli recurring-activity domain, shared project participation, the in-app notification domain, and private audit/outbox primitives.
 
 ## Source of truth and daily workflow
 
@@ -32,7 +32,7 @@ Each new anchor receives exactly three public visibility rows for `display_name`
 
 The profile and audit-actor foreign keys restrict raw deletion from `auth.users`. This intentional failure guard prevents application identity or audit history from being silently destroyed before plan 10 defines cleanup, anonymization, and lawful retention. Do not replace it with cascade or nulling as an incidental feature migration.
 
-`private.audit_events` is append-oriented operational/security history rather than user analytics; generic metadata must avoid bodies, tokens, exact locations, and unnecessary personal data. `private.outbox_events` is a transaction-local handoff record whose UUID supplies a stable event identity. Its availability/publication fields and pending index prepare later dispatch without implementing a queue, retries, notifications, or provider delivery. Neither private table has direct client privileges or Data API exposure.
+`private.audit_events` is append-oriented operational/security history rather than user analytics; generic metadata must avoid bodies, tokens, exact locations, and unnecessary personal data. `private.outbox_events` is a transaction-local handoff record whose UUID supplies a stable event identity. `available_at` controls when a worker may consider an event. The existing `published_at` is legacy/global dispatcher metadata, not a per-consumer acknowledgement. Independent consumers record success in `private.outbox_consumer_receipts` using `(outbox_event_id, consumer_key)`, so notification projection cannot hide an event from later chat or analytics consumers. These private tables have no direct client or broad service-role privileges and no Data API exposure.
 
 ## Public and private schemas
 
@@ -72,6 +72,16 @@ Authenticated clients use `request_to_join_project`, `withdraw_project_join_requ
 
 Requester, creator-review, own-membership, and creator-member-history reads are separate narrow operations. Request messages never become public, and the creator projection contains display name but no Auth email. `get_project_participant_meeting_details` returns only exact operational meeting text/point and concrete kind to the creator or a current accepted participant. Every transition adds an identifier-only audit/outbox event; no delivery, chat, resource contribution, capacity, badge, or contribution verification is implemented here.
 
+## Notification domain and outbox projection
+
+`public.notification_categories` is the system-managed catalog for `participation`, `project_activity`, `matching`, `chat`, and `resources`. The initial categories default both in-app and future push preferences to enabled and are user-configurable. Only `participation` has event mappings today. `public.profile_notification_preferences` stores sparse per-profile/category overrides; an absent row deliberately inherits the current category defaults. `list_own_notification_preferences` returns all effective categories, while `set_own_notification_preference` changes only one category and binds the form identity to `auth.uid()`.
+
+`public.notifications` stores recipient, category, semantic kind, source event, structured destination, relevant actor/request/membership identifiers, source chronology, and read state. It stores no message copy or source JSON. The six supported kinds are participation request received/withdrawn/accepted/rejected and participant left/removed. All four request-specific kinds retain `request_id` and target `participation_request`, a backend-route-agnostic reference to the future structured Messages item; the inbox returns that request ID with safe context. Participant-left targets the creator's `project_participation` overview, while participant-removed targets `project_detail`. Project kind and current title are resolved through the shared registry and concrete table by the inbox operation. The recipient-private workflow may return the current actor display name because the request/membership relationship authorizes that identity context, without weakening the anonymous public-profile boundary. Notifications remain alerts and do not own request acceptance or rejection.
+
+`process_notification_outbox_batch` is executable only by `service_role`. It selects only the six supported and available participation events, ignores `published_at`, excludes `notifications.v1` receipts, and uses `FOR UPDATE SKIP LOCKED` for concurrent workers. Each event is validated against canonical request, membership, and project rows rather than trusting payload text. An enabled preference creates at most one notification under a database uniqueness constraint; a disabled preference creates none but still records its consumer receipt. Mapping inconsistencies fail the batch visibly and create neither guessed notifications nor success-shaped receipts. Events that existed before the notification migration are receipted for `notifications.v1` without historical notification backfill, while unsupported event types remain untouched.
+
+Authenticated users use expected-identity-bound functions for keyset-paginated inbox reads, unread count, mark-one, mark-all, and preferences. Notification/category/preference tables use RLS with no direct client policies or table grants. Inbox results omit outbox IDs/payloads, private request messages, exact meeting text or coordinates, emails, tokens, and audit data. Push/device registration, delivery attempts, FCM, and notification UI are not part of this foundation.
+
 ## Fail-closed access
 
 The local config pins `auto_expose_new_tables = false`. The foundation migration also changes PostgreSQL default privileges for objects created by the `postgres` role in `public` and `private`:
@@ -110,6 +120,7 @@ The native pgTAP files under `supabase/tests/` verify:
 - one-time proposal constraints, lifecycle/status boundaries, owner/cross-account access, expected-identity protection, rough/exact privacy, skill relationships, function hardening, pagination, and historical retention.
 - recurring activity constraints, owner isolation, stale expected identity, weekly/monthly wall-clock recurrence, Rome DST changes, bounded occurrence windows, non-overlapping schedule history, pause/resume/end transitions, public privacy, and function hardening.
 - shared project registry synchronization, request/membership state and uniqueness, concrete lifecycle eligibility, stale identity, private read projections, participant meeting authorization, retained history, deletion protection, and content-free audit/outbox events.
+- controlled notification categories/defaults, sparse owner preferences, semantic notification constraints, six participation recipient mappings, private multi-consumer receipts, projector idempotency/concurrency, suppression receipts, own-only inbox/read state, privacy, and service/client grants.
 
 Run focused commands while the stack is already running:
 
@@ -122,6 +133,7 @@ npm run profile:verify:local
 npm run proposal:verify:local
 npm run recurring:verify:local
 npm run participation:verify:local
+npm run notification:verify:local
 npm run db:types
 npm run db:types:check
 ```
@@ -137,6 +149,8 @@ npm run db:types:check
 `recurring:verify:local` uses two complete authenticated identities plus anon to prove Tavolo draft ownership, cross-user and stale-identity rejection, required snapshot pagination, weekly/monthly discovery, participant-restricted exact-location absence, public detail-only exact location, pause/resume/end visibility, preservation of an old schedule when a future version is added, and in-place correction of that pending version. Reference windows are deterministic; the harness performs no realtime waits and never prints addresses, OTPs, tokens, keys, or protected meeting content.
 
 `participation:verify:local` uses a creator, requester, unrelated authenticated user, and anon across one future Proposal and Tavolo. It proves private request review, stale-identity rejection, single acceptance, leave/re-request/reject, pause/resume membership preservation, creator removal/re-request, end-history preservation, protected meeting authorization, and unchanged anonymous detail privacy. It never logs OTPs, tokens, request messages, or protected meeting values.
+
+`notification:verify:local` uses three complete authenticated identities, a service-role client, and one narrow direct local-database assertion. It proves pre-projection absence, concurrent projector idempotency, request/accept/withdraw/reject/leave mappings, stable request IDs and `participation_request` targets, cross-account denial, structured safe context, unread/read changes, preference suppression with a receipt, later re-enable behavior, and coexistence with an independent synthetic consumer receipt. It never logs OTPs, keys, database URLs, request messages, or protected meeting values.
 
 `auth:web:verify:local` adds web-specific evidence after a locally configured production Next.js build. It obtains session cookies through supported `@supabase/ssr` callbacks, confirms the Server Component recognizes the authenticated session, rejects private-auth material in the rendered response, and confirms `/admin` returns 404 for signed-out and signed-in requests. It does not invent or log Supabase's cookie encoding.
 

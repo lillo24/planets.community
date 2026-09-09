@@ -1,7 +1,7 @@
 # Implementation Roadmap
 
 **Status:** Planning baseline  
-**Current implementation:** Plans 00–04B2B and 05A implemented; 05B in progress; 04C remains separately not started
+**Current implementation:** Plans 00–04B2B, 05A, and 05B implemented; 06A in progress; 04C and 05C remain separately not started
 
 This roadmap divides the first PLANETS build into reviewable Codex tasks. Each numbered item should normally become its own implementation prompt, branch, and pull request.
 
@@ -33,38 +33,43 @@ Do not begin a dependent plan until the prior plan is merged or its branch is ex
 
 ## Ordered plans
 
-| ID  | Plan                                            | Main result                                                                                                              | Dependencies           | Founder input expected                                                                                               | Status      |
-| --- | ----------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ | ---------------------- | -------------------------------------------------------------------------------------------------------------------- | ----------- |
-| 00  | Architecture and repository bootstrap           | Runnable monorepo foundation, local tooling, initial CI, development docs                                                | Documentation baseline | Tool/account installation only if automation cannot provide it                                                       | Implemented |
-| 01  | Database foundation and security model (parent) | Secure database workflow plus shared identity, audit, and outbox primitives                                              | 00                     | Confirm any security-critical ambiguity Codex cannot isolate                                                         | Implemented |
-| 01A | Database workflow and security harness          | Canonical migrations, fail-closed grants, public/private boundary, PostGIS, pgTAP, generated types, and CI replay        | 00                     | None expected                                                                                                        | Implemented |
-| 01B | Identity, audit, and outbox primitives          | Auth/profile boundary and minimal shared audit/outbox foundations                                                        | 01A                    | Confirm any security-critical ambiguity Codex cannot isolate                                                         | Implemented |
-| 02  | Mobile and web application foundations (parent) | Flutter app shell, Next.js public/admin shells, environments, error handling, localization and monitoring foundations    | 00–01                  | No visual polish; only resolve navigation/product-shell ambiguity if material                                        | Implemented |
-| 02A | Mobile application foundation                   | Flutter startup, Riverpod/router, typed config, Supabase/Sentry, theme, localization, and state UI                       | 01                     | None expected                                                                                                        | Implemented |
-| 02B | Web/admin application foundation                | Next.js public/admin shells and web-side application foundations                                                         | 02A                    | None expected unless current tooling exposes a material ambiguity                                                    | Implemented |
-| 03  | Authentication and profiles (parent)            | Public browsing boundary, mobile/web email OTP, profile setup, competences/preferences, privacy-ready profile data       | 01–02                  | Initial required profile fields, visibility rules, competence taxonomy strategy                                      | Implemented |
-| 03A | Mobile Email-OTP Authentication                 | Public-first mobile numeric email OTP, Supabase session state, sign-out, and minimal profile-anchor readiness            | 02B                    | None expected                                                                                                        | Implemented |
-| 03B | Web Email-OTP Authentication                    | Web email OTP and session behavior using the canonical backend                                                           | 03A                    | None expected for this scoped work                                                                                   | Implemented |
-| 03C | Basic Profiles, Skills, and Visibility          | Display-name onboarding, optional bio, controlled starter skills, and per-field public/private visibility                | 03B                    | Initial required fields, starter taxonomy, and basic visibility resolved; advanced profile decisions remain deferred | Implemented |
-| 04  | Activity discovery/domain (parent)              | One-time proposals plus separately scoped recurring activities                                                           | 03                     | Proposal fields, lifecycle decisions, broad location behavior                                                        | Implemented |
-| 04A | One-Time Proposals and Discovery                | Draft/create/publish/cancel, public list/detail, requirements, location privacy, and mobile/web discovery                | 03C                    | One-time lifecycle and rough/exact location behavior resolved                                                        | Implemented |
-| 04B | Tavoli / Recurring Activities (parent)          | Versioned weekly/monthly recurring domain plus later mobile/web experience                                                | 04A                    | Initial recurrence and lifecycle resolved; occurrence exceptions remain deferred                                     | Implemented |
-| 04B1 | Tavoli / Recurring Activity Domain Foundation  | Separate recurring schema, schedule history, bounded occurrences, lifecycle, privacy, canonical APIs, and tests          | 04A                    | None expected for the defined weekly/monthly foundation                                                              | Implemented |
-| 04B2 | Tavoli Mobile/Web Experience (parent)          | Separate mobile and public-web clients over the canonical 04B1 backend                                                    | 04B1                   | Functional UX review; no recurrence expansion                                                                        | Implemented |
-| 04B2A | Tavoli Mobile Experience and Browse Integration | Mobile browse/list/detail/create/edit/manage UI over the canonical 04B1 backend                                         | 04B1                   | Native interaction review                                                                                             | Implemented |
-| 04B2B | Public Web Tavoli Discovery                   | Read-only public web Tavoli list and detail                                                                               | 04B2A                  | Functional public-web review                                                                                          | Implemented |
-| 04C | Resources + Scambio-Dona                        | Project needs/contributions plus donation/exchange listings and later matching/notifications                            | 04A                    | Resource types, ownership/handoff/return semantics, visibility, listing lifecycle, and matching                       | Not started |
-| 05  | Participation lifecycle (parent)                | Shared project participation foundation, later mobile experience, and verified-contribution review                       | 04A, 04B1              | Capacity/fullness and later contribution/resource semantics remain unresolved                                        | In progress |
-| 05A | Project Participation Domain Foundation         | Shared identity, private join requests, canonical membership history, protected meeting access, events, and tests        | 04A, 04B1              | No blocking decision; exact chat trigger remains Plan 07                                                             | Implemented |
-| 05B | Mobile Project Participation Experience         | Join/status/withdraw, creator review, member state, leave/remove, and protected meeting UI                               | 05A                    | Functional/native UX review                                                                                           | In progress |
-| 05C | Verified Project Contribution / Completion Review | Creator confirmation of actual contribution for later stats/badges/resource attribution                               | 05A, 04C               | Contribution taxonomy, resource attribution, dispute/correction rules, and credit semantics                           | Not started |
-| 06  | Notification backbone                           | In-app notifications, preferences, device registration, outbox/queue, FCM worker, retries and deep links                 | 03–05                  | Notification categories, priority, and copy can remain provisional unless user-facing review is needed               | Not started |
-| 07  | Proposal chat                                   | Automatic idempotent chat creation, membership authorization, persisted/realtime text, pagination, push, meeting URL     | 05–06                  | Triggering participation event plus access/moderation after leaving or removal                                       | Not started |
-| 08  | Storage and media hardening                     | Purpose-specific buckets, upload restrictions, private/public access, media metadata, cleanup and processing hooks       | 03–07                  | Profile/proposal photo visibility and retention choices                                                              | Not started |
-| 09  | Safety, moderation and admin                    | Reporting, blocking, content states, admin roles, moderation queue/actions, audit trail and minimal custom admin UI      | 04–08                  | Community rules, prohibited content, escalation, suspension, appeals, minimum age                                    | Not started |
-| 10  | Account deletion and privacy operations         | In-app and web deletion paths, cleanup/anonymization jobs, export groundwork, privacy documentation inputs               | 03–09                  | Legal retention and anonymization policy; legal text remains founder/legal work                                      | Not started |
-| 11  | Analytics and operational readiness             | Explicit product events, privacy scrubbing, health checks, alerts, restore procedure and operational runbooks            | 00–10                  | Success metrics and analytics consent/legal choices                                                                  | Not started |
-| 12  | Release pipeline and store readiness            | Staging/production deployment, signed mobile builds, internal testing, approval gates and store checklists               | 00–11                  | Provider accounts, billing, certificates, store listings, policies and final approval                                | Not started |
+| ID    | Plan                                                 | Main result                                                                                                           | Dependencies           | Founder input expected                                                                                               | Status      |
+| ----- | ---------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- | ---------------------- | -------------------------------------------------------------------------------------------------------------------- | ----------- |
+| 00    | Architecture and repository bootstrap                | Runnable monorepo foundation, local tooling, initial CI, development docs                                             | Documentation baseline | Tool/account installation only if automation cannot provide it                                                       | Implemented |
+| 01    | Database foundation and security model (parent)      | Secure database workflow plus shared identity, audit, and outbox primitives                                           | 00                     | Confirm any security-critical ambiguity Codex cannot isolate                                                         | Implemented |
+| 01A   | Database workflow and security harness               | Canonical migrations, fail-closed grants, public/private boundary, PostGIS, pgTAP, generated types, and CI replay     | 00                     | None expected                                                                                                        | Implemented |
+| 01B   | Identity, audit, and outbox primitives               | Auth/profile boundary and minimal shared audit/outbox foundations                                                     | 01A                    | Confirm any security-critical ambiguity Codex cannot isolate                                                         | Implemented |
+| 02    | Mobile and web application foundations (parent)      | Flutter app shell, Next.js public/admin shells, environments, error handling, localization and monitoring foundations | 00–01                  | No visual polish; only resolve navigation/product-shell ambiguity if material                                        | Implemented |
+| 02A   | Mobile application foundation                        | Flutter startup, Riverpod/router, typed config, Supabase/Sentry, theme, localization, and state UI                    | 01                     | None expected                                                                                                        | Implemented |
+| 02B   | Web/admin application foundation                     | Next.js public/admin shells and web-side application foundations                                                      | 02A                    | None expected unless current tooling exposes a material ambiguity                                                    | Implemented |
+| 03    | Authentication and profiles (parent)                 | Public browsing boundary, mobile/web email OTP, profile setup, competences/preferences, privacy-ready profile data    | 01–02                  | Initial required profile fields, visibility rules, competence taxonomy strategy                                      | Implemented |
+| 03A   | Mobile Email-OTP Authentication                      | Public-first mobile numeric email OTP, Supabase session state, sign-out, and minimal profile-anchor readiness         | 02B                    | None expected                                                                                                        | Implemented |
+| 03B   | Web Email-OTP Authentication                         | Web email OTP and session behavior using the canonical backend                                                        | 03A                    | None expected for this scoped work                                                                                   | Implemented |
+| 03C   | Basic Profiles, Skills, and Visibility               | Display-name onboarding, optional bio, controlled starter skills, and per-field public/private visibility             | 03B                    | Initial required fields, starter taxonomy, and basic visibility resolved; advanced profile decisions remain deferred | Implemented |
+| 04    | Activity discovery/domain (parent)                   | One-time proposals plus separately scoped recurring activities                                                        | 03                     | Proposal fields, lifecycle decisions, broad location behavior                                                        | Implemented |
+| 04A   | One-Time Proposals and Discovery                     | Draft/create/publish/cancel, public list/detail, requirements, location privacy, and mobile/web discovery             | 03C                    | One-time lifecycle and rough/exact location behavior resolved                                                        | Implemented |
+| 04B   | Tavoli / Recurring Activities (parent)               | Versioned weekly/monthly recurring domain plus later mobile/web experience                                            | 04A                    | Initial recurrence and lifecycle resolved; occurrence exceptions remain deferred                                     | Implemented |
+| 04B1  | Tavoli / Recurring Activity Domain Foundation        | Separate recurring schema, schedule history, bounded occurrences, lifecycle, privacy, canonical APIs, and tests       | 04A                    | None expected for the defined weekly/monthly foundation                                                              | Implemented |
+| 04B2  | Tavoli Mobile/Web Experience (parent)                | Separate mobile and public-web clients over the canonical 04B1 backend                                                | 04B1                   | Functional UX review; no recurrence expansion                                                                        | Implemented |
+| 04B2A | Tavoli Mobile Experience and Browse Integration      | Mobile browse/list/detail/create/edit/manage UI over the canonical 04B1 backend                                       | 04B1                   | Native interaction review                                                                                            | Implemented |
+| 04B2B | Public Web Tavoli Discovery                          | Read-only public web Tavoli list and detail                                                                           | 04B2A                  | Functional public-web review                                                                                         | Implemented |
+| 04C   | Resources + Scambio-Dona                             | Project needs/contributions plus donation/exchange listings and later matching/notifications                          | 04A                    | Resource types, ownership/handoff/return semantics, visibility, listing lifecycle, and matching                      | Not started |
+| 05    | Participation lifecycle (parent)                     | Shared project participation foundation, later mobile experience, and verified-contribution review                    | 04A, 04B1              | Capacity/fullness and later contribution/resource semantics remain unresolved                                        | In progress |
+| 05A   | Project Participation Domain Foundation              | Shared identity, private join requests, canonical membership history, protected meeting access, events, and tests     | 04A, 04B1              | No blocking decision; exact chat trigger remains Plan 07                                                             | Implemented |
+| 05B   | Mobile Project Participation Experience              | Join/status/withdraw, creator review, member state, leave/remove, and protected meeting UI                            | 05A                    | Functional/native UX review                                                                                          | Implemented |
+| 05C   | Verified Project Contribution / Completion Review    | Creator confirmation of actual contribution for later stats/badges/resource attribution                               | 05A, 04C               | Contribution taxonomy, resource attribution, dispute/correction rules, and credit semantics                          | Not started |
+| 06    | Notification backbone (parent)                       | Canonical notification projection, later mobile inbox/preferences, then device registration and push delivery         | 03–05A                 | User-facing notification UX/copy and push behavior remain later review points                                        | In progress |
+| 06A   | Notification Domain and Outbox Projection Foundation | Categories/preferences, semantic inbox records/targets, multi-consumer receipts, participation projection, secure APIs | 01B, 05A               | None expected for the defined participation foundation                                                               | In progress |
+| 06B   | Mobile In-App Notifications and Preferences          | Flutter inbox, unread state, preference controls, and structured project/request navigation                           | 06A                    | Functional/native UX review and user-facing copy                                                                     | Not started |
+| 06C   | Device Registration and FCM Push Delivery            | Installation tokens, delivery jobs/attempts, FCM worker, retries, safe previews, and environment protections          | 06A, 06B               | Push permission timing, preview policy, and provider/account-owner setup                                             | Not started |
+| 07    | Messages + Project Chat (parent)                      | Structured participation-request items plus automatic project group conversations                                     | 05A, 06A               | Exact chat trigger and access/moderation after leaving or removal                                                     | Not started |
+| 07A   | Messages Surface and Structured Participation Requests | Authenticated Messages inbox with canonical actionable join-request items                                            | 05A, 06A               | Functional/native UX review and final Messages information architecture                                               | Not started |
+| 07B   | Project Group Chat                                   | Automatic idempotent group chat, membership authorization, realtime text, group info, and meeting link                | 05A, 07A               | Triggering participation event plus access/moderation after leaving or removal                                       | Not started |
+| 08    | Storage and media hardening                          | Purpose-specific buckets, upload restrictions, private/public access, media metadata, cleanup and processing hooks    | 03–07                  | Profile/proposal photo visibility and retention choices                                                              | Not started |
+| 09    | Safety, moderation and admin                         | Reporting, blocking, content states, admin roles, moderation queue/actions, audit trail and minimal custom admin UI   | 04–08                  | Community rules, prohibited content, escalation, suspension, appeals, minimum age                                    | Not started |
+| 10    | Account deletion and privacy operations              | In-app and web deletion paths, cleanup/anonymization jobs, export groundwork, privacy documentation inputs            | 03–09                  | Legal retention and anonymization policy; legal text remains founder/legal work                                      | Not started |
+| 11    | Analytics and operational readiness                  | Explicit product events, privacy scrubbing, health checks, alerts, restore procedure and operational runbooks         | 00–10                  | Success metrics and analytics consent/legal choices                                                                  | Not started |
+| 12    | Release pipeline and store readiness                 | Staging/production deployment, signed mobile builds, internal testing, approval gates and store checklists            | 00–11                  | Provider accounts, billing, certificates, store listings, policies and final approval                                | Not started |
 
 ## Plan details
 
@@ -291,7 +296,7 @@ Owns:
 
 #### 05B — Mobile Project Participation Experience
 
-**Status:** In progress in PR #16, based on merged 05A; native QA remains required before merge.
+**Status:** Implemented in merged PR #16 (`09d62276faec4c50ab5d45cd3930975c5a49a6b7`) after founder merge approval. The repository has no recorded native QA checklist result, so this roadmap does not assert a native pass or fail.
 
 Mobile scope:
 
@@ -329,36 +334,100 @@ The former combined Plan 05 scope is now split across the three portions above. 
 
 **Goal:** Deliver domain events without coupling external services to transactions.
 
-Expected scope:
+**Status:** In progress through 06A. This parent is split so canonical state and security precede client and provider work.
 
-- categories and centralized preferences;
-- in-app notification records and inbox;
+#### 06A — Notification Domain and Outbox Projection Foundation
+
+**Status:** In progress.
+
+Owns:
+
+- controlled categories, default in-app/future-push settings, and sparse per-profile overrides;
+- canonical recipient-specific semantic notification records and structured request/project targets;
+- generic private per-consumer outbox receipts without treating `published_at` as a global consume switch;
+- service-only, concurrency-safe/idempotent projection for the six 05A participation events;
+- preference suppression that still records successful notification-consumer processing;
+- expected-identity-bound keyset inbox, unread, mark-one, mark-all, and preference APIs;
+- safe project/actor presentation context, pgTAP, local integration, generated types, and CI.
+
+06A depends on the 01B identity/outbox primitives and implemented 05A participation events. It does not depend on 05C or independent 04C resource work. Existing supported events are not automatically backfilled when support is introduced. Unsupported events, including the accepted event's possible future chat use, remain available to other consumers.
+
+#### 06B — Mobile In-App Notifications and Preferences
+
+**Status:** Not started.
+
+Future scope:
+
+- Flutter inbox and unread badge;
+- mark-one/mark-all interactions;
+- category preference UI;
+- structured Proposal/Tavolo project navigation and deep links;
+- request-specific target handling that remains compatible with the future Messages item;
+- safe refresh or realtime strategy.
+
+#### 06C — Device Registration and FCM Push Delivery
+
+**Status:** Not started.
+
+Future scope:
+
 - device-token lifecycle;
-- transactional outbox consumption;
-- queue worker and retry/idempotency strategy;
-- FCM integration using secret placeholders and mocks;
-- deep-link payload/version conventions;
+- platform and installation metadata;
+- notification delivery jobs and attempts;
+- FCM worker, retry/backoff, and delivery idempotency;
+- invalid-token cleanup and secret/config separation;
+- push permission integration;
 - safe previews that avoid private content leakage;
-- observable delivery attempts;
 - local/staging behavior that cannot accidentally notify production users.
 
-### 07 — Proposal chat
+An event may remain push-enabled while its in-app preference is disabled, in
+which case 06A deliberately records the notification-consumer receipt without
+creating a `public.notifications` row. Therefore 06C must not treat the in-app
+row as the complete set of push-eligible occurrences. It must either consume
+the domain outbox independently while reusing one canonical event mapping, or
+introduce a channel-neutral occurrence layer before fan-out; it must not copy
+and silently diverge the participation mapping in a second worker.
 
-**Goal:** Enable narrow, proposal-specific coordination.
+Request-specific 06A notifications carry `request_id` and the semantic `participation_request` target for the future Messages item. They remain alerts and do not own Accept/Reject. Plan 07 owns the persistent request surface and group-chat behavior; 06A does not turn `project.join_request_accepted` into a chat rule.
 
-Expected scope:
+### 07 — Messages + Project Chat
 
-- exactly one automatically created eligible chat per proposal;
+**Goal:** Give users one authenticated communication area for structured participation requests and later project-group coordination without duplicating canonical participation state.
+
+**Status:** Not started. This parent is split between the request-oriented Messages surface and the distinct accepted-participant group chat.
+
+#### 07A — Messages Surface and Structured Participation Request Items
+
+Future scope:
+
+- authenticated Messages inbox/surface;
+- persistent actionable join-request items backed by canonical `project_join_requests`;
+- authorized requester-message display;
+- request state changes rendered without duplicating participation state;
+- Accept/Reject actions calling the existing 05A transitions;
+- resolution of the notification `participation_request` target to the corresponding item;
+- no requirement that a request become a free-form chat message.
+
+The existing Participation overview remains the organizer's secondary full-history and member-management surface.
+
+#### 07B — Project Group Chat
+
+Future scope:
+
+- exactly one automatically created eligible group conversation per project;
 - transactional idempotent creation at the participation event finalized with plans 05/07, without a fixed three-person gate or manual Create Chat action;
 - member authorization and historical-access behavior;
 - retention of chat/messages when a project ends;
 - persisted text messages and pagination;
 - Supabase Realtime subscription handling;
 - send deduplication/error recovery;
+- group information with a route to the Participation overview;
 - message reporting/deletion-state groundwork;
 - push-notification events;
 - optional externally created meeting URL;
 - no direct messages, calls, reactions, typing indicators, or end-to-end encryption.
+
+The exact automatic group-chat trigger and whether Participation is a direct group action or a group-info action remain deferred to 07B.
 
 ### 08 — Storage and media hardening
 
@@ -454,7 +523,7 @@ Codex can usually implement:
 - CRUD and pagination;
 - join-request mechanics;
 - notification/outbox/queue infrastructure;
-- proposal-scoped chat infrastructure;
+- structured request Messages and project-scoped chat infrastructure;
 - storage policies;
 - moderation/admin mechanics;
 - CI, documentation, fixtures, and runbooks.
@@ -482,7 +551,7 @@ Major gates currently expected:
 
 1. recurrence expansion/exception semantics before extending beyond the bounded 04B1 weekly/monthly model; 04A rough/exact location visibility is resolved;
 2. capacity/fullness before introducing limits; the core request/membership state semantics are resolved in 05A;
-3. chat access after membership changes before plan 07;
+3. group-chat trigger and access after membership changes before plan 07B;
 4. moderation/minimum-age policy before plan 09 is complete;
 5. retention/anonymization policy before plan 10;
 6. success metrics and analytics legal basis before plan 11;
@@ -490,4 +559,4 @@ Major gates currently expected:
 
 ## Immediate next action
 
-Complete automated review and native Android/iOS QA for **05B — Mobile Project Participation Experience** before merge. **04C — Resources + Scambio-Dona** remains independently available; 05C waits for contribution/resource decisions. Plan 06 remains sequenced after Plan 05, and Plan 07 still requires the exact automatic-chat trigger and post-membership access decisions.
+Review **06A — Notification Domain and Outbox Projection Foundation** without merging until explicitly approved. **04C — Resources + Scambio-Dona** remains independently available; 05C waits for contribution/resource decisions. The repository records no 05B native-QA result. Plan 07A can build the structured Messages request surface on 05A plus 06A semantics, while 07B still requires the exact automatic-chat trigger and post-membership access decisions.
