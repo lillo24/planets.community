@@ -380,6 +380,14 @@ Future scope:
 - safe previews that avoid private content leakage;
 - local/staging behavior that cannot accidentally notify production users.
 
+An event may remain push-enabled while its in-app preference is disabled, in
+which case 06A deliberately records the notification-consumer receipt without
+creating a `public.notifications` row. Therefore 06C must not treat the in-app
+row as the complete set of push-eligible occurrences. It must either consume
+the domain outbox independently while reusing one canonical event mapping, or
+introduce a channel-neutral occurrence layer before fan-out; it must not copy
+and silently diverge the participation mapping in a second worker.
+
 Request-specific 06A notifications carry `request_id` and the semantic `participation_request` target for the future Messages item. They remain alerts and do not own Accept/Reject. Plan 07 owns the persistent request surface and group-chat behavior; 06A does not turn `project.join_request_accepted` into a chat rule.
 
 ### 07 — Messages + Project Chat

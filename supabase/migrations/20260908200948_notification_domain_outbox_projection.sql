@@ -123,7 +123,7 @@ create table public.notifications (
   source_outbox_event_id uuid not null
     constraint notifications_source_outbox_event_id_fkey
       references private.outbox_events (id) on delete restrict,
-  project_id uuid not null
+  project_id uuid
     constraint notifications_project_id_fkey
       references public.projects (id) on delete restrict,
   actor_profile_id uuid
@@ -150,6 +150,17 @@ create table public.notifications (
   ),
   constraint notifications_participation_category_valid check (
     category_slug = 'participation'
+  ),
+  constraint notifications_current_participation_project_required check (
+    notification_kind not in (
+      'participation_request_received',
+      'participation_request_withdrawn',
+      'participation_request_accepted',
+      'participation_request_rejected',
+      'participant_left',
+      'participant_removed'
+    )
+    or project_id is not null
   ),
   constraint notifications_destination_matches_kind check (
     (
@@ -202,6 +213,8 @@ comment on table public.notifications is
   'Recipient-owned semantic notification state projected from private outbox events; private source payloads are never copied.';
 comment on column public.notifications.destination_kind is
   'Backend-route-agnostic semantic target interpreted with project_id, project kind, and request_id when the target is participation_request.';
+comment on column public.notifications.project_id is
+  'Optional project context at the notification-domain boundary; current participation kinds require it through a checked invariant.';
 comment on column public.notifications.source_outbox_event_id is
   'Projection provenance and idempotency identity; omitted from ordinary inbox API results.';
 
@@ -447,7 +460,7 @@ begin
     notification.actor_profile_id,
     actor.display_name
   from public.notifications as notification
-  join public.projects as project on project.id = notification.project_id
+  left join public.projects as project on project.id = notification.project_id
   left join public.proposals as proposal
     on proposal.id = project.id
     and project.project_kind = 'one_time'

@@ -42,7 +42,7 @@ export type Database = {
           id: string
           membership_id: string | null
           notification_kind: string
-          project_id: string
+          project_id: string | null
           read_at: string | null
           recipient_profile_id: string
           request_id: string | null
@@ -56,7 +56,7 @@ export type Database = {
           id?: string
           membership_id?: string | null
           notification_kind: string
-          project_id: string
+          project_id?: string | null
           read_at?: string | null
           recipient_profile_id: string
           request_id?: string | null
@@ -70,7 +70,7 @@ export type Database = {
           id?: string
           membership_id?: string | null
           notification_kind?: string
-          project_id?: string
+          project_id?: string | null
           read_at?: string | null
           recipient_profile_id?: string
           request_id?: string | null

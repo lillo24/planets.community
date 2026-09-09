@@ -95,6 +95,12 @@ select col_type_is(
   'timestamp with time zone',
   'notification read state is timezone-aware'
 );
+select col_is_null(
+  'public',
+  'notifications',
+  'project_id',
+  'the notification-domain project context is optional for future standalone events'
+);
 
 select is(
   (
@@ -175,10 +181,33 @@ select ok(
   'notification kinds are constrained to their canonical semantic destination'
 );
 select ok(
+  exists (
+    select 1
+    from pg_constraint
+    where conrelid = 'public.notifications'::regclass
+      and conname = 'notifications_current_participation_project_required'
+      and contype = 'c'
+      and pg_get_constraintdef(oid) like '%participation_request_received%'
+      and pg_get_constraintdef(oid) like '%participation_request_withdrawn%'
+      and pg_get_constraintdef(oid) like '%participation_request_accepted%'
+      and pg_get_constraintdef(oid) like '%participation_request_rejected%'
+      and pg_get_constraintdef(oid) like '%participant_left%'
+      and pg_get_constraintdef(oid) like '%participant_removed%'
+      and pg_get_constraintdef(oid) like '%project_id IS NOT NULL%'
+  ),
+  'all current participation kinds still require project context'
+);
+select ok(
   pg_get_function_result(
     'public.list_own_notifications(uuid,integer,timestamptz,uuid)'::regprocedure
   ) like '%request_id uuid%',
   'the inbox contract returns the canonical request target identifier'
+);
+select ok(
+  pg_get_functiondef(
+    'public.list_own_notifications(uuid,integer,timestamptz,uuid)'::regprocedure
+  ) ilike '%left join public.projects%',
+  'the inbox resolves optional project presentation context without dropping rows'
 );
 select ok(
   exists (
