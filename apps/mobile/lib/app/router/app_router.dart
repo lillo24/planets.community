@@ -8,6 +8,9 @@ import '../../features/auth/application/return_destination.dart';
 import '../../features/auth/domain/auth_models.dart';
 import '../../features/auth/presentation/request_code_screen.dart';
 import '../../features/auth/presentation/verify_code_screen.dart';
+import '../../features/messages/presentation/messages_routes.dart';
+import '../../features/messages/presentation/messages_screen.dart';
+import '../../features/messages/presentation/participation_request_message_screen.dart';
 import '../../features/profile/presentation/profile_edit_screen.dart';
 import '../../features/profile/presentation/profile_screen.dart';
 import '../../features/participation/domain/participation_models.dart';
@@ -69,10 +72,12 @@ RoutingConfig _routingConfig(
       final isParticipationRoute = ParticipationRoutes.isParticipationPath(
         path,
       );
+      final isMessagesRoute = isMessagesPath(path);
       final isActivityManagementRoute =
           isProposalManagementRoute ||
           isTavoliManagementRoute ||
-          isParticipationRoute;
+          isParticipationRoute ||
+          isMessagesRoute;
 
       if (session.phase == AuthSessionPhase.restoring) {
         return null;
@@ -87,7 +92,7 @@ RoutingConfig _routingConfig(
       }
 
       if (session.phase == AuthSessionPhase.profileSetupRequired &&
-          isParticipationRoute) {
+          (isParticipationRoute || isMessagesRoute)) {
         return Uri(
           path: '/profile/edit',
           queryParameters: {'returnTo': state.uri.toString()},
@@ -115,7 +120,8 @@ RoutingConfig _routingConfig(
         final returnTo =
             pending?.returnTo ??
             sanitizeReturnDestination(state.uri.queryParameters['returnTo']);
-        if (ParticipationRoutes.isParticipationPath(returnTo)) {
+        if (ParticipationRoutes.isParticipationPath(returnTo) ||
+            isMessagesPath(returnTo)) {
           return Uri(
             path: '/profile/edit',
             queryParameters: {'returnTo': returnTo},
@@ -277,6 +283,20 @@ RoutingConfig _routingConfig(
               GoRoute(
                 path: '/',
                 builder: (context, state) => const FoundationScreen(),
+              ),
+              GoRoute(
+                path: '/messages',
+                builder: (context, state) => const MessagesScreen(),
+                routes: [
+                  GoRoute(
+                    path: 'requests/:requestId',
+                    builder: (context, state) =>
+                        ParticipationRequestMessageScreen(
+                          key: state.pageKey,
+                          requestId: state.pathParameters['requestId']!,
+                        ),
+                  ),
+                ],
               ),
             ],
           ),

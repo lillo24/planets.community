@@ -6,8 +6,10 @@ import 'package:planets_mobile/app/router/app_router.dart';
 import 'package:planets_mobile/core/config/app_config.dart';
 import 'package:planets_mobile/features/auth/data/auth_gateway.dart';
 import 'package:planets_mobile/features/auth/domain/auth_models.dart';
+import 'package:planets_mobile/features/profile/data/profile_gateway.dart';
 
 import '../../support/fake_auth.dart';
+import '../../support/fake_profile.dart';
 
 void main() {
   testWidgets('shows a safe localized screen for an unknown route', (
@@ -125,6 +127,81 @@ void main() {
     expect(
       router.routeInformationProvider.value.uri.queryParameters['returnTo'],
       '/profile/edit',
+    );
+  });
+
+  testWidgets('Messages detail preserves the exact sign-in return path', (
+    tester,
+  ) async {
+    final auth = FakeAuthGateway();
+    final profile = FakeProfileAnchorGateway();
+    addTearDown(auth.close);
+    const session = AuthSessionState.signedOut();
+    final router = createAppRouter(
+      initialLocation: '/messages/requests/request-9',
+      readAuthSession: () => session,
+    );
+    addTearDown(router.dispose);
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          appConfigProvider.overrideWithValue(_testConfig()),
+          appRouterProvider.overrideWithValue(router),
+          authGatewayProvider.overrideWithValue(auth),
+          profileAnchorGatewayProvider.overrideWithValue(profile),
+        ],
+        child: const PlanetsApp(),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('auth-email-field')), findsOneWidget);
+    expect(
+      router.routeInformationProvider.value.uri.queryParameters['returnTo'],
+      '/messages/requests/request-9',
+    );
+  });
+
+  testWidgets('incomplete profile keeps the exact Messages completion path', (
+    tester,
+  ) async {
+    final auth = FakeAuthGateway(
+      snapshot: const AuthSnapshot(identity: AuthIdentity(id: 'user-1')),
+    );
+    final profile = FakeProfileAnchorGateway()
+      ..readiness = ProfileAnchorReadiness.incomplete;
+    addTearDown(auth.close);
+    const session = AuthSessionState.profileSetupRequired(
+      AuthIdentity(id: 'user-1'),
+      hasProfileAnchor: true,
+    );
+    final router = createAppRouter(
+      initialLocation: '/messages/requests/request-9',
+      readAuthSession: () => session,
+    );
+    addTearDown(router.dispose);
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          appConfigProvider.overrideWithValue(_testConfig()),
+          appRouterProvider.overrideWithValue(router),
+          authGatewayProvider.overrideWithValue(auth),
+          profileAnchorGatewayProvider.overrideWithValue(profile),
+          profileGatewayProvider.overrideWithValue(
+            FakeProfileGateway(data: profileFixture(complete: false)),
+          ),
+        ],
+        child: const PlanetsApp(),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('profile-display-name-field')), findsOneWidget);
+    expect(
+      router.routeInformationProvider.value.uri.queryParameters['returnTo'],
+      '/messages/requests/request-9',
     );
   });
 }
