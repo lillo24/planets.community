@@ -1,6 +1,6 @@
 # Database development
 
-PostgreSQL is the canonical PLANETS product record. This guide owns the local schema-change, security-test, and generated-type workflow. The current schema includes application identity, basic profiles, a controlled starter skill catalog, field visibility, one-time proposals, the Tavoli recurring-activity domain, shared project participation, the in-app notification domain, and private audit/outbox primitives.
+PostgreSQL is the canonical PLANETS product record. This guide owns the local schema-change, security-test, and generated-type workflow. The current schema includes application identity, basic profiles, a controlled starter skill catalog, field visibility, one-time proposals, the Tavoli recurring-activity domain, shared project participation and structured Messages reads, the in-app notification domain, and private audit/outbox primitives.
 
 ## Source of truth and daily workflow
 
@@ -72,6 +72,24 @@ Authenticated clients use `request_to_join_project`, `withdraw_project_join_requ
 
 Requester, creator-review, own-membership, and creator-member-history reads are separate narrow operations. Request messages never become public, and the creator projection contains display name but no Auth email. `get_project_participant_meeting_details` returns only exact operational meeting text/point and concrete kind to the creator or a current accepted participant. Every transition adds an identifier-only audit/outbox event; no delivery, chat, resource contribution, capacity, badge, or contribution verification is implemented here.
 
+## Structured participation-request Messages
+
+`list_own_participation_request_message_items` and
+`get_own_participation_request_message_item` project canonical join-request
+history for the requester or Project creator only. They resolve current
+Proposal/Tavolo title and narrow participant display names, expose the private
+request message only inside that authorized relationship, and return no Auth
+email, exact meeting data, notification payload, or unrelated profile fields.
+Missing and unauthorized exact IDs use one fail-closed response.
+
+The list accepts 1 through 50 rows and a paired nullable
+`(p_cursor_activity_at, p_cursor_request_id)` cursor. It orders by resolution-or-
+creation activity descending and request ID descending; expression indexes
+support both outgoing requester and incoming creator paths. The routines are
+fixed-search-path security definers granted only to `authenticated`. They add no
+table grants, generic message/thread table, or durable copy. Request mutations
+remain the 05A operations.
+
 ## Notification domain and outbox projection
 
 `public.notification_categories` is the system-managed catalog for `participation`, `project_activity`, `matching`, `chat`, and `resources`. The initial categories default both in-app and future push preferences to enabled and are user-configurable. Only `participation` has event mappings today. `public.profile_notification_preferences` stores sparse per-profile/category overrides; an absent row deliberately inherits the current category defaults. `list_own_notification_preferences` returns all effective categories, while `set_own_notification_preference` changes only one category and binds the form identity to `auth.uid()`.
@@ -121,6 +139,7 @@ The native pgTAP files under `supabase/tests/` verify:
 - recurring activity constraints, owner isolation, stale expected identity, weekly/monthly wall-clock recurrence, Rome DST changes, bounded occurrence windows, non-overlapping schedule history, pause/resume/end transitions, public privacy, and function hardening.
 - shared project registry synchronization, request/membership state and uniqueness, concrete lifecycle eligibility, stale identity, private read projections, participant meeting authorization, retained history, deletion protection, and content-free audit/outbox events.
 - controlled notification categories/defaults, sparse owner preferences, semantic notification constraints, six participation recipient mappings, private multi-consumer receipts, projector idempotency/concurrency, suppression receipts, own-only inbox/read state, privacy, and service/client grants.
+- structured Messages read shape, requester/creator authorization, fail-closed exact lookup, Proposal/Tavolo context, private-message isolation, bounded keyset pagination, and routine grants.
 
 Run focused commands while the stack is already running:
 
@@ -134,6 +153,7 @@ npm run proposal:verify:local
 npm run recurring:verify:local
 npm run participation:verify:local
 npm run notification:verify:local
+npm run messages:verify:local
 npm run db:types
 npm run db:types:check
 ```
@@ -152,8 +172,10 @@ npm run db:types:check
 
 `notification:verify:local` uses three complete authenticated identities, a service-role client, and one narrow direct local-database assertion. It proves pre-projection absence, concurrent projector idempotency, request/accept/withdraw/reject/leave mappings, stable request IDs and `participation_request` targets, cross-account denial, structured safe context, unread/read changes, preference suppression with a receipt, later re-enable behavior, and coexistence with an independent synthetic consumer receipt. It never logs OTPs, keys, database URLs, request messages, or protected meeting values.
 
+`messages:verify:local` uses a Project creator, requester, unrelated authenticated user, and anon across a Proposal and Tavolo. It proves requester/creator structured reads and private-message visibility, identical unauthorized/missing exact failures, anonymous denial, canonical Accept/Withdraw history, both project contexts, chronology, narrow output, and unchanged public privacy. It never prints OTPs, tokens, keys, request messages, or meeting values.
+
 `auth:web:verify:local` adds web-specific evidence after a locally configured production Next.js build. It obtains session cookies through supported `@supabase/ssr` callbacks, confirms the Server Component recognizes the authenticated session, rejects private-auth material in the rendered response, and confirms `/admin` returns 404 for signed-out and signed-in requests. It does not invent or log Supabase's cookie encoding.
 
 `tavoli:web:verify:local` uses synthetic local OTP data and the production Next.js server to prove signed-out Tavoli list/detail rendering, rough-location and next-meeting output, exclusion of paused/ended rows from discovery, retained sanitized historical detail, exact-ID 404 behavior, and detail-only public/restricted exact-location handling. It never prints test addresses, tokens, keys, or protected meeting content.
 
-`npm run check:db` performs reset, lint, pgTAP, the mobile/backend Auth check, the two-user profile visibility check, the proposal privacy/lifecycle check, the recurring activity recurrence/privacy/lifecycle check, the multi-user project-participation check, type regeneration, and drift detection as one validation sequence. It assumes `npm run db:start` has already succeeded and leaves stack lifecycle to the caller. CI additionally generates local web configuration, builds Next.js, runs the web-session and public Tavoli integrations, and always stops Supabase.
+`npm run check:db` performs reset, lint, pgTAP, the mobile/backend Auth check, the two-user profile visibility check, the proposal privacy/lifecycle check, the recurring activity recurrence/privacy/lifecycle check, the multi-user project-participation check, notification projection, structured Messages integration, type regeneration, and drift detection as one validation sequence. It assumes `npm run db:start` has already succeeded and leaves stack lifecycle to the caller. CI additionally generates local web configuration, builds Next.js, runs the web-session and public Tavoli integrations, and always stops Supabase.

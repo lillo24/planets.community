@@ -1,7 +1,7 @@
 # System Design and Responsibility Boundaries
 
 **Status:** Initial accepted design  
-**Implementation status:** Foundations, authentication, profiles, one-time proposals, Tavoli mobile/public-web discovery, and the shared project-participation backend implemented
+**Implementation status:** Foundations, authentication, profiles, one-time proposals, Tavoli mobile/public-web discovery, shared project participation, notification projection, and structured participation-request Messages implemented
 
 This document describes how the major parts of PLANETS should interact. Technology choices are recorded separately in [`core-stack.md`](core-stack.md).
 
@@ -119,6 +119,24 @@ Complete-profile creators use expected-identity-bound create/publish/resume oper
 
 All mutations and private reads use expected-identity-bound project RPCs. Tables have RLS but no client grants/policies. Request messages are visible only to the requester and project creator; creator review exposes a narrow authenticated display identity but never Auth email. Protected meeting details are available only to the creator or a current accepted member. Each successful transition writes identifier-only audit/outbox events; `project.join_request_accepted` is a stable candidate input for Plan 07, but Plan 07 still owns the exact automatic-chat trigger and post-membership chat access rules.
 
+### Structured participation-request Messages
+
+The authenticated mobile Messages surface is a projection of canonical
+`project_join_requests`, not a second message or request-copy store. Narrow
+expected-identity-bound list and exact RPCs return a request only to its
+requester or the concrete Project creator, including the authorized private
+request message, current Proposal/Tavolo title, both display identities, state,
+and activity chronology. Missing and unauthorized exact IDs fail identically.
+
+The inbox uses bounded `(activity_at, request_id)` keyset pagination where
+`activity_at` is resolution time or creation time for a pending request.
+Creators may Accept/Reject and requesters may Withdraw through the existing 05A
+transitions; the client reloads canonical state and synchronizes its existing
+05B participation view. Resolved items remain read-only history. The routes
+`/messages` and `/messages/requests/:requestId` belong to Home and require a
+complete authenticated profile. No unread badge, generic chat message, thread,
+or group-chat authorization is introduced by 07A.
+
 ### Clients use shared operations rather than duplicate workflows
 
 Safe simple reads may query authorized views/tables directly. Multi-step or security-sensitive changes should use named backend operations, for example:
@@ -164,7 +182,7 @@ The preferred sequence is:
 | One-time proposals      | Creator-owned content, schedule, rough/exact location separation, stored lifecycle, derived temporal status | Creator, controlled skill requirements, future participation, future template source      |
 | Recurring activities    | Persistent Tavoli, versioned weekly/monthly schedules, bounded occurrences, rough/exact privacy, lifecycle  | Separate from one-time proposals; Flutter experience and public web discovery implemented |
 | Participation           | Shared project identity, private requests/decisions, current membership and retained history                | Profile and concrete one-time/recurring project; source for authorization and later stats |
-| Messages                | Future authenticated surface for structured participation-request items and project conversations           | Canonical join requests plus project chat/message state                                   |
+| Messages                | Authenticated structured participation-request inbox/detail; future project conversations                   | Canonical join requests now; separate project chat/message state in 07B                   |
 | Project chat            | One project-scoped group conversation when its future trigger and access rules are defined                   | Project and authorized participants                                                       |
 | Notifications           | Controlled categories/preferences and recipient in-app records; later device delivery                       | Recipient, per-consumer source event receipt, optional project/request/membership         |
 | Templates               | Reusable proposal structure derived from approved past/community content                                    | Source proposal, attribution, moderation/publication state                                |

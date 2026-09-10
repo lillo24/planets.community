@@ -512,5 +512,58 @@
   "participationStatusWithdrawn": "Withdrawn",
   "participationStatusCurrent": "Current participant",
   "participationStatusLeft": "Left",
-  "participationStatusRemoved": "Removed"
+  "participationStatusRemoved": "Removed",
+  "messagesTitle": "Messages",
+  "messagesOpenTooltip": "Open Messages",
+  "messagesLoading": "Loading messages…",
+  "messagesLoadingRequest": "Loading participation request…",
+  "messagesEmptyTitle": "No messages yet",
+  "messagesEmptyMessage": "Participation requests you send or receive will appear here.",
+  "messagesLoadMore": "Load more",
+  "messagesIncomingTitle": "{name} wants to join",
+  "@messagesIncomingTitle": {
+    "placeholders": { "name": { "type": "String" } }
+  },
+  "messagesOutgoingTitle": "Your request for {project}",
+  "@messagesOutgoingTitle": {
+    "placeholders": { "project": { "type": "String" } }
+  },
+  "messagesOutgoingDetailTitle": "Participation request to {name}",
+  "@messagesOutgoingDetailTitle": {
+    "placeholders": { "name": { "type": "String" } }
+  },
+  "messagesProposal": "Proposal",
+  "messagesTavolo": "Tavolo",
+  "messagesUpdatedAt": "Updated {date}",
+  "@messagesUpdatedAt": {
+    "placeholders": { "date": { "type": "String" } }
+  },
+  "messagesRequestDetailTitle": "Participation request",
+  "messagesProjectLabel": "Project",
+  "messagesPeopleLabel": "People",
+  "messagesRequesterLabel": "Requester: {name}",
+  "@messagesRequesterLabel": {
+    "placeholders": { "name": { "type": "String" } }
+  },
+  "messagesOrganizerLabel": "Organizer: {name}",
+  "@messagesOrganizerLabel": {
+    "placeholders": { "name": { "type": "String" } }
+  },
+  "messagesRequestMessageLabel": "Private request message",
+  "messagesNoRequestMessage": "No message was included.",
+  "messagesTimelineLabel": "Timeline",
+  "messagesRequestedAt": "Requested {date}",
+  "@messagesRequestedAt": {
+    "placeholders": { "date": { "type": "String" } }
+  },
+  "messagesResolvedAt": "Resolved {date}",
+  "@messagesResolvedAt": {
+    "placeholders": { "date": { "type": "String" } }
+  },
+  "messagesViewProject": "View project",
+  "messagesResolvedHistoryNote": "This resolved request remains in your history. Project chat is not available yet.",
+  "messagesSafeError": "We couldn't load Messages. Check your connection and try again.",
+  "messagesForbidden": "This participation request is not available for the current account.",
+  "messagesConflict": "This request changed while the screen was open. Its current status has been reloaded.",
+  "messagesNotFound": "This participation request is no longer available."
 }

@@ -14,7 +14,17 @@ class FoundationScreen extends StatelessWidget {
     final l10n = AppLocalizations.of(context);
 
     return Scaffold(
-      appBar: AppBar(title: Text(l10n.appTitle)),
+      appBar: AppBar(
+        title: Text(l10n.appTitle),
+        actions: [
+          IconButton(
+            key: const Key('open-messages-button'),
+            tooltip: l10n.messagesOpenTooltip,
+            onPressed: () => context.push('/messages'),
+            icon: const Icon(Icons.mail_outline),
+          ),
+        ],
+      ),
       body: SafeArea(
         child: Center(
           child: ConstrainedBox(

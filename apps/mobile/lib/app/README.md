@@ -16,7 +16,7 @@ This folder owns application startup presentation and navigation, not backend ru
 | --- | --- |
 | 0 / Profile | `/profile`, nested `/profile/edit` with an optional sanitized post-setup `returnTo` |
 | 1 / Browse | `/proposals` and `/tavoli`, each with nested `mine`, `create`, `:id`, `:id/edit`, `:id/join`, and `:id/participants` |
-| 2 / Home | `/` |
+| 2 / Home | `/`, `/messages`, nested `/messages/requests/:requestId` |
 
 Static Browse children precede each dynamic activity-ID route. A route-backed
 Proposals/Tavoli switcher changes the public list within Browse without adding a
@@ -31,11 +31,11 @@ when a guard redirects Create/My activity routes into a different branch.
 Home and Browse list/detail remain public. Signed-out Profile/management access
 uses the existing Auth flow with a sanitized internal `returnTo`. Incomplete
 profiles can use Home/Browse freely; Profile opens completion when the profile
-anchor exists, and management redirects to `/profile/edit`. Participation Join
-and creator-review routes preserve their exact internal destination through OTP
-and profile completion. Missing-anchor retry and email-OTP behavior are
-unchanged. Saving a valid profile returns to the preserved participation route
-when present, otherwise to Profile.
+anchor exists, and management redirects to `/profile/edit`. Participation Join,
+creator-review, and Messages routes preserve their exact internal destination
+through OTP and profile completion. Missing-anchor retry and email-OTP behavior
+are unchanged. Saving a valid profile returns to the preserved participation or
+Messages route when present, otherwise to Profile.
 
 ## Retention and identity
 
@@ -46,7 +46,7 @@ discards every retained branch (including inactive private forms) without losing
 an in-flight Auth return destination. A same-identity token refresh does not reset
 the shell. No form data is persisted to disk for this behavior.
 
-Profile, proposal, Tavoli owner, and participation controllers also clear cached state and increment a
+Profile, proposal, Tavoli owner, participation, and Messages controllers also clear cached state and increment a
 request revision on identity changes. Every async continuation checks that its
 revision is still current before publishing state or starting another operation.
 Thus A -> signed out -> A also rejects old work. Profile readiness cannot be
@@ -56,6 +56,12 @@ parameters remain in force; database authorization is unchanged.
 Participation protected-meeting data is an additional private state boundary:
 it is loaded only for the creator/current member and cleared when identity or
 current membership changes. It is never added to public activity models.
+
+Messages inbox and detail state is another identity-bound boundary. Home exposes
+it through an AppBar action without changing the three-destination navigation
+bar. Its request-specific route is the client resolution target for 06A's
+semantic `participation_request` notification target; 06A still owns alerts and
+07A owns the actionable canonical request presentation.
 
 Router/widget regressions live in `test/app/router/navigation_shell_test.dart`.
 Native Android/iOS navigation, keyboard and hot-reload QA remains a separate,

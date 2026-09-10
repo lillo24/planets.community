@@ -334,11 +334,11 @@ The former combined Plan 05 scope is now split across the three portions above. 
 
 **Goal:** Deliver domain events without coupling external services to transactions.
 
-**Status:** In progress through 06A. This parent is split so canonical state and security precede client and provider work.
+**Status:** In progress. 06A is implemented; 06B and 06C remain.
 
 #### 06A — Notification Domain and Outbox Projection Foundation
 
-**Status:** In progress.
+**Status:** Implemented in PR #17 (`6c3168b17845b2b2567ef42864c3e0f73eb6db97`).
 
 Owns:
 
@@ -394,11 +394,13 @@ Request-specific 06A notifications carry `request_id` and the semantic `particip
 
 **Goal:** Give users one authenticated communication area for structured participation requests and later project-group coordination without duplicating canonical participation state.
 
-**Status:** Not started. This parent is split between the request-oriented Messages surface and the distinct accepted-participant group chat.
+**Status:** In progress through 07A. This parent is split between the request-oriented Messages surface and the distinct accepted-participant group chat.
 
 #### 07A — Messages Surface and Structured Participation Request Items
 
-Future scope:
+**Status:** In progress while the implementation PR is open for native QA.
+
+Implemented scope:
 
 - authenticated Messages inbox/surface;
 - persistent actionable join-request items backed by canonical `project_join_requests`;
@@ -411,6 +413,8 @@ Future scope:
 The existing Participation overview remains the organizer's secondary full-history and member-management surface.
 
 #### 07B — Project Group Chat
+
+**Status:** Not started.
 
 Future scope:
 
@@ -559,4 +563,4 @@ Major gates currently expected:
 
 ## Immediate next action
 
-Review **06A — Notification Domain and Outbox Projection Foundation** without merging until explicitly approved. **04C — Resources + Scambio-Dona** remains independently available; 05C waits for contribution/resource decisions. The repository records no 05B native-QA result. Plan 07A can build the structured Messages request surface on 05A plus 06A semantics, while 07B still requires the exact automatic-chat trigger and post-membership access decisions.
+Complete native Android/iOS QA for **07A — Messages Surface and Structured Participation Request Items** before merging its PR. **04C — Resources + Scambio-Dona** remains independently available; 05C waits for contribution/resource decisions. Plan 06B can consume 07A's stable `/messages/requests/:requestId` handoff for `participation_request` alerts. Plan 07B still requires the exact automatic-chat trigger and post-membership access decisions.

@@ -807,6 +807,25 @@ export type Database = {
         }
         Returns: string
       }
+      get_own_participation_request_message_item: {
+        Args: { p_expected_profile_id: string; p_request_id: string }
+        Returns: {
+          activity_at: string
+          created_at: string
+          creator_display_name: string
+          creator_profile_id: string
+          project_id: string
+          project_kind: string
+          project_title: string
+          request_id: string
+          request_message: string
+          requester_display_name: string
+          requester_profile_id: string
+          resolved_at: string
+          status: string
+          viewer_role: string
+        }[]
+      }
       get_own_proposal: {
         Args: { p_expected_creator_profile_id: string; p_proposal_id: string }
         Returns: {
@@ -973,6 +992,30 @@ export type Database = {
           project_title: string
           read_at: string
           request_id: string
+        }[]
+      }
+      list_own_participation_request_message_items: {
+        Args: {
+          p_cursor_activity_at?: string
+          p_cursor_request_id?: string
+          p_expected_profile_id: string
+          p_limit: number
+        }
+        Returns: {
+          activity_at: string
+          created_at: string
+          creator_display_name: string
+          creator_profile_id: string
+          project_id: string
+          project_kind: string
+          project_title: string
+          request_id: string
+          request_message: string
+          requester_display_name: string
+          requester_profile_id: string
+          resolved_at: string
+          status: string
+          viewer_role: string
         }[]
       }
       list_own_project_join_requests: {
