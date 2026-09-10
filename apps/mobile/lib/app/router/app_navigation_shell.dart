@@ -1,17 +1,23 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../features/auth/application/auth_session_controller.dart';
+import '../../features/auth/domain/auth_models.dart';
+import '../../features/notifications/application/notifications_controllers.dart';
 import '../../l10n/generated/app_localizations.dart';
 
 enum AppBranch { profile, browse, home }
 
-class AppNavigationShell extends StatelessWidget {
+class AppNavigationShell extends ConsumerWidget {
   const AppNavigationShell({required this.navigationShell, super.key});
 
   final StatefulNavigationShell navigationShell;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
     return Scaffold(
       body: navigationShell,
@@ -22,6 +28,19 @@ class AppNavigationShell extends StatelessWidget {
           if (index != navigationShell.currentIndex) {
             FocusManager.instance.primaryFocus?.unfocus();
             navigationShell.goBranch(index);
+            if (index == AppBranch.home.index) {
+              final session = ref.read(authSessionProvider);
+              final profileId = session.phase == AuthSessionPhase.ready
+                  ? session.identity?.id
+                  : null;
+              if (profileId != null) {
+                unawaited(
+                  ref
+                      .read(notificationsUnreadProvider.notifier)
+                      .load(profileId, refresh: true),
+                );
+              }
+            }
           }
         },
         destinations: [

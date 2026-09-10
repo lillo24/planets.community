@@ -113,7 +113,7 @@ The initial seven-category skill catalog is deliberately small and system-manage
 
 ### Structured request Messages and project-scoped chat
 
-A future Messages surface will present join requests as persistent structured actionable items backed by canonical participation state; notifications are alerts, and requests do not become free-form chat messages. Project group chat is separate and will be created automatically by one idempotent backend operation. There is no manual Create Chat action, and no fixed three-person threshold controls availability. Plan 07 still owns the exact participation event and post-membership authorization. Ending a project retains its chat and messages. General direct messaging, calls, reactions, typing indicators, and end-to-end encryption are outside the initial backbone.
+The mobile Messages surface presents join requests as persistent structured actionable items backed by canonical participation state; notifications are alerts, and requests do not become free-form chat messages. Project group chat is separate and will be created automatically by one idempotent backend operation. There is no manual Create Chat action, and no fixed three-person threshold controls availability. Plan 07B still owns the exact participation event and post-membership authorization. Ending a project retains its chat and messages. General direct messaging, calls, reactions, typing indicators, and end-to-end encryption are outside the initial backbone.
 
 An optional meeting URL should be stored or exposed from the project chat. PLANETS should not implement video infrastructure or provider OAuth integrations initially.
 

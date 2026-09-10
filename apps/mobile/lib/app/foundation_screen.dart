@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 
 import '../core/theme/app_tokens.dart';
 import '../features/auth/presentation/auth_status.dart';
+import '../features/notifications/presentation/home_notification_button.dart';
 import '../l10n/generated/app_localizations.dart';
 import 'router/app_navigation_shell.dart';
 
@@ -17,6 +18,7 @@ class FoundationScreen extends StatelessWidget {
       appBar: AppBar(
         title: Text(l10n.appTitle),
         actions: [
+          const HomeNotificationButton(),
           IconButton(
             key: const Key('open-messages-button'),
             tooltip: l10n.messagesOpenTooltip,

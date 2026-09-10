@@ -1,7 +1,7 @@
 # Implementation Roadmap
 
 **Status:** Planning baseline  
-**Current implementation:** Plans 00–04B2B, 05A, and 05B implemented; 06A in progress; 04C and 05C remain separately not started
+**Current implementation:** Plans 00–04B2B, 05A, 05B, 06A, and 07A implemented; 06B is in progress; 04C and 05C remain separately not started
 
 This roadmap divides the first PLANETS build into reviewable Codex tasks. Each numbered item should normally become its own implementation prompt, branch, and pull request.
 
@@ -59,11 +59,11 @@ Do not begin a dependent plan until the prior plan is merged or its branch is ex
 | 05B   | Mobile Project Participation Experience              | Join/status/withdraw, creator review, member state, leave/remove, and protected meeting UI                            | 05A                    | Functional/native UX review                                                                                          | Implemented |
 | 05C   | Verified Project Contribution / Completion Review    | Creator confirmation of actual contribution for later stats/badges/resource attribution                               | 05A, 04C               | Contribution taxonomy, resource attribution, dispute/correction rules, and credit semantics                          | Not started |
 | 06    | Notification backbone (parent)                       | Canonical notification projection, later mobile inbox/preferences, then device registration and push delivery         | 03–05A                 | User-facing notification UX/copy and push behavior remain later review points                                        | In progress |
-| 06A   | Notification Domain and Outbox Projection Foundation | Categories/preferences, semantic inbox records/targets, multi-consumer receipts, participation projection, secure APIs | 01B, 05A               | None expected for the defined participation foundation                                                               | In progress |
-| 06B   | Mobile In-App Notifications and Preferences          | Flutter inbox, unread state, preference controls, and structured project/request navigation                           | 06A                    | Functional/native UX review and user-facing copy                                                                     | Not started |
+| 06A   | Notification Domain and Outbox Projection Foundation | Categories/preferences, semantic inbox records/targets, multi-consumer receipts, participation projection, secure APIs | 01B, 05A               | None expected for the defined participation foundation                                                               | Implemented |
+| 06B   | Mobile In-App Notifications and Preferences          | Flutter inbox, unread state, preference controls, and structured project/request navigation                           | 06A                    | Functional/native UX review and user-facing copy                                                                     | In progress |
 | 06C   | Device Registration and FCM Push Delivery            | Installation tokens, delivery jobs/attempts, FCM worker, retries, safe previews, and environment protections          | 06A, 06B               | Push permission timing, preview policy, and provider/account-owner setup                                             | Not started |
-| 07    | Messages + Project Chat (parent)                      | Structured participation-request items plus automatic project group conversations                                     | 05A, 06A               | Exact chat trigger and access/moderation after leaving or removal                                                     | Not started |
-| 07A   | Messages Surface and Structured Participation Requests | Authenticated Messages inbox with canonical actionable join-request items                                            | 05A, 06A               | Functional/native UX review and final Messages information architecture                                               | Not started |
+| 07    | Messages + Project Chat (parent)                      | Structured participation-request items plus automatic project group conversations                                     | 05A, 06A               | Exact chat trigger and access/moderation after leaving or removal                                                     | In progress |
+| 07A   | Messages Surface and Structured Participation Requests | Authenticated Messages inbox with canonical actionable join-request items                                            | 05A, 06A               | Functional/native UX review and final Messages information architecture                                               | Implemented |
 | 07B   | Project Group Chat                                   | Automatic idempotent group chat, membership authorization, realtime text, group info, and meeting link                | 05A, 07A               | Triggering participation event plus access/moderation after leaving or removal                                       | Not started |
 | 08    | Storage and media hardening                          | Purpose-specific buckets, upload restrictions, private/public access, media metadata, cleanup and processing hooks    | 03–07                  | Profile/proposal photo visibility and retention choices                                                              | Not started |
 | 09    | Safety, moderation and admin                         | Reporting, blocking, content states, admin roles, moderation queue/actions, audit trail and minimal custom admin UI   | 04–08                  | Community rules, prohibited content, escalation, suspension, appeals, minimum age                                    | Not started |
@@ -334,7 +334,7 @@ The former combined Plan 05 scope is now split across the three portions above. 
 
 **Goal:** Deliver domain events without coupling external services to transactions.
 
-**Status:** In progress. 06A is implemented; 06B and 06C remain.
+**Status:** In progress. 06A is implemented; 06B is in progress; 06C remains not started.
 
 #### 06A — Notification Domain and Outbox Projection Foundation
 
@@ -354,16 +354,16 @@ Owns:
 
 #### 06B — Mobile In-App Notifications and Preferences
 
-**Status:** Not started.
+**Status:** In progress while the implementation PR is open for native QA.
 
-Future scope:
+Implemented scope awaiting native QA:
 
 - Flutter inbox and unread badge;
 - mark-one/mark-all interactions;
-- category preference UI;
+- Participation in-app preference UI preserving the hidden future-push value;
 - structured Proposal/Tavolo project navigation and deep links;
-- request-specific target handling that remains compatible with the future Messages item;
-- safe refresh or realtime strategy.
+- request-specific target handling through the implemented 07A Messages item;
+- ready-identity/action/pull refresh without timers or Realtime.
 
 #### 06C — Device Registration and FCM Push Delivery
 
@@ -388,7 +388,7 @@ the domain outbox independently while reusing one canonical event mapping, or
 introduce a channel-neutral occurrence layer before fan-out; it must not copy
 and silently diverge the participation mapping in a second worker.
 
-Request-specific 06A notifications carry `request_id` and the semantic `participation_request` target for the future Messages item. They remain alerts and do not own Accept/Reject. Plan 07 owns the persistent request surface and group-chat behavior; 06A does not turn `project.join_request_accepted` into a chat rule.
+Request-specific 06A notifications carry `request_id` and the semantic `participation_request` target for the implemented 07A Messages item. They remain alerts and do not own Accept/Reject. Plan 07B owns group-chat behavior; 06A does not turn `project.join_request_accepted` into a chat rule.
 
 ### 07 — Messages + Project Chat
 
@@ -398,7 +398,7 @@ Request-specific 06A notifications carry `request_id` and the semantic `particip
 
 #### 07A — Messages Surface and Structured Participation Request Items
 
-**Status:** In progress while the implementation PR is open for native QA.
+**Status:** Implemented in PR #18 (`08e3d29e8bb72f498d6f1453fdcdf190f16c7e7e`).
 
 Implemented scope:
 
@@ -563,4 +563,4 @@ Major gates currently expected:
 
 ## Immediate next action
 
-Complete native Android/iOS QA for **07A — Messages Surface and Structured Participation Request Items** before merging its PR. **04C — Resources + Scambio-Dona** remains independently available; 05C waits for contribution/resource decisions. Plan 06B can consume 07A's stable `/messages/requests/:requestId` handoff for `participation_request` alerts. Plan 07B still requires the exact automatic-chat trigger and post-membership access decisions.
+Complete native Android/iOS QA for **06B — Mobile In-App Notifications and Preferences** before merging its PR. **04C — Resources + Scambio-Dona** remains independently available; 05C waits for contribution/resource decisions. Plan 07A is implemented and supplies the stable `/messages/requests/:requestId` handoff for `participation_request` alerts. Plan 06C remains the device/push handoff, and 07B still requires the exact automatic-chat trigger and post-membership access decisions.
