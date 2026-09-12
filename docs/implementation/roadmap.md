@@ -1,7 +1,7 @@
 # Implementation Roadmap
 
 **Status:** Planning baseline  
-**Current implementation:** Plans 00–04B2B, 05A, 05B, 06A, and 07A implemented; 06B is in progress; 04C and 05C remain separately not started
+**Current implementation:** Plans 00–04B2B, 05A, 05B, 06A, 06B, and 07A implemented; provider-independent 06C1 is in progress; provider-specific 06C2, 04C, and 05C remain not started
 
 This roadmap divides the first PLANETS build into reviewable Codex tasks. Each numbered item should normally become its own implementation prompt, branch, and pull request.
 
@@ -60,9 +60,11 @@ Do not begin a dependent plan until the prior plan is merged or its branch is ex
 | 05C   | Verified Project Contribution / Completion Review    | Creator confirmation of actual contribution for later stats/badges/resource attribution                               | 05A, 04C               | Contribution taxonomy, resource attribution, dispute/correction rules, and credit semantics                          | Not started |
 | 06    | Notification backbone (parent)                       | Canonical notification projection, later mobile inbox/preferences, then device registration and push delivery         | 03–05A                 | User-facing notification UX/copy and push behavior remain later review points                                        | In progress |
 | 06A   | Notification Domain and Outbox Projection Foundation | Categories/preferences, semantic inbox records/targets, multi-consumer receipts, participation projection, secure APIs | 01B, 05A               | None expected for the defined participation foundation                                                               | Implemented |
-| 06B   | Mobile In-App Notifications and Preferences          | Flutter inbox, unread state, preference controls, and structured project/request navigation                           | 06A                    | Functional/native UX review and user-facing copy                                                                     | In progress |
-| 06C   | Device Registration and FCM Push Delivery            | Installation tokens, delivery jobs/attempts, FCM worker, retries, safe previews, and environment protections          | 06A, 06B               | Push permission timing, preview policy, and provider/account-owner setup                                             | Not started |
-| 07    | Messages + Project Chat (parent)                      | Structured participation-request items plus automatic project group conversations                                     | 05A, 06A               | Exact chat trigger and access/moderation after leaving or removal                                                     | In progress |
+| 06B   | Mobile In-App Notifications and Preferences          | Flutter inbox, unread state, preference controls, and structured project/request navigation                           | 06A                    | Native QA deferred by founder for a later consolidated pass; not passed or failed                                    | Implemented |
+| 06C   | Push Delivery (parent)                               | Provider-independent installation/jobs followed by Firebase mobile registration and trusted delivery                 | 06A, 06B               | Push permission timing, preview policy, and provider/account-owner setup                                             | In progress |
+| 06C1  | Push Installation and Delivery-Job Foundation        | Private app installations, shared semantic resolution, independent `push.v1` projection, and recipient-level jobs    | 06A, 06B               | None; uses synthetic tokens and no provider account                                                                  | In progress |
+| 06C2  | Firebase Mobile Registration and FCM Delivery Worker | Flutter token/permission lifecycle plus trusted per-installation FCM delivery, retries, and cleanup                   | 06C1                   | Firebase Android/iOS config, APNs setup, permission timing, preview policy, and server credentials                   | Not started |
+| 07    | Messages + Project Chat (parent)                     | Structured participation-request items plus automatic project group conversations                                     | 05A, 06A               | Exact chat trigger and access/moderation after leaving or removal                                                     | In progress |
 | 07A   | Messages Surface and Structured Participation Requests | Authenticated Messages inbox with canonical actionable join-request items                                            | 05A, 06A               | Functional/native UX review and final Messages information architecture                                               | Implemented |
 | 07B   | Project Group Chat                                   | Automatic idempotent group chat, membership authorization, realtime text, group info, and meeting link                | 05A, 07A               | Triggering participation event plus access/moderation after leaving or removal                                       | Not started |
 | 08    | Storage and media hardening                          | Purpose-specific buckets, upload restrictions, private/public access, media metadata, cleanup and processing hooks    | 03–07                  | Profile/proposal photo visibility and retention choices                                                              | Not started |
@@ -256,6 +258,14 @@ management, identity-safe controllers, and the manual Android/iOS QA gate.
 Its native Android/iOS interaction QA was confirmed passed by the founder
 during the 04B2B review.
 
+Accepted future Browse direction: when a signed-in user has a pending join
+request for a Project or Tavolo, surface that item ahead of ordinary results
+where practical and distinguish it with a Requested treatment. This excludes
+historical rejected/withdrawn requests, does not change signed-out ordering,
+and leaves ranking relative to owned/current-participation projects for later
+UX work. Plan 06C1 records the direction but does not implement list enrichment,
+extra RPCs, ranking, or UI.
+
 ###### 04B2B — Public Web Tavoli Discovery
 
 **Status:** Implemented in merged PR #13 (`ccee48f68699702efeaeda160db1f27115a4d5df`).
@@ -334,7 +344,7 @@ The former combined Plan 05 scope is now split across the three portions above. 
 
 **Goal:** Deliver domain events without coupling external services to transactions.
 
-**Status:** In progress. 06A is implemented; 06B is in progress; 06C remains not started.
+**Status:** In progress. 06A and 06B are implemented; provider-independent 06C1 is in progress; provider-specific 06C2 remains not started.
 
 #### 06A — Notification Domain and Outbox Projection Foundation
 
@@ -354,9 +364,9 @@ Owns:
 
 #### 06B — Mobile In-App Notifications and Preferences
 
-**Status:** In progress while the implementation PR is open for native QA.
+**Status:** Implemented in PR #19 (`c459b185a0a7f8ae78bd8587301fcc3460a851d3`). Native Android/iOS QA was deferred by the founder for a later consolidated QA pass; it has not been marked passed or failed.
 
-Implemented scope awaiting native QA:
+Implemented scope:
 
 - Flutter inbox and unread badge;
 - mark-one/mark-all interactions;
@@ -365,20 +375,23 @@ Implemented scope awaiting native QA:
 - request-specific target handling through the implemented 07A Messages item;
 - ready-identity/action/pull refresh without timers or Realtime.
 
-#### 06C — Device Registration and FCM Push Delivery
+#### 06C — Push Delivery (parent)
 
-**Status:** Not started.
+**Status:** In progress through 06C1.
 
-Future scope:
+#### 06C1 — Push Installation and Delivery-Job Foundation
 
-- device-token lifecycle;
-- platform and installation metadata;
-- notification delivery jobs and attempts;
-- FCM worker, retry/backoff, and delivery idempotency;
-- invalid-token cleanup and secret/config separation;
-- push permission integration;
-- safe previews that avoid private content leakage;
-- local/staging behavior that cannot accidentally notify production users.
+**Status:** In progress.
+
+Owns:
+
+- private opaque app-installation registration with expected-identity-bound register/unregister operations;
+- atomic token rotation/reuse and installation ownership transfer without exposing provider tokens;
+- one shared canonical resolver for the six supported participation events;
+- independent service-only `push.v1` projection based only on `push_enabled`;
+- one private recipient-level semantic job without raw source payload, token, request content, or exact meeting data;
+- independent suppression receipts, historical-event rollout receipts, concurrency/idempotency, pgTAP, local integration, generated types, and CI;
+- no Firebase package, provider configuration, Edge Function, permission UI, or network delivery.
 
 An event may remain push-enabled while its in-app preference is disabled, in
 which case 06A deliberately records the notification-consumer receipt without
@@ -386,7 +399,28 @@ creating a `public.notifications` row. Therefore 06C must not treat the in-app
 row as the complete set of push-eligible occurrences. It must either consume
 the domain outbox independently while reusing one canonical event mapping, or
 introduce a channel-neutral occurrence layer before fan-out; it must not copy
-and silently diverge the participation mapping in a second worker.
+and silently diverge the participation mapping in a second worker. Plan 06C1
+implements the independent-consumer/shared-resolver option.
+
+#### 06C2 — Firebase Mobile Registration and FCM Delivery Worker
+
+**Status:** Not started.
+
+External context required:
+
+- Firebase Android and iOS app configuration;
+- APNs/Firebase iOS setup;
+- the real push-permission timing decision;
+- the safe push-preview policy;
+- server-side FCM HTTP v1 credentials stored as secrets.
+
+06C2 owns the official Flutter Firebase Messaging integration, persisted random
+installation UUID, OS permission flow, token refresh/register/unregister lifecycle,
+sign-in/account switching, foreground/background/open behavior, and push preference
+UI. Its trusted Edge Function or worker will claim recipient jobs, resolve active
+installations, create per-installation attempts, authenticate/send through FCM HTTP
+v1, implement retry/backoff/idempotency, clean invalid tokens, handle `no_targets`,
+apply safe payload/preview rules, and enforce environment safeguards.
 
 Request-specific 06A notifications carry `request_id` and the semantic `participation_request` target for the implemented 07A Messages item. They remain alerts and do not own Accept/Reject. Plan 07B owns group-chat behavior; 06A does not turn `project.join_request_accepted` into a chat rule.
 
@@ -563,4 +597,4 @@ Major gates currently expected:
 
 ## Immediate next action
 
-Complete native Android/iOS QA for **06B — Mobile In-App Notifications and Preferences** before merging its PR. **04C — Resources + Scambio-Dona** remains independently available; 05C waits for contribution/resource decisions. Plan 07A is implemented and supplies the stable `/messages/requests/:requestId` handoff for `participation_request` alerts. Plan 06C remains the device/push handoff, and 07B still requires the exact automatic-chat trigger and post-membership access decisions.
+Complete and review **06C1 — Push Installation and Delivery-Job Foundation** without merging provider-specific assumptions into it. 06B is implemented; its native Android/iOS QA is deferred by the founder for a later consolidated pass and is not marked passed or failed. **04C — Resources + Scambio-Dona** remains independently available; 05C waits for contribution/resource decisions. Plan 07A is implemented and supplies the stable `/messages/requests/:requestId` handoff for `participation_request` alerts. Plan 06C2 requires Firebase/APNs configuration, push permission and preview decisions, and server-side FCM credentials; 07B still requires the exact automatic-chat trigger and post-membership access decisions.

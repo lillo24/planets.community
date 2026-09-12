@@ -2,7 +2,7 @@
 
 **Status:** Accepted baseline for initial implementation  
 **Recorded:** 2026-09-01  
-**Implementation status:** Foundations, authentication, profiles, one-time proposals, and Tavoli mobile/public-web discovery implemented
+**Implementation status:** Foundations, authentication, profiles, one-time proposals, Tavoli mobile/public-web discovery, participation, in-app notifications, structured request Messages, and the provider-independent push foundation implemented
 
 ## Decision summary
 
@@ -120,6 +120,8 @@ An optional meeting URL should be stored or exposed from the project chat. PLANE
 ### Notification delivery uses an outbox and queue
 
 A domain transaction records what happened and appends a notification event. A background worker sends push or email with retry and idempotency. External delivery must not determine whether the underlying proposal operation succeeds.
+
+The provider-independent push foundation consumes the canonical domain outbox as its own `push.v1` consumer, alongside `notifications.v1`. It resolves the shared participation semantics, applies only `push_enabled`, and creates one private recipient-level job without consulting in-app notification rows or active installations. Installation registration uses opaque client-generated UUIDs and private provider tokens. Firebase SDKs, provider credentials, permission UI, per-installation attempts, and actual delivery remain owned by 06C2.
 
 The initial channel hierarchy is:
 

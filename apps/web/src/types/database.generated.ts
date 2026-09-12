@@ -1203,6 +1203,14 @@ export type Database = {
           processed_count: number
         }[]
       }
+      process_push_outbox_batch: {
+        Args: { p_limit?: number }
+        Returns: {
+          jobs_created: number
+          jobs_suppressed: number
+          processed_count: number
+        }[]
+      }
       publish_proposal: {
         Args: { p_expected_creator_profile_id: string; p_proposal_id: string }
         Returns: string
@@ -1213,6 +1221,20 @@ export type Database = {
           p_recurring_activity_id: string
         }
         Returns: string
+      }
+      register_own_push_installation: {
+        Args: {
+          p_expected_profile_id: string
+          p_installation_id: string
+          p_platform: string
+          p_provider_token: string
+        }
+        Returns: {
+          installation_id: string
+          last_registered_at: string
+          platform: string
+          provider: string
+        }[]
       }
       reject_project_join_request: {
         Args: { p_expected_creator_profile_id: string; p_request_id: string }
@@ -1245,6 +1267,10 @@ export type Database = {
           p_push_enabled: boolean
         }
         Returns: undefined
+      }
+      unregister_own_push_installation: {
+        Args: { p_expected_profile_id: string; p_installation_id: string }
+        Returns: boolean
       }
       update_own_profile: {
         Args: {

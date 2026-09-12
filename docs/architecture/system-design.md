@@ -1,7 +1,7 @@
 # System Design and Responsibility Boundaries
 
 **Status:** Initial accepted design  
-**Implementation status:** Foundations, authentication, profiles, one-time proposals, Tavoli mobile/public-web discovery, shared project participation, notification projection, and structured participation-request Messages implemented
+**Implementation status:** Foundations, authentication, profiles, one-time proposals, Tavoli mobile/public-web discovery, shared project participation, in-app notification projection, structured participation-request Messages, and the provider-independent push foundation implemented
 
 This document describes how the major parts of PLANETS should interact. Technology choices are recorded separately in [`core-stack.md`](core-stack.md).
 
@@ -184,7 +184,7 @@ The preferred sequence is:
 | Participation           | Shared project identity, private requests/decisions, current membership and retained history                | Profile and concrete one-time/recurring project; source for authorization and later stats |
 | Messages                | Authenticated structured participation-request inbox/detail; future project conversations                   | Canonical join requests now; separate project chat/message state in 07B                   |
 | Project chat            | One project-scoped group conversation when its future trigger and access rules are defined                   | Project and authorized participants                                                       |
-| Notifications           | Controlled categories/preferences and recipient in-app records; later device delivery                       | Recipient, per-consumer source event receipt, optional project/request/membership         |
+| Notifications           | Controlled categories/preferences, recipient in-app records, private installations, and recipient push jobs | Recipient, per-consumer source event receipt, optional project/request/membership         |
 | Templates               | Reusable proposal structure derived from approved past/community content                                    | Source proposal, attribution, moderation/publication state                                |
 | Community statistics    | Aggregated views over canonical activity and participation                                                  | Proposal type, location, participation, time                                              |
 | Moderation              | Reports, blocks, content status, actions, internal notes, appeals if introduced                             | Users, proposals, messages, media, administrators                                         |
@@ -290,7 +290,8 @@ Notifications are a centralized domain, not custom preference logic embedded in 
 - recipient-owned semantic in-app notification records and read timestamps;
 - private outbox events plus generic per-consumer receipts;
 - structured semantic targets that clients map to workflow items or routes without storing client URLs;
-- later device tokens, platform metadata, delivery jobs/attempts, and delivery timestamps.
+- private app-installation registrations and recipient-level push delivery jobs;
+- later provider attempts and delivery timestamps.
 
 The first notification projection owns the six participation events emitted by the
 shared project-participation domain. A service-only, concurrency-safe projector locks
@@ -307,8 +308,18 @@ actor display name. It never returns source JSON, join-request messages, exact m
 information, email, tokens, or audit metadata. The authenticated Flutter client
 provides the identity-bound in-app inbox, unread badge/read actions, semantic
 navigation, and Participation in-app preference over those narrow routines.
-Device registration, push delivery, and matching/resource/chat notifications
-remain later work.
+The same private resolver now supplies those validated semantic facts to both
+`notifications.v1` and `push.v1`. The push projector independently applies only
+`push_enabled`, writes one private recipient-level job, and records its own receipt;
+it does not depend on a `public.notifications` row or active installation. Private
+installation registrations are expected-identity-bound, use opaque installation
+UUIDs, and never expose provider tokens to ordinary clients. Historical supported
+events are receipted for `push.v1` at rollout so they are not delivered later.
+
+Firebase mobile registration, push permission timing and UI, server-side provider
+credentials, job claiming, per-installation delivery attempts, retries/backoff,
+invalid-token cleanup, `no_targets`, and safe provider previews remain 06C2 work.
+Matching/resource/chat notification kinds also remain later work.
 
 The request received, withdrawn, accepted, and rejected notifications retain the
 canonical `request_id` and use the `participation_request` destination. That target is

@@ -1,6 +1,6 @@
 # Database development
 
-PostgreSQL is the canonical PLANETS product record. This guide owns the local schema-change, security-test, and generated-type workflow. The current schema includes application identity, basic profiles, a controlled starter skill catalog, field visibility, one-time proposals, the Tavoli recurring-activity domain, shared project participation and structured Messages reads, the in-app notification domain, and private audit/outbox primitives.
+PostgreSQL is the canonical PLANETS product record. This guide owns the local schema-change, security-test, and generated-type workflow. The current schema includes application identity, basic profiles, a controlled starter skill catalog, field visibility, one-time proposals, the Tavoli recurring-activity domain, shared project participation and structured Messages reads, the in-app notification domain, the provider-independent push installation/delivery-job foundation, and private audit/outbox primitives.
 
 ## Source of truth and daily workflow
 
@@ -98,7 +98,17 @@ remain the 05A operations.
 
 `process_notification_outbox_batch` is executable only by `service_role`. It selects only the six supported and available participation events, ignores `published_at`, excludes `notifications.v1` receipts, and uses `FOR UPDATE SKIP LOCKED` for concurrent workers. Each event is validated against canonical request, membership, and project rows rather than trusting payload text. An enabled preference creates at most one notification under a database uniqueness constraint; a disabled preference creates none but still records its consumer receipt. Mapping inconsistencies fail the batch visibly and create neither guessed notifications nor success-shaped receipts. Events that existed before the notification migration are receipted for `notifications.v1` without historical notification backfill, while unsupported event types remain untouched.
 
-Authenticated users use expected-identity-bound functions for keyset-paginated inbox reads, unread count, mark-one, mark-all, and preferences. Notification/category/preference tables use RLS with no direct client policies or table grants. Inbox results omit outbox IDs/payloads, private request messages, exact meeting text or coordinates, emails, tokens, and audit data. Push/device registration, delivery attempts, FCM, and notification UI are not part of this foundation.
+Authenticated users use expected-identity-bound functions for keyset-paginated inbox reads, unread count, mark-one, mark-all, and preferences. Notification/category/preference tables use RLS with no direct client policies or table grants. Inbox results omit outbox IDs/payloads, private request messages, exact meeting text or coordinates, emails, tokens, and audit data.
+
+## Push installation and delivery-job foundation
+
+`private.resolve_participation_notification_event` validates each supported participation outbox event against canonical requests, memberships, project identity, and actors, then returns the provider-neutral recipient, kind, destination, references, and source chronology. Both projectors use this resolver so the six mappings cannot silently drift. The existing `process_notification_outbox_batch` signature, return shape, preference behavior, and `notifications.v1` receipt contract remain unchanged.
+
+`private.push_installations` represents app installations by opaque client-generated UUID, current profile, Android/iOS platform, server-owned `fcm` provider, and a private bounded token. Authenticated clients can only call the expected-identity-bound `register_own_push_installation` and `unregister_own_push_installation` functions. Registration atomically handles idempotent refresh, token rotation/reuse, and installation ownership transfer; unregister clears the token before disabling the row. Neither routine returns token text, and there is no token-listing API or direct client table access.
+
+`private.push_delivery_jobs` stores one recipient-level semantic job per source event, recipient, and kind. It intentionally stores no provider token, raw outbox payload, request message, exact meeting data, or per-device attempt. `process_push_outbox_batch` is service-only, selects available supported events with `FOR UPDATE SKIP LOCKED`, reuses the shared resolver, applies only the effective `push_enabled` value, and records `push.v1` success whether it creates or suppresses the job. It does not query installations or depend on `public.notifications`. Migration-time `push.v1` receipts cover already-existing supported events so provider delivery cannot unexpectedly replay historical activity.
+
+Plan 06C2 owns Firebase Android/iOS configuration, APNs/Firebase iOS setup, a push-permission timing decision, a safe push-preview policy, and server-side FCM HTTP v1 credentials stored as secrets. Its Flutter scope includes random installation UUID persistence, official Firebase Messaging integration, token refresh/register/unregister lifecycles, account switching, OS permissions, foreground/background/open handling, and push preference UI. Its trusted worker scope includes claiming recipient jobs, resolving active installations, per-installation attempts, OAuth/provider sends, retry/backoff/idempotency, invalid-token cleanup, safe payloads, `no_targets`, and environment safeguards. No part of that provider-specific delivery exists in 06C1.
 
 ## Fail-closed access
 
@@ -139,6 +149,7 @@ The native pgTAP files under `supabase/tests/` verify:
 - recurring activity constraints, owner isolation, stale expected identity, weekly/monthly wall-clock recurrence, Rome DST changes, bounded occurrence windows, non-overlapping schedule history, pause/resume/end transitions, public privacy, and function hardening.
 - shared project registry synchronization, request/membership state and uniqueness, concrete lifecycle eligibility, stale identity, private read projections, participant meeting authorization, retained history, deletion protection, and content-free audit/outbox events.
 - controlled notification categories/defaults, sparse owner preferences, semantic notification constraints, six participation recipient mappings, private multi-consumer receipts, projector idempotency/concurrency, suppression receipts, own-only inbox/read state, privacy, and service/client grants.
+- private push installation constraints/grants, expected-identity registration and unregister behavior, token rotation/reuse and account transfer, provider-token privacy, shared semantic resolution, recipient-level job constraints, six-event mapping, all four channel-preference combinations, independent receipts, historical rollout, retries, and service-only projection.
 - structured Messages read shape, requester/creator authorization, fail-closed exact lookup, Proposal/Tavolo context, private-message isolation, bounded keyset pagination, and routine grants.
 
 Run focused commands while the stack is already running:
@@ -153,6 +164,7 @@ npm run proposal:verify:local
 npm run recurring:verify:local
 npm run participation:verify:local
 npm run notification:verify:local
+npm run push:verify:local
 npm run messages:verify:local
 npm run db:types
 npm run db:types:check
@@ -179,10 +191,14 @@ transitions, and prints only processed/created/suppressed aggregate counts. It
 must not be embedded in or called by Flutter; the 06B feature README documents
 the deterministic local profiles and device-QA sequence.
 
+`push:verify:local` uses three complete authenticated identities, synthetic provider tokens, the two service-only projectors, and narrow local-database assertions. It proves idempotent registration, rotation, account transfer, owner-only unregister, independent in-app/push preferences, concurrent push projection, semantic job privacy, retry idempotency, suppression receipts, consumer coexistence, and unsupported-event preservation. It prints no tokens, keys, request messages, or meeting values.
+
+`push:project:local` is a trusted local helper that derives the service credential only from current local Supabase status, invokes the service-only push projector, and prints aggregate processed/created/suppressed counts. It must never be embedded in or called by Flutter.
+
 `messages:verify:local` uses a Project creator, requester, unrelated authenticated user, and anon across a Proposal and Tavolo. It proves requester/creator structured reads and private-message visibility, identical unauthorized/missing exact failures, anonymous denial, canonical Accept/Withdraw history, both project contexts, chronology, narrow output, and unchanged public privacy. It never prints OTPs, tokens, keys, request messages, or meeting values.
 
 `auth:web:verify:local` adds web-specific evidence after a locally configured production Next.js build. It obtains session cookies through supported `@supabase/ssr` callbacks, confirms the Server Component recognizes the authenticated session, rejects private-auth material in the rendered response, and confirms `/admin` returns 404 for signed-out and signed-in requests. It does not invent or log Supabase's cookie encoding.
 
 `tavoli:web:verify:local` uses synthetic local OTP data and the production Next.js server to prove signed-out Tavoli list/detail rendering, rough-location and next-meeting output, exclusion of paused/ended rows from discovery, retained sanitized historical detail, exact-ID 404 behavior, and detail-only public/restricted exact-location handling. It never prints test addresses, tokens, keys, or protected meeting content.
 
-`npm run check:db` performs reset, lint, pgTAP, the mobile/backend Auth check, the two-user profile visibility check, the proposal privacy/lifecycle check, the recurring activity recurrence/privacy/lifecycle check, the multi-user project-participation check, notification projection, structured Messages integration, type regeneration, and drift detection as one validation sequence. It assumes `npm run db:start` has already succeeded and leaves stack lifecycle to the caller. CI additionally generates local web configuration, builds Next.js, runs the web-session and public Tavoli integrations, and always stops Supabase.
+`npm run check:db` performs reset, lint, pgTAP, the mobile/backend Auth check, the two-user profile visibility check, the proposal privacy/lifecycle check, the recurring activity recurrence/privacy/lifecycle check, the multi-user project-participation check, notification projection, push-foundation integration, structured Messages integration, type regeneration, and drift detection as one validation sequence. It assumes `npm run db:start` has already succeeded and leaves stack lifecycle to the caller. CI additionally generates local web configuration, builds Next.js, runs the web-session and public Tavoli integrations, and always stops Supabase.
