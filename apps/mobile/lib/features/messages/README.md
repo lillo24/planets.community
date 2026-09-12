@@ -50,5 +50,6 @@ Messages belongs to the existing Home branch, reached from Home's AppBar:
 
 Both routes require authentication and a complete profile. Their exact safe
 internal destination survives email OTP and profile completion. The persistent
-bottom navigation remains Profile / Browse / Home; there is no fourth tab or
-unread badge in Plan 07A.
+bottom navigation remains Profile / Browse / Home; there is no fourth tab. Plan
+06B adds a separate Home notification bell/unread badge and resolves request
+alerts into this feature's stable request route.

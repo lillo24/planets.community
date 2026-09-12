@@ -304,12 +304,15 @@ analytics, or other independent consumers from observing the same event.
 Notification rows contain kinds and identifiers, not canonical English copy. The
 authenticated inbox resolves only safe current project title/kind and workflow-authorized
 actor display name. It never returns source JSON, join-request messages, exact meeting
-information, email, tokens, or audit metadata. Device registration, push delivery,
-matching/resource/chat notifications, and client inbox UI remain later work.
+information, email, tokens, or audit metadata. The authenticated Flutter client
+provides the identity-bound in-app inbox, unread badge/read actions, semantic
+navigation, and Participation in-app preference over those narrow routines.
+Device registration, push delivery, and matching/resource/chat notifications
+remain later work.
 
 The request received, withdrawn, accepted, and rejected notifications retain the
 canonical `request_id` and use the `participation_request` destination. That target is
-the backend-route-agnostic bridge to a future persistent actionable item in Messages;
+the backend-route-agnostic bridge to the persistent actionable item in Messages;
 the notification remains an alert and never owns Accept/Reject. `participant_left`
 targets the creator's `project_participation` overview, while `participant_removed`
 targets `project_detail`. The current Participation screen remains the creator's

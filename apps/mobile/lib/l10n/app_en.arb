@@ -565,5 +565,69 @@
   "messagesSafeError": "We couldn't load Messages. Check your connection and try again.",
   "messagesForbidden": "This participation request is not available for the current account.",
   "messagesConflict": "This request changed while the screen was open. Its current status has been reloaded.",
-  "messagesNotFound": "This participation request is no longer available."
+  "messagesNotFound": "This participation request is no longer available.",
+  "notificationsTitle": "Notifications",
+  "notificationsOpenTooltip": "Open Notifications",
+  "notificationsUnreadSemantics": "{count, plural, =1{Notifications, 1 unread} other{Notifications, {count} unread}}",
+  "@notificationsUnreadSemantics": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "notificationsLoading": "Loading notifications…",
+  "notificationsEmptyTitle": "No notifications yet",
+  "notificationsEmptyMessage": "Participation alerts will appear here when there is something new.",
+  "notificationsMarkAllRead": "Mark all as read",
+  "notificationsSettingsTooltip": "Notification settings",
+  "notificationsSettingsTitle": "Notification settings",
+  "notificationsLoadMore": "Load more",
+  "notificationsUnread": "Unread",
+  "notificationsRead": "Read",
+  "notificationsGeneric": "You have a new notification.",
+  "notificationsSafeError": "We couldn't load notifications. Check your connection and try again.",
+  "notificationsForbidden": "Notifications are not available for the current account.",
+  "notificationsUpdateError": "We couldn't update this notification. You can still open its destination.",
+  "notificationsMarkAllError": "We couldn't mark all notifications as read. Their saved state has been restored.",
+  "notificationsPreferencesLoading": "Loading notification settings…",
+  "notificationsParticipationAlerts": "Participation alerts",
+  "notificationsInApp": "In-app notifications",
+  "notificationsPreferenceExplanation": "This setting affects future in-app participation alerts. Existing notification history remains.",
+  "notificationsPreferenceUpdateError": "We couldn't confirm this setting. Its last loaded value is shown.",
+  "notificationRequestReceived": "{actor} requested to join “{project}”",
+  "@notificationRequestReceived": {
+    "placeholders": {
+      "actor": { "type": "String" },
+      "project": { "type": "String" }
+    }
+  },
+  "notificationRequestReceivedGeneric": "Someone requested to join one of your projects.",
+  "notificationRequestWithdrawn": "{actor} withdrew the request to join “{project}”",
+  "@notificationRequestWithdrawn": {
+    "placeholders": {
+      "actor": { "type": "String" },
+      "project": { "type": "String" }
+    }
+  },
+  "notificationRequestWithdrawnGeneric": "Someone withdrew a participation request.",
+  "notificationRequestAccepted": "Your request to join “{project}” was accepted",
+  "@notificationRequestAccepted": {
+    "placeholders": { "project": { "type": "String" } }
+  },
+  "notificationRequestAcceptedGeneric": "Your participation request was accepted.",
+  "notificationRequestRejected": "Your request to join “{project}” was rejected",
+  "@notificationRequestRejected": {
+    "placeholders": { "project": { "type": "String" } }
+  },
+  "notificationRequestRejectedGeneric": "Your participation request was rejected.",
+  "notificationParticipantLeft": "{actor} left “{project}”",
+  "@notificationParticipantLeft": {
+    "placeholders": {
+      "actor": { "type": "String" },
+      "project": { "type": "String" }
+    }
+  },
+  "notificationParticipantLeftGeneric": "A participant left one of your projects.",
+  "notificationParticipantRemoved": "You were removed from “{project}”",
+  "@notificationParticipantRemoved": {
+    "placeholders": { "project": { "type": "String" } }
+  },
+  "notificationParticipantRemovedGeneric": "You were removed from a project."
 }

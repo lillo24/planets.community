@@ -172,6 +172,13 @@ npm run db:types:check
 
 `notification:verify:local` uses three complete authenticated identities, a service-role client, and one narrow direct local-database assertion. It proves pre-projection absence, concurrent projector idempotency, request/accept/withdraw/reject/leave mappings, stable request IDs and `participation_request` targets, cross-account denial, structured safe context, unread/read changes, preference suppression with a receipt, later re-enable behavior, and coexistence with an independent synthetic consumer receipt. It never logs OTPs, keys, database URLs, request messages, or protected meeting values.
 
+`notification:project:local` is the narrower native-QA companion. It derives
+the service credential only from the current local Supabase status, drains the
+service-only notification projector after a tester creates participation
+transitions, and prints only processed/created/suppressed aggregate counts. It
+must not be embedded in or called by Flutter; the 06B feature README documents
+the deterministic local profiles and device-QA sequence.
+
 `messages:verify:local` uses a Project creator, requester, unrelated authenticated user, and anon across a Proposal and Tavolo. It proves requester/creator structured reads and private-message visibility, identical unauthorized/missing exact failures, anonymous denial, canonical Accept/Withdraw history, both project contexts, chronology, narrow output, and unchanged public privacy. It never prints OTPs, tokens, keys, request messages, or meeting values.
 
 `auth:web:verify:local` adds web-specific evidence after a locally configured production Next.js build. It obtains session cookies through supported `@supabase/ssr` callbacks, confirms the Server Component recognizes the authenticated session, rejects private-auth material in the rendered response, and confirms `/admin` returns 404 for signed-out and signed-in requests. It does not invent or log Supabase's cookie encoding.

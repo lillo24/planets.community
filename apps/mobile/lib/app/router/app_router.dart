@@ -11,6 +11,9 @@ import '../../features/auth/presentation/verify_code_screen.dart';
 import '../../features/messages/presentation/messages_routes.dart';
 import '../../features/messages/presentation/messages_screen.dart';
 import '../../features/messages/presentation/participation_request_message_screen.dart';
+import '../../features/notifications/presentation/notification_preferences_screen.dart';
+import '../../features/notifications/presentation/notification_routes.dart';
+import '../../features/notifications/presentation/notifications_screen.dart';
 import '../../features/profile/presentation/profile_edit_screen.dart';
 import '../../features/profile/presentation/profile_screen.dart';
 import '../../features/participation/domain/participation_models.dart';
@@ -73,11 +76,13 @@ RoutingConfig _routingConfig(
         path,
       );
       final isMessagesRoute = isMessagesPath(path);
+      final isNotificationsRoute = isNotificationsPath(path);
       final isActivityManagementRoute =
           isProposalManagementRoute ||
           isTavoliManagementRoute ||
           isParticipationRoute ||
-          isMessagesRoute;
+          isMessagesRoute ||
+          isNotificationsRoute;
 
       if (session.phase == AuthSessionPhase.restoring) {
         return null;
@@ -92,7 +97,7 @@ RoutingConfig _routingConfig(
       }
 
       if (session.phase == AuthSessionPhase.profileSetupRequired &&
-          (isParticipationRoute || isMessagesRoute)) {
+          (isParticipationRoute || isMessagesRoute || isNotificationsRoute)) {
         return Uri(
           path: '/profile/edit',
           queryParameters: {'returnTo': state.uri.toString()},
@@ -121,7 +126,8 @@ RoutingConfig _routingConfig(
             pending?.returnTo ??
             sanitizeReturnDestination(state.uri.queryParameters['returnTo']);
         if (ParticipationRoutes.isParticipationPath(returnTo) ||
-            isMessagesPath(returnTo)) {
+            isMessagesPath(returnTo) ||
+            isNotificationsPath(returnTo)) {
           return Uri(
             path: '/profile/edit',
             queryParameters: {'returnTo': returnTo},
@@ -295,6 +301,17 @@ RoutingConfig _routingConfig(
                           key: state.pageKey,
                           requestId: state.pathParameters['requestId']!,
                         ),
+                  ),
+                ],
+              ),
+              GoRoute(
+                path: '/notifications',
+                builder: (context, state) => const NotificationsScreen(),
+                routes: [
+                  GoRoute(
+                    path: 'preferences',
+                    builder: (context, state) =>
+                        const NotificationPreferencesScreen(),
                   ),
                 ],
               ),

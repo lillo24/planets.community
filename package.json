@@ -32,6 +32,7 @@
     "recurring:verify:local": "node scripts/verify-local-recurring-activities.mjs",
     "participation:verify:local": "node scripts/verify-local-participation.mjs",
     "notification:verify:local": "node scripts/verify-local-notifications.mjs",
+    "notification:project:local": "node scripts/process-local-notification-outbox.mjs",
     "messages:verify:local": "node scripts/verify-local-messages.mjs",
     "db:types": "node scripts/generate-database-types.mjs",
     "db:types:check": "npm run db:types && git diff --exit-code -- apps/web/src/types/database.generated.ts",
