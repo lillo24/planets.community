@@ -551,7 +551,7 @@ begin
     registration_time,
     null
   )
-  on conflict (installation_id) do update
+  on conflict on constraint push_installations_pkey do update
   set
     profile_id = excluded.profile_id,
     platform = excluded.platform,
