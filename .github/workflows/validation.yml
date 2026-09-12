@@ -116,6 +116,9 @@ jobs:
       - name: Verify notification projection, preferences, inbox privacy, and idempotency
         run: npm run notification:verify:local
 
+      - name: Verify push installation, recipient jobs, privacy, and channel independence
+        run: npm run push:verify:local
+
       - name: Verify structured participation-request Messages and privacy
         run: npm run messages:verify:local
 

@@ -36,3 +36,7 @@ Current product direction from the 08/09 founder discussion and follow-up clarif
 - A participation notification is only an alert and entry point. Request-specific notifications retain `request_id` and use a semantic `participation_request` target; the mobile client resolves it to `/messages/requests/:requestId` without storing a Flutter route in PostgreSQL.
 - The existing Participation screen remains the organizer's secondary overview for all request history and member management. It is not the primary arrival surface for new requests.
 - Project group chat is separate from pre-acceptance request items. Plan 07A implements only the Messages request surface; 07B still owns project chat, including the final automatic chat trigger and post-membership access rules.
+
+## Pending requests in Browse
+
+For a signed-in user, a Project or Tavolo with that user's pending join request should be surfaced ahead of ordinary discovery results where practical and visually distinguished, for example with a **Requested** badge or special border. This applies only to currently pending requests, not historical rejected or withdrawn attempts. Exact ranking relative to projects the user owns or already participates in remains later UX work, and signed-out/public ordering is unchanged. Plan 06C1 records this direction only; list enrichment, ranking, and UI are not part of its backend push foundation.
