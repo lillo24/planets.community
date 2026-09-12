@@ -24,7 +24,8 @@ Flutter mobile application             Next.js public/admin application
            |                                         |
            +--------------------+--------------------+
                                 |
-                         Supabase platform
+        Supabase platform (managed development/test environments;
+                    intended self-hosted production)
         +-----------------------+------------------------+
         |                       |                        |
  Auth and RLS          PostgreSQL and PostGIS     Storage and Realtime
@@ -37,6 +38,8 @@ Flutter mobile application             Next.js public/admin application
              Sentry observes application failures
        PostHog later receives explicit product events
 ```
+
+The deployment model does not change these responsibility boundaries. All clients still use one canonical Supabase/PostgreSQL backend. Managed Supabase may support development, staging, testing, or migration rehearsal, while self-hosted Supabase is the intended production target. The production infrastructure is deferred to its dedicated roadmap phase and does not exist yet.
 
 ## Core responsibility rules
 
@@ -171,6 +174,8 @@ The preferred sequence is:
 3. enqueue delivery work;
 4. deliver through FCM or email;
 5. record success, failure, and retry state with idempotency protection.
+
+Edge Functions and background workers remain valid implementation choices when their source is repository-owned, deployment-specific values come from environment/secrets, and they can run or be tested in the supported local/self-hosted Supabase environment where practical. Canonical domain and durable job state should remain database-backed where appropriate. Queue or scheduling implementations must not require an unreproducible managed control-plane action as a production invariant.
 
 ## Main data domains
 
@@ -375,6 +380,8 @@ The system must define what happens when a participant leaves, is removed, is bl
 
 Media should be divided by purpose and access policy rather than stored in one unrestricted bucket.
 
+The production object store is intentionally unresolved. Plan 08 must evaluate at least self-hosted Supabase Storage and an external object store such as Cloudflare R2, including bandwidth and storage cost, privacy/access control, backup coverage, migration complexity, and operating burden. Until that decision is accepted, clients and domain rules must not treat a Supabase Cloud Storage URL or dashboard-configured bucket as the permanent authorization boundary.
+
 Expected categories include:
 
 - public proposal media;
@@ -443,6 +450,8 @@ Every implementation plan must consider:
 - separate local, staging, and production resources;
 - restoration procedures, not merely nominal backups.
 
+Production clients must connect through explicit environment configuration. Before public release, the self-hosting/release work must define a backend endpoint and cutover strategy that does not accidentally strand installed mobile versions; the current client configuration system is not redesigned by this architecture change.
+
 Security-sensitive defaults should fail closed. A missing policy must not silently make data public.
 
 ## Reliability and test priorities
@@ -494,7 +503,7 @@ The foundation does not include:
 
 - full desktop/web parity with the mobile app;
 - microservices;
-- self-hosted infrastructure;
+- production self-hosted infrastructure during feature plans or the main UI/UX pass; it belongs to the dedicated pre-release infrastructure phase;
 - built-in video calling;
 - direct messaging unrelated to proposals;
 - full offline synchronization;

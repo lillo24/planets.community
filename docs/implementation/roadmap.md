@@ -1,11 +1,11 @@
 # Implementation Roadmap
 
 **Status:** Planning baseline  
-**Current implementation:** Plans 00–04B2B, 05A, 05B, 06A, 06B, and 07A implemented; provider-independent 06C1 is in progress; provider-specific 06C2, 04C, and 05C remain not started
+**Current implementation:** Plans 00–04B2B, 05A, 05B, 06A, 06B, provider-independent 06C1, and 07A implemented; provider-specific 06C2, 04C, and 05C remain not started
 
 This roadmap divides the first PLANETS build into reviewable Codex tasks. Each numbered item should normally become its own implementation prompt, branch, and pull request.
 
-The ordering is intentional: security and canonical data rules are established before feature screens depend on them, while product-heavy visual design is deferred.
+The ordering is intentional: security and canonical data rules are established before feature screens depend on them, product-heavy visual design is consolidated after the main functional feature set, and self-hosted production infrastructure is proven only after that UI/UX pass and before public release.
 
 ## Execution model
 
@@ -61,17 +61,19 @@ Do not begin a dependent plan until the prior plan is merged or its branch is ex
 | 06    | Notification backbone (parent)                       | Canonical notification projection, later mobile inbox/preferences, then device registration and push delivery         | 03–05A                 | User-facing notification UX/copy and push behavior remain later review points                                        | In progress |
 | 06A   | Notification Domain and Outbox Projection Foundation | Categories/preferences, semantic inbox records/targets, multi-consumer receipts, participation projection, secure APIs | 01B, 05A               | None expected for the defined participation foundation                                                               | Implemented |
 | 06B   | Mobile In-App Notifications and Preferences          | Flutter inbox, unread state, preference controls, and structured project/request navigation                           | 06A                    | Native QA deferred by founder for a later consolidated pass; not passed or failed                                    | Implemented |
-| 06C   | Push Delivery (parent)                               | Provider-independent installation/jobs followed by Firebase mobile registration and trusted delivery                 | 06A, 06B               | Push permission timing, preview policy, and provider/account-owner setup                                             | In progress |
-| 06C1  | Push Installation and Delivery-Job Foundation        | Private app installations, shared semantic resolution, independent `push.v1` projection, and recipient-level jobs    | 06A, 06B               | None; uses synthetic tokens and no provider account                                                                  | In progress |
+| 06C   | Push Delivery (parent)                               | Provider-independent installation/jobs followed by Firebase mobile registration and trusted delivery                  | 06A, 06B               | Push permission timing, preview policy, and provider/account-owner setup                                             | In progress |
+| 06C1  | Push Installation and Delivery-Job Foundation        | Private app installations, shared semantic resolution, independent `push.v1` projection, and recipient-level jobs    | 06A, 06B               | None; uses synthetic tokens and no provider account                                                                  | Implemented |
 | 06C2  | Firebase Mobile Registration and FCM Delivery Worker | Flutter token/permission lifecycle plus trusted per-installation FCM delivery, retries, and cleanup                   | 06C1                   | Firebase Android/iOS config, APNs setup, permission timing, preview policy, and server credentials                   | Not started |
-| 07    | Messages + Project Chat (parent)                     | Structured participation-request items plus automatic project group conversations                                     | 05A, 06A               | Exact chat trigger and access/moderation after leaving or removal                                                     | In progress |
-| 07A   | Messages Surface and Structured Participation Requests | Authenticated Messages inbox with canonical actionable join-request items                                            | 05A, 06A               | Functional/native UX review and final Messages information architecture                                               | Implemented |
+| 07    | Messages + Project Chat (parent)                     | Structured participation-request items plus automatic project group conversations                                     | 05A, 06A               | Exact chat trigger and access/moderation after leaving or removal                                                    | In progress |
+| 07A   | Messages Surface and Structured Participation Requests | Authenticated Messages inbox with canonical actionable join-request items                                            | 05A, 06A               | Functional/native UX review and final Messages information architecture                                              | Implemented |
 | 07B   | Project Group Chat                                   | Automatic idempotent group chat, membership authorization, realtime text, group info, and meeting link                | 05A, 07A               | Triggering participation event plus access/moderation after leaving or removal                                       | Not started |
-| 08    | Storage and media hardening                          | Purpose-specific buckets, upload restrictions, private/public access, media metadata, cleanup and processing hooks    | 03–07                  | Profile/proposal photo visibility and retention choices                                                              | Not started |
+| 08    | Storage and media hardening                          | Select the production media approach, then implement purpose-specific access, metadata, cleanup, and processing hooks | 03–07                  | Profile/proposal photo visibility, retention, and self-hosted Supabase Storage versus external object storage         | Not started |
 | 09    | Safety, moderation and admin                         | Reporting, blocking, content states, admin roles, moderation queue/actions, audit trail and minimal custom admin UI   | 04–08                  | Community rules, prohibited content, escalation, suspension, appeals, minimum age                                    | Not started |
 | 10    | Account deletion and privacy operations              | In-app and web deletion paths, cleanup/anonymization jobs, export groundwork, privacy documentation inputs            | 03–09                  | Legal retention and anonymization policy; legal text remains founder/legal work                                      | Not started |
-| 11    | Analytics and operational readiness                  | Explicit product events, privacy scrubbing, health checks, alerts, restore procedure and operational runbooks         | 00–10                  | Success metrics and analytics consent/legal choices                                                                  | Not started |
-| 12    | Release pipeline and store readiness                 | Staging/production deployment, signed mobile builds, internal testing, approval gates and store checklists            | 00–11                  | Provider accounts, billing, certificates, store listings, policies and final approval                                | Not started |
+| 11    | Analytics and operational foundations                | Explicit product events, privacy scrubbing, health/queue signals, alert requirements, and incident ownership inputs   | 00–10                  | Success metrics and analytics consent/legal choices                                                                  | Not started |
+| 12    | Consolidated UI/UX and native QA pass                | Coherent visual/interaction design, accessibility, responsive behavior, and deferred native flow validation           | 00–11                  | Final visual identity, high-impact interaction decisions, and native review                                          | Not started |
+| 13    | Self-hosted production infrastructure readiness      | Provisioned and rehearsed production Supabase stack, security, backups, monitoring, operations, and cutover plan      | 00–12                  | Host/account selection, billing, DNS, credentials, retention objectives, and production-operation approval            | Not started |
+| 14    | Release pipeline and store readiness                 | Controlled releases over the proven production backend, signed builds, internal testing, gates, and store checklists | 00–13                  | Provider accounts, certificates, store listings, policies, and final release approval                                | Not started |
 
 ## Plan details
 
@@ -344,7 +346,7 @@ The former combined Plan 05 scope is now split across the three portions above. 
 
 **Goal:** Deliver domain events without coupling external services to transactions.
 
-**Status:** In progress. 06A and 06B are implemented; provider-independent 06C1 is in progress; provider-specific 06C2 remains not started.
+**Status:** In progress. 06A, 06B, and provider-independent 06C1 are implemented; provider-specific 06C2 remains not started.
 
 #### 06A — Notification Domain and Outbox Projection Foundation
 
@@ -377,11 +379,11 @@ Implemented scope:
 
 #### 06C — Push Delivery (parent)
 
-**Status:** In progress through 06C1.
+**Status:** In progress; 06C1 is implemented and 06C2 is not started.
 
 #### 06C1 — Push Installation and Delivery-Job Foundation
 
-**Status:** In progress.
+**Status:** Implemented in PR #20 (`f7b88ee61c2471fcb4bff04e968403886dff1e27`).
 
 Owns:
 
@@ -423,6 +425,8 @@ v1, implement retry/backoff/idempotency, clean invalid tokens, handle `no_target
 apply safe payload/preview rules, and enforce environment safeguards.
 
 Request-specific 06A notifications carry `request_id` and the semantic `participation_request` target for the implemented 07A Messages item. They remain alerts and do not own Accept/Reject. Plan 07B owns group-chat behavior; 06A does not turn `project.join_request_accepted` into a chat rule.
+
+06C2 is feature/integration work, not the production self-hosting phase. Its repository-owned function or worker must remain configurable and runnable/testable in the supported local or self-hosted Supabase function environment where practical; provider credentials and production deployment remain later account-owner/infrastructure work.
 
 ### 07 — Messages + Project Chat
 
@@ -473,6 +477,8 @@ The exact automatic group-chat trigger and whether Participation is a direct gro
 
 Expected scope:
 
+- an explicit production media decision comparing self-hosted Supabase Storage with an external object store such as Cloudflare R2;
+- evaluation of bandwidth and storage cost, privacy/access control, backup coverage, migration complexity, and operational burden;
 - bucket separation by purpose/access;
 - file-size and MIME limits;
 - database media records and ownership;
@@ -517,7 +523,7 @@ Expected scope:
 - data-export groundwork if selected;
 - store-compliance checklist inputs.
 
-### 11 — Analytics and operational readiness
+### 11 — Analytics and operational foundations
 
 **Goal:** Observe product behavior and operate failures without collecting unnecessary content.
 
@@ -526,22 +532,55 @@ Expected scope:
 - explicit PostHog event vocabulary tied to product questions;
 - no automatic capture/session replay by default;
 - Sentry scrubbing and environment/release metadata;
-- health and queue-lag checks;
-- alert thresholds and ownership;
-- database backup verification and restore rehearsal documentation;
+- application health and queue-lag signal definitions;
+- alert requirements and incident ownership inputs for the production-infrastructure phase;
 - billing/spend-alert checklist;
-- incident and rollback runbooks;
 - dependency/security update process.
 
-### 12 — Release pipeline and store readiness
+### 12 — Consolidated UI/UX and native QA pass
 
-**Goal:** Produce controlled staging and production releases.
+**Goal:** Turn the implemented functional surfaces into one coherent, accessible product experience before production infrastructure is finalized.
 
 Expected scope:
 
-- environment-specific Supabase, web, Firebase, email, monitoring, and analytics configuration;
-- migration and Edge Function deployment workflow;
-- Vercel preview/staging/production behavior;
+- founder-approved visual identity and centralized design-token refinement;
+- interaction, navigation, loading, empty, error, and recovery consistency across implemented mobile features;
+- accessibility, localization, keyboard, text-scaling, and supported-screen-size review;
+- consolidated Android/iOS validation, including native checks intentionally deferred by earlier feature plans;
+- focused public-web/admin polish for the functionality retained at release, without forcing mobile parity;
+- regression coverage for behavior changed during the pass.
+
+This phase refines accepted flows; it must not silently decide unresolved authorization, lifecycle, policy, or data-retention behavior.
+
+### 13 — Self-hosted production infrastructure readiness
+
+**Goal:** Build, secure, test, and rehearse the intended self-hosted Supabase production environment after the main feature and UI/UX work, before public release.
+
+Expected scope:
+
+- production host/VPS evaluation, selection, provisioning, and capacity baseline;
+- production Supabase deployment using reviewed, reproducible infrastructure configuration;
+- HTTPS/TLS, DNS, firewall/network exposure, and secret management;
+- production SMTP/Auth email configuration;
+- database and media backup design with off-site retention;
+- restore and disaster-recovery testing against stated recovery objectives;
+- monitoring, alerting, queue/worker visibility, and incident ownership;
+- pinned update/upgrade procedures and operational runbooks;
+- migration rehearsal from any managed test environment where useful;
+- production client endpoint/configuration and cutover strategy that avoids stranding installed versions;
+- security, load, smoke, rollback, and failure-recovery rehearsals.
+
+This phase is not implemented by the architecture-direction change. It must not assume a production host, paid plan, DNS state, or credential before the founder/account owner selects and authorizes it.
+
+### 14 — Release pipeline and store readiness
+
+**Goal:** Produce controlled staging and public releases only after the self-hosted production environment has been proven.
+
+Expected scope:
+
+- release promotion over the rehearsed environment-specific Supabase, Firebase, email, monitoring, and analytics configuration;
+- migration and repository-owned Edge Function/worker release workflow against the proven production stack;
+- an independently selected web deployment workflow matching the static, client-side, server-rendered, and authenticated functionality retained at release;
 - Codemagic Android and iOS build pipelines;
 - signing/certificate placeholders and secure setup instructions;
 - TestFlight and Play internal-testing distribution;
@@ -549,6 +588,8 @@ Expected scope:
 - versioning and release notes;
 - privacy/data-safety/store-review checklists;
 - smoke tests and rollback paths.
+
+Public production and store release remain blocked until Plan 13's deployment, backup/restore, monitoring, upgrade, and client-cutover procedures have been exercised successfully.
 
 ## Work Codex can perform with low supervision
 
@@ -564,13 +605,14 @@ Codex can usually implement:
 - structured request Messages and project-scoped chat infrastructure;
 - storage policies;
 - moderation/admin mechanics;
+- reproducible self-hosting configuration and non-production rehearsals after the required host and policy choices are supplied;
 - CI, documentation, fixtures, and runbooks.
 
 ## Work requiring founder or account-owner action
 
 Codex cannot independently supply or approve:
 
-- service accounts, billing, domains, certificates, and production secrets;
+- production host/provider selection, service accounts, billing, domains, certificates, and production secrets;
 - Apple/Google developer enrollment;
 - product taxonomy and final user-facing policy decisions;
 - moderation, retention, minimum-age, and legal rules;
@@ -593,8 +635,10 @@ Major gates currently expected:
 4. moderation/minimum-age policy before plan 09 is complete;
 5. retention/anonymization policy before plan 10;
 6. success metrics and analytics legal basis before plan 11;
-7. production accounts, store material, and approvals before plan 12.
+7. production media backend before Plan 08 commits to permanent storage behavior;
+8. production host, recovery objectives, accounts, billing, DNS, and operational approval before Plan 13 provisions production infrastructure;
+9. store material, policies, certificates, and final release approval before Plan 14.
 
 ## Immediate next action
 
-Complete and review **06C1 — Push Installation and Delivery-Job Foundation** without merging provider-specific assumptions into it. 06B is implemented; its native Android/iOS QA is deferred by the founder for a later consolidated pass and is not marked passed or failed. **04C — Resources + Scambio-Dona** remains independently available; 05C waits for contribution/resource decisions. Plan 07A is implemented and supplies the stable `/messages/requests/:requestId` handoff for `participation_request` alerts. Plan 06C2 requires Firebase/APNs configuration, push permission and preview decisions, and server-side FCM credentials; 07B still requires the exact automatic-chat trigger and post-membership access decisions.
+PR #20 completed **06C1 — Push Installation and Delivery-Job Foundation**. **04C — Resources + Scambio-Dona** remains independently available; 05C waits for contribution/resource decisions. Plan 06C2 is the remaining push feature/integration work and requires Firebase/APNs configuration, push permission and preview decisions, and server-side FCM credentials. Plan 07B still requires the exact automatic-chat trigger and post-membership access decisions. Deferred native Android/iOS checks from implemented feature plans belong in the consolidated Plan 12 QA pass. Production self-hosting does not begin until Plan 13, after the main functional work and Plan 12 UI/UX pass.
