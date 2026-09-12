@@ -42,8 +42,18 @@ Follow `docs/architecture/core-stack.md` and `docs/architecture/system-design.md
 At the highest level, PLANETS uses:
 
 - Flutter/Dart for the Android/iOS application;
-- Supabase/PostgreSQL as the canonical shared backend;
+- Supabase/PostgreSQL as the canonical shared backend, with self-hosted Supabase as the intended production target;
 - Next.js/TypeScript for the public website and admin interface.
+
+Managed Supabase may still be used for development, staging, testing, or migration rehearsal. Production self-hosting has not been implemented and belongs to its dedicated roadmap phase after the main functional work and consolidated UI/UX pass; do not provision or design it incidentally during feature plans.
+
+Keep feature work portable within the Supabase ecosystem:
+
+- prefer canonical migrations, PostgreSQL/RLS primitives, and repository-owned code/configuration over dashboard-only state;
+- do not add a Supabase Cloud-only production dependency without evaluating the self-hosted equivalent and updating the architecture decision explicitly;
+- keep Edge Functions configurable through environment/secrets and runnable or testable in the supported local/self-hosted environment where practical;
+- keep durable domain/job state database-backed where appropriate, and do not assume managed-only queue or scheduling control-plane behavior;
+- treat media storage and web hosting as their separately deferred architecture/operational decisions.
 
 Do not replace an accepted technology or move a major responsibility across system boundaries as an incidental implementation choice. A material architecture change should be treated as an explicit architecture decision and should update the relevant architecture documentation.
 
@@ -101,7 +111,7 @@ Pre-production migration squashing is acceptable only when the active implementa
 
 ## External services and account-owner actions
 
-PLANETS may use external resources such as Supabase, Firebase/APNs, Vercel, Cloudflare, Resend, Sentry, PostHog, Codemagic, and Apple/Google developer services.
+PLANETS may use external resources such as managed or self-hosted Supabase environments, Firebase/APNs, web/object-storage providers, Cloudflare, Resend, Sentry, PostHog, Codemagic, and Apple/Google developer services.
 
 Do not fabricate credentials, account state, provider configuration, billing setup, domain ownership, signing material, or production resources.
 

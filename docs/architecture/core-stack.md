@@ -2,15 +2,19 @@
 
 **Status:** Accepted baseline for initial implementation  
 **Recorded:** 2026-09-01  
-**Implementation status:** Foundations, authentication, profiles, one-time proposals, Tavoli mobile/public-web discovery, participation, in-app notifications, structured request Messages, and the provider-independent push foundation implemented
+**Direction updated:** 2026-09-12
+
+**Implementation status:** Foundations, authentication, profiles, one-time proposals, Tavoli mobile/public-web discovery, participation, in-app notifications, structured request Messages, and the provider-independent push foundation implemented; production self-hosting is not implemented
 
 ## Decision summary
 
-PLANETS will begin as a managed, modular monolith:
+PLANETS uses a modular Supabase/PostgreSQL architecture that can use managed environments during development while remaining reproducible for the intended self-hosted production deployment:
 
-> **Flutter mobile app + Supabase/PostgreSQL backend + Next.js website/admin + Vercel hosting + Firebase Cloud Messaging + GitHub Actions/Codemagic.**
+> **Flutter mobile app + Supabase/PostgreSQL backend with an intended self-hosted production target + Next.js website/admin with independently selected hosting + Firebase Cloud Messaging + GitHub Actions/Codemagic.**
 
-This baseline favors rapid automation, strong relational data guarantees, and low operational burden. It is not a permanent prohibition on other tools; additions require a demonstrated product or operational need.
+This changes the production hosting direction, not the underlying application platform. Managed Supabase may still be used for development, staging, testing, and migration rehearsal. The self-hosted production stack will be designed and proven only after the main functional build and UI/UX pass; no production infrastructure is claimed by this document. Additions or provider-specific dependencies require a demonstrated product or operational need.
+
+The durable rationale and consequences are recorded in [ADR 0003](decisions/0003-self-hosted-supabase-production-direction.md).
 
 ## Goals and constraints
 
@@ -22,10 +26,11 @@ The stack should:
 - support local discovery and future geographic queries;
 - make authorization enforceable at the data layer;
 - allow Codex to build infrastructure and ordinary product backbones with limited founder supervision;
-- minimize server maintenance, deployment work, and fragmented vendors;
+- minimize unnecessary service fragmentation and managed-control-plane lock-in;
 - support a small local pilot without blocking later growth;
 - keep public discovery, authenticated mobile use, and administration separate where their security needs differ;
 - avoid premature infrastructure such as microservices, Kubernetes, Redis, and dedicated search clusters.
+- keep repository-owned backend behavior reproducible across local, managed Supabase, and the intended self-hosted Supabase environment.
 
 ## Selected tools
 
@@ -36,22 +41,22 @@ The stack should:
 | Mobile routing | `go_router` | Declarative navigation and deep links |
 | Mobile models | Freezed and `json_serializable` | Immutable typed models and predictable serialization |
 | Mobile design foundation | Material 3 with centralized design tokens | Functional, coherent default UI before brand-focused design |
-| Backend platform | Supabase Cloud | Managed database, authentication, storage, realtime, server functions, queues, and scheduled work |
+| Backend platform | Supabase platform | PostgreSQL, authentication, Data API, realtime, and server-function capabilities; managed environments are allowed for development/testing and self-hosted Supabase is the intended production target |
 | Database | PostgreSQL | Canonical relational data and transactional business rules |
 | Geographic data | PostGIS | Radius filtering, approximate locations, and future maps/statistics |
 | Authorization | PostgreSQL Row Level Security | Enforce access independently of client UI |
 | Atomic server operations | PostgreSQL functions | Multi-step domain transitions close to the data |
-| External integrations | Supabase Edge Functions | FCM, email, and other server-only service calls |
-| Background processing | Supabase Queues and Cron | Durable delivery, retries, cleanup, and scheduled jobs |
+| External integrations | Repository-owned Supabase Edge Functions or compatible workers | FCM, email, and other server-only service calls without making a managed-only deployment workflow a product invariant |
+| Background processing | Database-backed state with Supabase/PostgreSQL-compatible queues and scheduling | Durable delivery, retries, cleanup, and scheduled jobs reproducible outside a managed control plane |
 | Authentication | Supabase Auth | Email one-time code initially; social login only when justified |
 | Realtime project chat | Supabase Realtime with PostgreSQL persistence | Project-scoped group messaging without a separate chat vendor |
-| Media | Supabase Storage | Profile and proposal files with policy-controlled access |
+| Media | Deferred production storage choice | Plan 08 must evaluate self-hosted Supabase Storage and an external object store such as Cloudflare R2 while retaining database-owned authorization metadata |
 | Push notifications | Firebase Cloud Messaging | Android and iOS push delivery; iOS uses APNs through FCM |
 | Transactional email | Resend | Authentication, security, and exceptional account messages |
 | Public website | Next.js with TypeScript | Informational and discovery-oriented web presence |
 | Admin interface | Next.js with TypeScript | Separate authenticated moderation and administration routes |
 | Web components | Tailwind CSS and shadcn/ui | Fast construction of ordinary responsive pages, forms, and tables |
-| Web deployment | Vercel | Git-based preview and production deployments for Next.js |
+| Web deployment | Release-time operational choice | Vercel remains an allowed option, but static or other Next.js-compatible hosting may be selected for the web functionality retained at release |
 | DNS | Cloudflare | DNS, DNSSEC, and separation between domain ownership and hosting |
 | Error monitoring | Sentry with EU data location | Mobile, web, and server error/release visibility |
 | Product analytics | PostHog EU | Explicit beta product events and later feature flags |
@@ -64,11 +69,25 @@ Exact service tiers and prices are operational choices and must be rechecked whe
 
 ## Architectural consequences
 
-### Managed services over a general-purpose VPS
+### Supabase platform with a self-hosted production target
 
-Hostinger or another VPS could run the system, but it would make PLANETS responsible for operating Linux, PostgreSQL, backups, TLS, reverse proxies, storage, realtime infrastructure, monitoring, upgrades, and recovery. That conflicts with the automation goal.
+PostgreSQL remains the canonical product record, and Supabase Auth, RLS, PostGIS, Realtime, migrations, and other Supabase-compatible components remain accepted. Existing application behavior should not be rewritten merely because production hosting is intended to be self-hosted.
 
-A VPS or self-hosted Supabase remains an option only after a measured requirement makes the additional operational burden worthwhile.
+Self-hosting makes PLANETS responsible for host provisioning, security hardening, PostgreSQL maintenance, backups and recovery, TLS, monitoring, scaling, and upgrades. Those responsibilities belong to a dedicated production-infrastructure phase after the main functional and UI/UX work, not to incidental feature implementation.
+
+Managed Supabase remains acceptable for development, staging, testing, and migration rehearsal. Provider dashboards or manually configured cloud state must not become the only source of canonical behavior when migrations, repository configuration, or repository-owned functions can reproduce it.
+
+### Portability boundary for feature work
+
+Feature work should prefer timestamped SQL migrations, PostgreSQL constraints/functions, RLS, PostGIS, Supabase Auth, Supabase Realtime, and repository-owned code and configuration.
+
+A feature must not assume a Supabase Cloud-only production capability unless the self-hosted equivalent has been evaluated and an explicit architecture update records why the dependency is necessary. Features available in both managed and self-hosted Supabase remain acceptable.
+
+Supabase Edge Functions remain allowed. Their source belongs in the repository, deployment-specific values belong in environment or secret configuration, and functions should be runnable or testable in the supported local/self-hosted runtime where practical. Durable domain and delivery state should stay in canonical database-backed structures where appropriate. Queues, Cron, or equivalent components must not silently depend on a managed control plane that the intended production environment cannot reproduce.
+
+### Web hosting is independent of backend hosting
+
+The backend hosting direction does not select the web host. The Next.js public/admin implementation remains accepted, but its release deployment should match the functionality retained: static informational pages and sufficiently client-side interfaces may use static hosting, while server-rendered or authenticated functionality needs a compatible runtime. Vercel is an option rather than an unavoidable production dependency.
 
 ### PostgreSQL is the source of truth
 
@@ -153,26 +172,29 @@ Participation statistics and future badges should be computed from canonical pro
 
 ### Staging
 
-- separate Supabase project;
+- separate Supabase environment, which may be managed while useful for testing or migration rehearsal;
 - separate Firebase configuration;
-- preview/staging web deployment;
+- independently selected preview/staging web deployment;
 - test users and test push devices;
 - staging Sentry environment;
 - production-like migrations and smoke tests.
 
 ### Production
 
-- independently configured Supabase, Firebase/APNs, Vercel, Resend, Sentry, and analytics resources;
+- independently configured self-hosted Supabase, Firebase/APNs, email, monitoring, and analytics resources;
+- a web host selected separately for the public/admin functionality retained at release;
 - EU data locations where supported and appropriate;
-- secrets stored in provider secret managers, never in the repository;
+- secrets stored in appropriate secret-management facilities, never in the repository;
 - explicit approval gates for migrations, destructive actions, mobile-store submission, and other irreversible operations.
+
+The production host, topology, deployment automation, HTTPS/DNS, SMTP, backups, off-site retention, restore testing, monitoring, upgrades, migration rehearsal, and client cutover strategy are not implemented. The production client endpoint strategy must be resolved before public release so infrastructure changes do not strand installed application versions.
 
 ## Deferred alternatives
 
 | Alternative | Why deferred | Reconsider when |
 | --- | --- | --- |
-| Hostinger/general VPS | High continuing operations and security responsibility | Cost, regulation, or infrastructure control clearly outweighs managed-service value |
-| Self-hosted Supabase | Removes managed operations while preserving platform complexity | A concrete hosting or compliance requirement exists |
+| Specific production host/VPS and topology | Selection requires current cost, location, capacity, security, and operational evidence | The dedicated self-hosted production-infrastructure phase begins |
+| Supabase Cloud as the permanent production backend | It would reintroduce a managed control-plane dependency that the current direction avoids | A demonstrated requirement outweighs portability and an ADR updates the direction |
 | Firebase SQL Connect | Credible relational alternative, but a newer and more provider-specific application layer | Its ecosystem or generated client workflow offers a clear project advantage |
 | Firestore | Less natural fit for transactional, strongly relational workflows | A separate document/event use case appears |
 | Expo/React Native | Reduces language count but would discard existing Flutter experience | Full web/mobile sharing becomes more important than Flutter continuity |
@@ -188,6 +210,13 @@ Participation statistics and future badges should be computed from canonical pro
 | Built-in video calling | Expensive infrastructure unrelated to the first product hypothesis | Video coordination becomes strategically central |
 | Direct payment/donation processing | Business, legal, and accounting behavior is unresolved | The donation model and responsible legal entity are defined |
 | AI matching or moderation | Deterministic taxonomy and human moderation are easier to validate | Data and measured limitations justify ML/LLM support |
+
+## Architecture decisions still required
+
+- Plan 08 must choose the production media backend after comparing self-hosted Supabase Storage and an external object store such as Cloudflare R2 for bandwidth and storage cost, privacy/access control, backups, migration complexity, and operational burden.
+- The self-hosting phase must select the host, deployment and update mechanics, backup/restore design, monitoring, and migration/cutover procedure.
+- The production web host must be selected independently from the backend according to the static, client-side, server-rendered, and authenticated functionality retained at release.
+- Before public release, the client/backend endpoint and cutover strategy must prevent infrastructure changes from accidentally stranding installed mobile versions.
 
 ## Product decisions still required
 
