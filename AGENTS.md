@@ -14,7 +14,7 @@ The product is centered on:
 - reusable templates derived from previous proposals;
 - moderation, administration, and community statistics.
 
-The primary full user experience is the Android/iOS mobile app. The public website is mainly informational/discovery-oriented and is not expected to reproduce the entire mobile application. The admin interface is a separate authenticated surface for moderation and platform administration.
+The primary full user experience is the Android/iOS mobile app. A small static public website owns informational and launch content, while the existing dynamic web application owns selected public discovery and the future authenticated administration surface. Neither web application is expected to reproduce the entire mobile application.
 
 ## PLANETS sources of truth
 
@@ -43,7 +43,8 @@ At the highest level, PLANETS uses:
 
 - Flutter/Dart for the Android/iOS application;
 - Supabase/PostgreSQL as the canonical shared backend, with self-hosted Supabase as the intended production target;
-- Next.js/TypeScript for the public website and admin interface.
+- Vite/React/TypeScript for the small static public informational and launch site;
+- Next.js/TypeScript for public discovery and the admin interface.
 
 Managed Supabase may still be used for development, staging, testing, or migration rehearsal. Production self-hosting has not been implemented and belongs to its dedicated roadmap phase after the main functional work and consolidated UI/UX pass; do not provision or design it incidentally during feature plans.
 
@@ -57,7 +58,7 @@ Keep feature work portable within the Supabase ecosystem:
 
 Do not replace an accepted technology or move a major responsibility across system boundaries as an incidental implementation choice. A material architecture change should be treated as an explicit architecture decision and should update the relevant architecture documentation.
 
-In particular, all user-facing surfaces must use the same canonical backend/domain rules; do not create a competing set of business rules in one client.
+In particular, every user-facing surface that accesses product data must use the same canonical backend/domain rules; do not create a competing set of business rules in one client.
 
 Features, infrastructure, and alternatives explicitly marked as deferred or out of scope in the architecture documents remain deferred unless the active task reopens that decision.
 

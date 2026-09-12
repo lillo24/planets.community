@@ -69,6 +69,9 @@ jobs:
       - name: Validate web application
         run: npm run check:web
 
+      - name: Validate public informational site
+        run: npm run check:site
+
   supabase:
     name: Database
     runs-on: ubuntu-latest

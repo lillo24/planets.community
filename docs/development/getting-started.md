@@ -27,6 +27,7 @@ The bootstrap was generated and validated with:
 | Dart              | 3.13.2        |
 | Next.js           | 16.3.4        |
 | React / React DOM | 19.2.8        |
+| Vite              | 8.3.0         |
 | Supabase CLI      | 2.116.0       |
 
 Confirm the local tools before setup:
@@ -58,7 +59,7 @@ npm ci
 npm run restore:mobile
 ```
 
-The root lockfile covers `apps/web` and the project-scoped Supabase CLI. Do not install a global Supabase CLI or create a second lockfile under `apps/web`.
+The root lockfile covers the `apps/site` and `apps/web` npm workspaces and the project-scoped Supabase CLI. Do not install a global Supabase CLI or create a second lockfile inside either application.
 
 ## Local Supabase
 
@@ -190,6 +191,18 @@ Sentry is disabled when `NEXT_PUBLIC_SENTRY_DSN` is empty. When supplied, the we
 
 ## Run the applications
 
+Start the standalone public informational site:
+
+```text
+npm run dev:site
+```
+
+Open `http://localhost:5173`. The Vite application has no runtime environment
+configuration or backend dependency in SITE-00. Its production build is written
+to `apps/site/dist/` as ordinary static assets; no Node.js server is required to
+host that output. The production host and Cloudflare/domain configuration remain
+deferred to SITE-03.
+
 Generate web configuration, then start the Next.js development server:
 
 ```text
@@ -215,12 +228,13 @@ Run all ordinary web and mobile validation:
 npm run check
 ```
 
-The command runs web tooling/unit/component tests, linting, TypeScript checking, a production Next.js build, Dart formatting verification, Flutter analysis, and Flutter widget tests. Supabase startup is separate because it provisions local containers and is slower than the frequent validation loop.
+The command runs web tooling/unit/component tests, linting, TypeScript checking, a production Next.js build, informational-site linting/type checking/static build, Dart formatting verification, Flutter analysis, and Flutter widget tests. Supabase startup is separate because it provisions local containers and is slower than the frequent validation loop.
 
 Useful focused commands are:
 
 ```text
 npm run check:web
+npm run check:site
 npm run check:mobile
 npm run format
 npm run format:check
@@ -233,13 +247,13 @@ With the local Supabase stack running, validate a clean migration replay, schema
 npm run check:db
 ```
 
-`check:db` assumes the stack is already running; it does not start or stop containers. It includes the two-user mixed-visibility, proposal privacy/lifecycle, and recurring-activity harnesses. GitHub Actions owns the stack lifecycle and separately validates mobile, web, the database workflow, the built web Auth session check, and signed-out Tavoli HTTP privacy on pull requests and pushes to `main`.
+`check:db` assumes the stack is already running; it does not start or stop containers. It includes the two-user mixed-visibility, proposal privacy/lifecycle, and recurring-activity harnesses. GitHub Actions owns the stack lifecycle and separately validates mobile, the dynamic web application, the static informational site, the database workflow, the built web Auth session check, and signed-out Tavoli HTTP privacy on pull requests and pushes to `main`.
 
 Hosted email delivery is not configured by this repository. Before staging or production use, the account owner must configure a production SMTP provider and the equivalent numeric OTP template in the hosted Supabase project, then verify the hosted project's current Auth email restrictions and rate limits. Do not claim hosted Auth is ready from the local template alone.
 
 ## Environment and secrets
 
-The mobile and web configuration contracts are documented above. Local `.env*` files, non-example mobile config files, and Supabase CLI state are ignored.
+The mobile and dynamic-web configuration contracts are documented above. The static informational site has no environment contract in SITE-00. Local `.env*` files, non-example mobile config files, and Supabase CLI state are ignored.
 
 Never commit provider credentials, production database URLs, service-role keys, signing material, or local machine state. No Firebase, Vercel, Cloudflare, Resend, PostHog, or other cloud configuration is needed for this foundation; Sentry remains optional.
 
