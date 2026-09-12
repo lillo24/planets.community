@@ -1222,10 +1222,6 @@ export type Database = {
         }
         Returns: string
       }
-      reject_project_join_request: {
-        Args: { p_expected_creator_profile_id: string; p_request_id: string }
-        Returns: string
-      }
       register_own_push_installation: {
         Args: {
           p_expected_profile_id: string
@@ -1239,6 +1235,10 @@ export type Database = {
           platform: string
           provider: string
         }[]
+      }
+      reject_project_join_request: {
+        Args: { p_expected_creator_profile_id: string; p_request_id: string }
+        Returns: string
       }
       remove_project_member: {
         Args: { p_expected_creator_profile_id: string; p_membership_id: string }
