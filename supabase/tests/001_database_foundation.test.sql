@@ -18,8 +18,8 @@ select is(
 
 select is(
   has_schema_privilege('service_role', 'private', 'USAGE'),
-  false,
-  'service_role cannot use the private schema'
+  true,
+  'service_role can resolve explicitly granted private worker routines'
 );
 
 select is(

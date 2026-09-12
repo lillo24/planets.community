@@ -1,7 +1,7 @@
 # Implementation Roadmap
 
 **Status:** Planning baseline  
-**Current implementation:** Plans 00–04B2B, 05A, 05B, 06A, 06B, provider-independent 06C1, and 07A implemented; provider-specific 06C2, 04C, and 05C remain not started
+**Current implementation:** Plans 00–04B2B, 05A, 05B, 06A, 06B, provider-independent 06C1, and 07A implemented; provider-neutral 06C2A worker protocol is in progress; provider-specific 06C2B, 04C, and 05C remain not started
 
 This roadmap divides the first PLANETS build into reviewable Codex tasks. Each numbered item should normally become its own implementation prompt, branch, and pull request.
 
@@ -63,7 +63,9 @@ Do not begin a dependent plan until the prior plan is merged or its branch is ex
 | 06B   | Mobile In-App Notifications and Preferences          | Flutter inbox, unread state, preference controls, and structured project/request navigation                           | 06A                    | Native QA deferred by founder for a later consolidated pass; not passed or failed                                    | Implemented |
 | 06C   | Push Delivery (parent)                               | Provider-independent installation/jobs followed by Firebase mobile registration and trusted delivery                  | 06A, 06B               | Push permission timing, preview policy, and provider/account-owner setup                                             | In progress |
 | 06C1  | Push Installation and Delivery-Job Foundation        | Private app installations, shared semantic resolution, independent `push.v1` projection, and recipient-level jobs    | 06A, 06B               | None; uses synthetic tokens and no provider account                                                                  | Implemented |
-| 06C2  | Firebase Mobile Registration and FCM Delivery Worker | Flutter token/permission lifecycle plus trusted per-installation FCM delivery, retries, and cleanup                   | 06C1                   | Firebase Android/iOS config, APNs setup, permission timing, preview policy, and server credentials                   | Not started |
+| 06C2  | Provider Delivery Integration (parent)               | Provider-neutral worker protocol followed by Flutter registration and the repository-owned FCM adapter               | 06C1                   | Firebase/APNs setup, permission timing, preview policy, credentials, and worker deployment                            | In progress |
+| 06C2A | Push Delivery Attempt and Worker-Protocol Foundation | One-time installation fan-out, leases, safe attempt history, retries, terminal aggregation, and stale-token guards    | 06C1                   | None; uses synthetic outcomes and no provider account                                                                | In progress |
+| 06C2B | Firebase Mobile Registration and FCM Adapter         | Flutter token/permission lifecycle plus repository-owned FCM HTTP v1 sends over the trusted 06C2A protocol            | 06C2A                  | Firebase Android/iOS config, APNs setup, permission timing, preview policy, credentials, and worker hosting           | Not started |
 | 07    | Messages + Project Chat (parent)                     | Structured participation-request items plus automatic project group conversations                                     | 05A, 06A               | Exact chat trigger and access/moderation after leaving or removal                                                    | In progress |
 | 07A   | Messages Surface and Structured Participation Requests | Authenticated Messages inbox with canonical actionable join-request items                                            | 05A, 06A               | Functional/native UX review and final Messages information architecture                                              | Implemented |
 | 07B   | Project Group Chat                                   | Automatic idempotent group chat, membership authorization, realtime text, group info, and meeting link                | 05A, 07A               | Triggering participation event plus access/moderation after leaving or removal                                       | Not started |
@@ -346,7 +348,7 @@ The former combined Plan 05 scope is now split across the three portions above. 
 
 **Goal:** Deliver domain events without coupling external services to transactions.
 
-**Status:** In progress. 06A, 06B, and provider-independent 06C1 are implemented; provider-specific 06C2 remains not started.
+**Status:** In progress. 06A, 06B, and provider-independent 06C1 are implemented; provider-neutral 06C2A is in progress; provider-specific 06C2B remains not started.
 
 #### 06A — Notification Domain and Outbox Projection Foundation
 
@@ -379,7 +381,7 @@ Implemented scope:
 
 #### 06C — Push Delivery (parent)
 
-**Status:** In progress; 06C1 is implemented and 06C2 is not started.
+**Status:** In progress through 06C2A.
 
 #### 06C1 — Push Installation and Delivery-Job Foundation
 
@@ -404,7 +406,31 @@ introduce a channel-neutral occurrence layer before fan-out; it must not copy
 and silently diverge the participation mapping in a second worker. Plan 06C1
 implements the independent-consumer/shared-resolver option.
 
-#### 06C2 — Firebase Mobile Registration and FCM Delivery Worker
+#### 06C2 — Provider Delivery Integration (parent)
+
+**Status:** In progress through 06C2A.
+
+#### 06C2A — Push Delivery Attempt and Worker-Protocol Foundation
+
+**Status:** In progress.
+
+Owns:
+
+- monotonic private installation token generations;
+- one-time, concurrency-safe recipient-job fan-out to then-active installations;
+- private per-installation targets with bounded scheduling and expiring leases;
+- append-only attempt history with safe bounded provider metadata and no token/content copies;
+- `delivered`, `invalid_token`, `transient_failure`, `permanent_failure`, and `no_longer_registered` handling;
+- stale lease rejection, expired-lease reclaim, rotation-safe invalid-token cleanup, and terminal job aggregation;
+- private-schema service-only worker routines with no direct worker table access;
+- pgTAP, a real local fake-worker integration, generated-type drift checks, documentation, and CI;
+- no provider SDK/configuration, credentials, network sends, Edge Function, or mobile changes.
+
+The protocol uses only portable PostgreSQL/Supabase primitives. It assumes neither a
+managed scheduler nor a hosted project, and leaves provider deployment to 06C2B and
+production self-hosting to Plan 13.
+
+#### 06C2B — Firebase Mobile Registration and FCM Adapter
 
 **Status:** Not started.
 
@@ -416,17 +442,17 @@ External context required:
 - the safe push-preview policy;
 - server-side FCM HTTP v1 credentials stored as secrets.
 
-06C2 owns the official Flutter Firebase Messaging integration, persisted random
+06C2B owns the official Flutter Firebase Messaging integration, persisted random
 installation UUID, OS permission flow, token refresh/register/unregister lifecycle,
 sign-in/account switching, foreground/background/open behavior, and push preference
-UI. Its trusted Edge Function or worker will claim recipient jobs, resolve active
-installations, create per-installation attempts, authenticate/send through FCM HTTP
-v1, implement retry/backoff/idempotency, clean invalid tokens, handle `no_targets`,
-apply safe payload/preview rules, and enforce environment safeguards.
+UI. Its repository-owned trusted worker will authenticate/send through FCM HTTP v1
+using only the 06C2A claim/result protocol, apply adapter-owned retry-delay policy,
+map invalid/permanent/transient provider outcomes, enforce safe payload/preview and
+environment rules, and remain deployable in the supported self-hosted environment.
 
 Request-specific 06A notifications carry `request_id` and the semantic `participation_request` target for the implemented 07A Messages item. They remain alerts and do not own Accept/Reject. Plan 07B owns group-chat behavior; 06A does not turn `project.join_request_accepted` into a chat rule.
 
-06C2 is feature/integration work, not the production self-hosting phase. Its repository-owned function or worker must remain configurable and runnable/testable in the supported local or self-hosted Supabase function environment where practical; provider credentials and production deployment remain later account-owner/infrastructure work.
+06C2B is feature/integration work, not the production self-hosting phase. Its repository-owned worker must remain configurable and runnable/testable in the supported local or self-hosted environment; provider credentials and production deployment remain later account-owner/infrastructure work.
 
 ### 07 — Messages + Project Chat
 
@@ -641,4 +667,4 @@ Major gates currently expected:
 
 ## Immediate next action
 
-PR #20 completed **06C1 — Push Installation and Delivery-Job Foundation**. **04C — Resources + Scambio-Dona** remains independently available; 05C waits for contribution/resource decisions. Plan 06C2 is the remaining push feature/integration work and requires Firebase/APNs configuration, push permission and preview decisions, and server-side FCM credentials. Plan 07B still requires the exact automatic-chat trigger and post-membership access decisions. Deferred native Android/iOS checks from implemented feature plans belong in the consolidated Plan 12 QA pass. Production self-hosting does not begin until Plan 13, after the main functional work and Plan 12 UI/UX pass.
+Complete and review **06C2A — Push Delivery Attempt and Worker-Protocol Foundation** without adding provider-specific or mobile assumptions. **04C — Resources + Scambio-Dona** remains independently available; 05C waits for contribution/resource decisions. Plan 06C2B requires Firebase/APNs configuration, push permission and preview decisions, server-side FCM credentials, and a self-host-compatible worker deployment target. Plan 07B still requires the exact automatic-chat trigger and post-membership access decisions. Deferred native Android/iOS checks from implemented feature plans belong in the consolidated Plan 12 QA pass. Production self-hosting does not begin until Plan 13, after the main functional work and Plan 12 UI/UX pass.

@@ -1,7 +1,7 @@
 # System Design and Responsibility Boundaries
 
 **Status:** Initial accepted design  
-**Implementation status:** Foundations, authentication, profiles, one-time proposals, Tavoli mobile/public-web discovery, shared project participation, in-app notification projection, structured participation-request Messages, and the provider-independent push foundation implemented
+**Implementation status:** Foundations, authentication, profiles, one-time proposals, Tavoli mobile/public-web discovery, shared project participation, in-app notification projection, structured participation-request Messages, and the provider-independent push/job foundation implemented; provider-neutral push delivery worker protocol in progress
 
 This document describes how the major parts of PLANETS should interact. Technology choices are recorded separately in [`core-stack.md`](core-stack.md).
 
@@ -296,7 +296,7 @@ Notifications are a centralized domain, not custom preference logic embedded in 
 - private outbox events plus generic per-consumer receipts;
 - structured semantic targets that clients map to workflow items or routes without storing client URLs;
 - private app-installation registrations and recipient-level push delivery jobs;
-- later provider attempts and delivery timestamps.
+- private per-installation delivery targets, expiring leases, append-only attempts, and aggregate completion timestamps.
 
 The first notification projection owns the six participation events emitted by the
 shared project-participation domain. A service-only, concurrency-safe projector locks
@@ -321,10 +321,23 @@ installation registrations are expected-identity-bound, use opaque installation
 UUIDs, and never expose provider tokens to ordinary clients. Historical supported
 events are receipted for `push.v1` at rollout so they are not delivered later.
 
+The 06C2A protocol fans each available job out once to the recipient's then-active
+installations. Later registrations do not receive that historical event. A trusted
+worker claims pending targets with `SKIP LOCKED`, receives a short expiring lease and
+the current private token generation, and atomically creates an attempt. Delivery
+results must match the current unexpired lease and claimed generation. Delivered,
+invalid-token, permanent-failure, and no-longer-registered outcomes are terminal;
+transient failures return to a bounded future schedule. Expired work is reclaimable
+under a new lease, stale responses fail, and the job completes once all targets are
+terminal or immediately as `no_targets`. Invalid-token cleanup disables an
+installation only when its current owner and token generation still match. These
+routines live in the unexposed `private` schema, are executable only by direct-
+database `service_role`, and grant no worker table access.
+
 Firebase mobile registration, push permission timing and UI, server-side provider
-credentials, job claiming, per-installation delivery attempts, retries/backoff,
-invalid-token cleanup, `no_targets`, and safe provider previews remain 06C2 work.
-Matching/resource/chat notification kinds also remain later work.
+credentials, OAuth/FCM sends, safe provider previews, environment safeguards, and
+the repository-owned runnable adapter remain 06C2B work. Matching/resource/chat
+notification kinds also remain later work.
 
 The request received, withdrawn, accepted, and rejected notifications retain the
 canonical `request_id` and use the `participation_request` destination. That target is
