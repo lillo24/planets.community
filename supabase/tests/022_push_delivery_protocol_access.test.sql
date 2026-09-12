@@ -625,7 +625,7 @@ select ok(
   'transient failure returns the target to an unleased future schedule'
 );
 update private.push_delivery_targets
-set available_at = statement_timestamp() - interval '1 second'
+set available_at = created_at
 where id = (select target_id from reclaimed_claim);
 
 create temporary table retry_claim as

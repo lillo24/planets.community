@@ -155,7 +155,7 @@ async function verifyPushDeliveryProtocol() {
 
   await sql`
     update private.push_delivery_targets
-    set available_at = statement_timestamp() - interval '1 second'
+    set available_at = created_at
     where id = ${claimB[0].target_id}
   `;
   const retryClaim = await claimTargets("fake-worker-retry", 1, 60);
