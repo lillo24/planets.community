@@ -346,7 +346,15 @@ async function assertSignal(signals, message, chatId) {
         signal.chat_id !== chatId ||
         JSON.stringify(keys) !== JSON.stringify(expectedKeys)
       ) {
-        throw new Error("Realtime exposed a non-canonical or unsafe signal.");
+        throw new Error(
+          `Realtime exposed a non-canonical or unsafe signal (${JSON.stringify({
+            keys,
+            chatIdMatches: signal.chat_id === chatId,
+            valueTypes: Object.fromEntries(
+              keys.map((key) => [key, typeof signal[key]]),
+            ),
+          })}).`,
+        );
       }
       return;
     }
