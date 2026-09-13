@@ -360,9 +360,8 @@ select ok(
 
 select ok(
   to_regclass('public.project_group_chat_members') is null
-    and to_regclass('public.project_chat_messages') is null
     and to_regclass('public.chat_messages') is null,
-  '07B1 adds neither a chat-member mirror nor a message table'
+  'the chat anchor still has no denormalized member mirror or competing message table'
 );
 select is(
   (

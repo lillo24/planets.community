@@ -246,6 +246,45 @@ export type Database = {
         }
         Relationships: []
       }
+      project_chat_messages: {
+        Row: {
+          body: string
+          chat_id: string
+          created_at: string
+          id: string
+          sender_profile_id: string
+        }
+        Insert: {
+          body: string
+          chat_id: string
+          created_at?: string
+          id?: string
+          sender_profile_id: string
+        }
+        Update: {
+          body?: string
+          chat_id?: string
+          created_at?: string
+          id?: string
+          sender_profile_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_chat_messages_chat_id_fkey"
+            columns: ["chat_id"]
+            isOneToOne: false
+            referencedRelation: "project_group_chats"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_chat_messages_sender_profile_id_fkey"
+            columns: ["sender_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       project_group_chats: {
         Row: {
           activated_at: string
@@ -1110,6 +1149,47 @@ export type Database = {
           weekday: number
         }[]
       }
+      list_own_project_chat_messages: {
+        Args: {
+          p_before_created_at?: string
+          p_before_message_id?: string
+          p_chat_id: string
+          p_expected_profile_id: string
+          p_limit: number
+        }
+        Returns: {
+          body: string
+          chat_id: string
+          created_at: string
+          message_id: string
+          sender_display_name: string
+          sender_profile_id: string
+        }[]
+      }
+      list_own_project_group_chats: {
+        Args: {
+          p_before_activity_at?: string
+          p_before_chat_id?: string
+          p_expected_profile_id: string
+          p_limit: number
+        }
+        Returns: {
+          activated_at: string
+          activity_at: string
+          chat_id: string
+          has_current_entitlement: boolean
+          has_history_entitlement: boolean
+          last_visible_message_at: string
+          last_visible_message_body: string
+          last_visible_message_id: string
+          last_visible_sender_display_name: string
+          last_visible_sender_profile_id: string
+          project_id: string
+          project_kind: string
+          project_title: string
+          viewer_role: string
+        }[]
+      }
       list_own_project_join_requests: {
         Args: { p_expected_requester_profile_id: string }
         Returns: {
@@ -1350,6 +1430,20 @@ export type Database = {
           p_recurring_activity_id: string
         }
         Returns: string
+      }
+      send_project_chat_message: {
+        Args: {
+          p_body: string
+          p_chat_id: string
+          p_expected_profile_id: string
+        }
+        Returns: {
+          body: string
+          chat_id: string
+          created_at: string
+          message_id: string
+          sender_profile_id: string
+        }[]
       }
       set_own_notification_preference: {
         Args: {
