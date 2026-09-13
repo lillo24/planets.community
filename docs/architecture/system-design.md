@@ -1,7 +1,7 @@
 # System Design and Responsibility Boundaries
 
 **Status:** Initial accepted design  
-**Implementation status:** Foundations, authentication, profiles, one-time proposals, Tavoli mobile/public-web discovery, shared project participation, in-app notification projection, structured participation-request Messages, the provider-independent push/job foundation, and the static informational-site foundation implemented; provider-neutral push delivery worker protocol in progress
+**Implementation status:** Foundations, authentication, profiles, one-time proposals, Tavoli mobile/public-web discovery, shared project participation, in-app notification projection, structured participation-request Messages, the provider-independent push/job foundation, provider-neutral push delivery worker protocol, and the static-first informational site with its local/CI one-time waitlist boundary implemented
 
 This document describes how the major parts of PLANETS should interact. Technology choices are recorded separately in [`core-stack.md`](core-stack.md).
 
@@ -12,29 +12,29 @@ PLANETS is primarily a mobile platform for local co-creation. Users discover or 
 The initial system has four user-facing responsibilities across three applications:
 
 1. **Mobile application:** the full ordinary-user experience on Android and iOS.
-2. **Public informational site:** small static launch and informational pages without product behavior.
+2. **Public informational site:** small static-first launch and informational pages plus one purpose-limited launch-waitlist operation, without product behavior.
 3. **Public discovery:** selected dynamic public discovery without reproducing the whole app.
 4. **Admin interface:** moderation and platform administration, isolated from normal user flows.
 
-Every surface that accesses product data uses one canonical backend and data model. The informational site has no backend dependency in SITE-00.
+Every surface that accesses product data uses one canonical backend and data model. The informational site's isolated waitlist record is not a competing product data model.
 
 ## High-level structure
 
 ```text
 Vite informational site       Flutter mobile application       Next.js discovery/admin application
-    static assets                         |                                      |
-                                         +------------------+-------------------+
-                                                            |
-        Supabase platform (managed development/test environments;
-                    intended self-hosted production)
-        +-----------------------+------------------------+
-        |                       |                        |
- Auth and RLS          PostgreSQL and PostGIS     Storage and Realtime
-                                |
-                  functions, outbox, and queues
-                     |                         |
-                   FCM                       Resend
-                push delivery          auth/security email
+    static assets                         \                               /
+         |                                 +-------------+---------------+
+POST /api/waitlist                                       |
+         |                           Supabase platform (managed development/test;
+Cloudflare Pages Function                    intended self-hosted production)
+    |              |                    +---------------+----------------+
+Turnstile         D1                    |               |                |
+server check   launch_waitlist     Auth and RLS  PostgreSQL/PostGIS  Storage/Realtime
+                                                       |
+                                            functions, outbox, and queues
+                                               |                    |
+                                             FCM                  Resend
+                                          push delivery      auth/security email
 
              Sentry observes application failures
        PostHog later receives explicit product events
@@ -50,11 +50,33 @@ The Flutter process validates typed `local`, `staging`, or `production` compile-
 
 Mobile source is organized by real feature ownership, supported by narrow shared `core` modules for configuration, backend access, routing, theme, monitoring, and common state UI. New layers or abstractions should appear only when a feature has concrete behavior to place in them.
 
-### Public informational site foundation
+### Public informational site and launch waitlist
 
-`apps/site` is a separate Vite/React/TypeScript application that builds to ordinary static assets. SITE-00 gives it no runtime environment contract, authentication, Supabase client, server rendering, or domain behavior. Its placeholder proves the build boundary only; final content, visual identity, and production hosting remain later SITE-track work.
+`apps/site` is a separate Vite/React/TypeScript application that builds the
+public page to ordinary static assets. It has no authentication, Supabase client,
+server rendering, analytics, or product-domain behavior.
 
-The future SITE-02 waitlist is limited to collecting an address for one notification when the PLANETS app launches. It is not a newsletter and must not reuse that address for marketing, promotions, recurring product updates, or unrelated communication. Storage, abuse protection, legal copy, delivery, and retention are not implemented in SITE-00.
+Its only dynamic operation is `POST /api/waitlist`: a Cloudflare Pages
+Functions/Workers-compatible handler revalidates the email and explicit
+one-message consent, verifies Turnstile server-side, normalizes the address, and
+performs a prepared idempotent insert into D1. The record is limited to the
+normalized address, creation/consent timestamps, fixed
+`launch_notification_v1` purpose, and nullable SITE-04 `notified_at`. It
+contains no IP address, user agent, name, location, analytics identifier, or
+arbitrary request data.
+
+The address is authorized only for one notification when the PLANETS app
+launches. It is not a newsletter and cannot be reused for marketing, promotions,
+recurring updates, profiling, or unrelated communication. Duplicate requests do
+not reveal membership or rewrite the original record. Valid removal requests
+delete the row; no shadow marketing record is retained.
+
+Local Wrangler/Miniflare state, committed D1 migrations, official Turnstile test
+credentials, and mocks make the boundary reproducible without production
+resources. SITE-03 still owns Cloudflare provisioning, production secrets and
+hostname, legal/controller/contact inputs, deployment, and DNS. SITE-04 owns
+delivery and approved retirement/retention behavior. ADR 0005 records this
+boundary.
 
 ### Dynamic web/admin client foundation
 
@@ -510,7 +532,8 @@ apps/mobile/
   Flutter presentation and client-side application behavior
 
 apps/site/
-  Static public informational and launch website
+  Static public informational and launch website, one Cloudflare waitlist endpoint,
+  and D1 migrations
 
 apps/web/
   Next.js public discovery and authenticated admin interface
@@ -531,7 +554,7 @@ docs/implementation/
   Ordered implementation work and status
 ```
 
-The exact generated folders inside Flutter and Next.js were chosen by implementation plan 00. The informational site's restrained Vite structure is recorded in ADR 0004.
+The exact generated folders inside Flutter and Next.js were chosen by implementation plan 00. The informational site's restrained Vite structure is recorded in ADR 0004, and its isolated one-time waitlist boundary in ADR 0005.
 
 ## Initial non-goals
 

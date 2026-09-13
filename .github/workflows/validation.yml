@@ -69,7 +69,7 @@ jobs:
       - name: Validate web application
         run: npm run check:web
 
-      - name: Validate public informational site
+      - name: Validate public site and waitlist boundary
         run: npm run check:site
 
   supabase:

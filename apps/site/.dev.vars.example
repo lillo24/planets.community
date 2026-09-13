@@ -1,0 +1,5 @@
+# Official Cloudflare Turnstile test credential; it is not a production secret.
+TURNSTILE_SECRET_KEY=1x0000000000000000000000000000000AA
+TURNSTILE_EXPECTED_ACTION=waitlist_signup
+TURNSTILE_EXPECTED_HOSTNAME=example.com
+TURNSTILE_TESTING_MODE=true

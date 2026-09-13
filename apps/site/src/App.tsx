@@ -160,7 +160,7 @@ export function App() {
             <p className="eyebrow">Privacy, in breve</p>
             <h2 id="privacy-title">Una sola email, per un solo scopo.</h2>
             <p>
-              Quando la lista sarà attiva, chiederemo il tuo indirizzo solo per
+              Quando invii il modulo, chiediamo il tuo indirizzo solo per
               avvisarti una volta quando PLANETS sarà disponibile.
             </p>
             <ul>
@@ -175,10 +175,10 @@ export function App() {
               </li>
             </ul>
             <p className="privacy-preview">
-              In questa anteprima nessun indirizzo viene raccolto o conservato.
-              La raccolta e il consenso saranno attivati nella fase successiva;
-              i dati del titolare e il contatto privacy saranno completati prima
-              della pubblicazione.
+              Il consenso è facoltativo e specifico per questa unica notifica. I
+              dati del titolare e il contatto privacy saranno completati prima
+              della pubblicazione; fino ad allora la lista resta disponibile
+              solo negli ambienti locali e di test.
             </p>
           </article>
         </section>

@@ -311,7 +311,7 @@ h2 {
   gap: 0.6rem;
 }
 
-.waitlist input {
+.waitlist input[type="email"] {
   min-width: 0;
   padding: 0.95rem 1rem;
   border: 1px solid rgb(24 48 46 / 23%);
@@ -320,11 +320,11 @@ h2 {
   color: var(--ink);
 }
 
-.waitlist input::placeholder {
+.waitlist input[type="email"]::placeholder {
   color: #7b8987;
 }
 
-.waitlist input[aria-invalid="true"] {
+.waitlist input[type="email"][aria-invalid="true"] {
   border-color: #a73052;
   box-shadow: 0 0 0 3px rgb(167 48 82 / 10%);
 }
@@ -342,9 +342,36 @@ h2 {
     box-shadow 160ms ease;
 }
 
-.waitlist button:hover {
+.waitlist button:hover:not(:disabled) {
   box-shadow: 0 0.75rem 1.6rem rgb(24 48 46 / 25%);
   transform: translateY(-2px);
+}
+
+.waitlist button:disabled,
+.waitlist input:disabled {
+  cursor: not-allowed;
+  opacity: 0.66;
+}
+
+.waitlist label.waitlist__consent {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: start;
+  gap: 0.65rem;
+  margin: 0.9rem 0 0;
+  line-height: 1.45;
+}
+
+.waitlist__consent input {
+  width: 1.1rem;
+  height: 1.1rem;
+  margin: 0.15rem 0 0;
+  accent-color: var(--ink);
+}
+
+.waitlist__consent input[aria-invalid="true"] {
+  outline: 3px solid rgb(167 48 82 / 18%);
+  outline-offset: 2px;
 }
 
 .waitlist__purpose {
@@ -359,6 +386,18 @@ h2 {
   text-underline-offset: 0.2rem;
 }
 
+.waitlist__turnstile {
+  min-height: 65px;
+  margin-top: 0.9rem;
+}
+
+.waitlist__configuration {
+  margin: 0.9rem 0 0;
+  color: #9d294b;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
 .waitlist__feedback {
   min-height: 1.4em;
   margin: 0.55rem 0 0;
@@ -369,6 +408,11 @@ h2 {
 
 .waitlist[data-state="error"] .waitlist__feedback {
   color: #9d294b;
+}
+
+.waitlist[data-state="submitting"] .waitlist__feedback,
+.waitlist[data-state="success"] .waitlist__feedback {
+  color: #246657;
 }
 
 .hero__visual {
