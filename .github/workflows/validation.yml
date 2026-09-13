@@ -98,6 +98,9 @@ jobs:
       - name: Lint PLANETS schemas
         run: npm run db:lint
 
+      - name: Run database security advisors
+        run: npm run db:advisors
+
       - name: Run database security tests
         run: npm run db:test
 

@@ -163,6 +163,11 @@ prevents an already-connected former client from receiving new signals even
 though Supabase caches channel authorization for a connection. Durable RPCs,
 not Realtime, recover all history after disconnect.
 
+The database-authored Broadcast payload has exactly `chat_id`, `message_id`,
+and `created_at`. Current Realtime delivery also adds its own opaque message
+`id` as transport metadata to the received signal; consumers ignore that ID for
+domain reconciliation and fetch by the durable `message_id`.
+
 The authenticated role receives `EXECUTE` only on the fail-closed private topic
 predicate so Realtime can evaluate that policy. It still has no `USAGE` on the
 unexposed `private` schema, no direct Data API route to the predicate, and no
@@ -251,6 +256,7 @@ Run focused commands while the stack is already running:
 ```text
 npm run db:reset
 npm run db:lint
+npm run db:advisors
 npm run db:test
 npm run auth:verify:local
 npm run profile:verify:local
@@ -268,7 +274,7 @@ npm run db:types
 npm run db:types:check
 ```
 
-`db:lint` intentionally checks only `public` and `private`, avoiding warnings owned by Supabase-managed schemas or extensions. `db:types` regenerates `apps/web/src/types/database.generated.ts` from local `public`; its wrapper propagates CLI failures, rejects empty output, and normalizes only the terminal newline across hosts. The file is generated output and must not be hand-edited or formatted. `db:types:check` regenerates it and fails on a tracked diff.
+`db:lint` intentionally checks only `public` and `private`, avoiding warnings owned by Supabase-managed schemas or extensions. `db:advisors` runs the local Supabase security advisor, reports warning-or-higher findings, and fails the validation on an error-level security finding. `db:types` regenerates `apps/web/src/types/database.generated.ts` from local `public`; its wrapper propagates CLI failures, rejects empty output, and normalizes only the terminal newline across hosts. The file is generated output and must not be hand-edited or formatted. `db:types:check` regenerates it and fails on a tracked diff.
 
 `auth:verify:local` requests a numeric email OTP from local Auth, reads the new message through Mailpit's API, verifies the code, and inserts/reads the authenticated user's profile anchor through current RLS. It uses only deterministic `.invalid` test identity data and never prints the email, code, access token, or client key.
 

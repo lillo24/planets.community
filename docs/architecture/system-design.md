@@ -273,8 +273,8 @@ Edge Functions and background workers remain valid implementation choices when t
 | One-time proposals      | Creator-owned content, schedule, rough/exact location separation, stored lifecycle, derived temporal status | Creator, controlled skill requirements, future participation, future template source      |
 | Recurring activities    | Persistent Tavoli, versioned weekly/monthly schedules, bounded occurrences, rough/exact privacy, lifecycle  | Separate from one-time proposals; Flutter experience and public web discovery implemented |
 | Participation           | Shared project identity, private requests/decisions, current membership and retained history                | Profile and concrete one-time/recurring project; source for authorization and later stats |
-| Messages                | Authenticated structured participation-request inbox/detail; future project conversations                   | Canonical join requests in 07A; separate chat anchor/authorization in 07B1                |
-| Project chat            | One structural conversation anchor after first acceptance; message transport remains 07B2                   | Creator plus current/former participants under canonical membership-time rules            |
+| Messages                | Authenticated structured participation-request inbox/detail; future mobile Project-chat entry points        | Canonical join requests in 07A; separate Project-chat domain                              |
+| Project chat            | Structural anchor, immutable message history, authorized list/send APIs, and private Realtime hints         | Creator plus current/former participants under canonical membership-time rules            |
 | Notifications           | Controlled categories/preferences, recipient in-app records, private installations, and recipient push jobs | Recipient, per-consumer source event receipt, optional project/request/membership         |
 | Templates               | Reusable proposal structure derived from approved past/community content                                    | Source proposal, attribution, moderation/publication state                                |
 | Community statistics    | Aggregated views over canonical activity and participation                                                  | Proposal type, location, participation, time                                              |
@@ -472,13 +472,15 @@ The 07B1 Project-chat foundation now provides:
 - retention across leave, removal, rejoin gaps, Project completion, and Tavolo pause/end;
 - no chat-participant mirror, copied meeting details, message state, or transport.
 
-07B2 remains responsible for message persistence, paginated authorized history,
-Realtime text, mobile group chat/info, meeting-link access, reporting groundwork,
-and safe push behavior. It must first resolve the E2EE architecture and
-pre-first-join message visibility. General direct messages, independent group
-creation, calls, voice messages, typing indicators, reactions, and complex read
-receipts remain excluded. Plan 09 may later override ordinary entitlement for
-blocking, suspension, or moderation; clients must not invent those rules.
+07B2B now owns server-readable message persistence, paginated authorized
+history, chat-list summaries, and private identifier-only Realtime hints under
+the approved full-history rule. 07B2C remains responsible for the mobile group
+chat/info experience, meeting-link access through the existing protected
+operation, reporting groundwork, and safe push behavior. General direct
+messages, independent group creation, calls, voice messages, typing indicators,
+reactions, and complex read receipts remain excluded. Plan 09 may later
+override ordinary entitlement for blocking, suspension, or moderation; clients
+must not invent those rules.
 
 ## Media and storage
 
