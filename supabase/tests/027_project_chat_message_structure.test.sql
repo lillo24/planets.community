@@ -280,12 +280,29 @@ select is(
       'private.latest_project_membership_end(uuid,uuid)'::regprocedure,
       'private.profile_can_read_project_chat_message(uuid,uuid,timestamptz)'::regprocedure,
       'private.require_complete_project_chat_profile(uuid)'::regprocedure,
-      'private.project_chat_realtime_topic(uuid,uuid)'::regprocedure,
-      'private.profile_can_receive_project_chat_realtime_topic(text)'::regprocedure
+      'private.project_chat_realtime_topic(uuid,uuid)'::regprocedure
     ]) as procedure_oid
   ),
   true,
-  'private chat-message helpers are not directly executable by client roles'
+  'private chat-message helpers other than the Realtime policy predicate are not directly executable by client roles'
+);
+select ok(
+  has_function_privilege(
+    'authenticated',
+    'private.profile_can_receive_project_chat_realtime_topic(text)',
+    'EXECUTE'
+  )
+    and not has_function_privilege(
+      'anon',
+      'private.profile_can_receive_project_chat_realtime_topic(text)',
+      'EXECUTE'
+    )
+    and not has_function_privilege(
+      'service_role',
+      'private.profile_can_receive_project_chat_realtime_topic(text)',
+      'EXECUTE'
+    ),
+  'only authenticated Realtime policy evaluation can execute the fail-closed topic predicate'
 );
 
 select results_eq(

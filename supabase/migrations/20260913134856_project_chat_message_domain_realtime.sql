@@ -722,6 +722,8 @@ revoke all privileges on function public.list_own_project_group_chats(uuid, inte
 
 grant execute on function public.send_project_chat_message(uuid, uuid, text)
   to authenticated;
+grant execute on function private.profile_can_receive_project_chat_realtime_topic(text)
+  to authenticated;
 grant execute on function public.list_own_project_chat_messages(uuid, uuid, integer, timestamptz, uuid)
   to authenticated;
 grant execute on function public.list_own_project_group_chats(uuid, integer, timestamptz, uuid)
