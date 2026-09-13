@@ -116,19 +116,42 @@ select is(
     select bool_and(
       not has_table_privilege(role_name, 'public.project_group_chats', privilege_name)
     )
-    from unnest(array['public', 'anon', 'authenticated', 'service_role'])
+    from unnest(array['anon', 'authenticated', 'service_role'])
       as role_name
     cross join unnest(array['SELECT', 'INSERT', 'UPDATE', 'DELETE'])
       as privilege_name
   ),
   true,
-  'public, client, and broad service roles have no direct chat-table privileges'
+  'client and broad service roles have no direct chat-table privileges'
+);
+select is(
+  (
+    select exists (
+      select 1
+      from aclexplode(
+        coalesce(class.relacl, acldefault('r', class.relowner))
+      ) as acl
+      where acl.grantee = 0
+        and acl.privilege_type in ('SELECT', 'INSERT', 'UPDATE', 'DELETE')
+    )
+    from pg_class as class
+    where class.oid = 'public.project_group_chats'::regclass
+  ),
+  false,
+  'PostgreSQL PUBLIC has no direct chat-table privilege'
 );
 
 select ok(
   to_regprocedure('private.ensure_project_group_chat(uuid,timestamptz)')
     is not null,
   'the private idempotent chat ensure helper exists'
+);
+select ok(
+  to_regprocedure('private.validate_project_group_chat_anchor()') is not null
+    and to_regprocedure(
+      'private.ensure_project_group_chat_for_membership()'
+    ) is not null,
+  'private trigger helpers guard and activate the chat anchor'
 );
 select ok(
   to_regprocedure('private.reconcile_project_group_chats()') is not null,
@@ -179,7 +202,9 @@ select is(
     select bool_and(procedure.prosecdef)
     from pg_proc as procedure
     where procedure.oid in (
+      'private.validate_project_group_chat_anchor()'::regprocedure,
       'private.ensure_project_group_chat(uuid,timestamptz)'::regprocedure,
+      'private.ensure_project_group_chat_for_membership()'::regprocedure,
       'private.reconcile_project_group_chats()'::regprocedure,
       'private.profile_is_project_creator(uuid,uuid)'::regprocedure,
       'private.profile_has_current_project_membership(uuid,uuid)'::regprocedure,
@@ -198,7 +223,9 @@ select is(
     select bool_and(array_to_string(procedure.proconfig, ',') = 'search_path=""')
     from pg_proc as procedure
     where procedure.oid in (
+      'private.validate_project_group_chat_anchor()'::regprocedure,
       'private.ensure_project_group_chat(uuid,timestamptz)'::regprocedure,
+      'private.ensure_project_group_chat_for_membership()'::regprocedure,
       'private.reconcile_project_group_chats()'::regprocedure,
       'private.profile_is_project_creator(uuid,uuid)'::regprocedure,
       'private.profile_has_current_project_membership(uuid,uuid)'::regprocedure,
@@ -231,17 +258,34 @@ select is(
         'EXECUTE'
       )
     )
-    from unnest(array['public', 'anon', 'service_role']) as role_name
+    from unnest(array['anon', 'service_role']) as role_name
   ),
   true,
   'the public chat read is denied to unauthenticated and broad service roles'
 );
 select is(
   (
+    select exists (
+      select 1
+      from aclexplode(
+        coalesce(procedure.proacl, acldefault('f', procedure.proowner))
+      ) as acl
+      where acl.grantee = 0
+        and acl.privilege_type = 'EXECUTE'
+    )
+    from pg_proc as procedure
+    where procedure.oid =
+      'public.get_own_project_group_chat(uuid,uuid)'::regprocedure
+  ),
+  false,
+  'PostgreSQL PUBLIC cannot execute the authenticated chat read'
+);
+select is(
+  (
     select bool_and(
       not has_function_privilege(role_name, helper.oid, 'EXECUTE')
     )
-    from unnest(array['public', 'anon', 'authenticated', 'service_role'])
+    from unnest(array['anon', 'authenticated', 'service_role'])
       as role_name
     cross join lateral (
       select procedure.oid
@@ -249,7 +293,9 @@ select is(
       join pg_namespace as namespace on namespace.oid = procedure.pronamespace
       where namespace.nspname = 'private'
         and procedure.proname in (
+          'validate_project_group_chat_anchor',
           'ensure_project_group_chat',
+          'ensure_project_group_chat_for_membership',
           'reconcile_project_group_chats',
           'profile_is_project_creator',
           'profile_has_current_project_membership',
@@ -262,6 +308,37 @@ select is(
   ),
   true,
   'private chat helpers are not client- or service-executable'
+);
+select is(
+  (
+    select bool_and(
+      not exists (
+        select 1
+        from aclexplode(
+          coalesce(procedure.proacl, acldefault('f', procedure.proowner))
+        ) as acl
+        where acl.grantee = 0
+          and acl.privilege_type = 'EXECUTE'
+      )
+    )
+    from pg_proc as procedure
+    join pg_namespace as namespace on namespace.oid = procedure.pronamespace
+    where namespace.nspname = 'private'
+      and procedure.proname in (
+        'validate_project_group_chat_anchor',
+        'ensure_project_group_chat',
+        'ensure_project_group_chat_for_membership',
+        'reconcile_project_group_chats',
+        'profile_is_project_creator',
+        'profile_has_current_project_membership',
+        'profile_has_project_membership_history',
+        'profile_was_project_member_at',
+        'profile_has_current_project_chat_entitlement',
+        'profile_has_project_chat_history_entitlement'
+      )
+  ),
+  true,
+  'PostgreSQL PUBLIC cannot execute private chat helpers'
 );
 
 select ok(
