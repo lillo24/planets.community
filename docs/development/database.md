@@ -163,6 +163,11 @@ prevents an already-connected former client from receiving new signals even
 though Supabase caches channel authorization for a connection. Durable RPCs,
 not Realtime, recover all history after disconnect.
 
+The authenticated role receives `EXECUTE` only on the fail-closed private topic
+predicate so Realtime can evaluate that policy. It still has no `USAGE` on the
+unexposed `private` schema, no direct Data API route to the predicate, and no
+private-table grant; all other chat-message helpers remain owner-only.
+
 This is ordinary authenticated server-authorized messaging over HTTPS/TLS. The
 backend can technically read stored bodies, so it must not be described as
 E2EE. MLS research remains in unmerged PR #28 and is deferred as an optional
@@ -205,7 +210,7 @@ The local config pins `auto_expose_new_tables = false`. The foundation migration
 
 Default privileges are scoped to the object creator. Supabase migrations run as `postgres`, and the pgTAP probes assert that ownership assumption. PostgreSQL's built-in routine grant is global rather than schema-local, so removing `PUBLIC EXECUTE` intentionally applies to every future function created by `postgres`; each callable function must opt in explicitly. If a future migration runner creates PLANETS objects as another role, add and test equivalent `ALTER DEFAULT PRIVILEGES FOR ROLE ...` rules before using it.
 
-Plan 06C2A is the deliberate private-schema exception: `service_role` receives schema `USAGE` only so a direct PostgreSQL worker can resolve the three explicitly granted protocol routines. The schema remains absent from the Data API configuration, `anon` and `authenticated` retain no schema access, the aggregate helper remains owner-only, and every private table remains ungranted.
+Plan 06C2A is the deliberate private-schema resolution exception: `service_role` receives schema `USAGE` only so a direct PostgreSQL worker can resolve the three explicitly granted protocol routines. Plan 07B2B separately grants `authenticated` execution of one fail-closed Realtime policy predicate without granting schema `USAGE`, so it is evaluable only through the stored policy rather than exposed as a client RPC. The schema remains absent from the Data API configuration, `anon` retains no schema access, `authenticated` retains no schema access, the aggregate helper remains owner-only, and every private table remains ungranted.
 
 For every future ordinary table in `public`, keep the following in one reviewed migration:
 
