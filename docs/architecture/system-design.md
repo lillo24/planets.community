@@ -189,10 +189,11 @@ Project kind, viewer role, and entitlement booleans to a creator, current
 member, or former member. Missing and unrelated lookups fail identically.
 
 07B1 stores no message bodies, encryption material, meeting details, or chat
-participant rows and configures no Realtime transport. Before 07B2 defines
-message persistence and reads, it must reconcile the product's E2EE requirement
-and decide whether a newly accepted participant sees messages from before their
-first join.
+participant rows and configures no Realtime transport. 07B2A now validates RFC
+9420 MLS through OpenMLS as the client-side E2EE direction without adding a
+production schema. Its real add/remove/rejoin prototype demonstrates no
+pre-first-join history and no removed-interval history; that behavior is
+recommended pending founder confirmation before 07B2B finalizes reads.
 
 ### Clients use shared operations rather than duplicate workflows
 
@@ -440,13 +441,36 @@ The 07B1 Project-chat foundation now provides:
 - retention across leave, removal, rejoin gaps, Project completion, and Tavolo pause/end;
 - no chat-participant mirror, copied meeting details, message state, or transport.
 
-07B2 remains responsible for message persistence, paginated authorized history,
-Realtime text, mobile group chat/info, meeting-link access, reporting groundwork,
-and safe push behavior. It must first resolve the E2EE architecture and
-pre-first-join message visibility. General direct messages, independent group
-creation, calls, voice messages, typing indicators, reactions, and complex read
-receipts remain excluded. Plan 09 may later override ordinary entitlement for
-blocking, suspension, or moderation; clients must not invent those rules.
+07B2A isolates a reviewed OpenMLS Flutter prototype from production application
+wiring. Each authorized device is a distinct MLS leaf identified by a generic
+random installation UUID; profile authorization remains canonical in PostgreSQL,
+and BasicCredential public material is Auth-bound to that profile without email.
+Each client keeps independent SQLCipher state and client secrets protected by a
+future Android Keystore/iOS Keychain integration. The same installation UUID may
+also identify push registration, but push tokens, permissions, and crypto state
+are independent.
+
+07B2B remains responsible for Auth-bound crypto-client registration, bootstrap
+and membership-change serialization, opaque KeyPackage/Welcome/Commit/GroupInfo
+and application-message persistence, paginated authorized history, Realtime
+notification, secure mobile key lifecycle, mobile group chat/info, meeting-link
+access, reporting groundwork, and safe push behavior. Supabase is an untrusted
+Delivery Service: it authorizes and transports opaque artifacts but receives no
+message plaintext, group secret, client private key, or local database key.
+Realtime is notification/transport, not MLS consensus. Current backend send
+authorization ends immediately on leave/removal even if cryptographic rotation is
+still converging.
+
+A future envelope will likely carry a stable event UUID, chat ID, sender
+crypto-client ID, receipt time, protocol/application kind, MLS epoch, and opaque
+MLS bytes. The final schema must distinguish MLS-authenticated content/AAD from
+server transport metadata, support pagination and deduplication, and remain
+least-privilege under RLS even though payloads are encrypted. Generic server-known
+push copy is the default because the server cannot derive plaintext previews.
+Plan 09 may later accept user-submitted decrypted reporting evidence; it must not
+weaken E2EE. General direct messages, independent group creation, calls, voice
+messages, typing indicators, reactions, and complex read receipts remain
+excluded.
 
 ## Media and storage
 

@@ -2,9 +2,9 @@
 
 This feature owns the authenticated mobile Messages surface for structured
 participation requests. It presents canonical `project_join_requests`; it does
-not create a generic message, thread, or request-copy store. The 07B1 backend
-chat anchor/authorization remains separate from this UI; message transport and
-mobile group chat remain 07B2 scope.
+not create a generic message, thread, or request-copy store. The implemented 07B1
+backend chat anchor/authorization and isolated 07B2A MLS prototype remain
+separate from this UI; encrypted transport and mobile group chat are 07B2B scope.
 
 ## Source map
 
