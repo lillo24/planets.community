@@ -10,17 +10,17 @@ select has_table(
 
 select results_eq(
   $$
-    select column_name::text
+    select column_name::text collate "C"
     from information_schema.columns
     where table_schema = 'public'
       and table_name = 'project_group_chats'
     order by ordinal_position
   $$,
   $$values
-    ('id'::text),
-    ('project_id'::text),
-    ('activated_at'::text),
-    ('created_at'::text)
+    ('id'::text collate "C"),
+    ('project_id'::text collate "C"),
+    ('activated_at'::text collate "C"),
+    ('created_at'::text collate "C")
   $$,
   'the chat anchor contains structural state only'
 );
