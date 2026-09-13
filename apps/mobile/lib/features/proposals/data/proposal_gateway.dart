@@ -16,6 +16,12 @@ abstract interface class ProposalGateway {
     Set<String>? skillIds,
   });
 
+  Future<List<RequestedProposalSummary>> listOwnPendingRequestedProposals(
+    String expectedProfileId, {
+    String? locality,
+    Set<String>? skillIds,
+  });
+
   Future<ProposalDetail?> getPublicProposal(String proposalId);
 
   Future<List<OwnProposal>> listOwnProposals(String expectedCreatorId);
@@ -94,6 +100,34 @@ class SupabaseProposalGateway implements ProposalGateway {
     return response
         .cast<Map<String, dynamic>>()
         .map(_publicSummaryFromRow)
+        .toList(growable: false);
+  }
+
+  @override
+  Future<List<RequestedProposalSummary>> listOwnPendingRequestedProposals(
+    String expectedProfileId, {
+    String? locality,
+    Set<String>? skillIds,
+  }) async {
+    final response = await _client.rpc<List<dynamic>>(
+      'list_own_pending_requested_proposals',
+      params: {
+        'p_expected_requester_profile_id': expectedProfileId,
+        'p_locality': locality,
+        'p_skill_ids': skillIds?.toList(growable: false),
+      },
+    );
+    return response
+        .cast<Map<String, dynamic>>()
+        .map(
+          (row) => RequestedProposalSummary(
+            requestId: row['request_id'] as String,
+            requestCreatedAt: DateTime.parse(
+              row['request_created_at'] as String,
+            ),
+            proposal: _publicSummaryFromRow(row),
+          ),
+        )
         .toList(growable: false);
   }
 

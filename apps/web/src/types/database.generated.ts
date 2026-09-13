@@ -1018,6 +1018,57 @@ export type Database = {
           viewer_role: string
         }[]
       }
+      list_own_pending_requested_proposals: {
+        Args: {
+          p_expected_requester_profile_id: string
+          p_locality?: string
+          p_skill_ids?: string[]
+        }
+        Returns: {
+          administrative_area: string
+          country_code: string
+          derived_status: string
+          ends_at: string
+          event_timezone: string
+          locality: string
+          proposal_id: string
+          public_location_label: string
+          request_created_at: string
+          request_id: string
+          skills: Json
+          starts_at: string
+          summary: string
+          title: string
+        }[]
+      }
+      list_own_pending_requested_recurring_activities: {
+        Args: {
+          p_expected_requester_profile_id: string
+          p_locality?: string
+          p_reference_time: string
+        }
+        Returns: {
+          administrative_area: string
+          country_code: string
+          day_of_month: number
+          duration_minutes: number
+          event_timezone: string
+          local_start_time: string
+          locality: string
+          next_ends_at: string
+          next_starts_at: string
+          public_location_label: string
+          recurrence_type: string
+          recurring_activity_id: string
+          request_created_at: string
+          request_id: string
+          schedule_effective_from: string
+          summary: string
+          title: string
+          topic: string
+          weekday: number
+        }[]
+      }
       list_own_project_join_requests: {
         Args: { p_expected_requester_profile_id: string }
         Returns: {

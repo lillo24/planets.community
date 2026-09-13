@@ -14,8 +14,8 @@ notifications, resources, or occurrence-level editing. The sibling
   calls the canonical 04B1 public and expected-identity owner RPCs and rejects
   malformed payloads during parsing.
 - `application/recurring_activity_controllers.dart` owns discovery snapshots,
-  detail/owner loading, lifecycle commands, editor chains, request revisions,
-  and account-switch invalidation.
+  requester-only Requested enrichment, detail/owner loading, lifecycle commands,
+  editor chains, request revisions, and account-switch invalidation.
 - `presentation/` owns the separate Tavoli list/detail, constrained editor,
   My Tavoli lifecycle surface, and narrow recurring widgets.
 
@@ -38,6 +38,14 @@ time. Every page in that session reuses it with the returned
 `(next_starts_at, recurring_activity_id)` cursor. Request revisions discard
 late pages from an older snapshot or filter. State is in memory only and is not
 reset merely by viewing Proposals.
+
+For a ready authenticated identity, the first page also loads one bounded
+own-pending Tavolo projection using that same reference time and locality. Its
+sanitized rows include schedule metadata directly, avoiding detail-per-request
+enrichment. Requested cards render first and are visually deduplicated from raw
+public pages without changing their cursor or `hasMore`; signed-out sessions do
+not call the personalized RPC. Account, filter, and participation revisions
+clear or refresh the private projection independently of public-feed errors.
 
 The reviewed public list RPC exposes its next occurrence but not the recurrence
 definition. The gateway therefore enriches each bounded page through the

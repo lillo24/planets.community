@@ -280,6 +280,19 @@ Proposal/project chat will be created automatically by an idempotent backend ope
 
 The participation foundation emits `project.join_request_accepted` as a stable candidate event without creating chat. Plan 07 must still finalize which participation event triggers automatic creation and authorization after a participant leaves, is removed, blocked, or suspended. Any future participation threshold for a different business rule must not be reused implicitly as the chat rule.
 
+### Participation-aware mobile Browse
+
+Authenticated mobile Proposal and Tavolo Browse compose two independent reads:
+the unchanged cursor-paginated public feed and an expected-identity-bound,
+requester-only projection of current pending requests that still meet the same
+public lifecycle and filter rules. Requested cards are rendered first and
+deduplicated visually, while the raw public pages remain the sole source of
+cursors and `hasMore`. A private projection failure degrades to the public feed;
+identity/filter revisions prevent stale cards from crossing sessions or filters.
+The projection contains only sanitized public card fields plus request ID/time,
+never request messages or exact meeting data. Signed-out mobile discovery and
+the public Next.js experience remain unpersonalized.
+
 ## Matching
 
 Initial matching should be deterministic and explainable:

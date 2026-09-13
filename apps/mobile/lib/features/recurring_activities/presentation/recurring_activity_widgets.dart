@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 
 import '../../../core/theme/app_tokens.dart';
 import '../../../core/time/event_time.dart';
+import '../../../core/widgets/requested_badge.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../domain/recurring_activity_models.dart';
 
@@ -10,17 +11,26 @@ class RecurringActivityCard extends StatelessWidget {
   const RecurringActivityCard({
     required this.activity,
     required this.onTap,
+    this.isRequested = false,
     super.key,
   });
 
   final PublicRecurringActivitySummary activity;
   final VoidCallback onTap;
+  final bool isRequested;
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final locale = Localizations.localeOf(context).toLanguageTag();
+    final scheme = Theme.of(context).colorScheme;
     return Card(
+      shape: isRequested
+          ? RoundedRectangleBorder(
+              borderRadius: AppRadii.medium,
+              side: BorderSide(color: scheme.tertiary, width: 2),
+            )
+          : null,
       child: InkWell(
         key: Key('tavolo-card-${activity.id}'),
         onTap: onTap,
@@ -30,9 +40,20 @@ class RecurringActivityCard extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                activity.title,
-                style: Theme.of(context).textTheme.titleLarge,
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: Text(
+                      activity.title,
+                      style: Theme.of(context).textTheme.titleLarge,
+                    ),
+                  ),
+                  if (isRequested) ...[
+                    const SizedBox(width: AppSpacing.small),
+                    const RequestedBadge(),
+                  ],
+                ],
               ),
               const SizedBox(height: AppSpacing.xSmall),
               Text(activity.summary),

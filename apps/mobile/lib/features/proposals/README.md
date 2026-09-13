@@ -4,7 +4,7 @@ This feature owns one-time proposal discovery and authenticated owner management
 
 - `domain/` defines proposal, lifecycle, status, skill and time-zone models.
 - `data/` calls only the canonical Supabase proposal RPCs and reads the existing controlled skill catalog.
-- `application/` coordinates pagination, detail loading and race-safe owner commands. Every owner mutation carries the identity for which the screen was rendered.
+- `application/` coordinates pagination, requester-only Requested enrichment, detail loading and race-safe owner commands. Every owner mutation carries the identity for which the screen was rendered.
 - `presentation/` contains public list/detail screens and complete-profile create/edit/my-proposals screens.
 
 `presentation/skill_filter.dart` owns the compact, searchable Skills popover:
@@ -25,6 +25,14 @@ creation from proceeding to publish in a later session. Every owner RPC still
 receives the form's expected identity; no database rule changes are made here.
 
 The public client never reads proposal tables directly. Rough location is available on public cards; exact meeting text is rendered only when the sanitized detail RPC returns it. The shared `participation/` feature adds request/member actions and may replace the restricted explanation with participant-authorized operational meeting text without adding that data to Proposal models. Recurring activities, maps and media remain outside this feature.
+
+For a ready authenticated identity, Browse loads the raw public first page and
+the filtered own-pending projection in parallel. Requested cards render first
+with a localized semantic badge, and matching raw public cards are hidden only
+at presentation time. Raw pages still own the cursor and `hasMore`; signed-out
+sessions never call the personalized RPC. Account, filter, pull-refresh, and
+own-participation revisions refresh or clear the projection without turning a
+private-read failure into a public-feed error.
 
 Public details are self-contained: they show the localized start/end schedule in the event's named timezone and the same Required/Useful skill labels as cards. The editor stores UTC instants, initializes both pickers from event-zone wall time, and keeps those instants unchanged while timezone text is invalid. Invalid timezone input displays a validation message and cannot open a picker; correcting the timezone refreshes the schedule without silently changing the instants.
 
