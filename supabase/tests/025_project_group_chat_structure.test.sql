@@ -36,15 +36,14 @@ select is(
   'uuid',
   'chat identity is an opaque UUID'
 );
-select like(
+select ok(
   (
-    select column_default::text
+    select column_default::text like '%gen_random_uuid()%'
     from information_schema.columns
     where table_schema = 'public'
       and table_name = 'project_group_chats'
       and column_name = 'id'
   ),
-  '%gen_random_uuid()%',
   'chat identity is database-generated'
 );
 select is(
