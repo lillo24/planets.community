@@ -1,7 +1,7 @@
 # Implementation Roadmap
 
 **Status:** Planning baseline  
-**Current implementation:** Plans 00–04B2B, 05A, 05B, 05D, 06A, 06B, provider-independent 06C1, provider-neutral 06C2A, 07A, and public informational SITE-00 through SITE-02 implemented; 07B1 is in progress; provider-specific 06C2B, 04C, 05C, and 07B2 remain not started
+**Current implementation:** Plans 00–04B2B, 05A, 05B, 05D, 06A, 06B, provider-independent 06C1, provider-neutral 06C2A, 07A, 07B1, and public informational SITE-00 through SITE-02 implemented; 07B2 is in progress through the 07B2A MLS architecture/prototype, while 07B2B, provider-specific 06C2B, 04C, and 05C remain not started
 
 This roadmap divides the first PLANETS build into reviewable Codex tasks. Each numbered item should normally become its own implementation prompt, branch, and pull request.
 
@@ -70,8 +70,10 @@ Do not begin a dependent plan until the prior plan is merged or its branch is ex
 | 07    | Messages + Project Chat (parent)                     | Structured request items, Project-chat lifecycle authorization, and later encrypted realtime/mobile conversation     | 05A, 06A               | E2EE architecture, pre-first-join history visibility, and later moderation overrides                                 | In progress |
 | 07A   | Messages Surface and Structured Participation Requests | Authenticated Messages inbox with canonical actionable join-request items                                            | 05A, 06A               | Functional/native UX review and final Messages information architecture                                              | Implemented |
 | 07B   | Project Group Chat (parent)                          | First-accept lifecycle/authorization foundation followed by messaging, Realtime, and mobile group experience          | 05A, 07A               | E2EE architecture and pre-first-join history visibility before message reads                                         | In progress |
-| 07B1  | Project Group Chat Lifecycle and Authorization Foundation | One chat per Project, first-accept activation, and ownership/membership-derived current and historical entitlement | 05A, 07A               | None for the scoped structural foundation                                                                            | In progress |
-| 07B2  | Project Chat Messaging, Realtime and Mobile Experience | Authorized encrypted-message model, Realtime text, mobile chat/group info, and protected meeting access             | 07B1                    | Reconcile E2EE architecture and decide pre-first-join message visibility                                             | Not started |
+| 07B1  | Project Group Chat Lifecycle and Authorization Foundation | One chat per Project, first-accept activation, and ownership/membership-derived current and historical entitlement | 05A, 07A               | None for the scoped structural foundation                                                                            | Implemented |
+| 07B2  | Project Chat Messaging + E2EE (parent)                 | MLS architecture/prototype followed by encrypted transport, Realtime, and mobile group experience                    | 07B1                    | Confirm the recommended no-pre-first-join-history rule and later recovery behavior                                   | In progress |
+| 07B2A | MLS E2EE Architecture and Flutter Crypto Prototype    | Reviewed OpenMLS binding, real add/remove/rejoin/persistence proof, ADR, and 07B2B handoff                            | 07B1                    | No-pre-first-join history remains a recommendation pending founder confirmation                                      | In progress |
+| 07B2B | Encrypted Chat Transport, Realtime and Mobile Experience | Auth-bound crypto clients, opaque protocol/message delivery, Realtime, secure mobile state, and chat/group UI       | 07B2A                   | No-pre-first-join history, recovery/key-loss behavior, and functional/native UX review                               | Not started |
 | 08    | Storage and media hardening                          | Select the production media approach, then implement purpose-specific access, metadata, cleanup, and processing hooks | 03–07                  | Profile/proposal photo visibility, retention, and self-hosted Supabase Storage versus external object storage         | Not started |
 | 09    | Safety, moderation and admin                         | Reporting, blocking, content states, admin roles, moderation queue/actions, audit trail and minimal custom admin UI   | 04–08                  | Community rules, prohibited content, escalation, suspension, appeals, minimum age                                    | Not started |
 | 10    | Account deletion and privacy operations              | In-app and web deletion paths, cleanup/anonymization jobs, export groundwork, privacy documentation inputs            | 03–09                  | Legal retention and anonymization policy; legal text remains founder/legal work                                      | Not started |
@@ -496,7 +498,7 @@ Request-specific 06A notifications carry `request_id` and the semantic `particip
 
 **Goal:** Give users one authenticated communication area for structured participation requests and later project-group coordination without duplicating canonical participation state.
 
-**Status:** In progress through 07B1. This parent is split between the request-oriented Messages surface, the accepted-participant chat lifecycle/authorization foundation, and the later messaging experience.
+**Status:** In progress through 07B2A. This parent is split between the request-oriented Messages surface, the implemented chat lifecycle/authorization foundation, the MLS architecture/prototype, and the later production messaging experience.
 
 #### 07A — Messages Surface and Structured Participation Request Items
 
@@ -516,7 +518,7 @@ The existing Participation overview remains the organizer's secondary full-histo
 
 #### 07B — Project Group Chat (parent)
 
-**Status:** In progress through 07B1.
+**Status:** In progress through 07B2A.
 
 The parent is split so lifecycle and authorization can land without prematurely
 choosing how encrypted message bodies, multi-device keys, history reads, or
@@ -524,7 +526,7 @@ Realtime transport work.
 
 ##### 07B1 — Project Group Chat Lifecycle and Authorization Foundation
 
-**Status:** In progress in the current implementation PR. Depends on 05A and 07A.
+**Status:** Implemented in merged PR #26 (`bb26ef4a518484da6f67b3309d2cfd62e4d2b483`). Depends on 05A and 07A.
 
 Scoped foundation:
 
@@ -537,18 +539,51 @@ Scoped foundation:
 - existing membership history is reconciled deterministically;
 - no message body, chat-member mirror, Realtime, Flutter chat UI, meeting copy, or new notification/push behavior.
 
-##### 07B2 — Project Chat Messaging, Realtime and Mobile Experience
+##### 07B2 — Project Chat Messaging + E2EE (parent)
 
-**Status:** Not started. Depends on 07B1.
+**Status:** In progress through 07B2A. Depends on 07B1.
 
-Future scope includes the message persistence/encryption model, authorized
-history reads, Realtime text, send recovery, mobile chat and group information,
-protected existing meeting-link access, reporting groundwork, and safe push
-behavior. Before implementation, founder input must reconcile the existing E2EE
-product requirement with the architecture and decide whether a newly accepted
-current member may see messages sent before their first join. Blocking,
-suspension, and moderation overrides remain Plan 09. Direct messages, calls,
-reactions, and typing indicators remain excluded.
+The parent is split so the cryptographic stack and membership-interval behavior
+are validated before production message, device, protocol-artifact, or Realtime
+schema is designed.
+
+###### 07B2A — MLS E2EE Architecture and Flutter Crypto Prototype
+
+**Status:** In progress in the current architecture/prototype PR. Depends on
+07B1.
+
+Scoped outcome:
+
+- RFC 9420 MLS through OpenMLS rather than custom cryptography;
+- reviewed and exactly pinned Flutter/Dart binding inside an isolated prototype;
+- real creator/A/B KeyPackage, Add/Welcome, encrypted message, Remove, fresh
+  rejoin, no-prejoin/no-gap history, encrypted persistence, and restart proof;
+- one generic installation UUID reusable as push/MLS metadata while subsystem
+  secrets remain independent;
+- one MLS leaf per crypto client/device and Auth-bound profile ownership;
+- an untrusted Supabase Delivery Service, membership orchestration, metadata,
+  push, moderation, recovery, and 07B2B architecture handoff;
+- no production chat/message/key schema, Realtime, push change, or UI.
+
+The prototype validates and recommends no pre-first-join history because a new
+MLS member does not receive old application-message secrets. That remains a
+product recommendation pending founder confirmation, not an approved product
+rule.
+
+###### 07B2B — Encrypted Chat Transport, Realtime and Mobile Experience
+
+**Status:** Not started. Depends on completed/reviewed 07B2A.
+
+Future scope includes secure installation/signer/key persistence, Auth-bound
+crypto-client and KeyPackage lifecycle, bootstrap/membership orchestration,
+opaque Welcome/Commit/GroupInfo/application-message storage and pagination,
+authorized Realtime notification, encrypted send/recovery, mobile chat and group
+information, protected existing meeting-link access, reporting groundwork,
+license-notice distribution, and safe generic push behavior. Founder confirmation
+is required for the recommended no-pre-first-join-history rule; recovery and
+key-loss behavior also remains unresolved. Blocking, suspension, and moderation
+overrides remain Plan 09. Direct messages, calls, reactions, and typing indicators
+remain excluded.
 
 ### 08 — Storage and media hardening
 
@@ -710,7 +745,7 @@ Major gates currently expected:
 
 1. recurrence expansion/exception semantics before extending beyond the bounded 04B1 weekly/monthly model; 04A rough/exact location visibility is resolved;
 2. capacity/fullness before introducing limits; the core request/membership state semantics are resolved in 05A;
-3. E2EE architecture and pre-first-join message visibility before plan 07B2;
+3. founder confirmation of the 07B2A-validated no-pre-first-join-history recommendation, plus production wrapper/provenance and recovery gates, before 07B2B finalizes reads;
 4. moderation/minimum-age policy before plan 09 is complete;
 5. retention/anonymization policy before plan 10;
 6. success metrics and analytics legal basis before plan 11;
@@ -720,7 +755,7 @@ Major gates currently expected:
 
 ## Immediate next action
 
-Complete and review **07B1 — Project Group Chat Lifecycle and Authorization Foundation** without adding message storage, Realtime, or mobile chat. **04C — Resources + Scambio-Dona** remains independently available; 05C waits for contribution/resource decisions. Plan 06C2B requires Firebase/APNs configuration, push permission and preview decisions, server-side FCM credentials, and a self-host-compatible worker deployment target. Plan 07B2 requires an explicit E2EE architecture decision and a decision on pre-first-join message visibility. Deferred native Android/iOS checks from implemented feature plans belong in the consolidated Plan 12 QA pass. Production self-hosting does not begin until Plan 13, after the main functional work and Plan 12 UI/UX pass.
+Complete and review **07B2A — MLS E2EE Architecture and Flutter Crypto Prototype** without adding production message storage, Realtime, or mobile chat. Then obtain founder confirmation of the recommended no-pre-first-join-history rule and resolve the ADR's production dependency/recovery gates before 07B2B finalizes encrypted transport and reads. **04C — Resources + Scambio-Dona** remains independently available; 05C waits for contribution/resource decisions. Plan 06C2B requires Firebase/APNs configuration, push permission and preview decisions, server-side FCM credentials, and a self-host-compatible worker deployment target. Deferred native Android/iOS checks from implemented feature plans belong in the consolidated Plan 12 QA pass. Production self-hosting does not begin until Plan 13, after the main functional work and Plan 12 UI/UX pass.
 
 The independent public informational mini-track has SITE-00 implemented in
 merged PR #23, SITE-01 in merged PR #25, and SITE-02 implemented as the

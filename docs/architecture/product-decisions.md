@@ -13,10 +13,24 @@ Current product direction:
 - Voluntary leave or creator removal ends an ordinary participant's current entitlement immediately but retains each exact accepted membership interval for historical authorization. Rejoin creates another interval, and the gap is not membership time.
 - Project completion, Tavolo pause/end, or every participant leaving does **not** delete the chat anchor or its future authorized history.
 - Blocking, suspension, moderation, and content-action overrides remain Plan 09.
-- Whether a newly accepted participant may read messages sent before their first join is not yet decided. Plan 07B2 must resolve that before message-read APIs are finalized.
-- The product's existing end-to-end-encryption requirement must be reconciled with the implementation architecture before 07B2 stores any message body. Plan 07B1 therefore stores no plaintext, ciphertext, keys, or message placeholders.
+- The product's existing end-to-end-encryption requirement applies to Project chat. Plan 07B1 therefore stores no plaintext, ciphertext, keys, or message placeholders.
 
 This decision supersedes the older tentative `chat after at least three people` wording in `docs/architecture/system-design.md` and the threshold-gated chat wording in `docs/implementation/roadmap.md`. Future implementation plans must use this decision unless it is explicitly revised.
+
+### 07B2A architecture validation (not founder-approved product policy)
+
+The real 07B2A OpenMLS prototype validates RFC 9420 MLS as the recommended E2EE
+architecture and demonstrates that a client joining at a later epoch cannot
+decrypt earlier application messages. It also demonstrates that removal followed
+by a fresh rejoin does not expose messages from the removed interval.
+
+Therefore the architecture recommendation is that a participant sees Project
+chat messages only from periods in which an authorized crypto client/profile was
+an MLS member, with no pre-first-join history and no server historical-key escrow.
+Founder confirmation is still required before this becomes accepted product
+policy or production message-read behavior. Package production-readiness,
+multi-device recovery, and key-loss UX also remain unresolved implementation
+gates; they are not founder decisions inferred by the prototype.
 
 ## Projects and participation
 

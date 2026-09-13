@@ -18,3 +18,4 @@ This folder records material technical decisions whose rationale should survive 
 - [0003 — Self-hosted Supabase production direction](0003-self-hosted-supabase-production-direction.md)
 - [0004 — Separate static informational site](0004-separate-static-informational-site.md)
 - [0005 — Cloudflare one-time launch waitlist boundary](0005-cloudflare-one-time-launch-waitlist.md)
+- [0006 — MLS end-to-end encryption for Project group chat](0006-project-chat-mls-e2ee.md)

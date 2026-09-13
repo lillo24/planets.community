@@ -1,6 +1,6 @@
 # PLANETS mobile application
 
-This folder owns the Flutter application and its generated Android/iOS platform projects. It contains the shared client foundation, mobile email-OTP authentication, basic profile setup/editing, one-time proposal discovery/management, recurring Tavoli discovery/management, shared Project participation, and structured participation-request Messages.
+This folder owns the Flutter application and its generated Android/iOS platform projects. It contains the shared client foundation, mobile email-OTP authentication, basic profile setup/editing, one-time proposal discovery/management, recurring Tavoli discovery/management, shared Project participation, structured participation-request Messages, and the isolated 07B2A Project-chat MLS prototype.
 
 ## Source map
 
@@ -18,6 +18,7 @@ This folder owns the Flutter application and its generated Android/iOS platform 
 - `lib/features/recurring_activities/` owns public Tavoli browse/detail, weekly/monthly draft editing, and My Tavoli lifecycle management over the canonical 04B1 RPCs. See its [feature boundary](lib/features/recurring_activities/README.md).
 - `lib/features/participation/` owns shared Proposal/Tavolo join requests, own participation state, creator review, membership actions, and participant-authorized meeting information over the canonical 05A RPCs. See its [feature boundary](lib/features/participation/README.md).
 - `lib/features/messages/` owns the Home-branch Messages inbox, exact structured participation-request detail/history, and role-specific canonical actions over the 07A reads and existing 05A transitions. See its [feature boundary](lib/features/messages/README.md).
+- `lib/features/project_chat/` contains only the 07B2A MLS/OpenMLS architecture prototype; it has no production backend, transport, state wiring, or UI. See its [feature boundary](lib/features/project_chat/README.md).
 - `lib/l10n/` owns the English ARB source. `flutter gen-l10n` regenerates ignored Dart output under `lib/l10n/generated/`.
 - `config/` contains committed configuration examples; runtime files without `.example` are ignored.
 - `test/` mirrors the application responsibility boundaries.
@@ -29,7 +30,7 @@ Proposal date/time input is interpreted in an explicit IANA time zone with the b
 
 The persistent bottom navigation remains Profile / Browse / Home. Browse has separate route-backed Proposal and Tavoli lists; it never mixes their models into one feed. Home exposes Messages without adding a fourth tab or unread badge. `/messages` and `/messages/requests/:requestId` remain on the Home branch. Tavoli pagination reuses one explicit UTC reference snapshot across cursor pages. Recurring schedules remain the versioned, bounded weekly/monthly 04B1 model, and pause/resume/end authorization remains canonical database behavior.
 
-Participation is shared across both concrete Project types without merging their content models. Public details remain available signed out. Private request, membership, creator-review, operational meeting, and structured Messages state is held only in identity-bound memory and cleared on account changes. Messages list/exact reads are requester/creator-only, while Accept/Reject/Withdraw reuse the expected-identity-bound 05A transitions and refresh 05B state. Group chat, mobile notification UI, push delivery, resources, capacity, and contribution verification remain deferred.
+Participation is shared across both concrete Project types without merging their content models. Public details remain available signed out. Private request, membership, creator-review, operational meeting, and structured Messages state is held only in identity-bound memory and cleared on account changes. Messages list/exact reads are requester/creator-only, while Accept/Reject/Withdraw reuse the expected-identity-bound 05A transitions and refresh 05B state. The isolated 07B2A prototype validates MLS cryptography without app wiring; production encrypted chat transport/UI, push delivery, resources, capacity, and contribution verification remain deferred.
 
 The pending email and code live only in memory. Supabase owns session persistence and refresh. After verification, the app inserts the current user's skeletal `public.profiles` row; the expected existing primary key is idempotent success, while any unrelated error keeps the session and offers anchor retry. A non-null valid display name then derives completed-profile readiness.
 
