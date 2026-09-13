@@ -160,6 +160,7 @@ The native pgTAP files under `supabase/tests/` verify:
 - private push installation constraints/grants, expected-identity registration and unregister behavior, token rotation/reuse and account transfer, provider-token privacy, shared semantic resolution, recipient-level job constraints, six-event mapping, all four channel-preference combinations, independent receipts, historical rollout, retries, and service-only projection.
 - monotonic token generations, one-time fan-out, zero-target completion, target/attempt constraints, service-only private worker grants, concurrent leases, crash reclaim, stale-result rejection, transient scheduling, every terminal outcome, rotation-safe invalid-token cleanup, transfer-before-claim handling, aggregate completion, and protocol-history privacy.
 - structured Messages read shape, requester/creator authorization, fail-closed exact lookup, Proposal/Tavolo context, private-message isolation, bounded keyset pagination, and routine grants.
+- requester-only pending Proposal/Tavolo card projections, public eligibility and filters, deterministic request ordering, resolved/lifecycle omission, sanitized output, and hardened routine grants.
 
 Run focused commands while the stack is already running:
 
@@ -172,6 +173,7 @@ npm run profile:verify:local
 npm run proposal:verify:local
 npm run recurring:verify:local
 npm run participation:verify:local
+npm run participation:browse:verify:local
 npm run notification:verify:local
 npm run push:delivery:verify:local
 npm run push:verify:local
@@ -191,6 +193,13 @@ npm run db:types:check
 `recurring:verify:local` uses two complete authenticated identities plus anon to prove Tavolo draft ownership, cross-user and stale-identity rejection, required snapshot pagination, weekly/monthly discovery, participant-restricted exact-location absence, public detail-only exact location, pause/resume/end visibility, preservation of an old schedule when a future version is added, and in-place correction of that pending version. Reference windows are deterministic; the harness performs no realtime waits and never prints addresses, OTPs, tokens, keys, or protected meeting content.
 
 `participation:verify:local` uses a creator, requester, unrelated authenticated user, and anon across one future Proposal and Tavolo. It proves private request review, stale-identity rejection, single acceptance, leave/re-request/reject, pause/resume membership preservation, creator removal/re-request, end-history preservation, protected meeting authorization, and unchanged anonymous detail privacy. It never logs OTPs, tokens, request messages, or protected meeting values.
+
+`participation:browse:verify:local` uses requester A, unrelated user B, and
+creator C across multiple future Proposals and one Tavolo. It proves immediate
+pending promotion without changing public order, expected-identity isolation,
+locality/skill filtering, withdrawal and acceptance removal, pause/resume/end
+eligibility, and sanitized card payloads. It never logs OTPs, tokens, keys,
+request messages, or protected meeting values.
 
 `notification:verify:local` uses three complete authenticated identities, a service-role client, and one narrow direct local-database assertion. It proves pre-projection absence, concurrent projector idempotency, request/accept/withdraw/reject/leave mappings, stable request IDs and `participation_request` targets, cross-account denial, structured safe context, unread/read changes, preference suppression with a receipt, later re-enable behavior, and coexistence with an independent synthetic consumer receipt. It never logs OTPs, keys, database URLs, request messages, or protected meeting values.
 
@@ -213,4 +222,4 @@ the deterministic local profiles and device-QA sequence.
 
 `tavoli:web:verify:local` uses synthetic local OTP data and the production Next.js server to prove signed-out Tavoli list/detail rendering, rough-location and next-meeting output, exclusion of paused/ended rows from discovery, retained sanitized historical detail, exact-ID 404 behavior, and detail-only public/restricted exact-location handling. It never prints test addresses, tokens, keys, or protected meeting content.
 
-`npm run check:db` performs reset, lint, pgTAP, the real fake push-delivery worker protocol, the mobile/backend Auth check, the two-user profile visibility check, the proposal privacy/lifecycle check, the recurring activity recurrence/privacy/lifecycle check, the multi-user project-participation check, notification projection, push-foundation integration, structured Messages integration, type regeneration, and drift detection as one validation sequence. It assumes `npm run db:start` has already succeeded and leaves stack lifecycle to the caller. CI additionally generates local web configuration, builds Next.js, runs the web-session and public Tavoli integrations, and always stops Supabase.
+`npm run check:db` performs reset, lint, pgTAP, the real fake push-delivery worker protocol, the mobile/backend Auth check, the two-user profile visibility check, the proposal privacy/lifecycle check, the recurring activity recurrence/privacy/lifecycle check, the multi-user project-participation and participation-aware Browse checks, notification projection, push-foundation integration, structured Messages integration, type regeneration, and drift detection as one validation sequence. It assumes `npm run db:start` has already succeeded and leaves stack lifecycle to the caller. CI additionally generates local web configuration, builds Next.js, runs the web-session and public Tavoli integrations, and always stops Supabase.

@@ -1,8 +1,11 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../auth/application/auth_session_controller.dart';
 import '../../auth/domain/auth_models.dart';
+import '../../participation/application/participation_controllers.dart';
 import '../data/proposal_gateway.dart';
 import '../domain/proposal_models.dart';
 import '../domain/proposal_time.dart';
@@ -12,23 +15,53 @@ final proposalClockProvider = Provider<DateTime Function()>(
 );
 
 class PublicProposalsController extends Notifier<PublicProposalsState> {
-  var _revision = 0;
+  var _publicRevision = 0;
+  var _requestedRevision = 0;
 
   @override
-  PublicProposalsState build() => const PublicProposalsState();
+  PublicProposalsState build() {
+    ref.listen(
+      authSessionProvider.select(
+        (session) => (session.phase, session.identity?.id),
+      ),
+      (_, next) {
+        _requestedRevision++;
+        state = _stateWithRequested(const []);
+        if (next.$1 == AuthSessionPhase.ready && next.$2 != null) {
+          unawaited(refreshRequested());
+        }
+      },
+    );
+    ref.listen(ownParticipationProvider, (_, next) {
+      final profileId = _readyProfileId();
+      if (profileId != null && next.isReadyFor(profileId)) {
+        unawaited(refreshRequested());
+      }
+    });
+    ref.onDispose(() {
+      _publicRevision++;
+      _requestedRevision++;
+    });
+    return const PublicProposalsState();
+  }
 
   Future<void> load({bool reset = true}) async {
     if (state.isBusy) {
       return;
     }
-    final revision = ++_revision;
+    final revision = ++_publicRevision;
     final currentItems = reset ? const <ProposalSummary>[] : state.items;
+    final locality = state.locality;
+    final skillIds = state.selectedSkillIds;
+    final profileId = reset ? _readyProfileId() : null;
+    final requestedRevision = reset ? ++_requestedRevision : null;
     state = PublicProposalsState(
       phase: reset ? ProposalLoadPhase.loading : ProposalLoadPhase.loadingMore,
       items: currentItems,
+      requestedItems: state.requestedItems,
       categories: state.categories,
-      locality: state.locality,
-      selectedSkillIds: state.selectedSkillIds,
+      locality: locality,
+      selectedSkillIds: skillIds,
       hasMore: state.hasMore,
     );
 
@@ -41,34 +74,51 @@ class PublicProposalsController extends Notifier<PublicProposalsState> {
         gateway.listPublicProposals(
           limit: proposalPageSize,
           cursor: cursor,
-          locality: state.locality.trim().isEmpty ? null : state.locality,
-          skillIds: state.selectedSkillIds.isEmpty
-              ? null
-              : state.selectedSkillIds,
+          locality: locality.isEmpty ? null : locality,
+          skillIds: skillIds.isEmpty ? null : skillIds,
         ),
         if (state.categories.isEmpty)
           gateway.loadSkillCatalog()
         else
           Future.value(state.categories),
+        if (profileId != null)
+          gateway
+              .listOwnPendingRequestedProposals(
+                profileId,
+                locality: locality.isEmpty ? null : locality,
+                skillIds: skillIds.isEmpty ? null : skillIds,
+              )
+              .catchError((_) => const <RequestedProposalSummary>[])
+        else
+          Future.value(const <RequestedProposalSummary>[]),
       ]);
-      if (revision != _revision) {
+      if (!_isPublicCurrent(revision, locality, skillIds)) {
         return;
       }
       final page = results[0] as List<ProposalSummary>;
       final categories = results[1] as List<ProposalSkillCategory>;
+      final requested = results[2] as List<RequestedProposalSummary>;
+      final acceptRequested =
+          reset &&
+          requestedRevision == _requestedRevision &&
+          _readyProfileId() == profileId;
       state = PublicProposalsState(
         phase: ProposalLoadPhase.ready,
         items: List.unmodifiable([...currentItems, ...page]),
+        requestedItems: acceptRequested
+            ? List.unmodifiable(requested)
+            : state.requestedItems,
         categories: List.unmodifiable(categories),
-        locality: state.locality,
-        selectedSkillIds: state.selectedSkillIds,
+        locality: locality,
+        selectedSkillIds: skillIds,
         hasMore: page.length == proposalPageSize,
       );
     } catch (error) {
-      if (revision == _revision) {
+      if (_isPublicCurrent(revision, locality, skillIds)) {
         state = PublicProposalsState(
           phase: ProposalLoadPhase.failure,
           items: currentItems,
+          requestedItems: state.requestedItems,
           categories: state.categories,
           locality: state.locality,
           selectedSkillIds: state.selectedSkillIds,
@@ -83,7 +133,8 @@ class PublicProposalsController extends Notifier<PublicProposalsState> {
     required String locality,
     required Set<String> skillIds,
   }) async {
-    _revision += 1;
+    _publicRevision += 1;
+    _requestedRevision += 1;
     state = PublicProposalsState(
       items: const [],
       categories: state.categories,
@@ -92,6 +143,71 @@ class PublicProposalsController extends Notifier<PublicProposalsState> {
     );
     await load();
   }
+
+  Future<void> refreshRequested() async {
+    final profileId = _readyProfileId();
+    final locality = state.locality;
+    final skillIds = state.selectedSkillIds;
+    final revision = ++_requestedRevision;
+    if (profileId == null) {
+      state = _stateWithRequested(const []);
+      return;
+    }
+    try {
+      final requested = await ref
+          .read(proposalGatewayProvider)
+          .listOwnPendingRequestedProposals(
+            profileId,
+            locality: locality.isEmpty ? null : locality,
+            skillIds: skillIds.isEmpty ? null : skillIds,
+          );
+      if (_isRequestedCurrent(revision, profileId, locality, skillIds)) {
+        state = _stateWithRequested(List.unmodifiable(requested));
+      }
+    } catch (_) {
+      if (_isRequestedCurrent(revision, profileId, locality, skillIds)) {
+        state = _stateWithRequested(const []);
+      }
+    }
+  }
+
+  String? _readyProfileId() {
+    final session = ref.read(authSessionProvider);
+    return session.phase == AuthSessionPhase.ready
+        ? session.identity?.id
+        : null;
+  }
+
+  bool _isPublicCurrent(int revision, String locality, Set<String> skillIds) =>
+      ref.mounted &&
+      revision == _publicRevision &&
+      state.locality == locality &&
+      state.selectedSkillIds == skillIds;
+
+  bool _isRequestedCurrent(
+    int revision,
+    String profileId,
+    String locality,
+    Set<String> skillIds,
+  ) =>
+      ref.mounted &&
+      revision == _requestedRevision &&
+      _readyProfileId() == profileId &&
+      state.locality == locality &&
+      state.selectedSkillIds == skillIds;
+
+  PublicProposalsState _stateWithRequested(
+    List<RequestedProposalSummary> requested,
+  ) => PublicProposalsState(
+    phase: state.phase,
+    items: state.items,
+    requestedItems: requested,
+    categories: state.categories,
+    locality: state.locality,
+    selectedSkillIds: state.selectedSkillIds,
+    hasMore: state.hasMore,
+    failure: state.failure,
+  );
 }
 
 final publicProposalsProvider =

@@ -5,11 +5,14 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:planets_mobile/features/auth/application/auth_session_controller.dart';
 import 'package:planets_mobile/features/auth/data/auth_gateway.dart';
 import 'package:planets_mobile/features/auth/domain/auth_models.dart';
+import 'package:planets_mobile/features/participation/application/participation_controllers.dart';
+import 'package:planets_mobile/features/participation/data/participation_gateway.dart';
 import 'package:planets_mobile/features/proposals/application/proposal_controllers.dart';
 import 'package:planets_mobile/features/proposals/data/proposal_gateway.dart';
 import 'package:planets_mobile/features/proposals/domain/proposal_models.dart';
 
 import '../../../support/fake_auth.dart';
+import '../../../support/fake_participation.dart';
 import '../../../support/fake_proposal.dart';
 
 void main() {
@@ -112,6 +115,207 @@ void main() {
     expect(gateway.lastSkillIds, {'skill-mural'});
     await container.read(publicProposalsProvider.notifier).load(reset: false);
     expect(gateway.lastCursor?.id, 'proposal-1');
+  });
+
+  test('signed-out Browse skips the personalized RPC', () async {
+    final gateway = FakeProposalGateway()
+      ..publicItems = [proposalSummaryFixture()];
+    final container = ProviderContainer(
+      overrides: [proposalGatewayProvider.overrideWithValue(gateway)],
+    );
+    addTearDown(container.dispose);
+
+    await container.read(publicProposalsProvider.notifier).load();
+
+    expect(gateway.calls, isNot(contains('list-requested')));
+    expect(container.read(publicProposalsProvider).items, hasLength(1));
+  });
+
+  test(
+    'requested Proposals are deduplicated without changing raw pagination',
+    () async {
+      final gateway = FakeProposalGateway()
+        ..publicItems = [
+          proposalSummaryFixture(id: 'requested'),
+          proposalSummaryFixture(id: 'ordinary'),
+        ]
+        ..requestedItems = [requestedProposalFixture(proposalId: 'requested')];
+      final session = _readyContainer(gateway);
+      addTearDown(session.container.dispose);
+      addTearDown(session.auth.close);
+
+      await session.container.read(publicProposalsProvider.notifier).load();
+      final state = session.container.read(publicProposalsProvider);
+
+      expect(state.items.map((item) => item.id), ['requested', 'ordinary']);
+      expect(state.requestedItems.single.proposal.id, 'requested');
+      expect(state.ordinaryItems.single.id, 'ordinary');
+      expect(gateway.lastRequestedIdentity, 'user-1');
+    },
+  );
+
+  test('personalized failure degrades to the successful public feed', () async {
+    final gateway = FakeProposalGateway()
+      ..publicItems = [proposalSummaryFixture()]
+      ..requestedError = StateError('private diagnostic');
+    final session = _readyContainer(gateway);
+    addTearDown(session.container.dispose);
+    addTearDown(session.auth.close);
+
+    await session.container.read(publicProposalsProvider.notifier).load();
+    final state = session.container.read(publicProposalsProvider);
+
+    expect(state.phase, ProposalLoadPhase.ready);
+    expect(state.items, hasLength(1));
+    expect(state.requestedItems, isEmpty);
+    expect(state.failure, isNull);
+  });
+
+  test('account switch discards a late personalized response', () async {
+    final first = Completer<List<RequestedProposalSummary>>();
+    final gateway = FakeProposalGateway()
+      ..publicItems = [proposalSummaryFixture()]
+      ..requestedLoader = (identity, {locality, skillIds}) =>
+          identity == 'user-1'
+          ? first.future
+          : Future.value([
+              requestedProposalFixture(proposalId: 'user-2-request'),
+            ]);
+    final session = _readyContainer(gateway);
+    addTearDown(session.container.dispose);
+    addTearDown(session.auth.close);
+    final loading = session.container
+        .read(publicProposalsProvider.notifier)
+        .load();
+
+    session.container
+        .read(authSessionProvider.notifier)
+        .markProfileReady(const AuthIdentity(id: 'user-2'));
+    await Future<void>.delayed(Duration.zero);
+    first.complete([requestedProposalFixture(proposalId: 'stale')]);
+    await loading;
+    await Future<void>.delayed(Duration.zero);
+
+    expect(
+      session.container
+          .read(publicProposalsProvider)
+          .requestedItems
+          .single
+          .proposal
+          .id,
+      'user-2-request',
+    );
+  });
+
+  test(
+    'filter changes clear stale Requested cards and reject late results',
+    () async {
+      final filtered = Completer<List<RequestedProposalSummary>>();
+      final gateway = FakeProposalGateway()
+        ..publicItems = [proposalSummaryFixture()]
+        ..requestedLoader = (_, {locality, skillIds}) => locality == 'Rome'
+            ? filtered.future
+            : Future.value([requestedProposalFixture(proposalId: 'old')]);
+      final session = _readyContainer(gateway);
+      addTearDown(session.container.dispose);
+      addTearDown(session.auth.close);
+      final controller = session.container.read(
+        publicProposalsProvider.notifier,
+      );
+      await controller.load();
+
+      final applying = controller.applyFilters(
+        locality: 'Rome',
+        skillIds: const {},
+      );
+      expect(
+        session.container.read(publicProposalsProvider).requestedItems,
+        isEmpty,
+      );
+      filtered.complete([requestedProposalFixture(proposalId: 'new')]);
+      await applying;
+
+      expect(
+        session.container
+            .read(publicProposalsProvider)
+            .requestedItems
+            .single
+            .proposal
+            .id,
+        'new',
+      );
+    },
+  );
+
+  test(
+    'later public pages dedupe Requested IDs but keep the raw tail cursor',
+    () async {
+      final firstPage = List.generate(
+        proposalPageSize,
+        (index) => proposalSummaryFixture(id: 'first-$index'),
+      );
+      final secondPage = [
+        proposalSummaryFixture(id: 'requested-later'),
+        proposalSummaryFixture(id: 'raw-tail'),
+      ];
+      final gateway = FakeProposalGateway()
+        ..requestedItems = [
+          requestedProposalFixture(proposalId: 'requested-later'),
+        ]
+        ..publicLoader = ({required limit, cursor, locality, skillIds}) =>
+            Future.value(cursor == null ? firstPage : secondPage);
+      final session = _readyContainer(gateway);
+      addTearDown(session.container.dispose);
+      addTearDown(session.auth.close);
+      final controller = session.container.read(
+        publicProposalsProvider.notifier,
+      );
+
+      await controller.load();
+      expect(session.container.read(publicProposalsProvider).hasMore, isTrue);
+      await controller.load(reset: false);
+      final state = session.container.read(publicProposalsProvider);
+
+      expect(state.items.last.id, 'raw-tail');
+      expect(
+        state.ordinaryItems.where((item) => item.id == 'requested-later'),
+        isEmpty,
+      );
+      expect(state.hasMore, isFalse);
+    },
+  );
+
+  test('participation refresh updates and removes Requested cards', () async {
+    final participation = FakeParticipationGateway();
+    final gateway = FakeProposalGateway()
+      ..publicItems = [proposalSummaryFixture()];
+    final session = _readyContainer(
+      gateway,
+      participationGateway: participation,
+    );
+    addTearDown(session.container.dispose);
+    addTearDown(session.auth.close);
+    await session.container.read(publicProposalsProvider.notifier).load();
+
+    gateway.requestedItems = [requestedProposalFixture()];
+    await session.container
+        .read(ownParticipationProvider.notifier)
+        .load('user-1');
+    await Future<void>.delayed(Duration.zero);
+    expect(
+      session.container.read(publicProposalsProvider).requestedItems,
+      hasLength(1),
+    );
+
+    gateway.requestedItems = [];
+    await session.container
+        .read(ownParticipationProvider.notifier)
+        .load('user-1');
+    await Future<void>.delayed(Duration.zero);
+    expect(
+      session.container.read(publicProposalsProvider).requestedItems,
+      isEmpty,
+    );
   });
 
   test(
@@ -263,8 +467,9 @@ void main() {
 }
 
 ({ProviderContainer container, FakeAuthGateway auth}) _readyContainer(
-  FakeProposalGateway gateway,
-) {
+  FakeProposalGateway gateway, {
+  FakeParticipationGateway? participationGateway,
+}) {
   final auth = FakeAuthGateway(
     snapshot: const AuthSnapshot(identity: AuthIdentity(id: 'user-1')),
   );
@@ -275,6 +480,8 @@ void main() {
         FakeProfileAnchorGateway(),
       ),
       proposalGatewayProvider.overrideWithValue(gateway),
+      if (participationGateway != null)
+        participationGatewayProvider.overrideWithValue(participationGateway),
       proposalClockProvider.overrideWithValue(() => DateTime.utc(2026, 9, 3)),
     ],
   );

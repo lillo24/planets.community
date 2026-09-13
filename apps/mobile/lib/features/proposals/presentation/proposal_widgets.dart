@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/theme/app_tokens.dart';
+import '../../../core/widgets/requested_badge.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../domain/proposal_models.dart';
 import '../domain/proposal_time.dart';
@@ -44,15 +45,28 @@ class ProposalStatusBadge extends StatelessWidget {
 }
 
 class ProposalCard extends StatelessWidget {
-  const ProposalCard({required this.proposal, required this.onTap, super.key});
+  const ProposalCard({
+    required this.proposal,
+    required this.onTap,
+    this.isRequested = false,
+    super.key,
+  });
 
   final ProposalSummary proposal;
   final VoidCallback onTap;
+  final bool isRequested;
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     return Card(
       clipBehavior: Clip.antiAlias,
+      shape: isRequested
+          ? RoundedRectangleBorder(
+              borderRadius: AppRadii.medium,
+              side: BorderSide(color: scheme.tertiary, width: 2),
+            )
+          : null,
       child: InkWell(
         key: Key('proposal-card-${proposal.id}'),
         onTap: onTap,
@@ -71,7 +85,14 @@ class ProposalCard extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(width: AppSpacing.small),
-                  ProposalStatusBadge(status: proposal.status),
+                  Wrap(
+                    spacing: AppSpacing.xSmall,
+                    runSpacing: AppSpacing.xSmall,
+                    children: [
+                      if (isRequested) const RequestedBadge(),
+                      ProposalStatusBadge(status: proposal.status),
+                    ],
+                  ),
                 ],
               ),
               const SizedBox(height: AppSpacing.small),

@@ -65,6 +65,145 @@ void main() {
     expect(gateway.lastLocality, 'Bologna');
   });
 
+  test('signed-out Tavoli Browse skips the personalized RPC', () async {
+    final gateway = FakeRecurringActivityGateway()
+      ..publicItems = [publicRecurringSummaryFixture()];
+    final container = ProviderContainer(
+      overrides: [recurringActivityGatewayProvider.overrideWithValue(gateway)],
+    );
+    addTearDown(container.dispose);
+
+    await container.read(publicRecurringActivitiesProvider.notifier).load();
+
+    expect(gateway.calls, isNot(contains('list-requested')));
+    expect(
+      container.read(publicRecurringActivitiesProvider).items,
+      hasLength(1),
+    );
+  });
+
+  test('requested Tavoli deduplicate while keeping the raw page', () async {
+    final gateway = FakeRecurringActivityGateway()
+      ..publicItems = [
+        publicRecurringSummaryFixture(id: 'requested'),
+        publicRecurringSummaryFixture(id: 'ordinary'),
+      ]
+      ..requestedItems = [
+        requestedRecurringActivityFixture(activityId: 'requested'),
+      ];
+    final session = _readyContainer(gateway);
+    addTearDown(session.container.dispose);
+    addTearDown(session.auth.close);
+
+    await session.container
+        .read(publicRecurringActivitiesProvider.notifier)
+        .load();
+    final state = session.container.read(publicRecurringActivitiesProvider);
+
+    expect(state.items.map((item) => item.id), ['requested', 'ordinary']);
+    expect(state.requestedItems.single.activity.id, 'requested');
+    expect(state.ordinaryItems.single.id, 'ordinary');
+    expect(gateway.lastRequestedIdentity, 'user-1');
+  });
+
+  test('failed Tavoli personalization leaves the public feed ready', () async {
+    final gateway = FakeRecurringActivityGateway()
+      ..publicItems = [publicRecurringSummaryFixture()]
+      ..requestedError = StateError('private diagnostic');
+    final session = _readyContainer(gateway);
+    addTearDown(session.container.dispose);
+    addTearDown(session.auth.close);
+
+    await session.container
+        .read(publicRecurringActivitiesProvider.notifier)
+        .load();
+    final state = session.container.read(publicRecurringActivitiesProvider);
+
+    expect(state.phase, RecurringActivityLoadPhase.ready);
+    expect(state.items, hasLength(1));
+    expect(state.requestedItems, isEmpty);
+    expect(state.failure, isNull);
+  });
+
+  test('Tavolo locality changes clear stale Requested cards', () async {
+    final filtered = Completer<List<RequestedRecurringActivitySummary>>();
+    final gateway = FakeRecurringActivityGateway()
+      ..publicItems = [publicRecurringSummaryFixture()]
+      ..requestedLoader = (_, {required referenceTime, locality}) =>
+          locality == 'Rome'
+          ? filtered.future
+          : Future.value([
+              requestedRecurringActivityFixture(activityId: 'old'),
+            ]);
+    final session = _readyContainer(gateway);
+    addTearDown(session.container.dispose);
+    addTearDown(session.auth.close);
+    final controller = session.container.read(
+      publicRecurringActivitiesProvider.notifier,
+    );
+    await controller.load();
+
+    final applying = controller.applyLocality('Rome');
+    expect(
+      session.container.read(publicRecurringActivitiesProvider).requestedItems,
+      isEmpty,
+    );
+    filtered.complete([requestedRecurringActivityFixture(activityId: 'new')]);
+    await applying;
+
+    expect(
+      session.container
+          .read(publicRecurringActivitiesProvider)
+          .requestedItems
+          .single
+          .activity
+          .id,
+      'new',
+    );
+  });
+
+  test('later Tavolo pages dedupe without changing the raw cursor', () async {
+    final firstPage = List.generate(
+      recurringActivityPageSize,
+      (index) => publicRecurringSummaryFixture(id: 'first-$index'),
+    );
+    final secondPage = [
+      publicRecurringSummaryFixture(id: 'requested-later'),
+      publicRecurringSummaryFixture(id: 'raw-tail'),
+    ];
+    final gateway = FakeRecurringActivityGateway()
+      ..requestedItems = [
+        requestedRecurringActivityFixture(activityId: 'requested-later'),
+      ]
+      ..publicLoader = ({
+        required referenceTime,
+        required limit,
+        cursor,
+        locality,
+      }) => Future.value(cursor == null ? firstPage : secondPage);
+    final session = _readyContainer(gateway);
+    addTearDown(session.container.dispose);
+    addTearDown(session.auth.close);
+    final controller = session.container.read(
+      publicRecurringActivitiesProvider.notifier,
+    );
+
+    await controller.load();
+    expect(
+      session.container.read(publicRecurringActivitiesProvider).hasMore,
+      isTrue,
+    );
+    await controller.load(reset: false);
+    final state = session.container.read(publicRecurringActivitiesProvider);
+
+    expect(state.items.last.id, 'raw-tail');
+    expect(
+      state.ordinaryItems.where((item) => item.id == 'requested-later'),
+      isEmpty,
+    );
+    expect(state.hasMore, isFalse);
+  });
+
   test(
     'late response from an older snapshot and filter is discarded',
     () async {

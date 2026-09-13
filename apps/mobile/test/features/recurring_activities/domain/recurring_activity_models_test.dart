@@ -5,6 +5,23 @@ import 'package:planets_mobile/features/recurring_activities/domain/recurring_ac
 import '../../../support/fake_recurring_activity.dart';
 
 void main() {
+  test('requested deduplication never mutates raw Tavolo page state', () {
+    final state = PublicRecurringActivitiesState(
+      items: [
+        publicRecurringSummaryFixture(id: 'requested'),
+        publicRecurringSummaryFixture(id: 'ordinary'),
+      ],
+      requestedItems: [
+        requestedRecurringActivityFixture(activityId: 'requested'),
+      ],
+      hasMore: true,
+    );
+
+    expect(state.items.map((item) => item.id), ['requested', 'ordinary']);
+    expect(state.ordinaryItems.single.id, 'ordinary');
+    expect(state.hasMore, isTrue);
+  });
+
   test('weekly and monthly schedules enforce their constrained fields', () {
     expect(
       isPublishableRecurringActivityInput(recurringInputFixture()),

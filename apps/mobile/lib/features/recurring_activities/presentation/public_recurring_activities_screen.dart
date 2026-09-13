@@ -66,10 +66,12 @@ class _PublicRecurringActivitiesScreenState
       body: SafeArea(
         child:
             state.phase == RecurringActivityLoadPhase.loading &&
-                state.items.isEmpty
+                state.items.isEmpty &&
+                state.requestedItems.isEmpty
             ? LoadingState(message: l10n.tavoliLoading)
             : state.phase == RecurringActivityLoadPhase.failure &&
-                  state.items.isEmpty
+                  state.items.isEmpty &&
+                  state.requestedItems.isEmpty
             ? ErrorState(
                 message: l10n.tavoliSafeError,
                 onRetry: () =>
@@ -106,20 +108,47 @@ class _PublicRecurringActivitiesScreenState
                       ),
                     ),
                     const SizedBox(height: AppSpacing.medium),
-                    if (state.items.isEmpty)
+                    if (state.items.isEmpty && state.requestedItems.isEmpty)
                       EmptyState(
                         title: l10n.tavoliEmptyTitle,
                         message: l10n.tavoliEmptyMessage,
                         icon: Icons.autorenew,
                       )
-                    else
-                      for (final activity in state.items) ...[
+                    else ...[
+                      if (state.requestedItems.isNotEmpty) ...[
+                        Text(
+                          l10n.browseRequestedSection,
+                          key: const Key('tavolo-requested-section'),
+                          style: Theme.of(context).textTheme.titleLarge,
+                        ),
+                        const SizedBox(height: AppSpacing.small),
+                        for (final requested in state.requestedItems) ...[
+                          RecurringActivityCard(
+                            activity: requested.activity,
+                            isRequested: true,
+                            onTap: () =>
+                                context.go('/tavoli/${requested.activity.id}'),
+                          ),
+                          const SizedBox(height: AppSpacing.small),
+                        ],
+                      ],
+                      if (state.requestedItems.isNotEmpty &&
+                          state.ordinaryItems.isNotEmpty) ...[
+                        Text(
+                          l10n.browseOtherProjectsSection,
+                          key: const Key('tavolo-other-section'),
+                          style: Theme.of(context).textTheme.titleLarge,
+                        ),
+                        const SizedBox(height: AppSpacing.small),
+                      ],
+                      for (final activity in state.ordinaryItems) ...[
                         RecurringActivityCard(
                           activity: activity,
                           onTap: () => context.go('/tavoli/${activity.id}'),
                         ),
                         const SizedBox(height: AppSpacing.small),
                       ],
+                    ],
                     if (state.phase == RecurringActivityLoadPhase.failure &&
                         state.items.isNotEmpty)
                       Text(
