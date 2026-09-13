@@ -28,18 +28,21 @@ select results_eq(
 
 select results_eq(
   $$
-    select column_name::text, data_type::text, is_nullable::text
+    select
+      column_name::text collate "C",
+      data_type::text collate "C",
+      is_nullable::text collate "C"
     from information_schema.columns
     where table_schema = 'public'
       and table_name = 'project_chat_messages'
     order by ordinal_position
   $$,
   $$values
-    ('id'::text, 'uuid'::text, 'NO'::text),
-    ('chat_id'::text, 'uuid'::text, 'NO'::text),
-    ('sender_profile_id'::text, 'uuid'::text, 'NO'::text),
-    ('body'::text, 'text'::text, 'NO'::text),
-    ('created_at'::text, 'timestamp with time zone'::text, 'NO'::text)
+    ('id'::text collate "C", 'uuid'::text collate "C", 'NO'::text collate "C"),
+    ('chat_id'::text collate "C", 'uuid'::text collate "C", 'NO'::text collate "C"),
+    ('sender_profile_id'::text collate "C", 'uuid'::text collate "C", 'NO'::text collate "C"),
+    ('body'::text collate "C", 'text'::text collate "C", 'NO'::text collate "C"),
+    ('created_at'::text collate "C", 'timestamp with time zone'::text collate "C", 'NO'::text collate "C")
   $$,
   'message field types and nullability are canonical'
 );

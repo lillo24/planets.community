@@ -158,6 +158,7 @@ select results_eq(
   )$$,
   'the creator sends with server-owned identity and a canonical response'
 );
+reset role;
 select set_config(
   'test.message_creator_2',
   (
