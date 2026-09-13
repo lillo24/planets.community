@@ -7,10 +7,14 @@
 Current product direction:
 
 - A proposal/project group chat is created automatically by the system. There is no user-facing manual **Create chat** action.
-- Chat creation is **not gated by a fixed three-person threshold**. Participation or activation thresholds may exist for other project rules, but future plans must not assume that `3` controls chat availability.
-- The exact canonical participation event that triggers automatic chat creation will be finalized together with plans 05/07. The operation must be idempotent and create at most one chat for a proposal.
-- A proposal/project ending or becoming historical does **not** delete its chat or messages. For now they are retained as historical canonical data.
-- Authorization after a participant leaves, is removed, blocked, or suspended remains a separate decision for plan 07. Retention after project completion is already decided; completion alone must not delete chat history.
+- The **first accepted join request** activates the chat transactionally. The creator plus that first accepted participant is sufficient; there is no fixed three-person threshold.
+- There is exactly one canonical chat per Project. Later acceptances and rejoins reuse it.
+- The immutable Project creator has persistent organizer entitlement without a participant-membership row. A current accepted participant has current/send entitlement.
+- Voluntary leave or creator removal ends an ordinary participant's current entitlement immediately but retains each exact accepted membership interval for historical authorization. Rejoin creates another interval, and the gap is not membership time.
+- Project completion, Tavolo pause/end, or every participant leaving does **not** delete the chat anchor or its future authorized history.
+- Blocking, suspension, moderation, and content-action overrides remain Plan 09.
+- Whether a newly accepted participant may read messages sent before their first join is not yet decided. Plan 07B2 must resolve that before message-read APIs are finalized.
+- The product's existing end-to-end-encryption requirement must be reconciled with the implementation architecture before 07B2 stores any message body. Plan 07B1 therefore stores no plaintext, ciphertext, keys, or message placeholders.
 
 This decision supersedes the older tentative `chat after at least three people` wording in `docs/architecture/system-design.md` and the threshold-gated chat wording in `docs/implementation/roadmap.md`. Future implementation plans must use this decision unless it is explicitly revised.
 
@@ -35,8 +39,8 @@ Current product direction from the 08/09 founder discussion and follow-up clarif
 - The structured request item may display its private requester message to the authorized creator. Accept/Reject actions must continue to call the canonical participation transitions and render the resulting request state.
 - A participation notification is only an alert and entry point. Request-specific notifications retain `request_id` and use a semantic `participation_request` target; the mobile client resolves it to `/messages/requests/:requestId` without storing a Flutter route in PostgreSQL.
 - The existing Participation screen remains the organizer's secondary overview for all request history and member management. It is not the primary arrival surface for new requests.
-- Project group chat is separate from pre-acceptance request items. Plan 07A implements only the Messages request surface; 07B still owns project chat, including the final automatic chat trigger and post-membership access rules.
+- Project group chat is separate from pre-acceptance request items. Plan 07A implements only the Messages request surface; 07B1 owns the accepted lifecycle/authorization foundation, while 07B2 owns message persistence, Realtime, and mobile chat after its encryption and pre-join-history decisions.
 
 ## Pending requests in Browse
 
-For a signed-in user, a Project or Tavolo with that user's pending join request is surfaced ahead of ordinary mobile discovery results and visually distinguished with a **Requested** badge and theme outline. This applies only to currently pending requests whose project remains publicly discoverable under the active filters, not historical accepted, rejected, or withdrawn attempts. Exact ranking relative to projects the user owns or already participates in remains later UX work, signed-out/public ordering is unchanged, and the public web is not personalized. The treatment is a convenience/status signal rather than a second participation state machine; Messages remains the canonical request history and action surface. Plan 05D implements this accepted direction while its PR is in progress.
+For a signed-in user, a Project or Tavolo with that user's pending join request is surfaced ahead of ordinary mobile discovery results and visually distinguished with a **Requested** badge and theme outline. This applies only to currently pending requests whose project remains publicly discoverable under the active filters, not historical accepted, rejected, or withdrawn attempts. Exact ranking relative to projects the user owns or already participates in remains later UX work, signed-out/public ordering is unchanged, and the public web is not personalized. The treatment is a convenience/status signal rather than a second participation state machine; Messages remains the canonical request history and action surface. Plan 05D implements this accepted direction in merged PR #24.
