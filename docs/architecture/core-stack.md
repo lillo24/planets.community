@@ -4,17 +4,17 @@
 **Recorded:** 2026-09-01  
 **Direction updated:** 2026-09-12
 
-**Implementation status:** Foundations, authentication, profiles, one-time proposals, Tavoli mobile/public-web discovery, participation, in-app notifications, structured request Messages, and the provider-independent push/job foundation implemented; provider-neutral push delivery worker protocol in progress; production self-hosting is not implemented
+**Implementation status:** Foundations, authentication, profiles, one-time proposals, Tavoli mobile/public-web discovery, participation, in-app notifications, structured request Messages, the provider-independent push/job foundation, and the static informational-site foundation implemented; provider-neutral push delivery worker protocol in progress; production self-hosting is not implemented
 
 ## Decision summary
 
 PLANETS uses a modular Supabase/PostgreSQL architecture that can use managed environments during development while remaining reproducible for the intended self-hosted production deployment:
 
-> **Flutter mobile app + Supabase/PostgreSQL backend with an intended self-hosted production target + Next.js website/admin with independently selected hosting + Firebase Cloud Messaging + GitHub Actions/Codemagic.**
+> **Flutter mobile app + Supabase/PostgreSQL backend with an intended self-hosted production target + a static Vite/React informational site + a Next.js discovery/admin application with independently selected hosting + Firebase Cloud Messaging + GitHub Actions/Codemagic.**
 
 This changes the production hosting direction, not the underlying application platform. Managed Supabase may still be used for development, staging, testing, and migration rehearsal. The self-hosted production stack will be designed and proven only after the main functional build and UI/UX pass; no production infrastructure is claimed by this document. Additions or provider-specific dependencies require a demonstrated product or operational need.
 
-The durable rationale and consequences are recorded in [ADR 0003](decisions/0003-self-hosted-supabase-production-direction.md).
+The production-backend rationale and consequences are recorded in [ADR 0003](decisions/0003-self-hosted-supabase-production-direction.md). The lasting web-application responsibility split is recorded in [ADR 0004](decisions/0004-separate-static-informational-site.md).
 
 ## Goals and constraints
 
@@ -53,10 +53,11 @@ The stack should:
 | Media | Deferred production storage choice | Plan 08 must evaluate self-hosted Supabase Storage and an external object store such as Cloudflare R2 while retaining database-owned authorization metadata |
 | Push notifications | Firebase Cloud Messaging | Android and iOS push delivery; iOS uses APNs through FCM |
 | Transactional email | Resend | Authentication, security, and exceptional account messages |
-| Public website | Next.js with TypeScript | Informational and discovery-oriented web presence |
-| Admin interface | Next.js with TypeScript | Separate authenticated moderation and administration routes |
-| Web components | Tailwind CSS and shadcn/ui | Fast construction of ordinary responsive pages, forms, and tables |
-| Web deployment | Release-time operational choice | Vercel remains an allowed option, but static or other Next.js-compatible hosting may be selected for the web functionality retained at release |
+| Public informational site | Vite, React, and TypeScript | Small static-first informational and launch website under `apps/site` |
+| Public discovery | Next.js with TypeScript | Dynamic public discovery routes under `apps/web` |
+| Admin interface | Next.js with TypeScript | Future authenticated moderation and administration routes under `apps/web` |
+| Dynamic web components | Tailwind CSS and shadcn/ui | Fast construction of ordinary responsive pages, forms, and tables in `apps/web` |
+| Web deployment | Later operational choices | `apps/site` can use ordinary static hosting; `apps/web` requires hosting compatible with the dynamic functionality retained at release |
 | DNS | Cloudflare | DNS, DNSSEC, and separation between domain ownership and hosting |
 | Error monitoring | Sentry with EU data location | Mobile, web, and server error/release visibility |
 | Product analytics | PostHog EU | Explicit beta product events and later feature flags |
@@ -87,7 +88,7 @@ Supabase Edge Functions remain allowed. Their source belongs in the repository, 
 
 ### Web hosting is independent of backend hosting
 
-The backend hosting direction does not select the web host. The Next.js public/admin implementation remains accepted, but its release deployment should match the functionality retained: static informational pages and sufficiently client-side interfaces may use static hosting, while server-rendered or authenticated functionality needs a compatible runtime. Vercel is an option rather than an unavoidable production dependency.
+The backend hosting direction does not select either web host. `apps/site` produces ordinary static assets and remains independently deployable; SITE-03 owns its production Cloudflare and domain-cutover decision. The Next.js `apps/web` discovery/admin deployment must match the dynamic functionality retained at release. Vercel remains an option for that application rather than an unavoidable production dependency.
 
 ### PostgreSQL is the source of truth
 
@@ -104,7 +105,7 @@ The clients must not be solely responsible for invariants such as:
 
 ### Next.js is not a second backend
 
-The public website and admin interface may use server-side Next.js features, but canonical authorization and domain behavior belong in PostgreSQL functions, RLS policies, or Edge Functions. Mobile and web clients must not implement competing versions of the same business rule.
+The public-discovery and admin application may use server-side Next.js features, but canonical authorization and domain behavior belong in PostgreSQL functions, RLS policies, or Edge Functions. Mobile and web clients must not implement competing versions of the same business rule. The static informational site has no backend or domain-rule ownership in SITE-00.
 
 ### Flutter is optimized for the primary product
 
@@ -176,7 +177,7 @@ Participation statistics and future badges should be computed from canonical pro
 
 - separate Supabase environment, which may be managed while useful for testing or migration rehearsal;
 - separate Firebase configuration;
-- independently selected preview/staging web deployment;
+- independently selected preview/staging web deployments;
 - test users and test push devices;
 - staging Sentry environment;
 - production-like migrations and smoke tests.
@@ -184,7 +185,7 @@ Participation statistics and future badges should be computed from canonical pro
 ### Production
 
 - independently configured self-hosted Supabase, Firebase/APNs, email, monitoring, and analytics resources;
-- a web host selected separately for the public/admin functionality retained at release;
+- web hosts selected separately for the static informational site and the dynamic discovery/admin functionality retained at release;
 - EU data locations where supported and appropriate;
 - secrets stored in appropriate secret-management facilities, never in the repository;
 - explicit approval gates for migrations, destructive actions, mobile-store submission, and other irreversible operations.
@@ -217,7 +218,7 @@ The production host, topology, deployment automation, HTTPS/DNS, SMTP, backups, 
 
 - Plan 08 must choose the production media backend after comparing self-hosted Supabase Storage and an external object store such as Cloudflare R2 for bandwidth and storage cost, privacy/access control, backups, migration complexity, and operational burden.
 - The self-hosting phase must select the host, deployment and update mechanics, backup/restore design, monitoring, and migration/cutover procedure.
-- The production web host must be selected independently from the backend according to the static, client-side, server-rendered, and authenticated functionality retained at release.
+- SITE-03 must select the informational site's production Cloudflare configuration and domain cutover; the dynamic discovery/admin host must be selected independently according to the Next.js functionality retained at release.
 - Before public release, the client/backend endpoint and cutover strategy must prevent infrastructure changes from accidentally stranding installed mobile versions.
 
 ## Product decisions still required

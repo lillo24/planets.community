@@ -16,3 +16,4 @@ This folder records material technical decisions whose rationale should survive 
 - [0001 — Root npm workspace and task entry point](0001-root-npm-workspace.md)
 - [0002 — Canonical migrations and fail-closed database access](0002-canonical-migrations-and-fail-closed-database-access.md)
 - [0003 — Self-hosted Supabase production direction](0003-self-hosted-supabase-production-direction.md)
+- [0004 — Separate static informational site](0004-separate-static-informational-site.md)

@@ -1,7 +1,7 @@
 # System Design and Responsibility Boundaries
 
 **Status:** Initial accepted design  
-**Implementation status:** Foundations, authentication, profiles, one-time proposals, Tavoli mobile/public-web discovery, shared project participation, in-app notification projection, structured participation-request Messages, and the provider-independent push/job foundation implemented; provider-neutral push delivery worker protocol in progress
+**Implementation status:** Foundations, authentication, profiles, one-time proposals, Tavoli mobile/public-web discovery, shared project participation, in-app notification projection, structured participation-request Messages, the provider-independent push/job foundation, and the static informational-site foundation implemented; provider-neutral push delivery worker protocol in progress
 
 This document describes how the major parts of PLANETS should interact. Technology choices are recorded separately in [`core-stack.md`](core-stack.md).
 
@@ -9,21 +9,22 @@ This document describes how the major parts of PLANETS should interact. Technolo
 
 PLANETS is primarily a mobile platform for local co-creation. Users discover or create proposals, contribute relevant competences/resources, request participation, coordinate after acceptance, and generate reusable community knowledge from completed work.
 
-The initial system has three user-facing surfaces:
+The initial system has four user-facing responsibilities across three applications:
 
 1. **Mobile application:** the full ordinary-user experience on Android and iOS.
-2. **Public website:** information and selected public discovery without reproducing the whole app.
-3. **Admin interface:** moderation and platform administration, isolated from normal user flows.
+2. **Public informational site:** small static launch and informational pages without product behavior.
+3. **Public discovery:** selected dynamic public discovery without reproducing the whole app.
+4. **Admin interface:** moderation and platform administration, isolated from normal user flows.
 
-All surfaces use one canonical backend and data model.
+Every surface that accesses product data uses one canonical backend and data model. The informational site has no backend dependency in SITE-00.
 
 ## High-level structure
 
 ```text
-Flutter mobile application             Next.js public/admin application
-           |                                         |
-           +--------------------+--------------------+
-                                |
+Vite informational site       Flutter mobile application       Next.js discovery/admin application
+    static assets                         |                                      |
+                                         +------------------+-------------------+
+                                                            |
         Supabase platform (managed development/test environments;
                     intended self-hosted production)
         +-----------------------+------------------------+
@@ -49,9 +50,15 @@ The Flutter process validates typed `local`, `staging`, or `production` compile-
 
 Mobile source is organized by real feature ownership, supported by narrow shared `core` modules for configuration, backend access, routing, theme, monitoring, and common state UI. New layers or abstractions should appear only when a feature has concrete behavior to place in them.
 
-### Web client foundation
+### Public informational site foundation
 
-The Next.js App Router separates public and admin routes with `(public)` and `(admin)` route groups while retaining one root layout. Pages and layouts remain Server Components unless an interaction or browser API requires a narrow Client Component boundary.
+`apps/site` is a separate Vite/React/TypeScript application that builds to ordinary static assets. SITE-00 gives it no runtime environment contract, authentication, Supabase client, server rendering, or domain behavior. Its placeholder proves the build boundary only; final content, visual identity, and production hosting remain later SITE-track work.
+
+The future SITE-02 waitlist is limited to collecting an address for one notification when the PLANETS app launches. It is not a newsletter and must not reuse that address for marketing, promotions, recurring product updates, or unrelated communication. Storage, abuse protection, legal copy, delivery, and retention are not implemented in SITE-00.
+
+### Dynamic web/admin client foundation
+
+The `apps/web` Next.js App Router separates public and admin routes with `(public)` and `(admin)` route groups while retaining one root layout. Pages and layouts remain Server Components unless an interaction or browser API requires a narrow Client Component boundary.
 
 The web application defines one public `local`, `staging`, or `production` environment contract. It exposes only the canonical Supabase URL and publishable key plus an optional Sentry client DSN; staging and production Supabase URLs require HTTPS. Typed factories use the generated public `Database` type, a browser-only client, and a new cookie-backed server client per request.
 
@@ -489,8 +496,11 @@ Priority tests include:
 apps/mobile/
   Flutter presentation and client-side application behavior
 
+apps/site/
+  Static public informational and launch website
+
 apps/web/
-  Next.js public site and authenticated admin interface
+  Next.js public discovery and authenticated admin interface
 
 supabase/migrations/
   Canonical schema, constraints, indexes, functions, triggers, views, and RLS
@@ -508,7 +518,7 @@ docs/implementation/
   Ordered implementation work and status
 ```
 
-The exact generated folders inside Flutter and Next.js should be chosen by implementation plan 00 after the toolchains are initialized.
+The exact generated folders inside Flutter and Next.js were chosen by implementation plan 00. The informational site's restrained Vite structure is recorded in ADR 0004.
 
 ## Initial non-goals
 
