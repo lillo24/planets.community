@@ -134,6 +134,9 @@ jobs:
       - name: Verify Project chat lifecycle and authorization foundation
         run: npm run project:chat:verify:local
 
+      - name: Verify durable Project chat messages and private Realtime
+        run: npm run project:chat:messages:verify:local
+
       - name: Generate local web configuration
         run: npm run web:config:local
 

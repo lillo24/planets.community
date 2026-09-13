@@ -90,7 +90,7 @@ fixed-search-path security definers granted only to `authenticated`. They add no
 table grants, generic message/thread table, or durable copy. Request mutations
 remain the 05A operations.
 
-## Project group-chat lifecycle and authorization
+## Project group-chat lifecycle, messages, and Realtime
 
 `public.project_group_chats` stores only an opaque UUID, the unique shared
 Project identity, earliest accepted-membership activation time, and physical
@@ -110,14 +110,63 @@ authorized independently through immutable ownership. Leave/removal therefore
 changes entitlement without a chat mutation, and Project completion or Tavolo
 pause/end does not delete the anchor.
 
-`get_own_project_group_chat` is the only client-facing 07B1 contract. It binds
+`get_own_project_group_chat` is the client-facing 07B1 anchor contract. It binds
 the expected profile to `auth.uid()` and returns only chat/Project IDs, Project
 kind, activation time, viewer role, and current/history booleans to the creator
 or someone with accepted membership history. Missing, pre-activation, and
 unrelated lookups fail with the same unavailable response. 07A request Messages
-remain separate. There is no chat-member mirror, message body or ciphertext,
-key material, Realtime publication, meeting-detail copy, or Flutter chat state.
-07B2 must resolve E2EE and pre-first-join message visibility before message APIs.
+remain separate. There is no chat-member mirror, meeting-detail copy, or Flutter
+chat state.
+
+`public.project_chat_messages` is the 07B2B durable source of truth. It stores a
+database-generated UUID, restrictive chat/sender foreign keys, canonically
+trimmed plain text of 1 through 4,000 Unicode characters, and a server-owned
+timestamp. Messages are immutable: there is no update/delete operation or
+soft-delete placeholder, and a trigger rejects ordinary owner DML mutations.
+The table has RLS enabled but no policies or direct client/service grants. Its
+indexes match `(chat_id, created_at desc, id desc)` keyset history and the sender
+foreign-key path. Attachments, reactions, replies, receipts, unread state,
+rich text, and encryption fields remain absent.
+
+`private.profile_can_read_project_chat_message` implements the approved durable
+coordination-log rule. The creator and a current accepted participant read every
+message, including pre-first-join history. A former participant reads messages
+through `max(coalesce(left_at, removed_at))` for their latest ended membership.
+Rejoin makes all accumulated history visible, including the gap; a later end
+advances the frontier. `list_own_project_chat_messages` returns safe sender
+display context with a paired descending timestamp/UUID cursor. No exact-message
+RPC exists because Realtime consumers refresh durable history.
+
+`send_project_chat_message` requires an authenticated complete expected profile,
+the creator or a current membership, a valid chat, and a canonical body. It
+acquires `lock_project_for_participation`, preserving the established concrete
+source then shared Project lock order, and assigns `clock_timestamp()` only
+after that lock. Leave/removal now assign their end boundary after the same lock.
+Therefore a send serialized first remains inside the former-member frontier,
+while a send waiting behind termination rechecks entitlement and fails.
+
+`list_own_project_group_chats` returns one creator/current/former-visible chat
+using a bounded `(activity_at, chat_id)` keyset. Preview and activity are derived
+from the latest message the viewer can read or the chat activation time. A new
+message beyond a former member's frontier neither changes their preview nor
+reveals activity.
+
+Each successful send records `project.chat_message_sent` in the private outbox
+with only chat, Project kind/ID, message ID, and sender profile ID. Existing
+notification and push projectors do not consume it. The same transaction calls
+`realtime.send` with only chat ID, message ID, and creation time on private
+`project-chat:<chat-id>:profile:<profile-id>` topics for the creator and current
+members. A `realtime.messages` SELECT policy verifies `auth.uid()`, exact topic,
+and current entitlement; there is no client Broadcast-send policy and the
+message table is not in a Postgres Changes publication. Per-profile addressing
+prevents an already-connected former client from receiving new signals even
+though Supabase caches channel authorization for a connection. Durable RPCs,
+not Realtime, recover all history after disconnect.
+
+This is ordinary authenticated server-authorized messaging over HTTPS/TLS. The
+backend can technically read stored bodies, so it must not be described as
+E2EE. MLS research remains in unmerged PR #28 and is deferred as an optional
+future versioned privacy enhancement.
 
 ## Notification domain and outbox projection
 
@@ -190,6 +239,7 @@ The native pgTAP files under `supabase/tests/` verify:
 - monotonic token generations, one-time fan-out, zero-target completion, target/attempt constraints, service-only private worker grants, concurrent leases, crash reclaim, stale-result rejection, transient scheduling, every terminal outcome, rotation-safe invalid-token cleanup, transfer-before-claim handling, aggregate completion, and protocol-history privacy.
 - structured Messages read shape, requester/creator authorization, fail-closed exact lookup, Proposal/Tavolo context, private-message isolation, bounded keyset pagination, and routine grants.
 - requester-only pending Proposal/Tavolo card projections, public eligibility and filters, deterministic request ordering, resolved/lifecycle omission, sanitized output, and hardened routine grants.
+- immutable Project-chat message shape, canonical body limits, restrictive foreign keys, RPC-only access, full-history/current/former/rejoin rules, visible-frontier pagination and previews, identifier-only outbox payloads, private Realtime authorization, and send/termination serialization.
 
 Run focused commands while the stack is already running:
 
@@ -208,6 +258,7 @@ npm run push:delivery:verify:local
 npm run push:verify:local
 npm run messages:verify:local
 npm run project:chat:verify:local
+npm run project:chat:messages:verify:local
 npm run db:types
 npm run db:types:check
 ```
@@ -249,6 +300,8 @@ the deterministic local profiles and device-QA sequence.
 `messages:verify:local` uses a Project creator, requester, unrelated authenticated user, and anon across a Proposal and Tavolo. It proves requester/creator structured reads and private-message visibility, identical unauthorized/missing exact failures, anonymous denial, canonical Accept/Withdraw history, both project contexts, chronology, narrow output, and unchanged public privacy. It never prints OTPs, tokens, keys, request messages, or meeting values.
 
 `project:chat:verify:local` uses a creator, participants A/B, and an unrelated identity with real local Auth plus narrow direct-database assertions. It proves no pre-acceptance chat, first-accept activation, later reuse, concurrent two-request acceptance with one chat, creator/current/former entitlement, half-open leave/removal intervals, a preserved rejoin gap, stable chat identity, unrelated denial, all-members-ended retention, and shared Proposal/Tavolo behavior across pause/resume/end. It logs no OTPs, tokens, database URLs, request messages, meeting details, or secrets.
+
+`project:chat:messages:verify:local` uses four real authenticated clients, private Supabase Realtime Broadcast channels, and narrow direct-database transactions. It proves durable signal reconciliation, full pre-join history, former-member frontiers, rejoin gap visibility, last-visible previews/activity, current-only subscriptions, no post-leave/removal signal, Proposal/Tavolo behavior, identifier-only outbox state, and both serialization outcomes for send versus leave/removal. It logs no OTPs, tokens, database URLs, message bodies, private request text, or meeting details.
 
 `auth:web:verify:local` adds web-specific evidence after a locally configured production Next.js build. It obtains session cookies through supported `@supabase/ssr` callbacks, confirms the Server Component recognizes the authenticated session, rejects private-auth material in the rendered response, and confirms `/admin` returns 404 for signed-out and signed-in requests. It does not invent or log Supabase's cookie encoding.
 

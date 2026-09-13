@@ -1,7 +1,7 @@
 # System Design and Responsibility Boundaries
 
 **Status:** Initial accepted design  
-**Implementation status:** Foundations, authentication, profiles, one-time proposals, Tavoli mobile/public-web discovery, shared project participation, in-app notification projection, structured participation-request Messages, the provider-independent push/job foundation, provider-neutral push delivery worker protocol, and the static-first informational site with its local/CI one-time waitlist boundary implemented
+**Implementation status:** Foundations, authentication, profiles, one-time proposals, Tavoli mobile/public-web discovery, shared project participation, in-app notification projection, structured participation-request Messages, Project group-chat lifecycle plus durable message transport, the provider-independent push/job foundation, provider-neutral push delivery worker protocol, and the static-first informational site with its local/CI one-time waitlist boundary implemented or in focused review
 
 This document describes how the major parts of PLANETS should interact. Technology choices are recorded separately in [`core-stack.md`](core-stack.md).
 
@@ -189,10 +189,42 @@ Project kind, viewer role, and entitlement booleans to a creator, current
 member, or former member. Missing and unrelated lookups fail identically.
 
 07B1 stores no message bodies, encryption material, meeting details, or chat
-participant rows and configures no Realtime transport. Before 07B2 defines
-message persistence and reads, it must reconcile the product's E2EE requirement
-and decide whether a newly accepted participant sees messages from before their
-first join.
+participant rows and configures no Realtime transport. MLS/E2EE was technically
+prototyped in unmerged PR #28 but is deferred as an optional future privacy
+enhancement and is not a production dependency for the MVP.
+
+### Project group-chat message domain and Realtime transport
+
+The MVP stores immutable, canonically trimmed plain-text messages in
+`project_chat_messages`. HTTPS/TLS protects transport and expected-identity RPCs,
+database constraints, private helpers, RLS, and fail-closed grants enforce
+ordinary server authorization. The PLANETS backend can technically read message
+bodies; this architecture is not end-to-end encrypted.
+
+The creator and every current accepted participant can read the complete durable
+chat history, including messages from before a participant's first join. A
+former participant can read only messages created through the end of their
+latest membership. Rejoin restores the full accumulated history, including the
+gap, and a later leave/removal advances the retained frontier. Current
+entitlement—not historical visibility—is required to send or receive live
+signals. Proposal/Tavolo lifecycle changes alone do not make the chat read-only.
+
+`send_project_chat_message` acquires the established concrete-Project then
+shared-Project lock before checking current entitlement and assigning the server
+timestamp. Leave and removal record their boundary after the same lock, making
+send/termination races deterministic. History and chat-list APIs use bounded
+descending keysets; former-member previews and activity derive only from the
+latest message that viewer may read.
+
+PostgreSQL remains the message history. A successful send also publishes an
+identifier-only private Supabase Broadcast signal to one chat/profile topic for
+each profile entitled at that locked transition. Realtime authorization binds
+the topic to `auth.uid()` and current chat entitlement. Per-profile fan-out means
+an old cached socket receives no later signal after leave/removal; reconnecting
+as a former member also fails authorization. Clients reconcile through durable
+history after a signal or reconnect. Message bodies are absent from Realtime,
+outbox payloads, and audit records. The message outbox event is reserved for a
+future projector and existing notification/push consumers ignore it.
 
 ### Clients use shared operations rather than duplicate workflows
 
@@ -242,7 +274,7 @@ Edge Functions and background workers remain valid implementation choices when t
 | Recurring activities    | Persistent Tavoli, versioned weekly/monthly schedules, bounded occurrences, rough/exact privacy, lifecycle  | Separate from one-time proposals; Flutter experience and public web discovery implemented |
 | Participation           | Shared project identity, private requests/decisions, current membership and retained history                | Profile and concrete one-time/recurring project; source for authorization and later stats |
 | Messages                | Authenticated structured participation-request inbox/detail; future project conversations                   | Canonical join requests in 07A; separate chat anchor/authorization in 07B1                |
-| Project chat            | One structural conversation anchor after first acceptance; message transport remains 07B2                  | Creator plus current/former participants under canonical membership-time rules            |
+| Project chat            | One structural conversation anchor after first acceptance; message transport remains 07B2                   | Creator plus current/former participants under canonical membership-time rules            |
 | Notifications           | Controlled categories/preferences, recipient in-app records, private installations, and recipient push jobs | Recipient, per-consumer source event receipt, optional project/request/membership         |
 | Templates               | Reusable proposal structure derived from approved past/community content                                    | Source proposal, attribution, moderation/publication state                                |
 | Community statistics    | Aggregated views over canonical activity and participation                                                  | Proposal type, location, participation, time                                              |

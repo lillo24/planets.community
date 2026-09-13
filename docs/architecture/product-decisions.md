@@ -12,9 +12,11 @@ Current product direction:
 - The immutable Project creator has persistent organizer entitlement without a participant-membership row. A current accepted participant has current/send entitlement.
 - Voluntary leave or creator removal ends an ordinary participant's current entitlement immediately but retains each exact accepted membership interval for historical authorization. Rejoin creates another interval, and the gap is not membership time.
 - Project completion, Tavolo pause/end, or every participant leaving does **not** delete the chat anchor or its future authorized history.
+- A Project chat is a durable coordination log. The creator and every current accepted participant can read its full existing message history, including messages sent before that participant first joined.
+- After leave/removal, a former participant retains messages through the end of their latest membership but cannot read newer messages or send. Rejoin restores the full accumulated history, including the gap; a later end advances the retained-history frontier.
+- Project chat uses ordinary authenticated, server-authorized plain-text messaging for the MVP. HTTPS/TLS protects transport and database/API authorization restricts access, but the PLANETS backend remains technically capable of reading stored message bodies. This is not end-to-end encryption.
+- MLS/E2EE was technically prototyped in unmerged PR #28 and is deferred as an optional future privacy enhancement. The prototype is research, not an implementation dependency or current MVP requirement; future E2EE may introduce a versioned message format.
 - Blocking, suspension, moderation, and content-action overrides remain Plan 09.
-- Whether a newly accepted participant may read messages sent before their first join is not yet decided. Plan 07B2 must resolve that before message-read APIs are finalized.
-- The product's existing end-to-end-encryption requirement must be reconciled with the implementation architecture before 07B2 stores any message body. Plan 07B1 therefore stores no plaintext, ciphertext, keys, or message placeholders.
 
 This decision supersedes the older tentative `chat after at least three people` wording in `docs/architecture/system-design.md` and the threshold-gated chat wording in `docs/implementation/roadmap.md`. Future implementation plans must use this decision unless it is explicitly revised.
 
