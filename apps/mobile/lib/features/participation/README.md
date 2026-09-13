@@ -50,6 +50,11 @@ Own requests and memberships are loaded once per identity and resolved by
 project in memory, avoiding per-card RPCs. Public detail remains usable if this
 private overview fails.
 
+Successful own-participation reloads are also the narrow application signal
+consumed by Proposal and Tavolo Browse controllers after request/withdraw
+commands. Each Browse feature refreshes its own requester-only pending-card
+projection; participation state does not import or mutate presentation models.
+
 Protected operational meeting information is fetched only for the current
 creator or a current accepted participant. It is held only in the
 identity-bound project controller, cleared on sign-out/account change/leave,
@@ -76,3 +81,13 @@ Chat, notification delivery, resources/Scambio-Dona, capacity/fullness,
 participation roles, invitations, central participation history, contribution
 verification, badges, maps, and final unified Progetti discovery remain
 deferred.
+
+## Deferred native QA notes
+
+Comprehensive Android/iOS validation remains part of the consolidated Plan 12
+pass and is not a merge gate for 05D. Useful checks for that later pass are:
+request and withdraw from both detail types, return to Browse and confirm the
+Requested section updates; change locality/skill filters and confirm stale
+requested cards disappear; switch accounts and confirm no prior-account badge
+survives; open each requested card and confirm normal detail navigation and
+screen-reader announcement of “Requested to join.”

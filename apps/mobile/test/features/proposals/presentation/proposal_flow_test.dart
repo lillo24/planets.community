@@ -3,6 +3,9 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
+import 'package:planets_mobile/features/auth/application/auth_session_controller.dart';
+import 'package:planets_mobile/features/auth/data/auth_gateway.dart';
+import 'package:planets_mobile/features/auth/domain/auth_models.dart';
 import 'package:planets_mobile/features/proposals/data/proposal_gateway.dart';
 import 'package:planets_mobile/features/proposals/domain/proposal_models.dart';
 import 'package:planets_mobile/features/proposals/presentation/proposal_widgets.dart';
@@ -10,6 +13,7 @@ import 'package:planets_mobile/features/proposals/presentation/public_proposals_
 import 'package:planets_mobile/l10n/generated/app_localizations.dart';
 
 import '../../../support/fake_proposal.dart';
+import '../../../support/fake_auth.dart';
 
 void main() {
   testWidgets(
@@ -93,11 +97,96 @@ void main() {
       );
       await tester.pumpAndSettle();
       expect(find.text('Paint the square'), findsOneWidget);
+      expect(find.byKey(const Key('proposal-requested-section')), findsNothing);
+      expect(gateway.calls, isNot(contains('list-requested')));
 
       await tester.tap(find.byKey(const Key('proposal-card-proposal-1')));
       await tester.pumpAndSettle();
       expect(find.text('A full proposal description.'), findsOneWidget);
       expect(gateway.calls, contains('public-detail:proposal-1'));
+    },
+  );
+
+  testWidgets(
+    'requested Proposal is first, marked, unique, and remains tappable',
+    (tester) async {
+      final gateway = FakeProposalGateway()
+        ..publicItems = [proposalSummaryFixture(id: 'proposal-2')]
+        ..requestedItems = [requestedProposalFixture()]
+        ..publicDetail = proposalDetailFixture();
+      final auth = FakeAuthGateway(
+        snapshot: const AuthSnapshot(identity: AuthIdentity(id: 'user-1')),
+      );
+      addTearDown(auth.close);
+      final container = ProviderContainer(
+        overrides: [
+          authGatewayProvider.overrideWithValue(auth),
+          profileAnchorGatewayProvider.overrideWithValue(
+            FakeProfileAnchorGateway(),
+          ),
+          proposalGatewayProvider.overrideWithValue(gateway),
+        ],
+      );
+      addTearDown(container.dispose);
+      container
+          .read(authSessionProvider.notifier)
+          .markProfileReady(const AuthIdentity(id: 'user-1'));
+      final router = GoRouter(
+        initialLocation: '/proposals',
+        routes: [
+          GoRoute(
+            path: '/proposals',
+            builder: (_, _) => const PublicProposalsScreen(),
+          ),
+          GoRoute(
+            path: '/proposals/:id',
+            builder: (_, state) =>
+                ProposalDetailScreen(proposalId: state.pathParameters['id']!),
+          ),
+          GoRoute(path: '/proposals/mine', builder: (_, _) => const SizedBox()),
+          GoRoute(
+            path: '/proposals/create',
+            builder: (_, _) => const SizedBox(),
+          ),
+        ],
+      );
+      addTearDown(router.dispose);
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: _routerApp(router),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(
+        find.byKey(const Key('proposal-requested-section')),
+        findsOneWidget,
+      );
+      expect(find.byKey(const Key('browse-requested-badge')), findsOneWidget);
+      expect(find.byKey(const Key('proposal-card-proposal-1')), findsOneWidget);
+      expect(find.byKey(const Key('proposal-card-proposal-2')), findsOneWidget);
+      expect(
+        tester.getTopLeft(find.byKey(const Key('proposal-card-proposal-1'))).dy,
+        lessThan(
+          tester
+              .getTopLeft(find.byKey(const Key('proposal-card-proposal-2')))
+              .dy,
+        ),
+      );
+      expect(
+        tester
+            .getSemantics(find.byKey(const Key('browse-requested-badge')))
+            .label,
+        contains('Requested to join'),
+      );
+
+      await tester.tap(find.byKey(const Key('proposal-card-proposal-1')));
+      await tester.pumpAndSettle();
+      expect(
+        router.routeInformationProvider.value.uri.path,
+        '/proposals/proposal-1',
+      );
     },
   );
 

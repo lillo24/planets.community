@@ -9,18 +9,29 @@ typedef PublicTavoliLoader =
       String? locality,
     });
 
+typedef RequestedTavoliLoader =
+    Future<List<RequestedRecurringActivitySummary>> Function(
+      String expectedProfileId, {
+      required DateTime referenceTime,
+      String? locality,
+    });
+
 class FakeRecurringActivityGateway implements RecurringActivityGateway {
   List<PublicRecurringActivitySummary> publicItems = [];
+  List<RequestedRecurringActivitySummary> requestedItems = [];
   PublicRecurringActivityDetail? publicDetail;
   List<OwnRecurringActivity> ownItems = [];
   PublicTavoliLoader? publicLoader;
+  RequestedTavoliLoader? requestedLoader;
   Future<void>? mutationDelay;
   Object? error;
+  Object? requestedError;
   final calls = <String>[];
   final referenceTimes = <DateTime>[];
   RecurringActivityCursor? lastCursor;
   String? lastLocality;
   String? lastExpectedIdentity;
+  String? lastRequestedIdentity;
   RecurringActivityInput? lastInput;
 
   @override
@@ -44,6 +55,28 @@ class FakeRecurringActivityGateway implements RecurringActivityGateway {
       );
     }
     return publicItems.take(limit).toList();
+  }
+
+  @override
+  Future<List<RequestedRecurringActivitySummary>>
+  listOwnPendingRequestedActivities(
+    String expectedProfileId, {
+    required DateTime referenceTime,
+    String? locality,
+  }) async {
+    calls.add('list-requested');
+    lastRequestedIdentity = expectedProfileId;
+    lastLocality = locality;
+    referenceTimes.add(referenceTime);
+    if (requestedError case final failure?) throw failure;
+    if (requestedLoader case final loader?) {
+      return loader(
+        expectedProfileId,
+        referenceTime: referenceTime,
+        locality: locality,
+      );
+    }
+    return requestedItems;
   }
 
   @override
@@ -179,6 +212,16 @@ PublicRecurringActivitySummary publicRecurringSummaryFixture({
     eventTimezone: 'Europe/Rome',
   ),
   schedule: recurringScheduleFixture(type: type),
+);
+
+RequestedRecurringActivitySummary requestedRecurringActivityFixture({
+  String requestId = 'request-1',
+  String activityId = 'tavolo-1',
+  DateTime? requestCreatedAt,
+}) => RequestedRecurringActivitySummary(
+  requestId: requestId,
+  requestCreatedAt: requestCreatedAt ?? DateTime.utc(2026, 9, 4, 12),
+  activity: publicRecurringSummaryFixture(id: activityId),
 );
 
 PublicRecurringActivityDetail publicRecurringDetailFixture({

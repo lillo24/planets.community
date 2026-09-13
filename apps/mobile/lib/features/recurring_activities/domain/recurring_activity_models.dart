@@ -131,6 +131,18 @@ class PublicRecurringActivitySummary {
       RecurringActivityCursor(nextStartsAt: nextOccurrence.startsAt, id: id);
 }
 
+class RequestedRecurringActivitySummary {
+  const RequestedRecurringActivitySummary({
+    required this.requestId,
+    required this.requestCreatedAt,
+    required this.activity,
+  });
+
+  final String requestId;
+  final DateTime requestCreatedAt;
+  final PublicRecurringActivitySummary activity;
+}
+
 class PublicRecurringActivityDetail {
   const PublicRecurringActivityDetail({
     required this.id,
@@ -379,6 +391,7 @@ class PublicRecurringActivitiesState {
   const PublicRecurringActivitiesState({
     this.phase = RecurringActivityLoadPhase.idle,
     this.items = const [],
+    this.requestedItems = const [],
     this.locality = '',
     this.referenceTime,
     this.hasMore = true,
@@ -386,7 +399,9 @@ class PublicRecurringActivitiesState {
   });
 
   final RecurringActivityLoadPhase phase;
+  // Raw public pages stay separate so personalization never changes cursors.
   final List<PublicRecurringActivitySummary> items;
+  final List<RequestedRecurringActivitySummary> requestedItems;
   final String locality;
   final DateTime? referenceTime;
   final bool hasMore;
@@ -395,6 +410,13 @@ class PublicRecurringActivitiesState {
   bool get isBusy =>
       phase == RecurringActivityLoadPhase.loading ||
       phase == RecurringActivityLoadPhase.loadingMore;
+
+  List<PublicRecurringActivitySummary> get ordinaryItems {
+    final requestedIds = requestedItems.map((item) => item.activity.id).toSet();
+    return items
+        .where((item) => !requestedIds.contains(item.id))
+        .toList(growable: false);
+  }
 }
 
 class PublicRecurringActivityDetailState {

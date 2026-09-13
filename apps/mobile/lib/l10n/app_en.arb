@@ -1,4 +1,8 @@
 {
+  "browseRequestedSection": "Requested",
+  "browseOtherProjectsSection": "Other projects",
+  "browseRequestedBadge": "Requested",
+  "browseRequestedSemantics": "Requested to join",
   "@@locale": "en",
   "navigationProfile": "Profile",
   "navigationBrowse": "Browse",

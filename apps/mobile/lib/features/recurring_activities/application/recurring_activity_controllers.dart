@@ -1,8 +1,11 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../auth/application/auth_session_controller.dart';
 import '../../auth/domain/auth_models.dart';
+import '../../participation/application/participation_controllers.dart';
 import '../data/recurring_activity_gateway.dart';
 import '../domain/recurring_activity_models.dart';
 
@@ -12,15 +15,39 @@ final recurringActivityClockProvider = Provider<DateTime Function()>(
 
 class PublicRecurringActivitiesController
     extends Notifier<PublicRecurringActivitiesState> {
-  var _revision = 0;
+  var _publicRevision = 0;
+  var _requestedRevision = 0;
 
   @override
-  PublicRecurringActivitiesState build() =>
-      const PublicRecurringActivitiesState();
+  PublicRecurringActivitiesState build() {
+    ref.listen(
+      authSessionProvider.select(
+        (session) => (session.phase, session.identity?.id),
+      ),
+      (_, next) {
+        _requestedRevision++;
+        state = _stateWithRequested(const []);
+        if (next.$1 == AuthSessionPhase.ready && next.$2 != null) {
+          unawaited(refreshRequested());
+        }
+      },
+    );
+    ref.listen(ownParticipationProvider, (_, next) {
+      final profileId = _readyProfileId();
+      if (profileId != null && next.isReadyFor(profileId)) {
+        unawaited(refreshRequested());
+      }
+    });
+    ref.onDispose(() {
+      _publicRevision++;
+      _requestedRevision++;
+    });
+    return const PublicRecurringActivitiesState();
+  }
 
   Future<void> load({bool reset = true}) async {
     if (state.isBusy) return;
-    final revision = ++_revision;
+    final revision = ++_publicRevision;
     final currentItems = reset
         ? const <PublicRecurringActivitySummary>[]
         : state.items;
@@ -28,43 +55,67 @@ class PublicRecurringActivitiesController
         ? ref.read(recurringActivityClockProvider)().toUtc()
         : state.referenceTime!;
     final locality = state.locality;
+    final profileId = reset ? _readyProfileId() : null;
+    final requestedRevision = reset ? ++_requestedRevision : null;
     state = PublicRecurringActivitiesState(
       phase: reset
           ? RecurringActivityLoadPhase.loading
           : RecurringActivityLoadPhase.loadingMore,
       items: currentItems,
+      requestedItems: state.requestedItems,
       locality: locality,
       referenceTime: referenceTime,
       hasMore: state.hasMore,
     );
     try {
-      final page = await ref
-          .read(recurringActivityGatewayProvider)
-          .listPublicActivities(
-            referenceTime: referenceTime,
-            limit: recurringActivityPageSize,
-            cursor: reset || currentItems.isEmpty
-                ? null
-                : currentItems.last.cursor,
-            locality: locality.isEmpty ? null : locality,
-          );
-      if (revision != _revision ||
+      final gateway = ref.read(recurringActivityGatewayProvider);
+      final results = await Future.wait<dynamic>([
+        gateway.listPublicActivities(
+          referenceTime: referenceTime,
+          limit: recurringActivityPageSize,
+          cursor: reset || currentItems.isEmpty
+              ? null
+              : currentItems.last.cursor,
+          locality: locality.isEmpty ? null : locality,
+        ),
+        if (profileId != null)
+          gateway
+              .listOwnPendingRequestedActivities(
+                profileId,
+                referenceTime: referenceTime,
+                locality: locality.isEmpty ? null : locality,
+              )
+              .catchError((_) => const <RequestedRecurringActivitySummary>[])
+        else
+          Future.value(const <RequestedRecurringActivitySummary>[]),
+      ]);
+      if (revision != _publicRevision ||
           state.referenceTime != referenceTime ||
           state.locality != locality) {
         return;
       }
+      final page = results[0] as List<PublicRecurringActivitySummary>;
+      final requested = results[1] as List<RequestedRecurringActivitySummary>;
+      final acceptRequested =
+          reset &&
+          requestedRevision == _requestedRevision &&
+          _readyProfileId() == profileId;
       state = PublicRecurringActivitiesState(
         phase: RecurringActivityLoadPhase.ready,
         items: List.unmodifiable([...currentItems, ...page]),
+        requestedItems: acceptRequested
+            ? List.unmodifiable(requested)
+            : state.requestedItems,
         locality: locality,
         referenceTime: referenceTime,
         hasMore: page.length == recurringActivityPageSize,
       );
     } catch (error) {
-      if (revision == _revision) {
+      if (revision == _publicRevision) {
         state = PublicRecurringActivitiesState(
           phase: RecurringActivityLoadPhase.failure,
           items: currentItems,
+          requestedItems: state.requestedItems,
           locality: locality,
           referenceTime: referenceTime,
           hasMore: state.hasMore,
@@ -75,10 +126,69 @@ class PublicRecurringActivitiesController
   }
 
   Future<void> applyLocality(String locality) async {
-    _revision++;
+    _publicRevision++;
+    _requestedRevision++;
     state = PublicRecurringActivitiesState(locality: locality.trim());
     await load();
   }
+
+  Future<void> refreshRequested() async {
+    final profileId = _readyProfileId();
+    final locality = state.locality;
+    final referenceTime = state.referenceTime;
+    final revision = ++_requestedRevision;
+    if (profileId == null || referenceTime == null) {
+      state = _stateWithRequested(const []);
+      return;
+    }
+    try {
+      final requested = await ref
+          .read(recurringActivityGatewayProvider)
+          .listOwnPendingRequestedActivities(
+            profileId,
+            referenceTime: referenceTime,
+            locality: locality.isEmpty ? null : locality,
+          );
+      if (_isRequestedCurrent(revision, profileId, referenceTime, locality)) {
+        state = _stateWithRequested(List.unmodifiable(requested));
+      }
+    } catch (_) {
+      if (_isRequestedCurrent(revision, profileId, referenceTime, locality)) {
+        state = _stateWithRequested(const []);
+      }
+    }
+  }
+
+  String? _readyProfileId() {
+    final session = ref.read(authSessionProvider);
+    return session.phase == AuthSessionPhase.ready
+        ? session.identity?.id
+        : null;
+  }
+
+  bool _isRequestedCurrent(
+    int revision,
+    String profileId,
+    DateTime referenceTime,
+    String locality,
+  ) =>
+      ref.mounted &&
+      revision == _requestedRevision &&
+      _readyProfileId() == profileId &&
+      state.referenceTime == referenceTime &&
+      state.locality == locality;
+
+  PublicRecurringActivitiesState _stateWithRequested(
+    List<RequestedRecurringActivitySummary> requested,
+  ) => PublicRecurringActivitiesState(
+    phase: state.phase,
+    items: state.items,
+    requestedItems: requested,
+    locality: state.locality,
+    referenceTime: state.referenceTime,
+    hasMore: state.hasMore,
+    failure: state.failure,
+  );
 }
 
 final publicRecurringActivitiesProvider =
