@@ -30,7 +30,8 @@ select columns_are(
     'created_at',
     'updated_at',
     'last_registered_at',
-    'disabled_at'
+    'disabled_at',
+    'token_version'
   ],
   'installation state is narrow and provider registration remains private'
 );
@@ -50,7 +51,10 @@ select columns_are(
     'membership_id',
     'destination_kind',
     'created_at',
-    'available_at'
+    'available_at',
+    'fanout_at',
+    'completed_at',
+    'completion_reason'
   ],
   'push jobs contain recipient-level semantic identifiers and scheduling only'
 );

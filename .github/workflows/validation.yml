@@ -101,6 +101,9 @@ jobs:
       - name: Run database security tests
         run: npm run db:test
 
+      - name: Verify push delivery worker protocol
+        run: npm run push:delivery:verify:local
+
       - name: Verify local mobile email OTP flow
         run: npm run auth:verify:local
 
