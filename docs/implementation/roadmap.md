@@ -1,7 +1,7 @@
 # Implementation Roadmap
 
 **Status:** Planning baseline  
-**Current implementation:** Plans 00–04B2B, 05A, 05B, 06A, 06B, provider-independent 06C1, provider-neutral 06C2A, 07A, and public informational SITE-00 implemented; 05D is in progress; provider-specific 06C2B, 04C, and 05C remain not started
+**Current implementation:** Plans 00–04B2B, 05A, 05B, 05D, 06A, 06B, provider-independent 06C1, provider-neutral 06C2A, 07A, and public informational SITE-00 implemented; SITE-01 is in progress; provider-specific 06C2B, 04C, and 05C remain not started
 
 This roadmap divides the first PLANETS build into reviewable Codex tasks. Each numbered item should normally become its own implementation prompt, branch, and pull request.
 
@@ -87,18 +87,18 @@ the dependencies or responsibilities in the main 00–14 product sequence.
 | ID      | Plan                                           | Main result                                                       | Dependencies     | Founder/account-owner input expected                    | Status                    |
 | ------- | ---------------------------------------------- | ----------------------------------------------------------------- | ---------------- | ------------------------------------------------------- | ------------------------- |
 | SITE-00 | Static informational site foundation           | Vite/React workspace, placeholder, root tooling, CI, and docs     | Repository state | None                                                    | Implemented in PR #23 (`8b35ea95f44be39756bb0269da369827b63178d9`) |
-| SITE-01 | Public content and visual landing page          | Founder-approved content, logo, visual identity, and page shell   | SITE-00          | Final design, copy, logo, contact, and privacy inputs    | Not started               |
+| SITE-01 | Public content and visual landing page          | Founder-approved content, logo, visual identity, and page shell   | SITE-00          | Public contact and legal-controller details remain      | In progress               |
 | SITE-02 | One-time launch waitlist                       | Consent-aware signup for one app-launch notification              | SITE-01          | Persistence, abuse protection, and legal-copy decisions | Not started               |
 | SITE-03 | Cloudflare production deployment/domain cutover | Hosted static site and authorized `planets.community` cutover     | SITE-01–SITE-02  | Provider access, DNS access, billing, and cutover approval | Not started             |
 | SITE-04 | Launch notification and waitlist retirement    | One launch notice followed by approved waitlist retirement        | SITE-02–SITE-03  | App-release timing and retention/deletion approval      | Deferred until app release |
 
 The SITE-02 address is solely for one notification when the PLANETS app
 launches. It is not a newsletter and must not be reused for marketing,
-promotions, recurring product updates, or unrelated communications. SITE-00
-does not implement collection, storage, delivery, legal copy, or provider
-configuration. SITE-03 is the first plan that may select and configure the
-informational site's Cloudflare hosting; this foundation does not select a
-production host.
+promotions, recurring product updates, or unrelated communications. SITE-01
+provides only the static form and privacy-preview UI; it does not collect,
+store, or deliver an address. SITE-03 is the first plan that may select and
+configure the informational site's Cloudflare hosting; this foundation does
+not select a production host.
 
 ## Plan details
 
@@ -703,4 +703,4 @@ Major gates currently expected:
 
 Complete and review **05D — Participation-Aware Browse and Pending Request Visibility** without changing public discovery ordering or introducing broader personalization. **04C — Resources + Scambio-Dona** remains independently available; 05C waits for contribution/resource decisions. Plan 06C2B requires Firebase/APNs configuration, push permission and preview decisions, server-side FCM credentials, and a self-host-compatible worker deployment target. Plan 07B still requires the exact automatic-chat trigger and post-membership access decisions. Deferred native Android/iOS checks from implemented feature plans belong in the consolidated Plan 12 QA pass. Production self-hosting does not begin until Plan 13, after the main functional work and Plan 12 UI/UX pass.
 
-The independent public informational mini-track has SITE-00 implemented. SITE-01 must use its merged foundation and the founder-supplied design, logo, and content inputs rather than inventing them.
+The independent public informational mini-track has SITE-00 implemented in merged PR #23. SITE-01 is in progress on that merged foundation using the founder-supplied logo and approved one-launch-email constraint; a public contact address and legal-controller details remain founder inputs before production cutover.

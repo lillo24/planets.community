@@ -1,14 +1,208 @@
+import { PUBLIC_CONTACT_EMAIL } from "./site-content";
+import { WaitlistForm } from "./WaitlistForm";
+
+const activityExamples = [
+  ["Creare", "Dare forma a un'idea condivisa."],
+  ["Coltivare", "Prendersi cura di uno spazio comune."],
+  ["Costruire", "Mettere insieme capacità e materiali."],
+  ["Organizzare", "Far incontrare persone e iniziative."],
+] as const;
+
+const primaryNavigation = [
+  ["Home", "#inizio"],
+  ["Chi siamo", "#chi-siamo"],
+  ["Contatti", "#contatti"],
+  ["Privacy", "#privacy"],
+] as const;
+
 export function App() {
   return (
-    <main className="site-shell">
-      <section className="placeholder" aria-labelledby="site-title">
-        <p className="eyebrow">Public informational site</p>
-        <h1 id="site-title">PLANETS</h1>
-        <p>
-          This placeholder confirms that the standalone informational site is
-          ready for its later design and content.
-        </p>
-      </section>
-    </main>
+    <div className="site-page">
+      <a className="skip-link" href="#contenuto">
+        Vai al contenuto
+      </a>
+
+      <header className="site-header">
+        <div className="site-header__inner">
+          <a
+            className="brand"
+            href="#inizio"
+            aria-label="PLANETS, torna all'inizio"
+          >
+            <span className="brand__dot" aria-hidden="true" />
+            <span>PLANETS</span>
+          </a>
+
+          <nav className="primary-nav" aria-label="Navigazione principale">
+            {primaryNavigation.map(([label, href]) => (
+              <a href={href} key={href}>
+                {label}
+              </a>
+            ))}
+          </nav>
+        </div>
+      </header>
+
+      <main id="contenuto">
+        <section className="hero" id="inizio" aria-labelledby="hero-title">
+          <div className="hero__content">
+            <p className="eyebrow">In arrivo su iOS e Android</p>
+            <h1 id="hero-title">
+              Le idee prendono vita, <em>insieme.</em>
+            </h1>
+            <p className="hero__lead">
+              PLANETS mette in contatto persone che vogliono creare qualcosa
+              insieme nella propria comunità.
+            </p>
+            <p className="hero__support">
+              Un luogo per incontrarsi vicino a casa, unire capacità diverse e
+              trasformare un'idea in un'attività concreta.
+            </p>
+
+            <WaitlistForm />
+          </div>
+
+          <div className="hero__visual" aria-label="Identità visiva PLANETS">
+            <span className="orbit orbit--outer" aria-hidden="true" />
+            <span className="orbit orbit--inner" aria-hidden="true" />
+            <div className="logo-stage">
+              <img
+                className="hero__logo"
+                src="/brand/planets-logo.png"
+                alt="Logo PLANETS, simbolo multicolore della comunità"
+                width="1080"
+                height="1150"
+                fetchPriority="high"
+              />
+            </div>
+            <p className="hero__caption">
+              Persone, idee e luoghi che si incontrano.
+            </p>
+          </div>
+        </section>
+
+        <section className="activity-strip" aria-label="Esempi di attività">
+          <ul>
+            {activityExamples.map(([title, description], index) => (
+              <li key={title}>
+                <span
+                  className={`activity-strip__number activity-strip__number--${index + 1}`}
+                >
+                  0{index + 1}
+                </span>
+                <span>
+                  <strong>{title}</strong>
+                  {description}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </section>
+
+        <section
+          className="section section--about"
+          id="chi-siamo"
+          aria-labelledby="about-title"
+        >
+          <div className="section__heading">
+            <p className="eyebrow">Chi siamo</p>
+            <h2 id="about-title">Una comunità comincia da un incontro.</h2>
+          </div>
+
+          <div className="about-copy">
+            <p>
+              PLANETS nasce per rendere più semplice incontrare persone vicine
+              con cui trasformare un'idea in un'attività concreta.
+            </p>
+            <p>
+              La piattaforma è pensata per progetti e incontri collaborativi
+              locali: creare, costruire, coltivare, organizzare e contribuire
+              insieme alla comunità.
+            </p>
+            <aside className="about-note" aria-label="Il principio di PLANETS">
+              <span aria-hidden="true">✦</span>
+              <p>
+                Ogni persona porta qualcosa. PLANETS aiuta a trovare chi vuole
+                metterlo in comune.
+              </p>
+            </aside>
+          </div>
+        </section>
+
+        <section className="section section--details" aria-label="Informazioni">
+          <article
+            className="detail-card"
+            id="contatti"
+            aria-labelledby="contact-title"
+          >
+            <p className="eyebrow">Parliamone</p>
+            <h2 id="contact-title">Contatti</h2>
+            <p>Per informazioni o domande su PLANETS.</p>
+            {PUBLIC_CONTACT_EMAIL ? (
+              <a
+                className="contact-link"
+                href={`mailto:${PUBLIC_CONTACT_EMAIL}`}
+              >
+                {PUBLIC_CONTACT_EMAIL}
+              </a>
+            ) : (
+              <p className="content-pending">
+                Il contatto pubblico sarà aggiunto qui prima della messa online.
+              </p>
+            )}
+          </article>
+
+          <article
+            className="detail-card detail-card--privacy"
+            id="privacy"
+            aria-labelledby="privacy-title"
+          >
+            <p className="eyebrow">Privacy, in breve</p>
+            <h2 id="privacy-title">Una sola email, per un solo scopo.</h2>
+            <p>
+              Quando la lista sarà attiva, chiederemo il tuo indirizzo solo per
+              avvisarti una volta quando PLANETS sarà disponibile.
+            </p>
+            <ul>
+              <li>Non è un'iscrizione a una newsletter.</li>
+              <li>
+                L'indirizzo non sarà usato per pubblicità, promozioni,
+                aggiornamenti ricorrenti o comunicazioni estranee al lancio.
+              </li>
+              <li>
+                Prima dell'invio potrai chiederne la rimozione tramite il
+                contatto privacy che verrà pubblicato prima dell'attivazione.
+              </li>
+            </ul>
+            <p className="privacy-preview">
+              In questa anteprima nessun indirizzo viene raccolto o conservato.
+              La raccolta e il consenso saranno attivati nella fase successiva;
+              i dati del titolare e il contatto privacy saranno completati prima
+              della pubblicazione.
+            </p>
+          </article>
+        </section>
+      </main>
+
+      <footer className="site-footer">
+        <div className="site-footer__inner">
+          <div>
+            <a className="brand brand--footer" href="#inizio">
+              <span className="brand__dot" aria-hidden="true" />
+              <span>PLANETS</span>
+            </a>
+            <p>iOS e Android — prossimamente</p>
+          </div>
+
+          <nav aria-label="Navigazione a piè di pagina">
+            {primaryNavigation.slice(1).map(([label, href]) => (
+              <a href={href} key={href}>
+                {label}
+              </a>
+            ))}
+          </nav>
+        </div>
+      </footer>
+    </div>
   );
 }
