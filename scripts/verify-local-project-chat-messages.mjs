@@ -64,7 +64,7 @@ async function verifyProjectChatMessages() {
     "First durable Proposal message",
   );
   await assertSignal(participantASignals, message1, chat.chat_id);
-  await assertSourceRealtimeSignal(message1, 2);
+  await assertIdentifierOnlyRealtimeRows(message1, 2);
   await assertDurableMessage(message1);
   await assertHistoryContains(participantA, chat.chat_id, [
     message1.message_id,
@@ -366,7 +366,7 @@ async function assertSignal(signals, message, chatId) {
   throw new Error("An authorized client did not receive the message signal.");
 }
 
-async function assertSourceRealtimeSignal(message, expectedRecipients) {
+async function assertIdentifierOnlyRealtimeRows(message, expectedRecipients) {
   const rows = await sql`
     select payload
     from realtime.messages
@@ -374,18 +374,17 @@ async function assertSourceRealtimeSignal(message, expectedRecipients) {
       and event = 'project.chat_message_sent'
       and payload ->> 'message_id' = ${message.message_id}
   `;
-  const expectedKeys = ["chat_id", "created_at", "message_id"];
+  const expectedKeys = ["chat_id", "created_at", "id", "message_id"];
   if (rows.length !== expectedRecipients) {
     throw new Error("Realtime fan-out did not address every entitled profile.");
   }
   for (const row of rows) {
     if (
+      typeof row.payload.id !== "string" ||
       JSON.stringify(Object.keys(row.payload).sort()) !==
-      JSON.stringify(expectedKeys)
+        JSON.stringify(expectedKeys)
     ) {
-      throw new Error(
-        "The database-authored Realtime payload was not identifier-only.",
-      );
+      throw new Error("A persisted Realtime payload was not identifier-only.");
     }
   }
 }

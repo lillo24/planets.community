@@ -163,10 +163,11 @@ prevents an already-connected former client from receiving new signals even
 though Supabase caches channel authorization for a connection. Durable RPCs,
 not Realtime, recover all history after disconnect.
 
-The database-authored Broadcast payload has exactly `chat_id`, `message_id`,
-and `created_at`. Current Realtime delivery also adds its own opaque message
-`id` as transport metadata to the received signal; consumers ignore that ID for
-domain reconciliation and fetch by the durable `message_id`.
+The application supplies only `chat_id`, `message_id`, and `created_at` to
+`realtime.send`. The pinned Realtime stack adds its own opaque message `id` as
+transport metadata to the stored and received signal, so the resulting payload
+still contains identifiers/timestamps only. Consumers ignore that transport ID
+for domain reconciliation and fetch by the durable `message_id`.
 
 The authenticated role receives `EXECUTE` only on the fail-closed private topic
 predicate so Realtime can evaluate that policy. It still has no `USAGE` on the
