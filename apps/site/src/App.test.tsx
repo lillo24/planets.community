@@ -1,10 +1,12 @@
 // @vitest-environment jsdom
 
 import {
+  act,
   cleanup,
   fireEvent,
   render,
   screen,
+  waitFor,
   within,
 } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -12,9 +14,36 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { App } from "./App";
 import { WaitlistForm } from "./WaitlistForm";
 
+const testSiteKey = "1x00000000000000000000AA";
+
+function renderWaitlist(apiClient = vi.fn().mockResolvedValue(undefined)) {
+  render(<WaitlistForm apiClient={apiClient} turnstileSiteKey={testSiteKey} />);
+
+  const form = screen.getByRole("form", { name: "Sapere quando parte." });
+  const token = document.createElement("input");
+  token.type = "hidden";
+  token.name = "cf-turnstile-response";
+  token.value = "test-turnstile-token";
+  form.append(token);
+
+  return { apiClient, form };
+}
+
+function enterValidSubmission() {
+  fireEvent.change(screen.getByLabelText("La tua email"), {
+    target: { value: " persona@example.com " },
+  });
+  fireEvent.click(
+    screen.getByLabelText(
+      "Voglio ricevere una sola email quando PLANETS sarà disponibile.",
+    ),
+  );
+}
+
 afterEach(() => {
   cleanup();
   vi.unstubAllGlobals();
+  Reflect.deleteProperty(window, "turnstile");
 });
 
 describe("PLANETS public site", () => {
@@ -37,36 +66,140 @@ describe("PLANETS public site", () => {
     expect(document.querySelector('a[href^="mailto:"]')).toBeNull();
   });
 
-  it("shows an accessible error for an invalid email address", () => {
-    render(<WaitlistForm />);
+  it("does not submit an invalid email address", () => {
+    const { apiClient, form } = renderWaitlist();
 
     fireEvent.change(screen.getByLabelText("La tua email"), {
       target: { value: "indirizzo-non-valido" },
     });
-    fireEvent.submit(
-      screen.getByRole("form", { name: "Sapere quando parte." }),
-    );
+    fireEvent.submit(form);
 
     expect(screen.getByRole("alert").textContent).toContain(
       "Inserisci un indirizzo email valido.",
     );
+    expect(apiClient).not.toHaveBeenCalled();
   });
 
-  it("does not transmit or claim to save a valid preview address", () => {
-    const fetchSpy = vi.fn();
-    vi.stubGlobal("fetch", fetchSpy);
-    render(<WaitlistForm />);
+  it("requires unchecked affirmative consent before submission", () => {
+    const { apiClient, form } = renderWaitlist();
 
     fireEvent.change(screen.getByLabelText("La tua email"), {
       target: { value: "persona@example.com" },
     });
-    fireEvent.submit(
-      screen.getByRole("form", { name: "Sapere quando parte." }),
+    fireEvent.submit(form);
+
+    expect(screen.getByRole("alert").textContent).toContain(
+      "Conferma di voler ricevere la sola email di lancio.",
+    );
+    expect(apiClient).not.toHaveBeenCalled();
+  });
+
+  it("sends valid input to the waitlist API boundary", async () => {
+    const { apiClient, form } = renderWaitlist();
+    enterValidSubmission();
+
+    fireEvent.submit(form);
+
+    await waitFor(() => {
+      expect(apiClient).toHaveBeenCalledWith({
+        email: "persona@example.com",
+        consent: true,
+        turnstileToken: "test-turnstile-token",
+      });
+    });
+  });
+
+  it("keeps controls disabled while the request is submitting", async () => {
+    let resolveRequest: (() => void) | undefined;
+    const apiClient = vi.fn(
+      () =>
+        new Promise<void>((resolve) => {
+          resolveRequest = resolve;
+        }),
+    );
+    const { form } = renderWaitlist(apiClient);
+    enterValidSubmission();
+
+    fireEvent.submit(form);
+
+    expect(
+      (screen.getByRole("button", { name: "Invio…" }) as HTMLButtonElement)
+        .disabled,
+    ).toBe(true);
+    expect(
+      (screen.getByLabelText("La tua email") as HTMLInputElement).disabled,
+    ).toBe(true);
+
+    resolveRequest?.();
+    await screen.findByText(
+      "Perfetto. Ti avviseremo una sola volta quando PLANETS sarà disponibile.",
+    );
+  });
+
+  it("shows an accurate terminal success state", async () => {
+    const { form } = renderWaitlist();
+    enterValidSubmission();
+
+    fireEvent.submit(form);
+
+    expect(
+      await screen.findByText(
+        "Perfetto. Ti avviseremo una sola volta quando PLANETS sarà disponibile.",
+      ),
+    ).not.toBeNull();
+    expect(
+      (screen.getByLabelText("La tua email") as HTMLInputElement).value,
+    ).toBe("");
+    expect(
+      (
+        screen.getByRole("button", {
+          name: "Richiesta registrata",
+        }) as HTMLButtonElement
+      ).disabled,
+    ).toBe(true);
+
+    act(() => window.planetsTurnstileError?.());
+    expect(
+      screen.getByText(
+        "Perfetto. Ti avviseremo una sola volta quando PLANETS sarà disponibile.",
+      ),
+    ).not.toBeNull();
+  });
+
+  it("keeps a server or network failure visibly failed and retryable", async () => {
+    const reset = vi.fn();
+    window.turnstile = { reset };
+    const apiClient = vi.fn().mockRejectedValue(new Error("network failed"));
+    const { form } = renderWaitlist(apiClient);
+    enterValidSubmission();
+
+    fireEvent.submit(form);
+
+    expect(
+      await screen.findByText(
+        "Non è stato possibile registrare la richiesta. Riprova tra poco.",
+      ),
+    ).not.toBeNull();
+    expect(
+      (screen.getByRole("button", { name: "Avvisami" }) as HTMLButtonElement)
+        .disabled,
+    ).toBe(false);
+    expect(reset).toHaveBeenCalledOnce();
+  });
+
+  it("surfaces a Turnstile widget failure and clears it after recovery", () => {
+    renderWaitlist();
+
+    act(() => window.planetsTurnstileError?.());
+
+    expect(screen.getByRole("alert").textContent).toContain(
+      "La verifica anti-abuso non è riuscita.",
     );
 
-    expect(fetchSpy).not.toHaveBeenCalled();
-    expect(screen.getByRole("status").textContent).toContain(
-      "non è stato inviato né salvato",
-    );
+    act(() => window.planetsTurnstileSuccess?.());
+
+    expect(
+      screen.queryByText(/La verifica anti-abuso non è riuscita/u),
+    ).toBeNull();
   });
 });

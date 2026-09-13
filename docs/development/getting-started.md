@@ -191,17 +191,42 @@ Sentry is disabled when `NEXT_PUBLIC_SENTRY_DSN` is empty. When supplied, the we
 
 ## Run the applications
 
-Start the standalone public informational site:
+For static layout work, start the standalone public informational site:
 
 ```text
 npm run dev:site
 ```
 
-Open `http://localhost:5173`. The Vite application has no runtime environment
-configuration or backend dependency in SITE-00. Its production build is written
-to `apps/site/dist/` as ordinary static assets; no Node.js server is required to
-host that output. The production host and Cloudflare/domain configuration remain
-deferred to SITE-03.
+Open `http://localhost:5173`. This Vite-only server does not run the waitlist
+endpoint. To exercise the complete local flow, create the ignored Wrangler
+runtime variables, apply the D1 migration, and start Cloudflare's local Pages
+runtime:
+
+```text
+Copy-Item apps/site/.dev.vars.example apps/site/.dev.vars   # PowerShell
+cp apps/site/.dev.vars.example apps/site/.dev.vars          # macOS/Linux
+npm run waitlist:migrate:local
+npm run dev:site:waitlist
+```
+
+Open `http://localhost:8788`. This path builds the same static application with
+Cloudflare's public Turnstile test site key, loads the matching server-side test
+secret and explicit testing mode from the ignored `apps/site/.dev.vars`, and sends
+`POST /api/waitlist` through the local Pages Function to local D1. It does not
+use a Cloudflare account or a remote database. Inspect or remove deterministic
+local rows with:
+
+```text
+npm run waitlist:inspect:local
+npm run waitlist:delete-smoke:local
+npm run waitlist:reset:local
+```
+
+The static production assets remain in `apps/site/dist/`. SITE-02 adds only the
+Pages Function binding contract; production Cloudflare resources, hostname,
+secrets, deployment, and DNS remain deferred to SITE-03. See
+`apps/site/README.md` for the data boundary, manual removal procedure, and
+cutover blockers.
 
 Generate web configuration, then start the Next.js development server:
 
@@ -228,7 +253,7 @@ Run all ordinary web and mobile validation:
 npm run check
 ```
 
-The command runs web tooling/unit/component tests, linting, TypeScript checking, a production Next.js build, informational-site linting/type checking/static build, Dart formatting verification, Flutter analysis, and Flutter widget tests. Supabase startup is separate because it provisions local containers and is slower than the frequent validation loop.
+The command runs web tooling/unit/component tests, linting, TypeScript checking, a production Next.js build, informational-site client and Cloudflare runtime tests, site lint/type checking/static build, Dart formatting verification, Flutter analysis, and Flutter widget tests. Supabase startup is separate because it provisions local containers and is slower than the frequent validation loop.
 
 Useful focused commands are:
 
@@ -247,15 +272,28 @@ With the local Supabase stack running, validate a clean migration replay, schema
 npm run check:db
 ```
 
-`check:db` assumes the stack is already running; it does not start or stop containers. It includes the two-user mixed-visibility, proposal privacy/lifecycle, and recurring-activity harnesses. GitHub Actions owns the stack lifecycle and separately validates mobile, the dynamic web application, the static informational site, the database workflow, the built web Auth session check, and signed-out Tavoli HTTP privacy on pull requests and pushes to `main`.
+`check:db` assumes the stack is already running; it does not start or stop containers. It includes the two-user mixed-visibility, proposal privacy/lifecycle, and recurring-activity harnesses. GitHub Actions owns the stack lifecycle and separately validates mobile, the dynamic web application, the informational site's client and local Cloudflare/D1 boundary, the database workflow, the built web Auth session check, and signed-out Tavoli HTTP privacy on pull requests and pushes to `main`.
 
 Hosted email delivery is not configured by this repository. Before staging or production use, the account owner must configure a production SMTP provider and the equivalent numeric OTP template in the hosted Supabase project, then verify the hosted project's current Auth email restrictions and rate limits. Do not claim hosted Auth is ready from the local template alone.
 
 ## Environment and secrets
 
-The mobile and dynamic-web configuration contracts are documented above. The static informational site has no environment contract in SITE-00. Local `.env*` files, non-example mobile config files, and Supabase CLI state are ignored.
+The mobile and dynamic-web configuration contracts are documented above. The
+informational site's browser-visible build variable is
+`VITE_TURNSTILE_SITE_KEY`; it must contain only the public Turnstile site key.
+The Pages Function requires the server-only `TURNSTILE_SECRET_KEY`,
+`TURNSTILE_EXPECTED_ACTION`, `TURNSTILE_EXPECTED_HOSTNAME`, and
+`TURNSTILE_TESTING_MODE` bindings plus the `WAITLIST_DB` D1 binding.
+Production must set testing mode to `false`; only that mode requires exact
+action and hostname verification. The committed waitlist-local mode and
+`.dev.vars.example` use only Cloudflare's official test credentials and an
+explicit `true` testing mode.
 
-Never commit provider credentials, production database URLs, service-role keys, signing material, or local machine state. No Firebase, Vercel, Cloudflare, Resend, PostHog, or other cloud configuration is needed for this foundation; Sentry remains optional.
+Actual `.dev.vars`, other local `.env*` files, non-example mobile config files,
+and provider CLI state are ignored. Never commit provider credentials,
+production database URLs, service-role keys, signing material, or local machine
+state. SITE-02 needs no remote Cloudflare resource, Resend setup, analytics, or
+tracking; Sentry remains optional elsewhere.
 
 ## Provisional mobile identifiers
 

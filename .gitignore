@@ -20,6 +20,9 @@ ios/Pods/
 .env.*
 !.env.example
 !.env.*.example
+!apps/site/.env.waitlist-local
+.dev.vars
+apps/site/.wrangler/
 apps/mobile/config/local.json
 apps/mobile/config/staging.json
 apps/mobile/config/production.json

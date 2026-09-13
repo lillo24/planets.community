@@ -5,16 +5,26 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:waitlist": "npm run build:waitlist-local && wrangler pages dev",
     "build": "tsc --noEmit && vite build",
+    "build:waitlist-local": "tsc --noEmit && vite build --mode waitlist-local",
     "lint": "eslint .",
-    "test": "vitest run",
-    "typecheck": "tsc --noEmit"
+    "test": "npm run test:client && npm run test:waitlist",
+    "test:client": "vitest run --config vitest.config.ts",
+    "test:waitlist": "vitest run --config vitest.cloudflare.config.ts",
+    "typecheck": "tsc --noEmit && tsc --project tsconfig.worker.json",
+    "waitlist:migrate:local": "wrangler d1 migrations apply WAITLIST_DB --local --config wrangler.jsonc",
+    "waitlist:inspect:local": "wrangler d1 execute WAITLIST_DB --local --config wrangler.jsonc --command \"SELECT email, created_at, consented_at, consent_version, notified_at FROM launch_waitlist ORDER BY created_at\"",
+    "waitlist:delete-smoke:local": "wrangler d1 execute WAITLIST_DB --local --config wrangler.jsonc --command \"DELETE FROM launch_waitlist WHERE email = 'local-smoke@planets.invalid'\"",
+    "waitlist:reset:local": "wrangler d1 execute WAITLIST_DB --local --config wrangler.jsonc --command \"DELETE FROM launch_waitlist\""
   },
   "dependencies": {
     "react": "19.2.8",
     "react-dom": "19.2.8"
   },
   "devDependencies": {
+    "@cloudflare/vitest-plugin": "1.1.8",
+    "@cloudflare/workers-types": "5.20260911.1",
     "@eslint/js": "^9",
     "@testing-library/dom": "10.4.1",
     "@testing-library/react": "16.3.3",
@@ -29,6 +39,7 @@
     "typescript": "^5",
     "typescript-eslint": "^8",
     "vite": "8.3.0",
-    "vitest": "4.1.11"
+    "vitest": "4.1.11",
+    "wrangler": "4.131.1"
   }
 }
