@@ -109,7 +109,13 @@ select ok(
     from pg_constraint as constraint_row
     where constraint_row.conrelid = 'public.project_chat_messages'::regclass
       and constraint_row.conname = 'project_chat_messages_body_canonical'
-  ) ilike '%char_length(body)%between 1 and 4000%',
+  ) ilike '%regexp_replace%'
+    and (
+      select pg_get_constraintdef(constraint_row.oid)
+      from pg_constraint as constraint_row
+      where constraint_row.conrelid = 'public.project_chat_messages'::regclass
+        and constraint_row.conname = 'project_chat_messages_body_canonical'
+    ) ilike '%char_length(body)%1%4000%',
   'the database bounds canonical bodies to 4,000 Unicode characters'
 );
 
@@ -284,16 +290,19 @@ select is(
 
 select results_eq(
   $$
-    select policyname::text, cmd::text, roles::text
+    select
+      policyname::text collate "C",
+      cmd::text collate "C",
+      roles::text collate "C"
     from pg_policies
     where schemaname = 'realtime'
       and tablename = 'messages'
       and policyname = 'project_chat_current_profiles_receive_broadcasts'
   $$,
   $$values (
-    'project_chat_current_profiles_receive_broadcasts'::text,
-    'SELECT'::text,
-    '{authenticated}'::text
+    'project_chat_current_profiles_receive_broadcasts'::text collate "C",
+    'SELECT'::text collate "C",
+    '{authenticated}'::text collate "C"
   )$$,
   'private Broadcast has one authenticated receive-only authorization policy'
 );
