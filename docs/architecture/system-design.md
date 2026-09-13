@@ -149,7 +149,7 @@ Complete-profile creators use expected-identity-bound create/publish/resume oper
 
 `project_memberships` is acceptance history, not contribution proof. Acceptance atomically closes the request and creates one current membership; creator ownership is separate. Leave/removal ends a membership without deleting it, and pause/end/completion does not rewrite history. One current membership per project/profile is enforced centrally. Capacity, waitlists, participation roles, resources, badges, and creator-verified contribution remain deferred.
 
-All mutations and private reads use expected-identity-bound project RPCs. Tables have RLS but no client grants/policies. Request messages are visible only to the requester and project creator; creator review exposes a narrow authenticated display identity but never Auth email. Protected meeting details are available only to the creator or a current accepted member. Each successful transition writes identifier-only audit/outbox events; `project.join_request_accepted` is a stable candidate input for Plan 07, but Plan 07 still owns the exact automatic-chat trigger and post-membership chat access rules.
+All mutations and private reads use expected-identity-bound project RPCs. Tables have RLS but no client grants/policies. Request messages are visible only to the requester and project creator; creator review exposes a narrow authenticated display identity but never Auth email. Protected meeting details are available only to the creator or a current accepted member. Each successful transition writes identifier-only audit/outbox events. In 07B1, insertion of the canonical accepted membership also ensures the one Project group-chat anchor transactionally; it does not consume or repurpose the accepted outbox event.
 
 ### Structured participation-request Messages
 
@@ -168,6 +168,31 @@ transitions; the client reloads canonical state and synchronizes its existing
 `/messages` and `/messages/requests/:requestId` belong to Home and require a
 complete authenticated profile. No unread badge, generic chat message, thread,
 or group-chat authorization is introduced by 07A.
+
+### Project group-chat lifecycle and authorization foundation
+
+`project_group_chats` is one private structural anchor per shared `projects` row.
+The first accepted join request creates it inside the same transaction as the
+canonical membership; later acceptances and rejoins conflict safely onto the
+same chat. Existing membership history is reconciled from its earliest
+`joined_at`. Project completion, Tavolo pause/end, and membership termination do
+not delete the anchor.
+
+Chat authorization derives from immutable Project ownership and append-preserved
+`project_memberships`; there is no chat-member mirror. The creator always has
+current and historical organizer entitlement. Current accepted participants
+have current/send entitlement. Leave or removal ends it immediately while each
+half-open `[joined_at, ended_at)` interval remains available for future
+history-at-time checks; rejoin creates another interval and preserves the gap.
+The expected-identity `get_own_project_group_chat` RPC exposes only the anchor,
+Project kind, viewer role, and entitlement booleans to a creator, current
+member, or former member. Missing and unrelated lookups fail identically.
+
+07B1 stores no message bodies, encryption material, meeting details, or chat
+participant rows and configures no Realtime transport. Before 07B2 defines
+message persistence and reads, it must reconcile the product's E2EE requirement
+and decide whether a newly accepted participant sees messages from before their
+first join.
 
 ### Clients use shared operations rather than duplicate workflows
 
@@ -216,8 +241,8 @@ Edge Functions and background workers remain valid implementation choices when t
 | One-time proposals      | Creator-owned content, schedule, rough/exact location separation, stored lifecycle, derived temporal status | Creator, controlled skill requirements, future participation, future template source      |
 | Recurring activities    | Persistent Tavoli, versioned weekly/monthly schedules, bounded occurrences, rough/exact privacy, lifecycle  | Separate from one-time proposals; Flutter experience and public web discovery implemented |
 | Participation           | Shared project identity, private requests/decisions, current membership and retained history                | Profile and concrete one-time/recurring project; source for authorization and later stats |
-| Messages                | Authenticated structured participation-request inbox/detail; future project conversations                   | Canonical join requests now; separate project chat/message state in 07B                   |
-| Project chat            | One project-scoped group conversation when its future trigger and access rules are defined                   | Project and authorized participants                                                       |
+| Messages                | Authenticated structured participation-request inbox/detail; future project conversations                   | Canonical join requests in 07A; separate chat anchor/authorization in 07B1                |
+| Project chat            | One structural conversation anchor after first acceptance; message transport remains 07B2                  | Creator plus current/former participants under canonical membership-time rules            |
 | Notifications           | Controlled categories/preferences, recipient in-app records, private installations, and recipient push jobs | Recipient, per-consumer source event receipt, optional project/request/membership         |
 | Templates               | Reusable proposal structure derived from approved past/community content                                    | Source proposal, attribution, moderation/publication state                                |
 | Community statistics    | Aggregated views over canonical activity and participation                                                  | Proposal type, location, participation, time                                              |
@@ -278,7 +303,7 @@ The product document establishes the following general flow:
 4. matching may notify users whose competences are relevant;
 5. the proposal owner reviews participation requests;
 6. accepted users become members;
-7. the project group chat becomes available after the future Plan 07 trigger is satisfied;
+7. the first accepted join request transactionally activates the canonical project group chat;
 8. participants coordinate and may share an external meeting link;
 9. a completed proposal can contribute to templates and aggregate community information.
 
@@ -298,9 +323,9 @@ Regardless of final state names:
 
 ### Participation and automatic chat
 
-Proposal/project chat will be created automatically by an idempotent backend operation and is not gated by a fixed threshold of three. There is no user-facing manual Create Chat action, and project completion does not delete chat or message history.
+The first successful `accept_project_join_request` inserts canonical membership and transactionally ensures exactly one Project group-chat anchor. Creator plus first participant is sufficient; there is no fixed threshold or user-facing Create Chat action. Project completion and membership termination do not delete the anchor.
 
-The participation foundation emits `project.join_request_accepted` as a stable candidate event without creating chat. Plan 07 must still finalize which participation event triggers automatic creation and authorization after a participant leaves, is removed, blocked, or suspended. Any future participation threshold for a different business rule must not be reused implicitly as the chat rule.
+Current/send entitlement derives from ownership or a current membership. Former participants retain historical entitlement for their exact accepted membership intervals, and rejoins remain separate intervals. Blocking, suspension, and moderation overrides remain Plan 09. Any future participation threshold for another business rule must not be reused as the chat rule.
 
 ### Participation-aware mobile Browse
 
@@ -407,29 +432,21 @@ requester message to the authorized creator, and reflects canonical request stat
 Accept/Reject continues to call the participation transition functions; the item is
 not copied into a free-form chat message.
 
-Project group chat remains a distinct, intentionally narrow later domain:
+The 07B1 Project-chat foundation now provides:
 
-- one conversation per eligible project;
-- persisted text messages;
-- paginated history;
-- realtime updates;
-- current-membership authorization;
-- basic message/content reporting;
-- push notifications with safe previews;
-- optional external meeting URL.
+- one structural conversation anchor per Project after first acceptance;
+- creator, current-member, and former-member entitlement derived from canonical history;
+- exact half-open membership intervals for future time-authorized reads;
+- retention across leave, removal, rejoin gaps, Project completion, and Tavolo pause/end;
+- no chat-participant mirror, copied meeting details, message state, or transport.
 
-Initially excluded:
-
-- general direct messages;
-- independent group creation;
-- voice/video infrastructure;
-- voice messages;
-- typing indicators;
-- reactions;
-- end-to-end encryption;
-- complex read-receipt state.
-
-The system must define what happens when a participant leaves, is removed, is blocked, or is suspended. Historical access should not be guessed by the client.
+07B2 remains responsible for message persistence, paginated authorized history,
+Realtime text, mobile group chat/info, meeting-link access, reporting groundwork,
+and safe push behavior. It must first resolve the E2EE architecture and
+pre-first-join message visibility. General direct messages, independent group
+creation, calls, voice messages, typing indicators, reactions, and complex read
+receipts remain excluded. Plan 09 may later override ordinary entitlement for
+blocking, suspension, or moderation; clients must not invent those rules.
 
 ## Media and storage
 

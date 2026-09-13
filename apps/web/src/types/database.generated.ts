@@ -246,6 +246,35 @@ export type Database = {
         }
         Relationships: []
       }
+      project_group_chats: {
+        Row: {
+          activated_at: string
+          created_at: string
+          id: string
+          project_id: string
+        }
+        Insert: {
+          activated_at: string
+          created_at?: string
+          id?: string
+          project_id: string
+        }
+        Update: {
+          activated_at?: string
+          created_at?: string
+          id?: string
+          project_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_group_chats_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: true
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       project_join_requests: {
         Row: {
           created_at: string
@@ -823,6 +852,18 @@ export type Database = {
           requester_profile_id: string
           resolved_at: string
           status: string
+          viewer_role: string
+        }[]
+      }
+      get_own_project_group_chat: {
+        Args: { p_expected_profile_id: string; p_project_id: string }
+        Returns: {
+          activated_at: string
+          chat_id: string
+          has_current_entitlement: boolean
+          has_history_entitlement: boolean
+          project_id: string
+          project_kind: string
           viewer_role: string
         }[]
       }

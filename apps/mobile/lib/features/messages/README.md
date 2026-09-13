@@ -2,8 +2,9 @@
 
 This feature owns the authenticated mobile Messages surface for structured
 participation requests. It presents canonical `project_join_requests`; it does
-not create a generic message, thread, or request-copy store. Project group chat
-remains separate Plan 07B scope.
+not create a generic message, thread, or request-copy store. The 07B1 backend
+chat anchor/authorization remains separate from this UI; message transport and
+mobile group chat remain 07B2 scope.
 
 ## Source map
 
@@ -37,7 +38,9 @@ account switch clears state and rejects late responses. Pending actions are
 role-specific: creators may Accept/Reject and requesters may Withdraw. A
 successful action reloads the canonical item and inbox, then refreshes the
 corresponding 05B participation view. Conflicts also reload current canonical
-state. Resolved requests remain read-only history and do not imply chat access.
+state. Resolved requests remain read-only request history and do not themselves
+imply chat access; 07B1 derives chat entitlement from Project ownership and
+canonical accepted membership intervals.
 
 ## Navigation
 

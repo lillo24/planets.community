@@ -131,6 +131,9 @@ jobs:
       - name: Verify structured participation-request Messages and privacy
         run: npm run messages:verify:local
 
+      - name: Verify Project chat lifecycle and authorization foundation
+        run: npm run project:chat:verify:local
+
       - name: Generate local web configuration
         run: npm run web:config:local
 

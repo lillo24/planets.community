@@ -1,7 +1,7 @@
 # Implementation Roadmap
 
 **Status:** Planning baseline  
-**Current implementation:** Plans 00–04B2B, 05A, 05B, 05D, 06A, 06B, provider-independent 06C1, provider-neutral 06C2A, 07A, and public informational SITE-00 through SITE-02 implemented; provider-specific 06C2B, 04C, and 05C remain not started
+**Current implementation:** Plans 00–04B2B, 05A, 05B, 05D, 06A, 06B, provider-independent 06C1, provider-neutral 06C2A, 07A, and public informational SITE-00 through SITE-02 implemented; 07B1 is in progress; provider-specific 06C2B, 04C, 05C, and 07B2 remain not started
 
 This roadmap divides the first PLANETS build into reviewable Codex tasks. Each numbered item should normally become its own implementation prompt, branch, and pull request.
 
@@ -55,9 +55,9 @@ Do not begin a dependent plan until the prior plan is merged or its branch is ex
 | 04B2B | Public Web Tavoli Discovery                          | Read-only public web Tavoli list and detail                                                                           | 04B2A                  | Functional public-web review                                                                                         | Implemented |
 | 04C   | Resources + Scambio-Dona                             | Project needs/contributions plus donation/exchange listings and later matching/notifications                          | 04A                    | Resource types, ownership/handoff/return semantics, visibility, listing lifecycle, and matching                      | Not started |
 | 05    | Participation lifecycle (parent)                     | Shared project participation foundation, later mobile experience, and verified-contribution review                    | 04A, 04B1              | Capacity/fullness and later contribution/resource semantics remain unresolved                                        | In progress |
-| 05A   | Project Participation Domain Foundation              | Shared identity, private join requests, canonical membership history, protected meeting access, events, and tests     | 04A, 04B1              | No blocking decision; exact chat trigger remains Plan 07                                                             | Implemented |
+| 05A   | Project Participation Domain Foundation              | Shared identity, private join requests, canonical membership history, protected meeting access, events, and tests     | 04A, 04B1              | No blocking decision; 07B1 derives chat activation from accepted membership                                          | Implemented |
 | 05B   | Mobile Project Participation Experience              | Join/status/withdraw, creator review, member state, leave/remove, and protected meeting UI                            | 05A                    | Functional/native UX review                                                                                          | Implemented |
-| 05D   | Participation-Aware Browse and Pending Request Visibility | Own pending requests promoted in mobile Proposal/Tavolo Browse without changing public pagination                 | 04A, 04B1, 05A, 05B   | Native QA deferred to the consolidated Plan 12 pass                                                                  | In progress |
+| 05D   | Participation-Aware Browse and Pending Request Visibility | Own pending requests promoted in mobile Proposal/Tavolo Browse without changing public pagination                 | 04A, 04B1, 05A, 05B   | Native QA deferred to the consolidated Plan 12 pass                                                                  | Implemented |
 | 05C   | Verified Project Contribution / Completion Review    | Creator confirmation of actual contribution for later stats/badges/resource attribution                               | 05A, 04C               | Contribution taxonomy, resource attribution, dispute/correction rules, and credit semantics                          | Not started |
 | 06    | Notification backbone (parent)                       | Canonical notification projection, later mobile inbox/preferences, then device registration and push delivery         | 03–05A                 | User-facing notification UX/copy and push behavior remain later review points                                        | In progress |
 | 06A   | Notification Domain and Outbox Projection Foundation | Categories/preferences, semantic inbox records/targets, multi-consumer receipts, participation projection, secure APIs | 01B, 05A               | None expected for the defined participation foundation                                                               | Implemented |
@@ -67,9 +67,11 @@ Do not begin a dependent plan until the prior plan is merged or its branch is ex
 | 06C2  | Provider Delivery Integration (parent)               | Provider-neutral worker protocol followed by Flutter registration and the repository-owned FCM adapter               | 06C1                   | Firebase/APNs setup, permission timing, preview policy, credentials, and worker deployment                            | In progress |
 | 06C2A | Push Delivery Attempt and Worker-Protocol Foundation | One-time installation fan-out, leases, safe attempt history, retries, terminal aggregation, and stale-token guards    | 06C1                   | None; uses synthetic outcomes and no provider account                                                                | Implemented |
 | 06C2B | Firebase Mobile Registration and FCM Adapter         | Flutter token/permission lifecycle plus repository-owned FCM HTTP v1 sends over the trusted 06C2A protocol            | 06C2A                  | Firebase Android/iOS config, APNs setup, permission timing, preview policy, credentials, and worker hosting           | Not started |
-| 07    | Messages + Project Chat (parent)                     | Structured participation-request items plus automatic project group conversations                                     | 05A, 06A               | Exact chat trigger and access/moderation after leaving or removal                                                    | In progress |
+| 07    | Messages + Project Chat (parent)                     | Structured request items, Project-chat lifecycle authorization, and later encrypted realtime/mobile conversation     | 05A, 06A               | E2EE architecture, pre-first-join history visibility, and later moderation overrides                                 | In progress |
 | 07A   | Messages Surface and Structured Participation Requests | Authenticated Messages inbox with canonical actionable join-request items                                            | 05A, 06A               | Functional/native UX review and final Messages information architecture                                              | Implemented |
-| 07B   | Project Group Chat                                   | Automatic idempotent group chat, membership authorization, realtime text, group info, and meeting link                | 05A, 07A               | Triggering participation event plus access/moderation after leaving or removal                                       | Not started |
+| 07B   | Project Group Chat (parent)                          | First-accept lifecycle/authorization foundation followed by messaging, Realtime, and mobile group experience          | 05A, 07A               | E2EE architecture and pre-first-join history visibility before message reads                                         | In progress |
+| 07B1  | Project Group Chat Lifecycle and Authorization Foundation | One chat per Project, first-accept activation, and ownership/membership-derived current and historical entitlement | 05A, 07A               | None for the scoped structural foundation                                                                            | In progress |
+| 07B2  | Project Chat Messaging, Realtime and Mobile Experience | Authorized encrypted-message model, Realtime text, mobile chat/group info, and protected meeting access             | 07B1                    | Reconcile E2EE architecture and decide pre-first-join message visibility                                             | Not started |
 | 08    | Storage and media hardening                          | Select the production media approach, then implement purpose-specific access, metadata, cleanup, and processing hooks | 03–07                  | Profile/proposal photo visibility, retention, and self-hosted Supabase Storage versus external object storage         | Not started |
 | 09    | Safety, moderation and admin                         | Reporting, blocking, content states, admin roles, moderation queue/actions, audit trail and minimal custom admin UI   | 04–08                  | Community rules, prohibited content, escalation, suspension, appeals, minimum age                                    | Not started |
 | 10    | Account deletion and privacy operations              | In-app and web deletion paths, cleanup/anonymization jobs, export groundwork, privacy documentation inputs            | 03–09                  | Legal retention and anonymization policy; legal text remains founder/legal work                                      | Not started |
@@ -331,7 +333,7 @@ Owns:
 - requester/creator/member private reads and creator/current-member protected meeting access;
 - identifier-only audit/outbox events, pgTAP, real multi-user integration, and generated types.
 
-05A does not implement UI, notification delivery, chat, capacity/fullness, resources, online/in-person schema, contribution verification, badges, or denormalized counters. `project.join_request_accepted` is a stable Plan 07 candidate event, but Plan 07 still owns the exact automatic-chat trigger and access after membership changes.
+05A does not implement UI, notification delivery, chat, capacity/fullness, resources, online/in-person schema, contribution verification, badges, or denormalized counters. Its canonical accepted membership and append-preserved intervals are the source used by 07B1 chat activation and authorization; the existing accepted outbox event remains unchanged for independent consumers.
 
 #### 05B — Mobile Project Participation Experience
 
@@ -350,7 +352,7 @@ This client must consume the 05A operations and must not reproduce participation
 
 #### 05D — Participation-Aware Browse and Pending Request Visibility
 
-**Status:** In progress in the current implementation PR. Depends on 04A, 04B1, 05A, and 05B.
+**Status:** Implemented in merged PR #24 (`82ca32ab4020bc9107ea33beb3ad551ff48bcafc`). Depends on 04A, 04B1, 05A, and 05B.
 
 Owns requester-only, expected-identity pending-card reads plus the mobile
 Proposal/Tavolo `Requested` sections. Public list contracts, cursors, ordering,
@@ -400,7 +402,7 @@ Owns:
 - expected-identity-bound keyset inbox, unread, mark-one, mark-all, and preference APIs;
 - safe project/actor presentation context, pgTAP, local integration, generated types, and CI.
 
-06A depends on the 01B identity/outbox primitives and implemented 05A participation events. It does not depend on 05C or independent 04C resource work. Existing supported events are not automatically backfilled when support is introduced. Unsupported events, including the accepted event's possible future chat use, remain available to other consumers.
+06A depends on the 01B identity/outbox primitives and implemented 05A participation events. It does not depend on 05C or independent 04C resource work. Existing supported events are not automatically backfilled when support is introduced. The accepted event remains available to independent consumers; 07B1 activates the chat transactionally from canonical membership and does not consume or globally acknowledge it.
 
 #### 06B — Mobile In-App Notifications and Preferences
 
@@ -494,7 +496,7 @@ Request-specific 06A notifications carry `request_id` and the semantic `particip
 
 **Goal:** Give users one authenticated communication area for structured participation requests and later project-group coordination without duplicating canonical participation state.
 
-**Status:** In progress through 07A. This parent is split between the request-oriented Messages surface and the distinct accepted-participant group chat.
+**Status:** In progress through 07B1. This parent is split between the request-oriented Messages surface, the accepted-participant chat lifecycle/authorization foundation, and the later messaging experience.
 
 #### 07A — Messages Surface and Structured Participation Request Items
 
@@ -512,26 +514,41 @@ Implemented scope:
 
 The existing Participation overview remains the organizer's secondary full-history and member-management surface.
 
-#### 07B — Project Group Chat
+#### 07B — Project Group Chat (parent)
 
-**Status:** Not started.
+**Status:** In progress through 07B1.
 
-Future scope:
+The parent is split so lifecycle and authorization can land without prematurely
+choosing how encrypted message bodies, multi-device keys, history reads, or
+Realtime transport work.
 
-- exactly one automatically created eligible group conversation per project;
-- transactional idempotent creation at the participation event finalized with plans 05/07, without a fixed three-person gate or manual Create Chat action;
-- member authorization and historical-access behavior;
-- retention of chat/messages when a project ends;
-- persisted text messages and pagination;
-- Supabase Realtime subscription handling;
-- send deduplication/error recovery;
-- group information with a route to the Participation overview;
-- message reporting/deletion-state groundwork;
-- push-notification events;
-- optional externally created meeting URL;
-- no direct messages, calls, reactions, typing indicators, or end-to-end encryption.
+##### 07B1 — Project Group Chat Lifecycle and Authorization Foundation
 
-The exact automatic group-chat trigger and whether Participation is a direct group action or a group-info action remain deferred to 07B.
+**Status:** In progress in the current implementation PR. Depends on 05A and 07A.
+
+Scoped foundation:
+
+- the first accepted join request transactionally activates one chat anchor;
+- creator plus first accepted participant is sufficient, with no fixed threshold;
+- later acceptances and rejoins reuse the same Project chat;
+- current/send and historical entitlement derive from ownership plus canonical membership intervals;
+- leave/removal ends current entitlement while preserving half-open history intervals and rejoin gaps;
+- Project completion and Tavolo pause/end retain the anchor;
+- existing membership history is reconciled deterministically;
+- no message body, chat-member mirror, Realtime, Flutter chat UI, meeting copy, or new notification/push behavior.
+
+##### 07B2 — Project Chat Messaging, Realtime and Mobile Experience
+
+**Status:** Not started. Depends on 07B1.
+
+Future scope includes the message persistence/encryption model, authorized
+history reads, Realtime text, send recovery, mobile chat and group information,
+protected existing meeting-link access, reporting groundwork, and safe push
+behavior. Before implementation, founder input must reconcile the existing E2EE
+product requirement with the architecture and decide whether a newly accepted
+current member may see messages sent before their first join. Blocking,
+suspension, and moderation overrides remain Plan 09. Direct messages, calls,
+reactions, and typing indicators remain excluded.
 
 ### 08 — Storage and media hardening
 
@@ -693,7 +710,7 @@ Major gates currently expected:
 
 1. recurrence expansion/exception semantics before extending beyond the bounded 04B1 weekly/monthly model; 04A rough/exact location visibility is resolved;
 2. capacity/fullness before introducing limits; the core request/membership state semantics are resolved in 05A;
-3. group-chat trigger and access after membership changes before plan 07B;
+3. E2EE architecture and pre-first-join message visibility before plan 07B2;
 4. moderation/minimum-age policy before plan 09 is complete;
 5. retention/anonymization policy before plan 10;
 6. success metrics and analytics legal basis before plan 11;
@@ -703,7 +720,7 @@ Major gates currently expected:
 
 ## Immediate next action
 
-Complete and review **05D — Participation-Aware Browse and Pending Request Visibility** without changing public discovery ordering or introducing broader personalization. **04C — Resources + Scambio-Dona** remains independently available; 05C waits for contribution/resource decisions. Plan 06C2B requires Firebase/APNs configuration, push permission and preview decisions, server-side FCM credentials, and a self-host-compatible worker deployment target. Plan 07B still requires the exact automatic-chat trigger and post-membership access decisions. Deferred native Android/iOS checks from implemented feature plans belong in the consolidated Plan 12 QA pass. Production self-hosting does not begin until Plan 13, after the main functional work and Plan 12 UI/UX pass.
+Complete and review **07B1 — Project Group Chat Lifecycle and Authorization Foundation** without adding message storage, Realtime, or mobile chat. **04C — Resources + Scambio-Dona** remains independently available; 05C waits for contribution/resource decisions. Plan 06C2B requires Firebase/APNs configuration, push permission and preview decisions, server-side FCM credentials, and a self-host-compatible worker deployment target. Plan 07B2 requires an explicit E2EE architecture decision and a decision on pre-first-join message visibility. Deferred native Android/iOS checks from implemented feature plans belong in the consolidated Plan 12 QA pass. Production self-hosting does not begin until Plan 13, after the main functional work and Plan 12 UI/UX pass.
 
 The independent public informational mini-track has SITE-00 implemented in
 merged PR #23, SITE-01 in merged PR #25, and SITE-02 implemented as the

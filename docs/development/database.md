@@ -1,6 +1,6 @@
 # Database development
 
-PostgreSQL is the canonical PLANETS product record. This guide owns the local schema-change, security-test, and generated-type workflow. The current schema includes application identity, basic profiles, a controlled starter skill catalog, field visibility, one-time proposals, the Tavoli recurring-activity domain, shared project participation and structured Messages reads, the in-app notification domain, the provider-independent push installation/delivery-job foundation, and private audit/outbox primitives.
+PostgreSQL is the canonical PLANETS product record. This guide owns the local schema-change, security-test, and generated-type workflow. The current schema includes application identity, basic profiles, a controlled starter skill catalog, field visibility, one-time proposals, the Tavoli recurring-activity domain, shared project participation, structured Messages reads, the Project group-chat lifecycle/authorization foundation, the in-app notification domain, the provider-independent push installation/delivery-job foundation, and private audit/outbox primitives.
 
 ## Source of truth and daily workflow
 
@@ -70,7 +70,7 @@ Owners use expected-identity-bound create/update/publish/pause/resume/end and ow
 
 Authenticated clients use `request_to_join_project`, `withdraw_project_join_request`, `accept_project_join_request`, `reject_project_join_request`, `leave_project`, and `remove_project_member`; the tables themselves have no client privileges or RLS policies. All operations bind an expected rendered identity to `auth.uid()`, validate creator/requester/member ownership, and lock in a consistent source-project-row order. Request/accept eligibility uses the concrete lifecycle: a published one-time project accepts strictly before `ends_at`; a Tavolo accepts only while published. Pause/end/completion preserve membership history.
 
-Requester, creator-review, own-membership, and creator-member-history reads are separate narrow operations. Request messages never become public, and the creator projection contains display name but no Auth email. `get_project_participant_meeting_details` returns only exact operational meeting text/point and concrete kind to the creator or a current accepted participant. Every transition adds an identifier-only audit/outbox event; no delivery, chat, resource contribution, capacity, badge, or contribution verification is implemented here.
+Requester, creator-review, own-membership, and creator-member-history reads are separate narrow operations. Request messages never become public, and the creator projection contains display name but no Auth email. `get_project_participant_meeting_details` returns only exact operational meeting text/point and concrete kind to the creator or a current accepted participant. Every transition adds an identifier-only audit/outbox event. The later 07B1 migration derives chat activation from canonical membership insertion without changing those event contracts; resource contribution, capacity, badges, and contribution verification remain deferred.
 
 ## Structured participation-request Messages
 
@@ -89,6 +89,35 @@ support both outgoing requester and incoming creator paths. The routines are
 fixed-search-path security definers granted only to `authenticated`. They add no
 table grants, generic message/thread table, or durable copy. Request mutations
 remain the 05A operations.
+
+## Project group-chat lifecycle and authorization
+
+`public.project_group_chats` stores only an opaque UUID, the unique shared
+Project identity, earliest accepted-membership activation time, and physical
+creation time. It has RLS enabled with no policies or direct client/service
+grants. The first `project_memberships` insert transactionally calls a private
+conflict-safe ensure helper, so acceptance cannot commit without the chat anchor
+and later acceptance/rejoin retains the same ID. A private idempotent
+reconciliation helper backfills any Project with earlier membership history and
+uses `min(joined_at)` as logical activation. Project and chat identities are
+immutable, and a validation trigger forbids anchors without membership history.
+
+Private helpers answer creator status, current membership, any accepted history,
+membership at a timestamp, and current/historical chat entitlement. Participant
+intervals are half-open `[joined_at, coalesce(left_at, removed_at))`; separate
+rejoins remain separate rows and gaps remain observable. The Project creator is
+authorized independently through immutable ownership. Leave/removal therefore
+changes entitlement without a chat mutation, and Project completion or Tavolo
+pause/end does not delete the anchor.
+
+`get_own_project_group_chat` is the only client-facing 07B1 contract. It binds
+the expected profile to `auth.uid()` and returns only chat/Project IDs, Project
+kind, activation time, viewer role, and current/history booleans to the creator
+or someone with accepted membership history. Missing, pre-activation, and
+unrelated lookups fail with the same unavailable response. 07A request Messages
+remain separate. There is no chat-member mirror, message body or ciphertext,
+key material, Realtime publication, meeting-detail copy, or Flutter chat state.
+07B2 must resolve E2EE and pre-first-join message visibility before message APIs.
 
 ## Notification domain and outbox projection
 
@@ -178,6 +207,7 @@ npm run notification:verify:local
 npm run push:delivery:verify:local
 npm run push:verify:local
 npm run messages:verify:local
+npm run project:chat:verify:local
 npm run db:types
 npm run db:types:check
 ```
@@ -218,8 +248,10 @@ the deterministic local profiles and device-QA sequence.
 
 `messages:verify:local` uses a Project creator, requester, unrelated authenticated user, and anon across a Proposal and Tavolo. It proves requester/creator structured reads and private-message visibility, identical unauthorized/missing exact failures, anonymous denial, canonical Accept/Withdraw history, both project contexts, chronology, narrow output, and unchanged public privacy. It never prints OTPs, tokens, keys, request messages, or meeting values.
 
+`project:chat:verify:local` uses a creator, participants A/B, and an unrelated identity with real local Auth plus narrow direct-database assertions. It proves no pre-acceptance chat, first-accept activation, later reuse, concurrent two-request acceptance with one chat, creator/current/former entitlement, half-open leave/removal intervals, a preserved rejoin gap, stable chat identity, unrelated denial, all-members-ended retention, and shared Proposal/Tavolo behavior across pause/resume/end. It logs no OTPs, tokens, database URLs, request messages, meeting details, or secrets.
+
 `auth:web:verify:local` adds web-specific evidence after a locally configured production Next.js build. It obtains session cookies through supported `@supabase/ssr` callbacks, confirms the Server Component recognizes the authenticated session, rejects private-auth material in the rendered response, and confirms `/admin` returns 404 for signed-out and signed-in requests. It does not invent or log Supabase's cookie encoding.
 
 `tavoli:web:verify:local` uses synthetic local OTP data and the production Next.js server to prove signed-out Tavoli list/detail rendering, rough-location and next-meeting output, exclusion of paused/ended rows from discovery, retained sanitized historical detail, exact-ID 404 behavior, and detail-only public/restricted exact-location handling. It never prints test addresses, tokens, keys, or protected meeting content.
 
-`npm run check:db` performs reset, lint, pgTAP, the real fake push-delivery worker protocol, the mobile/backend Auth check, the two-user profile visibility check, the proposal privacy/lifecycle check, the recurring activity recurrence/privacy/lifecycle check, the multi-user project-participation and participation-aware Browse checks, notification projection, push-foundation integration, structured Messages integration, type regeneration, and drift detection as one validation sequence. It assumes `npm run db:start` has already succeeded and leaves stack lifecycle to the caller. CI additionally generates local web configuration, builds Next.js, runs the web-session and public Tavoli integrations, and always stops Supabase.
+`npm run check:db` performs reset, lint, pgTAP, the real fake push-delivery worker protocol, the mobile/backend Auth check, the two-user profile visibility check, the proposal privacy/lifecycle check, the recurring activity recurrence/privacy/lifecycle check, the multi-user project-participation and participation-aware Browse checks, notification projection, push-foundation integration, structured Messages integration, Project-chat lifecycle/authorization integration, type regeneration, and drift detection as one validation sequence. It assumes `npm run db:start` has already succeeded and leaves stack lifecycle to the caller. CI additionally generates local web configuration, builds Next.js, runs the web-session and public Tavoli integrations, and always stops Supabase.
