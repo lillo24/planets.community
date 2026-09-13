@@ -1,10 +1,10 @@
 # PLANETS web application
 
-This folder owns the Next.js public website, ordinary web authentication, read-only one-time Proposal and Tavoli discovery, and the future authenticated admin surface. Moderation and administration behavior remain deferred to later roadmap plans.
+This folder owns the dynamic Next.js public-discovery application, ordinary web authentication, read-only one-time Proposal and Tavoli discovery, and the future authenticated admin surface. The separate static informational and launch website lives in `apps/site`. Moderation and administration behavior remain deferred to later roadmap plans.
 
 ## Source map
 
-- `src/app/(public)/` owns the shared public shell routes. `/` stays informational and public, `/auth` owns sign-in, `/profile` is the authenticated owner settings route, and `/proposals` owns signed-out one-time Proposal discovery.
+- `src/app/(public)/` owns the shared public shell routes. `/` stays a public entry point for this dynamic application, `/auth` owns sign-in, `/profile` is the authenticated owner settings route, and `/proposals` owns signed-out one-time Proposal discovery.
 - `src/app/tavoli/` owns signed-out Tavoli list/detail routes outside the shared public loading boundary. The URL surface remains `/tavoli`; this separation lets invalid and missing IDs return an HTTP 404 before response streaming starts.
 - `src/app/(admin)/` reserves the separate admin route surface. `/admin` returns the not-found boundary for signed-out and ordinary signed-in users until a later plan defines admin authorization.
 - `src/app/` also owns the root Server Component layout, global Tailwind/shadcn theme, and safe loading/not-found/error boundaries.

@@ -15,6 +15,13 @@ abstract interface class RecurringActivityGateway {
     String? locality,
   });
 
+  Future<List<RequestedRecurringActivitySummary>>
+  listOwnPendingRequestedActivities(
+    String expectedProfileId, {
+    required DateTime referenceTime,
+    String? locality,
+  });
+
   Future<PublicRecurringActivityDetail?> getPublicActivity(
     String activityId, {
     required DateTime referenceTime,
@@ -90,6 +97,35 @@ class SupabaseRecurringActivityGateway implements RecurringActivityGateway {
       ),
       growable: false,
     );
+  }
+
+  @override
+  Future<List<RequestedRecurringActivitySummary>>
+  listOwnPendingRequestedActivities(
+    String expectedProfileId, {
+    required DateTime referenceTime,
+    String? locality,
+  }) async {
+    final response = await _client.rpc<List<dynamic>>(
+      'list_own_pending_requested_recurring_activities',
+      params: {
+        'p_expected_requester_profile_id': expectedProfileId,
+        'p_reference_time': referenceTime.toUtc().toIso8601String(),
+        'p_locality': locality,
+      },
+    );
+    return response
+        .cast<Map<String, dynamic>>()
+        .map(
+          (row) => RequestedRecurringActivitySummary(
+            requestId: row['request_id'] as String,
+            requestCreatedAt: DateTime.parse(
+              row['request_created_at'] as String,
+            ),
+            activity: _publicSummaryFromRow(row, _scheduleFromFlatRow(row)),
+          ),
+        )
+        .toList(growable: false);
   }
 
   @override

@@ -155,6 +155,18 @@ class ProposalSummary {
   ProposalCursor get cursor => ProposalCursor(startsAt: startsAt, id: id);
 }
 
+class RequestedProposalSummary {
+  const RequestedProposalSummary({
+    required this.requestId,
+    required this.requestCreatedAt,
+    required this.proposal,
+  });
+
+  final String requestId;
+  final DateTime requestCreatedAt;
+  final ProposalSummary proposal;
+}
+
 class ProposalDetail {
   const ProposalDetail({
     required this.summary,
@@ -308,6 +320,7 @@ class PublicProposalsState {
   const PublicProposalsState({
     this.phase = ProposalLoadPhase.idle,
     this.items = const [],
+    this.requestedItems = const [],
     this.categories = const [],
     this.locality = '',
     this.selectedSkillIds = const {},
@@ -316,7 +329,9 @@ class PublicProposalsState {
   });
 
   final ProposalLoadPhase phase;
+  // Raw public pages stay separate so personalization never changes cursors.
   final List<ProposalSummary> items;
+  final List<RequestedProposalSummary> requestedItems;
   final List<ProposalSkillCategory> categories;
   final String locality;
   final Set<String> selectedSkillIds;
@@ -326,6 +341,13 @@ class PublicProposalsState {
   bool get isBusy =>
       phase == ProposalLoadPhase.loading ||
       phase == ProposalLoadPhase.loadingMore;
+
+  List<ProposalSummary> get ordinaryItems {
+    final requestedIds = requestedItems.map((item) => item.proposal.id).toSet();
+    return items
+        .where((item) => !requestedIds.contains(item.id))
+        .toList(growable: false);
+  }
 }
 
 class ProposalDetailState {

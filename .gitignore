@@ -1,6 +1,7 @@
-# Node and Next.js
+# Node, Vite, and Next.js
 node_modules/
 .next/
+dist/
 out/
 coverage/
 *.tsbuildinfo

@@ -64,9 +64,14 @@ class _PublicProposalsScreenState extends ConsumerState<PublicProposalsScreen> {
         ],
       ),
       body: SafeArea(
-        child: state.phase == ProposalLoadPhase.loading && state.items.isEmpty
+        child:
+            state.phase == ProposalLoadPhase.loading &&
+                state.items.isEmpty &&
+                state.requestedItems.isEmpty
             ? LoadingState(message: l10n.proposalLoading)
-            : state.phase == ProposalLoadPhase.failure && state.items.isEmpty
+            : state.phase == ProposalLoadPhase.failure &&
+                  state.items.isEmpty &&
+                  state.requestedItems.isEmpty
             ? ErrorState(
                 message: l10n.proposalSafeError,
                 onRetry: () =>
@@ -116,20 +121,48 @@ class _PublicProposalsScreenState extends ConsumerState<PublicProposalsScreen> {
                       ),
                     ],
                     const SizedBox(height: AppSpacing.medium),
-                    if (state.items.isEmpty)
+                    if (state.items.isEmpty && state.requestedItems.isEmpty)
                       EmptyState(
                         title: l10n.proposalEmptyTitle,
                         message: l10n.proposalEmptyMessage,
                         icon: Icons.event_available_outlined,
                       )
-                    else
-                      for (final proposal in state.items) ...[
+                    else ...[
+                      if (state.requestedItems.isNotEmpty) ...[
+                        Text(
+                          l10n.browseRequestedSection,
+                          key: const Key('proposal-requested-section'),
+                          style: Theme.of(context).textTheme.titleLarge,
+                        ),
+                        const SizedBox(height: AppSpacing.small),
+                        for (final requested in state.requestedItems) ...[
+                          ProposalCard(
+                            proposal: requested.proposal,
+                            isRequested: true,
+                            onTap: () => context.go(
+                              '/proposals/${requested.proposal.id}',
+                            ),
+                          ),
+                          const SizedBox(height: AppSpacing.small),
+                        ],
+                      ],
+                      if (state.requestedItems.isNotEmpty &&
+                          state.ordinaryItems.isNotEmpty) ...[
+                        Text(
+                          l10n.browseOtherProjectsSection,
+                          key: const Key('proposal-other-section'),
+                          style: Theme.of(context).textTheme.titleLarge,
+                        ),
+                        const SizedBox(height: AppSpacing.small),
+                      ],
+                      for (final proposal in state.ordinaryItems) ...[
                         ProposalCard(
                           proposal: proposal,
                           onTap: () => context.go('/proposals/${proposal.id}'),
                         ),
                         const SizedBox(height: AppSpacing.small),
                       ],
+                    ],
                     if (state.phase == ProposalLoadPhase.failure &&
                         state.items.isNotEmpty)
                       Text(

@@ -21,6 +21,39 @@ import '../../../support/fake_recurring_activity.dart';
 
 void main() {
   testWidgets(
+    'requested Tavolo is first, marked, unique, and remains tappable',
+    (tester) async {
+      await tester.binding.setSurfaceSize(const Size(800, 1200));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+      final recurring = FakeRecurringActivityGateway()
+        ..publicItems = [publicRecurringSummaryFixture(id: 'tavolo-2')]
+        ..requestedItems = [requestedRecurringActivityFixture()]
+        ..publicDetail = publicRecurringDetailFixture();
+      final app = await _pump(tester, recurring: recurring);
+      app.read(appRouterProvider).go('/tavoli');
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(const Key('tavolo-requested-section')), findsOneWidget);
+      expect(find.byKey(const Key('browse-requested-badge')), findsOneWidget);
+      expect(find.byKey(const Key('tavolo-card-tavolo-1')), findsOneWidget);
+      expect(find.byKey(const Key('tavolo-card-tavolo-2')), findsOneWidget);
+      expect(
+        tester.getTopLeft(find.byKey(const Key('tavolo-card-tavolo-1'))).dy,
+        lessThan(
+          tester.getTopLeft(find.byKey(const Key('tavolo-card-tavolo-2'))).dy,
+        ),
+      );
+
+      await tester.tap(find.byKey(const Key('tavolo-card-tavolo-1')));
+      await tester.pumpAndSettle();
+      expect(
+        app.read(appRouterProvider).routeInformationProvider.value.uri.path,
+        '/tavoli/tavolo-1',
+      );
+    },
+  );
+
+  testWidgets(
     'public detail renders sanitized location and event-zone meetings',
     (tester) async {
       final recurring = FakeRecurringActivityGateway()

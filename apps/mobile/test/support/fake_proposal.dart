@@ -1,12 +1,30 @@
 import 'package:planets_mobile/features/proposals/data/proposal_gateway.dart';
 import 'package:planets_mobile/features/proposals/domain/proposal_models.dart';
 
+typedef RequestedProposalLoader =
+    Future<List<RequestedProposalSummary>> Function(
+      String expectedProfileId, {
+      String? locality,
+      Set<String>? skillIds,
+    });
+
+typedef PublicProposalLoader = Future<List<ProposalSummary>> Function({
+  required int limit,
+  ProposalCursor? cursor,
+  String? locality,
+  Set<String>? skillIds,
+});
+
 class FakeProposalGateway implements ProposalGateway {
   List<ProposalSkillCategory> categories = proposalCategoriesFixture();
   List<ProposalSummary> publicItems = [];
+  List<RequestedProposalSummary> requestedItems = [];
   ProposalDetail? publicDetail;
   List<OwnProposal> ownItems = [];
   Object? error;
+  Object? requestedError;
+  RequestedProposalLoader? requestedLoader;
+  PublicProposalLoader? publicLoader;
   Future<void>? mutationDelay;
   Future<List<OwnProposal>>? ownListResult;
   Future<OwnProposal?>? ownResult;
@@ -16,6 +34,9 @@ class FakeProposalGateway implements ProposalGateway {
   ProposalCursor? lastCursor;
   String? lastLocality;
   Set<String>? lastSkillIds;
+  String? lastRequestedIdentity;
+  String? lastRequestedLocality;
+  Set<String>? lastRequestedSkillIds;
 
   @override
   Future<List<ProposalSkillCategory>> loadSkillCatalog() async {
@@ -35,7 +56,32 @@ class FakeProposalGateway implements ProposalGateway {
     lastCursor = cursor;
     lastLocality = locality;
     lastSkillIds = skillIds;
+    if (publicLoader case final loader?) {
+      return loader(
+        limit: limit,
+        cursor: cursor,
+        locality: locality,
+        skillIds: skillIds,
+      );
+    }
     return publicItems.take(limit).toList();
+  }
+
+  @override
+  Future<List<RequestedProposalSummary>> listOwnPendingRequestedProposals(
+    String expectedProfileId, {
+    String? locality,
+    Set<String>? skillIds,
+  }) async {
+    calls.add('list-requested');
+    lastRequestedIdentity = expectedProfileId;
+    lastRequestedLocality = locality;
+    lastRequestedSkillIds = skillIds;
+    if (requestedError case final failure?) throw failure;
+    if (requestedLoader case final loader?) {
+      return loader(expectedProfileId, locality: locality, skillIds: skillIds);
+    }
+    return requestedItems;
   }
 
   @override
@@ -166,6 +212,16 @@ ProposalSummary proposalSummaryFixture({
           importance: ProposalSkillImportance.required,
         ),
       ],
+);
+
+RequestedProposalSummary requestedProposalFixture({
+  String requestId = 'request-1',
+  String proposalId = 'proposal-1',
+  DateTime? requestCreatedAt,
+}) => RequestedProposalSummary(
+  requestId: requestId,
+  requestCreatedAt: requestCreatedAt ?? DateTime.utc(2026, 9, 4, 12),
+  proposal: proposalSummaryFixture(id: proposalId),
 );
 
 ProposalDetail proposalDetailFixture({

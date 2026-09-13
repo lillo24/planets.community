@@ -69,6 +69,9 @@ jobs:
       - name: Validate web application
         run: npm run check:web
 
+      - name: Validate public informational site
+        run: npm run check:site
+
   supabase:
     name: Database
     runs-on: ubuntu-latest
@@ -115,6 +118,9 @@ jobs:
 
       - name: Verify project participation state, privacy, and lifecycle integration
         run: npm run participation:verify:local
+
+      - name: Verify participation-aware Browse ordering, filters, and privacy
+        run: npm run participation:browse:verify:local
 
       - name: Verify notification projection, preferences, inbox privacy, and idempotency
         run: npm run notification:verify:local
