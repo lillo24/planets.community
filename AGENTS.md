@@ -219,10 +219,19 @@ After finishing a plan:
 - inspect the diff
 - commit only intended files
 - push the branch
-- open/merge a PR into `main`
-- delete the branch locally and remotely after merge when the repository/workflow expects manual cleanup
+- always open a GitHub PR into main; do not consider an implementation task complete while its changes exist only in a local branch/worktree
+- after required CI passes and the PR is cleanly mergeable, merge it automatically unless the active task explicitly requires founder/manual review or there is an unresolved consequential decision that cannot be safely resolved from repository evidence and tests
+- when leaving a PR open, state exactly what requires human review; do not leave it open merely because manual approval is possible
+- after the PR is merged and no further QA, review, or fix-up work requires the isolated checkout, remove the task worktree if it was created manually or is still present
+- then delete the task branch locally and remotely when the repository/workflow expects manual cleanup
+- do not leave merged-plan worktrees behind; before creating a new manual worktree, check `git worktree list` and remove stale worktrees from already-merged plans
+
+A PR is required even when automatic merge is expected. The PR is the durable review/traceability artifact for the task.
+
+Code merge and external deployment are separate actions: automatic PR merge does not authorize production deployment, billing changes, DNS changes, destructive production operations, or other external actions that require explicit authorization elsewhere in this file.
 
 Do not push directly to `main` unless the active user/task instruction explicitly authorizes it.
+
 
 ### Parallel tasks
 Parallel Codex tasks must use separate branches/worktrees.
