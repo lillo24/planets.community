@@ -29,7 +29,7 @@ npm run restore:mobile
 npm run check
 ```
 
-Use `npm run db:start`, `npm run mobile:config:local`, and `npm run dev:mobile` for the locally configured Flutter app. Use `npm run web:config:local` before `npm run dev:web` for the dynamic web application. For the public site, `npm run dev:site` serves static UI work and `npm run dev:site:waitlist` runs the complete local Pages Function/D1 flow after its documented setup. No cloud account is required for the local workflow.
+Use `npm run db:start`, `npm run mobile:config:local`, and `npm run dev:mobile` for the locally configured Flutter app. Use `npm run web:config:local` before `npm run dev:web` for the dynamic web application. For the public site, `npm run dev:site` serves static UI work and `npm run dev:site:waitlist` runs the complete local Workers Static Assets/Worker/D1 flow after its documented setup. No cloud account is required for the local workflow.
 
 See [Getting started](docs/development/getting-started.md) for prerequisites, exact setup steps, local URLs, and troubleshooting. Database contributors should also read the [database development workflow](docs/development/database.md).
 

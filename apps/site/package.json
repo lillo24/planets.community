@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "dev:waitlist": "npm run build:waitlist-local && wrangler pages dev",
+    "dev:waitlist": "npm run build:waitlist-local && wrangler dev --local --port 8788",
+    "deploy": "wrangler deploy --config wrangler.jsonc",
     "build": "tsc --noEmit && vite build",
     "build:waitlist-local": "tsc --noEmit && vite build --mode waitlist-local",
     "lint": "eslint .",
@@ -13,6 +14,7 @@
     "test:client": "vitest run --config vitest.config.ts",
     "test:waitlist": "vitest run --config vitest.cloudflare.config.ts",
     "typecheck": "tsc --noEmit && tsc --project tsconfig.worker.json",
+    "check:deploy": "wrangler deploy --dry-run --outdir .wrangler/dry-run --config wrangler.jsonc",
     "waitlist:migrate:local": "wrangler d1 migrations apply WAITLIST_DB --local --config wrangler.jsonc",
     "waitlist:inspect:local": "wrangler d1 execute WAITLIST_DB --local --config wrangler.jsonc --command \"SELECT email, created_at, consented_at, consent_version, notified_at FROM launch_waitlist ORDER BY created_at\"",
     "waitlist:delete-smoke:local": "wrangler d1 execute WAITLIST_DB --local --config wrangler.jsonc --command \"DELETE FROM launch_waitlist WHERE email = 'local-smoke@planets.invalid'\"",

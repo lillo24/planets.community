@@ -1,7 +1,7 @@
 # System Design and Responsibility Boundaries
 
 **Status:** Initial accepted design  
-**Implementation status:** Foundations, authentication, profiles, one-time proposals, Tavoli mobile/public-web discovery, shared project participation, in-app notification projection, structured participation-request Messages, Project group-chat lifecycle/durable message/mobile experience, Project-chat notification/push projection, the provider-independent push/job foundation, provider-neutral push delivery worker protocol, and the static-first informational site with its local/CI one-time waitlist boundary implemented or in focused review
+**Implementation status:** Foundations, authentication, profiles, one-time proposals, Tavoli mobile/public-web discovery, shared project participation, in-app notification projection, structured participation-request Messages, Project group-chat lifecycle/durable message/mobile experience, Project-chat notification/push projection, the provider-independent push/job foundation, provider-neutral push delivery worker protocol, and the static-first informational site with its local/CI one-time waitlist boundary and native Workers runtime implemented or in focused review
 
 This document describes how the major parts of PLANETS should interact. Technology choices are recorded separately in [`core-stack.md`](core-stack.md).
 
@@ -26,7 +26,7 @@ Vite informational site       Flutter mobile application       Next.js discovery
          |                                 +-------------+---------------+
 POST /api/waitlist                                       |
          |                           Supabase platform (managed development/test;
-Cloudflare Pages Function                    intended self-hosted production)
+Cloudflare Worker + Static Assets            intended self-hosted production)
     |              |                    +---------------+----------------+
 Turnstile         D1                    |               |                |
 server check   launch_waitlist     Auth and RLS  PostgreSQL/PostGIS  Storage/Realtime
@@ -56,8 +56,8 @@ Mobile source is organized by real feature ownership, supported by narrow shared
 public page to ordinary static assets. It has no authentication, Supabase client,
 server rendering, analytics, or product-domain behavior.
 
-Its only dynamic operation is `POST /api/waitlist`: a Cloudflare Pages
-Functions/Workers-compatible handler revalidates the email and explicit
+Its only dynamic operation is `POST /api/waitlist`: a native Cloudflare Worker
+handler revalidates the email and explicit
 one-message consent, verifies Turnstile server-side, normalizes the address, and
 performs a prepared idempotent insert into D1. The record is limited to the
 normalized address, creation/consent timestamps, fixed
@@ -71,12 +71,14 @@ recurring updates, profiling, or unrelated communication. Duplicate requests do
 not reveal membership or rewrite the original record. Valid removal requests
 delete the row; no shadow marketing record is retained.
 
-Local Wrangler/Miniflare state, committed D1 migrations, official Turnstile test
+Matching files use Cloudflare Workers Static Assets' asset-first path; `/api/*`
+is routed to the Worker first, and there is no SPA fallback. Local
+Wrangler/Miniflare state, committed D1 migrations, official Turnstile test
 credentials, and mocks make the boundary reproducible without production
 resources. SITE-03 still owns Cloudflare provisioning, production secrets and
 hostname, legal/controller/contact inputs, deployment, and DNS. SITE-04 owns
-delivery and approved retirement/retention behavior. ADR 0005 records this
-boundary.
+delivery and approved retirement/retention behavior. ADR 0005 records the
+waitlist boundary and ADR 0006 records the Workers runtime.
 
 ### Dynamic web/admin client foundation
 

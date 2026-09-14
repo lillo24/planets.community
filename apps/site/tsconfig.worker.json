@@ -10,6 +10,6 @@
     "skipLibCheck": true,
     "types": ["@cloudflare/workers-types"]
   },
-  "include": ["functions/**/*.ts", "src/email-validation.ts"],
-  "exclude": ["functions/__tests__"]
+  "include": ["worker/**/*.ts", "src/email-validation.ts"],
+  "exclude": ["worker/__tests__"]
 }

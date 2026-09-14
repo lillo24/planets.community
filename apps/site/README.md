@@ -2,9 +2,11 @@
 
 This package owns the small public informational and launch website. Vite still
 builds the page as static assets. The only dynamic boundary is the narrow
-Cloudflare Pages Function at `POST /api/waitlist`, backed by D1 and protected by
-Turnstile. It is independent from `apps/web`, which owns dynamic public
-discovery and the future authenticated admin surface.
+Cloudflare Worker at `POST /api/waitlist`, backed by D1 and protected by
+Turnstile. Cloudflare Workers Static Assets serves the built page without
+invoking Worker code for matching files. The package is independent from
+`apps/web`, which owns dynamic public discovery and the future authenticated
+admin surface.
 
 ## Waitlist purpose and data boundary
 
@@ -51,7 +53,7 @@ prove production Turnstile configuration. Never put a real Turnstile secret in a
 `VITE_*` variable or any committed file.
 
 The ordinary `npm run dev:site` command remains useful for static layout work,
-but it has no Pages Function runtime and therefore cannot complete a signup.
+but it has no Worker runtime and therefore cannot complete a signup.
 
 Useful local data commands are:
 
@@ -75,9 +77,11 @@ npm run check:site
 
 The client suite covers validation, explicit consent, request/loading,
 success, and failure states. The Cloudflare runtime suite applies the committed
-D1 migration and covers endpoint validation, Turnstile outcomes, minimal
-storage, duplicates, constraints, and privacy-safe failures. It uses mocks and
-local Miniflare bindings; CI needs no Cloudflare account or production secret.
+D1 migration and covers native Worker routing, static-asset fallback, endpoint
+validation, Turnstile outcomes, minimal storage, duplicates, constraints, and
+privacy-safe failures. It uses mocks and local Miniflare bindings; CI needs no
+Cloudflare account or production secret. The validation gate also performs a
+dry-run Worker bundle with the static-assets and D1 bindings.
 
 ## Removal before launch
 
@@ -110,8 +114,17 @@ access/audit ownership are production inputs, not decisions made by SITE-02.
 
 ## Production boundary for SITE-03
 
-SITE-03 must replace the placeholder D1 identifier and test Turnstile values
-with separately provisioned production resources. Before cutover it must:
+SITE-03 must create a Workers application from the Git repository and replace
+the placeholder D1 identifier and test Turnstile values with separately
+provisioned production resources. The expected Workers Builds settings are:
+
+- repository root directory `/`;
+- build command `npm ci && npm run build --workspace @planets/site`;
+- deploy command `npm run deploy --workspace @planets/site`;
+- production branch `main`, with non-production branch builds and public
+  preview URLs enabled only if the account owner intentionally approves them.
+
+Before cutover SITE-03 must:
 
 - create the production D1 database, bind it as `WAITLIST_DB`, and apply the
   committed migrations;
@@ -123,6 +136,11 @@ with separately provisioned production resources. Before cutover it must:
   hostname as server-side bindings;
 - configure `TURNSTILE_TESTING_MODE=false`; test mode and official dummy keys
   must never be present in the production environment;
+- keep `VITE_TURNSTILE_SITE_KEY` in the Workers build environment while keeping
+  every server-only value in Worker runtime variables/secrets;
+- decide whether the temporary `workers.dev` route and version preview URLs are
+  enabled, and protect previews with Cloudflare Access if they must not be
+  public;
 - supply the approved legal-controller details, public/privacy contact, removal
   verification procedure, access owner, and retention/retirement decision;
 - verify the deployed static assets, endpoint binding, migration, duplicate
@@ -142,11 +160,13 @@ configure Resend, add analytics, or authorize waitlist reuse.
 - `src/TurnstileWidget.tsx` loads and renders Turnstile only when configured.
 - `src/waitlist-api.ts` owns the same-origin client request boundary.
 - `src/email-validation.ts` owns the shared email-format check.
-- `functions/api/waitlist.ts` maps the Pages route to the endpoint handler.
-- `functions/waitlist.ts` owns server validation, Siteverify, and prepared D1
+- `worker/index.ts` owns the native Worker router. `/api/*` reaches it before
+  assets, while matching static files use Cloudflare's asset-first path.
+- `worker/waitlist.ts` owns server validation, Siteverify, and prepared D1
   persistence.
 - `migrations/` owns reproducible D1 schema history.
-- `wrangler.jsonc` owns the local-compatible Pages/D1 binding contract; its
-  all-zero database ID is deliberately not a production resource.
-- `vitest.cloudflare.config.ts` and `functions/__tests__/` own Cloudflare runtime
+- `wrangler.jsonc` owns the native Worker, Static Assets, and local-compatible
+  D1 binding contract; its all-zero database ID is deliberately not a
+  production resource.
+- `vitest.cloudflare.config.ts` and `worker/__tests__/` own Cloudflare runtime
   tests.
