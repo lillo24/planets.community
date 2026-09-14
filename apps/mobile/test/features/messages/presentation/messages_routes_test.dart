@@ -10,4 +10,17 @@ void main() {
     expect(isMessagesPath('/messages/requests/request-1'), isTrue);
     expect(isMessagesPath('/proposals/request-1'), isFalse);
   });
+
+  test('project chats and group info have encoded stable routes', () {
+    expect(
+      projectChatRoute('chat/with space'),
+      '/messages/chats/chat%2Fwith%20space',
+    );
+    expect(
+      projectChatInfoRoute('chat/with space'),
+      '/messages/chats/chat%2Fwith%20space/info',
+    );
+    expect(isMessagesPath('/messages/chats/chat-1'), isTrue);
+    expect(isMessagesPath('/messages/chats/chat-1/info'), isTrue);
+  });
 }

@@ -4,6 +4,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../auth/application/auth_session_controller.dart';
 import '../../auth/domain/auth_models.dart';
 import '../../participation/application/participation_controllers.dart';
+import '../../project_chat/application/project_chat_refresh.dart';
 import '../data/messages_gateway.dart';
 import '../domain/message_models.dart';
 
@@ -350,6 +351,9 @@ class MessagesDetailController extends Notifier<MessagesDetailState> {
     ParticipationRequestMessageItem item,
     String profileId,
   ) async {
+    if (action == MessageAction.accepting) {
+      ref.read(projectChatRefreshProvider.notifier).notifyChanged();
+    }
     await ref
         .read(messagesInboxProvider.notifier)
         .load(profileId, refresh: true);

@@ -16,6 +16,7 @@ import 'package:planets_mobile/features/notifications/domain/notification_models
 import 'package:planets_mobile/features/participation/data/participation_gateway.dart';
 import 'package:planets_mobile/features/participation/domain/participation_models.dart';
 import 'package:planets_mobile/features/profile/data/profile_gateway.dart';
+import 'package:planets_mobile/features/project_chat/data/project_chat_gateway.dart';
 import 'package:planets_mobile/features/proposals/data/proposal_gateway.dart';
 import 'package:planets_mobile/features/recurring_activities/data/recurring_activity_gateway.dart';
 
@@ -24,6 +25,7 @@ import '../../../support/fake_messages.dart';
 import '../../../support/fake_notifications.dart';
 import '../../../support/fake_participation.dart';
 import '../../../support/fake_profile.dart';
+import '../../../support/fake_project_chat.dart';
 import '../../../support/fake_proposal.dart';
 import '../../../support/fake_recurring_activity.dart';
 
@@ -481,6 +483,7 @@ Future<ProviderContainer> _pump(
         messagesGatewayProvider.overrideWithValue(
           messages ?? FakeMessagesGateway(),
         ),
+        projectChatGatewayProvider.overrideWithValue(FakeProjectChatGateway()),
         participationGatewayProvider.overrideWithValue(
           FakeParticipationGateway(),
         ),

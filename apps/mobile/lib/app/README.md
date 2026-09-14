@@ -16,7 +16,7 @@ This folder owns application startup presentation and navigation, not backend ru
 | --- | --- |
 | 0 / Profile | `/profile`, nested `/profile/edit` with an optional sanitized post-setup `returnTo` |
 | 1 / Browse | `/proposals` and `/tavoli`, each with nested `mine`, `create`, `:id`, `:id/edit`, `:id/join`, and `:id/participants` |
-| 2 / Home | `/`, `/messages`, nested `/messages/requests/:requestId`, `/notifications`, nested `/notifications/preferences` |
+| 2 / Home | `/`, `/messages`, nested `/messages/requests/:requestId`, `/messages/chats/:chatId`, `/messages/chats/:chatId/info`, `/notifications`, nested `/notifications/preferences` |
 
 Static Browse children precede each dynamic activity-ID route. A route-backed
 Proposals/Tavoli switcher changes the public list within Browse without adding a
@@ -32,7 +32,7 @@ Home and Browse list/detail remain public. Signed-out Profile/management access
 uses the existing Auth flow with a sanitized internal `returnTo`. Incomplete
 profiles can use Home/Browse freely; Profile opens completion when the profile
 anchor exists, and management redirects to `/profile/edit`. Participation Join,
-creator-review, Messages, and Notifications routes preserve their exact internal destination
+creator-review, Messages request/chat/group-info, and Notifications routes preserve their exact internal destination
 through OTP and profile completion. Missing-anchor retry and email-OTP behavior
 are unchanged. Saving a valid profile returns to the preserved participation or
 Messages/Notifications route when present, otherwise to Profile.
@@ -57,11 +57,14 @@ Participation protected-meeting data is an additional private state boundary:
 it is loaded only for the creator/current member and cleared when identity or
 current membership changes. It is never added to public activity models.
 
-Messages inbox and detail state is another identity-bound boundary. Home exposes
-it through an AppBar action without changing the three-destination navigation
-bar. Its request-specific route is the client resolution target for 06A's
-semantic `participation_request` notification target; 06A still owns alerts and
-07A owns the actionable canonical request presentation.
+Messages request and Project-chat state are independent identity-bound
+boundaries. Home exposes their shared two-tab entry point through an AppBar
+action without changing the three-destination navigation bar. The
+request-specific route is the client resolution target for 06A's semantic
+`participation_request` notification target. Chat and group-info routes are
+protected by the same Auth/profile guards and are reconstructed on identity
+changes, which discards private history, composer, meeting state, and retained
+navigation.
 
 Notifications is a second authenticated Home AppBar surface. Its bell omits the
 badge while signed out, at zero, or after an unread-count failure; a ready

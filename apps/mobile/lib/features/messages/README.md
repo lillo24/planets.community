@@ -1,10 +1,10 @@
 # Messages
 
-This feature owns the authenticated mobile Messages surface for structured
-participation requests. It presents canonical `project_join_requests`; it does
-not create a generic message, thread, or request-copy store. The 07B1 backend
-chat anchor/authorization remains separate from this UI; message transport and
-mobile group chat remain 07B2 scope.
+This feature owns the authenticated mobile Messages information architecture.
+It keeps canonical structured participation requests and Project group chats
+in independent `Requests` and `Chats` tabs rather than creating one ambiguous
+chronological feed. Project-chat transport and UI live in the adjacent
+`project_chat/` feature; this feature remains the entry point.
 
 ## Source map
 
@@ -16,10 +16,11 @@ mobile group chat remain 07B2 scope.
 - `application/messages_controllers.dart` owns keyset paging, detail/action
   state, identity revisions, duplicate-action guards, conflict reloads, and
   synchronization with the existing 05B participation controllers.
-- `presentation/messages_routes.dart` owns the stable
-  `/messages/requests/:requestId` target used by future notification routing.
-- `presentation/messages_screen.dart` owns inbox loading, empty, safe-error,
-  refresh, pagination, role-aware copy, status, and project context.
+- `presentation/messages_routes.dart` owns stable request, chat, and group-info
+  routes used by navigation and future notification routing.
+- `presentation/messages_screen.dart` owns the two-tab shell, independent
+  loading/refresh/pagination, chat previews, and the existing role-aware request
+  cards. Chats is the deterministic default and no unread state is fabricated.
 - `presentation/participation_request_message_screen.dart` owns full authorized
   request detail, canonical actions, resolved history, and Proposal/Tavolo
   navigation.
@@ -39,8 +40,9 @@ role-specific: creators may Accept/Reject and requesters may Withdraw. A
 successful action reloads the canonical item and inbox, then refreshes the
 corresponding 05B participation view. Conflicts also reload current canonical
 state. Resolved requests remain read-only request history and do not themselves
-imply chat access; 07B1 derives chat entitlement from Project ownership and
-canonical accepted membership intervals.
+imply chat access. Chat availability and current/former behavior always come
+from the 07B2B canonical projections. Successful Accept/leave/remove flows
+issue only a narrow refresh hint so chat controllers re-read those projections.
 
 ## Navigation
 
@@ -49,10 +51,13 @@ Messages belongs to the existing Home branch, reached from Home's AppBar:
 ```text
 /messages
 /messages/requests/:requestId
+/messages/chats/:chatId
+/messages/chats/:chatId/info
 ```
 
 Both routes require authentication and a complete profile. Their exact safe
 internal destination survives email OTP and profile completion. The persistent
 bottom navigation remains Profile / Browse / Home; there is no fourth tab. Plan
 06B adds a separate Home notification bell/unread badge and resolves request
-alerts into this feature's stable request route.
+alerts into this feature's stable request route. 07B2C owns chat and group-info
+presentation without adding a fourth bottom destination.
