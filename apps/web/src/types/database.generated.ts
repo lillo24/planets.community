@@ -779,6 +779,65 @@ export type Database = {
           },
         ]
       }
+      resource_listings: {
+        Row: {
+          administrative_area: string | null
+          closed_at: string | null
+          country_code: string | null
+          created_at: string
+          description: string | null
+          id: string
+          lifecycle_state: string
+          listing_mode: string
+          locality: string | null
+          owner_profile_id: string
+          public_location_label: string | null
+          published_at: string | null
+          title: string | null
+          updated_at: string
+        }
+        Insert: {
+          administrative_area?: string | null
+          closed_at?: string | null
+          country_code?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          lifecycle_state?: string
+          listing_mode: string
+          locality?: string | null
+          owner_profile_id: string
+          public_location_label?: string | null
+          published_at?: string | null
+          title?: string | null
+          updated_at?: string
+        }
+        Update: {
+          administrative_area?: string | null
+          closed_at?: string | null
+          country_code?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          lifecycle_state?: string
+          listing_mode?: string
+          locality?: string | null
+          owner_profile_id?: string
+          public_location_label?: string | null
+          published_at?: string | null
+          title?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "resource_listings_owner_profile_id_fkey"
+            columns: ["owner_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       skill_categories: {
         Row: {
           id: string
@@ -845,6 +904,10 @@ export type Database = {
         Args: { p_expected_creator_profile_id: string; p_proposal_id: string }
         Returns: string
       }
+      close_resource_listing: {
+        Args: { p_expected_owner_profile_id: string; p_listing_id: string }
+        Returns: string
+      }
       create_proposal_draft: {
         Args: {
           p_administrative_area: string
@@ -885,6 +948,19 @@ export type Database = {
           p_title: string
           p_topic: string
           p_weekday: number
+        }
+        Returns: string
+      }
+      create_resource_listing_draft: {
+        Args: {
+          p_administrative_area: string
+          p_country_code: string
+          p_description: string
+          p_expected_owner_profile_id: string
+          p_listing_mode: string
+          p_locality: string
+          p_public_location_label: string
+          p_title: string
         }
         Returns: string
       }
@@ -979,6 +1055,25 @@ export type Database = {
           updated_at: string
         }[]
       }
+      get_own_resource_listing: {
+        Args: { p_expected_owner_profile_id: string; p_listing_id: string }
+        Returns: {
+          administrative_area: string
+          closed_at: string
+          country_code: string
+          created_at: string
+          description: string
+          lifecycle_state: string
+          listing_id: string
+          listing_mode: string
+          locality: string
+          owner_profile_id: string
+          public_location_label: string
+          published_at: string
+          title: string
+          updated_at: string
+        }[]
+      }
       get_own_unread_notification_count: {
         Args: { p_expected_profile_id: string }
         Returns: number
@@ -1052,6 +1147,22 @@ export type Database = {
           title: string
           topic: string
           weekday: number
+        }[]
+      }
+      get_public_resource_listing: {
+        Args: { p_listing_id: string }
+        Returns: {
+          administrative_area: string
+          country_code: string
+          description: string
+          listing_id: string
+          listing_mode: string
+          locality: string
+          owner_display_name: string
+          owner_profile_id: string
+          public_location_label: string
+          published_at: string
+          title: string
         }[]
       }
       leave_project: {
@@ -1287,6 +1398,25 @@ export type Database = {
           updated_at: string
         }[]
       }
+      list_own_resource_listings: {
+        Args: { p_expected_owner_profile_id: string }
+        Returns: {
+          administrative_area: string
+          closed_at: string
+          country_code: string
+          created_at: string
+          description: string
+          lifecycle_state: string
+          listing_id: string
+          listing_mode: string
+          locality: string
+          owner_profile_id: string
+          public_location_label: string
+          published_at: string
+          title: string
+          updated_at: string
+        }[]
+      }
       list_project_join_requests: {
         Args: { p_expected_creator_profile_id: string; p_project_id: string }
         Returns: {
@@ -1374,6 +1504,27 @@ export type Database = {
           starts_at: string
         }[]
       }
+      list_public_resource_listings: {
+        Args: {
+          p_cursor_id?: string
+          p_cursor_published_at?: string
+          p_limit?: number
+          p_listing_mode?: string
+          p_locality?: string
+          p_query?: string
+        }
+        Returns: {
+          administrative_area: string
+          country_code: string
+          description: string
+          listing_id: string
+          listing_mode: string
+          locality: string
+          public_location_label: string
+          published_at: string
+          title: string
+        }[]
+      }
       mark_all_notifications_read: {
         Args: { p_expected_profile_id: string }
         Returns: number
@@ -1414,6 +1565,10 @@ export type Database = {
           p_expected_creator_profile_id: string
           p_recurring_activity_id: string
         }
+        Returns: string
+      }
+      publish_resource_listing: {
+        Args: { p_expected_owner_profile_id: string; p_listing_id: string }
         Returns: string
       }
       register_own_push_installation: {
@@ -1534,6 +1689,20 @@ export type Database = {
           p_title: string
           p_topic: string
           p_weekday: number
+        }
+        Returns: string
+      }
+      update_own_resource_listing: {
+        Args: {
+          p_administrative_area: string
+          p_country_code: string
+          p_description: string
+          p_expected_owner_profile_id: string
+          p_listing_id: string
+          p_listing_mode: string
+          p_locality: string
+          p_public_location_label: string
+          p_title: string
         }
         Returns: string
       }
