@@ -13,7 +13,7 @@
     {
       "binding": "WAITLIST_DB",
       "database_name": "planets-launch-waitlist",
-      "database_id": "00000000-0000-0000-0000-000000000000",
+      "database_id": "d96b190d-2671-4af2-b592-7dbbfffa3009",
       "migrations_dir": "migrations",
     },
   ],
