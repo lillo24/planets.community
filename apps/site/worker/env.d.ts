@@ -5,3 +5,7 @@ interface WaitlistEnv {
   TURNSTILE_EXPECTED_HOSTNAME: string;
   TURNSTILE_TESTING_MODE: "true" | "false";
 }
+
+interface WorkerEnv extends WaitlistEnv {
+  ASSETS: Fetcher;
+}

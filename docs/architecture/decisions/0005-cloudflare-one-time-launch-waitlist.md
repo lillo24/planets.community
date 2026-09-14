@@ -3,6 +3,11 @@
 - **Status:** Accepted
 - **Date:** 2026-09-13
 
+The waitlist data, privacy, and service boundary remains accepted. [ADR
+0006](0006-workers-static-assets-site-runtime.md) narrows its previously
+deployment-neutral Pages Functions/Workers-compatible runtime to native
+Cloudflare Workers with Static Assets.
+
 ## Context
 
 ADR 0004 keeps the public informational site independent from the dynamic

@@ -1,8 +1,14 @@
 {
-  "$schema": "./node_modules/wrangler/config-schema.json",
+  "$schema": "../../node_modules/wrangler/config-schema.json",
   "name": "planets-public-site",
   "compatibility_date": "2026-09-13",
-  "pages_build_output_dir": "./dist",
+  "main": "./worker/index.ts",
+  "assets": {
+    "directory": "./dist",
+    "binding": "ASSETS",
+    "not_found_handling": "none",
+    "run_worker_first": ["/api/*"],
+  },
   "d1_databases": [
     {
       "binding": "WAITLIST_DB",

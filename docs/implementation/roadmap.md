@@ -1,7 +1,7 @@
 # Implementation Roadmap
 
 **Status:** Planning baseline  
-**Current implementation:** Plans 00–04B2B, 05A, 05B, 05D, 06A, 06B, provider-independent 06C1, provider-neutral 06C2A, 07A, 07B1, 07B2B, 07B2C, and public informational SITE-00 through SITE-02 implemented; 06D is in progress; provider-specific 06C2B, 04C, and 05C remain not started
+**Current implementation:** Plans 00–04B2B, 05A, 05B, 05D, 06A, 06B, provider-independent 06C1, provider-neutral 06C2A, 07A, 07B1, 07B2B, 07B2C, and public informational SITE-00 through SITE-02 plus SITE-02W implemented; 06D is in progress; provider-specific 06C2B, 04C, and 05C remain not started
 
 This roadmap divides the first PLANETS build into reviewable Codex tasks. Each numbered item should normally become its own implementation prompt, branch, and pull request.
 
@@ -86,23 +86,25 @@ Do not begin a dependent plan until the prior plan is merged or its branch is ex
 This independent mini-track adds the static public launch site without changing
 the dependencies or responsibilities in the main 00–14 product sequence.
 
-| ID      | Plan                                            | Main result                                                     | Dependencies     | Founder/account-owner input expected                       | Status                                                             |
-| ------- | ----------------------------------------------- | --------------------------------------------------------------- | ---------------- | ---------------------------------------------------------- | ------------------------------------------------------------------ |
-| SITE-00 | Static informational site foundation            | Vite/React workspace, placeholder, root tooling, CI, and docs   | Repository state | None                                                       | Implemented in PR #23 (`8b35ea95f44be39756bb0269da369827b63178d9`) |
-| SITE-01 | Public content and visual landing page          | Founder-approved content, logo, visual identity, and page shell | SITE-00          | Public contact and legal-controller details remain         | Implemented in PR #25 (`3db7492e9b4ad6a33beb5f73c3ea1c394e7cf942`) |
-| SITE-02 | One-time launch waitlist                        | Consent-aware signup for one app-launch notification            | SITE-01          | Controller/contact and production Cloudflare inputs remain | Implemented                                                        |
-| SITE-03 | Cloudflare production deployment/domain cutover | Hosted static site and authorized `planets.community` cutover   | SITE-01–SITE-02  | Provider access, DNS access, billing, and cutover approval | Not started                                                        |
-| SITE-04 | Launch notification and waitlist retirement     | One launch notice followed by approved waitlist retirement      | SITE-02–SITE-03  | App-release timing and retention/deletion approval         | Deferred until app release                                         |
+| ID       | Plan                                            | Main result                                                     | Dependencies     | Founder/account-owner input expected                       | Status                                                             |
+| -------- | ----------------------------------------------- | --------------------------------------------------------------- | ---------------- | ---------------------------------------------------------- | ------------------------------------------------------------------ |
+| SITE-00  | Static informational site foundation            | Vite/React workspace, placeholder, root tooling, CI, and docs   | Repository state | None                                                       | Implemented in PR #23 (`8b35ea95f44be39756bb0269da369827b63178d9`) |
+| SITE-01  | Public content and visual landing page          | Founder-approved content, logo, visual identity, and page shell | SITE-00          | Public contact and legal-controller details remain         | Implemented in PR #25 (`3db7492e9b4ad6a33beb5f73c3ea1c394e7cf942`) |
+| SITE-02  | One-time launch waitlist                        | Consent-aware signup for one app-launch notification            | SITE-01          | Controller/contact and production Cloudflare inputs remain | Implemented                                                        |
+| SITE-02W | Workers runtime migration                       | Native Worker API plus Workers Static Assets                    | SITE-02          | None; production resources remain SITE-03                  | Implemented                                                        |
+| SITE-03  | Cloudflare production deployment/domain cutover | Hosted static site and authorized `planets.community` cutover   | SITE-01–SITE-02W | Provider access, DNS access, billing, and cutover approval | Not started                                                        |
+| SITE-04  | Launch notification and waitlist retirement     | One launch notice followed by approved waitlist retirement      | SITE-02–SITE-03  | App-release timing and retention/deletion approval         | Deferred until app release                                         |
 
 The SITE-02 address is solely for one notification when the PLANETS app
 launches. It is not a newsletter and must not be reused for marketing,
 promotions, recurring product updates, profiling, or unrelated communications.
-SITE-02 adds a local/CI-tested Cloudflare Pages Function, server-side Turnstile
+SITE-02 adds a local/CI-tested server-side waitlist handler, Turnstile
 verification, and minimal D1 persistence without deploying production
-resources. SITE-03 provisions and verifies the production Cloudflare resources,
-approved hostname, controller/contact information, deployment, and domain
-cutover. SITE-04 remains responsible for the one launch notification and
-approved waitlist retirement.
+resources. SITE-02W runs that handler in a native Worker beside Workers Static
+Assets without changing its contract. SITE-03 provisions and verifies the
+production Cloudflare resources, approved hostname, controller/contact
+information, deployment, and domain cutover. SITE-04 remains responsible for
+the one launch notification and approved waitlist retirement.
 
 ## Plan details
 
@@ -788,8 +790,9 @@ self-hosting does not begin until Plan 13, after the main functional work and
 Plan 12 UI/UX pass.
 
 The independent public informational mini-track has SITE-00 implemented in
-merged PR #23, SITE-01 in merged PR #25, and SITE-02 implemented as the
-privacy-minimal local/CI waitlist boundary. Production D1/Turnstile resources,
+merged PR #23, SITE-01 in merged PR #25, SITE-02 implemented as the
+privacy-minimal local/CI waitlist boundary, and SITE-02W implemented as its
+native Workers runtime. Production Worker/D1/Turnstile resources,
 the exact hostname, approved controller/legal copy, a public/privacy contact,
 removal-request operations ownership, and waitlist retirement/retention remain
 required inputs before SITE-03 can cut over the domain.

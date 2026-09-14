@@ -199,7 +199,7 @@ npm run dev:site
 
 Open `http://localhost:5173`. This Vite-only server does not run the waitlist
 endpoint. To exercise the complete local flow, create the ignored Wrangler
-runtime variables, apply the D1 migration, and start Cloudflare's local Pages
+runtime variables, apply the D1 migration, and start Cloudflare's local Workers
 runtime:
 
 ```text
@@ -212,7 +212,8 @@ npm run dev:site:waitlist
 Open `http://localhost:8788`. This path builds the same static application with
 Cloudflare's public Turnstile test site key, loads the matching server-side test
 secret and explicit testing mode from the ignored `apps/site/.dev.vars`, and sends
-`POST /api/waitlist` through the local Pages Function to local D1. It does not
+`POST /api/waitlist` through the native local Worker to local D1. Matching files
+are served through Workers Static Assets without entering the Worker. It does not
 use a Cloudflare account or a remote database. Inspect or remove deterministic
 local rows with:
 
@@ -222,9 +223,9 @@ npm run waitlist:delete-smoke:local
 npm run waitlist:reset:local
 ```
 
-The static production assets remain in `apps/site/dist/`. SITE-02 adds only the
-Pages Function binding contract; production Cloudflare resources, hostname,
-secrets, deployment, and DNS remain deferred to SITE-03. See
+The static production assets remain in `apps/site/dist/`. SITE-02W defines the
+native Worker and Static Assets binding contract; production Cloudflare
+resources, hostname, secrets, deployment, and DNS remain deferred to SITE-03. See
 `apps/site/README.md` for the data boundary, manual removal procedure, and
 cutover blockers.
 
@@ -281,7 +282,7 @@ Hosted email delivery is not configured by this repository. Before staging or pr
 The mobile and dynamic-web configuration contracts are documented above. The
 informational site's browser-visible build variable is
 `VITE_TURNSTILE_SITE_KEY`; it must contain only the public Turnstile site key.
-The Pages Function requires the server-only `TURNSTILE_SECRET_KEY`,
+The Worker requires the server-only `TURNSTILE_SECRET_KEY`,
 `TURNSTILE_EXPECTED_ACTION`, `TURNSTILE_EXPECTED_HOSTNAME`, and
 `TURNSTILE_TESTING_MODE` bindings plus the `WAITLIST_DB` D1 binding.
 Production must set testing mode to `false`; only that mode requires exact
