@@ -6,7 +6,10 @@ import 'package:planets_mobile/features/participation/domain/participation_model
 
 class FakeNotificationsGateway implements NotificationsGateway {
   List<AppNotification> items = [];
-  List<NotificationPreference> preferences = [notificationPreferenceFixture()];
+  List<NotificationPreference> preferences = [
+    notificationPreferenceFixture(),
+    notificationPreferenceFixture(category: NotificationCategory.chat),
+  ];
   int? unreadCount;
   Object? listError;
   Object? unreadError;
@@ -21,6 +24,7 @@ class FakeNotificationsGateway implements NotificationsGateway {
   String? lastExpectedProfileId;
   bool? lastInAppEnabled;
   bool? lastPushEnabled;
+  NotificationCategory? lastCategory;
 
   @override
   Future<NotificationsPage> listNotifications({
@@ -110,6 +114,7 @@ class FakeNotificationsGateway implements NotificationsGateway {
   }) async {
     calls.add('set-preference');
     lastExpectedProfileId = expectedProfileId;
+    lastCategory = category;
     lastInAppEnabled = inAppEnabled;
     lastPushEnabled = pushEnabled;
     if (preferenceDelay case final delay?) await delay;
@@ -142,6 +147,8 @@ AppNotification notificationFixture({
   String? actorDisplayName = 'Mario',
   String? requestId = '00000000-0000-4000-8000-000000000101',
   String? projectId = '00000000-0000-4000-8000-000000000201',
+  String? chatId,
+  String? messageId,
   DateTime? createdAt,
   DateTime? readAt,
 }) => AppNotification(
@@ -158,6 +165,8 @@ AppNotification notificationFixture({
   projectKind: projectKind,
   projectTitle: projectTitle,
   requestId: requestId,
+  chatId: chatId,
+  messageId: messageId,
   actorProfileId: '00000000-0000-4000-8000-000000000301',
   actorDisplayName: actorDisplayName,
 );
@@ -169,7 +178,7 @@ NotificationPreference notificationPreferenceFixture({
   bool userConfigurable = true,
 }) => NotificationPreference(
   category: category,
-  sortOrder: 10,
+  sortOrder: category == NotificationCategory.chat ? 40 : 10,
   inAppEnabled: inAppEnabled,
   pushEnabled: pushEnabled,
   hasOverride: false,

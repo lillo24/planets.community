@@ -44,6 +44,55 @@ void main() {
     expect(parsed.projectKind, isNull);
   });
 
+  test('parses the strict Project chat notification shape', () {
+    final parsed = parser.notification({
+      ..._row('chat_message_received'),
+      'category_slug': 'chat',
+      'destination_kind': 'project_chat',
+      'request_id': null,
+      'chat_id': _chatId,
+      'message_id': _messageId,
+    });
+
+    expect(parsed.category, NotificationCategory.chat);
+    expect(parsed.kind, NotificationKind.chatMessageReceived);
+    expect(parsed.destinationKind, NotificationDestinationKind.projectChat);
+    expect(parsed.chatId, _chatId);
+    expect(parsed.messageId, _messageId);
+  });
+
+  test('known Project chat notifications reject incomplete semantics', () {
+    final valid = {
+      ..._row('chat_message_received'),
+      'category_slug': 'chat',
+      'destination_kind': 'project_chat',
+      'request_id': null,
+      'chat_id': _chatId,
+      'message_id': _messageId,
+    };
+
+    for (final field in [
+      'chat_id',
+      'message_id',
+      'project_id',
+      'project_title',
+    ]) {
+      expect(
+        () => parser.notification({...valid, field: null}),
+        throwsFormatException,
+        reason: field,
+      );
+    }
+    expect(
+      () => parser.notification({...valid, 'request_id': _requestId}),
+      throwsFormatException,
+    );
+    expect(
+      () => parser.notification({...valid, 'category_slug': 'participation'}),
+      throwsFormatException,
+    );
+  });
+
   test('known kinds reject missing or mismatched semantic context', () {
     expect(
       () => parser.notification({
@@ -102,6 +151,8 @@ const _notificationId = '00000000-0000-4000-8000-000000000001';
 const _projectId = '00000000-0000-4000-8000-000000000002';
 const _requestId = '00000000-0000-4000-8000-000000000003';
 const _actorId = '00000000-0000-4000-8000-000000000004';
+const _chatId = '00000000-0000-4000-8000-000000000005';
+const _messageId = '00000000-0000-4000-8000-000000000006';
 
 Map<String, Object?> _row(String kind) {
   final isRequest = kind.startsWith('participation_request_');
@@ -121,6 +172,8 @@ Map<String, Object?> _row(String kind) {
         ? 'project_participation'
         : 'project_detail',
     'request_id': isRequest ? _requestId : null,
+    'chat_id': null,
+    'message_id': null,
     'actor_profile_id': _actorId,
     'actor_display_name': 'Mario',
   };

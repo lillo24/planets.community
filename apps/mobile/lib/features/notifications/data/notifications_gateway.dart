@@ -118,14 +118,18 @@ class SupabaseNotificationsGateway implements NotificationsGateway {
     required bool inAppEnabled,
     required bool pushEnabled,
   }) async {
-    if (category != NotificationCategory.participation) {
-      throw ArgumentError('Only Participation is configurable in 06B.');
-    }
+    final categorySlug = switch (category) {
+      NotificationCategory.participation => 'participation',
+      NotificationCategory.chat => 'chat',
+      NotificationCategory.unknown => throw ArgumentError(
+        'Unknown notification categories cannot be configured.',
+      ),
+    };
     await _client.rpc(
       'set_own_notification_preference',
       params: {
         'p_expected_profile_id': expectedProfileId,
-        'p_category_slug': 'participation',
+        'p_category_slug': categorySlug,
         'p_in_app_enabled': inAppEnabled,
         'p_push_enabled': pushEnabled,
       },
@@ -163,6 +167,8 @@ class NotificationsPayloadParser {
       projectKind: projectKind,
       projectTitle: _optionalDisplayText(row['project_title']),
       requestId: _optionalUuid(row['request_id'], 'request ID'),
+      chatId: _optionalUuid(row['chat_id'], 'chat ID'),
+      messageId: _optionalUuid(row['message_id'], 'message ID'),
       actorProfileId: _optionalUuid(
         row['actor_profile_id'],
         'actor profile ID',
@@ -258,6 +264,22 @@ class NotificationsPayloadParser {
   }
 
   void _validateKnownNotification(AppNotification item) {
+    if (item.category == NotificationCategory.chat) {
+      if (item.kind != NotificationKind.chatMessageReceived ||
+          item.destinationKind != NotificationDestinationKind.projectChat ||
+          item.projectId == null ||
+          item.projectKind == null ||
+          item.projectTitle == null ||
+          item.chatId == null ||
+          item.messageId == null ||
+          item.actorProfileId == null ||
+          item.requestId != null) {
+        throw const FormatException(
+          'Project chat notification context was invalid.',
+        );
+      }
+      return;
+    }
     if (item.category != NotificationCategory.participation) return;
     switch (item.kind) {
       case NotificationKind.participationRequestReceived:
@@ -288,6 +310,10 @@ class NotificationsPayloadParser {
             'Participant-removed notification context was invalid.',
           );
         }
+      case NotificationKind.chatMessageReceived:
+        throw const FormatException(
+          'Project chat notifications require the chat category.',
+        );
       case NotificationKind.unknown:
         return;
     }

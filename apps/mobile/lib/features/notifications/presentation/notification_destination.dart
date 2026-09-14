@@ -3,6 +3,17 @@ import '../../participation/presentation/participation_routes.dart';
 import '../domain/notification_models.dart';
 
 String? notificationDestinationRoute(AppNotification notification) {
+  if (notification.category == NotificationCategory.chat) {
+    return switch ((notification.kind, notification.destinationKind)) {
+      (
+        NotificationKind.chatMessageReceived,
+        NotificationDestinationKind.projectChat,
+      )
+          when notification.chatId != null =>
+        projectChatRoute(notification.chatId!),
+      _ => null,
+    };
+  }
   if (notification.category != NotificationCategory.participation) return null;
 
   return switch ((notification.kind, notification.destinationKind)) {

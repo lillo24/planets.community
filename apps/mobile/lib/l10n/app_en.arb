@@ -639,8 +639,10 @@
   "notificationsMarkAllError": "We couldn't mark all notifications as read. Their saved state has been restored.",
   "notificationsPreferencesLoading": "Loading notification settings…",
   "notificationsParticipationAlerts": "Participation alerts",
+  "notificationsChatMessages": "Chat messages",
   "notificationsInApp": "In-app notifications",
   "notificationsPreferenceExplanation": "This setting affects future in-app participation alerts. Existing notification history remains.",
+  "notificationsChatPreferenceExplanation": "This setting affects future in-app chat alerts. Project chat and existing notification history remain available.",
   "notificationsPreferenceUpdateError": "We couldn't confirm this setting. Its last loaded value is shown.",
   "notificationRequestReceived": "{actor} requested to join “{project}”",
   "@notificationRequestReceived": {
@@ -680,5 +682,19 @@
   "@notificationParticipantRemoved": {
     "placeholders": { "project": { "type": "String" } }
   },
-  "notificationParticipantRemovedGeneric": "You were removed from a project."
+  "notificationParticipantRemovedGeneric": "You were removed from a project.",
+  "notificationChatMessage": "{actor} sent a message in “{project}”",
+  "@notificationChatMessage": {
+    "placeholders": {
+      "actor": { "type": "String" },
+      "project": { "type": "String" }
+    }
+  },
+  "notificationChatMessageProject": "New message in “{project}”",
+  "@notificationChatMessageProject": {
+    "placeholders": {
+      "project": { "type": "String" }
+    }
+  },
+  "notificationChatMessageGeneric": "New project chat message"
 }

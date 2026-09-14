@@ -184,6 +184,10 @@ void main() {
       final gateway = FakeNotificationsGateway()
         ..preferences = [
           notificationPreferenceFixture(pushEnabled: false),
+          notificationPreferenceFixture(
+            category: NotificationCategory.chat,
+            pushEnabled: true,
+          ),
           notificationPreferenceFixture(category: NotificationCategory.unknown),
         ];
       final session = _readyContainer(gateway);
@@ -208,6 +212,53 @@ void main() {
             .read(notificationPreferencesProvider)
             .participation
             ?.inAppEnabled,
+        isFalse,
+      );
+    },
+  );
+
+  test(
+    'chat preference preserves hidden push and the Participation row',
+    () async {
+      final gateway = FakeNotificationsGateway()
+        ..preferences = [
+          notificationPreferenceFixture(
+            inAppEnabled: false,
+            pushEnabled: false,
+          ),
+          notificationPreferenceFixture(
+            category: NotificationCategory.chat,
+            inAppEnabled: true,
+            pushEnabled: true,
+          ),
+        ];
+      final session = _readyContainer(gateway);
+      addTearDown(session.container.dispose);
+      addTearDown(session.auth.close);
+      final controller = session.container.read(
+        notificationPreferencesProvider.notifier,
+      );
+      await controller.load('user-1');
+
+      expect(
+        await controller.setChatInApp(
+          expectedProfileId: 'user-1',
+          enabled: false,
+        ),
+        isTrue,
+      );
+      expect(gateway.lastCategory, NotificationCategory.chat);
+      expect(gateway.lastInAppEnabled, isFalse);
+      expect(gateway.lastPushEnabled, isTrue);
+      final state = session.container.read(notificationPreferencesProvider);
+      expect(state.chat?.inAppEnabled, isFalse);
+      expect(state.participation?.inAppEnabled, isFalse);
+      expect(
+        gateway.preferences
+            .singleWhere(
+              (item) => item.category == NotificationCategory.participation,
+            )
+            .inAppEnabled,
         isFalse,
       );
     },
@@ -255,6 +306,10 @@ void main() {
       expect(await pending, isFalse);
       expect(
         session.container.read(notificationPreferencesProvider).participation,
+        isNull,
+      );
+      expect(
+        session.container.read(notificationPreferencesProvider).chat,
         isNull,
       );
     },

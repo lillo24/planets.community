@@ -37,6 +37,35 @@ void main() {
     );
   });
 
+  test('Project chat destination reuses the canonical Messages route', () {
+    expect(
+      notificationDestinationRoute(
+        notificationFixture(
+          category: NotificationCategory.chat,
+          kind: NotificationKind.chatMessageReceived,
+          destinationKind: NotificationDestinationKind.projectChat,
+          requestId: null,
+          chatId: '00000000-0000-4000-8000-000000000401',
+          messageId: '00000000-0000-4000-8000-000000000402',
+        ),
+      ),
+      '/messages/chats/00000000-0000-4000-8000-000000000401',
+    );
+    expect(
+      notificationDestinationRoute(
+        notificationFixture(
+          category: NotificationCategory.chat,
+          kind: NotificationKind.chatMessageReceived,
+          destinationKind: NotificationDestinationKind.projectChat,
+          requestId: null,
+          chatId: null,
+          messageId: '00000000-0000-4000-8000-000000000402',
+        ),
+      ),
+      isNull,
+    );
+  });
+
   test('unknown and mismatched semantics never guess a route', () {
     expect(
       notificationDestinationRoute(

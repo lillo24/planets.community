@@ -2,6 +2,20 @@ import '../../../l10n/generated/app_localizations.dart';
 import '../domain/notification_models.dart';
 
 String notificationCopy(AppLocalizations l10n, AppNotification notification) {
+  if (notification.category == NotificationCategory.chat) {
+    if (notification.kind != NotificationKind.chatMessageReceived) {
+      return l10n.notificationsGeneric;
+    }
+    final actor = notification.actorDisplayName;
+    final project = notification.projectTitle;
+    if (actor != null && project != null) {
+      return l10n.notificationChatMessage(actor, project);
+    }
+    if (project != null) {
+      return l10n.notificationChatMessageProject(project);
+    }
+    return l10n.notificationChatMessageGeneric;
+  }
   if (notification.category != NotificationCategory.participation) {
     return l10n.notificationsGeneric;
   }
@@ -32,6 +46,7 @@ String notificationCopy(AppLocalizations l10n, AppNotification notification) {
       project != null
           ? l10n.notificationParticipantRemoved(project)
           : l10n.notificationParticipantRemovedGeneric,
+    NotificationKind.chatMessageReceived => l10n.notificationsGeneric,
     NotificationKind.unknown => l10n.notificationsGeneric,
   };
 }

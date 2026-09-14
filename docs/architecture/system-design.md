@@ -1,7 +1,7 @@
 # System Design and Responsibility Boundaries
 
 **Status:** Initial accepted design  
-**Implementation status:** Foundations, authentication, profiles, one-time proposals, Tavoli mobile/public-web discovery, shared project participation, in-app notification projection, structured participation-request Messages, Project group-chat lifecycle plus durable message transport, the provider-independent push/job foundation, provider-neutral push delivery worker protocol, and the static-first informational site with its local/CI one-time waitlist boundary implemented or in focused review
+**Implementation status:** Foundations, authentication, profiles, one-time proposals, Tavoli mobile/public-web discovery, shared project participation, in-app notification projection, structured participation-request Messages, Project group-chat lifecycle/durable message/mobile experience, Project-chat notification/push projection, the provider-independent push/job foundation, provider-neutral push delivery worker protocol, and the static-first informational site with its local/CI one-time waitlist boundary implemented or in focused review
 
 This document describes how the major parts of PLANETS should interact. Technology choices are recorded separately in [`core-stack.md`](core-stack.md).
 
@@ -397,21 +397,31 @@ Notifications are a centralized domain, not custom preference logic embedded in 
 - private app-installation registrations and recipient-level push delivery jobs;
 - private per-installation delivery targets, expiring leases, append-only attempts, and aggregate completion timestamps.
 
-The first notification projection owns the six participation events emitted by the
-shared project-participation domain. A service-only, concurrency-safe projector locks
-available source events with `SKIP LOCKED`, resolves recipients from canonical request,
-membership, and project rows, applies the recipient's effective in-app preference, and
-records the stable `notifications.v1` consumer receipt. Notification uniqueness and
-the receipt together make retries idempotent. The outbox `published_at` field is not a
-consumer acknowledgement: notification processing must not prevent future chat,
-analytics, or other independent consumers from observing the same event.
+Notification projection owns the six participation events emitted by the shared
+project-participation domain and `project.chat_message_sent`. Service-only,
+concurrency-safe projectors lock available source events with `SKIP LOCKED`,
+revalidate canonical state, apply each recipient's effective channel preference,
+and record stable consumer receipts only after a complete event fan-out.
+Notification/job uniqueness and the receipt together make retries idempotent. The
+outbox `published_at` field is not a consumer acknowledgement: notification
+processing must not prevent future analytics or other independent consumers from
+observing the same event.
+
+Chat-message projection cross-checks the payload's Project kind/ID, chat, message,
+and sender against canonical rows. Recipients are the creator plus accepted
+memberships whose half-open interval contains `project_chat_messages.created_at`,
+with the sender excluded and duplicate identities collapsed. One event may
+therefore create zero, one, or many in-app notifications and push jobs. A late join
+does not receive an earlier alert, a leave/removal ends future targeting, and a
+rejoin restores targeting for later messages. Existing chat events are receipted at
+06D rollout without retroactive delivery.
 
 Notification rows contain kinds and identifiers, not canonical English copy. The
 authenticated inbox resolves only safe current project title/kind and workflow-authorized
 actor display name. It never returns source JSON, join-request messages, exact meeting
 information, email, tokens, or audit metadata. The authenticated Flutter client
 provides the identity-bound in-app inbox, unread badge/read actions, semantic
-navigation, and Participation in-app preference over those narrow routines.
+navigation, and Participation/Chat in-app preferences over those narrow routines.
 The same private resolver now supplies those validated semantic facts to both
 `notifications.v1` and `push.v1`. The push projector independently applies only
 `push_enabled`, writes one private recipient-level job, and records its own receipt;
@@ -433,10 +443,16 @@ installation only when its current owner and token generation still match. These
 routines live in the unexposed `private` schema, are executable only by direct-
 database `service_role`, and grant no worker table access.
 
+Notification rows and push jobs carry nullable `chat_id`/`message_id` semantic
+references for the `project_chat` destination. The inbox and trusted claim contract
+return those identifiers but no message body. Flutter renders generic safe chat copy
+from actor/Project display context and routes to `/messages/chats/:chatId`; the Push
+control remains hidden.
+
 Firebase mobile registration, push permission timing and UI, server-side provider
 credentials, OAuth/FCM sends, safe provider previews, environment safeguards, and
-the repository-owned runnable adapter remain 06C2B work. Matching/resource/chat
-notification kinds also remain later work.
+the repository-owned runnable adapter remain 06C2B work. Matching/resource and
+additional chat notification kinds remain later work.
 
 The request received, withdrawn, accepted, and rejected notifications retain the
 canonical `request_id` and use the `participation_request` destination. That target is
@@ -472,11 +488,12 @@ The 07B1 Project-chat foundation now provides:
 - retention across leave, removal, rejoin gaps, Project completion, and Tavolo pause/end;
 - no chat-participant mirror, copied meeting details, message state, or transport.
 
-07B2B now owns server-readable message persistence, paginated authorized
-history, chat-list summaries, and private identifier-only Realtime hints under
-the approved full-history rule. 07B2C remains responsible for the mobile group
-chat/info experience, meeting-link access through the existing protected
-operation, reporting groundwork, and safe push behavior. General direct
+07B2B owns server-readable message persistence, paginated authorized history,
+chat-list summaries, and private identifier-only Realtime hints under the
+approved full-history rule. Merged 07B2C owns the mobile group chat/info
+experience and meeting-link access through the existing protected operation.
+06D projects safe body-free Project-chat alerts into the notification and push
+backbones. General direct
 messages, independent group creation, calls, voice messages, typing indicators,
 reactions, and complex read receipts remain excluded. Plan 09 may later
 override ordinary entitlement for blocking, suspension, or moderation; clients

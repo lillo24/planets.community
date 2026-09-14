@@ -140,6 +140,9 @@ jobs:
       - name: Verify durable Project chat messages and private Realtime
         run: npm run project:chat:messages:verify:local
 
+      - name: Verify Project chat notification and push fan-out
+        run: npm run project:chat:notifications:verify:local
+
       - name: Generate local web configuration
         run: npm run web:config:local
 

@@ -63,7 +63,9 @@ select columns_are(
     'membership_id',
     'destination_kind',
     'created_at',
-    'read_at'
+    'read_at',
+    'chat_id',
+    'message_id'
   ],
   'notification rows persist semantic identifiers and read state only'
 );
@@ -166,6 +168,7 @@ select ok(
       and conname = 'notifications_destination_kind_valid'
       and contype = 'c'
       and pg_get_constraintdef(oid) like '%participation_request%'
+      and pg_get_constraintdef(oid) like '%project_chat%'
   ),
   'semantic destination kinds include the structured participation-request target'
 );
@@ -193,6 +196,7 @@ select ok(
       and pg_get_constraintdef(oid) like '%participation_request_rejected%'
       and pg_get_constraintdef(oid) like '%participant_left%'
       and pg_get_constraintdef(oid) like '%participant_removed%'
+      and pg_get_constraintdef(oid) like '%chat_message_received%'
       and pg_get_constraintdef(oid) like '%project_id IS NOT NULL%'
   ),
   'all current participation kinds still require project context'
@@ -200,8 +204,14 @@ select ok(
 select ok(
   pg_get_function_result(
     'public.list_own_notifications(uuid,integer,timestamptz,uuid)'::regprocedure
-  ) like '%request_id uuid%',
-  'the inbox contract returns the canonical request target identifier'
+  ) like '%request_id uuid%'
+    and pg_get_function_result(
+      'public.list_own_notifications(uuid,integer,timestamptz,uuid)'::regprocedure
+    ) like '%chat_id uuid%'
+    and pg_get_function_result(
+      'public.list_own_notifications(uuid,integer,timestamptz,uuid)'::regprocedure
+    ) like '%message_id uuid%',
+  'the inbox contract returns canonical participation and chat target identifiers'
 );
 select ok(
   pg_get_functiondef(
@@ -288,6 +298,11 @@ select ok(
   to_regclass('private.outbox_consumer_receipts_consumer_processed_idx')
     is not null,
   'consumer-specific receipt inspection is indexed'
+);
+select ok(
+  to_regclass('public.notifications_chat_id_idx') is not null
+    and to_regclass('public.notifications_message_id_idx') is not null,
+  'chat notification foreign-key lookups are indexed'
 );
 
 select ok(
