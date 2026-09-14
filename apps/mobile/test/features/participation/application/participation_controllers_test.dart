@@ -8,6 +8,7 @@ import 'package:planets_mobile/features/auth/domain/auth_models.dart';
 import 'package:planets_mobile/features/participation/application/participation_controllers.dart';
 import 'package:planets_mobile/features/participation/data/participation_gateway.dart';
 import 'package:planets_mobile/features/participation/domain/participation_models.dart';
+import 'package:planets_mobile/features/project_chat/application/project_chat_refresh.dart';
 
 import '../../../support/fake_auth.dart';
 import '../../../support/fake_participation.dart';
@@ -200,6 +201,7 @@ void main() {
             .canRequest,
         isTrue,
       );
+      expect(session.container.read(projectChatRefreshProvider), 1);
     },
   );
 
@@ -261,6 +263,7 @@ void main() {
         ),
         isTrue,
       );
+      expect(session.container.read(projectChatRefreshProvider), 1);
       expect(
         session.container
             .read(creatorParticipationProvider)
@@ -277,6 +280,7 @@ void main() {
         ),
         isTrue,
       );
+      expect(session.container.read(projectChatRefreshProvider), 1);
       final membershipId = gateway.creatorMembers.single.id;
       expect(
         await controller.remove(
@@ -287,6 +291,7 @@ void main() {
         isTrue,
       );
       expect(gateway.lastExpectedIdentity, 'user-1');
+      expect(session.container.read(projectChatRefreshProvider), 2);
       expect(
         session.container
             .read(creatorParticipationProvider)

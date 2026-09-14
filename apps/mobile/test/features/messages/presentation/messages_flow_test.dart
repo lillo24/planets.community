@@ -14,12 +14,14 @@ import 'package:planets_mobile/features/participation/data/participation_gateway
 import 'package:planets_mobile/features/participation/domain/participation_models.dart';
 import 'package:planets_mobile/features/proposals/data/proposal_gateway.dart';
 import 'package:planets_mobile/features/recurring_activities/data/recurring_activity_gateway.dart';
+import 'package:planets_mobile/features/project_chat/data/project_chat_gateway.dart';
 
 import '../../../support/fake_auth.dart';
 import '../../../support/fake_messages.dart';
 import '../../../support/fake_participation.dart';
 import '../../../support/fake_proposal.dart';
 import '../../../support/fake_recurring_activity.dart';
+import '../../../support/fake_project_chat.dart';
 
 void main() {
   testWidgets('Home keeps three tabs and opens mixed Messages inbox', (
@@ -44,6 +46,8 @@ void main() {
     expect(find.byKey(const Key('open-messages-button')), findsOneWidget);
     await tester.tap(find.byKey(const Key('open-messages-button')));
     await tester.pumpAndSettle();
+    await tester.tap(find.text('Requests'));
+    await tester.pumpAndSettle();
 
     expect(find.text('Messages'), findsOneWidget);
     expect(
@@ -60,7 +64,7 @@ void main() {
     expect(find.text('I can bring paint brushes.'), findsNWidgets(2));
   });
 
-  testWidgets('inbox exposes loading, empty, and pull-to-refresh states', (
+  testWidgets('request inbox exposes empty and pull-to-refresh states', (
     tester,
   ) async {
     final pending = Completer<void>();
@@ -70,7 +74,8 @@ void main() {
     final app = await _pump(tester, messages: messages);
     app.read(appRouterProvider).go('/messages');
     await tester.pump();
-    expect(find.text('Loading messages…'), findsOneWidget);
+    await tester.tap(find.text('Requests'));
+    await tester.pump(const Duration(seconds: 1));
     pending.complete();
     await tester.pumpAndSettle();
     expect(find.text('No messages yet'), findsOneWidget);
@@ -79,7 +84,7 @@ void main() {
       ..listDelay = null
       ..items = [messageItemFixture()];
     await tester
-        .widget<RefreshIndicator>(find.byType(RefreshIndicator))
+        .widget<RefreshIndicator>(find.byType(RefreshIndicator).hitTestable())
         .onRefresh();
     await tester.pumpAndSettle();
 
@@ -204,6 +209,8 @@ void main() {
     final app = await _pump(tester, messages: messages);
     app.read(appRouterProvider).go('/messages');
     await tester.pumpAndSettle();
+    await tester.tap(find.text('Requests'));
+    await tester.pumpAndSettle();
 
     expect(find.textContaining(raw), findsNothing);
     expect(find.textContaining("couldn't load Messages"), findsOneWidget);
@@ -242,6 +249,7 @@ Future<ProviderContainer> _pump(
             ..readiness = ProfileAnchorReadiness.complete,
         ),
         messagesGatewayProvider.overrideWithValue(messages),
+        projectChatGatewayProvider.overrideWithValue(FakeProjectChatGateway()),
         participationGatewayProvider.overrideWithValue(
           FakeParticipationGateway(),
         ),

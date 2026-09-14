@@ -3,6 +3,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../auth/application/auth_session_controller.dart';
 import '../../auth/domain/auth_models.dart';
+import '../../project_chat/application/project_chat_refresh.dart';
 import '../data/participation_gateway.dart';
 import '../domain/participation_models.dart';
 
@@ -300,6 +301,7 @@ class ParticipationCommandController
         expectedProfileId: expectedProfileId,
         projectId: projectId,
       );
+      ref.read(projectChatRefreshProvider.notifier).notifyChanged();
       return true;
     } catch (error) {
       if (!_isCurrent(revision, expectedProfileId)) return false;
@@ -557,6 +559,7 @@ class CreatorParticipationController
     expectedCreatorId: expectedCreatorId,
     projectId: projectId,
     targetId: requestId,
+    refreshProjectChats: true,
     command: (gateway) => gateway.acceptRequest(
       expectedCreatorProfileId: expectedCreatorId,
       requestId: requestId,
@@ -572,6 +575,7 @@ class CreatorParticipationController
     expectedCreatorId: expectedCreatorId,
     projectId: projectId,
     targetId: requestId,
+    refreshProjectChats: false,
     command: (gateway) => gateway.rejectRequest(
       expectedCreatorProfileId: expectedCreatorId,
       requestId: requestId,
@@ -587,6 +591,7 @@ class CreatorParticipationController
     expectedCreatorId: expectedCreatorId,
     projectId: projectId,
     targetId: membershipId,
+    refreshProjectChats: true,
     command: (gateway) => gateway.removeMember(
       expectedCreatorProfileId: expectedCreatorId,
       membershipId: membershipId,
@@ -598,6 +603,7 @@ class CreatorParticipationController
     required String expectedCreatorId,
     required String projectId,
     required String targetId,
+    required bool refreshProjectChats,
     required Future<void> Function(ParticipationGateway gateway) command,
   }) async {
     if (state.isBusy) return false;
@@ -623,6 +629,9 @@ class CreatorParticipationController
         requests: result.requests,
         members: result.members,
       );
+      if (refreshProjectChats) {
+        ref.read(projectChatRefreshProvider.notifier).notifyChanged();
+      }
       return true;
     } catch (error) {
       if (!_isCurrent(revision, expectedCreatorId, projectId)) return false;

@@ -54,6 +54,9 @@ Successful own-participation reloads are also the narrow application signal
 consumed by Proposal and Tavolo Browse controllers after request/withdraw
 commands. Each Browse feature refreshes its own requester-only pending-card
 projection; participation state does not import or mutate presentation models.
+Successful acceptance, leave, and removal also emit the adjacent Project-chat
+refresh signal. Chat controllers then re-read canonical entitlement and never
+predict membership or chat visibility from a client command result.
 
 Protected operational meeting information is fetched only for the current
 creator or a current accepted participant. It is held only in the
@@ -77,7 +80,7 @@ the exact safe internal `returnTo`; incomplete profile setup carries the same
 destination in `/profile/edit?returnTo=...` and resumes it after a successful
 save. The persistent bottom navigation remains Profile / Browse / Home.
 
-Chat, notification delivery, resources/Scambio-Dona, capacity/fullness,
+Notification delivery, resources/Scambio-Dona, capacity/fullness,
 participation roles, invitations, central participation history, contribution
 verification, badges, maps, and final unified Progetti discovery remain
 deferred.

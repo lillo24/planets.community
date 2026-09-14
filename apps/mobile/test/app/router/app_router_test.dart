@@ -130,15 +130,16 @@ void main() {
     );
   });
 
-  testWidgets('Messages detail preserves the exact sign-in return path', (
+  testWidgets('Messages routes preserve the exact sign-in return path', (
     tester,
   ) async {
     final auth = FakeAuthGateway();
     final profile = FakeProfileAnchorGateway();
     addTearDown(auth.close);
     const session = AuthSessionState.signedOut();
+    const destination = '/messages/chats/chat-9/info';
     final router = createAppRouter(
-      initialLocation: '/messages/requests/request-9',
+      initialLocation: destination,
       readAuthSession: () => session,
     );
     addTearDown(router.dispose);
@@ -159,7 +160,7 @@ void main() {
     expect(find.byKey(const Key('auth-email-field')), findsOneWidget);
     expect(
       router.routeInformationProvider.value.uri.queryParameters['returnTo'],
-      '/messages/requests/request-9',
+      destination,
     );
   });
 
@@ -176,8 +177,9 @@ void main() {
       AuthIdentity(id: 'user-1'),
       hasProfileAnchor: true,
     );
+    const destination = '/messages/chats/chat-9';
     final router = createAppRouter(
-      initialLocation: '/messages/requests/request-9',
+      initialLocation: destination,
       readAuthSession: () => session,
     );
     addTearDown(router.dispose);
@@ -201,7 +203,7 @@ void main() {
     expect(find.byKey(const Key('profile-display-name-field')), findsOneWidget);
     expect(
       router.routeInformationProvider.value.uri.queryParameters['returnTo'],
-      '/messages/requests/request-9',
+      destination,
     );
   });
 }

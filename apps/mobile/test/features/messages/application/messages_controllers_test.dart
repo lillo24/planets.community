@@ -10,6 +10,7 @@ import 'package:planets_mobile/features/messages/data/messages_gateway.dart';
 import 'package:planets_mobile/features/messages/domain/message_models.dart';
 import 'package:planets_mobile/features/participation/data/participation_gateway.dart';
 import 'package:planets_mobile/features/participation/domain/participation_models.dart';
+import 'package:planets_mobile/features/project_chat/application/project_chat_refresh.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../support/fake_auth.dart';
@@ -83,6 +84,7 @@ void main() {
         session.container.read(messagesDetailProvider).item?.status.name,
         'accepted',
       );
+      expect(session.container.read(projectChatRefreshProvider), 1);
     },
   );
 
