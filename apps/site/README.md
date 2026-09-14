@@ -114,9 +114,16 @@ access/audit ownership are production inputs, not decisions made by SITE-02.
 
 ## Production boundary for SITE-03
 
-SITE-03 must create a Workers application from the Git repository and replace
-the placeholder D1 identifier and test Turnstile values with separately
-provisioned production resources. The expected Workers Builds settings are:
+The production Worker is deployed at
+`https://planets-public-site.developer-planets-community.workers.dev`. Its
+`wrangler.jsonc` owns the production D1 binding and these non-secret runtime
+variables:
+
+- `TURNSTILE_EXPECTED_ACTION=waitlist_signup`;
+- `TURNSTILE_EXPECTED_HOSTNAME=planets-public-site.developer-planets-community.workers.dev`;
+- `TURNSTILE_TESTING_MODE=false`.
+
+The expected Workers Builds settings are:
 
 - repository root directory `/`;
 - build command `npm ci && npm run build --workspace @planets/site`;
@@ -124,20 +131,18 @@ provisioned production resources. The expected Workers Builds settings are:
 - production branch `main`, with non-production branch builds and public
   preview URLs enabled only if the account owner intentionally approves them.
 
-Before cutover SITE-03 must:
+Before domain cutover SITE-03 must:
 
-- create the production D1 database, bind it as `WAITLIST_DB`, and apply the
-  committed migrations;
-- create a production Turnstile widget for the exact public hostname and action
-  `waitlist_signup`;
-- expose the production site key as `VITE_TURNSTILE_SITE_KEY` at build time and
-  store `TURNSTILE_SECRET_KEY` only as a server-side secret;
-- configure `TURNSTILE_EXPECTED_ACTION=waitlist_signup` and the exact approved
-  hostname as server-side bindings;
-- configure `TURNSTILE_TESTING_MODE=false`; test mode and official dummy keys
-  must never be present in the production environment;
-- keep `VITE_TURNSTILE_SITE_KEY` in the Workers build environment while keeping
-  every server-only value in Worker runtime variables/secrets;
+- verify that the production D1 database remains bound as `WAITLIST_DB` and has
+  the committed migrations applied;
+- verify the production Turnstile widget for the exact public hostname and
+  action `waitlist_signup`;
+- configure the public `VITE_TURNSTILE_SITE_KEY` only as a Workers Builds build
+  variable and `TURNSTILE_SECRET_KEY` only as a Cloudflare Worker runtime
+  Secret; never commit either value;
+- keep the non-secret Turnstile runtime variables in `wrangler.jsonc`, including
+  `TURNSTILE_TESTING_MODE=false`; test mode and official dummy keys must never
+  be present in the production environment;
 - decide whether the temporary `workers.dev` route and version preview URLs are
   enabled, and protect previews with Cloudflare Access if they must not be
   public;

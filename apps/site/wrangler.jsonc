@@ -9,6 +9,11 @@
     "not_found_handling": "none",
     "run_worker_first": ["/api/*"],
   },
+  "vars": {
+    "TURNSTILE_EXPECTED_ACTION": "waitlist_signup",
+    "TURNSTILE_EXPECTED_HOSTNAME": "planets-public-site.developer-planets-community.workers.dev",
+    "TURNSTILE_TESTING_MODE": "false",
+  },
   "d1_databases": [
     {
       "binding": "WAITLIST_DB",
