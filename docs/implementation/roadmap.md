@@ -1,7 +1,7 @@
 # Implementation Roadmap
 
 **Status:** Planning baseline  
-**Current implementation:** Plans 00–04B2B, 05A, 05B, 05D, 06A, 06B, provider-independent 06C1, provider-neutral 06C2A, 06D, 07A, 07B1, 07B2B, 07B2C, and public informational SITE-00 through SITE-02 plus SITE-02W implemented; 04C1 is in progress; provider-specific 06C2B, 04C2–04C4, and 05C remain not started
+**Current implementation:** Plans 00–04B2B, 04C1, 05A, 05B, 05D, 06A, 06B, provider-independent 06C1, provider-neutral 06C2A, 06D, 07A, 07B1, 07B2B, 07B2C, and public informational SITE-00 through SITE-02 plus SITE-02W implemented; 04C2 is in progress; provider-specific 06C2B, 04C3–04C4, and 05C remain not started
 
 This roadmap divides the first PLANETS build into reviewable Codex tasks. Each numbered item should normally become its own implementation prompt, branch, and pull request.
 
@@ -54,8 +54,8 @@ Do not begin a dependent plan until the prior plan is merged or its branch is ex
 | 04B2A | Tavoli Mobile Experience and Browse Integration           | Mobile browse/list/detail/create/edit/manage UI over the canonical 04B1 backend                                        | 04B1                   | Native interaction review                                                                                            | Implemented |
 | 04B2B | Public Web Tavoli Discovery                               | Read-only public web Tavoli list and detail                                                                            | 04B2A                  | Functional public-web review                                                                                         | Implemented |
 | 04C   | Resources + Scambio-Dona                                  | Standalone Scambio-Dona listings plus later Project resources, requests, matching, and notifications                   | 04A                    | Transaction/handoff, taxonomy, Project contribution, and matching decisions remain split into later slices           | In progress |
-| 04C1  | Scambio-Dona Listing Domain Foundation                    | Owner lifecycle, rough-location public discovery, secure RPCs, identifier-only events, and tests                       | 04A, 03C               | None for the decision-light discovery-intent foundation                                                              | In progress |
-| 04C2  | Scambio-Dona Mobile Discovery and Owner Experience        | Mobile browse/detail/create/edit/publish/close experience over the 04C1 contracts                                      | 04C1                   | Functional/native UX review                                                                                          | Not started |
+| 04C1  | Scambio-Dona Listing Domain Foundation                    | Owner lifecycle, rough-location public discovery, secure RPCs, identifier-only events, and tests                       | 04A, 03C               | None for the decision-light discovery-intent foundation                                                              | Implemented |
+| 04C2  | Scambio-Dona Mobile Discovery and Owner Experience        | Mobile browse/detail/create/edit/publish/close experience over the 04C1 contracts                                      | 04C1                   | Functional/native UX review                                                                                          | In progress |
 | 04C3  | Project Resource Needs and Contribution Offers            | Project needs and participant contribution offers without collapsing them into standalone listings                    | 04A, 04B1, 05A         | Resource/contribution taxonomy and attribution semantics                                                             | Not started |
 | 04C4  | Listing Requests/Handoff + Saved Search/Matching          | Post-discovery request/handoff rules plus explainable saved-search and matching behavior                               | 04C1                   | Exchange, request, handoff, contact, matching, and notification semantics                                             | Not started |
 | 05    | Participation lifecycle (parent)                          | Shared project participation foundation, later mobile experience, and verified-contribution review                     | 04A, 04B1              | Capacity/fullness and later contribution/resource semantics remain unresolved                                        | In progress |
@@ -232,7 +232,7 @@ Expected scope:
 
 **Goal:** Implement activity discovery through independently reviewable one-time and recurring models.
 
-Parent plan 04 has 04A and 04B implemented while 04C is in progress through its independent 04C1 listing foundation. Shared participation depends on both concrete activity-domain foundations; standalone listings remain separate.
+Parent plan 04 has 04A and 04B implemented while 04C is in progress through its implemented 04C1 listing foundation and current 04C2 mobile client. Shared participation depends on both concrete activity-domain foundations; standalone listings remain separate.
 
 #### 04A — One-Time Proposals and Discovery
 
@@ -314,13 +314,13 @@ or introduce participation, chat, resources, or recurrence expansion.
 
 #### 04C — Resources + Scambio-Dona
 
-**Status:** In progress through 04C1. Later mobile, Project-resource, request/handoff, saved-search, matching, and notification slices remain not started.
+**Status:** In progress through implemented 04C1 and the current 04C2 mobile client. Later Project-resource, request/handoff, saved-search, matching, and notification slices remain not started.
 
 The earlier combined scope is split so standalone public listings do not force unresolved Project contribution or post-discovery transaction rules:
 
 ##### 04C1 — Scambio-Dona Listing Domain Foundation
 
-**Status:** In progress in the current implementation PR. Depends on merged 04A and 03C.
+**Status:** Implemented in merged PR #32 (`2aca5bdde7bf7ed7d747f14dcccbc3b5c4b75c42`). Depends on merged 04A and 03C.
 
 Owns standalone owner-managed `resource_listings`, `donate`/`exchange` discovery intent, private incomplete drafts, published rough-location discovery/detail, terminal closure, expected-identity-bound owner APIs, profile-display visibility, mode/locality/literal-keyword filtering, newest-first paired keyset pagination, identifier-only publish/close events, pgTAP, local integration, generated contracts, and documentation.
 
@@ -328,9 +328,9 @@ Owns standalone owner-managed `resource_listings`, `donate`/`exchange` discovery
 
 ##### 04C2 — Scambio-Dona Mobile Discovery and Owner Experience
 
-**Status:** Not started. Depends on 04C1.
+**Status:** In progress in the current implementation PR. Depends on merged 04C1.
 
-Future scope owns the primary Flutter browse/detail and owner create/edit/publish/close experience over the canonical 04C1 contracts. It may begin text-only; media remains Plan 08.
+Owns the primary text-only Flutter browse/detail and owner create/edit/publish/close experience over the canonical 04C1 contracts. Home exposes `Progetti` and `Scambio-Dona` as separate pillars while the persistent Profile / Browse / Home destinations remain unchanged. Public discovery/detail stays signed-out; management preserves Auth/profile-setup return intent. No request, claim, contact, transaction, or handoff flow is introduced; those semantics remain 04C4. Media remains Plan 08.
 
 ##### 04C3 — Project Resource Needs and Contribution Offers
 
@@ -716,6 +716,17 @@ Expected scope:
 
 This phase refines accepted flows; it must not silently decide unresolved authorization, lifecycle, policy, or data-retention behavior.
 
+Deferred 04C2 native checklist:
+
+- verify signed-out Scambio-Dona list and detail on Android and iOS;
+- verify OTP and incomplete-profile return to My Listings, Create, and Edit;
+- verify editor keyboard traversal, validation, and small-screen scrolling;
+- verify pull-to-refresh and paired-keyset load-more behavior;
+- verify the close confirmation copy and terminal read-only state;
+- verify account switching never flashes the prior owner's drafts;
+- verify screen-reader labels, text scaling, contrast, and non-color lifecycle
+  cues.
+
 ### 13 — Self-hosted production infrastructure readiness
 
 **Goal:** Build, secure, test, and rehearse the intended self-hosted Supabase production environment after the main feature and UI/UX work, before public release.
@@ -805,10 +816,11 @@ Major gates currently expected:
 
 ## Immediate next action
 
-Complete and review **04C1 — Scambio-Dona Listing Domain Foundation** without
-merging its PR. 06D is implemented in merged PR #31, while 06 remains in
+Complete and review **04C2 — Scambio-Dona Mobile Discovery and Owner
+Experience** without merging its PR. 04C1 is implemented in merged PR #32
+(`2aca5bdde7bf7ed7d747f14dcccbc3b5c4b75c42`). 06D is implemented in merged PR #31, while 06 remains in
 progress because provider-specific 06C2B is not started. Optional E2EE/MLS
-research remains unmerged and deferred in PR #28. 04C2–04C4 and 05C remain not
+research remains unmerged and deferred in PR #28. 04C3–04C4 and 05C remain not
 started; 05C waits specifically for the Project-resource/contribution slice
 04C3 rather than standalone listing UI. Plan 06C2B remains
 not started and requires Firebase/APNs configuration, push permission and

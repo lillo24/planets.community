@@ -54,16 +54,25 @@ class FoundationScreen extends StatelessWidget {
                     style: Theme.of(context).textTheme.bodyLarge,
                   ),
                   const SizedBox(height: AppSpacing.large),
-                  FilledButton.icon(
+                  const AuthStatus(),
+                  const SizedBox(height: AppSpacing.medium),
+                  _HomePillarCard(
                     key: const Key('browse-proposals-button'),
-                    onPressed: () =>
+                    icon: Icons.explore_outlined,
+                    title: l10n.homeProjectsTitle,
+                    message: l10n.homeProjectsMessage,
+                    onTap: () =>
                         StatefulNavigationShell.of(context)
                             .goBranch(AppBranch.browse.index),
-                    icon: const Icon(Icons.explore_outlined),
-                    label: Text(l10n.proposalsBrowseAction),
                   ),
-                  const SizedBox(height: AppSpacing.medium),
-                  const AuthStatus(),
+                  const SizedBox(height: AppSpacing.small),
+                  _HomePillarCard(
+                    key: const Key('browse-resources-button'),
+                    icon: Icons.inventory_2_outlined,
+                    title: l10n.resourceTitle,
+                    message: l10n.homeResourcesMessage,
+                    onTap: () => context.go('/resources'),
+                  ),
                 ],
               ),
             ),
@@ -72,4 +81,47 @@ class FoundationScreen extends StatelessWidget {
       ),
     );
   }
+}
+
+class _HomePillarCard extends StatelessWidget {
+  const _HomePillarCard({
+    required this.icon,
+    required this.title,
+    required this.message,
+    required this.onTap,
+    super.key,
+  });
+
+  final IconData icon;
+  final String title;
+  final String message;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) => Card(
+    clipBehavior: Clip.antiAlias,
+    child: InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.medium),
+        child: Row(
+          children: [
+            Icon(icon, size: 32),
+            const SizedBox(width: AppSpacing.medium),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(title, style: Theme.of(context).textTheme.titleLarge),
+                  const SizedBox(height: AppSpacing.xSmall),
+                  Text(message),
+                ],
+              ),
+            ),
+            const Icon(Icons.chevron_right),
+          ],
+        ),
+      ),
+    ),
+  );
 }

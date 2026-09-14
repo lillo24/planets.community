@@ -13,12 +13,14 @@ import 'package:planets_mobile/features/profile/data/profile_gateway.dart';
 import 'package:planets_mobile/features/participation/data/participation_gateway.dart';
 import 'package:planets_mobile/features/proposals/data/proposal_gateway.dart';
 import 'package:planets_mobile/features/recurring_activities/data/recurring_activity_gateway.dart';
+import 'package:planets_mobile/features/resource_listings/data/resource_listing_gateway.dart';
 
 import '../../support/fake_auth.dart';
 import '../../support/fake_profile.dart';
 import '../../support/fake_participation.dart';
 import '../../support/fake_proposal.dart';
 import '../../support/fake_recurring_activity.dart';
+import '../../support/fake_resource_listing.dart';
 
 void main() {
   testWidgets('one shell selects every direct-entry branch and nested back', (
@@ -44,6 +46,11 @@ void main() {
       '/tavoli/tavolo-1/edit': 1,
       '/tavoli/tavolo-1/join': 1,
       '/tavoli/tavolo-1/participants': 1,
+      '/resources': 2,
+      '/resources/$resourceListingId': 2,
+      '/resources/mine': 2,
+      '/resources/create': 2,
+      '/resources/$resourceListingId/edit': 2,
     }.entries) {
       router.go(entry.key);
       await tester.pumpAndSettle();
@@ -519,6 +526,7 @@ Future<ProviderContainer> _pump(
   FakeProposalGateway? proposals,
   FakeRecurringActivityGateway? recurringActivities,
   FakeParticipationGateway? participation,
+  FakeResourceListingGateway? resourceListings,
 }) async {
   final gateway =
       auth ??
@@ -566,6 +574,13 @@ Future<ProviderContainer> _pump(
                 ..publicItems = [publicRecurringSummaryFixture()]
                 ..publicDetail = publicRecurringDetailFixture()
                 ..ownItems = [ownRecurringActivityFixture()]),
+        ),
+        resourceListingGatewayProvider.overrideWithValue(
+          resourceListings ??
+              (FakeResourceListingGateway()
+                ..publicItems = [publicResourceListingFixture()]
+                ..publicDetail = publicResourceListingDetailFixture()
+                ..ownItems = [ownResourceListingFixture()]),
         ),
       ],
       child: const PlanetsApp(),
