@@ -140,13 +140,19 @@ select ok(
     ) ilike '%project_group_chats%'
     and pg_get_functiondef(
       'private.resolve_chat_message_notification_event(uuid)'::regprocedure
-    ) ilike '%membership.joined_at <= message_record.created_at%'
+    ) ilike '%membership.joined_at%'
     and pg_get_functiondef(
       'private.resolve_chat_message_notification_event(uuid)'::regprocedure
-    ) ilike '%message_record.created_at < coalesce%'
+    ) ilike '%membership.left_at%'
     and pg_get_functiondef(
       'private.resolve_chat_message_notification_event(uuid)'::regprocedure
-    ) ilike '%<> message_record.sender_profile_id%',
+    ) ilike '%membership.removed_at%'
+    and pg_get_functiondef(
+      'private.resolve_chat_message_notification_event(uuid)'::regprocedure
+    ) ilike '%message_record.created_at%'
+    and pg_get_functiondef(
+      'private.resolve_chat_message_notification_event(uuid)'::regprocedure
+    ) ilike '%message_record.sender_profile_id%',
   'canonical message state, half-open membership intervals, and sender exclusion drive fan-out'
 );
 select ok(
