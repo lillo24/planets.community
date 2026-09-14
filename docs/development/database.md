@@ -1,6 +1,6 @@
 # Database development
 
-PostgreSQL is the canonical PLANETS product record. This guide owns the local schema-change, security-test, and generated-type workflow. The current schema includes application identity, basic profiles, a controlled starter skill catalog, field visibility, one-time proposals, the Tavoli recurring-activity domain, shared project participation, structured Messages reads, the Project group-chat lifecycle/authorization foundation, the in-app notification domain, the provider-independent push installation/delivery-job foundation, and private audit/outbox primitives.
+PostgreSQL is the canonical PLANETS product record. This guide owns the local schema-change, security-test, and generated-type workflow. The current schema includes application identity, basic profiles, a controlled starter skill catalog, field visibility, one-time proposals, the Tavoli recurring-activity domain, standalone Scambio-Dona resource listings, shared project participation, structured Messages reads, the Project group-chat lifecycle/authorization foundation, the in-app notification domain, the provider-independent push installation/delivery-job foundation, and private audit/outbox primitives.
 
 ## Source of truth and daily workflow
 
@@ -61,6 +61,14 @@ Authenticated complete-profile owners call expected-identity-bound create/update
 `public.list_public_recurring_activities` returns only active published Tavoli, ordered by derived next occurrence and deterministic ID cursor, with rough location only. Its non-null `p_reference_time` is required: a caller chooses one snapshot for page one and must reuse that exact value with every cursor from that pagination session, so occurrence boundaries cannot reorder rows between pages. `public.get_public_recurring_activity` is exact-ID detail for published, paused, or ended history; paused/ended rows have no active next occurrences. `public.list_public_recurring_activity_occurrences` exposes only bounded occurrences for currently published series. Public exact meeting text is detail-only when visibility is `public`; `participants` returns no protected value and an explicit restricted indicator. The shared participation meeting operation separately authorizes creators/current members.
 
 Owners use expected-identity-bound create/update/publish/pause/resume/end and owner read operations. Repeated publish, pause, resume, and end calls are idempotent in their already-achieved state and do not duplicate audit/outbox events. Ended activities are immutable. Flutter provides the ordinary-user Tavoli experience. The public website consumes only the sanitized public list/detail functions and keeps authoring and owner management mobile-only.
+
+## Scambio-Dona resource listings
+
+`public.resource_listings` stores standalone owner-managed availability with exactly `donate` and `exchange` modes. In 04C1 those values are discovery intents only. In particular, `exchange` does not define lending, barter, ownership transfer, return, payment, reservation, contact, or handoff mechanics. Resource categories, quantities, condition grades, media, Project linkage, saved searches, matching, and resource notifications are also absent.
+
+The explicit lifecycle is `draft`, `published`, or terminal `closed`. Drafts may be incomplete and are private. Publication requires a 2–120-character title, 1–5000-character plain-text description, two-letter country code, locality, and rough public location label. `administrative_area` is optional. No exact location/address or contact field exists. Published listings remain editable only when the resulting row is still publishable; changing `listing_mode` changes only the public discovery bucket. Closing means only that the listing is no longer publicly available, retains it in owner history, and does not assert a successful donation or exchange.
+
+The table has RLS enabled with no policies or direct `anon`, `authenticated`, or `service_role` grants. Expected-identity-bound hardened RPCs own draft creation, update, idempotent publication, terminal closure, and owner reads. Anonymous and authenticated callers use sanitized public list/detail RPCs. Discovery orders by `(published_at desc, id desc)` with a paired cursor and supports optional mode, trimmed case-insensitive locality equality, and literal case-insensitive substring search across title or description. Detail exposes the owner profile ID and display name only when the existing `display_name` visibility row is public. Publish/close audit and outbox records contain only listing/owner identifiers and the safe mode enum; no content or location text is copied, and no notification mapping is introduced.
 
 ## Shared project participation
 
@@ -253,6 +261,7 @@ The native pgTAP files under `supabase/tests/` verify:
 - requester-only pending Proposal/Tavolo card projections, public eligibility and filters, deterministic request ordering, resolved/lifecycle omission, sanitized output, and hardened routine grants.
 - immutable Project-chat message shape, canonical body limits, restrictive foreign keys, RPC-only access, full-history/current/former/rejoin rules, visible-frontier pagination and previews, identifier-only outbox payloads, private Realtime authorization, and send/termination serialization.
 - Project-chat notification/push message-time recipients, late-join/leave/rejoin boundaries, zero-to-many event fan-out, independent channel preferences, body-free chat/message context, rollout receipts, Proposal/Tavolo behavior, and projector concurrency/idempotency.
+- Scambio-Dona listing shape, exact mode/lifecycle constraints, restrictive ownership, private drafts/closed history, publish/edit/close behavior, rough-location and owner-display privacy, public filters/keyset ordering, and identifier-only audit/outbox payloads.
 
 Run focused commands while the stack is already running:
 
@@ -274,6 +283,7 @@ npm run messages:verify:local
 npm run project:chat:verify:local
 npm run project:chat:messages:verify:local
 npm run project:chat:notifications:verify:local
+npm run resource:listings:verify:local
 npm run db:types
 npm run db:types:check
 ```
@@ -327,8 +337,10 @@ chat/message context, complete receipts, and identifier-only/body-free alert
 state. It prints no OTPs, tokens, keys, database URLs, message bodies, request
 messages, or meeting details.
 
+`resource:listings:verify:local` uses two real authenticated owners, an anonymous client, and narrow direct-database assertions. It proves private incomplete drafts, cross-account denial, publish requirements and idempotency, safe public card/detail shape, display-name visibility, mode/locality/literal-keyword filters, paired newest-first pagination, safe published edits, terminal closure with retained owner history, and identifier-only audit/outbox payloads. It never prints OTPs, tokens, keys, database URLs, listing content, locations, emails, or private profile data.
+
 `auth:web:verify:local` adds web-specific evidence after a locally configured production Next.js build. It obtains session cookies through supported `@supabase/ssr` callbacks, confirms the Server Component recognizes the authenticated session, rejects private-auth material in the rendered response, and confirms `/admin` returns 404 for signed-out and signed-in requests. It does not invent or log Supabase's cookie encoding.
 
 `tavoli:web:verify:local` uses synthetic local OTP data and the production Next.js server to prove signed-out Tavoli list/detail rendering, rough-location and next-meeting output, exclusion of paused/ended rows from discovery, retained sanitized historical detail, exact-ID 404 behavior, and detail-only public/restricted exact-location handling. It never prints test addresses, tokens, keys, or protected meeting content.
 
-`npm run check:db` performs reset, lint, pgTAP, the real fake push-delivery worker protocol, the mobile/backend Auth check, the two-user profile visibility check, the proposal privacy/lifecycle check, the recurring activity recurrence/privacy/lifecycle check, the multi-user project-participation and participation-aware Browse checks, notification/push projection, structured Messages integration, Project-chat lifecycle/message/notification integrations, type regeneration, and drift detection as one validation sequence. It assumes `npm run db:start` has already succeeded and leaves stack lifecycle to the caller. CI additionally generates local web configuration, builds Next.js, runs the web-session and public Tavoli integrations, and always stops Supabase.
+`npm run check:db` performs reset, lint, pgTAP, the real fake push-delivery worker protocol, the mobile/backend Auth check, the two-user profile visibility check, the proposal privacy/lifecycle check, the recurring activity recurrence/privacy/lifecycle check, the multi-user project-participation and participation-aware Browse checks, notification/push projection, structured Messages integration, Project-chat lifecycle/message/notification integrations, the two-owner Scambio-Dona listing integration, type regeneration, and drift detection as one validation sequence. It assumes `npm run db:start` has already succeeded and leaves stack lifecycle to the caller. CI additionally generates local web configuration, builds Next.js, runs the web-session and public Tavoli integrations, and always stops Supabase.

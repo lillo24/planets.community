@@ -107,7 +107,7 @@ Use database constraints, Row Level Security, and named server operations for ru
 
 ### The database owns canonical state
 
-PostgreSQL is the canonical record for accounts, profiles, proposals, participation, messages, notification events, reports, and audit history.
+PostgreSQL is the canonical record for accounts, profiles, proposals, standalone resource listings, participation, messages, notification events, reports, and audit history.
 
 External systems such as FCM, Resend, Sentry, and PostHog are delivery or observation tools. They must not become the only record of product state.
 
@@ -142,6 +142,14 @@ Complete-profile creators manage proposals only through expected-identity-bound 
 `recurring_activity_meeting_details` physically separates exact meeting text/coordinates from structured rough public location. Anonymous discovery uses narrow list/detail operations: normal list includes only published series and requires callers to reuse one explicit reference-time snapshot across cursor pages, while exact-ID detail may retain published, paused, or ended history. Participant-restricted exact data is absent from public payloads and is available to the creator/current accepted participant only through the shared project meeting boundary.
 
 Complete-profile creators use expected-identity-bound create/publish/resume operations; all owner mutations reject stale account-switch forms before changing data. Publication, schedule changes, pause, resume, and end record content-free audit/outbox metadata without implementing notification delivery. 04B2A provides the full Flutter Tavoli experience. 04B2B provides signed-out, read-only Next.js discovery through only the sanitized public list/detail operations; its list cursor preserves one caller-owned reference-time snapshot across pages.
+
+### Scambio-Dona listing domain
+
+`resource_listings` stores standalone owner-managed Scambio-Dona availability separately from Projects and participation. `donate` and `exchange` are discovery intents only: `exchange` does not define lending, barter, transfer, return, payment, reservation, contact, or handoff behavior. The stored lifecycle is `draft`, `published`, or terminal `closed`; closure means only that the listing is no longer publicly available.
+
+Drafts may be incomplete and remain private. Publication requires a bounded plain-text title and description plus country, locality, and a public rough-location label. There is no exact address, point, contact field, media reference, resource taxonomy, quantity, price, Project foreign key, requester, or transaction state. An editable published listing must remain publishable atomically, and changing its mode changes only its discovery bucket.
+
+Complete-profile owners use expected-identity-bound create and publish operations, while authenticated owners use the same identity boundary for update, close, and owner history. The table has RLS but no client policies or direct grants. Anonymous and authenticated clients use narrow list/detail functions; list discovery is newest-first paired keyset pagination with optional mode, case-insensitive locality equality, and literal case-insensitive title/description substring filters. Detail returns an owner display name only when the existing profile visibility row is public. Publish and close write identifier-only audit/outbox state for later consumers without projecting notifications.
 
 ### Shared project participation domain
 
@@ -274,6 +282,7 @@ Edge Functions and background workers remain valid implementation choices when t
 | Skills/competences      | Controlled taxonomy used by users and proposals                                                             | Many-to-many with profiles and proposal requirements                                      |
 | One-time proposals      | Creator-owned content, schedule, rough/exact location separation, stored lifecycle, derived temporal status | Creator, controlled skill requirements, future participation, future template source      |
 | Recurring activities    | Persistent Tavoli, versioned weekly/monthly schedules, bounded occurrences, rough/exact privacy, lifecycle  | Separate from one-time proposals; Flutter experience and public web discovery implemented |
+| Resource listings       | Standalone Scambio-Dona owner lifecycle, rough-location discovery, and sanitized public detail             | Profile owner only; no Project, transaction, taxonomy, media, request, or handoff linkage  |
 | Participation           | Shared project identity, private requests/decisions, current membership and retained history                | Profile and concrete one-time/recurring project; source for authorization and later stats |
 | Messages                | Authenticated structured participation-request inbox/detail; future mobile Project-chat entry points        | Canonical join requests in 07A; separate Project-chat domain                              |
 | Project chat            | Structural anchor, immutable message history, authorized list/send APIs, and private Realtime hints         | Creator plus current/former participants under canonical membership-time rules            |

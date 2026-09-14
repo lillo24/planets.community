@@ -1,7 +1,7 @@
 # Implementation Roadmap
 
 **Status:** Planning baseline  
-**Current implementation:** Plans 00–04B2B, 05A, 05B, 05D, 06A, 06B, provider-independent 06C1, provider-neutral 06C2A, 07A, 07B1, 07B2B, 07B2C, and public informational SITE-00 through SITE-02 plus SITE-02W implemented; 06D is in progress; provider-specific 06C2B, 04C, and 05C remain not started
+**Current implementation:** Plans 00–04B2B, 05A, 05B, 05D, 06A, 06B, provider-independent 06C1, provider-neutral 06C2A, 06D, 07A, 07B1, 07B2B, 07B2C, and public informational SITE-00 through SITE-02 plus SITE-02W implemented; 04C1 is in progress; provider-specific 06C2B, 04C2–04C4, and 05C remain not started
 
 This roadmap divides the first PLANETS build into reviewable Codex tasks. Each numbered item should normally become its own implementation prompt, branch, and pull request.
 
@@ -53,12 +53,16 @@ Do not begin a dependent plan until the prior plan is merged or its branch is ex
 | 04B2  | Tavoli Mobile/Web Experience (parent)                     | Separate mobile and public-web clients over the canonical 04B1 backend                                                 | 04B1                   | Functional UX review; no recurrence expansion                                                                        | Implemented |
 | 04B2A | Tavoli Mobile Experience and Browse Integration           | Mobile browse/list/detail/create/edit/manage UI over the canonical 04B1 backend                                        | 04B1                   | Native interaction review                                                                                            | Implemented |
 | 04B2B | Public Web Tavoli Discovery                               | Read-only public web Tavoli list and detail                                                                            | 04B2A                  | Functional public-web review                                                                                         | Implemented |
-| 04C   | Resources + Scambio-Dona                                  | Project needs/contributions plus donation/exchange listings and later matching/notifications                           | 04A                    | Resource types, ownership/handoff/return semantics, visibility, listing lifecycle, and matching                      | Not started |
+| 04C   | Resources + Scambio-Dona                                  | Standalone Scambio-Dona listings plus later Project resources, requests, matching, and notifications                   | 04A                    | Transaction/handoff, taxonomy, Project contribution, and matching decisions remain split into later slices           | In progress |
+| 04C1  | Scambio-Dona Listing Domain Foundation                    | Owner lifecycle, rough-location public discovery, secure RPCs, identifier-only events, and tests                       | 04A, 03C               | None for the decision-light discovery-intent foundation                                                              | In progress |
+| 04C2  | Scambio-Dona Mobile Discovery and Owner Experience        | Mobile browse/detail/create/edit/publish/close experience over the 04C1 contracts                                      | 04C1                   | Functional/native UX review                                                                                          | Not started |
+| 04C3  | Project Resource Needs and Contribution Offers            | Project needs and participant contribution offers without collapsing them into standalone listings                    | 04A, 04B1, 05A         | Resource/contribution taxonomy and attribution semantics                                                             | Not started |
+| 04C4  | Listing Requests/Handoff + Saved Search/Matching          | Post-discovery request/handoff rules plus explainable saved-search and matching behavior                               | 04C1                   | Exchange, request, handoff, contact, matching, and notification semantics                                             | Not started |
 | 05    | Participation lifecycle (parent)                          | Shared project participation foundation, later mobile experience, and verified-contribution review                     | 04A, 04B1              | Capacity/fullness and later contribution/resource semantics remain unresolved                                        | In progress |
 | 05A   | Project Participation Domain Foundation                   | Shared identity, private join requests, canonical membership history, protected meeting access, events, and tests      | 04A, 04B1              | No blocking decision; 07B1 derives chat activation from accepted membership                                          | Implemented |
 | 05B   | Mobile Project Participation Experience                   | Join/status/withdraw, creator review, member state, leave/remove, and protected meeting UI                             | 05A                    | Functional/native UX review                                                                                          | Implemented |
 | 05D   | Participation-Aware Browse and Pending Request Visibility | Own pending requests promoted in mobile Proposal/Tavolo Browse without changing public pagination                      | 04A, 04B1, 05A, 05B    | Native QA deferred to the consolidated Plan 12 pass                                                                  | Implemented |
-| 05C   | Verified Project Contribution / Completion Review         | Creator confirmation of actual contribution for later stats/badges/resource attribution                                | 05A, 04C               | Contribution taxonomy, resource attribution, dispute/correction rules, and credit semantics                          | Not started |
+| 05C   | Verified Project Contribution / Completion Review         | Creator confirmation of actual contribution for later stats/badges/resource attribution                                | 05A, 04C3              | Contribution taxonomy, resource attribution, dispute/correction rules, and credit semantics                          | Not started |
 | 06    | Notification backbone (parent)                            | Canonical notification projection, later mobile inbox/preferences, then device registration and push delivery          | 03–05A                 | User-facing notification UX/copy and push behavior remain later review points                                        | In progress |
 | 06A   | Notification Domain and Outbox Projection Foundation      | Categories/preferences, semantic inbox records/targets, multi-consumer receipts, participation projection, secure APIs | 01B, 05A               | None expected for the defined participation foundation                                                               | Implemented |
 | 06B   | Mobile In-App Notifications and Preferences               | Flutter inbox, unread state, preference controls, and structured project/request navigation                            | 06A                    | Native QA deferred by founder for a later consolidated pass; not passed or failed                                    | Implemented |
@@ -67,7 +71,7 @@ Do not begin a dependent plan until the prior plan is merged or its branch is ex
 | 06C2  | Provider Delivery Integration (parent)                    | Provider-neutral worker protocol followed by Flutter registration and the repository-owned FCM adapter                 | 06C1                   | Firebase/APNs setup, permission timing, preview policy, credentials, and worker deployment                           | In progress |
 | 06C2A | Push Delivery Attempt and Worker-Protocol Foundation      | One-time installation fan-out, leases, safe attempt history, retries, terminal aggregation, and stale-token guards     | 06C1                   | None; uses synthetic outcomes and no provider account                                                                | Implemented |
 | 06C2B | Firebase Mobile Registration and FCM Adapter              | Flutter token/permission lifecycle plus repository-owned FCM HTTP v1 sends over the trusted 06C2A protocol             | 06C2A                  | Firebase Android/iOS config, APNs setup, permission timing, preview policy, credentials, and worker hosting          | Not started |
-| 06D   | Project Chat Notification Projection and Mobile Alerts    | Message-time recipient fan-out into body-free in-app notifications and semantic push jobs, plus mobile chat alerts     | 06A, 06B, 06C1, 07B2C  | Native QA remains deferred to Plan 12; provider delivery remains 06C2B                                               | In progress |
+| 06D   | Project Chat Notification Projection and Mobile Alerts    | Message-time recipient fan-out into body-free in-app notifications and semantic push jobs, plus mobile chat alerts     | 06A, 06B, 06C1, 07B2C  | Native QA remains deferred to Plan 12; provider delivery remains 06C2B                                               | Implemented |
 | 07    | Messages + Project Chat (parent)                          | Structured request items, Project-chat lifecycle authorization, and server-authorized realtime/mobile conversation     | 05A, 06A               | Native QA remains in Plan 12; later moderation overrides remain Plan 09                                              | Implemented |
 | 07A   | Messages Surface and Structured Participation Requests    | Authenticated Messages inbox with canonical actionable join-request items                                              | 05A, 06A               | Functional/native UX review and final Messages information architecture                                              | Implemented |
 | 07B   | Project Group Chat (parent)                               | First-accept lifecycle/authorization foundation followed by messaging, Realtime, and mobile group experience           | 05A, 07A               | Optional E2EE research remains deferred; native QA remains in Plan 12                                                | Implemented |
@@ -228,7 +232,7 @@ Expected scope:
 
 **Goal:** Implement activity discovery through independently reviewable one-time and recurring models.
 
-Parent plan 04 is implemented through 04A and 04B. Shared participation depends on both concrete domain foundations while 04C remains separate.
+Parent plan 04 has 04A and 04B implemented while 04C is in progress through its independent 04C1 listing foundation. Shared participation depends on both concrete activity-domain foundations; standalone listings remain separate.
 
 #### 04A — One-Time Proposals and Discovery
 
@@ -310,11 +314,37 @@ or introduce participation, chat, resources, or recurrence expansion.
 
 #### 04C — Resources + Scambio-Dona
 
-**Status:** Not started and not implemented by 04B1.
+**Status:** In progress through 04C1. Later mobile, Project-resource, request/handoff, saved-search, matching, and notification slices remain not started.
 
-PLANETS still needs an explicit domain for material resources that a project may request, receive as donations, exchange, or use on loan. The accepted Scambio-Dona direction also includes standalone donation and exchange listings, with saved searches/notifications and matching between listings and project needs considered later. A scoped plan must first define resource types, contributor/owner relationships, handoff/return lifecycle, listing visibility/history, and matching semantics. This gap is recorded so resources are not silently collapsed into skills, Tavoli topics, or free-form join-request fields.
+The earlier combined scope is split so standalone public listings do not force unresolved Project contribution or post-discovery transaction rules:
 
-04C is not a dependency for the 05A participation foundation or 05B mobile participation UI. Stable join-request IDs allow future resource-offer rows to attach without equating contribution with membership. The 05C verified-contribution plan does depend on resolving relevant contribution/resource semantics.
+##### 04C1 — Scambio-Dona Listing Domain Foundation
+
+**Status:** In progress in the current implementation PR. Depends on merged 04A and 03C.
+
+Owns standalone owner-managed `resource_listings`, `donate`/`exchange` discovery intent, private incomplete drafts, published rough-location discovery/detail, terminal closure, expected-identity-bound owner APIs, profile-display visibility, mode/locality/literal-keyword filtering, newest-first paired keyset pagination, identifier-only publish/close events, pgTAP, local integration, generated contracts, and documentation.
+
+`exchange` does not define lending, barter, ownership transfer, return, payment, reservation, contact, or handoff mechanics. 04C1 also adds no resource taxonomy, media, Project linkage, saved searches, matching, notifications, quantities, prices, or transaction/request records.
+
+##### 04C2 — Scambio-Dona Mobile Discovery and Owner Experience
+
+**Status:** Not started. Depends on 04C1.
+
+Future scope owns the primary Flutter browse/detail and owner create/edit/publish/close experience over the canonical 04C1 contracts. It may begin text-only; media remains Plan 08.
+
+##### 04C3 — Project Resource Needs and Contribution Offers
+
+**Status:** Not started. Depends on 04A, 04B1, and 05A.
+
+Future scope owns Project resource needs and participant contribution offers as domain concepts separate from standalone Scambio-Dona listings and from accepted membership.
+
+##### 04C4 — Listing Requests/Handoff + Saved Search/Matching
+
+**Status:** Not started. Depends on 04C1 and founder decisions and may split further.
+
+Future scope must resolve what happens after discovery, including exchange/request/handoff/contact behavior, saved-search contracts, explainable matching, and resource notification semantics. It must not infer those rules from the 04C1 `exchange` discovery intent.
+
+04C is not a dependency for the 05A participation foundation or 05B mobile participation UI. Stable join-request IDs allow future resource-offer rows to attach without equating contribution with membership. The 05C verified-contribution plan depends specifically on 04C3 rather than on unrelated standalone listing UI or 04C4 transaction/matching work.
 
 ### 05 — Participation lifecycle
 
@@ -367,7 +397,7 @@ consolidated Plan 12 pass and is not marked passed or failed here.
 
 **Status:** Not started.
 
-Future scope records the 08/09 direction that the creator confirms who actually contributed after completion. It may later support contribution history, derived statistics, badges, and resource/help attribution, but membership acceptance alone is not proof. Taxonomy, resource linkage, correction/dispute behavior, and credit semantics remain founder-owned decisions; 05C must not be inferred from 05A history.
+Future scope records the 08/09 direction that the creator confirms who actually contributed after completion. It may later support contribution history, derived statistics, badges, and resource/help attribution, but membership acceptance alone is not proof. Taxonomy, resource linkage, correction/dispute behavior, and credit semantics remain founder-owned decisions; 05C must not be inferred from 05A history and depends on the Project-resource/contribution slice 04C3 rather than all standalone Scambio-Dona work.
 
 Future project-presentation work must also represent Tavoli as a Progetti type/filter in the final information architecture and implement the accepted Online/In-Presence mode. Neither is a participation-table field in 05A.
 
@@ -388,7 +418,7 @@ The former combined Plan 05 scope is now split across the four portions above. R
 
 **Goal:** Deliver domain events without coupling external services to transactions.
 
-**Status:** In progress. 06A, 06B, provider-independent 06C1, and provider-neutral 06C2A are implemented; 06D is in progress; provider-specific 06C2B remains not started.
+**Status:** In progress. 06A, 06B, provider-independent 06C1, provider-neutral 06C2A, and 06D are implemented; provider-specific 06C2B remains not started.
 
 #### 06A — Notification Domain and Outbox Projection Foundation
 
@@ -496,8 +526,7 @@ Request-specific 06A notifications carry `request_id` and the semantic `particip
 
 #### 06D — Project Chat Notification Projection and Mobile Alerts
 
-**Status:** In progress in the current implementation PR. Depends on merged
-07B2C/PR #30 plus 06A, 06B, and 06C1.
+**Status:** Implemented in merged PR #31 (`2197576acb47bd7cd0dd42a7f10987d7522caea5`). Depends on merged 07B2C/PR #30 plus 06A, 06B, and 06C1.
 
 The scoped bridge revalidates identifier-only `project.chat_message_sent`
 events, resolves the creator and accepted memberships at the canonical message
@@ -776,12 +805,12 @@ Major gates currently expected:
 
 ## Immediate next action
 
-Complete and review **06D — Project Chat Notification Projection and Mobile
-Alerts** without merging its PR. Its mobile destination dependency 07B2C is
-implemented in merged PR #30; optional E2EE/MLS research remains unmerged and
-deferred in PR #28. **04C — Resources +
-Scambio-Dona** remains not started and independently available; 05C remains not
-started while it waits for contribution/resource decisions. Plan 06C2B remains
+Complete and review **04C1 — Scambio-Dona Listing Domain Foundation** without
+merging its PR. 06D is implemented in merged PR #31, while 06 remains in
+progress because provider-specific 06C2B is not started. Optional E2EE/MLS
+research remains unmerged and deferred in PR #28. 04C2–04C4 and 05C remain not
+started; 05C waits specifically for the Project-resource/contribution slice
+04C3 rather than standalone listing UI. Plan 06C2B remains
 not started and requires Firebase/APNs configuration, push permission and
 preview decisions, server-side FCM credentials, and a self-host-compatible
 worker deployment target. Deferred native Android/iOS checks from implemented

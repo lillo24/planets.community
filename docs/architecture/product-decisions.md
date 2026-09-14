@@ -33,6 +33,17 @@ Current product direction from the 08/09 founder discussion:
 
 Ordinary withdrawal, voluntary leave, and creator removal are not permanent bans. A person may submit a fresh request while the project is eligible and they have no pending request or current membership. Blocking and moderation remain later work.
 
+## Scambio-Dona listings
+
+Current 04C1 product boundary:
+
+- Standalone Scambio-Dona listings use exactly `donate` and `exchange` as public discovery intents.
+- `exchange` does **not** define lending, barter, ownership transfer, return, payment, reservation, contact, or handoff mechanics. Those remain founder-owned decisions for a later request/handoff plan.
+- Owners manage a small `draft` → `published` → terminal `closed` lifecycle. Closing means only that a listing is no longer publicly available; it is not proof of a successful donation or exchange.
+- Public listing data contains plain-text title/description and rough `country_code`, `locality`, optional `administrative_area`, and `public_location_label` only. Exact location and contact data are absent.
+- Public detail follows the existing profile display-name visibility decision; publishing a listing does not make a private display name public.
+- Resource taxonomy, quantities, prices, condition grades, media, Project linkage, requests/handoffs, saved searches, matching, and resource notifications remain deferred.
+
 ## Messages, participation requests, and notification alerts
 
 Current product direction from the 08/09 founder discussion and follow-up clarification:
