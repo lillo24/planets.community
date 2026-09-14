@@ -928,19 +928,6 @@ export type Database = {
         }
         Returns: string
       }
-      create_resource_listing_draft: {
-        Args: {
-          p_administrative_area: string
-          p_country_code: string
-          p_description: string
-          p_expected_owner_profile_id: string
-          p_listing_mode: string
-          p_locality: string
-          p_public_location_label: string
-          p_title: string
-        }
-        Returns: string
-      }
       create_recurring_activity_draft: {
         Args: {
           p_administrative_area: string
@@ -961,6 +948,19 @@ export type Database = {
           p_title: string
           p_topic: string
           p_weekday: number
+        }
+        Returns: string
+      }
+      create_resource_listing_draft: {
+        Args: {
+          p_administrative_area: string
+          p_country_code: string
+          p_description: string
+          p_expected_owner_profile_id: string
+          p_listing_mode: string
+          p_locality: string
+          p_public_location_label: string
+          p_title: string
         }
         Returns: string
       }
