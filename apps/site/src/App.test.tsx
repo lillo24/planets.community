@@ -66,6 +66,69 @@ describe("PLANETS public site", () => {
     expect(document.querySelector('a[href^="mailto:"]')).toBeNull();
   });
 
+  it("renders the founder-reviewed copy and independent detail sections", () => {
+    render(<App />);
+
+    expect(document.querySelector(".hero__announcement")?.textContent).toBe(
+      "In arrivo su iOS e Android",
+    );
+    expect(document.querySelector(".hero__lead")?.textContent).toContain(
+      "Persone, idee e luoghi che si incontrano.",
+    );
+    expect(document.querySelector(".hero__support")?.textContent).toContain(
+      "PLANETS mette in contatto persone che vogliono creare qualcosa insieme nella propria comunità.",
+    );
+    expect(document.querySelector(".hero__caption")?.textContent).toContain(
+      "Ogni persona porta qualcosa. PLANETS aiuta a trovare chi vuole metterlo in comune.",
+    );
+    expect(
+      screen.queryByText(
+        "Un luogo per incontrarsi vicino a casa, unire capacità diverse e trasformare un'idea in un'attività concreta.",
+      ),
+    ).toBeNull();
+    expect(document.querySelector(".about-note")).toBeNull();
+
+    const contactSection = document.querySelector("section#contatti");
+    const privacySection = document.querySelector("section#privacy");
+
+    expect(contactSection).not.toBeNull();
+    expect(privacySection).not.toBeNull();
+    expect(contactSection?.nextElementSibling).toBe(privacySection);
+  });
+
+  it("uses the PLANETS logo as the accessible header brand mark", () => {
+    render(<App />);
+
+    const headerBrand = screen.getByRole("link", {
+      name: "PLANETS, torna all'inizio",
+    });
+    const logo = headerBrand.querySelector(".brand__mark img");
+
+    expect(logo?.getAttribute("src")).toBe("/brand/planets-logo.png");
+    expect(logo?.getAttribute("alt")).toBe("");
+    expect(headerBrand.querySelector(".brand__dot")).toBeNull();
+  });
+
+  it("omits the environment warning when Turnstile is configured", () => {
+    renderWaitlist();
+
+    expect(
+      screen.queryByText(
+        "La lista di attesa non è configurata in questo ambiente.",
+      ),
+    ).toBeNull();
+  });
+
+  it("keeps the environment warning when Turnstile is unconfigured", () => {
+    render(<WaitlistForm turnstileSiteKey={null} />);
+
+    expect(
+      screen.getByText(
+        "La lista di attesa non è configurata in questo ambiente.",
+      ),
+    ).not.toBeNull();
+  });
+
   it("does not submit an invalid email address", () => {
     const { apiClient, form } = renderWaitlist();
 
