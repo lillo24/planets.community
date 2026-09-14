@@ -79,7 +79,7 @@ img {
 
 .site-page {
   min-height: 100vh;
-  overflow: hidden;
+  overflow-x: clip;
 }
 
 .skip-link {
@@ -154,6 +154,37 @@ img {
   box-shadow: 0 0 0 1px rgb(24 48 46 / 14%);
 }
 
+.brand__mark {
+  display: grid;
+  width: 2.15rem;
+  aspect-ratio: 1;
+  flex: none;
+  place-items: center;
+  overflow: hidden;
+  padding: 0.16rem;
+  border: 1px solid rgb(255 255 255 / 82%);
+  border-radius: 48% 52% 50% 50% / 45% 45% 55% 55%;
+  background:
+    radial-gradient(circle, rgb(255 255 255 / 96%) 0 46%, transparent 76%),
+    conic-gradient(
+      from 28deg,
+      rgb(216 92 145 / 28%),
+      rgb(239 185 83 / 28%),
+      rgb(92 174 100 / 28%),
+      rgb(39 171 197 / 28%),
+      rgb(216 92 145 / 28%)
+    );
+  box-shadow:
+    0 0.35rem 0.9rem rgb(35 65 58 / 10%),
+    inset 0 0 0.6rem rgb(255 255 255 / 72%);
+}
+
+.brand__mark img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
 .primary-nav,
 .site-footer nav {
   display: flex;
@@ -184,11 +215,34 @@ img {
 }
 
 .hero {
-  display: grid;
+  display: flex;
   min-height: calc(100vh - 5rem);
+  flex-direction: column;
+  justify-content: center;
+  padding-block: clamp(3.5rem, 8vw, 7rem);
+}
+
+.hero__announcement {
+  align-self: center;
+  margin: 0 0 clamp(2.5rem, 5vw, 4rem);
+  padding: 0.75rem 1.2rem;
+  border: 1px solid rgb(216 92 145 / 18%);
+  border-radius: 999px;
+  background:
+    linear-gradient(rgb(255 255 255 / 84%), rgb(255 255 255 / 84%)),
+    linear-gradient(100deg, var(--pink), var(--gold), var(--green), var(--cyan));
+  color: #704356;
+  font-size: clamp(1rem, 2vw, 1.2rem);
+  font-weight: 750;
+  letter-spacing: -0.015em;
+  text-align: center;
+  box-shadow: 0 0.75rem 2rem rgb(35 65 58 / 7%);
+}
+
+.hero__body {
+  display: grid;
   align-items: center;
   gap: clamp(2.5rem, 7vw, 7rem);
-  padding-block: clamp(3.5rem, 8vw, 7rem);
 }
 
 .hero__content {
@@ -204,22 +258,6 @@ img {
   font-weight: 800;
   letter-spacing: 0.15em;
   text-transform: uppercase;
-}
-
-.hero > .hero__content > .eyebrow {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.6rem;
-  color: #704356;
-}
-
-.hero > .hero__content > .eyebrow::before {
-  width: 0.55rem;
-  height: 0.55rem;
-  border-radius: 50%;
-  background: var(--pink);
-  box-shadow: 0 0 0 0.3rem rgb(216 92 145 / 12%);
-  content: "";
 }
 
 h1,
@@ -280,10 +318,8 @@ h2 {
 }
 
 .waitlist__heading {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 1rem;
+  display: grid;
+  gap: 0.35rem;
   margin-bottom: 0.9rem;
 }
 
@@ -496,14 +532,17 @@ h2 {
 .hero__caption {
   position: relative;
   z-index: 2;
+  max-width: min(100%, 31rem);
   margin: -1.25rem 0 0;
   padding: 0.65rem 1rem;
   border: 1px solid var(--line);
-  border-radius: 999px;
+  border-radius: 1.2rem;
   background: rgb(255 255 255 / 88%);
   color: var(--muted);
   font-size: 0.8rem;
   font-weight: 700;
+  line-height: 1.45;
+  text-align: center;
   box-shadow: 0 0.8rem 2rem rgb(35 65 58 / 8%);
 }
 
@@ -592,38 +631,21 @@ h2 {
   line-height: 1.7;
 }
 
-.about-note {
-  display: grid;
-  grid-template-columns: auto 1fr;
-  gap: 0.85rem;
-  margin-top: 2rem;
-  padding: 1.35rem;
-  border: 1px solid rgb(92 174 100 / 25%);
-  border-radius: 1.2rem;
-  background: rgb(92 174 100 / 8%);
+.section--detail {
+  display: flex;
 }
 
-.about-note > span {
-  color: var(--green);
-  font-size: 1.3rem;
+.section--contact .detail-card {
+  max-width: 44rem;
 }
 
-.about-note p {
-  margin: 0;
-  color: #35524b;
-  font-weight: 650;
-  line-height: 1.55;
-}
-
-.section--details {
-  display: grid;
-  grid-template-columns: minmax(0, 0.78fr) minmax(0, 1.22fr);
-  align-items: stretch;
-  gap: 1rem;
+.section--privacy .detail-card {
+  max-width: 62rem;
+  margin-left: auto;
 }
 
 .detail-card {
-  scroll-margin-top: 7rem;
+  width: 100%;
   padding: clamp(1.5rem, 4vw, 2.5rem);
   border: 1px solid var(--line);
   border-radius: 1.6rem;
@@ -723,7 +745,7 @@ h2 {
 }
 
 @media (min-width: 58rem) {
-  .hero {
+  .hero__body {
     grid-template-columns: minmax(0, 1.05fr) minmax(22rem, 0.95fr);
   }
 
@@ -771,14 +793,6 @@ h2 {
     font-size: clamp(3.2rem, 17vw, 4.8rem);
   }
 
-  .waitlist__heading {
-    display: block;
-  }
-
-  .waitlist__heading h2 {
-    margin-top: 0.35rem;
-  }
-
   .waitlist__controls {
     grid-template-columns: 1fr;
   }
@@ -788,8 +802,7 @@ h2 {
   }
 
   .activity-strip ul,
-  .section--about,
-  .section--details {
+  .section--about {
     grid-template-columns: 1fr;
   }
 

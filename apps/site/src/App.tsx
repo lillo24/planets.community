@@ -29,7 +29,14 @@ export function App() {
             href="#inizio"
             aria-label="PLANETS, torna all'inizio"
           >
-            <span className="brand__dot" aria-hidden="true" />
+            <span className="brand__mark" aria-hidden="true">
+              <img
+                src="/brand/planets-logo.png"
+                alt=""
+                width="1080"
+                height="1150"
+              />
+            </span>
             <span>PLANETS</span>
           </a>
 
@@ -45,39 +52,42 @@ export function App() {
 
       <main id="contenuto">
         <section className="hero" id="inizio" aria-labelledby="hero-title">
-          <div className="hero__content">
-            <p className="eyebrow">In arrivo su iOS e Android</p>
-            <h1 id="hero-title">
-              Le idee prendono vita, <em>insieme.</em>
-            </h1>
-            <p className="hero__lead">
-              PLANETS mette in contatto persone che vogliono creare qualcosa
-              insieme nella propria comunità.
-            </p>
-            <p className="hero__support">
-              Un luogo per incontrarsi vicino a casa, unire capacità diverse e
-              trasformare un'idea in un'attività concreta.
-            </p>
+          <p className="hero__announcement">In arrivo su iOS e Android</p>
 
-            <WaitlistForm />
-          </div>
+          <div className="hero__body">
+            <div className="hero__content">
+              <h1 id="hero-title">
+                Le idee prendono vita, <em>insieme.</em>
+              </h1>
+              <p className="hero__lead">
+                Persone, idee e luoghi che si incontrano.
+              </p>
+              <p className="hero__support">
+                PLANETS mette in contatto persone che vogliono creare qualcosa
+                insieme nella propria comunità.
+              </p>
 
-          <div className="hero__visual" aria-label="Identità visiva PLANETS">
-            <span className="orbit orbit--outer" aria-hidden="true" />
-            <span className="orbit orbit--inner" aria-hidden="true" />
-            <div className="logo-stage">
-              <img
-                className="hero__logo"
-                src="/brand/planets-logo.png"
-                alt="Logo PLANETS, simbolo multicolore della comunità"
-                width="1080"
-                height="1150"
-                fetchPriority="high"
-              />
+              <WaitlistForm />
             </div>
-            <p className="hero__caption">
-              Persone, idee e luoghi che si incontrano.
-            </p>
+
+            <div className="hero__visual" aria-label="Identità visiva PLANETS">
+              <span className="orbit orbit--outer" aria-hidden="true" />
+              <span className="orbit orbit--inner" aria-hidden="true" />
+              <div className="logo-stage">
+                <img
+                  className="hero__logo"
+                  src="/brand/planets-logo.png"
+                  alt="Logo PLANETS, simbolo multicolore della comunità"
+                  width="1080"
+                  height="1150"
+                  fetchPriority="high"
+                />
+              </div>
+              <p className="hero__caption">
+                Ogni persona porta qualcosa. PLANETS aiuta a trovare chi vuole
+                metterlo in comune.
+              </p>
+            </div>
           </div>
         </section>
 
@@ -119,22 +129,15 @@ export function App() {
               locali: creare, costruire, coltivare, organizzare e contribuire
               insieme alla comunità.
             </p>
-            <aside className="about-note" aria-label="Il principio di PLANETS">
-              <span aria-hidden="true">✦</span>
-              <p>
-                Ogni persona porta qualcosa. PLANETS aiuta a trovare chi vuole
-                metterlo in comune.
-              </p>
-            </aside>
           </div>
         </section>
 
-        <section className="section section--details" aria-label="Informazioni">
-          <article
-            className="detail-card"
-            id="contatti"
-            aria-labelledby="contact-title"
-          >
+        <section
+          className="section section--detail section--contact"
+          id="contatti"
+          aria-labelledby="contact-title"
+        >
+          <article className="detail-card">
             <p className="eyebrow">Parliamone</p>
             <h2 id="contact-title">Contatti</h2>
             <p>Per informazioni o domande su PLANETS.</p>
@@ -151,12 +154,14 @@ export function App() {
               </p>
             )}
           </article>
+        </section>
 
-          <article
-            className="detail-card detail-card--privacy"
-            id="privacy"
-            aria-labelledby="privacy-title"
-          >
+        <section
+          className="section section--detail section--privacy"
+          id="privacy"
+          aria-labelledby="privacy-title"
+        >
+          <article className="detail-card detail-card--privacy">
             <p className="eyebrow">Privacy, in breve</p>
             <h2 id="privacy-title">Una sola email, per un solo scopo.</h2>
             <p>
