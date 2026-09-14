@@ -306,11 +306,12 @@ async function assertRecipients(message, expected, projectKind = "one_time") {
   const [context] = await sql`
     select
       count(*)::integer as notification_count,
-      min(notification.project_kind) as notification_project_kind,
+      min(project.project_kind) as notification_project_kind,
       min(job.project_kind) as job_project_kind,
       min(notification.chat_id::text) as notification_chat_id,
       min(job.chat_id::text) as job_chat_id
     from public.notifications as notification
+    join public.projects as project on project.id = notification.project_id
     join private.push_delivery_jobs as job
       on job.source_outbox_event_id = notification.source_outbox_event_id
       and job.recipient_profile_id = notification.recipient_profile_id
