@@ -37,10 +37,12 @@ export type Database = {
         Row: {
           actor_profile_id: string | null
           category_slug: string
+          chat_id: string | null
           created_at: string
           destination_kind: string
           id: string
           membership_id: string | null
+          message_id: string | null
           notification_kind: string
           project_id: string | null
           read_at: string | null
@@ -51,10 +53,12 @@ export type Database = {
         Insert: {
           actor_profile_id?: string | null
           category_slug: string
+          chat_id?: string | null
           created_at: string
           destination_kind: string
           id?: string
           membership_id?: string | null
+          message_id?: string | null
           notification_kind: string
           project_id?: string | null
           read_at?: string | null
@@ -65,10 +69,12 @@ export type Database = {
         Update: {
           actor_profile_id?: string | null
           category_slug?: string
+          chat_id?: string | null
           created_at?: string
           destination_kind?: string
           id?: string
           membership_id?: string | null
+          message_id?: string | null
           notification_kind?: string
           project_id?: string | null
           read_at?: string | null
@@ -92,10 +98,24 @@ export type Database = {
             referencedColumns: ["slug"]
           },
           {
+            foreignKeyName: "notifications_chat_id_fkey"
+            columns: ["chat_id"]
+            isOneToOne: false
+            referencedRelation: "project_group_chats"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "notifications_membership_id_fkey"
             columns: ["membership_id"]
             isOneToOne: false
             referencedRelation: "project_memberships"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notifications_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "project_chat_messages"
             referencedColumns: ["id"]
           },
           {
@@ -1063,8 +1083,10 @@ export type Database = {
           actor_display_name: string
           actor_profile_id: string
           category_slug: string
+          chat_id: string
           created_at: string
           destination_kind: string
+          message_id: string
           notification_id: string
           notification_kind: string
           project_id: string

@@ -54,7 +54,9 @@ select columns_are(
     'available_at',
     'fanout_at',
     'completed_at',
-    'completion_reason'
+    'completion_reason',
+    'chat_id',
+    'message_id'
   ],
   'push jobs contain recipient-level semantic identifiers and scheduling only'
 );
@@ -122,6 +124,18 @@ select ok(
   ),
   'one recipient-level semantic job is enforced per source event'
 );
+select ok(
+  exists (
+    select 1
+    from pg_constraint
+    where conrelid = 'private.push_delivery_jobs'::regclass
+      and conname = 'push_delivery_jobs_chat_shape_valid'
+      and contype = 'c'
+      and pg_get_constraintdef(oid) like '%chat_message_received%'
+      and pg_get_constraintdef(oid) like '%project_chat%'
+  ),
+  'chat jobs require their complete provider-neutral semantic shape'
+);
 
 select ok(
   to_regclass('private.push_installations_profile_id_idx') is not null,
@@ -149,7 +163,9 @@ select ok(
     and to_regclass('private.push_delivery_jobs_project_id_idx') is not null
     and to_regclass('private.push_delivery_jobs_actor_profile_id_idx') is not null
     and to_regclass('private.push_delivery_jobs_request_id_idx') is not null
-    and to_regclass('private.push_delivery_jobs_membership_id_idx') is not null,
+    and to_regclass('private.push_delivery_jobs_membership_id_idx') is not null
+    and to_regclass('private.push_delivery_jobs_chat_id_idx') is not null
+    and to_regclass('private.push_delivery_jobs_message_id_idx') is not null,
   'push-job semantic foreign-key paths are indexed'
 );
 
@@ -158,6 +174,13 @@ select ok(
     'private.resolve_participation_notification_event(uuid)'
   ) is not null,
   'the shared participation notification resolver exists'
+);
+select ok(
+  to_regprocedure(
+    'private.resolve_chat_message_notification_event(uuid)'
+  ) is not null
+    and to_regprocedure('private.resolve_notification_event(uuid)') is not null,
+  'chat fan-out and shared multi-recipient notification resolvers exist'
 );
 select ok(
   to_regprocedure(
@@ -191,7 +214,7 @@ select ok(
 select ok(
   pg_get_functiondef(
     'public.process_notification_outbox_batch(integer)'::regprocedure
-  ) ilike '%private.resolve_participation_notification_event%'
+  ) ilike '%private.resolve_notification_event%'
     and pg_get_functiondef(
       'public.process_notification_outbox_batch(integer)'::regprocedure
     ) not ilike '%source_event.payload%',
@@ -200,7 +223,7 @@ select ok(
 select ok(
   pg_get_functiondef(
     'public.process_push_outbox_batch(integer)'::regprocedure
-  ) ilike '%private.resolve_participation_notification_event%'
+  ) ilike '%private.resolve_notification_event%'
     and pg_get_functiondef(
       'public.process_push_outbox_batch(integer)'::regprocedure
     ) ilike '%preference.push_enabled%'
@@ -251,6 +274,8 @@ select is(
     where procedure.oid in (
       'private.require_push_identity(uuid)'::regprocedure,
       'private.resolve_participation_notification_event(uuid)'::regprocedure,
+      'private.resolve_chat_message_notification_event(uuid)'::regprocedure,
+      'private.resolve_notification_event(uuid)'::regprocedure,
       'public.register_own_push_installation(uuid,uuid,text,text)'::regprocedure,
       'public.unregister_own_push_installation(uuid,uuid)'::regprocedure,
       'public.process_notification_outbox_batch(integer)'::regprocedure,
@@ -267,6 +292,8 @@ select is(
     where procedure.oid in (
       'private.require_push_identity(uuid)'::regprocedure,
       'private.resolve_participation_notification_event(uuid)'::regprocedure,
+      'private.resolve_chat_message_notification_event(uuid)'::regprocedure,
+      'private.resolve_notification_event(uuid)'::regprocedure,
       'public.register_own_push_installation(uuid,uuid,text,text)'::regprocedure,
       'public.unregister_own_push_installation(uuid,uuid)'::regprocedure,
       'public.process_notification_outbox_batch(integer)'::regprocedure,
@@ -327,9 +354,17 @@ select is(
     'service_role',
     'private.resolve_participation_notification_event(uuid)',
     'EXECUTE'
+  ) or has_function_privilege(
+    'service_role',
+    'private.resolve_chat_message_notification_event(uuid)',
+    'EXECUTE'
+  ) or has_function_privilege(
+    'service_role',
+    'private.resolve_notification_event(uuid)',
+    'EXECUTE'
   ),
   false,
-  'service credentials cannot bypass the public projector through the resolver'
+  'service credentials cannot bypass the public projectors through private resolvers'
 );
 
 select is(

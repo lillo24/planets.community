@@ -1,7 +1,7 @@
 # Implementation Roadmap
 
 **Status:** Planning baseline  
-**Current implementation:** Plans 00–04B2B, 05A, 05B, 05D, 06A, 06B, provider-independent 06C1, provider-neutral 06C2A, 07A, 07B1, 07B2B, and public informational SITE-00 through SITE-02 implemented; 07B2C is in progress; provider-specific 06C2B, 04C, and 05C remain not started
+**Current implementation:** Plans 00–04B2B, 05A, 05B, 05D, 06A, 06B, provider-independent 06C1, provider-neutral 06C2A, 07A, 07B1, 07B2B, 07B2C, and public informational SITE-00 through SITE-02 implemented; 06D is in progress; provider-specific 06C2B, 04C, and 05C remain not started
 
 This roadmap divides the first PLANETS build into reviewable Codex tasks. Each numbered item should normally become its own implementation prompt, branch, and pull request.
 
@@ -67,11 +67,12 @@ Do not begin a dependent plan until the prior plan is merged or its branch is ex
 | 06C2  | Provider Delivery Integration (parent)                    | Provider-neutral worker protocol followed by Flutter registration and the repository-owned FCM adapter                 | 06C1                   | Firebase/APNs setup, permission timing, preview policy, credentials, and worker deployment                           | In progress |
 | 06C2A | Push Delivery Attempt and Worker-Protocol Foundation      | One-time installation fan-out, leases, safe attempt history, retries, terminal aggregation, and stale-token guards     | 06C1                   | None; uses synthetic outcomes and no provider account                                                                | Implemented |
 | 06C2B | Firebase Mobile Registration and FCM Adapter              | Flutter token/permission lifecycle plus repository-owned FCM HTTP v1 sends over the trusted 06C2A protocol             | 06C2A                  | Firebase Android/iOS config, APNs setup, permission timing, preview policy, credentials, and worker hosting          | Not started |
-| 07    | Messages + Project Chat (parent)                          | Structured request items, Project-chat lifecycle authorization, and server-authorized realtime/mobile conversation     | 05A, 06A               | Native QA remains in Plan 12; later moderation overrides remain Plan 09                                               | In progress |
+| 06D   | Project Chat Notification Projection and Mobile Alerts    | Message-time recipient fan-out into body-free in-app notifications and semantic push jobs, plus mobile chat alerts     | 06A, 06B, 06C1, 07B2C  | Native QA remains deferred to Plan 12; provider delivery remains 06C2B                                               | In progress |
+| 07    | Messages + Project Chat (parent)                          | Structured request items, Project-chat lifecycle authorization, and server-authorized realtime/mobile conversation     | 05A, 06A               | Native QA remains in Plan 12; later moderation overrides remain Plan 09                                              | Implemented |
 | 07A   | Messages Surface and Structured Participation Requests    | Authenticated Messages inbox with canonical actionable join-request items                                              | 05A, 06A               | Functional/native UX review and final Messages information architecture                                              | Implemented |
-| 07B   | Project Group Chat (parent)                               | First-accept lifecycle/authorization foundation followed by messaging, Realtime, and mobile group experience           | 05A, 07A               | Optional E2EE research remains deferred; native QA remains in Plan 12                                                 | In progress |
+| 07B   | Project Group Chat (parent)                               | First-accept lifecycle/authorization foundation followed by messaging, Realtime, and mobile group experience           | 05A, 07A               | Optional E2EE research remains deferred; native QA remains in Plan 12                                                | Implemented |
 | 07B1  | Project Group Chat Lifecycle and Authorization Foundation | One chat per Project, first-accept activation, and ownership/membership-derived current and historical entitlement     | 05A, 07A               | None for the scoped structural foundation                                                                            | Implemented |
-| 07B2  | Project Chat Messaging, Realtime and Mobile Experience    | Authorized plain-text message model, Realtime hints, mobile chat/group info, and protected meeting access              | 07B1                   | Native QA remains deferred to Plan 12; optional E2EE research remains unmerged                                       | In progress |
+| 07B2  | Project Chat Messaging, Realtime and Mobile Experience    | Authorized plain-text message model, Realtime hints, mobile chat/group info, and protected meeting access              | 07B1                   | Native QA remains deferred to Plan 12; optional E2EE research remains unmerged                                       | Implemented |
 | 08    | Storage and media hardening                               | Select the production media approach, then implement purpose-specific access, metadata, cleanup, and processing hooks  | 03–07                  | Profile/proposal photo visibility, retention, and self-hosted Supabase Storage versus external object storage        | Not started |
 | 09    | Safety, moderation and admin                              | Reporting, blocking, content states, admin roles, moderation queue/actions, audit trail and minimal custom admin UI    | 04–08                  | Community rules, prohibited content, escalation, suspension, appeals, minimum age                                    | Not started |
 | 10    | Account deletion and privacy operations                   | In-app and web deletion paths, cleanup/anonymization jobs, export groundwork, privacy documentation inputs             | 03–09                  | Legal retention and anonymization policy; legal text remains founder/legal work                                      | Not started |
@@ -385,7 +386,7 @@ The former combined Plan 05 scope is now split across the four portions above. R
 
 **Goal:** Deliver domain events without coupling external services to transactions.
 
-**Status:** In progress. 06A, 06B, provider-independent 06C1, and provider-neutral 06C2A are implemented; provider-specific 06C2B remains not started.
+**Status:** In progress. 06A, 06B, provider-independent 06C1, and provider-neutral 06C2A are implemented; 06D is in progress; provider-specific 06C2B remains not started.
 
 #### 06A — Notification Domain and Outbox Projection Foundation
 
@@ -491,11 +492,29 @@ Request-specific 06A notifications carry `request_id` and the semantic `particip
 
 06C2B is feature/integration work, not the production self-hosting phase. Its repository-owned worker must remain configurable and runnable/testable in the supported local or self-hosted environment; provider credentials and production deployment remain later account-owner/infrastructure work.
 
+#### 06D — Project Chat Notification Projection and Mobile Alerts
+
+**Status:** In progress in the current implementation PR. Depends on merged
+07B2C/PR #30 plus 06A, 06B, and 06C1.
+
+The scoped bridge revalidates identifier-only `project.chat_message_sent`
+events, resolves the creator and accepted memberships at the canonical message
+timestamp, excludes the sender, and fans one source event out to zero or more
+body-free in-app notifications and semantic push jobs. Each channel applies its
+own Chat preference and receipts the event only after complete fan-out. The
+mobile inbox adds safe localized chat copy, the canonical
+`/messages/chats/:chatId` destination, and a Chat in-app toggle while Push stays
+hidden. Historical chat events are acknowledged without alert backfill.
+
+Firebase/provider calls, message-body previews, unread/read receipts, batching,
+mentions, per-project mute controls, and native QA remain outside 06D. Native QA
+continues to belong to Plan 12; provider setup and delivery remain 06C2B.
+
 ### 07 — Messages + Project Chat
 
 **Goal:** Give users one authenticated communication area for structured participation requests and later project-group coordination without duplicating canonical participation state.
 
-**Status:** In progress through 07B1. This parent is split between the request-oriented Messages surface, the accepted-participant chat lifecycle/authorization foundation, and the later messaging experience.
+**Status:** Implemented through merged 07B2C/PR #30. The parent combines the request-oriented Messages surface, accepted-participant chat lifecycle/authorization, durable messaging/Realtime, and the mobile group-chat experience.
 
 #### 07A — Messages Surface and Structured Participation Request Items
 
@@ -515,7 +534,7 @@ The existing Participation overview remains the organizer's secondary full-histo
 
 #### 07B — Project Group Chat (parent)
 
-**Status:** In progress through 07B2C.
+**Status:** Implemented through merged 07B2C.
 
 The parent is split between the canonical lifecycle/authorization anchor, the
 production server-authorized message/Realtime domain, and the later mobile
@@ -538,7 +557,7 @@ Scoped foundation:
 
 ##### 07B2 — Project Chat Messaging and Mobile Experience (parent)
 
-**Status:** In progress through 07B2C. Depends on 07B1.
+**Status:** Implemented through merged 07B2C. Depends on 07B1.
 
 The MVP uses ordinary authenticated server-authorized plain-text Project chat.
 HTTPS/TLS protects transport, while the backend remains technically capable of
@@ -567,8 +586,8 @@ Scoped backend/domain work:
 
 ###### 07B2C — Mobile Project Chat Experience
 
-**Status:** In progress in the current implementation PR. Depends on merged
-07B2B.
+**Status:** Implemented in PR #30
+(`d343afbeab79ce6132403a6e9b46aecbc375f1fd`). Depends on merged 07B2B.
 
 The mobile scope owns Messages-screen Project-chat integration,
 `/messages/chats/:chatId`, paginated bubbles/history, composer/send, Realtime
@@ -755,9 +774,10 @@ Major gates currently expected:
 
 ## Immediate next action
 
-Complete and review **07B2C — Mobile Project Chat Experience** without merging
-its PR. The backend dependency 07B2B is implemented in merged PR #29; optional
-E2EE/MLS research remains unmerged and deferred in PR #28. **04C — Resources +
+Complete and review **06D — Project Chat Notification Projection and Mobile
+Alerts** without merging its PR. Its mobile destination dependency 07B2C is
+implemented in merged PR #30; optional E2EE/MLS research remains unmerged and
+deferred in PR #28. **04C — Resources +
 Scambio-Dona** remains not started and independently available; 05C remains not
 started while it waits for contribution/resource decisions. Plan 06C2B remains
 not started and requires Firebase/APNs configuration, push permission and

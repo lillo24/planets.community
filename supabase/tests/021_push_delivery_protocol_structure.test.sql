@@ -172,6 +172,12 @@ select ok(
       'private.claim_push_delivery_targets(text,integer,integer)'::regprocedure
     ) ilike '%provider_token text%'
     and pg_get_function_result(
+      'private.claim_push_delivery_targets(text,integer,integer)'::regprocedure
+    ) ilike '%chat_id uuid%'
+    and pg_get_function_result(
+      'private.claim_push_delivery_targets(text,integer,integer)'::regprocedure
+    ) ilike '%message_id uuid%'
+    and pg_get_function_result(
       'private.record_push_delivery_result(uuid,uuid,bigint,text,text,text,integer)'::regprocedure
     ) = 'text',
   'only the trusted claim boundary can return provider-token material'
@@ -317,6 +323,7 @@ select is(
         'provider_token',
         'payload',
         'request_message',
+        'body',
         'exact_meeting_text',
         'raw_response'
       )

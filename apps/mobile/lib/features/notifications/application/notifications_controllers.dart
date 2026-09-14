@@ -477,12 +477,14 @@ class NotificationPreferencesState {
     this.phase = NotificationPreferencesPhase.idle,
     this.expectedProfileId,
     this.participation,
+    this.chat,
     this.failure,
   });
 
   final NotificationPreferencesPhase phase;
   final String? expectedProfileId;
   final NotificationPreference? participation;
+  final NotificationPreference? chat;
   final NotificationsFailureKind? failure;
 
   bool get isBusy =>
@@ -520,6 +522,7 @@ class NotificationPreferencesController
       phase: NotificationPreferencesPhase.loading,
       expectedProfileId: expectedProfileId,
       participation: preserve ? state.participation : null,
+      chat: preserve ? state.chat : null,
     );
     try {
       _requireReadyIdentity(expectedProfileId);
@@ -527,6 +530,7 @@ class NotificationPreferencesController
           .read(notificationsGatewayProvider)
           .listPreferences(expectedProfileId: expectedProfileId);
       final participation = _participationPreference(preferences);
+      final chat = _chatPreference(preferences);
       if (!_isCurrent(identityRevision, operationRevision, expectedProfileId)) {
         return false;
       }
@@ -534,6 +538,7 @@ class NotificationPreferencesController
         phase: NotificationPreferencesPhase.ready,
         expectedProfileId: expectedProfileId,
         participation: participation,
+        chat: chat,
       );
       return true;
     } catch (error) {
@@ -544,6 +549,7 @@ class NotificationPreferencesController
         phase: NotificationPreferencesPhase.failure,
         expectedProfileId: expectedProfileId,
         participation: state.participation,
+        chat: state.chat,
         failure: mapNotificationsFailure(error),
       );
       return false;
@@ -553,10 +559,35 @@ class NotificationPreferencesController
   Future<bool> setParticipationInApp({
     required String expectedProfileId,
     required bool enabled,
+  }) => _setInApp(
+    expectedProfileId: expectedProfileId,
+    category: NotificationCategory.participation,
+    enabled: enabled,
+  );
+
+  Future<bool> setChatInApp({
+    required String expectedProfileId,
+    required bool enabled,
+  }) => _setInApp(
+    expectedProfileId: expectedProfileId,
+    category: NotificationCategory.chat,
+    enabled: enabled,
+  );
+
+  Future<bool> _setInApp({
+    required String expectedProfileId,
+    required NotificationCategory category,
+    required bool enabled,
   }) async {
-    final previous = state.participation;
+    final previousParticipation = state.participation;
+    final previousChat = state.chat;
+    final previous = switch (category) {
+      NotificationCategory.participation => previousParticipation,
+      NotificationCategory.chat => previousChat,
+      NotificationCategory.unknown => null,
+    };
     if (previous == null ||
-        previous.category != NotificationCategory.participation ||
+        previous.category != category ||
         !previous.userConfigurable ||
         state.expectedProfileId != expectedProfileId ||
         state.isBusy ||
@@ -568,40 +599,49 @@ class NotificationPreferencesController
     state = NotificationPreferencesState(
       phase: NotificationPreferencesPhase.saving,
       expectedProfileId: expectedProfileId,
-      participation: previous.withInAppEnabled(enabled),
+      participation: category == NotificationCategory.participation
+          ? previous.withInAppEnabled(enabled)
+          : previousParticipation,
+      chat: category == NotificationCategory.chat
+          ? previous.withInAppEnabled(enabled)
+          : previousChat,
     );
     try {
       _requireReadyIdentity(expectedProfileId);
       final gateway = ref.read(notificationsGatewayProvider);
       await gateway.setPreference(
         expectedProfileId: expectedProfileId,
-        category: NotificationCategory.participation,
+        category: category,
         inAppEnabled: enabled,
         pushEnabled: previous.pushEnabled,
       );
-      final canonical = _participationPreference(
-        await gateway.listPreferences(expectedProfileId: expectedProfileId),
+      final preferences = await gateway.listPreferences(
+        expectedProfileId: expectedProfileId,
       );
+      final canonicalParticipation = _participationPreference(preferences);
+      final canonicalChat = _chatPreference(preferences);
       if (!_isCurrent(identityRevision, operationRevision, expectedProfileId)) {
         return false;
       }
       state = NotificationPreferencesState(
         phase: NotificationPreferencesPhase.ready,
         expectedProfileId: expectedProfileId,
-        participation: canonical,
+        participation: canonicalParticipation,
+        chat: canonicalChat,
       );
       return true;
     } catch (error) {
       if (!_isCurrent(identityRevision, operationRevision, expectedProfileId)) {
         return false;
       }
-      var restored = previous;
+      var restoredParticipation = previousParticipation;
+      var restoredChat = previousChat;
       try {
-        restored = _participationPreference(
-          await ref
-              .read(notificationsGatewayProvider)
-              .listPreferences(expectedProfileId: expectedProfileId),
-        );
+        final preferences = await ref
+            .read(notificationsGatewayProvider)
+            .listPreferences(expectedProfileId: expectedProfileId);
+        restoredParticipation = _participationPreference(preferences);
+        restoredChat = _chatPreference(preferences);
       } catch (_) {
         // The already-loaded value is the safest explicit rollback if the
         // authoritative reload is also unavailable.
@@ -612,7 +652,8 @@ class NotificationPreferencesController
       state = NotificationPreferencesState(
         phase: NotificationPreferencesPhase.ready,
         expectedProfileId: expectedProfileId,
-        participation: restored,
+        participation: restoredParticipation,
+        chat: restoredChat,
         failure: mapNotificationsFailure(error),
       );
       return false;
@@ -628,6 +669,20 @@ class NotificationPreferencesController
     if (matches.length != 1 || !matches.single.userConfigurable) {
       throw const FormatException(
         'Participation notification preference was unavailable.',
+      );
+    }
+    return matches.single;
+  }
+
+  NotificationPreference _chatPreference(
+    List<NotificationPreference> preferences,
+  ) {
+    final matches = preferences.where(
+      (preference) => preference.category == NotificationCategory.chat,
+    );
+    if (matches.length != 1 || !matches.single.userConfigurable) {
+      throw const FormatException(
+        'Chat notification preference was unavailable.',
       );
     }
     return matches.single;

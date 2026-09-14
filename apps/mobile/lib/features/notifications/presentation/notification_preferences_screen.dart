@@ -7,6 +7,7 @@ import '../../../core/widgets/loading_state.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../auth/application/auth_session_controller.dart';
 import '../application/notifications_controllers.dart';
+import '../domain/notification_models.dart';
 import 'notifications_failure_message.dart';
 
 class NotificationPreferencesScreen extends ConsumerStatefulWidget {
@@ -34,12 +35,25 @@ class _NotificationPreferencesScreenState
     await ref.read(notificationPreferencesProvider.notifier).load(profileId);
   }
 
-  Future<void> _setEnabled(bool enabled) async {
+  Future<void> _setEnabled({
+    required NotificationCategory category,
+    required bool enabled,
+  }) async {
     final profileId = _currentExpectedProfileId();
     if (profileId == null) return;
-    final succeeded = await ref
-        .read(notificationPreferencesProvider.notifier)
-        .setParticipationInApp(expectedProfileId: profileId, enabled: enabled);
+    final controller = ref.read(notificationPreferencesProvider.notifier);
+    final succeeded = switch (category) {
+      NotificationCategory.participation =>
+        await controller.setParticipationInApp(
+          expectedProfileId: profileId,
+          enabled: enabled,
+        ),
+      NotificationCategory.chat => await controller.setChatInApp(
+        expectedProfileId: profileId,
+        enabled: enabled,
+      ),
+      NotificationCategory.unknown => false,
+    };
     if (!succeeded && mounted && _currentExpectedProfileId() != null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -64,11 +78,12 @@ class _NotificationPreferencesScreenState
     final l10n = AppLocalizations.of(context);
     final state = ref.watch(notificationPreferencesProvider);
     final belongsToScreen = state.expectedProfileId == _expectedProfileId;
-    final preference = belongsToScreen ? state.participation : null;
+    final participation = belongsToScreen ? state.participation : null;
+    final chat = belongsToScreen ? state.chat : null;
     final isInitialLoading =
         !belongsToScreen ||
         (state.phase == NotificationPreferencesPhase.loading &&
-            preference == null);
+            (participation == null || chat == null));
 
     return Scaffold(
       appBar: AppBar(title: Text(l10n.notificationsSettingsTitle)),
@@ -76,7 +91,7 @@ class _NotificationPreferencesScreenState
         child: isInitialLoading
             ? LoadingState(message: l10n.notificationsPreferencesLoading)
             : state.phase == NotificationPreferencesPhase.failure &&
-                  preference == null
+                  (participation == null || chat == null)
             ? ErrorState(
                 message: notificationsFailureMessage(l10n, state.failure!),
                 onRetry: _load,
@@ -107,14 +122,40 @@ class _NotificationPreferencesScreenState
                     key: const Key('participation-in-app-toggle'),
                     contentPadding: EdgeInsets.zero,
                     title: Text(l10n.notificationsInApp),
-                    value: preference!.inAppEnabled,
+                    value: participation!.inAppEnabled,
                     onChanged:
                         state.phase == NotificationPreferencesPhase.saving
                         ? null
-                        : _setEnabled,
+                        : (enabled) => _setEnabled(
+                            category: NotificationCategory.participation,
+                            enabled: enabled,
+                          ),
                   ),
                   const SizedBox(height: AppSpacing.small),
                   Text(l10n.notificationsPreferenceExplanation),
+                  const SizedBox(height: AppSpacing.large),
+                  const Divider(),
+                  const SizedBox(height: AppSpacing.medium),
+                  Text(
+                    l10n.notificationsChatMessages,
+                    style: Theme.of(context).textTheme.titleLarge,
+                  ),
+                  const SizedBox(height: AppSpacing.small),
+                  SwitchListTile(
+                    key: const Key('chat-in-app-toggle'),
+                    contentPadding: EdgeInsets.zero,
+                    title: Text(l10n.notificationsInApp),
+                    value: chat!.inAppEnabled,
+                    onChanged:
+                        state.phase == NotificationPreferencesPhase.saving
+                        ? null
+                        : (enabled) => _setEnabled(
+                            category: NotificationCategory.chat,
+                            enabled: enabled,
+                          ),
+                  ),
+                  const SizedBox(height: AppSpacing.small),
+                  Text(l10n.notificationsChatPreferenceExplanation),
                 ],
               ),
       ),

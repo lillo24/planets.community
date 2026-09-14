@@ -2,10 +2,12 @@ import '../../participation/domain/participation_models.dart';
 
 enum NotificationCategory {
   participation,
+  chat,
   unknown;
 
   static NotificationCategory fromWire(String value) => switch (value) {
     'participation' => NotificationCategory.participation,
+    'chat' => NotificationCategory.chat,
     _ => NotificationCategory.unknown,
   };
 }
@@ -17,6 +19,7 @@ enum NotificationKind {
   participationRequestRejected,
   participantLeft,
   participantRemoved,
+  chatMessageReceived,
   unknown;
 
   static NotificationKind fromWire(String value) => switch (value) {
@@ -30,6 +33,7 @@ enum NotificationKind {
       NotificationKind.participationRequestRejected,
     'participant_left' => NotificationKind.participantLeft,
     'participant_removed' => NotificationKind.participantRemoved,
+    'chat_message_received' => NotificationKind.chatMessageReceived,
     _ => NotificationKind.unknown,
   };
 }
@@ -38,12 +42,14 @@ enum NotificationDestinationKind {
   participationRequest,
   projectParticipation,
   projectDetail,
+  projectChat,
   unknown;
 
   static NotificationDestinationKind fromWire(String value) => switch (value) {
     'participation_request' => NotificationDestinationKind.participationRequest,
     'project_participation' => NotificationDestinationKind.projectParticipation,
     'project_detail' => NotificationDestinationKind.projectDetail,
+    'project_chat' => NotificationDestinationKind.projectChat,
     _ => NotificationDestinationKind.unknown,
   };
 }
@@ -60,6 +66,8 @@ class AppNotification {
     required this.projectKind,
     required this.projectTitle,
     required this.requestId,
+    required this.chatId,
+    required this.messageId,
     required this.actorProfileId,
     required this.actorDisplayName,
   });
@@ -74,6 +82,8 @@ class AppNotification {
   final ProjectKind? projectKind;
   final String? projectTitle;
   final String? requestId;
+  final String? chatId;
+  final String? messageId;
   final String? actorProfileId;
   final String? actorDisplayName;
 
@@ -90,6 +100,8 @@ class AppNotification {
     projectKind: projectKind,
     projectTitle: projectTitle,
     requestId: requestId,
+    chatId: chatId,
+    messageId: messageId,
     actorProfileId: actorProfileId,
     actorDisplayName: actorDisplayName,
   );

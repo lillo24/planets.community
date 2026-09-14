@@ -17,6 +17,7 @@ import 'package:planets_mobile/features/participation/data/participation_gateway
 import 'package:planets_mobile/features/participation/domain/participation_models.dart';
 import 'package:planets_mobile/features/profile/data/profile_gateway.dart';
 import 'package:planets_mobile/features/project_chat/data/project_chat_gateway.dart';
+import 'package:planets_mobile/features/project_chat/domain/project_chat_models.dart';
 import 'package:planets_mobile/features/proposals/data/proposal_gateway.dart';
 import 'package:planets_mobile/features/recurring_activities/data/recurring_activity_gateway.dart';
 
@@ -179,6 +180,15 @@ void main() {
             projectTitle: null,
             actorDisplayName: null,
           ),
+          notificationFixture(
+            index: 9,
+            category: NotificationCategory.chat,
+            kind: NotificationKind.chatMessageReceived,
+            destinationKind: NotificationDestinationKind.projectChat,
+            requestId: null,
+            chatId: '00000000-0000-4000-8000-000000000401',
+            messageId: '00000000-0000-4000-8000-000000000402',
+          ),
         ];
       final app = await _pump(tester, notifications: notifications);
       app.read(appRouterProvider).go('/notifications');
@@ -210,8 +220,13 @@ void main() {
         find.text('Someone requested to join one of your projects.'),
         findsOneWidget,
       );
+      expect(
+        find.text('Mario sent a message in “Community Garden”'),
+        findsOneWidget,
+      );
+      expect(find.textContaining('00000000-0000-4000-8000'), findsNothing);
       expect(find.textContaining('future_'), findsNothing);
-      expect(find.text('Unread'), findsNWidgets(8));
+      expect(find.text('Unread'), findsNWidgets(9));
     },
   );
 
@@ -273,6 +288,67 @@ void main() {
         '/messages/requests/$requestId',
       );
       expect(find.text('Participation request'), findsOneWidget);
+    },
+  );
+
+  testWidgets(
+    'chat tap navigates despite mark-read failure and resolves former history',
+    (tester) async {
+      const chatId = '00000000-0000-4000-8000-000000000401';
+      const messageId = '00000000-0000-4000-8000-000000000402';
+      final notifications = FakeNotificationsGateway()
+        ..items = [
+          notificationFixture(
+            category: NotificationCategory.chat,
+            kind: NotificationKind.chatMessageReceived,
+            destinationKind: NotificationDestinationKind.projectChat,
+            requestId: null,
+            chatId: chatId,
+            messageId: messageId,
+          ),
+        ]
+        ..mutationError = StateError('private read diagnostic');
+      final chats = FakeProjectChatGateway()
+        ..summaries = [
+          projectChatSummaryFixture(
+            chatId: chatId,
+            projectId: '00000000-0000-4000-8000-000000000201',
+            projectTitle: 'Community Garden',
+            viewerRole: ProjectChatViewerRole.formerMember,
+            lastVisibleMessageId: messageId,
+            lastVisibleMessageBody: 'Private notified body',
+          ),
+        ]
+        ..histories[chatId] = [
+          projectChatMessageFixture(
+            messageId: messageId,
+            chatId: chatId,
+            body: 'Private notified body',
+          ),
+        ];
+      final app = await _pump(
+        tester,
+        notifications: notifications,
+        projectChats: chats,
+      );
+      final router = app.read(appRouterProvider)..go('/notifications');
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Mario sent a message in “Community Garden”'));
+      await tester.pumpAndSettle();
+
+      expect(
+        router.routeInformationProvider.value.uri.path,
+        '/messages/chats/$chatId',
+      );
+      expect(find.text('Private notified body'), findsOneWidget);
+      expect(find.textContaining('chat is read-only'), findsOneWidget);
+      expect(
+        find.textContaining("couldn't update this notification"),
+        findsOneWidget,
+      );
+      expect(find.textContaining('private read diagnostic'), findsNothing);
+      expect(chats.subscriptions, isEmpty);
     },
   );
 
@@ -370,33 +446,46 @@ void main() {
   });
 
   testWidgets(
-    'preferences expose only Participation in-app and preserve push',
+    'preferences expose Participation and Chat in-app controls without Push',
     (tester) async {
       final notifications = FakeNotificationsGateway()
-        ..preferences = [notificationPreferenceFixture(pushEnabled: false)];
+        ..preferences = [
+          notificationPreferenceFixture(pushEnabled: false),
+          notificationPreferenceFixture(
+            category: NotificationCategory.chat,
+            pushEnabled: true,
+          ),
+        ];
       final app = await _pump(tester, notifications: notifications);
       app.read(appRouterProvider).go('/notifications/preferences');
       await tester.pumpAndSettle();
 
       expect(find.text('Participation alerts'), findsOneWidget);
-      expect(find.text('In-app notifications'), findsOneWidget);
+      expect(find.text('Chat messages'), findsOneWidget);
+      expect(find.text('In-app notifications'), findsNWidgets(2));
       expect(find.textContaining('Push'), findsNothing);
-      expect(find.textContaining('Chat'), findsNothing);
-      await tester.tap(find.byKey(const Key('participation-in-app-toggle')));
+      await tester.tap(find.byKey(const Key('chat-in-app-toggle')));
       await tester.pumpAndSettle();
 
+      expect(notifications.lastCategory, NotificationCategory.chat);
       expect(notifications.lastInAppEnabled, isFalse);
-      expect(notifications.lastPushEnabled, isFalse);
+      expect(notifications.lastPushEnabled, isTrue);
+      expect(
+        tester
+            .widget<SwitchListTile>(find.byKey(const Key('chat-in-app-toggle')))
+            .value,
+        isFalse,
+      );
       expect(
         tester
             .widget<SwitchListTile>(
               find.byKey(const Key('participation-in-app-toggle')),
             )
             .value,
-        isFalse,
+        isTrue,
       );
       expect(
-        find.textContaining('Existing notification history remains'),
+        find.textContaining('Project chat and existing notification history'),
         findsOneWidget,
       );
     },
@@ -452,6 +541,7 @@ Future<ProviderContainer> _pump(
   WidgetTester tester, {
   required FakeNotificationsGateway notifications,
   FakeMessagesGateway? messages,
+  FakeProjectChatGateway? projectChats,
   bool signedIn = true,
   bool complete = true,
 }) async {
@@ -483,7 +573,9 @@ Future<ProviderContainer> _pump(
         messagesGatewayProvider.overrideWithValue(
           messages ?? FakeMessagesGateway(),
         ),
-        projectChatGatewayProvider.overrideWithValue(FakeProjectChatGateway()),
+        projectChatGatewayProvider.overrideWithValue(
+          projectChats ?? FakeProjectChatGateway(),
+        ),
         participationGatewayProvider.overrideWithValue(
           FakeParticipationGateway(),
         ),
