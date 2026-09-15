@@ -97,46 +97,59 @@ describe("PLANETS public site", () => {
     expect(contactSection?.nextElementSibling).toBe(privacySection);
   });
 
-  it("defaults the announcement experiment to the current background and toggles fluid mode", () => {
+  it("defaults to reflection and switches between the two announcement effects", () => {
     render(<App />);
 
     const announcements = document.querySelectorAll(".hero__announcement");
     const announcement = announcements.item(0);
     const toggle = screen.getByRole("group", {
-      name: "Sfondo dell'annuncio",
+      name: "Effetto dell'annuncio",
     });
-    const currentButton = within(toggle).getByRole("button", {
-      name: "Attuale",
+    const reflectionButton = within(toggle).getByRole("button", {
+      name: "Riflesso",
     });
     const fluidButton = within(toggle).getByRole("button", {
       name: "Fluido",
     });
 
     expect(announcements).toHaveLength(1);
+    expect(within(toggle).getAllByRole("button")).toEqual([
+      reflectionButton,
+      fluidButton,
+    ]);
     expect(announcement.textContent).toBe("In arrivo su iOS e Android");
-    expect(announcement.getAttribute("data-background")).toBe("current");
+    expect(announcement.getAttribute("data-variant")).toBe("reflection");
+    expect(
+      announcement.classList.contains("hero__announcement--reflection"),
+    ).toBe(true);
     expect(announcement.classList.contains("hero__announcement--fluid")).toBe(
       false,
     );
-    expect(currentButton.getAttribute("aria-pressed")).toBe("true");
+    expect(reflectionButton.getAttribute("aria-pressed")).toBe("true");
     expect(fluidButton.getAttribute("aria-pressed")).toBe("false");
 
     fireEvent.click(fluidButton);
 
-    expect(announcement.getAttribute("data-background")).toBe("fluid");
+    expect(announcement.getAttribute("data-variant")).toBe("fluid");
+    expect(
+      announcement.classList.contains("hero__announcement--reflection"),
+    ).toBe(false);
     expect(announcement.classList.contains("hero__announcement--fluid")).toBe(
       true,
     );
-    expect(currentButton.getAttribute("aria-pressed")).toBe("false");
+    expect(reflectionButton.getAttribute("aria-pressed")).toBe("false");
     expect(fluidButton.getAttribute("aria-pressed")).toBe("true");
 
-    fireEvent.click(currentButton);
+    fireEvent.click(reflectionButton);
 
-    expect(announcement.getAttribute("data-background")).toBe("current");
+    expect(announcement.getAttribute("data-variant")).toBe("reflection");
+    expect(
+      announcement.classList.contains("hero__announcement--reflection"),
+    ).toBe(true);
     expect(announcement.classList.contains("hero__announcement--fluid")).toBe(
       false,
     );
-    expect(currentButton.getAttribute("aria-pressed")).toBe("true");
+    expect(reflectionButton.getAttribute("aria-pressed")).toBe("true");
     expect(fluidButton.getAttribute("aria-pressed")).toBe("false");
   });
 
