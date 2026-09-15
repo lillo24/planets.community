@@ -220,7 +220,9 @@ select ok(
 );
 
 select ok(
-  to_regprocedure('public.request_to_join_project(uuid,uuid,text)') is not null,
+  to_regprocedure(
+    'public.request_to_join_project(uuid,uuid,text,uuid[],uuid[])'
+  ) is not null,
   'the canonical request operation exists'
 );
 select ok(
@@ -270,7 +272,7 @@ select is(
     select bool_and(procedure.prosecdef)
     from pg_proc as procedure
     where procedure.oid in (
-      'public.request_to_join_project(uuid,uuid,text)'::regprocedure,
+      'public.request_to_join_project(uuid,uuid,text,uuid[],uuid[])'::regprocedure,
       'public.withdraw_project_join_request(uuid,uuid)'::regprocedure,
       'public.accept_project_join_request(uuid,uuid)'::regprocedure,
       'public.reject_project_join_request(uuid,uuid)'::regprocedure,
@@ -291,7 +293,7 @@ select is(
     select bool_and(array_to_string(procedure.proconfig, ',') = 'search_path=""')
     from pg_proc as procedure
     where procedure.oid in (
-      'public.request_to_join_project(uuid,uuid,text)'::regprocedure,
+      'public.request_to_join_project(uuid,uuid,text,uuid[],uuid[])'::regprocedure,
       'public.withdraw_project_join_request(uuid,uuid)'::regprocedure,
       'public.accept_project_join_request(uuid,uuid)'::regprocedure,
       'public.reject_project_join_request(uuid,uuid)'::regprocedure,
@@ -311,7 +313,7 @@ select is(
 select is(
   has_function_privilege(
     'authenticated',
-    'public.request_to_join_project(uuid,uuid,text)',
+    'public.request_to_join_project(uuid,uuid,text,uuid[],uuid[])',
     'EXECUTE'
   ),
   true,
@@ -320,7 +322,7 @@ select is(
 select is(
   has_function_privilege(
     'anon',
-    'public.request_to_join_project(uuid,uuid,text)',
+    'public.request_to_join_project(uuid,uuid,text,uuid[],uuid[])',
     'EXECUTE'
   ),
   false,

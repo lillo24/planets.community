@@ -334,6 +334,72 @@ export type Database = {
           },
         ]
       }
+      project_join_request_resource_selections: {
+        Row: {
+          request_id: string
+          resource_need_id: string
+          selected_at: string
+        }
+        Insert: {
+          request_id: string
+          resource_need_id: string
+          selected_at?: string
+        }
+        Update: {
+          request_id?: string
+          resource_need_id?: string
+          selected_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_join_request_resource_selections_need_id_fkey"
+            columns: ["resource_need_id"]
+            isOneToOne: false
+            referencedRelation: "project_resource_needs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_join_request_resource_selections_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "project_join_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      project_join_request_skill_selections: {
+        Row: {
+          request_id: string
+          selected_at: string
+          skill_id: string
+        }
+        Insert: {
+          request_id: string
+          selected_at?: string
+          skill_id: string
+        }
+        Update: {
+          request_id?: string
+          selected_at?: string
+          skill_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_join_request_skill_selections_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "project_join_requests"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_join_request_skill_selections_skill_id_fkey"
+            columns: ["skill_id"]
+            isOneToOne: false
+            referencedRelation: "skills"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       project_join_requests: {
         Row: {
           created_at: string
@@ -1380,6 +1446,14 @@ export type Database = {
           viewer_role: string
         }[]
       }
+      list_own_project_join_request_contribution_selections: {
+        Args: { p_expected_profile_id: string; p_request_id: string }
+        Returns: {
+          label: string
+          selection_id: string
+          selection_kind: string
+        }[]
+      }
       list_own_project_join_requests: {
         Args: { p_expected_requester_profile_id: string }
         Returns: {
@@ -1678,6 +1752,8 @@ export type Database = {
           p_expected_requester_profile_id: string
           p_project_id: string
           p_request_message?: string
+          p_resource_need_ids?: string[]
+          p_skill_ids?: string[]
         }
         Returns: string
       }

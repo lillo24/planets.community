@@ -1,7 +1,7 @@
 # Implementation Roadmap
 
 **Status:** Planning baseline  
-**Current implementation:** Plans 00–04B2B, 04C1–04C2, 05A, 05B, 05D, 06A, 06B, provider-independent 06C1, provider-neutral 06C2A, 06D, 07A, 07B1, 07B2B, 07B2C, and public informational SITE-00 through SITE-02 plus SITE-02W implemented; 04C3A is in progress; provider-specific 06C2B, 04C3B, 04C4, and 05C remain not started
+**Current implementation:** Plans 00–04B2B, 04C1–04C2, 05A, 05B, 05D, 06A, 06B, provider-independent 06C1, provider-neutral 06C2A, 06D, 07A, 07B1, 07B2B, 07B2C, and public informational SITE-00 through SITE-02 plus SITE-02W implemented; 04C3A and stacked 04C3B1 are in progress; provider-specific 06C2B, 04C3B2, 04C3C, 04C4, and 05C remain not started
 
 This roadmap divides the first PLANETS build into reviewable Codex tasks. Each numbered item should normally become its own implementation prompt, branch, and pull request.
 
@@ -58,13 +58,16 @@ Do not begin a dependent plan until the prior plan is merged or its branch is ex
 | 04C2  | Scambio-Dona Mobile Discovery and Owner Experience        | Mobile browse/detail/create/edit/publish/close experience over the 04C1 contracts                                      | 04C1                   | Native QA deferred to the consolidated Plan 12 pass                                                                  | Implemented |
 | 04C3  | Project Resource Needs and Contribution Offers (parent)   | Project needs followed by request-linked contribution offers without collapsing them into standalone listings          | 04A, 04B1, 05A         | Contribution attribution/correction semantics remain later                                                           | In progress |
 | 04C3A | Project Resource Needs Domain Foundation                  | Stable Project-owned plain-text needs, lifecycle-aware creator/public reads, identifier-only events, and tests         | 04A, 04B1, 05A         | None for the decision-light open/closed need foundation                                                              | In progress |
-| 04C3B | Join-Request Contribution Offers + Mobile/Messages        | Canonical competence/need selections attached to join requests and surfaced in mobile structured Messages              | 04C3A, 05A, 07A        | Selection/correction semantics beyond the initial request remain later                                               | Not started |
+| 04C3B | Join-Request Contribution Selection + Mobile/Messages     | Request-attempt selection domain followed by mobile selection and structured Messages labels                           | 04C3A, 05A, 07A        | Accepted mutable commitments remain separate                                                                         | In progress |
+| 04C3B1 | Join-Request Contribution Selection Domain               | Atomic historical Proposal-skill/Project-need ID selections with private requester/creator reads                        | 04C3A, 05A, 07A        | Tavolo skills wait for a canonical recurring requirement relation                                                     | In progress |
+| 04C3B2 | Mobile Selection + Rounded Messages Labels               | Flutter request-selection controls, Project-need owner UI, and structured Messages labels                               | 04C3B1                 | Native interaction review                                                                                             | Not started |
+| 04C3C | Accepted Participant Contribution Commitments            | Mutable post-acceptance help/resource availability without rewriting request history                                    | 04C3B1, 05A            | Mutation ownership/location and delegate semantics                                                                    | Not started |
 | 04C4  | Listing Requests/Handoff + Saved Search/Matching          | Post-discovery request/handoff rules plus explainable saved-search and matching behavior                               | 04C1                   | Exchange, request, handoff, contact, matching, and notification semantics                                             | Not started |
 | 05    | Participation lifecycle (parent)                          | Shared project participation foundation, later mobile experience, and verified-contribution review                     | 04A, 04B1              | Capacity/fullness and later contribution/resource semantics remain unresolved                                        | In progress |
 | 05A   | Project Participation Domain Foundation                   | Shared identity, private join requests, canonical membership history, protected meeting access, events, and tests      | 04A, 04B1              | No blocking decision; 07B1 derives chat activation from accepted membership                                          | Implemented |
 | 05B   | Mobile Project Participation Experience                   | Join/status/withdraw, creator review, member state, leave/remove, and protected meeting UI                             | 05A                    | Functional/native UX review                                                                                          | Implemented |
 | 05D   | Participation-Aware Browse and Pending Request Visibility | Own pending requests promoted in mobile Proposal/Tavolo Browse without changing public pagination                      | 04A, 04B1, 05A, 05B    | Native QA deferred to the consolidated Plan 12 pass                                                                  | Implemented |
-| 05C   | Verified Project Contribution / Completion Review         | Creator confirmation of actual contribution for later stats/badges/resource attribution                                | 05A, 04C3B             | Contribution taxonomy, resource attribution, dispute/correction rules, and credit semantics                          | Not started |
+| 05C   | Verified Project Contribution / Completion Review         | Creator confirmation of actual contribution for later stats/badges/resource attribution                                | 05A, 04C3C             | Contribution taxonomy, resource attribution, dispute/correction rules, and credit semantics                          | Not started |
 | 06    | Notification backbone (parent)                            | Canonical notification projection, later mobile inbox/preferences, then device registration and push delivery          | 03–05A                 | User-facing notification UX/copy and push behavior remain later review points                                        | In progress |
 | 06A   | Notification Domain and Outbox Projection Foundation      | Categories/preferences, semantic inbox records/targets, multi-consumer receipts, participation projection, secure APIs | 01B, 05A               | None expected for the defined participation foundation                                                               | Implemented |
 | 06B   | Mobile In-App Notifications and Preferences               | Flutter inbox, unread state, preference controls, and structured project/request navigation                            | 06A                    | Native QA deferred by founder for a later consolidated pass; not passed or failed                                    | Implemented |
@@ -316,7 +319,7 @@ or introduce participation, chat, resources, or recurrence expansion.
 
 #### 04C — Resources + Scambio-Dona
 
-**Status:** In progress through implemented 04C1–04C2 and current 04C3A. Request-linked contribution offers, request/handoff, saved-search, matching, and notification slices remain later work.
+**Status:** In progress through implemented 04C1–04C2 and current stacked 04C3A/04C3B1. Mobile contribution selection, accepted commitments, request/handoff, saved-search, matching, and notification slices remain later work.
 
 The earlier combined scope is split so standalone public listings do not force unresolved Project contribution or post-discovery transaction rules:
 
@@ -336,23 +339,43 @@ Owns the primary text-only Flutter browse/detail and owner create/edit/publish/c
 
 ##### 04C3 — Project Resource Needs and Contribution Offers (parent)
 
-**Status:** In progress through 04C3A. Depends on 04A, 04B1, and 05A.
+**Status:** In progress through stacked 04C3A and 04C3B1. Depends on 04A, 04B1, and 05A.
 
 This parent keeps Project-owned needs and later request-linked contribution offers separate from standalone Scambio-Dona listings and from accepted membership.
 
 ###### 04C3A — Project Resource Needs Domain Foundation
 
-**Status:** In progress in the current implementation PR. Depends on merged 04A, 04B1, and 05A.
+**Status:** Open in PR #45, rebased onto current `main`, and intentionally unmerged while executable Database validation is unavailable. Depends on merged 04A, 04B1, and 05A.
 
 Owns stable UUID needs attached to `public.projects`, bounded plain-text title/optional details, exact `open`/terminal `closed` state, creator-only lifecycle-aware mutations, retained creator history, currently-joinable public reads, identifier-only events, restrictive grants, pgTAP, real Proposal/Tavolo integration, concurrency coverage, and generated contracts. Closure means only that the Project is no longer asking; no fulfillment or attribution is inferred.
 
 04C3A adds no taxonomy, quantity/unit/price/priority, contributor/request/membership linkage, free-form offers, Messages/mobile changes, notifications, or Scambio-Dona linkage.
 
-###### 04C3B — Join-Request Contribution Offers + Mobile/Messages Integration
+###### 04C3B — Join-Request Contribution Selection + Mobile/Messages (parent)
 
-**Status:** Not started. Depends on 04C3A, 05A, and 07A.
+**Status:** In progress through 04C3B1. Depends on 04C3A, 05A, and 07A.
 
-Future scope lets a requester select canonical Project competence/skill IDs and open Project resource-need IDs, attaches those selections to the stable join request, and shows them as structured labels in Messages/mobile beside the existing optional request message. It must not introduce a generic free-text contribution category.
+This parent lets a requester select canonical Project competence/skill IDs and open Project resource-need IDs, attaches those selections to the stable join request, and later shows them as structured labels in Messages/mobile beside the existing optional request message. It must not introduce a generic free-text contribution category.
+
+###### 04C3B1 — Join-Request Contribution Selection Domain
+
+**Status:** In progress in the current stacked implementation, based on PR #45 without merging it.
+
+Owns immutable request-attempt skill/resource ID relations, an optional-array evolution of the existing atomic join-request RPC, Proposal current-requirement and open same-Project need validation, empty-only Tavolo skill input, requester/creator-only current-label resolution, retained withdraw/reject/accept history, unchanged identifier-only events, and focused pgTAP/real-OTP/concurrency coverage. Existing three-argument callers create zero selections. Later Proposal-skill removal, need rename, and need closure preserve the selected IDs.
+
+04C3B1 adds no Flutter UI, Tavolo skill-requirement relation, free-form contribution category, quantity/price, unsolicited offer, mutable accepted commitment, verification, notification expansion, matching, or Scambio-Dona link.
+
+###### 04C3B2 — Mobile Selection + Rounded Messages Labels
+
+**Status:** Not started. Depends on 04C3B1.
+
+Future scope owns Flutter selection chips on the join flow, Project resource-need owner UI, and rounded canonical labels in structured Messages. It consumes existing Proposal detail skills, 04C3A public open needs, and the private 04C3B1 request-selection read; Tavoli remain resource-only until a separate plan defines canonical recurring skill requirements.
+
+###### 04C3C — Accepted Participant Contribution Commitments
+
+**Status:** Not started. Depends on 04C3B1 and 05A.
+
+Future scope owns mutable statements of what an accepted participant can still bring or help with, where those are managed, and creator/delegate mutation permissions. It must be a separate canonical concept and must never rewrite historical request selections. Final contribution verification remains later in 05C.
 
 ##### 04C4 — Listing Requests/Handoff + Saved Search/Matching
 
@@ -360,7 +383,7 @@ Future scope lets a requester select canonical Project competence/skill IDs and 
 
 Future scope must resolve what happens after discovery, including exchange/request/handoff/contact behavior, saved-search contracts, explainable matching, and resource notification semantics. It must not infer those rules from the 04C1 `exchange` discovery intent.
 
-04C is not a dependency for the 05A participation foundation or 05B mobile participation UI. Stable join-request and Project resource-need IDs allow future 04C3B offer rows to attach without equating contribution with membership. The 05C verified-contribution plan depends specifically on 04C3B request/contribution semantics rather than merely on 04C3A need rows, unrelated standalone listing UI, or 04C4 transaction/matching work.
+04C is not a dependency for the 05A participation foundation or 05B mobile participation UI. Stable join-request and Project resource-need IDs let 04C3B1 selections attach without equating contribution with membership. The 05C verified-contribution plan follows the separate mutable accepted-commitment semantics in 04C3C rather than merely request history, 04C3A need rows, unrelated standalone listing UI, or 04C4 transaction/matching work.
 
 ### 05 — Participation lifecycle
 
@@ -832,15 +855,15 @@ Major gates currently expected:
 
 ## Immediate next action
 
-Complete and review **04C3A — Project Resource Needs Domain Foundation**
-without merging its PR. 04C1 is implemented in merged PR #32
+Complete and review the stacked **04C3B1 — Join-Request Contribution Selection Domain**
+without merging it or its 04C3A base PR #45. 04C1 is implemented in merged PR #32
 (`2aca5bdde7bf7ed7d747f14dcccbc3b5c4b75c42`) and 04C2 is implemented in
 merged PR #34 (`2da76de112a860210161d64de6bceab333159c26`).
 06D is implemented in merged PR #31, while 06 remains in
 progress because provider-specific 06C2B is not started. Optional E2EE/MLS
-research remains unmerged and deferred in PR #28. 04C3B, 04C4, and 05C remain
-not started; 05C waits specifically for request-linked contribution semantics
-from 04C3B rather than standalone listing UI or 04C3A need existence. Plan 06C2B remains
+research remains unmerged and deferred in PR #28. 04C3B2, 04C3C, 04C4, and 05C remain
+not started; 05C waits specifically for mutable accepted-commitment semantics
+from 04C3C rather than standalone listing UI, request history, or 04C3A need existence. Plan 06C2B remains
 not started and requires Firebase/APNs configuration, push permission and
 preview decisions, server-side FCM credentials, and a self-host-compatible
 worker deployment target. Deferred native Android/iOS checks from implemented
