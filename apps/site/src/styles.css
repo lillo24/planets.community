@@ -663,23 +663,6 @@ h2 {
   background: var(--pink);
 }
 
-.hero__caption {
-  position: relative;
-  z-index: 2;
-  max-width: min(100%, 31rem);
-  margin: -1.25rem 0 0;
-  padding: 0.65rem 1rem;
-  border: 1px solid var(--line);
-  border-radius: 1.2rem;
-  background: rgb(255 255 255 / 88%);
-  color: var(--muted);
-  font-size: 0.8rem;
-  font-weight: 700;
-  line-height: 1.45;
-  text-align: center;
-  box-shadow: 0 0.8rem 2rem rgb(35 65 58 / 8%);
-}
-
 .activity-strip {
   padding-block: 1.25rem clamp(4rem, 8vw, 7rem);
 }
