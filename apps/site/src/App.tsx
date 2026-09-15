@@ -60,11 +60,8 @@ export function App() {
                 Le idee prendono vita, <em>insieme.</em>
               </h1>
               <p className="hero__lead">
-                Persone, idee e luoghi che si incontrano.
-              </p>
-              <p className="hero__support">
-                PLANETS mette in contatto persone che vogliono creare qualcosa
-                insieme nella propria comunità.
+                Un luogo per incontrarsi vicino a casa, unire capacità diverse e
+                trasformare un'idea in un'attività concreta.
               </p>
 
               <WaitlistForm />
@@ -84,8 +81,8 @@ export function App() {
                 />
               </div>
               <p className="hero__caption">
-                Ogni persona porta qualcosa. PLANETS aiuta a trovare chi vuole
-                metterlo in comune.
+                PLANETS mette in contatto persone che vogliono creare qualcosa
+                insieme nella propria comunità.
               </p>
             </div>
           </div>
@@ -129,6 +126,10 @@ export function App() {
               locali: creare, costruire, coltivare, organizzare e contribuire
               insieme alla comunità.
             </p>
+            <aside className="about-note" aria-label="Il principio di PLANETS">
+              <span aria-hidden="true">✦</span>
+              <p>Persone, idee e luoghi che si incontrano.</p>
+            </aside>
           </div>
         </section>
 

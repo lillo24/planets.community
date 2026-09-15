@@ -66,27 +66,28 @@ describe("PLANETS public site", () => {
     expect(document.querySelector('a[href^="mailto:"]')).toBeNull();
   });
 
-  it("renders the founder-reviewed copy and independent detail sections", () => {
+  it("renders the corrected text container mapping and independent detail sections", () => {
     render(<App />);
 
     expect(document.querySelector(".hero__announcement")?.textContent).toBe(
       "In arrivo su iOS e Android",
     );
-    expect(document.querySelector(".hero__lead")?.textContent).toContain(
-      "Persone, idee e luoghi che si incontrano.",
+    expect(document.querySelector(".hero__lead")?.textContent?.trim()).toBe(
+      "Un luogo per incontrarsi vicino a casa, unire capacità diverse e trasformare un'idea in un'attività concreta.",
     );
-    expect(document.querySelector(".hero__support")?.textContent).toContain(
+    expect(document.querySelector(".hero__support")).toBeNull();
+    expect(document.querySelector(".hero__caption")?.textContent).toContain(
       "PLANETS mette in contatto persone che vogliono creare qualcosa insieme nella propria comunità.",
     );
-    expect(document.querySelector(".hero__caption")?.textContent).toContain(
+    expect(document.querySelector(".about-note p")?.textContent).toBe(
+      "Persone, idee e luoghi che si incontrano.",
+    );
+    expect(document.querySelector(".about-note")?.textContent).toContain(
+      "Persone, idee e luoghi che si incontrano.",
+    );
+    expect(document.body.textContent).not.toContain(
       "Ogni persona porta qualcosa. PLANETS aiuta a trovare chi vuole metterlo in comune.",
     );
-    expect(
-      screen.queryByText(
-        "Un luogo per incontrarsi vicino a casa, unire capacità diverse e trasformare un'idea in un'attività concreta.",
-      ),
-    ).toBeNull();
-    expect(document.querySelector(".about-note")).toBeNull();
 
     const contactSection = document.querySelector("section#contatti");
     const privacySection = document.querySelector("section#privacy");
