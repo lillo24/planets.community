@@ -178,7 +178,7 @@ describe("announcement visual experiment", () => {
 
     expect(baseWaitlist).toContain("margin-top: 0;");
     expect(desktop).toContain(".waitlist {\n    margin-top: 2.25rem;");
-    expect(mobile).toContain(".waitlist {\n    margin-top: 1.75rem;");
+    expect(mobile).toContain(".waitlist {\n    margin-top: 2.25rem;");
   });
 
   it("stops orbit rotation when reduced motion is requested", () => {
