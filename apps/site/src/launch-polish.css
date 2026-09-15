@@ -1,8 +1,9 @@
 .waitlist__email-label {
   margin: 0 0 0.45rem;
-  color: #35524b;
+  color: #704356;
   font-size: 0.88rem;
   font-weight: 750;
+  text-align: center;
 }
 
 .waitlist button {
@@ -32,4 +33,8 @@
 
 .hero__announcement--fluid::before {
   animation-duration: 4.5s;
+}
+
+.section--about {
+  border-top: 0;
 }

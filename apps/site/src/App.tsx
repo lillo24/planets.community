@@ -28,7 +28,7 @@ const announcementVariants = [
 ] as const satisfies ReadonlyArray<readonly [AnnouncementVariant, string]>;
 
 function AnnouncementExperiment({ isVisible }: { isVisible: boolean }) {
-  const [variant, setVariant] = useState<AnnouncementVariant>("base");
+  const [variant, setVariant] = useState<AnnouncementVariant>("fluid");
 
   return (
     <div className="hero__announcement-experiment">

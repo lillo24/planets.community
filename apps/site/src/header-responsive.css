@@ -3,4 +3,8 @@
     row-gap: 0.55rem;
     padding-bottom: 0;
   }
+
+  .primary-nav a {
+    padding-block: 0.55rem;
+  }
 }
