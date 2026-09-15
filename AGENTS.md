@@ -241,6 +241,36 @@ Every later task must update from latest `main` before merging.
 
 When the coding environment manages worktrees automatically, preserve that isolation and focus on the integration rule above rather than recreating the worktree manually.
 
+## CI / GitHub Actions Resource Discipline
+
+Treat CI as a finite project resource, especially in private repositories where hosted-runner usage may be limited or billed.
+
+Default to **change-scoped validation**:
+- run all checks that can reasonably be affected by the changed files/areas;
+- do not run expensive unrelated validation merely because a PR changed;
+- shared/root/tooling/configuration files must trigger every area they can affect;
+- cross-cutting changes should run multiple areas when appropriate.
+
+Expensive integration, database, end-to-end, build, or platform-specific suites should not run on unrelated changes.
+
+Avoid duplicate validation on both the PR and the resulting push to `main` unless the post-merge run has a distinct purpose.
+
+Keep an explicit way to run the **complete validation suite manually** for:
+- releases;
+- integration checkpoints;
+- CI/workflow changes;
+- difficult debugging;
+- cases where full validation is explicitly requested.
+
+Do not reduce CI cost by weakening meaningful test coverage. Prefer reducing unnecessary trigger frequency and redundant execution.
+
+When changing CI:
+- inspect repository dependencies before defining path boundaries;
+- preserve required-status-check / branch-protection behavior;
+- do not use path filtering in a way that can leave a required check permanently pending;
+- document non-obvious CI trigger behavior near the repository's CI configuration;
+- justify changes that substantially broaden recurring CI cost.
+
 —
 
 # Libraries and Dependencies
