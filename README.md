@@ -14,7 +14,7 @@ supabase/               Supabase configuration, migrations, seeds, and database 
 docs/architecture/      Accepted architecture and decision records
 docs/development/       Contributor setup and local workflows
 docs/implementation/    Ordered implementation roadmap
-.github/workflows/      Pull-request and main-branch validation
+.github/workflows/      Change-aware pull-request and manual validation
 ```
 
 The root npm workspace owns Node dependencies for `apps/site` and `apps/web`, the pinned Supabase CLI, and cross-platform task entry points. Flutter dependencies remain owned by `apps/mobile/pubspec.yaml`.
@@ -39,6 +39,7 @@ See [Getting started](docs/development/getting-started.md) for prerequisites, ex
 - [System design and responsibility boundaries](docs/architecture/system-design.md)
 - [Architecture decision records](docs/architecture/decisions/README.md)
 - [Database development workflow](docs/development/database.md)
+- [Continuous integration](docs/development/ci.md)
 - [Codex tooling policy](docs/development/codex-tooling.md)
 - [Implementation roadmap](docs/implementation/roadmap.md)
 - [Instructions for coding agents](AGENTS.md)
