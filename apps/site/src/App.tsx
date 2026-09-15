@@ -17,18 +17,17 @@ const primaryNavigation = [
   ["Privacy", "#privacy"],
 ] as const;
 
-type AnnouncementBackground = "current" | "fluid";
+type AnnouncementVariant = "reflection" | "fluid";
 
 function AnnouncementExperiment() {
-  const [background, setBackground] =
-    useState<AnnouncementBackground>("current");
-  const isFluid = background === "fluid";
+  const [variant, setVariant] = useState<AnnouncementVariant>("reflection");
+  const isReflection = variant === "reflection";
 
   return (
     <div className="hero__announcement-experiment">
       <p
-        className={`hero__announcement${isFluid ? " hero__announcement--fluid" : ""}`}
-        data-background={background}
+        className={`hero__announcement hero__announcement--${variant}`}
+        data-variant={variant}
       >
         <span>In arrivo su iOS e Android</span>
       </p>
@@ -36,20 +35,19 @@ function AnnouncementExperiment() {
       <div
         className="hero__announcement-toggle"
         role="group"
-        aria-label="Sfondo dell'annuncio"
+        aria-label="Effetto dell'annuncio"
       >
-        <span className="hero__announcement-toggle-label">Sfondo:</span>
         <button
           type="button"
-          aria-pressed={!isFluid}
-          onClick={() => setBackground("current")}
+          aria-pressed={isReflection}
+          onClick={() => setVariant("reflection")}
         >
-          Attuale
+          Riflesso
         </button>
         <button
           type="button"
-          aria-pressed={isFluid}
-          onClick={() => setBackground("fluid")}
+          aria-pressed={!isReflection}
+          onClick={() => setVariant("fluid")}
         >
           Fluido
         </button>
