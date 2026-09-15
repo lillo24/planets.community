@@ -152,10 +152,6 @@ export function App() {
                   fetchPriority="high"
                 />
               </div>
-              <p className="hero__caption">
-                PLANETS mette in contatto persone che vogliono creare qualcosa
-                insieme nella propria comunità.
-              </p>
             </div>
 
             <WaitlistForm />
@@ -192,8 +188,8 @@ export function App() {
 
           <div className="about-copy">
             <p>
-              PLANETS nasce per rendere più semplice incontrare persone vicine
-              con cui trasformare un'idea in un'attività concreta.
+              PLANETS mette in contatto persone che vogliono creare qualcosa
+              insieme nella propria comunità.
             </p>
             <p>
               La piattaforma è pensata per progetti e incontri collaborativi

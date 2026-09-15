@@ -77,8 +77,16 @@ describe("PLANETS public site", () => {
       "Un luogo per incontrarsi vicino a casa, unire capacità diverse e trasformare un'idea in un'attività concreta.",
     );
     expect(document.querySelector(".hero__support")).toBeNull();
-    expect(document.querySelector(".hero__caption")?.textContent).toContain(
+    expect(document.querySelector(".hero__caption")).toBeNull();
+    expect(
+      document
+        .querySelector(".about-copy > p:first-child")
+        ?.textContent?.trim(),
+    ).toBe(
       "PLANETS mette in contatto persone che vogliono creare qualcosa insieme nella propria comunità.",
+    );
+    expect(document.body.textContent).not.toContain(
+      "PLANETS nasce per rendere più semplice incontrare persone vicine con cui trasformare un'idea in un'attività concreta.",
     );
     expect(document.querySelector(".about-note p")?.textContent).toBe(
       "Persone, idee e luoghi che si incontrano.",
