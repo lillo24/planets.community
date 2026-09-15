@@ -300,13 +300,6 @@ h2 {
   line-height: 1.55;
 }
 
-.hero__support {
-  max-width: 37rem;
-  margin: 0.8rem 0 0;
-  color: var(--muted);
-  line-height: 1.65;
-}
-
 .waitlist {
   max-width: 42rem;
   margin-top: 2.25rem;
@@ -629,6 +622,29 @@ h2 {
   color: #3e5350;
   font-size: clamp(1.05rem, 2vw, 1.25rem);
   line-height: 1.7;
+}
+
+.about-note {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.85rem;
+  margin-top: 2rem;
+  padding: 1.35rem;
+  border: 1px solid rgb(92 174 100 / 25%);
+  border-radius: 1.2rem;
+  background: rgb(92 174 100 / 8%);
+}
+
+.about-note > span {
+  color: var(--green);
+  font-size: 1.3rem;
+}
+
+.about-note p {
+  margin: 0;
+  color: #35524b;
+  font-weight: 650;
+  line-height: 1.55;
 }
 
 .section--detail {
