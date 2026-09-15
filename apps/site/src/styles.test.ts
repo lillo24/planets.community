@@ -47,4 +47,27 @@ describe("announcement visual experiment", () => {
       ".hero__announcement--reflection::after,\n  .hero__announcement--fluid::before {\n    animation: none;",
     );
   });
+
+  it("keeps three evenly spaced orbit geometries with independent motion", () => {
+    expect(ruleBody(".orbit--inner")).toContain("width: 84%;");
+    expect(ruleBody(".orbit--inner")).toContain(
+      "animation: orbit-inner 20s linear infinite;",
+    );
+    expect(ruleBody(".orbit--outer")).toContain("width: 112%;");
+    expect(ruleBody(".orbit--outer")).toContain(
+      "animation: orbit-outer 28s linear infinite;",
+    );
+    expect(ruleBody(".orbit--far")).toContain("width: 140%;");
+    expect(ruleBody(".orbit--far")).toContain(
+      "animation: orbit-far 36s linear infinite;",
+    );
+  });
+
+  it("stops orbit rotation when reduced motion is requested", () => {
+    const reducedMotion = styles.slice(
+      styles.indexOf("@media (prefers-reduced-motion: reduce)"),
+    );
+
+    expect(reducedMotion).toContain(".orbit {\n    animation: none;");
+  });
 });

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { type PointerEvent, useRef, useState } from "react";
 
 import { PUBLIC_CONTACT_EMAIL } from "./site-content";
 import { WaitlistForm } from "./WaitlistForm";
@@ -17,11 +17,17 @@ const primaryNavigation = [
   ["Privacy", "#privacy"],
 ] as const;
 
-type AnnouncementVariant = "reflection" | "fluid";
+type AnnouncementVariant = "base" | "reflection" | "fluid";
 
-function AnnouncementExperiment() {
-  const [variant, setVariant] = useState<AnnouncementVariant>("reflection");
-  const isReflection = variant === "reflection";
+const developerRevealWindowMs = 500;
+const announcementVariants = [
+  ["base", "Base"],
+  ["reflection", "Riflesso"],
+  ["fluid", "Fluido"],
+] as const satisfies ReadonlyArray<readonly [AnnouncementVariant, string]>;
+
+function AnnouncementExperiment({ isVisible }: { isVisible: boolean }) {
+  const [variant, setVariant] = useState<AnnouncementVariant>("base");
 
   return (
     <div className="hero__announcement-experiment">
@@ -32,31 +38,57 @@ function AnnouncementExperiment() {
         <span>In arrivo su iOS e Android</span>
       </p>
 
-      <div
-        className="hero__announcement-toggle"
-        role="group"
-        aria-label="Effetto dell'annuncio"
-      >
-        <button
-          type="button"
-          aria-pressed={isReflection}
-          onClick={() => setVariant("reflection")}
+      {isVisible ? (
+        <div
+          className="hero__announcement-toggle"
+          role="group"
+          aria-label="Effetto dell'annuncio"
         >
-          Riflesso
-        </button>
-        <button
-          type="button"
-          aria-pressed={!isReflection}
-          onClick={() => setVariant("fluid")}
-        >
-          Fluido
-        </button>
-      </div>
+          {announcementVariants.map(([value, label]) => (
+            <button
+              key={value}
+              type="button"
+              aria-pressed={variant === value}
+              onClick={() => setVariant(value)}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      ) : null}
     </div>
   );
 }
 
 export function App() {
+  const [isAnnouncementExperimentVisible, setAnnouncementExperimentVisible] =
+    useState(false);
+  const lastDeveloperActivation = useRef<number | null>(null);
+
+  function handleDeveloperActivation(event: PointerEvent<HTMLSpanElement>) {
+    if (event.button !== 0 || isAnnouncementExperimentVisible) {
+      return;
+    }
+
+    const now = Date.now();
+    const elapsed =
+      lastDeveloperActivation.current === null
+        ? null
+        : now - lastDeveloperActivation.current;
+
+    if (
+      elapsed !== null &&
+      elapsed >= 0 &&
+      elapsed <= developerRevealWindowMs
+    ) {
+      lastDeveloperActivation.current = null;
+      setAnnouncementExperimentVisible(true);
+      return;
+    }
+
+    lastDeveloperActivation.current = now;
+  }
+
   return (
     <div className="site-page">
       <a className="skip-link" href="#contenuto">
@@ -93,7 +125,7 @@ export function App() {
 
       <main id="contenuto">
         <section className="hero" id="inizio" aria-labelledby="hero-title">
-          <AnnouncementExperiment />
+          <AnnouncementExperiment isVisible={isAnnouncementExperimentVisible} />
 
           <div className="hero__body">
             <div className="hero__content">
@@ -107,6 +139,7 @@ export function App() {
             </div>
 
             <div className="hero__visual" aria-label="Identità visiva PLANETS">
+              <span className="orbit orbit--far" aria-hidden="true" />
               <span className="orbit orbit--outer" aria-hidden="true" />
               <span className="orbit orbit--inner" aria-hidden="true" />
               <div className="logo-stage">
@@ -234,8 +267,13 @@ export function App() {
       <footer className="site-footer">
         <div className="site-footer__inner">
           <div>
-            <a className="brand brand--footer" href="#inizio">
-              <span className="brand__mark" aria-hidden="true">
+            <div className="brand brand--footer">
+              <span
+                className="brand__mark brand__developer-trigger"
+                data-developer-trigger=""
+                aria-hidden="true"
+                onPointerUp={handleDeveloperActivation}
+              >
                 <img
                   src="/brand/planets-logo.png"
                   alt=""
@@ -243,8 +281,10 @@ export function App() {
                   height="1150"
                 />
               </span>
-              <span>PLANETS</span>
-            </a>
+              <a className="brand__home-link" href="#inizio">
+                PLANETS
+              </a>
+            </div>
             <p>iOS e Android — prossimamente</p>
           </div>
 
