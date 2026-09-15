@@ -42,6 +42,7 @@ function enterValidSubmission() {
 
 afterEach(() => {
   cleanup();
+  vi.restoreAllMocks();
   vi.unstubAllGlobals();
   Reflect.deleteProperty(window, "turnstile");
 });
@@ -97,14 +98,49 @@ describe("PLANETS public site", () => {
     expect(contactSection?.nextElementSibling).toBe(privacySection);
   });
 
-  it("defaults to reflection and switches between the two announcement effects", () => {
+  it("reveals the Base, Riflesso, and Fluido controls after two quick footer-logo activations", () => {
     render(<App />);
 
     const announcements = document.querySelectorAll(".hero__announcement");
     const announcement = announcements.item(0);
+    const developerTrigger = document.querySelector("[data-developer-trigger]");
+    const footer = document.querySelector(".site-footer");
+    const initialHash = window.location.hash;
+    let now = 1_000;
+    vi.spyOn(Date, "now").mockImplementation(() => now);
+
+    expect(announcements).toHaveLength(1);
+    expect(announcement.textContent).toBe("In arrivo su iOS e Android");
+    expect(announcement.getAttribute("data-variant")).toBe("base");
+    expect(announcement.classList.contains("hero__announcement--base")).toBe(
+      true,
+    );
+    expect(
+      screen.queryByRole("group", { name: "Effetto dell'annuncio" }),
+    ).toBeNull();
+    expect(developerTrigger?.getAttribute("aria-hidden")).toBe("true");
+    expect(developerTrigger?.closest("a")).toBeNull();
+    expect(
+      within(footer as HTMLElement)
+        .getByRole("link", { name: "PLANETS" })
+        .getAttribute("href"),
+    ).toBe("#inizio");
+
+    fireEvent.pointerUp(developerTrigger as Element, { button: 0 });
+
+    expect(
+      screen.queryByRole("group", { name: "Effetto dell'annuncio" }),
+    ).toBeNull();
+    expect(announcement.getAttribute("data-variant")).toBe("base");
+    expect(window.location.hash).toBe(initialHash);
+
+    now = 1_499;
+    fireEvent.pointerUp(developerTrigger as Element, { button: 0 });
+
     const toggle = screen.getByRole("group", {
       name: "Effetto dell'annuncio",
     });
+    const baseButton = within(toggle).getByRole("button", { name: "Base" });
     const reflectionButton = within(toggle).getByRole("button", {
       name: "Riflesso",
     });
@@ -112,21 +148,27 @@ describe("PLANETS public site", () => {
       name: "Fluido",
     });
 
-    expect(announcements).toHaveLength(1);
     expect(within(toggle).getAllByRole("button")).toEqual([
+      baseButton,
       reflectionButton,
       fluidButton,
     ]);
-    expect(announcement.textContent).toBe("In arrivo su iOS e Android");
+    expect(
+      document.querySelectorAll(".hero__announcement-toggle"),
+    ).toHaveLength(1);
+    expect(announcement.getAttribute("data-variant")).toBe("base");
+    expect(baseButton.getAttribute("aria-pressed")).toBe("true");
+    expect(reflectionButton.getAttribute("aria-pressed")).toBe("false");
+    expect(fluidButton.getAttribute("aria-pressed")).toBe("false");
+
+    fireEvent.click(reflectionButton);
+
     expect(announcement.getAttribute("data-variant")).toBe("reflection");
     expect(
       announcement.classList.contains("hero__announcement--reflection"),
     ).toBe(true);
-    expect(announcement.classList.contains("hero__announcement--fluid")).toBe(
-      false,
-    );
+    expect(baseButton.getAttribute("aria-pressed")).toBe("false");
     expect(reflectionButton.getAttribute("aria-pressed")).toBe("true");
-    expect(fluidButton.getAttribute("aria-pressed")).toBe("false");
 
     fireEvent.click(fluidButton);
 
@@ -137,20 +179,36 @@ describe("PLANETS public site", () => {
     expect(announcement.classList.contains("hero__announcement--fluid")).toBe(
       true,
     );
-    expect(reflectionButton.getAttribute("aria-pressed")).toBe("false");
     expect(fluidButton.getAttribute("aria-pressed")).toBe("true");
 
-    fireEvent.click(reflectionButton);
+    fireEvent.click(baseButton);
 
-    expect(announcement.getAttribute("data-variant")).toBe("reflection");
-    expect(
-      announcement.classList.contains("hero__announcement--reflection"),
-    ).toBe(true);
+    expect(announcement.getAttribute("data-variant")).toBe("base");
+    expect(announcement.classList.contains("hero__announcement--base")).toBe(
+      true,
+    );
     expect(announcement.classList.contains("hero__announcement--fluid")).toBe(
       false,
     );
-    expect(reflectionButton.getAttribute("aria-pressed")).toBe("true");
-    expect(fluidButton.getAttribute("aria-pressed")).toBe("false");
+    expect(baseButton.getAttribute("aria-pressed")).toBe("true");
+  });
+
+  it("renders three decorative orbits around one hero logo", () => {
+    render(<App />);
+
+    const heroVisual = document.querySelector(".hero__visual");
+    const orbits = heroVisual?.querySelectorAll(".orbit");
+
+    expect(orbits).toHaveLength(3);
+    expect(heroVisual?.querySelector(".orbit--inner")).not.toBeNull();
+    expect(heroVisual?.querySelector(".orbit--outer")).not.toBeNull();
+    expect(heroVisual?.querySelector(".orbit--far")).not.toBeNull();
+    expect(
+      Array.from(orbits ?? []).every(
+        (orbit) => orbit.getAttribute("aria-hidden") === "true",
+      ),
+    ).toBe(true);
+    expect(heroVisual?.querySelectorAll(".hero__logo")).toHaveLength(1);
   });
 
   it("uses the PLANETS logo for both brand marks", () => {

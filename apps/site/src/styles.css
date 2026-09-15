@@ -180,6 +180,16 @@ img {
   object-fit: contain;
 }
 
+.brand__home-link {
+  color: inherit;
+  text-decoration: none;
+}
+
+.brand__developer-trigger {
+  touch-action: manipulation;
+  user-select: none;
+}
+
 .primary-nav,
 .site-footer nav {
   display: flex;
@@ -616,6 +626,8 @@ h2 {
 .orbit--outer {
   width: 112%;
   aspect-ratio: 1;
+  animation: orbit-outer 28s linear infinite;
+  will-change: transform;
 }
 
 .orbit--outer::after {
@@ -627,12 +639,28 @@ h2 {
   width: 84%;
   aspect-ratio: 1;
   transform: rotate(24deg);
+  animation: orbit-inner 20s linear infinite;
+  will-change: transform;
 }
 
 .orbit--inner::after {
   right: 2%;
   bottom: 27%;
   background: var(--gold);
+}
+
+.orbit--far {
+  width: 140%;
+  aspect-ratio: 1;
+  transform: rotate(58deg);
+  animation: orbit-far 36s linear infinite;
+  will-change: transform;
+}
+
+.orbit--far::after {
+  top: 16%;
+  left: 12%;
+  background: var(--pink);
 }
 
 .hero__caption {
@@ -873,6 +901,36 @@ h2 {
   }
 }
 
+@keyframes orbit-inner {
+  from {
+    transform: rotate(24deg);
+  }
+
+  to {
+    transform: rotate(384deg);
+  }
+}
+
+@keyframes orbit-outer {
+  from {
+    transform: rotate(-16deg);
+  }
+
+  to {
+    transform: rotate(-376deg);
+  }
+}
+
+@keyframes orbit-far {
+  from {
+    transform: rotate(58deg);
+  }
+
+  to {
+    transform: rotate(418deg);
+  }
+}
+
 @keyframes announcement-reflection-sweep {
   0%,
   18% {
@@ -1048,6 +1106,10 @@ h2 {
 
   .hero__announcement--reflection::after,
   .hero__announcement--fluid::before {
+    animation: none;
+  }
+
+  .orbit {
     animation: none;
   }
 
