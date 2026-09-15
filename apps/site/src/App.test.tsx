@@ -119,8 +119,8 @@ describe("PLANETS public site", () => {
 
     expect(announcements).toHaveLength(1);
     expect(announcement.textContent).toBe("In arrivo su iOS e Android");
-    expect(announcement.getAttribute("data-variant")).toBe("base");
-    expect(announcement.classList.contains("hero__announcement--base")).toBe(
+    expect(announcement.getAttribute("data-variant")).toBe("fluid");
+    expect(announcement.classList.contains("hero__announcement--fluid")).toBe(
       true,
     );
     expect(
@@ -139,7 +139,7 @@ describe("PLANETS public site", () => {
     expect(
       screen.queryByRole("group", { name: "Effetto dell'annuncio" }),
     ).toBeNull();
-    expect(announcement.getAttribute("data-variant")).toBe("base");
+    expect(announcement.getAttribute("data-variant")).toBe("fluid");
     expect(window.location.hash).toBe(initialHash);
 
     now = 1_499;
@@ -168,10 +168,10 @@ describe("PLANETS public site", () => {
     expect(
       document.querySelectorAll(".hero__announcement-toggle"),
     ).toHaveLength(1);
-    expect(announcement.getAttribute("data-variant")).toBe("base");
-    expect(baseButton.getAttribute("aria-pressed")).toBe("true");
+    expect(announcement.getAttribute("data-variant")).toBe("fluid");
+    expect(baseButton.getAttribute("aria-pressed")).toBe("false");
     expect(reflectionButton.getAttribute("aria-pressed")).toBe("false");
-    expect(fluidButton.getAttribute("aria-pressed")).toBe("false");
+    expect(fluidButton.getAttribute("aria-pressed")).toBe("true");
     expect(prismaButton.getAttribute("aria-pressed")).toBe("false");
 
     fireEvent.click(reflectionButton);
