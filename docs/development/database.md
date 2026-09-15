@@ -295,6 +295,8 @@ npm run db:types:check
 
 `auth:session:verify:local` authenticates three deterministic local users concurrently and binds a separate data client to each verified session token. Each user's first PostgREST request inserts and reads that user's own profile anchor, proving immediate identity-bound RLS behavior without authentication retries or arbitrary waits. It never prints emails, OTPs, session tokens, client keys, Authorization headers, or database credentials.
 
+The repository temporarily pins the exact prerelease Supabase CLI `2.118.0-beta.39` for local and CI validation because it bundles [PostgREST v16.3](https://github.com/PostgREST/postgrest/releases/tag/v16.3), which fixes the upstream sporadic `PGRST303 JWT issued at future` defect present in the prior local runtime. This does not configure staging or production. Replace the prerelease with the first stable CLI that bundles PostgREST v16.3 or later, then run the complete Database workflow before accepting that update.
+
 `profile:verify:local` authenticates two deterministic local users, completes one profile through the canonical operation, and proves owner reads, cross-user denial, stale-form identity rejection, an ineffective cross-user update, and anonymous exact-ID sanitization under mixed visibility. It rejects email/private-field leakage and does not print OTPs, tokens, keys, or addresses.
 
 `proposal:verify:local` uses two complete authenticated identities plus anon to prove draft ownership, cross-user and stale-identity rejection, publish/cancel behavior, controlled skills, rough-location discovery, participant-restricted exact-location absence, and public exact-location detail. It never prints test addresses, OTPs, tokens, keys, or exact restricted content.

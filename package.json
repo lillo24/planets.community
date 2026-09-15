@@ -72,6 +72,6 @@
   "devDependencies": {
     "prettier": "3.9.6",
     "postgres": "3.4.9",
-    "supabase": "2.116.0"
+    "supabase": "2.118.0-beta.39"
   }
 }

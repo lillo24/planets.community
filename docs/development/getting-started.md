@@ -99,6 +99,8 @@ npm run auth:session:verify:local
 
 This check binds each verified session token to a separate data client, then uses the first request to insert and read that user's own profile anchor under RLS. It does not retry authentication or print emails, codes, tokens, keys, Authorization headers, or raw messages.
 
+Local and CI tooling temporarily uses the exact prerelease Supabase CLI `2.118.0-beta.39` because its [PostgREST v16.3](https://github.com/PostgREST/postgrest/releases/tag/v16.3) runtime contains the upstream fix for sporadic fresh-JWT `PGRST303` failures. The pin does not affect staging or production. Move back to a stable CLI once a stable release bundles PostgREST v16.3 or later, and validate the full Database workflow after changing it.
+
 To prove the basic profile security contract with two authenticated users and one anonymous client, run:
 
 ```text
