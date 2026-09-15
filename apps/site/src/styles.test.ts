@@ -155,11 +155,11 @@ describe("announcement visual experiment", () => {
     );
     expect(ruleBody(".orbit--outer")).toContain("width: 112%;");
     expect(ruleBody(".orbit--outer")).toContain(
-      "animation: orbit-outer 24s linear infinite;",
+      "animation: orbit-outer 16s linear infinite;",
     );
     expect(ruleBody(".orbit--far")).toContain("width: 140%;");
     expect(ruleBody(".orbit--far")).toContain(
-      "animation: orbit-far 32s linear infinite;",
+      "animation: orbit-far 12s linear infinite;",
     );
   });
 
@@ -178,7 +178,7 @@ describe("announcement visual experiment", () => {
 
     expect(baseWaitlist).toContain("margin-top: 0;");
     expect(desktop).toContain(".waitlist {\n    margin-top: 2.25rem;");
-    expect(mobile).toContain(".waitlist {\n    margin-top: 1.75rem;");
+    expect(mobile).toContain(".waitlist {\n    margin-top: 2.25rem;");
   });
 
   it("stops orbit rotation when reduced motion is requested", () => {
