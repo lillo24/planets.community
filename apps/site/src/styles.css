@@ -296,24 +296,32 @@ img {
 
 .hero__announcement--fluid::before {
   inset: -52% -20%;
-  background:
-    radial-gradient(circle, rgb(216 92 145 / 62%) 0 22%, transparent 58%),
-    radial-gradient(circle, rgb(239 185 83 / 60%) 0 22%, transparent 58%),
-    radial-gradient(circle, rgb(92 174 100 / 58%) 0 21%, transparent 57%),
-    radial-gradient(circle, rgb(39 171 197 / 60%) 0 22%, transparent 58%);
-  background-position:
-    0% 18%,
-    38% 0%,
-    72% 100%,
-    100% 34%;
-  background-repeat: no-repeat;
-  background-size:
-    58% 88%,
-    52% 82%,
-    56% 90%,
-    52% 84%;
-  filter: blur(0.7rem) saturate(0.96);
-  opacity: 0.68;
+  background-image:
+    radial-gradient(
+      circle at 10% 48%,
+      rgb(216 92 145 / 28%) 0 12%,
+      transparent 31%
+    ),
+    radial-gradient(
+      circle at 36% 52%,
+      rgb(239 185 83 / 26%) 0 12%,
+      transparent 31%
+    ),
+    radial-gradient(
+      circle at 62% 48%,
+      rgb(92 174 100 / 25%) 0 12%,
+      transparent 31%
+    ),
+    radial-gradient(
+      circle at 88% 52%,
+      rgb(39 171 197 / 27%) 0 12%,
+      transparent 31%
+    );
+  background-position: 0 0;
+  background-repeat: repeat-x;
+  background-size: 24rem 100%;
+  filter: blur(0.7rem);
+  opacity: 0.55;
   animation: announcement-fluid-color-flow 6s linear infinite;
   will-change: background-position;
 }
@@ -614,6 +622,8 @@ h2 {
 
 .orbit::after {
   position: absolute;
+  top: 50%;
+  right: 0;
   width: 0.65rem;
   height: 0.65rem;
   border: 0.25rem solid #fbfaf6;
@@ -621,45 +631,38 @@ h2 {
   background: var(--cyan);
   box-shadow: 0 0 0 1px rgb(24 48 46 / 9%);
   content: "";
+  transform: translate(50%, -50%);
 }
 
 .orbit--outer {
   width: 112%;
   aspect-ratio: 1;
-  animation: orbit-outer 28s linear infinite;
+  transform: rotate(-96deg);
+  animation: orbit-outer 24s linear infinite;
   will-change: transform;
-}
-
-.orbit--outer::after {
-  top: 13%;
-  right: 10%;
 }
 
 .orbit--inner {
   width: 84%;
   aspect-ratio: 1;
   transform: rotate(24deg);
-  animation: orbit-inner 20s linear infinite;
+  animation: orbit-inner 18s linear infinite;
   will-change: transform;
 }
 
 .orbit--inner::after {
-  right: 2%;
-  bottom: 27%;
   background: var(--gold);
 }
 
 .orbit--far {
   width: 140%;
   aspect-ratio: 1;
-  transform: rotate(58deg);
-  animation: orbit-far 36s linear infinite;
+  transform: rotate(144deg);
+  animation: orbit-far 32s linear infinite;
   will-change: transform;
 }
 
 .orbit--far::after {
-  top: 16%;
-  left: 12%;
   background: var(--pink);
 }
 
@@ -896,21 +899,21 @@ h2 {
 
 @keyframes orbit-outer {
   from {
-    transform: rotate(-16deg);
+    transform: rotate(-96deg);
   }
 
   to {
-    transform: rotate(-376deg);
+    transform: rotate(-456deg);
   }
 }
 
 @keyframes orbit-far {
   from {
-    transform: rotate(58deg);
+    transform: rotate(144deg);
   }
 
   to {
-    transform: rotate(418deg);
+    transform: rotate(504deg);
   }
 }
 
@@ -933,69 +936,24 @@ h2 {
 }
 
 @keyframes announcement-fluid-color-flow {
-  0%,
-  100% {
-    background-position:
-      0% 53%,
-      47% 0%,
-      58% 100%,
-      100% 44%;
-  }
-
-  12.5% {
-    background-position:
-      11% 78%,
-      73% 12%,
-      28% 86%,
-      87% 75%;
+  0% {
+    background-position: 0 0;
   }
 
   25% {
-    background-position:
-      39% 88%,
-      84% 40%,
-      16% 53%,
-      55% 88%;
-  }
-
-  37.5% {
-    background-position:
-      67% 78%,
-      73% 68%,
-      28% 20%,
-      23% 75%;
+    background-position: 6rem -0.15rem;
   }
 
   50% {
-    background-position:
-      78% 53%,
-      47% 80%,
-      58% 6%,
-      10% 44%;
-  }
-
-  62.5% {
-    background-position:
-      67% 28%,
-      21% 68%,
-      88% 20%,
-      23% 13%;
+    background-position: 12rem 0;
   }
 
   75% {
-    background-position:
-      39% 18%,
-      10% 40%,
-      100% 53%,
-      55% 0%;
+    background-position: 18rem 0.15rem;
   }
 
-  87.5% {
-    background-position:
-      11% 28%,
-      21% 12%,
-      88% 86%,
-      87% 13%;
+  100% {
+    background-position: 24rem 0;
   }
 }
 
@@ -1073,6 +1031,10 @@ h2 {
 
   .hero__visual {
     margin-inline: 1rem;
+  }
+
+  .waitlist {
+    margin-top: 1.75rem;
   }
 
   .activity-strip ul,
