@@ -140,7 +140,10 @@ export function WaitlistForm({
       noValidate
       aria-label="Avviso lancio PLANETS"
     >
-      <label className="waitlist__email-label" htmlFor="launch-email">
+      <p className="waitlist__email-label" aria-hidden="true">
+        La tua email
+      </p>
+      <label className="visually-hidden" htmlFor="launch-email">
         La tua email
       </label>
       <div className="waitlist__controls">
