@@ -19,7 +19,7 @@ const testSiteKey = "1x00000000000000000000AA";
 function renderWaitlist(apiClient = vi.fn().mockResolvedValue(undefined)) {
   render(<WaitlistForm apiClient={apiClient} turnstileSiteKey={testSiteKey} />);
 
-  const form = screen.getByRole("form", { name: "Sapere quando parte." });
+  const form = screen.getByRole("form", { name: "Avviso lancio PLANETS" });
   const token = document.createElement("input");
   token.type = "hidden";
   token.name = "cf-turnstile-response";
@@ -140,7 +140,7 @@ describe("PLANETS public site", () => {
     expect(fluidButton.getAttribute("aria-pressed")).toBe("false");
   });
 
-  it("uses the PLANETS logo as the accessible header brand mark", () => {
+  it("uses the PLANETS logo for both brand marks", () => {
     render(<App />);
 
     const headerBrand = screen.getByRole("link", {
@@ -151,6 +151,38 @@ describe("PLANETS public site", () => {
     expect(logo?.getAttribute("src")).toBe("/brand/planets-logo.png");
     expect(logo?.getAttribute("alt")).toBe("");
     expect(headerBrand.querySelector(".brand__dot")).toBeNull();
+
+    const footer = document.querySelector(".site-footer");
+    const footerBrand = footer?.querySelector(".brand--footer");
+    const footerLogo = footerBrand?.querySelector(".brand__mark img");
+
+    expect(footerLogo?.getAttribute("src")).toBe("/brand/planets-logo.png");
+    expect(footerLogo?.getAttribute("alt")).toBe("");
+    expect(document.querySelector(".brand__dot")).toBeNull();
+  });
+
+  it("keeps one accessible waitlist form after the visual on mobile", () => {
+    render(<App />);
+
+    const forms = screen.getAllByRole("form", {
+      name: "Avviso lancio PLANETS",
+    });
+    const email = screen.getByLabelText("La tua email");
+    const emailLabel = document.querySelector('label[for="launch-email"]');
+    const heroBody = document.querySelector(".hero__body");
+
+    expect(forms).toHaveLength(1);
+    expect(document.querySelectorAll("#launch-email")).toHaveLength(1);
+    expect(email.getAttribute("placeholder")).toBe("nome@esempio.it");
+    expect(emailLabel?.classList.contains("visually-hidden")).toBe(true);
+    expect(forms[0].getAttribute("aria-label")).toBe("Avviso lancio PLANETS");
+    expect(forms[0].hasAttribute("aria-labelledby")).toBe(false);
+    expect(document.querySelector("#waitlist-title")).toBeNull();
+    expect(screen.queryByText("Lista di attesa")).toBeNull();
+    expect(screen.queryByText("Sapere quando parte.")).toBeNull();
+    expect(
+      Array.from(heroBody?.children ?? []).map(({ className }) => className),
+    ).toEqual(["hero__content", "hero__visual", "waitlist"]);
   });
 
   it("omits the environment warning when Turnstile is configured", () => {

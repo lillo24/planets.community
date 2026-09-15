@@ -106,8 +106,6 @@ export function App() {
                 Un luogo per incontrarsi vicino a casa, unire capacità diverse e
                 trasformare un'idea in un'attività concreta.
               </p>
-
-              <WaitlistForm />
             </div>
 
             <div className="hero__visual" aria-label="Identità visiva PLANETS">
@@ -128,6 +126,8 @@ export function App() {
                 insieme nella propria comunità.
               </p>
             </div>
+
+            <WaitlistForm />
           </div>
         </section>
 
@@ -237,7 +237,14 @@ export function App() {
         <div className="site-footer__inner">
           <div>
             <a className="brand brand--footer" href="#inizio">
-              <span className="brand__dot" aria-hidden="true" />
+              <span className="brand__mark" aria-hidden="true">
+                <img
+                  src="/brand/planets-logo.png"
+                  alt=""
+                  width="1080"
+                  height="1150"
+                />
+              </span>
               <span>PLANETS</span>
             </a>
             <p>iOS e Android — prossimamente</p>
