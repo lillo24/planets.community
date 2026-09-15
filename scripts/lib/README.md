@@ -9,8 +9,11 @@ tooling.
   returns a separate data client whose access-token callback is bound to the
   verified session JWT. This prevents immediate REST/RPC calls from falling
   back to the publishable key as their Bearer value.
+- `validation-paths.mjs` maps changed repository paths to the Mobile, Web, Site,
+  and Database CI areas. Its tests protect the conservative shared-path and
+  documentation-only boundaries used by the validation workflow.
 - The matching `*.test.mjs` files verify parsing and request authentication
-  behavior with non-secret fixtures.
+  behavior or path classification with non-secret fixtures.
 
 The authenticated-user helper is local integration tooling only. It must never
 log OTPs, access or refresh tokens, API keys, Authorization headers, or database
