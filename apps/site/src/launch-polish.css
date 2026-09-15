@@ -1,18 +1,38 @@
-.waitlist__email-label {
-  margin: 0 0 0.45rem;
-  color: #704356;
-  font-size: 0.88rem;
-  font-weight: 750;
-  text-align: center;
+.waitlist__controls {
+  gap: 0.85rem;
 }
 
 .waitlist button {
+  position: relative;
+  isolation: isolate;
+  overflow: visible;
   border: 1px solid rgb(216 92 145 / 18%);
   background: rgb(92 174 100 / 12%);
   color: #2f6842;
   box-shadow:
     0 0.55rem 1.25rem rgb(35 65 58 / 12%),
     inset 0 0 0 1px rgb(255 255 255 / 55%);
+  transition:
+    transform 120ms ease,
+    background-color 180ms ease,
+    box-shadow 180ms ease;
+}
+
+.waitlist button::before {
+  position: absolute;
+  z-index: -1;
+  inset: -0.38rem;
+  border-radius: 1rem;
+  background: rgb(92 174 100 / 22%);
+  filter: blur(0.5rem);
+  opacity: 0;
+  pointer-events: none;
+  content: "";
+  transform: scale(0.96);
+}
+
+.waitlist[data-verification="idle"] button:not(:disabled)::before {
+  animation: waitlist-cta-background-pulse 2.6s ease-in-out infinite;
 }
 
 .waitlist button:hover:not(:disabled) {
@@ -22,8 +42,60 @@
     inset 0 0 0 1px rgb(255 255 255 / 62%);
 }
 
+.waitlist button:active:not(:disabled) {
+  transform: scale(0.94);
+}
+
+.waitlist[data-state="success"] button {
+  cursor: default;
+  opacity: 1;
+  animation: waitlist-cta-success-pop 420ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.waitlist[data-state="success"] button::before {
+  animation: none;
+  opacity: 0;
+}
+
+.waitlist__consent {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: start;
+  gap: 0.65rem;
+  margin: 0.9rem 0 0;
+  font-size: 0.88rem;
+  font-weight: 700;
+  line-height: 1.45;
+}
+
+.waitlist__consent > span {
+  min-width: 0;
+}
+
+.waitlist__consent label {
+  cursor: pointer;
+}
+
+.waitlist__consent a {
+  margin-left: 0.2rem;
+  font-weight: 750;
+  text-underline-offset: 0.2rem;
+  white-space: nowrap;
+}
+
 .waitlist__turnstile {
-  margin-top: 1.25rem;
+  margin-top: 0;
+}
+
+.waitlist__turnstile-reveal {
+  display: grid;
+  width: 100%;
+  max-height: 6rem;
+  margin-top: 1.35rem;
+  overflow: hidden;
+  place-items: center;
+  animation: waitlist-turnstile-reveal 480ms cubic-bezier(0.16, 1, 0.3, 1)
+    both;
 }
 
 .hero__announcement--fluid {
@@ -37,4 +109,47 @@
 
 .section--about {
   border-top: 0;
+}
+
+@keyframes waitlist-cta-background-pulse {
+  0%,
+  100% {
+    opacity: 0.12;
+    transform: scale(0.96);
+  }
+
+  50% {
+    opacity: 0.38;
+    transform: scale(1.08);
+  }
+}
+
+@keyframes waitlist-cta-success-pop {
+  0% {
+    transform: scale(0.92);
+  }
+
+  64% {
+    transform: scale(1.06);
+  }
+
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes waitlist-turnstile-reveal {
+  from {
+    max-height: 0;
+    margin-top: 0;
+    opacity: 0;
+    transform: translateX(1.5rem);
+  }
+
+  to {
+    max-height: 6rem;
+    margin-top: 1.35rem;
+    opacity: 1;
+    transform: translateX(0);
+  }
 }
