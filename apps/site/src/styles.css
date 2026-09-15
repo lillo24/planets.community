@@ -709,7 +709,7 @@ h2 {
   width: 140%;
   aspect-ratio: 1;
   transform: rotate(144deg);
-  animation: orbit-far 14s linear infinite;
+  animation: orbit-far 12s linear infinite;
   will-change: transform;
 }
 
