@@ -24,17 +24,21 @@ describe("announcement visual experiment", () => {
   });
 
   it("keeps reflection and fluid motion as separate animation systems", () => {
+    const base = ruleBody(".hero__announcement");
     const reflection = ruleBody(".hero__announcement--reflection::after");
     const fluidColors = ruleBody(".hero__announcement--fluid::before");
     const fluidVeil = ruleBody(".hero__announcement--fluid::after");
 
+    expect(base).not.toContain("animation:");
     expect(reflection).toContain(
       "animation: announcement-reflection-sweep 4.8s ease-in-out infinite;",
     );
     expect(fluidColors).toContain(
-      "animation: announcement-fluid-color-flow 6s ease-in-out infinite;",
+      "animation: announcement-fluid-color-flow 6s linear infinite;",
     );
+    expect(fluidColors).not.toContain("ease-in-out");
     expect(fluidVeil).not.toContain("animation:");
+    expect(styles).toContain("@keyframes announcement-fluid-color-flow");
     expect(styles).not.toContain("announcement-fluid-sheen");
   });
 
@@ -46,6 +50,20 @@ describe("announcement visual experiment", () => {
     expect(reducedMotion).toContain(
       ".hero__announcement--reflection::after,\n  .hero__announcement--fluid::before {\n    animation: none;",
     );
+  });
+
+  it("keeps the fluid path closed with waypoints on both sides of the seam", () => {
+    const keyframesStart = styles.indexOf(
+      "@keyframes announcement-fluid-color-flow",
+    );
+    const fluidKeyframes = styles.slice(
+      keyframesStart,
+      styles.indexOf("@media", keyframesStart),
+    );
+
+    expect(fluidKeyframes).toContain("0%,\n  100% {");
+    expect(fluidKeyframes).toContain("12.5% {");
+    expect(fluidKeyframes).toContain("87.5% {");
   });
 
   it("keeps three evenly spaced orbit geometries with independent motion", () => {
