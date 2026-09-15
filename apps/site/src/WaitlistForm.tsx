@@ -1,4 +1,10 @@
-import { type FormEvent, useCallback, useState } from "react";
+import {
+  type FormEvent,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 
 import { TurnstileWidget } from "./TurnstileWidget";
 import { validateEmailAddress } from "./email-validation";
@@ -21,6 +27,8 @@ type WaitlistFormProps = {
 };
 
 const idleFeedback: Feedback = { kind: "idle", field: null, message: "" };
+const accessibleConsentLabel =
+  "Voglio ricevere una sola email quando PLANETS sarà disponibile.";
 
 function readTurnstileToken(form: HTMLFormElement) {
   const token = new FormData(form).get("cf-turnstile-response");
@@ -31,8 +39,10 @@ export function WaitlistForm({
   apiClient = submitWaitlist,
   turnstileSiteKey = WAITLIST_TURNSTILE_SITE_KEY,
 }: WaitlistFormProps) {
+  const formRef = useRef<HTMLFormElement>(null);
   const [email, setEmail] = useState("");
   const [consent, setConsent] = useState(false);
+  const [verificationRequested, setVerificationRequested] = useState(false);
   const [feedback, setFeedback] = useState<Feedback>(idleFeedback);
 
   const isSubmitting = feedback.kind === "submitting";
@@ -52,13 +62,31 @@ export function WaitlistForm({
     );
   }, []);
 
-  const clearTurnstileFailure = useCallback(() => {
+  const handleTurnstileSuccess = useCallback(() => {
     setFeedback((current) =>
       current.kind === "error" && current.field === "turnstile"
         ? idleFeedback
         : current,
     );
-  }, []);
+
+    if (!verificationRequested) {
+      return;
+    }
+
+    window.setTimeout(() => {
+      formRef.current?.requestSubmit();
+    }, 0);
+  }, [verificationRequested]);
+
+  useEffect(() => {
+    window.planetsTurnstileError = showTurnstileFailure;
+    window.planetsTurnstileSuccess = handleTurnstileSuccess;
+
+    return () => {
+      delete window.planetsTurnstileError;
+      delete window.planetsTurnstileSuccess;
+    };
+  }, [handleTurnstileSuccess, showTurnstileFailure]);
 
   function clearFailure() {
     if (feedback.kind === "error") {
@@ -91,13 +119,19 @@ export function WaitlistForm({
       return;
     }
 
-    const turnstileToken = readTurnstileToken(event.currentTarget);
-    if (!turnstileSiteKey || turnstileToken.length === 0) {
+    if (!turnstileSiteKey) {
       setFeedback({
         kind: "error",
         field: "turnstile",
-        message: "Completa la verifica anti-abuso e riprova.",
+        message: "La verifica anti-abuso non è disponibile in questo ambiente.",
       });
+      return;
+    }
+
+    const turnstileToken = readTurnstileToken(event.currentTarget);
+    if (turnstileToken.length === 0) {
+      setVerificationRequested(true);
+      setFeedback(idleFeedback);
       return;
     }
 
@@ -113,6 +147,7 @@ export function WaitlistForm({
         consent: true,
         turnstileToken,
       });
+      setVerificationRequested(false);
       setEmail("");
       setConsent(false);
       setFeedback({
@@ -134,15 +169,14 @@ export function WaitlistForm({
 
   return (
     <form
+      ref={formRef}
       className="waitlist"
       data-state={feedback.kind}
+      data-verification={verificationRequested ? "requested" : "idle"}
       onSubmit={handleSubmit}
       noValidate
       aria-label="Avviso lancio PLANETS"
     >
-      <p className="waitlist__email-label" aria-hidden="true">
-        La tua email
-      </p>
       <label className="visually-hidden" htmlFor="launch-email">
         La tua email
       </label>
@@ -159,52 +193,63 @@ export function WaitlistForm({
             setEmail(event.currentTarget.value);
             clearFailure();
           }}
-          aria-describedby="waitlist-purpose waitlist-feedback"
+          aria-describedby="waitlist-feedback"
           aria-invalid={feedback.field === "email"}
           disabled={controlsDisabled}
           required
         />
-        <button type="submit" disabled={controlsDisabled || !turnstileSiteKey}>
-          {isSubmitting
-            ? "Invio…"
-            : isComplete
-              ? "Richiesta registrata"
-              : "Avvisami"}
+        <button
+          type="submit"
+          aria-label={isComplete ? "Richiesta registrata" : undefined}
+          disabled={controlsDisabled || !turnstileSiteKey}
+        >
+          {isSubmitting ? "Invio…" : isComplete ? "Sent!" : "Avvisami"}
         </button>
       </div>
 
-      <label className="waitlist__consent" htmlFor="launch-consent">
+      <div className="waitlist__consent">
         <input
           id="launch-consent"
           name="consent"
           type="checkbox"
+          aria-label={accessibleConsentLabel}
           checked={consent}
           onChange={(event) => {
             setConsent(event.currentTarget.checked);
             clearFailure();
           }}
-          aria-describedby="waitlist-purpose waitlist-feedback"
+          aria-describedby="waitlist-feedback"
           aria-invalid={feedback.field === "consent"}
           disabled={controlsDisabled}
           required
         />
         <span>
-          Voglio ricevere una sola email quando PLANETS sarà disponibile.
+          <label htmlFor="launch-consent">
+            Non invieremo più di un'email e il tuo indirizzo non verrà usato in
+            nessun altro modo.
+          </label>{" "}
+          <a href="#privacy">Informativa privacy</a>
         </span>
-      </label>
-
-      <p className="waitlist__purpose" id="waitlist-purpose">
-        Ti invieremo una sola email quando PLANETS sarà disponibile. Il tuo
-        indirizzo non verrà usato per newsletter, pubblicità, promozioni o altre
-        comunicazioni. <a href="#privacy">Leggi l'informativa privacy</a>.
-      </p>
+      </div>
 
       {turnstileSiteKey ? (
-        <TurnstileWidget
-          siteKey={turnstileSiteKey}
-          onError={showTurnstileFailure}
-          onSuccess={clearTurnstileFailure}
-        />
+        verificationRequested ? (
+          <div className="waitlist__turnstile-reveal">
+            <TurnstileWidget
+              siteKey={turnstileSiteKey}
+              onError={showTurnstileFailure}
+              onSuccess={handleTurnstileSuccess}
+            />
+          </div>
+        ) : isComplete ? null : (
+          <div
+            className="cf-turnstile waitlist__turnstile"
+            data-action="waitlist_signup"
+            aria-hidden="true"
+            hidden
+            style={{ display: "none" }}
+          />
+        )
       ) : (
         <p className="waitlist__configuration" role="alert">
           La lista di attesa non è configurata in questo ambiente.
