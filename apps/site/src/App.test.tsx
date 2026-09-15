@@ -106,7 +106,7 @@ describe("PLANETS public site", () => {
     expect(contactSection?.nextElementSibling).toBe(privacySection);
   });
 
-  it("reveals the Base, Riflesso, and Fluido controls after two quick footer-logo activations", () => {
+  it("reveals the Base, Riflesso, Fluido, and Prisma controls after two quick footer-logo activations", () => {
     render(<App />);
 
     const announcements = document.querySelectorAll(".hero__announcement");
@@ -155,11 +155,15 @@ describe("PLANETS public site", () => {
     const fluidButton = within(toggle).getByRole("button", {
       name: "Fluido",
     });
+    const prismaButton = within(toggle).getByRole("button", {
+      name: "Prisma",
+    });
 
     expect(within(toggle).getAllByRole("button")).toEqual([
       baseButton,
       reflectionButton,
       fluidButton,
+      prismaButton,
     ]);
     expect(
       document.querySelectorAll(".hero__announcement-toggle"),
@@ -168,6 +172,7 @@ describe("PLANETS public site", () => {
     expect(baseButton.getAttribute("aria-pressed")).toBe("true");
     expect(reflectionButton.getAttribute("aria-pressed")).toBe("false");
     expect(fluidButton.getAttribute("aria-pressed")).toBe("false");
+    expect(prismaButton.getAttribute("aria-pressed")).toBe("false");
 
     fireEvent.click(reflectionButton);
 
@@ -189,6 +194,17 @@ describe("PLANETS public site", () => {
     );
     expect(fluidButton.getAttribute("aria-pressed")).toBe("true");
 
+    fireEvent.click(prismaButton);
+
+    expect(announcement.getAttribute("data-variant")).toBe("prisma");
+    expect(announcement.classList.contains("hero__announcement--fluid")).toBe(
+      false,
+    );
+    expect(announcement.classList.contains("hero__announcement--prisma")).toBe(
+      true,
+    );
+    expect(prismaButton.getAttribute("aria-pressed")).toBe("true");
+
     fireEvent.click(baseButton);
 
     expect(announcement.getAttribute("data-variant")).toBe("base");
@@ -196,6 +212,9 @@ describe("PLANETS public site", () => {
       true,
     );
     expect(announcement.classList.contains("hero__announcement--fluid")).toBe(
+      false,
+    );
+    expect(announcement.classList.contains("hero__announcement--prisma")).toBe(
       false,
     );
     expect(baseButton.getAttribute("aria-pressed")).toBe("true");

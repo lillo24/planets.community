@@ -74,13 +74,38 @@ describe("announcement visual experiment", () => {
     expect(styles).not.toContain("announcement-fluid-sheen");
   });
 
-  it("disables both motion systems when reduced motion is requested", () => {
+  it("gives Prisma a dedicated calm, seamless left-to-right animation", () => {
+    const prisma = ruleBody(".hero__announcement--prisma::before");
+    const keyframesStart = styles.indexOf(
+      "@keyframes announcement-prisma-flow",
+    );
+    const prismaKeyframes = styles.slice(
+      keyframesStart,
+      styles.indexOf("@media", keyframesStart),
+    );
+
+    expect(prisma).toContain("width: 300%;");
+    expect(prisma).toContain('content: "";');
+    expect(prisma).toContain(
+      "animation: announcement-prisma-flow 5s linear infinite;",
+    );
+    expect(prisma).not.toContain("ease-in-out");
+    expect(prisma).not.toContain("announcement-reflection-sweep");
+    expect(prisma).not.toContain("announcement-fluid-color-flow");
+    expect(prismaKeyframes).toContain("transform: translateX(-50%);");
+    expect(prismaKeyframes).toContain("transform: translateX(0);");
+  });
+
+  it("disables every announcement motion system when reduced motion is requested", () => {
     const reducedMotion = styles.slice(
       styles.indexOf("@media (prefers-reduced-motion: reduce)"),
     );
 
     expect(reducedMotion).toContain(
-      ".hero__announcement--reflection::after,\n  .hero__announcement--fluid::before {\n    animation: none;",
+      ".hero__announcement--reflection::after,\n  .hero__announcement--fluid::before,\n  .hero__announcement--prisma::before {\n    animation: none;",
+    );
+    expect(reducedMotion).toContain(
+      ".hero__announcement--prisma::before {\n    transform: translateX(-25%);",
     );
   });
 
