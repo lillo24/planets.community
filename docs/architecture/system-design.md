@@ -151,6 +151,13 @@ Drafts may be incomplete and remain private. Publication requires a bounded plai
 
 Complete-profile owners use expected-identity-bound create and publish operations, while authenticated owners use the same identity boundary for update, close, and owner history. The table has RLS but no client policies or direct grants. Anonymous and authenticated clients use narrow list/detail functions; list discovery is newest-first paired keyset pagination with optional mode, case-insensitive locality equality, and literal case-insensitive title/description substring filters. Detail returns an owner display name only when the existing profile visibility row is public. Publish and close write identifier-only audit/outbox state for later consumers without projecting notifications.
 
+The 04C2 Flutter client keeps Scambio-Dona in the Home pillar beside Progetti,
+without changing the persistent Profile / Browse / Home navigation. Its public
+list and detail are signed-out, while My Listings and create/edit routes require
+a complete profile and preserve their Auth/setup return destination. The client
+uses only the canonical listing RPCs; closing remains availability-only, and
+post-listing request/contact/handoff behavior remains deferred to 04C4.
+
 ### Shared project participation domain
 
 `projects` is a private, narrow identity registry across `proposals` and `recurring_activities`. Its UUID equals the concrete activity UUID and it stores only kind, synchronized creator, and creation time. Source insert/delete triggers preserve the one-to-one invariant for migration replay and trusted fixtures; content, lifecycle, schedules, skills, and location remain solely in the concrete tables. A source with request or membership history cannot be deleted.

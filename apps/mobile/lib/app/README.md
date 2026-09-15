@@ -5,7 +5,8 @@ This folder owns application startup presentation and navigation, not backend ru
 - `planets_app.dart` composes Riverpod, themes, localization and `MaterialApp.router`.
 - `router/app_router.dart` owns routes, Auth/readiness redirects and the identity-scoped routing configuration.
 - `router/app_navigation_shell.dart` owns the single Material 3 navigation bar and branch ordering.
-- `foundation_screen.dart` is Home; its Browse CTA uses the shell's branch switch.
+- `foundation_screen.dart` is Home; its Progetti entry uses the shell's Browse
+  branch switch and its Scambio-Dona entry opens the Home-owned resource routes.
 - `startup_failure_app.dart` is the safe fallback when bootstrap cannot launch the application.
 
 ## Navigation contract
@@ -16,7 +17,7 @@ This folder owns application startup presentation and navigation, not backend ru
 | --- | --- |
 | 0 / Profile | `/profile`, nested `/profile/edit` with an optional sanitized post-setup `returnTo` |
 | 1 / Browse | `/proposals` and `/tavoli`, each with nested `mine`, `create`, `:id`, `:id/edit`, `:id/join`, and `:id/participants` |
-| 2 / Home | `/`, `/messages`, nested `/messages/requests/:requestId`, `/messages/chats/:chatId`, `/messages/chats/:chatId/info`, `/notifications`, nested `/notifications/preferences` |
+| 2 / Home | `/`, public `/resources` and `/resources/:listingId`, protected `/resources/mine`, `/resources/create`, and `/resources/:listingId/edit`, `/messages`, nested `/messages/requests/:requestId`, `/messages/chats/:chatId`, `/messages/chats/:chatId/info`, `/notifications`, nested `/notifications/preferences` |
 
 Static Browse children precede each dynamic activity-ID route. A route-backed
 Proposals/Tavoli switcher changes the public list within Browse without adding a
@@ -28,10 +29,11 @@ no-op. Browse root actions use `go` to build canonical nested stacks, including
 when a guard redirects Create/My activity routes into a different branch.
 
 `/auth` and `/auth/verify` live outside the shell and have no bottom navigation.
-Home and Browse list/detail remain public. Signed-out Profile/management access
+Home and Browse list/detail, including Scambio-Dona list/detail, remain public. Signed-out Profile/management access
 uses the existing Auth flow with a sanitized internal `returnTo`. Incomplete
 profiles can use Home/Browse freely; Profile opens completion when the profile
-anchor exists, and management redirects to `/profile/edit`. Participation Join,
+anchor exists, and management redirects to `/profile/edit`. Scambio-Dona
+management preserves the exact destination through both OTP and profile setup. Participation Join,
 creator-review, Messages request/chat/group-info, and Notifications routes preserve their exact internal destination
 through OTP and profile completion. Missing-anchor retry and email-OTP behavior
 are unchanged. Saving a valid profile returns to the preserved participation or
@@ -46,7 +48,7 @@ discards every retained branch (including inactive private forms) without losing
 an in-flight Auth return destination. A same-identity token refresh does not reset
 the shell. No form data is persisted to disk for this behavior.
 
-Profile, proposal, Tavoli owner, participation, Messages, and Notifications controllers also clear cached state and increment a
+Profile, proposal, Tavoli owner, Scambio-Dona owner/editor, participation, Messages, and Notifications controllers also clear cached state and increment a
 request revision on identity changes. Every async continuation checks that its
 revision is still current before publishing state or starting another operation.
 Thus A -> signed out -> A also rejects old work. Profile readiness cannot be
