@@ -41,6 +41,20 @@ describe("announcement visual experiment", () => {
     );
   });
 
+  it("separates the stacked mobile brand and navigation with one divider", () => {
+    const mobileStart = styles.indexOf("@media (max-width: 43rem)");
+    const desktop = styles.slice(0, mobileStart);
+    const mobile = styles.slice(
+      mobileStart,
+      styles.indexOf("@media (prefers-reduced-motion: reduce)", mobileStart),
+    );
+
+    expect(mobile).toContain(
+      ".primary-nav {\n    width: 100%;\n    border-top: 1px solid var(--line);",
+    );
+    expect(desktop).not.toMatch(/\.primary-nav\s*\{[^}]*border-top:/u);
+  });
+
   it("floats the comparison toggle outside normal layout flow", () => {
     expect(ruleBody(".hero__announcement-experiment")).toContain(
       "position: relative;",
