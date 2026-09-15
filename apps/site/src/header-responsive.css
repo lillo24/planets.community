@@ -1,0 +1,5 @@
+@media (max-width: 43rem) {
+  .site-header__inner {
+    row-gap: 0.55rem;
+  }
+}
