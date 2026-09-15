@@ -155,11 +155,11 @@ describe("announcement visual experiment", () => {
     );
     expect(ruleBody(".orbit--outer")).toContain("width: 112%;");
     expect(ruleBody(".orbit--outer")).toContain(
-      "animation: orbit-outer 24s linear infinite;",
+      "animation: orbit-outer 16s linear infinite;",
     );
     expect(ruleBody(".orbit--far")).toContain("width: 140%;");
     expect(ruleBody(".orbit--far")).toContain(
-      "animation: orbit-far 32s linear infinite;",
+      "animation: orbit-far 14s linear infinite;",
     );
   });
 
