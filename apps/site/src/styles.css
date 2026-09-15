@@ -224,7 +224,7 @@ img {
   min-height: calc(100vh - 5rem);
   flex-direction: column;
   justify-content: center;
-  padding-block: clamp(3.5rem, 8vw, 7rem);
+  padding-block: clamp(3rem, 3.5vw, 5rem);
 }
 
 .hero__announcement-experiment {
@@ -233,7 +233,7 @@ img {
   width: 100%;
   align-self: center;
   place-items: center;
-  margin: 0 0 clamp(2.5rem, 5vw, 4rem);
+  margin: 0 0 clamp(2.5rem, 3vw, 3rem);
 }
 
 .hero__announcement {
@@ -1000,6 +1000,11 @@ h2 {
     top: calc(100% + 0.1rem);
   }
 
+  .hero__announcement {
+    padding: 1.02rem 1.62rem;
+    font-size: 1.26rem;
+  }
+
   .site-header__inner {
     flex-wrap: wrap;
     padding-block: 0.8rem;
@@ -1018,7 +1023,7 @@ h2 {
 
   .hero {
     min-height: 0;
-    padding-top: 2.75rem;
+    padding-block: 2.75rem 3.5rem;
   }
 
   h1 {

@@ -14,6 +14,33 @@ function ruleBody(selector: string) {
 }
 
 describe("announcement visual experiment", () => {
+  it("uses compact responsive hero spacing on laptops", () => {
+    expect(ruleBody(".hero")).toContain(
+      "padding-block: clamp(3rem, 3.5vw, 5rem);",
+    );
+    expect(ruleBody(".hero__announcement-experiment")).toContain(
+      "margin: 0 0 clamp(2.5rem, 3vw, 3rem);",
+    );
+  });
+
+  it("enlarges only the main announcement pill on phones", () => {
+    const mobileStart = styles.indexOf("@media (max-width: 43rem)");
+    const mobile = styles.slice(
+      mobileStart,
+      styles.indexOf("@media (prefers-reduced-motion: reduce)", mobileStart),
+    );
+
+    expect(mobile).toContain(
+      ".hero__announcement {\n    padding: 1.02rem 1.62rem;\n    font-size: 1.26rem;",
+    );
+    expect(mobile).toContain(
+      ".hero {\n    min-height: 0;\n    padding-block: 2.75rem 3.5rem;",
+    );
+    expect(ruleBody(".hero__announcement-toggle")).toContain(
+      "font-size: 0.72rem;",
+    );
+  });
+
   it("floats the comparison toggle outside normal layout flow", () => {
     expect(ruleBody(".hero__announcement-experiment")).toContain(
       "position: relative;",
