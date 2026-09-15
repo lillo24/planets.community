@@ -69,10 +69,14 @@ export function WaitlistForm({
         : current,
     );
 
+    if (!verificationRequested) {
+      return;
+    }
+
     window.setTimeout(() => {
       formRef.current?.requestSubmit();
     }, 0);
-  }, []);
+  }, [verificationRequested]);
 
   useEffect(() => {
     window.planetsTurnstileError = showTurnstileFailure;
