@@ -2,9 +2,7 @@ name: Validation
 
 on:
   pull_request:
-  push:
-    branches:
-      - main
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -14,8 +12,43 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  changes:
+    name: Change classification
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      mobile: ${{ steps.classify.outputs.mobile }}
+      web: ${{ steps.classify.outputs.web }}
+      site: ${{ steps.classify.outputs.site }}
+      database: ${{ steps.classify.outputs.database }}
+    steps:
+      - name: Check out repository history
+        uses: actions/checkout@v7.0.1
+        with:
+          fetch-depth: 0
+
+      - name: Classify affected validation areas
+        id: classify
+        shell: bash
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          set -euo pipefail
+          if [[ "$GITHUB_EVENT_NAME" == "workflow_dispatch" ]]; then
+            node scripts/classify-validation-paths.mjs \
+              --all \
+              --github-output "$GITHUB_OUTPUT"
+          else
+            # Treat moves as a removal plus an addition so both owners run.
+            git diff --no-renames --name-only -z "$BASE_SHA" "$GITHUB_SHA" | \
+              node scripts/classify-validation-paths.mjs \
+                --github-output "$GITHUB_OUTPUT"
+          fi
+
   mobile:
     name: Mobile
+    needs: changes
+    if: ${{ needs.changes.outputs.mobile == 'true' }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -51,6 +84,8 @@ jobs:
 
   web:
     name: Web
+    needs: changes
+    if: ${{ needs.changes.outputs.web == 'true' }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -69,11 +104,32 @@ jobs:
       - name: Validate web application
         run: npm run check:web
 
+  site:
+    name: Site
+    needs: changes
+    if: ${{ needs.changes.outputs.site == 'true' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7.0.1
+
+      - name: Install Node.js
+        uses: actions/setup-node@v7.0.0
+        with:
+          node-version: 24.20.0
+          cache: npm
+
+      - name: Restore Node packages
+        run: npm ci
+
       - name: Validate public site and waitlist boundary
         run: npm run check:site
 
   supabase:
     name: Database
+    needs: changes
+    if: ${{ needs.changes.outputs.database == 'true' }}
     runs-on: ubuntu-latest
     timeout-minutes: 25
     steps:
