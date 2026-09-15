@@ -28,6 +28,9 @@ import '../../features/proposals/presentation/public_proposals_screen.dart';
 import '../../features/recurring_activities/presentation/own_recurring_activities_screen.dart';
 import '../../features/recurring_activities/presentation/public_recurring_activities_screen.dart';
 import '../../features/recurring_activities/presentation/recurring_activity_editor_screen.dart';
+import '../../features/resource_listings/presentation/own_resource_listings_screen.dart';
+import '../../features/resource_listings/presentation/public_resource_listings_screen.dart';
+import '../../features/resource_listings/presentation/resource_listing_editor_screen.dart';
 import '../../l10n/generated/app_localizations.dart';
 import '../foundation_screen.dart';
 import 'app_navigation_shell.dart';
@@ -74,6 +77,7 @@ RoutingConfig _routingConfig(
           path == '/tavoli/mine' ||
           path == '/tavoli/create' ||
           (path.startsWith('/tavoli/') && path.endsWith('/edit'));
+      final isResourceManagementRoute = _isResourceManagementPath(path);
       final isParticipationRoute = ParticipationRoutes.isParticipationPath(
         path,
       );
@@ -82,6 +86,7 @@ RoutingConfig _routingConfig(
       final isActivityManagementRoute =
           isProposalManagementRoute ||
           isTavoliManagementRoute ||
+          isResourceManagementRoute ||
           isParticipationRoute ||
           isMessagesRoute ||
           isNotificationsRoute;
@@ -100,6 +105,14 @@ RoutingConfig _routingConfig(
 
       if (session.phase == AuthSessionPhase.profileSetupRequired &&
           (isParticipationRoute || isMessagesRoute || isNotificationsRoute)) {
+        return Uri(
+          path: '/profile/edit',
+          queryParameters: {'returnTo': state.uri.toString()},
+        ).toString();
+      }
+
+      if (session.phase == AuthSessionPhase.profileSetupRequired &&
+          isResourceManagementRoute) {
         return Uri(
           path: '/profile/edit',
           queryParameters: {'returnTo': state.uri.toString()},
@@ -129,7 +142,8 @@ RoutingConfig _routingConfig(
             sanitizeReturnDestination(state.uri.queryParameters['returnTo']);
         if (ParticipationRoutes.isParticipationPath(returnTo) ||
             isMessagesPath(returnTo) ||
-            isNotificationsPath(returnTo)) {
+            isNotificationsPath(returnTo) ||
+            _isResourceManagementPath(returnTo)) {
           return Uri(
             path: '/profile/edit',
             queryParameters: {'returnTo': returnTo},
@@ -333,12 +347,55 @@ RoutingConfig _routingConfig(
                   ),
                 ],
               ),
+              GoRoute(
+                path: '/resources',
+                builder: (context, state) =>
+                    const PublicResourceListingsScreen(),
+                routes: [
+                  GoRoute(
+                    path: 'mine',
+                    builder: (context, state) =>
+                        const OwnResourceListingsScreen(),
+                  ),
+                  GoRoute(
+                    path: 'create',
+                    builder: (context, state) =>
+                        const ResourceListingEditorScreen(),
+                  ),
+                  GoRoute(
+                    path: ':listingId',
+                    builder: (context, state) =>
+                        PublicResourceListingDetailScreen(
+                          listingId: state.pathParameters['listingId']!,
+                        ),
+                    routes: [
+                      GoRoute(
+                        path: 'edit',
+                        builder: (context, state) =>
+                            ResourceListingEditorScreen(
+                              listingId: state.pathParameters['listingId'],
+                            ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ],
           ),
         ],
       ),
     ],
   );
+}
+
+bool _isResourceManagementPath(String destination) {
+  final path = Uri.tryParse(destination)?.path;
+  if (path == null) return false;
+  if (path == '/resources/mine' || path == '/resources/create') return true;
+  final segments = Uri(path: path).pathSegments;
+  return segments.length == 3 &&
+      segments.first == 'resources' &&
+      segments.last == 'edit';
 }
 
 final appRouterProvider = Provider<GoRouter>((ref) {

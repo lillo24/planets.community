@@ -696,5 +696,78 @@
       "project": { "type": "String" }
     }
   },
-  "notificationChatMessageGeneric": "New project chat message"
+  "notificationChatMessageGeneric": "New project chat message",
+  "homeProjectsTitle": "Progetti",
+  "homeProjectsMessage": "Discover one-time projects and Tavoli.",
+  "homeResourcesMessage": "Discover things offered to donate or exchange.",
+  "resourceTitle": "Scambio-Dona",
+  "resourceModeAll": "All",
+  "resourceModeDonate": "Dona",
+  "resourceModeExchange": "Scambia",
+  "resourceModeFilterLabel": "Listing mode",
+  "resourceModeField": "Choose Dona or Scambia",
+  "resourceMyListings": "My listings",
+  "resourceCreateListing": "Create listing",
+  "resourceEditListing": "Edit listing",
+  "resourceViewListing": "View listing",
+  "resourceDetailTitle": "Listing details",
+  "resourceLoading": "Loading listings…",
+  "resourceSafeError": "We couldn't load the listing information. Check your connection and try again.",
+  "resourceInvalidInput": "Check the listing fields and try again.",
+  "resourceForbidden": "This listing is not available for the current account.",
+  "resourceInvalidState": "This listing can no longer be changed that way.",
+  "resourceNotFound": "This listing is no longer available.",
+  "resourceSearchLabel": "Search title and description",
+  "resourceLocalityLabel": "Locality",
+  "resourceSearchAction": "Search",
+  "resourceEmptyTitle": "Nothing in Scambio-Dona yet",
+  "resourceEmptyMessage": "Published listings will appear here.",
+  "resourceFilteredEmptyTitle": "No listings found",
+  "resourceFilteredEmptyMessage": "Try changing the search or filters.",
+  "resourceLoadMore": "Load more",
+  "resourceLocationTitle": "Public location",
+  "resourcePublishedDate": "Published {date}",
+  "@resourcePublishedDate": {
+    "placeholders": { "date": { "type": "String" } }
+  },
+  "resourceUpdatedDate": "Updated {date}",
+  "@resourceUpdatedDate": {
+    "placeholders": { "date": { "type": "String" } }
+  },
+  "resourceListedBy": "Listed by {owner}",
+  "@resourceListedBy": {
+    "placeholders": { "owner": { "type": "String" } }
+  },
+  "resourceMyEmptyTitle": "No listings yet",
+  "resourceMyEmptyMessage": "Create a draft when you have something to donate or exchange.",
+  "resourceUntitled": "Untitled draft",
+  "resourceLifecycleDraft": "Draft",
+  "resourceLifecyclePublished": "Published",
+  "resourceLifecycleClosed": "Closed",
+  "resourceTitleField": "Title",
+  "resourceDescriptionField": "Description",
+  "resourceCountryCodeField": "Country code",
+  "resourceLocalityField": "Locality",
+  "resourceAdministrativeAreaField": "Administrative area (optional)",
+  "resourcePublicLocationField": "Public location label",
+  "resourceSaveDraft": "Save draft",
+  "resourcePublish": "Publish",
+  "resourceSaveChanges": "Save changes",
+  "resourceCloseListing": "Close listing",
+  "resourceKeepListing": "Keep listing",
+  "resourceSaved": "Listing saved.",
+  "resourceRequiredField": "Required to publish.",
+  "resourceCountryCodeValidation": "Use a two-letter country code.",
+  "resourceMinimumLength": "Use at least {count} characters.",
+  "@resourceMinimumLength": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "resourceMaximumLength": "Use at most {count} characters.",
+  "@resourceMaximumLength": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "resourceDraftSavedPublishFailed": "Your draft was saved, but it could not be published. Review it and retry; no second draft will be created.",
+  "resourceCloseConfirmTitle": "Close this listing?",
+  "resourceCloseConfirmMessage": "This removes the listing from public discovery. It does not record whether a donation or exchange happened.",
+  "resourceClosedReadOnly": "Closed listings remain in your history and cannot be edited or reopened."
 }
