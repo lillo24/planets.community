@@ -1073,6 +1073,7 @@ h2 {
 
   .primary-nav {
     width: 100%;
+    border-top: 1px solid var(--line);
     justify-content: space-between;
     overflow-x: auto;
   }
