@@ -97,6 +97,49 @@ describe("PLANETS public site", () => {
     expect(contactSection?.nextElementSibling).toBe(privacySection);
   });
 
+  it("defaults the announcement experiment to the current background and toggles fluid mode", () => {
+    render(<App />);
+
+    const announcements = document.querySelectorAll(".hero__announcement");
+    const announcement = announcements.item(0);
+    const toggle = screen.getByRole("group", {
+      name: "Sfondo dell'annuncio",
+    });
+    const currentButton = within(toggle).getByRole("button", {
+      name: "Attuale",
+    });
+    const fluidButton = within(toggle).getByRole("button", {
+      name: "Fluido",
+    });
+
+    expect(announcements).toHaveLength(1);
+    expect(announcement.textContent).toBe("In arrivo su iOS e Android");
+    expect(announcement.getAttribute("data-background")).toBe("current");
+    expect(announcement.classList.contains("hero__announcement--fluid")).toBe(
+      false,
+    );
+    expect(currentButton.getAttribute("aria-pressed")).toBe("true");
+    expect(fluidButton.getAttribute("aria-pressed")).toBe("false");
+
+    fireEvent.click(fluidButton);
+
+    expect(announcement.getAttribute("data-background")).toBe("fluid");
+    expect(announcement.classList.contains("hero__announcement--fluid")).toBe(
+      true,
+    );
+    expect(currentButton.getAttribute("aria-pressed")).toBe("false");
+    expect(fluidButton.getAttribute("aria-pressed")).toBe("true");
+
+    fireEvent.click(currentButton);
+
+    expect(announcement.getAttribute("data-background")).toBe("current");
+    expect(announcement.classList.contains("hero__announcement--fluid")).toBe(
+      false,
+    );
+    expect(currentButton.getAttribute("aria-pressed")).toBe("true");
+    expect(fluidButton.getAttribute("aria-pressed")).toBe("false");
+  });
+
   it("uses the PLANETS logo as the accessible header brand mark", () => {
     render(<App />);
 
@@ -111,7 +154,15 @@ describe("PLANETS public site", () => {
   });
 
   it("omits the environment warning when Turnstile is configured", () => {
-    renderWaitlist();
+    const { form } = renderWaitlist();
+
+    const turnstile = form.querySelector(".cf-turnstile.waitlist__turnstile");
+    const feedback = form.querySelector("#waitlist-feedback");
+
+    expect(turnstile).not.toBeNull();
+    expect(turnstile?.getAttribute("data-action")).toBe("waitlist_signup");
+    expect(feedback?.getAttribute("role")).toBe("status");
+    expect(feedback?.textContent).toBe("");
 
     expect(
       screen.queryByText(

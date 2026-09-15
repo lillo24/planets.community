@@ -1,3 +1,5 @@
+import { useState } from "react";
+
 import { PUBLIC_CONTACT_EMAIL } from "./site-content";
 import { WaitlistForm } from "./WaitlistForm";
 
@@ -14,6 +16,47 @@ const primaryNavigation = [
   ["Contatti", "#contatti"],
   ["Privacy", "#privacy"],
 ] as const;
+
+type AnnouncementBackground = "current" | "fluid";
+
+function AnnouncementExperiment() {
+  const [background, setBackground] =
+    useState<AnnouncementBackground>("current");
+  const isFluid = background === "fluid";
+
+  return (
+    <div className="hero__announcement-experiment">
+      <p
+        className={`hero__announcement${isFluid ? " hero__announcement--fluid" : ""}`}
+        data-background={background}
+      >
+        <span>In arrivo su iOS e Android</span>
+      </p>
+
+      <div
+        className="hero__announcement-toggle"
+        role="group"
+        aria-label="Sfondo dell'annuncio"
+      >
+        <span className="hero__announcement-toggle-label">Sfondo:</span>
+        <button
+          type="button"
+          aria-pressed={!isFluid}
+          onClick={() => setBackground("current")}
+        >
+          Attuale
+        </button>
+        <button
+          type="button"
+          aria-pressed={isFluid}
+          onClick={() => setBackground("fluid")}
+        >
+          Fluido
+        </button>
+      </div>
+    </div>
+  );
+}
 
 export function App() {
   return (
@@ -52,7 +95,7 @@ export function App() {
 
       <main id="contenuto">
         <section className="hero" id="inizio" aria-labelledby="hero-title">
-          <p className="hero__announcement">In arrivo su iOS e Android</p>
+          <AnnouncementExperiment />
 
           <div className="hero__body">
             <div className="hero__content">
