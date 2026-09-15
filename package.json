@@ -29,6 +29,7 @@
     "db:advisors": "supabase db advisors --local --type security --level warn --fail-on error",
     "db:test": "supabase test db --local",
     "auth:verify:local": "node scripts/verify-local-mobile-auth.mjs",
+    "auth:session:verify:local": "node scripts/verify-local-authenticated-users.mjs",
     "auth:web:verify:local": "node scripts/verify-local-web-auth.mjs",
     "tavoli:web:verify:local": "node scripts/verify-local-web-tavoli.mjs",
     "profile:verify:local": "node scripts/verify-local-profile-visibility.mjs",
@@ -53,7 +54,7 @@
     "resource:listings:verify:local": "node scripts/verify-local-resource-listings.mjs",
     "db:types": "node scripts/generate-database-types.mjs",
     "db:types:check": "npm run db:types && git diff --exit-code -- apps/web/src/types/database.generated.ts",
-    "check:db": "npm run db:reset && npm run db:lint && npm run db:advisors && npm run db:test && npm run push:delivery:verify:local && npm run auth:verify:local && npm run profile:verify:local && npm run proposal:verify:local && npm run recurring:verify:local && npm run participation:verify:local && npm run participation:browse:verify:local && npm run notification:verify:local && npm run push:verify:local && npm run messages:verify:local && npm run project:chat:verify:local && npm run project:chat:messages:verify:local && npm run project:chat:notifications:verify:local && npm run resource:listings:verify:local && npm run db:types:check",
+    "check:db": "npm run db:reset && npm run db:lint && npm run db:advisors && npm run db:test && npm run push:delivery:verify:local && npm run auth:verify:local && npm run auth:session:verify:local && npm run profile:verify:local && npm run proposal:verify:local && npm run recurring:verify:local && npm run participation:verify:local && npm run participation:browse:verify:local && npm run notification:verify:local && npm run push:verify:local && npm run messages:verify:local && npm run project:chat:verify:local && npm run project:chat:messages:verify:local && npm run project:chat:notifications:verify:local && npm run resource:listings:verify:local && npm run db:types:check",
     "test:tooling": "node --test scripts/lib/*.test.mjs",
     "check:site": "npm run test --workspace @planets/site && npm run lint --workspace @planets/site && npm run typecheck --workspace @planets/site && npm run build --workspace @planets/site && npm run check:deploy --workspace @planets/site",
     "check:web": "npm run test:tooling && npm run test --workspace @planets/web && npm run lint --workspace @planets/web && npm run typecheck --workspace @planets/web && npm run build --workspace @planets/web",
@@ -71,6 +72,6 @@
   "devDependencies": {
     "prettier": "3.9.6",
     "postgres": "3.4.9",
-    "supabase": "2.116.0"
+    "supabase": "2.118.0-beta.39"
   }
 }
