@@ -91,6 +91,16 @@ npm run auth:verify:local
 
 The script requests a code for deterministic `.invalid` test data, reads only the new Mailpit message through its API, verifies the code, and confirms the signed-in user can insert/read exactly one own profile anchor under RLS. It does not print the email, code, session token, publishable key, or raw message.
 
+To verify that concurrent local OTP users can make an immediate identity-bound PostgREST request, run:
+
+```text
+npm run auth:session:verify:local
+```
+
+This check binds each verified session token to a separate data client, then uses the first request to insert and read that user's own profile anchor under RLS. It does not retry authentication or print emails, codes, tokens, keys, Authorization headers, or raw messages.
+
+Local and CI tooling temporarily uses the exact prerelease Supabase CLI `2.118.0-beta.39` because its [PostgREST v16.3](https://github.com/PostgREST/postgrest/releases/tag/v16.3) runtime contains the upstream fix for sporadic fresh-JWT `PGRST303` failures. The pin does not affect staging or production. Move back to a stable CLI once a stable release bundles PostgREST v16.3 or later, and validate the full Database workflow after changing it.
+
 To prove the basic profile security contract with two authenticated users and one anonymous client, run:
 
 ```text
@@ -273,7 +283,7 @@ With the local Supabase stack running, validate a clean migration replay, schema
 npm run check:db
 ```
 
-`check:db` assumes the stack is already running; it does not start or stop containers. It includes the two-user mixed-visibility, proposal privacy/lifecycle, and recurring-activity harnesses. GitHub Actions owns the stack lifecycle and separately validates mobile, the dynamic web application, the informational site's client and local Cloudflare/D1 boundary, the database workflow, the built web Auth session check, and signed-out Tavoli HTTP privacy on pull requests and pushes to `main`.
+`check:db` assumes the stack is already running; it does not start or stop containers. It includes the deterministic immediate-session/RLS check, the two-user mixed-visibility, proposal privacy/lifecycle, and recurring-activity harnesses. GitHub Actions owns the stack lifecycle and separately validates mobile, the dynamic web application, the informational site's client and local Cloudflare/D1 boundary, the database workflow, the built web Auth session check, and signed-out Tavoli HTTP privacy on pull requests and pushes to `main`.
 
 Hosted email delivery is not configured by this repository. Before staging or production use, the account owner must configure a production SMTP provider and the equivalent numeric OTP template in the hosted Supabase project, then verify the hosted project's current Auth email restrictions and rate limits. Do not claim hosted Auth is ready from the local template alone.
 

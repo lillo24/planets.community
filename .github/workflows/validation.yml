@@ -110,6 +110,9 @@ jobs:
       - name: Verify local mobile email OTP flow
         run: npm run auth:verify:local
 
+      - name: Verify deterministic local authenticated sessions
+        run: npm run auth:session:verify:local
+
       - name: Verify profile ownership and mixed visibility
         run: npm run profile:verify:local
 

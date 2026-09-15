@@ -1,6 +1,6 @@
 import postgres from "postgres";
-import { createClient } from "@supabase/supabase-js";
 
+import { signInLocalOtpUser } from "./lib/local-authenticated-user.mjs";
 import { readLocalSupabaseStatus } from "./lib/local-supabase-status.mjs";
 
 const repositoryRoot = process.cwd();
@@ -715,85 +715,13 @@ async function ensureCompleteProfile(user, displayName) {
 }
 
 async function signInWithLocalOtp(email) {
-  const client = createClient(apiUrl, publishableKey, {
-    auth: { persistSession: false },
-  });
-  const existingMessageIds = await findMessageIds(email);
-  const requestStartedAt = Date.now();
-  const { error: requestError } = await client.auth.signInWithOtp({
+  return signInLocalOtpUser({
+    apiUrl,
+    publishableKey,
+    mailpitUrl,
     email,
-    options: { shouldCreateUser: true },
+    verifierName: "message-domain",
   });
-  if (requestError) {
-    throw safeDatabaseFailure(
-      "request a local message-domain OTP",
-      requestError,
-    );
-  }
-
-  const messageId = await waitForNewMessage(
-    email,
-    existingMessageIds,
-    requestStartedAt,
-  );
-  const message = await fetchJson(
-    `${mailpitUrl}/api/v1/message/${encodeURIComponent(messageId)}`,
-    {},
-    "read a local message-domain OTP email",
-  );
-  const messageBody = `${message.Text ?? ""} ${message.HTML ?? ""}`;
-  const token = messageBody.match(/(?:^|\D)(\d{6})(?:\D|$)/)?.[1];
-  if (!token) {
-    throw new Error("A local message-domain email lacked a 6-digit token.");
-  }
-
-  const { data: verification, error: verificationError } =
-    await client.auth.verifyOtp({ email, token, type: "email" });
-  if (verificationError || !verification.user?.id || !verification.session) {
-    throw safeDatabaseFailure(
-      "verify a local message-domain OTP",
-      verificationError ?? {},
-    );
-  }
-  return { client, id: verification.user.id };
-}
-
-async function findMessageIds(email) {
-  const result = await fetchJson(
-    `${mailpitUrl}/api/v1/search?query=${encodeURIComponent(`to:${email}`)}&limit=50`,
-    {},
-    "search the local mailbox",
-  );
-  return new Set(
-    Array.isArray(result.messages)
-      ? result.messages
-          .map((message) => message.ID)
-          .filter((id) => typeof id === "string")
-      : [],
-  );
-}
-
-async function waitForNewMessage(email, existingIds, requestStartedAt) {
-  const deadline = requestStartedAt + 15_000;
-  while (Date.now() < deadline) {
-    const result = await fetchJson(
-      `${mailpitUrl}/api/v1/search?query=${encodeURIComponent(`to:${email}`)}&limit=10`,
-      {},
-      "search the local mailbox",
-    );
-    const messages = Array.isArray(result.messages) ? result.messages : [];
-    const message = messages.find(
-      (candidate) =>
-        typeof candidate.ID === "string" && !existingIds.has(candidate.ID),
-    );
-    if (message) {
-      return message.ID;
-    }
-    await delay(250);
-  }
-  throw new Error(
-    "Mailpit did not receive a message-domain OTP within 15 seconds.",
-  );
 }
 
 function safeDatabaseFailure(action, error) {
@@ -802,18 +730,6 @@ function safeDatabaseFailure(action, error) {
       ? error.code
       : "unknown";
   return new Error(`Failed to ${action} (code ${code}).`);
-}
-
-async function fetchJson(url, options, action) {
-  const response = await fetch(url, options);
-  if (!response.ok) {
-    throw new Error(`Failed to ${action} (HTTP ${response.status}).`);
-  }
-  try {
-    return await response.json();
-  } catch {
-    throw new Error(`Failed to ${action}: the response was not valid JSON.`);
-  }
 }
 
 function delay(milliseconds) {
