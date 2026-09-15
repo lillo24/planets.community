@@ -100,6 +100,18 @@ img {
   transform: translateY(0);
 }
 
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  border: 0;
+  margin: -1px;
+  clip: rect(0 0 0 0);
+  overflow: hidden;
+  white-space: nowrap;
+}
+
 .site-header {
   position: sticky;
   z-index: 10;
@@ -135,23 +147,6 @@ img {
   font-weight: 800;
   letter-spacing: 0.16em;
   text-decoration: none;
-}
-
-.brand__dot {
-  width: 0.9rem;
-  height: 0.9rem;
-  border: 3px solid var(--paper);
-  border-radius: 50%;
-  background: conic-gradient(
-    from 30deg,
-    var(--pink),
-    var(--coral),
-    var(--gold),
-    var(--green),
-    var(--cyan),
-    var(--pink)
-  );
-  box-shadow: 0 0 0 1px rgb(24 48 46 / 14%);
 }
 
 .brand__mark {
@@ -369,6 +364,10 @@ img {
 
 .hero__body {
   display: grid;
+  grid-template-areas:
+    "content"
+    "visual"
+    "waitlist";
   align-items: center;
   gap: clamp(2.5rem, 7vw, 7rem);
 }
@@ -376,10 +375,10 @@ img {
 .hero__content {
   position: relative;
   z-index: 1;
+  grid-area: content;
 }
 
-.eyebrow,
-.waitlist__kicker {
+.eyebrow {
   margin: 0 0 0.9rem;
   color: #647471;
   font-size: 0.76rem;
@@ -429,37 +428,14 @@ h2 {
 }
 
 .waitlist {
+  grid-area: waitlist;
   max-width: 42rem;
-  margin-top: 2.25rem;
+  margin-top: 0;
   padding: clamp(1.15rem, 3vw, 1.5rem);
   border: 1px solid var(--line);
   border-radius: 1.5rem;
   background: rgb(255 255 255 / 84%);
   box-shadow: 0 1.4rem 4rem rgb(32 54 50 / 9%);
-}
-
-.waitlist__heading {
-  display: grid;
-  gap: 0.35rem;
-  margin-bottom: 0.9rem;
-}
-
-.waitlist__heading h2 {
-  font-size: 1.15rem;
-  letter-spacing: -0.02em;
-}
-
-.waitlist__kicker {
-  margin: 0;
-  color: #8c5369;
-  font-size: 0.68rem;
-}
-
-.waitlist label {
-  display: inline-block;
-  margin-bottom: 0.45rem;
-  font-size: 0.88rem;
-  font-weight: 750;
 }
 
 .waitlist__controls {
@@ -516,6 +492,8 @@ h2 {
   align-items: start;
   gap: 0.65rem;
   margin: 0.9rem 0 0;
+  font-size: 0.88rem;
+  font-weight: 750;
   line-height: 1.45;
 }
 
@@ -583,6 +561,7 @@ h2 {
 .hero__visual {
   position: relative;
   display: grid;
+  grid-area: visual;
   place-items: center;
   isolation: isolate;
 }
@@ -936,7 +915,16 @@ h2 {
   }
 
   .hero__body {
+    grid-template-areas:
+      "content visual"
+      "waitlist visual";
     grid-template-columns: minmax(0, 1.05fr) minmax(22rem, 0.95fr);
+    column-gap: clamp(2.5rem, 7vw, 7rem);
+    row-gap: 0;
+  }
+
+  .waitlist {
+    margin-top: 2.25rem;
   }
 
   .activity-strip ul {

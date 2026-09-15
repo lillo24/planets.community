@@ -138,14 +138,11 @@ export function WaitlistForm({
       data-state={feedback.kind}
       onSubmit={handleSubmit}
       noValidate
-      aria-labelledby="waitlist-title"
+      aria-label="Avviso lancio PLANETS"
     >
-      <div className="waitlist__heading">
-        <p className="waitlist__kicker">Lista di attesa</p>
-        <h2 id="waitlist-title">Sapere quando parte.</h2>
-      </div>
-
-      <label htmlFor="launch-email">La tua email</label>
+      <label className="visually-hidden" htmlFor="launch-email">
+        La tua email
+      </label>
       <div className="waitlist__controls">
         <input
           id="launch-email"
