@@ -455,6 +455,47 @@ export type Database = {
           },
         ]
       }
+      project_resource_needs: {
+        Row: {
+          closed_at: string | null
+          created_at: string
+          details: string | null
+          id: string
+          project_id: string
+          state: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          closed_at?: string | null
+          created_at?: string
+          details?: string | null
+          id?: string
+          project_id: string
+          state?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          closed_at?: string | null
+          created_at?: string
+          details?: string | null
+          id?: string
+          project_id?: string
+          state?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_resource_needs_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       projects: {
         Row: {
           created_at: string
@@ -904,8 +945,24 @@ export type Database = {
         Args: { p_expected_creator_profile_id: string; p_proposal_id: string }
         Returns: string
       }
+      close_project_resource_need: {
+        Args: {
+          p_expected_creator_profile_id: string
+          p_resource_need_id: string
+        }
+        Returns: string
+      }
       close_resource_listing: {
         Args: { p_expected_owner_profile_id: string; p_listing_id: string }
+        Returns: string
+      }
+      create_project_resource_need: {
+        Args: {
+          p_details?: string
+          p_expected_creator_profile_id: string
+          p_project_id: string
+          p_title: string
+        }
         Returns: string
       }
       create_proposal_draft: {
@@ -1348,6 +1405,20 @@ export type Database = {
           removed_at: string
         }[]
       }
+      list_own_project_resource_needs: {
+        Args: { p_expected_creator_profile_id: string; p_project_id: string }
+        Returns: {
+          closed_at: string
+          created_at: string
+          details: string
+          project_id: string
+          project_kind: string
+          resource_need_id: string
+          state: string
+          title: string
+          updated_at: string
+        }[]
+      }
       list_own_proposals: {
         Args: { p_expected_creator_profile_id: string }
         Returns: {
@@ -1442,6 +1513,15 @@ export type Database = {
           participant_profile_id: string
           removed_at: string
           removed_by_profile_id: string
+        }[]
+      }
+      list_public_project_resource_needs: {
+        Args: { p_project_id: string }
+        Returns: {
+          created_at: string
+          details: string
+          resource_need_id: string
+          title: string
         }[]
       }
       list_public_proposals: {
@@ -1702,6 +1782,15 @@ export type Database = {
           p_listing_mode: string
           p_locality: string
           p_public_location_label: string
+          p_title: string
+        }
+        Returns: string
+      }
+      update_project_resource_need: {
+        Args: {
+          p_details?: string
+          p_expected_creator_profile_id: string
+          p_resource_need_id: string
           p_title: string
         }
         Returns: string

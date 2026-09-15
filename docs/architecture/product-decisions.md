@@ -26,12 +26,23 @@ Current product direction from the 08/09 founder discussion:
 
 - **Progetti** is the user-facing umbrella concept for both one-time Projects and recurring Tavoli. Their concrete backend models remain separate because their lifecycle and scheduling rules differ.
 - Participation is one shared project-level domain across both concrete types. A join request is an attempt; creator acceptance creates canonical membership history. Creators remain organizers through ownership rather than duplicate membership rows.
-- Participation and resources/contributions are related but separate. Future resource offers may attach to a stable join-request ID, but membership does not imply resource ownership or delivery.
+- Participation and resources/contributions are related but separate. Projects define stable resource-need IDs independently of join requests and membership. Future request-linked contribution offers may select those IDs, but membership does not imply resource ownership or delivery.
 - Accepted membership is not proof of contribution. A future 05C flow should let the creator confirm who actually contributed after completion before contribution credit, badges, or resource attribution are derived.
 - Online and In-Presence project modes are accepted future direction. Current project schemas remain physical-location oriented; the participation model stays location agnostic until a focused project-presentation/schema plan implements the mode.
 - Capacity and **Pieno** behavior remain unresolved. There is no maximum-participant rule, waitlist, automatic fullness, or role quota yet.
 
 Ordinary withdrawal, voluntary leave, and creator removal are not permanent bans. A person may submit a fresh request while the project is eligible and they have no pending request or current membership. Blocking and moderation remain later work.
+
+## Project resource needs
+
+Current 04C3A product boundary:
+
+- Proposal and Tavolo share Project-owned resource needs through `public.projects`; needs are not participants, join requests, memberships, contribution offers, or Scambio-Dona listings.
+- Each need has a stable UUID, a creator-defined trimmed title, optional plain-text details, and exactly `open` or terminal `closed` state.
+- `open`/`closed` says only whether the Project is still asking. Closure does not mean fulfilled, supplied, delivered, verified, or credited.
+- Public reads expose open needs only while the concrete Project is currently joinable. Creators retain open/closed history after the Project becomes historical.
+- There is no taxonomy, type, quantity, unit, condition, price, priority, contributor attribution, join-request linkage, Scambio-Dona linkage, free-form unsolicited offer, or notification projection.
+- 04C3B will let join requesters select canonical Project competence IDs and open resource-need IDs; the optional participation-request message remains the only free-text request content.
 
 ## Scambio-Dona listings
 

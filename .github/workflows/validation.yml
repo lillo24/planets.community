@@ -205,6 +205,9 @@ jobs:
       - name: Verify Scambio-Dona listing lifecycle, discovery, and privacy
         run: npm run resource:listings:verify:local
 
+      - name: Verify Project resource-need lifecycle, privacy, and concurrency
+        run: npm run project:resource-needs:verify:local
+
       - name: Generate local web configuration
         run: npm run web:config:local
 

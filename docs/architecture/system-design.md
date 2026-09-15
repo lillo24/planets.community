@@ -158,13 +158,21 @@ a complete profile and preserve their Auth/setup return destination. The client
 uses only the canonical listing RPCs; closing remains availability-only, and
 post-listing request/contact/handoff behavior remains deferred to 04C4.
 
+### Project resource-need domain
+
+`project_resource_needs` attaches stable plain-text needs to the shared `projects` identity for both Proposals and Tavoli. A need is separate from participation, a join request, a contribution offer, and a standalone Scambio-Dona listing. It stores only a UUID, Project UUID, trimmed title, optional trimmed details, `open`/terminal `closed` state, and server-owned timestamps. Closure means the Project is no longer asking; it does not assert fulfillment, supply, delivery, verification, or credit.
+
+Expected-identity-bound creator RPCs create, update, and close needs only while the concrete Project remains owner-manageable. They lock the concrete Proposal/Tavolo row before the shared Project and need rows, so lifecycle transitions serialize deterministically. Proposal management follows its existing draft/pre-start edit boundary; Tavolo management permits draft, published, and paused states but not ended state. Creators retain ordered open/closed history after mutation closes.
+
+Anonymous and authenticated public reads expose only open needs while the concrete Project is currently joinable: published before `ends_at` for a Proposal and currently published for a Tavolo. Draft, cancelled, expired, paused, ended, and missing Projects return the same empty shape. The table has RLS with no client policies or direct grants; hardened RPCs are the only client boundary. Events contain only Project kind/ID, need ID, and creator ID. Taxonomy, quantities, prices, priorities, contributor/request/membership linkage, Scambio-Dona matching, contribution offers, and notifications remain absent until focused later slices.
+
 ### Shared project participation domain
 
 `projects` is a private, narrow identity registry across `proposals` and `recurring_activities`. Its UUID equals the concrete activity UUID and it stores only kind, synchronized creator, and creation time. Source insert/delete triggers preserve the one-to-one invariant for migration replay and trusted fixtures; content, lifecycle, schedules, skills, and location remain solely in the concrete tables. A source with request or membership history cannot be deleted.
 
 `project_join_requests` preserves each private `pending`, `accepted`, `rejected`, or `withdrawn` attempt and an optional trimmed 500-character requester message. A complete non-creator may request a published one-time project strictly before its end or a currently published Tavolo. There may be at most one pending attempt and no request while the person is a current member. Terminal attempts remain history, so withdrawal, rejection, voluntary leave, or creator removal permits a fresh request whenever eligibility returns.
 
-`project_memberships` is acceptance history, not contribution proof. Acceptance atomically closes the request and creates one current membership; creator ownership is separate. Leave/removal ends a membership without deleting it, and pause/end/completion does not rewrite history. One current membership per project/profile is enforced centrally. Capacity, waitlists, participation roles, resources, badges, and creator-verified contribution remain deferred.
+`project_memberships` is acceptance history, not contribution proof. Acceptance atomically closes the request and creates one current membership; creator ownership is separate. Leave/removal ends a membership without deleting it, and pause/end/completion does not rewrite history. One current membership per project/profile is enforced centrally. Capacity, waitlists, participation roles, request-linked contribution offers, badges, and creator-verified contribution remain deferred.
 
 All mutations and private reads use expected-identity-bound project RPCs. Tables have RLS but no client grants/policies. Request messages are visible only to the requester and project creator; creator review exposes a narrow authenticated display identity but never Auth email. Protected meeting details are available only to the creator or a current accepted member. Each successful transition writes identifier-only audit/outbox events. In 07B1, insertion of the canonical accepted membership also ensures the one Project group-chat anchor transactionally; it does not consume or repurpose the accepted outbox event.
 
