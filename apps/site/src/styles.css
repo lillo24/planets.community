@@ -314,7 +314,7 @@ img {
     52% 84%;
   filter: blur(0.7rem) saturate(0.96);
   opacity: 0.68;
-  animation: announcement-fluid-color-flow 6s ease-in-out infinite;
+  animation: announcement-fluid-color-flow 6s linear infinite;
   will-change: background-position;
 }
 
@@ -953,34 +953,66 @@ h2 {
   0%,
   100% {
     background-position:
-      0% 18%,
-      38% 0%,
-      72% 100%,
-      100% 34%;
+      0% 53%,
+      47% 0%,
+      58% 100%,
+      100% 44%;
+  }
+
+  12.5% {
+    background-position:
+      11% 78%,
+      73% 12%,
+      28% 86%,
+      87% 75%;
   }
 
   25% {
     background-position:
-      20% 72%,
-      65% 18%,
-      46% 70%,
-      82% 88%;
+      39% 88%,
+      84% 40%,
+      16% 53%,
+      55% 88%;
+  }
+
+  37.5% {
+    background-position:
+      67% 78%,
+      73% 68%,
+      28% 20%,
+      23% 75%;
   }
 
   50% {
     background-position:
-      55% 88%,
-      84% 56%,
-      16% 36%,
-      46% 0%;
+      78% 53%,
+      47% 80%,
+      58% 6%,
+      10% 44%;
+  }
+
+  62.5% {
+    background-position:
+      67% 28%,
+      21% 68%,
+      88% 20%,
+      23% 13%;
   }
 
   75% {
     background-position:
-      78% 28%,
-      44% 80%,
-      64% 6%,
-      10% 64%;
+      39% 18%,
+      10% 40%,
+      100% 53%,
+      55% 0%;
+  }
+
+  87.5% {
+    background-position:
+      11% 28%,
+      21% 12%,
+      88% 86%,
+      87% 13%;
   }
 }
 
