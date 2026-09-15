@@ -17,13 +17,14 @@ const primaryNavigation = [
   ["Privacy", "#privacy"],
 ] as const;
 
-type AnnouncementVariant = "base" | "reflection" | "fluid";
+type AnnouncementVariant = "base" | "reflection" | "fluid" | "prisma";
 
 const developerRevealWindowMs = 500;
 const announcementVariants = [
   ["base", "Base"],
   ["reflection", "Riflesso"],
   ["fluid", "Fluido"],
+  ["prisma", "Prisma"],
 ] as const satisfies ReadonlyArray<readonly [AnnouncementVariant, string]>;
 
 function AnnouncementExperiment({ isVisible }: { isVisible: boolean }) {
