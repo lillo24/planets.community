@@ -210,7 +210,6 @@ export function App() {
           aria-labelledby="contact-title"
         >
           <article className="detail-card">
-            <p className="eyebrow">Parliamone</p>
             <h2 id="contact-title">Contatti</h2>
             <p>Per informazioni o domande su PLANETS.</p>
             {PUBLIC_CONTACT_EMAIL ? (
@@ -234,8 +233,7 @@ export function App() {
           aria-labelledby="privacy-title"
         >
           <article className="detail-card detail-card--privacy">
-            <p className="eyebrow">Privacy, in breve</p>
-            <h2 id="privacy-title">Una sola email, per un solo scopo.</h2>
+            <h2 id="privacy-title">Privacy</h2>
             <p>
               Quando invii il modulo, chiediamo il tuo indirizzo solo per
               avvisarti una volta quando PLANETS sarà disponibile.
