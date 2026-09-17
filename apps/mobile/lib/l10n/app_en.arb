@@ -820,5 +820,38 @@
   "messagesCanContribute": "Can contribute",
   "messagesNoContributionsSelected": "No contributions selected",
   "messagesContributionsLoading": "Loading contribution selections…",
-  "messagesContributionsLoadError": "We couldn't load the selected contributions. The request actions are still available."
+  "messagesContributionsLoadError": "We couldn't load the selected contributions. The request actions are still available.",
+  "participationMyCommitments": "My commitments",
+  "participationLastCommitments": "Last commitments",
+  "participationCommitments": "Commitments",
+  "participationViewCommitments": "View commitments",
+  "participationEditCommitments": "Edit",
+  "participationCommitmentsEditorTitle": "Manage commitments",
+  "participationCommitmentsReadOnly": "Read-only",
+  "participationNoCurrentCommitments": "No current commitments",
+  "participationNoCommitmentsRecorded": "No commitments recorded",
+  "participationCommitmentsLoading": "Loading commitments…",
+  "participationCommitmentsLoadError": "Unable to load commitments. Try again.",
+  "participationCommitmentOptionsLoading": "Checking what can be changed…",
+  "participationCommitmentOptionsLoadError": "We couldn't load the current commitment options.",
+  "participationCommitmentsNoLongerEditable": "These commitments can no longer be changed.",
+  "participationCommitmentRetainedLabel": "{label} · No longer requested",
+  "@participationCommitmentRetainedLabel": {
+    "placeholders": { "label": { "type": "String" } }
+  },
+  "participationClearCommitments": "Clear all",
+  "participationSaveCommitments": "Save commitments",
+  "participationCommitmentsChangedElsewhere": "These commitments were changed elsewhere. Latest commitments reloaded.",
+  "participationCommitmentOptionsChanged": "The available options changed. Latest commitments reloaded.",
+  "participationCommitmentsForbidden": "These commitments are not available for the current account.",
+  "participationCommitmentsNotFound": "These commitments are no longer available.",
+  "participationCommitmentsSaveError": "We couldn't save these commitments. Try again.",
+  "participationCommitmentSkillLimit": "You can select up to {max} competences or knowledge items.",
+  "@participationCommitmentSkillLimit": {
+    "placeholders": { "max": { "type": "int" } }
+  },
+  "participationCommitmentResourceLimit": "You can select up to {max} resources or materials.",
+  "@participationCommitmentResourceLimit": {
+    "placeholders": { "max": { "type": "int" } }
+  }
 }

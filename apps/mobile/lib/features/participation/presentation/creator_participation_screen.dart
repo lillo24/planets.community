@@ -8,6 +8,7 @@ import '../../../l10n/generated/app_localizations.dart';
 import '../../auth/application/auth_session_controller.dart';
 import '../application/participation_controllers.dart';
 import '../domain/participation_models.dart';
+import 'membership_commitment_sheet.dart';
 import 'project_participation_section.dart';
 
 class CreatorParticipationScreen extends ConsumerStatefulWidget {
@@ -128,6 +129,7 @@ class _CreatorParticipationScreenState
                           enabled: !state.isBusy,
                           isActing:
                               state.actionTargetId == member.id && state.isBusy,
+                          onCommitments: () => _openCommitments(member),
                           onRemove: () => _confirmRemove(member),
                         ),
                         const SizedBox(height: AppSpacing.small),
@@ -199,6 +201,21 @@ class _CreatorParticipationScreenState
           projectId: widget.projectId,
           membershipId: member.id,
         );
+  }
+
+  Future<void> _openCommitments(CreatorProjectMember member) async {
+    final expectedCreatorId = _expectedCreatorId;
+    if (expectedCreatorId == null ||
+        ref.read(authSessionProvider).identity?.id != expectedCreatorId) {
+      return;
+    }
+    await showMembershipCommitmentSheet(
+      context,
+      expectedProfileId: expectedCreatorId,
+      membershipId: member.id,
+      editable: member.isCurrent,
+      historical: !member.isCurrent,
+    );
   }
 }
 
@@ -284,12 +301,14 @@ class _MemberCard extends StatelessWidget {
     required this.member,
     required this.enabled,
     required this.isActing,
+    required this.onCommitments,
     required this.onRemove,
   });
 
   final CreatorProjectMember member;
   final bool enabled;
   final bool isActing;
+  final VoidCallback onCommitments;
   final VoidCallback onRemove;
 
   @override
@@ -311,8 +330,19 @@ class _MemberCard extends StatelessWidget {
             Text(
               l10n.participationJoinedAt(_formatDate(context, member.joinedAt)),
             ),
+            const SizedBox(height: AppSpacing.medium),
+            OutlinedButton.icon(
+              key: Key('participation-commitments-${member.id}'),
+              onPressed: enabled ? onCommitments : null,
+              icon: const Icon(Icons.checklist_outlined),
+              label: Text(
+                member.isCurrent
+                    ? l10n.participationCommitments
+                    : l10n.participationViewCommitments,
+              ),
+            ),
             if (member.isCurrent) ...[
-              const SizedBox(height: AppSpacing.medium),
+              const SizedBox(height: AppSpacing.small),
               OutlinedButton.icon(
                 key: Key('participation-remove-${member.id}'),
                 onPressed: enabled ? onRemove : null,

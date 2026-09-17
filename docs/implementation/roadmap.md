@@ -1,7 +1,7 @@
 # Implementation Roadmap
 
 **Status:** Planning baseline  
-**Current implementation:** Plans 00–04B2B, 04C1–04C2, 05A, 05B, 05D, 06A, 06B, provider-independent 06C1, provider-neutral 06C2A, 06D, 07A, 07B1, 07B2B, 07B2C, and public informational SITE-00 through SITE-02 plus SITE-02W implemented; 04C3A, stacked 04C3B1/04C3B2, and stacked 04C3C1 are in progress; provider-specific 06C2B, 04C3C2, 04C4, and 05C remain not started
+**Current implementation:** Plans 00–04B2B, 04C1–04C2, 05A, 05B, 05D, 06A, 06B, provider-independent 06C1, provider-neutral 06C2A, 06D, 07A, 07B1, 07B2B, 07B2C, and public informational SITE-00 through SITE-02 plus SITE-02W implemented; 04C3A, stacked 04C3B1/04C3B2/04C3C1, and the current stacked 04C3C2 mobile work are in progress; provider-specific 06C2B, 04C4, and 05C remain not started
 
 This roadmap divides the first PLANETS build into reviewable Codex tasks. Each numbered item should normally become its own implementation prompt, branch, and pull request.
 
@@ -63,7 +63,7 @@ Do not begin a dependent plan until the prior plan is merged or its branch is ex
 | 04C3B2 | Mobile Selection + Rounded Messages Labels                | Flutter request-selection controls, Project-need owner UI, and structured Messages labels                              | 04C3B1                 | Native interaction review deferred to Plan 12                                                                        | In progress |
 | 04C3C  | Accepted Participant Contribution Commitments (parent)    | Membership-scoped current expectations followed by a separately decided mobile management surface                      | 04C3B1, 05A            | Mobile edit location and delegated management remain separate decisions                                              | In progress |
 | 04C3C1 | Current Commitment Domain Foundation                      | Membership-episode skill/resource sets, acceptance seeding, lifecycle-safe replacement, private reads, and tests       | 04C3B1, 05A            | None for participant plus canonical-creator backend ownership                                                        | In progress |
-| 04C3C2 | Mobile Commitment Management                              | Participant and creator editing experience over the 04C3C1 domain                                                      | 04C3C1                 | Final edit location and native interaction review                                                                    | Not started |
+| 04C3C2 | Mobile Commitment Management                              | Participant and creator editing experience over the 04C3C1 domain                                                      | 04C3C1                 | Native interaction review; delegated/co-organizer authorization                                                      | In progress |
 | 04C4   | Listing Requests/Handoff + Saved Search/Matching          | Post-discovery request/handoff rules plus explainable saved-search and matching behavior                               | 04C1                   | Exchange, request, handoff, contact, matching, and notification semantics                                            | Not started |
 | 05     | Participation lifecycle (parent)                          | Shared project participation foundation, later mobile experience, and verified-contribution review                     | 04A, 04B1              | Capacity/fullness and later contribution/resource semantics remain unresolved                                        | In progress |
 | 05A    | Project Participation Domain Foundation                   | Shared identity, private join requests, canonical membership history, protected meeting access, events, and tests      | 04A, 04B1              | No blocking decision; 07B1 derives chat activation from accepted membership                                          | Implemented |
@@ -321,7 +321,7 @@ or introduce participation, chat, resources, or recurrence expansion.
 
 #### 04C — Resources + Scambio-Dona
 
-**Status:** In progress through implemented 04C1–04C2 and the current stacked 04C3A/04C3B1/04C3B2/04C3C1 work. Mobile commitment management, request/handoff, saved-search, matching, and notification slices remain later work.
+**Status:** In progress through implemented 04C1–04C2 and the current stacked 04C3A/04C3B1/04C3B2/04C3C1/04C3C2 work. Request/handoff, saved-search, matching, and notification slices remain later work.
 
 The earlier combined scope is split so standalone public listings do not force unresolved Project contribution or post-discovery transaction rules:
 
@@ -341,7 +341,7 @@ Owns the primary text-only Flutter browse/detail and owner create/edit/publish/c
 
 ##### 04C3 — Project Resource Needs and Contribution Offers (parent)
 
-**Status:** In progress through stacked 04C3A, 04C3B1, and 04C3B2. Depends on 04A, 04B1, and 05A.
+**Status:** In progress through stacked 04C3A, 04C3B1, 04C3B2, 04C3C1, and the current 04C3C2 mobile work. Depends on 04A, 04B1, and 05A.
 
 This parent keeps Project-owned needs and later request-linked contribution offers separate from standalone Scambio-Dona listings and from accepted membership.
 
@@ -377,21 +377,21 @@ Structured Messages detail independently resolves current canonical labels for h
 
 ###### 04C3C — Accepted Participant Contribution Commitments (parent)
 
-**Status:** In progress through the stacked 04C3C1 backend/domain layer. Depends on 04C3B1 and 05A.
+**Status:** In progress through the current stacked 04C3C2 mobile layer. Depends on 04C3B1 and 05A.
 
 Request selections remain immutable historical intent. Membership commitments are the separate mutable current expectation owned by one accepted membership episode. Verified actual contribution remains later in 05C.
 
 ###### 04C3C1 — Current Commitment Domain Foundation
 
-**Status:** In progress in the current stacked backend PR, based on open PR #60 without merging any layer. Depends on 04C3B1 and 05A.
+**Status:** In progress in stacked backend PR #61, based on open PR #60 without merging any layer. Depends on 04C3B1 and 05A.
 
 Owns fail-closed membership-scoped skill/resource commitment relations, atomic acceptance seeding and existing-membership backfill, participant/canonical-creator compare-and-swap full-set replacement, current-or-ended private commitment reads, current-membership addable-option snapshots with canonical labels, Proposal/Tavolo lifecycle and current-option validation for additions, retained stale commitments, identifier-only update events without notifications, and focused pgTAP/real-OTP/concurrency coverage. Replacement requires the caller's loaded current IDs so participant and creator cannot silently overwrite stale edits. It does not rewrite request selections or add fulfillment, verification, delegation, quantities, Tavolo skill requirements, Flutter UI, or Scambio-Dona linkage.
 
 ###### 04C3C2 — Mobile Commitment Management
 
-**Status:** Not started. Depends on 04C3C1.
+**Status:** In progress in the current stacked mobile PR, based on open PR #61 without merging any layer. Depends on 04C3C1.
 
-Future scope decides and exposes the participant and creator editing experience without prematurely choosing group info versus My Projects. Delegated/co-organizer Project management remains a separate future product and authorization plan.
+Uses Project-chat group info for current-participant `My commitments` editing and former-participant `Last commitments` history, resolving the current episode after a rejoin and the latest ended episode for a former member. Creator Manage participation adds lazy per-membership actions and reuses the same editor without per-row RPC fan-out. Current/final commitment reads stay separate from addable options; retained stale commitments remain explicit and removable; writes preserve loaded expected snapshots for compare-and-swap recovery. Messages request selections remain immutable historical intent. Native Android/iOS interaction review is deferred to Plan 12, and delegated/co-organizer Project management remains a separate future product and authorization plan.
 
 ##### 04C4 — Listing Requests/Handoff + Saved Search/Matching
 
@@ -890,15 +890,15 @@ Major gates currently expected:
 
 ## Immediate next action
 
-Complete and review the stacked **04C3C1 — Current Commitment Domain Foundation**
-without merging it, PR #60, PR #52, or their 04C3A base PR #45. 04C1 is implemented in merged PR #32
+Complete and review the stacked **04C3C2 — Mobile Commitment Management**
+without merging it, PR #61, PR #60, PR #52, or their 04C3A base PR #45. 04C1 is implemented in merged PR #32
 (`2aca5bdde7bf7ed7d747f14dcccbc3b5c4b75c42`) and 04C2 is implemented in
 merged PR #34 (`2da76de112a860210161d64de6bceab333159c26`).
 06D is implemented in merged PR #31, while 06 remains in
 progress because provider-specific 06C2B is not started. Optional E2EE/MLS
 research remains unmerged and deferred in PR #28. PR #45 (04C3A), PR #52
-(04C3B1), and PR #60 (04C3B2) remain open and unmerged beneath the in-progress
-04C3C1 stack; 04C3C2, 04C4, and 05C remain not started. 05C waits specifically
+(04C3B1), PR #60 (04C3B2), and PR #61 (04C3C1) remain open and unmerged beneath
+the in-progress 04C3C2 stack; 04C4 and 05C remain not started. 05C waits specifically
 for the mutable current-commitment semantics from 04C3C1 rather than standalone
 listing UI, request history, or 04C3A need existence. Plan 06C2B remains
 not started and requires Firebase/APNs configuration, push permission and

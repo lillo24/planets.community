@@ -6,6 +6,7 @@ import 'package:planets_mobile/app/router/app_router.dart';
 import 'package:planets_mobile/core/config/app_config.dart';
 import 'package:planets_mobile/features/auth/data/auth_gateway.dart';
 import 'package:planets_mobile/features/auth/domain/auth_models.dart';
+import 'package:planets_mobile/features/participation/data/membership_commitment_gateway.dart';
 import 'package:planets_mobile/features/participation/data/participation_gateway.dart';
 import 'package:planets_mobile/features/participation/domain/participation_models.dart';
 import 'package:planets_mobile/features/profile/data/profile_gateway.dart';
@@ -16,6 +17,7 @@ import 'package:planets_mobile/features/recurring_activities/data/recurring_acti
 import 'package:planets_mobile/features/recurring_activities/domain/recurring_activity_models.dart';
 
 import '../../../support/fake_auth.dart';
+import '../../../support/fake_membership_commitment.dart';
 import '../../../support/fake_participation.dart';
 import '../../../support/fake_profile.dart';
 import '../../../support/fake_project_resource_needs.dart';
@@ -267,6 +269,57 @@ void main() {
     expect(find.byKey(const Key('participation-remove-left')), findsNothing);
   });
 
+  testWidgets(
+    'creator member commitment actions load lazily and share editor',
+    (tester) async {
+      final participation = FakeParticipationGateway()
+        ..creatorMembers = [
+          creatorMemberFixture(id: 'current'),
+          creatorMemberFixture(id: 'left', status: MembershipStatus.left),
+        ];
+      final commitments = FakeMembershipCommitmentGateway()
+        ..commitments = [membershipCommitmentFixture()]
+        ..options = [membershipCommitmentOptionFixture()];
+      final app = await _pump(
+        tester,
+        identityId: 'user-1',
+        participation: participation,
+        commitments: commitments,
+      );
+      app.read(appRouterProvider).go('/proposals/proposal-1/participants');
+      await tester.pumpAndSettle();
+
+      expect(commitments.calls, isEmpty);
+      expect(
+        find.byKey(const Key('participation-commitments-current')),
+        findsOneWidget,
+      );
+      await tester.tap(
+        find.byKey(const Key('participation-commitments-current')),
+      );
+      await tester.pumpAndSettle();
+      expect(commitments.calls, contains('commitments:current'));
+      expect(commitments.calls, contains('options:current'));
+      expect(
+        find.byKey(const Key('membership-commitment-save')),
+        findsOneWidget,
+      );
+      await tester.tap(find.byKey(const Key('membership-commitment-close')));
+      await tester.pumpAndSettle();
+
+      await _scrollTo(
+        tester,
+        find.byKey(const Key('participation-commitments-left')),
+      );
+      await tester.tap(find.byKey(const Key('participation-commitments-left')));
+      await tester.pumpAndSettle();
+      expect(commitments.calls, contains('commitments:left'));
+      expect(commitments.calls, isNot(contains('options:left')));
+      expect(find.text('Read-only'), findsOneWidget);
+      expect(find.byKey(const Key('membership-commitment-save')), findsNothing);
+    },
+  );
+
   testWidgets('pending requester never loads protected meeting information', (
     tester,
   ) async {
@@ -400,6 +453,7 @@ Future<ProviderContainer> _pump(
   FakeRecurringActivityGateway? recurring,
   ProposalStatus proposalStatus = ProposalStatus.upcoming,
   FakeProjectResourceNeedsGateway? projectResourceNeeds,
+  FakeMembershipCommitmentGateway? commitments,
 }) async {
   final auth = FakeAuthGateway(
     snapshot: AuthSnapshot(identity: AuthIdentity(id: identityId)),
@@ -443,6 +497,9 @@ Future<ProviderContainer> _pump(
         proposalGatewayProvider.overrideWithValue(proposals),
         recurringActivityGatewayProvider.overrideWithValue(recurringGateway),
         participationGatewayProvider.overrideWithValue(participation),
+        membershipCommitmentGatewayProvider.overrideWithValue(
+          commitments ?? FakeMembershipCommitmentGateway(),
+        ),
         projectResourceNeedsGatewayProvider.overrideWithValue(
           projectResourceNeeds ?? FakeProjectResourceNeedsGateway(),
         ),

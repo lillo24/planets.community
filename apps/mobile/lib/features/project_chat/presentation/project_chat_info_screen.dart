@@ -7,8 +7,10 @@ import '../../../core/widgets/error_state.dart';
 import '../../../core/widgets/loading_state.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../auth/application/auth_session_controller.dart';
+import '../../participation/application/membership_commitment_controller.dart';
 import '../../participation/application/participation_controllers.dart';
 import '../../participation/domain/participation_models.dart';
+import '../../participation/presentation/membership_commitment_sheet.dart';
 import '../../participation/presentation/participation_routes.dart';
 import '../application/project_chat_controllers.dart';
 import '../domain/project_chat_models.dart';
@@ -143,6 +145,13 @@ class _ProjectChatInfoScreenState extends ConsumerState<ProjectChatInfoScreen> {
                       label: Text(l10n.projectChatManageParticipation),
                     ),
                   ],
+                  if (!summary.isCreator) ...[
+                    const SizedBox(height: AppSpacing.large),
+                    _ParticipantCommitments(
+                      expectedProfileId: _expectedProfileId,
+                      summary: summary,
+                    ),
+                  ],
                   if (summary.hasCurrentEntitlement) ...[
                     const SizedBox(height: AppSpacing.large),
                     _MeetingDetails(
@@ -153,6 +162,235 @@ class _ProjectChatInfoScreenState extends ConsumerState<ProjectChatInfoScreen> {
                 ],
               ),
       ),
+    );
+  }
+}
+
+class _ParticipantCommitments extends ConsumerStatefulWidget {
+  const _ParticipantCommitments({
+    required this.expectedProfileId,
+    required this.summary,
+  });
+
+  final String? expectedProfileId;
+  final ProjectChatSummary summary;
+
+  @override
+  ConsumerState<_ParticipantCommitments> createState() =>
+      _ParticipantCommitmentsState();
+}
+
+class _ParticipantCommitmentsState
+    extends ConsumerState<_ParticipantCommitments> {
+  @override
+  void initState() {
+    super.initState();
+    Future<void>.microtask(_load);
+  }
+
+  @override
+  void didUpdateWidget(covariant _ParticipantCommitments oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.expectedProfileId != widget.expectedProfileId ||
+        oldWidget.summary.projectId != widget.summary.projectId ||
+        oldWidget.summary.viewerRole != widget.summary.viewerRole) {
+      Future<void>.microtask(_load);
+    }
+  }
+
+  Future<void> _load() async {
+    final profileId = widget.expectedProfileId;
+    if (profileId == null ||
+        ref.read(authSessionProvider).identity?.id != profileId) {
+      return;
+    }
+    await ref.read(ownParticipationProvider.notifier).load(profileId);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final profileId = widget.expectedProfileId;
+    final participation = ref.watch(ownParticipationProvider);
+    final belongs =
+        profileId != null && participation.expectedProfileId == profileId;
+    if (!belongs || participation.phase == ParticipationLoadPhase.loading) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            widget.summary.viewerRole == ProjectChatViewerRole.currentMember
+                ? l10n.participationMyCommitments
+                : l10n.participationLastCommitments,
+            style: Theme.of(context).textTheme.titleLarge,
+          ),
+          const SizedBox(height: AppSpacing.small),
+          const Center(child: CircularProgressIndicator()),
+        ],
+      );
+    }
+    if (participation.phase == ParticipationLoadPhase.failure) {
+      return _CommitmentSectionFailure(onRetry: _load);
+    }
+    final snapshot = participation.forProject(
+      widget.summary.projectId,
+      widget.summary.projectKind,
+    );
+    final current =
+        widget.summary.viewerRole == ProjectChatViewerRole.currentMember;
+    final membership = current
+        ? snapshot.currentMembership
+        : snapshot.latestMembership;
+    if (membership == null) {
+      return _CommitmentSectionFailure(onRetry: _load);
+    }
+    return _MembershipCommitmentsSection(
+      key: ValueKey('project-commitments-${membership.id}-$current'),
+      expectedProfileId: profileId,
+      membershipId: membership.id,
+      editable: current,
+    );
+  }
+}
+
+class _MembershipCommitmentsSection extends ConsumerStatefulWidget {
+  const _MembershipCommitmentsSection({
+    required this.expectedProfileId,
+    required this.membershipId,
+    required this.editable,
+    super.key,
+  });
+
+  final String expectedProfileId;
+  final String membershipId;
+  final bool editable;
+
+  @override
+  ConsumerState<_MembershipCommitmentsSection> createState() =>
+      _MembershipCommitmentsSectionState();
+}
+
+class _MembershipCommitmentsSectionState
+    extends ConsumerState<_MembershipCommitmentsSection> {
+  @override
+  void initState() {
+    super.initState();
+    Future<void>.microtask(_load);
+  }
+
+  Future<void> _load() => ref
+      .read(membershipCommitmentProvider(widget.membershipId).notifier)
+      .load(
+        expectedProfileId: widget.expectedProfileId,
+        editable: widget.editable,
+      );
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final state = ref.watch(membershipCommitmentProvider(widget.membershipId));
+    final controller = ref.read(
+      membershipCommitmentProvider(widget.membershipId).notifier,
+    );
+    final belongs = state.expectedProfileId == widget.expectedProfileId;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text(
+          widget.editable
+              ? l10n.participationMyCommitments
+              : l10n.participationLastCommitments,
+          style: Theme.of(context).textTheme.titleLarge,
+        ),
+        const SizedBox(height: AppSpacing.small),
+        if (!belongs ||
+            state.readPhase == MembershipCommitmentReadPhase.idle ||
+            state.readPhase == MembershipCommitmentReadPhase.loading)
+          const Center(child: CircularProgressIndicator())
+        else if (state.readPhase == MembershipCommitmentReadPhase.failure)
+          _CommitmentSectionFailure(onRetry: _load)
+        else ...[
+          MembershipCommitmentPreview(
+            commitments: state.commitments,
+            emptyLabel: widget.editable
+                ? l10n.participationNoCurrentCommitments
+                : l10n.participationNoCommitmentsRecorded,
+          ),
+          const SizedBox(height: AppSpacing.small),
+          if (!widget.editable)
+            Text(l10n.participationCommitmentsReadOnly)
+          else if (state.optionsPhase ==
+              MembershipCommitmentOptionsPhase.loading)
+            Text(l10n.participationCommitmentOptionsLoading)
+          else if (state.optionsPhase ==
+              MembershipCommitmentOptionsPhase.failure) ...[
+            Semantics(
+              liveRegion: true,
+              child: Text(
+                l10n.participationCommitmentOptionsLoadError,
+                key: const Key('project-chat-commitment-options-error'),
+                style: TextStyle(color: Theme.of(context).colorScheme.error),
+              ),
+            ),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: TextButton(
+                onPressed: () =>
+                    controller.retryOptions(widget.expectedProfileId),
+                child: Text(l10n.retryAction),
+              ),
+            ),
+          ] else if (state.optionsPhase ==
+              MembershipCommitmentOptionsPhase.noLongerEditable)
+            Semantics(
+              liveRegion: true,
+              child: Text(
+                l10n.participationCommitmentsNoLongerEditable,
+                key: const Key('project-chat-commitments-read-only'),
+              ),
+            )
+          else if (state.optionsPhase == MembershipCommitmentOptionsPhase.ready)
+            Align(
+              alignment: Alignment.centerLeft,
+              child: OutlinedButton(
+                key: const Key('project-chat-edit-commitments'),
+                onPressed: () => showMembershipCommitmentSheet(
+                  context,
+                  expectedProfileId: widget.expectedProfileId,
+                  membershipId: widget.membershipId,
+                  editable: true,
+                  historical: false,
+                ),
+                child: Text(l10n.participationEditCommitments),
+              ),
+            ),
+        ],
+      ],
+    );
+  }
+}
+
+class _CommitmentSectionFailure extends StatelessWidget {
+  const _CommitmentSectionFailure({required this.onRetry});
+
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Semantics(
+          liveRegion: true,
+          child: Text(
+            l10n.participationCommitmentsLoadError,
+            key: const Key('project-chat-commitments-error'),
+            style: TextStyle(color: Theme.of(context).colorScheme.error),
+          ),
+        ),
+        TextButton(onPressed: onRetry, child: Text(l10n.retryAction)),
+      ],
     );
   }
 }

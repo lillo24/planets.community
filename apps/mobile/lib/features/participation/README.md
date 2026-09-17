@@ -11,15 +11,23 @@ their existing features; participation uses only a project ID plus the narrow
 - `domain/participation_models.dart` defines strict project kinds, request and
   membership states, private read models, and project-specific state
   derivation.
-- `data/participation_gateway.dart` is the only Supabase boundary. It calls the
-  canonical 05A RPCs and strictly parses their narrow payloads. It never reads
-  participation tables directly.
+- `domain/membership_commitment_models.dart` defines the strict skill/resource
+  commitment, addable-option, and merged editor-item shapes.
+- `data/participation_gateway.dart` is the 05A Supabase boundary. It calls the
+  canonical participation RPCs and strictly parses their narrow payloads. It
+  never reads participation tables directly.
+- `data/membership_commitment_gateway.dart` is the focused RPC-only 04C3C1
+  commitment boundary. It owns current/final reads, addable-option reads, and
+  six-argument compare-and-swap replacement parameters.
 - `application/participation_controllers.dart` owns identity-bound own
   participation, requester/member commands, creator review, protected meeting
   data, request revisions, and safe failure mapping.
 - `application/contribution_options_controller.dart` independently loads the
   current Proposal skill requirements plus open Project resource needs, or
   resource needs alone for Tavoli, and clears them on identity changes.
+- `application/membership_commitment_controller.dart` owns membership-keyed,
+  identity-bound commitment reads, editor snapshots, independent option
+  failure/retry, 50/50 limits, and compare-and-swap conflict recovery.
 - `presentation/participation_routes.dart` maps the shared feature onto the
   concrete Proposal and Tavolo routes.
 - `presentation/project_participation_section.dart` supplies the shared detail
@@ -29,6 +37,9 @@ their existing features; participation uses only a project ID plus the narrow
   message, and the single canonical submit flow.
 - `presentation/creator_participation_screen.dart` owns creator request/history
   review and current/historical membership management.
+- `presentation/membership_commitment_sheet.dart` is the shared participant and
+  creator commitment editor/read-only sheet, including retained stale options
+  and accessible live recovery messages.
 
 ## Canonical lifecycle and privacy
 
@@ -83,6 +94,23 @@ identity-bound project controller, cleared on sign-out/account change/leave,
 and never copied into public Proposal or Tavolo models, logs, or monitoring
 context.
 
+Current membership commitments are resolved by membership episode rather than
+Project alone. Group info uses the current episode for a current/rejoined
+participant and the latest ended episode for a former participant. Creator
+member cards carry the canonical membership ID and load commitment data only
+after their action is tapped, avoiding per-row fan-out. Ended memberships call
+only the current/final commitment read; current memberships keep that read
+useful even when addable options fail or the backend reports that editing is no
+longer operational.
+
+The editor keeps the loaded current skill/resource IDs as an immutable expected
+snapshot while desired selections change. Current commitments missing from the
+option snapshot remain selected and visibly marked as no longer requested; they
+can be removed or toggled back on before Save. SQLSTATE `40001`, `22023`, and
+`55000` reload canonical state without automatically retrying or merging the
+write. Request-attempt selections displayed in Messages remain immutable
+history and are not replaced by this membership state.
+
 ## Routes
 
 Participation stays in the Browse branch:
@@ -100,9 +128,9 @@ destination in `/profile/edit?returnTo=...` and resumes it after a successful
 save. The persistent bottom navigation remains Profile / Browse / Home.
 
 Notification delivery, standalone Scambio-Dona, capacity/fullness,
-participation roles, invitations, central participation history, contribution
-verification, badges, maps, and final unified Progetti discovery remain
-deferred.
+participation roles, invitations, central participation history, delegated or
+co-organizer commitment management, contribution verification, badges, maps,
+and final unified Progetti discovery remain deferred.
 
 ## Deferred native QA notes
 
@@ -117,3 +145,23 @@ screen-reader announcement of “Requested to join.”
 04C3B2 chip touch targets, small-screen wrapping, keyboard/message interaction,
 selected-state screen-reader output, and stale-option recovery remain in the
 consolidated Plan 12 native pass.
+
+04C3C2 also defers these checks to the consolidated Plan 12 pass on physical
+Android and iOS devices:
+
+- open group info as a current, rejoined, and former participant and verify the
+  correct membership episode, zero state, inline chips, edit visibility, and
+  read-only copy;
+- open current and historical creator member actions and verify commitment data
+  loads only for the tapped row while remove-member behavior remains unchanged;
+- toggle an option that is no longer requested off and back on, save a real
+  removal, and confirm it disappears after canonical reload;
+- exercise 50-skill and 50-resource boundaries independently, clear all, and
+  confirm a no-op Save stays disabled;
+- create participant/creator concurrent edits and stale-option/lifecycle races,
+  then verify reload messages, reset selections, and final read-only recovery;
+- switch accounts or sign out during reads and saves and verify no prior-account
+  commitment state or late response appears;
+- verify chip wrapping, scroll/keyboard behavior, touch targets, selected and
+  unavailable semantics, focus order, and live-region announcements with
+  VoiceOver and TalkBack.
