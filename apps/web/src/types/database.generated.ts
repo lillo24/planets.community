@@ -455,6 +455,72 @@ export type Database = {
           },
         ]
       }
+      project_membership_resource_commitments: {
+        Row: {
+          committed_at: string
+          membership_id: string
+          resource_need_id: string
+        }
+        Insert: {
+          committed_at?: string
+          membership_id: string
+          resource_need_id: string
+        }
+        Update: {
+          committed_at?: string
+          membership_id?: string
+          resource_need_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_membership_resource_commitments_membership_id_fkey"
+            columns: ["membership_id"]
+            isOneToOne: false
+            referencedRelation: "project_memberships"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_membership_resource_commitments_need_id_fkey"
+            columns: ["resource_need_id"]
+            isOneToOne: false
+            referencedRelation: "project_resource_needs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      project_membership_skill_commitments: {
+        Row: {
+          committed_at: string
+          membership_id: string
+          skill_id: string
+        }
+        Insert: {
+          committed_at?: string
+          membership_id: string
+          skill_id: string
+        }
+        Update: {
+          committed_at?: string
+          membership_id?: string
+          skill_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_membership_skill_commitments_membership_id_fkey"
+            columns: ["membership_id"]
+            isOneToOne: false
+            referencedRelation: "project_memberships"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_membership_skill_commitments_skill_id_fkey"
+            columns: ["skill_id"]
+            isOneToOne: false
+            referencedRelation: "skills"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       project_memberships: {
         Row: {
           id: string
@@ -1466,6 +1532,14 @@ export type Database = {
           status: string
         }[]
       }
+      list_own_project_membership_commitments: {
+        Args: { p_expected_profile_id: string; p_membership_id: string }
+        Returns: {
+          commitment_id: string
+          commitment_kind: string
+          label: string
+        }[]
+      }
       list_own_project_memberships: {
         Args: { p_expected_participant_profile_id: string }
         Returns: {
@@ -1745,6 +1819,15 @@ export type Database = {
       }
       remove_project_member: {
         Args: { p_expected_creator_profile_id: string; p_membership_id: string }
+        Returns: string
+      }
+      replace_project_membership_commitments: {
+        Args: {
+          p_expected_actor_profile_id: string
+          p_membership_id: string
+          p_resource_need_ids?: string[]
+          p_skill_ids?: string[]
+        }
         Returns: string
       }
       request_to_join_project: {
