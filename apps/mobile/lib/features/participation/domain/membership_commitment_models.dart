@@ -55,6 +55,7 @@ class MembershipCommitmentEditorItem {
   final String label;
   final bool isSelected;
 
-  /// True when this loaded commitment is no longer among the addable options.
+  /// True when an authoritative options read proves this commitment is no
+  /// longer among the addable options.
   final bool isRetained;
 }

@@ -383,6 +383,7 @@ void main() {
       find.byKey(const Key('project-chat-commitment-options-error')),
       findsOneWidget,
     );
+    expect(find.text('Try again'), findsOneWidget);
     expect(find.textContaining('private options diagnostic'), findsNothing);
     expect(
       find.byKey(const Key('project-chat-edit-commitments')),

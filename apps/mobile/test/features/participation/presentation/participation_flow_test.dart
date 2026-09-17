@@ -15,6 +15,7 @@ import 'package:planets_mobile/features/proposals/data/proposal_gateway.dart';
 import 'package:planets_mobile/features/proposals/domain/proposal_models.dart';
 import 'package:planets_mobile/features/recurring_activities/data/recurring_activity_gateway.dart';
 import 'package:planets_mobile/features/recurring_activities/domain/recurring_activity_models.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../support/fake_auth.dart';
 import '../../../support/fake_membership_commitment.dart';
@@ -316,9 +317,78 @@ void main() {
       expect(commitments.calls, contains('commitments:left'));
       expect(commitments.calls, isNot(contains('options:left')));
       expect(find.text('Read-only'), findsOneWidget);
+      expect(find.text('Carpentry'), findsOneWidget);
+      expect(find.text('Carpentry · No longer requested'), findsNothing);
       expect(find.byKey(const Key('membership-commitment-save')), findsNothing);
     },
   );
+
+  testWidgets('commitment sheet keeps labels normal when options fail', (
+    tester,
+  ) async {
+    final participation = FakeParticipationGateway()
+      ..creatorMembers = [creatorMemberFixture(id: 'current')];
+    final commitments = FakeMembershipCommitmentGateway()
+      ..commitments = [membershipCommitmentFixture()]
+      ..optionsError = StateError('private options diagnostic');
+    final app = await _pump(
+      tester,
+      identityId: 'user-1',
+      participation: participation,
+      commitments: commitments,
+    );
+    app.read(appRouterProvider).go('/proposals/proposal-1/participants');
+    await tester.pumpAndSettle();
+
+    await tester.tap(
+      find.byKey(const Key('participation-commitments-current')),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Carpentry'), findsOneWidget);
+    expect(find.text('Carpentry · No longer requested'), findsNothing);
+    expect(
+      find.byKey(const Key('membership-commitment-options-error')),
+      findsOneWidget,
+    );
+    expect(find.text('Try again'), findsOneWidget);
+    expect(find.textContaining('private options diagnostic'), findsNothing);
+  });
+
+  testWidgets('lifecycle read-only sheet does not infer stale labels', (
+    tester,
+  ) async {
+    final participation = FakeParticipationGateway()
+      ..creatorMembers = [creatorMemberFixture(id: 'current')];
+    final commitments = FakeMembershipCommitmentGateway()
+      ..commitments = [membershipCommitmentFixture()]
+      ..optionsError = const PostgrestException(
+        message: 'private lifecycle diagnostic',
+        code: '55000',
+      );
+    final app = await _pump(
+      tester,
+      identityId: 'user-1',
+      participation: participation,
+      commitments: commitments,
+    );
+    app.read(appRouterProvider).go('/proposals/proposal-1/participants');
+    await tester.pumpAndSettle();
+
+    await tester.tap(
+      find.byKey(const Key('participation-commitments-current')),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Carpentry'), findsOneWidget);
+    expect(find.text('Carpentry · No longer requested'), findsNothing);
+    expect(
+      find.byKey(const Key('membership-commitment-read-only-notice')),
+      findsOneWidget,
+    );
+    expect(find.byKey(const Key('membership-commitment-save')), findsNothing);
+    expect(find.textContaining('private lifecycle diagnostic'), findsNothing);
+  });
 
   testWidgets('pending requester never loads protected meeting information', (
     tester,

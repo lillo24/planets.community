@@ -54,8 +54,10 @@ void main() {
       final gateway = FakeMembershipCommitmentGateway()
         ..commitments = [
           membershipCommitmentFixture(id: 'skill-stale', label: 'Old ladder'),
+          membershipCommitmentFixture(id: 'skill-current'),
         ]
         ..options = [
+          membershipCommitmentOptionFixture(id: 'skill-current'),
           membershipCommitmentOptionFixture(id: 'skill-new', label: 'Painting'),
         ];
       final session = _readyContainer(gateway);
@@ -72,17 +74,70 @@ void main() {
       );
       expect(state.readPhase, MembershipCommitmentReadPhase.ready);
       expect(state.optionsPhase, MembershipCommitmentOptionsPhase.ready);
-      expect(state.expectedSkillIds, {'skill-stale'});
-      expect(
-        state.itemsFor(MembershipCommitmentKind.skill).map((item) => item.id),
-        ['skill-stale', 'skill-new'],
-      );
-      expect(
-        state.itemsFor(MembershipCommitmentKind.skill).first.isRetained,
-        isTrue,
-      );
+      expect(state.expectedSkillIds, {'skill-stale', 'skill-current'});
+      final items = state
+          .itemsFor(MembershipCommitmentKind.skill)
+          .toList(growable: false);
+      expect(items.map((item) => item.id), [
+        'skill-stale',
+        'skill-current',
+        'skill-new',
+      ]);
+      expect(items[0].isRetained, isTrue);
+      expect(items[1].isRetained, isFalse);
+      expect(items[2].isRetained, isFalse);
     },
   );
+
+  test('initial option loading does not infer retained commitments', () async {
+    final pendingOptions = Completer<void>();
+    final gateway = FakeMembershipCommitmentGateway()
+      ..commitments = [membershipCommitmentFixture()]
+      ..optionsDelay = pendingOptions.future;
+    final session = _readyContainer(gateway);
+    addTearDown(session.dispose);
+    final controller = session.container.read(
+      membershipCommitmentProvider('membership-1').notifier,
+    );
+
+    final load = controller.load(expectedProfileId: 'user-1', editable: true);
+    await pumpEventQueue();
+    final loading = session.container.read(
+      membershipCommitmentProvider('membership-1'),
+    );
+    expect(loading.readPhase, MembershipCommitmentReadPhase.ready);
+    expect(loading.optionsPhase, MembershipCommitmentOptionsPhase.loading);
+    expect(
+      loading.itemsFor(MembershipCommitmentKind.skill).single.isRetained,
+      isFalse,
+    );
+
+    pendingOptions.complete();
+    expect(await load, isTrue);
+  });
+
+  test('historical reads do not infer retained commitments', () async {
+    final gateway = FakeMembershipCommitmentGateway()
+      ..commitments = [membershipCommitmentFixture()];
+    final session = _readyContainer(gateway);
+    addTearDown(session.dispose);
+
+    expect(
+      await session.container
+          .read(membershipCommitmentProvider('membership-1').notifier)
+          .load(expectedProfileId: 'user-1', editable: false),
+      isTrue,
+    );
+    final state = session.container.read(
+      membershipCommitmentProvider('membership-1'),
+    );
+    expect(state.optionsPhase, MembershipCommitmentOptionsPhase.notRequested);
+    expect(
+      state.itemsFor(MembershipCommitmentKind.skill).single.isRetained,
+      isFalse,
+    );
+    expect(gateway.calls.where((call) => call.startsWith('options:')), isEmpty);
+  });
 
   test('keeps commitment read when options fail and retries locally', () async {
     final gateway = FakeMembershipCommitmentGateway()
@@ -98,11 +153,14 @@ void main() {
       await controller.load(expectedProfileId: 'user-1', editable: true),
       isFalse,
     );
+    final failed = session.container.read(
+      membershipCommitmentProvider('membership-1'),
+    );
+    expect(failed.commitments, hasLength(1));
+    expect(failed.optionsPhase, MembershipCommitmentOptionsPhase.failure);
     expect(
-      session.container
-          .read(membershipCommitmentProvider('membership-1'))
-          .commitments,
-      hasLength(1),
+      failed.itemsFor(MembershipCommitmentKind.skill).single.isRetained,
+      isFalse,
     );
     gateway.optionsError = null;
     gateway.options = [membershipCommitmentOptionFixture()];
@@ -140,6 +198,37 @@ void main() {
         MembershipCommitmentOptionsPhase.noLongerEditable,
       );
       expect(state.isEditable, isFalse);
+      expect(
+        state.itemsFor(MembershipCommitmentKind.skill).single.isRetained,
+        isFalse,
+      );
+    },
+  );
+
+  test(
+    'authoritative empty options classify current commitments retained',
+    () async {
+      final gateway = FakeMembershipCommitmentGateway()
+        ..commitments = [membershipCommitmentFixture()]
+        ..options = [];
+      final session = _readyContainer(gateway);
+      addTearDown(session.dispose);
+
+      expect(
+        await session.container
+            .read(membershipCommitmentProvider('membership-1').notifier)
+            .load(expectedProfileId: 'user-1', editable: true),
+        isTrue,
+      );
+      final state = session.container.read(
+        membershipCommitmentProvider('membership-1'),
+      );
+      expect(state.optionsPhase, MembershipCommitmentOptionsPhase.ready);
+      expect(state.options, isEmpty);
+      expect(
+        state.itemsFor(MembershipCommitmentKind.skill).single.isRetained,
+        isTrue,
+      );
     },
   );
 
@@ -170,6 +259,32 @@ void main() {
     expect(gateway.lastExpectedSkillIds, {'skill-stale'});
     expect(gateway.lastSkillIds, {'skill-stale', 'skill-new'});
     expect(gateway.lastExpectedProfileId, 'user-1');
+  });
+
+  test('saved stale removal disappears after canonical reload', () async {
+    final gateway = FakeMembershipCommitmentGateway()
+      ..commitments = [membershipCommitmentFixture(id: 'skill-stale')]
+      ..options = [membershipCommitmentOptionFixture(id: 'skill-new')];
+    final session = _readyContainer(gateway);
+    addTearDown(session.dispose);
+    final controller = session.container.read(
+      membershipCommitmentProvider('membership-1').notifier,
+    );
+    await controller.load(expectedProfileId: 'user-1', editable: true);
+
+    expect(
+      controller.toggle(MembershipCommitmentKind.skill, 'skill-stale'),
+      isTrue,
+    );
+    expect(await controller.save('user-1'), isTrue);
+    final state = session.container.read(
+      membershipCommitmentProvider('membership-1'),
+    );
+    expect(state.commitments, isEmpty);
+    expect(
+      state.itemsFor(MembershipCommitmentKind.skill).map((item) => item.id),
+      ['skill-new'],
+    );
   });
 
   test('enforces independent 50/50 limits and clear-all is valid', () async {

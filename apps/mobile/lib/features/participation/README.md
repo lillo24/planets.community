@@ -104,12 +104,15 @@ useful even when addable options fail or the backend reports that editing is no
 longer operational.
 
 The editor keeps the loaded current skill/resource IDs as an immutable expected
-snapshot while desired selections change. Current commitments missing from the
-option snapshot remain selected and visibly marked as no longer requested; they
-can be removed or toggled back on before Save. SQLSTATE `40001`, `22023`, and
-`55000` reload canonical state without automatically retrying or merging the
-write. Request-attempt selections displayed in Messages remain immutable
-history and are not replaced by this membership state.
+snapshot while desired selections change. Only a successfully loaded current
+options snapshot can classify an absent commitment as no longer requested; an
+authoritative empty snapshot may therefore classify every current commitment,
+while historical reads, loading, transient option failure, and lifecycle
+read-only recovery do not infer stale status. Proven stale commitments remain
+selected and can be removed or toggled back on before Save. SQLSTATE `40001`,
+`22023`, and `55000` reload canonical state without automatically retrying or
+merging the write. Request-attempt selections displayed in Messages remain
+immutable history and are not replaced by this membership state.
 
 ## Routes
 

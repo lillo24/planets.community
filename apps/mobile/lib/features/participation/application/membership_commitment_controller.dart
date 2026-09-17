@@ -74,6 +74,8 @@ class MembershipCommitmentState {
   Iterable<MembershipCommitmentEditorItem> itemsFor(
     MembershipCommitmentKind kind,
   ) sync* {
+    final canClassifyRetained =
+        optionsPhase == MembershipCommitmentOptionsPhase.ready;
     final optionKeys = {for (final option in options) option.key};
     final emitted = <String>{};
     for (final commitment in commitments.where((item) => item.kind == kind)) {
@@ -83,7 +85,7 @@ class MembershipCommitmentState {
         kind: commitment.kind,
         label: commitment.label,
         isSelected: isSelected(commitment.kind, commitment.id),
-        isRetained: !optionKeys.contains(commitment.key),
+        isRetained: canClassifyRetained && !optionKeys.contains(commitment.key),
       );
     }
     for (final option in options.where((item) => item.kind == kind)) {
