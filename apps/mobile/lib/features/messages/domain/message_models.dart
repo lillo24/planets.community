@@ -15,6 +15,36 @@ enum MessageViewerRole {
   };
 }
 
+enum RequestContributionSelectionKind {
+  skill('skill'),
+  resource('resource');
+
+  const RequestContributionSelectionKind(this.wireValue);
+
+  final String wireValue;
+
+  static RequestContributionSelectionKind fromWire(String value) =>
+      switch (value) {
+        'skill' => RequestContributionSelectionKind.skill,
+        'resource' => RequestContributionSelectionKind.resource,
+        _ => throw const FormatException(
+          'Unsupported request contribution-selection kind.',
+        ),
+      };
+}
+
+class RequestContributionSelection {
+  const RequestContributionSelection({
+    required this.kind,
+    required this.id,
+    required this.label,
+  });
+
+  final RequestContributionSelectionKind kind;
+  final String id;
+  final String label;
+}
+
 class ParticipationRequestMessageItem {
   const ParticipationRequestMessageItem({
     required this.requestId,

@@ -179,6 +179,8 @@ class ParticipationCommandController
     required String projectId,
     required ProjectKind projectKind,
     required String message,
+    Set<String> skillIds = const {},
+    Set<String> resourceNeedIds = const {},
   }) async {
     final normalizedMessage = message.trim();
     if (state.isBusy ||
@@ -207,6 +209,8 @@ class ParticipationCommandController
             expectedRequesterProfileId: expectedProfileId,
             projectId: projectId,
             message: normalizedMessage.isEmpty ? null : normalizedMessage,
+            skillIds: skillIds,
+            resourceNeedIds: resourceNeedIds,
           );
       if (!_isCurrent(revision, expectedProfileId)) return false;
       await ref.read(ownParticipationProvider.notifier).load(expectedProfileId);

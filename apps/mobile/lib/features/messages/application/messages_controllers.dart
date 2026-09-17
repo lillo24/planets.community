@@ -165,12 +165,17 @@ enum MessageAction { accepting, rejecting, withdrawing }
 
 enum MessagesDetailPhase { idle, loading, ready, failure }
 
+enum MessagesSelectionPhase { idle, loading, ready, failure }
+
 class MessagesDetailState {
   const MessagesDetailState({
     this.phase = MessagesDetailPhase.idle,
     this.expectedProfileId,
     this.requestId,
     this.item,
+    this.selectionPhase = MessagesSelectionPhase.idle,
+    this.selections = const [],
+    this.selectionFailure,
     this.action,
     this.failure,
   });
@@ -179,6 +184,9 @@ class MessagesDetailState {
   final String? expectedProfileId;
   final String? requestId;
   final ParticipationRequestMessageItem? item;
+  final MessagesSelectionPhase selectionPhase;
+  final List<RequestContributionSelection> selections;
+  final MessagesFailureKind? selectionFailure;
   final MessageAction? action;
   final MessagesFailureKind? failure;
 
@@ -214,6 +222,11 @@ class MessagesDetailController extends Notifier<MessagesDetailState> {
       expectedProfileId: expectedProfileId,
       requestId: requestId,
       item: preserve ? state.item : null,
+      selectionPhase: preserve
+          ? state.selectionPhase
+          : MessagesSelectionPhase.idle,
+      selections: preserve ? state.selections : const [],
+      selectionFailure: preserve ? state.selectionFailure : null,
     );
     try {
       _requireReadyIdentity(expectedProfileId);
@@ -226,7 +239,37 @@ class MessagesDetailController extends Notifier<MessagesDetailState> {
         expectedProfileId: expectedProfileId,
         requestId: requestId,
         item: item,
+        selectionPhase: MessagesSelectionPhase.loading,
+        selections: preserve ? state.selections : const [],
       );
+      try {
+        final selections = await ref
+            .read(messagesGatewayProvider)
+            .listContributionSelections(
+              expectedProfileId: expectedProfileId,
+              requestId: requestId,
+            );
+        if (!_isCurrent(revision, expectedProfileId, requestId)) return false;
+        state = MessagesDetailState(
+          phase: MessagesDetailPhase.ready,
+          expectedProfileId: expectedProfileId,
+          requestId: requestId,
+          item: item,
+          selectionPhase: MessagesSelectionPhase.ready,
+          selections: List.unmodifiable(selections),
+        );
+      } catch (error) {
+        if (!_isCurrent(revision, expectedProfileId, requestId)) return false;
+        state = MessagesDetailState(
+          phase: MessagesDetailPhase.ready,
+          expectedProfileId: expectedProfileId,
+          requestId: requestId,
+          item: item,
+          selectionPhase: MessagesSelectionPhase.failure,
+          selections: preserve ? state.selections : const [],
+          selectionFailure: mapMessagesFailure(error),
+        );
+      }
       return true;
     } catch (error) {
       if (!_isCurrent(revision, expectedProfileId, requestId)) return false;
@@ -235,6 +278,9 @@ class MessagesDetailController extends Notifier<MessagesDetailState> {
         expectedProfileId: expectedProfileId,
         requestId: requestId,
         item: state.item,
+        selectionPhase: state.selectionPhase,
+        selections: state.selections,
+        selectionFailure: state.selectionFailure,
         failure: mapMessagesFailure(error),
       );
       return false;
@@ -246,6 +292,53 @@ class MessagesDetailController extends Notifier<MessagesDetailState> {
   Future<bool> reject() => _mutate(MessageAction.rejecting);
 
   Future<bool> withdraw() => _mutate(MessageAction.withdrawing);
+
+  Future<bool> retryContributionSelections() async {
+    final item = state.item;
+    final profileId = state.expectedProfileId;
+    final requestId = state.requestId;
+    if (item == null || profileId == null || requestId == null) return false;
+    final revision = ++_revision;
+    state = MessagesDetailState(
+      phase: MessagesDetailPhase.ready,
+      expectedProfileId: profileId,
+      requestId: requestId,
+      item: item,
+      selectionPhase: MessagesSelectionPhase.loading,
+      selections: state.selections,
+    );
+    try {
+      _requireReadyIdentity(profileId);
+      final selections = await ref
+          .read(messagesGatewayProvider)
+          .listContributionSelections(
+            expectedProfileId: profileId,
+            requestId: requestId,
+          );
+      if (!_isCurrent(revision, profileId, requestId)) return false;
+      state = MessagesDetailState(
+        phase: MessagesDetailPhase.ready,
+        expectedProfileId: profileId,
+        requestId: requestId,
+        item: item,
+        selectionPhase: MessagesSelectionPhase.ready,
+        selections: List.unmodifiable(selections),
+      );
+      return true;
+    } catch (error) {
+      if (!_isCurrent(revision, profileId, requestId)) return false;
+      state = MessagesDetailState(
+        phase: MessagesDetailPhase.ready,
+        expectedProfileId: profileId,
+        requestId: requestId,
+        item: item,
+        selectionPhase: MessagesSelectionPhase.failure,
+        selections: state.selections,
+        selectionFailure: mapMessagesFailure(error),
+      );
+      return false;
+    }
+  }
 
   Future<bool> _mutate(MessageAction action) async {
     final item = state.item;
@@ -265,6 +358,9 @@ class MessagesDetailController extends Notifier<MessagesDetailState> {
       expectedProfileId: profileId,
       requestId: requestId,
       item: item,
+      selectionPhase: state.selectionPhase,
+      selections: state.selections,
+      selectionFailure: state.selectionFailure,
       action: action,
     );
     try {
@@ -298,6 +394,9 @@ class MessagesDetailController extends Notifier<MessagesDetailState> {
         expectedProfileId: profileId,
         requestId: requestId,
         item: canonical,
+        selectionPhase: state.selectionPhase,
+        selections: state.selections,
+        selectionFailure: state.selectionFailure,
       );
       await _synchronize(action, canonical, profileId);
       return _isCurrent(revision, profileId, requestId);
@@ -315,6 +414,9 @@ class MessagesDetailController extends Notifier<MessagesDetailState> {
             expectedProfileId: profileId,
             requestId: requestId,
             item: canonical,
+            selectionPhase: state.selectionPhase,
+            selections: state.selections,
+            selectionFailure: state.selectionFailure,
             failure: failure,
           );
           await ref
@@ -330,6 +432,9 @@ class MessagesDetailController extends Notifier<MessagesDetailState> {
         expectedProfileId: profileId,
         requestId: requestId,
         item: item,
+        selectionPhase: state.selectionPhase,
+        selections: state.selections,
+        selectionFailure: state.selectionFailure,
         failure: failure,
       );
       return false;

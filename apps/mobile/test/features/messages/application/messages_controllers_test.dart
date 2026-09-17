@@ -192,6 +192,111 @@ void main() {
       expect(session.container.read(messagesDetailProvider).item, isNull);
     },
   );
+
+  test('detail preserves canonical contribution ordering', () async {
+    final gateway = FakeMessagesGateway()
+      ..items = [messageItemFixture()]
+      ..selections = const [
+        RequestContributionSelection(
+          kind: RequestContributionSelectionKind.skill,
+          id: 'skill-1',
+          label: 'Carpentry',
+        ),
+        RequestContributionSelection(
+          kind: RequestContributionSelectionKind.resource,
+          id: 'need-1',
+          label: 'Wooden boards',
+        ),
+      ];
+    final session = _readyContainer(gateway);
+    addTearDown(session.container.dispose);
+    addTearDown(session.auth.close);
+
+    expect(
+      await session.container
+          .read(messagesDetailProvider.notifier)
+          .load(expectedProfileId: 'user-1', requestId: 'request-1'),
+      isTrue,
+    );
+    final state = session.container.read(messagesDetailProvider);
+    expect(state.item, isNotNull);
+    expect(state.selectionPhase, MessagesSelectionPhase.ready);
+    expect(state.selections.map((selection) => selection.id), [
+      'skill-1',
+      'need-1',
+    ]);
+  });
+
+  test('selection failure keeps actions usable and supports retry', () async {
+    final gateway = FakeMessagesGateway()
+      ..items = [messageItemFixture()]
+      ..selectionError = StateError('private selection diagnostic');
+    final session = _readyContainer(gateway);
+    addTearDown(session.container.dispose);
+    addTearDown(session.auth.close);
+    final controller = session.container.read(messagesDetailProvider.notifier);
+
+    expect(
+      await controller.load(
+        expectedProfileId: 'user-1',
+        requestId: 'request-1',
+      ),
+      isTrue,
+    );
+    expect(
+      session.container.read(messagesDetailProvider).selectionPhase,
+      MessagesSelectionPhase.failure,
+    );
+    expect(await controller.accept(), isTrue);
+
+    gateway
+      ..selectionError = null
+      ..selections = const [
+        RequestContributionSelection(
+          kind: RequestContributionSelectionKind.resource,
+          id: 'need-1',
+          label: 'Paint',
+        ),
+      ];
+    expect(await controller.retryContributionSelections(), isTrue);
+    expect(
+      session.container.read(messagesDetailProvider).selections.single.id,
+      'need-1',
+    );
+  });
+
+  test(
+    'account switch clears a late contribution-selection response',
+    () async {
+      final pending = Completer<void>();
+      final gateway = FakeMessagesGateway()
+        ..items = [messageItemFixture()]
+        ..selections = const [
+          RequestContributionSelection(
+            kind: RequestContributionSelectionKind.skill,
+            id: 'skill-1',
+            label: 'Carpentry',
+          ),
+        ]
+        ..selectionDelay = pending.future;
+      final session = _readyContainer(gateway);
+      addTearDown(session.container.dispose);
+      addTearDown(session.auth.close);
+      final load = session.container
+          .read(messagesDetailProvider.notifier)
+          .load(expectedProfileId: 'user-1', requestId: 'request-1');
+      await Future<void>.delayed(Duration.zero);
+      session.container
+          .read(authSessionProvider.notifier)
+          .markProfileReady(const AuthIdentity(id: 'user-2'));
+      pending.complete();
+
+      expect(await load, isFalse);
+      final state = session.container.read(messagesDetailProvider);
+      expect(state.item, isNull);
+      expect(state.selections, isEmpty);
+    },
+  );
 }
 
 ({ProviderContainer container, FakeAuthGateway auth}) _readyContainer(

@@ -6,9 +6,12 @@ import 'package:planets_mobile/features/participation/domain/participation_model
 
 class FakeMessagesGateway implements MessagesGateway {
   List<ParticipationRequestMessageItem> items = [];
+  List<RequestContributionSelection> selections = [];
   Object? error;
+  Object? selectionError;
   Future<void>? listDelay;
   Future<void>? detailDelay;
+  Future<void>? selectionDelay;
   Future<void>? mutationDelay;
   Object? mutationError;
   final List<String> calls = [];
@@ -47,6 +50,18 @@ class FakeMessagesGateway implements MessagesGateway {
     if (detailDelay case final delay?) await delay;
     _throwIfNeeded();
     return items.singleWhere((item) => item.requestId == requestId);
+  }
+
+  @override
+  Future<List<RequestContributionSelection>> listContributionSelections({
+    required String expectedProfileId,
+    required String requestId,
+  }) async {
+    calls.add('selections:$requestId');
+    lastExpectedProfileId = expectedProfileId;
+    if (selectionDelay case final delay?) await delay;
+    if (selectionError case final failure?) throw failure;
+    return List.unmodifiable(selections);
   }
 
   @override

@@ -8,6 +8,8 @@ import '../../../core/widgets/error_state.dart';
 import '../../../core/widgets/loading_state.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../auth/application/auth_session_controller.dart';
+import '../../participation/domain/participation_models.dart';
+import '../../project_resource_needs/presentation/project_resource_need_routes.dart';
 import '../application/proposal_controllers.dart';
 import '../domain/proposal_models.dart';
 
@@ -119,6 +121,17 @@ class _OwnProposalCard extends ConsumerWidget {
             Wrap(
               spacing: AppSpacing.small,
               children: [
+                OutlinedButton.icon(
+                  key: Key('proposal-resources-${proposal.id}'),
+                  onPressed: () => context.push(
+                    ProjectResourceNeedRoutes.manage(
+                      ProjectKind.oneTime,
+                      proposal.id,
+                    ),
+                  ),
+                  icon: const Icon(Icons.inventory_2_outlined),
+                  label: Text(l10n.projectResourcesManage),
+                ),
                 if (proposal.isEditableAt(now))
                   OutlinedButton(
                     key: Key('proposal-edit-${proposal.id}'),

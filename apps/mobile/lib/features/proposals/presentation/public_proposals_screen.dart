@@ -8,8 +8,11 @@ import '../../../core/widgets/empty_state.dart';
 import '../../../core/widgets/error_state.dart';
 import '../../../core/widgets/loading_state.dart';
 import '../../../l10n/generated/app_localizations.dart';
+import '../../auth/application/auth_session_controller.dart';
 import '../../participation/domain/participation_models.dart';
 import '../../participation/presentation/project_participation_section.dart';
+import '../../project_resource_needs/presentation/project_resource_need_routes.dart';
+import '../../project_resource_needs/presentation/project_resource_needs_section.dart';
 import '../application/proposal_controllers.dart';
 import '../domain/proposal_models.dart';
 import '../domain/proposal_time.dart';
@@ -273,6 +276,22 @@ class _ProposalDetailScreenState extends ConsumerState<ProposalDetailScreen> {
                     ),
                     const SizedBox(height: AppSpacing.small),
                     ProposalSkillRequirements(skills: detail.summary.skills),
+                  ],
+                  ProjectResourceNeedsSection(projectId: detail.summary.id),
+                  if (ref.watch(authSessionProvider).identity?.id ==
+                      detail.creatorProfileId) ...[
+                    const SizedBox(height: AppSpacing.medium),
+                    OutlinedButton.icon(
+                      key: Key('project-resources-manage-${detail.summary.id}'),
+                      onPressed: () => context.push(
+                        ProjectResourceNeedRoutes.manage(
+                          ProjectKind.oneTime,
+                          detail.summary.id,
+                        ),
+                      ),
+                      icon: const Icon(Icons.inventory_2_outlined),
+                      label: Text(l10n.projectResourcesManage),
+                    ),
                   ],
                   const SizedBox(height: AppSpacing.large),
                   ProjectParticipationSection(

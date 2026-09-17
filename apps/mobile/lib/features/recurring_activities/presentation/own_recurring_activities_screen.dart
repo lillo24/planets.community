@@ -9,6 +9,8 @@ import '../../../core/widgets/error_state.dart';
 import '../../../core/widgets/loading_state.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../auth/application/auth_session_controller.dart';
+import '../../participation/domain/participation_models.dart';
+import '../../project_resource_needs/presentation/project_resource_need_routes.dart';
 import '../application/recurring_activity_controllers.dart';
 import '../domain/recurring_activity_models.dart';
 import 'recurring_activity_widgets.dart';
@@ -136,6 +138,17 @@ class _OwnTavoloCard extends ConsumerWidget {
               spacing: AppSpacing.small,
               runSpacing: AppSpacing.xSmall,
               children: [
+                OutlinedButton.icon(
+                  key: Key('tavoli-resources-${activity.id}'),
+                  onPressed: () => context.push(
+                    ProjectResourceNeedRoutes.manage(
+                      ProjectKind.recurring,
+                      activity.id,
+                    ),
+                  ),
+                  icon: const Icon(Icons.inventory_2_outlined),
+                  label: Text(l10n.projectResourcesManage),
+                ),
                 if (activity.lifecycle != RecurringActivityLifecycle.draft)
                   OutlinedButton(
                     key: Key('tavoli-view-${activity.id}'),

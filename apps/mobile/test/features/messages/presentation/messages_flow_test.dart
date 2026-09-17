@@ -155,6 +155,12 @@ void main() {
     await tester.tap(find.byKey(const Key('message-withdraw')));
     await tester.pumpAndSettle();
     expect(messages.calls, contains('withdraw:request-1'));
+    await tester.fling(
+      find.byType(Scrollable).hitTestable().first,
+      const Offset(0, 1000),
+      1200,
+    );
+    await tester.pumpAndSettle();
     expect(find.text('Withdrawn'), findsOneWidget);
   });
 

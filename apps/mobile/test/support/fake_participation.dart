@@ -16,6 +16,8 @@ class FakeParticipationGateway implements ParticipationGateway {
   String? lastExpectedIdentity;
   String? lastProjectId;
   String? lastMessage;
+  Set<String> lastSkillIds = const {};
+  Set<String> lastResourceNeedIds = const {};
 
   @override
   Future<List<OwnProjectJoinRequest>> listOwnJoinRequests(
@@ -44,11 +46,15 @@ class FakeParticipationGateway implements ParticipationGateway {
     required String expectedRequesterProfileId,
     required String projectId,
     String? message,
+    Set<String> skillIds = const {},
+    Set<String> resourceNeedIds = const {},
   }) async {
     calls.add('request:$projectId');
     lastExpectedIdentity = expectedRequesterProfileId;
     lastProjectId = projectId;
     lastMessage = message;
+    lastSkillIds = Set.unmodifiable(skillIds);
+    lastResourceNeedIds = Set.unmodifiable(resourceNeedIds);
     if (mutationDelay case final delay?) await delay;
     _throwIfNeeded();
     final request = ownJoinRequestFixture(

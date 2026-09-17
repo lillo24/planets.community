@@ -769,5 +769,51 @@
   "resourceDraftSavedPublishFailed": "Your draft was saved, but it could not be published. Review it and retry; no second draft will be created.",
   "resourceCloseConfirmTitle": "Close this listing?",
   "resourceCloseConfirmMessage": "This removes the listing from public discovery. It does not record whether a donation or exchange happened.",
-  "resourceClosedReadOnly": "Closed listings remain in your history and cannot be edited or reopened."
+  "resourceClosedReadOnly": "Closed listings remain in your history and cannot be edited or reopened.",
+  "projectResourcesNeededTitle": "Resources / Materials needed",
+  "projectResourcesLoading": "Loading resources and materials…",
+  "projectResourcesSafeError": "We couldn't load the Project's resources and materials. Try again.",
+  "projectResourcesManage": "Manage resources / materials",
+  "projectResourcesManageTitle": "Project resources and materials",
+  "projectResourcesOpen": "Open",
+  "projectResourcesClosed": "Closed",
+  "projectResourcesNoOpenNeeds": "No open needs.",
+  "projectResourcesEmptyTitle": "No resource needs yet",
+  "projectResourcesEmptyMessage": "Add what this Project currently needs so applicants can select it.",
+  "projectResourcesAddNeed": "Add need",
+  "projectResourcesEditNeed": "Edit need",
+  "projectResourcesCloseNeed": "Close need",
+  "projectResourcesNeedTitleField": "Resource need title",
+  "projectResourcesDetailsOptional": "Details (optional)",
+  "projectResourcesInvalidTitle": "Use between {min} and {max} characters.",
+  "@projectResourcesInvalidTitle": {
+    "placeholders": {
+      "min": { "type": "int" },
+      "max": { "type": "int" }
+    }
+  },
+  "projectResourcesDetailsTooLong": "Use at most {max} characters.",
+  "@projectResourcesDetailsTooLong": {
+    "placeholders": { "max": { "type": "int" } }
+  },
+  "projectResourcesSaveAction": "Save",
+  "projectResourcesCancelAction": "Cancel",
+  "projectResourcesCloseConfirmTitle": "Close this need?",
+  "projectResourcesCloseConfirmMessage": "It will no longer be offered as a selectable Project need. This does not record that it was supplied or fulfilled.",
+  "projectResourcesClosedReadOnly": "Closed history · not marked as supplied or fulfilled",
+  "projectResourcesInvalidInput": "Check the resource-need fields and try again.",
+  "projectResourcesForbidden": "These Project resources are not available for the current account.",
+  "projectResourcesConflict": "This Project need can no longer be changed that way. Refresh and try again.",
+  "projectResourcesNotFound": "This Project need is no longer available.",
+  "participationContributionTitle": "What can you contribute?",
+  "participationCompetencesGroup": "Competences / Knowledge",
+  "participationResourcesGroup": "Resources / Materials",
+  "participationContributionLoading": "Loading contribution options…",
+  "participationContributionLoadError": "We couldn't load the current contribution options.",
+  "participationNoContributionOptions": "No contribution options are currently listed. You can still send an optional message.",
+  "participationRequirementsChanged": "The Project requirements changed. Review your selections and try again.",
+  "messagesCanContribute": "Can contribute",
+  "messagesNoContributionsSelected": "No contributions selected",
+  "messagesContributionsLoading": "Loading contribution selections…",
+  "messagesContributionsLoadError": "We couldn't load the selected contributions. The request actions are still available."
 }

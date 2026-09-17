@@ -17,12 +17,16 @@ their existing features; participation uses only a project ID plus the narrow
 - `application/participation_controllers.dart` owns identity-bound own
   participation, requester/member commands, creator review, protected meeting
   data, request revisions, and safe failure mapping.
+- `application/contribution_options_controller.dart` independently loads the
+  current Proposal skill requirements plus open Project resource needs, or
+  resource needs alone for Tavoli, and clears them on identity changes.
 - `presentation/participation_routes.dart` maps the shared feature onto the
   concrete Proposal and Tavolo routes.
 - `presentation/project_participation_section.dart` supplies the shared detail
   location/action area.
-- `presentation/join_request_screen.dart` owns the optional private 500-character
-  request message and canonical submit flow.
+- `presentation/join_request_screen.dart` owns typed multi-select contribution
+  chips, stale-option recovery, the optional private 500-character request
+  message, and the single canonical submit flow.
 - `presentation/creator_participation_screen.dart` owns creator request/history
   review and current/historical membership management.
 
@@ -45,6 +49,15 @@ The mobile client presents, but does not reproduce, the 05A state machine:
 - a creator may accept/reject pending requests and remove current members;
 - creators are organizers through ownership and are filtered from membership
   rows.
+
+Request creation sends canonical Proposal-skill and Project-resource-need ID
+arrays through the evolved atomic RPC. Proposal options come only from its
+public detail; Tavoli intentionally expose no competence options because they
+have no canonical skill-requirement relation. A legitimate zero-option Project
+keeps the message-only flow. Initial option failure disables submission without
+discarding the message. Backend stale-option rejection reloads the canonical
+options, intersects selected IDs, preserves the message, and displays only safe
+localized copy.
 
 Own requests and memberships are loaded once per identity and resolved by
 project in memory, avoiding per-card RPCs. Public detail remains usable if this
@@ -80,7 +93,7 @@ the exact safe internal `returnTo`; incomplete profile setup carries the same
 destination in `/profile/edit?returnTo=...` and resumes it after a successful
 save. The persistent bottom navigation remains Profile / Browse / Home.
 
-Notification delivery, resources/Scambio-Dona, capacity/fullness,
+Notification delivery, standalone Scambio-Dona, capacity/fullness,
 participation roles, invitations, central participation history, contribution
 verification, badges, maps, and final unified Progetti discovery remain
 deferred.
@@ -94,3 +107,7 @@ Requested section updates; change locality/skill filters and confirm stale
 requested cards disappear; switch accounts and confirm no prior-account badge
 survives; open each requested card and confirm normal detail navigation and
 screen-reader announcement of “Requested to join.”
+
+04C3B2 chip touch targets, small-screen wrapping, keyboard/message interaction,
+selected-state screen-reader output, and stale-option recovery remain in the
+consolidated Plan 12 native pass.

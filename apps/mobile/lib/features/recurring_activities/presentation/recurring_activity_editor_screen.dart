@@ -11,6 +11,8 @@ import '../../../core/widgets/error_state.dart';
 import '../../../core/widgets/loading_state.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../auth/application/auth_session_controller.dart';
+import '../../participation/domain/participation_models.dart';
+import '../../project_resource_needs/presentation/project_resource_need_routes.dart';
 import '../application/recurring_activity_controllers.dart';
 import '../domain/recurring_activity_models.dart';
 
@@ -409,6 +411,20 @@ class _RecurringActivityEditorScreenState
                     Wrap(
                       spacing: AppSpacing.small,
                       children: [
+                        if (existing != null)
+                          OutlinedButton.icon(
+                            key: const Key('tavoli-manage-resources'),
+                            onPressed: state.isBusy
+                                ? null
+                                : () => context.push(
+                                    ProjectResourceNeedRoutes.manage(
+                                      ProjectKind.recurring,
+                                      existing.id,
+                                    ),
+                                  ),
+                            icon: const Icon(Icons.inventory_2_outlined),
+                            label: Text(l10n.projectResourcesManage),
+                          ),
                         FilledButton.tonal(
                           key: const Key('tavoli-save-draft'),
                           onPressed: state.isBusy ? null : () => _submit(false),

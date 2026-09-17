@@ -17,6 +17,8 @@ abstract interface class ParticipationGateway {
     required String expectedRequesterProfileId,
     required String projectId,
     String? message,
+    Set<String> skillIds = const {},
+    Set<String> resourceNeedIds = const {},
   });
 
   Future<void> withdrawRequest({
@@ -95,12 +97,16 @@ class SupabaseParticipationGateway implements ParticipationGateway {
     required String expectedRequesterProfileId,
     required String projectId,
     String? message,
+    Set<String> skillIds = const {},
+    Set<String> resourceNeedIds = const {},
   }) => _client.rpc<String>(
     'request_to_join_project',
     params: {
       'p_expected_requester_profile_id': expectedRequesterProfileId,
       'p_project_id': projectId,
       'p_request_message': message,
+      'p_skill_ids': (skillIds.toList()..sort()),
+      'p_resource_need_ids': (resourceNeedIds.toList()..sort()),
     },
   );
 

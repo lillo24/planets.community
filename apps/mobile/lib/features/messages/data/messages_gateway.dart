@@ -17,6 +17,11 @@ abstract interface class MessagesGateway {
     required String requestId,
   });
 
+  Future<List<RequestContributionSelection>> listContributionSelections({
+    required String expectedProfileId,
+    required String requestId,
+  });
+
   Future<void> accept({
     required String expectedCreatorProfileId,
     required String requestId,
@@ -77,6 +82,21 @@ class SupabaseMessagesGateway implements MessagesGateway {
       throw const FormatException('Expected one participation message item.');
     }
     return _parser.item(response.single);
+  }
+
+  @override
+  Future<List<RequestContributionSelection>> listContributionSelections({
+    required String expectedProfileId,
+    required String requestId,
+  }) async {
+    final response = await _client.rpc<List<dynamic>>(
+      'list_own_project_join_request_contribution_selections',
+      params: {
+        'p_expected_profile_id': expectedProfileId,
+        'p_request_id': requestId,
+      },
+    );
+    return response.map(_parser.contributionSelection).toList(growable: false);
   }
 
   @override
@@ -145,6 +165,22 @@ class MessagesPayloadParser {
       createdAt: _date(row['created_at']),
       resolvedAt: _optionalDate(row['resolved_at']),
       activityAt: _date(row['activity_at']),
+    );
+  }
+
+  RequestContributionSelection contributionSelection(Object? value) {
+    if (value is! Map) {
+      throw const FormatException(
+        'Contribution selection payload was not an object.',
+      );
+    }
+    final row = value.cast<String, dynamic>();
+    return RequestContributionSelection(
+      kind: RequestContributionSelectionKind.fromWire(
+        row['selection_kind'] as String,
+      ),
+      id: row['selection_id'] as String,
+      label: row['label'] as String,
     );
   }
 

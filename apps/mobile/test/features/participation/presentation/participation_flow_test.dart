@@ -9,6 +9,7 @@ import 'package:planets_mobile/features/auth/domain/auth_models.dart';
 import 'package:planets_mobile/features/participation/data/participation_gateway.dart';
 import 'package:planets_mobile/features/participation/domain/participation_models.dart';
 import 'package:planets_mobile/features/profile/data/profile_gateway.dart';
+import 'package:planets_mobile/features/project_resource_needs/data/project_resource_needs_gateway.dart';
 import 'package:planets_mobile/features/proposals/data/proposal_gateway.dart';
 import 'package:planets_mobile/features/proposals/domain/proposal_models.dart';
 import 'package:planets_mobile/features/recurring_activities/data/recurring_activity_gateway.dart';
@@ -17,6 +18,7 @@ import 'package:planets_mobile/features/recurring_activities/domain/recurring_ac
 import '../../../support/fake_auth.dart';
 import '../../../support/fake_participation.dart';
 import '../../../support/fake_profile.dart';
+import '../../../support/fake_project_resource_needs.dart';
 import '../../../support/fake_proposal.dart';
 import '../../../support/fake_recurring_activity.dart';
 
@@ -39,6 +41,10 @@ void main() {
     await tester.enterText(
       find.byKey(const Key('participation-message-field')),
       '  I can bring brushes.  ',
+    );
+    await _scrollTo(
+      tester,
+      find.byKey(const Key('participation-send-request')),
     );
     await tester.tap(find.byKey(const Key('participation-send-request')));
     await tester.pumpAndSettle();
@@ -346,6 +352,45 @@ void main() {
       );
     },
   );
+
+  testWidgets(
+    'Proposal and Tavolo detail both show public open resource needs',
+    (tester) async {
+      final resources = FakeProjectResourceNeedsGateway()
+        ..publicItems = [
+          publicProjectResourceNeedFixture(
+            id: 'boards',
+            title: 'Wooden boards',
+          ),
+        ];
+      final app = await _pump(
+        tester,
+        participation: FakeParticipationGateway(),
+        projectResourceNeeds: resources,
+      );
+      final router = app.read(appRouterProvider);
+
+      router.go('/proposals/proposal-1');
+      await tester.pumpAndSettle();
+      await _scrollTo(
+        tester,
+        find.byKey(const Key('public-resource-need-boards')),
+      );
+      expect(find.text('Wooden boards'), findsWidgets);
+
+      router.go('/tavoli/tavolo-1');
+      await tester.pumpAndSettle();
+      await _scrollTo(
+        tester,
+        find.byKey(const Key('public-resource-need-boards')),
+      );
+      expect(find.text('Wooden boards'), findsWidgets);
+      expect(
+        resources.calls,
+        containsAll(['list-public:proposal-1', 'list-public:tavolo-1']),
+      );
+    },
+  );
 }
 
 Future<ProviderContainer> _pump(
@@ -354,6 +399,7 @@ Future<ProviderContainer> _pump(
   required FakeParticipationGateway participation,
   FakeRecurringActivityGateway? recurring,
   ProposalStatus proposalStatus = ProposalStatus.upcoming,
+  FakeProjectResourceNeedsGateway? projectResourceNeeds,
 }) async {
   final auth = FakeAuthGateway(
     snapshot: AuthSnapshot(identity: AuthIdentity(id: identityId)),
@@ -397,6 +443,9 @@ Future<ProviderContainer> _pump(
         proposalGatewayProvider.overrideWithValue(proposals),
         recurringActivityGatewayProvider.overrideWithValue(recurringGateway),
         participationGatewayProvider.overrideWithValue(participation),
+        projectResourceNeedsGatewayProvider.overrideWithValue(
+          projectResourceNeeds ?? FakeProjectResourceNeedsGateway(),
+        ),
       ],
       child: const PlanetsApp(),
     ),

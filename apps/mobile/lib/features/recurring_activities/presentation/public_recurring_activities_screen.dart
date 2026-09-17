@@ -9,8 +9,11 @@ import '../../../core/widgets/empty_state.dart';
 import '../../../core/widgets/error_state.dart';
 import '../../../core/widgets/loading_state.dart';
 import '../../../l10n/generated/app_localizations.dart';
+import '../../auth/application/auth_session_controller.dart';
 import '../../participation/domain/participation_models.dart';
 import '../../participation/presentation/project_participation_section.dart';
+import '../../project_resource_needs/presentation/project_resource_need_routes.dart';
+import '../../project_resource_needs/presentation/project_resource_needs_section.dart';
 import '../application/recurring_activity_controllers.dart';
 import '../domain/recurring_activity_models.dart';
 import 'recurring_activity_widgets.dart';
@@ -293,6 +296,22 @@ class _PublicRecurringActivityDetailScreenState
                     '${formatEventDateTime(occurrence.endsAt, occurrence.eventTimezone, locale)} · ${occurrence.eventTimezone}',
                   ),
                 ),
+            ProjectResourceNeedsSection(projectId: detail.id),
+            if (ref.watch(authSessionProvider).identity?.id ==
+                detail.creatorProfileId) ...[
+              const SizedBox(height: AppSpacing.medium),
+              OutlinedButton.icon(
+                key: Key('project-resources-manage-${detail.id}'),
+                onPressed: () => context.push(
+                  ProjectResourceNeedRoutes.manage(
+                    ProjectKind.recurring,
+                    detail.id,
+                  ),
+                ),
+                icon: const Icon(Icons.inventory_2_outlined),
+                label: Text(l10n.projectResourcesManage),
+              ),
+            ],
             const SizedBox(height: AppSpacing.large),
             ProjectParticipationSection(
               projectId: detail.id,

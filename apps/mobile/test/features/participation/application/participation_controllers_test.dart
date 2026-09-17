@@ -63,6 +63,8 @@ void main() {
         projectId: 'proposal-1',
         projectKind: ProjectKind.oneTime,
         message: '  I can help.  ',
+        skillIds: const {'skill-b', 'skill-a'},
+        resourceNeedIds: const {'need-2', 'need-1'},
       );
       final second = await controller.requestToJoin(
         expectedProfileId: 'user-1',
@@ -78,6 +80,8 @@ void main() {
       pending.complete();
       expect(await first, isTrue);
       expect(gateway.lastMessage, 'I can help.');
+      expect(gateway.lastSkillIds, {'skill-a', 'skill-b'});
+      expect(gateway.lastResourceNeedIds, {'need-1', 'need-2'});
       expect(
         session.container
             .read(ownParticipationProvider)
@@ -110,6 +114,8 @@ void main() {
         isTrue,
       );
       expect(gateway.lastMessage, isNull);
+      expect(gateway.lastSkillIds, isEmpty);
+      expect(gateway.lastResourceNeedIds, isEmpty);
       expect(
         await controller.requestToJoin(
           expectedProfileId: 'user-1',

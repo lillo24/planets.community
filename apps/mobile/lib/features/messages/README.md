@@ -9,10 +9,11 @@ chronological feed. Project-chat transport and UI live in the adjacent
 ## Source map
 
 - `domain/message_models.dart` defines the strict requester/creator viewer role,
-  structured request item, and paired activity/request cursor.
+  structured request item, typed skill/resource selection labels, and paired
+  activity/request cursor.
 - `data/messages_gateway.dart` is the only Supabase boundary. It calls the 07A
-  list/exact read RPCs and the existing 05A Accept/Reject/Withdraw transitions,
-  then strictly parses the narrow response.
+  list/exact reads, the private 04C3B1 selection read, and the existing 05A
+  Accept/Reject/Withdraw transitions, then strictly parses each narrow response.
 - `application/messages_controllers.dart` owns keyset paging, detail/action
   state, identity revisions, duplicate-action guards, conflict reloads, and
   synchronization with the existing 05B participation controllers.
@@ -22,8 +23,9 @@ chronological feed. Project-chat transport and UI live in the adjacent
   loading/refresh/pagination, chat previews, and the existing role-aware request
   cards. Chats is the deterministic default and no unread state is fabricated.
 - `presentation/participation_request_message_screen.dart` owns full authorized
-  request detail, canonical actions, resolved history, and Proposal/Tavolo
-  navigation.
+request detail, canonical actions, resolved history, and Proposal/Tavolo
+  navigation. Rounded contribution labels remain detail-only so the inbox never
+  performs per-row selection fan-out.
 
 ## Privacy and state
 
@@ -32,6 +34,12 @@ or the owning Project creator. The private request message and narrow display
 identities are never loaded from public project reads. Missing and unauthorized
 exact IDs fail identically. The client displays safe localized errors and never
 renders backend diagnostics.
+
+The request item and contribution-selection read are independent. Selection
+loading/failure never removes Accept/Reject/Withdraw, and its local retry
+resolves current canonical labels for the historical selected IDs. Empty
+selection history is valid. Unknown selection kinds fail safely rather than
+being rendered as an invented contribution type.
 
 Inbox and detail data live only in identity-bound Riverpod memory. Every load or
 mutation captures the rendered identity and a request revision; sign-out or an

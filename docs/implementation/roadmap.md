@@ -60,7 +60,7 @@ Do not begin a dependent plan until the prior plan is merged or its branch is ex
 | 04C3A | Project Resource Needs Domain Foundation                  | Stable Project-owned plain-text needs, lifecycle-aware creator/public reads, identifier-only events, and tests         | 04A, 04B1, 05A         | None for the decision-light open/closed need foundation                                                              | In progress |
 | 04C3B | Join-Request Contribution Selection + Mobile/Messages     | Request-attempt selection domain followed by mobile selection and structured Messages labels                           | 04C3A, 05A, 07A        | Accepted mutable commitments remain separate                                                                         | In progress |
 | 04C3B1 | Join-Request Contribution Selection Domain               | Atomic historical Proposal-skill/Project-need ID selections with private requester/creator reads                        | 04C3A, 05A, 07A        | Tavolo skills wait for a canonical recurring requirement relation                                                     | In progress |
-| 04C3B2 | Mobile Selection + Rounded Messages Labels               | Flutter request-selection controls, Project-need owner UI, and structured Messages labels                               | 04C3B1                 | Native interaction review                                                                                             | Not started |
+| 04C3B2 | Mobile Selection + Rounded Messages Labels               | Flutter request-selection controls, Project-need owner UI, and structured Messages labels                               | 04C3B1                 | Native interaction review deferred to Plan 12                                                                         | In progress |
 | 04C3C | Accepted Participant Contribution Commitments            | Mutable post-acceptance help/resource availability without rewriting request history                                    | 04C3B1, 05A            | Mutation ownership/location and delegate semantics                                                                    | Not started |
 | 04C4  | Listing Requests/Handoff + Saved Search/Matching          | Post-discovery request/handoff rules plus explainable saved-search and matching behavior                               | 04C1                   | Exchange, request, handoff, contact, matching, and notification semantics                                             | Not started |
 | 05    | Participation lifecycle (parent)                          | Shared project participation foundation, later mobile experience, and verified-contribution review                     | 04A, 04B1              | Capacity/fullness and later contribution/resource semantics remain unresolved                                        | In progress |
@@ -319,7 +319,7 @@ or introduce participation, chat, resources, or recurrence expansion.
 
 #### 04C — Resources + Scambio-Dona
 
-**Status:** In progress through implemented 04C1–04C2 and current stacked 04C3A/04C3B1. Mobile contribution selection, accepted commitments, request/handoff, saved-search, matching, and notification slices remain later work.
+**Status:** In progress through implemented 04C1–04C2 and the current stacked 04C3A/04C3B1/04C3B2 work. Accepted commitments, request/handoff, saved-search, matching, and notification slices remain later work.
 
 The earlier combined scope is split so standalone public listings do not force unresolved Project contribution or post-discovery transaction rules:
 
@@ -339,7 +339,7 @@ Owns the primary text-only Flutter browse/detail and owner create/edit/publish/c
 
 ##### 04C3 — Project Resource Needs and Contribution Offers (parent)
 
-**Status:** In progress through stacked 04C3A and 04C3B1. Depends on 04A, 04B1, and 05A.
+**Status:** In progress through stacked 04C3A, 04C3B1, and 04C3B2. Depends on 04A, 04B1, and 05A.
 
 This parent keeps Project-owned needs and later request-linked contribution offers separate from standalone Scambio-Dona listings and from accepted membership.
 
@@ -353,13 +353,13 @@ Owns stable UUID needs attached to `public.projects`, bounded plain-text title/o
 
 ###### 04C3B — Join-Request Contribution Selection + Mobile/Messages (parent)
 
-**Status:** In progress through 04C3B1. Depends on 04C3A, 05A, and 07A.
+**Status:** In progress through the stacked 04C3B2 mobile layer. Depends on 04C3A, 05A, and 07A.
 
 This parent lets a requester select canonical Project competence/skill IDs and open Project resource-need IDs, attaches those selections to the stable join request, and later shows them as structured labels in Messages/mobile beside the existing optional request message. It must not introduce a generic free-text contribution category.
 
 ###### 04C3B1 — Join-Request Contribution Selection Domain
 
-**Status:** In progress in the current stacked implementation, based on PR #45 without merging it.
+**Status:** Open in PR #52, rebased onto the current PR #45 head, and intentionally unmerged while executable Database validation is unavailable.
 
 Owns immutable request-attempt skill/resource ID relations, an optional-array evolution of the existing atomic join-request RPC, Proposal current-requirement and open same-Project need validation, empty-only Tavolo skill input, requester/creator-only current-label resolution, retained withdraw/reject/accept history, unchanged identifier-only events, and focused pgTAP/real-OTP/concurrency coverage. Existing three-argument callers create zero selections. Later Proposal-skill removal, need rename, and need closure preserve the selected IDs.
 
@@ -367,9 +367,11 @@ Owns immutable request-attempt skill/resource ID relations, an optional-array ev
 
 ###### 04C3B2 — Mobile Selection + Rounded Messages Labels
 
-**Status:** Not started. Depends on 04C3B1.
+**Status:** In progress in the current stacked mobile PR, based on PR #52 without merging any layer. Depends on 04C3B1.
 
-Future scope owns Flutter selection chips on the join flow, Project resource-need owner UI, and rounded canonical labels in structured Messages. It consumes existing Proposal detail skills, 04C3A public open needs, and the private 04C3B1 request-selection read; Tavoli remain resource-only until a separate plan defines canonical recurring skill requirements.
+The scoped Flutter layer adds independent public open-need sections on Proposal/Tavolo detail, expected-identity creator add/edit/terminal-close history, and protected `/proposals/:id/resources` / `/tavoli/:id/resources` routes. Join requesters select canonical Proposal-skill and open Project-need IDs with Material chips while retaining the optional private message; Tavoli remain resource-only until a separate plan defines canonical recurring skill requirements. Submission waits for canonical options, and stale backend validation reloads/prunes IDs without discarding the message.
+
+Structured Messages detail independently resolves current canonical labels for historical request selections and renders rounded skill/resource groups beside the existing message. A selection-read failure stays local and never hides Accept/Reject/Withdraw. Inbox rows do not fan out selection reads. 04C3B2 adds no migration, Tavolo skill relation, accepted commitment, fulfillment inference, Realtime, notification, or Scambio-Dona linkage.
 
 ###### 04C3C — Accepted Participant Contribution Commitments
 
@@ -766,6 +768,25 @@ Deferred 04C2 native checklist:
 - verify screen-reader labels, text scaling, contrast, and non-color lifecycle
   cues.
 
+Deferred 04C3B2 native checklist:
+
+- verify contribution-chip touch targets and selected/unselected screen-reader
+  state on Android and iOS;
+- verify long skill/resource labels and both chip groups wrap without overflow
+  on supported small screens and text scales;
+- verify keyboard traversal between chips and the optional private message;
+- verify add/edit resource-need dialogs, validation, keyboard insets, and close
+  confirmation copy, including that Closed never implies fulfilled;
+- verify Proposal join shows both current skill requirements and open resource
+  needs while Tavolo join remains resource-only;
+- verify a changed/closed option produces safe stale-option recovery, prunes
+  only invalid selections, and retains the private message;
+- verify Messages request-detail chips wrap and remain visible for resolved
+  historical requests;
+- verify a Messages selection-read failure leaves Accept/Reject/Withdraw usable;
+- verify account switching with join/owner/message screens open never exposes
+  the prior account's message, selections, or creator history.
+
 ### 13 — Self-hosted production infrastructure readiness
 
 **Goal:** Build, secure, test, and rehearse the intended self-hosted Supabase production environment after the main feature and UI/UX work, before public release.
@@ -855,13 +876,13 @@ Major gates currently expected:
 
 ## Immediate next action
 
-Complete and review the stacked **04C3B1 — Join-Request Contribution Selection Domain**
-without merging it or its 04C3A base PR #45. 04C1 is implemented in merged PR #32
+Complete and review the stacked **04C3B2 — Mobile Selection + Rounded Messages Labels**
+without merging it, PR #52, or its 04C3A base PR #45. 04C1 is implemented in merged PR #32
 (`2aca5bdde7bf7ed7d747f14dcccbc3b5c4b75c42`) and 04C2 is implemented in
 merged PR #34 (`2da76de112a860210161d64de6bceab333159c26`).
 06D is implemented in merged PR #31, while 06 remains in
 progress because provider-specific 06C2B is not started. Optional E2EE/MLS
-research remains unmerged and deferred in PR #28. 04C3B2, 04C3C, 04C4, and 05C remain
+research remains unmerged and deferred in PR #28. 04C3C, 04C4, and 05C remain
 not started; 05C waits specifically for mutable accepted-commitment semantics
 from 04C3C rather than standalone listing UI, request history, or 04C3A need existence. Plan 06C2B remains
 not started and requires Firebase/APNs configuration, push permission and

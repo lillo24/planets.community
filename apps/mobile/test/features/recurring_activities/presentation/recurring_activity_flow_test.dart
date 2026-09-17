@@ -7,6 +7,7 @@ import 'package:planets_mobile/core/config/app_config.dart';
 import 'package:planets_mobile/features/auth/data/auth_gateway.dart';
 import 'package:planets_mobile/features/auth/domain/auth_models.dart';
 import 'package:planets_mobile/features/profile/data/profile_gateway.dart';
+import 'package:planets_mobile/features/project_resource_needs/data/project_resource_needs_gateway.dart';
 import 'package:planets_mobile/features/participation/data/participation_gateway.dart';
 import 'package:planets_mobile/features/participation/domain/participation_models.dart';
 import 'package:planets_mobile/features/proposals/data/proposal_gateway.dart';
@@ -15,6 +16,7 @@ import 'package:planets_mobile/features/recurring_activities/domain/recurring_ac
 
 import '../../../support/fake_auth.dart';
 import '../../../support/fake_profile.dart';
+import '../../../support/fake_project_resource_needs.dart';
 import '../../../support/fake_participation.dart';
 import '../../../support/fake_proposal.dart';
 import '../../../support/fake_recurring_activity.dart';
@@ -254,6 +256,9 @@ Future<ProviderContainer> _pump(
         ),
         proposalGatewayProvider.overrideWithValue(FakeProposalGateway()),
         recurringActivityGatewayProvider.overrideWithValue(recurring),
+        projectResourceNeedsGatewayProvider.overrideWithValue(
+          FakeProjectResourceNeedsGateway(),
+        ),
       ],
       child: const PlanetsApp(),
     ),
