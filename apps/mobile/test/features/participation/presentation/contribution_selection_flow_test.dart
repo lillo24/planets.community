@@ -11,6 +11,7 @@ import 'package:planets_mobile/features/participation/data/participation_gateway
 import 'package:planets_mobile/features/participation/domain/participation_models.dart';
 import 'package:planets_mobile/features/participation/presentation/join_request_screen.dart';
 import 'package:planets_mobile/features/project_resource_needs/data/project_resource_needs_gateway.dart';
+import 'package:planets_mobile/features/project_resource_needs/domain/project_resource_need_models.dart';
 import 'package:planets_mobile/features/proposals/data/proposal_gateway.dart';
 import 'package:planets_mobile/features/proposals/domain/proposal_models.dart';
 import 'package:planets_mobile/l10n/generated/app_localizations.dart';
@@ -230,6 +231,118 @@ void main() {
     );
     expect(find.textContaining('private validation'), findsNothing);
   });
+
+  testWidgets(
+    'skill and resource limits are independent and never submit a 51st ID',
+    (tester) async {
+      final participation = FakeParticipationGateway();
+      final resources = FakeProjectResourceNeedsGateway()
+        ..publicItems = _resourceOptions(51);
+      final proposals = FakeProposalGateway()
+        ..publicDetail = proposalDetailFixture(skills: _skillOptions(51));
+      final session = await _pumpJoin(
+        tester,
+        projectKind: ProjectKind.oneTime,
+        participation: participation,
+        resources: resources,
+        proposals: proposals,
+      );
+      addTearDown(session.dispose);
+
+      _selectOptions(tester, prefix: 'skill', count: 50);
+      await tester.pump();
+
+      expect(
+        find.byKey(const Key('participation-skill-limit-guidance')),
+        findsOneWidget,
+      );
+      expect(find.text('Maximum 50 selections.'), findsOneWidget);
+      expect(_option(tester, 'skill', 49).selected, isTrue);
+      expect(_option(tester, 'skill', 50).onSelected, isNull);
+      expect(_option(tester, 'resource', 50).onSelected, isNotNull);
+
+      _selectOptions(tester, prefix: 'resource', count: 50);
+      await tester.pump();
+
+      expect(
+        find.byKey(const Key('participation-resource-limit-guidance')),
+        findsOneWidget,
+      );
+      expect(find.text('Maximum 50 selections.'), findsNWidgets(2));
+      expect(_option(tester, 'resource', 49).selected, isTrue);
+      expect(_option(tester, 'resource', 50).onSelected, isNull);
+
+      _option(tester, 'skill', 0).onSelected!(false);
+      await tester.pump();
+      expect(_option(tester, 'skill', 50).onSelected, isNotNull);
+      _option(tester, 'skill', 50).onSelected!(true);
+      await tester.pump();
+      expect(_option(tester, 'skill', 50).selected, isTrue);
+      expect(_option(tester, 'skill', 0).onSelected, isNull);
+
+      _option(tester, 'resource', 0).onSelected!(false);
+      await tester.pump();
+      expect(_option(tester, 'resource', 50).onSelected, isNotNull);
+      _option(tester, 'resource', 50).onSelected!(true);
+      await tester.pump();
+      expect(_option(tester, 'resource', 50).selected, isTrue);
+      expect(_option(tester, 'resource', 0).onSelected, isNull);
+
+      await _scrollTo(
+        tester,
+        find.byKey(const Key('participation-send-request')),
+      );
+      await tester.tap(find.byKey(const Key('participation-send-request')));
+      await tester.pumpAndSettle();
+
+      expect(participation.lastSkillIds, hasLength(50));
+      expect(participation.lastSkillIds, contains('skill-50'));
+      expect(participation.lastSkillIds, isNot(contains('skill-0')));
+      expect(participation.lastResourceNeedIds, hasLength(50));
+      expect(participation.lastResourceNeedIds, contains('need-50'));
+      expect(participation.lastResourceNeedIds, isNot(contains('need-0')));
+    },
+  );
+}
+
+List<ProposalSkill> _skillOptions(int count) => List.generate(
+  count,
+  (index) => ProposalSkill(
+    id: 'skill-$index',
+    slug: 'skill-$index',
+    label: 'Skill $index',
+    categoryId: 'category-1',
+    categorySlug: 'category',
+    categoryLabel: 'Category',
+    importance: index.isEven
+        ? ProposalSkillImportance.required
+        : ProposalSkillImportance.useful,
+  ),
+);
+
+List<PublicProjectResourceNeed> _resourceOptions(int count) => List.generate(
+  count,
+  (index) => publicProjectResourceNeedFixture(
+    id: 'need-$index',
+    title: 'Resource $index',
+  ),
+);
+
+void _selectOptions(
+  WidgetTester tester, {
+  required String prefix,
+  required int count,
+}) {
+  for (var index = 0; index < count; index++) {
+    _option(tester, prefix, index).onSelected!(true);
+  }
+}
+
+FilterChip _option(WidgetTester tester, String prefix, int index) {
+  final idPrefix = prefix == 'skill' ? 'skill' : 'need';
+  return tester.widget<FilterChip>(
+    find.byKey(Key('participation-option-$prefix-$idPrefix-$index')),
+  );
 }
 
 Future<ProviderContainer> _pumpJoin(

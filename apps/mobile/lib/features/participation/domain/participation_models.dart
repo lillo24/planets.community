@@ -1,4 +1,6 @@
 const participationRequestMessageMaxLength = 500;
+const participationSkillSelectionMax = 50;
+const participationResourceNeedSelectionMax = 50;
 
 enum ContributionOptionKind { skill, resource }
 

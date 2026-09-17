@@ -132,6 +132,67 @@ void main() {
     },
   );
 
+  test('join rejects a 51st selection before calling the gateway', () async {
+    final gateway = FakeParticipationGateway();
+    final session = _readyContainer(gateway);
+    addTearDown(session.container.dispose);
+    addTearDown(session.auth.close);
+    final controller = session.container.read(
+      participationCommandProvider.notifier,
+    );
+    final fiftySkills = {
+      for (var index = 0; index < participationSkillSelectionMax; index++)
+        'skill-$index',
+    };
+    final fiftyResources = {
+      for (
+        var index = 0;
+        index < participationResourceNeedSelectionMax;
+        index++
+      )
+        'need-$index',
+    };
+
+    expect(
+      await controller.requestToJoin(
+        expectedProfileId: 'user-1',
+        projectId: 'proposal-too-many-skills',
+        projectKind: ProjectKind.oneTime,
+        message: '',
+        skillIds: {...fiftySkills, 'skill-50'},
+      ),
+      isFalse,
+    );
+    expect(
+      await controller.requestToJoin(
+        expectedProfileId: 'user-1',
+        projectId: 'proposal-too-many-resources',
+        projectKind: ProjectKind.oneTime,
+        message: '',
+        resourceNeedIds: {...fiftyResources, 'need-50'},
+      ),
+      isFalse,
+    );
+    expect(gateway.calls.where((call) => call.startsWith('request:')), isEmpty);
+
+    expect(
+      await controller.requestToJoin(
+        expectedProfileId: 'user-1',
+        projectId: 'proposal-at-limits',
+        projectKind: ProjectKind.oneTime,
+        message: '',
+        skillIds: fiftySkills,
+        resourceNeedIds: fiftyResources,
+      ),
+      isTrue,
+    );
+    expect(gateway.lastSkillIds, hasLength(participationSkillSelectionMax));
+    expect(
+      gateway.lastResourceNeedIds,
+      hasLength(participationResourceNeedSelectionMax),
+    );
+  });
+
   test(
     'identity change rejects a late join response and clears private state',
     () async {

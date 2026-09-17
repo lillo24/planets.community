@@ -196,6 +196,11 @@ class _JoinRequestScreenState extends ConsumerState<JoinRequestScreen> {
                       title: l10n.participationCompetencesGroup,
                       options: options.skillOptions,
                       selectedIds: _selectedSkillIds,
+                      selectionLimit: participationSkillSelectionMax,
+                      limitMessage: l10n
+                          .participationContributionSelectionLimit(
+                            participationSkillSelectionMax,
+                          ),
                       enabled: !isBusy,
                       keyPrefix: 'skill',
                       onChanged: (id, selected) => setState(() {
@@ -211,6 +216,11 @@ class _JoinRequestScreenState extends ConsumerState<JoinRequestScreen> {
                       title: l10n.participationResourcesGroup,
                       options: options.resourceOptions,
                       selectedIds: _selectedResourceNeedIds,
+                      selectionLimit: participationResourceNeedSelectionMax,
+                      limitMessage: l10n
+                          .participationContributionSelectionLimit(
+                            participationResourceNeedSelectionMax,
+                          ),
                       enabled: !isBusy,
                       keyPrefix: 'resource',
                       onChanged: (id, selected) => setState(() {
@@ -299,6 +309,8 @@ class _ContributionOptionGroup extends StatelessWidget {
     required this.title,
     required this.options,
     required this.selectedIds,
+    required this.selectionLimit,
+    required this.limitMessage,
     required this.enabled,
     required this.keyPrefix,
     required this.onChanged,
@@ -307,6 +319,8 @@ class _ContributionOptionGroup extends StatelessWidget {
   final String title;
   final List<ContributionOption> options;
   final Set<String> selectedIds;
+  final int selectionLimit;
+  final String limitMessage;
   final bool enabled;
   final String keyPrefix;
   final void Function(String id, bool selected) onChanged;
@@ -326,12 +340,26 @@ class _ContributionOptionGroup extends StatelessWidget {
               key: Key('participation-option-$keyPrefix-${option.id}'),
               label: Text(option.label),
               selected: selectedIds.contains(option.id),
-              onSelected: enabled
+              onSelected:
+                  enabled &&
+                      (selectedIds.contains(option.id) ||
+                          selectedIds.length < selectionLimit)
                   ? (selected) => onChanged(option.id, selected)
                   : null,
             ),
         ],
       ),
+      if (selectedIds.length >= selectionLimit) ...[
+        const SizedBox(height: AppSpacing.xSmall),
+        Semantics(
+          liveRegion: true,
+          child: Text(
+            limitMessage,
+            key: Key('participation-$keyPrefix-limit-guidance'),
+            style: Theme.of(context).textTheme.bodySmall,
+          ),
+        ),
+      ],
     ],
   );
 }

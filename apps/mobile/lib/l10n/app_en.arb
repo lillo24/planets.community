@@ -811,6 +811,11 @@
   "participationContributionLoading": "Loading contribution options…",
   "participationContributionLoadError": "We couldn't load the current contribution options.",
   "participationNoContributionOptions": "No contribution options are currently listed. You can still send an optional message.",
+  "participationContributionSelectionLimit": "Maximum {max} selections.",
+  "@participationContributionSelectionLimit": {
+    "description": "Guidance shown when a contribution-option group reaches its canonical selection limit.",
+    "placeholders": { "max": { "type": "int" } }
+  },
   "participationRequirementsChanged": "The Project requirements changed. Review your selections and try again.",
   "messagesCanContribute": "Can contribute",
   "messagesNoContributionsSelected": "No contributions selected",

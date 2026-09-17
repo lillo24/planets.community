@@ -184,7 +184,9 @@ class ParticipationCommandController
   }) async {
     final normalizedMessage = message.trim();
     if (state.isBusy ||
-        normalizedMessage.length > participationRequestMessageMaxLength) {
+        normalizedMessage.length > participationRequestMessageMaxLength ||
+        skillIds.length > participationSkillSelectionMax ||
+        resourceNeedIds.length > participationResourceNeedSelectionMax) {
       if (!state.isBusy) {
         state = ParticipationCommandState(
           phase: ParticipationCommandPhase.failure,

@@ -59,6 +59,12 @@ discarding the message. Backend stale-option rejection reloads the canonical
 options, intersects selected IDs, preserves the message, and displays only safe
 localized copy.
 
+The join form mirrors the backend's independent maximums of 50 selected
+Proposal skills and 50 selected Project resource needs. At a group limit,
+selected chips remain enabled for deselection while additional unselected chips
+remain unavailable until space is freed; the two groups do not consume one
+another's allowance.
+
 Own requests and memberships are loaded once per identity and resolved by
 project in memory, avoiding per-card RPCs. Public detail remains usable if this
 private overview fails.
