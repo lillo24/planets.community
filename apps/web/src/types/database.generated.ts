@@ -1532,6 +1532,14 @@ export type Database = {
           status: string
         }[]
       }
+      list_own_project_membership_commitment_options: {
+        Args: { p_expected_profile_id: string; p_membership_id: string }
+        Returns: {
+          label: string
+          option_id: string
+          option_kind: string
+        }[]
+      }
       list_own_project_membership_commitments: {
         Args: { p_expected_profile_id: string; p_membership_id: string }
         Returns: {

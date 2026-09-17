@@ -559,6 +559,136 @@ begin
 end;
 $$;
 
+create function public.list_own_project_membership_commitment_options(
+  p_expected_profile_id uuid,
+  p_membership_id uuid
+)
+returns table (
+  option_kind text,
+  option_id uuid,
+  label text
+)
+language plpgsql
+stable
+security definer
+set search_path = ''
+as $$
+declare
+  current_profile_id uuid := private.require_participation_identity(
+    p_expected_profile_id
+  );
+  membership_record public.project_memberships%rowtype;
+  registry public.projects%rowtype;
+  source_creator_profile_id uuid;
+  source_is_operational boolean;
+begin
+  select * into membership_record
+  from public.project_memberships as membership
+  where membership.id = p_membership_id;
+
+  if not found then
+    raise exception using
+      errcode = '42501',
+      message = 'The membership commitment options are unavailable.';
+  end if;
+
+  select * into registry
+  from public.projects as project
+  where project.id = membership_record.project_id;
+
+  if not found
+    or (
+      membership_record.participant_profile_id <> current_profile_id
+      and registry.creator_profile_id <> current_profile_id
+    ) then
+    raise exception using
+      errcode = '42501',
+      message = 'The membership commitment options are unavailable.';
+  end if;
+
+  if membership_record.left_at is not null
+    or membership_record.removed_at is not null then
+    raise exception using
+      errcode = '55000',
+      message = 'Only a current membership can list commitment options.';
+  end if;
+
+  if registry.project_kind = 'one_time' then
+    select
+      proposal.creator_profile_id,
+      proposal.lifecycle_state = 'published'
+        and proposal.ends_at is not null
+        and statement_timestamp() < proposal.ends_at
+    into source_creator_profile_id, source_is_operational
+    from public.proposals as proposal
+    where proposal.id = registry.id;
+  elsif registry.project_kind = 'recurring' then
+    select
+      activity.creator_profile_id,
+      activity.lifecycle_state in ('published', 'paused')
+    into source_creator_profile_id, source_is_operational
+    from public.recurring_activities as activity
+    where activity.id = registry.id;
+  end if;
+
+  if not found or source_creator_profile_id <> registry.creator_profile_id then
+    raise exception using
+      errcode = '55000',
+      message = 'The project registry is inconsistent with its concrete activity.';
+  end if;
+
+  if source_is_operational is not true then
+    raise exception using
+      errcode = '55000',
+      message = 'Membership commitments can only change while the Project is operational.';
+  end if;
+
+  -- This is an advisory UI snapshot, not a reservation. The replacement RPC
+  -- revalidates every newly added ID under the canonical mutation locks.
+  return query
+  with ordered_options as (
+    select
+      'skill'::text as resolved_kind,
+      available_skill.skill_id as resolved_id,
+      skill.label as resolved_label,
+      0::smallint as kind_order,
+      category.sort_order as category_order,
+      skill.sort_order as item_order,
+      null::timestamptz as resource_created_at
+    from public.proposal_skills as available_skill
+    join public.skills as skill on skill.id = available_skill.skill_id
+    join public.skill_categories as category on category.id = skill.category_id
+    where registry.project_kind = 'one_time'
+      and available_skill.proposal_id = membership_record.project_id
+
+    union all
+
+    select
+      'resource'::text,
+      resource_need.id,
+      resource_need.title,
+      1::smallint,
+      0::smallint,
+      0::smallint,
+      resource_need.created_at
+    from public.project_resource_needs as resource_need
+    where resource_need.project_id = membership_record.project_id
+      and resource_need.state = 'open'
+  )
+  select
+    ordered.resolved_kind,
+    ordered.resolved_id,
+    ordered.resolved_label
+  from ordered_options as ordered
+  order by
+    ordered.kind_order,
+    ordered.category_order,
+    ordered.item_order,
+    ordered.resource_created_at,
+    ordered.resolved_id;
+end;
+$$;
+
 revoke all privileges on function private.seed_project_membership_commitments()
   from public, anon, authenticated, service_role;
 revoke all privileges on function
@@ -573,12 +703,18 @@ revoke all privileges on function
 revoke all privileges on function
   public.list_own_project_membership_commitments(uuid, uuid)
   from public, anon, authenticated, service_role;
+revoke all privileges on function
+  public.list_own_project_membership_commitment_options(uuid, uuid)
+  from public, anon, authenticated, service_role;
 
 grant execute on function
   public.replace_project_membership_commitments(uuid, uuid, uuid[], uuid[])
   to authenticated;
 grant execute on function
   public.list_own_project_membership_commitments(uuid, uuid)
+  to authenticated;
+grant execute on function
+  public.list_own_project_membership_commitment_options(uuid, uuid)
   to authenticated;
 
 comment on function
@@ -595,3 +731,7 @@ is
   'Replaces the full skill/resource desired set for one current membership; only new IDs require current Project validity.';
 comment on function public.list_own_project_membership_commitments(uuid, uuid) is
   'Returns current canonical labels for one current or ended membership final commitment IDs to its participant or Project creator.';
+comment on function
+  public.list_own_project_membership_commitment_options(uuid, uuid)
+is
+  'Returns the current skills/open needs that an authorized current membership may newly add; this advisory snapshot may become stale and replacement revalidates atomically.';

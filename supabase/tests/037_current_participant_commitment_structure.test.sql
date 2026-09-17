@@ -147,6 +147,12 @@ select ok(
   ) is not null,
   'the participant-and-creator authorized read RPC exists'
 );
+select ok(
+  to_regprocedure(
+    'public.list_own_project_membership_commitment_options(uuid,uuid)'
+  ) is not null,
+  'the current-membership addable-options RPC exists'
+);
 select is(
   (
     select pronargdefaults
@@ -166,6 +172,25 @@ select is(
   'TABLE(commitment_kind text, commitment_id uuid, label text)'::text,
   'the read returns only normalized kind, ID, and current label rows'
 );
+select is(
+  (
+    select pg_get_function_result(
+      'public.list_own_project_membership_commitment_options(uuid,uuid)'::regprocedure
+    )
+  ),
+  'TABLE(option_kind text, option_id uuid, label text)'::text,
+  'the options read returns only normalized kind, ID, and current label rows'
+);
+select is(
+  (
+    select provolatile::text
+    from pg_proc
+    where oid =
+      'public.list_own_project_membership_commitment_options(uuid,uuid)'::regprocedure
+  ),
+  's'::text,
+  'the advisory options snapshot is stable and does not reserve options'
+);
 
 select is(
   (
@@ -176,7 +201,8 @@ select is(
       'private.lock_project_for_membership_commitment_mutation(uuid)'::regprocedure,
       'private.record_project_membership_commitment_event(uuid,uuid,text,uuid,uuid)'::regprocedure,
       'public.replace_project_membership_commitments(uuid,uuid,uuid[],uuid[])'::regprocedure,
-      'public.list_own_project_membership_commitments(uuid,uuid)'::regprocedure
+      'public.list_own_project_membership_commitments(uuid,uuid)'::regprocedure,
+      'public.list_own_project_membership_commitment_options(uuid,uuid)'::regprocedure
     )
   ),
   true,
@@ -191,7 +217,8 @@ select is(
       'private.lock_project_for_membership_commitment_mutation(uuid)'::regprocedure,
       'private.record_project_membership_commitment_event(uuid,uuid,text,uuid,uuid)'::regprocedure,
       'public.replace_project_membership_commitments(uuid,uuid,uuid[],uuid[])'::regprocedure,
-      'public.list_own_project_membership_commitments(uuid,uuid)'::regprocedure
+      'public.list_own_project_membership_commitments(uuid,uuid)'::regprocedure,
+      'public.list_own_project_membership_commitment_options(uuid,uuid)'::regprocedure
     )
   ),
   true,
@@ -216,6 +243,15 @@ select is(
   'authenticated users can invoke the guarded read RPC'
 );
 select is(
+  has_function_privilege(
+    'authenticated',
+    'public.list_own_project_membership_commitment_options(uuid,uuid)',
+    'EXECUTE'
+  ),
+  true,
+  'authenticated users can invoke the guarded addable-options RPC'
+);
+select is(
   (
     select bool_or(
       has_function_privilege(role_name, function_name, 'EXECUTE')
@@ -223,11 +259,30 @@ select is(
     from unnest(array['anon', 'service_role']) as roles(role_name)
     cross join unnest(array[
       'public.replace_project_membership_commitments(uuid,uuid,uuid[],uuid[])',
-      'public.list_own_project_membership_commitments(uuid,uuid)'
+      'public.list_own_project_membership_commitments(uuid,uuid)',
+      'public.list_own_project_membership_commitment_options(uuid,uuid)'
     ]) as functions(function_name)
   ),
   false,
   'anonymous and service roles receive no commitment API grants'
+);
+select unlike(
+  lower(
+    pg_get_functiondef(
+      'public.list_own_project_membership_commitment_options(uuid,uuid)'::regprocedure
+    )
+  ),
+  '%audit_events%',
+  'the advisory options read writes no audit event'
+);
+select unlike(
+  lower(
+    pg_get_functiondef(
+      'public.list_own_project_membership_commitment_options(uuid,uuid)'::regprocedure
+    )
+  ),
+  '%outbox_events%',
+  'the advisory options read writes no outbox event'
 );
 select is(
   (

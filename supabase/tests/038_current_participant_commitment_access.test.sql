@@ -158,6 +158,18 @@ select throws_ok(
   'permission denied for function list_own_project_membership_commitments',
   'anonymous users cannot invoke the commitment read'
 );
+select throws_ok(
+  $$
+    select *
+    from public.list_own_project_membership_commitment_options(
+      null,
+      '00000000-0000-4000-8000-000000000001'
+    )
+  $$,
+  '42501',
+  'permission denied for function list_own_project_membership_commitment_options',
+  'anonymous users cannot invoke the commitment-options read'
+);
 
 set local role authenticated;
 select set_config(
@@ -264,6 +276,108 @@ select is(
   ),
   1::bigint,
   'the existing acceptance-time group-chat trigger still creates one chat'
+);
+
+select set_config(
+  'test.options_audit_before',
+  (select count(*)::text from private.audit_events),
+  true
+);
+select set_config(
+  'test.options_outbox_before',
+  (select count(*)::text from private.outbox_events),
+  true
+);
+
+set local role authenticated;
+select set_config(
+  'request.jwt.claim.sub',
+  'a1000000-0000-4000-8000-000000000002',
+  true
+);
+select results_eq(
+  $$
+    select option_kind, option_id, label
+    from public.list_own_project_membership_commitment_options(
+      'a1000000-0000-4000-8000-000000000002',
+      current_setting('test.commitment_membership')::uuid
+    )
+  $$,
+  $$
+    values
+      (
+        'skill'::text,
+        'd0000000-0000-4000-8001-000000000001'::uuid,
+        'Mural painting'::text
+      ),
+      (
+        'skill'::text,
+        'd0000000-0000-4000-8003-000000000002'::uuid,
+        'Woodworking'::text
+      ),
+      (
+        'resource'::text,
+        'a3000000-0000-4000-8000-000000000001'::uuid,
+        'Seeded open need'::text
+      ),
+      (
+        'resource'::text,
+        'a3000000-0000-4000-8000-000000000002'::uuid,
+        'Second open need'::text
+      )
+  $$,
+  'a Proposal participant reads required/useful skills then open resources in deterministic order'
+);
+select set_config(
+  'request.jwt.claim.sub',
+  'a1000000-0000-4000-8000-000000000001',
+  true
+);
+select results_eq(
+  $$
+    select option_kind, option_id
+    from public.list_own_project_membership_commitment_options(
+      'a1000000-0000-4000-8000-000000000001',
+      current_setting('test.commitment_membership')::uuid
+    )
+  $$,
+  $$
+    values
+      ('skill'::text, 'd0000000-0000-4000-8001-000000000001'::uuid),
+      ('skill'::text, 'd0000000-0000-4000-8003-000000000002'::uuid),
+      ('resource'::text, 'a3000000-0000-4000-8000-000000000001'::uuid),
+      ('resource'::text, 'a3000000-0000-4000-8000-000000000002'::uuid)
+  $$,
+  'the canonical creator may read one current member addable options'
+);
+select set_config(
+  'request.jwt.claim.sub',
+  'a1000000-0000-4000-8000-000000000003',
+  true
+);
+select throws_ok(
+  $$
+    select *
+    from public.list_own_project_membership_commitment_options(
+      'a1000000-0000-4000-8000-000000000003',
+      current_setting('test.commitment_membership')::uuid
+    )
+  $$,
+  '42501',
+  'The membership commitment options are unavailable.',
+  'an unrelated profile cannot read addable options'
+);
+
+reset role;
+select is(
+  (select count(*) from private.audit_events),
+  current_setting('test.options_audit_before')::bigint,
+  'successful and denied options reads create no audit rows'
+);
+select is(
+  (select count(*) from private.outbox_events),
+  current_setting('test.options_outbox_before')::bigint,
+  'successful and denied options reads create no outbox rows'
 );
 
 set local role authenticated;
@@ -536,6 +650,38 @@ select set_config(
   'a1000000-0000-4000-8000-000000000002',
   true
 );
+select results_eq(
+  $$
+    select commitment_kind, commitment_id
+    from public.list_own_project_membership_commitments(
+      'a1000000-0000-4000-8000-000000000002',
+      current_setting('test.commitment_membership')::uuid
+    )
+  $$,
+  $$
+    values
+      ('skill'::text, 'd0000000-0000-4000-8001-000000000001'::uuid),
+      ('skill'::text, 'd0000000-0000-4000-8003-000000000002'::uuid),
+      ('resource'::text, 'a3000000-0000-4000-8000-000000000001'::uuid),
+      ('resource'::text, 'a3000000-0000-4000-8000-000000000002'::uuid)
+  $$,
+  'retained commitments still include a removed skill and closed need'
+);
+select results_eq(
+  $$
+    select option_kind, option_id
+    from public.list_own_project_membership_commitment_options(
+      'a1000000-0000-4000-8000-000000000002',
+      current_setting('test.commitment_membership')::uuid
+    )
+  $$,
+  $$
+    values
+      ('skill'::text, 'd0000000-0000-4000-8003-000000000002'::uuid),
+      ('resource'::text, 'a3000000-0000-4000-8000-000000000002'::uuid)
+  $$,
+  'removed skills and closed needs are absent from newly addable options'
+);
 select lives_ok(
   $$
     select public.replace_project_membership_commitments(
@@ -683,6 +829,18 @@ select throws_ok(
   'Only a current membership can change its commitments.',
   'an ended membership cannot mutate its retained final set'
 );
+select throws_ok(
+  $$
+    select *
+    from public.list_own_project_membership_commitment_options(
+      'a1000000-0000-4000-8000-000000000002',
+      current_setting('test.commitment_membership')::uuid
+    )
+  $$,
+  '55000',
+  'Only a current membership can list commitment options.',
+  'an ended membership cannot request editable options'
+);
 select results_eq(
   $$
     select commitment_kind, commitment_id
@@ -773,6 +931,34 @@ select set_config(
   )::text,
   true
 );
+select set_config(
+  'request.jwt.claim.sub',
+  'a1000000-0000-4000-8000-000000000004',
+  true
+);
+select results_eq(
+  $$
+    select option_kind, option_id, label
+    from public.list_own_project_membership_commitment_options(
+      'a1000000-0000-4000-8000-000000000004',
+      current_setting('test.recurring_membership')::uuid
+    )
+  $$,
+  $$
+    values
+      (
+        'resource'::text,
+        'a3000000-0000-4000-8000-000000000005'::uuid,
+        'Tavolo seeded need'::text
+      ),
+      (
+        'resource'::text,
+        'a3000000-0000-4000-8000-000000000006'::uuid,
+        'Tavolo added need'::text
+      )
+  $$,
+  'a published Tavolo returns open resources and no skill options'
+);
 
 reset role;
 update public.recurring_activities
@@ -786,6 +972,21 @@ select set_config(
   'request.jwt.claim.sub',
   'a1000000-0000-4000-8000-000000000004',
   true
+);
+select results_eq(
+  $$
+    select option_kind, option_id
+    from public.list_own_project_membership_commitment_options(
+      'a1000000-0000-4000-8000-000000000004',
+      current_setting('test.recurring_membership')::uuid
+    )
+  $$,
+  $$
+    values
+      ('resource'::text, 'a3000000-0000-4000-8000-000000000005'::uuid),
+      ('resource'::text, 'a3000000-0000-4000-8000-000000000006'::uuid)
+  $$,
+  'a paused Tavolo still returns open resource options and no skills'
 );
 select lives_ok(
   $$
@@ -819,6 +1020,32 @@ select throws_ok(
 );
 
 reset role;
+update public.recurring_activities
+set
+  lifecycle_state = 'ended',
+  ended_at = statement_timestamp()
+where id = 'a4000000-0000-4000-8000-000000000001';
+
+set local role authenticated;
+select set_config(
+  'request.jwt.claim.sub',
+  'a1000000-0000-4000-8000-000000000004',
+  true
+);
+select throws_ok(
+  $$
+    select *
+    from public.list_own_project_membership_commitment_options(
+      'a1000000-0000-4000-8000-000000000004',
+      current_setting('test.recurring_membership')::uuid
+    )
+  $$,
+  '55000',
+  'Membership commitments can only change while the Project is operational.',
+  'an ended Tavolo rejects editable option reads'
+);
+
+reset role;
 update public.proposals
 set ends_at = statement_timestamp() - interval '1 minute'
 where id = 'a2000000-0000-4000-8000-000000000001';
@@ -841,6 +1068,18 @@ select throws_ok(
   '55000',
   'Membership commitments can only change while the Project is operational.',
   'an ended Proposal rejects mutation even when the desired set is a no-op'
+);
+select throws_ok(
+  $$
+    select *
+    from public.list_own_project_membership_commitment_options(
+      'a1000000-0000-4000-8000-000000000002',
+      current_setting('test.rejoin_membership')::uuid
+    )
+  $$,
+  '55000',
+  'Membership commitments can only change while the Project is operational.',
+  'an ended Proposal rejects editable option reads'
 );
 
 reset role;

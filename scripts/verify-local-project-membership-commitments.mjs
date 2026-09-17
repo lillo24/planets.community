@@ -46,7 +46,7 @@ async function verifyProjectMembershipCommitments() {
   await verifySkillRemovalSerialization(creator, participant);
 
   console.log(
-    "Confirmed real-OTP acceptance seeding, authorized current/ended commitment reads, full-set replacement and no-ops, lifecycle/stale-option rules, identifier-only events without notifications, rejoin isolation, and membership/resource/skill lock serialization.",
+    "Confirmed real-OTP acceptance seeding, authorized current/ended commitment reads, current addable-option snapshots including paused Tavoli, full-set replacement and no-ops, lifecycle/stale-option rules, identifier-only events without notifications, rejoin isolation, and membership/resource/skill lock serialization.",
   );
 }
 
@@ -70,6 +70,17 @@ async function verifyPrimaryFlows(creator, participant, unrelated) {
   await assertCommitments(creator, fixture.membershipId, [
     ["skill", requiredSkillId, "Mural painting"],
   ]);
+  const eventCountsBeforeOptions = await readAuditOutboxCounts();
+  await assertCommitmentOptions(participant, fixture.membershipId, [
+    ["skill", requiredSkillId, "Mural painting"],
+    ["skill", usefulSkillId, "Woodworking"],
+    ["resource", secondNeedId, "Primary second open need"],
+  ]);
+  await assertCommitmentOptions(creator, fixture.membershipId, [
+    ["skill", requiredSkillId, "Mural painting"],
+    ["skill", usefulSkillId, "Woodworking"],
+    ["resource", secondNeedId, "Primary second open need"],
+  ]);
   await assertRpcCode(
     unrelated.client.rpc("list_own_project_membership_commitments", {
       p_expected_profile_id: unrelated.id,
@@ -78,6 +89,21 @@ async function verifyPrimaryFlows(creator, participant, unrelated) {
     "42501",
     "deny an unrelated membership commitment read",
   );
+  await assertRpcCode(
+    unrelated.client.rpc("list_own_project_membership_commitment_options", {
+      p_expected_profile_id: unrelated.id,
+      p_membership_id: fixture.membershipId,
+    }),
+    "42501",
+    "deny an unrelated membership commitment-options read",
+  );
+  const eventCountsAfterOptions = await readAuditOutboxCounts();
+  if (
+    JSON.stringify(eventCountsBeforeOptions) !==
+    JSON.stringify(eventCountsAfterOptions)
+  ) {
+    throw new Error("Commitment-options reads created audit or outbox rows.");
+  }
   const { error: directReadError } = await participant.client
     .from("project_membership_skill_commitments")
     .select("membership_id");
@@ -116,6 +142,14 @@ async function verifyPrimaryFlows(creator, participant, unrelated) {
     ["useful"],
     "Integration membership commitment primary",
   );
+  await assertCommitments(participant, fixture.membershipId, [
+    ["skill", requiredSkillId, "Mural painting"],
+    ["skill", usefulSkillId, "Woodworking"],
+    ["resource", secondNeedId, "Primary second open need"],
+  ]);
+  await assertCommitmentOptions(participant, fixture.membershipId, [
+    ["skill", usefulSkillId, "Woodworking"],
+  ]);
   await replaceCommitments(
     participant,
     fixture.membershipId,
@@ -163,6 +197,9 @@ async function verifyPrimaryFlows(creator, participant, unrelated) {
       ends_at = statement_timestamp() + interval '2 hours'
     where id = ${fixture.proposalId}::uuid
   `;
+  await assertCommitmentOptions(participant, fixture.membershipId, [
+    ["skill", usefulSkillId, "Woodworking"],
+  ]);
   await replaceCommitments(
     participant,
     fixture.membershipId,
@@ -187,6 +224,14 @@ async function verifyPrimaryFlows(creator, participant, unrelated) {
     }),
     "55000",
     "reject mutation of an ended membership",
+  );
+  await assertRpcCode(
+    participant.client.rpc("list_own_project_membership_commitment_options", {
+      p_expected_profile_id: participant.id,
+      p_membership_id: fixture.membershipId,
+    }),
+    "55000",
+    "reject options for an ended membership",
   );
 
   const rejoinRequestId = await requestToJoin(
@@ -220,6 +265,14 @@ async function verifyPrimaryFlows(creator, participant, unrelated) {
     "55000",
     "reject a no-op after the Proposal has ended",
   );
+  await assertRpcCode(
+    participant.client.rpc("list_own_project_membership_commitment_options", {
+      p_expected_profile_id: participant.id,
+      p_membership_id: rejoinMembershipId,
+    }),
+    "55000",
+    "reject options after the Proposal has ended",
+  );
   await assertCommitments(creator, fixture.membershipId, [
     ["skill", usefulSkillId, "Woodworking"],
   ]);
@@ -242,7 +295,15 @@ async function verifyTavoloFlow(creator, participant) {
     [firstNeedId],
   );
   const membershipId = await acceptRequest(creator, requestId);
+  await assertCommitmentOptions(participant, membershipId, [
+    ["resource", firstNeedId, "Tavolo first need"],
+    ["resource", secondNeedId, "Tavolo second need"],
+  ]);
   await transitionTavolo(creator, "pause_recurring_activity", tavoloId);
+  await assertCommitmentOptions(participant, membershipId, [
+    ["resource", firstNeedId, "Tavolo first need"],
+    ["resource", secondNeedId, "Tavolo second need"],
+  ]);
   await replaceCommitments(
     participant,
     membershipId,
@@ -258,6 +319,15 @@ async function verifyTavoloFlow(creator, participant) {
     }),
     "22023",
     "reject a new Tavolo skill commitment",
+  );
+  await transitionTavolo(creator, "end_recurring_activity", tavoloId);
+  await assertRpcCode(
+    participant.client.rpc("list_own_project_membership_commitment_options", {
+      p_expected_profile_id: participant.id,
+      p_membership_id: membershipId,
+    }),
+    "55000",
+    "reject options after the Tavolo has ended",
   );
 }
 
@@ -785,6 +855,41 @@ async function assertCommitments(user, membershipId, expectedRows) {
       "Membership commitments had unexpected IDs, labels, or order.",
     );
   }
+}
+
+async function assertCommitmentOptions(user, membershipId, expectedRows) {
+  const { data, error } = await user.client.rpc(
+    "list_own_project_membership_commitment_options",
+    {
+      p_expected_profile_id: user.id,
+      p_membership_id: membershipId,
+    },
+  );
+  if (error || !Array.isArray(data)) {
+    throw safeDatabaseFailure(
+      "read membership commitment options",
+      error ?? {},
+    );
+  }
+  const actualRows = data.map((row) => [
+    row.option_kind,
+    row.option_id,
+    row.label,
+  ]);
+  if (JSON.stringify(actualRows) !== JSON.stringify(expectedRows)) {
+    throw new Error(
+      "Membership commitment options had unexpected IDs, labels, or order.",
+    );
+  }
+}
+
+async function readAuditOutboxCounts() {
+  const [counts] = await sql`
+    select
+      (select count(*)::integer from private.audit_events) as audit_count,
+      (select count(*)::integer from private.outbox_events) as outbox_count
+  `;
+  return counts;
 }
 
 async function readCommitmentState(membershipId) {
