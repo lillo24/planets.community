@@ -1832,9 +1832,11 @@ export type Database = {
       replace_project_membership_commitments: {
         Args: {
           p_expected_actor_profile_id: string
+          p_expected_resource_need_ids: string[]
+          p_expected_skill_ids: string[]
           p_membership_id: string
-          p_resource_need_ids?: string[]
-          p_skill_ids?: string[]
+          p_resource_need_ids: string[]
+          p_skill_ids: string[]
         }
         Returns: string
       }

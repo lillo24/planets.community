@@ -137,9 +137,15 @@ select is(
 
 select ok(
   to_regprocedure(
-    'public.replace_project_membership_commitments(uuid,uuid,uuid[],uuid[])'
+    'public.replace_project_membership_commitments(uuid,uuid,uuid[],uuid[],uuid[],uuid[])'
   ) is not null,
-  'the atomic full-set replacement RPC exists'
+  'the compare-and-swap full-set replacement RPC exists'
+);
+select ok(
+  to_regprocedure(
+    'public.replace_project_membership_commitments(uuid,uuid,uuid[],uuid[])'
+  ) is null,
+  'the unsafe four-argument replacement overload is absent'
 );
 select ok(
   to_regprocedure(
@@ -158,10 +164,27 @@ select is(
     select pronargdefaults
     from pg_proc
     where oid =
-      'public.replace_project_membership_commitments(uuid,uuid,uuid[],uuid[])'::regprocedure
+      'public.replace_project_membership_commitments(uuid,uuid,uuid[],uuid[],uuid[],uuid[])'::regprocedure
   ),
-  2::smallint,
-  'both desired-set arrays default to empty'
+  0::smallint,
+  'expected and desired snapshots are all required explicitly'
+);
+select is(
+  (
+    select proargnames[1:6]
+    from pg_proc
+    where oid =
+      'public.replace_project_membership_commitments(uuid,uuid,uuid[],uuid[],uuid[],uuid[])'::regprocedure
+  ),
+  array[
+    'p_expected_actor_profile_id',
+    'p_membership_id',
+    'p_expected_skill_ids',
+    'p_expected_resource_need_ids',
+    'p_skill_ids',
+    'p_resource_need_ids'
+  ]::text[],
+  'the replacement signature distinguishes expected and desired sets explicitly'
 );
 select is(
   (
@@ -200,7 +223,7 @@ select is(
       'private.seed_project_membership_commitments()'::regprocedure,
       'private.lock_project_for_membership_commitment_mutation(uuid)'::regprocedure,
       'private.record_project_membership_commitment_event(uuid,uuid,text,uuid,uuid)'::regprocedure,
-      'public.replace_project_membership_commitments(uuid,uuid,uuid[],uuid[])'::regprocedure,
+      'public.replace_project_membership_commitments(uuid,uuid,uuid[],uuid[],uuid[],uuid[])'::regprocedure,
       'public.list_own_project_membership_commitments(uuid,uuid)'::regprocedure,
       'public.list_own_project_membership_commitment_options(uuid,uuid)'::regprocedure
     )
@@ -216,7 +239,7 @@ select is(
       'private.seed_project_membership_commitments()'::regprocedure,
       'private.lock_project_for_membership_commitment_mutation(uuid)'::regprocedure,
       'private.record_project_membership_commitment_event(uuid,uuid,text,uuid,uuid)'::regprocedure,
-      'public.replace_project_membership_commitments(uuid,uuid,uuid[],uuid[])'::regprocedure,
+      'public.replace_project_membership_commitments(uuid,uuid,uuid[],uuid[],uuid[],uuid[])'::regprocedure,
       'public.list_own_project_membership_commitments(uuid,uuid)'::regprocedure,
       'public.list_own_project_membership_commitment_options(uuid,uuid)'::regprocedure
     )
@@ -227,7 +250,7 @@ select is(
 select is(
   has_function_privilege(
     'authenticated',
-    'public.replace_project_membership_commitments(uuid,uuid,uuid[],uuid[])',
+    'public.replace_project_membership_commitments(uuid,uuid,uuid[],uuid[],uuid[],uuid[])',
     'EXECUTE'
   ),
   true,
@@ -258,7 +281,7 @@ select is(
     )
     from unnest(array['anon', 'service_role']) as roles(role_name)
     cross join unnest(array[
-      'public.replace_project_membership_commitments(uuid,uuid,uuid[],uuid[])',
+      'public.replace_project_membership_commitments(uuid,uuid,uuid[],uuid[],uuid[],uuid[])',
       'public.list_own_project_membership_commitments(uuid,uuid)',
       'public.list_own_project_membership_commitment_options(uuid,uuid)'
     ]) as functions(function_name)
@@ -313,7 +336,7 @@ select ok(
 select like(
   lower(
     pg_get_functiondef(
-      'public.replace_project_membership_commitments(uuid,uuid,uuid[],uuid[])'::regprocedure
+      'public.replace_project_membership_commitments(uuid,uuid,uuid[],uuid[],uuid[],uuid[])'::regprocedure
     )
   ),
   '%cardinality(normalized_skill_ids) > 50%',
@@ -322,11 +345,38 @@ select like(
 select like(
   lower(
     pg_get_functiondef(
-      'public.replace_project_membership_commitments(uuid,uuid,uuid[],uuid[])'::regprocedure
+      'public.replace_project_membership_commitments(uuid,uuid,uuid[],uuid[],uuid[],uuid[])'::regprocedure
     )
   ),
   '%cardinality(normalized_resource_need_ids) > 50%',
   'resource commitment input is explicitly bounded at 50'
+);
+select like(
+  lower(
+    pg_get_functiondef(
+      'public.replace_project_membership_commitments(uuid,uuid,uuid[],uuid[],uuid[],uuid[])'::regprocedure
+    )
+  ),
+  '%cardinality(normalized_expected_skill_ids) > 50%',
+  'the expected skill snapshot is explicitly bounded at 50'
+);
+select like(
+  lower(
+    pg_get_functiondef(
+      'public.replace_project_membership_commitments(uuid,uuid,uuid[],uuid[],uuid[],uuid[])'::regprocedure
+    )
+  ),
+  '%cardinality(normalized_expected_resource_need_ids) > 50%',
+  'the expected resource snapshot is explicitly bounded at 50'
+);
+select like(
+  lower(
+    pg_get_functiondef(
+      'public.replace_project_membership_commitments(uuid,uuid,uuid[],uuid[],uuid[],uuid[])'::regprocedure
+    )
+  ),
+  '%errcode = ''40001''%',
+  'stale commitment snapshots use a stable serialization-conflict SQLSTATE'
 );
 select like(
   lower(

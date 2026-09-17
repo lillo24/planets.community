@@ -39,6 +39,7 @@ async function verifyProjectMembershipCommitments() {
   ]);
 
   await verifyPrimaryFlows(creator, participant, unrelated);
+  await verifyOptimisticConcurrency(creator, participant);
   await verifyTavoloFlow(creator, unrelated);
   await verifyLeaveSerialization(creator, participant);
   await verifyRemovalSerialization(creator, participant);
@@ -46,7 +47,7 @@ async function verifyProjectMembershipCommitments() {
   await verifySkillRemovalSerialization(creator, participant);
 
   console.log(
-    "Confirmed real-OTP acceptance seeding, authorized current/ended commitment reads, current addable-option snapshots including paused Tavoli, full-set replacement and no-ops, lifecycle/stale-option rules, identifier-only events without notifications, rejoin isolation, and membership/resource/skill lock serialization.",
+    "Confirmed real-OTP acceptance seeding, authorized current/ended commitment reads, current addable-option snapshots including paused Tavoli, compare-and-swap full-set replacement and no-ops, participant/creator stale-editor rejection, lifecycle/stale-option rules, identifier-only events without notifications, rejoin isolation, and membership/resource/skill lock serialization.",
   );
 }
 
@@ -117,6 +118,8 @@ async function verifyPrimaryFlows(creator, participant, unrelated) {
   await replaceCommitments(
     participant,
     fixture.membershipId,
+    [requiredSkillId],
+    [],
     [usefulSkillId, requiredSkillId],
     [secondNeedId],
   );
@@ -124,6 +127,8 @@ async function verifyPrimaryFlows(creator, participant, unrelated) {
   await replaceCommitments(
     participant,
     fixture.membershipId,
+    [requiredSkillId, usefulSkillId],
+    [secondNeedId],
     [requiredSkillId, usefulSkillId],
     [secondNeedId],
   );
@@ -155,16 +160,22 @@ async function verifyPrimaryFlows(creator, participant, unrelated) {
     fixture.membershipId,
     [requiredSkillId, usefulSkillId],
     [secondNeedId],
+    [requiredSkillId, usefulSkillId],
+    [secondNeedId],
   );
   await replaceCommitments(
     participant,
     fixture.membershipId,
+    [requiredSkillId, usefulSkillId],
+    [secondNeedId],
     [usefulSkillId],
     [],
   );
   await assertRpcCode(
     participant.client.rpc("replace_project_membership_commitments", {
       p_expected_actor_profile_id: participant.id,
+      p_expected_skill_ids: [usefulSkillId],
+      p_expected_resource_need_ids: [],
       p_membership_id: fixture.membershipId,
       p_skill_ids: [requiredSkillId, usefulSkillId],
       p_resource_need_ids: [],
@@ -175,6 +186,8 @@ async function verifyPrimaryFlows(creator, participant, unrelated) {
   await assertRpcCode(
     participant.client.rpc("replace_project_membership_commitments", {
       p_expected_actor_profile_id: participant.id,
+      p_expected_skill_ids: [usefulSkillId],
+      p_expected_resource_need_ids: [],
       p_membership_id: fixture.membershipId,
       p_skill_ids: [usefulSkillId],
       p_resource_need_ids: [secondNeedId],
@@ -183,10 +196,19 @@ async function verifyPrimaryFlows(creator, participant, unrelated) {
     "reject re-adding a closed resource need",
   );
 
-  await replaceCommitments(creator, fixture.membershipId, null, null);
+  await replaceCommitments(
+    creator,
+    fixture.membershipId,
+    [usefulSkillId],
+    [],
+    null,
+    null,
+  );
   await replaceCommitments(
     participant,
     fixture.membershipId,
+    [],
+    [],
     [usefulSkillId],
     [],
   );
@@ -205,6 +227,8 @@ async function verifyPrimaryFlows(creator, participant, unrelated) {
     fixture.membershipId,
     [usefulSkillId],
     [],
+    [usefulSkillId],
+    [],
   );
   await transitionMembership(
     participant,
@@ -218,6 +242,8 @@ async function verifyPrimaryFlows(creator, participant, unrelated) {
   await assertRpcCode(
     participant.client.rpc("replace_project_membership_commitments", {
       p_expected_actor_profile_id: participant.id,
+      p_expected_skill_ids: [usefulSkillId],
+      p_expected_resource_need_ids: [],
       p_membership_id: fixture.membershipId,
       p_skill_ids: [],
       p_resource_need_ids: [],
@@ -258,6 +284,8 @@ async function verifyPrimaryFlows(creator, participant, unrelated) {
   await assertRpcCode(
     participant.client.rpc("replace_project_membership_commitments", {
       p_expected_actor_profile_id: participant.id,
+      p_expected_skill_ids: [usefulSkillId],
+      p_expected_resource_need_ids: [],
       p_membership_id: rejoinMembershipId,
       p_skill_ids: [usefulSkillId],
       p_resource_need_ids: [],
@@ -277,6 +305,58 @@ async function verifyPrimaryFlows(creator, participant, unrelated) {
     ["skill", usefulSkillId, "Woodworking"],
   ]);
   await assertIdentifierOnlyEventsWithoutNotifications(fixture.membershipId);
+}
+
+async function verifyOptimisticConcurrency(creator, participant) {
+  const fixture = await createMembershipFixture(
+    creator,
+    participant,
+    "Integration membership commitment stale editor",
+  );
+  await Promise.all([
+    assertCommitments(participant, fixture.membershipId, []),
+    assertCommitments(creator, fixture.membershipId, []),
+  ]);
+  const countsBefore = await readAuditOutboxCounts();
+
+  await replaceCommitments(
+    participant,
+    fixture.membershipId,
+    [],
+    [],
+    [requiredSkillId],
+    [],
+  );
+  await assertRpcCode(
+    creator.client.rpc("replace_project_membership_commitments", {
+      p_expected_actor_profile_id: creator.id,
+      p_expected_skill_ids: [],
+      p_expected_resource_need_ids: [],
+      p_membership_id: fixture.membershipId,
+      p_skill_ids: [usefulSkillId],
+      p_resource_need_ids: [],
+    }),
+    "40001",
+    "reject a creator replacement based on the participant stale snapshot",
+  );
+
+  await Promise.all([
+    assertCommitments(participant, fixture.membershipId, [
+      ["skill", requiredSkillId, "Mural painting"],
+    ]),
+    assertCommitments(creator, fixture.membershipId, [
+      ["skill", requiredSkillId, "Mural painting"],
+    ]),
+  ]);
+  const countsAfter = await readAuditOutboxCounts();
+  if (
+    countsAfter.audit_count !== countsBefore.audit_count + 1 ||
+    countsAfter.outbox_count !== countsBefore.outbox_count + 1
+  ) {
+    throw new Error(
+      "A stale creator replacement changed commitment event side effects.",
+    );
+  }
 }
 
 async function verifyTavoloFlow(creator, participant) {
@@ -308,11 +388,15 @@ async function verifyTavoloFlow(creator, participant) {
     participant,
     membershipId,
     [],
+    [firstNeedId],
+    [],
     [firstNeedId, secondNeedId],
   );
   await assertRpcCode(
     participant.client.rpc("replace_project_membership_commitments", {
       p_expected_actor_profile_id: participant.id,
+      p_expected_skill_ids: [],
+      p_expected_resource_need_ids: [firstNeedId, secondNeedId],
       p_membership_id: membershipId,
       p_skill_ids: [requiredSkillId],
       p_resource_need_ids: [firstNeedId, secondNeedId],
@@ -349,6 +433,8 @@ async function verifyLeaveSerialization(creator, participant) {
     blockedReplace = track(
       participant.client.rpc("replace_project_membership_commitments", {
         p_expected_actor_profile_id: participant.id,
+        p_expected_skill_ids: [],
+        p_expected_resource_need_ids: [],
         p_membership_id: leaveFirst.membershipId,
         p_skill_ids: [requiredSkillId],
         p_resource_need_ids: [],
@@ -374,6 +460,8 @@ async function verifyLeaveSerialization(creator, participant) {
       transaction,
       participant.id,
       replaceFirst.membershipId,
+      [],
+      [],
       [requiredSkillId],
       [],
     );
@@ -413,6 +501,8 @@ async function verifyRemovalSerialization(creator, participant) {
     blockedReplace = track(
       participant.client.rpc("replace_project_membership_commitments", {
         p_expected_actor_profile_id: participant.id,
+        p_expected_skill_ids: [],
+        p_expected_resource_need_ids: [],
         p_membership_id: removeFirst.membershipId,
         p_skill_ids: [requiredSkillId],
         p_resource_need_ids: [],
@@ -438,6 +528,8 @@ async function verifyRemovalSerialization(creator, participant) {
       transaction,
       participant.id,
       replaceFirst.membershipId,
+      [],
+      [],
       [requiredSkillId],
       [],
     );
@@ -482,6 +574,8 @@ async function verifyResourceClosureSerialization(creator, participant) {
     blockedReplace = track(
       participant.client.rpc("replace_project_membership_commitments", {
         p_expected_actor_profile_id: participant.id,
+        p_expected_skill_ids: [],
+        p_expected_resource_need_ids: [],
         p_membership_id: closeFirst.membershipId,
         p_skill_ids: [],
         p_resource_need_ids: [closeFirstNeedId],
@@ -512,6 +606,8 @@ async function verifyResourceClosureSerialization(creator, participant) {
       transaction,
       participant.id,
       replaceFirst.membershipId,
+      [],
+      [],
       [],
       [replaceFirstNeedId],
     );
@@ -553,6 +649,8 @@ async function verifySkillRemovalSerialization(creator, participant) {
     blockedReplace = track(
       participant.client.rpc("replace_project_membership_commitments", {
         p_expected_actor_profile_id: participant.id,
+        p_expected_skill_ids: [],
+        p_expected_resource_need_ids: [],
         p_membership_id: removeFirst.membershipId,
         p_skill_ids: [requiredSkillId],
         p_resource_need_ids: [],
@@ -578,6 +676,8 @@ async function verifySkillRemovalSerialization(creator, participant) {
       transaction,
       participant.id,
       replaceFirst.membershipId,
+      [],
+      [],
       [requiredSkillId],
       [],
     );
@@ -636,6 +736,8 @@ async function replaceInTransaction(
   transaction,
   actorId,
   membershipId,
+  expectedSkillIds,
+  expectedResourceNeedIds,
   skillIds,
   resourceNeedIds,
 ) {
@@ -643,6 +745,8 @@ async function replaceInTransaction(
     select public.replace_project_membership_commitments(
       ${actorId}::uuid,
       ${membershipId}::uuid,
+      ${expectedSkillIds}::uuid[],
+      ${expectedResourceNeedIds}::uuid[],
       ${skillIds}::uuid[],
       ${resourceNeedIds}::uuid[]
     )
@@ -804,11 +908,20 @@ async function acceptRequest(creator, requestId) {
   return data;
 }
 
-async function replaceCommitments(user, membershipId, skillIds, resourceIds) {
+async function replaceCommitments(
+  user,
+  membershipId,
+  expectedSkillIds,
+  expectedResourceIds,
+  skillIds,
+  resourceIds,
+) {
   const { data, error } = await user.client.rpc(
     "replace_project_membership_commitments",
     {
       p_expected_actor_profile_id: user.id,
+      p_expected_skill_ids: expectedSkillIds,
+      p_expected_resource_need_ids: expectedResourceIds,
       p_membership_id: membershipId,
       p_skill_ids: skillIds,
       p_resource_need_ids: resourceIds,

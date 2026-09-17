@@ -216,8 +216,10 @@ $$;
 create function public.replace_project_membership_commitments(
   p_expected_actor_profile_id uuid,
   p_membership_id uuid,
-  p_skill_ids uuid[] default '{}'::uuid[],
-  p_resource_need_ids uuid[] default '{}'::uuid[]
+  p_expected_skill_ids uuid[],
+  p_expected_resource_need_ids uuid[],
+  p_skill_ids uuid[],
+  p_resource_need_ids uuid[]
 )
 returns uuid
 language plpgsql
@@ -227,6 +229,14 @@ as $$
 declare
   current_profile_id uuid := private.require_participation_identity(
     p_expected_actor_profile_id
+  );
+  normalized_expected_skill_ids uuid[] := coalesce(
+    p_expected_skill_ids,
+    '{}'::uuid[]
+  );
+  normalized_expected_resource_need_ids uuid[] := coalesce(
+    p_expected_resource_need_ids,
+    '{}'::uuid[]
   );
   normalized_skill_ids uuid[] := coalesce(p_skill_ids, '{}'::uuid[]);
   normalized_resource_need_ids uuid[] := coalesce(
@@ -241,6 +251,125 @@ declare
   skill_set_changed boolean;
   resource_set_changed boolean;
 begin
+  if cardinality(normalized_expected_skill_ids) > 50 then
+    raise exception using
+      errcode = '22023',
+      message = 'An expected membership snapshot may contain at most 50 Project skills.';
+  end if;
+
+  if cardinality(normalized_expected_resource_need_ids) > 50 then
+    raise exception using
+      errcode = '22023',
+      message = 'An expected membership snapshot may contain at most 50 Project resource needs.';
+  end if;
+
+  if exists (
+    select 1
+    from unnest(normalized_expected_skill_ids) as expected(skill_id)
+    where expected.skill_id is null
+  ) then
+    raise exception using
+      errcode = '22023',
+      message = 'Expected Project skill commitments cannot contain null identifiers.';
+  end if;
+
+  if exists (
+    select 1
+    from unnest(normalized_expected_resource_need_ids) as expected(resource_need_id)
+    where expected.resource_need_id is null
+  ) then
+    raise exception using
+      errcode = '22023',
+      message = 'Expected Project resource commitments cannot contain null identifiers.';
+  end if;
+
+  if cardinality(normalized_expected_skill_ids) <> (
+    select count(distinct expected.skill_id)
+    from unnest(normalized_expected_skill_ids) as expected(skill_id)
+  ) then
+    raise exception using
+      errcode = '22023',
+      message = 'Expected Project skill commitments cannot contain duplicate identifiers.';
+  end if;
+
+  if cardinality(normalized_expected_resource_need_ids) <> (
+    select count(distinct expected.resource_need_id)
+    from unnest(normalized_expected_resource_need_ids)
+      as expected(resource_need_id)
+  ) then
+    raise exception using
+      errcode = '22023',
+      message = 'Expected Project resource commitments cannot contain duplicate identifiers.';
+  end if;
+
+  select * into membership_record
+  from public.project_memberships as membership
+  where membership.id = p_membership_id;
+
+  if not found then
+    raise exception using errcode = 'P0002', message = 'The membership does not exist.';
+  end if;
+
+  select * into project_record
+  from private.lock_project_for_membership_commitment_mutation(
+    membership_record.project_id
+  );
+
+  select * into membership_record
+  from public.project_memberships as membership
+  where membership.id = p_membership_id
+  for update;
+
+  if membership_record.participant_profile_id <> current_profile_id
+    and project_record.creator_profile_id <> current_profile_id then
+    raise exception using
+      errcode = '42501',
+      message = 'Only the participant or Project creator can manage this membership commitment set.';
+  end if;
+
+  if membership_record.left_at is not null
+    or membership_record.removed_at is not null then
+    raise exception using
+      errcode = '55000',
+      message = 'Only a current membership can change its commitments.';
+  end if;
+
+  if exists (
+    select commitment.skill_id
+    from public.project_membership_skill_commitments as commitment
+    where commitment.membership_id = p_membership_id
+    except
+    select expected.skill_id
+    from unnest(normalized_expected_skill_ids) as expected(skill_id)
+  ) or exists (
+    select expected.skill_id
+    from unnest(normalized_expected_skill_ids) as expected(skill_id)
+    except
+    select commitment.skill_id
+    from public.project_membership_skill_commitments as commitment
+    where commitment.membership_id = p_membership_id
+  ) or exists (
+    select commitment.resource_need_id
+    from public.project_membership_resource_commitments as commitment
+    where commitment.membership_id = p_membership_id
+    except
+    select expected.resource_need_id
+    from unnest(normalized_expected_resource_need_ids)
+      as expected(resource_need_id)
+  ) or exists (
+    select expected.resource_need_id
+    from unnest(normalized_expected_resource_need_ids)
+      as expected(resource_need_id)
+    except
+    select commitment.resource_need_id
+    from public.project_membership_resource_commitments as commitment
+    where commitment.membership_id = p_membership_id
+  ) then
+    raise exception using
+      errcode = '40001',
+      message = 'Membership commitments changed since they were loaded.';
+  end if;
+
   if cardinality(normalized_skill_ids) > 50 then
     raise exception using
       errcode = '22023',
@@ -289,38 +418,6 @@ begin
     raise exception using
       errcode = '22023',
       message = 'Project resource commitments cannot contain duplicate identifiers.';
-  end if;
-
-  select * into membership_record
-  from public.project_memberships as membership
-  where membership.id = p_membership_id;
-
-  if not found then
-    raise exception using errcode = 'P0002', message = 'The membership does not exist.';
-  end if;
-
-  select * into project_record
-  from private.lock_project_for_membership_commitment_mutation(
-    membership_record.project_id
-  );
-
-  select * into membership_record
-  from public.project_memberships as membership
-  where membership.id = p_membership_id
-  for update;
-
-  if membership_record.participant_profile_id <> current_profile_id
-    and project_record.creator_profile_id <> current_profile_id then
-    raise exception using
-      errcode = '42501',
-      message = 'Only the participant or Project creator can manage this membership commitment set.';
-  end if;
-
-  if membership_record.left_at is not null
-    or membership_record.removed_at is not null then
-    raise exception using
-      errcode = '55000',
-      message = 'Only a current membership can change its commitments.';
   end if;
 
   select exists (
@@ -698,7 +795,14 @@ revoke all privileges on function
   private.record_project_membership_commitment_event(uuid, uuid, text, uuid, uuid)
   from public, anon, authenticated, service_role;
 revoke all privileges on function
-  public.replace_project_membership_commitments(uuid, uuid, uuid[], uuid[])
+  public.replace_project_membership_commitments(
+    uuid,
+    uuid,
+    uuid[],
+    uuid[],
+    uuid[],
+    uuid[]
+  )
   from public, anon, authenticated, service_role;
 revoke all privileges on function
   public.list_own_project_membership_commitments(uuid, uuid)
@@ -708,7 +812,14 @@ revoke all privileges on function
   from public, anon, authenticated, service_role;
 
 grant execute on function
-  public.replace_project_membership_commitments(uuid, uuid, uuid[], uuid[])
+  public.replace_project_membership_commitments(
+    uuid,
+    uuid,
+    uuid[],
+    uuid[],
+    uuid[],
+    uuid[]
+  )
   to authenticated;
 grant execute on function
   public.list_own_project_membership_commitments(uuid, uuid)
@@ -726,9 +837,16 @@ comment on function
 is
   'Emits the identifier-only audit/outbox event for one real membership-commitment replacement.';
 comment on function
-  public.replace_project_membership_commitments(uuid, uuid, uuid[], uuid[])
+  public.replace_project_membership_commitments(
+    uuid,
+    uuid,
+    uuid[],
+    uuid[],
+    uuid[],
+    uuid[]
+  )
 is
-  'Replaces the full skill/resource desired set for one current membership; only new IDs require current Project validity.';
+  'Compare-and-swap replacement of one current membership full skill/resource set; stale expected snapshots fail before desired-set validation or writes.';
 comment on function public.list_own_project_membership_commitments(uuid, uuid) is
   'Returns current canonical labels for one current or ended membership final commitment IDs to its participant or Project creator.';
 comment on function

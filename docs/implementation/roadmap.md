@@ -385,7 +385,7 @@ Request selections remain immutable historical intent. Membership commitments ar
 
 **Status:** In progress in the current stacked backend PR, based on open PR #60 without merging any layer. Depends on 04C3B1 and 05A.
 
-Owns fail-closed membership-scoped skill/resource commitment relations, atomic acceptance seeding and existing-membership backfill, participant/canonical-creator full-set replacement, current-or-ended private commitment reads, current-membership addable-option snapshots with canonical labels, Proposal/Tavolo lifecycle and current-option validation for additions, retained stale commitments, identifier-only update events without notifications, and focused pgTAP/real-OTP/concurrency coverage. It does not rewrite request selections or add fulfillment, verification, delegation, quantities, Tavolo skill requirements, Flutter UI, or Scambio-Dona linkage.
+Owns fail-closed membership-scoped skill/resource commitment relations, atomic acceptance seeding and existing-membership backfill, participant/canonical-creator compare-and-swap full-set replacement, current-or-ended private commitment reads, current-membership addable-option snapshots with canonical labels, Proposal/Tavolo lifecycle and current-option validation for additions, retained stale commitments, identifier-only update events without notifications, and focused pgTAP/real-OTP/concurrency coverage. Replacement requires the caller's loaded current IDs so participant and creator cannot silently overwrite stale edits. It does not rewrite request selections or add fulfillment, verification, delegation, quantities, Tavolo skill requirements, Flutter UI, or Scambio-Dona linkage.
 
 ###### 04C3C2 — Mobile Commitment Management
 

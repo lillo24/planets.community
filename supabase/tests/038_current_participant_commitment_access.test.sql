@@ -425,6 +425,111 @@ select throws_ok(
         'd0000000-0000-4000-8001-000000000001'::uuid,
         'd0000000-0000-4000-8001-000000000001'::uuid
       ],
+      array['a3000000-0000-4000-8000-000000000001'::uuid],
+      array['d0000000-0000-4000-8001-000000000001'::uuid],
+      array['a3000000-0000-4000-8000-000000000001'::uuid]
+    )
+  $$,
+  '22023',
+  'Expected Project skill commitments cannot contain duplicate identifiers.',
+  'duplicate expected skill IDs fail explicitly'
+);
+select throws_ok(
+  $$
+    select public.replace_project_membership_commitments(
+      'a1000000-0000-4000-8000-000000000002',
+      current_setting('test.commitment_membership')::uuid,
+      array[null::uuid],
+      array['a3000000-0000-4000-8000-000000000001'::uuid],
+      array['d0000000-0000-4000-8001-000000000001'::uuid],
+      array['a3000000-0000-4000-8000-000000000001'::uuid]
+    )
+  $$,
+  '22023',
+  'Expected Project skill commitments cannot contain null identifiers.',
+  'null expected skill IDs fail explicitly'
+);
+select throws_ok(
+  $$
+    select public.replace_project_membership_commitments(
+      'a1000000-0000-4000-8000-000000000002',
+      current_setting('test.commitment_membership')::uuid,
+      array_fill(
+        'd0000000-0000-4000-8001-000000000001'::uuid,
+        array[51]
+      ),
+      array['a3000000-0000-4000-8000-000000000001'::uuid],
+      array['d0000000-0000-4000-8001-000000000001'::uuid],
+      array['a3000000-0000-4000-8000-000000000001'::uuid]
+    )
+  $$,
+  '22023',
+  'An expected membership snapshot may contain at most 50 Project skills.',
+  'expected skill arrays are bounded before duplicate validation'
+);
+select throws_ok(
+  $$
+    select public.replace_project_membership_commitments(
+      'a1000000-0000-4000-8000-000000000002',
+      current_setting('test.commitment_membership')::uuid,
+      array['d0000000-0000-4000-8001-000000000001'::uuid],
+      array[
+        'a3000000-0000-4000-8000-000000000001'::uuid,
+        'a3000000-0000-4000-8000-000000000001'::uuid
+      ],
+      array['d0000000-0000-4000-8001-000000000001'::uuid],
+      array['a3000000-0000-4000-8000-000000000001'::uuid]
+    )
+  $$,
+  '22023',
+  'Expected Project resource commitments cannot contain duplicate identifiers.',
+  'duplicate expected resource IDs fail explicitly'
+);
+select throws_ok(
+  $$
+    select public.replace_project_membership_commitments(
+      'a1000000-0000-4000-8000-000000000002',
+      current_setting('test.commitment_membership')::uuid,
+      array['d0000000-0000-4000-8001-000000000001'::uuid],
+      array[null::uuid],
+      array['d0000000-0000-4000-8001-000000000001'::uuid],
+      array['a3000000-0000-4000-8000-000000000001'::uuid]
+    )
+  $$,
+  '22023',
+  'Expected Project resource commitments cannot contain null identifiers.',
+  'null expected resource IDs fail explicitly'
+);
+select throws_ok(
+  $$
+    select public.replace_project_membership_commitments(
+      'a1000000-0000-4000-8000-000000000002',
+      current_setting('test.commitment_membership')::uuid,
+      array['d0000000-0000-4000-8001-000000000001'::uuid],
+      array_fill(
+        'a3000000-0000-4000-8000-000000000001'::uuid,
+        array[51]
+      ),
+      array['d0000000-0000-4000-8001-000000000001'::uuid],
+      array['a3000000-0000-4000-8000-000000000001'::uuid]
+    )
+  $$,
+  '22023',
+  'An expected membership snapshot may contain at most 50 Project resource needs.',
+  'expected resource arrays are bounded before duplicate validation'
+);
+
+select throws_ok(
+  $$
+    select public.replace_project_membership_commitments(
+      'a1000000-0000-4000-8000-000000000002',
+      current_setting('test.commitment_membership')::uuid,
+      array['d0000000-0000-4000-8001-000000000001'::uuid],
+      array['a3000000-0000-4000-8000-000000000001'::uuid],
+      array[
+        'd0000000-0000-4000-8001-000000000001'::uuid,
+        'd0000000-0000-4000-8001-000000000001'::uuid
+      ],
       '{}'::uuid[]
     )
   $$,
@@ -437,6 +542,8 @@ select throws_ok(
     select public.replace_project_membership_commitments(
       'a1000000-0000-4000-8000-000000000002',
       current_setting('test.commitment_membership')::uuid,
+      array['d0000000-0000-4000-8001-000000000001'::uuid],
+      array['a3000000-0000-4000-8000-000000000001'::uuid],
       array[null::uuid],
       '{}'::uuid[]
     )
@@ -450,6 +557,8 @@ select throws_ok(
     select public.replace_project_membership_commitments(
       'a1000000-0000-4000-8000-000000000002',
       current_setting('test.commitment_membership')::uuid,
+      array['d0000000-0000-4000-8001-000000000001'::uuid],
+      array['a3000000-0000-4000-8000-000000000001'::uuid],
       array_fill(
         'd0000000-0000-4000-8001-000000000001'::uuid,
         array[51]
@@ -466,6 +575,8 @@ select throws_ok(
     select public.replace_project_membership_commitments(
       'a1000000-0000-4000-8000-000000000002',
       current_setting('test.commitment_membership')::uuid,
+      array['d0000000-0000-4000-8001-000000000001'::uuid],
+      array['a3000000-0000-4000-8000-000000000001'::uuid],
       array['d0000000-0000-4000-8006-000000000001'::uuid],
       '{}'::uuid[]
     )
@@ -479,6 +590,8 @@ select throws_ok(
     select public.replace_project_membership_commitments(
       'a1000000-0000-4000-8000-000000000002',
       current_setting('test.commitment_membership')::uuid,
+      array['d0000000-0000-4000-8001-000000000001'::uuid],
+      array['a3000000-0000-4000-8000-000000000001'::uuid],
       '{}'::uuid[],
       array[
         'a3000000-0000-4000-8000-000000000002'::uuid,
@@ -495,6 +608,8 @@ select throws_ok(
     select public.replace_project_membership_commitments(
       'a1000000-0000-4000-8000-000000000002',
       current_setting('test.commitment_membership')::uuid,
+      array['d0000000-0000-4000-8001-000000000001'::uuid],
+      array['a3000000-0000-4000-8000-000000000001'::uuid],
       '{}'::uuid[],
       array[null::uuid]
     )
@@ -508,6 +623,8 @@ select throws_ok(
     select public.replace_project_membership_commitments(
       'a1000000-0000-4000-8000-000000000002',
       current_setting('test.commitment_membership')::uuid,
+      array['d0000000-0000-4000-8001-000000000001'::uuid],
+      array['a3000000-0000-4000-8000-000000000001'::uuid],
       '{}'::uuid[],
       array_fill(
         'a3000000-0000-4000-8000-000000000002'::uuid,
@@ -524,6 +641,8 @@ select throws_ok(
     select public.replace_project_membership_commitments(
       'a1000000-0000-4000-8000-000000000002',
       current_setting('test.commitment_membership')::uuid,
+      array['d0000000-0000-4000-8001-000000000001'::uuid],
+      array['a3000000-0000-4000-8000-000000000001'::uuid],
       '{}'::uuid[],
       array['a3000000-0000-4000-8000-000000000003'::uuid]
     )
@@ -537,6 +656,8 @@ select throws_ok(
     select public.replace_project_membership_commitments(
       'a1000000-0000-4000-8000-000000000002',
       current_setting('test.commitment_membership')::uuid,
+      array['d0000000-0000-4000-8001-000000000001'::uuid],
+      array['a3000000-0000-4000-8000-000000000001'::uuid],
       '{}'::uuid[],
       array['a3000000-0000-4000-8000-000000000004'::uuid]
     )
@@ -551,6 +672,8 @@ select lives_ok(
     select public.replace_project_membership_commitments(
       'a1000000-0000-4000-8000-000000000002',
       current_setting('test.commitment_membership')::uuid,
+      array['d0000000-0000-4000-8001-000000000001'::uuid],
+      array['a3000000-0000-4000-8000-000000000001'::uuid],
       array[
         'd0000000-0000-4000-8003-000000000002'::uuid,
         'd0000000-0000-4000-8001-000000000001'::uuid
@@ -603,6 +726,14 @@ select lives_ok(
         'd0000000-0000-4000-8001-000000000001'::uuid
       ],
       array[
+        'a3000000-0000-4000-8000-000000000002'::uuid,
+        'a3000000-0000-4000-8000-000000000001'::uuid
+      ],
+      array[
+        'd0000000-0000-4000-8003-000000000002'::uuid,
+        'd0000000-0000-4000-8001-000000000001'::uuid
+      ],
+      array[
         'a3000000-0000-4000-8000-000000000001'::uuid,
         'a3000000-0000-4000-8000-000000000002'::uuid
       ]
@@ -632,6 +763,228 @@ select is(
   ),
   1::bigint,
   'a no-op emits no event'
+);
+
+select set_config(
+  'test.cas_audit_before',
+  (select count(*)::text from private.audit_events),
+  true
+);
+select set_config(
+  'test.cas_outbox_before',
+  (select count(*)::text from private.outbox_events),
+  true
+);
+
+set local role authenticated;
+select set_config(
+  'request.jwt.claim.sub',
+  'a1000000-0000-4000-8000-000000000002',
+  true
+);
+select lives_ok(
+  $$
+    select public.replace_project_membership_commitments(
+      'a1000000-0000-4000-8000-000000000002',
+      current_setting('test.commitment_membership')::uuid,
+      array[
+        'd0000000-0000-4000-8003-000000000002'::uuid,
+        'd0000000-0000-4000-8001-000000000001'::uuid
+      ],
+      array[
+        'a3000000-0000-4000-8000-000000000002'::uuid,
+        'a3000000-0000-4000-8000-000000000001'::uuid
+      ],
+      array['d0000000-0000-4000-8001-000000000001'::uuid],
+      array['a3000000-0000-4000-8000-000000000001'::uuid]
+    )
+  $$,
+  'the participant wins when participant and creator edit the same snapshot'
+);
+select set_config(
+  'request.jwt.claim.sub',
+  'a1000000-0000-4000-8000-000000000001',
+  true
+);
+select throws_ok(
+  $$
+    select public.replace_project_membership_commitments(
+      'a1000000-0000-4000-8000-000000000001',
+      current_setting('test.commitment_membership')::uuid,
+      array[
+        'd0000000-0000-4000-8003-000000000002'::uuid,
+        'd0000000-0000-4000-8001-000000000001'::uuid
+      ],
+      array[
+        'a3000000-0000-4000-8000-000000000002'::uuid,
+        'a3000000-0000-4000-8000-000000000001'::uuid
+      ],
+      array['d0000000-0000-4000-8001-000000000001'::uuid],
+      array['a3000000-0000-4000-8000-000000000001'::uuid]
+    )
+  $$,
+  '40001',
+  'Membership commitments changed since they were loaded.',
+  'a stale creator snapshot rejects even when desired equals the newer canonical set'
+);
+
+reset role;
+select results_eq(
+  $$
+    select 'skill'::text, skill_id
+    from public.project_membership_skill_commitments
+    where membership_id = current_setting('test.commitment_membership')::uuid
+    union all
+    select 'resource'::text, resource_need_id
+    from public.project_membership_resource_commitments
+    where membership_id = current_setting('test.commitment_membership')::uuid
+    order by 1 desc
+  $$,
+  $$
+    values
+      ('skill'::text, 'd0000000-0000-4000-8001-000000000001'::uuid),
+      ('resource'::text, 'a3000000-0000-4000-8000-000000000001'::uuid)
+  $$,
+  'a rejected creator overwrite leaves the participant result canonical'
+);
+
+set local role authenticated;
+select set_config(
+  'request.jwt.claim.sub',
+  'a1000000-0000-4000-8000-000000000001',
+  true
+);
+select lives_ok(
+  $$
+    select public.replace_project_membership_commitments(
+      'a1000000-0000-4000-8000-000000000001',
+      current_setting('test.commitment_membership')::uuid,
+      array['d0000000-0000-4000-8001-000000000001'::uuid],
+      array['a3000000-0000-4000-8000-000000000001'::uuid],
+      array['d0000000-0000-4000-8003-000000000002'::uuid],
+      array['a3000000-0000-4000-8000-000000000002'::uuid]
+    )
+  $$,
+  'the creator can replace a freshly loaded participant result'
+);
+select set_config(
+  'request.jwt.claim.sub',
+  'a1000000-0000-4000-8000-000000000002',
+  true
+);
+select throws_ok(
+  $$
+    select public.replace_project_membership_commitments(
+      'a1000000-0000-4000-8000-000000000002',
+      current_setting('test.commitment_membership')::uuid,
+      array['d0000000-0000-4000-8001-000000000001'::uuid],
+      array['a3000000-0000-4000-8000-000000000001'::uuid],
+      array[
+        'd0000000-0000-4000-8001-000000000001'::uuid,
+        'd0000000-0000-4000-8003-000000000002'::uuid
+      ],
+      array[
+        'a3000000-0000-4000-8000-000000000001'::uuid,
+        'a3000000-0000-4000-8000-000000000002'::uuid
+      ]
+    )
+  $$,
+  '40001',
+  'Membership commitments changed since they were loaded.',
+  'the participant cannot overwrite a creator update from a stale snapshot'
+);
+
+reset role;
+select results_eq(
+  $$
+    select 'skill'::text, skill_id
+    from public.project_membership_skill_commitments
+    where membership_id = current_setting('test.commitment_membership')::uuid
+    union all
+    select 'resource'::text, resource_need_id
+    from public.project_membership_resource_commitments
+    where membership_id = current_setting('test.commitment_membership')::uuid
+    order by 1 desc
+  $$,
+  $$
+    values
+      ('skill'::text, 'd0000000-0000-4000-8003-000000000002'::uuid),
+      ('resource'::text, 'a3000000-0000-4000-8000-000000000002'::uuid)
+  $$,
+  'a rejected participant overwrite leaves the creator result canonical'
+);
+
+set local role authenticated;
+select set_config(
+  'request.jwt.claim.sub',
+  'a1000000-0000-4000-8000-000000000002',
+  true
+);
+select lives_ok(
+  $$
+    select public.replace_project_membership_commitments(
+      'a1000000-0000-4000-8000-000000000002',
+      current_setting('test.commitment_membership')::uuid,
+      array['d0000000-0000-4000-8003-000000000002'::uuid],
+      array['a3000000-0000-4000-8000-000000000002'::uuid],
+      array[
+        'd0000000-0000-4000-8001-000000000001'::uuid,
+        'd0000000-0000-4000-8003-000000000002'::uuid
+      ],
+      array[
+        'a3000000-0000-4000-8000-000000000001'::uuid,
+        'a3000000-0000-4000-8000-000000000002'::uuid
+      ]
+    )
+  $$,
+  'the first of two rapid participant submissions commits'
+);
+select throws_ok(
+  $$
+    select public.replace_project_membership_commitments(
+      'a1000000-0000-4000-8000-000000000002',
+      current_setting('test.commitment_membership')::uuid,
+      array['d0000000-0000-4000-8003-000000000002'::uuid],
+      array['a3000000-0000-4000-8000-000000000002'::uuid],
+      '{}'::uuid[],
+      '{}'::uuid[]
+    )
+  $$,
+  '40001',
+  'Membership commitments changed since they were loaded.',
+  'the second rapid participant submission cannot overwrite from stale state'
+);
+
+reset role;
+select results_eq(
+  $$
+    select 'skill'::text, skill_id
+    from public.project_membership_skill_commitments
+    where membership_id = current_setting('test.commitment_membership')::uuid
+    union all
+    select 'resource'::text, resource_need_id
+    from public.project_membership_resource_commitments
+    where membership_id = current_setting('test.commitment_membership')::uuid
+    order by 1 desc, 2
+  $$,
+  $$
+    values
+      ('skill'::text, 'd0000000-0000-4000-8001-000000000001'::uuid),
+      ('skill'::text, 'd0000000-0000-4000-8003-000000000002'::uuid),
+      ('resource'::text, 'a3000000-0000-4000-8000-000000000001'::uuid),
+      ('resource'::text, 'a3000000-0000-4000-8000-000000000002'::uuid)
+  $$,
+  'stale participant submission leaves the first participant result canonical'
+);
+select is(
+  (select count(*) from private.audit_events),
+  current_setting('test.cas_audit_before')::bigint + 3,
+  'three successful CAS changes create exactly three audit rows'
+);
+select is(
+  (select count(*) from private.outbox_events),
+  current_setting('test.cas_outbox_before')::bigint + 3,
+  'stale CAS conflicts create no outbox rows beyond the three real changes'
 );
 
 delete from public.proposal_skills
@@ -694,6 +1047,14 @@ select lives_ok(
       array[
         'a3000000-0000-4000-8000-000000000001'::uuid,
         'a3000000-0000-4000-8000-000000000002'::uuid
+      ],
+      array[
+        'd0000000-0000-4000-8001-000000000001'::uuid,
+        'd0000000-0000-4000-8003-000000000002'::uuid
+      ],
+      array[
+        'a3000000-0000-4000-8000-000000000001'::uuid,
+        'a3000000-0000-4000-8000-000000000002'::uuid
       ]
     )
   $$,
@@ -704,6 +1065,14 @@ select lives_ok(
     select public.replace_project_membership_commitments(
       'a1000000-0000-4000-8000-000000000002',
       current_setting('test.commitment_membership')::uuid,
+      array[
+        'd0000000-0000-4000-8001-000000000001'::uuid,
+        'd0000000-0000-4000-8003-000000000002'::uuid
+      ],
+      array[
+        'a3000000-0000-4000-8000-000000000001'::uuid,
+        'a3000000-0000-4000-8000-000000000002'::uuid
+      ],
       array['d0000000-0000-4000-8003-000000000002'::uuid],
       array['a3000000-0000-4000-8000-000000000002'::uuid]
     )
@@ -715,6 +1084,8 @@ select throws_ok(
     select public.replace_project_membership_commitments(
       'a1000000-0000-4000-8000-000000000002',
       current_setting('test.commitment_membership')::uuid,
+      array['d0000000-0000-4000-8003-000000000002'::uuid],
+      array['a3000000-0000-4000-8000-000000000002'::uuid],
       array[
         'd0000000-0000-4000-8001-000000000001'::uuid,
         'd0000000-0000-4000-8003-000000000002'::uuid
@@ -731,6 +1102,8 @@ select throws_ok(
     select public.replace_project_membership_commitments(
       'a1000000-0000-4000-8000-000000000002',
       current_setting('test.commitment_membership')::uuid,
+      array['d0000000-0000-4000-8003-000000000002'::uuid],
+      array['a3000000-0000-4000-8000-000000000002'::uuid],
       array['d0000000-0000-4000-8003-000000000002'::uuid],
       array[
         'a3000000-0000-4000-8000-000000000001'::uuid,
@@ -753,11 +1126,26 @@ select lives_ok(
     select public.replace_project_membership_commitments(
       'a1000000-0000-4000-8000-000000000001',
       current_setting('test.commitment_membership')::uuid,
+      array['d0000000-0000-4000-8003-000000000002'::uuid],
+      array['a3000000-0000-4000-8000-000000000002'::uuid],
       null,
       null
     )
   $$,
   'the canonical creator can clear the full set and null arrays normalize empty'
+);
+select lives_ok(
+  $$
+    select public.replace_project_membership_commitments(
+      'a1000000-0000-4000-8000-000000000001',
+      current_setting('test.commitment_membership')::uuid,
+      null,
+      null,
+      null,
+      null
+    )
+  $$,
+  'null expected and desired arrays normalize to the empty-set no-op'
 );
 
 select set_config(
@@ -770,6 +1158,8 @@ select throws_ok(
     select public.replace_project_membership_commitments(
       'a1000000-0000-4000-8000-000000000003',
       current_setting('test.commitment_membership')::uuid,
+      '{}'::uuid[],
+      '{}'::uuid[],
       '{}'::uuid[],
       '{}'::uuid[]
     )
@@ -801,6 +1191,8 @@ select lives_ok(
     select public.replace_project_membership_commitments(
       'a1000000-0000-4000-8000-000000000002',
       current_setting('test.commitment_membership')::uuid,
+      '{}'::uuid[],
+      '{}'::uuid[],
       array['d0000000-0000-4000-8003-000000000002'::uuid],
       array['a3000000-0000-4000-8000-000000000002'::uuid]
     )
@@ -821,6 +1213,8 @@ select throws_ok(
     select public.replace_project_membership_commitments(
       'a1000000-0000-4000-8000-000000000002',
       current_setting('test.commitment_membership')::uuid,
+      array['d0000000-0000-4000-8003-000000000002'::uuid],
+      array['a3000000-0000-4000-8000-000000000002'::uuid],
       '{}'::uuid[],
       '{}'::uuid[]
     )
@@ -994,6 +1388,8 @@ select lives_ok(
       'a1000000-0000-4000-8000-000000000004',
       current_setting('test.recurring_membership')::uuid,
       '{}'::uuid[],
+      array['a3000000-0000-4000-8000-000000000005'::uuid],
+      '{}'::uuid[],
       array[
         'a3000000-0000-4000-8000-000000000005'::uuid,
         'a3000000-0000-4000-8000-000000000006'::uuid
@@ -1007,6 +1403,11 @@ select throws_ok(
     select public.replace_project_membership_commitments(
       'a1000000-0000-4000-8000-000000000004',
       current_setting('test.recurring_membership')::uuid,
+      '{}'::uuid[],
+      array[
+        'a3000000-0000-4000-8000-000000000005'::uuid,
+        'a3000000-0000-4000-8000-000000000006'::uuid
+      ],
       array['d0000000-0000-4000-8001-000000000001'::uuid],
       array[
         'a3000000-0000-4000-8000-000000000005'::uuid,
@@ -1061,6 +1462,8 @@ select throws_ok(
     select public.replace_project_membership_commitments(
       'a1000000-0000-4000-8000-000000000002',
       current_setting('test.rejoin_membership')::uuid,
+      array['d0000000-0000-4000-8003-000000000002'::uuid],
+      array['a3000000-0000-4000-8000-000000000002'::uuid],
       array['d0000000-0000-4000-8003-000000000002'::uuid],
       array['a3000000-0000-4000-8000-000000000002'::uuid]
     )
