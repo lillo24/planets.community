@@ -54,39 +54,23 @@ void main() {
     },
   );
 
-  test(
-    'creator acceptance blocks duplicate taps and reloads canonical status',
-    () async {
-      final pending = Completer<void>();
-      final gateway = FakeMessagesGateway()
-        ..items = [messageItemFixture()]
-        ..mutationDelay = pending.future;
-      final session = _readyContainer(gateway);
-      addTearDown(session.container.dispose);
-      addTearDown(session.auth.close);
-      final controller = session.container.read(
-        messagesDetailProvider.notifier,
-      );
-      await controller.load(
-        expectedProfileId: 'user-1',
-        requestId: 'request-1',
-      );
+  test('triaged acceptance reloads canonical detail and inbox', () async {
+    final gateway = FakeMessagesGateway()..items = [messageItemFixture()];
+    final session = _readyContainer(gateway);
+    addTearDown(session.container.dispose);
+    addTearDown(session.auth.close);
+    final controller = session.container.read(messagesDetailProvider.notifier);
+    await controller.load(expectedProfileId: 'user-1', requestId: 'request-1');
 
-      final first = controller.accept();
-      expect(await controller.accept(), isFalse);
-      expect(
-        gateway.calls.where((call) => call == 'accept:request-1'),
-        hasLength(1),
-      );
-      pending.complete();
-      expect(await first, isTrue);
-      expect(
-        session.container.read(messagesDetailProvider).item?.status.name,
-        'accepted',
-      );
-      expect(session.container.read(projectChatRefreshProvider), 1);
-    },
-  );
+    gateway.items = [messageItemFixture(status: JoinRequestStatus.accepted)];
+    expect(await controller.reloadAfterJoinAcceptanceTriage(), isTrue);
+    expect(
+      session.container.read(messagesDetailProvider).item?.status.name,
+      'accepted',
+    );
+    expect(gateway.calls.where((call) => call == 'list'), hasLength(1));
+    expect(session.container.read(projectChatRefreshProvider), 0);
+  });
 
   test('requester cannot invoke creator actions', () async {
     final gateway = FakeMessagesGateway()
@@ -97,9 +81,7 @@ void main() {
     final controller = session.container.read(messagesDetailProvider.notifier);
     await controller.load(expectedProfileId: 'user-1', requestId: 'request-1');
 
-    expect(await controller.accept(), isFalse);
     expect(await controller.reject(), isFalse);
-    expect(gateway.calls.where((call) => call.startsWith('accept:')), isEmpty);
   });
 
   test('creator can reject and reload the canonical resolved item', () async {
@@ -133,7 +115,7 @@ void main() {
     final controller = session.container.read(messagesDetailProvider.notifier);
     await controller.load(expectedProfileId: 'user-1', requestId: 'request-1');
 
-    final action = controller.accept();
+    final action = controller.reject();
     gateway.items = [messageItemFixture(status: JoinRequestStatus.rejected)];
     pending.complete();
 
@@ -154,7 +136,7 @@ void main() {
     final controller = session.container.read(messagesDetailProvider.notifier);
     await controller.load(expectedProfileId: 'user-1', requestId: 'request-1');
 
-    final action = controller.accept();
+    final action = controller.reject();
     session.container
         .read(authSessionProvider.notifier)
         .markProfileReady(const AuthIdentity(id: 'user-2'));
@@ -247,8 +229,6 @@ void main() {
       session.container.read(messagesDetailProvider).selectionPhase,
       MessagesSelectionPhase.failure,
     );
-    expect(await controller.accept(), isTrue);
-
     gateway
       ..selectionError = null
       ..selections = const [

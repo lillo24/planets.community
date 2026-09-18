@@ -15,8 +15,8 @@ chronological feed. Project-chat transport and UI live in the adjacent
   list/exact reads, the private 04C3B1 selection read, and the existing 05A
   Accept/Reject/Withdraw transitions, then strictly parses each narrow response.
 - `application/messages_controllers.dart` owns keyset paging, detail/action
-  state, identity revisions, duplicate-action guards, conflict reloads, and
-  synchronization with the existing 05B participation controllers.
+  state, identity revisions, Reject/Withdraw guards, conflict reloads, and
+  canonical post-triage synchronization with participation and the inbox.
 - `presentation/messages_routes.dart` owns stable request, chat, and group-info
   routes used by navigation and future notification routing.
 - `presentation/messages_screen.dart` owns the two-tab shell, independent
@@ -39,14 +39,16 @@ The request item and contribution-selection read are independent. Selection
 loading/failure never removes Accept/Reject/Withdraw, and its local retry
 resolves current canonical labels for the historical selected IDs. Empty
 selection history is valid. Unknown selection kinds fail safely rather than
-being rendered as an invented contribution type.
+being rendered as an invented contribution type. These chips remain immutable
+request history and are not reused as mutable acceptance state.
 
-On the 04C3D1 backend, the existing two-argument Accept call succeeds only when
-the request has no selected contributions. A selected request therefore remains
-visible but cannot be accepted by this stacked client until 04C3D2 adds the
-mandatory needed/already-found/extra decision controls and calls the explicit
-triaged overload. Reject and Withdraw are unchanged; the backend invariant is
-not weakened to preserve the interim button behavior.
+Creator Accept opens the participation-owned 04C3D2 triage sheet, which performs
+its own action-local canonical selection read even when the Messages display
+read previously succeeded or failed. The shared sheet requires every offered
+item to be classified and is the only mobile owner of the D1 eight-argument
+acceptance call. On return, request detail, inbox, and an already-loaded matching
+creator participation view reload canonical state. Reject and requester
+Withdraw remain owned here and unchanged.
 
 Inbox and detail data live only in identity-bound Riverpod memory. Every load or
 mutation captures the rendered identity and a request revision; sign-out or an

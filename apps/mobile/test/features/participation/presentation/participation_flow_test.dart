@@ -8,9 +8,11 @@ import 'package:planets_mobile/features/auth/data/auth_gateway.dart';
 import 'package:planets_mobile/features/auth/domain/auth_models.dart';
 import 'package:planets_mobile/features/participation/data/membership_commitment_gateway.dart';
 import 'package:planets_mobile/features/participation/data/participation_gateway.dart';
+import 'package:planets_mobile/features/participation/data/join_acceptance_triage_gateway.dart';
 import 'package:planets_mobile/features/participation/domain/participation_models.dart';
 import 'package:planets_mobile/features/profile/data/profile_gateway.dart';
 import 'package:planets_mobile/features/project_resource_needs/data/project_resource_needs_gateway.dart';
+import 'package:planets_mobile/features/project_chat/application/project_chat_refresh.dart';
 import 'package:planets_mobile/features/proposals/data/proposal_gateway.dart';
 import 'package:planets_mobile/features/proposals/domain/proposal_models.dart';
 import 'package:planets_mobile/features/recurring_activities/data/recurring_activity_gateway.dart';
@@ -20,6 +22,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../support/fake_auth.dart';
 import '../../../support/fake_membership_commitment.dart';
 import '../../../support/fake_participation.dart';
+import '../../../support/fake_join_acceptance_triage.dart';
 import '../../../support/fake_profile.dart';
 import '../../../support/fake_project_resource_needs.dart';
 import '../../../support/fake_proposal.dart';
@@ -215,10 +218,31 @@ void main() {
         ),
       ]
       ..meetingDetails = meetingDetailsFixture();
+    final triage = FakeJoinAcceptanceTriageGateway()
+      ..onAccepted = () {
+        participation.creatorRequests = [
+          for (final request in participation.creatorRequests)
+            if (request.id == 'pending')
+              creatorJoinRequestFixture(
+                id: request.id,
+                requesterProfileId: request.requesterProfileId,
+                requesterDisplayName: request.requesterDisplayName,
+                status: JoinRequestStatus.accepted,
+                message: request.message,
+              )
+            else
+              request,
+        ];
+        participation.creatorMembers = [
+          ...participation.creatorMembers,
+          creatorMemberFixture(id: 'membership-4'),
+        ];
+      };
     final app = await _pump(
       tester,
       identityId: 'user-1',
       participation: participation,
+      triage: triage,
     );
     app.read(appRouterProvider).go('/proposals/proposal-1');
     await tester.pumpAndSettle();
@@ -248,7 +272,12 @@ void main() {
     expect(participation.calls, contains('reject:reject-me'));
     await tester.tap(find.byKey(const Key('participation-accept-pending')));
     await tester.pumpAndSettle();
-    expect(participation.calls, contains('accept:pending'));
+    expect(find.text('No contribution offers to classify.'), findsOneWidget);
+    expect(triage.calls, ['selections:pending']);
+    await tester.tap(find.byKey(const Key('join-acceptance-submit')));
+    await tester.pumpAndSettle();
+    expect(triage.calls, ['selections:pending', 'accept:pending']);
+    expect(app.read(projectChatRefreshProvider), 1);
     await _scrollTo(
       tester,
       find.byKey(const Key('participation-member-membership-4')),
@@ -524,6 +553,7 @@ Future<ProviderContainer> _pump(
   ProposalStatus proposalStatus = ProposalStatus.upcoming,
   FakeProjectResourceNeedsGateway? projectResourceNeeds,
   FakeMembershipCommitmentGateway? commitments,
+  FakeJoinAcceptanceTriageGateway? triage,
 }) async {
   final auth = FakeAuthGateway(
     snapshot: AuthSnapshot(identity: AuthIdentity(id: identityId)),
@@ -567,6 +597,9 @@ Future<ProviderContainer> _pump(
         proposalGatewayProvider.overrideWithValue(proposals),
         recurringActivityGatewayProvider.overrideWithValue(recurringGateway),
         participationGatewayProvider.overrideWithValue(participation),
+        joinAcceptanceTriageGatewayProvider.overrideWithValue(
+          triage ?? FakeJoinAcceptanceTriageGateway(),
+        ),
         membershipCommitmentGatewayProvider.overrideWithValue(
           commitments ?? FakeMembershipCommitmentGateway(),
         ),

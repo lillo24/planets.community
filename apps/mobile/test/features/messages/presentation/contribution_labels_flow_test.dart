@@ -8,12 +8,14 @@ import 'package:planets_mobile/features/messages/data/messages_gateway.dart';
 import 'package:planets_mobile/features/messages/domain/message_models.dart';
 import 'package:planets_mobile/features/messages/presentation/participation_request_message_screen.dart';
 import 'package:planets_mobile/features/participation/data/participation_gateway.dart';
+import 'package:planets_mobile/features/participation/data/join_acceptance_triage_gateway.dart';
 import 'package:planets_mobile/features/participation/domain/participation_models.dart';
 import 'package:planets_mobile/l10n/generated/app_localizations.dart';
 
 import '../../../support/fake_auth.dart';
 import '../../../support/fake_messages.dart';
 import '../../../support/fake_participation.dart';
+import '../../../support/fake_join_acceptance_triage.dart';
 
 void main() {
   testWidgets(
@@ -74,7 +76,9 @@ void main() {
       final messages = FakeMessagesGateway()
         ..items = [messageItemFixture()]
         ..selectionError = StateError('private diagnostic');
-      final session = await _pump(tester, messages);
+      final triage = FakeJoinAcceptanceTriageGateway()
+        ..selectionError = StateError('private action diagnostic');
+      final session = await _pump(tester, messages, triage: triage);
       addTearDown(session.dispose);
 
       expect(
@@ -89,6 +93,15 @@ void main() {
       );
       expect(find.byKey(const Key('message-accept')), findsOneWidget);
       expect(find.byKey(const Key('message-reject')), findsOneWidget);
+      await tester.tap(find.byKey(const Key('message-accept')));
+      await tester.pumpAndSettle();
+      expect(
+        find.byKey(const Key('join-acceptance-load-error')),
+        findsOneWidget,
+      );
+      expect(triage.calls.where((call) => call.startsWith('accept:')), isEmpty);
+      await tester.tap(find.byKey(const Key('join-acceptance-close')));
+      await tester.pumpAndSettle();
 
       messages
         ..selectionError = null
@@ -116,8 +129,9 @@ void main() {
 
 Future<ProviderContainer> _pump(
   WidgetTester tester,
-  FakeMessagesGateway messages,
-) async {
+  FakeMessagesGateway messages, {
+  FakeJoinAcceptanceTriageGateway? triage,
+}) async {
   final auth = FakeAuthGateway(
     snapshot: const AuthSnapshot(identity: AuthIdentity(id: 'user-1')),
   );
@@ -128,6 +142,9 @@ Future<ProviderContainer> _pump(
       messagesGatewayProvider.overrideWithValue(messages),
       participationGatewayProvider.overrideWithValue(
         FakeParticipationGateway(),
+      ),
+      joinAcceptanceTriageGatewayProvider.overrideWithValue(
+        triage ?? FakeJoinAcceptanceTriageGateway(),
       ),
     ],
   );

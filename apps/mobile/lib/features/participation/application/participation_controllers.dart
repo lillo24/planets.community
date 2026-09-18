@@ -456,7 +456,6 @@ enum CreatorParticipationPhase {
   idle,
   loading,
   ready,
-  accepting,
   rejecting,
   removing,
   failure,
@@ -483,7 +482,6 @@ class CreatorParticipationState {
 
   bool get isBusy => switch (phase) {
     CreatorParticipationPhase.loading ||
-    CreatorParticipationPhase.accepting ||
     CreatorParticipationPhase.rejecting ||
     CreatorParticipationPhase.removing => true,
     CreatorParticipationPhase.idle ||
@@ -555,22 +553,6 @@ class CreatorParticipationController
       );
     }
   }
-
-  Future<bool> accept({
-    required String expectedCreatorId,
-    required String projectId,
-    required String requestId,
-  }) => _requestMutation(
-    phase: CreatorParticipationPhase.accepting,
-    expectedCreatorId: expectedCreatorId,
-    projectId: projectId,
-    targetId: requestId,
-    refreshProjectChats: true,
-    command: (gateway) => gateway.acceptRequest(
-      expectedCreatorProfileId: expectedCreatorId,
-      requestId: requestId,
-    ),
-  );
 
   Future<bool> reject({
     required String expectedCreatorId,

@@ -8,6 +8,7 @@ import '../../../l10n/generated/app_localizations.dart';
 import '../../auth/application/auth_session_controller.dart';
 import '../application/participation_controllers.dart';
 import '../domain/participation_models.dart';
+import 'join_acceptance_triage_sheet.dart';
 import 'membership_commitment_sheet.dart';
 import 'project_participation_section.dart';
 
@@ -109,8 +110,8 @@ class _CreatorParticipationScreenState
                           isActing:
                               state.actionTargetId == request.id &&
                               state.isBusy,
-                          onAccept: () => _decide(request, accept: true),
-                          onReject: () => _decide(request, accept: false),
+                          onAccept: () => _accept(request),
+                          onReject: () => _reject(request),
                         ),
                         const SizedBox(height: AppSpacing.small),
                       ],
@@ -141,29 +142,42 @@ class _CreatorParticipationScreenState
     );
   }
 
-  Future<void> _decide(
-    CreatorProjectJoinRequest request, {
-    required bool accept,
-  }) async {
+  Future<void> _accept(CreatorProjectJoinRequest request) async {
     final expectedCreatorId = _expectedCreatorId;
     if (expectedCreatorId == null ||
         ref.read(authSessionProvider).identity?.id != expectedCreatorId) {
       return;
     }
-    final controller = ref.read(creatorParticipationProvider.notifier);
-    if (accept) {
-      await controller.accept(
-        expectedCreatorId: expectedCreatorId,
-        projectId: widget.projectId,
-        requestId: request.id,
-      );
-    } else {
-      await controller.reject(
-        expectedCreatorId: expectedCreatorId,
-        projectId: widget.projectId,
-        requestId: request.id,
-      );
+    await showJoinAcceptanceTriageSheet(
+      context,
+      expectedCreatorProfileId: expectedCreatorId,
+      requestId: request.id,
+      projectId: widget.projectId,
+      projectKind: widget.projectKind,
+      requesterDisplayName: request.requesterDisplayName,
+    );
+    if (!mounted ||
+        ref.read(authSessionProvider).identity?.id != expectedCreatorId) {
+      return;
     }
+    await ref
+        .read(creatorParticipationProvider.notifier)
+        .load(expectedCreatorId, widget.projectId);
+  }
+
+  Future<void> _reject(CreatorProjectJoinRequest request) async {
+    final expectedCreatorId = _expectedCreatorId;
+    if (expectedCreatorId == null ||
+        ref.read(authSessionProvider).identity?.id != expectedCreatorId) {
+      return;
+    }
+    await ref
+        .read(creatorParticipationProvider.notifier)
+        .reject(
+          expectedCreatorId: expectedCreatorId,
+          projectId: widget.projectId,
+          requestId: request.id,
+        );
   }
 
   Future<void> _confirmRemove(CreatorProjectMember member) async {

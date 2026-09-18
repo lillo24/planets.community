@@ -8,6 +8,7 @@ import '../../../core/widgets/loading_state.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../auth/application/auth_session_controller.dart';
 import '../../participation/domain/participation_models.dart';
+import '../../participation/presentation/join_acceptance_triage_sheet.dart';
 import '../../participation/presentation/participation_routes.dart';
 import '../application/messages_controllers.dart';
 import '../domain/message_models.dart';
@@ -184,7 +185,11 @@ class _ParticipationRequestMessageScreenState
                     ),
                     if (item.isPending) ...[
                       const SizedBox(height: AppSpacing.medium),
-                      _MessageActions(item: item, state: state),
+                      _MessageActions(
+                        item: item,
+                        state: state,
+                        onAccept: () => _accept(item),
+                      ),
                     ] else ...[
                       const SizedBox(height: AppSpacing.medium),
                       Text(
@@ -198,6 +203,30 @@ class _ParticipationRequestMessageScreenState
               ),
       ),
     );
+  }
+
+  Future<void> _accept(ParticipationRequestMessageItem item) async {
+    final expectedProfileId = _expectedProfileId;
+    if (expectedProfileId == null ||
+        item.viewerRole != MessageViewerRole.creator ||
+        ref.read(authSessionProvider).identity?.id != expectedProfileId) {
+      return;
+    }
+    await showJoinAcceptanceTriageSheet(
+      context,
+      expectedCreatorProfileId: expectedProfileId,
+      requestId: item.requestId,
+      projectId: item.projectId,
+      projectKind: item.projectKind,
+      requesterDisplayName: item.requesterDisplayName,
+    );
+    if (!mounted ||
+        ref.read(authSessionProvider).identity?.id != expectedProfileId) {
+      return;
+    }
+    await ref
+        .read(messagesDetailProvider.notifier)
+        .reloadAfterJoinAcceptanceTriage();
   }
 }
 
@@ -347,10 +376,15 @@ class _DetailSection extends StatelessWidget {
 }
 
 class _MessageActions extends ConsumerWidget {
-  const _MessageActions({required this.item, required this.state});
+  const _MessageActions({
+    required this.item,
+    required this.state,
+    required this.onAccept,
+  });
 
   final ParticipationRequestMessageItem item;
   final MessagesDetailState state;
+  final VoidCallback onAccept;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -381,10 +415,8 @@ class _MessageActions extends ConsumerWidget {
         Expanded(
           child: FilledButton(
             key: const Key('message-accept'),
-            onPressed: state.isActing ? null : controller.accept,
-            child: state.action == MessageAction.accepting
-                ? const _ActionProgress()
-                : Text(l10n.participationAccept),
+            onPressed: state.isActing ? null : onAccept,
+            child: Text(l10n.participationAccept),
           ),
         ),
       ],

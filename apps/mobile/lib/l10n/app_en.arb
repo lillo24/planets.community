@@ -853,5 +853,27 @@
   "participationCommitmentResourceLimit": "You can select up to {max} resources or materials.",
   "@participationCommitmentResourceLimit": {
     "placeholders": { "max": { "type": "int" } }
-  }
+  },
+  "joinAcceptanceTitle": "Review contribution offers",
+  "joinAcceptanceIntroduction": "Before accepting {name}, decide what each offer means.",
+  "@joinAcceptanceIntroduction": {
+    "placeholders": { "name": { "type": "String" } }
+  },
+  "joinAcceptanceLoading": "Loading contribution offers…",
+  "joinAcceptanceNeeded": "Needed",
+  "joinAcceptanceAlreadyFound": "Already found",
+  "joinAcceptanceExtra": "Extra is fine",
+  "joinAcceptanceNeededHelper": "This person is expected to help with or bring this.",
+  "joinAcceptanceAlreadyFoundHelper": "You do not need this from this person.",
+  "joinAcceptanceExtraHelper": "They may still help with or bring this, but it is not being used as the needed contribution.",
+  "joinAcceptanceAcceptPerson": "Accept person",
+  "joinAcceptanceDecideEveryContribution": "Decide what this person should bring or help with before accepting.",
+  "joinAcceptanceFirstGuidance": "Decide what this person should bring or help with before accepting. You can change this participant's current commitments later from Project management.",
+  "joinAcceptanceNoOffers": "No contribution offers to classify.",
+  "joinAcceptanceNoDecision": "No decision selected",
+  "joinAcceptanceItemDecisionRequired": "A decision is required before accepting.",
+  "joinAcceptanceProjectNeedsChanged": "The Project needs changed. Review the items marked Needed before accepting.",
+  "joinAcceptanceRequestUnavailable": "This request can no longer be accepted.",
+  "joinAcceptanceForbidden": "This request is not available for the current account.",
+  "joinAcceptanceLoadError": "Unable to load contribution offers. Try again."
 }

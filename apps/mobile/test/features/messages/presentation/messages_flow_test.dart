@@ -11,14 +11,17 @@ import 'package:planets_mobile/features/auth/domain/auth_models.dart';
 import 'package:planets_mobile/features/messages/data/messages_gateway.dart';
 import 'package:planets_mobile/features/messages/domain/message_models.dart';
 import 'package:planets_mobile/features/participation/data/participation_gateway.dart';
+import 'package:planets_mobile/features/participation/data/join_acceptance_triage_gateway.dart';
 import 'package:planets_mobile/features/participation/domain/participation_models.dart';
 import 'package:planets_mobile/features/proposals/data/proposal_gateway.dart';
 import 'package:planets_mobile/features/recurring_activities/data/recurring_activity_gateway.dart';
 import 'package:planets_mobile/features/project_chat/data/project_chat_gateway.dart';
+import 'package:planets_mobile/features/project_chat/application/project_chat_refresh.dart';
 
 import '../../../support/fake_auth.dart';
 import '../../../support/fake_messages.dart';
 import '../../../support/fake_participation.dart';
+import '../../../support/fake_join_acceptance_triage.dart';
 import '../../../support/fake_proposal.dart';
 import '../../../support/fake_recurring_activity.dart';
 import '../../../support/fake_project_chat.dart';
@@ -91,13 +94,22 @@ void main() {
     expect(find.byKey(const Key('message-item-request-1')), findsOneWidget);
   });
 
-  testWidgets('creator sees full private message and can accept once', (
+  testWidgets('creator accepts through shared triage and reloads history', (
     tester,
   ) async {
     final longMessage = List.filled(50, 'private-context').join(' ');
     final messages = FakeMessagesGateway()
       ..items = [messageItemFixture(requestMessage: longMessage)];
-    final app = await _pump(tester, messages: messages);
+    final triage = FakeJoinAcceptanceTriageGateway()
+      ..onAccepted = () {
+        messages.items = [
+          messageItemFixture(
+            requestMessage: longMessage,
+            status: JoinRequestStatus.accepted,
+          ),
+        ];
+      };
+    final app = await _pump(tester, messages: messages, triage: triage);
     app.read(appRouterProvider).go('/messages/requests/request-1');
     await tester.pumpAndSettle();
 
@@ -113,11 +125,17 @@ void main() {
     expect(find.byKey(const Key('message-reject')), findsOneWidget);
     await tester.tap(find.byKey(const Key('message-accept')));
     await tester.pumpAndSettle();
+    expect(find.text('Review contribution offers'), findsOneWidget);
+    expect(triage.calls, ['selections:request-1']);
+    await tester.tap(find.byKey(const Key('join-acceptance-submit')));
+    await tester.pumpAndSettle();
 
     expect(
-      messages.calls.where((call) => call == 'accept:request-1'),
+      triage.calls.where((call) => call == 'accept:request-1'),
       hasLength(1),
     );
+    expect(messages.calls, contains('list'));
+    expect(app.read(projectChatRefreshProvider), 1);
     await tester.fling(
       find.byType(Scrollable).hitTestable().first,
       const Offset(0, 1000),
@@ -234,6 +252,7 @@ Future<ProviderContainer> _pump(
   WidgetTester tester, {
   required FakeMessagesGateway messages,
   String identityId = 'user-1',
+  FakeJoinAcceptanceTriageGateway? triage,
 }) async {
   final auth = FakeAuthGateway(
     snapshot: AuthSnapshot(identity: AuthIdentity(id: identityId)),
@@ -258,6 +277,9 @@ Future<ProviderContainer> _pump(
         projectChatGatewayProvider.overrideWithValue(FakeProjectChatGateway()),
         participationGatewayProvider.overrideWithValue(
           FakeParticipationGateway(),
+        ),
+        joinAcceptanceTriageGatewayProvider.overrideWithValue(
+          triage ?? FakeJoinAcceptanceTriageGateway(),
         ),
         proposalGatewayProvider.overrideWithValue(
           FakeProposalGateway()..publicDetail = proposalDetailFixture(),

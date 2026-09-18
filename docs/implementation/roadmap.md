@@ -1,7 +1,7 @@
 # Implementation Roadmap
 
 **Status:** Planning baseline  
-**Current implementation:** Plans 00–04B2B, 04C1–04C2, 05A, 05B, 05D, 06A, 06B, provider-independent 06C1, provider-neutral 06C2A, 06D, 07A, 07B1, 07B2B, 07B2C, and public informational SITE-00 through SITE-02 plus SITE-02W implemented; 04C3A, stacked 04C3B1/04C3B2/04C3C1/04C3C2, and the current stacked 04C3D1 backend work are in progress; 04C3D2/04C3D3, provider-specific 06C2B, 04C4, and 05C remain not started
+**Current implementation:** Plans 00–04B2B, 04C1–04C2, 05A, 05B, 05D, 06A, 06B, provider-independent 06C1, provider-neutral 06C2A, 06D, 07A, 07B1, 07B2B, 07B2C, and public informational SITE-00 through SITE-02 plus SITE-02W implemented; 04C3A, stacked 04C3B1/04C3B2/04C3C1/04C3C2, open PR #63 for 04C3D1, and the current stacked 04C3D2 mobile work are in progress; 04C3D3, provider-specific 06C2B, 04C4, and 05C remain not started
 
 This roadmap divides the first PLANETS build into reviewable Codex tasks. Each numbered item should normally become its own implementation prompt, branch, and pull request.
 
@@ -66,7 +66,7 @@ Do not begin a dependent plan until the prior plan is merged or its branch is ex
 | 04C3C2 | Mobile Commitment Management                              | Participant and creator editing experience over the 04C3C1 domain                                                      | 04C3C1                 | Native interaction review; delegated/co-organizer authorization                                                      | In progress |
 | 04C3D  | Acceptance Triage and Live Project Coverage (parent)      | Immutable creator acceptance decisions followed by mobile triage and current Project-need coverage coordination        | 04C3B1, 04C3C1, 05A    | External/manual coverage and delegate policy remain later decisions                                                  | In progress |
 | 04C3D1 | Join-Acceptance Contribution Triage Domain                | Exact needed/already-found/extra decisions, selective commitment seeding, historical backfill, and concurrency tests   | 04C3C1                 | None for canonical-creator backend ownership                                                                         | In progress |
-| 04C3D2 | Mobile Join-Acceptance Contribution Triage                | Mandatory three-way creator decision UI over every selected request contribution                                       | 04C3D1, 04C3B2, 07A    | Native interaction review; delegated/co-organizer authorization                                                      | Not started |
+| 04C3D2 | Mobile Join-Acceptance Contribution Triage                | Mandatory three-way creator decision UI over every selected request contribution                                       | 04C3D1, 04C3B2, 07A    | Native interaction review; delegated/co-organizer authorization                                                      | In progress |
 | 04C3D3 | Live Need Coverage + Group Coordination                   | Current coverage projection, resurfacing, chat needed-items coordination, and participant claim/cover flow             | 04C3D1, 04C3D2, 07B2C  | Manual/external-found semantics, attention UX, and delegate policy                                                   | Not started |
 | 04C4   | Listing Requests/Handoff + Saved Search/Matching          | Post-discovery request/handoff rules plus explainable saved-search and matching behavior                               | 04C1                   | Exchange, request, handoff, contact, matching, and notification semantics                                            | Not started |
 | 05     | Participation lifecycle (parent)                          | Shared project participation foundation, later mobile experience, and verified-contribution review                     | 04A, 04B1              | Capacity/fullness and later contribution/resource semantics remain unresolved                                        | In progress |
@@ -325,7 +325,7 @@ or introduce participation, chat, resources, or recurrence expansion.
 
 #### 04C — Resources + Scambio-Dona
 
-**Status:** In progress through implemented 04C1–04C2 and the current stacked 04C3A/04C3B1/04C3B2/04C3C1/04C3C2/04C3D1 work. Mobile acceptance triage, live coverage, request/handoff, saved-search, matching, and notification slices remain later work.
+**Status:** In progress through implemented 04C1–04C2 and the current stacked 04C3A/04C3B1/04C3B2/04C3C1/04C3C2/04C3D1/04C3D2 work. Live coverage, request/handoff, saved-search, matching, and notification slices remain later work.
 
 The earlier combined scope is split so standalone public listings do not force unresolved Project contribution or post-discovery transaction rules:
 
@@ -345,7 +345,7 @@ Owns the primary text-only Flutter browse/detail and owner create/edit/publish/c
 
 ##### 04C3 — Project Resource Needs and Contribution Offers (parent)
 
-**Status:** In progress through stacked 04C3A, 04C3B1, 04C3B2, 04C3C1, 04C3C2, and the current 04C3D1 backend work. Depends on 04A, 04B1, and 05A.
+**Status:** In progress through stacked 04C3A, 04C3B1, 04C3B2, 04C3C1, 04C3C2, open PR #63 for 04C3D1, and the current 04C3D2 mobile work. Depends on 04A, 04B1, and 05A.
 
 This parent keeps Project-owned needs and later request-linked contribution offers separate from standalone Scambio-Dona listings and from accepted membership.
 
@@ -399,21 +399,21 @@ Uses Project-chat group info for current-participant `My commitments` editing an
 
 ###### 04C3D — Acceptance Triage and Live Project Coverage (parent)
 
-**Status:** In progress through the current stacked 04C3D1 backend layer. Depends on 04C3B1, 04C3C1, and 05A.
+**Status:** In progress through open PR #63 for 04C3D1 and the current stacked 04C3D2 mobile layer. Depends on 04C3B1, 04C3C1, and 05A.
 
 This parent keeps five states explicit: request selection is the requester's historical offer; acceptance decision is the organizer's immutable decision at one acceptance; current commitment is the membership's mutable expectation; live Project coverage is the current need-to-participant/external state; final actual contribution is the later one-time completion attribution. None is a person rating, and no earlier layer is proof of delivery.
 
 ###### 04C3D1 — Join-Acceptance Contribution Triage Domain
 
-**Status:** In progress in the current stacked backend PR, based on open PR #62 without merging any layer. Depends on 04C3C1.
+**Status:** In progress in open PR #63, based on open PR #62 without merging any layer. Depends on 04C3C1.
 
 Owns immutable per-selection `needed`/`already_found`/`extra` decisions, exact-partition triaged acceptance, current-validity checks only for `needed`, zero-selection-only two-argument compatibility, selective needed-plus-extra commitment seeding, a fail-closed membership trigger, deterministic existing-history backfill, independent rejoins, identifier-only events, and focused pgTAP/real-OTP/concurrency coverage. It does not add mobile UI, live coverage, fulfillment, final attribution, delegates, or ratings.
 
 ###### 04C3D2 — Mobile Join-Acceptance Contribution Triage
 
-**Status:** Not started. Depends on 04C3D1, 04C3B2, and 07A.
+**Status:** In progress in the current stacked mobile PR, based on open PR #63 without merging any layer. Depends on 04C3D1, 04C3B2, and 07A.
 
-Will require the canonical Project creator to classify every displayed offered skill/resource as Needed, Already found, or Extra before Accept can call the triaged backend overload. Unclassified chips receive the specified red-border/brief-shake attention and one explanatory tooltip. It must preserve the backend's exact-partition and stale-option reload behavior. Until this layer lands, current mobile two-argument acceptance works only for zero-selection requests.
+Adds one participation-owned triage sheet shared by Manage participation and Messages request detail. It lazily reads only the tapped request, requires the canonical Project creator to classify every offered skill/resource as Needed, Already found, or Extra, and calls only the explicit triaged backend overload, including six empty arrays for zero offers. Unclassified items receive an accessible error border, brief reduced-motion-safe shake, and one explanatory tooltip. Safe stale-need/conflict/authorization recovery preserves the backend's exact-partition authority; surrounding participation, Messages, inbox, and chat projections reload canonically after the flow.
 
 ###### 04C3D3 — Live Need Coverage + Group Coordination
 
@@ -918,15 +918,15 @@ Major gates currently expected:
 
 ## Immediate next action
 
-Complete and review the stacked **04C3D1 — Join-Acceptance Contribution Triage Domain**
-without merging it, PR #62, PR #61, PR #60, PR #52, or their 04C3A base PR #45. 04C1 is implemented in merged PR #32
+Complete and review the stacked **04C3D2 — Mobile Join-Acceptance Contribution Triage**
+without merging it, open PR #63, PR #62, PR #61, PR #60, PR #52, or their 04C3A base PR #45. 04C1 is implemented in merged PR #32
 (`2aca5bdde7bf7ed7d747f14dcccbc3b5c4b75c42`) and 04C2 is implemented in
 merged PR #34 (`2da76de112a860210161d64de6bceab333159c26`).
 06D is implemented in merged PR #31, while 06 remains in
 progress because provider-specific 06C2B is not started. Optional E2EE/MLS
 research remains unmerged and deferred in PR #28. PR #45 (04C3A), PR #52
-(04C3B1), PR #60 (04C3B2), PR #61 (04C3C1), and PR #62 (04C3C2) remain open and unmerged beneath
-the in-progress 04C3D1 stack; 04C3D2, 04C3D3, 04C4, and 05C remain not started. 05C waits specifically
+(04C3B1), PR #60 (04C3B2), PR #61 (04C3C1), PR #62 (04C3C2), and PR #63 (04C3D1) remain open and unmerged beneath
+the in-progress 04C3D2 stack; 04C3D3, 04C4, and 05C remain not started. 05C waits specifically
 for live coverage/final active commitments after 04C3D3 rather than standalone
 listing UI, request selection, acceptance history, or 04C3A need existence. Plan 06C2B remains
 not started and requires Firebase/APNs configuration, push permission and

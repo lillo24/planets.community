@@ -127,40 +127,6 @@ class FakeParticipationGateway implements ParticipationGateway {
   }
 
   @override
-  Future<void> acceptRequest({
-    required String expectedCreatorProfileId,
-    required String requestId,
-  }) async {
-    calls.add('accept:$requestId');
-    lastExpectedIdentity = expectedCreatorProfileId;
-    if (mutationDelay case final delay?) await delay;
-    _throwIfNeeded();
-    final request = creatorRequests.singleWhere((item) => item.id == requestId);
-    creatorRequests = [
-      for (final item in creatorRequests)
-        if (item.id == requestId)
-          creatorJoinRequestFixture(
-            id: item.id,
-            requesterProfileId: item.requesterProfileId,
-            requesterDisplayName: item.requesterDisplayName,
-            status: JoinRequestStatus.accepted,
-            message: item.message,
-          )
-        else
-          item,
-    ];
-    creatorMembers = [
-      creatorMemberFixture(
-        id: 'membership-${creatorMembers.length + 1}',
-        participantProfileId: request.requesterProfileId,
-        participantDisplayName: request.requesterDisplayName,
-        originatingRequestId: request.id,
-      ),
-      ...creatorMembers,
-    ];
-  }
-
-  @override
   Future<void> rejectRequest({
     required String expectedCreatorProfileId,
     required String requestId,

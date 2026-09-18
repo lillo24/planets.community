@@ -4,7 +4,6 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../auth/application/auth_session_controller.dart';
 import '../../auth/domain/auth_models.dart';
 import '../../participation/application/participation_controllers.dart';
-import '../../project_chat/application/project_chat_refresh.dart';
 import '../data/messages_gateway.dart';
 import '../domain/message_models.dart';
 
@@ -161,7 +160,7 @@ final messagesInboxProvider =
       MessagesInboxController.new,
     );
 
-enum MessageAction { accepting, rejecting, withdrawing }
+enum MessageAction { rejecting, withdrawing }
 
 enum MessagesDetailPhase { idle, loading, ready, failure }
 
@@ -287,8 +286,6 @@ class MessagesDetailController extends Notifier<MessagesDetailState> {
     }
   }
 
-  Future<bool> accept() => _mutate(MessageAction.accepting);
-
   Future<bool> reject() => _mutate(MessageAction.rejecting);
 
   Future<bool> withdraw() => _mutate(MessageAction.withdrawing);
@@ -367,11 +364,6 @@ class MessagesDetailController extends Notifier<MessagesDetailState> {
       _requireReadyIdentity(profileId);
       final gateway = ref.read(messagesGatewayProvider);
       switch (action) {
-        case MessageAction.accepting:
-          await gateway.accept(
-            expectedCreatorProfileId: profileId,
-            requestId: requestId,
-          );
         case MessageAction.rejecting:
           await gateway.reject(
             expectedCreatorProfileId: profileId,
@@ -445,7 +437,6 @@ class MessagesDetailController extends Notifier<MessagesDetailState> {
     ParticipationRequestMessageItem item,
     MessageAction action,
   ) => switch ((item.viewerRole, action)) {
-    (MessageViewerRole.creator, MessageAction.accepting) ||
     (MessageViewerRole.creator, MessageAction.rejecting) ||
     (MessageViewerRole.requester, MessageAction.withdrawing) => true,
     _ => false,
@@ -456,9 +447,6 @@ class MessagesDetailController extends Notifier<MessagesDetailState> {
     ParticipationRequestMessageItem item,
     String profileId,
   ) async {
-    if (action == MessageAction.accepting) {
-      ref.read(projectChatRefreshProvider.notifier).notifyChanged();
-    }
     await ref
         .read(messagesInboxProvider.notifier)
         .load(profileId, refresh: true);
@@ -473,6 +461,42 @@ class MessagesDetailController extends Notifier<MessagesDetailState> {
           .read(creatorParticipationProvider.notifier)
           .load(profileId, item.projectId);
     }
+  }
+
+  Future<bool> reloadAfterJoinAcceptanceTriage() async {
+    final profileId = state.expectedProfileId;
+    final requestId = state.requestId;
+    final previousItem = state.item;
+    if (profileId == null || requestId == null || previousItem == null) {
+      return false;
+    }
+    final loaded = await load(
+      expectedProfileId: profileId,
+      requestId: requestId,
+    );
+    if (!loaded ||
+        ref.read(authSessionProvider).identity?.id != profileId ||
+        state.requestId != requestId) {
+      return false;
+    }
+    await ref
+        .read(messagesInboxProvider.notifier)
+        .load(profileId, refresh: true);
+    if (ref.read(authSessionProvider).identity?.id != profileId ||
+        state.requestId != requestId) {
+      return false;
+    }
+    final canonical = state.item;
+    final creatorState = ref.read(creatorParticipationProvider);
+    if (canonical != null &&
+        creatorState.expectedCreatorId == profileId &&
+        creatorState.projectId == canonical.projectId) {
+      await ref
+          .read(creatorParticipationProvider.notifier)
+          .load(profileId, canonical.projectId);
+    }
+    return ref.read(authSessionProvider).identity?.id == profileId &&
+        state.requestId == requestId;
   }
 
   bool _isCurrent(int revision, String profileId, String requestId) =>

@@ -307,111 +307,47 @@ void main() {
     },
   );
 
-  test(
-    'creator accept, reject, and remove use expected identity and refresh',
-    () async {
-      final gateway = FakeParticipationGateway()
-        ..creatorRequests = [
-          creatorJoinRequestFixture(id: 'accept-me'),
-          creatorJoinRequestFixture(id: 'reject-me'),
-        ];
-      final session = _readyContainer(gateway);
-      addTearDown(session.container.dispose);
-      addTearDown(session.auth.close);
-      final controller = session.container.read(
-        creatorParticipationProvider.notifier,
-      );
-      await controller.load('user-1', 'proposal-1');
-      expect(
-        await controller.accept(
-          expectedCreatorId: 'user-1',
-          projectId: 'proposal-1',
-          requestId: 'accept-me',
-        ),
-        isTrue,
-      );
-      expect(session.container.read(projectChatRefreshProvider), 1);
-      expect(
-        session.container
-            .read(creatorParticipationProvider)
-            .members
-            .single
-            .isCurrent,
-        isTrue,
-      );
-      expect(
-        await controller.reject(
-          expectedCreatorId: 'user-1',
-          projectId: 'proposal-1',
-          requestId: 'reject-me',
-        ),
-        isTrue,
-      );
-      expect(session.container.read(projectChatRefreshProvider), 1);
-      final membershipId = gateway.creatorMembers.single.id;
-      expect(
-        await controller.remove(
-          expectedCreatorId: 'user-1',
-          projectId: 'proposal-1',
-          membershipId: membershipId,
-        ),
-        isTrue,
-      );
-      expect(gateway.lastExpectedIdentity, 'user-1');
-      expect(session.container.read(projectChatRefreshProvider), 2);
-      expect(
-        session.container
-            .read(creatorParticipationProvider)
-            .members
-            .single
-            .status,
-        MembershipStatus.removed,
-      );
-    },
-  );
-
-  test(
-    'creator account switch rejects duplicate and late acceptance',
-    () async {
-      final pending = Completer<void>();
-      final gateway = FakeParticipationGateway()
-        ..creatorRequests = [creatorJoinRequestFixture()];
-      final session = _readyContainer(gateway);
-      addTearDown(session.container.dispose);
-      addTearDown(session.auth.close);
-      final controller = session.container.read(
-        creatorParticipationProvider.notifier,
-      );
-      await controller.load('user-1', 'proposal-1');
-      gateway.mutationDelay = pending.future;
-      final first = controller.accept(
+  test('creator reject and remove use expected identity and refresh', () async {
+    final gateway = FakeParticipationGateway()
+      ..creatorRequests = [creatorJoinRequestFixture(id: 'reject-me')];
+    final session = _readyContainer(gateway);
+    addTearDown(session.container.dispose);
+    addTearDown(session.auth.close);
+    final controller = session.container.read(
+      creatorParticipationProvider.notifier,
+    );
+    await controller.load('user-1', 'proposal-1');
+    expect(
+      await controller.reject(
         expectedCreatorId: 'user-1',
         projectId: 'proposal-1',
-        requestId: 'request-1',
-      );
-      expect(
-        await controller.accept(
-          expectedCreatorId: 'user-1',
-          projectId: 'proposal-1',
-          requestId: 'request-1',
-        ),
-        isFalse,
-      );
-      expect(
-        gateway.calls.where((call) => call == 'accept:request-1'),
-        hasLength(1),
-      );
+        requestId: 'reject-me',
+      ),
+      isTrue,
+    );
+    expect(session.container.read(projectChatRefreshProvider), 0);
+    gateway.creatorMembers = [creatorMemberFixture()];
+    await controller.load('user-1', 'proposal-1');
+    final membershipId = gateway.creatorMembers.single.id;
+    expect(
+      await controller.remove(
+        expectedCreatorId: 'user-1',
+        projectId: 'proposal-1',
+        membershipId: membershipId,
+      ),
+      isTrue,
+    );
+    expect(gateway.lastExpectedIdentity, 'user-1');
+    expect(session.container.read(projectChatRefreshProvider), 1);
+    expect(
       session.container
-          .read(authSessionProvider.notifier)
-          .markProfileReady(const AuthIdentity(id: 'user-2'));
-      pending.complete();
-      expect(await first, isFalse);
-      expect(
-        session.container.read(creatorParticipationProvider).requests,
-        isEmpty,
-      );
-    },
-  );
+          .read(creatorParticipationProvider)
+          .members
+          .single
+          .status,
+      MembershipStatus.removed,
+    );
+  });
 
   test('old protected meeting load cannot publish after sign-out', () async {
     final pending = Completer<void>();

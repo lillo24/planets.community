@@ -13,12 +13,17 @@ their existing features; participation uses only a project ID plus the narrow
   derivation.
 - `domain/membership_commitment_models.dart` defines the strict skill/resource
   commitment, addable-option, and merged editor-item shapes.
+- `domain/join_acceptance_triage_models.dart` defines composite-keyed offered
+  skill/resource items and the explicit needed/already-found/extra decisions.
 - `data/participation_gateway.dart` is the 05A Supabase boundary. It calls the
   canonical participation RPCs and strictly parses their narrow payloads. It
   never reads participation tables directly.
 - `data/membership_commitment_gateway.dart` is the focused RPC-only 04C3C1
   commitment boundary. It owns current/final reads, addable-option reads, and
   six-argument compare-and-swap replacement parameters.
+- `data/join_acceptance_triage_gateway.dart` is the RPC-only 04C3D2 boundary
+  for action-local selection reads and the explicit eight-argument acceptance
+  overload; it deterministically sorts all six disposition arrays.
 - `application/participation_controllers.dart` owns identity-bound own
   participation, requester/member commands, creator review, protected meeting
   data, request revisions, and safe failure mapping.
@@ -28,6 +33,9 @@ their existing features; participation uses only a project ID plus the narrow
 - `application/membership_commitment_controller.dart` owns membership-keyed,
   identity-bound commitment reads, editor snapshots, independent option
   failure/retry, 50/50 limits, and compare-and-swap conflict recovery.
+- `application/join_acceptance_triage_controller.dart` owns request-keyed,
+  identity-bound triage loading, mandatory classification, exact partition
+  construction, race-safe mutation state, and account-switch clearing.
 - `presentation/participation_routes.dart` maps the shared feature onto the
   concrete Proposal and Tavolo routes.
 - `presentation/project_participation_section.dart` supplies the shared detail
@@ -37,6 +45,10 @@ their existing features; participation uses only a project ID plus the narrow
   message, and the single canonical submit flow.
 - `presentation/creator_participation_screen.dart` owns creator request/history
   review and current/historical membership management.
+- `presentation/join_acceptance_triage_sheet.dart` is the single creator
+  acceptance surface shared by Manage participation and Messages request
+  detail, including accessible validation, one-shot guidance, and
+  reduced-motion-safe shake feedback.
 - `presentation/membership_commitment_sheet.dart` is the shared participant and
   creator commitment editor/read-only sheet, including retained stale options
   and accessible live recovery messages.
@@ -61,12 +73,22 @@ The mobile client presents, but does not reproduce, the 05A state machine:
 - creators are organizers through ownership and are filtered from membership
   rows.
 
-04C3D1 tightens acceptance: the current two-argument client call can accept only
-zero-selection requests. Requests with selected contributions require the
-future 04C3D2 creator UI to classify every item as needed, already found, or
-extra and submit the explicit triaged overload. Until that stacked layer lands,
-selected requests remain reviewable/rejectable but their Accept action fails
-closed at the backend.
+04C3D2 routes both creator Accept entry points through one action-local triage
+sheet. The sheet reads only the tapped request, requires an explicit needed,
+already-found, or extra decision for every offered item, and always calls the
+D1 eight-argument overload. Zero-offer requests use the same contract with six
+empty arrays. No production mobile two-argument acceptance helper remains.
+Reject and requester Withdraw retain their existing direct paths.
+
+Incomplete submission never calls the backend. Every undecided composite item
+gets an error border, semantic error, and one short validation-pulse shake; the
+first incomplete attempt also opens one accessible guidance tooltip for that
+sheet lifetime. `22023` keeps decisions visible for review because current
+Project needs changed. `55000` makes the request terminal, while `42501` and an
+account switch clear private triage data. Successful acceptance closes the
+sheet, emits the Project-chat refresh hint, and makes each caller reload its
+canonical participation or Messages projections rather than predicting member
+or commitment state.
 
 Request creation sends canonical Proposal-skill and Project-resource-need ID
 arrays through the evolved atomic RPC. Proposal options come only from its
@@ -175,3 +197,14 @@ Android and iOS devices:
 - verify chip wrapping, scroll/keyboard behavior, touch targets, selected and
   unavailable semantics, focus order, and live-region announcements with
   VoiceOver and TalkBack.
+
+04C3D2 also defers these physical-device checks to Plan 12:
+
+- verify bottom-sheet sizing, long labels, and three-option wrapping on narrow
+  Android and iOS screens;
+- verify the validation shake is subtle, non-looping, and absent when reduced
+  motion is enabled while the border and semantic error remain;
+- verify tooltip positioning plus TalkBack/VoiceOver item, disposition, error,
+  keyboard, and focus order behavior;
+- exercise both creator Accept entry points, a zero-offer request, Project-needs
+  change rejection, and an account switch while the sheet is open.

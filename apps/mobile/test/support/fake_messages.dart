@@ -65,17 +65,6 @@ class FakeMessagesGateway implements MessagesGateway {
   }
 
   @override
-  Future<void> accept({
-    required String expectedCreatorProfileId,
-    required String requestId,
-  }) => _resolve(
-    call: 'accept:$requestId',
-    expectedProfileId: expectedCreatorProfileId,
-    requestId: requestId,
-    status: JoinRequestStatus.accepted,
-  );
-
-  @override
   Future<void> reject({
     required String expectedCreatorProfileId,
     required String requestId,
