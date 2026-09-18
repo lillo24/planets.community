@@ -533,6 +533,102 @@ export type Database = {
           },
         ]
       }
+      project_manual_resource_coverages: {
+        Row: {
+          marked_at: string
+          marked_by_profile_id: string
+          originating_request_id: string | null
+          resource_need_id: string
+        }
+        Insert: {
+          marked_at?: string
+          marked_by_profile_id: string
+          originating_request_id?: string | null
+          resource_need_id: string
+        }
+        Update: {
+          marked_at?: string
+          marked_by_profile_id?: string
+          originating_request_id?: string | null
+          resource_need_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_manual_resource_coverages_marked_by_fkey"
+            columns: ["marked_by_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_manual_resource_coverages_need_id_fkey"
+            columns: ["resource_need_id"]
+            isOneToOne: true
+            referencedRelation: "project_resource_needs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_manual_resource_coverages_request_id_fkey"
+            columns: ["originating_request_id"]
+            isOneToOne: false
+            referencedRelation: "project_join_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      project_manual_skill_coverages: {
+        Row: {
+          marked_at: string
+          marked_by_profile_id: string
+          originating_request_id: string | null
+          project_id: string
+          skill_id: string
+        }
+        Insert: {
+          marked_at?: string
+          marked_by_profile_id: string
+          originating_request_id?: string | null
+          project_id: string
+          skill_id: string
+        }
+        Update: {
+          marked_at?: string
+          marked_by_profile_id?: string
+          originating_request_id?: string | null
+          project_id?: string
+          skill_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_manual_skill_coverages_marked_by_fkey"
+            columns: ["marked_by_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_manual_skill_coverages_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_manual_skill_coverages_request_id_fkey"
+            columns: ["originating_request_id"]
+            isOneToOne: false
+            referencedRelation: "project_join_requests"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_manual_skill_coverages_skill_id_fkey"
+            columns: ["skill_id"]
+            isOneToOne: false
+            referencedRelation: "skills"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       project_membership_resource_commitments: {
         Row: {
           committed_at: string
@@ -566,6 +662,32 @@ export type Database = {
           },
         ]
       }
+      project_membership_resource_coverages: {
+        Row: {
+          covered_at: string
+          membership_id: string
+          resource_need_id: string
+        }
+        Insert: {
+          covered_at?: string
+          membership_id: string
+          resource_need_id: string
+        }
+        Update: {
+          covered_at?: string
+          membership_id?: string
+          resource_need_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_membership_resource_coverages_commitment_fkey"
+            columns: ["membership_id", "resource_need_id"]
+            isOneToOne: true
+            referencedRelation: "project_membership_resource_commitments"
+            referencedColumns: ["membership_id", "resource_need_id"]
+          },
+        ]
+      }
       project_membership_skill_commitments: {
         Row: {
           committed_at: string
@@ -596,6 +718,32 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "skills"
             referencedColumns: ["id"]
+          },
+        ]
+      }
+      project_membership_skill_coverages: {
+        Row: {
+          covered_at: string
+          membership_id: string
+          skill_id: string
+        }
+        Insert: {
+          covered_at?: string
+          membership_id: string
+          skill_id: string
+        }
+        Update: {
+          covered_at?: string
+          membership_id?: string
+          skill_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_membership_skill_coverages_commitment_fkey"
+            columns: ["membership_id", "skill_id"]
+            isOneToOne: true
+            referencedRelation: "project_membership_skill_commitments"
+            referencedColumns: ["membership_id", "skill_id"]
           },
         ]
       }
@@ -1160,6 +1308,15 @@ export type Database = {
               p_needed_skill_ids: string[]
               p_request_id: string
             }
+        Returns: string
+      }
+      claim_project_requirement: {
+        Args: {
+          p_expected_participant_profile_id: string
+          p_project_id: string
+          p_requirement_id: string
+          p_requirement_kind: string
+        }
         Returns: string
       }
       cancel_proposal: {
@@ -1760,6 +1917,18 @@ export type Database = {
           removed_by_profile_id: string
         }[]
       }
+      list_project_live_requirement_coverage: {
+        Args: { p_expected_profile_id: string; p_project_id: string }
+        Returns: {
+          importance: string
+          is_covered: boolean
+          is_manually_covered: boolean
+          label: string
+          requirement_id: string
+          requirement_kind: string
+          viewer_is_covering: boolean
+        }[]
+      }
       list_public_project_resource_needs: {
         Args: { p_project_id: string }
         Returns: {
@@ -1968,6 +2137,16 @@ export type Database = {
           p_push_enabled: boolean
         }
         Returns: undefined
+      }
+      set_project_requirement_manual_coverage: {
+        Args: {
+          p_expected_creator_profile_id: string
+          p_is_covered: boolean
+          p_project_id: string
+          p_requirement_id: string
+          p_requirement_kind: string
+        }
+        Returns: string
       }
       unregister_own_push_installation: {
         Args: { p_expected_profile_id: string; p_installation_id: string }
