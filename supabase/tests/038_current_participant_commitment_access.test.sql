@@ -198,7 +198,13 @@ select set_config(
   'test.commitment_membership',
   public.accept_project_join_request(
     'a1000000-0000-4000-8000-000000000001',
-    current_setting('test.commitment_request')::uuid
+    current_setting('test.commitment_request')::uuid,
+    array['d0000000-0000-4000-8001-000000000001'::uuid],
+    '{}'::uuid[],
+    '{}'::uuid[],
+    array['a3000000-0000-4000-8000-000000000001'::uuid],
+    '{}'::uuid[],
+    '{}'::uuid[]
   )::text,
   true
 );
@@ -1271,7 +1277,13 @@ select set_config(
   'test.rejoin_membership',
   public.accept_project_join_request(
     'a1000000-0000-4000-8000-000000000001',
-    current_setting('test.rejoin_request')::uuid
+    current_setting('test.rejoin_request')::uuid,
+    array['d0000000-0000-4000-8003-000000000002'::uuid],
+    '{}'::uuid[],
+    '{}'::uuid[],
+    array['a3000000-0000-4000-8000-000000000002'::uuid],
+    '{}'::uuid[],
+    '{}'::uuid[]
   )::text,
   true
 );
@@ -1321,7 +1333,13 @@ select set_config(
   'test.recurring_membership',
   public.accept_project_join_request(
     'a1000000-0000-4000-8000-000000000001',
-    current_setting('test.recurring_request')::uuid
+    current_setting('test.recurring_request')::uuid,
+    '{}'::uuid[],
+    '{}'::uuid[],
+    '{}'::uuid[],
+    array['a3000000-0000-4000-8000-000000000005'::uuid],
+    '{}'::uuid[],
+    '{}'::uuid[]
   )::text,
   true
 );

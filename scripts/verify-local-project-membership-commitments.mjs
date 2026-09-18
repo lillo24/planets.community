@@ -266,7 +266,12 @@ async function verifyPrimaryFlows(creator, participant, unrelated) {
     [usefulSkillId],
     [],
   );
-  const rejoinMembershipId = await acceptRequest(creator, rejoinRequestId);
+  const rejoinMembershipId = await acceptRequest(
+    creator,
+    rejoinRequestId,
+    [usefulSkillId],
+    [],
+  );
   if (rejoinMembershipId === fixture.membershipId) {
     throw new Error("Rejoining reused an ended membership episode.");
   }
@@ -374,7 +379,12 @@ async function verifyTavoloFlow(creator, participant) {
     [],
     [firstNeedId],
   );
-  const membershipId = await acceptRequest(creator, requestId);
+  const membershipId = await acceptRequest(
+    creator,
+    requestId,
+    [],
+    [firstNeedId],
+  );
   await assertCommitmentOptions(participant, membershipId, [
     ["resource", firstNeedId, "Tavolo first need"],
     ["resource", secondNeedId, "Tavolo second need"],
@@ -721,7 +731,12 @@ async function createMembershipFixture(
     selectedSkillIds,
     selectedResourceNeedIds,
   );
-  const membershipId = await acceptRequest(creator, requestId);
+  const membershipId = await acceptRequest(
+    creator,
+    requestId,
+    selectedSkillIds,
+    selectedResourceNeedIds,
+  );
   return { proposalId, requestId, membershipId };
 }
 
@@ -894,12 +909,23 @@ async function requestToJoin(
   return data;
 }
 
-async function acceptRequest(creator, requestId) {
+async function acceptRequest(
+  creator,
+  requestId,
+  neededSkillIds,
+  neededResourceNeedIds,
+) {
   const { data, error } = await creator.client.rpc(
     "accept_project_join_request",
     {
       p_expected_creator_profile_id: creator.id,
       p_request_id: requestId,
+      p_needed_skill_ids: neededSkillIds,
+      p_already_found_skill_ids: [],
+      p_extra_skill_ids: [],
+      p_needed_resource_need_ids: neededResourceNeedIds,
+      p_already_found_resource_need_ids: [],
+      p_extra_resource_need_ids: [],
     },
   );
   if (error || typeof data !== "string") {

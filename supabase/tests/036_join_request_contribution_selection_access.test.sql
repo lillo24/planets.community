@@ -487,10 +487,16 @@ select lives_ok(
   $$
     select public.accept_project_join_request(
       '91000000-0000-4000-8000-000000000001',
-      current_setting('test.accepted_request')::uuid
+      current_setting('test.accepted_request')::uuid,
+      array['d0000000-0000-4000-8001-000000000001'::uuid],
+      '{}'::uuid[],
+      '{}'::uuid[],
+      array['93000000-0000-4000-8000-000000000001'::uuid],
+      '{}'::uuid[],
+      '{}'::uuid[]
     )
   $$,
-  'a contribution-aware pending request keeps the existing acceptance flow'
+  'a contribution-aware pending request accepts through explicit triage'
 );
 select results_eq(
   $$

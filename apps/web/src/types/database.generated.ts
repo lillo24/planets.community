@@ -334,6 +334,45 @@ export type Database = {
           },
         ]
       }
+      project_join_request_resource_acceptance_decisions: {
+        Row: {
+          decided_at: string
+          decided_by_profile_id: string
+          disposition: string
+          request_id: string
+          resource_need_id: string
+        }
+        Insert: {
+          decided_at: string
+          decided_by_profile_id: string
+          disposition: string
+          request_id: string
+          resource_need_id: string
+        }
+        Update: {
+          decided_at?: string
+          decided_by_profile_id?: string
+          disposition?: string
+          request_id?: string
+          resource_need_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_join_request_resource_acceptance_decided_by_fkey"
+            columns: ["decided_by_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_join_request_resource_acceptance_selection_fkey"
+            columns: ["request_id", "resource_need_id"]
+            isOneToOne: true
+            referencedRelation: "project_join_request_resource_selections"
+            referencedColumns: ["request_id", "resource_need_id"]
+          },
+        ]
+      }
       project_join_request_resource_selections: {
         Row: {
           request_id: string
@@ -364,6 +403,45 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "project_join_requests"
             referencedColumns: ["id"]
+          },
+        ]
+      }
+      project_join_request_skill_acceptance_decisions: {
+        Row: {
+          decided_at: string
+          decided_by_profile_id: string
+          disposition: string
+          request_id: string
+          skill_id: string
+        }
+        Insert: {
+          decided_at: string
+          decided_by_profile_id: string
+          disposition: string
+          request_id: string
+          skill_id: string
+        }
+        Update: {
+          decided_at?: string
+          decided_by_profile_id?: string
+          disposition?: string
+          request_id?: string
+          skill_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_join_request_skill_acceptance_decided_by_fkey"
+            columns: ["decided_by_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_join_request_skill_acceptance_selection_fkey"
+            columns: ["request_id", "skill_id"]
+            isOneToOne: true
+            referencedRelation: "project_join_request_skill_selections"
+            referencedColumns: ["request_id", "skill_id"]
           },
         ]
       }
@@ -1070,7 +1148,18 @@ export type Database = {
     }
     Functions: {
       accept_project_join_request: {
-        Args: { p_expected_creator_profile_id: string; p_request_id: string }
+        Args:
+          | { p_expected_creator_profile_id: string; p_request_id: string }
+          | {
+              p_already_found_resource_need_ids: string[]
+              p_already_found_skill_ids: string[]
+              p_expected_creator_profile_id: string
+              p_extra_resource_need_ids: string[]
+              p_extra_skill_ids: string[]
+              p_needed_resource_need_ids: string[]
+              p_needed_skill_ids: string[]
+              p_request_id: string
+            }
         Returns: string
       }
       cancel_proposal: {

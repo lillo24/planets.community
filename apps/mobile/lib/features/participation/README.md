@@ -61,6 +61,13 @@ The mobile client presents, but does not reproduce, the 05A state machine:
 - creators are organizers through ownership and are filtered from membership
   rows.
 
+04C3D1 tightens acceptance: the current two-argument client call can accept only
+zero-selection requests. Requests with selected contributions require the
+future 04C3D2 creator UI to classify every item as needed, already found, or
+extra and submit the explicit triaged overload. Until that stacked layer lands,
+selected requests remain reviewable/rejectable but their Accept action fails
+closed at the backend.
+
 Request creation sends canonical Proposal-skill and Project-resource-need ID
 arrays through the evolved atomic RPC. Proposal options come only from its
 public detail; Tavoli intentionally expose no competence options because they

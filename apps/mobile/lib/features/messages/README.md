@@ -23,7 +23,7 @@ chronological feed. Project-chat transport and UI live in the adjacent
   loading/refresh/pagination, chat previews, and the existing role-aware request
   cards. Chats is the deterministic default and no unread state is fabricated.
 - `presentation/participation_request_message_screen.dart` owns full authorized
-request detail, canonical actions, resolved history, and Proposal/Tavolo
+  request detail, canonical actions, resolved history, and Proposal/Tavolo
   navigation. Rounded contribution labels remain detail-only so the inbox never
   performs per-row selection fan-out.
 
@@ -40,6 +40,13 @@ loading/failure never removes Accept/Reject/Withdraw, and its local retry
 resolves current canonical labels for the historical selected IDs. Empty
 selection history is valid. Unknown selection kinds fail safely rather than
 being rendered as an invented contribution type.
+
+On the 04C3D1 backend, the existing two-argument Accept call succeeds only when
+the request has no selected contributions. A selected request therefore remains
+visible but cannot be accepted by this stacked client until 04C3D2 adds the
+mandatory needed/already-found/extra decision controls and calls the explicit
+triaged overload. Reject and Withdraw are unchanged; the backend invariant is
+not weakened to preserve the interim button behavior.
 
 Inbox and detail data live only in identity-bound Riverpod memory. Every load or
 mutation captures the rendered identity and a request revision; sign-out or an
