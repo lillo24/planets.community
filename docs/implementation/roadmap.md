@@ -419,21 +419,33 @@ Adds one participation-owned triage sheet shared by Manage participation and Mes
 
 ###### 04C3D3 — Live Need Coverage + Group Coordination (parent)
 
-**Status:** In progress through the current stacked 04C3D3A backend layer. Depends on 04C3D1, 04C3D2, and the Project-chat experience.
+**Status:** In progress through open PR #65 for 04C3D3A and the current stacked 04C3D3B1 backend layer. Depends on 04C3D1, 04C3D2, and the Project-chat experience.
 
 Owns the current coverage projection, initialization from `needed` decisions, need-reappearance events, chat needed-items coordination, participant claim flow, creator manual-found control, and attention behavior without reinterpreting the 04C3A `open`/`closed` lifecycle as coverage.
 
 ###### 04C3D3A — Live Project Requirement Coverage Domain
 
-**Status:** In progress in the current stacked backend PR, based on open PR #64 without merging any layer. Depends on 04C3D1 and 04C3D2.
+**Status:** In progress in open PR #65, based on open PR #64 without merging any layer. Depends on 04C3D1 and 04C3D2.
 
 Owns fail-closed participant and manual/external coverage sources, deterministic history backfill, acceptance initialization, membership/commitment/requirement cleanup, exact identifier-only covered and needed-again transitions, Project-level serialization, current-participant claim with optional atomic commitment creation, creator manual coverage control, and a private creator/current-member normalized read. `extra` commitments remain uncovered until explicitly claimed; conservative `already_found` creates a manual source only when no tracked live source exists. Public discovery, provider identities, chat UI, notifications, final contribution, and delegate permissions remain outside this layer.
 
 ###### 04C3D3B — Group Needs Coordination + Chat Resurfacing
 
-**Status:** Not started. Depends on 04C3D3A, 07B2C, and 06D.
+**Status:** In progress through the current stacked 04C3D3B1 backend layer. Depends on 04C3D3A, 07B2C, and 06D.
 
-Will use the D3A read and mutation RPCs for the chat-bottom Needs button and upward drawer, participant claim action, creator manual-found control, system messages and alerts for `project.requirement_needed_again`, and any badge/popover/shake acknowledgement behavior. It must not read coverage tables directly or expose provider names incidentally.
+Owns the structured group projection and mobile coordination experience built on D3A. It uses canonical coverage reads/mutations and must not read coverage tables directly, fake system users, copy localized text into history, or expose provider identities.
+
+###### 04C3D3B1 — Structured Group Need Resurfacing + Attention Domain
+
+**Status:** In progress in the current stacked backend PR, based on open PR #65 without merging any layer. Depends on 04C3D3A and the Project-chat message/Realtime domain.
+
+Adds immutable identifier-only `requirement_needed_again` system history, one historically authorized mixed message/system feed, current-entitlement Realtime coverage signals on the existing private chat topic, system-aware chat-list activity, and a per-profile monotonic acknowledgement frontier whose attention remains true only for current uncovered operational requirements. Human chat messages remain sender-required and unchanged. No global notification projection or mobile UI is added.
+
+###### 04C3D3B2 — Mobile Needs Drawer + Chat Coordination
+
+**Status:** Not started. Depends on 04C3D3B1 and 04C3D3A.
+
+Will add the chat-bottom Needs control and upward drawer, current uncovered-requirement rendering, participant Claim, creator Found/Needed control, structured system-event cards, badge/popover/shake attention, acknowledge-on-drawer-open, and additive Realtime refresh. It must use only the canonical D3A/D3B1 RPCs and signals.
 
 ##### 04C4 — Listing Requests/Handoff + Saved Search/Matching
 
@@ -441,7 +453,7 @@ Will use the D3A read and mutation RPCs for the chat-bottom Needs button and upw
 
 Future scope must resolve what happens after discovery, including exchange/request/handoff/contact behavior, saved-search contracts, explainable matching, and resource notification semantics. It must not infer those rules from the 04C1 `exchange` discovery intent.
 
-04C is not a dependency for the 05A participation foundation or 05B mobile participation UI. Stable join-request and Project resource-need IDs let 04C3B1 selections attach without equating contribution with membership. The 05C actual-finalization plan follows the complete 04C3D3A/D3B live coverage and group-coordination flow and the final active commitment set rather than merely request selections, acceptance history, coverage history, 04C3A need rows, unrelated standalone listing UI, or 04C4 transaction/matching work.
+04C is not a dependency for the 05A participation foundation or 05B mobile participation UI. Stable join-request and Project resource-need IDs let 04C3B1 selections attach without equating contribution with membership. The 05C actual-finalization plan follows the complete 04C3D3A/D3B1/D3B2 live coverage and group-coordination flow and the final active commitment set rather than merely request selections, acceptance history, coverage or system-resurfacing history, 04C3A need rows, unrelated standalone listing UI, or 04C4 transaction/matching work.
 
 ### 05 — Participation lifecycle
 

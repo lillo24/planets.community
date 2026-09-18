@@ -112,7 +112,7 @@ Replacement follows concrete Proposal/Tavolo → shared Project → membership �
 
 Triaged acceptance now initializes live state in the same transaction after commitment seeding. Current `needed` items create participant coverage, `extra` creates only a commitment, and a current `already_found` item creates a manual source only when no tracked source exists. Existing D1 history is backfilled under the same current-membership, current-requirement, and operational-lifecycle rules without emitting transition events. Membership leave/removal and covered commitment deletion release participant sources; the exact last-source transition for a still-current operational requirement emits `project.requirement_needed_again`. A first source emits `project.requirement_covered`; redundant sources emit neither duplicate. Both events contain only Project, requirement, actor, and optional membership identifiers.
 
-`claim_project_requirement` serializes through concrete Proposal/Tavolo → shared Project → membership → resource row. A current accepted participant may claim only a current uncovered requirement; the first claimant wins and later claims fail with SQLSTATE `40001`. Claim reuses an existing extra commitment or atomically creates a missing one within the independent 50-skill/50-resource limits, emitting the existing commitment event only for a created commitment. `set_project_requirement_manual_coverage` lets only the canonical creator idempotently add or clear an independent external source. `list_project_live_requirement_coverage` is available only while the Project is operational and only to its creator or a current participant; it returns current labels, skill importance, total/manual/viewer booleans, deterministic skill-then-resource ordering, and no provider identities. Public discovery is unchanged. The D3B UI, chat messages, notifications, attention acknowledgement, and final contribution attribution remain separate.
+`claim_project_requirement` serializes through concrete Proposal/Tavolo → shared Project → membership → resource row. A current accepted participant may claim only a current uncovered requirement; the first claimant wins and later claims fail with SQLSTATE `40001`. Claim reuses an existing extra commitment or atomically creates a missing one within the independent 50-skill/50-resource limits, emitting the existing commitment event only for a created commitment. `set_project_requirement_manual_coverage` lets only the canonical creator idempotently add or clear an independent external source. `list_project_live_requirement_coverage` is available only while the Project is operational and only to its creator or a current participant; it returns current labels, skill importance, total/manual/viewer booleans, deterministic skill-then-resource ordering, and no provider identities. Public discovery is unchanged. The D3B2 mobile UI, global notifications, and final contribution attribution remain separate.
 
 ## Shared project participation
 
@@ -226,6 +226,51 @@ The authenticated role receives `EXECUTE` only on the fail-closed private topic
 predicate so Realtime can evaluate that policy. It still has no `USAGE` on the
 unexposed `private` schema, no direct Data API route to the predicate, and no
 private-table grant; all other chat-message helpers remain owner-only.
+
+### Structured requirement resurfacing and attention
+
+`public.project_chat_system_events` is a separate immutable, fail-closed
+history relation; `project_chat_messages.sender_profile_id` remains required
+and human sends retain their existing behavior. Each system row represents only
+`requirement_needed_again`, stores a strict skill-or-resource reference, and has
+one unique restrictive reference to the exact private D3A outbox event. It
+stores no body or label. The mixed-feed read resolves the current canonical
+`skills.label` or `project_resource_needs.title`, so requirement removal or
+closure does not erase historical group context.
+
+D3A's coverage-transition helper now assigns one canonical `clock_timestamp`,
+writes audit/outbox provenance, and, when an existing chat is present,
+synchronously creates the needed-again system row and calls `realtime.send` in
+the same transaction. Covered transitions send only a refresh signal and never
+create durable system history. A transition without a chat retains its
+audit/outbox records but neither creates a chat nor broadcasts. Current creator
+and accepted-member recipients reuse the existing
+`project-chat:<chat-id>:profile:<profile-id>` topic. Payloads contain only chat,
+Project, requirement, event, and time identifiers. Membership coverage release
+runs after the leave/removal boundary is stored, so a departing profile neither
+receives nor gains history for the later system item.
+
+`list_own_project_chat_feed` owns cross-table pagination with the complete
+`(created_at, item_kind, item_id)` cursor and an explicit message-before-system
+tie-break. It applies the same creator/current/former frontier helper as human
+history and returns a strict discriminated row: message sender/body fields and
+system requirement fields are mutually exclusive. The old message-only read
+remains available until D3B2 migrates. `list_own_project_group_chats` keeps its
+human preview fields honest while `activity_at` considers the newest visible
+human or system item; post-frontier events do not move a former member's chat.
+
+`public.project_chat_requirement_attention_receipts` stores one fail-closed
+`(chat_id, profile_id)` cursor with both event time and UUID constrained to an
+event in that chat. `get_own_project_requirement_attention` is current-group
+only and reports an unseen item only while its requirement is still current,
+uncovered, and operational. Re-cover, requirement removal/closure, or Project
+end suppresses attention without deleting history. The acknowledgement RPC
+locks through the same concrete Project → shared Project order and advances the
+cursor monotonically to the exact event supplied by the client; a later event
+serialized concurrently remains unseen. Chat opening, message loading, and
+Realtime connection do not acknowledge attention. These receipts are separate
+from notification-inbox `read_at`, and D3B1 adds no global notification or push
+projection.
 
 This is ordinary authenticated server-authorized messaging over HTTPS/TLS. The
 backend can technically read stored bodies, so it must not be described as

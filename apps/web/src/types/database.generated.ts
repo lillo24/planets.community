@@ -305,6 +305,111 @@ export type Database = {
           },
         ]
       }
+      project_chat_requirement_attention_receipts: {
+        Row: {
+          acknowledged_through_created_at: string
+          acknowledged_through_event_id: string
+          chat_id: string
+          profile_id: string
+          updated_at: string
+        }
+        Insert: {
+          acknowledged_through_created_at: string
+          acknowledged_through_event_id: string
+          chat_id: string
+          profile_id: string
+          updated_at?: string
+        }
+        Update: {
+          acknowledged_through_created_at?: string
+          acknowledged_through_event_id?: string
+          chat_id?: string
+          profile_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_chat_requirement_attention_receipts_chat_id_fkey"
+            columns: ["chat_id"]
+            isOneToOne: false
+            referencedRelation: "project_group_chats"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_chat_requirement_attention_receipts_event_cursor_fkey"
+            columns: [
+              "chat_id",
+              "acknowledged_through_created_at",
+              "acknowledged_through_event_id",
+            ]
+            isOneToOne: false
+            referencedRelation: "project_chat_system_events"
+            referencedColumns: ["chat_id", "created_at", "id"]
+          },
+          {
+            foreignKeyName: "project_chat_requirement_attention_receipts_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      project_chat_system_events: {
+        Row: {
+          chat_id: string
+          created_at: string
+          event_kind: string
+          id: string
+          requirement_kind: string
+          resource_need_id: string | null
+          skill_id: string | null
+          source_outbox_event_id: string
+        }
+        Insert: {
+          chat_id: string
+          created_at: string
+          event_kind: string
+          id?: string
+          requirement_kind: string
+          resource_need_id?: string | null
+          skill_id?: string | null
+          source_outbox_event_id: string
+        }
+        Update: {
+          chat_id?: string
+          created_at?: string
+          event_kind?: string
+          id?: string
+          requirement_kind?: string
+          resource_need_id?: string | null
+          skill_id?: string | null
+          source_outbox_event_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_chat_system_events_chat_id_fkey"
+            columns: ["chat_id"]
+            isOneToOne: false
+            referencedRelation: "project_group_chats"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_chat_system_events_resource_need_id_fkey"
+            columns: ["resource_need_id"]
+            isOneToOne: false
+            referencedRelation: "project_resource_needs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_chat_system_events_skill_id_fkey"
+            columns: ["skill_id"]
+            isOneToOne: false
+            referencedRelation: "skills"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       project_group_chats: {
         Row: {
           activated_at: string
@@ -1295,6 +1400,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      acknowledge_project_requirement_attention: {
+        Args: {
+          p_expected_profile_id: string
+          p_project_id: string
+          p_through_system_event_id: string
+        }
+        Returns: string
+      }
       accept_project_join_request: {
         Args:
           | { p_expected_creator_profile_id: string; p_request_id: string }
@@ -1435,6 +1548,15 @@ export type Database = {
           project_id: string
           project_kind: string
           viewer_role: string
+        }[]
+      }
+      get_own_project_requirement_attention: {
+        Args: { p_expected_profile_id: string; p_project_id: string }
+        Returns: {
+          chat_id: string
+          has_unseen_resurfaced_need: boolean
+          latest_unseen_event_at: string
+          latest_unseen_event_id: string
         }[]
       }
       get_own_proposal: {
@@ -1715,6 +1837,29 @@ export type Database = {
           title: string
           topic: string
           weekday: number
+        }[]
+      }
+      list_own_project_chat_feed: {
+        Args: {
+          p_before_created_at?: string
+          p_before_item_id?: string
+          p_before_item_kind?: string
+          p_chat_id: string
+          p_expected_profile_id: string
+          p_limit: number
+        }
+        Returns: {
+          body: string
+          chat_id: string
+          created_at: string
+          item_id: string
+          item_kind: string
+          requirement_id: string
+          requirement_kind: string
+          requirement_label: string
+          sender_display_name: string
+          sender_profile_id: string
+          system_event_kind: string
         }[]
       }
       list_own_project_chat_messages: {

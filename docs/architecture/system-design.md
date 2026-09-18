@@ -257,6 +257,24 @@ history after a signal or reconnect. Message bodies are absent from Realtime,
 outbox payloads, and audit records. The message outbox event is reserved for a
 future projector and existing notification/push consumers ignore it.
 
+Coverage resurfacing extends that same private channel without weakening the
+human message model. D3A's canonical transition transaction creates one
+identifier-only immutable `project_chat_system_events` row only for
+`project.requirement_needed_again` when the Project chat already exists, and
+broadcasts both needed-again and covered refresh signals only to profiles with
+current entitlement at the serialized transition. Covered transitions have no
+durable system item. The mixed chat feed owns cross-kind keyset ordering and
+applies the established creator/current/former history frontier while resolving
+current requirement labels at read time.
+
+Current creator/member attention is a separate durable cursor, not chat unread
+or notification read state. The attention read combines system events after the
+profile's explicit event-time/UUID frontier with current canonical truth: the
+requirement must still exist, remain uncovered, and belong to an operational
+Project. A monotonic acknowledgement through one loaded event cannot consume a
+later transition serialized behind it. Former members retain authorized system
+history but cannot read or mutate current coordination attention.
+
 ### Clients use shared operations rather than duplicate workflows
 
 Safe simple reads may query authorized views/tables directly. Multi-step or security-sensitive changes should use named backend operations, for example:
