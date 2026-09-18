@@ -13,6 +13,8 @@ import 'package:planets_mobile/features/participation/domain/membership_commitme
 import 'package:planets_mobile/features/participation/domain/participation_models.dart';
 import 'package:planets_mobile/features/profile/data/profile_gateway.dart';
 import 'package:planets_mobile/features/project_chat/data/project_chat_gateway.dart';
+import 'package:planets_mobile/features/project_chat/data/project_needs_gateway.dart';
+import 'package:planets_mobile/features/project_chat/application/project_chat_controllers.dart';
 import 'package:planets_mobile/features/project_chat/domain/project_chat_models.dart';
 import 'package:planets_mobile/features/proposals/data/proposal_gateway.dart';
 import 'package:planets_mobile/features/recurring_activities/data/recurring_activity_gateway.dart';
@@ -24,6 +26,7 @@ import '../../../support/fake_membership_commitment.dart';
 import '../../../support/fake_participation.dart';
 import '../../../support/fake_profile.dart';
 import '../../../support/fake_project_chat.dart';
+import '../../../support/fake_project_needs.dart';
 import '../../../support/fake_proposal.dart';
 import '../../../support/fake_recurring_activity.dart';
 
@@ -158,7 +161,175 @@ void main() {
     expect(find.byKey(const Key('project-chat-composer')), findsNothing);
     expect(find.byKey(const Key('project-chat-read-only')), findsOneWidget);
     expect(find.text('Bring a small brush.'), findsOneWidget);
+    expect(find.byKey(const Key('project-needs-button')), findsNothing);
     expect(chats.subscriptions, isEmpty);
+  });
+
+  testWidgets('mixed feed renders a neutral resurfacing system card', (
+    tester,
+  ) async {
+    final chats = FakeProjectChatGateway()
+      ..summaries = [projectChatSummaryFixture()]
+      ..histories['chat-1'] = [
+        projectChatSystemEventFixture(requirementLabel: 'Exterior paint'),
+        projectChatMessageFixture(),
+      ];
+    final app = await _pump(tester, chats: chats);
+    app.read(appRouterProvider).go('/messages/chats/chat-1');
+    await tester.pumpAndSettle();
+
+    expect(find.text('Exterior paint is needed again.'), findsOneWidget);
+    expect(
+      find.byKey(const Key('project-chat-system-event-1')),
+      findsOneWidget,
+    );
+    expect(find.text('Jordan'), findsOneWidget);
+  });
+
+  testWidgets('participant opens grouped Needs drawer and claims a need', (
+    tester,
+  ) async {
+    final needs = FakeProjectNeedsGateway()
+      ..requirements = [
+        projectRequirementFixture(label: 'Painting'),
+        projectRequirementFixture(
+          kind: ProjectRequirementKind.resource,
+          id: 'resource-1',
+          label: 'Paint brushes',
+        ),
+      ];
+    final chats = FakeProjectChatGateway()
+      ..summaries = [projectChatSummaryFixture()]
+      ..histories['chat-1'] = [];
+    final app = await _pump(tester, chats: chats, needs: needs);
+    app.read(appRouterProvider).go('/messages/chats/chat-1');
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('project-needs-button')), findsOneWidget);
+    await tester.tap(find.byKey(const Key('project-needs-button')));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('project-needs-drawer')), findsOneWidget);
+    expect(find.text('Competences / Knowledge'), findsOneWidget);
+    expect(find.text('Resources / Materials'), findsOneWidget);
+    expect(find.text('I can help'), findsOneWidget);
+    expect(find.text('I can bring it'), findsOneWidget);
+
+    await tester.tap(find.text('I can help'));
+    await tester.pumpAndSettle();
+    expect(needs.calls, contains('claim:skill:skill-1'));
+    expect(find.text('Painting'), findsNothing);
+  });
+
+  testWidgets('creator sees manual management without participant actions', (
+    tester,
+  ) async {
+    final needs = FakeProjectNeedsGateway()
+      ..requirements = [
+        projectRequirementFixture(label: 'Painting'),
+        projectRequirementFixture(
+          kind: ProjectRequirementKind.resource,
+          id: 'resource-1',
+          label: 'Ladder',
+          isCovered: true,
+          isManuallyCovered: true,
+        ),
+      ];
+    final chats = FakeProjectChatGateway()
+      ..summaries = [
+        projectChatSummaryFixture(viewerRole: ProjectChatViewerRole.creator),
+      ]
+      ..histories['chat-1'] = [];
+    final app = await _pump(tester, chats: chats, needs: needs);
+    app.read(appRouterProvider).go('/messages/chats/chat-1');
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('project-needs-button')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Found outside app'), findsOneWidget);
+    expect(find.text('Found outside the app'), findsOneWidget);
+    expect(find.text('Needed again'), findsOneWidget);
+    expect(find.text('I can help'), findsNothing);
+  });
+
+  testWidgets(
+    'attention persists until visible drawer refresh acknowledges it',
+    (tester) async {
+      final needs = FakeProjectNeedsGateway()
+        ..requirements = [projectRequirementFixture()]
+        ..attention = projectAttentionFixture(
+          hasUnseen: true,
+          eventId: 'event-A',
+        );
+      final chats = FakeProjectChatGateway()
+        ..summaries = [projectChatSummaryFixture()]
+        ..histories['chat-1'] = [];
+      final app = await _pump(tester, chats: chats, needs: needs);
+      app.read(appRouterProvider).go('/messages/chats/chat-1');
+      await tester.pumpAndSettle();
+
+      expect(
+        find.byKey(const Key('project-needs-attention-callout')),
+        findsOneWidget,
+      );
+      expect(needs.calls.where((call) => call.startsWith('ack:')), isEmpty);
+
+      await tester.tap(find.byKey(const Key('project-needs-button')));
+      await tester.pumpAndSettle();
+
+      expect(needs.acknowledgedEventId, 'event-A');
+      expect(
+        find.byKey(const Key('project-needs-attention-callout')),
+        findsNothing,
+      );
+    },
+  );
+
+  testWidgets('failed drawer coverage never acknowledges attention', (
+    tester,
+  ) async {
+    final needs = FakeProjectNeedsGateway()
+      ..coverageError = StateError('private diagnostic')
+      ..attention = projectAttentionFixture(hasUnseen: true);
+    final chats = FakeProjectChatGateway()
+      ..summaries = [projectChatSummaryFixture()]
+      ..histories['chat-1'] = [];
+    final app = await _pump(tester, chats: chats, needs: needs);
+    app.read(appRouterProvider).go('/messages/chats/chat-1');
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('project-needs-button')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Unable to load current needs.'), findsOneWidget);
+    expect(needs.calls.where((call) => call.startsWith('ack:')), isEmpty);
+  });
+
+  testWidgets('becoming former closes the drawer and hides live Needs', (
+    tester,
+  ) async {
+    final needs = FakeProjectNeedsGateway()
+      ..requirements = [projectRequirementFixture()];
+    final chats = FakeProjectChatGateway()
+      ..summaries = [projectChatSummaryFixture()]
+      ..histories['chat-1'] = [];
+    final app = await _pump(tester, chats: chats, needs: needs);
+    app.read(appRouterProvider).go('/messages/chats/chat-1');
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('project-needs-button')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('project-needs-drawer')), findsOneWidget);
+
+    chats.summaries = [
+      projectChatSummaryFixture(viewerRole: ProjectChatViewerRole.formerMember),
+    ];
+    await app
+        .read(projectChatDetailProvider.notifier)
+        .refresh(expectedProfileId: 'user-1', chatId: 'chat-1');
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('project-needs-drawer')), findsNothing);
+    expect(find.byKey(const Key('project-needs-button')), findsNothing);
+    expect(find.byKey(const Key('project-chat-read-only')), findsOneWidget);
   });
 
   testWidgets(
@@ -585,6 +756,7 @@ void main() {
 Future<ProviderContainer> _pump(
   WidgetTester tester, {
   required FakeProjectChatGateway chats,
+  FakeProjectNeedsGateway? needs,
   FakeParticipationGateway? participation,
   FakeMembershipCommitmentGateway? commitments,
   FakeAuthGateway? authGateway,
@@ -613,6 +785,9 @@ Future<ProviderContainer> _pump(
         profileGatewayProvider.overrideWithValue(FakeProfileGateway()),
         messagesGatewayProvider.overrideWithValue(FakeMessagesGateway()),
         projectChatGatewayProvider.overrideWithValue(chats),
+        projectNeedsGatewayProvider.overrideWithValue(
+          needs ?? FakeProjectNeedsGateway(),
+        ),
         participationGatewayProvider.overrideWithValue(
           participation ?? FakeParticipationGateway(),
         ),

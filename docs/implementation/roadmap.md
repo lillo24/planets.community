@@ -1,7 +1,7 @@
 # Implementation Roadmap
 
 **Status:** Planning baseline  
-**Current implementation:** Plans 00–04B2B, 04C1–04C2, 05A, 05B, 05D, 06A, 06B, provider-independent 06C1, provider-neutral 06C2A, 06D, 07A, 07B1, 07B2B, 07B2C, and public informational SITE-00 through SITE-02 plus SITE-02W implemented; 04C3A and stacked 04C3B1/04C3B2/04C3C1/04C3C2/04C3D1/04C3D2/04C3D3A are in progress; 04C3D3B, provider-specific 06C2B, 04C4, and 05C remain not started
+**Current implementation:** Plans 00–04B2B, 04C1–04C2, 05A, 05B, 05D, 06A, 06B, provider-independent 06C1, provider-neutral 06C2A, 06D, 07A, 07B1, 07B2B, 07B2C, and public informational SITE-00 through SITE-02 plus SITE-02W implemented; 04C3A and stacked 04C3B1/04C3B2/04C3C1/04C3C2/04C3D1/04C3D2/04C3D3A/04C3D3B1/04C3D3B2 are in progress; provider-specific 06C2B, 04C4, and 05C remain not started
 
 This roadmap divides the first PLANETS build into reviewable Codex tasks. Each numbered item should normally become its own implementation prompt, branch, and pull request.
 
@@ -69,7 +69,7 @@ Do not begin a dependent plan until the prior plan is merged or its branch is ex
 | 04C3D2 | Mobile Join-Acceptance Contribution Triage                | Mandatory three-way creator decision UI over every selected request contribution                                       | 04C3D1, 04C3B2, 07A    | Native interaction review; delegated/co-organizer authorization                                                      | In progress |
 | 04C3D3 | Live Need Coverage + Group Coordination (parent)          | Backend live requirement truth followed by group-chat coordination and resurfacing                                      | 04C3D1, 04C3D2, 07B2C  | Delegate policy remains separate                                                                                     | In progress |
 | 04C3D3A | Live Project Requirement Coverage Domain                | Participant/manual sources, exact coverage transitions, lifecycle cleanup, claim/manual/read RPCs, and tests            | 04C3D1, 04C3D2          | None for canonical creator/current-participant backend ownership                                                     | In progress |
-| 04C3D3B | Group Needs Coordination + Chat Resurfacing              | Chat Needs drawer, participant claim UI, creator manual control, system messages, notifications, and attention UX       | 04C3D3A, 07B2C, 06D     | Attention acknowledgement details and delegate policy                                                               | Not started |
+| 04C3D3B | Group Needs Coordination + Chat Resurfacing              | Chat Needs drawer, participant claim UI, creator manual control, system messages, notifications, and attention UX       | 04C3D3A, 07B2C, 06D     | Delegate policy remains separate; native interaction review remains Plan 12                                          | In progress |
 | 04C4   | Listing Requests/Handoff + Saved Search/Matching          | Post-discovery request/handoff rules plus explainable saved-search and matching behavior                               | 04C1                   | Exchange, request, handoff, contact, matching, and notification semantics                                            | Not started |
 | 05     | Participation lifecycle (parent)                          | Shared project participation foundation, later mobile experience, and verified-contribution review                     | 04A, 04B1              | Capacity/fullness and later contribution/resource semantics remain unresolved                                        | In progress |
 | 05A    | Project Participation Domain Foundation                   | Shared identity, private join requests, canonical membership history, protected meeting access, events, and tests      | 04A, 04B1              | No blocking decision; 07B1 derives chat activation from accepted membership                                          | Implemented |
@@ -443,9 +443,9 @@ Adds immutable identifier-only `requirement_needed_again` system history, one hi
 
 ###### 04C3D3B2 — Mobile Needs Drawer + Chat Coordination
 
-**Status:** Not started. Depends on 04C3D3B1 and 04C3D3A.
+**Status:** In progress in the current stacked mobile PR, based on open PR #66 without merging the lower stack. Depends on 04C3D3B1 and 04C3D3A.
 
-Will add the chat-bottom Needs control and upward drawer, current uncovered-requirement rendering, participant Claim, creator Found/Needed control, structured system-event cards, badge/popover/shake attention, acknowledge-on-drawer-open, and additive Realtime refresh. It must use only the canonical D3A/D3B1 RPCs and signals.
+Project chat detail now consumes the strict mixed human/system feed and exact three-part keyset cursor. Current creators and participants get a composer-side Needs control backed by independent RPC-only coverage and attention state, an upward scroll-controlled drawer, participant claim or creator manual-coverage actions, persistent resurfacing attention, and an explicit-frontier acknowledgement only after refreshed current Needs render. Former members keep authorized historical system cards but perform no live-Needs reads. All three Realtime hints reuse the existing private chat topic; native drawer, animation, accessibility, multi-device race, restart, and lifecycle interaction review is deferred to Plan 12 and is not marked passed or failed here.
 
 ##### 04C4 — Listing Requests/Handoff + Saved Search/Matching
 

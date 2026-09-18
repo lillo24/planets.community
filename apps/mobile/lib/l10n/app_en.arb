@@ -875,5 +875,52 @@
   "joinAcceptanceProjectNeedsChanged": "The Project needs changed. Review the items marked Needed before accepting.",
   "joinAcceptanceRequestUnavailable": "This request can no longer be accepted.",
   "joinAcceptanceForbidden": "This request is not available for the current account.",
-  "joinAcceptanceLoadError": "Unable to load contribution offers. Try again."
+  "joinAcceptanceLoadError": "Unable to load contribution offers. Try again.",
+  "projectNeedsTitle": "Needs",
+  "projectNeedsNeededNow": "Needed now",
+  "projectNeedsAllCovered": "Everything currently needed is covered.",
+  "projectNeedsCompetencesGroup": "Competences / Knowledge",
+  "projectNeedsResourcesGroup": "Resources / Materials",
+  "projectNeedsRequired": "Required",
+  "projectNeedsUseful": "Useful",
+  "projectNeedsCanHelp": "I can help",
+  "projectNeedsCanBring": "I can bring it",
+  "projectNeedsFoundOutsideAction": "Found outside app",
+  "projectNeedsFoundOutsideSection": "Found outside the app",
+  "projectNeedsNeededAgain": "Needed again",
+  "projectNeedsSystemEvent": "{name} is needed again.",
+  "@projectNeedsSystemEvent": {
+    "placeholders": { "name": { "type": "String" } }
+  },
+  "projectNeedsCoveredElsewhere": "Someone else just covered this need.",
+  "projectNeedsChanged": "This need changed. Review the latest list.",
+  "projectNeedsLoadError": "Unable to load current needs.",
+  "projectNeedsUpdateError": "Unable to update this need.",
+  "projectNeedsCoordinationEnded": "Live Project coordination is no longer available.",
+  "projectNeedsTryAgain": "Try again",
+  "projectNeedsNewAttention": "New Project need",
+  "projectNeedsCountSemantics": "{count, plural, =0{No current needs} =1{1 current need} other{{count} current needs}}",
+  "@projectNeedsCountSemantics": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "projectNeedsButtonSemantics": "{countLabel}. Open current Project needs.",
+  "@projectNeedsButtonSemantics": {
+    "placeholders": { "countLabel": { "type": "String" } }
+  },
+  "projectNeedsButtonAttentionSemantics": "{countLabel}. Needed again. Open current Project needs.",
+  "@projectNeedsButtonAttentionSemantics": {
+    "placeholders": { "countLabel": { "type": "String" } }
+  },
+  "projectNeedsLoading": "Loading current needs…",
+  "projectNeedsActionProgress": "Updating {name}…",
+  "@projectNeedsActionProgress": {
+    "placeholders": { "name": { "type": "String" } }
+  },
+  "projectNeedsSystemEventSemantics": "Project update: {name} is needed again at {time}.",
+  "@projectNeedsSystemEventSemantics": {
+    "placeholders": {
+      "name": { "type": "String" },
+      "time": { "type": "String" }
+    }
+  }
 }
