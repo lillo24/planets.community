@@ -734,6 +734,131 @@ export type Database = {
           },
         ]
       }
+      project_membership_actual_effort_markers: {
+        Row: {
+          marked_at: string
+          marked_by_profile_id: string
+          membership_id: string
+        }
+        Insert: {
+          marked_at?: string
+          marked_by_profile_id: string
+          membership_id: string
+        }
+        Update: {
+          marked_at?: string
+          marked_by_profile_id?: string
+          membership_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_membership_actual_effort_markers_marked_by_fkey"
+            columns: ["marked_by_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_membership_actual_effort_markers_membership_id_fkey"
+            columns: ["membership_id"]
+            isOneToOne: true
+            referencedRelation: "project_memberships"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      project_membership_actual_resource_overrides: {
+        Row: {
+          is_included: boolean
+          membership_id: string
+          resource_need_id: string
+          updated_at: string
+          updated_by_profile_id: string
+        }
+        Insert: {
+          is_included: boolean
+          membership_id: string
+          resource_need_id: string
+          updated_at?: string
+          updated_by_profile_id: string
+        }
+        Update: {
+          is_included?: boolean
+          membership_id?: string
+          resource_need_id?: string
+          updated_at?: string
+          updated_by_profile_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_membership_actual_resource_overrides_membership_id_fkey"
+            columns: ["membership_id"]
+            isOneToOne: false
+            referencedRelation: "project_memberships"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_membership_actual_resource_overrides_need_id_fkey"
+            columns: ["resource_need_id"]
+            isOneToOne: false
+            referencedRelation: "project_resource_needs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_membership_actual_resource_overrides_updated_by_fkey"
+            columns: ["updated_by_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      project_membership_actual_skill_overrides: {
+        Row: {
+          is_included: boolean
+          membership_id: string
+          skill_id: string
+          updated_at: string
+          updated_by_profile_id: string
+        }
+        Insert: {
+          is_included: boolean
+          membership_id: string
+          skill_id: string
+          updated_at?: string
+          updated_by_profile_id: string
+        }
+        Update: {
+          is_included?: boolean
+          membership_id?: string
+          skill_id?: string
+          updated_at?: string
+          updated_by_profile_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_membership_actual_skill_overrides_membership_id_fkey"
+            columns: ["membership_id"]
+            isOneToOne: false
+            referencedRelation: "project_memberships"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_membership_actual_skill_overrides_skill_id_fkey"
+            columns: ["skill_id"]
+            isOneToOne: false
+            referencedRelation: "skills"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_membership_actual_skill_overrides_updated_by_fkey"
+            columns: ["updated_by_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       project_membership_resource_commitments: {
         Row: {
           committed_at: string
@@ -1879,6 +2004,26 @@ export type Database = {
           sender_profile_id: string
         }[]
       }
+      list_project_membership_actual_contribution_options: {
+        Args: {
+          p_expected_creator_profile_id: string
+          p_membership_id: string
+        }
+        Returns: {
+          label: string
+          option_id: string
+          option_kind: string
+        }[]
+      }
+      list_project_membership_actual_contributions: {
+        Args: { p_expected_profile_id: string; p_membership_id: string }
+        Returns: {
+          attribution_source: string
+          contribution_id: string
+          contribution_kind: string
+          label: string
+        }[]
+      }
       list_own_project_group_chats: {
         Args: {
           p_before_activity_at?: string
@@ -2230,6 +2375,19 @@ export type Database = {
       }
       remove_project_member: {
         Args: { p_expected_creator_profile_id: string; p_membership_id: string }
+        Returns: string
+      }
+      replace_project_membership_actual_contributions: {
+        Args: {
+          p_expected_creator_profile_id: string
+          p_expected_resource_need_ids: string[]
+          p_expected_skill_ids: string[]
+          p_expected_substantial_effort: boolean
+          p_membership_id: string
+          p_resource_need_ids: string[]
+          p_skill_ids: string[]
+          p_substantial_effort: boolean
+        }
         Returns: string
       }
       replace_project_membership_commitments: {
