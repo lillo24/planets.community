@@ -132,6 +132,7 @@ async function verifyResourceListings() {
     );
   }
   assertExactKeys(donateCard, [
+    "active_request_count",
     "administrative_area",
     "country_code",
     "description",
@@ -143,6 +144,7 @@ async function verifyResourceListings() {
     "title",
   ]);
   assertExactKeys(donateDetail[0], [
+    "active_request_count",
     "administrative_area",
     "country_code",
     "description",
@@ -159,8 +161,10 @@ async function verifyResourceListings() {
     donateCard.country_code !== "IT" ||
     donateCard.locality !== "Trento" ||
     donateCard.public_location_label !== "Trento · Povo" ||
+    donateCard.active_request_count !== 0 ||
     donateDetail[0].owner_profile_id !== userA.id ||
     donateDetail[0].owner_display_name !== null ||
+    donateDetail[0].active_request_count !== 0 ||
     JSON.stringify(donateDetail[0]).includes(userAEmail)
   ) {
     throw new Error(

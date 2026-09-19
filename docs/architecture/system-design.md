@@ -151,12 +151,15 @@ Drafts may be incomplete and remain private. Publication requires a bounded plai
 
 Complete-profile owners use expected-identity-bound create and publish operations, while authenticated owners use the same identity boundary for update, close, and owner history. The table has RLS but no client policies or direct grants. Anonymous and authenticated clients use narrow list/detail functions; list discovery is newest-first paired keyset pagination with optional mode, case-insensitive locality equality, and literal case-insensitive title/description substring filters. Detail returns an owner display name only when the existing profile visibility row is public. Publish and close write identifier-only audit/outbox state for later consumers without projecting notifications.
 
+`resource_listing_requests` adds a separate private expression-of-interest lifecycle with `pending`, `accepted`, `rejected`, `withdrawn`, and `listing_closed` states. A requester/listing pair has at most one active pending-or-accepted request, while terminal attempts remain as independent history. Multiple accepted requesters are valid because acceptance means willingness to coordinate, not reservation, agreement, handoff, or completion. All mutations and private reads cross expected-identity RPC boundaries; the table has RLS without direct client policies or grants. Listing-first locks serialize creation and close, and listing-then-request locks serialize owner decisions with requester withdrawal. Public listing reads expose only the derived pending-plus-accepted count. Identifier-only request events deliberately precede any later Messages, conversation, or notification projection.
+
 The 04C2 Flutter client keeps Scambio-Dona in the Home pillar beside Progetti,
 without changing the persistent Profile / Browse / Home navigation. Its public
 list and detail are signed-out, while My Listings and create/edit routes require
 a complete profile and preserve their Auth/setup return destination. The client
-uses only the canonical listing RPCs; closing remains availability-only, and
-post-listing request/contact/handoff behavior remains deferred to 04C4.
+uses only the canonical listing RPCs; closing remains availability-only. The
+04C4A request backend has no mobile surface yet, while agreement, contact,
+handoff, and request-specific conversation behavior remain in 04C4B/04C4C.
 
 ### Project resource-need domain
 

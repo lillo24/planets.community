@@ -1408,6 +1408,61 @@ export type Database = {
           },
         ]
       }
+      resource_listing_requests: {
+        Row: {
+          created_at: string
+          id: string
+          listing_id: string
+          request_message: string | null
+          requester_profile_id: string
+          resolved_at: string | null
+          resolved_by_profile_id: string | null
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          listing_id: string
+          request_message?: string | null
+          requester_profile_id: string
+          resolved_at?: string | null
+          resolved_by_profile_id?: string | null
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          listing_id?: string
+          request_message?: string | null
+          requester_profile_id?: string
+          resolved_at?: string | null
+          resolved_by_profile_id?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "resource_listing_requests_listing_id_fkey"
+            columns: ["listing_id"]
+            isOneToOne: false
+            referencedRelation: "resource_listings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "resource_listing_requests_requester_profile_id_fkey"
+            columns: ["requester_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "resource_listing_requests_resolved_by_profile_id_fkey"
+            columns: ["resolved_by_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       resource_listings: {
         Row: {
           administrative_area: string | null
@@ -1546,6 +1601,10 @@ export type Database = {
               p_needed_skill_ids: string[]
               p_request_id: string
             }
+        Returns: string
+      }
+      accept_resource_listing_request: {
+        Args: { p_expected_owner_profile_id: string; p_request_id: string }
         Returns: string
       }
       claim_project_requirement: {
@@ -1834,6 +1893,7 @@ export type Database = {
       get_public_resource_listing: {
         Args: { p_listing_id: string }
         Returns: {
+          active_request_count: number
           administrative_area: string
           country_code: string
           description: string
@@ -1845,6 +1905,25 @@ export type Database = {
           public_location_label: string
           published_at: string
           title: string
+        }[]
+      }
+      get_resource_listing_request: {
+        Args: { p_expected_profile_id: string; p_request_id: string }
+        Returns: {
+          created_at: string
+          listing_id: string
+          listing_lifecycle: string
+          listing_mode: string
+          listing_title: string
+          owner_display_name: string
+          owner_profile_id: string
+          request_id: string
+          request_message: string
+          requester_display_name: string
+          requester_profile_id: string
+          resolved_at: string
+          resolved_by_profile_id: string
+          status: string
         }[]
       }
       leave_project: {
@@ -2161,6 +2240,22 @@ export type Database = {
           updated_at: string
         }[]
       }
+      list_own_resource_listing_requests: {
+        Args: { p_expected_requester_profile_id: string }
+        Returns: {
+          created_at: string
+          listing_id: string
+          listing_lifecycle: string
+          listing_mode: string
+          listing_title: string
+          owner_display_name: string
+          owner_profile_id: string
+          request_id: string
+          request_message: string
+          resolved_at: string
+          status: string
+        }[]
+      }
       list_own_resource_listings: {
         Args: { p_expected_owner_profile_id: string }
         Returns: {
@@ -2298,6 +2393,7 @@ export type Database = {
           p_query?: string
         }
         Returns: {
+          active_request_count: number
           administrative_area: string
           country_code: string
           description: string
@@ -2307,6 +2403,19 @@ export type Database = {
           public_location_label: string
           published_at: string
           title: string
+        }[]
+      }
+      list_resource_listing_requests: {
+        Args: { p_expected_owner_profile_id: string; p_listing_id: string }
+        Returns: {
+          created_at: string
+          request_id: string
+          request_message: string
+          requester_display_name: string
+          requester_profile_id: string
+          resolved_at: string
+          resolved_by_profile_id: string
+          status: string
         }[]
       }
       mark_all_notifications_read: {
@@ -2373,6 +2482,10 @@ export type Database = {
         Args: { p_expected_creator_profile_id: string; p_request_id: string }
         Returns: string
       }
+      reject_resource_listing_request: {
+        Args: { p_expected_owner_profile_id: string; p_request_id: string }
+        Returns: string
+      }
       remove_project_member: {
         Args: { p_expected_creator_profile_id: string; p_membership_id: string }
         Returns: string
@@ -2398,6 +2511,14 @@ export type Database = {
           p_membership_id: string
           p_resource_need_ids: string[]
           p_skill_ids: string[]
+        }
+        Returns: string
+      }
+      request_resource_listing: {
+        Args: {
+          p_expected_requester_profile_id: string
+          p_listing_id: string
+          p_message?: string
         }
         Returns: string
       }
@@ -2536,6 +2657,10 @@ export type Database = {
         Returns: string
       }
       withdraw_project_join_request: {
+        Args: { p_expected_requester_profile_id: string; p_request_id: string }
+        Returns: string
+      }
+      withdraw_resource_listing_request: {
         Args: { p_expected_requester_profile_id: string; p_request_id: string }
         Returns: string
       }
