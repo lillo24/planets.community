@@ -485,7 +485,7 @@ ActualContributionFailureKind mapActualContributionFailure(Object error) {
   }
   if (error is PostgrestException) {
     return switch (error.code) {
-      '40001' => ActualContributionFailureKind.staleEdit,
+      'PT409' => ActualContributionFailureKind.staleEdit,
       '22023' => ActualContributionFailureKind.optionsChanged,
       '42501' => ActualContributionFailureKind.forbidden,
       '55000' => ActualContributionFailureKind.notAvailable,

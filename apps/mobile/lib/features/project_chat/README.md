@@ -107,7 +107,7 @@ pass. On Android and iOS, verify:
    interaction, narrow widths, text scaling, and a 50-item mixed list;
 9. the persistent `Needed again` callout and subtle one-shot reduced-motion
    pulse, including TalkBack/VoiceOver count and attention semantics;
-10. participant claim races on two devices and canonical `40001` recovery;
+10. participant claim races on two devices and canonical `PT409` recovery;
 11. creator `Found outside app` and `Needed again` manual-coverage flows,
     including participant-plus-manual coverage;
 12. closed-drawer and open-drawer Realtime resurfacing, ensuring attention is

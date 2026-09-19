@@ -120,10 +120,10 @@ void main() {
   });
 
   test(
-    '40001 and 22023 recover through canonical reload without retry',
+    'PT409 and 22023 recover through canonical reload without retry',
     () async {
       for (final entry in const [
-        ('40001', ProjectNeedsNotice.coveredElsewhere),
+        ('PT409', ProjectNeedsNotice.coveredElsewhere),
         ('22023', ProjectNeedsNotice.requirementChanged),
       ]) {
         final gateway = FakeProjectNeedsGateway()
@@ -158,6 +158,40 @@ void main() {
       }
     },
   );
+
+  test('40001 is not treated as the application claim conflict', () async {
+    final gateway = FakeProjectNeedsGateway()
+      ..requirements = [projectRequirementFixture()]
+      ..actionError = const PostgrestException(
+        message: 'genuine serialization failure',
+        code: '40001',
+      );
+    final session = _readyContainer(gateway);
+    addTearDown(session.dispose);
+    await _load(session.container);
+    final requirement = session.container
+        .read(projectNeedsProvider)
+        .requirements
+        .single;
+
+    expect(
+      await session.container
+          .read(projectNeedsProvider.notifier)
+          .claim(requirement),
+      isFalse,
+    );
+    final state = session.container.read(projectNeedsProvider);
+    expect(state.notice, isNull);
+    expect(state.failure, ProjectNeedsFailureKind.unavailable);
+    expect(
+      gateway.calls.where((call) => call.startsWith('claim:')),
+      hasLength(1),
+    );
+    expect(
+      gateway.calls.where((call) => call == 'coverage:proposal-1'),
+      hasLength(1),
+    );
+  });
 
   test('creator can set and clear only manual coverage', () async {
     final gateway = FakeProjectNeedsGateway()

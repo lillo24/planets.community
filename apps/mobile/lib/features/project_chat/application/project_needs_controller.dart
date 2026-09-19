@@ -451,17 +451,17 @@ class ProjectNeedsController extends Notifier<ProjectNeedsState> {
             : state.attentionPhase,
         attention: terminal ? null : state.attention,
         failure: failure,
-        notice: code == '40001'
+        notice: code == 'PT409'
             ? ProjectNeedsNotice.coveredElsewhere
             : code == '22023'
             ? ProjectNeedsNotice.requirementChanged
             : null,
       );
-      if (code == '40001' || code == '22023') {
+      if (code == 'PT409' || code == '22023') {
         await refresh(allowAttentionPulse: true);
         if (_isCurrent(revision)) {
           state = state.copyWith(
-            notice: code == '40001'
+            notice: code == 'PT409'
                 ? ProjectNeedsNotice.coveredElsewhere
                 : ProjectNeedsNotice.requirementChanged,
           );

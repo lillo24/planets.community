@@ -341,7 +341,7 @@ async function verifyOptimisticConcurrency(creator, participant) {
       p_skill_ids: [usefulSkillId],
       p_resource_need_ids: [],
     }),
-    "40001",
+    "PT409",
     "reject a creator replacement based on the participant stale snapshot",
   );
 

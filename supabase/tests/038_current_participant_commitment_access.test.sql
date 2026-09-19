@@ -829,7 +829,7 @@ select throws_ok(
       array['a3000000-0000-4000-8000-000000000001'::uuid]
     )
   $$,
-  '40001',
+  'PT409',
   'Membership commitments changed since they were loaded.',
   'a stale creator snapshot rejects even when desired equals the newer canonical set'
 );
@@ -895,7 +895,7 @@ select throws_ok(
       ]
     )
   $$,
-  '40001',
+  'PT409',
   'Membership commitments changed since they were loaded.',
   'the participant cannot overwrite a creator update from a stale snapshot'
 );
@@ -956,7 +956,7 @@ select throws_ok(
       '{}'::uuid[]
     )
   $$,
-  '40001',
+  'PT409',
   'Membership commitments changed since they were loaded.',
   'the second rapid participant submission cannot overwrite from stale state'
 );

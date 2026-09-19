@@ -289,7 +289,7 @@ select is(
 );
 select throws_ok(
   $$select public.claim_project_requirement('c1000000-0000-4000-8000-000000000002', 'c2000000-0000-4000-8000-000000000001', 'resource', 'c3000000-0000-4000-8000-000000000001')$$,
-  '40001',
+  'PT409',
   'The Project requirement is already covered.',
   'claiming an already-covered requirement returns the stable conflict'
 );

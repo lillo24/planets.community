@@ -375,8 +375,8 @@ select like(
       'public.replace_project_membership_commitments(uuid,uuid,uuid[],uuid[],uuid[],uuid[])'::regprocedure
     )
   ),
-  '%errcode = ''40001''%',
-  'stale commitment snapshots use a stable serialization-conflict SQLSTATE'
+  '%raise sqlstate ''pt409''%',
+  'stale commitment snapshots use the explicit PostgREST conflict SQLSTATE'
 );
 select like(
   lower(

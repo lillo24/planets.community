@@ -17,7 +17,8 @@ import '../../../support/fake_auth.dart';
 void main() {
   test('maps the actual-contribution SQLSTATE contract', () {
     for (final entry in <String, ActualContributionFailureKind>{
-      '40001': ActualContributionFailureKind.staleEdit,
+      'PT409': ActualContributionFailureKind.staleEdit,
+      '40001': ActualContributionFailureKind.unavailable,
       '22023': ActualContributionFailureKind.optionsChanged,
       '42501': ActualContributionFailureKind.forbidden,
       '55000': ActualContributionFailureKind.notAvailable,
@@ -297,7 +298,7 @@ void main() {
   });
 
   test(
-    '40001 reloads latest and never resubmits stale desired state',
+    'PT409 reloads latest and never resubmits stale desired state',
     () async {
       final gateway = FakeActualContributionGateway()
         ..contributions = [actualContributionFixture(id: 'skill-old')]
@@ -306,7 +307,7 @@ void main() {
           actualContributionOptionFixture(id: 'skill-new'),
         ]
         ..replaceErrors.add(
-          const PostgrestException(message: 'private stale', code: '40001'),
+          const PostgrestException(message: 'private stale', code: 'PT409'),
         );
       final session = _readyContainer(gateway);
       addTearDown(session.dispose);

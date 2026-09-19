@@ -348,8 +348,8 @@ select like(
   lower(pg_get_functiondef(
     'public.replace_project_membership_actual_contributions(uuid,uuid,uuid[],uuid[],boolean,uuid[],uuid[],boolean)'::regprocedure
   )),
-  '%errcode = ''40001''%',
-  'stale actual-contribution snapshots use serialization-conflict SQLSTATE'
+  '%raise sqlstate ''pt409''%',
+  'stale actual-contribution snapshots use the explicit PostgREST conflict SQLSTATE'
 );
 select like(
   lower(pg_get_functiondef(

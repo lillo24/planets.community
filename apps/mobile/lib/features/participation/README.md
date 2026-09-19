@@ -148,7 +148,7 @@ options snapshot can classify an absent commitment as no longer requested; an
 authoritative empty snapshot may therefore classify every current commitment,
 while historical reads, loading, transient option failure, and lifecycle
 read-only recovery do not infer stale status. Proven stale commitments remain
-selected and can be removed or toggled back on before Save. SQLSTATE `40001`,
+selected and can be removed or toggled back on before Save. SQLSTATE `PT409`,
 `22023`, and `55000` reload canonical state without automatically retrying or
 merging the write. Request-attempt selections displayed in Messages remain
 immutable history and are not replaced by this membership state.
@@ -164,7 +164,7 @@ The actual-contribution editor sends the loaded effective skill/resource/effort
 set as an immutable expected CAS snapshot and the visible draft as desired
 truth. Options are unioned by kind plus ID so equal UUID text across kinds does
 not collide. Skill and resource maximums remain independently 50; effort does
-not consume either allowance. SQLSTATE `40001` and `22023` reload both factual
+not consume either allowance. SQLSTATE `PT409` and `22023` reload both factual
 state and options, discard the stale draft, announce the recovery, and never
 resubmit automatically. `55000` becomes localized lifecycle-unavailable copy,
 while identity changes clear state and reject late responses.

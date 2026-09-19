@@ -18,9 +18,18 @@ void main() {
   test('maps the commitment SQLSTATE contract', () {
     expect(
       mapMembershipCommitmentFailure(
-        const PostgrestException(message: 'stale', code: '40001'),
+        const PostgrestException(message: 'stale', code: 'PT409'),
       ),
       MembershipCommitmentFailureKind.staleEdit,
+    );
+    expect(
+      mapMembershipCommitmentFailure(
+        const PostgrestException(
+          message: 'genuine serialization failure',
+          code: '40001',
+        ),
+      ),
+      MembershipCommitmentFailureKind.unavailable,
     );
     expect(
       mapMembershipCommitmentFailure(
@@ -379,7 +388,7 @@ void main() {
   );
 
   test(
-    '40001 reloads canonical current/options and resets desired state',
+    'PT409 reloads canonical current/options and resets desired state',
     () async {
       final gateway = FakeMembershipCommitmentGateway()
         ..commitments = [membershipCommitmentFixture(id: 'skill-old')]
@@ -390,7 +399,7 @@ void main() {
         ..replaceErrors.add(
           const PostgrestException(
             message: 'private stale detail',
-            code: '40001',
+            code: 'PT409',
           ),
         );
       final session = _readyContainer(gateway);
@@ -411,6 +420,10 @@ void main() {
       expect(state.expectedSkillIds, {'skill-concurrent'});
       expect(state.desiredSkillIds, {'skill-concurrent'});
       expect(state.actionFailure, MembershipCommitmentFailureKind.staleEdit);
+      expect(
+        gateway.calls.where((call) => call.startsWith('replace:')),
+        hasLength(1),
+      );
     },
   );
 

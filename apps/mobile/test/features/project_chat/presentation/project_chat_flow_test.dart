@@ -690,7 +690,7 @@ void main() {
       ..replaceErrors.add(
         const PostgrestException(
           message: 'private conflict diagnostic',
-          code: '40001',
+          code: 'PT409',
         ),
       );
     final app = await _pump(

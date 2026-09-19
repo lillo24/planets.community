@@ -204,7 +204,7 @@ async function verifyPrimaryFlows(
       p_requirement_kind: "resource",
       p_requirement_id: claimResourceId,
     }),
-    "40001",
+    "PT409",
     "reject a claim after another source covers the requirement",
   );
 
@@ -467,7 +467,7 @@ async function verifyClaimRace(creator, participantA, participantB) {
   ]);
   const successCount = results.filter((result) => !result.error).length;
   const conflictCount = results.filter(
-    (result) => result.error?.code === "40001",
+    (result) => result.error?.code === "PT409",
   ).length;
   if (successCount !== 1 || conflictCount !== 1) {
     throw new Error(
@@ -526,7 +526,7 @@ async function verifyClaimVersusCommitmentCas(creator, participant) {
   });
   await assertTrackedRpcCode(
     blockedReplacement,
-    "40001",
+    "PT409",
     "reject stale commitment replacement after claim",
   );
 

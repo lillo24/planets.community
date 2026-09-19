@@ -172,7 +172,7 @@ void main() {
         actualContributionOptionFixture(id: 'skill-new', label: 'Painting'),
       ]
       ..replaceErrors.add(
-        const PostgrestException(message: 'private stale', code: '40001'),
+        const PostgrestException(message: 'private stale', code: 'PT409'),
       );
     await _pumpHost(tester, gateway: gateway, editable: true);
     await tester.tap(find.byKey(const Key('open-actual-contributions')));

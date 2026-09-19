@@ -451,7 +451,7 @@ MembershipCommitmentFailureKind mapMembershipCommitmentFailure(Object error) {
   }
   if (error is PostgrestException) {
     return switch (error.code) {
-      '40001' => MembershipCommitmentFailureKind.staleEdit,
+      'PT409' => MembershipCommitmentFailureKind.staleEdit,
       '22023' => MembershipCommitmentFailureKind.optionsChanged,
       '42501' => MembershipCommitmentFailureKind.forbidden,
       '55000' => MembershipCommitmentFailureKind.noLongerEditable,

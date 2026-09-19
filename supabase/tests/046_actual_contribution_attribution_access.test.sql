@@ -456,7 +456,7 @@ select throws_ok(
       true
     )
   $$,
-  '40001',
+  'PT409',
   'Actual contributions changed since they were loaded.',
   'stale expected truth is rejected even when desired equals the newer state'
 );

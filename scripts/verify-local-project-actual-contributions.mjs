@@ -335,7 +335,7 @@ async function verifyAutomaticAndCorrectedTruth(
         p_substantial_effort: true,
       },
     ),
-    "40001",
+    "PT409",
     "reject a stale creator session even when desired equals current truth",
   );
   const afterConflict = await readActualState(fixture.activeMembershipId);
