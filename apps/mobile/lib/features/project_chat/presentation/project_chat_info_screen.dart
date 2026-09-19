@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
 
 import '../../../core/theme/app_tokens.dart';
 import '../../../core/widgets/error_state.dart';
@@ -10,6 +11,7 @@ import '../../auth/application/auth_session_controller.dart';
 import '../../participation/application/membership_commitment_controller.dart';
 import '../../participation/application/participation_controllers.dart';
 import '../../participation/domain/participation_models.dart';
+import '../../participation/presentation/actual_contribution_sheet.dart';
 import '../../participation/presentation/membership_commitment_sheet.dart';
 import '../../participation/presentation/participation_routes.dart';
 import '../application/project_chat_controllers.dart';
@@ -244,11 +246,147 @@ class _ParticipantCommitmentsState
     if (membership == null) {
       return _CommitmentSectionFailure(onRetry: _load);
     }
-    return _MembershipCommitmentsSection(
-      key: ValueKey('project-commitments-${membership.id}-$current'),
-      expectedProfileId: profileId,
-      membershipId: membership.id,
-      editable: current,
+    final episodes =
+        participation.memberships
+            .where(
+              (item) =>
+                  item.projectId == widget.summary.projectId &&
+                  item.projectKind == ProjectKind.oneTime,
+            )
+            .toList()
+          ..sort((left, right) {
+            final byJoinedAt = right.joinedAt.compareTo(left.joinedAt);
+            return byJoinedAt != 0 ? byJoinedAt : right.id.compareTo(left.id);
+          });
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        _MembershipCommitmentsSection(
+          key: ValueKey('project-commitments-${membership.id}-$current'),
+          expectedProfileId: profileId,
+          membershipId: membership.id,
+          editable: current,
+        ),
+        if (widget.summary.projectKind == ProjectKind.oneTime &&
+            episodes.isNotEmpty) ...[
+          const SizedBox(height: AppSpacing.large),
+          _ParticipantActualContributions(
+            expectedProfileId: profileId,
+            episodes: episodes,
+          ),
+        ],
+      ],
+    );
+  }
+}
+
+class _ParticipantActualContributions extends StatelessWidget {
+  const _ParticipantActualContributions({
+    required this.expectedProfileId,
+    required this.episodes,
+  });
+
+  final String expectedProfileId;
+  final List<OwnProjectMembership> episodes;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text(
+          l10n.actualContributionsTitle,
+          style: Theme.of(context).textTheme.titleLarge,
+        ),
+        const SizedBox(height: AppSpacing.small),
+        if (episodes.length == 1)
+          Align(
+            alignment: Alignment.centerLeft,
+            child: OutlinedButton.icon(
+              key: Key('project-chat-actual-${episodes.single.id}'),
+              onPressed: () => _open(context, episodes.single),
+              icon: const Icon(Icons.fact_check_outlined),
+              label: Text(l10n.actualContributionsViewAction),
+            ),
+          )
+        else
+          for (var index = 0; index < episodes.length; index++) ...[
+            _ParticipationEpisodeCard(
+              episode: episodes[index],
+              number: episodes.length - index,
+              onView: () => _open(context, episodes[index]),
+            ),
+            if (index != episodes.length - 1)
+              const SizedBox(height: AppSpacing.small),
+          ],
+      ],
+    );
+  }
+
+  Future<void> _open(BuildContext context, OwnProjectMembership membership) =>
+      showActualContributionSheet(
+        context,
+        expectedProfileId: expectedProfileId,
+        membershipId: membership.id,
+        editable: false,
+      );
+}
+
+class _ParticipationEpisodeCard extends StatelessWidget {
+  const _ParticipationEpisodeCard({
+    required this.episode,
+    required this.number,
+    required this.onView,
+  });
+
+  final OwnProjectMembership episode;
+  final int number;
+  final VoidCallback onView;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final locale = Localizations.localeOf(context).toLanguageTag();
+    final joined = DateFormat.yMMMd(locale).format(episode.joinedAt.toLocal());
+    final endedAt = episode.leftAt ?? episode.removedAt;
+    final endLabel = switch ((episode.status, endedAt)) {
+      (MembershipStatus.current, _) => l10n.participationStatusCurrent,
+      (MembershipStatus.left, final value?) => l10n.actualContributionLeftDate(
+        DateFormat.yMMMd(locale).format(value.toLocal()),
+      ),
+      (MembershipStatus.removed, final value?) =>
+        l10n.actualContributionRemovedDate(
+          DateFormat.yMMMd(locale).format(value.toLocal()),
+        ),
+      (MembershipStatus.left, null) => l10n.participationStatusLeft,
+      (MembershipStatus.removed, null) => l10n.participationStatusRemoved,
+    };
+    return Card(
+      key: Key('actual-contribution-episode-${episode.id}'),
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.medium),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              l10n.actualContributionParticipation(number),
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            Text(l10n.actualContributionJoinedDate(joined)),
+            Text(endLabel),
+            const SizedBox(height: AppSpacing.small),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: OutlinedButton(
+                key: Key('project-chat-actual-${episode.id}'),
+                onPressed: onView,
+                child: Text(l10n.actualContributionsViewAction),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

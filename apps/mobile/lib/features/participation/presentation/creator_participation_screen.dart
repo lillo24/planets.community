@@ -8,6 +8,7 @@ import '../../../l10n/generated/app_localizations.dart';
 import '../../auth/application/auth_session_controller.dart';
 import '../application/participation_controllers.dart';
 import '../domain/participation_models.dart';
+import 'actual_contribution_sheet.dart';
 import 'join_acceptance_triage_sheet.dart';
 import 'membership_commitment_sheet.dart';
 import 'project_participation_section.dart';
@@ -131,6 +132,10 @@ class _CreatorParticipationScreenState
                           isActing:
                               state.actionTargetId == member.id && state.isBusy,
                           onCommitments: () => _openCommitments(member),
+                          onActualContributions:
+                              widget.projectKind == ProjectKind.oneTime
+                              ? () => _openActualContributions(member)
+                              : null,
                           onRemove: () => _confirmRemove(member),
                         ),
                         const SizedBox(height: AppSpacing.small),
@@ -231,6 +236,21 @@ class _CreatorParticipationScreenState
       historical: !member.isCurrent,
     );
   }
+
+  Future<void> _openActualContributions(CreatorProjectMember member) async {
+    final expectedCreatorId = _expectedCreatorId;
+    if (expectedCreatorId == null ||
+        ref.read(authSessionProvider).identity?.id != expectedCreatorId) {
+      return;
+    }
+    await showActualContributionSheet(
+      context,
+      expectedProfileId: expectedCreatorId,
+      membershipId: member.id,
+      editable: true,
+      participantDisplayName: member.participantDisplayName,
+    );
+  }
 }
 
 class _RequestCard extends StatelessWidget {
@@ -316,6 +336,7 @@ class _MemberCard extends StatelessWidget {
     required this.enabled,
     required this.isActing,
     required this.onCommitments,
+    required this.onActualContributions,
     required this.onRemove,
   });
 
@@ -323,6 +344,7 @@ class _MemberCard extends StatelessWidget {
   final bool enabled;
   final bool isActing;
   final VoidCallback onCommitments;
+  final VoidCallback? onActualContributions;
   final VoidCallback onRemove;
 
   @override
@@ -345,15 +367,40 @@ class _MemberCard extends StatelessWidget {
               l10n.participationJoinedAt(_formatDate(context, member.joinedAt)),
             ),
             const SizedBox(height: AppSpacing.medium),
-            OutlinedButton.icon(
-              key: Key('participation-commitments-${member.id}'),
-              onPressed: enabled ? onCommitments : null,
-              icon: const Icon(Icons.checklist_outlined),
-              label: Text(
-                member.isCurrent
-                    ? l10n.participationCommitments
-                    : l10n.participationViewCommitments,
-              ),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton.icon(
+                    key: Key('participation-commitments-${member.id}'),
+                    onPressed: enabled ? onCommitments : null,
+                    icon: const Icon(Icons.checklist_outlined),
+                    label: Text(
+                      member.isCurrent
+                          ? l10n.participationCommitments
+                          : l10n.participationViewCommitments,
+                      maxLines: 2,
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                ),
+                if (onActualContributions case final action?) ...[
+                  const SizedBox(width: AppSpacing.small),
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      key: Key(
+                        'participation-actual-contributions-${member.id}',
+                      ),
+                      onPressed: enabled ? action : null,
+                      icon: const Icon(Icons.fact_check_outlined),
+                      label: Text(
+                        l10n.actualContributionsAction,
+                        maxLines: 2,
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                  ),
+                ],
+              ],
             ),
             if (member.isCurrent) ...[
               const SizedBox(height: AppSpacing.small),

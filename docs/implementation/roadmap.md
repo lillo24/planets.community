@@ -1,7 +1,7 @@
 # Implementation Roadmap
 
 **Status:** Planning baseline  
-**Current implementation:** Plans 00–04B2B, 04C1–04C2, 05A, 05B, 05D, 06A, 06B, provider-independent 06C1, provider-neutral 06C2A, 06D, 07A, 07B1, 07B2B, 07B2C, and public informational SITE-00 through SITE-02 plus SITE-02W implemented; 04C3A and stacked 04C3B1/04C3B2/04C3C1/04C3C2/04C3D1/04C3D2/04C3D3A/04C3D3B1/04C3D3B2/05C1 are in progress; provider-specific 06C2B, 04C4, and 05C2 remain not started
+**Current implementation:** Plans 00–04B2B, 04C1–04C2, 05A, 05B, 05D, 06A, 06B, provider-independent 06C1, provider-neutral 06C2A, 06D, 07A, 07B1, 07B2B, 07B2C, and public informational SITE-00 through SITE-02 plus SITE-02W implemented; 04C3A and stacked 04C3B1/04C3B2/04C3C1/04C3C2/04C3D1/04C3D2/04C3D3A/04C3D3B1/04C3D3B2/05C1/05C2 are in progress; provider-specific 06C2B and 04C4 remain not started
 
 This roadmap divides the first PLANETS build into reviewable Codex tasks. Each numbered item should normally become its own implementation prompt, branch, and pull request.
 
@@ -77,7 +77,7 @@ Do not begin a dependent plan until the prior plan is merged or its branch is ex
 | 05D    | Participation-Aware Browse and Pending Request Visibility | Own pending requests promoted in mobile Proposal/Tavolo Browse without changing public pagination                      | 04A, 04B1, 05A, 05B    | Native QA deferred to the consolidated Plan 12 pass                                                                  | Implemented |
 | 05C    | One-Time Project Actual Contribution Attribution (parent)  | Derived final-commitment attribution, sparse creator corrections, and a later mobile experience                         | 05A, 04C3D3B           | Delegate scope, participant reminder/correction flow, and Tavoli finalization                                         | In progress |
 | 05C1   | Actual Contribution Attribution Domain                     | Membership-at-end baseline, sparse creator overrides/additions, effort marker, secure RPCs, events, and tests           | 05A, 04C3D3B           | None for canonical creator-only one-time Project ownership                                                            | In progress |
-| 05C2   | Mobile Actual Contribution Experience                      | Participant read-only visibility plus creator post-end correction UI                                                    | 05C1, 05B              | Native interaction review; participant-to-creator reminder remains a separate future follow-up                       | Not started |
+| 05C2   | Mobile Actual Contribution Experience                      | Participant read-only visibility plus creator post-end correction UI                                                    | 05C1, 05B              | Native interaction review; participant-to-creator reminder remains a separate future follow-up                       | In progress |
 | 06     | Notification backbone (parent)                            | Canonical notification projection, later mobile inbox/preferences, then device registration and push delivery          | 03–05A                 | User-facing notification UX/copy and push behavior remain later review points                                        | In progress |
 | 06A    | Notification Domain and Outbox Projection Foundation      | Categories/preferences, semantic inbox records/targets, multi-consumer receipts, participation projection, secure APIs | 01B, 05A               | None expected for the defined participation foundation                                                               | Implemented |
 | 06B    | Mobile In-App Notifications and Preferences               | Flutter inbox, unread state, preference controls, and structured project/request navigation                            | 06A                    | Native QA deferred by founder for a later consolidated pass; not passed or failed                                    | Implemented |
@@ -506,19 +506,19 @@ consolidated Plan 12 pass and is not marked passed or failed here.
 
 #### 05C — One-Time Project Actual Contribution Attribution
 
-**Status:** In progress through 05C1.
+**Status:** In progress through stacked 05C2. Neither PR #68 nor its 05C2 mobile dependent is merged.
 
 For a one-time Project, the final commitments of each membership episode active at the exact Proposal end instant become actual contribution attribution automatically. Request selections, acceptance decisions, earlier commitment snapshots, and live coverage are not themselves final attribution. Tavoli finalization, delegated management, ratings/reviews, statistics/badges, and participant disputes remain deferred.
 
 ##### 05C1 — Actual Contribution Attribution Domain
 
-Owns the derivable frozen final-commitment baseline for ended published one-time Proposals, exact half-open membership-at-end eligibility, sparse creator exclusions/additions, the separate Substantial Effort / Energy marker, participant/creator reads, creator-only option and compare-and-swap replacement RPCs, identifier-only update events, and focused pgTAP/real-OTP/concurrency coverage. No Project-end worker or copied baseline is introduced. Memberships ended before Proposal end start from an empty baseline but can receive explicit creator attribution; post-end leave/removal does not erase baseline eligibility; rejoin episodes stay independent.
+PR #68 remains open and unmerged. It owns the derivable frozen final-commitment baseline for ended published one-time Proposals, exact half-open membership-at-end eligibility, sparse creator exclusions/additions, the separate Substantial Effort / Energy marker, participant/creator reads, creator-only option and compare-and-swap replacement RPCs, identifier-only update events, and focused pgTAP/real-OTP/concurrency coverage. No Project-end worker or copied baseline is introduced. Memberships ended before Proposal end start from an empty baseline but can receive explicit creator attribution; post-end leave/removal does not erase baseline eligibility; rejoin episodes stay independent.
 
 ##### 05C2 — Mobile Actual Contribution Experience
 
-**Status:** Not started.
+**Status:** In progress as a mobile PR stacked on PR #68.
 
-Will add participant/former-participant read-only actual-contribution visibility and the creator's post-end per-member correction editor, starting with automatic final commitments already selected and supporting canonical off-app additions plus the effort toggle. It will consume the 05C1 read/options/CAS APIs and existing group-info/member surfaces without adding a mandatory Project-wide approval state. A private participant-to-creator “remind creator” request/message/popup/notification remains a possible later follow-up rather than required 05C1/05C2 scope; group contribution surveys remain speculative.
+Adds participant/former-participant read-only actual-contribution visibility at Project chat → Group info → Actual contributions, preserving every membership episode independently. The creator's Manage participation member cards open the same membership-scoped sheet in editable mode, starting with automatic final commitments already selected and supporting canonical off-app additions plus the dedicated effort toggle. The mobile boundary consumes only the 05C1 read/options/CAS APIs, keeps expected and desired snapshots separate, and reloads canonical state after saves and stale-edit/options races without adding a mandatory Project-wide approval state. Tavoli remain excluded. A private participant-to-creator “remind creator” request/message/popup/notification remains a possible later follow-up rather than required 05C1/05C2 scope; cross-episode statistics/badges and group contribution surveys remain downstream or speculative.
 
 Future project-presentation work must also represent Tavoli as a Progetti type/filter in the final information architecture and implement the accepted Online/In-Presence mode. Neither is a participation-table field in 05A.
 

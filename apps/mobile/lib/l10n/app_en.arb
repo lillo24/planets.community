@@ -854,6 +854,48 @@
   "@participationCommitmentResourceLimit": {
     "placeholders": { "max": { "type": "int" } }
   },
+  "actualContributionsTitle": "Actual contributions",
+  "actualContributionsAction": "Actual contributions",
+  "actualContributionsViewAction": "View actual contributions",
+  "actualContributionsViewTitle": "Actual contributions",
+  "actualContributionsEditTitle": "Edit actual contributions",
+  "actualContributionsOtherGroup": "Other contribution",
+  "actualContributionsSubstantialEffort": "Substantial Effort / Energy",
+  "actualContributionsEmpty": "No actual contributions recorded.",
+  "actualContributionSourceFinal": "From final commitment",
+  "actualContributionSourceCreator": "Added by organizer",
+  "actualContributionsLoading": "Loading actual contributions…",
+  "actualContributionsNotAvailable": "Actual contributions are available after an eligible one-time Project ends.",
+  "actualContributionsLoadError": "Unable to load actual contributions.",
+  "actualContributionOptionsLoading": "Loading contribution options…",
+  "actualContributionOptionsLoadError": "Unable to load contribution options.",
+  "actualContributionsSaveError": "Unable to update actual contributions.",
+  "actualContributionsChangedElsewhere": "These actual contributions changed elsewhere. We loaded the latest version. Review it before saving again.",
+  "actualContributionOptionsChanged": "The available contribution options changed. Review the latest version and try again.",
+  "actualContributionsForbidden": "Actual contributions are not available for the current account.",
+  "actualContributionsNotFound": "These actual contributions are no longer available.",
+  "actualContributionMaximumSelections": "Maximum {count} selections",
+  "@actualContributionMaximumSelections": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "actualContributionsSave": "Save contributions",
+  "actualContributionsClearAll": "Clear all",
+  "actualContributionParticipation": "Participation {number}",
+  "@actualContributionParticipation": {
+    "placeholders": { "number": { "type": "int" } }
+  },
+  "actualContributionJoinedDate": "Joined {date}",
+  "@actualContributionJoinedDate": {
+    "placeholders": { "date": { "type": "String" } }
+  },
+  "actualContributionLeftDate": "Left {date}",
+  "@actualContributionLeftDate": {
+    "placeholders": { "date": { "type": "String" } }
+  },
+  "actualContributionRemovedDate": "Removed {date}",
+  "@actualContributionRemovedDate": {
+    "placeholders": { "date": { "type": "String" } }
+  },
   "joinAcceptanceTitle": "Review contribution offers",
   "joinAcceptanceIntroduction": "Before accepting {name}, decide what each offer means.",
   "@joinAcceptanceIntroduction": {

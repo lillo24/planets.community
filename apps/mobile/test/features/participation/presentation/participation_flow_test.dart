@@ -6,6 +6,7 @@ import 'package:planets_mobile/app/router/app_router.dart';
 import 'package:planets_mobile/core/config/app_config.dart';
 import 'package:planets_mobile/features/auth/data/auth_gateway.dart';
 import 'package:planets_mobile/features/auth/domain/auth_models.dart';
+import 'package:planets_mobile/features/participation/data/actual_contribution_gateway.dart';
 import 'package:planets_mobile/features/participation/data/membership_commitment_gateway.dart';
 import 'package:planets_mobile/features/participation/data/participation_gateway.dart';
 import 'package:planets_mobile/features/participation/data/join_acceptance_triage_gateway.dart';
@@ -20,6 +21,7 @@ import 'package:planets_mobile/features/recurring_activities/domain/recurring_ac
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../support/fake_auth.dart';
+import '../../../support/fake_actual_contribution.dart';
 import '../../../support/fake_membership_commitment.dart';
 import '../../../support/fake_participation.dart';
 import '../../../support/fake_join_acceptance_triage.dart';
@@ -352,6 +354,71 @@ void main() {
     },
   );
 
+  testWidgets(
+    'creator actual-contribution actions target exact episodes lazily and exclude Tavoli',
+    (tester) async {
+      final participation = FakeParticipationGateway()
+        ..creatorMembers = [
+          creatorMemberFixture(id: 'current'),
+          creatorMemberFixture(id: 'left', status: MembershipStatus.left),
+        ];
+      final actual = FakeActualContributionGateway()
+        ..contributions = [actualContributionFixture()]
+        ..options = [actualContributionOptionFixture()];
+      final app = await _pump(
+        tester,
+        identityId: 'user-1',
+        participation: participation,
+        actualContributions: actual,
+      );
+      final router = app.read(appRouterProvider);
+      router.go('/proposals/proposal-1/participants');
+      await tester.pumpAndSettle();
+
+      expect(actual.calls, isEmpty);
+      expect(
+        find.byKey(const Key('participation-actual-contributions-current')),
+        findsOneWidget,
+      );
+      await tester.tap(
+        find.byKey(const Key('participation-actual-contributions-current')),
+      );
+      await tester.pumpAndSettle();
+      expect(
+        actual.calls,
+        containsAll(['contributions:current', 'options:current']),
+      );
+      expect(find.text('Jordan'), findsWidgets);
+      expect(find.byKey(const Key('actual-contribution-save')), findsOneWidget);
+      await tester.tap(find.byKey(const Key('actual-contribution-close')));
+      await tester.pumpAndSettle();
+
+      await _scrollTo(
+        tester,
+        find.byKey(const Key('participation-actual-contributions-left')),
+      );
+      await tester.tap(
+        find.byKey(const Key('participation-actual-contributions-left')),
+      );
+      await tester.pumpAndSettle();
+      expect(actual.calls, containsAll(['contributions:left', 'options:left']));
+      expect(find.byKey(const Key('actual-contribution-save')), findsOneWidget);
+      await tester.tap(find.byKey(const Key('actual-contribution-close')));
+      await tester.pumpAndSettle();
+
+      router.go('/tavoli/tavolo-1/participants');
+      await tester.pumpAndSettle();
+      expect(
+        find.byKey(const Key('participation-actual-contributions-current')),
+        findsNothing,
+      );
+      expect(
+        find.byKey(const Key('participation-actual-contributions-left')),
+        findsNothing,
+      );
+    },
+  );
+
   testWidgets('commitment sheet keeps labels normal when options fail', (
     tester,
   ) async {
@@ -553,6 +620,7 @@ Future<ProviderContainer> _pump(
   ProposalStatus proposalStatus = ProposalStatus.upcoming,
   FakeProjectResourceNeedsGateway? projectResourceNeeds,
   FakeMembershipCommitmentGateway? commitments,
+  FakeActualContributionGateway? actualContributions,
   FakeJoinAcceptanceTriageGateway? triage,
 }) async {
   final auth = FakeAuthGateway(
@@ -603,6 +671,9 @@ Future<ProviderContainer> _pump(
         membershipCommitmentGatewayProvider.overrideWithValue(
           commitments ?? FakeMembershipCommitmentGateway(),
         ),
+        actualContributionGatewayProvider.overrideWithValue(
+          actualContributions ?? FakeActualContributionGateway(),
+        ),
         projectResourceNeedsGatewayProvider.overrideWithValue(
           projectResourceNeeds ?? FakeProjectResourceNeedsGateway(),
         ),
@@ -615,10 +686,11 @@ Future<ProviderContainer> _pump(
 }
 
 Future<void> _scrollTo(WidgetTester tester, Finder target) async {
-  await tester.scrollUntilVisible(
-    target,
-    350,
-    scrollable: find.byType(Scrollable).hitTestable().first,
-  );
+  final scrollable = find.byType(Scrollable).hitTestable().first;
+  for (var attempt = 0; attempt < 8 && target.evaluate().isEmpty; attempt++) {
+    await tester.drag(scrollable, const Offset(0, -350));
+    await tester.pump();
+  }
+  await tester.ensureVisible(target);
   await tester.pumpAndSettle();
 }

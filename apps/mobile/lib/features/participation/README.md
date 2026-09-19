@@ -13,6 +13,8 @@ their existing features; participation uses only a project ID plus the narrow
   derivation.
 - `domain/membership_commitment_models.dart` defines the strict skill/resource
   commitment, addable-option, and merged editor-item shapes.
+- `domain/actual_contribution_models.dart` defines strict skill/resource/effort
+  attribution, source, option, and editor-item shapes without a fake effort ID.
 - `domain/join_acceptance_triage_models.dart` defines composite-keyed offered
   skill/resource items and the explicit needed/already-found/extra decisions.
 - `data/participation_gateway.dart` is the 05A Supabase boundary. It calls the
@@ -21,6 +23,8 @@ their existing features; participation uses only a project ID plus the narrow
 - `data/membership_commitment_gateway.dart` is the focused RPC-only 04C3C1
   commitment boundary. It owns current/final reads, addable-option reads, and
   six-argument compare-and-swap replacement parameters.
+- `data/actual_contribution_gateway.dart` is the RPC-only 05C1 mobile boundary
+  for factual reads, creator options, and exact eight-argument CAS replacement.
 - `data/join_acceptance_triage_gateway.dart` is the RPC-only 04C3D2 boundary
   for action-local selection reads and the explicit eight-argument acceptance
   overload; it deterministically sorts all six disposition arrays.
@@ -33,6 +37,9 @@ their existing features; participation uses only a project ID plus the narrow
 - `application/membership_commitment_controller.dart` owns membership-keyed,
   identity-bound commitment reads, editor snapshots, independent option
   failure/retry, 50/50 limits, and compare-and-swap conflict recovery.
+- `application/actual_contribution_controller.dart` owns membership-keyed,
+  identity-bound actual-contribution reads, separate expected/desired sets,
+  effort state, independent options failure, limits, and canonical reloads.
 - `application/join_acceptance_triage_controller.dart` owns request-keyed,
   identity-bound triage loading, mandatory classification, exact partition
   construction, race-safe mutation state, and account-switch clearing.
@@ -52,6 +59,9 @@ their existing features; participation uses only a project ID plus the narrow
 - `presentation/membership_commitment_sheet.dart` is the shared participant and
   creator commitment editor/read-only sheet, including retained stale options
   and accessible live recovery messages.
+- `presentation/actual_contribution_sheet.dart` is the shared participant
+  read-only and creator-editable factual attribution sheet with a dedicated
+  effort control and accessible lifecycle/race recovery messages.
 
 ## Canonical lifecycle and privacy
 
@@ -143,6 +153,22 @@ selected and can be removed or toggled back on before Save. SQLSTATE `40001`,
 merging the write. Request-attempt selections displayed in Messages remain
 immutable history and are not replaced by this membership state.
 
+Actual contributions are shown only for one-time Projects. A participant opens
+them from Project chat → Group info and receives one read-only action or a
+newest-first episode list when they rejoined; opening one episode performs only
+that membership read. A creator opens the same sheet from Manage participation
+on the exact current or historical member card. Member lists and episode lists
+never fan out attribution reads.
+
+The actual-contribution editor sends the loaded effective skill/resource/effort
+set as an immutable expected CAS snapshot and the visible draft as desired
+truth. Options are unioned by kind plus ID so equal UUID text across kinds does
+not collide. Skill and resource maximums remain independently 50; effort does
+not consume either allowance. SQLSTATE `40001` and `22023` reload both factual
+state and options, discard the stale draft, announce the recovery, and never
+resubmit automatically. `55000` becomes localized lifecycle-unavailable copy,
+while identity changes clear state and reject late responses.
+
 ## Routes
 
 Participation stays in the Browse branch:
@@ -208,3 +234,12 @@ Android and iOS devices:
   keyboard, and focus order behavior;
 - exercise both creator Accept entry points, a zero-offer request, Project-needs
   change rejection, and an account switch while the sheet is open.
+
+05C2 also defers these physical-device checks to Plan 12:
+
+- verify actual-contribution sheet sizing, long labels, 50-option scrolling,
+  text scaling, keyboard/focus order, and TalkBack/VoiceOver semantics;
+- exercise participant single- and multiple-episode paths plus creator current
+  and historical membership editing without per-row preload;
+- verify the pre-end informational state, CAS conflict/options recovery, and an
+  account switch while the sheet is open.

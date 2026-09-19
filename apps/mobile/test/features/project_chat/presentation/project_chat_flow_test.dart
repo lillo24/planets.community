@@ -7,6 +7,7 @@ import 'package:planets_mobile/core/config/app_config.dart';
 import 'package:planets_mobile/features/auth/data/auth_gateway.dart';
 import 'package:planets_mobile/features/auth/domain/auth_models.dart';
 import 'package:planets_mobile/features/messages/data/messages_gateway.dart';
+import 'package:planets_mobile/features/participation/data/actual_contribution_gateway.dart';
 import 'package:planets_mobile/features/participation/data/membership_commitment_gateway.dart';
 import 'package:planets_mobile/features/participation/data/participation_gateway.dart';
 import 'package:planets_mobile/features/participation/domain/membership_commitment_models.dart';
@@ -21,6 +22,7 @@ import 'package:planets_mobile/features/recurring_activities/data/recurring_acti
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../support/fake_auth.dart';
+import '../../../support/fake_actual_contribution.dart';
 import '../../../support/fake_messages.dart';
 import '../../../support/fake_membership_commitment.dart';
 import '../../../support/fake_participation.dart';
@@ -475,6 +477,115 @@ void main() {
     expect(commitments.lastSkillIds, {'skill-stale', 'skill-new'});
   });
 
+  testWidgets(
+    'one-time participant actual contributions load only after View and stay read-only',
+    (tester) async {
+      final chats = FakeProjectChatGateway()
+        ..summaries = [projectChatSummaryFixture()]
+        ..histories['chat-1'] = [];
+      final participation = FakeParticipationGateway()
+        ..ownMemberships = [ownMembershipFixture(id: 'membership-current')];
+      final actual = FakeActualContributionGateway()
+        ..contributions = [
+          actualContributionFixture(),
+          substantialEffortFixture(),
+        ];
+      final app = await _pump(
+        tester,
+        chats: chats,
+        participation: participation,
+        actualContributions: actual,
+      );
+      app.read(appRouterProvider).go('/messages/chats/chat-1/info');
+      await tester.pumpAndSettle();
+
+      expect(find.text('Actual contributions'), findsOneWidget);
+      expect(actual.calls, isEmpty);
+      await tester.scrollUntilVisible(
+        find.byKey(const Key('project-chat-actual-membership-current')),
+        300,
+      );
+      await tester.tap(
+        find.byKey(const Key('project-chat-actual-membership-current')),
+      );
+      await tester.pumpAndSettle();
+
+      expect(actual.calls, ['contributions:membership-current']);
+      expect(find.text('Carpentry'), findsOneWidget);
+      expect(find.text('Substantial Effort / Energy'), findsOneWidget);
+      expect(find.byKey(const Key('actual-contribution-save')), findsNothing);
+    },
+  );
+
+  testWidgets(
+    'rejoin episodes remain separate and opening one creates no fan-out',
+    (tester) async {
+      final chats = FakeProjectChatGateway()
+        ..summaries = [projectChatSummaryFixture()]
+        ..histories['chat-1'] = [];
+      final participation = FakeParticipationGateway()
+        ..ownMemberships = [
+          ownMembershipFixture(
+            id: 'membership-old',
+            status: MembershipStatus.left,
+            joinedAt: DateTime.utc(2026, 9, 1),
+          ),
+          ownMembershipFixture(
+            id: 'membership-current',
+            joinedAt: DateTime.utc(2026, 9, 12),
+          ),
+        ];
+      final actual = FakeActualContributionGateway()
+        ..contributions = [actualContributionFixture()];
+      final app = await _pump(
+        tester,
+        chats: chats,
+        participation: participation,
+        actualContributions: actual,
+      );
+      app.read(appRouterProvider).go('/messages/chats/chat-1/info');
+      await tester.pumpAndSettle();
+
+      expect(find.text('Participation 2'), findsOneWidget);
+      expect(find.text('Participation 1'), findsOneWidget);
+      expect(find.textContaining('Left'), findsOneWidget);
+      expect(
+        tester
+            .getTopLeft(
+              find.byKey(
+                const Key('actual-contribution-episode-membership-current'),
+              ),
+            )
+            .dy,
+        lessThan(
+          tester
+              .getTopLeft(
+                find.byKey(
+                  const Key('actual-contribution-episode-membership-old'),
+                ),
+              )
+              .dy,
+        ),
+      );
+      expect(actual.calls, isEmpty);
+      await tester.scrollUntilVisible(
+        find.byKey(const Key('project-chat-actual-membership-old')),
+        300,
+      );
+      await tester.ensureVisible(
+        find.byKey(const Key('project-chat-actual-membership-old')),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(
+        find.byKey(const Key('project-chat-actual-membership-old')),
+      );
+      await tester.pumpAndSettle();
+
+      expect(actual.calls, ['contributions:membership-old']);
+      expect(actual.calls, isNot(contains('contributions:membership-current')));
+    },
+  );
+
   testWidgets('former member info uses latest episode read-only', (
     tester,
   ) async {
@@ -683,12 +794,21 @@ void main() {
         ),
       ]
       ..histories['chat-1'] = [];
-    final app = await _pump(tester, chats: chats);
+    final participation = FakeParticipationGateway()
+      ..ownMemberships = [
+        ownMembershipFixture(
+          id: 'tavolo-membership',
+          projectId: 'tavolo-1',
+          projectKind: ProjectKind.recurring,
+        ),
+      ];
+    final app = await _pump(tester, chats: chats, participation: participation);
     final router = app.read(appRouterProvider);
     router.go('/messages/chats/chat-1/info');
     await tester.pumpAndSettle();
 
     expect(find.text('Tavolo'), findsOneWidget);
+    expect(find.text('Actual contributions'), findsNothing);
     expect(
       find.byKey(const Key('project-chat-manage-participation')),
       findsNothing,
@@ -759,6 +879,7 @@ Future<ProviderContainer> _pump(
   FakeProjectNeedsGateway? needs,
   FakeParticipationGateway? participation,
   FakeMembershipCommitmentGateway? commitments,
+  FakeActualContributionGateway? actualContributions,
   FakeAuthGateway? authGateway,
 }) async {
   final auth =
@@ -793,6 +914,9 @@ Future<ProviderContainer> _pump(
         ),
         membershipCommitmentGatewayProvider.overrideWithValue(
           commitments ?? FakeMembershipCommitmentGateway(),
+        ),
+        actualContributionGatewayProvider.overrideWithValue(
+          actualContributions ?? FakeActualContributionGateway(),
         ),
         proposalGatewayProvider.overrideWithValue(
           FakeProposalGateway()..publicDetail = proposalDetailFixture(),
