@@ -2,6 +2,27 @@ begin;
 
 select no_plan();
 
+-- These transaction-only grants and policies let the test inspect canonical
+-- rows after RPC mutations. The final rollback restores production access.
+grant select on table
+  public.resource_listing_requests,
+  public.resource_exchange_agreements,
+  public.resource_exchange_agreement_terms,
+  public.resource_exchange_agreement_events
+to authenticated;
+create policy resource_listing_requests_test_inspection
+on public.resource_listing_requests for select to authenticated
+using (true);
+create policy resource_exchange_agreements_test_inspection
+on public.resource_exchange_agreements for select to authenticated
+using (true);
+create policy resource_exchange_agreement_terms_test_inspection
+on public.resource_exchange_agreement_terms for select to authenticated
+using (true);
+create policy resource_exchange_agreement_events_test_inspection
+on public.resource_exchange_agreement_events for select to authenticated
+using (true);
+
 insert into auth.users (id, email)
 values
   ('f5100000-0000-4000-8000-000000000001', 'agreement-owner@planets.invalid'),
@@ -225,6 +246,17 @@ select is(
   1::bigint,
   'acceptance records one structured agreement-created event'
 );
+select is(
+  (
+    select count(*)
+    from public.list_resource_exchange_agreement_terms(
+      'f5100000-0000-4000-8000-000000000001',
+      current_setting('test.main_agreement')::uuid
+    )
+  ),
+  0::bigint,
+  'an agreement without proposals returns an empty terms list'
+);
 
 select set_config(
   'test.terms_one',
@@ -243,6 +275,27 @@ select set_config(
     'Private proposal note'
   )::text,
   true
+);
+select results_eq(
+  $$
+    select
+      terms_id,
+      is_current,
+      is_pending,
+      jsonb_typeof(to_jsonb(projected) -> 'is_current'),
+      jsonb_typeof(to_jsonb(projected) -> 'is_pending')
+    from public.list_resource_exchange_agreement_terms(
+      'f5100000-0000-4000-8000-000000000001',
+      current_setting('test.main_agreement')::uuid
+    ) as projected
+  $$,
+  format(
+    $expected$
+      values (%L::uuid, false, true, 'boolean'::text, 'boolean'::text)
+    $expected$,
+    current_setting('test.terms_one')
+  ),
+  'a first pending proposal projects non-null false/true JSON booleans'
 );
 select results_eq(
   $$
@@ -331,6 +384,28 @@ select results_eq(
   ),
   'counter-proposal preserves the old immutable version and records supersession'
 );
+select results_eq(
+  $$
+    select terms_id, is_current, is_pending,
+      jsonb_typeof(to_jsonb(projected) -> 'is_current'),
+      jsonb_typeof(to_jsonb(projected) -> 'is_pending')
+    from public.list_resource_exchange_agreement_terms(
+      'f5100000-0000-4000-8000-000000000002',
+      current_setting('test.main_agreement')::uuid
+    ) as projected
+    order by version_number desc
+  $$,
+  format(
+    $expected$
+      values
+        (%L::uuid, false, true, 'boolean'::text, 'boolean'::text),
+        (%L::uuid, false, false, 'boolean'::text, 'boolean'::text)
+    $expected$,
+    current_setting('test.terms_two'),
+    current_setting('test.terms_one')
+  ),
+  'a pending counter-proposal leaves its superseded version false/false'
+);
 
 select set_config(
   'request.jwt.claim.sub',
@@ -357,6 +432,83 @@ select results_eq(
     current_setting('test.terms_two')
   ),
   'accepted immutable terms become current and clear pending'
+);
+select results_eq(
+  $$
+    select terms_id, is_current, is_pending,
+      jsonb_typeof(to_jsonb(projected) -> 'is_current'),
+      jsonb_typeof(to_jsonb(projected) -> 'is_pending')
+    from public.list_resource_exchange_agreement_terms(
+      'f5100000-0000-4000-8000-000000000001',
+      current_setting('test.main_agreement')::uuid
+    ) as projected
+    order by version_number desc
+  $$,
+  format(
+    $expected$
+      values
+        (%L::uuid, true, false, 'boolean'::text, 'boolean'::text),
+        (%L::uuid, false, false, 'boolean'::text, 'boolean'::text)
+    $expected$,
+    current_setting('test.terms_two'),
+    current_setting('test.terms_one')
+  ),
+  'accepted current terms and historical terms project true/false and false/false'
+);
+reset role;
+select set_config(
+  'test.read_audit_count',
+  (select count(*)::text from private.audit_events),
+  true
+);
+select set_config(
+  'test.read_outbox_count',
+  (select count(*)::text from private.outbox_events),
+  true
+);
+select set_config(
+  'test.read_agreement_event_count',
+  (select count(*)::text from public.resource_exchange_agreement_events),
+  true
+);
+set local role authenticated;
+select set_config(
+  'request.jwt.claim.sub',
+  'f5100000-0000-4000-8000-000000000001',
+  true
+);
+select is(
+  (
+    select count(*)
+    from public.list_resource_exchange_agreement_terms(
+      'f5100000-0000-4000-8000-000000000001',
+      current_setting('test.main_agreement')::uuid
+    )
+  ),
+  2::bigint,
+  'the terms projection remains readable after acceptance'
+);
+reset role;
+select is(
+  (select count(*) from private.audit_events),
+  current_setting('test.read_audit_count')::bigint,
+  'reading projected flags creates no audit event'
+);
+select is(
+  (select count(*) from private.outbox_events),
+  current_setting('test.read_outbox_count')::bigint,
+  'reading projected flags creates no outbox event'
+);
+select is(
+  (select count(*) from public.resource_exchange_agreement_events),
+  current_setting('test.read_agreement_event_count')::bigint,
+  'reading projected flags creates no agreement-history event'
+);
+set local role authenticated;
+select set_config(
+  'request.jwt.claim.sub',
+  'f5100000-0000-4000-8000-000000000001',
+  true
 );
 select throws_ok(
   format(
@@ -429,6 +581,23 @@ select set_config(
 );
 select is(
   (
+    select bool_and(is_current is not null and is_pending is not null)
+      and bool_and(
+        jsonb_typeof(to_jsonb(projected) -> 'is_current') = 'boolean'
+        and jsonb_typeof(to_jsonb(projected) -> 'is_pending') = 'boolean'
+      )
+      and count(*) filter (where is_current) = 1
+      and count(*) filter (where is_pending) = 1
+    from public.list_resource_exchange_agreement_terms(
+      'f5100000-0000-4000-8000-000000000001',
+      current_setting('test.main_agreement')::uuid
+    ) as projected
+  ),
+  true,
+  'a current version plus pending replacement has one non-null true flag each'
+);
+select is(
+  (
     select private_note
     from public.resource_exchange_agreement_terms
     where id = current_setting('test.shape_give_none')::uuid
@@ -450,6 +619,20 @@ select is(
   ),
   current_setting('test.shape_give_none')::uuid,
   'the non-proposer may reject give to none terms'
+);
+select results_eq(
+  $$
+    select is_current, is_pending,
+      jsonb_typeof(to_jsonb(projected) -> 'is_current'),
+      jsonb_typeof(to_jsonb(projected) -> 'is_pending')
+    from public.list_resource_exchange_agreement_terms(
+      'f5100000-0000-4000-8000-000000000002',
+      current_setting('test.main_agreement')::uuid
+    ) as projected
+    where terms_id = current_setting('test.shape_give_none')::uuid
+  $$,
+  $$values (false, false, 'boolean'::text, 'boolean'::text)$$,
+  'a rejected replacement becomes a historical false/false row'
 );
 
 select set_config(
@@ -479,6 +662,30 @@ select is(
   ),
   current_setting('test.shape_lend_none')::uuid,
   'the proposer may withdraw lend to none terms'
+);
+select is(
+  (
+    select bool_and(is_current is not null and is_pending is not null)
+      and bool_and(
+        jsonb_typeof(to_jsonb(projected) -> 'is_current') = 'boolean'
+        and jsonb_typeof(to_jsonb(projected) -> 'is_pending') = 'boolean'
+      )
+      and count(*) filter (where is_current) = 1
+      and count(*) filter (where is_pending) = 0
+      and bool_and(
+        case
+          when terms_id = current_setting('test.terms_two')::uuid
+            then is_current and not is_pending
+          else not is_current and not is_pending
+        end
+      )
+    from public.list_resource_exchange_agreement_terms(
+      'f5100000-0000-4000-8000-000000000001',
+      current_setting('test.main_agreement')::uuid
+    ) as projected
+  ),
+  true,
+  'a withdrawn replacement is historical while accepted current terms remain true/false'
 );
 
 select set_config(
@@ -650,6 +857,35 @@ select set_config(
   true
 );
 select is(
+  (
+    select agreement.lifecycle_state = 'in_progress'
+      and bool_and(projected.is_current is not null)
+      and bool_and(projected.is_pending is not null)
+      and bool_and(
+        jsonb_typeof(to_jsonb(projected) -> 'is_current') = 'boolean'
+        and jsonb_typeof(to_jsonb(projected) -> 'is_pending') = 'boolean'
+      )
+      and count(*) filter (where projected.is_current) = 1
+      and count(*) filter (where projected.is_pending) = 0
+      and bool_and(
+        case
+          when projected.terms_id = current_setting('test.terms_two')::uuid
+            then projected.is_current and not projected.is_pending
+          else not projected.is_current and not projected.is_pending
+        end
+      )
+    from public.resource_exchange_agreements as agreement
+    cross join lateral public.list_resource_exchange_agreement_terms(
+      'f5100000-0000-4000-8000-000000000001',
+      agreement.id
+    ) as projected
+    where agreement.id = current_setting('test.main_agreement')::uuid
+    group by agreement.lifecycle_state
+  ),
+  true,
+  'in-progress projection keeps one current true/false row and historical false/false rows'
+);
+select is(
   public.record_resource_exchange_milestone(
     'f5100000-0000-4000-8000-000000000001',
     current_setting('test.main_agreement')::uuid,
@@ -750,6 +986,30 @@ select results_eq(
   $$,
   $$values ('completed'::text, true)$$,
   'all required give plus lend confirmations auto-complete the agreement'
+);
+select is(
+  (
+    select bool_and(is_current is not null and is_pending is not null)
+      and bool_and(
+        jsonb_typeof(to_jsonb(projected) -> 'is_current') = 'boolean'
+        and jsonb_typeof(to_jsonb(projected) -> 'is_pending') = 'boolean'
+      )
+      and count(*) filter (where is_current) = 1
+      and count(*) filter (where is_pending) = 0
+      and bool_and(
+        case
+          when terms_id = current_setting('test.terms_two')::uuid
+            then is_current and not is_pending
+          else not is_current and not is_pending
+        end
+      )
+    from public.list_resource_exchange_agreement_terms(
+      'f5100000-0000-4000-8000-000000000002',
+      current_setting('test.main_agreement')::uuid
+    ) as projected
+  ),
+  true,
+  'completed projection retains current true/false and historical false/false rows'
 );
 select results_eq(
   $$
@@ -856,11 +1116,45 @@ select set_config(
   ),
   true
 );
+select set_config(
+  'test.cancel_withdrawn_terms',
+  public.propose_resource_exchange_terms(
+    'f5100000-0000-4000-8000-000000000001',
+    current_setting('test.cancel_negotiating_agreement')::uuid,
+    null,
+    null,
+    'give', null, null,
+    'none', null, null, null, null
+  )::text,
+  true
+);
+select public.withdraw_resource_exchange_terms(
+  'f5100000-0000-4000-8000-000000000001',
+  current_setting('test.cancel_negotiating_agreement')::uuid,
+  current_setting('test.cancel_withdrawn_terms')::uuid
+);
+select set_config(
+  'test.cancel_rejected_terms',
+  public.propose_resource_exchange_terms(
+    'f5100000-0000-4000-8000-000000000001',
+    current_setting('test.cancel_negotiating_agreement')::uuid,
+    null,
+    null,
+    'give', null, null,
+    'none', null, null, null, null
+  )::text,
+  true
+);
 
 select set_config(
   'request.jwt.claim.sub',
   'f5100000-0000-4000-8000-000000000002',
   true
+);
+select public.reject_resource_exchange_terms(
+  'f5100000-0000-4000-8000-000000000002',
+  current_setting('test.cancel_negotiating_agreement')::uuid,
+  current_setting('test.cancel_rejected_terms')::uuid
 );
 select is(
   public.cancel_resource_exchange_agreement(
@@ -882,6 +1176,25 @@ select results_eq(
   $$,
   $$values ('cancelled'::text, 'accepted'::text, true)$$,
   'cancellation closes coordination but retains accepted request history'
+);
+select is(
+  (
+    select bool_and(
+      is_current is not null
+      and is_pending is not null
+      and not is_current
+      and not is_pending
+      and jsonb_typeof(to_jsonb(projected) -> 'is_current') = 'boolean'
+      and jsonb_typeof(to_jsonb(projected) -> 'is_pending') = 'boolean'
+    )
+      and count(*) = 2
+    from public.list_resource_exchange_agreement_terms(
+      'f5100000-0000-4000-8000-000000000002',
+      current_setting('test.cancel_negotiating_agreement')::uuid
+    ) as projected
+  ),
+  true,
+  'cancelled pending-only agreement retains rejected and withdrawn false/false history'
 );
 select set_config(
   'test.after_cancel_request',
@@ -959,6 +1272,24 @@ select is(
   ),
   1::bigint,
   'cancellation retains accepted immutable terms history'
+);
+select results_eq(
+  $$
+    select terms_id, is_current, is_pending,
+      jsonb_typeof(to_jsonb(projected) -> 'is_current'),
+      jsonb_typeof(to_jsonb(projected) -> 'is_pending')
+    from public.list_resource_exchange_agreement_terms(
+      'f5100000-0000-4000-8000-000000000001',
+      current_setting('test.cancel_agreed_agreement')::uuid
+    ) as projected
+  $$,
+  format(
+    $expected$
+      values (%L::uuid, true, false, 'boolean'::text, 'boolean'::text)
+    $expected$,
+    current_setting('test.cancel_agreed_terms')
+  ),
+  'cancelled agreement retains accepted current terms as true/false booleans'
 );
 
 select set_config(

@@ -59,6 +59,7 @@ async function verifyResourceExchangeAgreements() {
       "Request acceptance did not atomically create one negotiating agreement.",
     );
   }
+  await assertTermsProjection(requester, requestId, agreement.agreement_id, []);
 
   const privateNote = "Private agreement verifier note";
   const requesterDescription = "Bookshelf offered by the requester";
@@ -70,6 +71,9 @@ async function verifyResourceExchangeAgreements() {
     requesterDescription,
     privateNote,
   });
+  await assertTermsProjection(requester, requestId, agreement.agreement_id, [
+    [firstTermsId, false, true],
+  ]);
   const secondTermsId = await proposeTerms(requester, agreement.agreement_id, {
     currentTermsId: null,
     pendingTermsId: firstTermsId,
@@ -80,7 +84,15 @@ async function verifyResourceExchangeAgreements() {
     requesterEndsAt: futureIso(10),
     privateNote: null,
   });
+  await assertTermsProjection(owner, requestId, agreement.agreement_id, [
+    [secondTermsId, false, true],
+    [firstTermsId, false, false],
+  ]);
   await acceptTerms(owner, agreement.agreement_id, secondTermsId);
+  await assertTermsProjection(requester, requestId, agreement.agreement_id, [
+    [secondTermsId, true, false],
+    [firstTermsId, false, false],
+  ]);
 
   const terms = await listTerms(requester, agreement.agreement_id);
   if (
@@ -116,6 +128,10 @@ async function verifyResourceExchangeAgreements() {
     "owner_resource",
     "resource_provided",
   );
+  await assertTermsProjection(owner, requestId, agreement.agreement_id, [
+    [secondTermsId, true, false],
+    [firstTermsId, false, false],
+  ]);
   await milestone(
     requester,
     agreement.agreement_id,
@@ -169,10 +185,15 @@ async function verifyResourceExchangeAgreements() {
   ) {
     throw new Error("Required milestones did not complete the agreement.");
   }
+  await assertTermsProjection(requester, requestId, agreement.agreement_id, [
+    [secondTermsId, true, false],
+    [firstTermsId, false, false],
+  ]);
   await assertPublicCount(listingId, 0);
   await requestListing(requester, listingId);
 
   await verifyOverdueAndCancellation(owner, requesterB);
+  await verifyRejectedAndWithdrawnTerms(owner, requesterB);
   await verifyListingClosureAfterHandoff(owner, requesterB);
   await verifyCompetingProposals(owner, requester);
   await verifyAcceptVersusCounterProposal(owner, requester);
@@ -181,7 +202,7 @@ async function verifyResourceExchangeAgreements() {
   await assertIdentifierOnlyEvents([privateNote, requesterDescription]);
 
   console.log(
-    "Confirmed real-OTP resource exchange agreements: atomic anchors, immutable counter-proposals, private reads, structured two-leg milestones, automatic completion, repeat requests, overdue derivation, cancellation, listing-close survival, identifier-only events, and deterministic proposal/accept/cancel/final-milestone serialization.",
+    "Confirmed real-OTP resource exchange agreements: non-null boolean terms projections across empty, pending, accepted, historical, in-progress, completed, rejected, withdrawn, and cancelled states; atomic anchors; immutable counter-proposals; private reads; structured two-leg milestones; automatic completion; repeat requests; overdue derivation; cancellation; listing-close survival; identifier-only events; and deterministic proposal/accept/cancel/final-milestone serialization.",
   );
 }
 
@@ -204,6 +225,9 @@ async function verifyOverdueAndCancellation(owner, requester) {
     privateNote: null,
   });
   await acceptTerms(requester, agreement.agreement_id, termsId);
+  await assertTermsProjection(owner, requestId, agreement.agreement_id, [
+    [termsId, true, false],
+  ]);
   const overdue = await getAgreement(requester, requestId);
   if (
     overdue.owner_lend_return_overdue !== true ||
@@ -221,7 +245,50 @@ async function verifyOverdueAndCancellation(owner, requester) {
       "Pre-handoff cancellation did not close coordination and overdue truth.",
     );
   }
+  await assertTermsProjection(requester, requestId, agreement.agreement_id, [
+    [termsId, true, false],
+  ]);
   await requestListing(requester, listingId);
+}
+
+async function verifyRejectedAndWithdrawnTerms(owner, requester) {
+  const { requestId, agreementId } = await createAcceptedAgreement(
+    owner,
+    requester,
+    "Historical terms verifier item",
+  );
+  const withdrawnTermsId = await proposeTerms(owner, agreementId, {
+    currentTermsId: null,
+    pendingTermsId: null,
+    ownerKind: "give",
+    requesterKind: "none",
+    requesterDescription: null,
+    privateNote: null,
+  });
+  await withdrawTerms(owner, agreementId, withdrawnTermsId);
+  await assertTermsProjection(requester, requestId, agreementId, [
+    [withdrawnTermsId, false, false],
+  ]);
+
+  const rejectedTermsId = await proposeTerms(owner, agreementId, {
+    currentTermsId: null,
+    pendingTermsId: null,
+    ownerKind: "give",
+    requesterKind: "none",
+    requesterDescription: null,
+    privateNote: null,
+  });
+  await rejectTerms(requester, agreementId, rejectedTermsId);
+  await assertTermsProjection(owner, requestId, agreementId, [
+    [rejectedTermsId, false, false],
+    [withdrawnTermsId, false, false],
+  ]);
+
+  await cancelAgreement(requester, agreementId);
+  await assertTermsProjection(requester, requestId, agreementId, [
+    [rejectedTermsId, false, false],
+    [withdrawnTermsId, false, false],
+  ]);
 }
 
 async function verifyListingClosureAfterHandoff(owner, requester) {
@@ -582,6 +649,47 @@ async function listTerms(actor, agreementId) {
   return data;
 }
 
+async function assertTermsProjection(
+  actor,
+  requestId,
+  agreementId,
+  expectedRows,
+) {
+  const [agreement, terms] = await Promise.all([
+    getAgreement(actor, requestId),
+    listTerms(actor, agreementId),
+  ]);
+  if (terms.length !== expectedRows.length) {
+    throw new Error("Agreement terms projection returned an unexpected count.");
+  }
+
+  for (const row of terms) {
+    if (
+      typeof row.is_current !== "boolean" ||
+      typeof row.is_pending !== "boolean"
+    ) {
+      throw new Error(
+        "Agreement terms projection returned a non-boolean flag.",
+      );
+    }
+    if (
+      row.is_current !== (row.terms_id === agreement.current_terms_id) ||
+      row.is_pending !== (row.terms_id === agreement.pending_terms_id)
+    ) {
+      throw new Error(
+        "Agreement terms flags disagreed with canonical pointers.",
+      );
+    }
+  }
+
+  for (const [termsId, isCurrent, isPending] of expectedRows) {
+    const row = terms.find((candidate) => candidate.terms_id === termsId);
+    if (!row || row.is_current !== isCurrent || row.is_pending !== isPending) {
+      throw new Error("Agreement terms projection returned unexpected flags.");
+    }
+  }
+}
+
 async function listEvents(actor, agreementId) {
   const { data, error } = await actor.client.rpc(
     "list_resource_exchange_agreement_events",
@@ -631,6 +739,38 @@ async function acceptTerms(actor, agreementId, termsId) {
   );
   if (value !== termsId) {
     throw new Error("Terms acceptance returned the wrong identifier.");
+  }
+}
+
+async function rejectTerms(actor, agreementId, termsId) {
+  const value = await rpcValue(
+    actor,
+    "reject_resource_exchange_terms",
+    {
+      p_expected_profile_id: actor.id,
+      p_agreement_id: agreementId,
+      p_expected_pending_terms_id: termsId,
+    },
+    "reject resource exchange terms",
+  );
+  if (value !== termsId) {
+    throw new Error("Terms rejection returned the wrong identifier.");
+  }
+}
+
+async function withdrawTerms(actor, agreementId, termsId) {
+  const value = await rpcValue(
+    actor,
+    "withdraw_resource_exchange_terms",
+    {
+      p_expected_profile_id: actor.id,
+      p_agreement_id: agreementId,
+      p_expected_pending_terms_id: termsId,
+    },
+    "withdraw resource exchange terms",
+  );
+  if (value !== termsId) {
+    throw new Error("Terms withdrawal returned the wrong identifier.");
   }
 }
 

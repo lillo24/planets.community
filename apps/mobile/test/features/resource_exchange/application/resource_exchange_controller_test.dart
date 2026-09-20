@@ -161,6 +161,48 @@ void main() {
     );
   });
 
+  test(
+    'first proposal and later acceptance survive canonical reloads',
+    () async {
+      final gateway = FakeResourceExchangeGateway();
+      final proposerSession = _readyContainer(gateway);
+      addTearDown(proposerSession.dispose);
+      await _load(proposerSession.container);
+      final proposer = proposerSession.container.read(
+        resourceExchangeProvider.notifier,
+      );
+      proposer.startDraft();
+      proposer.setOwnerTransferKind(ResourceOwnerTransferKind.give);
+      proposer.setRequesterTransferKind(ResourceRequesterTransferKind.none);
+
+      expect(await proposer.submitDraft(), isTrue);
+      final pending = proposerSession.container
+          .read(resourceExchangeProvider)
+          .snapshot
+          ?.pendingTerms;
+      expect(pending, isNotNull);
+      expect((pending?.isCurrent, pending?.isPending), (false, true));
+
+      final counterpartySession = _readyContainer(gateway, profileId: 'user-2');
+      addTearDown(counterpartySession.dispose);
+      await _load(counterpartySession.container, profileId: 'user-2');
+      final counterparty = counterpartySession.container.read(
+        resourceExchangeProvider.notifier,
+      );
+
+      expect(await counterparty.acceptPendingTerms(), isTrue);
+      final accepted = counterpartySession.container
+          .read(resourceExchangeProvider)
+          .snapshot;
+      expect(accepted?.pendingTerms, isNull);
+      expect(accepted?.currentTerms?.termsId, pending?.termsId);
+      expect(
+        (accepted?.currentTerms?.isCurrent, accepted?.currentTerms?.isPending),
+        (true, false),
+      );
+    },
+  );
+
   test('proposer can edit or withdraw but cannot accept or reject', () async {
     final pending = resourceExchangeTermsFixture(
       proposedByProfileId: 'user-1',
@@ -413,10 +455,13 @@ void main() {
 
 const _pendingId = '00000000-0000-4000-8000-000000000702';
 
-Future<bool> _load(ProviderContainer container) => container
+Future<bool> _load(
+  ProviderContainer container, {
+  String profileId = 'user-1',
+}) => container
     .read(resourceExchangeProvider.notifier)
     .load(
-      expectedProfileId: 'user-1',
+      expectedProfileId: profileId,
       chatId: '00000000-0000-4000-8000-000000000401',
       requestId: gatewayRequestId,
       agreementId: gatewayAgreementId,
@@ -437,9 +482,12 @@ class _Session {
   }
 }
 
-_Session _readyContainer(FakeResourceExchangeGateway gateway) {
+_Session _readyContainer(
+  FakeResourceExchangeGateway gateway, {
+  String profileId = 'user-1',
+}) {
   final auth = FakeAuthGateway(
-    snapshot: const AuthSnapshot(identity: AuthIdentity(id: 'user-1')),
+    snapshot: AuthSnapshot(identity: AuthIdentity(id: profileId)),
   );
   final container = ProviderContainer(
     overrides: [
@@ -452,6 +500,6 @@ _Session _readyContainer(FakeResourceExchangeGateway gateway) {
   );
   container
       .read(authSessionProvider.notifier)
-      .markProfileReady(const AuthIdentity(id: 'user-1'));
+      .markProfileReady(AuthIdentity(id: profileId));
   return _Session(container, auth);
 }

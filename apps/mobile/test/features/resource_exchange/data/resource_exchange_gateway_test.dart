@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
@@ -106,6 +107,58 @@ void main() {
       ),
       throwsFormatException,
     );
+    for (final malformed in <Map<String, dynamic>>[
+      _termsRow()..['is_current'] = null,
+      _termsRow()..['is_pending'] = null,
+      _termsRow()..remove('is_current'),
+      _termsRow()..remove('is_pending'),
+      _termsRow()..['is_current'] = 'false',
+      _termsRow()..['is_pending'] = 0,
+    ]) {
+      expect(() => parser.terms(malformed), throwsFormatException);
+    }
+  });
+
+  test('parses corrected pending, current, and historical boolean shapes', () {
+    final pending = parser.terms(
+      _termsRow()
+        ..['is_current'] = false
+        ..['is_pending'] = true,
+    );
+    final current = parser.terms(
+      _termsRow()
+        ..['is_current'] = true
+        ..['is_pending'] = false,
+    );
+    final historical = parser.terms(
+      _termsRow()
+        ..['is_current'] = false
+        ..['is_pending'] = false,
+    );
+
+    expect((pending.isCurrent, pending.isPending), (false, true));
+    expect((current.isCurrent, current.isPending), (true, false));
+    expect((historical.isCurrent, historical.isPending), (false, false));
+  });
+
+  test('sanitized real-OTP RPC projection parses and reconciles', () {
+    final fixture = jsonDecode(
+      File('test/fixtures/resource_exchange_terms_projection.json')
+          .readAsStringSync(),
+    ) as Map<String, dynamic>;
+    final agreement = parser.agreement(fixture['agreement']);
+    final terms = (fixture['terms'] as List<dynamic>).map(parser.terms);
+    final snapshot = ResourceExchangeSnapshot.reconcile(
+      agreement: agreement,
+      terms: terms,
+    );
+
+    expect(snapshot.currentTerms?.termsId, agreement.currentTermsId);
+    expect(snapshot.pendingTerms, isNull);
+    expect(snapshot.terms.map((item) => (item.isCurrent, item.isPending)), [
+      (true, false),
+      (false, false),
+    ]);
   });
 
   test('mutation UUID result is strict', () {

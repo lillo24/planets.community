@@ -371,6 +371,33 @@ select ok(
   ) is not null,
   'counterparty terms-history read exists'
 );
+select is(
+  (
+    select provolatile = 's'
+      and prosecdef
+      and proretset
+      and array_to_string(proconfig, ',') = 'search_path=""'
+    from pg_proc
+    where oid =
+      'public.list_resource_exchange_agreement_terms(uuid,uuid)'::regprocedure
+  ),
+  true,
+  'terms-history projection remains stable, set-returning, and hardened'
+);
+select is(
+  (
+    select regexp_count(lower(pg_get_functiondef(oid)), 'coalesce[(]') = 2
+      and lower(pg_get_functiondef(oid)) like
+        '%coalesce(terms.id = agreement.current_terms_id, false)%'
+      and lower(pg_get_functiondef(oid)) like
+        '%coalesce(terms.id = agreement.pending_terms_id, false)%'
+    from pg_proc
+    where oid =
+      'public.list_resource_exchange_agreement_terms(uuid,uuid)'::regprocedure
+  ),
+  true,
+  'terms-history current and pending flags are explicitly non-null booleans'
+);
 select ok(
   to_regprocedure(
     'public.list_resource_exchange_agreement_events(uuid,uuid)'

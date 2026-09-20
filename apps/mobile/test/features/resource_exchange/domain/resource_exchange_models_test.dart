@@ -54,6 +54,14 @@ void main() {
         ),
         throwsFormatException,
       );
+      expect(
+        () => ResourceExchangeSnapshot.reconcile(
+          agreement: resourceExchangeAgreementFixture(),
+          terms: [resourceExchangeTermsFixture(isCurrent: true)],
+        ),
+        throwsFormatException,
+        reason: 'a true flag cannot invent a pointer absent from the agreement',
+      );
       final pending = resourceExchangeTermsFixture(isPending: true);
       expect(
         () => ResourceExchangeSnapshot.reconcile(

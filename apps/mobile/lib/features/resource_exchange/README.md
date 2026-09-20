@@ -28,6 +28,12 @@ accepted version is the current terms; a replacement can remain pending beside
 it. Handoff freezes negotiation, so `in_progress`, `completed`, and `cancelled`
 agreements are read-only here.
 
+The terms-history RPC always projects `is_current` and `is_pending` as non-null
+JSON booleans. The canonical agreement's `current_terms_id` and
+`pending_terms_id` UUID pointers remain nullable; the flags are `false` when a
+nullable pointer does not identify that terms row. The mobile parser keeps this
+contract strict and rejects null, missing, or non-boolean flags.
+
 04C4C3C1 deliberately renders only the canonical current and pending versions.
 It does not label older terms as accepted/rejected/withdrawn without the event
 timeline. Physical handoff, receipt, return, full history, and overdue
