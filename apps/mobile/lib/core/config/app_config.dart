@@ -22,7 +22,7 @@ enum AppEnvironment {
 }
 
 final class AppConfig {
-  AppConfig({
+  AppConfig._({
     required this.environment,
     required this.supabaseUrl,
     required this.supabasePublishableKey,
@@ -78,7 +78,7 @@ final class AppConfig {
       enableDemoTools,
     );
 
-    return AppConfig(
+    return AppConfig._(
       environment: environment,
       supabaseUrl: parsedSupabaseUrl,
       supabasePublishableKey: publishableKey,
