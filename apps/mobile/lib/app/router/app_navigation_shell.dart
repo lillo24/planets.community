@@ -19,7 +19,11 @@ class AppNavigationShell extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
-    return Scaffold(
+    final path = GoRouterState.of(context).uri.path;
+    final isBrowseRoot =
+        navigationShell.currentIndex == AppBranch.browse.index &&
+        (path == '/proposals' || path == '/tavoli');
+    final scaffold = Scaffold(
       body: navigationShell,
       bottomNavigationBar: NavigationBar(
         selectedIndex: navigationShell.currentIndex,
@@ -64,6 +68,15 @@ class AppNavigationShell extends ConsumerWidget {
           ),
         ],
       ),
+    );
+    return PopScope(
+      canPop: !isBrowseRoot,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop && isBrowseRoot) {
+          navigationShell.goBranch(AppBranch.home.index);
+        }
+      },
+      child: scaffold,
     );
   }
 }

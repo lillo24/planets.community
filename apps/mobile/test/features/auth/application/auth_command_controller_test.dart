@@ -75,6 +75,60 @@ void main() {
     expect(auth.requestCount, 1);
   });
 
+  test('times out an OTP request without installing pending state', () async {
+    final completer = Completer<void>();
+    final auth = FakeAuthGateway()..requestDelay = completer.future;
+    final profile = FakeProfileAnchorGateway();
+    final container = _container(
+      auth,
+      profile,
+      requestTimeout: const Duration(milliseconds: 1),
+    );
+    addTearDown(container.dispose);
+    addTearDown(auth.close);
+
+    final sent = await container
+        .read(authCommandProvider.notifier)
+        .requestCode(email: 'person@example.com');
+
+    expect(sent, isFalse);
+    expect(container.read(authCommandProvider).isBusy, isFalse);
+    expect(
+      container.read(authCommandProvider).failure,
+      AuthFailureKind.requestTimedOut,
+    );
+    expect(container.read(pendingEmailOtpProvider), isNull);
+    completer.complete();
+    await Future<void>.delayed(Duration.zero);
+    expect(container.read(pendingEmailOtpProvider), isNull);
+  });
+
+  test(
+    'an abandoned OTP completion cannot overwrite a newer request',
+    () async {
+      final firstCompletion = Completer<void>();
+      final auth = FakeAuthGateway()..requestDelay = firstCompletion.future;
+      final profile = FakeProfileAnchorGateway();
+      final container = _container(auth, profile);
+      addTearDown(container.dispose);
+      addTearDown(auth.close);
+      final controller = container.read(authCommandProvider.notifier);
+
+      final first = controller.requestCode(email: 'first@example.com');
+      await Future<void>.delayed(Duration.zero);
+      controller.cancelFlow();
+      auth.requestDelay = null;
+      expect(await controller.requestCode(email: 'second@example.com'), isTrue);
+
+      firstCompletion.complete();
+      expect(await first, isFalse);
+      expect(
+        container.read(pendingEmailOtpProvider)?.email,
+        'second@example.com',
+      );
+    },
+  );
+
   test(
     'verifies the code and recognizes a new skeletal profile as incomplete',
     () async {
@@ -197,13 +251,16 @@ void main() {
 
 ProviderContainer _container(
   FakeAuthGateway auth,
-  FakeProfileAnchorGateway profile,
-) {
+  FakeProfileAnchorGateway profile, {
+  Duration? requestTimeout,
+}) {
   return ProviderContainer(
     overrides: [
       authGatewayProvider.overrideWithValue(auth),
       profileAnchorGatewayProvider.overrideWithValue(profile),
       authClockProvider.overrideWithValue(() => DateTime.utc(2026, 9, 2)),
+      if (requestTimeout != null)
+        authOtpRequestTimeoutProvider.overrideWithValue(requestTimeout),
     ],
   );
 }

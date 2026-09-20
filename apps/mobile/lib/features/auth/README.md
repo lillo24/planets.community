@@ -19,5 +19,10 @@ feature never persists a parallel signed-in flag, email address, or OTP value.
 The resend countdown is a user-interface convenience only. Supabase Auth owns
 the real abuse-prevention and verification limits.
 
+Email OTP requests have a PLANETS-owned 15-second application timeout. The
+resolved Supabase Auth API does not expose per-request cancellation, so leaving
+or timing out invalidates the local flow and ignores any later completion; it
+does not claim to stop an already-started provider request.
+
 Auth owns readiness, not profile editing. Skeletal anchors continue to the
 Profile feature, while missing anchors retain the focused creation retry.

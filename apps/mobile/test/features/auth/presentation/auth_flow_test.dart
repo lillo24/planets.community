@@ -4,7 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:planets_mobile/app/planets_app.dart';
+import 'package:planets_mobile/app/router/app_router.dart';
 import 'package:planets_mobile/core/config/app_config.dart';
+import 'package:planets_mobile/features/auth/application/auth_command_controller.dart';
 import 'package:planets_mobile/features/auth/data/auth_gateway.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -53,6 +55,20 @@ void main() {
 
     await tester.tap(find.byKey(const Key('auth-request-button')));
     await tester.pump();
+    final emailField = tester.widget<TextFormField>(
+      find.byKey(const Key('auth-email-field')),
+    );
+    expect(emailField.enabled, isFalse);
+    expect(emailField.controller?.text, 'person@example.com');
+    expect(find.text('Sending sign-in code…'), findsOneWidget);
+    expect(find.byKey(const Key('auth-request-progress')), findsOneWidget);
+    expect(find.byType(CircularProgressIndicator), findsOneWidget);
+    expect(
+      tester
+          .widget<FilledButton>(find.byKey(const Key('auth-request-button')))
+          .onPressed,
+      isNull,
+    );
     await tester.tap(find.byKey(const Key('auth-request-button')));
     expect(auth.requestCount, 1);
     completer.complete();
@@ -85,13 +101,172 @@ void main() {
     );
     expect(find.textContaining(rawDetail), findsNothing);
   });
+
+  testWidgets('voluntary Auth close and system Back both return Home', (
+    tester,
+  ) async {
+    final auth = FakeAuthGateway();
+    final profile = FakeProfileAnchorGateway();
+    addTearDown(auth.close);
+    final app = await _pumpApp(tester, auth, profile);
+    final router = app.read(appRouterProvider);
+
+    await tester.tap(find.text('Sign in'));
+    await tester.pumpAndSettle();
+    expect(router.routerDelegate.currentConfiguration.uri.path, '/auth');
+    await tester.tap(find.byKey(const Key('auth-close-button')));
+    await tester.pumpAndSettle();
+    expect(router.routeInformationProvider.value.uri.path, '/');
+    expect(find.text('Mobile foundation ready'), findsOneWidget);
+
+    await tester.tap(find.text('Sign in'));
+    await tester.pumpAndSettle();
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+    expect(router.routeInformationProvider.value.uri.path, '/');
+    expect(find.byKey(const Key('auth-email-field')), findsNothing);
+  });
+
+  testWidgets('protected Auth cancel escapes to public Home', (tester) async {
+    final auth = FakeAuthGateway();
+    final profile = FakeProfileAnchorGateway();
+    addTearDown(auth.close);
+    final app = await _pumpApp(tester, auth, profile);
+    final router = app.read(appRouterProvider);
+
+    router.go('/profile');
+    await tester.pumpAndSettle();
+    expect(router.routeInformationProvider.value.uri.path, '/auth');
+    expect(
+      router.routeInformationProvider.value.uri.queryParameters['returnTo'],
+      '/profile',
+    );
+
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+    expect(router.routeInformationProvider.value.uri.path, '/');
+    expect(find.text('Mobile foundation ready'), findsOneWidget);
+    expect(find.byKey(const Key('auth-email-field')), findsNothing);
+  });
+
+  testWidgets('verification Back preserves the protected return destination', (
+    tester,
+  ) async {
+    final auth = FakeAuthGateway();
+    final profile = FakeProfileAnchorGateway();
+    addTearDown(auth.close);
+    final app = await _pumpApp(tester, auth, profile);
+    final router = app.read(appRouterProvider);
+
+    router.go('/profile');
+    await tester.pumpAndSettle();
+    await tester.enterText(
+      find.byKey(const Key('auth-email-field')),
+      'person@example.com',
+    );
+    await tester.tap(find.byKey(const Key('auth-request-button')));
+    await tester.pumpAndSettle();
+    expect(router.routeInformationProvider.value.uri.path, '/auth/verify');
+    expect(app.read(pendingEmailOtpProvider)?.returnTo, '/profile');
+
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+    expect(router.routeInformationProvider.value.uri.path, '/auth');
+    expect(
+      router.routeInformationProvider.value.uri.queryParameters['returnTo'],
+      '/profile',
+    );
+    expect(app.read(pendingEmailOtpProvider), isNull);
+    expect(find.byKey(const Key('auth-email-field')), findsOneWidget);
+  });
+
+  testWidgets(
+    'OTP request timeout restores the form and ignores late success',
+    (tester) async {
+      final completer = Completer<void>();
+      final auth = FakeAuthGateway()..requestDelay = completer.future;
+      final profile = FakeProfileAnchorGateway();
+      addTearDown(auth.close);
+      final app = await _pumpApp(
+        tester,
+        auth,
+        profile,
+        requestTimeout: const Duration(milliseconds: 10),
+      );
+      final router = app.read(appRouterProvider);
+
+      await tester.tap(find.text('Sign in'));
+      await tester.pumpAndSettle();
+      await tester.enterText(
+        find.byKey(const Key('auth-email-field')),
+        'person@example.com',
+      );
+      await tester.tap(find.byKey(const Key('auth-request-button')));
+      await tester.pump(const Duration(milliseconds: 20));
+
+      expect(
+        find.text(
+          'The sign-in request took too long. Check your connection and try again.',
+        ),
+        findsOneWidget,
+      );
+      expect(
+        tester
+            .widget<TextFormField>(find.byKey(const Key('auth-email-field')))
+            .enabled,
+        isTrue,
+      );
+      expect(
+        tester
+            .widget<TextFormField>(find.byKey(const Key('auth-email-field')))
+            .controller
+            ?.text,
+        'person@example.com',
+      );
+      expect(app.read(pendingEmailOtpProvider), isNull);
+
+      completer.complete();
+      await tester.pumpAndSettle();
+      expect(router.routerDelegate.currentConfiguration.uri.path, '/auth');
+      expect(find.byKey(const Key('auth-code-field')), findsNothing);
+      expect(app.read(pendingEmailOtpProvider), isNull);
+    },
+  );
+
+  testWidgets('closing Auth abandons an in-flight OTP request', (tester) async {
+    final completer = Completer<void>();
+    final auth = FakeAuthGateway()..requestDelay = completer.future;
+    final profile = FakeProfileAnchorGateway();
+    addTearDown(auth.close);
+    final app = await _pumpApp(tester, auth, profile);
+    final router = app.read(appRouterProvider);
+
+    await tester.tap(find.text('Sign in'));
+    await tester.pumpAndSettle();
+    await tester.enterText(
+      find.byKey(const Key('auth-email-field')),
+      'person@example.com',
+    );
+    await tester.tap(find.byKey(const Key('auth-request-button')));
+    await tester.pump();
+    await tester.tap(find.byKey(const Key('auth-close-button')));
+    await tester.pumpAndSettle();
+    expect(router.routeInformationProvider.value.uri.path, '/');
+
+    completer.complete();
+    await tester.pumpAndSettle();
+    expect(router.routeInformationProvider.value.uri.path, '/');
+    expect(find.byKey(const Key('auth-code-field')), findsNothing);
+    expect(app.read(pendingEmailOtpProvider), isNull);
+  });
 }
 
-Future<void> _pumpApp(
+Future<ProviderContainer> _pumpApp(
   WidgetTester tester,
   FakeAuthGateway auth,
-  FakeProfileAnchorGateway profile,
-) async {
+  FakeProfileAnchorGateway profile, {
+  Duration? requestTimeout,
+}) async {
   await tester.pumpWidget(
     ProviderScope(
       overrides: [
@@ -104,9 +279,12 @@ Future<void> _pumpApp(
         ),
         authGatewayProvider.overrideWithValue(auth),
         profileAnchorGatewayProvider.overrideWithValue(profile),
+        if (requestTimeout != null)
+          authOtpRequestTimeoutProvider.overrideWithValue(requestTimeout),
       ],
       child: const PlanetsApp(),
     ),
   );
   await tester.pumpAndSettle();
+  return ProviderScope.containerOf(tester.element(find.byType(PlanetsApp)));
 }
