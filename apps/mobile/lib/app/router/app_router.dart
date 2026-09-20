@@ -33,6 +33,7 @@ import '../../features/recurring_activities/presentation/recurring_activity_edit
 import '../../features/resource_listings/presentation/own_resource_listings_screen.dart';
 import '../../features/resource_listings/presentation/public_resource_listings_screen.dart';
 import '../../features/resource_listings/presentation/resource_listing_editor_screen.dart';
+import '../../features/resource_chat/presentation/resource_chat_screen.dart';
 import '../../features/resource_requests/presentation/resource_request_screen.dart';
 import '../../l10n/generated/app_localizations.dart';
 import '../foundation_screen.dart';
@@ -348,6 +349,13 @@ RoutingConfig _routingConfig(
                           key: state.pageKey,
                           requestId: state.pathParameters['requestId']!,
                         ),
+                  ),
+                  GoRoute(
+                    path: 'chats/resource/:chatId',
+                    builder: (context, state) => ResourceChatScreen(
+                      key: state.pageKey,
+                      chatId: state.pathParameters['chatId']!,
+                    ),
                   ),
                   GoRoute(
                     path: 'chats/:chatId',

@@ -105,6 +105,9 @@ class ResourceRequestPayloadParser {
 
   ResourceRequest exact(Object? value) {
     final row = _row(value);
+    if (row.containsKey('resource_listing_id')) {
+      return _structuredExact(row);
+    }
     final history = own(row);
     return ResourceRequest(
       id: history.id,
@@ -116,11 +119,66 @@ class ResourceRequestPayloadParser {
       ownerDisplayName: history.ownerDisplayName,
       requesterProfileId: _uuid(row, 'requester_profile_id'),
       requesterDisplayName: _string(row, 'requester_display_name'),
+      chatId: null,
+      agreementId: null,
       status: history.status,
       requestMessage: history.requestMessage,
       createdAt: history.createdAt,
       resolvedAt: history.resolvedAt,
       coordinationClosedAt: history.coordinationClosedAt,
+    );
+  }
+
+  ResourceRequest _structuredExact(Map<String, dynamic> row) {
+    if (_string(row, 'item_kind') != 'resource_request' ||
+        row['project_id'] != null ||
+        row['project_kind'] != null ||
+        row['project_title'] != null ||
+        row['project_creator_profile_id'] != null ||
+        row['project_creator_display_name'] != null) {
+      throw const FormatException(
+        'Resource request detail discriminator was inconsistent.',
+      );
+    }
+    final status = ResourceRequestStatus.fromWire(_string(row, 'status'));
+    final createdAt = _date(row, 'created_at');
+    final resolvedAt = _optionalDate(row, 'resolved_at');
+    final coordinationClosedAt = _optionalDate(row, 'coordination_closed_at');
+    _validateTimeline(status, createdAt, resolvedAt, coordinationClosedAt);
+    final chatId = _optionalUuid(row, 'resource_chat_id');
+    final agreementId = _optionalUuid(row, 'resource_agreement_id');
+    if (status == ResourceRequestStatus.accepted) {
+      if (chatId == null || agreementId == null) {
+        throw const FormatException(
+          'Accepted Resource request lacked conversation anchors.',
+        );
+      }
+    } else if (chatId != null || agreementId != null) {
+      throw const FormatException(
+        'Non-accepted Resource request had conversation anchors.',
+      );
+    }
+    return ResourceRequest(
+      id: _uuid(row, 'request_id'),
+      listingId: _uuid(row, 'resource_listing_id'),
+      listingMode: ResourceListingMode.fromWire(
+        _string(row, 'resource_listing_mode'),
+      ),
+      listingTitle: _string(row, 'resource_listing_title'),
+      listingLifecycle: ResourceListingLifecycle.fromWire(
+        _string(row, 'resource_listing_lifecycle'),
+      ),
+      ownerProfileId: _uuid(row, 'resource_owner_profile_id'),
+      ownerDisplayName: _string(row, 'resource_owner_display_name'),
+      requesterProfileId: _uuid(row, 'requester_profile_id'),
+      requesterDisplayName: _string(row, 'requester_display_name'),
+      chatId: chatId,
+      agreementId: agreementId,
+      status: status,
+      requestMessage: _optionalString(row, 'request_message'),
+      createdAt: createdAt,
+      resolvedAt: resolvedAt,
+      coordinationClosedAt: coordinationClosedAt,
     );
   }
 
@@ -159,6 +217,9 @@ class ResourceRequestPayloadParser {
     }
     return value;
   }
+
+  String? _optionalUuid(Map<String, dynamic> row, String key) =>
+      row[key] == null ? null : _uuid(row, key);
 
   DateTime _date(Map<String, dynamic> row, String key) {
     final parsed = DateTime.tryParse(_string(row, key));
@@ -284,11 +345,14 @@ class SupabaseResourceRequestGateway implements ResourceRequestGateway {
     required String requestId,
   }) async {
     final response = await _client.rpc<List<dynamic>>(
-      'get_resource_listing_request',
-      params: contract.exactParams(
-        expectedProfileId: expectedProfileId,
-        requestId: requestId,
-      ),
+      'get_own_structured_request_message_item',
+      params: {
+        ...contract.exactParams(
+          expectedProfileId: expectedProfileId,
+          requestId: requestId,
+        ),
+        'p_item_kind': 'resource_request',
+      },
     );
     return response.isEmpty ? null : parser.exact(response.single);
   }

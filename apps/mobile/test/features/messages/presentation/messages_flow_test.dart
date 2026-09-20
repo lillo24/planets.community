@@ -9,6 +9,7 @@ import 'package:planets_mobile/core/config/app_config.dart';
 import 'package:planets_mobile/features/auth/data/auth_gateway.dart';
 import 'package:planets_mobile/features/auth/domain/auth_models.dart';
 import 'package:planets_mobile/features/messages/data/messages_gateway.dart';
+import 'package:planets_mobile/features/messages/data/message_chats_gateway.dart';
 import 'package:planets_mobile/features/messages/domain/message_models.dart';
 import 'package:planets_mobile/features/participation/data/participation_gateway.dart';
 import 'package:planets_mobile/features/participation/data/join_acceptance_triage_gateway.dart';
@@ -20,9 +21,13 @@ import 'package:planets_mobile/features/project_chat/application/project_chat_re
 import 'package:planets_mobile/features/resource_listings/data/resource_listing_gateway.dart';
 import 'package:planets_mobile/features/resource_requests/data/resource_request_gateway.dart';
 import 'package:planets_mobile/features/resource_requests/domain/resource_request_models.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:planets_mobile/features/resource_chat/data/resource_chat_gateway.dart';
+import 'package:planets_mobile/features/resource_chat/domain/resource_chat_models.dart';
 
 import '../../../support/fake_auth.dart';
 import '../../../support/fake_messages.dart';
+import '../../../support/fake_message_chats.dart';
 import '../../../support/fake_participation.dart';
 import '../../../support/fake_join_acceptance_triage.dart';
 import '../../../support/fake_proposal.dart';
@@ -30,8 +35,219 @@ import '../../../support/fake_recurring_activity.dart';
 import '../../../support/fake_project_chat.dart';
 import '../../../support/fake_resource_listing.dart';
 import '../../../support/fake_resource_request.dart';
+import '../../../support/fake_resource_chat.dart';
 
 void main() {
+  testWidgets('Chats mixes Project and Resource cards without fake events', (
+    tester,
+  ) async {
+    final chats = FakeMessageChatsGateway()
+      ..items = [
+        resourceMessageChatFixture(
+          messageId: null,
+          activityAt: DateTime.utc(2026, 9, 20, 12),
+          lifecycle: ResourceExchangeLifecycle.completed,
+          isReadOnly: true,
+        ),
+        projectMessageChatFixture(activityAt: DateTime.utc(2026, 9, 20, 11)),
+      ];
+    final app = await _pump(
+      tester,
+      messages: FakeMessagesGateway(),
+      chats: chats,
+    );
+    app.read(appRouterProvider).go('/messages');
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('message-chat-list')), findsOneWidget);
+    expect(
+      find.byKey(
+        const Key('resource-chat-link-00000000-0000-4000-8000-000000000401'),
+      ),
+      findsOneWidget,
+    );
+    expect(find.text('Scambio-Dona · Resource conversation'), findsOneWidget);
+    expect(find.text('No messages yet.'), findsOneWidget);
+    expect(find.text('Read-only'), findsOneWidget);
+    expect(find.textContaining('Terms changed'), findsNothing);
+    expect(
+      find.byKey(
+        const Key('project-chat-item-00000000-0000-4000-8000-000000000601'),
+      ),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('Resource card routes to discriminator-safe conversation path', (
+    tester,
+  ) async {
+    final resourceChats = FakeResourceChatGateway()
+      ..histories['00000000-0000-4000-8000-000000000401'] = [];
+    final app = await _pump(
+      tester,
+      messages: FakeMessagesGateway(),
+      chats: FakeMessageChatsGateway()..items = [resourceMessageChatFixture()],
+      resourceChats: resourceChats,
+    );
+    app.read(appRouterProvider).go('/messages');
+    await tester.pumpAndSettle();
+
+    final link = find.byKey(
+      const Key('resource-chat-link-00000000-0000-4000-8000-000000000401'),
+    );
+    await tester.ensureVisible(link);
+    await tester.tap(link.hitTestable());
+    await tester.pumpAndSettle();
+
+    expect(
+      app.read(appRouterProvider).routeInformationProvider.value.uri.path,
+      '/messages/chats/resource/00000000-0000-4000-8000-000000000401',
+    );
+    expect(find.byKey(const Key('resource-chat-composer')), findsOneWidget);
+    expect(find.byKey(const Key('project-needs-button')), findsNothing);
+  });
+
+  testWidgets('Resource conversation shows counterpart, bubbles, and sends', (
+    tester,
+  ) async {
+    const chatId = '00000000-0000-4000-8000-000000000401';
+    final resourceChats = FakeResourceChatGateway()
+      ..histories[chatId] = [
+        resourceChatMessageFixture(body: 'Canonical history message'),
+      ];
+    final app = await _pump(
+      tester,
+      messages: FakeMessagesGateway(),
+      resourceChats: resourceChats,
+    );
+    app.read(appRouterProvider).go('/messages/chats/resource/$chatId');
+    await tester.pumpAndSettle();
+
+    expect(find.text('Requester: Jordan'), findsOneWidget);
+    expect(find.text('Canonical history message'), findsOneWidget);
+    await tester.enterText(
+      find.byKey(const Key('resource-chat-composer')),
+      '  See you soon  ',
+    );
+    await tester.tap(find.byKey(const Key('resource-chat-send')));
+    await tester.pumpAndSettle();
+
+    expect(resourceChats.sendCount, 1);
+    expect(resourceChats.lastSentBody, 'See you soon');
+    expect(find.text('You'), findsOneWidget);
+    expect(
+      tester
+          .widget<TextField>(find.byKey(const Key('resource-chat-composer')))
+          .controller
+          ?.text,
+      isEmpty,
+    );
+  });
+
+  testWidgets('failed Resource send keeps draft and hides diagnostics', (
+    tester,
+  ) async {
+    const chatId = '00000000-0000-4000-8000-000000000401';
+    const diagnostic = 'private backend diagnostic';
+    final resourceChats = FakeResourceChatGateway()
+      ..histories[chatId] = []
+      ..sendError = StateError(diagnostic);
+    final app = await _pump(
+      tester,
+      messages: FakeMessagesGateway(),
+      resourceChats: resourceChats,
+    );
+    app.read(appRouterProvider).go('/messages/chats/resource/$chatId');
+    await tester.pumpAndSettle();
+    await tester.enterText(
+      find.byKey(const Key('resource-chat-composer')),
+      'Keep this draft',
+    );
+
+    await tester.tap(find.byKey(const Key('resource-chat-send')));
+    await tester.pumpAndSettle();
+
+    expect(find.textContaining(diagnostic), findsNothing);
+    expect(find.text('Unable to send message.'), findsOneWidget);
+    expect(
+      tester
+          .widget<TextField>(find.byKey(const Key('resource-chat-composer')))
+          .controller
+          ?.text,
+      'Keep this draft',
+    );
+  });
+
+  testWidgets('PT409 shows live read-only guidance and never retries', (
+    tester,
+  ) async {
+    const chatId = '00000000-0000-4000-8000-000000000401';
+    final resourceChats = FakeResourceChatGateway()
+      ..histories[chatId] = []
+      ..sendError = const PostgrestException(
+        message: 'private closed state',
+        code: 'PT409',
+      );
+    resourceChats.onSendAttempt = () {
+      resourceChats.summary = resourceChatSummaryFixture(
+        lifecycle: ResourceExchangeLifecycle.cancelled,
+      );
+    };
+    final app = await _pump(
+      tester,
+      messages: FakeMessagesGateway(),
+      resourceChats: resourceChats,
+    );
+    app.read(appRouterProvider).go('/messages/chats/resource/$chatId');
+    await tester.pumpAndSettle();
+    await tester.enterText(
+      find.byKey(const Key('resource-chat-composer')),
+      'Unsent message',
+    );
+
+    await tester.tap(find.byKey(const Key('resource-chat-send')));
+    await tester.pumpAndSettle();
+
+    expect(resourceChats.sendCount, 1);
+    expect(
+      find.text(
+        'This conversation is now read-only. Your message was not sent.',
+      ),
+      findsOneWidget,
+    );
+    expect(find.byKey(const Key('resource-chat-read-only')), findsOneWidget);
+    expect(find.byKey(const Key('resource-chat-composer')), findsNothing);
+  });
+
+  testWidgets('Resource conversation tolerates large text and long content', (
+    tester,
+  ) async {
+    tester.platformDispatcher.textScaleFactorTestValue = 2;
+    addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+    const chatId = '00000000-0000-4000-8000-000000000401';
+    final resourceChats = FakeResourceChatGateway()
+      ..summary = resourceChatSummaryFixture(
+        listingTitle:
+            'A very long resource listing title that must remain readable',
+      )
+      ..histories[chatId] = [
+        resourceChatMessageFixture(
+          body: List.filled(30, 'coordination').join(' '),
+        ),
+      ];
+    final app = await _pump(
+      tester,
+      messages: FakeMessagesGateway(),
+      resourceChats: resourceChats,
+    );
+    app.read(appRouterProvider).go('/messages/chats/resource/$chatId');
+
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('resource-chat-history')), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('Home keeps three tabs and opens mixed Messages inbox', (
     tester,
   ) async {
@@ -231,6 +447,53 @@ void main() {
     expect(find.byKey(const Key('resource-request-withdraw')), findsNothing);
     expect(find.byKey(const Key('resource-request-accept')), findsNothing);
     expect(find.byKey(const Key('resource-request-reject')), findsNothing);
+    await tester.scrollUntilVisible(
+      find.byKey(const Key('resource-request-open-conversation')),
+      300,
+      scrollable: find.byType(Scrollable).hitTestable().first,
+    );
+    expect(
+      find.byKey(const Key('resource-request-open-conversation')),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('closed accepted request still opens read-only conversation', (
+    tester,
+  ) async {
+    final accepted = copyResourceRequest(
+      resourceRequestFixture(),
+      status: ResourceRequestStatus.accepted,
+      coordinationClosedAt: DateTime.utc(2026, 9, 20, 12),
+    );
+    final resourceChats = FakeResourceChatGateway()
+      ..summary = resourceChatSummaryFixture(
+        lifecycle: ResourceExchangeLifecycle.completed,
+      )
+      ..histories[accepted.chatId!] = [];
+    final app = await _pump(
+      tester,
+      messages: FakeMessagesGateway(),
+      identityId: otherProfileId,
+      resourceRequests: FakeResourceRequestGateway()..detail = accepted,
+      resourceChats: resourceChats,
+    );
+    app
+        .read(appRouterProvider)
+        .go('/messages/requests/resource/$resourceRequestId');
+    await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(
+      find.byKey(const Key('resource-request-open-conversation')),
+      300,
+      scrollable: find.byType(Scrollable).hitTestable().first,
+    );
+    await tester.tap(
+      find.byKey(const Key('resource-request-open-conversation')).hitTestable(),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('resource-chat-read-only')), findsOneWidget);
+    expect(find.byKey(const Key('resource-chat-composer')), findsNothing);
   });
 
   testWidgets('Resource detail hides an absent optional message', (
@@ -360,6 +623,8 @@ Future<ProviderContainer> _pump(
   String identityId = 'user-1',
   FakeJoinAcceptanceTriageGateway? triage,
   FakeResourceRequestGateway? resourceRequests,
+  FakeMessageChatsGateway? chats,
+  FakeResourceChatGateway? resourceChats,
 }) async {
   final auth = FakeAuthGateway(
     snapshot: AuthSnapshot(identity: AuthIdentity(id: identityId)),
@@ -381,6 +646,12 @@ Future<ProviderContainer> _pump(
             ..readiness = ProfileAnchorReadiness.complete,
         ),
         messagesGatewayProvider.overrideWithValue(messages),
+        messageChatsGatewayProvider.overrideWithValue(
+          chats ?? FakeMessageChatsGateway(),
+        ),
+        resourceChatGatewayProvider.overrideWithValue(
+          resourceChats ?? FakeResourceChatGateway(),
+        ),
         resourceRequestGatewayProvider.overrideWithValue(
           resourceRequests ?? FakeResourceRequestGateway(),
         ),

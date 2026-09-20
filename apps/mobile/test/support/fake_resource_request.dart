@@ -109,6 +109,8 @@ ResourceRequest resourceRequestFixture({
   ResourceRequestStatus status = ResourceRequestStatus.pending,
   String? requestMessage = 'Could I use these this weekend?',
   DateTime? coordinationClosedAt,
+  String? chatId,
+  String? agreementId,
 }) {
   final createdAt = DateTime.utc(2026, 9, 18, 10);
   return ResourceRequest(
@@ -121,6 +123,12 @@ ResourceRequest resourceRequestFixture({
     ownerDisplayName: 'Casey',
     requesterProfileId: requesterProfileId,
     requesterDisplayName: 'Jordan',
+    chatId: status == ResourceRequestStatus.accepted
+        ? chatId ?? '00000000-0000-4000-8000-000000000401'
+        : null,
+    agreementId: status == ResourceRequestStatus.accepted
+        ? agreementId ?? '00000000-0000-4000-8000-000000000501'
+        : null,
     status: status,
     requestMessage: requestMessage,
     createdAt: createdAt,
@@ -166,6 +174,12 @@ ResourceRequest copyResourceRequest(
   ownerDisplayName: item.ownerDisplayName,
   requesterProfileId: item.requesterProfileId,
   requesterDisplayName: item.requesterDisplayName,
+  chatId: status == ResourceRequestStatus.accepted
+      ? item.chatId ?? '00000000-0000-4000-8000-000000000401'
+      : null,
+  agreementId: status == ResourceRequestStatus.accepted
+      ? item.agreementId ?? '00000000-0000-4000-8000-000000000501'
+      : null,
   status: status,
   requestMessage: item.requestMessage,
   createdAt: item.createdAt,

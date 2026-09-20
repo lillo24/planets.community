@@ -7,6 +7,9 @@ String resourceRequestMessageRoute(String requestId) =>
 String projectChatRoute(String chatId) =>
     '/messages/chats/${Uri.encodeComponent(chatId)}';
 
+String resourceChatRoute(String chatId) =>
+    '/messages/chats/resource/${Uri.encodeComponent(chatId)}';
+
 String projectChatInfoRoute(String chatId) =>
     '${projectChatRoute(chatId)}/info';
 

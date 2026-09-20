@@ -1,29 +1,36 @@
 # Messages
 
 This feature owns the authenticated mobile Messages information architecture.
-It keeps canonical structured Project and Resource requests and Project group
-chats in independent `Requests` and `Chats` tabs rather than creating one
-ambiguous chronological feed. Project-chat transport and UI live in the adjacent
-`project_chat/` feature; this feature remains the entry point.
+It keeps canonical structured Project and Resource requests in `Requests` and a
+mixed chronological Project/Resource conversation projection in `Chats`.
+Project and Resource detail transport remain in the adjacent `project_chat/`
+and `resource_chat/` features; this feature owns their shared entry point.
 
 ## Source map
 
 - `domain/message_models.dart` defines the centrally discriminated Project and
   Resource request variants, strict viewer roles, typed contribution labels,
   and the complete activity/kind/request cursor.
+- `domain/message_chat_models.dart` defines the sealed Project/Resource chat
+  variants, complete activity/kind/chat cursor, and composite identity.
 - `data/messages_gateway.dart` is the only Supabase boundary. The inbox and
   exact-item reads use the unified 04C4C2 RPCs; Project-only selection and
   mutation operations keep their existing 04C3B1/05A boundaries. Each narrow
   response is parsed strictly and cross-domain field mixtures fail closed.
+- `data/message_chats_gateway.dart` reads only the canonical unified Chats RPC.
+  It strictly validates branch XOR fields and human-preview completeness.
+- `application/message_chats_controller.dart` owns identity-bound mixed paging,
+  composite deduplication, loaded-writable-chat subscriptions, debounced
+  canonical refresh, aggregated connection state, and reconnect catch-up.
 - `application/messages_controllers.dart` owns keyset paging, detail/action
   state, identity revisions, Reject/Withdraw guards, conflict reloads, and
   canonical post-triage synchronization with participation and the inbox.
 - `presentation/messages_routes.dart` owns stable request, chat, and group-info
   routes used by navigation and future notification routing.
 - `presentation/messages_screen.dart` owns the two-tab shell, independent
-  loading/refresh/pagination, chat previews, and role-aware Project/Resource
-  request cards. Chats is the deterministic default and no unread state is
-  fabricated.
+  loading/refresh/pagination, centrally discriminated Project/Resource chat
+  cards, and role-aware Project/Resource request cards. Chats is the
+  deterministic default and no unread or agreement activity copy is fabricated.
 - `presentation/participation_request_message_screen.dart` owns full authorized
   request detail, canonical actions, resolved history, and Proposal/Tavolo
   navigation. Rounded contribution labels remain detail-only so the inbox never
@@ -81,6 +88,7 @@ Messages belongs to the existing Home branch, reached from Home's AppBar:
 /messages/requests/resource/:requestId
 /messages/chats/:chatId
 /messages/chats/:chatId/info
+/messages/chats/resource/:chatId
 ```
 
 Both routes require authentication and a complete profile. Their exact safe

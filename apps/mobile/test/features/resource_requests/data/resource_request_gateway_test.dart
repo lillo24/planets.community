@@ -128,21 +128,58 @@ void main() {
     },
   );
 
-  test('Resource requests use only the six authorized RPC boundaries', () {
-    final source = File(
-      'lib/features/resource_requests/data/resource_request_gateway.dart',
-    ).readAsStringSync();
-    for (final rpc in [
-      'request_resource_listing',
-      'withdraw_resource_listing_request',
-      'accept_resource_listing_request',
-      'reject_resource_listing_request',
-      'list_own_resource_listing_requests',
-      'get_resource_listing_request',
-    ]) {
-      expect(source, contains("'$rpc'"));
-    }
-    expect(source, isNot(contains(".from('resource_listing_requests')")));
+  test(
+    'Resource requests use authorized mutations plus unified exact read',
+    () {
+      final source = File(
+        'lib/features/resource_requests/data/resource_request_gateway.dart',
+      ).readAsStringSync();
+      for (final rpc in [
+        'request_resource_listing',
+        'withdraw_resource_listing_request',
+        'accept_resource_listing_request',
+        'reject_resource_listing_request',
+        'list_own_resource_listing_requests',
+        'get_own_structured_request_message_item',
+      ]) {
+        expect(source, contains("'$rpc'"));
+      }
+      expect(source, isNot(contains(".from('resource_listing_requests')")));
+    },
+  );
+
+  test('unified exact read carries accepted conversation anchors', () {
+    final row = {
+      'item_kind': 'resource_request',
+      'request_id': '00000000-0000-4000-8000-000000000301',
+      'viewer_role': 'owner',
+      'requester_profile_id': '00000000-0000-4000-8000-000000000102',
+      'requester_display_name': 'Jordan',
+      'status': 'accepted',
+      'request_message': 'Could I use these this weekend?',
+      'created_at': '2026-09-18T10:00:00Z',
+      'resolved_at': '2026-09-18T11:00:00Z',
+      'activity_at': '2026-09-18T11:00:00Z',
+      'project_id': null,
+      'project_kind': null,
+      'project_title': null,
+      'project_creator_profile_id': null,
+      'project_creator_display_name': null,
+      'resource_listing_id': '00000000-0000-4000-8000-000000000201',
+      'resource_listing_mode': 'donate',
+      'resource_listing_title': 'Garden tools',
+      'resource_listing_lifecycle': 'published',
+      'resource_owner_profile_id': '00000000-0000-4000-8000-000000000101',
+      'resource_owner_display_name': 'Casey',
+      'resource_chat_id': '00000000-0000-4000-8000-000000000401',
+      'resource_agreement_id': '00000000-0000-4000-8000-000000000501',
+      'coordination_closed_at': null,
+    };
+
+    final request = const ResourceRequestPayloadParser().exact(row);
+
+    expect(request.chatId, '00000000-0000-4000-8000-000000000401');
+    expect(request.agreementId, '00000000-0000-4000-8000-000000000501');
   });
 }
 

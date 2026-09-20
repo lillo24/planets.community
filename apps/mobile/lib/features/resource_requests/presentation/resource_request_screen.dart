@@ -7,6 +7,7 @@ import '../../../core/widgets/error_state.dart';
 import '../../../core/widgets/loading_state.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../auth/application/auth_session_controller.dart';
+import '../../messages/presentation/messages_routes.dart';
 import '../../resource_listings/domain/resource_listing_models.dart';
 import '../../resource_listings/presentation/resource_listing_widgets.dart';
 import '../application/resource_request_controllers.dart';
@@ -173,6 +174,17 @@ class _ResourceRequestScreenState extends ConsumerState<ResourceRequestScreen> {
                       icon: const Icon(Icons.open_in_new),
                       label: Text(l10n.resourceViewListing),
                     ),
+                    if (item.status == ResourceRequestStatus.accepted &&
+                        item.chatId != null) ...[
+                      const SizedBox(height: AppSpacing.medium),
+                      FilledButton.icon(
+                        key: const Key('resource-request-open-conversation'),
+                        onPressed: () =>
+                            context.push(resourceChatRoute(item.chatId!)),
+                        icon: const Icon(Icons.forum_outlined),
+                        label: Text(l10n.resourceRequestOpenConversation),
+                      ),
+                    ],
                     if (item.status == ResourceRequestStatus.pending) ...[
                       const SizedBox(height: AppSpacing.medium),
                       _Actions(

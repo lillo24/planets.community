@@ -7,6 +7,7 @@ import 'package:planets_mobile/core/config/app_config.dart';
 import 'package:planets_mobile/features/auth/data/auth_gateway.dart';
 import 'package:planets_mobile/features/auth/domain/auth_models.dart';
 import 'package:planets_mobile/features/messages/data/messages_gateway.dart';
+import 'package:planets_mobile/features/messages/data/message_chats_gateway.dart';
 import 'package:planets_mobile/features/participation/data/actual_contribution_gateway.dart';
 import 'package:planets_mobile/features/participation/data/membership_commitment_gateway.dart';
 import 'package:planets_mobile/features/participation/data/participation_gateway.dart';
@@ -19,11 +20,13 @@ import 'package:planets_mobile/features/project_chat/application/project_chat_co
 import 'package:planets_mobile/features/project_chat/domain/project_chat_models.dart';
 import 'package:planets_mobile/features/proposals/data/proposal_gateway.dart';
 import 'package:planets_mobile/features/recurring_activities/data/recurring_activity_gateway.dart';
+import 'package:planets_mobile/features/resource_chat/data/resource_chat_gateway.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../support/fake_auth.dart';
 import '../../../support/fake_actual_contribution.dart';
 import '../../../support/fake_messages.dart';
+import '../../../support/fake_message_chats.dart';
 import '../../../support/fake_membership_commitment.dart';
 import '../../../support/fake_participation.dart';
 import '../../../support/fake_profile.dart';
@@ -31,6 +34,7 @@ import '../../../support/fake_project_chat.dart';
 import '../../../support/fake_project_needs.dart';
 import '../../../support/fake_proposal.dart';
 import '../../../support/fake_recurring_activity.dart';
+import '../../../support/fake_resource_chat.dart';
 
 void main() {
   testWidgets('Messages defaults to chat previews without unread state', (
@@ -67,15 +71,16 @@ void main() {
   ) async {
     const diagnostic = 'private database identifier';
     final chats = FakeProjectChatGateway()..listError = StateError(diagnostic);
-    final app = await _pump(tester, chats: chats);
+    final app = await _pump(
+      tester,
+      chats: chats,
+      unifiedChats: FakeMessageChatsGateway()..error = StateError(diagnostic),
+    );
     app.read(appRouterProvider).go('/messages');
     await tester.pumpAndSettle();
 
     expect(find.textContaining(diagnostic), findsNothing);
-    expect(
-      find.textContaining("couldn't load the project chat"),
-      findsOneWidget,
-    );
+    expect(find.textContaining("couldn't load chats"), findsOneWidget);
   });
 
   testWidgets('current member sees full returned history and sends once', (
@@ -881,6 +886,7 @@ Future<ProviderContainer> _pump(
   FakeMembershipCommitmentGateway? commitments,
   FakeActualContributionGateway? actualContributions,
   FakeAuthGateway? authGateway,
+  FakeMessageChatsGateway? unifiedChats,
 }) async {
   final auth =
       authGateway ??
@@ -905,7 +911,28 @@ Future<ProviderContainer> _pump(
         ),
         profileGatewayProvider.overrideWithValue(FakeProfileGateway()),
         messagesGatewayProvider.overrideWithValue(FakeMessagesGateway()),
+        messageChatsGatewayProvider.overrideWithValue(
+          unifiedChats ??
+              (FakeMessageChatsGateway()
+                ..items = [
+                  for (final summary in chats.summaries)
+                    projectMessageChatFixture(
+                      chatId: summary.chatId,
+                      projectId: summary.projectId,
+                      title: summary.projectTitle,
+                      projectKind: summary.projectKind,
+                      viewerRole: summary.viewerRole,
+                      isReadOnly: summary.isReadOnly,
+                      messageId: summary.lastVisibleMessageId,
+                      messageBody: summary.lastVisibleMessageBody,
+                      activityAt: summary.activityAt,
+                    ),
+                ]),
+        ),
         projectChatGatewayProvider.overrideWithValue(chats),
+        resourceChatGatewayProvider.overrideWithValue(
+          FakeResourceChatGateway(),
+        ),
         projectNeedsGatewayProvider.overrideWithValue(
           needs ?? FakeProjectNeedsGateway(),
         ),

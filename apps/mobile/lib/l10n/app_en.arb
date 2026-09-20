@@ -589,6 +589,21 @@
     "placeholders": { "resource": { "type": "String" } }
   },
   "resourceRequestTypeLabel": "Scambio-Dona request",
+  "messageChatsLoading": "Loading chats…",
+  "messageChatsEmptyTitle": "No chats yet",
+  "messageChatsEmptyMessage": "Project and resource conversations will appear here when they become available.",
+  "messageChatsUnavailable": "We couldn't load chats. Check your connection and try again.",
+  "messageProjectChatCardSemantics": "Project chat for {title}",
+  "@messageProjectChatCardSemantics": {
+    "placeholders": { "title": { "type": "String" } }
+  },
+  "messageResourceChatCardSemantics": "Resource conversation for {title}, {status}",
+  "@messageResourceChatCardSemantics": {
+    "placeholders": {
+      "title": { "type": "String" },
+      "status": { "type": "String" }
+    }
+  },
   "projectChatsLoading": "Loading project chats…",
   "projectChatsEmptyTitle": "No project chats yet",
   "projectChatsEmptyMessage": "A group chat appears after the first participation request is accepted.",
@@ -775,9 +790,46 @@
   "resourceRequestWithdraw": "Withdraw request",
   "resourceRequestReject": "Reject",
   "resourceRequestAccept": "Accept",
+  "resourceRequestOpenConversation": "Open conversation",
   "resourceRequestAction": "Request resource",
   "resourceRequestAlreadyActive": "You already have an active request for this listing. The latest request has been loaded.",
   "resourceRequestView": "View request",
+  "resourceChatTitle": "Resource conversation",
+  "resourceChatLoading": "Loading conversation…",
+  "resourceChatCardContext": "Scambio-Dona · Resource conversation",
+  "resourceChatOpenLabel": "Open",
+  "resourceChatOwner": "Owner",
+  "resourceChatRequester": "Requester",
+  "resourceChatCounterparty": "{role}: {name}",
+  "@resourceChatCounterparty": {
+    "placeholders": {
+      "role": { "type": "String" },
+      "name": { "type": "String" }
+    }
+  },
+  "resourceChatNoMessages": "No messages yet.",
+  "resourceChatEmptyGuidance": "Use this conversation to coordinate the resource exchange.",
+  "resourceChatReadOnlyNotice": "This conversation is read-only because this resource coordination has ended.",
+  "resourceChatSendConflict": "This conversation is now read-only. Your message was not sent.",
+  "resourceChatMessageHint": "Message",
+  "resourceChatSend": "Send",
+  "resourceChatLoadOlder": "Load older messages",
+  "resourceChatUnavailable": "Unable to load conversation. Check your connection and try again.",
+  "resourceChatUnableSend": "Unable to send message.",
+  "resourceChatInvalidInput": "Enter a message between 1 and 4,000 characters.",
+  "resourceChatForbidden": "This resource conversation is not available for the current account.",
+  "resourceChatNotFound": "This resource conversation is no longer available.",
+  "resourceChatConnectionIssue": "Connection issue. Refresh to check for new messages.",
+  "resourceChatYou": "You",
+  "resourceChatUnknownSender": "Participant",
+  "resourceChatMessageSemantics": "{sender}, {message}, {time}",
+  "@resourceChatMessageSemantics": {
+    "placeholders": {
+      "sender": { "type": "String" },
+      "message": { "type": "String" },
+      "time": { "type": "String" }
+    }
+  },
   "resourceDetailTitle": "Listing details",
   "resourceLoading": "Loading listings…",
   "resourceSafeError": "We couldn't load the listing information. Check your connection and try again.",

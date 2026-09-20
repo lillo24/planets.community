@@ -31,4 +31,12 @@ void main() {
     expect(isMessagesPath('/messages/chats/chat-1'), isTrue);
     expect(isMessagesPath('/messages/chats/chat-1/info'), isTrue);
   });
+
+  test('Resource chats use a distinct encoded route', () {
+    expect(
+      resourceChatRoute('chat/with space'),
+      '/messages/chats/resource/chat%2Fwith%20space',
+    );
+    expect(isMessagesPath('/messages/chats/resource/chat-1'), isTrue);
+  });
 }

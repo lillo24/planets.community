@@ -87,6 +87,8 @@ class ResourceRequest extends OwnResourceRequest {
     required super.ownerDisplayName,
     required this.requesterProfileId,
     required this.requesterDisplayName,
+    required this.chatId,
+    required this.agreementId,
     required super.status,
     required super.requestMessage,
     required super.createdAt,
@@ -96,6 +98,8 @@ class ResourceRequest extends OwnResourceRequest {
 
   final String requesterProfileId;
   final String requesterDisplayName;
+  final String? chatId;
+  final String? agreementId;
 
   ResourceRequestViewerRole viewerRoleFor(String profileId) {
     if (profileId == requesterProfileId) {
