@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
+import 'package:planets_mobile/core/config/app_config.dart';
 import 'package:planets_mobile/features/auth/application/auth_session_controller.dart';
 import 'package:planets_mobile/features/auth/data/auth_gateway.dart';
 import 'package:planets_mobile/features/auth/domain/auth_models.dart';
@@ -70,7 +71,7 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('debug sample fills every publish field and can publish', (
+  testWidgets('demo sample fills every publish field without auto-submitting', (
     tester,
   ) async {
     final gateway = await _pumpEditor(tester, null);
@@ -78,6 +79,7 @@ void main() {
     expect(fill, findsOneWidget);
     await tester.tap(fill);
     await tester.pumpAndSettle();
+    expect(gateway.calls, isNot(contains('create')));
 
     expect(
       tester
@@ -204,6 +206,13 @@ Future<FakeProposalGateway> _pumpEditor(
     ..ownItems = input == null ? [] : [ownProposalFixture(input: input)];
   final container = ProviderContainer(
     overrides: [
+      appConfigProvider.overrideWithValue(
+        AppConfig.fromValues(
+          appEnvironment: 'local',
+          supabaseUrl: 'http://127.0.0.1:54321',
+          supabasePublishableKey: 'test-key',
+        ),
+      ),
       authGatewayProvider.overrideWithValue(auth),
       profileAnchorGatewayProvider.overrideWithValue(
         FakeProfileAnchorGateway()..readiness = ProfileAnchorReadiness.complete,

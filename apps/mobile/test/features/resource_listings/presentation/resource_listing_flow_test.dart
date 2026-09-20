@@ -179,6 +179,36 @@ void main() {
     },
   );
 
+  testWidgets('demo sample fills create fields and preserves mode locally', (
+    tester,
+  ) async {
+    final gateway = FakeResourceListingGateway();
+    final app = await _pump(tester, gateway: gateway);
+    app.read(appRouterProvider).go('/resources/create');
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Exchange'));
+    await tester.tap(find.byKey(const Key('resource-fill-sample')));
+    await tester.pumpAndSettle();
+
+    expect(
+      tester
+          .widget<TextFormField>(find.byKey(const Key('resource-title-field')))
+          .controller
+          ?.text,
+      'Shared garden tools',
+    );
+    expect(
+      tester
+          .widget<SegmentedButton<ResourceListingMode>>(
+            find.byKey(const Key('resource-editor-mode')),
+          )
+          .selected,
+      {ResourceListingMode.exchange},
+    );
+    expect(gateway.createCount, 0);
+  });
+
   testWidgets('published edit offers save and semantic close confirmation', (
     tester,
   ) async {
@@ -193,6 +223,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byKey(const Key('resource-save-draft')), findsNothing);
+    expect(find.byKey(const Key('resource-fill-sample')), findsNothing);
     expect(find.byKey(const Key('resource-save-changes')), findsOneWidget);
     expect(find.text('Unpublish'), findsNothing);
     await tester.ensureVisible(find.byKey(const Key('resource-close-listing')));

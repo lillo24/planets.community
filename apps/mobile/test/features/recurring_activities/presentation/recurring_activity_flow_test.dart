@@ -124,45 +124,45 @@ void main() {
     );
   });
 
-  testWidgets(
-    'debug sample supports monthly publish and invalid zones are safe',
-    (tester) async {
-      final recurring = FakeRecurringActivityGateway();
-      final app = await _pump(tester, recurring: recurring);
-      app.read(appRouterProvider).go('/tavoli/create');
-      await tester.pumpAndSettle();
-      await tester.tap(find.byKey(const Key('tavoli-fill-sample')));
-      await tester.pumpAndSettle();
-      await _scrollTo(tester, find.byKey(const Key('tavoli-timezone')), 500);
-      await tester.enterText(
-        find.byKey(const Key('tavoli-timezone')),
-        'Not/AZone',
-      );
-      await tester.pump();
-      expect(
-        tester
-            .widget<OutlinedButton>(
-              find.byKey(const Key('tavoli-choose-effective-date')),
-            )
-            .onPressed,
-        isNull,
-      );
-      await tester.enterText(
-        find.byKey(const Key('tavoli-timezone')),
-        'Europe/Rome',
-      );
-      await _scrollTo(tester, find.text('Monthly'), -400);
-      await tester.tap(find.text('Monthly'));
-      await tester.pumpAndSettle();
-      expect(find.byKey(const Key('tavoli-day-of-month')), findsOneWidget);
-      await _scrollTo(tester, find.byKey(const Key('tavoli-publish')), 500);
-      await tester.tap(find.byKey(const Key('tavoli-publish')));
-      await tester.pumpAndSettle();
-      expect(recurring.lastInput?.recurrenceType, RecurrenceType.monthly);
-      expect(recurring.lastInput?.dayOfMonth, 1);
-      expect(recurring.calls, contains('publish:new-tavolo'));
-    },
-  );
+  testWidgets('demo sample stays local and supports monthly publish', (
+    tester,
+  ) async {
+    final recurring = FakeRecurringActivityGateway();
+    final app = await _pump(tester, recurring: recurring);
+    app.read(appRouterProvider).go('/tavoli/create');
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('tavoli-fill-sample')));
+    await tester.pumpAndSettle();
+    expect(recurring.calls, isNot(contains('create')));
+    await _scrollTo(tester, find.byKey(const Key('tavoli-timezone')), 500);
+    await tester.enterText(
+      find.byKey(const Key('tavoli-timezone')),
+      'Not/AZone',
+    );
+    await tester.pump();
+    expect(
+      tester
+          .widget<OutlinedButton>(
+            find.byKey(const Key('tavoli-choose-effective-date')),
+          )
+          .onPressed,
+      isNull,
+    );
+    await tester.enterText(
+      find.byKey(const Key('tavoli-timezone')),
+      'Europe/Rome',
+    );
+    await _scrollTo(tester, find.text('Monthly'), -400);
+    await tester.tap(find.text('Monthly'));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('tavoli-day-of-month')), findsOneWidget);
+    await _scrollTo(tester, find.byKey(const Key('tavoli-publish')), 500);
+    await tester.tap(find.byKey(const Key('tavoli-publish')));
+    await tester.pumpAndSettle();
+    expect(recurring.lastInput?.recurrenceType, RecurrenceType.monthly);
+    expect(recurring.lastInput?.dayOfMonth, 1);
+    expect(recurring.calls, contains('publish:new-tavolo'));
+  });
 
   testWidgets('owner cards expose only lifecycle-valid actions', (
     tester,

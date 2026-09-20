@@ -38,10 +38,10 @@ Public details are self-contained: they show the localized start/end schedule in
 
 The time helpers explicitly support the existing `UTC` default as an alias for `Etc/UTC`, because the bundled timezone dataset excludes that legacy alias.
 
-In debug builds, new-proposal forms expose a **Fill sample data** action with
-synthetic values and a future schedule; the control is removed at compile time
-from release builds and never persists or sends data until the developer chooses
-Save draft or Publish. Save/publish validation shows a fixed field-name summary
+When demo tools are enabled, new-proposal forms expose a **Fill sample data**
+action with synthetic values and a future schedule. The configuration gate is
+hard-off in production, and the preset never persists or sends data until the
+developer chooses Save draft or Publish. Save/publish validation shows a fixed field-name summary
 that remains visible while the form scrolls, inline errors for text, timezone,
 country and schedule controls, and brings the first mounted invalid field into
 view. Drafts keep their intentionally optional fields while still validating

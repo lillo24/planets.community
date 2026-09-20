@@ -12,6 +12,53 @@ import '../../../support/fake_auth.dart';
 import '../../../support/fake_profile.dart';
 
 void main() {
+  testWidgets('demo sample fills controlled profile fields without saving', (
+    tester,
+  ) async {
+    final auth = FakeAuthGateway(
+      snapshot: const AuthSnapshot(identity: AuthIdentity(id: 'user-1')),
+    );
+    final anchor = FakeProfileAnchorGateway()
+      ..readiness = ProfileAnchorReadiness.incomplete;
+    final profile = FakeProfileGateway();
+    addTearDown(auth.close);
+    await _pumpApp(tester, auth, anchor, profile);
+    await tester.tap(find.text('Complete profile'));
+    await tester.pumpAndSettle();
+
+    final fill = find.byKey(const Key('profile-fill-sample'));
+    expect(fill, findsOneWidget);
+    await tester.tap(fill);
+    await tester.pumpAndSettle();
+
+    expect(
+      tester
+          .widget<TextFormField>(
+            find.byKey(const Key('profile-display-name-field')),
+          )
+          .controller
+          ?.text,
+      'Casey Rivers',
+    );
+    expect(
+      tester
+          .widget<CheckboxListTile>(
+            find.byKey(const Key('profile-skill-mural-painting')),
+          )
+          .value,
+      isTrue,
+    );
+    expect(
+      tester
+          .widget<SegmentedButton<ProfileAudience>>(
+            find.byKey(const Key('profile-visibility-bio')),
+          )
+          .selected,
+      {ProfileAudience.private},
+    );
+    expect(profile.updateCount, 0);
+  });
+
   testWidgets('incomplete owner selects categorized skills and visibility', (
     tester,
   ) async {
@@ -189,8 +236,9 @@ Future<void> _pumpApp(
   WidgetTester tester,
   FakeAuthGateway auth,
   FakeProfileAnchorGateway anchor,
-  FakeProfileGateway profile,
-) async {
+  FakeProfileGateway profile, {
+  String enableDemoTools = '',
+}) async {
   await tester.pumpWidget(
     ProviderScope(
       overrides: [
@@ -199,6 +247,7 @@ Future<void> _pumpApp(
             appEnvironment: 'local',
             supabaseUrl: 'http://127.0.0.1:54321',
             supabasePublishableKey: 'test-key',
+            enableDemoTools: enableDemoTools,
           ),
         ),
         authGatewayProvider.overrideWithValue(auth),

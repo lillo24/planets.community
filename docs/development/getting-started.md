@@ -153,6 +153,7 @@ The Flutter app accepts compile-time values through `--dart-define-from-file`. I
 | `SUPABASE_URL`             | Canonical Supabase API URL; staging and production require HTTPS                      |
 | `SUPABASE_PUBLISHABLE_KEY` | Client-safe Supabase publishable key (the local CLI may still call this the anon key) |
 | `SENTRY_DSN`               | Optional client DSN; an empty value keeps Sentry disabled                             |
+| `ENABLE_DEMO_TOOLS`        | Optional exact `true`/`false` switch for local-only form presets and shell marker      |
 
 Committed examples live in `apps/mobile/config/*.example.json`. Actual `local.json`, `staging.json`, and `production.json` files are ignored. Never put a Supabase service-role key in a mobile config file.
 
@@ -171,6 +172,30 @@ npm run mobile:config:local -- --host 10.0.2.2
 The default `127.0.0.1` URL is appropriate for an iOS Simulator on the same Mac. A physical device needs a reachable development-machine hostname and may require host firewall/local-network setup. Android and iOS allow local HTTP only in debug builds; Profile and Release retain their normal transport security.
 
 Sentry is disabled when `SENTRY_DSN` is empty. Supplying a DSN enables error monitoring, while personal-data collection, tracing, replay, screenshots, failed-request capture, and HTTP breadcrumbs are explicitly disabled in this foundation. No Sentry account is required locally.
+
+`ENABLE_DEMO_TOOLS` is a presentation convenience, not another application
+environment. Omission enables demo tools for `local` and `staging`; explicit
+`false` disables them, and explicit `true` enables them there. `production`
+always disables demo tools even when the value is `true`. Any other explicit
+value fails configuration validation instead of guessing. The effective matrix
+is:
+
+| `APP_ENV`    | Omitted  | `true`   | `false`  |
+| ------------ | -------- | -------- | -------- |
+| `local`      | Enabled  | Enabled  | Disabled |
+| `staging`    | Enabled  | Enabled  | Disabled |
+| `production` | Disabled | Disabled | Disabled |
+
+When enabled, a small **DEMO** marker appears on the normal navigation shell.
+The Proposal create, Tavolo create, Profile setup/edit, and Scambio-Dona listing
+create forms expose **Fill sample data**. These actions only update the current
+form and never submit it. Auth/OTP, notifications, participation messages,
+project chat, destructive confirmations, read-only filters, and edit-only
+Scambio-Dona/Tavolo flows deliberately have no presets.
+
+Form presets are not a database demo dataset: they create no rows until a
+developer explicitly chooses an existing Save or Publish action. Persistent,
+coherent demo records remain the responsibility of the separate DEMO-B plan.
 
 The mobile Auth feature does not log or report email addresses, OTPs, or session tokens. Its 30-second resend countdown is only a UI convenience; Supabase Auth remains authoritative for request and verification limits.
 
@@ -254,7 +279,13 @@ With an Android emulator, iOS Simulator, or physical device available, start Flu
 npm run dev:mobile
 ```
 
-`dev:mobile` loads `apps/mobile/config/local.json`; generate it first as described above. Use `flutter devices` to inspect available devices. iOS builds require macOS/Xcode; Android builds require a configured Android SDK.
+`dev:mobile` loads `apps/mobile/config/local.json`; generate it first as described above. Local demo helpers are enabled by default. To exercise the same local configuration with all demo presentation removed, run:
+
+```text
+npm run dev:mobile:clean
+```
+
+Use `flutter devices` to inspect available devices. iOS builds require macOS/Xcode; Android builds require a configured Android SDK.
 
 ## Validate and format
 

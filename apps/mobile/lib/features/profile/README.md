@@ -25,3 +25,7 @@ old data or mark a previous session ready, even after signing back in as the sam
 Display name is the only required field. Photo media, location, custom skills,
 proficiency, public profile search, and organizer/participant audiences remain
 deferred.
+
+When centrally gated demo tools are enabled, setup and edit expose the shared
+sample-data action. It selects only IDs from the loaded controlled catalog,
+uses a mixed public/private visibility example, and remains local until Save.
