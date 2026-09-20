@@ -475,7 +475,7 @@ Owns one agreement anchor per accepted request, immutable two-leg `give`/`lend` 
 
 ###### 04C4C — Resource Requests + Messages (parent)
 
-**Status:** In progress through the current stacked 04C4C1 backend slice. Depends on 04C4B and the existing Messages foundation.
+**Status:** In progress through the current stacked 04C4C2 backend slice. Depends on 04C4B and the existing Messages foundation.
 
 This parent separates the durable accepted-request conversation, notification/Messages projection, and mobile request/agreement/chat experience so every client uses the canonical 04C4A/04C4B state.
 
@@ -487,9 +487,9 @@ Owns one private chat per accepted request episode, immutable human-only message
 
 ###### 04C4C2 — Resource Request Messages + Notification Projection
 
-**Status:** Not started. Depends on 04C4C1 and the existing Messages/notification foundations.
+**Status:** In progress in the current stacked backend PR, based on open 04C4C1 PR #73 without merging either layer. Depends on 04C4C1 and the existing Messages/notification foundations.
 
-Will own structured resource-request Messages items, Resources-category notification projection, semantic destinations, and safe resource-chat alerts through canonical request/agreement/chat operations rather than direct table access.
+Owns discriminated cross-domain Requests and Chats projections with complete three-part keysets while preserving the existing Project and Resource domain reads. It maps supported Resource request, chat, and agreement events into the existing `resources` preference category, strict `resource_request`/`resource_chat` destinations, body-free in-app notifications, and provider-neutral push jobs. Resolvers validate identifier-only payloads against canonical rows and derive the opposite counterparty; historical Resource outbox rows are receipted without alert backfill. Mobile copy, routes, and Resources preference controls remain 04C4C3.
 
 ###### 04C4C3 — Mobile Scambio Request / Agreement / Conversation Experience
 

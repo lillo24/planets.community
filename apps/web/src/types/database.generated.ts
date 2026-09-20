@@ -48,6 +48,12 @@ export type Database = {
           read_at: string | null
           recipient_profile_id: string
           request_id: string | null
+          resource_agreement_event_id: string | null
+          resource_agreement_id: string | null
+          resource_chat_id: string | null
+          resource_chat_message_id: string | null
+          resource_listing_id: string | null
+          resource_request_id: string | null
           source_outbox_event_id: string
         }
         Insert: {
@@ -64,6 +70,12 @@ export type Database = {
           read_at?: string | null
           recipient_profile_id: string
           request_id?: string | null
+          resource_agreement_event_id?: string | null
+          resource_agreement_id?: string | null
+          resource_chat_id?: string | null
+          resource_chat_message_id?: string | null
+          resource_listing_id?: string | null
+          resource_request_id?: string | null
           source_outbox_event_id: string
         }
         Update: {
@@ -80,6 +92,12 @@ export type Database = {
           read_at?: string | null
           recipient_profile_id?: string
           request_id?: string | null
+          resource_agreement_event_id?: string | null
+          resource_agreement_id?: string | null
+          resource_chat_id?: string | null
+          resource_chat_message_id?: string | null
+          resource_listing_id?: string | null
+          resource_request_id?: string | null
           source_outbox_event_id?: string
         }
         Relationships: [
@@ -137,6 +155,48 @@ export type Database = {
             columns: ["request_id"]
             isOneToOne: false
             referencedRelation: "project_join_requests"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notifications_resource_agreement_event_id_fkey"
+            columns: ["resource_agreement_event_id"]
+            isOneToOne: false
+            referencedRelation: "resource_exchange_agreement_events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notifications_resource_agreement_id_fkey"
+            columns: ["resource_agreement_id"]
+            isOneToOne: false
+            referencedRelation: "resource_exchange_agreements"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notifications_resource_chat_id_fkey"
+            columns: ["resource_chat_id"]
+            isOneToOne: false
+            referencedRelation: "resource_request_chats"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notifications_resource_chat_message_id_fkey"
+            columns: ["resource_chat_message_id"]
+            isOneToOne: false
+            referencedRelation: "resource_request_chat_messages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notifications_resource_listing_id_fkey"
+            columns: ["resource_listing_id"]
+            isOneToOne: false
+            referencedRelation: "resource_listings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notifications_resource_request_id_fkey"
+            columns: ["resource_request_id"]
+            isOneToOne: false
+            referencedRelation: "resource_listing_requests"
             referencedColumns: ["id"]
           },
         ]
@@ -1847,18 +1907,16 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      acknowledge_project_requirement_attention: {
-        Args: {
-          p_expected_profile_id: string
-          p_project_id: string
-          p_through_system_event_id: string
-        }
-        Returns: string
-      }
-      accept_project_join_request: {
-        Args:
-          | { p_expected_creator_profile_id: string; p_request_id: string }
-          | {
+      accept_project_join_request:
+        | {
+            Args: {
+              p_expected_creator_profile_id: string
+              p_request_id: string
+            }
+            Returns: string
+          }
+        | {
+            Args: {
               p_already_found_resource_need_ids: string[]
               p_already_found_skill_ids: string[]
               p_expected_creator_profile_id: string
@@ -1868,8 +1926,8 @@ export type Database = {
               p_needed_skill_ids: string[]
               p_request_id: string
             }
-        Returns: string
-      }
+            Returns: string
+          }
       accept_resource_exchange_terms: {
         Args: {
           p_agreement_id: string
@@ -1882,12 +1940,11 @@ export type Database = {
         Args: { p_expected_owner_profile_id: string; p_request_id: string }
         Returns: string
       }
-      claim_project_requirement: {
+      acknowledge_project_requirement_attention: {
         Args: {
-          p_expected_participant_profile_id: string
+          p_expected_profile_id: string
           p_project_id: string
-          p_requirement_id: string
-          p_requirement_kind: string
+          p_through_system_event_id: string
         }
         Returns: string
       }
@@ -1897,6 +1954,15 @@ export type Database = {
       }
       cancel_resource_exchange_agreement: {
         Args: { p_agreement_id: string; p_expected_profile_id: string }
+        Returns: string
+      }
+      claim_project_requirement: {
+        Args: {
+          p_expected_participant_profile_id: string
+          p_project_id: string
+          p_requirement_id: string
+          p_requirement_kind: string
+        }
         Returns: string
       }
       close_project_resource_need: {
@@ -2119,6 +2185,39 @@ export type Database = {
           viewer_role: string
         }[]
       }
+      get_own_structured_request_message_item: {
+        Args: {
+          p_expected_profile_id: string
+          p_item_kind: string
+          p_request_id: string
+        }
+        Returns: {
+          activity_at: string
+          coordination_closed_at: string
+          created_at: string
+          item_kind: string
+          project_creator_display_name: string
+          project_creator_profile_id: string
+          project_id: string
+          project_kind: string
+          project_title: string
+          request_id: string
+          request_message: string
+          requester_display_name: string
+          requester_profile_id: string
+          resolved_at: string
+          resource_agreement_id: string
+          resource_chat_id: string
+          resource_listing_id: string
+          resource_listing_lifecycle: string
+          resource_listing_mode: string
+          resource_listing_title: string
+          resource_owner_display_name: string
+          resource_owner_profile_id: string
+          status: string
+          viewer_role: string
+        }[]
+      }
       get_own_unread_notification_count: {
         Args: { p_expected_profile_id: string }
         Returns: number
@@ -2259,6 +2358,35 @@ export type Database = {
         }
         Returns: string
       }
+      list_own_message_chat_items: {
+        Args: {
+          p_cursor_activity_at?: string
+          p_cursor_chat_id?: string
+          p_cursor_item_kind?: string
+          p_expected_profile_id: string
+          p_limit: number
+        }
+        Returns: {
+          activity_at: string
+          agreement_lifecycle: string
+          chat_id: string
+          coordination_closed_at: string
+          display_title: string
+          is_read_only: boolean
+          item_kind: string
+          last_visible_message_at: string
+          last_visible_message_body: string
+          last_visible_message_id: string
+          last_visible_sender_display_name: string
+          last_visible_sender_profile_id: string
+          project_id: string
+          project_kind: string
+          resource_agreement_id: string
+          resource_listing_id: string
+          resource_request_id: string
+          viewer_role: string
+        }[]
+      }
       list_own_notification_preferences: {
         Args: { p_expected_profile_id: string }
         Returns: {
@@ -2292,6 +2420,15 @@ export type Database = {
           project_title: string
           read_at: string
           request_id: string
+          resource_agreement_event_id: string
+          resource_agreement_id: string
+          resource_chat_id: string
+          resource_chat_message_id: string
+          resource_exchange_event_kind: string
+          resource_exchange_leg_kind: string
+          resource_listing_id: string
+          resource_listing_title: string
+          resource_request_id: string
         }[]
       }
       list_own_participation_request_message_items: {
@@ -2407,26 +2544,6 @@ export type Database = {
           message_id: string
           sender_display_name: string
           sender_profile_id: string
-        }[]
-      }
-      list_project_membership_actual_contribution_options: {
-        Args: {
-          p_expected_creator_profile_id: string
-          p_membership_id: string
-        }
-        Returns: {
-          label: string
-          option_id: string
-          option_kind: string
-        }[]
-      }
-      list_project_membership_actual_contributions: {
-        Args: { p_expected_profile_id: string; p_membership_id: string }
-        Returns: {
-          attribution_source: string
-          contribution_id: string
-          contribution_kind: string
-          label: string
         }[]
       }
       list_own_project_group_chats: {
@@ -2650,6 +2767,41 @@ export type Database = {
           viewer_role: string
         }[]
       }
+      list_own_structured_request_message_items: {
+        Args: {
+          p_cursor_activity_at?: string
+          p_cursor_item_kind?: string
+          p_cursor_request_id?: string
+          p_expected_profile_id: string
+          p_limit: number
+        }
+        Returns: {
+          activity_at: string
+          coordination_closed_at: string
+          created_at: string
+          item_kind: string
+          project_creator_display_name: string
+          project_creator_profile_id: string
+          project_id: string
+          project_kind: string
+          project_title: string
+          request_id: string
+          request_message: string
+          requester_display_name: string
+          requester_profile_id: string
+          resolved_at: string
+          resource_agreement_id: string
+          resource_chat_id: string
+          resource_listing_id: string
+          resource_listing_lifecycle: string
+          resource_listing_mode: string
+          resource_listing_title: string
+          resource_owner_display_name: string
+          resource_owner_profile_id: string
+          status: string
+          viewer_role: string
+        }[]
+      }
       list_project_join_requests: {
         Args: { p_expected_creator_profile_id: string; p_project_id: string }
         Returns: {
@@ -2661,6 +2813,18 @@ export type Database = {
           resolved_at: string
           resolved_by_profile_id: string
           status: string
+        }[]
+      }
+      list_project_live_requirement_coverage: {
+        Args: { p_expected_profile_id: string; p_project_id: string }
+        Returns: {
+          importance: string
+          is_covered: boolean
+          is_manually_covered: boolean
+          label: string
+          requirement_id: string
+          requirement_kind: string
+          viewer_is_covering: boolean
         }[]
       }
       list_project_members: {
@@ -2677,16 +2841,21 @@ export type Database = {
           removed_by_profile_id: string
         }[]
       }
-      list_project_live_requirement_coverage: {
-        Args: { p_expected_profile_id: string; p_project_id: string }
+      list_project_membership_actual_contribution_options: {
+        Args: { p_expected_creator_profile_id: string; p_membership_id: string }
         Returns: {
-          importance: string
-          is_covered: boolean
-          is_manually_covered: boolean
           label: string
-          requirement_id: string
-          requirement_kind: string
-          viewer_is_covering: boolean
+          option_id: string
+          option_kind: string
+        }[]
+      }
+      list_project_membership_actual_contributions: {
+        Args: { p_expected_profile_id: string; p_membership_id: string }
+        Returns: {
+          attribution_source: string
+          contribution_id: string
+          contribution_kind: string
+          label: string
         }[]
       }
       list_public_project_resource_needs: {
@@ -2891,6 +3060,16 @@ export type Database = {
         Args: { p_expected_owner_profile_id: string; p_listing_id: string }
         Returns: string
       }
+      record_resource_exchange_milestone: {
+        Args: {
+          p_agreement_id: string
+          p_event_kind: string
+          p_expected_profile_id: string
+          p_expected_terms_id: string
+          p_leg_kind: string
+        }
+        Returns: string
+      }
       register_own_push_installation: {
         Args: {
           p_expected_profile_id: string
@@ -2904,16 +3083,6 @@ export type Database = {
           platform: string
           provider: string
         }[]
-      }
-      record_resource_exchange_milestone: {
-        Args: {
-          p_agreement_id: string
-          p_event_kind: string
-          p_expected_profile_id: string
-          p_expected_terms_id: string
-          p_leg_kind: string
-        }
-        Returns: string
       }
       reject_project_join_request: {
         Args: { p_expected_creator_profile_id: string; p_request_id: string }
