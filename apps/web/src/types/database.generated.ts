@@ -1724,6 +1724,71 @@ export type Database = {
           },
         ]
       }
+      resource_request_chat_messages: {
+        Row: {
+          body: string
+          chat_id: string
+          created_at: string
+          id: string
+          sender_profile_id: string
+        }
+        Insert: {
+          body: string
+          chat_id: string
+          created_at?: string
+          id?: string
+          sender_profile_id: string
+        }
+        Update: {
+          body?: string
+          chat_id?: string
+          created_at?: string
+          id?: string
+          sender_profile_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "resource_request_chat_messages_chat_id_fkey"
+            columns: ["chat_id"]
+            isOneToOne: false
+            referencedRelation: "resource_request_chats"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "resource_request_chat_messages_sender_profile_id_fkey"
+            columns: ["sender_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      resource_request_chats: {
+        Row: {
+          activated_at: string
+          id: string
+          request_id: string
+        }
+        Insert: {
+          activated_at: string
+          id?: string
+          request_id: string
+        }
+        Update: {
+          activated_at?: string
+          id?: string
+          request_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "resource_request_chats_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: true
+            referencedRelation: "resource_listing_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       skill_categories: {
         Row: {
           id: string
@@ -2027,6 +2092,31 @@ export type Database = {
           published_at: string
           title: string
           updated_at: string
+        }[]
+      }
+      get_own_resource_request_chat: {
+        Args: { p_chat_id: string; p_expected_profile_id: string }
+        Returns: {
+          activated_at: string
+          activity_at: string
+          agreement_id: string
+          agreement_lifecycle: string
+          chat_id: string
+          coordination_closed_at: string
+          has_send_entitlement: boolean
+          last_visible_message_at: string
+          last_visible_message_body: string
+          last_visible_message_id: string
+          last_visible_sender_display_name: string
+          last_visible_sender_profile_id: string
+          listing_id: string
+          listing_title: string
+          owner_display_name: string
+          owner_profile_id: string
+          request_id: string
+          requester_display_name: string
+          requester_profile_id: string
+          viewer_role: string
         }[]
       }
       get_own_unread_notification_count: {
@@ -2513,6 +2603,53 @@ export type Database = {
           updated_at: string
         }[]
       }
+      list_own_resource_request_chat_messages: {
+        Args: {
+          p_before_created_at?: string
+          p_before_message_id?: string
+          p_chat_id: string
+          p_expected_profile_id: string
+          p_limit: number
+        }
+        Returns: {
+          body: string
+          chat_id: string
+          created_at: string
+          message_id: string
+          sender_display_name: string
+          sender_profile_id: string
+        }[]
+      }
+      list_own_resource_request_chats: {
+        Args: {
+          p_before_activity_at?: string
+          p_before_chat_id?: string
+          p_expected_profile_id: string
+          p_limit: number
+        }
+        Returns: {
+          activated_at: string
+          activity_at: string
+          agreement_id: string
+          agreement_lifecycle: string
+          chat_id: string
+          coordination_closed_at: string
+          has_send_entitlement: boolean
+          last_visible_message_at: string
+          last_visible_message_body: string
+          last_visible_message_id: string
+          last_visible_sender_display_name: string
+          last_visible_sender_profile_id: string
+          listing_id: string
+          listing_title: string
+          owner_display_name: string
+          owner_profile_id: string
+          request_id: string
+          requester_display_name: string
+          requester_profile_id: string
+          viewer_role: string
+        }[]
+      }
       list_project_join_requests: {
         Args: { p_expected_creator_profile_id: string; p_project_id: string }
         Returns: {
@@ -2848,6 +2985,20 @@ export type Database = {
         Returns: string
       }
       send_project_chat_message: {
+        Args: {
+          p_body: string
+          p_chat_id: string
+          p_expected_profile_id: string
+        }
+        Returns: {
+          body: string
+          chat_id: string
+          created_at: string
+          message_id: string
+          sender_profile_id: string
+        }[]
+      }
+      send_resource_request_chat_message: {
         Args: {
           p_body: string
           p_chat_id: string

@@ -457,7 +457,7 @@ Project chat detail now consumes the strict mixed human/system feed and exact th
 
 ##### 04C4 — Scambio-Dona Requests, Agreements and Matching (parent)
 
-**Status:** In progress through the current stacked 04C4B backend slice. Depends on 04C1; queue, matching, notification, post-handoff amendment, and dispute decisions remain isolated in later child plans.
+**Status:** In progress through the current stacked 04C4C1 backend slice. Depends on 04C1; queue, matching, notification, post-handoff amendment, and dispute decisions remain isolated in later child plans.
 
 This parent keeps a lightweight expression of interest separate from reliable agreement terms, physical handoff/completion, loan scheduling, Project matching, and saved-search notifications. None of those later concepts may be inferred from the 04C1 `exchange` discovery intent or from an accepted 04C4A request.
 
@@ -473,11 +473,29 @@ Owns private episode-based `pending`/`accepted`/`rejected`/`withdrawn`/`listing_
 
 Owns one agreement anchor per accepted request, immutable two-leg `give`/`lend` terms, optional requester `none`/`give`/`lend` consideration, bounded loan periods, server-owned listing snapshots, CAS negotiation, actor-authorized structured handoff/receipt/return milestones, automatic completion, pre-handoff cancellation, coordination closure, repeat requests, counterparty-only history, derived overdue indicators, and identifier-only events. Request status remains accepted history. Terms freeze at the first milestone; post-handoff amendments and dispute/liability consequences remain future structured work.
 
-###### 04C4C — Mobile Requests + Messages
+###### 04C4C — Resource Requests + Messages (parent)
 
-**Status:** Not started. Depends on 04C4B and the existing Messages foundation.
+**Status:** In progress through the current stacked 04C4C1 backend slice. Depends on 04C4B and the existing Messages foundation.
 
-Will own request creation/status, owner Accept/Reject, requester Withdraw, “N interested,” structured agreement proposal/accept/reject/withdraw and milestone controls, a Messages request/agreement item, and accepted request-specific private conversation activation. It must use canonical 04C4A/04C4B RPCs and may later project alerts from their identifier-only events.
+This parent separates the durable accepted-request conversation, notification/Messages projection, and mobile request/agreement/chat experience so every client uses the canonical 04C4A/04C4B state.
+
+###### 04C4C1 — Accepted Resource-Request Conversation Domain + Realtime
+
+**Status:** In progress in the current stacked backend PR, based on open 04C4B PR #72 without merging either layer. Depends on 04C4B.
+
+Owns one private chat per accepted request episode, immutable human-only messages, permanent counterparty history, open-coordination send authorization serialized against agreement completion/cancellation, honest human previews with agreement-aware activity, private per-profile identifier-only message/agreement Realtime hints, identifier-only message outbox state, and focused pgTAP/real-OTP/concurrency coverage. Listing closure does not disable an accepted open chat; completion/cancellation makes it read-only. It adds no mobile UI, structured Messages item, notification projection, push, fake system message, or generic DM behavior.
+
+###### 04C4C2 — Resource Request Messages + Notification Projection
+
+**Status:** Not started. Depends on 04C4C1 and the existing Messages/notification foundations.
+
+Will own structured resource-request Messages items, Resources-category notification projection, semantic destinations, and safe resource-chat alerts through canonical request/agreement/chat operations rather than direct table access.
+
+###### 04C4C3 — Mobile Scambio Request / Agreement / Conversation Experience
+
+**Status:** Not started. Depends on 04C4C1 and 04C4C2.
+
+Will own mobile Request/Withdraw and owner Accept/Reject flows, “N interested,” structured request Messages cards, accepted-request chat, agreement negotiation/milestones, and the structured timeline. It must use canonical 04C4A/04C4B/04C4C1 RPCs and Realtime hints.
 
 ###### 04C4D — Loan Availability / Queue
 
@@ -1002,15 +1020,15 @@ Major gates currently expected:
 
 ## Immediate next action
 
-Complete and review the stacked **04C4B — Reliable Scambio Agreement + Loan/Barter Domain**
-on open 04C4A PR #71 without merging it or the lower stack. 04C1 is implemented in merged PR #32
+Complete and review the stacked **04C4C1 — Accepted Resource-Request Conversation Domain + Realtime**
+on open 04C4B PR #72 without merging it or the lower stack. 04C1 is implemented in merged PR #32
 (`2aca5bdde7bf7ed7d747f14dcccbc3b5c4b75c42`) and 04C2 is implemented in
 merged PR #34 (`2da76de112a860210161d64de6bceab333159c26`).
 06D is implemented in merged PR #31, while 06 remains in
 progress because provider-specific 06C2B is not started. Optional E2EE/MLS
 research remains unmerged and deferred in PR #28. The stacked 04C3/05C work
-remains open and unmerged beneath DB-COMPAT-01; 04C4B is the current child
-above open 04C4A, while 04C4C–04C4F remain not started. Plan 06C2B remains
+remains open and unmerged beneath DB-COMPAT-01; 04C4C1 is the current child
+above open 04C4B, while 04C4C2–04C4F remain not started. Plan 06C2B remains
 not started and requires Firebase/APNs configuration, push permission and
 preview decisions, server-side FCM credentials, and a self-host-compatible
 worker deployment target. Deferred native Android/iOS checks from implemented
