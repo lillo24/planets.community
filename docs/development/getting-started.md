@@ -153,7 +153,7 @@ The Flutter app accepts compile-time values through `--dart-define-from-file`. I
 | `SUPABASE_URL`             | Canonical Supabase API URL; staging and production require HTTPS                      |
 | `SUPABASE_PUBLISHABLE_KEY` | Client-safe Supabase publishable key (the local CLI may still call this the anon key) |
 | `SENTRY_DSN`               | Optional client DSN; an empty value keeps Sentry disabled                             |
-| `ENABLE_DEMO_TOOLS`        | Optional exact `true`/`false` switch for local-only form presets and shell marker      |
+| `ENABLE_DEMO_TOOLS`        | Optional exact `true`/`false` switch for local-only form presets and shell marker     |
 
 Committed examples live in `apps/mobile/config/*.example.json`. Actual `local.json`, `staging.json`, and `production.json` files are ignored. Never put a Supabase service-role key in a mobile config file.
 
