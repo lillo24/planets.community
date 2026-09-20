@@ -19,9 +19,11 @@ select columns_are(
     'request_message',
     'created_at',
     'resolved_at',
-    'resolved_by_profile_id'
+    'resolved_by_profile_id',
+    'coordination_closed_at',
+    'coordination_closed_by_profile_id'
   ],
-  'request rows contain only identities, lifecycle, private message, and timestamps'
+  'request rows contain identities, decision lifecycle, private message, and separate coordination closure'
 );
 
 select col_is_pk(

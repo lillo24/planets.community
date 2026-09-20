@@ -1408,8 +1408,199 @@ export type Database = {
           },
         ]
       }
+      resource_exchange_agreement_events: {
+        Row: {
+          actor_profile_id: string
+          agreement_id: string
+          created_at: string
+          event_kind: string
+          id: string
+          leg_kind: string | null
+          terms_id: string | null
+        }
+        Insert: {
+          actor_profile_id: string
+          agreement_id: string
+          created_at?: string
+          event_kind: string
+          id?: string
+          leg_kind?: string | null
+          terms_id?: string | null
+        }
+        Update: {
+          actor_profile_id?: string
+          agreement_id?: string
+          created_at?: string
+          event_kind?: string
+          id?: string
+          leg_kind?: string | null
+          terms_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "resource_exchange_agreement_events_actor_profile_id_fkey"
+            columns: ["actor_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "resource_exchange_agreement_events_agreement_id_fkey"
+            columns: ["agreement_id"]
+            isOneToOne: false
+            referencedRelation: "resource_exchange_agreements"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "resource_exchange_agreement_events_agreement_terms_fkey"
+            columns: ["agreement_id", "terms_id"]
+            isOneToOne: false
+            referencedRelation: "resource_exchange_agreement_terms"
+            referencedColumns: ["agreement_id", "id"]
+          },
+        ]
+      }
+      resource_exchange_agreement_terms: {
+        Row: {
+          agreement_id: string
+          created_at: string
+          id: string
+          listing_description_snapshot: string
+          listing_title_snapshot: string
+          owner_lend_ends_at: string | null
+          owner_lend_starts_at: string | null
+          owner_transfer_kind: string
+          private_note: string | null
+          proposed_by_profile_id: string
+          requester_lend_ends_at: string | null
+          requester_lend_starts_at: string | null
+          requester_resource_description: string | null
+          requester_transfer_kind: string
+          version_number: number
+        }
+        Insert: {
+          agreement_id: string
+          created_at?: string
+          id?: string
+          listing_description_snapshot: string
+          listing_title_snapshot: string
+          owner_lend_ends_at?: string | null
+          owner_lend_starts_at?: string | null
+          owner_transfer_kind: string
+          private_note?: string | null
+          proposed_by_profile_id: string
+          requester_lend_ends_at?: string | null
+          requester_lend_starts_at?: string | null
+          requester_resource_description?: string | null
+          requester_transfer_kind: string
+          version_number: number
+        }
+        Update: {
+          agreement_id?: string
+          created_at?: string
+          id?: string
+          listing_description_snapshot?: string
+          listing_title_snapshot?: string
+          owner_lend_ends_at?: string | null
+          owner_lend_starts_at?: string | null
+          owner_transfer_kind?: string
+          private_note?: string | null
+          proposed_by_profile_id?: string
+          requester_lend_ends_at?: string | null
+          requester_lend_starts_at?: string | null
+          requester_resource_description?: string | null
+          requester_transfer_kind?: string
+          version_number?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "resource_exchange_agreement_terms_agreement_id_fkey"
+            columns: ["agreement_id"]
+            isOneToOne: false
+            referencedRelation: "resource_exchange_agreements"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "resource_exchange_agreement_terms_proposer_fkey"
+            columns: ["proposed_by_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      resource_exchange_agreements: {
+        Row: {
+          cancelled_at: string | null
+          cancelled_by_profile_id: string | null
+          completed_at: string | null
+          created_at: string
+          current_terms_accepted_at: string | null
+          current_terms_id: string | null
+          id: string
+          lifecycle_state: string
+          pending_terms_id: string | null
+          request_id: string
+        }
+        Insert: {
+          cancelled_at?: string | null
+          cancelled_by_profile_id?: string | null
+          completed_at?: string | null
+          created_at?: string
+          current_terms_accepted_at?: string | null
+          current_terms_id?: string | null
+          id?: string
+          lifecycle_state?: string
+          pending_terms_id?: string | null
+          request_id: string
+        }
+        Update: {
+          cancelled_at?: string | null
+          cancelled_by_profile_id?: string | null
+          completed_at?: string | null
+          created_at?: string
+          current_terms_accepted_at?: string | null
+          current_terms_id?: string | null
+          id?: string
+          lifecycle_state?: string
+          pending_terms_id?: string | null
+          request_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "resource_exchange_agreements_cancelled_by_profile_id_fkey"
+            columns: ["cancelled_by_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "resource_exchange_agreements_current_terms_fkey"
+            columns: ["id", "current_terms_id"]
+            isOneToOne: false
+            referencedRelation: "resource_exchange_agreement_terms"
+            referencedColumns: ["agreement_id", "id"]
+          },
+          {
+            foreignKeyName: "resource_exchange_agreements_pending_terms_fkey"
+            columns: ["id", "pending_terms_id"]
+            isOneToOne: false
+            referencedRelation: "resource_exchange_agreement_terms"
+            referencedColumns: ["agreement_id", "id"]
+          },
+          {
+            foreignKeyName: "resource_exchange_agreements_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: true
+            referencedRelation: "resource_listing_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       resource_listing_requests: {
         Row: {
+          coordination_closed_at: string | null
+          coordination_closed_by_profile_id: string | null
           created_at: string
           id: string
           listing_id: string
@@ -1420,6 +1611,8 @@ export type Database = {
           status: string
         }
         Insert: {
+          coordination_closed_at?: string | null
+          coordination_closed_by_profile_id?: string | null
           created_at?: string
           id?: string
           listing_id: string
@@ -1430,6 +1623,8 @@ export type Database = {
           status?: string
         }
         Update: {
+          coordination_closed_at?: string | null
+          coordination_closed_by_profile_id?: string | null
           created_at?: string
           id?: string
           listing_id?: string
@@ -1440,6 +1635,13 @@ export type Database = {
           status?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "resource_listing_requests_coordination_closed_by_fkey"
+            columns: ["coordination_closed_by_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "resource_listing_requests_listing_id_fkey"
             columns: ["listing_id"]
@@ -1603,6 +1805,14 @@ export type Database = {
             }
         Returns: string
       }
+      accept_resource_exchange_terms: {
+        Args: {
+          p_agreement_id: string
+          p_expected_pending_terms_id: string
+          p_expected_profile_id: string
+        }
+        Returns: string
+      }
       accept_resource_listing_request: {
         Args: { p_expected_owner_profile_id: string; p_request_id: string }
         Returns: string
@@ -1618,6 +1828,10 @@ export type Database = {
       }
       cancel_proposal: {
         Args: { p_expected_creator_profile_id: string; p_proposal_id: string }
+        Returns: string
+      }
+      cancel_resource_exchange_agreement: {
+        Args: { p_agreement_id: string; p_expected_profile_id: string }
         Returns: string
       }
       close_project_resource_need: {
@@ -1907,9 +2121,31 @@ export type Database = {
           title: string
         }[]
       }
+      get_resource_exchange_agreement: {
+        Args: { p_expected_profile_id: string; p_request_id: string }
+        Returns: {
+          agreement_id: string
+          cancelled_at: string
+          cancelled_by_profile_id: string
+          completed_at: string
+          created_at: string
+          current_terms_accepted_at: string
+          current_terms_id: string
+          lifecycle_state: string
+          listing_id: string
+          owner_lend_return_overdue: boolean
+          owner_profile_id: string
+          pending_terms_id: string
+          request_id: string
+          requester_lend_return_overdue: boolean
+          requester_profile_id: string
+        }[]
+      }
       get_resource_listing_request: {
         Args: { p_expected_profile_id: string; p_request_id: string }
         Returns: {
+          coordination_closed_at: string
+          coordination_closed_by_profile_id: string
           created_at: string
           listing_id: string
           listing_lifecycle: string
@@ -2243,6 +2479,8 @@ export type Database = {
       list_own_resource_listing_requests: {
         Args: { p_expected_requester_profile_id: string }
         Returns: {
+          coordination_closed_at: string
+          coordination_closed_by_profile_id: string
           created_at: string
           listing_id: string
           listing_lifecycle: string
@@ -2405,9 +2643,44 @@ export type Database = {
           title: string
         }[]
       }
+      list_resource_exchange_agreement_events: {
+        Args: { p_agreement_id: string; p_expected_profile_id: string }
+        Returns: {
+          actor_display_name: string
+          actor_profile_id: string
+          created_at: string
+          event_id: string
+          event_kind: string
+          leg_kind: string
+          terms_id: string
+        }[]
+      }
+      list_resource_exchange_agreement_terms: {
+        Args: { p_agreement_id: string; p_expected_profile_id: string }
+        Returns: {
+          created_at: string
+          is_current: boolean
+          is_pending: boolean
+          listing_description_snapshot: string
+          listing_title_snapshot: string
+          owner_lend_ends_at: string
+          owner_lend_starts_at: string
+          owner_transfer_kind: string
+          private_note: string
+          proposed_by_profile_id: string
+          requester_lend_ends_at: string
+          requester_lend_starts_at: string
+          requester_resource_description: string
+          requester_transfer_kind: string
+          terms_id: string
+          version_number: number
+        }[]
+      }
       list_resource_listing_requests: {
         Args: { p_expected_owner_profile_id: string; p_listing_id: string }
         Returns: {
+          coordination_closed_at: string
+          coordination_closed_by_profile_id: string
           created_at: string
           request_id: string
           request_message: string
@@ -2449,6 +2722,23 @@ export type Database = {
           processed_count: number
         }[]
       }
+      propose_resource_exchange_terms: {
+        Args: {
+          p_agreement_id: string
+          p_expected_current_terms_id: string
+          p_expected_pending_terms_id: string
+          p_expected_profile_id: string
+          p_owner_lend_ends_at: string
+          p_owner_lend_starts_at: string
+          p_owner_transfer_kind: string
+          p_private_note: string
+          p_requester_lend_ends_at: string
+          p_requester_lend_starts_at: string
+          p_requester_resource_description: string
+          p_requester_transfer_kind: string
+        }
+        Returns: string
+      }
       publish_proposal: {
         Args: { p_expected_creator_profile_id: string; p_proposal_id: string }
         Returns: string
@@ -2478,8 +2768,26 @@ export type Database = {
           provider: string
         }[]
       }
+      record_resource_exchange_milestone: {
+        Args: {
+          p_agreement_id: string
+          p_event_kind: string
+          p_expected_profile_id: string
+          p_expected_terms_id: string
+          p_leg_kind: string
+        }
+        Returns: string
+      }
       reject_project_join_request: {
         Args: { p_expected_creator_profile_id: string; p_request_id: string }
+        Returns: string
+      }
+      reject_resource_exchange_terms: {
+        Args: {
+          p_agreement_id: string
+          p_expected_pending_terms_id: string
+          p_expected_profile_id: string
+        }
         Returns: string
       }
       reject_resource_listing_request: {
@@ -2658,6 +2966,14 @@ export type Database = {
       }
       withdraw_project_join_request: {
         Args: { p_expected_requester_profile_id: string; p_request_id: string }
+        Returns: string
+      }
+      withdraw_resource_exchange_terms: {
+        Args: {
+          p_agreement_id: string
+          p_expected_pending_terms_id: string
+          p_expected_profile_id: string
+        }
         Returns: string
       }
       withdraw_resource_listing_request: {

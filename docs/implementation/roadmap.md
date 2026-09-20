@@ -1,7 +1,7 @@
 # Implementation Roadmap
 
 **Status:** Planning baseline  
-**Current implementation:** Plans 00–04B2B, 04C1–04C2, 05A, 05B, 05D, 06A, 06B, provider-independent 06C1, provider-neutral 06C2A, 06D, 07A, 07B1, 07B2B, 07B2C, and public informational SITE-00 through SITE-02 plus SITE-02W implemented; 04C3A and stacked 04C3B1/04C3B2/04C3C1/04C3C2/04C3D1/04C3D2/04C3D3A/04C3D3B1/04C3D3B2/05C1/05C2/04C4A are in progress; provider-specific 06C2B and 04C4B–04C4F remain not started
+**Current implementation:** Plans 00–04B2B, 04C1–04C2, 05A, 05B, 05D, 06A, 06B, provider-independent 06C1, provider-neutral 06C2A, 06D, 07A, 07B1, 07B2B, 07B2C, and public informational SITE-00 through SITE-02 plus SITE-02W implemented; 04C3A and stacked 04C3B1/04C3B2/04C3C1/04C3C2/04C3D1/04C3D2/04C3D3A/04C3D3B1/04C3D3B2/05C1/05C2/04C4A/04C4B are in progress; provider-specific 06C2B and 04C4C–04C4F remain not started
 
 This roadmap divides the first PLANETS build into reviewable Codex tasks. Each numbered item should normally become its own implementation prompt, branch, and pull request.
 
@@ -72,8 +72,8 @@ Do not begin a dependent plan until the prior plan is merged or its branch is ex
 | 04C3D3B | Group Needs Coordination + Chat Resurfacing               | Chat Needs drawer, participant claim UI, creator manual control, system messages, notifications, and attention UX      | 04C3D3A, 07B2C, 06D    | Delegate policy remains separate; native interaction review remains Plan 12                                          | In progress |
 | 04C4    | Scambio-Dona Requests, Agreements and Matching (parent)   | Request intent, later reliable agreement/handoff, mobile coordination, queues, matching, and saved searches            | 04C1                   | Agreement, handoff, queue, matching, notification, and Dona policy remain isolated in later slices                   | In progress |
 | 04C4A   | Resource Request Domain Foundation                        | Private request episodes, multiple acceptances, active-interest count, lifecycle serialization, and history            | 04C1, DB-COMPAT-01     | None for the bounded interest-request lifecycle                                                                      | In progress |
-| 04C4B   | Reliable Scambio Agreement + Loan/Barter Domain           | Structured counterpart terms, give/lend/barter semantics, duration, handoff, completion, and return history            | 04C4A                  | Founder decisions for agreement, handoff, completion, loan, and return policy                                        | Not started |
-| 04C4C   | Mobile Requests + Messages                                | Request/accept/reject/withdraw UI, active-interest display, structured Messages item, and request conversation         | 04C4A, 07A             | Native interaction review and conversation activation policy                                                         | Not started |
+| 04C4B   | Reliable Scambio Agreement + Loan/Barter Domain           | Structured counterpart terms, give/lend/barter semantics, duration, handoff, completion, and return history             | 04C4A                  | Post-handoff amendment, dispute, and liability policy remain later founder decisions                                 | In progress |
+| 04C4C   | Mobile Requests + Messages                                | Request/accept/reject/withdraw UI, agreement negotiation/milestones, structured Messages item, and request conversation | 04C4B, 07A             | Native interaction review and conversation activation policy                                                         | Not started |
 | 04C4D   | Loan Availability / Queue                                 | Sequential loan periods, conflicts, queue/calendar behavior, and recurring tool availability                           | 04C4B                  | Queue fairness, calendar, and loan cancellation policy                                                               | Not started |
 | 04C4E   | Project Resource Matching                                 | Explainable text/location/availability matching between Project needs and Scambio-Dona listings                        | 04C3A, 04C4B           | Matching thresholds and availability semantics                                                                       | Not started |
 | 04C4F   | Saved Searches + Matching Notifications                   | Personal saved filters, later taxonomy/radius refinements, matching events, and notification projection                | 04C4E, 06A             | Saved-search scope, notification copy/frequency, and later taxonomy                                                  | Not started |
@@ -335,7 +335,7 @@ or introduce participation, chat, resources, or recurrence expansion.
 
 #### 04C — Resources + Scambio-Dona
 
-**Status:** In progress through implemented 04C1–04C2, the stacked 04C3 work, and the current 04C4A request-domain slice. Reliable agreements/handoff, loan queues, mobile request coordination, matching, saved searches, and matching notifications remain later work.
+**Status:** In progress through implemented 04C1–04C2, the stacked 04C3 work, and the current 04C4A/04C4B request-and-agreement backend slices. Loan queues, mobile request/agreement coordination, matching, saved searches, and matching notifications remain later work.
 
 The earlier combined scope is split so standalone public listings do not force unresolved Project contribution or post-discovery transaction rules:
 
@@ -457,7 +457,7 @@ Project chat detail now consumes the strict mixed human/system feed and exact th
 
 ##### 04C4 — Scambio-Dona Requests, Agreements and Matching (parent)
 
-**Status:** In progress through the current stacked 04C4A backend slice. Depends on 04C1; each consequential agreement, queue, matching, and notification decision remains isolated in its later child plan.
+**Status:** In progress through the current stacked 04C4B backend slice. Depends on 04C1; queue, matching, notification, post-handoff amendment, and dispute decisions remain isolated in later child plans.
 
 This parent keeps a lightweight expression of interest separate from reliable agreement terms, physical handoff/completion, loan scheduling, Project matching, and saved-search notifications. None of those later concepts may be inferred from the 04C1 `exchange` discovery intent or from an accepted 04C4A request.
 
@@ -465,19 +465,19 @@ This parent keeps a lightweight expression of interest separate from reliable ag
 
 **Status:** In progress in the current stacked backend PR, based on DB-COMPAT-01 without merging either layer. Depends on 04C1 and DB-COMPAT-01.
 
-Owns private episode-based `pending`/`accepted`/`rejected`/`withdrawn`/`listing_closed` requests, one active request per requester/listing, multiple accepted requesters, optional bounded private context, expected-identity mutations and private history, a public pending-plus-accepted interest count, listing-close serialization, identifier-only events, PT409 application conflicts, pgTAP, real-OTP integration, and generated contracts. Acceptance means only willingness to coordinate: it does not reserve or close the listing, disclose contact information, start an agreement, or assert handoff/completion.
+Owns private episode-based `pending`/`accepted`/`rejected`/`withdrawn`/`listing_closed` request decisions, one coordination-open request per requester/listing, multiple accepted requesters, optional bounded private context, expected-identity mutations and private history, a public pending-plus-coordination-open-accepted interest count, listing-close serialization, identifier-only events, PT409 application conflicts, pgTAP, real-OTP integration, and generated contracts. Acceptance means only willingness to coordinate: 04C4B now attaches a separate agreement anchor, but acceptance still does not reserve or close the listing, disclose contact information, or assert handoff/completion.
 
 ###### 04C4B — Reliable Scambio Agreement + Loan/Barter Domain
 
-**Status:** Not started. Depends on 04C4A and explicit founder decisions.
+**Status:** In progress in the current stacked backend PR, based on open 04C4A PR #71 without merging either layer. Depends on 04C4A.
 
-Will own structured counterpart offers, give-versus-lend semantics, mixed barter/loan terms, period or duration, persisted agreement snapshots, handoff, completion, and return history. It must not rewrite request intent or treat acceptance as agreement completion.
+Owns one agreement anchor per accepted request, immutable two-leg `give`/`lend` terms, optional requester `none`/`give`/`lend` consideration, bounded loan periods, server-owned listing snapshots, CAS negotiation, actor-authorized structured handoff/receipt/return milestones, automatic completion, pre-handoff cancellation, coordination closure, repeat requests, counterparty-only history, derived overdue indicators, and identifier-only events. Request status remains accepted history. Terms freeze at the first milestone; post-handoff amendments and dispute/liability consequences remain future structured work.
 
 ###### 04C4C — Mobile Requests + Messages
 
-**Status:** Not started. Depends on 04C4A and the existing Messages foundation.
+**Status:** Not started. Depends on 04C4B and the existing Messages foundation.
 
-Will own request creation/status, owner Accept/Reject, requester Withdraw, “N interested,” a structured Messages request item, and accepted request-specific private conversation activation. It must use canonical RPCs and may later project alerts from the identifier-only 04C4A events.
+Will own request creation/status, owner Accept/Reject, requester Withdraw, “N interested,” structured agreement proposal/accept/reject/withdraw and milestone controls, a Messages request/agreement item, and accepted request-specific private conversation activation. It must use canonical 04C4A/04C4B RPCs and may later project alerts from their identifier-only events.
 
 ###### 04C4D — Loan Availability / Queue
 
@@ -497,7 +497,7 @@ Will connect Project resource needs to Scambio-Dona listings through explainable
 
 Will own eBay-style personal saved searches over current filters first, later taxonomy/radius/category refinements, explainable matching events, and notification preference/copy/frequency behavior.
 
-Global resource taxonomy/tags, Dona-specific UI/policy refinement, and social “what we did together” profile history remain future work and are not blockers for 04C4A.
+Global resource taxonomy/tags, Dona-specific UI/policy refinement, post-handoff mutually accepted amendments, dispute/liability handling, and social “what we did together” profile history remain future work and are not blockers for 04C4B.
 
 04C is not a dependency for the 05A participation foundation or 05B mobile participation UI. Stable join-request and Project resource-need IDs let 04C3B1 selections attach without equating contribution with membership. The 05C actual-finalization plan follows the complete 04C3D3A/D3B1/D3B2 live coverage and group-coordination flow and the final active commitment set rather than merely request selections, acceptance history, coverage or system-resurfacing history, 04C3A need rows, unrelated standalone listing UI, or 04C4 transaction/matching work.
 
@@ -564,7 +564,7 @@ PR #68 remains open and unmerged. It owns the derivable frozen final-commitment 
 
 Adds participant/former-participant read-only actual-contribution visibility at Project chat → Group info → Actual contributions, preserving every membership episode independently. The creator's Manage participation member cards open the same membership-scoped sheet in editable mode, starting with automatic final commitments already selected and supporting canonical off-app additions plus the dedicated effort toggle. The mobile boundary consumes only the 05C1 read/options/CAS APIs, keeps expected and desired snapshots separate, and reloads canonical state after saves and stale-edit/options races without adding a mandatory Project-wide approval state. Tavoli remain excluded. A private participant-to-creator “remind creator” request/message/popup/notification remains a possible later follow-up rather than required 05C1/05C2 scope; cross-episode statistics/badges and group contribution surveys remain downstream or speculative.
 
-Technical compatibility patch DB-COMPAT-01 is stacked above 05C2. It reserves PostgreSQL SQLSTATE `40001` for genuine serialization failures and uses PostgREST custom SQLSTATE `PT409` for explicit application conflicts. 04C4A follows that convention for request races; contact, reliable agreement, handoff, and matching decisions remain isolated in 04C4B–04C4F.
+Technical compatibility patch DB-COMPAT-01 is stacked above 05C2. It reserves PostgreSQL SQLSTATE `40001` for genuine serialization failures and uses PostgREST custom SQLSTATE `PT409` for explicit application conflicts. 04C4A/04C4B follow that convention for request, negotiation, and milestone races; conversations, queues, matching, and notifications remain isolated in 04C4C–04C4F.
 
 Future project-presentation work must also represent Tavoli as a Progetti type/filter in the final information architecture and implement the accepted Online/In-Presence mode. Neither is a participation-table field in 05A.
 
@@ -1002,15 +1002,15 @@ Major gates currently expected:
 
 ## Immediate next action
 
-Complete and review the stacked **04C4A — Resource Request Domain Foundation**
-on open DB-COMPAT-01 PR #70 without merging it or the lower stack. 04C1 is implemented in merged PR #32
+Complete and review the stacked **04C4B — Reliable Scambio Agreement + Loan/Barter Domain**
+on open 04C4A PR #71 without merging it or the lower stack. 04C1 is implemented in merged PR #32
 (`2aca5bdde7bf7ed7d747f14dcccbc3b5c4b75c42`) and 04C2 is implemented in
 merged PR #34 (`2da76de112a860210161d64de6bceab333159c26`).
 06D is implemented in merged PR #31, while 06 remains in
 progress because provider-specific 06C2B is not started. Optional E2EE/MLS
 research remains unmerged and deferred in PR #28. The stacked 04C3/05C work
-remains open and unmerged beneath DB-COMPAT-01; 04C4A is the current child,
-while 04C4B–04C4F remain not started. Plan 06C2B remains
+remains open and unmerged beneath DB-COMPAT-01; 04C4B is the current child
+above open 04C4A, while 04C4C–04C4F remain not started. Plan 06C2B remains
 not started and requires Firebase/APNs configuration, push permission and
 preview decisions, server-side FCM credentials, and a self-host-compatible
 worker deployment target. Deferred native Android/iOS checks from implemented
