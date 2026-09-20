@@ -111,6 +111,24 @@ void main() {
     );
   });
 
+  testWidgets('signed-out Home Browse CTA returns Home on system Back', (
+    tester,
+  ) async {
+    final app = await _pump(tester, signedIn: false);
+    final router = app.read(appRouterProvider);
+
+    await _tap(tester, 'browse-proposals-button');
+    expect(router.routeInformationProvider.value.uri.path, '/proposals');
+    expect(find.text('One-time proposals'), findsOneWidget);
+
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+
+    expect(router.routeInformationProvider.value.uri.path, '/');
+    expect(find.text('Mobile foundation ready'), findsOneWidget);
+    expect(find.byKey(const Key('auth-email-field')), findsNothing);
+  });
+
   testWidgets('public Tavoli routes stay available signed out', (tester) async {
     final app = await _pump(tester, signedIn: false);
     final router = app.read(appRouterProvider);

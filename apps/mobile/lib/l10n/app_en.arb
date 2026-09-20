@@ -92,6 +92,10 @@
   "@authSendCodeAction": {
     "description": "Action that requests an email OTP."
   },
+  "authSendingCode": "Sending sign-in code…",
+  "@authSendingCode": {
+    "description": "Accessible progress label while an email OTP request is pending."
+  },
   "authPrivacyNote": "We use this address to sign you in. Never share your sign-in code with anyone.",
   "@authPrivacyNote": {
     "description": "Privacy and security note on the OTP request screen."
@@ -128,6 +132,10 @@
   "authRateLimited": "Please wait before requesting or checking another code.",
   "@authRateLimited": {
     "description": "Safe auth rate-limit message."
+  },
+  "authRequestTimedOut": "The sign-in request took too long. Check your connection and try again.",
+  "@authRequestTimedOut": {
+    "description": "Safe timeout message for an email OTP request."
   },
   "authNetworkUnavailable": "Check your connection and try again.",
   "@authNetworkUnavailable": {
