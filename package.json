@@ -18,6 +18,7 @@
     "dev:site:waitlist": "npm run dev:waitlist --workspace @planets/site",
     "dev:web": "npm run dev --workspace @planets/web",
     "dev:mobile": "cd apps/mobile && flutter run --dart-define-from-file=config/local.json",
+    "dev:mobile:clean": "cd apps/mobile && flutter run --dart-define-from-file=config/local.json --dart-define=ENABLE_DEMO_TOOLS=false",
     "web:config:local": "node scripts/generate-web-local-config.mjs",
     "mobile:config:local": "node scripts/generate-mobile-local-config.mjs",
     "mobile:l10n": "cd apps/mobile && flutter gen-l10n",

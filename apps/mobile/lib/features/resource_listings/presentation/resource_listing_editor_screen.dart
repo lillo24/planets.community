@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_tokens.dart';
 import '../../../core/widgets/error_state.dart';
 import '../../../core/widgets/loading_state.dart';
+import '../../../devtools/demo/demo_widgets.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../auth/application/auth_session_controller.dart';
 import '../application/resource_listing_controllers.dart';
@@ -117,6 +118,14 @@ class _ResourceListingEditorScreenState
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
+                      if (widget.listingId == null && state.listingId == null)
+                        Align(
+                          alignment: Alignment.centerLeft,
+                          child: DemoFillSampleAction(
+                            buttonKey: const Key('resource-fill-sample'),
+                            onPressed: state.isBusy ? null : _fillSample,
+                          ),
+                        ),
                       if (isClosed) ...[
                         ResourceListingLifecycleBadge(
                           lifecycle: ResourceListingLifecycle.closed,
@@ -409,6 +418,20 @@ class _ResourceListingEditorScreenState
     _locality.text = listing.locality ?? '';
     _administrativeArea.text = listing.administrativeArea ?? '';
     _publicLocation.text = listing.publicLocationLabel ?? '';
+  }
+
+  void _fillSample() {
+    setState(() {
+      _title.text = 'Shared garden tools';
+      _description.text =
+          'A sturdy set of hand tools ready for another neighborhood project.';
+      _country.text = 'IT';
+      _locality.text = 'Bologna';
+      _administrativeArea.text = 'Emilia-Romagna';
+      _publicLocation.text = 'Central Bologna';
+      _attemptPublish = false;
+    });
+    _formKey.currentState?.validate();
   }
 }
 

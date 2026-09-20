@@ -31,3 +31,8 @@ The feature intentionally has no request, claim, reservation, contact,
 handoff, lending, barter, payment, quantity, taxonomy, media, Project linkage,
 saved-search, matching, or notification behavior. Closing only removes a
 listing from public discovery and records no transfer outcome.
+
+When centrally gated demo tools are enabled, only the create form exposes a
+synthetic listing preset. It fills fields this model already owns, preserves the
+currently selected Donate/Exchange mode, and does not create a row until the
+developer explicitly saves or publishes.

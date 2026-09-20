@@ -4,6 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/theme/app_tokens.dart';
+import '../../devtools/demo/demo_tools.dart';
+import '../../devtools/demo/demo_widgets.dart';
 import '../../features/auth/application/auth_session_controller.dart';
 import '../../features/auth/domain/auth_models.dart';
 import '../../features/notifications/application/notifications_controllers.dart';
@@ -19,8 +22,20 @@ class AppNavigationShell extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
+    final demoToolsEnabled = ref.watch(demoToolsEnabledProvider);
     return Scaffold(
-      body: navigationShell,
+      body: Stack(
+        fit: StackFit.expand,
+        children: [
+          navigationShell,
+          if (demoToolsEnabled)
+            const Positioned(
+              right: AppSpacing.small,
+              bottom: AppSpacing.small,
+              child: IgnorePointer(child: DemoIndicator()),
+            ),
+        ],
+      ),
       bottomNavigationBar: NavigationBar(
         selectedIndex: navigationShell.currentIndex,
         onDestinationSelected: (index) {

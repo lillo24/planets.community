@@ -77,3 +77,7 @@ Owner providers clear and increment their revision on identity changes, and
 every post-`await` continuation rechecks revision and identity. The router also
 rebuilds its stateful shell on account changes, discarding retained private
 forms and stacks.
+
+When centrally gated demo tools are enabled, only the Tavolo create form offers
+a synthetic, publishable weekly preset. It mutates local form state without
+saving; Tavolo edit screens never expose the action.

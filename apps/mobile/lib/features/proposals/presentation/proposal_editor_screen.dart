@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_tokens.dart';
 import '../../../core/widgets/error_state.dart';
 import '../../../core/widgets/loading_state.dart';
+import '../../../devtools/demo/demo_widgets.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../auth/application/auth_session_controller.dart';
 import '../application/proposal_controllers.dart';
@@ -341,14 +342,12 @@ class _ProposalFormState extends ConsumerState<_ProposalForm> {
             child: ListView(
               padding: const EdgeInsets.all(AppSpacing.large),
               children: [
-                if (kDebugMode && widget.proposal == null) ...[
+                if (widget.proposal == null) ...[
                   Align(
                     alignment: Alignment.centerLeft,
-                    child: OutlinedButton.icon(
-                      key: const Key('proposal-fill-sample'),
+                    child: DemoFillSampleAction(
+                      buttonKey: const Key('proposal-fill-sample'),
                       onPressed: busy ? null : _fillSampleData,
-                      icon: const Icon(Icons.science_outlined),
-                      label: Text(l10n.proposalFillSampleAction),
                     ),
                   ),
                   const SizedBox(height: AppSpacing.medium),

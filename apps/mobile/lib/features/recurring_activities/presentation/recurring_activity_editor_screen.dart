@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -9,6 +8,7 @@ import '../../../core/theme/app_tokens.dart';
 import '../../../core/time/event_time.dart';
 import '../../../core/widgets/error_state.dart';
 import '../../../core/widgets/loading_state.dart';
+import '../../../devtools/demo/demo_widgets.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../auth/application/auth_session_controller.dart';
 import '../application/recurring_activity_controllers.dart';
@@ -123,14 +123,12 @@ class _RecurringActivityEditorScreenState
                 child: ListView(
                   padding: const EdgeInsets.all(AppSpacing.large),
                   children: [
-                    if (kDebugMode)
+                    if (widget.activityId == null && existing == null)
                       Align(
                         alignment: Alignment.centerLeft,
-                        child: TextButton.icon(
-                          key: const Key('tavoli-fill-sample'),
+                        child: DemoFillSampleAction(
+                          buttonKey: const Key('tavoli-fill-sample'),
                           onPressed: state.isBusy ? null : _fillSample,
-                          icon: const Icon(Icons.science_outlined),
-                          label: Text(l10n.tavoliFillSample),
                         ),
                       ),
                     _field(

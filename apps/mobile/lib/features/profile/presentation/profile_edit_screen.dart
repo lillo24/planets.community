@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_tokens.dart';
 import '../../../core/widgets/error_state.dart';
 import '../../../core/widgets/loading_state.dart';
+import '../../../devtools/demo/demo_widgets.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../auth/application/auth_session_controller.dart';
 import '../application/profile_controller.dart';
@@ -204,6 +205,13 @@ class _ProfileEditFormState extends ConsumerState<_ProfileEditForm> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
+                          Align(
+                            alignment: Alignment.centerLeft,
+                            child: DemoFillSampleAction(
+                              buttonKey: const Key('profile-fill-sample'),
+                              onPressed: state.isBusy ? null : _fillSample,
+                            ),
+                          ),
                           Text(
                             widget.data.profile.isComplete
                                 ? l10n.profileEditDescription
@@ -319,6 +327,25 @@ class _ProfileEditFormState extends ConsumerState<_ProfileEditForm> {
 
   void _setVisibility(ProfileFieldKey field, ProfileAudience audience) {
     setState(() => _visibility[field] = audience);
+  }
+
+  void _fillSample() {
+    final sampleSkills = widget.data.categories
+        .expand((category) => category.skills)
+        .take(2)
+        .map((skill) => skill.id);
+    setState(() {
+      _displayNameController.text = 'Casey Rivers';
+      _bioController.text = 'I enjoy building welcoming neighborhood projects with practical, creative teams.';
+      _selectedSkillIds
+        ..clear()
+        ..addAll(sampleSkills);
+      _visibility
+        ..[ProfileFieldKey.displayName] = ProfileAudience.public
+        ..[ProfileFieldKey.bio] = ProfileAudience.private
+        ..[ProfileFieldKey.skills] = ProfileAudience.public;
+    });
+    _formKey.currentState?.validate();
   }
 }
 

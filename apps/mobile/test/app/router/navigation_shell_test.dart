@@ -23,6 +23,44 @@ import '../../support/fake_recurring_activity.dart';
 import '../../support/fake_resource_listing.dart';
 
 void main() {
+  testWidgets('demo marker survives shell routes and production removes it', (
+    tester,
+  ) async {
+    final app = await _pump(tester);
+    expect(find.byKey(const Key('demo-indicator')), findsOneWidget);
+
+    app.read(appRouterProvider).go('/proposals');
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('demo-indicator')), findsOneWidget);
+
+    app.read(appRouterProvider).go('/resources');
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('demo-indicator')), findsOneWidget);
+
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pumpAndSettle();
+    await _pump(tester, appEnvironment: 'production', enableDemoTools: 'true');
+    expect(find.byKey(const Key('demo-indicator')), findsNothing);
+  });
+
+  testWidgets('clean-run configuration removes every demo form control', (
+    tester,
+  ) async {
+    final app = await _pump(tester, enableDemoTools: 'false');
+    expect(find.byKey(const Key('demo-indicator')), findsNothing);
+
+    for (final entry in {
+      '/profile/edit': 'profile-fill-sample',
+      '/proposals/create': 'proposal-fill-sample',
+      '/tavoli/create': 'tavoli-fill-sample',
+      '/resources/create': 'resource-fill-sample',
+    }.entries) {
+      app.read(appRouterProvider).go(entry.key);
+      await tester.pumpAndSettle();
+      expect(find.byKey(Key(entry.value)), findsNothing);
+    }
+  });
+
   testWidgets('one shell selects every direct-entry branch and nested back', (
     tester,
   ) async {
@@ -527,6 +565,8 @@ Future<ProviderContainer> _pump(
   FakeRecurringActivityGateway? recurringActivities,
   FakeParticipationGateway? participation,
   FakeResourceListingGateway? resourceListings,
+  String appEnvironment = 'local',
+  String enableDemoTools = '',
 }) async {
   final gateway =
       auth ??
@@ -541,9 +581,12 @@ Future<ProviderContainer> _pump(
       overrides: [
         appConfigProvider.overrideWithValue(
           AppConfig.fromValues(
-            appEnvironment: 'local',
-            supabaseUrl: 'http://127.0.0.1:54321',
+            appEnvironment: appEnvironment,
+            supabaseUrl: appEnvironment == 'local'
+                ? 'http://127.0.0.1:54321'
+                : 'https://example.test',
             supabasePublishableKey: 'test-key',
+            enableDemoTools: enableDemoTools,
           ),
         ),
         authGatewayProvider.overrideWithValue(gateway),

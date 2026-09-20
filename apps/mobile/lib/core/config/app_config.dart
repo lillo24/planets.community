@@ -22,11 +22,12 @@ enum AppEnvironment {
 }
 
 final class AppConfig {
-  AppConfig({
+  AppConfig._({
     required this.environment,
     required this.supabaseUrl,
     required this.supabasePublishableKey,
     required this.sentryDsn,
+    required this.demoToolsEnabled,
   });
 
   factory AppConfig.fromCompileTime() {
@@ -37,6 +38,7 @@ final class AppConfig {
         'SUPABASE_PUBLISHABLE_KEY',
       ),
       sentryDsn: const String.fromEnvironment('SENTRY_DSN'),
+      enableDemoTools: const String.fromEnvironment('ENABLE_DEMO_TOOLS'),
     );
   }
 
@@ -45,6 +47,7 @@ final class AppConfig {
     required String supabaseUrl,
     required String supabasePublishableKey,
     String sentryDsn = '',
+    String enableDemoTools = '',
   }) {
     final environment = AppEnvironment.parse(
       _requireUnpaddedValue('APP_ENV', appEnvironment),
@@ -70,12 +73,17 @@ final class AppConfig {
     final parsedSentryDsn = sentryValue == null
         ? null
         : _parseHttpUrl('SENTRY_DSN', sentryValue, allowUserInfo: true);
+    final demoToolsEnabled = _parseDemoToolsEnabled(
+      environment,
+      enableDemoTools,
+    );
 
-    return AppConfig(
+    return AppConfig._(
       environment: environment,
       supabaseUrl: parsedSupabaseUrl,
       supabasePublishableKey: publishableKey,
       sentryDsn: parsedSentryDsn,
+      demoToolsEnabled: demoToolsEnabled,
     );
   }
 
@@ -83,6 +91,7 @@ final class AppConfig {
   final Uri supabaseUrl;
   final String supabasePublishableKey;
   final Uri? sentryDsn;
+  final bool demoToolsEnabled;
 
   bool get monitoringEnabled => sentryDsn != null;
 
@@ -91,7 +100,8 @@ final class AppConfig {
     return 'AppConfig('
         'environment: ${environment.value}, '
         'supabaseHost: ${supabaseUrl.host}, '
-        'monitoringEnabled: $monitoringEnabled)';
+        'monitoringEnabled: $monitoringEnabled, '
+        'demoToolsEnabled: $demoToolsEnabled)';
   }
 }
 
@@ -123,6 +133,21 @@ String? _optionalUnpaddedValue(String name, String value) {
     return null;
   }
   return _requireUnpaddedValue(name, value);
+}
+
+bool _parseDemoToolsEnabled(
+  AppEnvironment environment,
+  String configuredValue,
+) {
+  final requested = switch (configuredValue) {
+    '' => environment != AppEnvironment.production,
+    'true' => true,
+    'false' => false,
+    _ => throw const AppConfigException(
+      'ENABLE_DEMO_TOOLS must be true or false when provided.',
+    ),
+  };
+  return environment != AppEnvironment.production && requested;
 }
 
 Uri _parseHttpUrl(String name, String value, {required bool allowUserInfo}) {
