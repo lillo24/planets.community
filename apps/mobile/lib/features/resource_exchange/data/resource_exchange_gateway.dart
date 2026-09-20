@@ -15,6 +15,19 @@ abstract interface class ResourceExchangeGateway {
     required String agreementId,
   });
 
+  Future<List<ResourceExchangeEvent>> listEvents({
+    required String expectedProfileId,
+    required String agreementId,
+  });
+
+  Future<String> recordMilestone({
+    required String expectedProfileId,
+    required String agreementId,
+    required String expectedTermsId,
+    required ResourceExchangeLegKind legKind,
+    required ResourceExchangeMilestoneKind eventKind,
+  });
+
   Future<String> proposeTerms({
     required String expectedProfileId,
     required String agreementId,
@@ -84,6 +97,42 @@ class SupabaseResourceExchangeGateway implements ResourceExchangeGateway {
       },
     );
     return List.unmodifiable(response.map(parser.terms));
+  }
+
+  @override
+  Future<List<ResourceExchangeEvent>> listEvents({
+    required String expectedProfileId,
+    required String agreementId,
+  }) async {
+    final response = await _client.rpc<List<dynamic>>(
+      'list_resource_exchange_agreement_events',
+      params: {
+        'p_expected_profile_id': expectedProfileId,
+        'p_agreement_id': agreementId,
+      },
+    );
+    return List.unmodifiable(response.map(parser.event));
+  }
+
+  @override
+  Future<String> recordMilestone({
+    required String expectedProfileId,
+    required String agreementId,
+    required String expectedTermsId,
+    required ResourceExchangeLegKind legKind,
+    required ResourceExchangeMilestoneKind eventKind,
+  }) async {
+    final response = await _client.rpc<String>(
+      'record_resource_exchange_milestone',
+      params: {
+        'p_expected_profile_id': expectedProfileId,
+        'p_agreement_id': agreementId,
+        'p_expected_terms_id': expectedTermsId,
+        'p_leg_kind': legKind.wireValue,
+        'p_event_kind': eventKind.wireValue,
+      },
+    );
+    return parser.uuidResult(response, 'Resource exchange milestone');
   }
 
   @override
@@ -224,6 +273,15 @@ class ResourceExchangePayloadParser {
     'is_current',
     'is_pending',
   };
+  static const _eventKeys = {
+    'event_id',
+    'event_kind',
+    'terms_id',
+    'leg_kind',
+    'actor_profile_id',
+    'actor_display_name',
+    'created_at',
+  };
 
   ResourceExchangeAgreement agreement(Object? value) {
     final row = _row(value, 'Resource exchange agreement');
@@ -333,6 +391,47 @@ class ResourceExchangePayloadParser {
       createdAt: _date(row, 'created_at'),
       isCurrent: isCurrent,
       isPending: isPending,
+    );
+  }
+
+  ResourceExchangeEvent event(Object? value) {
+    final row = _row(value, 'Resource exchange event');
+    _exact(row, _eventKeys, 'Resource exchange event');
+    final kind = ResourceExchangeEventKind.fromWire(_string(row, 'event_kind'));
+    final termsId = _optionalUuid(row, 'terms_id');
+    final legKind = row['leg_kind'] == null
+        ? null
+        : ResourceExchangeLegKind.fromWire(_string(row, 'leg_kind'));
+    final validShape = switch (kind) {
+      ResourceExchangeEventKind.agreementCreated ||
+      ResourceExchangeEventKind.agreementCancelled =>
+        termsId == null && legKind == null,
+      ResourceExchangeEventKind.termsProposed ||
+      ResourceExchangeEventKind.termsSuperseded ||
+      ResourceExchangeEventKind.termsAccepted ||
+      ResourceExchangeEventKind.termsRejected ||
+      ResourceExchangeEventKind.termsWithdrawn ||
+      ResourceExchangeEventKind.agreementCompleted =>
+        termsId != null && legKind == null,
+      ResourceExchangeEventKind.resourceProvided ||
+      ResourceExchangeEventKind.resourceReceived ||
+      ResourceExchangeEventKind.resourceReturned ||
+      ResourceExchangeEventKind.resourceReturnReceived =>
+        termsId != null && legKind != null,
+    };
+    if (!validShape) {
+      throw const FormatException(
+        'Resource exchange event shape was inconsistent.',
+      );
+    }
+    return ResourceExchangeEvent(
+      eventId: _uuid(row, 'event_id'),
+      kind: kind,
+      termsId: termsId,
+      legKind: legKind,
+      actorProfileId: _uuid(row, 'actor_profile_id'),
+      actorDisplayName: _string(row, 'actor_display_name'),
+      createdAt: _date(row, 'created_at'),
     );
   }
 

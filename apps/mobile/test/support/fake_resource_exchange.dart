@@ -4,8 +4,11 @@ import 'package:planets_mobile/features/resource_exchange/domain/resource_exchan
 class FakeResourceExchangeGateway implements ResourceExchangeGateway {
   ResourceExchangeAgreement agreement = resourceExchangeAgreementFixture();
   List<ResourceExchangeTerms> terms = [];
+  List<ResourceExchangeEvent> events = [resourceExchangeCreatedEventFixture()];
+  bool autoSynchronizeHistory = true;
   final List<String> calls = [];
   Object? readError;
+  Object? eventReadError;
   Object? mutationError;
   Future<void>? readDelay;
   Future<void>? mutationDelay;
@@ -15,6 +18,10 @@ class FakeResourceExchangeGateway implements ResourceExchangeGateway {
   var rejectCount = 0;
   var withdrawCount = 0;
   var cancelCount = 0;
+  var milestoneCount = 0;
+  var eventReadCount = 0;
+  CapturedResourceExchangeMilestone? lastMilestone;
+  void Function(int count)? onEventReadAttempt;
   void Function()? onCancelAttempt;
 
   @override
@@ -40,6 +47,21 @@ class FakeResourceExchangeGateway implements ResourceExchangeGateway {
   }
 
   @override
+  Future<List<ResourceExchangeEvent>> listEvents({
+    required String expectedProfileId,
+    required String agreementId,
+  }) async {
+    calls.add('events:$agreementId');
+    eventReadCount++;
+    onEventReadAttempt?.call(eventReadCount);
+    if (readDelay case final delay?) await delay;
+    if (eventReadError case final error?) throw error;
+    if (readError case final error?) throw error;
+    _synchronizeConfiguredHistory();
+    return List.unmodifiable(events);
+  }
+
+  @override
   Future<String> proposeTerms({
     required String expectedProfileId,
     required String agreementId,
@@ -57,6 +79,7 @@ class FakeResourceExchangeGateway implements ResourceExchangeGateway {
     await _beforeMutation();
     final termsId =
         '00000000-0000-4000-8000-${(800 + proposeCount).toString().padLeft(12, '0')}';
+    final oldPendingTermsId = agreement.pendingTermsId;
     terms = [
       resourceExchangeTermsFixture(
         termsId: termsId,
@@ -82,6 +105,18 @@ class FakeResourceExchangeGateway implements ResourceExchangeGateway {
     agreement = resourceExchangeAgreementFrom(
       agreement,
       pendingTermsId: termsId,
+    );
+    if (oldPendingTermsId != null) {
+      _appendEvent(
+        ResourceExchangeEventKind.termsSuperseded,
+        actorProfileId: expectedProfileId,
+        termsId: oldPendingTermsId,
+      );
+    }
+    _appendEvent(
+      ResourceExchangeEventKind.termsProposed,
+      actorProfileId: expectedProfileId,
+      termsId: termsId,
     );
     return termsId;
   }
@@ -110,6 +145,11 @@ class FakeResourceExchangeGateway implements ResourceExchangeGateway {
       pendingTermsId: null,
       currentTermsAcceptedAt: DateTime.utc(2026, 9, 20, 13),
     );
+    _appendEvent(
+      ResourceExchangeEventKind.termsAccepted,
+      actorProfileId: expectedProfileId,
+      termsId: expectedPendingTermsId,
+    );
     return expectedPendingTermsId;
   }
 
@@ -123,6 +163,11 @@ class FakeResourceExchangeGateway implements ResourceExchangeGateway {
     rejectCount++;
     await _beforeMutation();
     _clearPending();
+    _appendEvent(
+      ResourceExchangeEventKind.termsRejected,
+      actorProfileId: expectedProfileId,
+      termsId: expectedPendingTermsId,
+    );
     return expectedPendingTermsId;
   }
 
@@ -136,7 +181,77 @@ class FakeResourceExchangeGateway implements ResourceExchangeGateway {
     withdrawCount++;
     await _beforeMutation();
     _clearPending();
+    _appendEvent(
+      ResourceExchangeEventKind.termsWithdrawn,
+      actorProfileId: expectedProfileId,
+      termsId: expectedPendingTermsId,
+    );
     return expectedPendingTermsId;
+  }
+
+  @override
+  Future<String> recordMilestone({
+    required String expectedProfileId,
+    required String agreementId,
+    required String expectedTermsId,
+    required ResourceExchangeLegKind legKind,
+    required ResourceExchangeMilestoneKind eventKind,
+  }) async {
+    calls.add(
+      'milestone:$agreementId:${legKind.wireValue}:${eventKind.wireValue}',
+    );
+    milestoneCount++;
+    lastMilestone = CapturedResourceExchangeMilestone(
+      expectedTermsId: expectedTermsId,
+      legKind: legKind,
+      eventKind: eventKind,
+    );
+    await _beforeMutation();
+    for (final event in events) {
+      if (event.termsId == expectedTermsId &&
+          event.legKind == legKind &&
+          event.kind == eventKind.eventKind) {
+        return event.eventId;
+      }
+    }
+    final event = _appendEvent(
+      eventKind.eventKind,
+      actorProfileId: expectedProfileId,
+      termsId: expectedTermsId,
+      legKind: legKind,
+    );
+    agreement = resourceExchangeAgreementFrom(
+      agreement,
+      lifecycle: ResourceExchangeLifecycle.inProgress,
+    );
+    final snapshot = ResourceExchangeSnapshot.reconcile(
+      agreement: agreement,
+      terms: terms,
+      events: events,
+    );
+    final ownerComplete = snapshot
+        .progressFor(
+          ResourceExchangeLegKind.ownerResource,
+          agreement.ownerProfileId,
+        )!
+        .isComplete;
+    final requester = snapshot.progressFor(
+      ResourceExchangeLegKind.requesterResource,
+      agreement.ownerProfileId,
+    );
+    if (ownerComplete && (requester?.isComplete ?? true)) {
+      agreement = resourceExchangeAgreementFrom(
+        agreement,
+        lifecycle: ResourceExchangeLifecycle.completed,
+        completedAt: DateTime.utc(2026, 9, 20, 23),
+      );
+      _appendEvent(
+        ResourceExchangeEventKind.agreementCompleted,
+        actorProfileId: expectedProfileId,
+        termsId: expectedTermsId,
+      );
+    }
+    return event.eventId;
   }
 
   @override
@@ -159,6 +274,10 @@ class FakeResourceExchangeGateway implements ResourceExchangeGateway {
       cancelledAt: DateTime.utc(2026, 9, 20, 13),
       cancelledByProfileId: expectedProfileId,
     );
+    _appendEvent(
+      ResourceExchangeEventKind.agreementCancelled,
+      actorProfileId: expectedProfileId,
+    );
     return agreementId;
   }
 
@@ -174,6 +293,134 @@ class FakeResourceExchangeGateway implements ResourceExchangeGateway {
     ];
     agreement = resourceExchangeAgreementFrom(agreement, pendingTermsId: null);
   }
+
+  ResourceExchangeEvent _appendEvent(
+    ResourceExchangeEventKind kind, {
+    required String actorProfileId,
+    String? termsId,
+    ResourceExchangeLegKind? legKind,
+  }) {
+    final event = resourceExchangeEventFixture(
+      sequence: events.length + 1,
+      kind: kind,
+      actorProfileId: actorProfileId,
+      termsId: termsId,
+      legKind: legKind,
+    );
+    events = [...events, event];
+    return event;
+  }
+
+  void _synchronizeConfiguredHistory() {
+    if (!autoSynchronizeHistory || terms.isEmpty) return;
+    final termsIds = terms.map((item) => item.termsId).toSet();
+    if (events.any(
+      (event) => event.termsId != null && !termsIds.contains(event.termsId),
+    )) {
+      events = [resourceExchangeCreatedEventFixture()];
+    }
+    if (events.length != 1) return;
+    final orderedTerms = [
+      ...terms,
+    ]..sort((left, right) => left.versionNumber.compareTo(right.versionNumber));
+    for (final item in orderedTerms) {
+      _appendEvent(
+        ResourceExchangeEventKind.termsProposed,
+        actorProfileId: item.proposedByProfileId,
+        termsId: item.termsId,
+      );
+      if (item.isCurrent) {
+        _appendEvent(
+          ResourceExchangeEventKind.termsAccepted,
+          actorProfileId: item.proposedByProfileId == agreement.ownerProfileId
+              ? agreement.requesterProfileId
+              : agreement.ownerProfileId,
+          termsId: item.termsId,
+        );
+      } else if (!item.isPending) {
+        _appendEvent(
+          ResourceExchangeEventKind.termsRejected,
+          actorProfileId: agreement.ownerProfileId,
+          termsId: item.termsId,
+        );
+      }
+    }
+    final current = terms.where((item) => item.isCurrent).firstOrNull;
+    if (current != null &&
+        (agreement.lifecycle == ResourceExchangeLifecycle.inProgress ||
+            agreement.lifecycle == ResourceExchangeLifecycle.completed)) {
+      _appendEvent(
+        ResourceExchangeEventKind.resourceProvided,
+        actorProfileId: agreement.ownerProfileId,
+        termsId: current.termsId,
+        legKind: ResourceExchangeLegKind.ownerResource,
+      );
+      if (agreement.lifecycle == ResourceExchangeLifecycle.completed) {
+        _appendEvent(
+          ResourceExchangeEventKind.resourceReceived,
+          actorProfileId: agreement.requesterProfileId,
+          termsId: current.termsId,
+          legKind: ResourceExchangeLegKind.ownerResource,
+        );
+        if (current.ownerTransferKind == ResourceOwnerTransferKind.lend) {
+          _appendEvent(
+            ResourceExchangeEventKind.resourceReturned,
+            actorProfileId: agreement.requesterProfileId,
+            termsId: current.termsId,
+            legKind: ResourceExchangeLegKind.ownerResource,
+          );
+          _appendEvent(
+            ResourceExchangeEventKind.resourceReturnReceived,
+            actorProfileId: agreement.ownerProfileId,
+            termsId: current.termsId,
+            legKind: ResourceExchangeLegKind.ownerResource,
+          );
+        }
+        if (current.requesterTransferKind !=
+            ResourceRequesterTransferKind.none) {
+          _appendEvent(
+            ResourceExchangeEventKind.resourceProvided,
+            actorProfileId: agreement.requesterProfileId,
+            termsId: current.termsId,
+            legKind: ResourceExchangeLegKind.requesterResource,
+          );
+          _appendEvent(
+            ResourceExchangeEventKind.resourceReceived,
+            actorProfileId: agreement.ownerProfileId,
+            termsId: current.termsId,
+            legKind: ResourceExchangeLegKind.requesterResource,
+          );
+          if (current.requesterTransferKind ==
+              ResourceRequesterTransferKind.lend) {
+            _appendEvent(
+              ResourceExchangeEventKind.resourceReturned,
+              actorProfileId: agreement.ownerProfileId,
+              termsId: current.termsId,
+              legKind: ResourceExchangeLegKind.requesterResource,
+            );
+            _appendEvent(
+              ResourceExchangeEventKind.resourceReturnReceived,
+              actorProfileId: agreement.requesterProfileId,
+              termsId: current.termsId,
+              legKind: ResourceExchangeLegKind.requesterResource,
+            );
+          }
+        }
+        _appendEvent(
+          ResourceExchangeEventKind.agreementCompleted,
+          actorProfileId: agreement.ownerProfileId,
+          termsId: current.termsId,
+        );
+      }
+    }
+    if (agreement.lifecycle == ResourceExchangeLifecycle.cancelled) {
+      _appendEvent(
+        ResourceExchangeEventKind.agreementCancelled,
+        actorProfileId:
+            agreement.cancelledByProfileId ?? agreement.ownerProfileId,
+      );
+    }
+  }
 }
 
 class CapturedResourceExchangeProposal {
@@ -188,12 +435,26 @@ class CapturedResourceExchangeProposal {
   final ResourceExchangeTermsInput input;
 }
 
+class CapturedResourceExchangeMilestone {
+  const CapturedResourceExchangeMilestone({
+    required this.expectedTermsId,
+    required this.legKind,
+    required this.eventKind,
+  });
+
+  final String expectedTermsId;
+  final ResourceExchangeLegKind legKind;
+  final ResourceExchangeMilestoneKind eventKind;
+}
+
 ResourceExchangeAgreement resourceExchangeAgreementFixture({
   ResourceExchangeLifecycle lifecycle = ResourceExchangeLifecycle.negotiating,
   String? currentTermsId,
   String? pendingTermsId,
   String ownerProfileId = '00000000-0000-4000-8000-000000000101',
   String requesterProfileId = '00000000-0000-4000-8000-000000000102',
+  bool ownerLendReturnOverdue = false,
+  bool requesterLendReturnOverdue = false,
 }) => ResourceExchangeAgreement(
   agreementId: gatewayAgreementId,
   requestId: gatewayRequestId,
@@ -216,8 +477,8 @@ ResourceExchangeAgreement resourceExchangeAgreementFixture({
   completedAt: lifecycle == ResourceExchangeLifecycle.completed
       ? DateTime.utc(2026, 9, 20, 12)
       : null,
-  ownerLendReturnOverdue: false,
-  requesterLendReturnOverdue: false,
+  ownerLendReturnOverdue: ownerLendReturnOverdue,
+  requesterLendReturnOverdue: requesterLendReturnOverdue,
 );
 
 ResourceExchangeAgreement resourceExchangeAgreementFrom(
@@ -228,6 +489,7 @@ ResourceExchangeAgreement resourceExchangeAgreementFrom(
   Object? currentTermsAcceptedAt = _unchanged,
   Object? cancelledAt = _unchanged,
   Object? cancelledByProfileId = _unchanged,
+  Object? completedAt = _unchanged,
 }) => ResourceExchangeAgreement(
   agreementId: value.agreementId,
   requestId: value.requestId,
@@ -251,9 +513,36 @@ ResourceExchangeAgreement resourceExchangeAgreementFrom(
   cancelledByProfileId: identical(cancelledByProfileId, _unchanged)
       ? value.cancelledByProfileId
       : cancelledByProfileId as String?,
-  completedAt: value.completedAt,
+  completedAt: identical(completedAt, _unchanged)
+      ? value.completedAt
+      : completedAt as DateTime?,
   ownerLendReturnOverdue: value.ownerLendReturnOverdue,
   requesterLendReturnOverdue: value.requesterLendReturnOverdue,
+);
+
+ResourceExchangeEvent resourceExchangeCreatedEventFixture() =>
+    resourceExchangeEventFixture(
+      sequence: 1,
+      kind: ResourceExchangeEventKind.agreementCreated,
+      actorProfileId: '00000000-0000-4000-8000-000000000101',
+    );
+
+ResourceExchangeEvent resourceExchangeEventFixture({
+  required int sequence,
+  required ResourceExchangeEventKind kind,
+  required String actorProfileId,
+  String? termsId,
+  ResourceExchangeLegKind? legKind,
+  String actorDisplayName = 'Alex',
+}) => ResourceExchangeEvent(
+  eventId:
+      '00000000-0000-4000-8000-${(900 + sequence).toString().padLeft(12, '0')}',
+  kind: kind,
+  termsId: termsId,
+  legKind: legKind,
+  actorProfileId: actorProfileId,
+  actorDisplayName: actorDisplayName,
+  createdAt: DateTime.utc(2026, 9, 20, 12).add(Duration(minutes: sequence)),
 );
 
 ResourceExchangeTerms resourceExchangeTermsFixture({
@@ -318,3 +607,5 @@ const gatewayAgreementId = '00000000-0000-4000-8000-000000000501';
 const gatewayRequestId = '00000000-0000-4000-8000-000000000301';
 const gatewayListingId = '00000000-0000-4000-8000-000000000201';
 const gatewayTermsId = '00000000-0000-4000-8000-000000000701';
+const gatewayOwnerProfileId = '00000000-0000-4000-8000-000000000101';
+const gatewayRequesterProfileId = '00000000-0000-4000-8000-000000000102';

@@ -417,6 +417,238 @@ void main() {
   });
 
   test(
+    'first milestone calls once and reloads canonical in-progress state',
+    () async {
+      final current = resourceExchangeTermsFixture(isCurrent: true);
+      final gateway = FakeResourceExchangeGateway()
+        ..agreement = resourceExchangeAgreementFixture(
+          lifecycle: ResourceExchangeLifecycle.agreed,
+          currentTermsId: current.termsId,
+        )
+        ..terms = [current];
+      final session = _readyContainer(
+        gateway,
+        profileId: gatewayOwnerProfileId,
+      );
+      addTearDown(session.dispose);
+      await _load(session.container, profileId: gatewayOwnerProfileId);
+
+      const action = ResourceExchangeMilestoneAction(
+        legKind: ResourceExchangeLegKind.ownerResource,
+        eventKind: ResourceExchangeMilestoneKind.resourceProvided,
+      );
+      expect(
+        await session.container
+            .read(resourceExchangeProvider.notifier)
+            .recordMilestone(action),
+        isTrue,
+      );
+      final state = session.container.read(resourceExchangeProvider);
+      expect(gateway.milestoneCount, 1);
+      expect(gateway.lastMilestone?.expectedTermsId, current.termsId);
+      expect(
+        state.snapshot?.agreement.lifecycle,
+        ResourceExchangeLifecycle.inProgress,
+      );
+      expect(
+        state.snapshot?.events.where(
+          (event) => event.kind == action.eventKind.eventKind,
+        ),
+        hasLength(1),
+      );
+    },
+  );
+
+  test(
+    'final milestone reloads automatic completion without local append',
+    () async {
+      final current = resourceExchangeTermsFixture(isCurrent: true);
+      final gateway = FakeResourceExchangeGateway()
+        ..agreement = resourceExchangeAgreementFixture(
+          lifecycle: ResourceExchangeLifecycle.inProgress,
+          currentTermsId: current.termsId,
+        )
+        ..terms = [current]
+        ..autoSynchronizeHistory = false
+        ..events = [
+          resourceExchangeCreatedEventFixture(),
+          resourceExchangeEventFixture(
+            sequence: 2,
+            kind: ResourceExchangeEventKind.termsProposed,
+            actorProfileId: gatewayOwnerProfileId,
+            termsId: current.termsId,
+          ),
+          resourceExchangeEventFixture(
+            sequence: 3,
+            kind: ResourceExchangeEventKind.termsAccepted,
+            actorProfileId: gatewayRequesterProfileId,
+            termsId: current.termsId,
+          ),
+          resourceExchangeEventFixture(
+            sequence: 4,
+            kind: ResourceExchangeEventKind.resourceProvided,
+            actorProfileId: gatewayOwnerProfileId,
+            termsId: current.termsId,
+            legKind: ResourceExchangeLegKind.ownerResource,
+          ),
+        ];
+      final session = _readyContainer(
+        gateway,
+        profileId: gatewayRequesterProfileId,
+      );
+      addTearDown(session.dispose);
+      await _load(session.container, profileId: gatewayRequesterProfileId);
+
+      expect(
+        await session.container
+            .read(resourceExchangeProvider.notifier)
+            .recordMilestone(
+              const ResourceExchangeMilestoneAction(
+                legKind: ResourceExchangeLegKind.ownerResource,
+                eventKind: ResourceExchangeMilestoneKind.resourceReceived,
+              ),
+            ),
+        isTrue,
+      );
+      final snapshot = session.container
+          .read(resourceExchangeProvider)
+          .snapshot;
+      expect(
+        snapshot?.agreement.lifecycle,
+        ResourceExchangeLifecycle.completed,
+      );
+      expect(
+        snapshot?.events.where(
+          (event) => event.kind == ResourceExchangeEventKind.agreementCompleted,
+        ),
+        hasLength(1),
+      );
+      expect(snapshot?.milestoneActionsFor(gatewayRequesterProfileId), isEmpty);
+    },
+  );
+
+  test(
+    'milestone PT409 is never retried and canonical state is reloaded',
+    () async {
+      final current = resourceExchangeTermsFixture(isCurrent: true);
+      final gateway = FakeResourceExchangeGateway()
+        ..agreement = resourceExchangeAgreementFixture(
+          lifecycle: ResourceExchangeLifecycle.agreed,
+          currentTermsId: current.termsId,
+        )
+        ..terms = [current]
+        ..mutationError = const PostgrestException(
+          message: 'private',
+          code: 'PT409',
+        );
+      final session = _readyContainer(
+        gateway,
+        profileId: gatewayOwnerProfileId,
+      );
+      addTearDown(session.dispose);
+      await _load(session.container, profileId: gatewayOwnerProfileId);
+
+      expect(
+        await session.container
+            .read(resourceExchangeProvider.notifier)
+            .recordMilestone(
+              const ResourceExchangeMilestoneAction(
+                legKind: ResourceExchangeLegKind.ownerResource,
+                eventKind: ResourceExchangeMilestoneKind.resourceProvided,
+              ),
+            ),
+        isFalse,
+      );
+      expect(gateway.milestoneCount, 1);
+      expect(
+        session.container.read(resourceExchangeProvider).failure,
+        ResourceExchangeFailureKind.milestoneConflict,
+      );
+    },
+  );
+
+  test(
+    'timeline failure keeps terms visible and retry restores actions',
+    () async {
+      final current = resourceExchangeTermsFixture(isCurrent: true);
+      final gateway = FakeResourceExchangeGateway()
+        ..agreement = resourceExchangeAgreementFixture(
+          lifecycle: ResourceExchangeLifecycle.agreed,
+          currentTermsId: current.termsId,
+        )
+        ..terms = [current]
+        ..eventReadError = StateError('timeline unavailable');
+      final session = _readyContainer(
+        gateway,
+        profileId: gatewayOwnerProfileId,
+      );
+      addTearDown(session.dispose);
+
+      expect(
+        await _load(session.container, profileId: gatewayOwnerProfileId),
+        isFalse,
+      );
+      var state = session.container.read(resourceExchangeProvider);
+      expect(state.phase, ResourceExchangePhase.ready);
+      expect(state.snapshot?.currentTerms, current);
+      expect(state.eventLoadFailure, isTrue);
+      expect(
+        await session.container
+            .read(resourceExchangeProvider.notifier)
+            .recordMilestone(
+              const ResourceExchangeMilestoneAction(
+                legKind: ResourceExchangeLegKind.ownerResource,
+                eventKind: ResourceExchangeMilestoneKind.resourceProvided,
+              ),
+            ),
+        isFalse,
+      );
+
+      gateway.eventReadError = null;
+      expect(
+        await session.container
+            .read(resourceExchangeProvider.notifier)
+            .refresh(),
+        isTrue,
+      );
+      state = session.container.read(resourceExchangeProvider);
+      expect(state.eventLoadFailure, isFalse);
+      expect(
+        state.snapshot?.milestoneActionsFor(gatewayOwnerProfileId),
+        isNotEmpty,
+      );
+    },
+  );
+
+  test('mixed cross-read snapshot is retried once and then accepted', () async {
+    final gateway = FakeResourceExchangeGateway()
+      ..autoSynchronizeHistory = false
+      ..events = [
+        resourceExchangeCreatedEventFixture(),
+        resourceExchangeEventFixture(
+          sequence: 2,
+          kind: ResourceExchangeEventKind.termsProposed,
+          actorProfileId: gatewayOwnerProfileId,
+          termsId: gatewayTermsId,
+        ),
+      ];
+    gateway.onEventReadAttempt = (count) {
+      if (count == 2) {
+        gateway.events = [resourceExchangeCreatedEventFixture()];
+      }
+    };
+    final session = _readyContainer(gateway);
+    addTearDown(session.dispose);
+
+    expect(await _load(session.container), isTrue);
+    expect(gateway.eventReadCount, 2);
+    expect(
+      session.container.read(resourceExchangeProvider).hasRefreshWarning,
+      isFalse,
+    );
+  });
+
+  test(
     'agreement read failure does not affect an independent chat owner',
     () async {
       final gateway = FakeResourceExchangeGateway()

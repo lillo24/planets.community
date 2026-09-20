@@ -9,6 +9,8 @@ String resourceExchangeFailureMessage(
   ResourceExchangeFailureKind.forbidden => l10n.resourceExchangeForbidden,
   ResourceExchangeFailureKind.notFound => l10n.resourceExchangeNotFound,
   ResourceExchangeFailureKind.conflict => l10n.resourceExchangeConflict,
+  ResourceExchangeFailureKind.milestoneConflict =>
+    l10n.resourceExchangeMilestoneConflict,
   ResourceExchangeFailureKind.cancellationConflict =>
     l10n.resourceExchangeCancellationConflict,
   ResourceExchangeFailureKind.unavailable => l10n.resourceExchangeUnavailable,

@@ -1168,5 +1168,130 @@
   "resourceExchangeConflict": "The agreement changed elsewhere. We loaded the latest terms. Review them before trying again.",
   "resourceExchangeCancellationConflict": "This agreement changed and can no longer be cancelled here.",
   "resourceExchangeUnavailable": "Agreement details are unavailable. The conversation still works.",
-  "resourceExchangeRefreshWarning": "We could not refresh the agreement. The last known terms remain visible."
+  "resourceExchangeRefreshWarning": "We could not refresh the agreement. The last known terms remain visible.",
+  "resourceExchangeTimelineWarning": "Agreement history could not be refreshed. Terms remain visible, but handoff actions are paused.",
+  "resourceExchangeMilestoneConflict": "The agreement changed elsewhere. We loaded the latest handoff status.",
+  "resourceExchangeHistoryTitle": "Agreement history",
+  "resourceExchangeHistoryAction": "History",
+  "resourceExchangeHistoryTrust": "These entries record participant confirmations in PLANETS.",
+  "resourceExchangeProposalHistoryTitle": "Proposal history",
+  "resourceExchangeTermsVersion": "Version {number}",
+  "@resourceExchangeTermsVersion": {
+    "placeholders": { "number": { "type": "int" } }
+  },
+  "resourceExchangeViewHistoricalTerms": "View terms",
+  "resourceExchangeOutcomePending": "Pending",
+  "resourceExchangeOutcomeAccepted": "Accepted",
+  "resourceExchangeOutcomeRejected": "Rejected",
+  "resourceExchangeOutcomeWithdrawn": "Withdrawn",
+  "resourceExchangeOutcomeSuperseded": "Superseded",
+  "resourceExchangeOutcomeHistoricalAccepted": "Previously accepted",
+  "resourceExchangeProgressTitle": "Handoff progress",
+  "resourceExchangeHandedOver": "Handed over",
+  "resourceExchangeReceived": "Received",
+  "resourceExchangeReturned": "Returned",
+  "resourceExchangeReturnConfirmed": "Return confirmed",
+  "resourceExchangeMilestoneDone": "Recorded",
+  "resourceExchangeMilestoneNotDone": "Not yet recorded",
+  "resourceExchangeMarkHandedOver": "Mark as handed over",
+  "resourceExchangeConfirmReceived": "Confirm received",
+  "resourceExchangeMarkReturned": "Mark as returned",
+  "resourceExchangeConfirmReturn": "Confirm return",
+  "resourceExchangeWaitingFor": "Waiting for {name}",
+  "@resourceExchangeWaitingFor": {
+    "placeholders": { "name": { "type": "String" } }
+  },
+  "resourceExchangeYourNextStep": "Your next step: {action}",
+  "@resourceExchangeYourNextStep": {
+    "placeholders": { "action": { "type": "String" } }
+  },
+  "resourceExchangeOwnerResource": "{title} — {transfer}",
+  "@resourceExchangeOwnerResource": {
+    "placeholders": {
+      "title": { "type": "String" },
+      "transfer": { "type": "String" }
+    }
+  },
+  "resourceExchangeRequesterResource": "{description} — {transfer}",
+  "@resourceExchangeRequesterResource": {
+    "placeholders": {
+      "description": { "type": "String" },
+      "transfer": { "type": "String" }
+    }
+  },
+  "resourceExchangeReturnOverdue": "Return is overdue",
+  "resourceExchangeExpectedReturn": "Expected return: {date}",
+  "@resourceExchangeExpectedReturn": {
+    "placeholders": { "date": { "type": "String" } }
+  },
+  "resourceExchangeMilestoneConfirmTitle": "Record this handoff update?",
+  "resourceExchangeMilestoneConfirmHandedOver": "Confirm that you handed over this resource?",
+  "resourceExchangeMilestoneConfirmReceived": "Confirm that you received this resource?",
+  "resourceExchangeMilestoneConfirmReturned": "Confirm that you returned this resource?",
+  "resourceExchangeMilestoneConfirmReturn": "Confirm that the resource was returned to you?",
+  "resourceExchangeMilestoneConfirmExplanation": "PLANETS records this statement in the agreement history.",
+  "resourceExchangeMilestoneConfirmAction": "Record update",
+  "resourceExchangeMilestoneUpdating": "Recording handoff update…",
+  "resourceExchangeHandoffLocked": "Handoff has started. Agreed terms are locked.",
+  "resourceExchangeTimelineAgreementCreated": "Agreement created",
+  "resourceExchangeTimelineTermsProposed": "Terms proposed by {name}",
+  "@resourceExchangeTimelineTermsProposed": {
+    "placeholders": { "name": { "type": "String" } }
+  },
+  "resourceExchangeTimelineTermsSuperseded": "Previous proposal superseded by {name}",
+  "@resourceExchangeTimelineTermsSuperseded": {
+    "placeholders": { "name": { "type": "String" } }
+  },
+  "resourceExchangeTimelineTermsAccepted": "Terms accepted by {name}",
+  "@resourceExchangeTimelineTermsAccepted": {
+    "placeholders": { "name": { "type": "String" } }
+  },
+  "resourceExchangeTimelineTermsRejected": "Proposal rejected by {name}",
+  "@resourceExchangeTimelineTermsRejected": {
+    "placeholders": { "name": { "type": "String" } }
+  },
+  "resourceExchangeTimelineTermsWithdrawn": "Proposal withdrawn by {name}",
+  "@resourceExchangeTimelineTermsWithdrawn": {
+    "placeholders": { "name": { "type": "String" } }
+  },
+  "resourceExchangeTimelineCancelled": "Coordination cancelled by {name}",
+  "@resourceExchangeTimelineCancelled": {
+    "placeholders": { "name": { "type": "String" } }
+  },
+  "resourceExchangeTimelineCompleted": "Exchange completed",
+  "resourceExchangeTimelineHandedOver": "{name} marked “{resource}” as handed over.",
+  "@resourceExchangeTimelineHandedOver": {
+    "placeholders": {
+      "name": { "type": "String" },
+      "resource": { "type": "String" }
+    }
+  },
+  "resourceExchangeTimelineReceived": "{name} confirmed receiving “{resource}”.",
+  "@resourceExchangeTimelineReceived": {
+    "placeholders": {
+      "name": { "type": "String" },
+      "resource": { "type": "String" }
+    }
+  },
+  "resourceExchangeTimelineReturned": "{name} marked “{resource}” as returned.",
+  "@resourceExchangeTimelineReturned": {
+    "placeholders": {
+      "name": { "type": "String" },
+      "resource": { "type": "String" }
+    }
+  },
+  "resourceExchangeTimelineReturnReceived": "{name} confirmed “{resource}” was returned.",
+  "@resourceExchangeTimelineReturnReceived": {
+    "placeholders": {
+      "name": { "type": "String" },
+      "resource": { "type": "String" }
+    }
+  },
+  "resourceExchangeEventSemantics": "{description}, {date}",
+  "@resourceExchangeEventSemantics": {
+    "placeholders": {
+      "description": { "type": "String" },
+      "date": { "type": "String" }
+    }
+  }
 }

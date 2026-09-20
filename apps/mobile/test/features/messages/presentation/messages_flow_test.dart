@@ -906,7 +906,10 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Exchange in progress'), findsOneWidget);
-    expect(find.text('The agreed terms are now locked.'), findsOneWidget);
+    expect(
+      find.text('Handoff has started. Agreed terms are locked.'),
+      findsOneWidget,
+    );
     expect(find.byKey(const Key('resource-exchange-cancel')), findsNothing);
     await tester.tap(
       find.byKey(const Key('resource-exchange-primary-action')).hitTestable(),
@@ -965,6 +968,181 @@ void main() {
       find.byKey(const Key('resource-exchange-propose-changes')),
       findsNothing,
     );
+  });
+
+  testWidgets(
+    'handoff progress shows backend overdue state and confirms once',
+    (tester) async {
+      const chatId = '00000000-0000-4000-8000-000000000401';
+      final current = resourceExchangeTermsFixture(
+        ownerTransferKind: ResourceOwnerTransferKind.lend,
+        ownerLendStartsAt: DateTime.utc(2026, 9, 20, 8),
+        ownerLendEndsAt: DateTime.utc(2026, 9, 23, 18),
+        isCurrent: true,
+      );
+      final exchange = FakeResourceExchangeGateway()
+        ..agreement = resourceExchangeAgreementFixture(
+          lifecycle: ResourceExchangeLifecycle.agreed,
+          currentTermsId: current.termsId,
+          ownerLendReturnOverdue: true,
+        )
+        ..terms = [current];
+      final app = await _pump(
+        tester,
+        identityId: gatewayOwnerProfileId,
+        messages: FakeMessagesGateway(),
+        resourceChats: FakeResourceChatGateway()
+          ..summary = resourceChatSummaryFixture(
+            lifecycle: ResourceExchangeLifecycle.agreed,
+          )
+          ..histories[chatId] = [],
+        resourceExchange: exchange,
+      );
+      app.read(appRouterProvider).go('/messages/chats/resource/$chatId');
+      await tester.pumpAndSettle();
+
+      await tester.tap(
+        find
+            .byKey(const Key('resource-exchange-progress-action'))
+            .hitTestable(),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('Return is overdue'), findsOneWidget);
+      expect(find.textContaining('Expected return:'), findsOneWidget);
+      expect(find.text('Mark as handed over'), findsWidgets);
+
+      await tester.tap(
+        find
+            .byKey(
+              const Key(
+                'resource-exchange-milestone-owner_resource-resource_provided',
+              ),
+            )
+            .hitTestable(),
+      );
+      await tester.pumpAndSettle();
+      expect(
+        find.textContaining('Confirm that you handed over this resource?'),
+        findsOneWidget,
+      );
+      expect(
+        find.textContaining('records this statement in the agreement history'),
+        findsOneWidget,
+      );
+      await tester.tap(
+        find
+            .byKey(const Key('resource-exchange-confirm-milestone'))
+            .hitTestable(),
+      );
+      await tester.pumpAndSettle();
+
+      expect(exchange.milestoneCount, 1);
+      expect(
+        exchange.agreement.lifecycle,
+        ResourceExchangeLifecycle.inProgress,
+      );
+      expect(find.text('✓ Handed over'), findsOneWidget);
+    },
+  );
+
+  testWidgets('agreement history renders timeline and immutable terms', (
+    tester,
+  ) async {
+    const chatId = '00000000-0000-4000-8000-000000000401';
+    final current = resourceExchangeTermsFixture(
+      requesterTransferKind: ResourceRequesterTransferKind.give,
+      requesterResourceDescription: 'A long-lived wheelbarrow snapshot',
+      isCurrent: true,
+    );
+    final exchange = FakeResourceExchangeGateway()
+      ..agreement = resourceExchangeAgreementFixture(
+        lifecycle: ResourceExchangeLifecycle.agreed,
+        currentTermsId: current.termsId,
+      )
+      ..terms = [current];
+    final app = await _pump(
+      tester,
+      messages: FakeMessagesGateway(),
+      resourceChats: FakeResourceChatGateway()
+        ..summary = resourceChatSummaryFixture(
+          lifecycle: ResourceExchangeLifecycle.agreed,
+        )
+        ..histories[chatId] = [],
+      resourceExchange: exchange,
+    );
+    app.read(appRouterProvider).go('/messages/chats/resource/$chatId');
+    await tester.pumpAndSettle();
+
+    await tester.tap(
+      find.byKey(const Key('resource-exchange-history')).hitTestable(),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('Agreement history'), findsOneWidget);
+    expect(
+      find.text('These entries record participant confirmations in PLANETS.'),
+      findsOneWidget,
+    );
+    expect(find.text('Agreement created'), findsOneWidget);
+    expect(find.textContaining('Terms proposed by'), findsOneWidget);
+    expect(find.text('Proposal history'), findsOneWidget);
+    expect(find.text('Version 1'), findsOneWidget);
+
+    await tester.tap(
+      find
+          .byKey(Key('resource-exchange-history-terms-${current.termsId}'))
+          .hitTestable(),
+    );
+    await tester.pumpAndSettle();
+    expect(
+      find.byKey(Key('resource-exchange-historical-terms-${current.termsId}')),
+      findsOneWidget,
+    );
+    expect(
+      find.textContaining('A long-lived wheelbarrow snapshot'),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('timeline failure keeps terms and pauses handoff controls', (
+    tester,
+  ) async {
+    const chatId = '00000000-0000-4000-8000-000000000401';
+    final current = resourceExchangeTermsFixture(isCurrent: true);
+    final exchange = FakeResourceExchangeGateway()
+      ..agreement = resourceExchangeAgreementFixture(
+        lifecycle: ResourceExchangeLifecycle.agreed,
+        currentTermsId: current.termsId,
+      )
+      ..terms = [current]
+      ..eventReadError = StateError('private timeline diagnostic');
+    final app = await _pump(
+      tester,
+      identityId: gatewayOwnerProfileId,
+      messages: FakeMessagesGateway(),
+      resourceChats: FakeResourceChatGateway()
+        ..summary = resourceChatSummaryFixture(
+          lifecycle: ResourceExchangeLifecycle.agreed,
+        )
+        ..histories[chatId] = [],
+      resourceExchange: exchange,
+    );
+    app.read(appRouterProvider).go('/messages/chats/resource/$chatId');
+    await tester.pumpAndSettle();
+
+    expect(find.text('Give ↔ Nothing'), findsOneWidget);
+    expect(
+      find.byKey(const Key('resource-exchange-timeline-warning')),
+      findsOneWidget,
+    );
+    expect(
+      tester
+          .widget<OutlinedButton>(
+            find.byKey(const Key('resource-exchange-progress-action')),
+          )
+          .onPressed,
+      isNull,
+    );
+    expect(find.textContaining('private timeline diagnostic'), findsNothing);
   });
 
   testWidgets('agreement failure is isolated from human chat', (tester) async {

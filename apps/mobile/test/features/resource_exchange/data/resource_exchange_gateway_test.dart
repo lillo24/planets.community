@@ -5,6 +5,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:planets_mobile/features/resource_exchange/data/resource_exchange_gateway.dart';
 import 'package:planets_mobile/features/resource_exchange/domain/resource_exchange_models.dart';
 
+import '../../../support/fake_resource_exchange.dart';
+
 void main() {
   const parser = ResourceExchangePayloadParser();
 
@@ -119,6 +121,53 @@ void main() {
     }
   });
 
+  test('event parser accepts every canonical kind and exact shape', () {
+    for (final kind in ResourceExchangeEventKind.values) {
+      final event = parser.event(_eventRow(kind));
+      expect(event.kind, kind);
+      expect(event.actorDisplayName, 'Alex Example');
+      expect(event.legKind, kind.isMilestone ? isNotNull : isNull);
+      expect(
+        event.termsId,
+        kind == ResourceExchangeEventKind.agreementCreated ||
+                kind == ResourceExchangeEventKind.agreementCancelled
+            ? isNull
+            : _termsId,
+      );
+    }
+  });
+
+  test('event parser rejects unknown kinds and malformed combinations', () {
+    expect(
+      () => parser.event(
+        _eventRow(ResourceExchangeEventKind.agreementCreated)
+          ..['event_kind'] = 'future_event',
+      ),
+      throwsFormatException,
+    );
+    expect(
+      () => parser.event(
+        _eventRow(ResourceExchangeEventKind.resourceProvided)
+          ..['leg_kind'] = null,
+      ),
+      throwsFormatException,
+    );
+    expect(
+      () => parser.event(
+        _eventRow(ResourceExchangeEventKind.termsAccepted)
+          ..['leg_kind'] = 'owner_resource',
+      ),
+      throwsFormatException,
+    );
+    expect(
+      () => parser.event({
+        ..._eventRow(ResourceExchangeEventKind.agreementCreated),
+        'unexpected': true,
+      }),
+      throwsFormatException,
+    );
+  });
+
   test('parses corrected pending, current, and historical boolean shapes', () {
     final pending = parser.terms(
       _termsRow()
@@ -147,10 +196,32 @@ void main() {
           .readAsStringSync(),
     ) as Map<String, dynamic>;
     final agreement = parser.agreement(fixture['agreement']);
-    final terms = (fixture['terms'] as List<dynamic>).map(parser.terms);
+    final terms = (fixture['terms'] as List<dynamic>)
+        .map(parser.terms)
+        .toList();
+    final events = <ResourceExchangeEvent>[
+      resourceExchangeCreatedEventFixture(),
+      for (var index = 0; index < terms.length; index++) ...[
+        resourceExchangeEventFixture(
+          sequence: index * 2 + 2,
+          kind: ResourceExchangeEventKind.termsProposed,
+          actorProfileId: terms[index].proposedByProfileId,
+          termsId: terms[index].termsId,
+        ),
+        resourceExchangeEventFixture(
+          sequence: index * 2 + 3,
+          kind: terms[index].isCurrent
+              ? ResourceExchangeEventKind.termsAccepted
+              : ResourceExchangeEventKind.termsRejected,
+          actorProfileId: '00000000-0000-4000-8000-000000000102',
+          termsId: terms[index].termsId,
+        ),
+      ],
+    ];
     final snapshot = ResourceExchangeSnapshot.reconcile(
       agreement: agreement,
       terms: terms,
+      events: events,
     );
 
     expect(snapshot.currentTerms?.termsId, agreement.currentTermsId);
@@ -177,6 +248,8 @@ void main() {
     for (final rpc in [
       'get_resource_exchange_agreement',
       'list_resource_exchange_agreement_terms',
+      'list_resource_exchange_agreement_events',
+      'record_resource_exchange_milestone',
       'propose_resource_exchange_terms',
       'accept_resource_exchange_terms',
       'reject_resource_exchange_terms',
@@ -190,6 +263,9 @@ void main() {
       'p_agreement_id',
       'p_expected_current_terms_id',
       'p_expected_pending_terms_id',
+      'p_expected_terms_id',
+      'p_leg_kind',
+      'p_event_kind',
       'p_owner_transfer_kind',
       'p_owner_lend_starts_at',
       'p_owner_lend_ends_at',
@@ -212,6 +288,7 @@ const _ownerId = '00000000-0000-4000-8000-000000000101';
 const _requesterId = '00000000-0000-4000-8000-000000000102';
 const _termsId = '00000000-0000-4000-8000-000000000701';
 const _pendingId = '00000000-0000-4000-8000-000000000702';
+const _eventId = '00000000-0000-4000-8000-000000000901';
 
 Map<String, dynamic> _agreementRow({
   ResourceExchangeLifecycle lifecycle = ResourceExchangeLifecycle.negotiating,
@@ -277,4 +354,18 @@ Map<String, dynamic> _termsRow({
   'created_at': '2026-09-20T09:00:00Z',
   'is_current': false,
   'is_pending': true,
+};
+
+Map<String, dynamic> _eventRow(ResourceExchangeEventKind kind) => {
+  'event_id': _eventId,
+  'event_kind': kind.wireValue,
+  'terms_id':
+      kind == ResourceExchangeEventKind.agreementCreated ||
+          kind == ResourceExchangeEventKind.agreementCancelled
+      ? null
+      : _termsId,
+  'leg_kind': kind.isMilestone ? 'owner_resource' : null,
+  'actor_profile_id': _ownerId,
+  'actor_display_name': 'Alex Example',
+  'created_at': '2026-09-20T10:00:00Z',
 };

@@ -1,7 +1,7 @@
 # Implementation Roadmap
 
 **Status:** Planning baseline  
-**Current implementation:** Plans 00–04B2B, 04C1–04C2, 05A, 05B, 05D, 06A, 06B, provider-independent 06C1, provider-neutral 06C2A, 06D, 07A, 07B1, 07B2B, 07B2C, and public informational SITE-00 through SITE-02 plus SITE-02W implemented; 04C3A and stacked 04C3B1/04C3B2/04C3C1/04C3C2/04C3D1/04C3D2/04C3D3A/04C3D3B1/04C3D3B2/05C1/05C2/04C4A/04C4B/04C4C1/04C4C2/04C4C3A/04C4C3B/04C4C3C1 are in progress; provider-specific 06C2B, 04C4C3C2, and 04C4D–04C4F remain not started
+**Current implementation:** Plans 00–04B2B, 04C1–04C2, 05A, 05B, 05D, 06A, 06B, provider-independent 06C1, provider-neutral 06C2A, 06D, 07A, 07B1, 07B2B, 07B2C, and public informational SITE-00 through SITE-02 plus SITE-02W implemented; 04C3A and stacked 04C3B1/04C3B2/04C3C1/04C3C2/04C3D1/04C3D2/04C3D3A/04C3D3B1/04C3D3B2/05C1/05C2/04C4A/04C4B/04C4C1/04C4C2/04C4C3A/04C4C3B/04C4C3C1/04C4C3C2 are in progress; provider-specific 06C2B and 04C4D–04C4F remain not started
 
 This roadmap divides the first PLANETS build into reviewable Codex tasks. Each numbered item should normally become its own implementation prompt, branch, and pull request.
 
@@ -79,7 +79,7 @@ Do not begin a dependent plan until the prior plan is merged or its branch is ex
 | 04C4C3C | Mobile Scambio Agreement Experience                       | Split negotiation followed by handoff, return, timeline, and overdue presentation                                        | 04C4C3A, 04C4B         | Native interaction review and later dispute policy                                                                    | In progress |
 | 04C4C3C1 | Mobile Scambio Agreement Negotiation                     | Immutable terms proposal/counterproposal, acceptance, rejection, withdrawal, cancellation, and conflict recovery         | 04C4C3B, 04C4B         | Native interaction review deferred to Plan 12                                                                         | In progress |
 | 04C4C3C1-F1 | Non-null Agreement Terms Flags                     | Forward SQL contract repair for strict mobile boolean parsing, with authenticated RPC and lifecycle regressions         | 04C4C3C1, 04C4B         | No handoff, timeline, overdue UI, or notification scope                                                               | In progress |
-| 04C4C3C2 | Mobile Handoff / Return / Timeline / Overdue              | Physical handoff and return milestones, structured agreement timeline, and overdue presentation                          | 04C4C3C1, 04C4B        | Native interaction review and later dispute policy                                                                    | Not started |
+| 04C4C3C2 | Mobile Handoff / Return / Timeline / Overdue              | Physical handoff and return milestones, structured agreement timeline, and overdue presentation                          | 04C4C3C1, 04C4B        | Native interaction review and later dispute policy                                                                    | In progress |
 | 04C4C3D | Mobile Resources Notification UX                          | Resource notification copy/destinations and Resources preference controls                                               | 04C4C3B, 04C4C3C, 06B | User-facing copy review                                                                                                | Not started |
 | 04C4D   | Loan Availability / Queue                                 | Sequential loan periods, conflicts, queue/calendar behavior, and recurring tool availability                           | 04C4B                  | Queue fairness, calendar, and loan cancellation policy                                                               | Not started |
 | 04C4E   | Project Resource Matching                                 | Explainable text/location/availability matching between Project needs and Scambio-Dona listings                        | 04C3A, 04C4B           | Matching thresholds and availability semantics                                                                       | Not started |
@@ -528,14 +528,14 @@ but no Group domain or flow is implemented here.
 
 ###### 04C4C3C — Mobile Scambio Agreement Experience
 
-**Status:** In progress through stacked 04C4C3C1. Depends on 04C4C3A and 04C4B.
+**Status:** In progress through stacked 04C4C3C2. Depends on 04C4C3A and 04C4B.
 
 This mobile agreement surface is split so negotiation can land independently
 from physical handoff and the event timeline.
 
 ###### 04C4C3C1 — Mobile Scambio Agreement Negotiation
 
-**Status:** In progress in the current stacked mobile PR, based on open 04C4C3B PR #79. Depends on 04C4C3B and 04C4B.
+**Status:** In progress in open PR #80, based on open 04C4C3B PR #79. Depends on 04C4C3B and 04C4B.
 
 Owns strict current/pending immutable terms, proposal and counterproposal,
 accept/reject/withdraw, pre-handoff cancellation, compare-and-swap conflict
@@ -545,10 +545,12 @@ does not label older historical versions without the event timeline.
 
 ###### 04C4C3C2 — Mobile Handoff / Return / Timeline / Overdue
 
-**Status:** Not started. Depends on 04C4C3C1 and 04C4B.
+**Status:** In progress in the current stacked mobile PR, based on open 04C4C3C1 PR #80. Depends on 04C4C3C1 and 04C4B.
 
-Will own physical handoff/receipt/return controls, the structured agreement
-timeline, historical outcome labels, completion UX, and overdue presentation.
+Owns participant-confirmed handoff/receipt/return controls, the structured
+agreement timeline, historical outcome labels, automatic completion UX, and
+backend-derived non-punitive overdue presentation. Post-handoff amendments,
+extensions, disputes, damage, fault, and liability remain future scope.
 
 ###### 04C4C3D — Mobile Resources Notification UX
 
@@ -1083,16 +1085,16 @@ Major gates currently expected:
 
 ## Immediate next action
 
-Complete and review the stacked **04C4C3C1 — Mobile Scambio Agreement Negotiation**
-on open 04C4C3B PR #79, which remains based on open 04C4C3A PR #78, without
-merging it or the lower stack. 04C1 is implemented in merged PR #32
+Complete and review the stacked **04C4C3C2 — Mobile Handoff / Return / Timeline / Overdue**
+on open 04C4C3C1 PR #80, which remains based on open 04C4C3B PR #79 and open
+04C4C3A PR #78, without merging it or the lower stack. 04C1 is implemented in merged PR #32
 (`2aca5bdde7bf7ed7d747f14dcccbc3b5c4b75c42`) and 04C2 is implemented in
 merged PR #34 (`2da76de112a860210161d64de6bceab333159c26`).
 06D is implemented in merged PR #31, while 06 remains in
 progress because provider-specific 06C2B is not started. Optional E2EE/MLS
 research remains unmerged and deferred in PR #28. The stacked 04C3/05C work
 remains open and unmerged beneath DB-COMPAT-01; the 04C4A→04C4C2 stack remains
-open beneath 04C4C3C1, while 04C4C3C2 and 04C4D–04C4F remain not started. Plan 06C2B remains
+open beneath 04C4C3C2, while 04C4D–04C4F remain not started. Plan 06C2B remains
 not started and requires Firebase/APNs configuration, push permission and
 preview decisions, server-side FCM credentials, and a self-host-compatible
 worker deployment target. Deferred native Android/iOS checks from implemented

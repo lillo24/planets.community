@@ -8,6 +8,7 @@ import '../../auth/domain/auth_models.dart';
 import '../../messages/application/message_chats_refresh.dart';
 import '../../messages/application/messages_controllers.dart';
 import '../../resource_chat/application/resource_chat_refresh.dart';
+import '../../resource_requests/application/resource_request_controllers.dart';
 import '../data/resource_exchange_gateway.dart';
 import '../domain/resource_exchange_models.dart';
 import 'resource_exchange_refresh.dart';
@@ -17,6 +18,7 @@ enum ResourceExchangeFailureKind {
   forbidden,
   notFound,
   conflict,
+  milestoneConflict,
   cancellationConflict,
   unavailable,
 }
@@ -47,8 +49,10 @@ class ResourceExchangeState {
     this.draftExpectedPendingTermsId,
     this.draftIssues = const {},
     this.action,
+    this.milestoneAction,
     this.failure,
     this.hasRefreshWarning = false,
+    this.eventLoadFailure = false,
   });
 
   static const _unchanged = Object();
@@ -67,10 +71,12 @@ class ResourceExchangeState {
   final String? draftExpectedPendingTermsId;
   final Set<ResourceExchangeDraftIssue> draftIssues;
   final ResourceExchangeAction? action;
+  final ResourceExchangeMilestoneAction? milestoneAction;
   final ResourceExchangeFailureKind? failure;
   final bool hasRefreshWarning;
+  final bool eventLoadFailure;
 
-  bool get isActing => action != null;
+  bool get isActing => action != null || milestoneAction != null;
   bool get isEditing => draft != null;
 
   ResourceExchangeState copyWith({
@@ -81,8 +87,10 @@ class ResourceExchangeState {
     Object? draftExpectedPendingTermsId = _unchanged,
     Set<ResourceExchangeDraftIssue>? draftIssues,
     Object? action = _unchanged,
+    Object? milestoneAction = _unchanged,
     Object? failure = _unchanged,
     bool? hasRefreshWarning,
+    bool? eventLoadFailure,
   }) => ResourceExchangeState(
     phase: phase ?? this.phase,
     expectedProfileId: expectedProfileId,
@@ -110,10 +118,14 @@ class ResourceExchangeState {
     action: identical(action, _unchanged)
         ? this.action
         : action as ResourceExchangeAction?,
+    milestoneAction: identical(milestoneAction, _unchanged)
+        ? this.milestoneAction
+        : milestoneAction as ResourceExchangeMilestoneAction?,
     failure: identical(failure, _unchanged)
         ? this.failure
         : failure as ResourceExchangeFailureKind?,
     hasRefreshWarning: hasRefreshWarning ?? this.hasRefreshWarning,
+    eventLoadFailure: eventLoadFailure ?? this.eventLoadFailure,
   );
 }
 
@@ -178,18 +190,23 @@ class ResourceExchangeController extends Notifier<ResourceExchangeState> {
       draftExpectedPendingTermsId: sameTarget
           ? state.draftExpectedPendingTermsId
           : null,
+      eventLoadFailure: sameTarget && state.eventLoadFailure,
+      hasRefreshWarning: sameTarget && state.hasRefreshWarning,
     );
     try {
-      final snapshot = await _readCanonical(expectedProfileId);
+      final read = await _readCanonical(expectedProfileId);
       if (!_isCurrent(revision, expectedProfileId, requestId)) return false;
-      _validateContext(snapshot.agreement);
+      _validateContext(read.snapshot.agreement);
       state = state.copyWith(
         phase: ResourceExchangePhase.ready,
-        snapshot: snapshot,
-        failure: null,
-        hasRefreshWarning: false,
+        snapshot: read.snapshot,
+        failure: read.eventsCurrent
+            ? null
+            : ResourceExchangeFailureKind.unavailable,
+        hasRefreshWarning: !read.eventsCurrent,
+        eventLoadFailure: !read.eventsCurrent,
       );
-      return true;
+      return read.eventsCurrent;
     } catch (error) {
       if (!_isCurrent(revision, expectedProfileId, requestId)) return false;
       state = state.copyWith(
@@ -198,6 +215,7 @@ class ResourceExchangeController extends Notifier<ResourceExchangeState> {
             : ResourceExchangePhase.ready,
         failure: mapResourceExchangeFailure(error),
         hasRefreshWarning: state.snapshot != null,
+        eventLoadFailure: state.snapshot != null,
       );
       return false;
     }
@@ -217,22 +235,26 @@ class ResourceExchangeController extends Notifier<ResourceExchangeState> {
     _isRefreshing = true;
     final revision = _revision;
     try {
-      final snapshot = await _readCanonical(profileId);
+      final read = await _readCanonical(profileId);
       if (!_isCurrent(revision, profileId, requestId)) return false;
-      _validateContext(snapshot.agreement);
+      _validateContext(read.snapshot.agreement);
       state = state.copyWith(
         phase: ResourceExchangePhase.ready,
-        snapshot: snapshot,
-        failure: null,
-        hasRefreshWarning: false,
+        snapshot: read.eventsCurrent ? read.snapshot : state.snapshot,
+        failure: read.eventsCurrent
+            ? null
+            : ResourceExchangeFailureKind.unavailable,
+        hasRefreshWarning: !read.eventsCurrent,
+        eventLoadFailure: !read.eventsCurrent,
       );
-      return true;
+      return read.eventsCurrent;
     } catch (error) {
       if (!_isCurrent(revision, profileId, requestId)) return false;
       state = state.copyWith(
         phase: ResourceExchangePhase.ready,
         failure: mapResourceExchangeFailure(error),
         hasRefreshWarning: true,
+        eventLoadFailure: true,
       );
       return false;
     } finally {
@@ -435,6 +457,109 @@ class ResourceExchangeController extends Notifier<ResourceExchangeState> {
     requireProposer: true,
   );
 
+  Future<bool> recordMilestone(ResourceExchangeMilestoneAction action) async {
+    final snapshot = state.snapshot;
+    final current = snapshot?.currentTerms;
+    final profileId = state.expectedProfileId;
+    final requestId = state.requestId;
+    if (snapshot == null ||
+        current == null ||
+        profileId == null ||
+        requestId == null ||
+        state.isActing ||
+        state.eventLoadFailure ||
+        !snapshot.milestoneActionsFor(profileId).contains(action) ||
+        !_matchesTarget(profileId, requestId)) {
+      return false;
+    }
+    final revision = ++_revision;
+    final wasCompleted =
+        snapshot.agreement.lifecycle == ResourceExchangeLifecycle.completed;
+    state = state.copyWith(
+      milestoneAction: action,
+      failure: null,
+      hasRefreshWarning: false,
+    );
+    try {
+      _requireReadyIdentity(profileId);
+      await ref
+          .read(resourceExchangeGatewayProvider)
+          .recordMilestone(
+            expectedProfileId: profileId,
+            agreementId: snapshot.agreement.agreementId,
+            expectedTermsId: current.termsId,
+            legKind: action.legKind,
+            eventKind: action.eventKind,
+          );
+      if (!_isCurrent(revision, profileId, requestId)) return false;
+      final read = await _readCanonical(profileId);
+      if (!_isCurrent(revision, profileId, requestId)) return false;
+      if (!read.eventsCurrent) {
+        state = state.copyWith(
+          milestoneAction: null,
+          failure: ResourceExchangeFailureKind.unavailable,
+          hasRefreshWarning: true,
+          eventLoadFailure: true,
+        );
+        _refreshDependentSurfaces();
+        return false;
+      }
+      _validateContext(read.snapshot.agreement);
+      final completedNow =
+          !wasCompleted &&
+          read.snapshot.agreement.lifecycle ==
+              ResourceExchangeLifecycle.completed;
+      state = state.copyWith(
+        phase: ResourceExchangePhase.ready,
+        snapshot: read.snapshot,
+        milestoneAction: null,
+        failure: null,
+        hasRefreshWarning: false,
+        eventLoadFailure: false,
+      );
+      _refreshDependentSurfaces(refreshRequest: completedNow);
+      return true;
+    } catch (error) {
+      if (!_isCurrent(revision, profileId, requestId)) return false;
+      final failure = mapResourceExchangeFailure(error);
+      ResourceExchangeSnapshot? canonical;
+      var eventsCurrent = false;
+      if (failure == ResourceExchangeFailureKind.conflict ||
+          failure == ResourceExchangeFailureKind.forbidden) {
+        try {
+          final read = await _readCanonical(profileId);
+          canonical = read.snapshot;
+          eventsCurrent = read.eventsCurrent;
+          _validateContext(canonical.agreement);
+        } catch (_) {
+          canonical = null;
+        }
+      }
+      if (!_isCurrent(revision, profileId, requestId)) return false;
+      state = state.copyWith(
+        phase: ResourceExchangePhase.ready,
+        snapshot: canonical ?? state.snapshot,
+        milestoneAction: null,
+        failure: failure == ResourceExchangeFailureKind.conflict
+            ? ResourceExchangeFailureKind.milestoneConflict
+            : failure,
+        hasRefreshWarning:
+            canonical == null ||
+            ((failure == ResourceExchangeFailureKind.conflict ||
+                    failure == ResourceExchangeFailureKind.forbidden) &&
+                !eventsCurrent),
+        eventLoadFailure: canonical == null
+            ? state.eventLoadFailure
+            : !eventsCurrent,
+      );
+      if (failure == ResourceExchangeFailureKind.conflict ||
+          failure == ResourceExchangeFailureKind.forbidden) {
+        _refreshDependentSurfaces();
+      }
+      return false;
+    }
+  }
+
   Future<bool> _pendingMutation(
     ResourceExchangeAction action, {
     required bool requireProposer,
@@ -553,12 +678,17 @@ class ResourceExchangeController extends Notifier<ResourceExchangeState> {
     required bool clearDraft,
   }) async {
     try {
-      final snapshot = await _readCanonical(profileId);
+      final read = await _readCanonical(profileId);
       if (!_isCurrent(revision, profileId, requestId)) return false;
-      _validateContext(snapshot.agreement);
+      if (!read.eventsCurrent) {
+        throw const FormatException(
+          'Resource exchange events were unavailable after mutation.',
+        );
+      }
+      _validateContext(read.snapshot.agreement);
       state = state.copyWith(
         phase: ResourceExchangePhase.ready,
-        snapshot: snapshot,
+        snapshot: read.snapshot,
         draft: clearDraft ? null : state.draft,
         draftExpectedCurrentTermsId: clearDraft
             ? null
@@ -570,6 +700,7 @@ class ResourceExchangeController extends Notifier<ResourceExchangeState> {
         action: null,
         failure: null,
         hasRefreshWarning: false,
+        eventLoadFailure: false,
       );
       _refreshDependentSurfaces();
       return true;
@@ -596,8 +727,9 @@ class ResourceExchangeController extends Notifier<ResourceExchangeState> {
     ResourceExchangeSnapshot? canonical;
     if (failure == ResourceExchangeFailureKind.conflict) {
       try {
-        canonical = await _readCanonical(profileId);
-        _validateContext(canonical.agreement);
+        final read = await _readCanonical(profileId);
+        canonical = read.eventsCurrent ? read.snapshot : null;
+        if (canonical != null) _validateContext(canonical.agreement);
       } catch (_) {
         canonical = null;
       }
@@ -612,19 +744,50 @@ class ResourceExchangeController extends Notifier<ResourceExchangeState> {
           : failure,
       hasRefreshWarning:
           failure == ResourceExchangeFailureKind.conflict && canonical == null,
+      eventLoadFailure:
+          failure == ResourceExchangeFailureKind.conflict && canonical == null
+          ? true
+          : state.eventLoadFailure,
     );
     if (failure == ResourceExchangeFailureKind.conflict) {
       _refreshDependentSurfaces();
     }
   }
 
-  Future<ResourceExchangeSnapshot> _readCanonical(String profileId) async {
+  Future<_CanonicalResourceExchangeRead> _readCanonical(
+    String profileId,
+  ) async {
     _requireReadyIdentity(profileId);
     final requestId = state.requestId;
     final agreementId = state.expectedAgreementId;
     if (requestId == null || agreementId == null) {
       throw const FormatException('Resource exchange target was missing.');
     }
+    _TimelineReadFailure? timelineFailure;
+    for (var attempt = 0; attempt < 2; attempt++) {
+      try {
+        return await _readCanonicalOnce(
+          profileId: profileId,
+          requestId: requestId,
+          agreementId: agreementId,
+        );
+      } on _TimelineReadFailure catch (error) {
+        timelineFailure = error;
+      } on FormatException {
+        if (attempt == 1) rethrow;
+      }
+    }
+    return _CanonicalResourceExchangeRead(
+      snapshot: timelineFailure!.snapshot,
+      eventsCurrent: false,
+    );
+  }
+
+  Future<_CanonicalResourceExchangeRead> _readCanonicalOnce({
+    required String profileId,
+    required String requestId,
+    required String agreementId,
+  }) async {
     final gateway = ref.read(resourceExchangeGatewayProvider);
     final agreement = await gateway.getAgreement(
       expectedProfileId: profileId,
@@ -635,9 +798,26 @@ class ResourceExchangeController extends Notifier<ResourceExchangeState> {
       expectedProfileId: profileId,
       agreementId: agreementId,
     );
-    return ResourceExchangeSnapshot.reconcile(
+    final base = ResourceExchangeSnapshot.withoutEvents(
       agreement: agreement,
       terms: terms,
+    );
+    List<ResourceExchangeEvent> events;
+    try {
+      events = await gateway.listEvents(
+        expectedProfileId: profileId,
+        agreementId: agreementId,
+      );
+    } catch (error) {
+      throw _TimelineReadFailure(base, error);
+    }
+    return _CanonicalResourceExchangeRead(
+      snapshot: ResourceExchangeSnapshot.reconcile(
+        agreement: agreement,
+        terms: terms,
+        events: events,
+      ),
+      eventsCurrent: true,
     );
   }
 
@@ -670,11 +850,28 @@ class ResourceExchangeController extends Notifier<ResourceExchangeState> {
     });
   }
 
-  void _refreshDependentSurfaces() {
+  void _refreshDependentSurfaces({bool refreshRequest = false}) {
     ref.read(resourceChatRefreshProvider.notifier).notifyChanged();
     ref.read(messageChatsRefreshProvider.notifier).notifyChanged();
     final profileId = state.expectedProfileId;
     if (profileId == null) return;
+    if (refreshRequest) {
+      final requestId = state.requestId;
+      if (requestId != null) {
+        unawaited(
+          ref
+              .read(resourceRequestDetailProvider(requestId).notifier)
+              .load(profileId),
+        );
+      }
+      if (state.expectedRequesterProfileId == profileId) {
+        unawaited(
+          ref
+              .read(resourceRequestHistoryProvider.notifier)
+              .load(profileId, force: true),
+        );
+      }
+    }
     final inbox = ref.read(messagesInboxProvider);
     if (inbox.expectedProfileId == profileId &&
         inbox.phase != MessagesInboxPhase.idle) {
@@ -704,6 +901,23 @@ class ResourceExchangeController extends Notifier<ResourceExchangeState> {
       throw const ResourceExchangeIdentityChangedException();
     }
   }
+}
+
+class _CanonicalResourceExchangeRead {
+  const _CanonicalResourceExchangeRead({
+    required this.snapshot,
+    required this.eventsCurrent,
+  });
+
+  final ResourceExchangeSnapshot snapshot;
+  final bool eventsCurrent;
+}
+
+class _TimelineReadFailure implements Exception {
+  const _TimelineReadFailure(this.snapshot, this.cause);
+
+  final ResourceExchangeSnapshot snapshot;
+  final Object cause;
 }
 
 final resourceExchangeProvider =
