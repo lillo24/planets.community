@@ -187,7 +187,7 @@ void main() {
     app.read(appRouterProvider).go('/resources/create');
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('Exchange'));
+    await tester.tap(find.text('Scambia'));
     await tester.tap(find.byKey(const Key('resource-fill-sample')));
     await tester.pumpAndSettle();
 
