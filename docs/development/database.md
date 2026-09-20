@@ -526,6 +526,16 @@ messages, or meeting details.
 
 `project:membership-commitments:verify:local` uses three real OTP-authenticated identities plus narrow direct-database transactions across Proposals and a Tavolo. It proves atomic acceptance seeding, participant/creator-only current and ended reads, authorized addable-option snapshots including paused Tavoli and stale-option omission, full desired-set replacement and no-op preservation, creator clearing, stale-option retention/removal, independent rejoin episodes, Proposal/Tavolo lifecycle rules, read-event absence, exact identifier-only mutation events without notifications, and both serialization outcomes for replacement versus leave, removal, resource closure, and Proposal-skill removal. It never prints OTPs, tokens, keys, database URLs, request text, commitment labels, emails, or private Project data.
 
+`demo:seed:local` is the explicit trusted local demo-world command. It reuses
+the authenticated-user helper and canonical domain RPCs, coordinates concurrent
+runs with one database advisory lock, reuses existing demo-owned rows by stable
+persona/title keys, refreshes only the relative Proposal clock fields, and
+drains the existing notification projector. `demo:verify:local` checks the
+focused connected read/security contract. `demo:reset:local` deliberately runs
+the existing local-only database reset before seeding; normal `db:reset` still
+does not auto-seed demo rows. The commands reject remote and production targets
+and never print OTPs, credentials, protected locations, or message bodies.
+
 `auth:web:verify:local` adds web-specific evidence after a locally configured production Next.js build. It obtains session cookies through supported `@supabase/ssr` callbacks, confirms the Server Component recognizes the authenticated session, rejects private-auth material in the rendered response, and confirms `/admin` returns 404 for signed-out and signed-in requests. It does not invent or log Supabase's cookie encoding.
 
 `tavoli:web:verify:local` uses synthetic local OTP data and the production Next.js server to prove signed-out Tavoli list/detail rendering, rough-location and next-meeting output, exclusion of paused/ended rows from discovery, retained sanitized historical detail, exact-ID 404 behavior, and detail-only public/restricted exact-location handling. It never prints test addresses, tokens, keys, or protected meeting content.

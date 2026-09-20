@@ -81,6 +81,13 @@ With the committed default configuration, the main local endpoints are:
 
 `npm run db:status` is the authoritative source for active local endpoints and development credentials. These values are local-only and must never be reused as staging or production secrets.
 
+To populate a coherent real-backend world for mobile QA, run
+`npm run demo:reset:local` after the stack starts. It creates three stable
+synthetic personas and connected Proposal, Tavolo, Messages, notification,
+Project-chat, and Scambio-Dona scenarios. See the
+[local demo-data guide](demo-data.md) for the non-destructive seed command,
+persona emails, Mailpit sign-in, safety boundary, and clean-reset path.
+
 Local Auth uses a PLANETS numeric-code template at `supabase/templates/magic_link.html`. Despite Supabase's template category name, it includes `{{ .Token }}` and deliberately omits `{{ .ConfirmationURL }}`, so the mobile and web flows do not require a magic-link or deep-link callback. Local codes are six digits and expire after one hour. Restart the local stack after changing Auth configuration or templates.
 
 To exercise the complete local flow without scraping the email viewer UI, run:
