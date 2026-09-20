@@ -22,17 +22,20 @@ void main() {
     'inbox uses an exact activity/id cursor and appends the next page',
     () async {
       final gateway = FakeMessagesGateway()
-        ..items = List.generate(
-          21,
-          (index) => messageItemFixture(
-            requestId: 'request-$index',
-            createdAt: DateTime.utc(
-              2026,
-              9,
-              9,
-            ).subtract(Duration(minutes: index)),
+        ..items = [
+          ...List.generate(
+            20,
+            (index) => messageItemFixture(
+              requestId: 'request-$index',
+              createdAt: DateTime.utc(
+                2026,
+                9,
+                9,
+              ).subtract(Duration(minutes: index)),
+            ),
           ),
-        );
+          resourceMessageItemFixture(requestId: 'request-0'),
+        ];
       final session = _readyContainer(gateway);
       addTearDown(session.container.dispose);
       addTearDown(session.auth.close);
@@ -47,10 +50,22 @@ void main() {
       expect(await controller.loadMore('user-1'), isTrue);
       expect(gateway.lastCursor?.requestId, 'request-19');
       expect(
+        gateway.lastCursor?.itemKind,
+        StructuredRequestItemKind.participationRequest,
+      );
+      expect(
         session.container.read(messagesInboxProvider).items,
         hasLength(21),
       );
       expect(session.container.read(messagesInboxProvider).hasMore, isFalse);
+      expect(
+        session.container
+            .read(messagesInboxProvider)
+            .items
+            .map((item) => item.compositeId)
+            .where((id) => id.endsWith(':request-0')),
+        hasLength(2),
+      );
     },
   );
 

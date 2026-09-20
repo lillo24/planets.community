@@ -217,6 +217,7 @@ PublicResourceListingSummary _publicSummary(OwnResourceListing listing) =>
       administrativeArea: listing.administrativeArea,
       publicLocationLabel: listing.publicLocationLabel!,
       publishedAt: listing.publishedAt!,
+      activeRequestCount: 0,
     );
 
 const resourceOwnerProfileId = '00000000-0000-4000-8000-000000000101';
@@ -247,6 +248,7 @@ PublicResourceListingSummary publicResourceListingFixture({
   String id = resourceListingId,
   ResourceListingMode mode = ResourceListingMode.donate,
   DateTime? publishedAt,
+  int activeRequestCount = 0,
 }) => PublicResourceListingSummary(
   id: id,
   mode: mode,
@@ -257,13 +259,15 @@ PublicResourceListingSummary publicResourceListingFixture({
   administrativeArea: 'Emilia-Romagna',
   publicLocationLabel: 'Central Bologna',
   publishedAt: publishedAt ?? DateTime.utc(2026, 9, 14, 12),
+  activeRequestCount: activeRequestCount,
 );
 
 PublicResourceListingDetail publicResourceListingDetailFixture({
   String ownerId = resourceOwnerProfileId,
   String? ownerDisplayName = 'Casey',
+  int activeRequestCount = 0,
 }) => PublicResourceListingDetail(
-  summary: publicResourceListingFixture(),
+  summary: publicResourceListingFixture(activeRequestCount: activeRequestCount),
   ownerProfileId: ownerId,
   ownerDisplayName: ownerDisplayName,
 );

@@ -18,6 +18,7 @@ void main() {
     expect(summary.administrativeArea, 'Emilia-Romagna');
     expect(summary.cursor.id, resourceListingId);
     expect(summary.cursor.publishedAt, DateTime.parse(_publishedAt));
+    expect(summary.activeRequestCount, 3);
   });
 
   test('public detail preserves present and absent owner display name', () {
@@ -71,6 +72,18 @@ void main() {
     expect(
       () =>
           parser.publicSummary({..._publicRow(), 'published_at': 'not-a-date'}),
+      throwsFormatException,
+    );
+  });
+
+  test('active request count rejects negative and malformed values', () {
+    expect(
+      () => parser.publicSummary({..._publicRow(), 'active_request_count': -1}),
+      throwsFormatException,
+    );
+    expect(
+      () =>
+          parser.publicSummary({..._publicRow(), 'active_request_count': '3'}),
       throwsFormatException,
     );
   });
@@ -152,6 +165,7 @@ Map<String, dynamic> _publicRow() => {
   'administrative_area': 'Emilia-Romagna',
   'public_location_label': 'Central Bologna',
   'published_at': _publishedAt,
+  'active_request_count': 3,
 };
 
 Map<String, dynamic> _ownRow(String lifecycle) => {

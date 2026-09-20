@@ -17,6 +17,9 @@ import 'package:planets_mobile/features/proposals/data/proposal_gateway.dart';
 import 'package:planets_mobile/features/recurring_activities/data/recurring_activity_gateway.dart';
 import 'package:planets_mobile/features/project_chat/data/project_chat_gateway.dart';
 import 'package:planets_mobile/features/project_chat/application/project_chat_refresh.dart';
+import 'package:planets_mobile/features/resource_listings/data/resource_listing_gateway.dart';
+import 'package:planets_mobile/features/resource_requests/data/resource_request_gateway.dart';
+import 'package:planets_mobile/features/resource_requests/domain/resource_request_models.dart';
 
 import '../../../support/fake_auth.dart';
 import '../../../support/fake_messages.dart';
@@ -25,6 +28,8 @@ import '../../../support/fake_join_acceptance_triage.dart';
 import '../../../support/fake_proposal.dart';
 import '../../../support/fake_recurring_activity.dart';
 import '../../../support/fake_project_chat.dart';
+import '../../../support/fake_resource_listing.dart';
+import '../../../support/fake_resource_request.dart';
 
 void main() {
   testWidgets('Home keeps three tabs and opens mixed Messages inbox', (
@@ -94,6 +99,58 @@ void main() {
     expect(find.byKey(const Key('message-item-request-1')), findsOneWidget);
   });
 
+  testWidgets('Requests mixes Resource cards and opens the Resource detail', (
+    tester,
+  ) async {
+    final messages = FakeMessagesGateway()
+      ..items = [
+        messageItemFixture(),
+        resourceMessageItemFixture(requestId: resourceRequestId),
+      ];
+    final resourceRequests = FakeResourceRequestGateway()
+      ..detail = resourceRequestFixture();
+    final app = await _pump(
+      tester,
+      messages: messages,
+      identityId: resourceOwnerProfileId,
+      resourceRequests: resourceRequests,
+    );
+    app.read(appRouterProvider).go('/messages');
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Requests'));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(Key('message-item-request-1')), findsOneWidget);
+    expect(
+      find.byKey(Key('resource-request-message-item-$resourceRequestId')),
+      findsOneWidget,
+    );
+    expect(
+      find.text('Scambio-Dona request · Dona · Garden tools'),
+      findsOneWidget,
+    );
+    final resourceCard = find.byKey(
+      Key('resource-request-message-item-$resourceRequestId'),
+    );
+    await tester.ensureVisible(resourceCard);
+    app
+        .read(appRouterProvider)
+        .go('/messages/requests/resource/$resourceRequestId');
+    await tester.pumpAndSettle();
+
+    expect(
+      app.read(appRouterProvider).routeInformationProvider.value.uri.path,
+      '/messages/requests/resource/$resourceRequestId',
+    );
+    expect(find.text('Resource request'), findsOneWidget);
+    expect(find.text('Requester: Jordan'), findsOneWidget);
+    expect(find.byKey(const Key('resource-request-accept')), findsOneWidget);
+    await tester.tap(find.byKey(const Key('resource-request-accept')));
+    await tester.pumpAndSettle();
+    expect(resourceRequests.calls, contains('accept:$resourceRequestId'));
+    expect(find.text('Coordination is open.'), findsOneWidget);
+  });
+
   testWidgets('creator accepts through shared triage and reloads history', (
     tester,
   ) async {
@@ -151,6 +208,55 @@ void main() {
     );
     await tester.pumpAndSettle();
     expect(find.textContaining('remains in your history'), findsOneWidget);
+  });
+
+  testWidgets('resolved Resource request detail is read-only', (tester) async {
+    final accepted = copyResourceRequest(
+      resourceRequestFixture(),
+      status: ResourceRequestStatus.accepted,
+    );
+    final app = await _pump(
+      tester,
+      messages: FakeMessagesGateway(),
+      identityId: otherProfileId,
+      resourceRequests: FakeResourceRequestGateway()..detail = accepted,
+    );
+    app
+        .read(appRouterProvider)
+        .go('/messages/requests/resource/$resourceRequestId');
+    await tester.pumpAndSettle();
+
+    expect(find.text('Accepted'), findsOneWidget);
+    expect(find.text('Coordination is open.'), findsOneWidget);
+    expect(find.byKey(const Key('resource-request-withdraw')), findsNothing);
+    expect(find.byKey(const Key('resource-request-accept')), findsNothing);
+    expect(find.byKey(const Key('resource-request-reject')), findsNothing);
+  });
+
+  testWidgets('Resource detail hides an absent optional message', (
+    tester,
+  ) async {
+    final terminal = copyResourceRequest(
+      resourceRequestFixture(requestMessage: null),
+      status: ResourceRequestStatus.listingClosed,
+    );
+    final app = await _pump(
+      tester,
+      messages: FakeMessagesGateway(),
+      identityId: otherProfileId,
+      resourceRequests: FakeResourceRequestGateway()..detail = terminal,
+    );
+    app
+        .read(appRouterProvider)
+        .go('/messages/requests/resource/$resourceRequestId');
+    await tester.pumpAndSettle();
+
+    expect(find.text('Listing closed'), findsOneWidget);
+    expect(
+      find.byKey(const Key('resource-request-detail-message')),
+      findsNothing,
+    );
+    expect(find.byKey(const Key('resource-request-withdraw')), findsNothing);
   });
 
   testWidgets('requester can withdraw but cannot see creator controls', (
@@ -253,6 +359,7 @@ Future<ProviderContainer> _pump(
   required FakeMessagesGateway messages,
   String identityId = 'user-1',
   FakeJoinAcceptanceTriageGateway? triage,
+  FakeResourceRequestGateway? resourceRequests,
 }) async {
   final auth = FakeAuthGateway(
     snapshot: AuthSnapshot(identity: AuthIdentity(id: identityId)),
@@ -274,6 +381,13 @@ Future<ProviderContainer> _pump(
             ..readiness = ProfileAnchorReadiness.complete,
         ),
         messagesGatewayProvider.overrideWithValue(messages),
+        resourceRequestGatewayProvider.overrideWithValue(
+          resourceRequests ?? FakeResourceRequestGateway(),
+        ),
+        resourceListingGatewayProvider.overrideWithValue(
+          FakeResourceListingGateway()
+            ..publicDetail = publicResourceListingDetailFixture(),
+        ),
         projectChatGatewayProvider.overrideWithValue(FakeProjectChatGateway()),
         participationGatewayProvider.overrideWithValue(
           FakeParticipationGateway(),

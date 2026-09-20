@@ -1,7 +1,7 @@
 # System Design and Responsibility Boundaries
 
 **Status:** Initial accepted design  
-**Implementation status:** Foundations, authentication, profiles, one-time proposals, Tavoli mobile/public-web discovery, shared project participation, request contribution selections, membership commitments, join-acceptance contribution triage, in-app notification projection, structured participation-request Messages, Project group-chat lifecycle/durable message/mobile experience, Project-chat notification/push projection, the provider-independent push/job foundation, provider-neutral push delivery worker protocol, and the static-first informational site with its local/CI one-time waitlist boundary and native Workers runtime implemented or in focused review
+**Implementation status:** Foundations, authentication, profiles, one-time proposals, Tavoli mobile/public-web discovery, shared project participation, request contribution selections, membership commitments, join-acceptance contribution triage, in-app notification projection, unified structured Project/Resource Requests in mobile Messages, mobile Resource request actions, Project group-chat lifecycle/durable message/mobile experience, Project-chat notification/push projection, the provider-independent push/job foundation, provider-neutral push delivery worker protocol, and the static-first informational site with its local/CI one-time waitlist boundary and native Workers runtime implemented or in focused review
 
 This document describes how the major parts of PLANETS should interact. Technology choices are recorded separately in [`core-stack.md`](core-stack.md).
 
@@ -164,9 +164,12 @@ without changing the persistent Profile / Browse / Home navigation. Its public
 list and detail are signed-out, while My Listings and create/edit routes require
 a complete profile and preserve their Auth/setup return destination. The client
 uses only the canonical listing RPCs; closing remains availability-only. The
-04C4A/04C4B request and agreement backends and 04C4C1 conversation backend
-have no mobile surface yet, while request, negotiation, milestone, and
-conversation UX remains in 04C4C3.
+04C4C3A Flutter slice renders the public derived active-interest count, keeps
+requester history in identity-bound memory, and exposes canonical
+Request/Withdraw and owner Accept/Reject actions through only the 04C4A RPCs.
+It also consumes the 04C4C2 unified structured Requests projection. Agreement
+negotiation/milestones, Resource conversation/Realtime, and Resource-specific
+notification UX remain in 04C4C3C, 04C4C3B, and 04C4C3D respectively.
 
 ### Project resource-need domain
 
@@ -192,23 +195,29 @@ Request selection (what was offered), acceptance decision (what the creator deci
 
 All mutations and private reads use expected-identity-bound project RPCs. Tables have RLS but no client grants/policies. Request messages are visible only to the requester and project creator; creator review exposes a narrow authenticated display identity but never Auth email. Protected meeting details are available only to the creator or a current accepted member. Each successful transition writes identifier-only audit/outbox events; acceptance adds no disposition arrays, labels, or message text, while exact live-source transitions add only Project/requirement/actor and optional membership identifiers. In 07B1, insertion of the canonical accepted membership also ensures the one Project group-chat anchor transactionally; it does not consume or repurpose the accepted outbox event.
 
-### Structured participation-request Messages
+### Unified structured-request Messages
 
-The authenticated mobile Messages surface is a projection of canonical
-`project_join_requests`, not a second message or request-copy store. Narrow
-expected-identity-bound list and exact RPCs return a request only to its
-requester or the concrete Project creator, including the authorized private
-request message, current Proposal/Tavolo title, both display identities, state,
-and activity chronology. Missing and unauthorized exact IDs fail identically.
+The authenticated mobile Requests tab is a discriminated projection of
+canonical `project_join_requests` and `resource_listing_requests`, not a second
+message or request-copy store. Narrow expected-identity-bound unified list and
+exact RPCs return an item only to its requester or concrete Project
+creator/Resource owner, including the authorized private message, display
+identities, state, domain context, and activity chronology. Missing and
+unauthorized exact IDs fail identically.
 
-The inbox uses bounded `(activity_at, request_id)` keyset pagination where
-`activity_at` is resolution time or creation time for a pending request.
-Creators may Accept/Reject and requesters may Withdraw through the existing 05A
-transitions; the client reloads canonical state and synchronizes its existing
-05B participation view. Resolved items remain read-only history. The routes
-`/messages` and `/messages/requests/:requestId` belong to Home and require a
-complete authenticated profile. No unread badge, generic chat message, thread,
-or group-chat authorization is introduced by 07A.
+The inbox uses bounded `(activity_at, item_kind, request_id)` keyset pagination
+and the same composite identity for client deduplication. The centralized sealed
+model/parser rejects unknown discriminators, invalid viewer roles, and mixed
+Project/Resource payload shapes. This boundary may later gain explicit Group or
+invitation variants without spreading kind checks through unrelated routes; no
+Group or invitation feature is implemented.
+
+Project creators retain the existing 05A/04C3D2 actions. Resource owners may
+Accept/Reject and Resource requesters may Withdraw through the 04C4A boundary;
+each mutation reloads canonical detail and affected projections. Resolved items
+remain read-only history. `/messages`, `/messages/requests/:requestId`, and
+`/messages/requests/resource/:requestId` belong to Home and require a complete
+authenticated profile. The Chats tab remains Project-only until 04C4C3B.
 
 ### Project group-chat lifecycle and authorization foundation
 
@@ -331,10 +340,10 @@ Edge Functions and background workers remain valid implementation choices when t
 | Skills/competences      | Controlled taxonomy used by users and proposals                                                             | Many-to-many with profiles and proposal requirements                                      |
 | One-time proposals      | Creator-owned content, schedule, rough/exact location separation, stored lifecycle, derived temporal status | Creator, controlled skill requirements, future participation, future template source      |
 | Recurring activities    | Persistent Tavoli, versioned weekly/monthly schedules, bounded occurrences, rough/exact privacy, lifecycle  | Separate from one-time proposals; Flutter experience and public web discovery implemented |
-| Resource listings       | Standalone Scambio-Dona owner lifecycle, rough-location discovery, and sanitized public detail              | Profile owner only; no Project, transaction, taxonomy, media, request, or handoff linkage |
+| Resource listings       | Standalone Scambio-Dona lifecycle, rough-location discovery, sanitized detail, and derived active-interest count | Profile owner plus separate private Resource request episodes; no Project, taxonomy, media, or handoff linkage |
 | Resource request chat   | Accepted-request human history, authorized summaries/send, and private Realtime refresh hints               | One request/agreement episode; permanent owner/requester read and open-coordination send  |
 | Participation           | Shared project identity, private requests/decisions, current membership and retained history                | Profile and concrete one-time/recurring project; source for authorization and later stats |
-| Messages                | Authenticated structured participation-request inbox/detail; future mobile Project-chat entry points        | Canonical join requests in 07A; separate Project-chat domain                              |
+| Messages                | Authenticated discriminated Project/Resource Requests plus the existing Project-only Chats tab               | Canonical request domains; complete three-part cursor; Resource chats remain 04C4C3B       |
 | Project chat            | Structural anchor, immutable message history, authorized list/send APIs, and private Realtime hints         | Creator plus current/former participants under canonical membership-time rules            |
 | Notifications           | Controlled categories/preferences, recipient in-app records, private installations, and recipient push jobs | Recipient, per-consumer source event receipt, optional project/request/membership         |
 | Templates               | Reusable proposal structure derived from approved past/community content                                    | Source proposal, attribution, moderation/publication state                                |

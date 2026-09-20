@@ -11,6 +11,14 @@ void main() {
     expect(isMessagesPath('/proposals/request-1'), isFalse);
   });
 
+  test('Resource request messages use a distinct encoded route', () {
+    expect(
+      resourceRequestMessageRoute('request/with space'),
+      '/messages/requests/resource/request%2Fwith%20space',
+    );
+    expect(isMessagesPath('/messages/requests/resource/request-1'), isTrue);
+  });
+
   test('project chats and group info have encoded stable routes', () {
     expect(
       projectChatRoute('chat/with space'),

@@ -10,10 +10,13 @@ import 'package:planets_mobile/features/profile/data/profile_gateway.dart';
 import 'package:planets_mobile/features/resource_listings/application/resource_listing_controllers.dart';
 import 'package:planets_mobile/features/resource_listings/data/resource_listing_gateway.dart';
 import 'package:planets_mobile/features/resource_listings/domain/resource_listing_models.dart';
+import 'package:planets_mobile/features/resource_requests/data/resource_request_gateway.dart';
+import 'package:planets_mobile/features/resource_requests/domain/resource_request_models.dart';
 
 import '../../../support/fake_auth.dart';
 import '../../../support/fake_profile.dart';
 import '../../../support/fake_resource_listing.dart';
+import '../../../support/fake_resource_request.dart';
 
 void main() {
   testWidgets(
@@ -85,6 +88,137 @@ void main() {
       }
     },
   );
+
+  testWidgets('public cards hide zero interest and detail always shows count', (
+    tester,
+  ) async {
+    final gateway = FakeResourceListingGateway()
+      ..publicItems = [publicResourceListingFixture()]
+      ..publicDetail = publicResourceListingDetailFixture();
+    final app = await _pump(tester, gateway: gateway, signedIn: false);
+    app.read(appRouterProvider).go('/resources');
+    await tester.pumpAndSettle();
+    expect(find.text('No one interested yet'), findsNothing);
+
+    gateway
+      ..publicItems = [publicResourceListingFixture(activeRequestCount: 2)]
+      ..publicDetail = publicResourceListingDetailFixture(
+        activeRequestCount: 2,
+      );
+    await app.read(publicResourceListingsProvider.notifier).load(force: true);
+    await tester.pumpAndSettle();
+    expect(find.text('2 people interested'), findsOneWidget);
+    await _tap(tester, 'resource-card-$resourceListingId');
+    expect(find.text('2 people interested'), findsOneWidget);
+  });
+
+  testWidgets('requester sees canonical active request actions on detail', (
+    tester,
+  ) async {
+    final listingGateway = FakeResourceListingGateway()
+      ..publicDetail = publicResourceListingDetailFixture();
+    final request = resourceRequestFixture(requesterProfileId: otherProfileId);
+    final requestGateway = FakeResourceRequestGateway()
+      ..history = [request]
+      ..detail = request;
+    final app = await _pump(
+      tester,
+      gateway: listingGateway,
+      identityId: otherProfileId,
+      resourceRequests: requestGateway,
+    );
+    app.read(appRouterProvider).go('/resources/$resourceListingId');
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('resource-request-action')), findsNothing);
+    expect(find.byKey(const Key('resource-request-view')), findsOneWidget);
+    expect(
+      find.byKey(const Key('resource-request-inline-withdraw')),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('non-owner without an active episode can open the composer', (
+    tester,
+  ) async {
+    final listingGateway = FakeResourceListingGateway()
+      ..publicDetail = publicResourceListingDetailFixture();
+    final app = await _pump(
+      tester,
+      gateway: listingGateway,
+      identityId: otherProfileId,
+      resourceRequests: FakeResourceRequestGateway(),
+    );
+    app.read(appRouterProvider).go('/resources/$resourceListingId');
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('resource-request-action')), findsOneWidget);
+    await tester.tap(find.byKey(const Key('resource-request-action')));
+    await tester.pumpAndSettle();
+    expect(find.text('Request this resource'), findsOneWidget);
+    expect(
+      find.textContaining('does not reserve the resource'),
+      findsOneWidget,
+    );
+    expect(find.byKey(const Key('resource-request-message')), findsOneWidget);
+  });
+
+  testWidgets(
+    'accepted-open stays active but closed coordination permits retry',
+    (tester) async {
+      final listingGateway = FakeResourceListingGateway()
+        ..publicDetail = publicResourceListingDetailFixture();
+      final acceptedOpen = copyResourceRequest(
+        resourceRequestFixture(requesterProfileId: otherProfileId),
+        status: ResourceRequestStatus.accepted,
+      );
+      var app = await _pump(
+        tester,
+        gateway: listingGateway,
+        identityId: otherProfileId,
+        resourceRequests: FakeResourceRequestGateway()
+          ..history = [acceptedOpen]
+          ..detail = acceptedOpen,
+      );
+      app.read(appRouterProvider).go('/resources/$resourceListingId');
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('resource-request-view')), findsOneWidget);
+      expect(
+        find.byKey(const Key('resource-request-inline-withdraw')),
+        findsNothing,
+      );
+      expect(find.byKey(const Key('resource-request-action')), findsNothing);
+
+      await tester.pumpWidget(const SizedBox.shrink());
+      final acceptedClosed = copyResourceRequest(
+        acceptedOpen,
+        status: ResourceRequestStatus.accepted,
+        coordinationClosedAt: DateTime.utc(2026, 9, 19),
+      );
+      app = await _pump(
+        tester,
+        gateway: listingGateway,
+        identityId: otherProfileId,
+        resourceRequests: FakeResourceRequestGateway()
+          ..history = [acceptedClosed]
+          ..detail = acceptedClosed,
+      );
+      app.read(appRouterProvider).go('/resources/$resourceListingId');
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('resource-request-action')), findsOneWidget);
+    },
+  );
+
+  testWidgets('listing owner never sees the Request action', (tester) async {
+    final listingGateway = FakeResourceListingGateway()
+      ..publicDetail = publicResourceListingDetailFixture();
+    final app = await _pump(tester, gateway: listingGateway);
+    app.read(appRouterProvider).go('/resources/$resourceListingId');
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('resource-request-action')), findsNothing);
+    expect(find.byKey(const Key('resource-request-view')), findsNothing);
+  });
 
   testWidgets('hidden owner name is omitted from public detail', (
     tester,
@@ -251,10 +385,13 @@ Future<ProviderContainer> _pump(
   WidgetTester tester, {
   required FakeResourceListingGateway gateway,
   bool signedIn = true,
+  String? identityId,
+  FakeResourceRequestGateway? resourceRequests,
 }) async {
+  final signedInProfileId = identityId ?? resourceOwnerProfileId;
   final auth = FakeAuthGateway(
     snapshot: signedIn
-        ? const AuthSnapshot(identity: AuthIdentity(id: resourceOwnerProfileId))
+        ? AuthSnapshot(identity: AuthIdentity(id: signedInProfileId))
         : const AuthSnapshot(),
   );
   addTearDown(auth.close);
@@ -277,6 +414,9 @@ Future<ProviderContainer> _pump(
           FakeProfileGateway(data: profileFixture()),
         ),
         resourceListingGatewayProvider.overrideWithValue(gateway),
+        resourceRequestGatewayProvider.overrideWithValue(
+          resourceRequests ?? FakeResourceRequestGateway(),
+        ),
       ],
       child: const PlanetsApp(),
     ),

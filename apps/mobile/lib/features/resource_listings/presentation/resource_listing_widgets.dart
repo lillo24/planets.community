@@ -94,9 +94,17 @@ class PublicResourceListingCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final mode = resourceListingModeLabel(l10n, listing.mode);
+    final interest = listing.activeRequestCount == 0
+        ? null
+        : l10n.resourceInterestCount(listing.activeRequestCount);
     return Semantics(
       button: true,
-      label: '$mode, ${listing.title}, ${listing.publicLocationLabel}',
+      label: [
+        mode,
+        listing.title,
+        listing.publicLocationLabel,
+        ?interest,
+      ].join(', '),
       child: Card(
         clipBehavior: Clip.antiAlias,
         child: InkWell(
@@ -138,6 +146,14 @@ class PublicResourceListingCard extends StatelessWidget {
                     formatResourceListingDate(context, listing.publishedAt),
                   ),
                 ),
+                if (interest != null) ...[
+                  const SizedBox(height: AppSpacing.xSmall),
+                  _IconText(
+                    icon: Icons.people_outline,
+                    text: interest,
+                    key: Key('resource-interest-count-${listing.id}'),
+                  ),
+                ],
               ],
             ),
           ),
@@ -180,7 +196,7 @@ class ResourceListingLocation extends StatelessWidget {
 }
 
 class _IconText extends StatelessWidget {
-  const _IconText({required this.icon, required this.text});
+  const _IconText({required this.icon, required this.text, super.key});
 
   final IconData icon;
   final String text;

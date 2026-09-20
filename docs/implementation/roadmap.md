@@ -1,7 +1,7 @@
 # Implementation Roadmap
 
 **Status:** Planning baseline  
-**Current implementation:** Plans 00–04B2B, 04C1–04C2, 05A, 05B, 05D, 06A, 06B, provider-independent 06C1, provider-neutral 06C2A, 06D, 07A, 07B1, 07B2B, 07B2C, and public informational SITE-00 through SITE-02 plus SITE-02W implemented; 04C3A and stacked 04C3B1/04C3B2/04C3C1/04C3C2/04C3D1/04C3D2/04C3D3A/04C3D3B1/04C3D3B2/05C1/05C2/04C4A/04C4B are in progress; provider-specific 06C2B and 04C4C–04C4F remain not started
+**Current implementation:** Plans 00–04B2B, 04C1–04C2, 05A, 05B, 05D, 06A, 06B, provider-independent 06C1, provider-neutral 06C2A, 06D, 07A, 07B1, 07B2B, 07B2C, and public informational SITE-00 through SITE-02 plus SITE-02W implemented; 04C3A and stacked 04C3B1/04C3B2/04C3C1/04C3C2/04C3D1/04C3D2/04C3D3A/04C3D3B1/04C3D3B2/05C1/05C2/04C4A/04C4B/04C4C1/04C4C2/04C4C3A are in progress; provider-specific 06C2B and 04C4C3B–04C4F remain not started
 
 This roadmap divides the first PLANETS build into reviewable Codex tasks. Each numbered item should normally become its own implementation prompt, branch, and pull request.
 
@@ -73,7 +73,11 @@ Do not begin a dependent plan until the prior plan is merged or its branch is ex
 | 04C4    | Scambio-Dona Requests, Agreements and Matching (parent)   | Request intent, later reliable agreement/handoff, mobile coordination, queues, matching, and saved searches            | 04C1                   | Agreement, handoff, queue, matching, notification, and Dona policy remain isolated in later slices                   | In progress |
 | 04C4A   | Resource Request Domain Foundation                        | Private request episodes, multiple acceptances, active-interest count, lifecycle serialization, and history            | 04C1, DB-COMPAT-01     | None for the bounded interest-request lifecycle                                                                      | In progress |
 | 04C4B   | Reliable Scambio Agreement + Loan/Barter Domain           | Structured counterpart terms, give/lend/barter semantics, duration, handoff, completion, and return history             | 04C4A                  | Post-handoff amendment, dispute, and liability policy remain later founder decisions                                 | In progress |
-| 04C4C   | Mobile Requests + Messages                                | Request/accept/reject/withdraw UI, agreement negotiation/milestones, structured Messages item, and request conversation | 04C4B, 07A             | Native interaction review and conversation activation policy                                                         | Not started |
+| 04C4C   | Resource Requests + Messages (parent)                      | Durable conversation/projections followed by split mobile request, chat, agreement, and notification experiences       | 04C4B, 07A             | Native interaction review remains in Plan 12                                                                          | In progress |
+| 04C4C3A | Mobile Resource Requests + Unified Requests Inbox          | Interest count, canonical request actions, and discriminated Project/Resource Requests UI                               | 04C4C2                 | Native interaction review deferred to Plan 12                                                                         | In progress |
+| 04C4C3B | Mobile Resource Conversation + Unified Chats               | Resource chat list/detail/send/Realtime and read-only closed coordination                                                | 04C4C3A, 04C4C1        | Native interaction review                                                                                              | Not started |
+| 04C4C3C | Mobile Scambio Agreement Experience                       | Terms negotiation, milestones, timeline, and overdue presentation                                                        | 04C4C3A, 04C4B         | Native interaction review and later dispute policy                                                                    | Not started |
+| 04C4C3D | Mobile Resources Notification UX                          | Resource notification copy/destinations and Resources preference controls                                               | 04C4C3B, 04C4C3C, 06B | User-facing copy review                                                                                                | Not started |
 | 04C4D   | Loan Availability / Queue                                 | Sequential loan periods, conflicts, queue/calendar behavior, and recurring tool availability                           | 04C4B                  | Queue fairness, calendar, and loan cancellation policy                                                               | Not started |
 | 04C4E   | Project Resource Matching                                 | Explainable text/location/availability matching between Project needs and Scambio-Dona listings                        | 04C3A, 04C4B           | Matching thresholds and availability semantics                                                                       | Not started |
 | 04C4F   | Saved Searches + Matching Notifications                   | Personal saved filters, later taxonomy/radius refinements, matching events, and notification projection                | 04C4E, 06A             | Saved-search scope, notification copy/frequency, and later taxonomy                                                  | Not started |
@@ -493,9 +497,43 @@ Owns discriminated cross-domain Requests and Chats projections with complete thr
 
 ###### 04C4C3 — Mobile Scambio Request / Agreement / Conversation Experience
 
-**Status:** Not started. Depends on 04C4C1 and 04C4C2.
+**Status:** In progress through 04C4C3A. Depends on 04C4C1 and 04C4C2.
 
-Will own mobile Request/Withdraw and owner Accept/Reject flows, “N interested,” structured request Messages cards, accepted-request chat, agreement negotiation/milestones, and the structured timeline. It must use canonical 04C4A/04C4B/04C4C1 RPCs and Realtime hints.
+This mobile parent is split so request actions, Resource chat, agreement work,
+and notification UX land only with their canonical backend dependency.
+
+###### 04C4C3A — Mobile Resource Requests + Unified Requests Inbox
+
+**Status:** In progress in the current stacked mobile PR, based on open 04C4C2 PR #75. Depends on 04C4C2.
+
+Owns “N interested,” requester Request/Withdraw, owner Accept/Reject, strict
+identity-bound requester history, canonical conflict refresh, a dedicated
+Resource request route, and the discriminated Project/Resource Requests inbox.
+Chats and Resource notification UX are intentionally unchanged.
+
+###### 04C4C3B — Mobile Resource Conversation + Unified Chats
+
+**Status:** Not started. Depends on 04C4C3A and 04C4C1.
+
+Will own Resource chat list/detail/send/Realtime and read-only presentation
+after coordination closes, migrating the Chats projection atomically.
+
+###### 04C4C3C — Mobile Scambio Agreement Experience
+
+**Status:** Not started. Depends on 04C4C3A and 04C4B.
+
+Will own terms proposal/counterproposal, accept/reject/withdraw, milestone
+controls, structured timeline, and derived overdue presentation.
+
+###### 04C4C3D — Mobile Resources Notification UX
+
+**Status:** Not started. Depends on the mobile destinations established by
+04C4C3B/04C4C3C and the existing notification foundation.
+
+Will own Resource notification kinds/copy/destinations and Resources preference
+controls. Future Groups, group invitations, Project invitations, and external
+invite links remain a separate roadmap family; 04C4C3A preserves only the
+central discriminated Messages extension boundary.
 
 ###### 04C4D — Loan Availability / Queue
 
@@ -1020,15 +1058,15 @@ Major gates currently expected:
 
 ## Immediate next action
 
-Complete and review the stacked **04C4C1 — Accepted Resource-Request Conversation Domain + Realtime**
-on open 04C4B PR #72 without merging it or the lower stack. 04C1 is implemented in merged PR #32
+Complete and review the stacked **04C4C3A — Mobile Resource Requests + Unified Requests Inbox**
+on open 04C4C2 PR #75 without merging it or the lower stack. 04C1 is implemented in merged PR #32
 (`2aca5bdde7bf7ed7d747f14dcccbc3b5c4b75c42`) and 04C2 is implemented in
 merged PR #34 (`2da76de112a860210161d64de6bceab333159c26`).
 06D is implemented in merged PR #31, while 06 remains in
 progress because provider-specific 06C2B is not started. Optional E2EE/MLS
 research remains unmerged and deferred in PR #28. The stacked 04C3/05C work
-remains open and unmerged beneath DB-COMPAT-01; 04C4C1 is the current child
-above open 04C4B, while 04C4C2–04C4F remain not started. Plan 06C2B remains
+remains open and unmerged beneath DB-COMPAT-01; the 04C4A→04C4C2 stack remains
+open beneath 04C4C3A, while 04C4C3B–04C4F remain not started. Plan 06C2B remains
 not started and requires Firebase/APNs configuration, push permission and
 preview decisions, server-side FCM credentials, and a self-host-compatible
 worker deployment target. Deferred native Android/iOS checks from implemented

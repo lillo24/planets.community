@@ -1,39 +1,43 @@
 # Messages
 
 This feature owns the authenticated mobile Messages information architecture.
-It keeps canonical structured participation requests and Project group chats
-in independent `Requests` and `Chats` tabs rather than creating one ambiguous
-chronological feed. Project-chat transport and UI live in the adjacent
+It keeps canonical structured Project and Resource requests and Project group
+chats in independent `Requests` and `Chats` tabs rather than creating one
+ambiguous chronological feed. Project-chat transport and UI live in the adjacent
 `project_chat/` feature; this feature remains the entry point.
 
 ## Source map
 
-- `domain/message_models.dart` defines the strict requester/creator viewer role,
-  structured request item, typed skill/resource selection labels, and paired
-  activity/request cursor.
-- `data/messages_gateway.dart` is the only Supabase boundary. It calls the 07A
-  list/exact reads, the private 04C3B1 selection read, and the existing 05A
-  Accept/Reject/Withdraw transitions, then strictly parses each narrow response.
+- `domain/message_models.dart` defines the centrally discriminated Project and
+  Resource request variants, strict viewer roles, typed contribution labels,
+  and the complete activity/kind/request cursor.
+- `data/messages_gateway.dart` is the only Supabase boundary. The inbox and
+  exact-item reads use the unified 04C4C2 RPCs; Project-only selection and
+  mutation operations keep their existing 04C3B1/05A boundaries. Each narrow
+  response is parsed strictly and cross-domain field mixtures fail closed.
 - `application/messages_controllers.dart` owns keyset paging, detail/action
   state, identity revisions, Reject/Withdraw guards, conflict reloads, and
   canonical post-triage synchronization with participation and the inbox.
 - `presentation/messages_routes.dart` owns stable request, chat, and group-info
   routes used by navigation and future notification routing.
 - `presentation/messages_screen.dart` owns the two-tab shell, independent
-  loading/refresh/pagination, chat previews, and the existing role-aware request
-  cards. Chats is the deterministic default and no unread state is fabricated.
+  loading/refresh/pagination, chat previews, and role-aware Project/Resource
+  request cards. Chats is the deterministic default and no unread state is
+  fabricated.
 - `presentation/participation_request_message_screen.dart` owns full authorized
   request detail, canonical actions, resolved history, and Proposal/Tavolo
   navigation. Rounded contribution labels remain detail-only so the inbox never
   performs per-row selection fan-out.
+- The adjacent `resource_requests/` feature owns Resource request detail and
+  actions. Messages routes Resource cards there without copying domain state.
 
 ## Privacy and state
 
 The backend returns an item only when the authenticated profile is its requester
-or the owning Project creator. The private request message and narrow display
-identities are never loaded from public project reads. Missing and unauthorized
-exact IDs fail identically. The client displays safe localized errors and never
-renders backend diagnostics.
+or the owning Project creator/Resource owner. Private request messages and
+narrow display identities never come from public discovery reads. Missing and
+unauthorized exact IDs fail identically. The client displays safe localized
+errors and never renders backend diagnostics.
 
 The request item and contribution-selection read are independent. Selection
 loading/failure never removes Accept/Reject/Withdraw, and its local retry
@@ -61,6 +65,12 @@ imply chat access. Chat availability and current/former behavior always come
 from the 07B2B canonical projections. Successful Accept/leave/remove flows
 issue only a narrow refresh hint so chat controllers re-read those projections.
 
+Inbox pagination and deduplication use `(activity_at, item_kind, request_id)`,
+so equal UUIDs in different domains cannot collide. New future structured kinds
+(including possible Group or Project invitations) must be added as explicit
+typed variants at this central parser/model boundary; no invitation flow is
+implemented here.
+
 ## Navigation
 
 Messages belongs to the existing Home branch, reached from Home's AppBar:
@@ -68,6 +78,7 @@ Messages belongs to the existing Home branch, reached from Home's AppBar:
 ```text
 /messages
 /messages/requests/:requestId
+/messages/requests/resource/:requestId
 /messages/chats/:chatId
 /messages/chats/:chatId/info
 ```

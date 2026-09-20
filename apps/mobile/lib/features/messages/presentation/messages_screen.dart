@@ -13,6 +13,8 @@ import '../../participation/domain/participation_models.dart';
 import '../../project_chat/application/project_chat_controllers.dart';
 import '../../project_chat/domain/project_chat_models.dart';
 import '../../project_chat/presentation/project_chat_failure_message.dart';
+import '../../resource_listings/presentation/resource_listing_widgets.dart';
+import '../../resource_requests/presentation/resource_request_widgets.dart';
 import '../application/messages_controllers.dart';
 import '../domain/message_models.dart';
 import 'messages_failure_message.dart';
@@ -317,7 +319,7 @@ class _RequestsTab extends ConsumerWidget {
     final belongs = state.expectedProfileId == expectedProfileId;
     final items = belongs
         ? state.items
-        : const <ParticipationRequestMessageItem>[];
+        : const <StructuredRequestMessageItem>[];
     final initialLoading =
         !belongs ||
         (state.phase == MessagesInboxPhase.loading && items.isEmpty);
@@ -387,7 +389,7 @@ class _RequestsTab extends ConsumerWidget {
           }
           return Padding(
             padding: const EdgeInsets.only(bottom: AppSpacing.small),
-            child: _MessageCard(item: items[itemIndex]),
+            child: _StructuredRequestCard(item: items[itemIndex]),
           );
         },
       ),
@@ -395,8 +397,22 @@ class _RequestsTab extends ConsumerWidget {
   }
 }
 
-class _MessageCard extends StatelessWidget {
-  const _MessageCard({required this.item});
+class _StructuredRequestCard extends StatelessWidget {
+  const _StructuredRequestCard({required this.item});
+
+  final StructuredRequestMessageItem item;
+
+  @override
+  Widget build(BuildContext context) => switch (item) {
+    ParticipationRequestMessageItem item => _ParticipationRequestCard(
+      item: item,
+    ),
+    ResourceRequestMessageItem item => _ResourceRequestCard(item: item),
+  };
+}
+
+class _ParticipationRequestCard extends StatelessWidget {
+  const _ParticipationRequestCard({required this.item});
 
   final ParticipationRequestMessageItem item;
 
@@ -437,6 +453,72 @@ class _MessageCard extends StatelessWidget {
                 '${item.projectTitle}',
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
+              ),
+              const SizedBox(height: AppSpacing.small),
+              Text(preview, maxLines: 2, overflow: TextOverflow.ellipsis),
+              const SizedBox(height: AppSpacing.small),
+              Text(
+                l10n.messagesUpdatedAt(messageDate(context, item.activityAt)),
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ResourceRequestCard extends StatelessWidget {
+  const _ResourceRequestCard({required this.item});
+
+  final ResourceRequestMessageItem item;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final title = item.viewerRole == MessageViewerRole.owner
+        ? l10n.resourceRequestInboxIncomingTitle(item.requesterDisplayName)
+        : l10n.resourceRequestInboxOutgoingTitle(item.listingTitle);
+    final preview = item.requestMessage ?? l10n.messagesNoRequestMessage;
+    return Card(
+      key: Key('resource-request-message-item-${item.requestId}'),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        key: Key('resource-request-message-link-${item.requestId}'),
+        onTap: () => context.push(resourceRequestMessageRoute(item.requestId)),
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpacing.medium),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: Text(
+                      title,
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.small),
+                  ResourceRequestStatusChip(status: item.status),
+                ],
+              ),
+              const SizedBox(height: AppSpacing.xSmall),
+              Text(
+                '${l10n.resourceRequestTypeLabel} · '
+                '${resourceListingModeLabel(l10n, item.listingMode)} · '
+                '${item.listingTitle}',
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+              Text(
+                item.viewerRole == MessageViewerRole.owner
+                    ? l10n.resourceRequestRequesterLabel(
+                        item.requesterDisplayName,
+                      )
+                    : l10n.resourceRequestOwnerLabel(item.ownerDisplayName),
               ),
               const SizedBox(height: AppSpacing.small),
               Text(preview, maxLines: 2, overflow: TextOverflow.ellipsis),

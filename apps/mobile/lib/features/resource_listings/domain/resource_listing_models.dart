@@ -48,6 +48,7 @@ class PublicResourceListingSummary {
     required this.administrativeArea,
     required this.publicLocationLabel,
     required this.publishedAt,
+    required this.activeRequestCount,
   });
 
   final String id;
@@ -59,6 +60,7 @@ class PublicResourceListingSummary {
   final String? administrativeArea;
   final String publicLocationLabel;
   final DateTime publishedAt;
+  final int activeRequestCount;
 
   ResourceListingCursor get cursor =>
       ResourceListingCursor(publishedAt: publishedAt, id: id);

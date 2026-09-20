@@ -24,7 +24,7 @@ class MessagesInboxState {
 
   final MessagesInboxPhase phase;
   final String? expectedProfileId;
-  final List<ParticipationRequestMessageItem> items;
+  final List<StructuredRequestMessageItem> items;
   final bool hasMore;
   final MessagesFailureKind? failure;
 
@@ -113,17 +113,18 @@ class MessagesInboxController extends Notifier<MessagesInboxState> {
             limit: messagesPageSize,
             cursor: MessageCursor(
               activityAt: last.activityAt,
+              itemKind: last.kind,
               requestId: last.requestId,
             ),
           );
       if (!_isCurrent(revision, expectedProfileId)) return false;
-      final knownIds = existing.map((item) => item.requestId).toSet();
+      final knownIds = existing.map((item) => item.compositeId).toSet();
       state = MessagesInboxState(
         phase: MessagesInboxPhase.ready,
         expectedProfileId: expectedProfileId,
         items: List.unmodifiable([
           ...existing,
-          ...page.items.where((item) => knownIds.add(item.requestId)),
+          ...page.items.where((item) => knownIds.add(item.compositeId)),
         ]),
         hasMore: page.hasMore,
       );
@@ -229,9 +230,19 @@ class MessagesDetailController extends Notifier<MessagesDetailState> {
     );
     try {
       _requireReadyIdentity(expectedProfileId);
-      final item = await ref
+      final structuredItem = await ref
           .read(messagesGatewayProvider)
-          .getItem(expectedProfileId: expectedProfileId, requestId: requestId);
+          .getItem(
+            expectedProfileId: expectedProfileId,
+            itemKind: StructuredRequestItemKind.participationRequest,
+            requestId: requestId,
+          );
+      if (structuredItem is! ParticipationRequestMessageItem) {
+        throw const FormatException(
+          'Project request route returned another request kind.',
+        );
+      }
+      final item = structuredItem;
       if (!_isCurrent(revision, expectedProfileId, requestId)) return false;
       state = MessagesDetailState(
         phase: MessagesDetailPhase.ready,
@@ -376,10 +387,17 @@ class MessagesDetailController extends Notifier<MessagesDetailState> {
           );
       }
       if (!_isCurrent(revision, profileId, requestId)) return false;
-      final canonical = await gateway.getItem(
+      final structuredCanonical = await gateway.getItem(
         expectedProfileId: profileId,
+        itemKind: StructuredRequestItemKind.participationRequest,
         requestId: requestId,
       );
+      if (structuredCanonical is! ParticipationRequestMessageItem) {
+        throw const FormatException(
+          'Project request mutation returned another request kind.',
+        );
+      }
+      final canonical = structuredCanonical;
       if (!_isCurrent(revision, profileId, requestId)) return false;
       state = MessagesDetailState(
         phase: MessagesDetailPhase.ready,
@@ -397,9 +415,19 @@ class MessagesDetailController extends Notifier<MessagesDetailState> {
       final failure = mapMessagesFailure(error);
       if (failure == MessagesFailureKind.conflict) {
         try {
-          final canonical = await ref
+          final structuredCanonical = await ref
               .read(messagesGatewayProvider)
-              .getItem(expectedProfileId: profileId, requestId: requestId);
+              .getItem(
+                expectedProfileId: profileId,
+                itemKind: StructuredRequestItemKind.participationRequest,
+                requestId: requestId,
+              );
+          if (structuredCanonical is! ParticipationRequestMessageItem) {
+            throw const FormatException(
+              'Project request conflict returned another request kind.',
+            );
+          }
+          final canonical = structuredCanonical;
           if (!_isCurrent(revision, profileId, requestId)) return false;
           state = MessagesDetailState(
             phase: MessagesDetailPhase.ready,

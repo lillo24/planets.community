@@ -99,6 +99,7 @@ class ResourceListingPayloadParser {
         administrativeArea: _optionalString(row, 'administrative_area'),
         publicLocationLabel: _string(row, 'public_location_label'),
         publishedAt: _date(row, 'published_at'),
+        activeRequestCount: _nonNegativeInteger(row, 'active_request_count'),
       );
 
   PublicResourceListingDetail publicDetail(Map<String, dynamic> row) =>
@@ -184,6 +185,14 @@ class ResourceListingPayloadParser {
 
   DateTime? _optionalDate(Map<String, dynamic> row, String key) =>
       row[key] == null ? null : _date(row, key);
+
+  int _nonNegativeInteger(Map<String, dynamic> row, String key) {
+    final value = row[key];
+    if (value is! int || value < 0) {
+      throw FormatException('Resource listing $key was not non-negative.');
+    }
+    return value;
+  }
 }
 
 class SupabaseResourceListingGateway implements ResourceListingGateway {

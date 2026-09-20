@@ -532,7 +532,7 @@
   "messagesLoading": "Loading messages…",
   "messagesLoadingRequest": "Loading participation request…",
   "messagesEmptyTitle": "No messages yet",
-  "messagesEmptyMessage": "Participation requests you send or receive will appear here.",
+  "messagesEmptyMessage": "Participation and resource requests you send or receive will appear here.",
   "messagesLoadMore": "Load more",
   "messagesIncomingTitle": "{name} wants to join",
   "@messagesIncomingTitle": {
@@ -580,6 +580,15 @@
   "messagesForbidden": "This participation request is not available for the current account.",
   "messagesConflict": "This request changed while the screen was open. Its current status has been reloaded.",
   "messagesNotFound": "This participation request is no longer available.",
+  "resourceRequestInboxIncomingTitle": "{name} is interested in your listing",
+  "@resourceRequestInboxIncomingTitle": {
+    "placeholders": { "name": { "type": "String" } }
+  },
+  "resourceRequestInboxOutgoingTitle": "Your request for {resource}",
+  "@resourceRequestInboxOutgoingTitle": {
+    "placeholders": { "resource": { "type": "String" } }
+  },
+  "resourceRequestTypeLabel": "Scambio-Dona request",
   "projectChatsLoading": "Loading project chats…",
   "projectChatsEmptyTitle": "No project chats yet",
   "projectChatsEmptyMessage": "A group chat appears after the first participation request is accepted.",
@@ -718,6 +727,57 @@
   "resourceCreateListing": "Create listing",
   "resourceEditListing": "Edit listing",
   "resourceViewListing": "View listing",
+  "resourceInterestCount": "{count, plural, =0{No one interested yet} =1{1 person interested} other{{count} people interested}}",
+  "@resourceInterestCount": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "resourceRequestStatusPending": "Pending",
+  "resourceRequestStatusAccepted": "Accepted",
+  "resourceRequestStatusRejected": "Rejected",
+  "resourceRequestStatusWithdrawn": "Withdrawn",
+  "resourceRequestStatusListingClosed": "Listing closed",
+  "resourceRequestInvalidInput": "Check the request message and try again.",
+  "resourceRequestForbidden": "This request is not available for the current account.",
+  "resourceRequestChangedElsewhere": "This request changed while the screen was open. The latest status has been reloaded.",
+  "resourceRequestListingUnavailable": "This listing is no longer accepting requests.",
+  "resourceRequestNotFound": "This request is no longer available.",
+  "resourceRequestUnableLoad": "We couldn't load this resource request. Check your connection and try again.",
+  "resourceRequestUnableUpdate": "We couldn't update this resource request. Try again.",
+  "resourceRequestUnableSend": "We couldn't send this request. Try again.",
+  "resourceRequestComposerTitle": "Request this resource",
+  "resourceRequestComposerGuidance": "Sending a request shows interest. It does not reserve the resource. You can include an optional message for the listing owner.",
+  "resourceRequestOptionalMessage": "Message (optional)",
+  "resourceRequestSend": "Send request",
+  "resourceRequestCancel": "Cancel",
+  "resourceRequestDetailTitle": "Resource request",
+  "resourceRequestLoading": "Loading resource request…",
+  "resourceRequestCoordinationOpen": "Coordination is open.",
+  "resourceRequestCoordinationFinished": "Coordination has finished.",
+  "resourceRequestPeopleLabel": "People",
+  "resourceRequestRequesterLabel": "Requester: {name}",
+  "@resourceRequestRequesterLabel": {
+    "placeholders": { "name": { "type": "String" } }
+  },
+  "resourceRequestOwnerLabel": "Owner: {name}",
+  "@resourceRequestOwnerLabel": {
+    "placeholders": { "name": { "type": "String" } }
+  },
+  "resourceRequestMessageLabel": "Private request message",
+  "resourceRequestTimelineLabel": "Timeline",
+  "resourceRequestRequestedAt": "Requested {date}",
+  "@resourceRequestRequestedAt": {
+    "placeholders": { "date": { "type": "String" } }
+  },
+  "resourceRequestResolvedAt": "Resolved {date}",
+  "@resourceRequestResolvedAt": {
+    "placeholders": { "date": { "type": "String" } }
+  },
+  "resourceRequestWithdraw": "Withdraw request",
+  "resourceRequestReject": "Reject",
+  "resourceRequestAccept": "Accept",
+  "resourceRequestAction": "Request resource",
+  "resourceRequestAlreadyActive": "You already have an active request for this listing. The latest request has been loaded.",
+  "resourceRequestView": "View request",
   "resourceDetailTitle": "Listing details",
   "resourceLoading": "Loading listings…",
   "resourceSafeError": "We couldn't load the listing information. Check your connection and try again.",

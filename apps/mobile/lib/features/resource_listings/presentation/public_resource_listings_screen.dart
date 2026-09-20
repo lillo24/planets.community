@@ -9,6 +9,11 @@ import '../../../core/widgets/loading_state.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../auth/application/auth_session_controller.dart';
 import '../../auth/domain/auth_models.dart';
+import '../../messages/presentation/messages_routes.dart';
+import '../../resource_requests/application/resource_request_controllers.dart';
+import '../../resource_requests/domain/resource_request_models.dart';
+import '../../resource_requests/presentation/resource_request_composer.dart';
+import '../../resource_requests/presentation/resource_request_widgets.dart';
 import '../application/resource_listing_controllers.dart';
 import '../domain/resource_listing_models.dart';
 import 'resource_listing_widgets.dart';
@@ -245,11 +250,18 @@ class _PublicResourceListingDetailScreenState
   @override
   void initState() {
     super.initState();
-    Future<void>.microtask(
-      () => ref
-          .read(publicResourceListingDetailProvider.notifier)
-          .load(widget.listingId),
-    );
+    Future<void>.microtask(_load);
+  }
+
+  Future<void> _load() async {
+    await ref
+        .read(publicResourceListingDetailProvider.notifier)
+        .load(widget.listingId);
+    if (!mounted) return;
+    final profileId = ref.read(authSessionProvider).identity?.id;
+    if (profileId != null) {
+      await ref.read(resourceRequestHistoryProvider.notifier).load(profileId);
+    }
   }
 
   @override
@@ -261,6 +273,9 @@ class _PublicResourceListingDetailScreenState
     final isOwner =
         session.phase == AuthSessionPhase.ready &&
         session.identity?.id == detail?.ownerProfileId;
+    final profileId = session.phase == AuthSessionPhase.ready
+        ? session.identity?.id
+        : null;
     return Scaffold(
       appBar: AppBar(
         title: Text(l10n.resourceDetailTitle),
@@ -283,9 +298,7 @@ class _PublicResourceListingDetailScreenState
                 message: state.phase == ResourceListingLoadPhase.ready
                     ? l10n.resourceNotFound
                     : resourceListingFailureMessage(l10n, state.failure),
-                onRetry: () => ref
-                    .read(publicResourceListingDetailProvider.notifier)
-                    .load(widget.listingId),
+                onRetry: _load,
               )
             : ListView(
                 padding: const EdgeInsets.all(AppSpacing.large),
@@ -321,9 +334,131 @@ class _PublicResourceListingDetailScreenState
                     const SizedBox(height: AppSpacing.large),
                     Text(l10n.resourceListedBy(owner)),
                   ],
+                  const SizedBox(height: AppSpacing.medium),
+                  Semantics(
+                    label: l10n.resourceInterestCount(
+                      detail.summary.activeRequestCount,
+                    ),
+                    child: Row(
+                      key: const Key('resource-detail-interest-count'),
+                      children: [
+                        const Icon(Icons.people_outline, size: 20),
+                        const SizedBox(width: AppSpacing.small),
+                        Expanded(
+                          child: Text(
+                            l10n.resourceInterestCount(
+                              detail.summary.activeRequestCount,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  if (profileId != null && !isOwner) ...[
+                    const SizedBox(height: AppSpacing.large),
+                    _ResourceRequestListingActions(
+                      listingId: widget.listingId,
+                      expectedProfileId: profileId,
+                    ),
+                  ],
                 ],
               ),
       ),
+    );
+  }
+}
+
+class _ResourceRequestListingActions extends ConsumerWidget {
+  const _ResourceRequestListingActions({
+    required this.listingId,
+    required this.expectedProfileId,
+  });
+
+  final String listingId;
+  final String expectedProfileId;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
+    final history = ref.watch(resourceRequestHistoryProvider);
+    final belongs = history.expectedRequesterProfileId == expectedProfileId;
+    if (!belongs || history.phase == ResourceRequestHistoryPhase.loading) {
+      return const Center(
+        child: SizedBox.square(
+          dimension: 24,
+          child: CircularProgressIndicator(strokeWidth: 2),
+        ),
+      );
+    }
+    if (history.phase == ResourceRequestHistoryPhase.failure) {
+      return Semantics(
+        liveRegion: true,
+        child: Column(
+          children: [
+            Text(
+              l10n.resourceRequestUnableLoad,
+              key: const Key('resource-request-history-error'),
+            ),
+            TextButton(
+              onPressed: () => ref
+                  .read(resourceRequestHistoryProvider.notifier)
+                  .load(expectedProfileId, force: true),
+              child: Text(l10n.retryAction),
+            ),
+          ],
+        ),
+      );
+    }
+    final active = ref
+        .read(resourceRequestHistoryProvider.notifier)
+        .activeRequestForListing(listingId);
+    if (active == null) {
+      return FilledButton.icon(
+        key: const Key('resource-request-action'),
+        onPressed: () => showResourceRequestComposer(
+          context,
+          listingId: listingId,
+          expectedRequesterProfileId: expectedProfileId,
+        ),
+        icon: const Icon(Icons.front_hand_outlined),
+        label: Text(l10n.resourceRequestAction),
+      );
+    }
+    final mutation = ref.watch(resourceRequestDetailProvider(active.id));
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Align(
+          alignment: Alignment.centerLeft,
+          child: ResourceRequestStatusChip(status: active.status),
+        ),
+        const SizedBox(height: AppSpacing.small),
+        if (active.status == ResourceRequestStatus.pending)
+          OutlinedButton.icon(
+            key: const Key('resource-request-inline-withdraw'),
+            onPressed: mutation.isActing
+                ? null
+                : () => ref
+                      .read(resourceRequestDetailProvider(active.id).notifier)
+                      .withdrawFromHistory(
+                        expectedProfileId: expectedProfileId,
+                        request: active,
+                      ),
+            icon: mutation.action == ResourceRequestMutation.withdrawing
+                ? const SizedBox.square(
+                    dimension: 18,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Icon(Icons.undo),
+            label: Text(l10n.resourceRequestWithdraw),
+          ),
+        OutlinedButton.icon(
+          key: const Key('resource-request-view'),
+          onPressed: () => context.push(resourceRequestMessageRoute(active.id)),
+          icon: const Icon(Icons.open_in_new),
+          label: Text(l10n.resourceRequestView),
+        ),
+      ],
     );
   }
 }

@@ -1,6 +1,9 @@
 String participationRequestMessageRoute(String requestId) =>
     '/messages/requests/${Uri.encodeComponent(requestId)}';
 
+String resourceRequestMessageRoute(String requestId) =>
+    '/messages/requests/resource/${Uri.encodeComponent(requestId)}';
+
 String projectChatRoute(String chatId) =>
     '/messages/chats/${Uri.encodeComponent(chatId)}';
 
