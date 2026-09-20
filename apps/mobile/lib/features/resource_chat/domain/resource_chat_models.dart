@@ -1,3 +1,8 @@
+import '../../resource_exchange/domain/resource_exchange_models.dart';
+
+export '../../resource_exchange/domain/resource_exchange_models.dart'
+    show ResourceExchangeLifecycle;
+
 const resourceChatMessageMaxLength = 4000;
 
 enum ResourceChatViewerRole {
@@ -12,33 +17,6 @@ enum ResourceChatViewerRole {
     'owner' => ResourceChatViewerRole.owner,
     'requester' => ResourceChatViewerRole.requester,
     _ => throw const FormatException('Unsupported Resource chat viewer role.'),
-  };
-}
-
-enum ResourceExchangeLifecycle {
-  negotiating('negotiating'),
-  agreed('agreed'),
-  inProgress('in_progress'),
-  completed('completed'),
-  cancelled('cancelled');
-
-  const ResourceExchangeLifecycle(this.wireValue);
-
-  final String wireValue;
-
-  bool get isClosed =>
-      this == ResourceExchangeLifecycle.completed ||
-      this == ResourceExchangeLifecycle.cancelled;
-
-  static ResourceExchangeLifecycle fromWire(String value) => switch (value) {
-    'negotiating' => ResourceExchangeLifecycle.negotiating,
-    'agreed' => ResourceExchangeLifecycle.agreed,
-    'in_progress' => ResourceExchangeLifecycle.inProgress,
-    'completed' => ResourceExchangeLifecycle.completed,
-    'cancelled' => ResourceExchangeLifecycle.cancelled,
-    _ => throw const FormatException(
-      'Unsupported Resource exchange lifecycle.',
-    ),
   };
 }
 

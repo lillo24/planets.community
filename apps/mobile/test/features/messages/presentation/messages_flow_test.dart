@@ -23,7 +23,8 @@ import 'package:planets_mobile/features/resource_requests/data/resource_request_
 import 'package:planets_mobile/features/resource_requests/domain/resource_request_models.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:planets_mobile/features/resource_chat/data/resource_chat_gateway.dart';
-import 'package:planets_mobile/features/resource_chat/domain/resource_chat_models.dart';
+import 'package:planets_mobile/features/resource_exchange/data/resource_exchange_gateway.dart';
+import 'package:planets_mobile/features/resource_exchange/domain/resource_exchange_models.dart';
 
 import '../../../support/fake_auth.dart';
 import '../../../support/fake_messages.dart';
@@ -36,6 +37,7 @@ import '../../../support/fake_project_chat.dart';
 import '../../../support/fake_resource_listing.dart';
 import '../../../support/fake_resource_request.dart';
 import '../../../support/fake_resource_chat.dart';
+import '../../../support/fake_resource_exchange.dart';
 
 void main() {
   testWidgets('Chats mixes Project and Resource cards without fake events', (
@@ -615,6 +617,477 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.byKey(const Key('message-item-request-1')), findsOneWidget);
   });
+
+  testWidgets('Resource agreement requires explicit choices before proposal', (
+    tester,
+  ) async {
+    const chatId = '00000000-0000-4000-8000-000000000401';
+    final exchange = FakeResourceExchangeGateway();
+    final app = await _pump(
+      tester,
+      messages: FakeMessagesGateway(),
+      resourceChats: FakeResourceChatGateway()..histories[chatId] = [],
+      resourceExchange: exchange,
+    );
+    app.read(appRouterProvider).go('/messages/chats/resource/$chatId');
+    await tester.pumpAndSettle();
+
+    expect(find.text('No terms agreed yet.'), findsOneWidget);
+    await tester.tap(
+      find.byKey(const Key('resource-exchange-primary-action')).hitTestable(),
+    );
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('resource-exchange-editor')), findsOneWidget);
+
+    await tester.scrollUntilVisible(
+      find.byKey(const Key('resource-exchange-submit-proposal')),
+      500,
+      scrollable: find
+          .descendant(
+            of: find.byKey(const Key('resource-exchange-editor')),
+            matching: find.byType(Scrollable),
+          )
+          .first,
+    );
+    await tester.ensureVisible(
+      find.byKey(const Key('resource-exchange-submit-proposal')),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(
+      find.byKey(const Key('resource-exchange-submit-proposal')),
+    );
+    await tester.pumpAndSettle();
+    expect(
+      find.textContaining("Choose whether the listing owner's resource"),
+      findsOneWidget,
+    );
+    expect(find.text('Choose what the requester provides.'), findsOneWidget);
+    expect(exchange.proposeCount, 0);
+
+    await tester.scrollUntilVisible(
+      find.byKey(const Key('resource-exchange-owner-give')),
+      -500,
+      scrollable: find
+          .descendant(
+            of: find.byKey(const Key('resource-exchange-editor')),
+            matching: find.byType(Scrollable),
+          )
+          .first,
+    );
+    await tester.tap(
+      find.byKey(const Key('resource-exchange-owner-give')).hitTestable(),
+    );
+    await tester.tap(
+      find.byKey(const Key('resource-exchange-requester-none')).hitTestable(),
+    );
+    await tester.pump();
+    await tester.scrollUntilVisible(
+      find.byKey(const Key('resource-exchange-submit-proposal')),
+      500,
+      scrollable: find
+          .descendant(
+            of: find.byKey(const Key('resource-exchange-editor')),
+            matching: find.byType(Scrollable),
+          )
+          .first,
+    );
+    await tester.tap(
+      find.byKey(const Key('resource-exchange-submit-proposal')).hitTestable(),
+    );
+    await tester.pumpAndSettle();
+
+    expect(exchange.proposeCount, 1);
+    expect(find.byKey(const Key('resource-exchange-editor')), findsNothing);
+    expect(
+      find.text('Your proposal is waiting for the other person.'),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('pending proposal exposes the role-correct action matrix', (
+    tester,
+  ) async {
+    const chatId = '00000000-0000-4000-8000-000000000401';
+    final pending = resourceExchangeTermsFixture(
+      proposedByProfileId: 'other-user',
+      isPending: true,
+    );
+    final exchange = FakeResourceExchangeGateway()
+      ..agreement = resourceExchangeAgreementFixture(
+        pendingTermsId: pending.termsId,
+      )
+      ..terms = [pending];
+    final app = await _pump(
+      tester,
+      messages: FakeMessagesGateway(),
+      resourceChats: FakeResourceChatGateway()..histories[chatId] = [],
+      resourceExchange: exchange,
+    );
+    app.read(appRouterProvider).go('/messages/chats/resource/$chatId');
+    await tester.pumpAndSettle();
+
+    expect(find.text('New proposal to review.'), findsOneWidget);
+    await tester.tap(
+      find.byKey(const Key('resource-exchange-primary-action')).hitTestable(),
+    );
+    await tester.pumpAndSettle();
+
+    expect(
+      find.byKey(const Key('resource-exchange-accept-proposal')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const Key('resource-exchange-reject-proposal')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const Key('resource-exchange-counterproposal')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const Key('resource-exchange-withdraw-proposal')),
+      findsNothing,
+    );
+  });
+
+  testWidgets('own pending proposal exposes edit and withdraw only', (
+    tester,
+  ) async {
+    const chatId = '00000000-0000-4000-8000-000000000401';
+    final pending = resourceExchangeTermsFixture(
+      proposedByProfileId: 'user-1',
+      isPending: true,
+    );
+    final exchange = FakeResourceExchangeGateway()
+      ..agreement = resourceExchangeAgreementFixture(
+        pendingTermsId: pending.termsId,
+      )
+      ..terms = [pending];
+    final app = await _pump(
+      tester,
+      messages: FakeMessagesGateway(),
+      resourceChats: FakeResourceChatGateway()..histories[chatId] = [],
+      resourceExchange: exchange,
+    );
+    app.read(appRouterProvider).go('/messages/chats/resource/$chatId');
+    await tester.pumpAndSettle();
+    await tester.tap(
+      find.byKey(const Key('resource-exchange-primary-action')).hitTestable(),
+    );
+    await tester.pumpAndSettle();
+
+    expect(
+      find.byKey(const Key('resource-exchange-edit-proposal')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const Key('resource-exchange-withdraw-proposal')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const Key('resource-exchange-accept-proposal')),
+      findsNothing,
+    );
+  });
+
+  testWidgets('current terms can be reviewed and replaced', (tester) async {
+    const chatId = '00000000-0000-4000-8000-000000000401';
+    final current = resourceExchangeTermsFixture(
+      ownerTransferKind: ResourceOwnerTransferKind.lend,
+      ownerLendStartsAt: DateTime.utc(2026, 10, 1, 8),
+      ownerLendEndsAt: DateTime.utc(2026, 10, 8, 18),
+      requesterTransferKind: ResourceRequesterTransferKind.give,
+      requesterResourceDescription: 'A wheelbarrow',
+      privateNote: 'Meet beside the community garden.',
+      isCurrent: true,
+    );
+    final exchange = FakeResourceExchangeGateway()
+      ..agreement = resourceExchangeAgreementFixture(
+        lifecycle: ResourceExchangeLifecycle.agreed,
+        currentTermsId: current.termsId,
+      )
+      ..terms = [current];
+    final app = await _pump(
+      tester,
+      messages: FakeMessagesGateway(),
+      resourceChats: FakeResourceChatGateway()..histories[chatId] = [],
+      resourceExchange: exchange,
+    );
+    app.read(appRouterProvider).go('/messages/chats/resource/$chatId');
+    await tester.pumpAndSettle();
+
+    expect(find.text('Terms agreed.'), findsOneWidget);
+    expect(find.text('Lend ↔ Give'), findsOneWidget);
+    await tester.tap(
+      find.byKey(const Key('resource-exchange-primary-action')).hitTestable(),
+    );
+    await tester.pumpAndSettle();
+
+    expect(
+      find.byKey(const Key('resource-exchange-current-terms')),
+      findsOneWidget,
+    );
+    expect(find.textContaining('A wheelbarrow'), findsOneWidget);
+    expect(find.text('Meet beside the community garden.'), findsOneWidget);
+    expect(
+      find.byKey(const Key('resource-exchange-propose-changes')),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('current and pending replacement remain distinct', (
+    tester,
+  ) async {
+    const chatId = '00000000-0000-4000-8000-000000000401';
+    final current = resourceExchangeTermsFixture(isCurrent: true);
+    final pending = resourceExchangeTermsFixture(
+      termsId: '00000000-0000-4000-8000-000000000702',
+      versionNumber: 2,
+      proposedByProfileId: 'other-user',
+      requesterTransferKind: ResourceRequesterTransferKind.give,
+      requesterResourceDescription: 'Seed packets',
+      isPending: true,
+    );
+    final exchange = FakeResourceExchangeGateway()
+      ..agreement = resourceExchangeAgreementFixture(
+        lifecycle: ResourceExchangeLifecycle.agreed,
+        currentTermsId: current.termsId,
+        pendingTermsId: pending.termsId,
+      )
+      ..terms = [pending, current];
+    final app = await _pump(
+      tester,
+      messages: FakeMessagesGateway(),
+      resourceChats: FakeResourceChatGateway()..histories[chatId] = [],
+      resourceExchange: exchange,
+    );
+    app.read(appRouterProvider).go('/messages/chats/resource/$chatId');
+    await tester.pumpAndSettle();
+    await tester.tap(
+      find.byKey(const Key('resource-exchange-primary-action')).hitTestable(),
+    );
+    await tester.pumpAndSettle();
+
+    expect(
+      find.byKey(const Key('resource-exchange-current-terms')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const Key('resource-exchange-pending-terms')),
+      findsOneWidget,
+    );
+    expect(find.text('Proposed by Jordan'), findsOneWidget);
+    expect(find.textContaining('Seed packets'), findsOneWidget);
+  });
+
+  testWidgets('handoff freezes current terms and all negotiation controls', (
+    tester,
+  ) async {
+    const chatId = '00000000-0000-4000-8000-000000000401';
+    final current = resourceExchangeTermsFixture(isCurrent: true);
+    final exchange = FakeResourceExchangeGateway()
+      ..agreement = resourceExchangeAgreementFixture(
+        lifecycle: ResourceExchangeLifecycle.inProgress,
+        currentTermsId: current.termsId,
+      )
+      ..terms = [current];
+    final resourceChats = FakeResourceChatGateway()
+      ..summary = resourceChatSummaryFixture(
+        lifecycle: ResourceExchangeLifecycle.inProgress,
+      )
+      ..histories[chatId] = [];
+    final app = await _pump(
+      tester,
+      messages: FakeMessagesGateway(),
+      resourceChats: resourceChats,
+      resourceExchange: exchange,
+    );
+    app.read(appRouterProvider).go('/messages/chats/resource/$chatId');
+    await tester.pumpAndSettle();
+
+    expect(find.text('Exchange in progress'), findsOneWidget);
+    expect(find.text('The agreed terms are now locked.'), findsOneWidget);
+    expect(find.byKey(const Key('resource-exchange-cancel')), findsNothing);
+    await tester.tap(
+      find.byKey(const Key('resource-exchange-primary-action')).hitTestable(),
+    );
+    await tester.pumpAndSettle();
+    expect(
+      find.byKey(const Key('resource-exchange-current-terms')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const Key('resource-exchange-propose-changes')),
+      findsNothing,
+    );
+    expect(
+      find.byKey(const Key('resource-exchange-accept-proposal')),
+      findsNothing,
+    );
+  });
+
+  testWidgets('completed agreement remains readable without mutation actions', (
+    tester,
+  ) async {
+    const chatId = '00000000-0000-4000-8000-000000000401';
+    final current = resourceExchangeTermsFixture(isCurrent: true);
+    final exchange = FakeResourceExchangeGateway()
+      ..agreement = resourceExchangeAgreementFixture(
+        lifecycle: ResourceExchangeLifecycle.completed,
+        currentTermsId: current.termsId,
+      )
+      ..terms = [current];
+    final resourceChats = FakeResourceChatGateway()
+      ..summary = resourceChatSummaryFixture(
+        lifecycle: ResourceExchangeLifecycle.completed,
+      )
+      ..histories[chatId] = [];
+    final app = await _pump(
+      tester,
+      messages: FakeMessagesGateway(),
+      resourceChats: resourceChats,
+      resourceExchange: exchange,
+    );
+    app.read(appRouterProvider).go('/messages/chats/resource/$chatId');
+    await tester.pumpAndSettle();
+
+    expect(find.text('Exchange completed'), findsOneWidget);
+    expect(find.byKey(const Key('resource-exchange-cancel')), findsNothing);
+    await tester.tap(
+      find.byKey(const Key('resource-exchange-primary-action')).hitTestable(),
+    );
+    await tester.pumpAndSettle();
+    expect(
+      find.byKey(const Key('resource-exchange-current-terms')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const Key('resource-exchange-propose-changes')),
+      findsNothing,
+    );
+  });
+
+  testWidgets('agreement failure is isolated from human chat', (tester) async {
+    const chatId = '00000000-0000-4000-8000-000000000401';
+    final app = await _pump(
+      tester,
+      messages: FakeMessagesGateway(),
+      resourceChats: FakeResourceChatGateway()
+        ..histories[chatId] = [
+          resourceChatMessageFixture(body: 'Chat remains available'),
+        ],
+      resourceExchange: FakeResourceExchangeGateway()
+        ..readError = StateError('private agreement diagnostic'),
+    );
+    app.read(appRouterProvider).go('/messages/chats/resource/$chatId');
+    await tester.pumpAndSettle();
+
+    expect(find.text('Chat remains available'), findsOneWidget);
+    expect(find.byKey(const Key('resource-chat-composer')), findsOneWidget);
+    expect(
+      find.text(
+        'Agreement details are unavailable. The conversation still works.',
+      ),
+      findsOneWidget,
+    );
+    expect(find.textContaining('private agreement diagnostic'), findsNothing);
+  });
+
+  testWidgets('proposal conflict preserves the editor draft', (tester) async {
+    const chatId = '00000000-0000-4000-8000-000000000401';
+    final exchange = FakeResourceExchangeGateway()
+      ..mutationError = const PostgrestException(
+        message: 'private',
+        code: 'PT409',
+      );
+    final app = await _pump(
+      tester,
+      messages: FakeMessagesGateway(),
+      resourceChats: FakeResourceChatGateway()..histories[chatId] = [],
+      resourceExchange: exchange,
+    );
+    app.read(appRouterProvider).go('/messages/chats/resource/$chatId');
+    await tester.pumpAndSettle();
+    await tester.tap(
+      find.byKey(const Key('resource-exchange-primary-action')).hitTestable(),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(
+      find.byKey(const Key('resource-exchange-owner-give')).hitTestable(),
+    );
+    await tester.tap(
+      find.byKey(const Key('resource-exchange-requester-give')).hitTestable(),
+    );
+    await tester.pump();
+    await tester.enterText(
+      find.byKey(const Key('resource-exchange-requester-description')),
+      'A wheelbarrow',
+    );
+
+    await tester.scrollUntilVisible(
+      find.byKey(const Key('resource-exchange-submit-proposal')),
+      500,
+      scrollable: find
+          .descendant(
+            of: find.byKey(const Key('resource-exchange-editor')),
+            matching: find.byType(Scrollable),
+          )
+          .first,
+    );
+    await tester.tap(
+      find.byKey(const Key('resource-exchange-submit-proposal')).hitTestable(),
+    );
+    await tester.pumpAndSettle();
+
+    expect(exchange.proposeCount, 1);
+    expect(find.byKey(const Key('resource-exchange-editor')), findsOneWidget);
+    expect(find.text('A wheelbarrow'), findsOneWidget);
+    expect(
+      find.byKey(const Key('resource-exchange-editor-error')),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('confirmed cancellation closes agreement and chat canonically', (
+    tester,
+  ) async {
+    const chatId = '00000000-0000-4000-8000-000000000401';
+    final resourceChats = FakeResourceChatGateway()..histories[chatId] = [];
+    final exchange = FakeResourceExchangeGateway()
+      ..onCancelAttempt = () {
+        resourceChats.summary = resourceChatSummaryFixture(
+          lifecycle: ResourceExchangeLifecycle.cancelled,
+        );
+      };
+    final app = await _pump(
+      tester,
+      messages: FakeMessagesGateway(),
+      resourceChats: resourceChats,
+      resourceExchange: exchange,
+    );
+    app.read(appRouterProvider).go('/messages/chats/resource/$chatId');
+    await tester.pumpAndSettle();
+
+    await tester.tap(
+      find.byKey(const Key('resource-exchange-cancel')).hitTestable(),
+    );
+    await tester.pumpAndSettle();
+    expect(
+      find.textContaining(
+        'conversation and agreement history will remain visible',
+      ),
+      findsOneWidget,
+    );
+    await tester.tap(
+      find.byKey(const Key('resource-exchange-confirm-cancel')).hitTestable(),
+    );
+    await tester.pumpAndSettle();
+
+    expect(exchange.cancelCount, 1);
+    expect(find.text('Coordination cancelled'), findsOneWidget);
+    expect(find.byKey(const Key('resource-chat-composer')), findsNothing);
+    expect(find.byKey(const Key('resource-chat-read-only')), findsOneWidget);
+  });
 }
 
 Future<ProviderContainer> _pump(
@@ -625,6 +1098,7 @@ Future<ProviderContainer> _pump(
   FakeResourceRequestGateway? resourceRequests,
   FakeMessageChatsGateway? chats,
   FakeResourceChatGateway? resourceChats,
+  FakeResourceExchangeGateway? resourceExchange,
 }) async {
   final auth = FakeAuthGateway(
     snapshot: AuthSnapshot(identity: AuthIdentity(id: identityId)),
@@ -651,6 +1125,9 @@ Future<ProviderContainer> _pump(
         ),
         resourceChatGatewayProvider.overrideWithValue(
           resourceChats ?? FakeResourceChatGateway(),
+        ),
+        resourceExchangeGatewayProvider.overrideWithValue(
+          resourceExchange ?? FakeResourceExchangeGateway(),
         ),
         resourceRequestGatewayProvider.overrideWithValue(
           resourceRequests ?? FakeResourceRequestGateway(),

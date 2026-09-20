@@ -6,8 +6,10 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../auth/application/auth_session_controller.dart';
 import '../../auth/domain/auth_models.dart';
 import '../../messages/application/message_chats_refresh.dart';
+import '../../resource_exchange/application/resource_exchange_refresh.dart';
 import '../data/resource_chat_gateway.dart';
 import '../domain/resource_chat_models.dart';
+import 'resource_chat_refresh.dart';
 
 const resourceChatHistoryPageSize = 30;
 
@@ -63,6 +65,15 @@ class ResourceChatDetailController extends Notifier<ResourceChatDetailState> {
 
   @override
   ResourceChatDetailState build() {
+    ref.listen(resourceChatRefreshProvider, (_, _) {
+      final profileId = state.expectedProfileId;
+      final chatId = state.chatId;
+      if (profileId != null &&
+          chatId != null &&
+          state.phase == ResourceChatDetailPhase.ready) {
+        _scheduleReconcile(profileId, chatId, includeMessages: false);
+      }
+    });
     ref.listen(authSessionProvider.select((session) => session.identity?.id), (
       _,
       _,
@@ -416,6 +427,7 @@ class ResourceChatDetailController extends Notifier<ResourceChatDetailState> {
   void handleAppResumed(String expectedProfileId, String chatId) {
     if (_matchesTarget(expectedProfileId, chatId)) {
       _scheduleReconcile(expectedProfileId, chatId, includeMessages: true);
+      ref.read(resourceExchangeRefreshProvider.notifier).notifyChanged();
       ref.read(messageChatsRefreshProvider.notifier).notifyChanged();
     }
   }
@@ -460,6 +472,9 @@ class ResourceChatDetailController extends Notifier<ResourceChatDetailState> {
       return;
     }
     ref.read(messageChatsRefreshProvider.notifier).notifyChanged();
+    if (signal is ResourceExchangeChangedSignal) {
+      ref.read(resourceExchangeRefreshProvider.notifier).notifyChanged();
+    }
     _scheduleReconcile(
       expectedProfileId,
       chatId,

@@ -1084,5 +1084,89 @@
       "name": { "type": "String" },
       "time": { "type": "String" }
     }
-  }
+  },
+  "resourceExchangeAgreementTitle": "Agreement",
+  "resourceExchangeLoading": "Loading agreement…",
+  "resourceExchangeNoTerms": "No terms agreed yet.",
+  "resourceExchangeYourProposalWaiting": "Your proposal is waiting for the other person.",
+  "resourceExchangeNewProposal": "New proposal to review.",
+  "resourceExchangeTermsAgreed": "Terms agreed.",
+  "resourceExchangeInProgress": "Exchange in progress",
+  "resourceExchangeTermsLocked": "The agreed terms are now locked.",
+  "resourceExchangeCompleted": "Exchange completed",
+  "resourceExchangeCancelled": "Coordination cancelled",
+  "resourceExchangeSetTerms": "Set terms",
+  "resourceExchangeReview": "Review",
+  "resourceExchangeReviewProposal": "Review proposal",
+  "resourceExchangeViewTerms": "View terms",
+  "resourceExchangeCurrentTerms": "Current terms",
+  "resourceExchangePendingTerms": "Pending proposal",
+  "resourceExchangeProposedByYou": "Proposed by You",
+  "resourceExchangeProposedBy": "Proposed by {name}",
+  "@resourceExchangeProposedBy": {
+    "placeholders": { "name": { "type": "String" } }
+  },
+  "resourceExchangeOwnerProvides": "Listing owner provides",
+  "resourceExchangeRequesterProvides": "Requester provides",
+  "resourceExchangeGivePermanently": "Give permanently",
+  "resourceExchangeLendTemporarily": "Lend temporarily",
+  "resourceExchangeNothingInReturn": "Nothing in return",
+  "resourceExchangeGiveSomething": "Give something",
+  "resourceExchangeLendSomething": "Lend something",
+  "resourceExchangeGiveShort": "Give",
+  "resourceExchangeLendShort": "Lend",
+  "resourceExchangeNothingShort": "Nothing",
+  "resourceExchangeLendWithRange": "Lend · {start} to {end}",
+  "@resourceExchangeLendWithRange": {
+    "placeholders": {
+      "start": { "type": "String" },
+      "end": { "type": "String" }
+    }
+  },
+  "resourceExchangeGiveDescription": "Give · {description}",
+  "@resourceExchangeGiveDescription": {
+    "placeholders": { "description": { "type": "String" } }
+  },
+  "resourceExchangeLendDescription": "Lend · {description} · {start} to {end}",
+  "@resourceExchangeLendDescription": {
+    "placeholders": {
+      "description": { "type": "String" },
+      "start": { "type": "String" },
+      "end": { "type": "String" }
+    }
+  },
+  "resourceExchangePrivateNote": "Private note",
+  "resourceExchangePrivateNoteHelp": "Visible only to the two people coordinating this exchange.",
+  "resourceExchangeEditCounterproposal": "Edit / Counter-propose",
+  "resourceExchangeWithdrawProposal": "Withdraw proposal",
+  "resourceExchangeAcceptProposal": "Accept",
+  "resourceExchangeRejectProposal": "Reject",
+  "resourceExchangeCounterproposal": "Counter-propose",
+  "resourceExchangeProposeChanges": "Propose changes",
+  "resourceExchangeCancelCoordination": "Cancel coordination",
+  "resourceExchangeCancelTitle": "Cancel coordination?",
+  "resourceExchangeCancelExplanation": "This ends the current coordination. The conversation and agreement history will remain visible.",
+  "resourceExchangeKeepCoordination": "Keep coordination",
+  "resourceExchangeCancelAction": "Cancel coordination",
+  "resourceExchangeEditorTitle": "Propose agreement terms",
+  "resourceExchangeChooseOwnerTransfer": "Choose whether the listing owner's resource is given or lent.",
+  "resourceExchangeChooseRequesterTransfer": "Choose what the requester provides.",
+  "resourceExchangeOwnerLendStart": "Listing owner's loan starts",
+  "resourceExchangeOwnerLendEnd": "Listing owner's loan ends",
+  "resourceExchangeRequesterLendStart": "Requester's loan starts",
+  "resourceExchangeRequesterLendEnd": "Requester's loan ends",
+  "resourceExchangeChooseDateTime": "Choose date and time",
+  "resourceExchangeLendPeriodError": "Choose a start and an end after it.",
+  "resourceExchangeOfferingLabel": "What are you offering?",
+  "resourceExchangeDescriptionError": "Enter 2 to 500 characters.",
+  "resourceExchangePrivateNoteError": "Use at most 1000 characters.",
+  "resourceExchangeSendProposal": "Send proposal",
+  "resourceExchangeDiscardDraft": "Discard draft",
+  "resourceExchangeInvalidInput": "Review the highlighted agreement fields.",
+  "resourceExchangeForbidden": "You can no longer change this agreement.",
+  "resourceExchangeNotFound": "This agreement is no longer available.",
+  "resourceExchangeConflict": "The agreement changed elsewhere. We loaded the latest terms. Review them before trying again.",
+  "resourceExchangeCancellationConflict": "This agreement changed and can no longer be cancelled here.",
+  "resourceExchangeUnavailable": "Agreement details are unavailable. The conversation still works.",
+  "resourceExchangeRefreshWarning": "We could not refresh the agreement. The last known terms remain visible."
 }

@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:planets_mobile/features/auth/application/auth_session_controller.dart';
 import 'package:planets_mobile/features/auth/data/auth_gateway.dart';
 import 'package:planets_mobile/features/auth/domain/auth_models.dart';
+import 'package:planets_mobile/features/resource_exchange/application/resource_exchange_refresh.dart';
 import 'package:planets_mobile/features/resource_chat/application/resource_chat_controller.dart';
 import 'package:planets_mobile/features/resource_chat/data/resource_chat_gateway.dart';
 import 'package:planets_mobile/features/resource_chat/domain/resource_chat_models.dart';
@@ -252,6 +253,52 @@ void main() {
     expect(state.hasConnectionIssue, isFalse);
     expect(state.messages, hasLength(1));
   });
+
+  test(
+    'exchange signal reuses one channel and notifies agreement refresh',
+    () async {
+      final gateway = FakeResourceChatGateway()..histories[gatewayChatId] = [];
+      final session = _readyContainer(gateway);
+      addTearDown(session.dispose);
+      final controller = session.container.read(
+        resourceChatDetailProvider.notifier,
+      );
+      await controller.load(expectedProfileId: 'user-1', chatId: gatewayChatId);
+      controller.startSignals('user-1', gatewayChatId);
+      final before = session.container.read(resourceExchangeRefreshProvider);
+
+      gateway.emitExchange(gatewayChatId);
+
+      expect(
+        session.container.read(resourceExchangeRefreshProvider),
+        before + 1,
+      );
+      expect(gateway.subscriptions, hasLength(1));
+    },
+  );
+
+  test(
+    'app resume notifies agreement refresh without another channel',
+    () async {
+      final gateway = FakeResourceChatGateway()..histories[gatewayChatId] = [];
+      final session = _readyContainer(gateway);
+      addTearDown(session.dispose);
+      final controller = session.container.read(
+        resourceChatDetailProvider.notifier,
+      );
+      await controller.load(expectedProfileId: 'user-1', chatId: gatewayChatId);
+      controller.startSignals('user-1', gatewayChatId);
+      final before = session.container.read(resourceExchangeRefreshProvider);
+
+      controller.handleAppResumed('user-1', gatewayChatId);
+
+      expect(
+        session.container.read(resourceExchangeRefreshProvider),
+        before + 1,
+      );
+      expect(gateway.subscriptions, hasLength(1));
+    },
+  );
 
   test('account switch rejects a late read and clears private state', () async {
     final delay = Completer<void>();

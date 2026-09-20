@@ -7,6 +7,8 @@ import '../../../core/widgets/error_state.dart';
 import '../../../core/widgets/loading_state.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../auth/application/auth_session_controller.dart';
+import '../../resource_exchange/application/resource_exchange_controller.dart';
+import '../../resource_exchange/presentation/resource_exchange_widgets.dart';
 import '../application/resource_chat_controller.dart';
 import '../domain/resource_chat_models.dart';
 import 'resource_chat_failure_message.dart';
@@ -24,6 +26,7 @@ class _ResourceChatScreenState extends ConsumerState<ResourceChatScreen>
     with WidgetsBindingObserver {
   late final String? _expectedProfileId;
   late final ResourceChatDetailController _controller;
+  late final ResourceExchangeController _exchangeController;
   final _composer = TextEditingController();
   final _scrollController = ScrollController();
   var _didInitialScroll = false;
@@ -34,6 +37,7 @@ class _ResourceChatScreenState extends ConsumerState<ResourceChatScreen>
     WidgetsBinding.instance.addObserver(this);
     _expectedProfileId = ref.read(authSessionProvider).identity?.id;
     _controller = ref.read(resourceChatDetailProvider.notifier);
+    _exchangeController = ref.read(resourceExchangeProvider.notifier);
     Future<void>.microtask(_load);
   }
 
@@ -61,18 +65,33 @@ class _ResourceChatScreenState extends ConsumerState<ResourceChatScreen>
   Future<void> _load() async {
     final profileId = _expectedProfileId;
     if (profileId == null || !_hasExpectedIdentity) return;
-    await _controller.load(expectedProfileId: profileId, chatId: widget.chatId);
+    final loaded = await _controller.load(
+      expectedProfileId: profileId,
+      chatId: widget.chatId,
+    );
     if (!mounted || !_hasExpectedIdentity) return;
     _controller.startSignals(profileId, widget.chatId);
+    if (!loaded) return;
+    final summary = ref.read(resourceChatDetailProvider).summary;
+    if (summary == null) return;
+    await _exchangeController.load(
+      expectedProfileId: profileId,
+      chatId: widget.chatId,
+      requestId: summary.requestId,
+      agreementId: summary.agreementId,
+      listingId: summary.listingId,
+      ownerProfileId: summary.ownerProfileId,
+      requesterProfileId: summary.requesterProfileId,
+    );
   }
 
   Future<void> _refresh() async {
     final profileId = _expectedProfileId;
     if (profileId == null || !_hasExpectedIdentity) return;
-    await _controller.refresh(
-      expectedProfileId: profileId,
-      chatId: widget.chatId,
-    );
+    await Future.wait([
+      _controller.refresh(expectedProfileId: profileId, chatId: widget.chatId),
+      _exchangeController.refresh(),
+    ]);
   }
 
   Future<void> _loadOlder() async {
@@ -164,6 +183,12 @@ class _ResourceChatScreenState extends ConsumerState<ResourceChatScreen>
             : Column(
                 children: [
                   if (summary != null) _CounterpartyHeader(summary: summary),
+                  if (summary != null)
+                    ResourceExchangeAgreementSection(
+                      listingTitle: summary.listingTitle,
+                      ownerDisplayName: summary.ownerDisplayName,
+                      requesterDisplayName: summary.requesterDisplayName,
+                    ),
                   if (state.hasConnectionIssue)
                     Semantics(
                       liveRegion: true,
