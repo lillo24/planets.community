@@ -66,6 +66,63 @@ void main() {
     );
   });
 
+  test('Resource request alerts open the structured Resource request', () {
+    for (final kind in [
+      NotificationKind.resourceRequestReceived,
+      NotificationKind.resourceRequestWithdrawn,
+      NotificationKind.resourceRequestRejected,
+      NotificationKind.resourceRequestListingClosed,
+    ]) {
+      expect(
+        notificationDestinationRoute(resourceNotificationFixture(kind: kind)),
+        '/messages/requests/resource/00000000-0000-4000-8000-000000000502',
+        reason: kind.name,
+      );
+    }
+  });
+
+  test('accepted, chat, and exchange alerts open Resource chat', () {
+    for (final kind in [
+      NotificationKind.resourceRequestAccepted,
+      NotificationKind.resourceChatMessageReceived,
+      NotificationKind.resourceExchangeTermsProposed,
+      NotificationKind.resourceExchangeTermsAccepted,
+      NotificationKind.resourceExchangeTermsRejected,
+      NotificationKind.resourceExchangeTermsWithdrawn,
+      NotificationKind.resourceExchangeMilestoneRecorded,
+      NotificationKind.resourceExchangeCancelled,
+      NotificationKind.resourceExchangeCompleted,
+    ]) {
+      expect(
+        notificationDestinationRoute(
+          resourceNotificationFixture(
+            kind: kind,
+            destinationKind: NotificationDestinationKind.resourceChat,
+            resourceChatId: '00000000-0000-4000-8000-000000000503',
+          ),
+        ),
+        '/messages/chats/resource/00000000-0000-4000-8000-000000000503',
+        reason: kind.name,
+      );
+    }
+    expect(
+      notificationDestinationRoute(
+        resourceNotificationFixture(
+          kind: NotificationKind.resourceRequestAccepted,
+          destinationKind: NotificationDestinationKind.resourceChat,
+          resourceChatId: null,
+        ),
+      ),
+      isNull,
+    );
+    expect(
+      notificationDestinationRoute(
+        resourceNotificationFixture(kind: NotificationKind.unknown),
+      ),
+      isNull,
+    );
+  });
+
   test('unknown and mismatched semantics never guess a route', () {
     expect(
       notificationDestinationRoute(

@@ -2,6 +2,9 @@ import '../../../l10n/generated/app_localizations.dart';
 import '../domain/notification_models.dart';
 
 String notificationCopy(AppLocalizations l10n, AppNotification notification) {
+  if (notification.category == NotificationCategory.resources) {
+    return _resourceCopy(l10n, notification);
+  }
   if (notification.category == NotificationCategory.chat) {
     if (notification.kind != NotificationKind.chatMessageReceived) {
       return l10n.notificationsGeneric;
@@ -46,7 +49,95 @@ String notificationCopy(AppLocalizations l10n, AppNotification notification) {
       project != null
           ? l10n.notificationParticipantRemoved(project)
           : l10n.notificationParticipantRemovedGeneric,
-    NotificationKind.chatMessageReceived => l10n.notificationsGeneric,
-    NotificationKind.unknown => l10n.notificationsGeneric,
+    _ => l10n.notificationsGeneric,
   };
 }
+
+String _resourceCopy(AppLocalizations l10n, AppNotification notification) {
+  final actor =
+      notification.actorDisplayName ?? l10n.notificationResourceFallbackActor;
+  final listing =
+      notification.resourceListingTitle ??
+      l10n.notificationResourceFallbackListing;
+  return switch (notification.kind) {
+    NotificationKind.resourceRequestReceived =>
+      l10n.notificationResourceRequestReceived(actor, listing),
+    NotificationKind.resourceRequestWithdrawn =>
+      l10n.notificationResourceRequestWithdrawn(actor, listing),
+    NotificationKind.resourceRequestAccepted =>
+      l10n.notificationResourceRequestAccepted(listing),
+    NotificationKind.resourceRequestRejected =>
+      l10n.notificationResourceRequestRejected(listing),
+    NotificationKind.resourceRequestListingClosed =>
+      l10n.notificationResourceRequestListingClosed(listing),
+    NotificationKind.resourceChatMessageReceived =>
+      l10n.notificationResourceChatMessage(actor, listing),
+    NotificationKind.resourceExchangeTermsProposed =>
+      l10n.notificationResourceTermsProposed(actor, listing),
+    NotificationKind.resourceExchangeTermsAccepted =>
+      l10n.notificationResourceTermsAccepted(actor, listing),
+    NotificationKind.resourceExchangeTermsRejected =>
+      l10n.notificationResourceTermsRejected(actor, listing),
+    NotificationKind.resourceExchangeTermsWithdrawn =>
+      l10n.notificationResourceTermsWithdrawn(actor, listing),
+    NotificationKind.resourceExchangeMilestoneRecorded =>
+      _resourceMilestoneCopy(l10n, notification, actor, listing),
+    NotificationKind.resourceExchangeCancelled =>
+      l10n.notificationResourceExchangeCancelled(actor, listing),
+    NotificationKind.resourceExchangeCompleted =>
+      l10n.notificationResourceExchangeCompleted(listing),
+    _ => l10n.notificationsGeneric,
+  };
+}
+
+String _resourceMilestoneCopy(
+  AppLocalizations l10n,
+  AppNotification notification,
+  String actor,
+  String listing,
+) => switch ((
+  notification.resourceExchangeLegKind,
+  notification.resourceExchangeEventKind,
+)) {
+  (
+    ResourceNotificationLegKind.ownerResource,
+    ResourceNotificationEventKind.resourceProvided,
+  ) =>
+    l10n.notificationResourceOwnerProvided(actor, listing),
+  (
+    ResourceNotificationLegKind.ownerResource,
+    ResourceNotificationEventKind.resourceReceived,
+  ) =>
+    l10n.notificationResourceOwnerReceived(actor, listing),
+  (
+    ResourceNotificationLegKind.ownerResource,
+    ResourceNotificationEventKind.resourceReturned,
+  ) =>
+    l10n.notificationResourceOwnerReturned(actor, listing),
+  (
+    ResourceNotificationLegKind.ownerResource,
+    ResourceNotificationEventKind.resourceReturnReceived,
+  ) =>
+    l10n.notificationResourceOwnerReturnReceived(actor, listing),
+  (
+    ResourceNotificationLegKind.requesterResource,
+    ResourceNotificationEventKind.resourceProvided,
+  ) =>
+    l10n.notificationResourceRequesterProvided(actor),
+  (
+    ResourceNotificationLegKind.requesterResource,
+    ResourceNotificationEventKind.resourceReceived,
+  ) =>
+    l10n.notificationResourceRequesterReceived(actor),
+  (
+    ResourceNotificationLegKind.requesterResource,
+    ResourceNotificationEventKind.resourceReturned,
+  ) =>
+    l10n.notificationResourceRequesterReturned(actor),
+  (
+    ResourceNotificationLegKind.requesterResource,
+    ResourceNotificationEventKind.resourceReturnReceived,
+  ) =>
+    l10n.notificationResourceRequesterReturnReceived(actor),
+  _ => l10n.notificationsGeneric,
+};

@@ -80,7 +80,7 @@ Do not begin a dependent plan until the prior plan is merged or its branch is ex
 | 04C4C3C1 | Mobile Scambio Agreement Negotiation                     | Immutable terms proposal/counterproposal, acceptance, rejection, withdrawal, cancellation, and conflict recovery         | 04C4C3B, 04C4B         | Native interaction review deferred to Plan 12                                                                         | In progress |
 | 04C4C3C1-F1 | Non-null Agreement Terms Flags                     | Forward SQL contract repair for strict mobile boolean parsing, with authenticated RPC and lifecycle regressions         | 04C4C3C1, 04C4B         | No handoff, timeline, overdue UI, or notification scope                                                               | In progress |
 | 04C4C3C2 | Mobile Handoff / Return / Timeline / Overdue              | Physical handoff and return milestones, structured agreement timeline, and overdue presentation                          | 04C4C3C1, 04C4B        | Native interaction review and later dispute policy                                                                    | In progress |
-| 04C4C3D | Mobile Resources Notification UX                          | Resource notification copy/destinations and Resources preference controls                                               | 04C4C3B, 04C4C3C, 06B | User-facing copy review                                                                                                | Not started |
+| 04C4C3D | Mobile Resources Notification UX                          | Resource notification copy/destinations and Resources preference controls                                               | 04C4C3B, 04C4C3C, 06B | User-facing copy and native interaction review                                                                         | In progress |
 | 04C4D   | Loan Availability / Queue                                 | Sequential loan periods, conflicts, queue/calendar behavior, and recurring tool availability                           | 04C4B                  | Queue fairness, calendar, and loan cancellation policy                                                               | Not started |
 | 04C4E   | Project Resource Matching                                 | Explainable text/location/availability matching between Project needs and Scambio-Dona listings                        | 04C3A, 04C4B           | Matching thresholds and availability semantics                                                                       | Not started |
 | 04C4F   | Saved Searches + Matching Notifications                   | Personal saved filters, later taxonomy/radius refinements, matching events, and notification projection                | 04C4E, 06A             | Saved-search scope, notification copy/frequency, and later taxonomy                                                  | Not started |
@@ -554,11 +554,18 @@ extensions, disputes, damage, fault, and liability remain future scope.
 
 ###### 04C4C3D — Mobile Resources Notification UX
 
-**Status:** Not started. Depends on the mobile destinations established by
+**Status:** In progress in the current stacked mobile PR, based on open
+04C4C3C2 PR #81. Depends on the mobile destinations established by
 04C4C3B/04C4C3C and the existing notification foundation.
 
-Will own Resource notification kinds/copy/destinations and Resources preference
-controls. Future Groups, group invitations, Project invitations, and external
+Owns strict Resource notification kinds/context, localized non-adjudicative
+copy, Resource request/chat destinations, and the Resources in-app preference.
+It completes the currently scoped 04C4C3A → 04C4C3B → 04C4C3C1 →
+04C4C3C2 → 04C4C3D mobile implementation chain while its stacked PRs remain
+open. The stored Resources push preference is preserved, but a push toggle and
+provider delivery UX are not added here. Native interaction review remains
+Plan 12; post-handoff amendments/disputes and Resource matching remain later
+work. Future Groups, group invitations, Project invitations, and external
 invite links remain a separate roadmap family; 04C4C3A preserves only the
 central discriminated Messages extension boundary.
 

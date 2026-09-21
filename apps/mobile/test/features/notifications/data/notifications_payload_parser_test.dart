@@ -144,6 +144,11 @@ void main() {
       'user_configurable': true,
     });
     expect(preference.category, NotificationCategory.unknown);
+    expect(
+      () => NotificationCategory.unknown.preferenceWireSlug,
+      throwsArgumentError,
+    );
+    expect(NotificationCategory.resources.preferenceWireSlug, 'resources');
   });
 }
 

@@ -188,6 +188,10 @@ void main() {
             category: NotificationCategory.chat,
             pushEnabled: true,
           ),
+          notificationPreferenceFixture(
+            category: NotificationCategory.resources,
+            pushEnabled: true,
+          ),
           notificationPreferenceFixture(category: NotificationCategory.unknown),
         ];
       final session = _readyContainer(gateway);
@@ -229,6 +233,10 @@ void main() {
           notificationPreferenceFixture(
             category: NotificationCategory.chat,
             inAppEnabled: true,
+            pushEnabled: true,
+          ),
+          notificationPreferenceFixture(
+            category: NotificationCategory.resources,
             pushEnabled: true,
           ),
         ];
@@ -311,6 +319,164 @@ void main() {
       expect(
         session.container.read(notificationPreferencesProvider).chat,
         isNull,
+      );
+      expect(
+        session.container.read(notificationPreferencesProvider).resources,
+        isNull,
+      );
+    },
+  );
+
+  test('Resources preference changes only in-app and preserves push', () async {
+    final gateway = FakeNotificationsGateway()
+      ..preferences = [
+        notificationPreferenceFixture(inAppEnabled: false),
+        notificationPreferenceFixture(
+          category: NotificationCategory.chat,
+          inAppEnabled: false,
+        ),
+        notificationPreferenceFixture(
+          category: NotificationCategory.resources,
+          inAppEnabled: true,
+          pushEnabled: true,
+        ),
+        notificationPreferenceFixture(category: NotificationCategory.unknown),
+      ];
+    final session = _readyContainer(gateway);
+    addTearDown(session.container.dispose);
+    addTearDown(session.auth.close);
+    final controller = session.container.read(
+      notificationPreferencesProvider.notifier,
+    );
+    expect(await controller.load('user-1'), isTrue);
+    expect(
+      session.container
+          .read(notificationPreferencesProvider)
+          .resources
+          ?.inAppEnabled,
+      isTrue,
+    );
+
+    expect(
+      await controller.setResourcesInApp(
+        expectedProfileId: 'user-1',
+        enabled: false,
+      ),
+      isTrue,
+    );
+    expect(gateway.lastCategory, NotificationCategory.resources);
+    expect(gateway.lastInAppEnabled, isFalse);
+    expect(gateway.lastPushEnabled, isTrue);
+    var state = session.container.read(notificationPreferencesProvider);
+    expect(state.resources?.inAppEnabled, isFalse);
+    expect(state.participation?.inAppEnabled, isFalse);
+    expect(state.chat?.inAppEnabled, isFalse);
+
+    expect(
+      await controller.setResourcesInApp(
+        expectedProfileId: 'user-1',
+        enabled: true,
+      ),
+      isTrue,
+    );
+    state = session.container.read(notificationPreferencesProvider);
+    expect(state.resources?.inAppEnabled, isTrue);
+    expect(gateway.lastPushEnabled, isTrue);
+    expect(state.preferences, hasLength(3));
+  });
+
+  test('all three known preferences must be unique and configurable', () async {
+    final gateway = FakeNotificationsGateway();
+    final session = _readyContainer(gateway);
+    addTearDown(session.container.dispose);
+    addTearDown(session.auth.close);
+    final controller = session.container.read(
+      notificationPreferencesProvider.notifier,
+    );
+    final valid = List<NotificationPreference>.of(gateway.preferences);
+    expect(await controller.load('user-1'), isTrue);
+
+    gateway.preferences = valid
+        .where((item) => item.category != NotificationCategory.resources)
+        .toList();
+    expect(await controller.load('user-1'), isFalse);
+    expect(
+      session.container.read(notificationPreferencesProvider).phase,
+      NotificationPreferencesPhase.failure,
+    );
+
+    gateway.preferences = [
+      ...valid,
+      notificationPreferenceFixture(category: NotificationCategory.resources),
+    ];
+    expect(await controller.load('user-1'), isFalse);
+
+    gateway.preferences = [
+      for (final item in valid)
+        if (item.category == NotificationCategory.resources)
+          notificationPreferenceFixture(
+            category: NotificationCategory.resources,
+            userConfigurable: false,
+          )
+        else
+          item,
+    ];
+    expect(await controller.load('user-1'), isFalse);
+
+    gateway.preferences = [
+      ...valid,
+      notificationPreferenceFixture(category: NotificationCategory.unknown),
+    ];
+    expect(await controller.load('user-1'), isTrue);
+    expect(
+      session.container.read(notificationPreferencesProvider).preferences,
+      hasLength(3),
+    );
+  });
+
+  test(
+    'Resources failure rolls back and late account mutation is discarded',
+    () async {
+      final gateway = FakeNotificationsGateway();
+      final session = _readyContainer(gateway);
+      addTearDown(session.container.dispose);
+      addTearDown(session.auth.close);
+      final controller = session.container.read(
+        notificationPreferencesProvider.notifier,
+      );
+      await controller.load('user-1');
+      gateway.preferenceError = StateError('private backend diagnostic');
+
+      expect(
+        await controller.setResourcesInApp(
+          expectedProfileId: 'user-1',
+          enabled: false,
+        ),
+        isFalse,
+      );
+      expect(
+        session.container
+            .read(notificationPreferencesProvider)
+            .resources
+            ?.inAppEnabled,
+        isTrue,
+      );
+
+      gateway.preferenceError = null;
+      final delay = Completer<void>();
+      gateway.preferenceDelay = delay.future;
+      final pending = controller.setResourcesInApp(
+        expectedProfileId: 'user-1',
+        enabled: false,
+      );
+      session.container
+          .read(authSessionProvider.notifier)
+          .markProfileReady(const AuthIdentity(id: 'user-2'));
+      delay.complete();
+      expect(await pending, isFalse);
+      expect(
+        session.container.read(notificationPreferencesProvider).preferences,
+        isEmpty,
       );
     },
   );

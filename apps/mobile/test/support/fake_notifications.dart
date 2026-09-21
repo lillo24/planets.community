@@ -9,6 +9,7 @@ class FakeNotificationsGateway implements NotificationsGateway {
   List<NotificationPreference> preferences = [
     notificationPreferenceFixture(),
     notificationPreferenceFixture(category: NotificationCategory.chat),
+    notificationPreferenceFixture(category: NotificationCategory.resources),
   ];
   int? unreadCount;
   Object? listError;
@@ -149,6 +150,15 @@ AppNotification notificationFixture({
   String? projectId = '00000000-0000-4000-8000-000000000201',
   String? chatId,
   String? messageId,
+  String? resourceListingId,
+  String? resourceListingTitle,
+  String? resourceRequestId,
+  String? resourceChatId,
+  String? resourceChatMessageId,
+  String? resourceAgreementId,
+  String? resourceAgreementEventId,
+  ResourceNotificationEventKind? resourceExchangeEventKind,
+  ResourceNotificationLegKind? resourceExchangeLegKind,
   DateTime? createdAt,
   DateTime? readAt,
 }) => AppNotification(
@@ -169,6 +179,51 @@ AppNotification notificationFixture({
   messageId: messageId,
   actorProfileId: '00000000-0000-4000-8000-000000000301',
   actorDisplayName: actorDisplayName,
+  resourceListingId: resourceListingId,
+  resourceListingTitle: resourceListingTitle,
+  resourceRequestId: resourceRequestId,
+  resourceChatId: resourceChatId,
+  resourceChatMessageId: resourceChatMessageId,
+  resourceAgreementId: resourceAgreementId,
+  resourceAgreementEventId: resourceAgreementEventId,
+  resourceExchangeEventKind: resourceExchangeEventKind,
+  resourceExchangeLegKind: resourceExchangeLegKind,
+);
+
+AppNotification resourceNotificationFixture({
+  int index = 1,
+  NotificationKind kind = NotificationKind.resourceRequestReceived,
+  NotificationDestinationKind destinationKind =
+      NotificationDestinationKind.resourceRequest,
+  String? actorDisplayName = 'Mario',
+  String resourceListingId = '00000000-0000-4000-8000-000000000501',
+  String? resourceListingTitle = 'Power drill',
+  String resourceRequestId = '00000000-0000-4000-8000-000000000502',
+  String? resourceChatId,
+  String? resourceChatMessageId,
+  String? resourceAgreementId,
+  String? resourceAgreementEventId,
+  ResourceNotificationEventKind? resourceExchangeEventKind,
+  ResourceNotificationLegKind? resourceExchangeLegKind,
+}) => notificationFixture(
+  index: index,
+  category: NotificationCategory.resources,
+  kind: kind,
+  destinationKind: destinationKind,
+  projectId: null,
+  projectKind: null,
+  projectTitle: null,
+  requestId: null,
+  actorDisplayName: actorDisplayName,
+  resourceListingId: resourceListingId,
+  resourceListingTitle: resourceListingTitle,
+  resourceRequestId: resourceRequestId,
+  resourceChatId: resourceChatId,
+  resourceChatMessageId: resourceChatMessageId,
+  resourceAgreementId: resourceAgreementId,
+  resourceAgreementEventId: resourceAgreementEventId,
+  resourceExchangeEventKind: resourceExchangeEventKind,
+  resourceExchangeLegKind: resourceExchangeLegKind,
 );
 
 NotificationPreference notificationPreferenceFixture({
@@ -178,7 +233,11 @@ NotificationPreference notificationPreferenceFixture({
   bool userConfigurable = true,
 }) => NotificationPreference(
   category: category,
-  sortOrder: category == NotificationCategory.chat ? 40 : 10,
+  sortOrder: switch (category) {
+    NotificationCategory.chat => 40,
+    NotificationCategory.resources => 50,
+    _ => 10,
+  },
   inAppEnabled: inAppEnabled,
   pushEnabled: pushEnabled,
   hasOverride: false,
