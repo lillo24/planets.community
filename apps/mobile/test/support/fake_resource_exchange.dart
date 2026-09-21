@@ -484,6 +484,8 @@ ResourceExchangeAgreement resourceExchangeAgreementFixture({
 ResourceExchangeAgreement resourceExchangeAgreementFrom(
   ResourceExchangeAgreement value, {
   ResourceExchangeLifecycle? lifecycle,
+  bool? ownerLendReturnOverdue,
+  bool? requesterLendReturnOverdue,
   Object? currentTermsId = _unchanged,
   Object? pendingTermsId = _unchanged,
   Object? currentTermsAcceptedAt = _unchanged,
@@ -516,8 +518,10 @@ ResourceExchangeAgreement resourceExchangeAgreementFrom(
   completedAt: identical(completedAt, _unchanged)
       ? value.completedAt
       : completedAt as DateTime?,
-  ownerLendReturnOverdue: value.ownerLendReturnOverdue,
-  requesterLendReturnOverdue: value.requesterLendReturnOverdue,
+  ownerLendReturnOverdue:
+      ownerLendReturnOverdue ?? value.ownerLendReturnOverdue,
+  requesterLendReturnOverdue:
+      requesterLendReturnOverdue ?? value.requesterLendReturnOverdue,
 );
 
 ResourceExchangeEvent resourceExchangeCreatedEventFixture() =>

@@ -529,8 +529,7 @@ class _LegProgressView extends StatelessWidget {
                 child: Text('${milestone.$2 ? '✓' : '○'} ${milestone.$1}'),
               ),
             if (isOverdue &&
-                progress.transferKind == ResourceExchangeTransferKind.lend &&
-                progress.returnReceivedEvent == null) ...[
+                progress.transferKind == ResourceExchangeTransferKind.lend) ...[
               const SizedBox(height: AppSpacing.xSmall),
               Text(
                 l10n.resourceExchangeReturnOverdue,

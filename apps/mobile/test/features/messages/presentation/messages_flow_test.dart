@@ -24,6 +24,7 @@ import 'package:planets_mobile/features/resource_requests/domain/resource_reques
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:planets_mobile/features/resource_chat/data/resource_chat_gateway.dart';
 import 'package:planets_mobile/features/resource_exchange/data/resource_exchange_gateway.dart';
+import 'package:planets_mobile/features/resource_exchange/application/resource_exchange_controller.dart';
 import 'package:planets_mobile/features/resource_exchange/domain/resource_exchange_models.dart';
 
 import '../../../support/fake_auth.dart';
@@ -1044,6 +1045,71 @@ void main() {
       expect(find.text('✓ Handed over'), findsOneWidget);
     },
   );
+
+  testWidgets('overdue warnings follow refreshed backend flags, not dates', (
+    tester,
+  ) async {
+    const chatId = '00000000-0000-4000-8000-000000000401';
+    final current = resourceExchangeTermsFixture(
+      ownerTransferKind: ResourceOwnerTransferKind.lend,
+      ownerLendStartsAt: DateTime.utc(2040, 9, 20, 8),
+      ownerLendEndsAt: DateTime.utc(2040, 9, 23, 18),
+      requesterTransferKind: ResourceRequesterTransferKind.lend,
+      requesterResourceDescription: 'A shared ladder',
+      requesterLendStartsAt: DateTime.utc(2040, 9, 20, 8),
+      requesterLendEndsAt: DateTime.utc(2040, 9, 23, 18),
+      isCurrent: true,
+    );
+    final exchange = FakeResourceExchangeGateway()
+      ..agreement = resourceExchangeAgreementFixture(
+        lifecycle: ResourceExchangeLifecycle.agreed,
+        currentTermsId: current.termsId,
+        ownerLendReturnOverdue: true,
+        requesterLendReturnOverdue: true,
+      )
+      ..terms = [current];
+    final app = await _pump(
+      tester,
+      identityId: gatewayOwnerProfileId,
+      messages: FakeMessagesGateway(),
+      resourceChats: FakeResourceChatGateway()
+        ..summary = resourceChatSummaryFixture(
+          lifecycle: ResourceExchangeLifecycle.agreed,
+        )
+        ..histories[chatId] = [],
+      resourceExchange: exchange,
+    );
+    app.read(appRouterProvider).go('/messages/chats/resource/$chatId');
+    await tester.pumpAndSettle();
+    await tester.tap(
+      find.byKey(const Key('resource-exchange-progress-action')).hitTestable(),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Return is overdue'), findsNWidgets(2));
+
+    exchange.agreement = resourceExchangeAgreementFrom(
+      exchange.agreement,
+      ownerLendReturnOverdue: false,
+      requesterLendReturnOverdue: false,
+    );
+    exchange.terms = [
+      resourceExchangeTermsFixture(
+        ownerTransferKind: ResourceOwnerTransferKind.lend,
+        ownerLendStartsAt: DateTime.utc(2020, 9, 20, 8),
+        ownerLendEndsAt: DateTime.utc(2020, 9, 23, 18),
+        requesterTransferKind: ResourceRequesterTransferKind.lend,
+        requesterResourceDescription: 'A shared ladder',
+        requesterLendStartsAt: DateTime.utc(2020, 9, 20, 8),
+        requesterLendEndsAt: DateTime.utc(2020, 9, 23, 18),
+        isCurrent: true,
+      ),
+    ];
+    expect(await app.read(resourceExchangeProvider.notifier).refresh(), isTrue);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Return is overdue'), findsNothing);
+  });
 
   testWidgets('agreement history renders timeline and immutable terms', (
     tester,
