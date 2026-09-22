@@ -23,9 +23,32 @@ const anonymous = createClient(apiUrl, publishableKey, {
 });
 
 try {
-  await verifyResourceExchangeAgreements();
+  if (process.argv.includes("--loan-reservations-only")) {
+    await verifyLoanReservationsOnly();
+  } else {
+    await verifyResourceExchangeAgreements();
+  }
 } finally {
   await sql.end({ timeout: 5 });
+}
+
+async function verifyLoanReservationsOnly() {
+  const [owner, requester, requesterB, unrelated] = await Promise.all([
+    signInWithLocalOtp("resource-loan-owner@planets.invalid"),
+    signInWithLocalOtp("resource-loan-requester@planets.invalid"),
+    signInWithLocalOtp("resource-loan-requester-b@planets.invalid"),
+    signInWithLocalOtp("resource-loan-unrelated@planets.invalid"),
+  ]);
+  await Promise.all([
+    ensureCompleteProfile(owner, "Loan Verifier Owner"),
+    ensureCompleteProfile(requester, "Loan Verifier Requester"),
+    ensureCompleteProfile(requesterB, "Loan Verifier Requester B"),
+    ensureCompleteProfile(unrelated, "Loan Verifier Unrelated"),
+  ]);
+  await verifyLoanReservations(owner, requester, requesterB, unrelated);
+  console.log(
+    "Confirmed real-OTP loan reservation, privacy, replacement, release, overdue/risk, and deterministic acceptance/cancellation/completion races.",
+  );
 }
 
 async function verifyResourceExchangeAgreements() {
@@ -199,11 +222,541 @@ async function verifyResourceExchangeAgreements() {
   await verifyAcceptVersusCounterProposal(owner, requester);
   await verifyCancelVersusFirstMilestone(owner, requester);
   await verifyFinalMilestoneRace(owner, requester);
+  await verifyLoanReservations(owner, requester, requesterB, unrelated);
   await assertIdentifierOnlyEvents([privateNote, requesterDescription]);
 
   console.log(
-    "Confirmed real-OTP resource exchange agreements: non-null boolean terms projections across empty, pending, accepted, historical, in-progress, completed, rejected, withdrawn, and cancelled states; atomic anchors; immutable counter-proposals; private reads; structured two-leg milestones; automatic completion; repeat requests; overdue derivation; cancellation; listing-close survival; identifier-only events; and deterministic proposal/accept/cancel/final-milestone serialization.",
+    "Confirmed real-OTP resource exchange agreements and derived listing-side loan reservations: non-null terms flags; private agreement lifecycle; half-open conflicts and adjacency; owner-only schedule; pending availability; replacement and release; overdue and at-risk derivation; listing-close survival; identifier-only events; and deterministic proposal/accept/cancel/completion serialization.",
   );
+}
+
+async function verifyLoanReservations(owner, requester, requesterB, unrelated) {
+  const listingId = await createPublishedListing(
+    owner,
+    "Reservation verifier tool",
+  );
+  const first = await createAgreementOnListing(owner, requester, listingId);
+  const second = await createAgreementOnListing(owner, requesterB, listingId);
+  const firstStart = pastIso(4);
+  const boundary = pastIso(1);
+  const secondEnd = futureIso(2);
+  const firstTermsId = await proposeLoan(
+    owner,
+    first.agreementId,
+    null,
+    null,
+    firstStart,
+    boundary,
+  );
+  const secondTermsId = await proposeLoan(
+    owner,
+    second.agreementId,
+    null,
+    null,
+    boundary,
+    secondEnd,
+  );
+
+  if ((await ownerSchedule(owner, listingId)).length !== 0) {
+    throw new Error("Pending loans created a reservation.");
+  }
+  await assertAvailability(
+    requester,
+    first.agreementId,
+    firstTermsId,
+    true,
+    true,
+  );
+  await acceptTerms(requester, first.agreementId, firstTermsId);
+  await assertAvailability(
+    requesterB,
+    second.agreementId,
+    secondTermsId,
+    true,
+    true,
+  );
+  await acceptTerms(requesterB, second.agreementId, secondTermsId);
+  let schedule = await ownerSchedule(owner, listingId);
+  if (
+    schedule.length !== 2 ||
+    schedule[0].agreement_id !== first.agreementId ||
+    schedule[1].agreement_id !== second.agreementId ||
+    schedule[0].is_overdue !== true ||
+    schedule[1].is_at_risk !== true ||
+    schedule.some((row) => row.requester_display_name === null)
+  ) {
+    throw new Error(
+      "Owner schedule, adjacency, overdue, or risk was incorrect.",
+    );
+  }
+
+  await assertRpcCode(
+    requester.client.rpc("list_owned_resource_listing_loan_schedule", {
+      p_expected_owner_profile_id: requester.id,
+      p_listing_id: listingId,
+    }),
+    "42501",
+    "deny borrower access to owner loan schedule",
+  );
+  await assertRpcCode(
+    unrelated.client.rpc("check_resource_exchange_pending_loan_availability", {
+      p_expected_profile_id: unrelated.id,
+      p_agreement_id: second.agreementId,
+      p_expected_pending_terms_id: secondTermsId,
+    }),
+    "42501",
+    "deny unrelated pending availability access",
+  );
+  await assertRpcCode(
+    anonymous.rpc("list_owned_resource_listing_loan_schedule", {
+      p_expected_owner_profile_id: owner.id,
+      p_listing_id: listingId,
+    }),
+    "42501",
+    "deny anonymous owner loan schedule",
+  );
+
+  const conflictingId = await proposeLoan(
+    owner,
+    second.agreementId,
+    secondTermsId,
+    null,
+    pastIso(2),
+    futureIso(1),
+  );
+  await assertAvailability(
+    requesterB,
+    second.agreementId,
+    conflictingId,
+    true,
+    false,
+  );
+  await assertRpcCode(
+    requesterB.client.rpc("accept_resource_exchange_terms", {
+      p_expected_profile_id: requesterB.id,
+      p_agreement_id: second.agreementId,
+      p_expected_pending_terms_id: conflictingId,
+    }),
+    "PT409",
+    "reject conflicting replacement without accepted side effects",
+  );
+  if (
+    (await getAgreement(owner, second.requestId)).current_terms_id !==
+    secondTermsId
+  ) {
+    throw new Error("Conflicting replacement changed current terms.");
+  }
+
+  const compatibleId = await proposeLoan(
+    owner,
+    second.agreementId,
+    secondTermsId,
+    conflictingId,
+    boundary,
+    secondEnd,
+  );
+  await acceptTerms(requesterB, second.agreementId, compatibleId);
+  const giveId = await proposeTerms(owner, second.agreementId, {
+    currentTermsId: compatibleId,
+    pendingTermsId: null,
+    ownerKind: "give",
+    requesterKind: "none",
+    requesterDescription: null,
+    privateNote: null,
+  });
+  await acceptTerms(requesterB, second.agreementId, giveId);
+  if ((await ownerSchedule(owner, listingId)).length !== 1) {
+    throw new Error(
+      "LEND-to-GIVE replacement did not release its reservation.",
+    );
+  }
+  const relendId = await proposeLoan(
+    owner,
+    second.agreementId,
+    giveId,
+    null,
+    boundary,
+    secondEnd,
+  );
+  await acceptTerms(requesterB, second.agreementId, relendId);
+  if ((await ownerSchedule(owner, listingId)).length !== 2) {
+    throw new Error("GIVE-to-LEND replacement did not reserve.");
+  }
+
+  await milestone(
+    owner,
+    first.agreementId,
+    firstTermsId,
+    "owner_resource",
+    "resource_provided",
+  );
+  await milestone(
+    requester,
+    first.agreementId,
+    firstTermsId,
+    "owner_resource",
+    "resource_received",
+  );
+  await milestone(
+    requester,
+    first.agreementId,
+    firstTermsId,
+    "owner_resource",
+    "resource_returned",
+  );
+  await milestone(
+    owner,
+    first.agreementId,
+    firstTermsId,
+    "owner_resource",
+    "resource_return_received",
+  );
+  schedule = await ownerSchedule(owner, listingId);
+  if (schedule.length !== 1 || schedule[0].is_at_risk !== false) {
+    throw new Error("Completed overdue loan did not clear derived risk.");
+  }
+
+  const otherListingId = await createPublishedListing(
+    owner,
+    "Independent reservation tool",
+  );
+  const other = await createAgreementOnListing(
+    owner,
+    requester,
+    otherListingId,
+  );
+  const otherTermsId = await proposeLoan(
+    owner,
+    other.agreementId,
+    null,
+    null,
+    boundary,
+    secondEnd,
+  );
+  await acceptTerms(requester, other.agreementId, otherTermsId);
+  await closeListing(owner, otherListingId);
+  if ((await ownerSchedule(owner, otherListingId)).length !== 1) {
+    throw new Error("Listing closure released an accepted loan.");
+  }
+  await cancelAgreement(owner, other.agreementId);
+  if ((await ownerSchedule(owner, otherListingId)).length !== 0) {
+    throw new Error("Cancellation failed to release a closed-listing loan.");
+  }
+
+  await verifyConcurrentLoanAccepts(owner, requester, requesterB);
+  await verifyCancellationVsLoanAcceptance(owner, requester, requesterB);
+  await verifyCompletionVsLoanAcceptance(owner, requester, requesterB);
+}
+
+async function verifyConcurrentLoanAccepts(owner, requester, requesterB) {
+  const listingId = await createPublishedListing(owner, "Concurrent loan tool");
+  const a = await createAgreementOnListing(owner, requester, listingId);
+  const b = await createAgreementOnListing(owner, requesterB, listingId);
+  const aTermsId = await proposeLoan(
+    owner,
+    a.agreementId,
+    null,
+    null,
+    futureIso(10),
+    futureIso(12),
+  );
+  const bTermsId = await proposeLoan(
+    owner,
+    b.agreementId,
+    null,
+    null,
+    futureIso(11),
+    futureIso(13),
+  );
+  let blocked;
+  await sql.begin(async (transaction) => {
+    await setAuthenticatedTransaction(transaction, requester.id);
+    await transaction`
+      select public.accept_resource_exchange_terms(
+        ${requester.id}::uuid, ${a.agreementId}::uuid, ${aTermsId}::uuid
+      )
+    `;
+    blocked = track(
+      requesterB.client.rpc("accept_resource_exchange_terms", {
+        p_expected_profile_id: requesterB.id,
+        p_agreement_id: b.agreementId,
+        p_expected_pending_terms_id: bTermsId,
+      }),
+    );
+    await assertBlocked(blocked, "overlapping loan acceptance");
+  });
+  await assertTrackedRpcCode(
+    blocked,
+    "PT409",
+    "reject the serialized overlapping loan",
+  );
+  if ((await ownerSchedule(owner, listingId)).length !== 1) {
+    throw new Error(
+      "Concurrent overlapping accepts left an invalid active set.",
+    );
+  }
+
+  const adjacentListingId = await createPublishedListing(
+    owner,
+    "Adjacent race tool",
+  );
+  const c = await createAgreementOnListing(owner, requester, adjacentListingId);
+  const d = await createAgreementOnListing(
+    owner,
+    requesterB,
+    adjacentListingId,
+  );
+  const adjacentStart = futureIso(20);
+  const adjacentBoundary = futureIso(22);
+  const adjacentEnd = futureIso(24);
+  const cTermsId = await proposeLoan(
+    owner,
+    c.agreementId,
+    null,
+    null,
+    adjacentStart,
+    adjacentBoundary,
+  );
+  const dTermsId = await proposeLoan(
+    owner,
+    d.agreementId,
+    null,
+    null,
+    adjacentBoundary,
+    adjacentEnd,
+  );
+  await sql.begin(async (transaction) => {
+    await setAuthenticatedTransaction(transaction, requester.id);
+    await transaction`
+      select public.accept_resource_exchange_terms(
+        ${requester.id}::uuid, ${c.agreementId}::uuid, ${cTermsId}::uuid
+      )
+    `;
+    blocked = track(
+      requesterB.client.rpc("accept_resource_exchange_terms", {
+        p_expected_profile_id: requesterB.id,
+        p_agreement_id: d.agreementId,
+        p_expected_pending_terms_id: dTermsId,
+      }),
+    );
+    await assertBlocked(blocked, "adjacent loan acceptance");
+  });
+  await assertTrackedRpcValue(blocked, "accept serialized adjacent loan");
+  if ((await ownerSchedule(owner, adjacentListingId)).length !== 2) {
+    throw new Error("Concurrent adjacent accepts did not both succeed.");
+  }
+}
+
+async function verifyCancellationVsLoanAcceptance(
+  owner,
+  requester,
+  requesterB,
+) {
+  const listingId = await createPublishedListing(
+    owner,
+    "Cancellation release tool",
+  );
+  const a = await createAgreementOnListing(owner, requester, listingId);
+  const b = await createAgreementOnListing(owner, requesterB, listingId);
+  const startsAt = futureIso(30);
+  const endsAt = futureIso(32);
+  const aTermsId = await proposeLoan(
+    owner,
+    a.agreementId,
+    null,
+    null,
+    startsAt,
+    endsAt,
+  );
+  const bTermsId = await proposeLoan(
+    owner,
+    b.agreementId,
+    null,
+    null,
+    startsAt,
+    endsAt,
+  );
+  await acceptTerms(requester, a.agreementId, aTermsId);
+  let blocked;
+  await sql.begin(async (transaction) => {
+    await setAuthenticatedTransaction(transaction, owner.id);
+    await transaction`
+      select public.cancel_resource_exchange_agreement(
+        ${owner.id}::uuid, ${a.agreementId}::uuid
+      )
+    `;
+    blocked = track(
+      requesterB.client.rpc("accept_resource_exchange_terms", {
+        p_expected_profile_id: requesterB.id,
+        p_agreement_id: b.agreementId,
+        p_expected_pending_terms_id: bTermsId,
+      }),
+    );
+    await assertBlocked(blocked, "acceptance behind cancellation");
+  });
+  await assertTrackedRpcValue(blocked, "accept after committed cancellation");
+  const schedule = await ownerSchedule(owner, listingId);
+  if (schedule.length !== 1 || schedule[0].agreement_id !== b.agreementId) {
+    throw new Error(
+      "Cancellation/acceptance race left inconsistent reservation truth.",
+    );
+  }
+}
+
+async function verifyCompletionVsLoanAcceptance(owner, requester, requesterB) {
+  const listingId = await createPublishedListing(
+    owner,
+    "Completion release tool",
+  );
+  const a = await createAgreementOnListing(owner, requester, listingId);
+  const b = await createAgreementOnListing(owner, requesterB, listingId);
+  const startsAt = futureIso(40);
+  const endsAt = futureIso(42);
+  const aTermsId = await proposeLoan(
+    owner,
+    a.agreementId,
+    null,
+    null,
+    startsAt,
+    endsAt,
+  );
+  const bTermsId = await proposeLoan(
+    owner,
+    b.agreementId,
+    null,
+    null,
+    startsAt,
+    endsAt,
+  );
+  await acceptTerms(requester, a.agreementId, aTermsId);
+  await milestone(
+    owner,
+    a.agreementId,
+    aTermsId,
+    "owner_resource",
+    "resource_provided",
+  );
+  await milestone(
+    requester,
+    a.agreementId,
+    aTermsId,
+    "owner_resource",
+    "resource_received",
+  );
+  await milestone(
+    requester,
+    a.agreementId,
+    aTermsId,
+    "owner_resource",
+    "resource_returned",
+  );
+  let blocked;
+  await sql.begin(async (transaction) => {
+    await setAuthenticatedTransaction(transaction, owner.id);
+    await transaction`
+      select public.record_resource_exchange_milestone(
+        ${owner.id}::uuid, ${a.agreementId}::uuid, ${aTermsId}::uuid,
+        'owner_resource', 'resource_return_received'
+      )
+    `;
+    blocked = track(
+      requesterB.client.rpc("accept_resource_exchange_terms", {
+        p_expected_profile_id: requesterB.id,
+        p_agreement_id: b.agreementId,
+        p_expected_pending_terms_id: bTermsId,
+      }),
+    );
+    await assertBlocked(blocked, "acceptance behind completion");
+  });
+  await assertTrackedRpcValue(blocked, "accept after committed completion");
+  const schedule = await ownerSchedule(owner, listingId);
+  if (schedule.length !== 1 || schedule[0].agreement_id !== b.agreementId) {
+    throw new Error(
+      "Completion/acceptance race left inconsistent reservation truth.",
+    );
+  }
+}
+
+async function createAgreementOnListing(owner, requester, listingId) {
+  const requestId = await requestListing(requester, listingId);
+  await transitionRequest(owner, "accept_resource_listing_request", requestId);
+  const agreement = await getAgreement(owner, requestId);
+  return { requestId, agreementId: agreement.agreement_id };
+}
+
+async function proposeLoan(
+  owner,
+  agreementId,
+  currentTermsId,
+  pendingTermsId,
+  startsAt,
+  endsAt,
+) {
+  return proposeTerms(owner, agreementId, {
+    currentTermsId,
+    pendingTermsId,
+    ownerKind: "lend",
+    ownerStartsAt: startsAt,
+    ownerEndsAt: endsAt,
+    requesterKind: "none",
+    requesterDescription: null,
+    privateNote: null,
+  });
+}
+
+async function ownerSchedule(owner, listingId) {
+  const { data, error } = await owner.client.rpc(
+    "list_owned_resource_listing_loan_schedule",
+    { p_expected_owner_profile_id: owner.id, p_listing_id: listingId },
+  );
+  if (error || !Array.isArray(data)) {
+    throw safeDatabaseFailure("read the owner loan schedule", error);
+  }
+  const allowedFields = new Set([
+    "listing_id",
+    "agreement_id",
+    "request_id",
+    "terms_id",
+    "requester_profile_id",
+    "requester_display_name",
+    "starts_at",
+    "ends_at",
+    "agreement_lifecycle",
+    "is_overdue",
+    "is_at_risk",
+  ]);
+  if (
+    data.some((row) => Object.keys(row).some((key) => !allowedFields.has(key)))
+  ) {
+    throw new Error("Owner schedule exposed unbounded private details.");
+  }
+  return data;
+}
+
+async function assertAvailability(
+  actor,
+  agreementId,
+  termsId,
+  isLend,
+  available,
+) {
+  const { data, error } = await actor.client.rpc(
+    "check_resource_exchange_pending_loan_availability",
+    {
+      p_expected_profile_id: actor.id,
+      p_agreement_id: agreementId,
+      p_expected_pending_terms_id: termsId,
+    },
+  );
+  if (
+    error ||
+    data?.length !== 1 ||
+    data[0].is_lend !== isLend ||
+    data[0].is_available !== available ||
+    Object.keys(data[0]).sort().join(",") !== "is_available,is_lend"
+  ) {
+    throw safeDatabaseFailure("check private pending loan availability", error);
+  }
 }
 
 async function verifyOverdueAndCancellation(owner, requester) {

@@ -482,11 +482,11 @@ select ok(
 select ok(
   pg_get_functiondef(
     'public.get_resource_exchange_agreement(uuid,uuid)'::regprocedure
-  ) like '%resource_return_received%'
+  ) like '%resource_exchange_owner_lend_is_overdue%'
   and pg_get_functiondef(
     'public.get_resource_exchange_agreement(uuid,uuid)'::regprocedure
   ) like '%owner_lend_return_overdue%',
-  'authorized agreement read derives both return-overdue indicators'
+  'authorized agreement read reuses owner-lend overdue truth and derives both indicators'
 );
 
 select * from finish();

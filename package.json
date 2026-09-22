@@ -54,6 +54,7 @@
     "resource:listings:verify:local": "node scripts/verify-local-resource-listings.mjs",
     "resource:listings:requests:verify:local": "node scripts/verify-local-resource-listing-requests.mjs",
     "resource:agreements:verify:local": "node scripts/verify-local-resource-exchange-agreements.mjs",
+    "resource:loan-reservations:verify:local": "node scripts/verify-local-resource-exchange-agreements.mjs --loan-reservations-only",
     "resource:chat:verify:local": "node scripts/verify-local-resource-request-chat.mjs",
     "resource:messages-notifications:verify:local": "node scripts/verify-local-resource-messages-notifications.mjs",
     "project:resource-needs:verify:local": "node scripts/verify-local-project-resource-needs.mjs",
