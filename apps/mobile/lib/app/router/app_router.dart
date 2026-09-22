@@ -33,6 +33,7 @@ import '../../features/recurring_activities/presentation/recurring_activity_edit
 import '../../features/resource_listings/presentation/own_resource_listings_screen.dart';
 import '../../features/resource_listings/presentation/public_resource_listings_screen.dart';
 import '../../features/resource_listings/presentation/resource_listing_editor_screen.dart';
+import '../../features/resource_loans/presentation/resource_loan_schedule_screen.dart';
 import '../../features/resource_chat/presentation/resource_chat_screen.dart';
 import '../../features/resource_requests/presentation/resource_request_screen.dart';
 import '../../l10n/generated/app_localizations.dart';
@@ -415,6 +416,12 @@ RoutingConfig _routingConfig(
                               listingId: state.pathParameters['listingId'],
                             ),
                       ),
+                      GoRoute(
+                        path: 'loan-schedule',
+                        builder: (context, state) => ResourceLoanScheduleScreen(
+                          listingId: state.pathParameters['listingId']!,
+                        ),
+                      ),
                     ],
                   ),
                 ],
@@ -434,7 +441,7 @@ bool _isResourceManagementPath(String destination) {
   final segments = Uri(path: path).pathSegments;
   return segments.length == 3 &&
       segments.first == 'resources' &&
-      segments.last == 'edit';
+      (segments.last == 'edit' || segments.last == 'loan-schedule');
 }
 
 final appRouterProvider = Provider<GoRouter>((ref) {

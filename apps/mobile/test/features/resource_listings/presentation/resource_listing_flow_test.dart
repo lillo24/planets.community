@@ -12,11 +12,13 @@ import 'package:planets_mobile/features/resource_listings/data/resource_listing_
 import 'package:planets_mobile/features/resource_listings/domain/resource_listing_models.dart';
 import 'package:planets_mobile/features/resource_requests/data/resource_request_gateway.dart';
 import 'package:planets_mobile/features/resource_requests/domain/resource_request_models.dart';
+import 'package:planets_mobile/features/resource_loans/data/resource_loan_gateway.dart';
 
 import '../../../support/fake_auth.dart';
 import '../../../support/fake_profile.dart';
 import '../../../support/fake_resource_listing.dart';
 import '../../../support/fake_resource_request.dart';
+import '../../../support/fake_resource_loan.dart';
 
 void main() {
   testWidgets(
@@ -218,6 +220,78 @@ void main() {
 
     expect(find.byKey(const Key('resource-request-action')), findsNothing);
     expect(find.byKey(const Key('resource-request-view')), findsNothing);
+    expect(
+      find.byKey(const Key('resource-owner-loan-schedule-shortcut')),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('non-owner has no private loan schedule shortcut', (
+    tester,
+  ) async {
+    final gateway = FakeResourceListingGateway()
+      ..publicDetail = publicResourceListingDetailFixture();
+    final app = await _pump(
+      tester,
+      gateway: gateway,
+      identityId: otherProfileId,
+    );
+    app.read(appRouterProvider).go('/resources/$resourceListingId');
+    await tester.pumpAndSettle();
+    expect(
+      find.byKey(const Key('resource-owner-loan-schedule-shortcut')),
+      findsNothing,
+    );
+  });
+
+  testWidgets('My Listings shows schedule only for published or closed items', (
+    tester,
+  ) async {
+    final loans = FakeResourceLoanGateway();
+    final gateway = FakeResourceListingGateway()
+      ..ownItems = [
+        ownResourceListingFixture(),
+        ownResourceListingFixture(
+          id: secondResourceListingId,
+          lifecycle: ResourceListingLifecycle.published,
+        ),
+        ownResourceListingFixture(
+          id: '00000000-0000-4000-8000-000000000203',
+          lifecycle: ResourceListingLifecycle.closed,
+        ),
+      ];
+    final app = await _pump(tester, gateway: gateway, resourceLoans: loans);
+    app.read(appRouterProvider).go('/resources/mine');
+    await tester.pumpAndSettle();
+    expect(
+      find.byKey(Key('resource-loan-schedule-$resourceListingId')),
+      findsNothing,
+    );
+    expect(
+      find.byKey(Key('resource-loan-schedule-$secondResourceListingId')),
+      findsOneWidget,
+    );
+    await tester.scrollUntilVisible(
+      find.byKey(
+        const Key(
+          'resource-loan-schedule-00000000-0000-4000-8000-000000000203',
+        ),
+      ),
+      150,
+    );
+    expect(
+      find.byKey(
+        const Key(
+          'resource-loan-schedule-00000000-0000-4000-8000-000000000203',
+        ),
+      ),
+      findsOneWidget,
+    );
+    expect(
+      loans.calls,
+      isEmpty,
+      reason: 'cards never prefetch private schedules',
+    );
   });
 
   testWidgets('hidden owner name is omitted from public detail', (
@@ -387,6 +461,7 @@ Future<ProviderContainer> _pump(
   bool signedIn = true,
   String? identityId,
   FakeResourceRequestGateway? resourceRequests,
+  FakeResourceLoanGateway? resourceLoans,
 }) async {
   final signedInProfileId = identityId ?? resourceOwnerProfileId;
   final auth = FakeAuthGateway(
@@ -416,6 +491,9 @@ Future<ProviderContainer> _pump(
         resourceListingGatewayProvider.overrideWithValue(gateway),
         resourceRequestGatewayProvider.overrideWithValue(
           resourceRequests ?? FakeResourceRequestGateway(),
+        ),
+        resourceLoanGatewayProvider.overrideWithValue(
+          resourceLoans ?? FakeResourceLoanGateway(),
         ),
       ],
       child: const PlanetsApp(),

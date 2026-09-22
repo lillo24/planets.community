@@ -288,6 +288,14 @@ class _PublicResourceListingDetailScreenState
                   context.go('/resources/${widget.listingId}/edit'),
               icon: const Icon(Icons.edit_outlined),
             ),
+          if (isOwner)
+            IconButton(
+              key: const Key('resource-owner-loan-schedule-shortcut'),
+              tooltip: l10n.resourceLoanScheduleView,
+              onPressed: () =>
+                  context.go('/resources/${widget.listingId}/loan-schedule'),
+              icon: const Icon(Icons.event_note_outlined),
+            ),
         ],
       ),
       body: SafeArea(

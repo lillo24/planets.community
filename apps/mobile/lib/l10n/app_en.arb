@@ -1337,5 +1337,52 @@
       "description": { "type": "String" },
       "date": { "type": "String" }
     }
-  }
+  },
+  "resourceLoanScheduleTitle": "Loan schedule",
+  "resourceLoanScheduleView": "View loan schedule",
+  "resourceLoanScheduleChronological": "Active loans in chronological order. This schedule does not set priority for future requests.",
+  "resourceLoanScheduleForbidden": "This loan schedule is only available to the listing owner.",
+  "resourceLoanScheduleUnavailable": "The loan schedule is unavailable. Try again.",
+  "resourceLoanScheduleRefreshFailed": "Couldn't refresh the schedule. Showing the previous result.",
+  "resourceLoanScheduleEmptyTitle": "No active loans",
+  "resourceLoanScheduleEmptyMessage": "Accepted loans for this listing will appear here.",
+  "resourceLoanSchedulePeriod": "{start} → {end}",
+  "@resourceLoanSchedulePeriod": {
+    "placeholders": {
+      "start": { "type": "String" },
+      "end": { "type": "String" }
+    }
+  },
+  "resourceLoanScheduleRowSemantics": "Loan to {requester}, {period}, {lifecycle}",
+  "@resourceLoanScheduleRowSemantics": {
+    "placeholders": {
+      "requester": { "type": "String" },
+      "period": { "type": "String" },
+      "lifecycle": { "type": "String" }
+    }
+  },
+  "resourceLoanTermsAgreed": "Terms agreed",
+  "resourceLoanExchangeInProgress": "Exchange in progress",
+  "resourceLoanReturnOverdue": "Return overdue",
+  "resourceLoanReturnOverdueExplanation": "The expected return time has passed.",
+  "resourceLoanAtRisk": "At risk",
+  "resourceLoanAtRiskExplanation": "An earlier loan has not yet been confirmed returned.",
+  "resourceLoanAtRiskStillValid": "This reservation is still valid.",
+  "resourceLoanOpenRequest": "Open request",
+  "resourceLoanStart": "Start: {date}",
+  "@resourceLoanStart": {
+    "placeholders": { "date": { "type": "String" } }
+  },
+  "resourceLoanExpectedReturn": "Expected return: {date}",
+  "@resourceLoanExpectedReturn": {
+    "placeholders": { "date": { "type": "String" } }
+  },
+  "resourceLoanCheckingDates": "Checking loan dates…",
+  "resourceLoanDatesAvailable": "Dates currently available",
+  "resourceLoanAvailableGuidance": "No accepted loan overlaps this period. Availability is checked again when you accept.",
+  "resourceLoanDatesConflict": "These dates conflict with another accepted loan.",
+  "resourceLoanDatesConflictGuidance": "Choose different dates before accepting.",
+  "resourceLoanAvailabilityUnavailable": "Couldn't verify availability right now.",
+  "resourceLoanAcceptanceChecksAgain": "Acceptance will check again.",
+  "resourceLoanDatesNoLongerAvailable": "These dates are no longer available. Review the proposal and choose another period."
 }

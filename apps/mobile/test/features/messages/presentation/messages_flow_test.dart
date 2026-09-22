@@ -26,10 +26,13 @@ import 'package:planets_mobile/features/resource_chat/data/resource_chat_gateway
 import 'package:planets_mobile/features/resource_exchange/data/resource_exchange_gateway.dart';
 import 'package:planets_mobile/features/resource_exchange/application/resource_exchange_controller.dart';
 import 'package:planets_mobile/features/resource_exchange/domain/resource_exchange_models.dart';
+import 'package:planets_mobile/features/resource_loans/data/resource_loan_gateway.dart';
+import 'package:planets_mobile/features/resource_loans/domain/resource_loan_models.dart';
 
 import '../../../support/fake_auth.dart';
 import '../../../support/fake_messages.dart';
 import '../../../support/fake_message_chats.dart';
+import '../../../support/fake_resource_loan.dart';
 import '../../../support/fake_participation.dart';
 import '../../../support/fake_join_acceptance_triage.dart';
 import '../../../support/fake_proposal.dart';
@@ -751,6 +754,300 @@ void main() {
     );
   });
 
+  testWidgets(
+    'pending owner LEND preflight controls Accept without blocking alternatives',
+    (tester) async {
+      const chatId = '00000000-0000-4000-8000-000000000401';
+      final pending = _loanPending();
+      final exchange = FakeResourceExchangeGateway()
+        ..agreement = resourceExchangeAgreementFixture(
+          pendingTermsId: pending.termsId,
+        )
+        ..terms = [pending];
+      final loans = FakeResourceLoanGateway()
+        ..availability = const PendingLoanAvailability(
+          isLend: true,
+          isAvailable: false,
+        );
+      final app = await _pump(
+        tester,
+        messages: FakeMessagesGateway(),
+        resourceChats: FakeResourceChatGateway()..histories[chatId] = [],
+        resourceExchange: exchange,
+        resourceLoans: loans,
+      );
+      app.read(appRouterProvider).go('/messages/chats/resource/$chatId');
+      await tester.pumpAndSettle();
+      await tester.tap(
+        find.byKey(const Key('resource-exchange-primary-action')).hitTestable(),
+      );
+      await tester.pumpAndSettle();
+      expect(
+        find.text('These dates conflict with another accepted loan.'),
+        findsOneWidget,
+      );
+      expect(
+        tester
+            .widget<FilledButton>(
+              find.byKey(const Key('resource-exchange-accept-proposal')),
+            )
+            .onPressed,
+        isNull,
+      );
+      expect(
+        find.byKey(const Key('resource-exchange-reject-proposal')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const Key('resource-exchange-counterproposal')),
+        findsOneWidget,
+      );
+      expect(loans.calls, hasLength(1));
+    },
+  );
+
+  testWidgets(
+    'available and failed preflights keep authoritative Accept enabled',
+    (tester) async {
+      const chatId = '00000000-0000-4000-8000-000000000401';
+      final pending = _loanPending();
+      final exchange = FakeResourceExchangeGateway()
+        ..agreement = resourceExchangeAgreementFixture(
+          pendingTermsId: pending.termsId,
+        )
+        ..terms = [pending];
+      final loans = FakeResourceLoanGateway();
+      final app = await _pump(
+        tester,
+        messages: FakeMessagesGateway(),
+        resourceChats: FakeResourceChatGateway()..histories[chatId] = [],
+        resourceExchange: exchange,
+        resourceLoans: loans,
+      );
+      app.read(appRouterProvider).go('/messages/chats/resource/$chatId');
+      await tester.pumpAndSettle();
+      await tester.tap(
+        find.byKey(const Key('resource-exchange-primary-action')).hitTestable(),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('Dates currently available'), findsOneWidget);
+      expect(
+        tester
+            .widget<FilledButton>(
+              find.byKey(const Key('resource-exchange-accept-proposal')),
+            )
+            .onPressed,
+        isNotNull,
+      );
+      loans.availabilityError = StateError('private backend');
+      exchange.agreement = resourceExchangeAgreementFrom(
+        exchange.agreement,
+        pendingTermsId: '00000000-0000-4000-8000-000000000703',
+      );
+      exchange.terms = [
+        _loanPending(termsId: '00000000-0000-4000-8000-000000000703'),
+      ];
+      await app.read(resourceExchangeProvider.notifier).refresh();
+      await tester.pumpAndSettle();
+      expect(
+        find.text("Couldn't verify availability right now."),
+        findsOneWidget,
+      );
+      expect(find.textContaining('private backend'), findsNothing);
+      expect(
+        tester
+            .widget<FilledButton>(
+              find.byKey(const Key('resource-exchange-accept-proposal')),
+            )
+            .onPressed,
+        isNotNull,
+      );
+    },
+  );
+
+  testWidgets(
+    'Accept PT409 reloads same terms and shows specific date guidance',
+    (tester) async {
+      const chatId = '00000000-0000-4000-8000-000000000401';
+      final pending = _loanPending();
+      final exchange = FakeResourceExchangeGateway()
+        ..agreement = resourceExchangeAgreementFixture(
+          pendingTermsId: pending.termsId,
+        )
+        ..terms = [pending]
+        ..mutationError = const PostgrestException(
+          message: 'private',
+          code: 'PT409',
+        );
+      final loans = FakeResourceLoanGateway();
+      final app = await _pump(
+        tester,
+        messages: FakeMessagesGateway(),
+        resourceChats: FakeResourceChatGateway()..histories[chatId] = [],
+        resourceExchange: exchange,
+        resourceLoans: loans,
+      );
+      app.read(appRouterProvider).go('/messages/chats/resource/$chatId');
+      await tester.pumpAndSettle();
+      await tester.tap(
+        find.byKey(const Key('resource-exchange-primary-action')).hitTestable(),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('Dates currently available'), findsOneWidget);
+
+      loans.availability = const PendingLoanAvailability(
+        isLend: true,
+        isAvailable: false,
+      );
+      await tester.tap(
+        find
+            .byKey(const Key('resource-exchange-accept-proposal'))
+            .hitTestable(),
+      );
+      await tester.pumpAndSettle();
+      expect(exchange.acceptCount, 1);
+      expect(loans.calls, hasLength(2));
+      expect(
+        find.text(
+          'These dates are no longer available. Review the proposal and choose another period.',
+        ),
+        findsOneWidget,
+      );
+      await tester.scrollUntilVisible(
+        find.byKey(const Key('resource-exchange-counterproposal')),
+        150,
+        scrollable: find.byType(Scrollable).last,
+      );
+      expect(
+        find.byKey(const Key('resource-exchange-counterproposal')),
+        findsOneWidget,
+      );
+    },
+  );
+
+  testWidgets('loading preflight leaves Accept available for backend check', (
+    tester,
+  ) async {
+    const chatId = '00000000-0000-4000-8000-000000000401';
+    final pending = _loanPending();
+    final exchange = FakeResourceExchangeGateway()
+      ..agreement = resourceExchangeAgreementFixture(
+        pendingTermsId: pending.termsId,
+      )
+      ..terms = [pending];
+    final delayed = Completer<void>();
+    final loans = FakeResourceLoanGateway()..availabilityDelay = delayed.future;
+    final app = await _pump(
+      tester,
+      messages: FakeMessagesGateway(),
+      resourceChats: FakeResourceChatGateway()..histories[chatId] = [],
+      resourceExchange: exchange,
+      resourceLoans: loans,
+    );
+    app.read(appRouterProvider).go('/messages/chats/resource/$chatId');
+    await tester.pumpAndSettle();
+    await tester.tap(
+      find.byKey(const Key('resource-exchange-primary-action')).hitTestable(),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('Checking loan dates…'), findsOneWidget);
+    expect(
+      tester
+          .widget<FilledButton>(
+            find.byKey(const Key('resource-exchange-accept-proposal')),
+          )
+          .onPressed,
+      isNotNull,
+    );
+    delayed.complete();
+    await tester.pumpAndSettle();
+  });
+
+  testWidgets('proposer sees conflict but retains edit and withdraw', (
+    tester,
+  ) async {
+    const chatId = '00000000-0000-4000-8000-000000000401';
+    final pending = _loanPending(proposedByProfileId: 'user-1');
+    final exchange = FakeResourceExchangeGateway()
+      ..agreement = resourceExchangeAgreementFixture(
+        pendingTermsId: pending.termsId,
+      )
+      ..terms = [pending];
+    final loans = FakeResourceLoanGateway()
+      ..availability = const PendingLoanAvailability(
+        isLend: true,
+        isAvailable: false,
+      );
+    final app = await _pump(
+      tester,
+      messages: FakeMessagesGateway(),
+      resourceChats: FakeResourceChatGateway()..histories[chatId] = [],
+      resourceExchange: exchange,
+      resourceLoans: loans,
+    );
+    app.read(appRouterProvider).go('/messages/chats/resource/$chatId');
+    await tester.pumpAndSettle();
+    await tester.tap(
+      find.byKey(const Key('resource-exchange-primary-action')).hitTestable(),
+    );
+    await tester.pumpAndSettle();
+    expect(
+      find.text('These dates conflict with another accepted loan.'),
+      findsOneWidget,
+    );
+    await tester.scrollUntilVisible(
+      find.byKey(const Key('resource-exchange-edit-proposal')),
+      150,
+      scrollable: find.byType(Scrollable).last,
+    );
+    expect(
+      find.byKey(const Key('resource-exchange-edit-proposal')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const Key('resource-exchange-withdraw-proposal')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const Key('resource-exchange-accept-proposal')),
+      findsNothing,
+    );
+  });
+
+  testWidgets('pending GIVE or requester-only LEND has no listing preflight', (
+    tester,
+  ) async {
+    const chatId = '00000000-0000-4000-8000-000000000401';
+    final pending = _loanPending(
+      ownerKind: ResourceOwnerTransferKind.give,
+      requesterKind: ResourceRequesterTransferKind.lend,
+    );
+    final exchange = FakeResourceExchangeGateway()
+      ..agreement = resourceExchangeAgreementFixture(
+        pendingTermsId: pending.termsId,
+      )
+      ..terms = [pending];
+    final loans = FakeResourceLoanGateway();
+    final app = await _pump(
+      tester,
+      messages: FakeMessagesGateway(),
+      resourceChats: FakeResourceChatGateway()..histories[chatId] = [],
+      resourceExchange: exchange,
+      resourceLoans: loans,
+    );
+    app.read(appRouterProvider).go('/messages/chats/resource/$chatId');
+    await tester.pumpAndSettle();
+    await tester.tap(
+      find.byKey(const Key('resource-exchange-primary-action')).hitTestable(),
+    );
+    await tester.pumpAndSettle();
+    expect(
+      find.byKey(const Key('resource-loan-availability-status')),
+      findsNothing,
+    );
+    expect(loans.calls, isEmpty);
+  });
+
   testWidgets('own pending proposal exposes edit and withdraw only', (
     tester,
   ) async {
@@ -1334,6 +1631,34 @@ void main() {
   });
 }
 
+ResourceExchangeTerms _loanPending({
+  String termsId = loanPendingTermsId,
+  String proposedByProfileId = 'other-user',
+  ResourceOwnerTransferKind ownerKind = ResourceOwnerTransferKind.lend,
+  ResourceRequesterTransferKind requesterKind =
+      ResourceRequesterTransferKind.none,
+}) => resourceExchangeTermsFixture(
+  termsId: termsId,
+  proposedByProfileId: proposedByProfileId,
+  ownerTransferKind: ownerKind,
+  ownerLendStartsAt: ownerKind == ResourceOwnerTransferKind.lend
+      ? DateTime.utc(2026, 9, 24)
+      : null,
+  ownerLendEndsAt: ownerKind == ResourceOwnerTransferKind.lend
+      ? DateTime.utc(2026, 9, 26)
+      : null,
+  requesterTransferKind: requesterKind,
+  requesterResourceDescription:
+      requesterKind == ResourceRequesterTransferKind.none ? null : 'A cart',
+  requesterLendStartsAt: requesterKind == ResourceRequesterTransferKind.lend
+      ? DateTime.utc(2026, 9, 24)
+      : null,
+  requesterLendEndsAt: requesterKind == ResourceRequesterTransferKind.lend
+      ? DateTime.utc(2026, 9, 26)
+      : null,
+  isPending: true,
+);
+
 Future<ProviderContainer> _pump(
   WidgetTester tester, {
   required FakeMessagesGateway messages,
@@ -1343,6 +1668,7 @@ Future<ProviderContainer> _pump(
   FakeMessageChatsGateway? chats,
   FakeResourceChatGateway? resourceChats,
   FakeResourceExchangeGateway? resourceExchange,
+  FakeResourceLoanGateway? resourceLoans,
 }) async {
   final auth = FakeAuthGateway(
     snapshot: AuthSnapshot(identity: AuthIdentity(id: identityId)),
@@ -1372,6 +1698,9 @@ Future<ProviderContainer> _pump(
         ),
         resourceExchangeGatewayProvider.overrideWithValue(
           resourceExchange ?? FakeResourceExchangeGateway(),
+        ),
+        resourceLoanGatewayProvider.overrideWithValue(
+          resourceLoans ?? FakeResourceLoanGateway(),
         ),
         resourceRequestGatewayProvider.overrideWithValue(
           resourceRequests ?? FakeResourceRequestGateway(),

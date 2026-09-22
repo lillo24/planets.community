@@ -1,7 +1,7 @@
 # Implementation Roadmap
 
 **Status:** Planning baseline  
-**Current implementation:** Plans 00–04B2B, 04C1–04C2, 05A, 05B, 05D, 06A, 06B, provider-independent 06C1, provider-neutral 06C2A, 06D, 07A, 07B1, 07B2B, 07B2C, and public informational SITE-00 through SITE-02 plus SITE-02W implemented; 04C3A and stacked 04C3B1/04C3B2/04C3C1/04C3C2/04C3D1/04C3D2/04C3D3A/04C3D3B1/04C3D3B2/05C1/05C2/04C4A/04C4B/04C4C1/04C4C2/04C4C3A/04C4C3B/04C4C3C1/04C4C3C2/04C4C3D/04C4D1 are in progress; provider-specific 06C2B, 04C4D2, and 04C4E–04C4F remain not started
+**Current implementation:** Plans 00–04B2B, 04C1–04C2, 05A, 05B, 05D, 06A, 06B, provider-independent 06C1, provider-neutral 06C2A, 06D, 07A, 07B1, 07B2B, 07B2C, and public informational SITE-00 through SITE-02 plus SITE-02W implemented; 04C3A and stacked 04C3B1/04C3B2/04C3C1/04C3C2/04C3D1/04C3D2/04C3D3A/04C3D3B1/04C3D3B2/05C1/05C2/04C4A/04C4B/04C4C1/04C4C2/04C4C3A/04C4C3B/04C4C3C1/04C4C3C2/04C4C3D/04C4D1/04C4D2 are in progress; provider-specific 06C2B and 04C4E–04C4F remain not started
 
 This roadmap divides the first PLANETS build into reviewable Codex tasks. Each numbered item should normally become its own implementation prompt, branch, and pull request.
 
@@ -83,7 +83,7 @@ Do not begin a dependent plan until the prior plan is merged or its branch is ex
 | 04C4C3D | Mobile Resources Notification UX                          | Resource notification copy/destinations and Resources preference controls                                               | 04C4C3B, 04C4C3C, 06B | User-facing copy and native interaction review                                                                         | In progress |
 | 04C4D   | Loan Availability / Queue                                 | Accepted listing-side loan reservations followed by mobile schedule/availability UX                                      | 04C4B                  | Recurring availability, multi-unit capacity, automatic promotion, and post-handoff amendments remain deferred        | In progress |
 | 04C4D1  | Loan Reservation + Conflict Domain                       | Derived accepted LEND schedule, half-open conflict enforcement, owner schedule, counterpart availability                | 04C4B, 04C4C3D         | No FIFO entitlement or public borrower calendar                                                                       | In progress |
-| 04C4D2  | Mobile Loan Calendar / Queue                              | Owner schedule visualization, pending availability, and at-risk warning UX                                               | 04C4D1                 | No automatic promotion                                                                                                 | Not started |
+| 04C4D2  | Mobile Loan Schedule + Availability UX                     | Owner schedule visualization, pending availability, and at-risk warning UX                                               | 04C4D1                 | No automatic promotion                                                                                                 | In progress |
 | 04C4E   | Project Resource Matching                                 | Explainable text/location/availability matching between Project needs and Scambio-Dona listings                        | 04C3A, 04C4D1          | Matching thresholds and private availability use                                                                      | Not started |
 | 04C4F   | Saved Searches + Matching Notifications                   | Personal saved filters, later taxonomy/radius refinements, matching events, and notification projection                | 04C4E, 06A             | Saved-search scope, notification copy/frequency, and later taxonomy                                                  | Not started |
 | 05      | Participation lifecycle (parent)                          | Shared project participation foundation, later mobile experience, and verified-contribution review                     | 04A, 04B1              | Capacity/fullness and later contribution/resource semantics remain unresolved                                        | In progress |
@@ -573,11 +573,11 @@ central discriminated Messages extension boundary.
 
 ###### 04C4D — Loan Availability / Queue
 
-**Status:** In progress through stacked 04C4D1. Depends on 04C4B and the current 04C4C3D stack.
+**Status:** In progress through stacked 04C4D1 and mobile 04C4D2. Depends on 04C4B and the current 04C4C3D stack.
 
 ###### 04C4D1 — Loan Reservation + Conflict Domain
 
-**Status:** In progress above open 04C4C3D PR #82; neither PR is merged.
+**Status:** Open PR #83 above open 04C4C3D PR #82; neither PR is merged. D1's database reset/lint/advisors/pgTAP/type-drift/OTP gates remain blocked, so the stack is not merge-ready.
 
 One listing is one reservable unit. Mutually accepted listing-owner LEND terms
 in an agreed or in-progress agreement are the sole active reservation truth;
@@ -590,9 +590,9 @@ counterparties can check only their exact pending proposal's availability.
 Neither request arrival nor release confers FIFO priority or automatic
 promotion. Agreement terms/events remain the audit history.
 
-###### 04C4D2 — Mobile Loan Calendar / Queue
+###### 04C4D2 — Mobile Loan Schedule + Availability UX
 
-**Status:** Not started. Depends on 04C4D1.
+**Status:** In progress above PR #83. Neither D1 nor D2 is merge-ready while D1's database gates are blocked.
 
 Consume only `list_owned_resource_listing_loan_schedule`,
 `check_resource_exchange_pending_loan_availability`, and existing
@@ -602,6 +602,15 @@ availability, and at-risk warning UX belong here, not in D1. Recurring owner
 availability, multi-unit capacity, automatic promotion, and post-handoff
 extensions/amendments remain deferred. 04C4E may consume D1's internal
 availability truth for matching but must not expose private reservation dates.
+
+The mobile owner schedule is chronological, not a FIFO entitlement, and remains
+reachable for closed listings whose accepted agreements survive closure. A
+pending immutable owner-side LEND proposal gets a private exact-version
+availability preflight; GIVE and requester-side-only LEND do not. Accepted
+listing-side LEND terms remain the sole reservation truth, and backend Accept
+remains authoritative even when a preflight is unavailable. A future at-risk
+reservation is still valid; the warning only says an earlier return has not yet
+been confirmed.
 
 ###### 04C4E — Project Resource Matching
 

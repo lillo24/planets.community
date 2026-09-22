@@ -140,6 +140,14 @@ class _OwnResourceListingCard extends StatelessWidget {
                     : l10n.resourceEditListing,
               ),
             ),
+            if (listing.lifecycle != ResourceListingLifecycle.draft)
+              OutlinedButton.icon(
+                key: Key('resource-loan-schedule-${listing.id}'),
+                onPressed: () =>
+                    context.go('/resources/${listing.id}/loan-schedule'),
+                icon: const Icon(Icons.event_note_outlined),
+                label: Text(l10n.resourceLoanScheduleTitle),
+              ),
           ],
         ),
       ),

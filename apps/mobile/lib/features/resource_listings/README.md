@@ -17,7 +17,8 @@ Participation, and Project resources.
   authenticated non-owner entry point into the adjacent `resource_requests/`
   feature.
 - `presentation/own_resource_listings_screen.dart` owns the canonical
-  draft/published/closed owner history.
+  draft/published/closed owner history and the non-draft owner entry point to
+  the adjacent private `resource_loans/` schedule.
 - `presentation/resource_listing_editor_screen.dart` owns the local
   create/edit form, draft/publish actions, and terminal close flow.
 - `presentation/resource_listing_widgets.dart` owns shared mode/lifecycle,
@@ -36,3 +37,7 @@ still has no reservation, handoff, lending, barter, payment, quantity,
 taxonomy, media, Project linkage, saved-search, matching, or notification UX.
 Closing only removes a listing from public discovery and records no transfer
 outcome.
+Published and closed owner listings retain a private schedule entry point;
+the owner-only D1 RPC remains the authority for schedule access. No schedule
+RPC is called per listing card, and public discovery does not expose borrower
+names or reserved periods.

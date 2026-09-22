@@ -6,6 +6,7 @@ import '../../../core/theme/app_tokens.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../application/resource_exchange_controller.dart';
 import '../domain/resource_exchange_models.dart';
+import '../../resource_loans/application/resource_loan_controllers.dart';
 import 'resource_exchange_failure_message.dart';
 
 class ResourceExchangeAgreementSection extends ConsumerWidget {
@@ -71,6 +72,9 @@ class ResourceExchangeAgreementSection extends ConsumerWidget {
 
     final pending = snapshot.pendingTerms;
     final current = snapshot.currentTerms;
+    // Keep the exact pending-version preflight in sync with the existing
+    // canonical chat refresh even before the terms sheet is opened.
+    ref.watch(pendingLoanAvailabilityProvider);
     final profileId = state.expectedProfileId;
     final pendingIsMine =
         pending != null && pending.proposedByProfileId == profileId;
@@ -728,6 +732,20 @@ class ResourceExchangeTermsSheet extends ConsumerWidget {
     final pendingIsMine =
         pending?.proposedByProfileId == state.expectedProfileId;
     final lifecycle = snapshot.agreement.lifecycle;
+    final loanAvailabilityState = ref.watch(pendingLoanAvailabilityProvider);
+    final pendingOwnerLend =
+        pending != null &&
+        pending.ownerTransferKind == ResourceOwnerTransferKind.lend;
+    final loanAvailability =
+        pendingOwnerLend &&
+            state.expectedProfileId != null &&
+            loanAvailabilityState.matches(
+              state.expectedProfileId!,
+              snapshot.agreement.agreementId,
+              pending.termsId,
+            )
+        ? loanAvailabilityState
+        : null;
     return DraggableScrollableSheet(
       expand: false,
       initialChildSize: 0.85,
@@ -785,13 +803,41 @@ class ResourceExchangeTermsSheet extends ConsumerWidget {
               key: const Key('resource-exchange-pending-terms'),
               terms: pending,
             ),
+            if (pendingOwnerLend) ...[
+              const SizedBox(height: AppSpacing.small),
+              Semantics(
+                liveRegion: true,
+                child: Text(
+                  loanAvailability?.phase == ResourceLoanPhase.ready &&
+                          loanAvailability?.availability?.isLend == true
+                      ? loanAvailability!.isKnownConflict
+                            ? l10n.resourceLoanDatesConflict
+                            : l10n.resourceLoanDatesAvailable
+                      : loanAvailability?.phase == ResourceLoanPhase.loading
+                      ? l10n.resourceLoanCheckingDates
+                      : l10n.resourceLoanAvailabilityUnavailable,
+                  key: const Key('resource-loan-availability-status'),
+                ),
+              ),
+              Text(
+                loanAvailability?.phase == ResourceLoanPhase.ready &&
+                        loanAvailability?.availability?.isLend == true
+                    ? loanAvailability!.isKnownConflict
+                          ? l10n.resourceLoanDatesConflictGuidance
+                          : l10n.resourceLoanAvailableGuidance
+                    : l10n.resourceLoanAcceptanceChecksAgain,
+              ),
+            ],
           ],
           if (state.failure case final failure?) ...[
             const SizedBox(height: AppSpacing.small),
             Semantics(
               liveRegion: true,
               child: Text(
-                resourceExchangeFailureMessage(l10n, failure),
+                failure == ResourceExchangeFailureKind.conflict &&
+                        loanAvailability?.isAcceptanceConflict == true
+                    ? l10n.resourceLoanDatesNoLongerAvailable
+                    : resourceExchangeFailureMessage(l10n, failure),
                 style: TextStyle(color: Theme.of(context).colorScheme.error),
               ),
             ),
@@ -822,7 +868,9 @@ class ResourceExchangeTermsSheet extends ConsumerWidget {
                 ] else if (pending != null) ...[
                   FilledButton(
                     key: const Key('resource-exchange-accept-proposal'),
-                    onPressed: state.isActing
+                    onPressed:
+                        state.isActing ||
+                            loanAvailability?.isKnownConflict == true
                         ? null
                         : () => ref
                               .read(resourceExchangeProvider.notifier)

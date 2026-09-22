@@ -26,6 +26,10 @@ mutates the agreement only through the versioned Resource-exchange RPCs.
 - `presentation/resource_exchange_failure_message.dart` maps failures to safe,
   localized UI copy without exposing backend diagnostics.
 
+The adjacent `resource_loans/` feature consumes the canonical pending terms
+pointer to show listing-owner LEND availability. It shares this feature's
+existing refresh signal; it does not own another Realtime subscription.
+
 Each proposal or counterproposal creates a new immutable terms version. The
 accepted version is the current terms; a replacement can remain pending beside
 it. Handoff freezes negotiation, so `in_progress`, `completed`, and `cancelled`
