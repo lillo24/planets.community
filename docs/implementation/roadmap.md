@@ -626,7 +626,7 @@ been confirmed.
 
 ###### 04C4E2 — Mobile Project Resource Matching UX
 
-**Status:** In progress on a stacked mobile PR based on PR #87. It exposes matching only from creator-managed open needs, keeps explicit geography and Dona/Scambia filters visible, localizes discrete match reasons, and routes results to the existing public Resource detail and request flow.
+**Status:** In progress on stacked mobile PR #88 based on PR #87. It exposes matching only from creator-managed open needs, keeps explicit geography and Dona/Scambia filters visible, localizes discrete match reasons, and routes results to the existing public Resource detail and request flow.
 
 The first version is lexical and explainable, with no score, synonyms/taxonomy,
 private availability inference, saved search, or direct
