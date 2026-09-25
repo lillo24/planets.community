@@ -14,11 +14,20 @@ import '../../resource_requests/application/resource_request_controllers.dart';
 import '../../resource_requests/domain/resource_request_models.dart';
 import '../../resource_requests/presentation/resource_request_composer.dart';
 import '../../resource_requests/presentation/resource_request_widgets.dart';
+import '../../resource_saved_searches/application/resource_saved_search_controller.dart';
+import '../../resource_saved_searches/domain/resource_saved_search_models.dart';
+import '../../resource_saved_searches/presentation/resource_saved_search_routes.dart';
 import '../application/resource_listing_controllers.dart';
 import '../domain/resource_listing_models.dart';
 import 'resource_listing_widgets.dart';
 
 enum _ResourceModeChoice { all, donate, exchange }
+
+typedef _ResourceFilterTuple = ({
+  ResourceListingMode? mode,
+  String locality,
+  String query,
+});
 
 class PublicResourceListingsScreen extends ConsumerStatefulWidget {
   const PublicResourceListingsScreen({super.key});
@@ -63,10 +72,35 @@ class _PublicResourceListingsScreenState
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final state = ref.watch(publicResourceListingsProvider);
+    final session = ref.watch(authSessionProvider);
+    final expectedProfileId = session.phase == AuthSessionPhase.ready
+        ? session.identity?.id
+        : null;
+    final savedSearches = ref.watch(resourceSavedSearchesProvider);
+    ref.listen<_ResourceFilterTuple>(
+      publicResourceListingsProvider.select(
+        (value) => (
+          mode: value.modeFilter,
+          locality: value.locality,
+          query: value.query,
+        ),
+      ),
+      (previous, next) {
+        if (previous != next) _syncFilterControls(next);
+      },
+    );
+    final pendingInput = _currentInput();
     return Scaffold(
       appBar: AppBar(
         title: Text(l10n.resourceTitle),
         actions: [
+          if (expectedProfileId != null)
+            IconButton(
+              key: const Key('resource-saved-searches-action'),
+              tooltip: l10n.resourceSavedSearchesTitle,
+              onPressed: () => context.go(ResourceSavedSearchRoutes.path),
+              icon: const Icon(Icons.bookmarks_outlined),
+            ),
           IconButton(
             key: const Key('resource-my-listings-action'),
             tooltip: l10n.resourceMyListings,
@@ -139,6 +173,7 @@ class _PublicResourceListingsScreenState
                       decoration: InputDecoration(
                         labelText: l10n.resourceSearchLabel,
                       ),
+                      onChanged: (_) => setState(() {}),
                       onSubmitted: (_) => _applyFilters(),
                     ),
                     TextField(
@@ -149,16 +184,42 @@ class _PublicResourceListingsScreenState
                       decoration: InputDecoration(
                         labelText: l10n.resourceLocalityLabel,
                       ),
+                      onChanged: (_) => setState(() {}),
                       onSubmitted: (_) => _applyFilters(),
                     ),
-                    Align(
-                      alignment: Alignment.centerRight,
-                      child: FilledButton.icon(
-                        key: const Key('resource-apply-filters'),
-                        onPressed: state.isBusy ? null : _applyFilters,
-                        icon: const Icon(Icons.search),
-                        label: Text(l10n.resourceSearchAction),
-                      ),
+                    Wrap(
+                      alignment: WrapAlignment.end,
+                      spacing: AppSpacing.small,
+                      runSpacing: AppSpacing.small,
+                      children: [
+                        FilledButton.icon(
+                          key: const Key('resource-apply-filters'),
+                          onPressed: state.isBusy ? null : _applyFilters,
+                          icon: const Icon(Icons.search),
+                          label: Text(l10n.resourceSearchAction),
+                        ),
+                        if (expectedProfileId != null)
+                          OutlinedButton.icon(
+                            key: const Key('resource-save-search'),
+                            onPressed:
+                                state.isBusy ||
+                                    savedSearches.isActing ||
+                                    !pendingInput.isValid
+                                ? null
+                                : () => _saveCurrentSearch(expectedProfileId),
+                            icon:
+                                savedSearches.action ==
+                                    ResourceSavedSearchAction.creating
+                                ? const SizedBox.square(
+                                    dimension: 18,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                    ),
+                                  )
+                                : const Icon(Icons.bookmark_add_outlined),
+                            label: Text(l10n.resourceSavedSearchSaveAction),
+                          ),
+                      ],
                     ),
                     const SizedBox(height: AppSpacing.medium),
                     if (state.items.isEmpty)
@@ -220,18 +281,72 @@ class _PublicResourceListingsScreenState
   }
 
   void _applyFilters() {
-    final mode = switch (_modeChoice) {
-      _ResourceModeChoice.all => null,
-      _ResourceModeChoice.donate => ResourceListingMode.donate,
-      _ResourceModeChoice.exchange => ResourceListingMode.exchange,
-    };
+    final input = _currentInput();
     ref
         .read(publicResourceListingsProvider.notifier)
         .applyFilters(
-          mode: mode,
-          locality: _localityController.text,
-          query: _queryController.text,
+          mode: input.mode,
+          locality: input.locality ?? '',
+          query: input.query ?? '',
         );
+  }
+
+  ResourceSavedSearchInput _currentInput() =>
+      ResourceSavedSearchInput.normalized(
+        query: _queryController.text,
+        mode: switch (_modeChoice) {
+          _ResourceModeChoice.all => null,
+          _ResourceModeChoice.donate => ResourceListingMode.donate,
+          _ResourceModeChoice.exchange => ResourceListingMode.exchange,
+        },
+        locality: _localityController.text,
+      );
+
+  void _syncFilterControls(_ResourceFilterTuple filters) {
+    _queryController.text = filters.query;
+    _localityController.text = filters.locality;
+    setState(() {
+      _modeChoice = switch (filters.mode) {
+        null => _ResourceModeChoice.all,
+        ResourceListingMode.donate => _ResourceModeChoice.donate,
+        ResourceListingMode.exchange => _ResourceModeChoice.exchange,
+      };
+    });
+  }
+
+  Future<void> _saveCurrentSearch(String expectedProfileId) async {
+    final l10n = AppLocalizations.of(context);
+    final input = _currentInput();
+    if (!input.isValid) return;
+    await ref
+        .read(publicResourceListingsProvider.notifier)
+        .applyFilters(
+          mode: input.mode,
+          locality: input.locality ?? '',
+          query: input.query ?? '',
+        );
+    final outcome = await ref
+        .read(resourceSavedSearchesProvider.notifier)
+        .create(expectedProfileId, input);
+    if (!mounted) return;
+    final message = switch (outcome) {
+      ResourceSavedSearchMutationOutcome.success =>
+        l10n.resourceSavedSearchCreated,
+      ResourceSavedSearchMutationOutcome.duplicate =>
+        l10n.resourceSavedSearchCreateDuplicate,
+      ResourceSavedSearchMutationOutcome.invalidInput =>
+        l10n.resourceSavedSearchInvalidInput,
+      ResourceSavedSearchMutationOutcome.forbidden ||
+      ResourceSavedSearchMutationOutcome.notFound =>
+        l10n.resourceSavedSearchForbidden,
+      ResourceSavedSearchMutationOutcome.unavailable ||
+      ResourceSavedSearchMutationOutcome.staleIdentity ||
+      ResourceSavedSearchMutationOutcome.busy =>
+        l10n.resourceSavedSearchUnableCreate,
+    };
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(content: Text(message)));
   }
 }
 

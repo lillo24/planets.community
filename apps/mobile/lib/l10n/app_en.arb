@@ -884,6 +884,53 @@
   "resourceSearchLabel": "Search title and description",
   "resourceLocalityLabel": "Locality",
   "resourceSearchAction": "Search",
+  "resourceSavedSearchesTitle": "Saved searches",
+  "resourceSavedSearchesLoading": "Loading saved searches…",
+  "resourceSavedSearchSaveAction": "Save search",
+  "resourceSavedSearchCreated": "Search saved.",
+  "resourceSavedSearchUpdated": "Saved search updated.",
+  "resourceSavedSearchDeleted": "Saved search deleted.",
+  "resourceSavedSearchCreateDuplicate": "This search is already saved.",
+  "resourceSavedSearchUpdateDuplicate": "Another saved search already uses these filters.",
+  "resourceSavedSearchInvalidInput": "At least one filter is required. Query and locality can use at most 120 characters.",
+  "resourceSavedSearchAtLeastOneFilter": "At least one filter is required.",
+  "resourceSavedSearchForbidden": "Saved searches are not available for the current account.",
+  "resourceSavedSearchNoLongerAvailable": "This saved search is no longer available.",
+  "resourceSavedSearchUnavailable": "Unable to load saved searches.",
+  "resourceSavedSearchUnableCreate": "We couldn't save this search. Try again.",
+  "resourceSavedSearchUnableUpdate": "Unable to update saved search.",
+  "resourceSavedSearchUnableDelete": "Unable to delete saved search.",
+  "resourceSavedSearchesEmptyTitle": "No saved searches yet.",
+  "resourceSavedSearchesEmptyMessage": "Set filters in Scambio-Dona and save a search to reuse it later.",
+  "resourceSavedSearchBrowseResources": "Browse resources",
+  "resourceSavedSearchOpen": "Open",
+  "resourceSavedSearchEdit": "Edit",
+  "resourceSavedSearchEditTitle": "Edit saved search",
+  "resourceSavedSearchSaveChanges": "Save changes",
+  "resourceSavedSearchCancel": "Cancel",
+  "resourceSavedSearchDeleteAction": "Delete",
+  "resourceSavedSearchDeleteTitle": "Delete this saved search?",
+  "resourceSavedSearchDeleteMessage": "This permanently removes the saved filter definition. It does not change any Resource listings.",
+  "resourceSavedSearchModeFilter": "Mode: {mode}",
+  "@resourceSavedSearchModeFilter": {
+    "placeholders": { "mode": { "type": "String" } }
+  },
+  "resourceSavedSearchQueryFilter": "Keywords: {query}",
+  "@resourceSavedSearchQueryFilter": {
+    "placeholders": { "query": { "type": "String" } }
+  },
+  "resourceSavedSearchLocalityFilter": "Locality: {locality}",
+  "@resourceSavedSearchLocalityFilter": {
+    "placeholders": { "locality": { "type": "String" } }
+  },
+  "resourceSavedSearchUpdatedDate": "Updated {date}",
+  "@resourceSavedSearchUpdatedDate": {
+    "placeholders": { "date": { "type": "String" } }
+  },
+  "resourceSavedSearchCardSemantics": "Saved search, {filters}",
+  "@resourceSavedSearchCardSemantics": {
+    "placeholders": { "filters": { "type": "String" } }
+  },
   "resourceEmptyTitle": "Nothing in Scambio-Dona yet",
   "resourceEmptyMessage": "Published listings will appear here.",
   "resourceFilteredEmptyTitle": "No listings found",

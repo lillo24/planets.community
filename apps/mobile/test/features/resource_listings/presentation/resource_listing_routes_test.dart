@@ -9,11 +9,13 @@ import 'package:planets_mobile/features/auth/domain/auth_models.dart';
 import 'package:planets_mobile/features/profile/data/profile_gateway.dart';
 import 'package:planets_mobile/features/resource_listings/data/resource_listing_gateway.dart';
 import 'package:planets_mobile/features/resource_loans/data/resource_loan_gateway.dart';
+import 'package:planets_mobile/features/resource_saved_searches/data/resource_saved_search_gateway.dart';
 
 import '../../../support/fake_auth.dart';
 import '../../../support/fake_profile.dart';
 import '../../../support/fake_resource_listing.dart';
 import '../../../support/fake_resource_loan.dart';
+import '../../../support/fake_resource_saved_search.dart';
 
 void main() {
   testWidgets('public list and exact detail remain signed-out Home routes', (
@@ -63,6 +65,7 @@ void main() {
     for (final destination in [
       '/resources/mine',
       '/resources/create',
+      '/resources/saved-searches',
       '/resources/$resourceListingId/edit',
       '/resources/$resourceListingId/loan-schedule',
     ]) {
@@ -94,6 +97,7 @@ void main() {
     for (final destination in [
       '/resources/mine',
       '/resources/create',
+      '/resources/saved-searches',
       '/resources/$resourceListingId/edit',
       '/resources/$resourceListingId/loan-schedule',
     ]) {
@@ -125,6 +129,7 @@ void main() {
       '/resources/$resourceListingId',
       '/resources/mine',
       '/resources/create',
+      '/resources/saved-searches',
       '/resources/$resourceListingId/edit',
       '/resources/$resourceListingId/loan-schedule',
     ]) {
@@ -137,6 +142,26 @@ void main() {
       expect(router.routeInformationProvider.value.uri.path, destination);
       expect(tester.takeException(), isNull);
     }
+  });
+
+  testWidgets('saved-searches is static and never parsed as a listing ID', (
+    tester,
+  ) async {
+    const session = AuthSessionState.ready(
+      AuthIdentity(id: resourceOwnerProfileId),
+    );
+    final app = await _pump(
+      tester,
+      session: session,
+      gateway: FakeResourceListingGateway(),
+    );
+
+    app.read(appRouterProvider).go('/resources/saved-searches');
+    await tester.pumpAndSettle();
+
+    expect(find.text('Saved searches'), findsOneWidget);
+    expect(find.text('Listing details'), findsNothing);
+    expect(find.text('No saved searches yet.'), findsOneWidget);
   });
 }
 
@@ -181,6 +206,9 @@ Future<ProviderContainer> _pump(
         resourceListingGatewayProvider.overrideWithValue(gateway),
         resourceLoanGatewayProvider.overrideWithValue(
           FakeResourceLoanGateway(),
+        ),
+        resourceSavedSearchGatewayProvider.overrideWithValue(
+          FakeResourceSavedSearchGateway(),
         ),
       ],
       child: const PlanetsApp(),

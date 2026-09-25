@@ -17,7 +17,7 @@ This folder owns application startup presentation and navigation, not backend ru
 | ------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | 0 / Profile         | `/profile`, nested `/profile/edit` with an optional sanitized post-setup `returnTo`                                                                                                                                                                                                                             |
 | 1 / Browse          | `/proposals` and `/tavoli`, each with nested `mine`, `create`, `:id`, `:id/edit`, protected `:id/resources`, `:id/resources/:resourceNeedId/matches`, `:id/join`, and `:id/participants`                                                                                                                        |
-| 2 / Home            | `/`, public `/resources` and `/resources/:listingId`, protected `/resources/mine`, `/resources/create`, and `/resources/:listingId/edit`, `/messages`, nested `/messages/requests/:requestId`, `/messages/chats/:chatId`, `/messages/chats/:chatId/info`, `/notifications`, nested `/notifications/preferences` |
+| 2 / Home            | `/`, public `/resources` and `/resources/:listingId`, protected `/resources/mine`, `/resources/create`, `/resources/saved-searches`, and `/resources/:listingId/edit`, `/messages`, nested `/messages/requests/:requestId`, `/messages/chats/:chatId`, `/messages/chats/:chatId/info`, `/notifications`, nested `/notifications/preferences` |
 
 Static Browse children precede each dynamic activity-ID route. A route-backed
 Proposals/Tavoli switcher changes the public list within Browse without adding a
@@ -33,7 +33,7 @@ Home and Browse list/detail, including Scambio-Dona list/detail, remain public. 
 uses the existing Auth flow with a sanitized internal `returnTo`. Incomplete
 profiles can use Home/Browse freely; Profile opens completion when the profile
 anchor exists, and management redirects to `/profile/edit`. Scambio-Dona
-management preserves the exact destination through both OTP and profile setup. Participation Join,
+management and personal saved searches preserve the exact destination through both OTP and profile setup. Participation Join,
 creator-review, Project resource management/matching, Messages request/chat/group-info, and Notifications routes preserve their exact internal destination
 through OTP and profile completion. Missing-anchor retry and email-OTP behavior
 are unchanged. Saving a valid profile returns to the preserved participation or

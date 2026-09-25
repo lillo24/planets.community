@@ -37,6 +37,8 @@ import '../../features/resource_listings/presentation/resource_listing_editor_sc
 import '../../features/resource_loans/presentation/resource_loan_schedule_screen.dart';
 import '../../features/resource_chat/presentation/resource_chat_screen.dart';
 import '../../features/resource_requests/presentation/resource_request_screen.dart';
+import '../../features/resource_saved_searches/presentation/resource_saved_search_routes.dart';
+import '../../features/resource_saved_searches/presentation/resource_saved_searches_screen.dart';
 import '../../l10n/generated/app_localizations.dart';
 import '../foundation_screen.dart';
 import 'app_navigation_shell.dart';
@@ -426,6 +428,11 @@ RoutingConfig _routingConfig(
                         const ResourceListingEditorScreen(),
                   ),
                   GoRoute(
+                    path: 'saved-searches',
+                    builder: (context, state) =>
+                        const ResourceSavedSearchesScreen(),
+                  ),
+                  GoRoute(
                     path: ':listingId',
                     builder: (context, state) =>
                         PublicResourceListingDetailScreen(
@@ -460,6 +467,7 @@ RoutingConfig _routingConfig(
 bool _isResourceManagementPath(String destination) {
   final path = Uri.tryParse(destination)?.path;
   if (path == null) return false;
+  if (ResourceSavedSearchRoutes.isManagementPath(path)) return true;
   if (path == '/resources/mine' || path == '/resources/create') return true;
   final segments = Uri(path: path).pathSegments;
   return segments.length == 3 &&

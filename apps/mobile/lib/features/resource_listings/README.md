@@ -13,9 +13,10 @@ Participation, and Project resources.
   filters, public detail, identity-bound owner history, editor lifecycle, stale
   response rejection, and focused refresh coordination.
 - `presentation/public_resource_listings_screen.dart` owns signed-out
-  discovery, public detail, the sanitized active-interest count, and the
-  authenticated non-owner entry point into the adjacent `resource_requests/`
-  feature.
+  discovery, public detail, canonical filter controls, the authenticated Save
+  search entry point into adjacent `resource_saved_searches/`, the sanitized
+  active-interest count, and the authenticated non-owner entry point into the
+  adjacent `resource_requests/` feature.
 - `presentation/own_resource_listings_screen.dart` owns the canonical
   draft/published/closed owner history and the non-draft owner entry point to
   the adjacent private `resource_loans/` schedule.
@@ -34,7 +35,9 @@ The listing feature does not own private request state. It renders only the
 backend-derived active-interest count and delegates Request/Withdraw/View to
 `resource_requests/`, whose identity-bound history determines the action. It
 still has no reservation, handoff, lending, barter, payment, quantity,
-taxonomy, media, Project linkage, saved-search, matching, or notification UX.
+taxonomy, media, Project linkage, matching, or notification UX. Personal saved
+search definitions are independently owned by `resource_saved_searches/`; Open
+feeds their tuple back through this feature's normal public controller.
 Closing only removes a listing from public discovery and records no transfer
 outcome.
 Published and closed owner listings retain a private schedule entry point;
