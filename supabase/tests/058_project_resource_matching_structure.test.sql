@@ -56,9 +56,9 @@ select is((
 
 select is((
   select count(*) from pg_class
-  where relname like '%resource%match%'
+  where relname like '%project_resource_match%'
     and relkind in ('r', 'p', 'm')
-), 0::bigint, 'matching persists no table or materialized view');
+), 0::bigint, 'Project resource matching persists no table or materialized view');
 
 select ok(
   pg_get_functiondef(

@@ -3134,6 +3134,14 @@ export type Database = {
           processed_count: number
         }[]
       }
+      process_resource_saved_search_matching_outbox_batch: {
+        Args: { p_limit?: number }
+        Returns: {
+          matches_created: number
+          matches_suppressed: number
+          processed_count: number
+        }[]
+      }
       propose_resource_exchange_terms: {
         Args: {
           p_agreement_id: string
