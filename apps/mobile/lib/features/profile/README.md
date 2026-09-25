@@ -13,6 +13,12 @@ before scalar fields, skills, and visibility commit atomically.
   Auth readiness complete only after a valid profile reload.
 - `presentation/` contains the functional owner view and setup/edit form.
 
+Setup and edit use the shared `core/widgets/tag_multi_select.dart` control. Its
+closed state shows removable selected tags without expanding the catalog; the
+bounded bottom sheet groups the canonical catalog, searches labels, reports a
+selection count, and updates only local form state. Save remains the sole
+network boundary and submits the exact complete selected-ID set atomically.
+
 Setup and edit share one canonical Save handler. Its AppBar action remains
 visible while scrolling, disables during requests and shows save progress.
 Safe save failures appear above the scrollable fields as a live-region message;

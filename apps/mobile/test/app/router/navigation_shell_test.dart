@@ -388,7 +388,7 @@ void main() {
     );
     await _tap(tester, 'proposal-apply-filters');
     await _tap(tester, 'skill-filter-trigger');
-    await _tap(tester, 'proposal-filter-skill-mural');
+    await _tap(tester, 'skill-filter-option-mural');
     await _tap(tester, 'skill-filter-apply');
     final list = find.byType(ListView);
     await tester.drag(list, const Offset(0, -600));

@@ -3,7 +3,7 @@ begin;
 select no_plan();
 
 select ok(
-  to_regprocedure('public.list_own_pending_requested_proposals(uuid,text,uuid[])')
+  to_regprocedure('public.list_own_pending_requested_proposals(uuid,text,uuid[],text)')
     is not null,
   'the requester-private Proposal card read exists'
 );
@@ -19,7 +19,7 @@ select is(
     select bool_and(procedure.prosecdef)
     from pg_proc as procedure
     where procedure.oid in (
-      'public.list_own_pending_requested_proposals(uuid,text,uuid[])'::regprocedure,
+      'public.list_own_pending_requested_proposals(uuid,text,uuid[],text)'::regprocedure,
       'public.list_own_pending_requested_recurring_activities(uuid,timestamptz,text)'::regprocedure
     )
   ),
@@ -31,7 +31,7 @@ select is(
     select bool_and(array_to_string(procedure.proconfig, ',') = 'search_path=""')
     from pg_proc as procedure
     where procedure.oid in (
-      'public.list_own_pending_requested_proposals(uuid,text,uuid[])'::regprocedure,
+      'public.list_own_pending_requested_proposals(uuid,text,uuid[],text)'::regprocedure,
       'public.list_own_pending_requested_recurring_activities(uuid,timestamptz,text)'::regprocedure
     )
   ),
@@ -42,7 +42,7 @@ select is(
 select is(
   has_function_privilege(
     'authenticated',
-    'public.list_own_pending_requested_proposals(uuid,text,uuid[])',
+    'public.list_own_pending_requested_proposals(uuid,text,uuid[],text)',
     'EXECUTE'
   ),
   true,
@@ -60,7 +60,7 @@ select is(
 select is(
   has_function_privilege(
     'anon',
-    'public.list_own_pending_requested_proposals(uuid,text,uuid[])',
+    'public.list_own_pending_requested_proposals(uuid,text,uuid[],text)',
     'EXECUTE'
   ),
   false,
@@ -78,7 +78,7 @@ select is(
 select is(
   has_function_privilege(
     'service_role',
-    'public.list_own_pending_requested_proposals(uuid,text,uuid[])',
+    'public.list_own_pending_requested_proposals(uuid,text,uuid[],text)',
     'EXECUTE'
   ),
   false,
@@ -119,7 +119,7 @@ select ok(
 
 select ok(
   to_regprocedure(
-    'public.list_public_proposals(integer,timestamptz,uuid,text,uuid[])'
+    'public.list_public_proposals(integer,timestamptz,uuid,text,uuid[],text)'
   ) is not null,
   'the existing anonymous Proposal page contract remains present'
 );
@@ -132,7 +132,7 @@ select ok(
 
 select ok(
   pg_get_function_result(
-    'public.list_own_pending_requested_proposals(uuid,text,uuid[])'::regprocedure
+    'public.list_own_pending_requested_proposals(uuid,text,uuid[],text)'::regprocedure
   ) not ilike all (
     array['%description%', '%exact%', '%meeting%', '%creator%', '%request_message%']
   ),

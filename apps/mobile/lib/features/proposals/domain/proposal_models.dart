@@ -322,6 +322,7 @@ class PublicProposalsState {
     this.items = const [],
     this.requestedItems = const [],
     this.categories = const [],
+    this.query = '',
     this.locality = '',
     this.selectedSkillIds = const {},
     this.hasMore = true,
@@ -333,6 +334,7 @@ class PublicProposalsState {
   final List<ProposalSummary> items;
   final List<RequestedProposalSummary> requestedItems;
   final List<ProposalSkillCategory> categories;
+  final String query;
   final String locality;
   final Set<String> selectedSkillIds;
   final bool hasMore;

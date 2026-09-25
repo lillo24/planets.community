@@ -8,6 +8,10 @@ import '../../auth/domain/auth_models.dart';
 import '../data/resource_listing_gateway.dart';
 import '../domain/resource_listing_models.dart';
 
+final resourceListingClockProvider = Provider<DateTime Function()>(
+  (ref) => DateTime.now,
+);
+
 class PublicResourceListingsController
     extends Notifier<PublicResourceListingsState> {
   var _revision = 0;
@@ -88,9 +92,11 @@ class PublicResourceListingsController
   }) async {
     _revision++;
     state = PublicResourceListingsState(
+      items: state.items,
       modeFilter: mode,
       locality: locality.trim(),
       query: query.trim(),
+      hasMore: state.hasMore,
     );
     await load();
   }

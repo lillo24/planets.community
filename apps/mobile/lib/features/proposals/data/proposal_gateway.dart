@@ -12,12 +12,14 @@ abstract interface class ProposalGateway {
   Future<List<ProposalSummary>> listPublicProposals({
     required int limit,
     ProposalCursor? cursor,
+    String? query,
     String? locality,
     Set<String>? skillIds,
   });
 
   Future<List<RequestedProposalSummary>> listOwnPendingRequestedProposals(
     String expectedProfileId, {
+    String? query,
     String? locality,
     Set<String>? skillIds,
   });
@@ -84,6 +86,7 @@ class SupabaseProposalGateway implements ProposalGateway {
   Future<List<ProposalSummary>> listPublicProposals({
     required int limit,
     ProposalCursor? cursor,
+    String? query,
     String? locality,
     Set<String>? skillIds,
   }) async {
@@ -93,6 +96,7 @@ class SupabaseProposalGateway implements ProposalGateway {
         'p_limit': limit,
         'p_cursor_starts_at': cursor?.startsAt.toUtc().toIso8601String(),
         'p_cursor_id': cursor?.id,
+        'p_query': query,
         'p_locality': locality,
         'p_skill_ids': skillIds?.toList(growable: false),
       },
@@ -106,6 +110,7 @@ class SupabaseProposalGateway implements ProposalGateway {
   @override
   Future<List<RequestedProposalSummary>> listOwnPendingRequestedProposals(
     String expectedProfileId, {
+    String? query,
     String? locality,
     Set<String>? skillIds,
   }) async {
@@ -113,6 +118,7 @@ class SupabaseProposalGateway implements ProposalGateway {
       'list_own_pending_requested_proposals',
       params: {
         'p_expected_requester_profile_id': expectedProfileId,
+        'p_query': query,
         'p_locality': locality,
         'p_skill_ids': skillIds?.toList(growable: false),
       },

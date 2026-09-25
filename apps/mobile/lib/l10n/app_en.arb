@@ -11,6 +11,24 @@
   "skillFilterNoMatches": "No matching skills",
   "skillFilterClear": "Clear all",
   "skillFilterApply": "Apply",
+  "skillSelectorPlaceholder": "Select skills",
+  "skillSelectorDone": "Done",
+  "skillSelectorSelectionCount": "{count, plural, =0{No skills selected} =1{1 skill selected} other{{count} skills selected}}",
+  "@skillSelectorSelectionCount": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "skillSelectorSelected": "{skill}, selected",
+  "@skillSelectorSelected": {
+    "placeholders": { "skill": { "type": "String" } }
+  },
+  "skillSelectorNotSelected": "{skill}, not selected",
+  "@skillSelectorNotSelected": {
+    "placeholders": { "skill": { "type": "String" } }
+  },
+  "skillSelectorRemove": "Remove {skill}",
+  "@skillSelectorRemove": {
+    "placeholders": { "skill": { "type": "String" } }
+  },
   "skillFilterMore": "+{count} more",
   "@skillFilterMore": {
     "description": "Count of additional selected skills beyond the visible badges.",
@@ -337,6 +355,7 @@
   "proposalMyEmpty": "No proposals yet",
   "proposalMyEmptyMessage": "Create a draft when you are ready to organize a one-time activity.",
   "proposalLoading": "Loading proposals…",
+  "proposalSearchLabel": "Search projects",
   "proposalEmptyTitle": "No proposals found",
   "proposalEmptyMessage": "Try different filters or check again later.",
   "proposalSafeError": "We couldn't complete that proposal request. Check your connection and try again.",
@@ -866,6 +885,8 @@
   "resourceRequestAccept": "Accept",
   "resourceRequestOpenConversation": "Open conversation",
   "resourceRequestAction": "Request resource",
+  "resourceSignedOutRequestAction": "Request this resource",
+  "resourceRequestFlowHelper": "After the owner accepts your request, you can chat and agree whether the item is given or lent and what is exchanged.",
   "resourceRequestAlreadyActive": "You already have an active request for this listing. The latest request has been loaded.",
   "resourceRequestView": "View request",
   "resourceChatTitle": "Resource conversation",
@@ -919,7 +940,32 @@
   "resourceFilteredEmptyTitle": "No listings found",
   "resourceFilteredEmptyMessage": "Try changing the search or filters.",
   "resourceLoadMore": "Load more",
-  "resourceLocationTitle": "Public location",
+  "resourceLocationTitle": "Location",
+  "resourceDescriptionTitle": "Description",
+  "resourceAgeNow": "now",
+  "resourceAgeMinutes": "{count}m",
+  "@resourceAgeMinutes": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "resourceAgeHours": "{count}h",
+  "@resourceAgeHours": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "resourceAgeDays": "{count}d",
+  "@resourceAgeDays": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "resourcePublishedRelative": "Published {age} ago",
+  "@resourcePublishedRelative": {
+    "placeholders": { "age": { "type": "String" } }
+  },
+  "resourceDetailMetadata": "{age} · Listed by {owner}",
+  "@resourceDetailMetadata": {
+    "placeholders": {
+      "age": { "type": "String" },
+      "owner": { "type": "String" }
+    }
+  },
   "resourcePublishedDate": "Published {date}",
   "@resourcePublishedDate": {
     "placeholders": { "date": { "type": "String" } }

@@ -60,20 +60,25 @@ void main() {
     await tester.tap(find.text('Complete profile'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Art & Creativity'), findsOneWidget);
+    expect(find.byType(CheckboxListTile), findsNothing);
+    expect(find.byKey(const Key('profile-skills-trigger')), findsOneWidget);
     expect(
       find.byKey(const Key('profile-save-button')).hitTestable(),
       findsOneWidget,
     );
-    expect(find.text('Music'), findsOneWidget);
     await tester.enterText(
       find.byKey(const Key('profile-display-name-field')),
       '  Casey  ',
     );
+    await _tapVisible(tester, find.byKey(const Key('profile-skills-trigger')));
+    expect(find.text('Art & Creativity'), findsOneWidget);
+    expect(find.text('Music'), findsOneWidget);
     await _tapVisible(
       tester,
-      find.byKey(const Key('profile-skill-mural-painting')),
+      find.byKey(const Key('profile-skills-option-mural-painting')),
     );
+    expect(profile.updateCount, 0, reason: 'selection stays local until Save');
+    await _tapVisible(tester, find.byKey(const Key('profile-skills-apply')));
     final bioVisibility = find.byKey(const Key('profile-visibility-bio'));
     await _tapVisible(
       tester,
@@ -173,14 +178,15 @@ void main() {
 
     await _tapVisible(tester, find.byKey(const Key('profile-edit-button')));
     await tester.pumpAndSettle();
-    final musician = find.byKey(const Key('profile-skill-musician'));
-    expect(tester.widget<CheckboxListTile>(musician).value, isTrue);
+    final musician = find.byKey(const Key('profile-skills-selected-musician'));
+    expect(musician, findsOneWidget);
+    expect(find.byType(CheckboxListTile), findsNothing);
     await _tapVisible(
       tester,
-      find.descendant(of: musician, matching: find.byType(Checkbox)),
+      find.descendant(of: musician, matching: find.byIcon(Icons.cancel)),
     );
     await tester.pump();
-    expect(tester.widget<CheckboxListTile>(musician).value, isFalse);
+    expect(musician, findsNothing);
     await _tapVisible(tester, find.byKey(const Key('profile-save-button')));
     await tester.pumpAndSettle();
 
@@ -251,6 +257,7 @@ Future<void> _tapVisible(WidgetTester tester, Finder finder) async {
   );
   await tester.pumpAndSettle();
   await tester.tap(finder);
+  await tester.pumpAndSettle();
 }
 
 Future<void> _scrollToBottom(WidgetTester tester) async {
