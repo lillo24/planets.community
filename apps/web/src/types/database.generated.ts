@@ -2858,6 +2858,34 @@ export type Database = {
           label: string
         }[]
       }
+      list_project_resource_need_listing_matches: {
+        Args: {
+          p_cursor_listing_id?: string
+          p_cursor_location_match_kind?: string
+          p_cursor_published_at?: string
+          p_cursor_text_match_kind?: string
+          p_expected_creator_profile_id: string
+          p_limit?: number
+          p_listing_mode?: string
+          p_location_scope: string
+          p_resource_need_id: string
+        }
+        Returns: {
+          active_request_count: number
+          administrative_area: string
+          country_code: string
+          description: string
+          listing_id: string
+          listing_mode: string
+          locality: string
+          location_match_kind: string
+          public_location_label: string
+          published_at: string
+          resource_need_id: string
+          text_match_kind: string
+          title: string
+        }[]
+      }
       list_public_project_resource_needs: {
         Args: { p_project_id: string }
         Returns: {

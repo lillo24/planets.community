@@ -407,6 +407,7 @@ npm run resource:loan-reservations:verify:local
 npm run resource:chat:verify:local
 npm run resource:messages-notifications:verify:local
 npm run project:resource-needs:verify:local
+npm run project:resource-matching:verify:local
 npm run project:contribution-selections:verify:local
 npm run project:membership-commitments:verify:local
 npm run db:types
@@ -477,6 +478,8 @@ messages, or meeting details.
 `resource:messages-notifications:verify:local` uses real authenticated owner, requester, and unrelated identities plus narrow direct-database assertions. It proves discriminated Project/Resource Requests and Chats reads, same-UUID domain safety, exact Resource anchors, agreement-aware activity with human-only previews, canonical request/chat/terms/milestone/completion recipients, safe milestone enums, Resources preference suppression, independent receipts, provider-neutral body-free jobs, pre-receipted no-backfill behavior, and unrelated-user denial. It never prints OTPs, tokens, keys, database URLs, request messages, chat bodies, private terms, lending dates, contact details, or inbox dumps.
 
 `project:resource-needs:verify:local` uses a real authenticated creator, an unrelated authenticated identity, an anonymous client, and narrow direct-database transactions across a Proposal and Tavolo. It proves draft/public visibility, stable ordered needs, cross-account and stale-identity denial, updates, terminal closure with owner history, Proposal cancellation, Tavolo pause/resume/end behavior, identifier-only events, and both lifecycle-first and mutation-first lock serialization. It never prints OTPs, tokens, keys, database URLs, need text, emails, or private Project data.
+
+`project:resource-matching:verify:local` uses real OTP identities for a Project creator and a listing owner plus an anonymous client. It checks creator-only access, public-safe explanation/count parity, explicit mode, and read-time closure; pgTAP supplies the lexical, geography, and lifecycle matrix. It does not print OTPs, tokens, database URLs, or private Resource data. The matcher uses built-in Italian FTS without a synonym dictionary, so cross-language or semantically equivalent terms without shared lexemes are not matches. Neither Project event dates nor D1 private loan reservations are availability signals.
 
 `project:contribution-selections:verify:local` uses three real OTP-authenticated identities plus narrow direct-database transactions across Proposals and a Tavolo. It proves required/useful Proposal selections, resource-only Tavolo behavior, invalid skill/resource rejection, requester/creator-only reads, backward-compatible empty selections, mandatory exact acceptance triage, exact decision/commitment subsets, post-acceptance commitment edits without history rewrites, independent rejoins, chat activation, identifier-only events, and both serialization outcomes for needed acceptance versus resource closure/Proposal-skill removal plus withdrawal-first request serialization. It never prints OTPs, tokens, keys, database URLs, request messages, selection/decision labels, emails, or private Project data.
 
