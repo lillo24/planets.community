@@ -88,6 +88,17 @@ void main() {
       ]) {
         expect(find.text(deferred), findsNothing);
       }
+      await tester.binding.handlePopRoute();
+      await tester.pumpAndSettle();
+      expect(
+        app
+            .read(appRouterProvider)
+            .routerDelegate
+            .currentConfiguration
+            .uri
+            .path,
+        '/resources',
+      );
     },
   );
 

@@ -48,9 +48,17 @@ void main() {
 
       await tester.tap(find.byKey(const Key('tavolo-card-tavolo-1')));
       await tester.pumpAndSettle();
+      expect(find.text('Tavolo details'), findsOneWidget);
+      await tester.binding.handlePopRoute();
+      await tester.pumpAndSettle();
       expect(
-        app.read(appRouterProvider).routeInformationProvider.value.uri.path,
-        '/tavoli/tavolo-1',
+        app
+            .read(appRouterProvider)
+            .routerDelegate
+            .currentConfiguration
+            .uri
+            .path,
+        '/tavoli',
       );
     },
   );

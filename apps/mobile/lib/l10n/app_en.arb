@@ -202,6 +202,32 @@
   "@profileTitle": {
     "description": "Title for the signed-in owner's basic profile."
   },
+  "profileExampleLabel": "Example profile",
+  "@profileExampleLabel": {
+    "description": "Label making clear that the signed-out profile is an illustrative fac-simile."
+  },
+  "profileExampleName": "Your name",
+  "@profileExampleName": {
+    "description": "Generic display name in the signed-out example profile."
+  },
+  "profileExampleBio": "Share what you enjoy doing and how you would like to help your community.",
+  "@profileExampleBio": {
+    "description": "Illustrative biography in the signed-out example profile."
+  },
+  "profileExampleGardening": "Gardening",
+  "profileExamplePhotography": "Photography",
+  "profileExampleRepairs": "Repairs",
+  "profileExampleActivityTitle": "Community activity — example",
+  "@profileExampleActivityTitle": {
+    "description": "Heading that explicitly marks the example community statistics as illustrative."
+  },
+  "profileExampleProjectsJoined": "Projects joined: 4",
+  "profileExampleProjectsCreated": "Projects created: 1",
+  "profileExampleBadge": "Example community badge",
+  "profileExampleSignInAction": "Sign in / Create your profile",
+  "@profileExampleSignInAction": {
+    "description": "Signed-out profile call to action that opens Auth and returns to Profile."
+  },
   "profileSetupTitle": "Set up your profile",
   "@profileSetupTitle": {
     "description": "Title for first-time basic profile setup."
@@ -651,6 +677,10 @@
   "projectChatSafeError": "We couldn't load the project chat. Check your connection and try again.",
   "notificationsTitle": "Notifications",
   "notificationsOpenTooltip": "Open Notifications",
+  "notificationsSignInMessage": "Sign in to see your notifications.",
+  "@notificationsSignInMessage": {
+    "description": "Explanation shown when a signed-out user taps the Home notification bell."
+  },
   "notificationsUnreadSemantics": "{count, plural, =1{Notifications, 1 unread} other{Notifications, {count} unread}}",
   "@notificationsUnreadSemantics": {
     "placeholders": { "count": { "type": "int" } }

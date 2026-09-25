@@ -105,12 +105,15 @@ void main() {
     await tester.tap(link.hitTestable());
     await tester.pumpAndSettle();
 
-    expect(
-      app.read(appRouterProvider).routeInformationProvider.value.uri.path,
-      '/messages/chats/resource/00000000-0000-4000-8000-000000000401',
-    );
     expect(find.byKey(const Key('resource-chat-composer')), findsOneWidget);
     expect(find.byKey(const Key('project-needs-button')), findsNothing);
+
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+    expect(
+      app.read(appRouterProvider).routerDelegate.currentConfiguration.uri.path,
+      '/messages',
+    );
   });
 
   testWidgets('Resource conversation shows counterpart, bubbles, and sends', (
@@ -282,7 +285,7 @@ void main() {
     expect(find.text('Messages'), findsOneWidget);
     expect(
       tester.widget<NavigationBar>(find.byType(NavigationBar)).selectedIndex,
-      2,
+      1,
     );
     expect(find.text('Jordan wants to join'), findsOneWidget);
     expect(
@@ -1745,7 +1748,7 @@ Future<void> _expectViewProject(
   await tester.pumpAndSettle();
   expect(
     tester.widget<NavigationBar>(find.byType(NavigationBar)).selectedIndex,
-    2,
+    1,
   );
   await tester.scrollUntilVisible(
     find.byKey(const Key('message-view-project')),

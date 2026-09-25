@@ -60,9 +60,12 @@ void main() {
             .hitTestable(),
       );
       await tester.pumpAndSettle();
+      expect(find.text('00000000-0000-4000-8000-000000000302'), findsOneWidget);
+      await tester.binding.handlePopRoute();
+      await tester.pumpAndSettle();
       expect(
-        router.routeInformationProvider.value.uri.path,
-        '/messages/requests/resource/00000000-0000-4000-8000-000000000302',
+        router.routerDelegate.currentConfiguration.uri.path,
+        '/resources/$loanListingId/loan-schedule',
       );
     },
   );

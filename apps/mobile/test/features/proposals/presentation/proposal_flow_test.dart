@@ -183,10 +183,10 @@ void main() {
 
       await tester.tap(find.byKey(const Key('proposal-card-proposal-1')));
       await tester.pumpAndSettle();
-      expect(
-        router.routeInformationProvider.value.uri.path,
-        '/proposals/proposal-1',
-      );
+      expect(find.text('Proposal details'), findsOneWidget);
+      await tester.binding.handlePopRoute();
+      await tester.pumpAndSettle();
+      expect(router.routerDelegate.currentConfiguration.uri.path, '/proposals');
     },
   );
 

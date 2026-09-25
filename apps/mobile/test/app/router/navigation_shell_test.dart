@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:planets_mobile/app/planets_app.dart';
+import 'package:planets_mobile/app/router/app_navigation_shell.dart';
 import 'package:planets_mobile/app/router/app_router.dart';
 import 'package:planets_mobile/core/config/app_config.dart';
 import 'package:planets_mobile/features/auth/application/auth_session_controller.dart';
@@ -30,26 +31,38 @@ void main() {
   ) async {
     final app = await _pump(tester);
     final router = app.read(appRouterProvider);
+    expect(AppBranch.values, [
+      AppBranch.profile,
+      AppBranch.home,
+      AppBranch.browse,
+    ]);
+    expect(
+      tester
+          .widget<NavigationBar>(find.byType(NavigationBar))
+          .destinations
+          .map((destination) => destination.key),
+      const [Key('nav-profile'), Key('nav-home'), Key('nav-browse')],
+    );
     for (final entry in {
-      '/': 2,
+      '/': 1,
       '/profile': 0,
       '/profile/edit': 0,
-      '/proposals': 1,
-      '/proposals/mine': 1,
-      '/proposals/create': 1,
-      '/proposals/proposal-1': 1,
-      '/proposals/proposal-1/edit': 1,
-      '/proposals/proposal-1/resources': 1,
-      '/proposals/proposal-1/join': 1,
-      '/proposals/proposal-1/participants': 1,
-      '/tavoli': 1,
-      '/tavoli/mine': 1,
-      '/tavoli/create': 1,
-      '/tavoli/tavolo-1': 1,
-      '/tavoli/tavolo-1/resources': 1,
-      '/tavoli/tavolo-1/edit': 1,
-      '/tavoli/tavolo-1/join': 1,
-      '/tavoli/tavolo-1/participants': 1,
+      '/proposals': 2,
+      '/proposals/mine': 2,
+      '/proposals/create': 2,
+      '/proposals/proposal-1': 2,
+      '/proposals/proposal-1/edit': 2,
+      '/proposals/proposal-1/resources': 2,
+      '/proposals/proposal-1/join': 2,
+      '/proposals/proposal-1/participants': 2,
+      '/tavoli': 2,
+      '/tavoli/mine': 2,
+      '/tavoli/create': 2,
+      '/tavoli/tavolo-1': 2,
+      '/tavoli/tavolo-1/resources': 2,
+      '/tavoli/tavolo-1/edit': 2,
+      '/tavoli/tavolo-1/join': 2,
+      '/tavoli/tavolo-1/participants': 2,
       '/resources': 2,
       '/resources/$resourceListingId': 2,
       '/resources/mine': 2,
@@ -81,6 +94,11 @@ void main() {
     await tester.binding.handlePopRoute();
     await tester.pumpAndSettle();
     expect(router.routeInformationProvider.value.uri.path, '/tavoli');
+    router.go('/resources/$resourceListingId');
+    await tester.pumpAndSettle();
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+    expect(router.routeInformationProvider.value.uri.path, '/resources');
   });
 
   testWidgets('Browse switches between separate Proposal and Tavoli roots', (
@@ -111,22 +129,58 @@ void main() {
     );
   });
 
-  testWidgets('signed-out Home Browse CTA returns Home on system Back', (
+  testWidgets(
+    'Profile and Browse roots return Home without trapping Home Back',
+    (tester) async {
+      final app = await _pump(tester, signedIn: false);
+      final router = app.read(appRouterProvider);
+
+      await _tap(tester, 'browse-proposals-button');
+      expect(router.routeInformationProvider.value.uri.path, '/proposals');
+      expect(find.text('One-time proposals'), findsOneWidget);
+
+      await tester.binding.handlePopRoute();
+      await tester.pumpAndSettle();
+
+      expect(router.routeInformationProvider.value.uri.path, '/');
+      expect(find.text('Mobile foundation ready'), findsOneWidget);
+      expect(find.byKey(const Key('auth-email-field')), findsNothing);
+
+      for (final root in ['/resources', '/profile']) {
+        router.go(root);
+        await tester.pumpAndSettle();
+        await tester.binding.handlePopRoute();
+        await tester.pumpAndSettle();
+        expect(router.routeInformationProvider.value.uri.path, '/');
+      }
+
+      expect(await tester.binding.handlePopRoute(), isFalse);
+      expect(router.routeInformationProvider.value.uri.path, '/');
+    },
+  );
+
+  testWidgets('Scambio opens Browse while Home stays canonical and retained', (
     tester,
   ) async {
     final app = await _pump(tester, signedIn: false);
     final router = app.read(appRouterProvider);
 
-    await _tap(tester, 'browse-proposals-button');
-    expect(router.routeInformationProvider.value.uri.path, '/proposals');
-    expect(find.text('One-time proposals'), findsOneWidget);
+    await _tap(tester, 'browse-resources-button');
+    expect(router.routeInformationProvider.value.uri.path, '/resources');
+    expect(
+      tester.widget<NavigationBar>(find.byType(NavigationBar)).selectedIndex,
+      AppBranch.browse.index,
+    );
 
-    await tester.binding.handlePopRoute();
-    await tester.pumpAndSettle();
-
+    await _tap(tester, 'nav-home');
     expect(router.routeInformationProvider.value.uri.path, '/');
-    expect(find.text('Mobile foundation ready'), findsOneWidget);
-    expect(find.byKey(const Key('auth-email-field')), findsNothing);
+    expect(
+      tester.widget<NavigationBar>(find.byType(NavigationBar)).selectedIndex,
+      AppBranch.home.index,
+    );
+
+    await _tap(tester, 'nav-browse');
+    expect(router.routeInformationProvider.value.uri.path, '/resources');
   });
 
   testWidgets('public Tavoli routes stay available signed out', (tester) async {
@@ -398,24 +452,25 @@ void main() {
             .text,
         'Unsaved activity',
       );
-      expect(
-        router.routeInformationProvider.value.uri.path,
-        '/proposals/create',
-      );
     },
   );
 
-  testWidgets('Auth is outside shell; protected destination survives sign-in', (
+  testWidgets('public Profile keeps protected edit intent through Auth', (
     tester,
   ) async {
     final app = await _pump(tester, signedIn: false);
     await _tap(tester, 'nav-browse');
     await _tap(tester, 'nav-profile');
     final router = app.read(appRouterProvider);
+    expect(find.byType(NavigationBar), findsOneWidget);
+    expect(find.byKey(const Key('profile-example-label')), findsOneWidget);
+    expect(find.byKey(const Key('auth-email-field')), findsNothing);
+    router.go('/profile/edit');
+    await tester.pumpAndSettle();
     expect(find.byType(NavigationBar), findsNothing);
     expect(
       router.routeInformationProvider.value.uri.queryParameters['returnTo'],
-      '/profile',
+      '/profile/edit',
     );
     await tester.enterText(
       find.byKey(const Key('auth-email-field')),
@@ -425,7 +480,7 @@ void main() {
     expect(find.byType(NavigationBar), findsNothing);
     await tester.enterText(find.byKey(const Key('auth-code-field')), '123456');
     await _tap(tester, 'auth-verify-button');
-    expect(router.routeInformationProvider.value.uri.path, '/profile');
+    expect(router.routeInformationProvider.value.uri.path, '/profile/edit');
     expect(
       tester.widget<NavigationBar>(find.byType(NavigationBar)).selectedIndex,
       0,
@@ -435,7 +490,7 @@ void main() {
   testWidgets(
     'incomplete profile can escape to public tabs but cannot create',
     (tester) async {
-      final app = await _pump(tester, complete: false);
+      await _pump(tester, complete: false);
       await _tap(tester, 'nav-profile');
       expect(
         find.byKey(const Key('profile-display-name-field')),
@@ -445,8 +500,8 @@ void main() {
       await _tap(tester, 'nav-browse');
       await _tap(tester, 'proposal-create-action');
       expect(
-        app.read(appRouterProvider).routeInformationProvider.value.uri.path,
-        '/profile/edit',
+        find.byKey(const Key('profile-display-name-field')),
+        findsOneWidget,
       );
       await _tap(tester, 'nav-home');
       expect(find.text('Mobile foundation ready'), findsOneWidget);
@@ -500,7 +555,8 @@ void main() {
       '/proposals',
     );
     await _tap(tester, 'nav-profile');
-    expect(find.byKey(const Key('auth-email-field')), findsOneWidget);
+    expect(find.byKey(const Key('profile-example-label')), findsOneWidget);
+    expect(find.byKey(const Key('auth-email-field')), findsNothing);
     expect(profile.updateCount, 0);
   });
 
@@ -629,7 +685,10 @@ Future<ProviderContainer> _pump(
 }
 
 Future<void> _tap(WidgetTester tester, String key) async {
-  await tester.tap(find.byKey(Key(key)));
+  final finder = find.byKey(Key(key));
+  await tester.ensureVisible(finder);
+  await tester.pumpAndSettle();
+  await tester.tap(finder.hitTestable());
   await tester.pumpAndSettle();
 }
 

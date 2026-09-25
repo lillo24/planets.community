@@ -5,6 +5,7 @@ import 'package:planets_mobile/app/planets_app.dart';
 import 'package:planets_mobile/core/config/app_config.dart';
 import 'package:planets_mobile/features/auth/data/auth_gateway.dart';
 import 'package:planets_mobile/features/auth/domain/auth_models.dart';
+import 'package:planets_mobile/features/auth/presentation/request_code_screen.dart';
 import 'package:planets_mobile/features/profile/data/profile_gateway.dart';
 import 'package:planets_mobile/features/profile/domain/profile_models.dart';
 
@@ -12,6 +13,37 @@ import '../../../support/fake_auth.dart';
 import '../../../support/fake_profile.dart';
 
 void main() {
+  testWidgets('signed-out Profile is a static example with explicit Auth CTA', (
+    tester,
+  ) async {
+    final auth = FakeAuthGateway(snapshot: const AuthSnapshot());
+    final anchor = FakeProfileAnchorGateway();
+    final profile = FakeProfileGateway();
+    addTearDown(auth.close);
+    await _pumpApp(tester, auth, anchor, profile);
+
+    await tester.tap(find.byKey(const Key('nav-profile')));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('auth-email-field')), findsNothing);
+    expect(find.byKey(const Key('profile-example-label')), findsOneWidget);
+    expect(find.text('Example profile'), findsOneWidget);
+    expect(find.text('Your name'), findsOneWidget);
+    expect(find.text('Community activity — example'), findsOneWidget);
+    expect(find.text('Example community badge'), findsOneWidget);
+    expect(profile.loadCount, 0);
+
+    await _tapVisible(
+      tester,
+      find.byKey(const Key('profile-example-sign-in-button')),
+    );
+    await tester.pumpAndSettle();
+    expect(
+      tester.widget<RequestCodeScreen>(find.byType(RequestCodeScreen)).returnTo,
+      '/profile',
+    );
+  });
+
   testWidgets('incomplete owner selects categorized skills and visibility', (
     tester,
   ) async {

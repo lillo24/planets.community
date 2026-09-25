@@ -48,7 +48,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       appBar: AppBar(title: Text(l10n.profileTitle)),
       body: SafeArea(
         child: userId == null
-            ? const SizedBox.shrink()
+            ? const _ExampleProfile()
             : data == null && state.phase == ProfilePhase.loading
             ? LoadingState(message: l10n.profileLoading)
             : data == null
@@ -57,6 +57,103 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 onRetry: () => ref.read(profileProvider.notifier).load(userId),
               )
             : _ProfileBody(data: data),
+      ),
+    );
+  }
+}
+
+class _ExampleProfile extends StatelessWidget {
+  const _ExampleProfile();
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final theme = Theme.of(context);
+
+    return Center(
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(AppSpacing.large),
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: AppBreakpoints.compact),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(
+                l10n.profileExampleLabel,
+                key: const Key('profile-example-label'),
+                style: theme.textTheme.labelLarge?.copyWith(
+                  color: theme.colorScheme.primary,
+                ),
+              ),
+              const SizedBox(height: AppSpacing.medium),
+              CircleAvatar(
+                radius: 40,
+                backgroundColor: theme.colorScheme.secondaryContainer,
+                child: Icon(
+                  Icons.person_outline,
+                  size: 48,
+                  color: theme.colorScheme.onSecondaryContainer,
+                ),
+              ),
+              const SizedBox(height: AppSpacing.medium),
+              Text(
+                l10n.profileExampleName,
+                textAlign: TextAlign.center,
+                style: theme.textTheme.headlineSmall,
+              ),
+              const SizedBox(height: AppSpacing.small),
+              Text(l10n.profileExampleBio, textAlign: TextAlign.center),
+              const SizedBox(height: AppSpacing.large),
+              Text(l10n.profileSkillsTitle, style: theme.textTheme.titleLarge),
+              const SizedBox(height: AppSpacing.small),
+              Wrap(
+                spacing: AppSpacing.small,
+                runSpacing: AppSpacing.small,
+                children: [
+                  Chip(label: Text(l10n.profileExampleGardening)),
+                  Chip(label: Text(l10n.profileExamplePhotography)),
+                  Chip(label: Text(l10n.profileExampleRepairs)),
+                ],
+              ),
+              const SizedBox(height: AppSpacing.large),
+              Text(
+                l10n.profileExampleActivityTitle,
+                style: theme.textTheme.titleLarge,
+              ),
+              const SizedBox(height: AppSpacing.small),
+              Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(AppSpacing.medium),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(l10n.profileExampleProjectsJoined),
+                      const SizedBox(height: AppSpacing.xSmall),
+                      Text(l10n.profileExampleProjectsCreated),
+                      const SizedBox(height: AppSpacing.small),
+                      Chip(
+                        avatar: const Icon(Icons.workspace_premium_outlined),
+                        label: Text(l10n.profileExampleBadge),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: AppSpacing.large),
+              FilledButton.icon(
+                key: const Key('profile-example-sign-in-button'),
+                onPressed: () => context.go(
+                  Uri(
+                    path: '/auth',
+                    queryParameters: const {'returnTo': '/profile'},
+                  ).toString(),
+                ),
+                icon: const Icon(Icons.login),
+                label: Text(l10n.profileExampleSignInAction),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -144,7 +241,7 @@ class _ProfileBody extends StatelessWidget {
               const SizedBox(height: AppSpacing.large),
               FilledButton.icon(
                 key: const Key('profile-edit-button'),
-                onPressed: () => context.go('/profile/edit'),
+                onPressed: () => context.push('/profile/edit'),
                 icon: const Icon(Icons.edit_outlined),
                 label: Text(
                   profile.isComplete

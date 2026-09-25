@@ -70,7 +70,7 @@ class _PublicResourceListingsScreenState
           IconButton(
             key: const Key('resource-my-listings-action'),
             tooltip: l10n.resourceMyListings,
-            onPressed: () => context.go('/resources/mine'),
+            onPressed: () => context.push('/resources/mine'),
             icon: const Icon(Icons.inventory_2_outlined),
           ),
         ],
@@ -175,7 +175,7 @@ class _PublicResourceListingsScreenState
                       for (final listing in state.items) ...[
                         PublicResourceListingCard(
                           listing: listing,
-                          onTap: () => context.go('/resources/${listing.id}'),
+                          onTap: () => context.push('/resources/${listing.id}'),
                         ),
                         const SizedBox(height: AppSpacing.small),
                       ],
@@ -212,7 +212,7 @@ class _PublicResourceListingsScreenState
       ),
       floatingActionButton: FloatingActionButton.extended(
         key: const Key('resource-create-action'),
-        onPressed: () => context.go('/resources/create'),
+        onPressed: () => context.push('/resources/create'),
         icon: const Icon(Icons.add),
         label: Text(l10n.resourceCreateListing),
       ),
@@ -285,7 +285,7 @@ class _PublicResourceListingDetailScreenState
               key: const Key('resource-owner-edit-shortcut'),
               tooltip: l10n.resourceEditListing,
               onPressed: () =>
-                  context.go('/resources/${widget.listingId}/edit'),
+                  context.push('/resources/${widget.listingId}/edit'),
               icon: const Icon(Icons.edit_outlined),
             ),
           if (isOwner)
@@ -293,7 +293,7 @@ class _PublicResourceListingDetailScreenState
               key: const Key('resource-owner-loan-schedule-shortcut'),
               tooltip: l10n.resourceLoanScheduleView,
               onPressed: () =>
-                  context.go('/resources/${widget.listingId}/loan-schedule'),
+                  context.push('/resources/${widget.listingId}/loan-schedule'),
               icon: const Icon(Icons.event_note_outlined),
             ),
         ],

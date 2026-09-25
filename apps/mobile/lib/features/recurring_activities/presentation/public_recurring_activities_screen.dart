@@ -61,7 +61,7 @@ class _PublicRecurringActivitiesScreenState
           IconButton(
             key: const Key('my-tavoli-action'),
             tooltip: l10n.tavoliMyTitle,
-            onPressed: () => context.go('/tavoli/mine'),
+            onPressed: () => context.push('/tavoli/mine'),
             icon: const Icon(Icons.folder_outlined),
           ),
         ],
@@ -129,8 +129,9 @@ class _PublicRecurringActivitiesScreenState
                           RecurringActivityCard(
                             activity: requested.activity,
                             isRequested: true,
-                            onTap: () =>
-                                context.go('/tavoli/${requested.activity.id}'),
+                            onTap: () => context.push(
+                              '/tavoli/${requested.activity.id}',
+                            ),
                           ),
                           const SizedBox(height: AppSpacing.small),
                         ],
@@ -147,7 +148,7 @@ class _PublicRecurringActivitiesScreenState
                       for (final activity in state.ordinaryItems) ...[
                         RecurringActivityCard(
                           activity: activity,
-                          onTap: () => context.go('/tavoli/${activity.id}'),
+                          onTap: () => context.push('/tavoli/${activity.id}'),
                         ),
                         const SizedBox(height: AppSpacing.small),
                       ],
@@ -180,7 +181,7 @@ class _PublicRecurringActivitiesScreenState
       ),
       floatingActionButton: FloatingActionButton.extended(
         key: const Key('tavoli-create-action'),
-        onPressed: () => context.go('/tavoli/create'),
+        onPressed: () => context.push('/tavoli/create'),
         icon: const Icon(Icons.add),
         label: Text(l10n.tavoliCreateTitle),
       ),

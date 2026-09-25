@@ -61,7 +61,7 @@ class _PublicProposalsScreenState extends ConsumerState<PublicProposalsScreen> {
           IconButton(
             key: const Key('my-proposals-action'),
             tooltip: l10n.proposalMyTitle,
-            onPressed: () => context.go('/proposals/mine'),
+            onPressed: () => context.push('/proposals/mine'),
             icon: const Icon(Icons.folder_outlined),
           ),
         ],
@@ -142,7 +142,7 @@ class _PublicProposalsScreenState extends ConsumerState<PublicProposalsScreen> {
                           ProposalCard(
                             proposal: requested.proposal,
                             isRequested: true,
-                            onTap: () => context.go(
+                            onTap: () => context.push(
                               '/proposals/${requested.proposal.id}',
                             ),
                           ),
@@ -161,7 +161,8 @@ class _PublicProposalsScreenState extends ConsumerState<PublicProposalsScreen> {
                       for (final proposal in state.ordinaryItems) ...[
                         ProposalCard(
                           proposal: proposal,
-                          onTap: () => context.go('/proposals/${proposal.id}'),
+                          onTap: () =>
+                              context.push('/proposals/${proposal.id}'),
                         ),
                         const SizedBox(height: AppSpacing.small),
                       ],
@@ -190,7 +191,7 @@ class _PublicProposalsScreenState extends ConsumerState<PublicProposalsScreen> {
       ),
       floatingActionButton: FloatingActionButton.extended(
         key: const Key('proposal-create-action'),
-        onPressed: () => context.go('/proposals/create'),
+        onPressed: () => context.push('/proposals/create'),
         icon: const Icon(Icons.add),
         label: Text(l10n.proposalCreateTitle),
       ),

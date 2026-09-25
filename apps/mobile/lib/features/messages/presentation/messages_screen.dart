@@ -348,7 +348,7 @@ class _ResourceChatCard extends StatelessWidget {
         clipBehavior: Clip.antiAlias,
         child: InkWell(
           key: Key('resource-chat-link-${item.chatId}'),
-          onTap: () => context.go(resourceChatRoute(item.chatId)),
+          onTap: () => context.push(resourceChatRoute(item.chatId)),
           child: Padding(
             padding: const EdgeInsets.all(AppSpacing.medium),
             child: Column(
