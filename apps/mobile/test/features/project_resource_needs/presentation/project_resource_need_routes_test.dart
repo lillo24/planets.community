@@ -10,11 +10,13 @@ import 'package:planets_mobile/features/auth/domain/auth_models.dart';
 import 'package:planets_mobile/features/participation/domain/participation_models.dart';
 import 'package:planets_mobile/features/profile/data/profile_gateway.dart';
 import 'package:planets_mobile/features/project_resource_needs/data/project_resource_needs_gateway.dart';
+import 'package:planets_mobile/features/project_resource_needs/data/project_resource_matches_gateway.dart';
 import 'package:planets_mobile/features/project_resource_needs/presentation/project_resource_need_routes.dart';
 
 import '../../../support/fake_auth.dart';
 import '../../../support/fake_profile.dart';
 import '../../../support/fake_project_resource_needs.dart';
+import '../../../support/fake_project_resource_matches.dart';
 
 void main() {
   test('route helper maps both Project kinds and rejects lookalikes', () {
@@ -37,6 +39,28 @@ void main() {
         '/proposals/proposal-1/resources/extra',
       ),
       isFalse,
+    );
+    expect(
+      ProjectResourceNeedRoutes.matches(
+        ProjectKind.oneTime,
+        'proposal-1',
+        'need-1',
+      ),
+      '/proposals/proposal-1/resources/need-1/matches',
+    );
+    expect(
+      ProjectResourceNeedRoutes.matches(
+        ProjectKind.recurring,
+        'tavolo-1',
+        'need-1',
+      ),
+      '/tavoli/tavolo-1/resources/need-1/matches',
+    );
+    expect(
+      ProjectResourceNeedRoutes.isManagementPath(
+        '/tavoli/tavolo-1/resources/need-1/matches',
+      ),
+      isTrue,
     );
   });
 
@@ -109,6 +133,50 @@ void main() {
       expect(find.text('Project resources and materials'), findsOneWidget);
     });
   }
+
+  for (final destination in [
+    '/proposals/proposal-1/resources/need-1/matches',
+    '/tavoli/tavolo-1/resources/need-1/matches',
+  ]) {
+    testWidgets('signed out matching route $destination preserves returnTo', (
+      tester,
+    ) async {
+      final result = await _pump(
+        tester,
+        destination: destination,
+        session: const AuthSessionState.signedOut(),
+      );
+      addTearDown(result.dispose);
+
+      expect(find.byKey(const Key('auth-email-field')), findsOneWidget);
+      expect(
+        result
+            .router
+            .routeInformationProvider
+            .value
+            .uri
+            .queryParameters['returnTo'],
+        destination,
+      );
+    });
+
+    testWidgets('ready identity reaches matching route $destination', (
+      tester,
+    ) async {
+      final result = await _pump(
+        tester,
+        destination: destination,
+        session: const AuthSessionState.ready(AuthIdentity(id: 'user-1')),
+      );
+      addTearDown(result.dispose);
+
+      expect(
+        result.router.routeInformationProvider.value.uri.path,
+        destination,
+      );
+      expect(find.text('Matching resources'), findsOneWidget);
+    });
+  }
 }
 
 Future<
@@ -151,6 +219,9 @@ _pump(
       ),
       projectResourceNeedsGatewayProvider.overrideWithValue(
         FakeProjectResourceNeedsGateway(),
+      ),
+      projectResourceMatchesGatewayProvider.overrideWithValue(
+        FakeProjectResourceMatchesGateway(),
       ),
     ],
   );

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../core/theme/app_tokens.dart';
 import '../../../core/widgets/empty_state.dart';
@@ -11,6 +12,7 @@ import '../../auth/application/auth_session_controller.dart';
 import '../../participation/domain/participation_models.dart';
 import '../application/project_resource_needs_controllers.dart';
 import '../domain/project_resource_need_models.dart';
+import 'project_resource_need_routes.dart';
 
 class ProjectResourceNeedsScreen extends ConsumerStatefulWidget {
   const ProjectResourceNeedsScreen({
@@ -104,6 +106,7 @@ class _ProjectResourceNeedsScreenState
                         state: state,
                         onEdit: _edit,
                         onClose: _close,
+                        onMatch: _openMatches,
                       ),
                       if (closed.isNotEmpty) ...[
                         const SizedBox(height: AppSpacing.large),
@@ -113,6 +116,7 @@ class _ProjectResourceNeedsScreenState
                           state: state,
                           onEdit: _edit,
                           onClose: _close,
+                          onMatch: _openMatches,
                         ),
                       ],
                     ],
@@ -188,6 +192,16 @@ class _ProjectResourceNeedsScreenState
         .read(ownProjectResourceNeedsProvider(widget.projectId).notifier)
         .close(expectedCreatorProfileId: profileId, resourceNeedId: need.id);
   }
+
+  void _openMatches(ProjectResourceNeed need) {
+    context.go(
+      ProjectResourceNeedRoutes.matches(
+        widget.projectKind,
+        widget.projectId,
+        need.id,
+      ),
+    );
+  }
 }
 
 class _NeedGroup extends StatelessWidget {
@@ -197,6 +211,7 @@ class _NeedGroup extends StatelessWidget {
     required this.state,
     required this.onEdit,
     required this.onClose,
+    required this.onMatch,
   });
 
   final String title;
@@ -204,6 +219,7 @@ class _NeedGroup extends StatelessWidget {
   final OwnProjectResourceNeedsState state;
   final ValueChanged<ProjectResourceNeed> onEdit;
   final ValueChanged<ProjectResourceNeed> onClose;
+  final ValueChanged<ProjectResourceNeed> onMatch;
 
   @override
   Widget build(BuildContext context) {
@@ -237,6 +253,16 @@ class _NeedGroup extends StatelessWidget {
                       Wrap(
                         spacing: AppSpacing.small,
                         children: [
+                          FilledButton.tonalIcon(
+                            key: Key('project-resource-match-${need.id}'),
+                            onPressed: state.isBusy
+                                ? null
+                                : () => onMatch(need),
+                            icon: const Icon(Icons.manage_search_outlined),
+                            label: Text(
+                              l10n.projectResourcesFindMatchingResources,
+                            ),
+                          ),
                           OutlinedButton(
                             key: Key('project-resource-edit-${need.id}'),
                             onPressed: state.isBusy ? null : () => onEdit(need),

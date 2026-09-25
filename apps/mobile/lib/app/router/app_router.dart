@@ -19,6 +19,7 @@ import '../../features/profile/presentation/profile_screen.dart';
 import '../../features/project_chat/presentation/project_chat_info_screen.dart';
 import '../../features/project_chat/presentation/project_chat_screen.dart';
 import '../../features/project_resource_needs/presentation/project_resource_need_routes.dart';
+import '../../features/project_resource_needs/presentation/project_resource_matches_screen.dart';
 import '../../features/project_resource_needs/presentation/project_resource_needs_screen.dart';
 import '../../features/participation/domain/participation_models.dart';
 import '../../features/participation/presentation/creator_participation_screen.dart';
@@ -251,6 +252,17 @@ RoutingConfig _routingConfig(
                           projectId: state.pathParameters['id']!,
                           projectKind: ProjectKind.oneTime,
                         ),
+                        routes: [
+                          GoRoute(
+                            path: ':resourceNeedId/matches',
+                            builder: (context, state) =>
+                                ProjectResourceMatchesScreen(
+                                  projectId: state.pathParameters['id']!,
+                                  resourceNeedId:
+                                      state.pathParameters['resourceNeedId']!,
+                                ),
+                          ),
+                        ],
                       ),
                       GoRoute(
                         path: 'join',
@@ -305,6 +317,17 @@ RoutingConfig _routingConfig(
                           projectId: state.pathParameters['id']!,
                           projectKind: ProjectKind.recurring,
                         ),
+                        routes: [
+                          GoRoute(
+                            path: ':resourceNeedId/matches',
+                            builder: (context, state) =>
+                                ProjectResourceMatchesScreen(
+                                  projectId: state.pathParameters['id']!,
+                                  resourceNeedId:
+                                      state.pathParameters['resourceNeedId']!,
+                                ),
+                          ),
+                        ],
                       ),
                       GoRoute(
                         path: 'join',

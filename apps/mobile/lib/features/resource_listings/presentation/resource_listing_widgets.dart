@@ -84,11 +84,15 @@ class PublicResourceListingCard extends StatelessWidget {
   const PublicResourceListingCard({
     required this.listing,
     required this.onTap,
+    this.footer,
+    this.semanticDetails = const [],
     super.key,
   });
 
   final PublicResourceListingSummary listing;
   final VoidCallback onTap;
+  final Widget? footer;
+  final List<String> semanticDetails;
 
   @override
   Widget build(BuildContext context) {
@@ -104,6 +108,7 @@ class PublicResourceListingCard extends StatelessWidget {
         listing.title,
         listing.publicLocationLabel,
         ?interest,
+        ...semanticDetails,
       ].join(', '),
       child: Card(
         clipBehavior: Clip.antiAlias,
@@ -153,6 +158,10 @@ class PublicResourceListingCard extends StatelessWidget {
                     text: interest,
                     key: Key('resource-interest-count-${listing.id}'),
                   ),
+                ],
+                if (footer case final footer?) ...[
+                  const SizedBox(height: AppSpacing.medium),
+                  footer,
                 ],
               ],
             ),

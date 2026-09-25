@@ -13,11 +13,11 @@ This folder owns application startup presentation and navigation, not backend ru
 
 `StatefulShellRoute.indexedStack` (go_router 18) gives each destination its own Navigator:
 
-| Index / destination | Routes |
-| --- | --- |
-| 0 / Profile | `/profile`, nested `/profile/edit` with an optional sanitized post-setup `returnTo` |
-| 1 / Browse | `/proposals` and `/tavoli`, each with nested `mine`, `create`, `:id`, `:id/edit`, protected `:id/resources`, `:id/join`, and `:id/participants` |
-| 2 / Home | `/`, public `/resources` and `/resources/:listingId`, protected `/resources/mine`, `/resources/create`, and `/resources/:listingId/edit`, `/messages`, nested `/messages/requests/:requestId`, `/messages/chats/:chatId`, `/messages/chats/:chatId/info`, `/notifications`, nested `/notifications/preferences` |
+| Index / destination | Routes                                                                                                                                                                                                                                                                                                          |
+| ------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 0 / Profile         | `/profile`, nested `/profile/edit` with an optional sanitized post-setup `returnTo`                                                                                                                                                                                                                             |
+| 1 / Browse          | `/proposals` and `/tavoli`, each with nested `mine`, `create`, `:id`, `:id/edit`, protected `:id/resources`, `:id/resources/:resourceNeedId/matches`, `:id/join`, and `:id/participants`                                                                                                                        |
+| 2 / Home            | `/`, public `/resources` and `/resources/:listingId`, protected `/resources/mine`, `/resources/create`, and `/resources/:listingId/edit`, `/messages`, nested `/messages/requests/:requestId`, `/messages/chats/:chatId`, `/messages/chats/:chatId/info`, `/notifications`, nested `/notifications/preferences` |
 
 Static Browse children precede each dynamic activity-ID route. A route-backed
 Proposals/Tavoli switcher changes the public list within Browse without adding a
@@ -34,7 +34,7 @@ uses the existing Auth flow with a sanitized internal `returnTo`. Incomplete
 profiles can use Home/Browse freely; Profile opens completion when the profile
 anchor exists, and management redirects to `/profile/edit`. Scambio-Dona
 management preserves the exact destination through both OTP and profile setup. Participation Join,
-creator-review, Project resource management, Messages request/chat/group-info, and Notifications routes preserve their exact internal destination
+creator-review, Project resource management/matching, Messages request/chat/group-info, and Notifications routes preserve their exact internal destination
 through OTP and profile completion. Missing-anchor retry and email-OTP behavior
 are unchanged. Saving a valid profile returns to the preserved participation or
 Messages/Notifications route when present, otherwise to Profile.
@@ -48,7 +48,7 @@ discards every retained branch (including inactive private forms) without losing
 an in-flight Auth return destination. A same-identity token refresh does not reset
 the shell. No form data is persisted to disk for this behavior.
 
-Profile, proposal, Tavoli owner, Project-resource owner, Scambio-Dona owner/editor, participation, Messages, and Notifications controllers also clear cached state and increment a
+Profile, proposal, Tavoli owner, Project-resource owner/matching, Scambio-Dona owner/editor, participation, Messages, and Notifications controllers also clear cached state and increment a
 request revision on identity changes. Every async continuation checks that its
 revision is still current before publishing state or starting another operation.
 Thus A -> signed out -> A also rejects old work. Profile readiness cannot be
