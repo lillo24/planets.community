@@ -1849,6 +1849,44 @@ export type Database = {
           },
         ]
       }
+      resource_saved_searches: {
+        Row: {
+          created_at: string
+          id: string
+          listing_mode: string | null
+          locality: string | null
+          profile_id: string
+          query: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          listing_mode?: string | null
+          locality?: string | null
+          profile_id: string
+          query?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          listing_mode?: string | null
+          locality?: string | null
+          profile_id?: string
+          query?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "resource_saved_searches_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       skill_categories: {
         Row: {
           id: string
@@ -2041,6 +2079,19 @@ export type Database = {
         }
         Returns: string
       }
+      create_resource_saved_search: {
+        Args: {
+          p_expected_profile_id: string
+          p_listing_mode: string
+          p_locality: string
+          p_query: string
+        }
+        Returns: string
+      }
+      delete_resource_saved_search: {
+        Args: { p_expected_profile_id: string; p_saved_search_id: string }
+        Returns: string
+      }
       end_recurring_activity: {
         Args: {
           p_expected_creator_profile_id: string
@@ -2183,6 +2234,17 @@ export type Database = {
           requester_display_name: string
           requester_profile_id: string
           viewer_role: string
+        }[]
+      }
+      get_own_resource_saved_search: {
+        Args: { p_expected_profile_id: string; p_saved_search_id: string }
+        Returns: {
+          created_at: string
+          listing_mode: string
+          locality: string
+          query: string
+          saved_search_id: string
+          updated_at: string
         }[]
       }
       get_own_structured_request_message_item: {
@@ -2767,6 +2829,22 @@ export type Database = {
           viewer_role: string
         }[]
       }
+      list_own_resource_saved_searches: {
+        Args: {
+          p_cursor_id?: string
+          p_cursor_updated_at?: string
+          p_expected_profile_id: string
+          p_limit?: number
+        }
+        Returns: {
+          created_at: string
+          listing_mode: string
+          locality: string
+          query: string
+          saved_search_id: string
+          updated_at: string
+        }[]
+      }
       list_own_structured_request_message_items: {
         Args: {
           p_cursor_activity_at?: string
@@ -3309,6 +3387,16 @@ export type Database = {
           p_expected_creator_profile_id: string
           p_resource_need_id: string
           p_title: string
+        }
+        Returns: string
+      }
+      update_resource_saved_search: {
+        Args: {
+          p_expected_profile_id: string
+          p_listing_mode: string
+          p_locality: string
+          p_query: string
+          p_saved_search_id: string
         }
         Returns: string
       }
