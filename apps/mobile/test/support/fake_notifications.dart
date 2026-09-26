@@ -10,6 +10,7 @@ class FakeNotificationsGateway implements NotificationsGateway {
     notificationPreferenceFixture(),
     notificationPreferenceFixture(category: NotificationCategory.chat),
     notificationPreferenceFixture(category: NotificationCategory.resources),
+    notificationPreferenceFixture(category: NotificationCategory.matching),
   ];
   int? unreadCount;
   Object? listError;
@@ -146,6 +147,7 @@ AppNotification notificationFixture({
   ProjectKind? projectKind = ProjectKind.oneTime,
   String? projectTitle = 'Community Garden',
   String? actorDisplayName = 'Mario',
+  String? actorProfileId = '00000000-0000-4000-8000-000000000301',
   String? requestId = '00000000-0000-4000-8000-000000000101',
   String? projectId = '00000000-0000-4000-8000-000000000201',
   String? chatId,
@@ -177,7 +179,7 @@ AppNotification notificationFixture({
   requestId: requestId,
   chatId: chatId,
   messageId: messageId,
-  actorProfileId: '00000000-0000-4000-8000-000000000301',
+  actorProfileId: actorProfileId,
   actorDisplayName: actorDisplayName,
   resourceListingId: resourceListingId,
   resourceListingTitle: resourceListingTitle,
@@ -226,6 +228,25 @@ AppNotification resourceNotificationFixture({
   resourceExchangeLegKind: resourceExchangeLegKind,
 );
 
+AppNotification matchingNotificationFixture({
+  int index = 1,
+  String resourceListingId = '00000000-0000-4000-8000-000000000501',
+  String? resourceListingTitle = 'Power drill',
+}) => notificationFixture(
+  index: index,
+  category: NotificationCategory.matching,
+  kind: NotificationKind.matchingAvailable,
+  destinationKind: NotificationDestinationKind.matchingResult,
+  projectId: null,
+  projectKind: null,
+  projectTitle: null,
+  requestId: null,
+  actorProfileId: null,
+  actorDisplayName: null,
+  resourceListingId: resourceListingId,
+  resourceListingTitle: resourceListingTitle,
+);
+
 NotificationPreference notificationPreferenceFixture({
   NotificationCategory category = NotificationCategory.participation,
   bool inAppEnabled = true,
@@ -236,6 +257,7 @@ NotificationPreference notificationPreferenceFixture({
   sortOrder: switch (category) {
     NotificationCategory.chat => 40,
     NotificationCategory.resources => 50,
+    NotificationCategory.matching => 60,
     _ => 10,
   },
   inAppEnabled: inAppEnabled,

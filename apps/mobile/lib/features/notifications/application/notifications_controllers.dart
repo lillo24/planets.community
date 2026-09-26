@@ -490,6 +490,8 @@ class NotificationPreferencesState {
   NotificationPreference? get chat => preferences[NotificationCategory.chat];
   NotificationPreference? get resources =>
       preferences[NotificationCategory.resources];
+  NotificationPreference? get matching =>
+      preferences[NotificationCategory.matching];
 
   bool get isBusy =>
       phase == NotificationPreferencesPhase.loading ||
@@ -583,6 +585,15 @@ class NotificationPreferencesController
     enabled: enabled,
   );
 
+  Future<bool> setMatchingInApp({
+    required String expectedProfileId,
+    required bool enabled,
+  }) => _setInApp(
+    expectedProfileId: expectedProfileId,
+    category: NotificationCategory.matching,
+    enabled: enabled,
+  );
+
   Future<bool> _setInApp({
     required String expectedProfileId,
     required NotificationCategory category,
@@ -665,6 +676,7 @@ class NotificationPreferencesController
       NotificationCategory.participation,
       NotificationCategory.chat,
       NotificationCategory.resources,
+      NotificationCategory.matching,
     ]) {
       final matches = preferences.where((item) => item.category == category);
       if (matches.length != 1 || !matches.single.userConfigurable) {

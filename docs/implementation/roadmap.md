@@ -1,7 +1,7 @@
 # Implementation Roadmap
 
 **Status:** Planning baseline  
-**Current implementation:** Plans 00–04B2B, 04C1–04C2, 05A, 05B, 05D, 06A, 06B, provider-independent 06C1, provider-neutral 06C2A, 06D, 07A, 07B1, 07B2B, 07B2C, and public informational SITE-00 through SITE-02 plus SITE-02W implemented; 04C3A and stacked 04C3B1/04C3B2/04C3C1/04C3C2/04C3D1/04C3D2/04C3D3A/04C3D3B1/04C3D3B2/05C1/05C2/04C4A/04C4B/04C4C1/04C4C2/04C4C3A/04C4C3B/04C4C3C1/04C4C3C2/04C4C3D/04C4D1/04C4D2/04C4E1/04C4E2/04C4F1/04C4F2/04C4F3A/04C4F3B1 are in progress; provider-specific 06C2B and mobile 04C4F3B2 remain not started
+**Current implementation:** Plans 00–04B2B, 04C1–04C2, 05A, 05B, 05D, 06A, 06B, provider-independent 06C1, provider-neutral 06C2A, 06D, 07A, 07B1, 07B2B, 07B2C, and public informational SITE-00 through SITE-02 plus SITE-02W implemented; 04C3A and stacked 04C3B1/04C3B2/04C3C1/04C3C2/04C3D1/04C3D2/04C3D3A/04C3D3B1/04C3D3B2/05C1/05C2/04C4A/04C4B/04C4C1/04C4C2/04C4C3A/04C4C3B/04C4C3C1/04C4C3C2/04C4C3D/04C4D1/04C4D2/04C4E1/04C4E2/04C4F1/04C4F2/04C4F3A/04C4F3B1/04C4F3B2 are in progress; provider-specific 06C2B remains not started
 
 This roadmap divides the first PLANETS build into reviewable Codex tasks. Each numbered item should normally become its own implementation prompt, branch, and pull request.
 
@@ -70,7 +70,7 @@ Do not begin a dependent plan until the prior plan is merged or its branch is ex
 | 04C3D3  | Live Need Coverage + Group Coordination (parent)          | Backend live requirement truth followed by group-chat coordination and resurfacing                                     | 04C3D1, 04C3D2, 07B2C  | Delegate policy remains separate                                                                                     | In progress |
 | 04C3D3A | Live Project Requirement Coverage Domain                  | Participant/manual sources, exact coverage transitions, lifecycle cleanup, claim/manual/read RPCs, and tests           | 04C3D1, 04C3D2         | None for canonical creator/current-participant backend ownership                                                     | In progress |
 | 04C3D3B | Group Needs Coordination + Chat Resurfacing               | Chat Needs drawer, participant claim UI, creator manual control, system messages, notifications, and attention UX      | 04C3D3A, 07B2C, 06D    | Delegate policy remains separate; native interaction review remains Plan 12                                          | In progress |
-| 04C4    | Scambio-Dona Requests, Agreements and Matching (parent)   | Request intent, later reliable agreement/handoff, mobile coordination, queues, matching, and saved searches            | 04C1                   | Agreement, handoff, queue, matching, notification, and Dona policy remain isolated in later slices                   | In progress |
+| 04C4    | Scambio-Dona Requests, Agreements and Matching (parent)   | Request intent, reliable agreement/handoff, mobile coordination, loan availability, matching, and saved searches        | 04C1                   | Open stack remains unmerged and inherits pending database gates; later dispute/Dona policy stays separate            | Functionally complete (open stack) |
 | 04C4A   | Resource Request Domain Foundation                        | Private request episodes, multiple acceptances, active-interest count, lifecycle serialization, and history            | 04C1, DB-COMPAT-01     | None for the bounded interest-request lifecycle                                                                      | In progress |
 | 04C4B   | Reliable Scambio Agreement + Loan/Barter Domain           | Structured counterpart terms, give/lend/barter semantics, duration, handoff, completion, and return history             | 04C4A                  | Post-handoff amendment, dispute, and liability policy remain later founder decisions                                 | In progress |
 | 04C4C   | Resource Requests + Messages (parent)                      | Durable conversation/projections followed by split mobile request, chat, agreement, and notification experiences       | 04C4B, 07A             | Native interaction review remains in Plan 12                                                                          | In progress |
@@ -87,14 +87,14 @@ Do not begin a dependent plan until the prior plan is merged or its branch is ex
 | 04C4E   | Project Resource Matching (parent)                        | Explainable read-time matching domain followed by mobile Project matching UX                                           | 04C3A, 04C4D1          | No private reservation inference or guaranteed availability                                                           | In progress |
 | 04C4E1  | Explainable Project Resource Matching Domain              | Creator-only Italian lexical tiers, coarse-geography scopes, mode filters, keyset, public-safe reasons                 | 04C4D2                 | No mobile UI, saved searches, alerts, or private availability                                                        | In progress |
 | 04C4E2  | Mobile Project Resource Matching UX                       | Mobile consumption of E1 reasons and discovery routing                                                                 | 04C4E1                 | Native interaction review remains later work                                                                           | In progress |
-| 04C4F   | Saved Searches + Matching Notifications                   | Personal saved filters followed by mobile execution and later published-listing notification projection                | 04C4E2, 06A            | Later taxonomy/radius and mobile notification copy remain isolated                                                  | In progress |
+| 04C4F   | Saved Searches + Matching Notifications                   | Personal saved filters, mobile execution, published-listing projection, immediate notification projection, and mobile UX | 04C4E2, 06A            | Open stack remains unmerged and inherits pending database gates; taxonomy/radius remain later work                  | Functionally complete (open stack) |
 | 04C4F1  | Personal Saved Resource Search Domain                     | Private exact current-filter CRUD, semantic uniqueness, keyset reads, and browse-parity predicate                       | 04C4E2                 | No mobile UI, match snapshots, events, or notification policy                                                       | In progress |
 | 04C4F2  | Mobile Saved Resource Search Experience                   | Save/manage/run personal filters through existing public Resource browse                                                | 04C4F1                 | Native interaction review remains Plan 12; no notification behavior                                                 | In progress |
-| 04C4F3   | Saved Resource Search Match Notifications (parent)        | Frequency-neutral published-listing match facts followed by immediate channel projection and mobile UX                  | 04C4F1, 06A            | User-facing copy remains isolated to the mobile follow-up                                                            | In progress |
+| 04C4F3   | Saved Resource Search Match Notifications (parent)        | Frequency-neutral published-listing match facts followed by immediate channel projection and mobile UX                  | 04C4F1, 06A            | Open stack remains unmerged; provider delivery remains 06C2B                                                        | Functionally complete (open stack) |
 | 04C4F3A  | New-Listing Match Projection                              | Historical-boundary receipts, event-time F1 matching, private versioned facts, and identifier-only derived events       | 04C4F2                 | No notification row, push job, preference, frequency, copy, or match-history UI                                      | In progress |
-| 04C4F3B  | Immediate Saved-Search Notifications (parent)              | Immediate, per-listing-deduplicated notification delivery followed by mobile consumption                                | 04C4F3A, 06A, 06B      | No digest, per-search toggle, or provider send                                                                       | In progress |
+| 04C4F3B  | Immediate Saved-Search Notifications (parent)              | Immediate, per-listing-deduplicated notification delivery followed by mobile consumption                                | 04C4F3A, 06A, 06B      | No digest, per-search toggle, or provider send                                                                       | Functionally complete (open stack) |
 | 04C4F3B1 | Backend Immediate Notification Projection                  | Current-state-revalidated in-app and push-job projection under the global Matching channel preferences                  | 04C4F3A, 06A, 06B      | No Flutter changes or provider delivery                                                                              | In progress |
-| 04C4F3B2 | Mobile Matching Notification UX                            | Matching inbox/push copy, destination routing, and global Matching preference controls                                  | 04C4F3B1                | Native interaction review remains Plan 12                                                                           | Not started |
+| 04C4F3B2 | Mobile Matching Notification UX                            | Matching inbox copy, destination routing, and global Matching in-app preference control                                  | 04C4F3B1                | Native interaction review remains Plan 12; provider push remains 06C2B                                             | Implemented (open PR) |
 | 05      | Participation lifecycle (parent)                          | Shared project participation foundation, later mobile experience, and verified-contribution review                     | 04A, 04B1              | Capacity/fullness and later contribution/resource semantics remain unresolved                                        | In progress |
 | 05A     | Project Participation Domain Foundation                   | Shared identity, private join requests, canonical membership history, protected meeting access, events, and tests      | 04A, 04B1              | No blocking decision; 07B1 derives chat activation from accepted membership                                          | Implemented |
 | 05B     | Mobile Project Participation Experience                   | Join/status/withdraw, creator review, member state, leave/remove, and protected meeting UI                             | 05A                    | Functional/native UX review                                                                                          | Implemented |
@@ -353,7 +353,7 @@ or introduce participation, chat, resources, or recurrence expansion.
 
 #### 04C — Resources + Scambio-Dona
 
-**Status:** In progress through implemented 04C1–04C2, the stacked 04C3 work, and the current 04C4A/04C4B request-and-agreement backend slices. Loan queues, mobile request/agreement coordination, matching, saved searches, and matching notifications remain later work.
+**Status:** Functionally complete through 04C4F3B2 in the open stacked PR chain, but that chain remains unmerged and not fully validated because inherited database gates are pending. Implemented 04C1–04C2 are merged; stacked 04C3, 05C, and 04C4 work remains open.
 
 The earlier combined scope is split so standalone public listings do not force unresolved Project contribution or post-discovery transaction rules:
 
@@ -475,7 +475,7 @@ Project chat detail now consumes the strict mixed human/system feed and exact th
 
 ##### 04C4 — Scambio-Dona Requests, Agreements and Matching (parent)
 
-**Status:** In progress through the current stacked 04C4C1 backend slice. Depends on 04C1; queue, matching, notification, post-handoff amendment, and dispute decisions remain isolated in later child plans.
+**Status:** Functionally complete through 04C4F3B2 in the open stacked PR chain, not merged or fully validated. Depends on 04C1; post-handoff amendment and dispute decisions remain outside the accepted child plans.
 
 This parent keeps a lightweight expression of interest separate from reliable agreement terms, physical handoff/completion, loan scheduling, Project matching, and saved-search notifications. None of those later concepts may be inferred from the 04C1 `exchange` discovery intent or from an accepted 04C4A request.
 
@@ -640,11 +640,11 @@ private availability inference, saved search, or direct
 Project-need-to-Resource-request relation. PR #87 still owns E1's pending final
 database gates, and stacked mobile PR #88 owns E2. The saved-search sequence
 continues above that exact stack with F1 in PR #89, F2 in PR #90, F3A in PR #91,
-and F3B1 in this PR.
+F3B1 in PR #92, and F3B2 in this PR.
 
 ###### 04C4F — Saved Searches + Matching Notifications
 
-**Status:** In progress through 04C4F3B1. F1 is open on stacked PR #89 with inherited database gates pending; F2 is open on stacked PR #90; F3A is open on stacked PR #91; F3B1 is in this PR and F3B2 is next.
+**Status:** Functionally complete through 04C4F3B2 in this open stacked PR, not merged or fully validated. F1 is open on PR #89 with inherited database gates pending; F2 is PR #90; F3A is PR #91; F3B1 is PR #92.
 
 04C4F1 persists personal, Project-independent definitions of exactly the current Resource browse query, Dona/Scambia mode, and locality filters. Query remains literal case-insensitive title/description substring matching; locality remains trimmed case-insensitive exact equality. Definitions are private, semantic duplicates return `PT409`, and no match result, listing snapshot, Project relation, event, notification toggle, frequency, or copy is stored.
 
@@ -662,7 +662,7 @@ Consumes F1 RPC-only CRUD and executes Open through the existing Resource Browse
 
 ###### 04C4F3 — Saved Resource Search Match Notifications (parent)
 
-**Status:** In progress through 04C4F3B1. F3B2 is not started.
+**Status:** Functionally complete through 04C4F3B2 in the open stack; none of this status claims merge or final validation.
 
 F3A and F3B deliberately separate frequency-neutral match provenance from user-visible delivery. Both reuse the F1 predicate only after canonical listing validation; neither introduces Project matching or private loan-availability semantics.
 
@@ -674,21 +674,21 @@ Consumes future `resource_listing.published` events with independent `saved-sear
 
 ###### 04C4F3B — Immediate Saved-Search Notifications
 
-**Status:** In progress through 04C4F3B1. The fixed policy is immediate delivery, not a digest or user-selectable frequency.
+**Status:** Functionally complete through 04C4F3B2 in the open stack. The fixed policy is immediate delivery, not a digest or user-selectable frequency.
 
 One user-visible alert is eligible per recipient/new matching listing even when multiple saved searches match. All saved searches participate; there is no per-search notification toggle. The existing global Matching category controls in-app and push eligibility independently.
 
 ###### 04C4F3B1 — Backend Immediate Notification Projection
 
-**Status:** In progress in this PR, based on exact 04C4F3A head `2f3334568421e63f608c032628ae2612227d7f6d` from PR #91.
+**Status:** In progress on PR #92, based on exact 04C4F3A head `2f3334568421e63f608c032628ae2612227d7f6d` from PR #91.
 
 Consumes future `resource_saved_search.matched` events through independent `notifications.v1` and `push.v1` receipts. It revalidates the private fact, saved-search version/current filters, and current published listing before projecting `matching_available` to `matching_result`. Missing or stale delivery state is safely suppressed; inconsistent canonical state fails visibly. Notification rows and immediately available push jobs retain only the listing reference and are unique by recipient/listing, so overlapping definitions cannot duplicate either channel. Historical match events are receipted without backfill. Provider delivery remains outside this plan.
 
 ###### 04C4F3B2 — Mobile Matching Notification UX
 
-**Status:** Not started. Depends on 04C4F3B1.
+**Status:** Implemented in this open PR, based on exact 04C4F3B1 head `78daffd8311659bb289f900594eb042802704fc2` from PR #92; not merged or fully validated while inherited database gates remain pending.
 
-Will consume the B1 contract in Flutter: category `matching`, kind `matching_available`, destination `matching_result`, listing identifier, and safe resolved listing title. It owns localized inbox/push copy, routing to the existing public Resource result/detail flow, and the existing global Matching in-app/push controls. It does not add a digest, frequency selector, or per-search toggle.
+Consumes the B1 contract in Flutter: category `matching`, kind `matching_available`, destination `matching_result`, listing identifier, and optional safe resolved listing title. It owns localized inbox copy, routing to the existing public Resource detail flow, and the global Matching in-app control while preserving the hidden canonical push value. It adds no digest, frequency selector, per-search toggle, provider integration, or extra inbox read.
 
 Global resource taxonomy/tags, Dona-specific UI/policy refinement, post-handoff mutually accepted amendments, dispute/liability handling, and social “what we did together” profile history remain future work and are not blockers for 04C4B.
 
@@ -1205,7 +1205,7 @@ progress because provider-specific 06C2B is not started. Optional E2EE/MLS
 research remains unmerged and deferred in PR #28. The stacked 04C3/05C work
 remains open and unmerged beneath DB-COMPAT-01; the 04C4A→04C4C2 stack remains
 open beneath 04C4C3C2, while 04C4D1/04C4D2/04C4E1/04C4E2 are open and stacked
-and 04C4F1 is open on PR #89 above PR #88, 04C4F2 is open on PR #90, 04C4F3A is open on PR #91, and 04C4F3B1 is in progress in this PR while F3B2 is next. Plan 06C2B remains
+and 04C4F1 is open on PR #89 above PR #88, 04C4F2 is open on PR #90, 04C4F3A is open on PR #91, 04C4F3B1 is open on PR #92, and 04C4F3B2 is in progress in this PR. Plan 06C2B remains
 not started and requires Firebase/APNs configuration, push permission and
 preview decisions, server-side FCM credentials, and a self-host-compatible
 worker deployment target. Deferred native Android/iOS checks from implemented

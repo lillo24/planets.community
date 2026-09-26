@@ -2,6 +2,15 @@ import '../../../l10n/generated/app_localizations.dart';
 import '../domain/notification_models.dart';
 
 String notificationCopy(AppLocalizations l10n, AppNotification notification) {
+  if (notification.category == NotificationCategory.matching) {
+    if (notification.kind != NotificationKind.matchingAvailable) {
+      return l10n.notificationsGeneric;
+    }
+    final listing = notification.resourceListingTitle;
+    return listing == null
+        ? l10n.notificationMatchingAvailableGeneric
+        : l10n.notificationMatchingAvailable(listing);
+  }
   if (notification.category == NotificationCategory.resources) {
     return _resourceCopy(l10n, notification);
   }

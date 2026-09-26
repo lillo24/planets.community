@@ -370,6 +370,35 @@ void main() {
     expect(find.textContaining('private read diagnostic'), findsNothing);
   });
 
+  testWidgets('Matching alert remains in the inbox and opens Resource detail', (
+    tester,
+  ) async {
+    const listingId = '00000000-0000-4000-8000-000000000501';
+    final notifications = FakeNotificationsGateway()
+      ..items = [matchingNotificationFixture(resourceListingId: listingId)]
+      ..mutationError = StateError('private read diagnostic');
+    final app = await _pump(tester, notifications: notifications);
+    final router = app.read(appRouterProvider)..go('/notifications');
+    await tester.pumpAndSettle();
+
+    const copy =
+        'New listing matches one of your saved searches: “Power drill”.';
+    expect(find.text(copy), findsOneWidget);
+    await tester.tap(find.text(copy));
+    await tester.pumpAndSettle();
+
+    expect(
+      router.routeInformationProvider.value.uri.path,
+      '/resources/$listingId',
+    );
+    expect(
+      find.textContaining("couldn't update this notification"),
+      findsOneWidget,
+    );
+    expect(find.textContaining('private read diagnostic'), findsNothing);
+    expect(notifications.calls.where((call) => call == 'list'), hasLength(1));
+  });
+
   testWidgets(
     'chat tap navigates despite mark-read failure and resolves former history',
     (tester) async {
@@ -526,6 +555,28 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('long Matching copy remains readable at high text scale', (
+    tester,
+  ) async {
+    tester.platformDispatcher.textScaleFactorTestValue = 2;
+    addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+    await tester.binding.setSurfaceSize(const Size(320, 600));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    final longTitle = List.filled(12, 'Neighborhood').join(' ');
+    final app = await _pump(
+      tester,
+      notifications: FakeNotificationsGateway()
+        ..items = [
+          matchingNotificationFixture(resourceListingTitle: longTitle),
+        ],
+    );
+    app.read(appRouterProvider).go('/notifications');
+    await tester.pumpAndSettle();
+
+    expect(find.textContaining(longTitle), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('mark all and pull refresh synchronize inbox and unread count', (
     tester,
   ) async {
@@ -551,76 +602,93 @@ void main() {
     );
   });
 
-  testWidgets(
-    'preferences expose Participation, Chat, and Resources without Push',
-    (tester) async {
-      await tester.binding.setSurfaceSize(const Size(900, 1600));
-      addTearDown(() => tester.binding.setSurfaceSize(null));
-      final notifications = FakeNotificationsGateway()
-        ..preferences = [
-          notificationPreferenceFixture(pushEnabled: false),
-          notificationPreferenceFixture(
-            category: NotificationCategory.chat,
-            pushEnabled: true,
-          ),
-          notificationPreferenceFixture(
-            category: NotificationCategory.resources,
-            pushEnabled: true,
-          ),
-        ];
-      final app = await _pump(tester, notifications: notifications);
-      app.read(appRouterProvider).go('/notifications/preferences');
-      await tester.pumpAndSettle();
+  testWidgets('preferences expose four in-app categories without Push', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(900, 1600));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    final notifications = FakeNotificationsGateway()
+      ..preferences = [
+        notificationPreferenceFixture(pushEnabled: false),
+        notificationPreferenceFixture(
+          category: NotificationCategory.chat,
+          pushEnabled: true,
+        ),
+        notificationPreferenceFixture(
+          category: NotificationCategory.resources,
+          pushEnabled: true,
+        ),
+        notificationPreferenceFixture(
+          category: NotificationCategory.matching,
+          pushEnabled: false,
+        ),
+      ];
+    final app = await _pump(tester, notifications: notifications);
+    app.read(appRouterProvider).go('/notifications/preferences');
+    await tester.pumpAndSettle();
 
-      expect(find.text('Participation alerts'), findsOneWidget);
-      expect(find.text('Chat messages'), findsOneWidget);
-      expect(find.text('Resource activity'), findsOneWidget);
-      expect(find.bySemanticsLabel('Resource activity'), findsOneWidget);
-      expect(find.text('In-app notifications'), findsNWidgets(3));
-      expect(find.textContaining('Push'), findsNothing);
-      await tester.tap(find.byKey(const Key('chat-in-app-toggle')));
-      await tester.pumpAndSettle();
+    expect(find.text('Participation alerts'), findsOneWidget);
+    expect(find.text('Chat messages'), findsOneWidget);
+    expect(find.text('Resource activity'), findsOneWidget);
+    expect(find.text('Saved search matches'), findsOneWidget);
+    expect(find.bySemanticsLabel('Resource activity'), findsOneWidget);
+    expect(find.bySemanticsLabel('Saved search matches'), findsOneWidget);
+    expect(find.text('In-app notifications'), findsNWidgets(3));
+    expect(find.text('In-app'), findsOneWidget);
+    expect(find.textContaining('Push'), findsNothing);
+    await tester.tap(find.byKey(const Key('chat-in-app-toggle')));
+    await tester.pumpAndSettle();
 
-      expect(notifications.lastCategory, NotificationCategory.chat);
-      expect(notifications.lastInAppEnabled, isFalse);
-      expect(notifications.lastPushEnabled, isTrue);
-      expect(
-        tester
-            .widget<SwitchListTile>(find.byKey(const Key('chat-in-app-toggle')))
-            .value,
-        isFalse,
-      );
-      expect(
-        tester
-            .widget<SwitchListTile>(
-              find.byKey(const Key('participation-in-app-toggle')),
-            )
-            .value,
-        isTrue,
-      );
-      expect(
-        find.textContaining('Project chat and existing notification history'),
-        findsOneWidget,
-      );
-      await tester.tap(find.byKey(const Key('resources-in-app-toggle')));
-      await tester.pumpAndSettle();
-      expect(notifications.lastCategory, NotificationCategory.resources);
-      expect(notifications.lastInAppEnabled, isFalse);
-      expect(notifications.lastPushEnabled, isTrue);
-      expect(
-        tester
-            .widget<SwitchListTile>(
-              find.byKey(const Key('resources-in-app-toggle')),
-            )
-            .value,
-        isFalse,
-      );
-      expect(
-        find.textContaining('Requests, Resource conversations'),
-        findsOneWidget,
-      );
-    },
-  );
+    expect(notifications.lastCategory, NotificationCategory.chat);
+    expect(notifications.lastInAppEnabled, isFalse);
+    expect(notifications.lastPushEnabled, isTrue);
+    expect(
+      tester
+          .widget<SwitchListTile>(find.byKey(const Key('chat-in-app-toggle')))
+          .value,
+      isFalse,
+    );
+    expect(
+      tester
+          .widget<SwitchListTile>(
+            find.byKey(const Key('participation-in-app-toggle')),
+          )
+          .value,
+      isTrue,
+    );
+    expect(
+      find.textContaining('Project chat and existing notification history'),
+      findsOneWidget,
+    );
+    await tester.tap(find.byKey(const Key('resources-in-app-toggle')));
+    await tester.pumpAndSettle();
+    expect(notifications.lastCategory, NotificationCategory.resources);
+    expect(notifications.lastInAppEnabled, isFalse);
+    expect(notifications.lastPushEnabled, isTrue);
+    expect(
+      tester
+          .widget<SwitchListTile>(
+            find.byKey(const Key('resources-in-app-toggle')),
+          )
+          .value,
+      isFalse,
+    );
+    expect(
+      find.textContaining('Requests, Resource conversations'),
+      findsOneWidget,
+    );
+    await tester.tap(find.byKey(const Key('matching-in-app-toggle')));
+    await tester.pumpAndSettle();
+    expect(notifications.lastCategory, NotificationCategory.matching);
+    expect(notifications.lastInAppEnabled, isFalse);
+    expect(notifications.lastPushEnabled, isFalse);
+    expect(
+      find.textContaining(
+        'newly published Scambio-Dona listing matches one of your saved searches',
+      ),
+      findsOneWidget,
+    );
+  });
 
   testWidgets('Resources toggle rolls back with safe copy at high text scale', (
     tester,
@@ -649,6 +717,36 @@ void main() {
     );
     expect(app.read(notificationPreferencesProvider).failure, isNotNull);
     expect(find.textContaining('private preference diagnostic'), findsNothing);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('Matching preference remains usable at high text scale', (
+    tester,
+  ) async {
+    tester.platformDispatcher.textScaleFactorTestValue = 2;
+    addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+    await tester.binding.setSurfaceSize(const Size(320, 600));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    final notifications = FakeNotificationsGateway();
+    final app = await _pump(tester, notifications: notifications);
+    app.read(appRouterProvider).go('/notifications/preferences');
+    await tester.pumpAndSettle();
+
+    await tester.scrollUntilVisible(
+      find.byKey(const Key('matching-in-app-toggle')),
+      300,
+      scrollable: find.byType(Scrollable),
+    );
+    await tester.tap(find.byKey(const Key('matching-in-app-toggle')));
+    await tester.pumpAndSettle();
+
+    expect(notifications.lastCategory, NotificationCategory.matching);
+    expect(
+      find.textContaining(
+        'newly published Scambio-Dona listing matches one of your saved searches',
+      ),
+      findsOneWidget,
+    );
     expect(tester.takeException(), isNull);
   });
 

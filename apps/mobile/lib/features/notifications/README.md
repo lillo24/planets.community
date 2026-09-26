@@ -14,11 +14,13 @@ outbox, register devices, deliver push, or own participation/chat actions.
   results. It never calls the service-only projector.
 - `application/notifications_controllers.dart` owns inbox paging, unread state,
   mark-one/mark-all, duplicate-action guards, rollback/reload behavior,
-  Participation/Chat/Resources preference state, and identity revisions.
+  Participation/Chat/Resources/Matching preference state, and identity
+  revisions.
 - `presentation/notification_destination.dart` maps known semantic targets to
   the 07A Messages request item, the canonical Project-chat route, Resource
-  request/chat routes, or existing Proposal/Tavolo routes without deriving
-  navigation from display copy.
+  request/chat routes, the existing public Resource detail route for Matching,
+  or existing Proposal/Tavolo routes without deriving navigation from display
+  copy.
 - `presentation/notification_copy.dart` owns localized copy selection and safe
   missing-context/future-kind fallbacks.
 - `presentation/home_notification_button.dart` owns the Home bell, accessible
@@ -26,7 +28,8 @@ outbox, register devices, deliver push, or own participation/chat actions.
 - `presentation/notifications_screen.dart` owns inbox loading, empty, safe
   error, refresh, keyset pagination, read state, and tap orchestration.
 - `presentation/notification_preferences_screen.dart` exposes Participation,
-  Chat, and Resources **In-app notifications** controls while keeping Push hidden.
+  Chat, Resources, and the global Matching in-app controls while keeping Push
+  hidden.
 - `presentation/notification_routes.dart` identifies the guarded Home routes.
 
 ## Backend and privacy boundary
@@ -39,9 +42,12 @@ and never calls `process_notification_outbox_batch`. Notification source JSON,
 request messages, exact meeting information, email, tokens, and outbox/audit
 identifiers are neither requested nor rendered.
 
-Known participation, Project-chat, and Resource rows are strictly validated,
+Known participation, Project-chat, Resource, and Matching rows are strictly validated,
 including exact Resource request/chat/exchange shapes, event/leg consistency,
-and Project/Resource field separation. Resource copy uses only listing title
+and Project/Resource field separation. Matching requires only its semantic
+category/kind/destination and listing identifier; its listing title is optional
+safe display enrichment. Neither saved-search identifiers nor filters enter the
+mobile model. Resource copy uses only listing title
 and safe actor context; it never fetches request text, chat bodies, private
 terms, requester item descriptions, lend dates, or contact details. Unknown
 future category or kind values become generic, non-navigable UI;
@@ -62,6 +68,9 @@ creator's existing Participation overview; participant-removed opens the
 Proposal/Tavolo detail; Project chat alerts open `/messages/chats/:chatId`.
 Resource request alerts open `/messages/requests/resource/:requestId` and
 accepted/chat/exchange alerts open `/messages/chats/resource/:chatId`.
+Matching alerts open the existing `/resources/:listingId` public detail. Their
+inbox copy is built entirely from the notification RPC row; no saved search,
+match fact, or listing is fetched while rendering the inbox.
 Unknown or incomplete destinations have no route. An
 unread tap attempts the identity-bound read first. A transient read failure is
 reported but does not block a still-valid target; an identity change always
@@ -74,12 +83,14 @@ inbox loads/refreshes, and after read actions. 06B deliberately adds no timer,
 Realtime subscription, or background service.
 
 The preference screen requires exactly one configurable Participation, Chat,
-and Resources row, ignoring unknown future categories. It preserves each
+Resources, and Matching row, ignoring unknown future categories. It preserves each
 hidden `push_enabled` value unchanged when setting its
 `in_app_enabled` value. Disabling a category affects future projected in-app
 rows only; existing history remains. No category-specific push toggle is
-exposed in this slice. Push permission, provider delivery, and dedicated push
-control UX remain separate work.
+exposed in this slice. Matching is one global immediate policy across all saved
+searches: there is no digest/frequency selector or per-search notification
+toggle. Push permission, provider delivery, and dedicated push control UX
+remain separate work.
 
 ## Local native-QA data
 

@@ -6,6 +6,30 @@ import 'package:planets_mobile/features/participation/domain/participation_model
 import '../../../support/fake_notifications.dart';
 
 void main() {
+  test('Matching alerts open the existing Resource detail route', () {
+    expect(
+      notificationDestinationRoute(matchingNotificationFixture()),
+      '/resources/00000000-0000-4000-8000-000000000501',
+    );
+    expect(
+      notificationDestinationRoute(
+        notificationFixture(
+          category: NotificationCategory.matching,
+          kind: NotificationKind.unknown,
+          destinationKind: NotificationDestinationKind.matchingResult,
+          projectId: null,
+          projectKind: null,
+          projectTitle: null,
+          requestId: null,
+          actorProfileId: null,
+          actorDisplayName: null,
+          resourceListingId: '00000000-0000-4000-8000-000000000501',
+        ),
+      ),
+      isNull,
+    );
+  });
+
   test('request destinations reuse the structured Messages route', () {
     expect(
       notificationDestinationRoute(notificationFixture()),

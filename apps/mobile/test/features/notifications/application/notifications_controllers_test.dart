@@ -192,6 +192,10 @@ void main() {
             category: NotificationCategory.resources,
             pushEnabled: true,
           ),
+          notificationPreferenceFixture(
+            category: NotificationCategory.matching,
+            pushEnabled: false,
+          ),
           notificationPreferenceFixture(category: NotificationCategory.unknown),
         ];
       final session = _readyContainer(gateway);
@@ -238,6 +242,10 @@ void main() {
           notificationPreferenceFixture(
             category: NotificationCategory.resources,
             pushEnabled: true,
+          ),
+          notificationPreferenceFixture(
+            category: NotificationCategory.matching,
+            pushEnabled: false,
           ),
         ];
       final session = _readyContainer(gateway);
@@ -324,6 +332,10 @@ void main() {
         session.container.read(notificationPreferencesProvider).resources,
         isNull,
       );
+      expect(
+        session.container.read(notificationPreferencesProvider).matching,
+        isNull,
+      );
     },
   );
 
@@ -339,6 +351,10 @@ void main() {
           category: NotificationCategory.resources,
           inAppEnabled: true,
           pushEnabled: true,
+        ),
+        notificationPreferenceFixture(
+          category: NotificationCategory.matching,
+          pushEnabled: false,
         ),
         notificationPreferenceFixture(category: NotificationCategory.unknown),
       ];
@@ -382,10 +398,52 @@ void main() {
     state = session.container.read(notificationPreferencesProvider);
     expect(state.resources?.inAppEnabled, isTrue);
     expect(gateway.lastPushEnabled, isTrue);
-    expect(state.preferences, hasLength(3));
+    expect(state.preferences, hasLength(4));
   });
 
-  test('all three known preferences must be unique and configurable', () async {
+  test('Matching preference preserves canonical hidden push values', () async {
+    for (final pushEnabled in [false, true]) {
+      final gateway = FakeNotificationsGateway()
+        ..preferences = [
+          notificationPreferenceFixture(),
+          notificationPreferenceFixture(category: NotificationCategory.chat),
+          notificationPreferenceFixture(
+            category: NotificationCategory.resources,
+          ),
+          notificationPreferenceFixture(
+            category: NotificationCategory.matching,
+            pushEnabled: pushEnabled,
+          ),
+        ];
+      final session = _readyContainer(gateway);
+      addTearDown(session.container.dispose);
+      addTearDown(session.auth.close);
+      final controller = session.container.read(
+        notificationPreferencesProvider.notifier,
+      );
+      expect(await controller.load('user-1'), isTrue);
+
+      expect(
+        await controller.setMatchingInApp(
+          expectedProfileId: 'user-1',
+          enabled: false,
+        ),
+        isTrue,
+      );
+      expect(gateway.lastCategory, NotificationCategory.matching);
+      expect(gateway.lastInAppEnabled, isFalse);
+      expect(gateway.lastPushEnabled, pushEnabled);
+      expect(
+        session.container
+            .read(notificationPreferencesProvider)
+            .matching
+            ?.inAppEnabled,
+        isFalse,
+      );
+    }
+  });
+
+  test('all four known preferences must be unique and configurable', () async {
     final gateway = FakeNotificationsGateway();
     final session = _readyContainer(gateway);
     addTearDown(session.container.dispose);
@@ -430,7 +488,7 @@ void main() {
     expect(await controller.load('user-1'), isTrue);
     expect(
       session.container.read(notificationPreferencesProvider).preferences,
-      hasLength(3),
+      hasLength(4),
     );
   });
 

@@ -3,6 +3,15 @@ import '../../participation/presentation/participation_routes.dart';
 import '../domain/notification_models.dart';
 
 String? notificationDestinationRoute(AppNotification notification) {
+  if (notification.category == NotificationCategory.matching) {
+    if (notification.kind != NotificationKind.matchingAvailable ||
+        notification.destinationKind !=
+            NotificationDestinationKind.matchingResult ||
+        notification.resourceListingId == null) {
+      return null;
+    }
+    return '/resources/${Uri.encodeComponent(notification.resourceListingId!)}';
+  }
   if (notification.category == NotificationCategory.resources) {
     if (notification.resourceListingId == null ||
         notification.resourceRequestId == null) {

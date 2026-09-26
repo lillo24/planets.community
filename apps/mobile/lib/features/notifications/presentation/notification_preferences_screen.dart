@@ -56,6 +56,10 @@ class _NotificationPreferencesScreenState
         expectedProfileId: profileId,
         enabled: enabled,
       ),
+      NotificationCategory.matching => await controller.setMatchingInApp(
+        expectedProfileId: profileId,
+        enabled: enabled,
+      ),
       NotificationCategory.unknown => false,
     };
     if (!succeeded && mounted && _currentExpectedProfileId() != null) {
@@ -85,10 +89,14 @@ class _NotificationPreferencesScreenState
     final participation = belongsToScreen ? state.participation : null;
     final chat = belongsToScreen ? state.chat : null;
     final resources = belongsToScreen ? state.resources : null;
+    final matching = belongsToScreen ? state.matching : null;
     final isInitialLoading =
         !belongsToScreen ||
         (state.phase == NotificationPreferencesPhase.loading &&
-            (participation == null || chat == null || resources == null));
+            (participation == null ||
+                chat == null ||
+                resources == null ||
+                matching == null));
 
     return Scaffold(
       appBar: AppBar(title: Text(l10n.notificationsSettingsTitle)),
@@ -96,7 +104,10 @@ class _NotificationPreferencesScreenState
         child: isInitialLoading
             ? LoadingState(message: l10n.notificationsPreferencesLoading)
             : state.phase == NotificationPreferencesPhase.failure &&
-                  (participation == null || chat == null || resources == null)
+                  (participation == null ||
+                      chat == null ||
+                      resources == null ||
+                      matching == null)
             ? ErrorState(
                 message: notificationsFailureMessage(l10n, state.failure!),
                 onRetry: _load,
@@ -187,6 +198,32 @@ class _NotificationPreferencesScreenState
                   ),
                   const SizedBox(height: AppSpacing.small),
                   Text(l10n.notificationsResourcePreferenceExplanation),
+                  const SizedBox(height: AppSpacing.large),
+                  const Divider(),
+                  const SizedBox(height: AppSpacing.medium),
+                  Semantics(
+                    header: true,
+                    child: Text(
+                      l10n.notificationsMatchingAlerts,
+                      style: Theme.of(context).textTheme.titleLarge,
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.small),
+                  SwitchListTile(
+                    key: const Key('matching-in-app-toggle'),
+                    contentPadding: EdgeInsets.zero,
+                    title: Text(l10n.notificationsMatchingInApp),
+                    value: matching!.inAppEnabled,
+                    onChanged:
+                        state.phase == NotificationPreferencesPhase.saving
+                        ? null
+                        : (enabled) => _setEnabled(
+                            category: NotificationCategory.matching,
+                            enabled: enabled,
+                          ),
+                  ),
+                  const SizedBox(height: AppSpacing.small),
+                  Text(l10n.notificationsMatchingPreferenceExplanation),
                 ],
               ),
       ),

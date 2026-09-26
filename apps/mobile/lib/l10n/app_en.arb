@@ -657,7 +657,7 @@
   },
   "notificationsLoading": "Loading notifications…",
   "notificationsEmptyTitle": "No notifications yet",
-  "notificationsEmptyMessage": "Participation, chat, and Resource alerts will appear here when there is something new.",
+  "notificationsEmptyMessage": "Participation, chat, Resource, and saved-search match alerts will appear here when there is something new.",
   "notificationsMarkAllRead": "Mark all as read",
   "notificationsSettingsTooltip": "Notification settings",
   "notificationsSettingsTitle": "Notification settings",
@@ -674,10 +674,20 @@
   "notificationsChatMessages": "Chat messages",
   "notificationsResourceActivity": "Resource activity",
   "notificationsResourcePreferenceExplanation": "Requests, Resource conversations, and exchange updates. This setting affects future in-app alerts; existing history remains available.",
+  "notificationsMatchingAlerts": "Saved search matches",
+  "notificationsMatchingInApp": "In-app",
+  "notificationsMatchingPreferenceExplanation": "Show an alert when a newly published Scambio-Dona listing matches one of your saved searches.",
   "notificationsInApp": "In-app notifications",
   "notificationsPreferenceExplanation": "This setting affects future in-app participation alerts. Existing notification history remains.",
   "notificationsChatPreferenceExplanation": "This setting affects future in-app chat alerts. Project chat and existing notification history remain available.",
   "notificationsPreferenceUpdateError": "We couldn't confirm this setting. Its last loaded value is shown.",
+  "notificationMatchingAvailable": "New listing matches one of your saved searches: “{listingTitle}”.",
+  "@notificationMatchingAvailable": {
+    "placeholders": {
+      "listingTitle": { "type": "String" }
+    }
+  },
+  "notificationMatchingAvailableGeneric": "A new Resource listing matches one of your saved searches.",
   "notificationRequestReceived": "{actor} requested to join “{project}”",
   "@notificationRequestReceived": {
     "placeholders": {

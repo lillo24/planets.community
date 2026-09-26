@@ -4,12 +4,14 @@ enum NotificationCategory {
   participation,
   chat,
   resources,
+  matching,
   unknown;
 
   static NotificationCategory fromWire(String value) => switch (value) {
     'participation' => NotificationCategory.participation,
     'chat' => NotificationCategory.chat,
     'resources' => NotificationCategory.resources,
+    'matching' => NotificationCategory.matching,
     _ => NotificationCategory.unknown,
   };
 
@@ -17,6 +19,7 @@ enum NotificationCategory {
     NotificationCategory.participation => 'participation',
     NotificationCategory.chat => 'chat',
     NotificationCategory.resources => 'resources',
+    NotificationCategory.matching => 'matching',
     NotificationCategory.unknown => throw ArgumentError(
       'Unknown notification categories cannot be configured.',
     ),
@@ -44,6 +47,7 @@ enum NotificationKind {
   resourceExchangeMilestoneRecorded,
   resourceExchangeCancelled,
   resourceExchangeCompleted,
+  matchingAvailable,
   unknown;
 
   static NotificationKind fromWire(String value) => switch (value) {
@@ -78,6 +82,7 @@ enum NotificationKind {
       NotificationKind.resourceExchangeMilestoneRecorded,
     'resource_exchange_cancelled' => NotificationKind.resourceExchangeCancelled,
     'resource_exchange_completed' => NotificationKind.resourceExchangeCompleted,
+    'matching_available' => NotificationKind.matchingAvailable,
     _ => NotificationKind.unknown,
   };
 
@@ -117,6 +122,7 @@ enum NotificationDestinationKind {
   projectChat,
   resourceRequest,
   resourceChat,
+  matchingResult,
   unknown;
 
   static NotificationDestinationKind fromWire(String value) => switch (value) {
@@ -126,6 +132,7 @@ enum NotificationDestinationKind {
     'project_chat' => NotificationDestinationKind.projectChat,
     'resource_request' => NotificationDestinationKind.resourceRequest,
     'resource_chat' => NotificationDestinationKind.resourceChat,
+    'matching_result' => NotificationDestinationKind.matchingResult,
     _ => NotificationDestinationKind.unknown,
   };
 }

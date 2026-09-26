@@ -149,6 +149,7 @@ void main() {
       throwsArgumentError,
     );
     expect(NotificationCategory.resources.preferenceWireSlug, 'resources');
+    expect(NotificationCategory.matching.preferenceWireSlug, 'matching');
   });
 }
 

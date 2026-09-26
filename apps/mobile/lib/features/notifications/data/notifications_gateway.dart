@@ -307,6 +307,41 @@ class NotificationsPayloadParser {
     AppNotification item,
     Map<String, dynamic> row,
   ) {
+    if (item.category != NotificationCategory.matching &&
+        (item.kind == NotificationKind.matchingAvailable ||
+            item.destinationKind ==
+                NotificationDestinationKind.matchingResult)) {
+      throw const FormatException(
+        'Matching notification semantics require the Matching category.',
+      );
+    }
+    if (item.category == NotificationCategory.matching) {
+      if (item.kind != NotificationKind.matchingAvailable ||
+          item.destinationKind != NotificationDestinationKind.matchingResult ||
+          item.resourceListingId == null ||
+          _hasAny(row, const [
+            'project_id',
+            'project_kind',
+            'project_title',
+            'request_id',
+            'chat_id',
+            'message_id',
+            'actor_profile_id',
+            'actor_display_name',
+            'resource_request_id',
+            'resource_chat_id',
+            'resource_chat_message_id',
+            'resource_agreement_id',
+            'resource_agreement_event_id',
+            'resource_exchange_event_kind',
+            'resource_exchange_leg_kind',
+          ])) {
+        throw const FormatException(
+          'Matching notification context was invalid.',
+        );
+      }
+      return;
+    }
     if (item.category == NotificationCategory.resources) {
       if (_hasAny(row, const [
         'project_id',
@@ -412,6 +447,10 @@ class NotificationsPayloadParser {
       case NotificationKind.resourceExchangeCompleted:
         throw const FormatException(
           'Resource notifications require the Resources category.',
+        );
+      case NotificationKind.matchingAvailable:
+        throw const FormatException(
+          'Matching notifications require the Matching category.',
         );
       case NotificationKind.unknown:
         return;
