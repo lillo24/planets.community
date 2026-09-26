@@ -299,6 +299,10 @@ function createFixtureIds() {
     rotationEventId: randomUUID(),
     transferEventId: randomUUID(),
     zeroTargetEventId: randomUUID(),
+    primaryListingId: randomUUID(),
+    rotationListingId: randomUUID(),
+    transferListingId: randomUUID(),
+    zeroTargetListingId: randomUUID(),
     primaryJobId: randomUUID(),
     rotationJobId: randomUUID(),
     transferJobId: randomUUID(),
@@ -339,6 +343,59 @@ async function createBaseFixture(fixture, tokens) {
       (${fixture.transferProfileId}, 'Protocol Transfer'),
       (${fixture.rotationProfileId}, 'Protocol Rotation'),
       (${fixture.zeroTargetProfileId}, 'Protocol No Target')
+  `;
+  await sql`
+    insert into public.resource_listings (
+      id,
+      owner_profile_id,
+      listing_mode,
+      lifecycle_state,
+      title,
+      description,
+      country_code,
+      locality,
+      public_location_label,
+      created_at,
+      updated_at,
+      published_at
+    )
+    values
+      (
+        ${fixture.primaryListingId},
+        ${fixture.otherProfileId},
+        'donate', 'published', 'Protocol listing one',
+        'Synthetic push protocol context', 'IT', 'Trento', 'Trento',
+        statement_timestamp() - interval '5 minutes',
+        statement_timestamp() - interval '5 minutes',
+        statement_timestamp() - interval '5 minutes'
+      ),
+      (
+        ${fixture.rotationListingId},
+        ${fixture.otherProfileId},
+        'donate', 'published', 'Protocol listing two',
+        'Synthetic push protocol context', 'IT', 'Trento', 'Trento',
+        statement_timestamp() - interval '5 minutes',
+        statement_timestamp() - interval '5 minutes',
+        statement_timestamp() - interval '5 minutes'
+      ),
+      (
+        ${fixture.transferListingId},
+        ${fixture.otherProfileId},
+        'donate', 'published', 'Protocol listing three',
+        'Synthetic push protocol context', 'IT', 'Trento', 'Trento',
+        statement_timestamp() - interval '5 minutes',
+        statement_timestamp() - interval '5 minutes',
+        statement_timestamp() - interval '5 minutes'
+      ),
+      (
+        ${fixture.zeroTargetListingId},
+        ${fixture.otherProfileId},
+        'donate', 'published', 'Protocol listing four',
+        'Synthetic push protocol context', 'IT', 'Trento', 'Trento',
+        statement_timestamp() - interval '5 minutes',
+        statement_timestamp() - interval '5 minutes',
+        statement_timestamp() - interval '5 minutes'
+      )
   `;
   await sql`
     insert into private.push_installations (
@@ -424,6 +481,7 @@ async function createBaseFixture(fixture, tokens) {
       category_slug,
       notification_kind,
       destination_kind,
+      resource_listing_id,
       created_at,
       available_at
     )
@@ -435,6 +493,7 @@ async function createBaseFixture(fixture, tokens) {
         'matching',
         'matching_available',
         'matching_result',
+        ${fixture.primaryListingId},
         statement_timestamp() - interval '4 minutes',
         statement_timestamp()
       ),
@@ -445,6 +504,7 @@ async function createBaseFixture(fixture, tokens) {
         'matching',
         'matching_available',
         'matching_result',
+        ${fixture.transferListingId},
         statement_timestamp() - interval '2 minutes',
         statement_timestamp()
       ),
@@ -455,6 +515,7 @@ async function createBaseFixture(fixture, tokens) {
         'matching',
         'matching_available',
         'matching_result',
+        ${fixture.zeroTargetListingId},
         statement_timestamp() - interval '1 minute',
         statement_timestamp()
       )
@@ -470,6 +531,7 @@ async function createRotationJob(fixture) {
       category_slug,
       notification_kind,
       destination_kind,
+      resource_listing_id,
       created_at,
       available_at
     )
@@ -480,6 +542,7 @@ async function createRotationJob(fixture) {
       'matching',
       'matching_available',
       'matching_result',
+      ${fixture.rotationListingId},
       statement_timestamp() - interval '3 minutes',
       statement_timestamp()
     )
