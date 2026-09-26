@@ -5,6 +5,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/backend/supabase_backend.dart';
 import '../domain/profile_photo_models.dart';
+import '../domain/visible_profile_photo_models.dart';
 
 const profilePhotoBucket = 'profile-photos';
 const profilePhotoContentType = 'image/webp';
@@ -14,6 +15,12 @@ abstract interface class ProfilePhotoGateway {
   Future<OwnProfilePhoto?> loadOwnPhoto(String expectedProfileId);
 
   Future<Uint8List> downloadOwnPhoto(String objectPath);
+
+  Future<VisibleProfilePhoto?> loadVisiblePhoto(String profileId);
+
+  Future<List<VisibleProfilePhoto>> loadVisiblePhotos(List<String> profileIds);
+
+  Future<Uint8List> downloadVisiblePhoto(String objectPath);
 
   Future<void> uploadNewPhoto(String objectPath, Uint8List webpBytes);
 
@@ -113,6 +120,75 @@ class SupabaseProfilePhotoGateway implements ProfilePhotoGateway {
   }
 
   @override
+  Future<VisibleProfilePhoto?> loadVisiblePhoto(String profileId) async {
+    _requireProfileId(profileId);
+    final response = await _remote.rpc('get_profile_photo_for_viewer', {
+      'p_profile_id': profileId,
+    });
+    final rows = _rows(response, operation: 'viewer photo read');
+    if (rows.isEmpty) return null;
+    if (rows.length != 1) {
+      throw const ProfilePhotoDataException(
+        'Viewer photo read returned multiple rows.',
+      );
+    }
+    final photo = VisibleProfilePhoto.fromRpcRow(rows.single);
+    if (photo.profileId != profileId) {
+      throw const ProfilePhotoDataException(
+        'Viewer photo read returned another profile.',
+      );
+    }
+    return photo;
+  }
+
+  @override
+  Future<List<VisibleProfilePhoto>> loadVisiblePhotos(
+    List<String> profileIds,
+  ) async {
+    if (profileIds.isEmpty || profileIds.length > 50) {
+      throw const ProfilePhotoDataException(
+        'Viewer photo batches require between 1 and 50 target IDs.',
+      );
+    }
+    for (final profileId in profileIds) {
+      _requireProfileId(profileId);
+    }
+
+    final response = await _remote.rpc('list_profile_photos_for_viewer', {
+      'p_profile_ids': profileIds,
+    });
+    final rows = _rows(response, operation: 'viewer photo batch read');
+    final requested = profileIds.toSet();
+    final seen = <String>{};
+    String? previousProfileId;
+    final photos = <VisibleProfilePhoto>[];
+    for (final row in rows) {
+      final photo = VisibleProfilePhoto.fromRpcRow(row);
+      if (!requested.contains(photo.profileId) ||
+          !seen.add(photo.profileId) ||
+          (previousProfileId != null &&
+              previousProfileId.compareTo(photo.profileId) >= 0)) {
+        throw const ProfilePhotoDataException(
+          'Viewer photo batch returned invalid targets or ordering.',
+        );
+      }
+      previousProfileId = photo.profileId;
+      photos.add(photo);
+    }
+    return List.unmodifiable(photos);
+  }
+
+  @override
+  Future<Uint8List> downloadVisiblePhoto(String objectPath) {
+    if (!isVisibleProfilePhotoPath(objectPath)) {
+      throw const ProfilePhotoDataException(
+        'Visible profile photo download path is invalid.',
+      );
+    }
+    return _remote.download(profilePhotoBucket, objectPath);
+  }
+
+  @override
   Future<void> uploadNewPhoto(String objectPath, Uint8List webpBytes) {
     if (webpBytes.length > profilePhotoMaxBytes) {
       throw const ProfilePhotoDataException(
@@ -201,6 +277,14 @@ class SupabaseProfilePhotoGateway implements ProfilePhotoGateway {
       );
     }
     return rows.single;
+  }
+
+  static void _requireProfileId(String profileId) {
+    if (!isProfilePhotoUuid(profileId)) {
+      throw const ProfilePhotoDataException(
+        'Viewer photo target must be a UUID.',
+      );
+    }
   }
 }
 

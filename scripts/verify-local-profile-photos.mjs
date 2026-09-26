@@ -154,10 +154,14 @@ async function verifyProfilePhotos() {
         audienceError ?? {},
       );
     }
-    await expectStorageFailure(
-      anonymous.storage.from(bucket).download(userAPaths[0]),
-      "download an A1 public-audience photo anonymously",
-    );
+    const { data: publicDownload, error: publicDownloadError } =
+      await anonymous.storage.from(bucket).download(userAPaths[0]);
+    if (publicDownloadError || !publicDownload || publicDownload.size === 0) {
+      throw safeStorageFailure(
+        "download a canonical public-audience photo anonymously",
+        publicDownloadError ?? {},
+      );
+    }
 
     await upload(userA, userAPaths[1]);
     const replacement = await setPhoto(userA, userAPaths[1], "public");
@@ -237,7 +241,7 @@ async function verifyProfilePhotos() {
     );
 
     console.log(
-      "Confirmed private owner-only WebP uploads, 250 KiB enforcement, immutable paths, canonical replacement/concurrency, audience isolation, clear, and Storage API cleanup.",
+      "Confirmed owner-only WebP writes, 250 KiB enforcement, immutable paths, canonical replacement/concurrency, public viewer delivery, clear, and Storage API cleanup.",
     );
   } finally {
     await userA.client.rpc("clear_own_profile_photo", {

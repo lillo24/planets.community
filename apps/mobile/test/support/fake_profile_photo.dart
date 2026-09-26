@@ -6,6 +6,7 @@ import 'package:planets_mobile/features/profile_photo/application/profile_photo_
 import 'package:planets_mobile/features/profile_photo/data/profile_photo_gateway.dart';
 import 'package:planets_mobile/features/profile_photo/data/profile_photo_picker.dart';
 import 'package:planets_mobile/features/profile_photo/domain/profile_photo_models.dart';
+import 'package:planets_mobile/features/profile_photo/domain/visible_profile_photo_models.dart';
 
 class FakeProfilePhotoGateway implements ProfilePhotoGateway {
   OwnProfilePhoto? photo;
@@ -20,6 +21,13 @@ class FakeProfilePhotoGateway implements ProfilePhotoGateway {
   Future<OwnProfilePhoto?> Function(String profileId)? loadResult;
   Future<void>? uploadDelay;
   Future<ProfilePhotoCommit>? commitResult;
+  final Map<String, VisibleProfilePhoto> visiblePhotos = {};
+  Object? visibleLoadError;
+  Object? visibleDownloadError;
+  Future<VisibleProfilePhoto?> Function(String profileId)? visibleLoadResult;
+  Future<List<VisibleProfilePhoto>> Function(List<String> profileIds)?
+  visibleBatchLoadResult;
+  Future<Uint8List> Function(String objectPath)? visibleDownloadResult;
   final List<String> loadIds = [];
   final List<String> downloadPaths = [];
   final List<String> uploadPaths = [];
@@ -29,6 +37,9 @@ class FakeProfilePhotoGateway implements ProfilePhotoGateway {
   final List<ProfilePhotoAudience> audienceUpdates = [];
   final List<String> clearIds = [];
   final List<String> deletedPaths = [];
+  final List<String> visibleLoadIds = [];
+  final List<List<String>> visibleBatchLoadIds = [];
+  final List<String> visibleDownloadPaths = [];
 
   @override
   Future<OwnProfilePhoto?> loadOwnPhoto(String expectedProfileId) async {
@@ -43,6 +54,40 @@ class FakeProfilePhotoGateway implements ProfilePhotoGateway {
   Future<Uint8List> downloadOwnPhoto(String objectPath) async {
     downloadPaths.add(objectPath);
     if (downloadError case final error?) throw error;
+    return downloadBytes;
+  }
+
+  @override
+  Future<VisibleProfilePhoto?> loadVisiblePhoto(String profileId) async {
+    visibleLoadIds.add(profileId);
+    final result = visibleLoadResult;
+    if (result != null) return result(profileId);
+    if (visibleLoadError case final error?) throw error;
+    return visiblePhotos[profileId];
+  }
+
+  @override
+  Future<List<VisibleProfilePhoto>> loadVisiblePhotos(
+    List<String> profileIds,
+  ) async {
+    visibleBatchLoadIds.add(List.unmodifiable(profileIds));
+    final result = visibleBatchLoadResult;
+    if (result != null) return result(profileIds);
+    if (visibleLoadError case final error?) throw error;
+    final photos = profileIds
+        .map((profileId) => visiblePhotos[profileId])
+        .whereType<VisibleProfilePhoto>()
+        .toList();
+    photos.sort((left, right) => left.profileId.compareTo(right.profileId));
+    return List.unmodifiable(photos);
+  }
+
+  @override
+  Future<Uint8List> downloadVisiblePhoto(String objectPath) async {
+    visibleDownloadPaths.add(objectPath);
+    final result = visibleDownloadResult;
+    if (result != null) return result(objectPath);
+    if (visibleDownloadError case final error?) throw error;
     return downloadBytes;
   }
 

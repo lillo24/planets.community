@@ -318,11 +318,16 @@ select is(
     from pg_proc as procedure
     join pg_namespace as namespace on namespace.oid = procedure.pronamespace
     where namespace.nspname = 'public'
-      and procedure.proname like '%profile%photo%'
+      and procedure.proname in (
+        'get_own_profile_photo',
+        'set_own_profile_photo',
+        'set_own_profile_photo_audience',
+        'clear_own_profile_photo'
+      )
       and has_function_privilege('anon', procedure.oid, 'EXECUTE')
   ),
   0::bigint,
-  '08A1 exposes no anonymous profile-photo read routine'
+  '08A1 owner routines remain unavailable to anonymous callers'
 );
 
 select ok(

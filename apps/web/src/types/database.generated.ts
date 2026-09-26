@@ -2341,6 +2341,14 @@ export type Database = {
         Args: { p_expected_profile_id: string }
         Returns: number
       }
+      get_profile_photo_for_viewer: {
+        Args: { p_profile_id: string }
+        Returns: {
+          object_path: string
+          profile_id: string
+          updated_at: string
+        }[]
+      }
       get_project_participant_meeting_details: {
         Args: { p_expected_profile_id: string; p_project_id: string }
         Returns: {
@@ -2951,6 +2959,14 @@ export type Database = {
           requester_profile_id: string
           starts_at: string
           terms_id: string
+        }[]
+      }
+      list_profile_photos_for_viewer: {
+        Args: { p_profile_ids: string[] }
+        Returns: {
+          object_path: string
+          profile_id: string
+          updated_at: string
         }[]
       }
       list_project_join_requests: {

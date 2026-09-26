@@ -45,6 +45,115 @@ void main() {
       expect(await gateway.loadOwnPhoto('user-1'), isNull);
     });
 
+    test('uses the exact viewer RPC and treats zero rows as hidden', () async {
+      remote.rpcResult = [_visibleRow(_viewerA)];
+
+      final photo = await gateway.loadVisiblePhoto(_viewerA);
+
+      expect(photo?.profileId, _viewerA);
+      expect(photo?.objectPath, '$_viewerA/$_versionA.webp');
+      expect(remote.rpcNames.single, 'get_profile_photo_for_viewer');
+      expect(remote.rpcParams.single, {'p_profile_id': _viewerA});
+      expect(remote.downloads, isEmpty);
+
+      remote.rpcResult = [];
+      expect(await gateway.loadVisiblePhoto(_viewerA), isNull);
+    });
+
+    test(
+      'strict viewer rows reject cardinality and malformed metadata',
+      () async {
+        remote.rpcResult = [_visibleRow(_viewerA), _visibleRow(_viewerA)];
+        await expectLater(
+          gateway.loadVisiblePhoto(_viewerA),
+          throwsA(isA<ProfilePhotoDataException>()),
+        );
+
+        for (final invalid in [
+          {..._visibleRow(_viewerA), 'profile_id': 'not-a-uuid'},
+          {..._visibleRow(_viewerA), 'object_path': '$_viewerA/avatar.webp'},
+          {..._visibleRow(_viewerA), 'updated_at': 'not-a-timestamp'},
+          {..._visibleRow(_viewerA), 'audience': 'public'},
+        ]) {
+          remote.rpcResult = [invalid];
+          await expectLater(
+            gateway.loadVisiblePhoto(_viewerA),
+            throwsA(isA<FormatException>()),
+          );
+        }
+      },
+    );
+
+    test(
+      'batch keeps backend deduplication and authorized omissions',
+      () async {
+        remote.rpcResult = [_visibleRow(_viewerA), _visibleRow(_viewerB)];
+
+        final photos = await gateway.loadVisiblePhotos([
+          _viewerA,
+          _viewerA,
+          _viewerB,
+          _viewerC,
+        ]);
+
+        expect(photos.map((photo) => photo.profileId), [_viewerA, _viewerB]);
+        expect(remote.rpcNames.single, 'list_profile_photos_for_viewer');
+        expect(remote.rpcParams.single, {
+          'p_profile_ids': [_viewerA, _viewerA, _viewerB, _viewerC],
+        });
+        expect(remote.downloads, isEmpty);
+      },
+    );
+
+    test(
+      'batch rejects invalid bounds, targets, duplicates, and order',
+      () async {
+        await expectLater(
+          gateway.loadVisiblePhotos([]),
+          throwsA(isA<ProfilePhotoDataException>()),
+        );
+        await expectLater(
+          gateway.loadVisiblePhotos(List.filled(51, _viewerA)),
+          throwsA(isA<ProfilePhotoDataException>()),
+        );
+        await expectLater(
+          gateway.loadVisiblePhotos(['bad-id']),
+          throwsA(isA<ProfilePhotoDataException>()),
+        );
+
+        remote.rpcResult = [_visibleRow(_viewerA), _visibleRow(_viewerA)];
+        await expectLater(
+          gateway.loadVisiblePhotos([_viewerA]),
+          throwsA(isA<ProfilePhotoDataException>()),
+        );
+        remote.rpcResult = [_visibleRow(_viewerB), _visibleRow(_viewerA)];
+        await expectLater(
+          gateway.loadVisiblePhotos([_viewerA, _viewerB]),
+          throwsA(isA<ProfilePhotoDataException>()),
+        );
+        remote.rpcResult = [_visibleRow(_viewerC)];
+        await expectLater(
+          gateway.loadVisiblePhotos([_viewerA]),
+          throwsA(isA<ProfilePhotoDataException>()),
+        );
+      },
+    );
+
+    test('downloads only well-formed authorized object paths', () async {
+      final bytes = await gateway.downloadVisiblePhoto(
+        '$_viewerA/$_versionA.webp',
+      );
+
+      expect(bytes, remote.downloadResult);
+      expect(remote.downloads, [
+        ('profile-photos', '$_viewerA/$_versionA.webp'),
+      ]);
+      expect(
+        () => gateway.downloadVisiblePhoto('$_viewerA/avatar.webp'),
+        throwsA(isA<ProfilePhotoDataException>()),
+      );
+    });
+
     test('strict owner read rejects invalid cardinality and fields', () async {
       remote.rpcResult = [_ownerRow(), _ownerRow()];
       await expectLater(
@@ -148,6 +257,17 @@ void main() {
     });
   });
 }
+
+const _viewerA = 'a5000000-0000-4000-8000-000000000001';
+const _viewerB = 'a5000000-0000-4000-8000-000000000002';
+const _viewerC = 'a5000000-0000-4000-8000-000000000003';
+const _versionA = 'a5100000-0000-4000-8000-000000000001';
+
+Map<String, dynamic> _visibleRow(String profileId) => {
+  'profile_id': profileId,
+  'object_path': '$profileId/$_versionA.webp',
+  'updated_at': '2026-09-26T12:00:00Z',
+};
 
 Map<String, dynamic> _ownerRow() => {
   'profile_id': 'user-1',
