@@ -7,9 +7,11 @@ import 'package:planets_mobile/features/auth/data/auth_gateway.dart';
 import 'package:planets_mobile/features/auth/domain/auth_models.dart';
 import 'package:planets_mobile/features/profile/data/profile_gateway.dart';
 import 'package:planets_mobile/features/profile/domain/profile_models.dart';
+import 'package:planets_mobile/features/profile_photo/data/profile_photo_gateway.dart';
 
 import '../../../support/fake_auth.dart';
 import '../../../support/fake_profile.dart';
+import '../../../support/fake_profile_photo.dart';
 
 void main() {
   testWidgets('incomplete owner selects categorized skills and visibility', (
@@ -189,8 +191,9 @@ Future<void> _pumpApp(
   WidgetTester tester,
   FakeAuthGateway auth,
   FakeProfileAnchorGateway anchor,
-  FakeProfileGateway profile,
-) async {
+  FakeProfileGateway profile, [
+  FakeProfilePhotoGateway? profilePhoto,
+]) async {
   await tester.pumpWidget(
     ProviderScope(
       overrides: [
@@ -204,6 +207,9 @@ Future<void> _pumpApp(
         authGatewayProvider.overrideWithValue(auth),
         profileAnchorGatewayProvider.overrideWithValue(anchor),
         profileGatewayProvider.overrideWithValue(profile),
+        profilePhotoGatewayProvider.overrideWithValue(
+          profilePhoto ?? FakeProfilePhotoGateway(),
+        ),
       ],
       child: const PlanetsApp(),
     ),

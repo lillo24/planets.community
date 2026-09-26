@@ -8,6 +8,8 @@ import '../../../core/widgets/error_state.dart';
 import '../../../core/widgets/loading_state.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../auth/application/auth_session_controller.dart';
+import '../../profile_photo/application/profile_photo_controller.dart';
+import '../../profile_photo/presentation/profile_photo_section.dart';
 import '../application/profile_controller.dart';
 import '../domain/profile_models.dart';
 
@@ -33,7 +35,10 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
     final userId = ref.read(authSessionProvider).identity?.id;
     if (userId != null && _requestedUserId != userId) {
       _requestedUserId = userId;
-      await ref.read(profileProvider.notifier).load(userId);
+      await Future.wait([
+        ref.read(profileProvider.notifier).load(userId),
+        ref.read(profilePhotoProvider.notifier).load(userId),
+      ]);
     }
   }
 
@@ -204,6 +209,8 @@ class _ProfileEditFormState extends ConsumerState<_ProfileEditForm> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
+                          ProfilePhotoSection(profileId: widget.identityId),
+                          const SizedBox(height: AppSpacing.large),
                           Text(
                             widget.data.profile.isComplete
                                 ? l10n.profileEditDescription

@@ -118,8 +118,8 @@ Do not begin a dependent plan until the prior plan is merged or its branch is ex
 | 07B2    | Project Chat Messaging, Realtime and Mobile Experience    | Authorized plain-text message model, Realtime hints, mobile chat/group info, and protected meeting access              | 07B1                   | Native QA remains deferred to Plan 12; optional E2EE research remains unmerged                                       | Implemented |
 | 08      | Storage and media hardening                               | Purpose-specific storage, access, metadata, cleanup, and processing hooks                                                | 03–07                  | Broader media retention and self-hosted Supabase Storage versus external object storage                              | In progress |
 | 08A     | Profile Pictures (parent)                                 | Private profile-photo foundation, mobile management, authorized delivery, and trust reminders                           | 03                      | Interaction relationship scope belongs to 08A3; native UX belongs to 08A2/08A4                                      | In progress |
-| 08A1    | Profile Photo Storage + Domain Foundation                 | Private WebP bucket, owner-only immutable objects, canonical path/audience metadata, and RPCs                            | 03                      | Non-owner delivery, mobile upload, and trust reminders remain later slices                                            | In progress |
-| 08A2    | Mobile Photo Upload + Profile Management                  | Deterministic 512×512 WebP production, upload/replacement/cleanup, and profile UI                                        | 08A1                    | Native interaction review remains Plan 12                                                                             | Not started |
+| 08A1    | Profile Photo Storage + Domain Foundation                 | Private WebP bucket, owner-only immutable objects, canonical path/audience metadata, and RPCs                            | 03                      | PR #95; non-owner delivery and trust reminders remain later slices                                                     | In progress |
+| 08A2    | Mobile Photo Upload + Profile Management                  | Deterministic 512×512 WebP production, upload/replacement/cleanup, and profile UI                                        | 08A1                    | Current stacked PR; native interaction review remains Plan 12                                                          | In progress |
 | 08A3    | Photo Read Access + Interactions                          | Reusable relationship authorization and non-owner private photo delivery                                                  | 08A2                    | Exact interaction relationships require focused authorization review                                                  | Not started |
 | 08A4    | Join/Create Trust Reminder + Review Integration           | Profile-photo trust prompts and authorized review-surface integration                                                     | 08A3                    | Reminder timing/copy and native interaction review                                                                    | Not started |
 | 09      | Safety, moderation and admin                              | Reporting, blocking, content states, admin roles, moderation queue/actions, audit trail and minimal custom admin UI    | 04–08                  | Community rules, prohibited content, escalation, suspension, appeals, minimum age                                    | Not started |
@@ -1004,7 +1004,7 @@ implemented roadmap item nor a dependency of the MVP message schema.
 
 **Goal:** Support user media without treating storage URLs as authorization.
 
-**Status:** In progress through 08A1 in the current open stacked PR. The profile-photo foundation selects portable Supabase Storage for that purpose only; broader media storage remains a separate decision.
+**Status:** In progress through 08A2 in the current open stacked PR. PR #95 owns the 08A1 profile-photo foundation; the current PR owns mobile photo management. The selected portable Supabase Storage boundary remains specific to profile photos, while broader media storage is a separate decision.
 
 Expected scope:
 
@@ -1024,10 +1024,10 @@ Expected scope:
 
 08A is split into four reviewable slices:
 
-- **08A1 — Profile Photo Storage + Domain Foundation:** repository-defined private `profile-photos` bucket, immutable owner-only WebP object paths, one canonical object-path/audience row, and expected-identity-bound owner RPCs. This slice stores `public` or `interactions` (“Only people I interact with”), defaults to `interactions`, and implements no non-owner delivery.
-- **08A2 — Mobile Photo Upload + Profile Management:** later deterministic crop/resize/compression to 512×512 WebP targeting roughly 100 KB, upload with `upsert = false`, canonical replacement, cleanup attempts, and profile management UI.
-- **08A3 — Photo Read Access + Interactions:** later reusable relationship authorization and non-owner delivery, initially including a Project/Tavolo creator reviewing that user's join request.
-- **08A4 — Join/Create Trust Reminder + Review Integration:** later trust reminder and review-flow integration without expanding the storage domain.
+- **08A1 — Profile Photo Storage + Domain Foundation (PR #95):** repository-defined private `profile-photos` bucket, immutable owner-only WebP object paths, one canonical object-path/audience row, and expected-identity-bound owner RPCs. This slice stores `public` or `interactions` (“Only people I interact with”), defaults to `interactions`, and implements no non-owner delivery.
+- **08A2 — Mobile Photo Upload + Profile Management (current PR):** deterministic crop/resize/compression to 512×512 WebP targeting roughly 100 KB, upload with `upsert = false`, canonical replacement, cleanup attempts, and independent owner profile management UI.
+- **08A3 — Photo Read Access + “Only people I interact with” (next):** reusable relationship authorization and non-owner private photo delivery.
+- **08A4 — Join/Create Trust Reminder + Review Integration:** contextual trust guidance and approved non-owner presentation after the read boundary exists.
 
 08A1 keeps the bucket private, enforces `image/webp` and a 250 KiB hard limit, stores paths rather than URLs, retains no original, and leaves public/interactions reads, mobile UI, trust reminders, scheduled orphan cleanup, and account-deletion object cleanup to their owning follow-ups.
 
