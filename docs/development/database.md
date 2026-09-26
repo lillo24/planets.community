@@ -102,7 +102,7 @@ The table has RLS with no client policies or direct grants. Authenticated creato
 
 `public.project_join_request_skill_selections` and `public.project_join_request_resource_selections` store immutable ID selections for one canonical join-request attempt. Composite primary keys reject duplicates; restrictive foreign keys preserve the request, skill-catalog, and resource-need identities. No label, free-text category, quantity, unit, price, fulfillment, or accepted-commitment field is copied into these relations. Both tables have RLS with no policies or direct client/service grants.
 
-The single `request_to_join_project` signature keeps its existing identity, Project, and optional-message arguments and adds default-empty skill/resource UUID arrays. Null arrays normalize to empty, each group is capped at 50, and null or duplicate IDs fail explicitly. A Proposal accepts only skills currently attached through `proposal_skills`, including both `required` and `useful`; a Tavolo rejects every non-empty skill array. A selected resource need must exist, be open, and belong to the same Project. Request, selections, and the unchanged body-free `project.join_requested` audit/outbox event are one transaction.
+The single `request_to_join_project` signature keeps its existing identity, Project, and optional-message arguments and adds default-empty skill/resource UUID arrays. Null arrays normalize to empty, each group is capped at 50, and null or duplicate IDs fail explicitly. A Proposal accepts only skills currently attached through `proposal_skills`, including both `required` and `useful`; a Tavolo rejects every non-empty skill array. A selected resource need must exist, be open, and belong to the same Project. Request, permanent private request-chat anchor, selections, and the unchanged body-free `project.join_requested` audit/outbox event are one transaction.
 
 The mutation keeps the established concrete Proposal/Tavolo → shared Project lock order, then locks selected resource needs in UUID order. This serializes need closure against request validation and uses the concrete Proposal row to serialize skill replacement. `list_own_project_join_request_contribution_selections` is granted only to `authenticated`, binds expected identity, authorizes only the requester or Project creator, and resolves current canonical labels in skill-catalog order followed by resource-need creation order. Resolution and later requirement/title/state changes never delete historical IDs; later requests start with independent selections. Accepted-participant commitments are a separate membership-episode domain and contribution verification remains later work.
 
@@ -161,6 +161,50 @@ support both outgoing requester and incoming creator paths. The routines are
 fixed-search-path security definers granted only to `authenticated`. They add no
 table grants, generic message/thread table, or durable copy. Request mutations
 remain the 05A operations.
+
+## Participation-request private chat
+
+`public.project_join_request_chats` stores one opaque chat ID, unique restrictive
+request foreign key, and `activated_at` equal to the canonical request
+`created_at`. The migration backfills every existing request episode and an
+`AFTER INSERT` trigger makes every later `request_to_join_project` call create
+the anchor in the same transaction as its request and contribution selections.
+Anchors remain after accept, reject, or withdraw and cannot be mutated.
+
+`public.project_join_request_chat_messages` stores immutable human-authored
+messages with restrictive chat/sender foreign keys, canonical surrounding-space
+trimming, a 1–4,000 Unicode-character limit, and a server-owned timestamp.
+Neither the optional request note nor any state transition is copied into this
+table. Both request-chat tables have RLS enabled without policies or direct
+client/service privileges, are absent from Postgres Changes, and are accessible
+only through expected-identity security-definer RPCs.
+
+`get_own_project_join_request_chat` accepts a request ID and returns exact
+Project kind/title, requester/creator display identities, request state and
+note, canonical timestamps, read-only/send entitlement, and the canonical
+Project group-chat ID only after acceptance. Missing and unauthorized requests
+fail identically. `list_own_project_join_request_chat_items` returns exactly one
+structured `request` row plus zero or more `message` rows under a strict field
+XOR and descending `(created_at, item_kind_order, item_id)` cursor. The existing
+structured Requests and unified Chats RPCs remain unchanged for 07C1B.
+
+`send_project_join_request_chat_message` authorizes only the requester or
+Project creator and only while the request is pending. It follows the canonical
+concrete-Project → shared Project → request-row lock order used by participation
+resolution, assigning `clock_timestamp()` afterward. A send serialized before
+accept/reject/withdraw commits; a waiting send observes the terminal status and
+fails with `PT409`. Resolved counterparties retain exact/feed read access.
+
+Each send writes identifier-only audit/outbox event
+`project.join_request_chat_message_sent` and calls `realtime.send` with only
+chat/request/message IDs and creation time for both exact counterparties. A
+receive-only policy authorizes private
+`project-request-chat:<chat-id>:profile:<profile-id>` topics against
+`auth.uid()`. Existing notification/push processors have no mapping for this
+event and safely leave it for 07C1B. Run
+`npm run project:request:chat:verify:local` for real-OTP, private Realtime,
+privacy, strict feed, accepted group-chat continuation, and send/accept race
+coverage.
 
 ## Project group-chat lifecycle, messages, and Realtime
 
@@ -370,6 +414,7 @@ The native pgTAP files under `supabase/tests/` verify:
 - monotonic token generations, one-time fan-out, zero-target completion, target/attempt constraints, service-only private worker grants, concurrent leases, crash reclaim, stale-result rejection, transient scheduling, every terminal outcome, rotation-safe invalid-token cleanup, transfer-before-claim handling, aggregate completion, and protocol-history privacy.
 - structured Messages read shape, requester/creator authorization, fail-closed exact lookup, Proposal/Tavolo context, private-message isolation, bounded keyset pagination, and routine grants.
 - requester-only pending Proposal/Tavolo card projections, public eligibility and filters, deterministic request ordering, resolved/lifecycle omission, sanitized output, and hardened routine grants.
+- one-chat-per-participation-request anchoring/backfill, structured-note versus human-message XOR, counterparty-only exact/feed/send access, resolved read-only history, accepted Project-chat continuation, immutable bodies, identifier-only private Realtime, and send/resolution serialization.
 - immutable Project-chat message shape, canonical body limits, restrictive foreign keys, RPC-only access, full-history/current/former/rejoin rules, visible-frontier pagination and previews, identifier-only outbox payloads, private Realtime authorization, and send/termination serialization.
 - Project-chat notification/push message-time recipients, late-join/leave/rejoin boundaries, zero-to-many event fan-out, independent channel preferences, body-free chat/message context, rollout receipts, Proposal/Tavolo behavior, and projector concurrency/idempotency.
 - Scambio-Dona listing shape, exact mode/lifecycle constraints, restrictive ownership, private drafts/closed history, publish/edit/close behavior, rough-location and owner-display privacy, public filters/keyset ordering, and identifier-only audit/outbox payloads.
@@ -456,6 +501,8 @@ the deterministic local profiles and device-QA sequence.
 `project:chat:verify:local` uses a creator, participants A/B, and an unrelated identity with real local Auth plus narrow direct-database assertions. It proves no pre-acceptance chat, first-accept activation, later reuse, concurrent two-request acceptance with one chat, creator/current/former entitlement, half-open leave/removal intervals, a preserved rejoin gap, stable chat identity, unrelated denial, all-members-ended retention, and shared Proposal/Tavolo behavior across pause/resume/end. It logs no OTPs, tokens, database URLs, request messages, meeting details, or secrets.
 
 `project:chat:messages:verify:local` uses four real authenticated clients, private Supabase Realtime Broadcast channels, and narrow direct-database transactions. It proves durable signal reconciliation, full pre-join history, former-member frontiers, rejoin gap visibility, last-visible previews/activity, current-only subscriptions, no post-leave/removal signal, Proposal/Tavolo behavior, identifier-only outbox state, and both serialization outcomes for send versus leave/removal. It logs no OTPs, tokens, database URLs, message bodies, private request text, or meeting details.
+
+`project:request:chat:verify:local` uses a Project creator, requester, and unrelated real authenticated user with private Supabase Realtime Broadcast channels and one narrow direct-database race. It proves atomic request/chat creation, the structured initial note, strict mixed-feed pagination, exact counterparty access, unrelated denial, identifier-only events/hints, send/accept serialization, durable resolved history, and the accepted Project group-chat continuation. It logs no OTPs, tokens, keys, database URLs, request notes, message bodies, or meeting details.
 
 `project:chat:notifications:verify:local` uses three real authenticated clients,
 canonical join/leave/rejoin/send RPCs, both service-only projectors, and narrow

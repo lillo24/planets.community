@@ -1,7 +1,7 @@
 # System Design and Responsibility Boundaries
 
 **Status:** Initial accepted design  
-**Implementation status:** Foundations, authentication, profiles, one-time proposals, Tavoli mobile/public-web discovery, shared project participation, request contribution selections, membership commitments, join-acceptance contribution triage, in-app notification projection, unified structured Project/Resource Requests in mobile Messages, mobile Resource request actions, Project group-chat lifecycle/durable message/mobile experience, Project-chat notification/push projection, the provider-independent push/job foundation, provider-neutral push delivery worker protocol, and the static-first informational site with its local/CI one-time waitlist boundary and native Workers runtime implemented or in focused review
+**Implementation status:** Foundations, authentication, profiles, one-time proposals, Tavoli mobile/public-web discovery, shared project participation, request contribution selections, membership commitments, join-acceptance contribution triage, participation-request private chat domain, in-app notification projection, unified structured Project/Resource Requests in mobile Messages, mobile Resource request actions, Project group-chat lifecycle/durable message/mobile experience, Project-chat notification/push projection, the provider-independent push/job foundation, provider-neutral push delivery worker protocol, and the static-first informational site with its local/CI one-time waitlist boundary and native Workers runtime implemented or in focused review
 
 This document describes how the major parts of PLANETS should interact. Technology choices are recorded separately in [`core-stack.md`](core-stack.md).
 
@@ -219,6 +219,33 @@ remain read-only history. `/messages`, `/messages/requests/:requestId`, and
 `/messages/requests/resource/:requestId` belong to Home and require a complete
 authenticated profile. The Chats tab remains Project-only until 04C4C3B.
 
+### Participation-request private conversation domain
+
+Every `project_join_requests` episode owns one permanent private
+`project_join_request_chats` anchor from request creation, including historical
+rows backfilled at their canonical `created_at`. The optional 500-character
+request note remains the structured Request feed item; it is never copied into
+`project_join_request_chat_messages`. Human follow-ups are immutable,
+canonically trimmed plain text of 1 through 4,000 Unicode characters with a
+server-owned timestamp. Both tables use restrictive foreign keys, RLS without
+client policies, and no direct client or broad service-role privileges.
+
+Only the requester and the immutable Project creator can resolve the exact
+conversation, page its strict Request/message feed, or receive its private
+`project-request-chat:<chat-id>:profile:<profile-id>` Broadcast hints. Sending is
+available only while the canonical request is pending. It takes the established
+concrete-Project, shared-Project, then request-row locks, so accept, reject, and
+withdraw races deterministically preserve a send serialized first and reject a
+send serialized after resolution. Terminal episodes retain readable history;
+accepted detail also exposes the separately authorized Project group-chat ID.
+
+Durable audit/outbox event `project.join_request_chat_message_sent` and Realtime
+hints contain identifiers/timestamps only. Existing notification/push
+projectors deliberately ignore this new event until 07C1B owns its projection.
+The existing unified Requests projection is unchanged, and
+`list_own_message_chat_items` is intentionally unchanged; 07C1B owns the mobile
+conversation UI and unified Chats inclusion.
+
 ### Project group-chat lifecycle and authorization foundation
 
 `project_group_chats` is one private structural anchor per shared `projects` row.
@@ -333,23 +360,24 @@ Edge Functions and background workers remain valid implementation choices when t
 
 ## Main data domains
 
-| Domain                  | Responsibility                                                                                              | Important relationships                                                                   |
-| ----------------------- | ----------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
-| Authentication identity | Login identity, verified contact method, session                                                            | Linked one-to-one with an application profile                                             |
-| Profiles                | Display identity, competences, interests, preferences, visibility settings                                  | User, skills, participation history, media                                                |
-| Skills/competences      | Controlled taxonomy used by users and proposals                                                             | Many-to-many with profiles and proposal requirements                                      |
-| One-time proposals      | Creator-owned content, schedule, rough/exact location separation, stored lifecycle, derived temporal status | Creator, controlled skill requirements, future participation, future template source      |
-| Recurring activities    | Persistent Tavoli, versioned weekly/monthly schedules, bounded occurrences, rough/exact privacy, lifecycle  | Separate from one-time proposals; Flutter experience and public web discovery implemented |
-| Resource listings       | Standalone Scambio-Dona lifecycle, rough-location discovery, sanitized detail, and derived active-interest count | Profile owner plus separate private Resource request episodes; no Project, taxonomy, media, or handoff linkage |
-| Resource request chat   | Accepted-request human history, authorized summaries/send, and private Realtime refresh hints               | One request/agreement episode; permanent owner/requester read and open-coordination send  |
-| Participation           | Shared project identity, private requests/decisions, current membership and retained history                | Profile and concrete one-time/recurring project; source for authorization and later stats |
-| Messages                | Authenticated discriminated Project/Resource Requests plus the existing Project-only Chats tab               | Canonical request domains; complete three-part cursor; Resource chats remain 04C4C3B       |
-| Project chat            | Structural anchor, immutable message history, authorized list/send APIs, and private Realtime hints         | Creator plus current/former participants under canonical membership-time rules            |
-| Notifications           | Controlled categories/preferences, recipient in-app records, private installations, and recipient push jobs | Recipient, per-consumer source event receipt, optional project/request/membership         |
-| Templates               | Reusable proposal structure derived from approved past/community content                                    | Source proposal, attribution, moderation/publication state                                |
-| Community statistics    | Aggregated views over canonical activity and participation                                                  | Proposal type, location, participation, time                                              |
-| Moderation              | Reports, blocks, content status, actions, internal notes, appeals if introduced                             | Users, proposals, messages, media, administrators                                         |
-| Audit/operations        | Security-relevant and administrative action history                                                         | Actor, target, action, timestamps, metadata                                               |
+| Domain                     | Responsibility                                                                                                   | Important relationships                                                                                        |
+| -------------------------- | ---------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| Authentication identity    | Login identity, verified contact method, session                                                                 | Linked one-to-one with an application profile                                                                  |
+| Profiles                   | Display identity, competences, interests, preferences, visibility settings                                       | User, skills, participation history, media                                                                     |
+| Skills/competences         | Controlled taxonomy used by users and proposals                                                                  | Many-to-many with profiles and proposal requirements                                                           |
+| One-time proposals         | Creator-owned content, schedule, rough/exact location separation, stored lifecycle, derived temporal status      | Creator, controlled skill requirements, future participation, future template source                           |
+| Recurring activities       | Persistent Tavoli, versioned weekly/monthly schedules, bounded occurrences, rough/exact privacy, lifecycle       | Separate from one-time proposals; Flutter experience and public web discovery implemented                      |
+| Resource listings          | Standalone Scambio-Dona lifecycle, rough-location discovery, sanitized detail, and derived active-interest count | Profile owner plus separate private Resource request episodes; no Project, taxonomy, media, or handoff linkage |
+| Resource request chat      | Accepted-request human history, authorized summaries/send, and private Realtime refresh hints                    | One request/agreement episode; permanent owner/requester read and open-coordination send                       |
+| Participation              | Shared project identity, private requests/decisions, current membership and retained history                     | Profile and concrete one-time/recurring project; source for authorization and later stats                      |
+| Participation request chat | Pending-request human history, structured request-note feed, exact authorized state, and private Realtime hints  | One join-request episode; permanent requester/creator read and pending-only send                               |
+| Messages                   | Authenticated discriminated Project/Resource Requests plus the existing Project-only Chats tab                   | Canonical request domains; complete three-part cursor; Resource chats remain 04C4C3B                           |
+| Project chat               | Structural anchor, immutable message history, authorized list/send APIs, and private Realtime hints              | Creator plus current/former participants under canonical membership-time rules                                 |
+| Notifications              | Controlled categories/preferences, recipient in-app records, private installations, and recipient push jobs      | Recipient, per-consumer source event receipt, optional project/request/membership                              |
+| Templates                  | Reusable proposal structure derived from approved past/community content                                         | Source proposal, attribution, moderation/publication state                                                     |
+| Community statistics       | Aggregated views over canonical activity and participation                                                       | Proposal type, location, participation, time                                                                   |
+| Moderation                 | Reports, blocks, content status, actions, internal notes, appeals if introduced                                  | Users, proposals, messages, media, administrators                                                              |
+| Audit/operations           | Security-relevant and administrative action history                                                              | Actor, target, action, timestamps, metadata                                                                    |
 
 Later schema plans must extend this model deliberately and record unresolved product choices instead of guessing them.
 
@@ -401,10 +429,10 @@ The product document establishes the following general flow:
 
 1. a user creates a proposal from scratch or from a reusable template;
 2. the proposal becomes discoverable after publication;
-3. users request to participate;
+3. users request to participate and that request episode gains a private requester/creator conversation;
 4. matching may notify users whose competences are relevant;
-5. the proposal owner reviews participation requests;
-6. accepted users become members;
+5. the proposal owner reviews participation requests while either counterparty may follow up until resolution;
+6. accepted users become members and the request conversation becomes read-only;
 7. the first accepted join request transactionally activates the canonical project group chat;
 8. participants coordinate and may share an external meeting link;
 9. a completed proposal can contribute to templates and aggregate community information.
@@ -549,6 +577,14 @@ request item is backed directly by `project_join_requests`, may show its private
 requester message to the authorized creator, and reflects canonical request state.
 Accept/Reject continues to call the participation transition functions; the item is
 not copied into a free-form chat message.
+
+07C1A adds one private requester/creator conversation per participation-request
+episode at request creation. Its feed keeps that canonical Request item distinct
+from later human messages, allows both counterparties to send only while pending,
+and retains read-only history after accept/reject/withdraw. Acceptance links to,
+but never merges with, the separate Project group chat. The backend contract is
+implemented; 07C1B owns mobile routes, rendering, live refresh, unified Chats
+projection, and any notification/push consumption.
 
 The 07B1 Project-chat foundation now provides:
 

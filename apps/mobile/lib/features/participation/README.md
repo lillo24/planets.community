@@ -83,6 +83,14 @@ The mobile client presents, but does not reproduce, the 05A state machine:
 - creators are organizers through ownership and are filtered from membership
   rows.
 
+07C1A now creates a permanent private requester/creator chat anchor inside each
+request transaction. The optional join note remains structured request data;
+later human messages are a separate immutable feed, writable only while that
+exact request is pending and read-only after accept/reject/withdraw. Acceptance
+may expose the separate Project group chat, but does not merge the two histories.
+This feature continues to own request creation and resolution; 07C1B owns the
+mobile request-conversation presentation and live refresh.
+
 04C3D2 routes both creator Accept entry points through one action-local triage
 sheet. The sheet reads only the tapped request, requires an explicit needed,
 already-found, or extra decision for every offered item, and always calls the

@@ -6,6 +6,13 @@ mixed chronological Project/Resource conversation projection in `Chats`.
 Project and Resource detail transport remain in the adjacent `project_chat/`
 and `resource_chat/` features; this feature owns their shared entry point.
 
+The 07C1A backend also gives every Project participation-request episode a
+private requester/creator conversation with a structured Request item, immutable
+human follow-ups, pending-only send entitlement, and permanent resolved history.
+It intentionally does not change the current unified Chats RPC or this mobile
+parser. 07C1B owns the new typed variant, route/presentation, subscriptions,
+notification projection, and inclusion in the unified Chats list.
+
 ## Source map
 
 - `domain/message_models.dart` defines the centrally discriminated Project and
