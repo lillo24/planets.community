@@ -258,31 +258,28 @@ select is(
   'anonymous and service roles receive no selection API grants'
 );
 
-select unlike(
+select ok(
   lower(
     pg_get_functiondef(
       'public.request_to_join_project(uuid,uuid,text,uuid[],uuid[])'::regprocedure
     )
-  ),
-  '%''skill_ids''%',
+  ) not like '%''skill_ids''%',
   'the unchanged join-request event has no skill-array payload key'
 );
-select unlike(
+select ok(
   lower(
     pg_get_functiondef(
       'public.request_to_join_project(uuid,uuid,text,uuid[],uuid[])'::regprocedure
     )
-  ),
-  '%''resource_need_ids''%',
+  ) not like '%''resource_need_ids''%',
   'the unchanged join-request event has no resource-array payload key'
 );
-select unlike(
+select ok(
   lower(
     pg_get_functiondef(
       'public.request_to_join_project(uuid,uuid,text,uuid[],uuid[])'::regprocedure
     )
-  ),
-  '%''request_message''%',
+  ) not like '%''request_message''%',
   'the unchanged join-request event has no request-message payload key'
 );
 

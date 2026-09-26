@@ -344,95 +344,82 @@ select is(
   'authenticated clients cannot execute private actual-contribution helpers'
 );
 
-select like(
+select ok(
   lower(pg_get_functiondef(
     'public.replace_project_membership_actual_contributions(uuid,uuid,uuid[],uuid[],boolean,uuid[],uuid[],boolean)'::regprocedure
-  )),
-  '%raise sqlstate ''pt409''%',
+  )) like '%raise sqlstate ''pt409''%',
   'stale actual-contribution snapshots use the explicit PostgREST conflict SQLSTATE'
 );
-select like(
+select ok(
   lower(pg_get_functiondef(
     'public.replace_project_membership_actual_contributions(uuid,uuid,uuid[],uuid[],boolean,uuid[],uuid[],boolean)'::regprocedure
-  )),
-  '%cardinality(normalized_skill_ids) > 50%',
+  )) like '%cardinality(normalized_skill_ids) > 50%',
   'desired actual skills are independently bounded at 50'
 );
-select like(
+select ok(
   lower(pg_get_functiondef(
     'public.replace_project_membership_actual_contributions(uuid,uuid,uuid[],uuid[],boolean,uuid[],uuid[],boolean)'::regprocedure
-  )),
-  '%cardinality(normalized_resource_need_ids) > 50%',
+  )) like '%cardinality(normalized_resource_need_ids) > 50%',
   'desired actual resources are independently bounded at 50'
 );
-select like(
+select ok(
   lower(pg_get_functiondef(
     'private.record_project_actual_contributions_updated_event(uuid,uuid,uuid,uuid)'::regprocedure
-  )),
-  '%project.actual_contributions_updated%',
+  )) like '%project.actual_contributions_updated%',
   'real corrections use the dedicated update event'
 );
-select unlike(
+select ok(
   lower(pg_get_functiondef(
     'private.record_project_actual_contributions_updated_event(uuid,uuid,uuid,uuid)'::regprocedure
-  )),
-  '%skill_ids%',
+  )) not like '%skill_ids%',
   'the update event contains no skill array'
 );
-select unlike(
+select ok(
   lower(pg_get_functiondef(
     'private.record_project_actual_contributions_updated_event(uuid,uuid,uuid,uuid)'::regprocedure
-  )),
-  '%resource_need_ids%',
+  )) not like '%resource_need_ids%',
   'the update event contains no resource array'
 );
-select unlike(
+select ok(
   lower(pg_get_functiondef(
     'private.record_project_actual_contributions_updated_event(uuid,uuid,uuid,uuid)'::regprocedure
-  )),
-  '%label%',
+  )) not like '%label%',
   'the update event contains no contribution label'
 );
-select unlike(
+select ok(
   lower(pg_get_functiondef(
     'public.list_project_membership_actual_contributions(uuid,uuid)'::regprocedure
-  )),
-  '%project_membership_skill_coverages%',
+  )) not like '%project_membership_skill_coverages%',
   'effective actual attribution does not derive from skill coverage history'
 );
-select unlike(
+select ok(
   lower(pg_get_functiondef(
     'public.list_project_membership_actual_contributions(uuid,uuid)'::regprocedure
-  )),
-  '%project_membership_resource_coverages%',
+  )) not like '%project_membership_resource_coverages%',
   'effective actual attribution does not derive from resource coverage history'
 );
-select unlike(
+select ok(
   lower(pg_get_functiondef(
     'public.replace_project_membership_actual_contributions(uuid,uuid,uuid[],uuid[],boolean,uuid[],uuid[],boolean)'::regprocedure
-  )),
-  '%insert into public.skills%',
+  )) not like '%insert into public.skills%',
   'actual attribution never creates a fake skill catalog row'
 );
-select unlike(
+select ok(
   lower(pg_get_functiondef(
     'public.replace_project_membership_actual_contributions(uuid,uuid,uuid[],uuid[],boolean,uuid[],uuid[],boolean)'::regprocedure
-  )),
-  '%insert into public.project_resource_needs%',
+  )) not like '%insert into public.project_resource_needs%',
   'actual attribution never creates a fake Project resource need'
 );
-select unlike(
+select ok(
   lower(pg_get_functiondef(
     'public.replace_project_membership_actual_contributions(uuid,uuid,uuid[],uuid[],boolean,uuid[],uuid[],boolean)'::regprocedure
-  )),
-  '%project_membership_skill_coverages%',
+  )) not like '%project_membership_skill_coverages%',
   'actual attribution mutation does not create skill coverage'
 );
-select unlike(
+select ok(
   lower(pg_get_functiondef(
     'public.replace_project_membership_actual_contributions(uuid,uuid,uuid[],uuid[],boolean,uuid[],uuid[],boolean)'::regprocedure
-  )),
-  '%project_membership_resource_coverages%',
+  )) not like '%project_membership_resource_coverages%',
   'actual attribution mutation does not create resource coverage'
 );
 

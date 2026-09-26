@@ -329,7 +329,11 @@ select is(
   'service role receives no convenience listing API grant'
 );
 
-select is(to_regclass('public.resource_listing_requests'), null, 'no listing request table exists');
+select is(
+  to_regclass('public.resource_listing_requests'),
+  'public.resource_listing_requests'::regclass,
+  'later request workflow state stays in its dedicated table'
+);
 select is(to_regclass('public.resource_transactions'), null, 'no resource transaction table exists');
 select is(to_regclass('public.resource_listing_media'), null, 'no listing media table exists');
 select is(to_regclass('public.project_resource_listings'), null, 'no Project-listing linkage table exists');

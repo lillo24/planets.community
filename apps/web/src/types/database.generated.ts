@@ -1994,6 +1994,17 @@ export type Database = {
         Args: { p_agreement_id: string; p_expected_profile_id: string }
         Returns: string
       }
+      check_resource_exchange_pending_loan_availability: {
+        Args: {
+          p_agreement_id: string
+          p_expected_pending_terms_id: string
+          p_expected_profile_id: string
+        }
+        Returns: {
+          is_available: boolean
+          is_lend: boolean
+        }[]
+      }
       claim_project_requirement: {
         Args: {
           p_expected_participant_profile_id: string
@@ -2878,6 +2889,22 @@ export type Database = {
           resource_owner_profile_id: string
           status: string
           viewer_role: string
+        }[]
+      }
+      list_owned_resource_listing_loan_schedule: {
+        Args: { p_expected_owner_profile_id: string; p_listing_id: string }
+        Returns: {
+          agreement_id: string
+          agreement_lifecycle: string
+          ends_at: string
+          is_at_risk: boolean
+          is_overdue: boolean
+          listing_id: string
+          request_id: string
+          requester_display_name: string
+          requester_profile_id: string
+          starts_at: string
+          terms_id: string
         }[]
       }
       list_project_join_requests: {

@@ -361,10 +361,12 @@ select results_eq(
     )
   $$,
   $$
-    select id
-    from public.project_resource_needs
-    where project_id = 'f1000000-0000-4000-8000-000000000001'
-    order by created_at, id
+    select expected.resource_need_id
+    from (values
+      (current_setting('test.need_one')::uuid),
+      (current_setting('test.need_two')::uuid)
+    ) as expected(resource_need_id)
+    order by expected.resource_need_id
   $$,
   'creator history uses stable creation-time and UUID ordering'
 );
@@ -385,11 +387,12 @@ select results_eq(
     )
   $$,
   $$
-    select id
-    from public.project_resource_needs
-    where project_id = 'f1000000-0000-4000-8000-000000000001'
-      and state = 'open'
-    order by created_at, id
+    select expected.resource_need_id
+    from (values
+      (current_setting('test.need_one')::uuid),
+      (current_setting('test.need_two')::uuid)
+    ) as expected(resource_need_id)
+    order by expected.resource_need_id
   $$,
   'publication exposes open needs in deterministic creation order'
 );
@@ -772,7 +775,10 @@ select is(
       'project.resource_need_updated',
       'project.resource_need_closed'
     )
-      and jsonb_object_length(event.payload) = 4
+      and (
+        select count(*)
+        from jsonb_object_keys(event.payload)
+      ) = 4
       and event.payload ?& array[
         'project_id',
         'project_kind',
@@ -801,7 +807,10 @@ select is(
       'project.resource_need_closed'
     )
       and event.target_type = 'project_resource_need'
-      and jsonb_object_length(event.metadata) = 4
+      and (
+        select count(*)
+        from jsonb_object_keys(event.metadata)
+      ) = 4
       and event.metadata ?& array[
         'project_id',
         'project_kind',

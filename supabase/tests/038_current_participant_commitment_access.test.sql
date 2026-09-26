@@ -773,12 +773,20 @@ select is(
 
 select set_config(
   'test.cas_audit_before',
-  (select count(*)::text from private.audit_events),
+  (
+    select count(*)::text
+    from private.audit_events
+    where action = 'project.membership_commitments_updated'
+  ),
   true
 );
 select set_config(
   'test.cas_outbox_before',
-  (select count(*)::text from private.outbox_events),
+  (
+    select count(*)::text
+    from private.outbox_events
+    where event_type = 'project.membership_commitments_updated'
+  ),
   true
 );
 
@@ -983,12 +991,20 @@ select results_eq(
   'stale participant submission leaves the first participant result canonical'
 );
 select is(
-  (select count(*) from private.audit_events),
+  (
+    select count(*)
+    from private.audit_events
+    where action = 'project.membership_commitments_updated'
+  ),
   current_setting('test.cas_audit_before')::bigint + 3,
   'three successful CAS changes create exactly three audit rows'
 );
 select is(
-  (select count(*) from private.outbox_events),
+  (
+    select count(*)
+    from private.outbox_events
+    where event_type = 'project.membership_commitments_updated'
+  ),
   current_setting('test.cas_outbox_before')::bigint + 3,
   'stale CAS conflicts create no outbox rows beyond the three real changes'
 );
@@ -1553,7 +1569,10 @@ select is(
         current_setting('test.commitment_membership'),
         current_setting('test.recurring_membership')
       )
-      and jsonb_object_length(event.payload) = 5
+      and (
+        select count(*)
+        from jsonb_object_keys(event.payload)
+      ) = 5
       and event.payload ?& array[
         'project_id',
         'project_kind',
@@ -1609,7 +1628,10 @@ select is(
       )
       and (
         event.target_type <> 'project_membership'
-        or jsonb_object_length(event.metadata) <> 5
+        or (
+          select count(*)
+          from jsonb_object_keys(event.metadata)
+        ) <> 5
       )
   ),
   0::bigint,

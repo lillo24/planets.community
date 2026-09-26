@@ -175,7 +175,7 @@ async function verifyResourceSavedSearches() {
   }
 
   const listingId = await createListing(listingOwner, {
-    title: `Trapano Bosch ${runMarker}`,
+    title: `Trapano ${runMarker} Bosch`,
     description: `Kit Bosch 18V ${runMarker}`,
     locality: "Trento",
   });

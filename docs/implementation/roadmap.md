@@ -70,7 +70,7 @@ Do not begin a dependent plan until the prior plan is merged or its branch is ex
 | 04C3D3  | Live Need Coverage + Group Coordination (parent)          | Backend live requirement truth followed by group-chat coordination and resurfacing                                     | 04C3D1, 04C3D2, 07B2C  | Delegate policy remains separate                                                                                     | In progress |
 | 04C3D3A | Live Project Requirement Coverage Domain                  | Participant/manual sources, exact coverage transitions, lifecycle cleanup, claim/manual/read RPCs, and tests           | 04C3D1, 04C3D2         | None for canonical creator/current-participant backend ownership                                                     | In progress |
 | 04C3D3B | Group Needs Coordination + Chat Resurfacing               | Chat Needs drawer, participant claim UI, creator manual control, system messages, notifications, and attention UX      | 04C3D3A, 07B2C, 06D    | Delegate policy remains separate; native interaction review remains Plan 12                                          | In progress |
-| 04C4    | Scambio-Dona Requests, Agreements and Matching (parent)   | Request intent, reliable agreement/handoff, mobile coordination, loan availability, matching, and saved searches        | 04C1                   | Open stack remains unmerged and inherits pending database gates; later dispute/Dona policy stays separate            | Functionally complete (open stack) |
+| 04C4    | Scambio-Dona Requests, Agreements and Matching (parent)   | Request intent, reliable agreement/handoff, mobile coordination, loan availability, matching, and saved searches        | 04C1                   | STACK-STABILIZATION-01 clears inherited database validation blockers; the open stack remains unmerged                 | Functionally complete (open stack) |
 | 04C4A   | Resource Request Domain Foundation                        | Private request episodes, multiple acceptances, active-interest count, lifecycle serialization, and history            | 04C1, DB-COMPAT-01     | None for the bounded interest-request lifecycle                                                                      | In progress |
 | 04C4B   | Reliable Scambio Agreement + Loan/Barter Domain           | Structured counterpart terms, give/lend/barter semantics, duration, handoff, completion, and return history             | 04C4A                  | Post-handoff amendment, dispute, and liability policy remain later founder decisions                                 | In progress |
 | 04C4C   | Resource Requests + Messages (parent)                      | Durable conversation/projections followed by split mobile request, chat, agreement, and notification experiences       | 04C4B, 07A             | Native interaction review remains in Plan 12                                                                          | In progress |
@@ -87,7 +87,7 @@ Do not begin a dependent plan until the prior plan is merged or its branch is ex
 | 04C4E   | Project Resource Matching (parent)                        | Explainable read-time matching domain followed by mobile Project matching UX                                           | 04C3A, 04C4D1          | No private reservation inference or guaranteed availability                                                           | In progress |
 | 04C4E1  | Explainable Project Resource Matching Domain              | Creator-only Italian lexical tiers, coarse-geography scopes, mode filters, keyset, public-safe reasons                 | 04C4D2                 | No mobile UI, saved searches, alerts, or private availability                                                        | In progress |
 | 04C4E2  | Mobile Project Resource Matching UX                       | Mobile consumption of E1 reasons and discovery routing                                                                 | 04C4E1                 | Native interaction review remains later work                                                                           | In progress |
-| 04C4F   | Saved Searches + Matching Notifications                   | Personal saved filters, mobile execution, published-listing projection, immediate notification projection, and mobile UX | 04C4E2, 06A            | Open stack remains unmerged and inherits pending database gates; taxonomy/radius remain later work                  | Functionally complete (open stack) |
+| 04C4F   | Saved Searches + Matching Notifications                   | Personal saved filters, mobile execution, published-listing projection, immediate notification projection, and mobile UX | 04C4E2, 06A            | STACK-STABILIZATION-01 clears inherited database validation blockers; taxonomy/radius remain later work             | Functionally complete (open stack) |
 | 04C4F1  | Personal Saved Resource Search Domain                     | Private exact current-filter CRUD, semantic uniqueness, keyset reads, and browse-parity predicate                       | 04C4E2                 | No mobile UI, match snapshots, events, or notification policy                                                       | In progress |
 | 04C4F2  | Mobile Saved Resource Search Experience                   | Save/manage/run personal filters through existing public Resource browse                                                | 04C4F1                 | Native interaction review remains Plan 12; no notification behavior                                                 | In progress |
 | 04C4F3   | Saved Resource Search Match Notifications (parent)        | Frequency-neutral published-listing match facts followed by immediate channel projection and mobile UX                  | 04C4F1, 06A            | Open stack remains unmerged; provider delivery remains 06C2B                                                        | Functionally complete (open stack) |
@@ -353,7 +353,7 @@ or introduce participation, chat, resources, or recurrence expansion.
 
 #### 04C — Resources + Scambio-Dona
 
-**Status:** Functionally complete through 04C4F3B2 in the open stacked PR chain, but that chain remains unmerged and not fully validated because inherited database gates are pending. Implemented 04C1–04C2 are merged; stacked 04C3, 05C, and 04C4 work remains open.
+**Status:** Functionally complete through 04C4F3B2 in the open stacked PR chain. STACK-STABILIZATION-01 clears the inherited database validation blockers; the stacked 04C3, 05C, and 04C4 work remains open and unmerged. Implemented 04C1–04C2 are merged.
 
 The earlier combined scope is split so standalone public listings do not force unresolved Project contribution or post-discovery transaction rules:
 
@@ -475,7 +475,7 @@ Project chat detail now consumes the strict mixed human/system feed and exact th
 
 ##### 04C4 — Scambio-Dona Requests, Agreements and Matching (parent)
 
-**Status:** Functionally complete through 04C4F3B2 in the open stacked PR chain, not merged or fully validated. Depends on 04C1; post-handoff amendment and dispute decisions remain outside the accepted child plans.
+**Status:** Functionally complete through 04C4F3B2 in the open stacked PR chain. STACK-STABILIZATION-01 clears the inherited database validation blockers, but the stack remains open and unmerged. Depends on 04C1; post-handoff amendment and dispute decisions remain outside the accepted child plans.
 
 This parent keeps a lightweight expression of interest separate from reliable agreement terms, physical handoff/completion, loan scheduling, Project matching, and saved-search notifications. None of those later concepts may be inferred from the 04C1 `exchange` discovery intent or from an accepted 04C4A request.
 
@@ -586,7 +586,7 @@ central discriminated Messages extension boundary.
 
 ###### 04C4D1 — Loan Reservation + Conflict Domain
 
-**Status:** Open PR #83 above open 04C4C3D PR #82; neither PR is merged. D1's database reset/lint/advisors/pgTAP/type-drift/OTP gates remain blocked, so the stack is not merge-ready.
+**Status:** Open PR #83 above open 04C4C3D PR #82; neither PR is merged. STACK-STABILIZATION-01 clears D1's inherited database reset/lint/advisors/pgTAP/type-drift/OTP blockers at the top of the stack.
 
 One listing is one reservable unit. Mutually accepted listing-owner LEND terms
 in an agreed or in-progress agreement are the sole active reservation truth;
@@ -601,7 +601,7 @@ promotion. Agreement terms/events remain the audit history.
 
 ###### 04C4D2 — Mobile Loan Schedule + Availability UX
 
-**Status:** In progress above PR #83. Neither D1 nor D2 is merge-ready while D1's database gates are blocked.
+**Status:** In progress above PR #83. STACK-STABILIZATION-01 clears the inherited D1 database-gate blockers at the top of the open stack; neither D1 nor D2 is merged.
 
 Consume only `list_owned_resource_listing_loan_schedule`,
 `check_resource_exchange_pending_loan_availability`, and existing
@@ -623,9 +623,9 @@ been confirmed.
 
 ###### 04C4E — Project Resource Matching
 
-**Status:** In progress through stacked 04C4E2. The E1 backend matcher is PR #87, whose final database gates remain pending. Depends on 04C3A and the public-listing domain; D1 private reservations remain deliberately outside match eligibility.
+**Status:** In progress through stacked 04C4E2. The E1 backend matcher is PR #87; STACK-STABILIZATION-01 clears its inherited database-gate blockers at the top of the open stack. Depends on 04C3A and the public-listing domain; D1 private reservations remain deliberately outside match eligibility.
 
-04C4E1 adds a creator-only, read-time Italian lexical matcher for an open need and published listing. Strongest text reason is title phrase, then title/details lexemes in listing title/description; coarse locality/area/country reasons and an explicit scope refine ordering. Full keyset pagination and optional Dona/Scambia filtering return public listing fields only. Matching does not guarantee physical availability, imply fulfillment, award contribution credit, or emit events. It does not inspect D1 private loan dates because the need has no canonical LEND period. The current draft stack inherits PR #83's unresolved database gates; E1 must not merge until its own and inherited replay/lint/advisors/pgTAP/type-drift/OTP checks pass.
+04C4E1 adds a creator-only, read-time Italian lexical matcher for an open need and published listing. Strongest text reason is title phrase, then title/details lexemes in listing title/description; coarse locality/area/country reasons and an explicit scope refine ordering. Full keyset pagination and optional Dona/Scambia filtering return public listing fields only. Matching does not guarantee physical availability, imply fulfillment, award contribution credit, or emit events. It does not inspect D1 private loan dates because the need has no canonical LEND period. STACK-STABILIZATION-01 clears the inherited replay/lint/advisors/pgTAP/type-drift/OTP blockers at the top of the current draft stack.
 
 ###### 04C4E1 — Explainable Project Resource Matching Domain
 
@@ -644,13 +644,13 @@ F3B1 in PR #92, and F3B2 in this PR.
 
 ###### 04C4F — Saved Searches + Matching Notifications
 
-**Status:** Functionally complete through 04C4F3B2 in this open stacked PR, not merged or fully validated. F1 is open on PR #89 with inherited database gates pending; F2 is PR #90; F3A is PR #91; F3B1 is PR #92.
+**Status:** Functionally complete through 04C4F3B2 in this open stacked PR, not merged. STACK-STABILIZATION-01 clears the inherited database validation blockers; F1 is open on PR #89, F2 is PR #90, F3A is PR #91, and F3B1 is PR #92.
 
 04C4F1 persists personal, Project-independent definitions of exactly the current Resource browse query, Dona/Scambia mode, and locality filters. Query remains literal case-insensitive title/description substring matching; locality remains trimmed case-insensitive exact equality. Definitions are private, semantic duplicates return `PT409`, and no match result, listing snapshot, Project relation, event, notification toggle, frequency, or copy is stored.
 
 ###### 04C4F1 — Personal Saved Resource Search Domain
 
-**Status:** In progress on PR #89, based on stacked mobile PR #88 (`2824e9b2a0a891473aecc3d19e0460bf63c55713`). Final database replay, lint, advisors, pgTAP, OTP, and generated-type gates remain pending on that inherited stack.
+**Status:** In progress on PR #89, based on stacked mobile PR #88 (`2824e9b2a0a891473aecc3d19e0460bf63c55713`). STACK-STABILIZATION-01 clears the inherited database replay, lint, advisors, pgTAP, OTP, and generated-type blockers at the top of the stack.
 
 Owns RPC-only CRUD, hard delete, `(updated_at desc, id desc)` pagination, database-enforced normalized uniqueness, and the field-only predicate that mirrors current browse filters. The predicate is lifecycle-independent by design; callers must separately require a published listing.
 
@@ -686,7 +686,7 @@ Consumes future `resource_saved_search.matched` events through independent `noti
 
 ###### 04C4F3B2 — Mobile Matching Notification UX
 
-**Status:** Implemented in this open PR, based on exact 04C4F3B1 head `78daffd8311659bb289f900594eb042802704fc2` from PR #92; not merged or fully validated while inherited database gates remain pending.
+**Status:** Implemented in open PR #93, based on exact 04C4F3B1 head `78daffd8311659bb289f900594eb042802704fc2` from PR #92; not merged. STACK-STABILIZATION-01 clears the inherited database validation blockers at the top of the stack.
 
 Consumes the B1 contract in Flutter: category `matching`, kind `matching_available`, destination `matching_result`, listing identifier, and optional safe resolved listing title. It owns localized inbox copy, routing to the existing public Resource detail flow, and the global Matching in-app control while preserving the hidden canonical push value. It adds no digest, frequency selector, per-search toggle, provider integration, or extra inbox read.
 

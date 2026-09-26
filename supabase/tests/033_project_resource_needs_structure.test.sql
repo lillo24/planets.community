@@ -327,22 +327,20 @@ select is(
   null,
   '04C3A adds no Scambio-Dona linkage table'
 );
-select unlike(
+select ok(
   lower(
     pg_get_functiondef(
       'private.record_project_resource_need_event(text,uuid,uuid,text,uuid)'::regprocedure
     )
-  ),
-  '%title%',
+  ) not like '%title%',
   'the event writer cannot accept or serialize need titles'
 );
-select unlike(
+select ok(
   lower(
     pg_get_functiondef(
       'private.record_project_resource_need_event(text,uuid,uuid,text,uuid)'::regprocedure
     )
-  ),
-  '%details%',
+  ) not like '%details%',
   'the event writer cannot accept or serialize need details'
 );
 

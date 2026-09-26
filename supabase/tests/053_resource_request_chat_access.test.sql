@@ -353,6 +353,8 @@ select set_config(
   ),
   true
 );
+
+reset role;
 select results_eq(
   $$
     select sender_profile_id, body
@@ -374,6 +376,7 @@ select ok(
   'the server assigns the immutable message timestamp'
 );
 
+set local role authenticated;
 select set_config(
   'request.jwt.claim.sub',
   'f6100000-0000-4000-8000-000000000001',

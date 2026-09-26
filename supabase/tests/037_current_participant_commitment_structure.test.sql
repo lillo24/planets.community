@@ -289,22 +289,20 @@ select is(
   false,
   'anonymous and service roles receive no commitment API grants'
 );
-select unlike(
+select ok(
   lower(
     pg_get_functiondef(
       'public.list_own_project_membership_commitment_options(uuid,uuid)'::regprocedure
     )
-  ),
-  '%audit_events%',
+  ) not like '%audit_events%',
   'the advisory options read writes no audit event'
 );
-select unlike(
+select ok(
   lower(
     pg_get_functiondef(
       'public.list_own_project_membership_commitment_options(uuid,uuid)'::regprocedure
     )
-  ),
-  '%outbox_events%',
+  ) not like '%outbox_events%',
   'the advisory options read writes no outbox event'
 );
 select is(
@@ -333,94 +331,84 @@ select ok(
   ),
   'membership insertion has an AFTER trigger for atomic selection seeding'
 );
-select like(
+select ok(
   lower(
     pg_get_functiondef(
       'public.replace_project_membership_commitments(uuid,uuid,uuid[],uuid[],uuid[],uuid[])'::regprocedure
     )
-  ),
-  '%cardinality(normalized_skill_ids) > 50%',
+  ) like '%cardinality(normalized_skill_ids) > 50%',
   'skill commitment input is explicitly bounded at 50'
 );
-select like(
+select ok(
   lower(
     pg_get_functiondef(
       'public.replace_project_membership_commitments(uuid,uuid,uuid[],uuid[],uuid[],uuid[])'::regprocedure
     )
-  ),
-  '%cardinality(normalized_resource_need_ids) > 50%',
+  ) like '%cardinality(normalized_resource_need_ids) > 50%',
   'resource commitment input is explicitly bounded at 50'
 );
-select like(
+select ok(
   lower(
     pg_get_functiondef(
       'public.replace_project_membership_commitments(uuid,uuid,uuid[],uuid[],uuid[],uuid[])'::regprocedure
     )
-  ),
-  '%cardinality(normalized_expected_skill_ids) > 50%',
+  ) like '%cardinality(normalized_expected_skill_ids) > 50%',
   'the expected skill snapshot is explicitly bounded at 50'
 );
-select like(
+select ok(
   lower(
     pg_get_functiondef(
       'public.replace_project_membership_commitments(uuid,uuid,uuid[],uuid[],uuid[],uuid[])'::regprocedure
     )
-  ),
-  '%cardinality(normalized_expected_resource_need_ids) > 50%',
+  ) like '%cardinality(normalized_expected_resource_need_ids) > 50%',
   'the expected resource snapshot is explicitly bounded at 50'
 );
-select like(
+select ok(
   lower(
     pg_get_functiondef(
       'public.replace_project_membership_commitments(uuid,uuid,uuid[],uuid[],uuid[],uuid[])'::regprocedure
     )
-  ),
-  '%raise sqlstate ''pt409''%',
+  ) like '%raise sqlstate ''pt409''%',
   'stale commitment snapshots use the explicit PostgREST conflict SQLSTATE'
 );
-select like(
+select ok(
   lower(
     pg_get_functiondef(
       'private.record_project_membership_commitment_event(uuid,uuid,text,uuid,uuid)'::regprocedure
     )
-  ),
-  '%project.membership_commitments_updated%',
+  ) like '%project.membership_commitments_updated%',
   'real replacements use the dedicated audit/outbox event'
 );
-select unlike(
+select ok(
   lower(
     pg_get_functiondef(
       'private.record_project_membership_commitment_event(uuid,uuid,text,uuid,uuid)'::regprocedure
     )
-  ),
-  '%skill_ids%',
+  ) not like '%skill_ids%',
   'the event helper exposes no skill arrays'
 );
-select unlike(
+select ok(
   lower(
     pg_get_functiondef(
       'private.record_project_membership_commitment_event(uuid,uuid,text,uuid,uuid)'::regprocedure
     )
-  ),
-  '%resource_need_ids%',
+  ) not like '%resource_need_ids%',
   'the event helper exposes no resource arrays'
 );
-select unlike(
+select ok(
   lower(
     pg_get_functiondef(
       'private.record_project_membership_commitment_event(uuid,uuid,text,uuid,uuid)'::regprocedure
     )
-  ),
-  '%label%',
+  ) not like '%label%',
   'the event helper exposes no labels'
 );
-select unlike(
+select ok(
   lower(
     pg_get_functiondef(
       'private.record_project_membership_commitment_event(uuid,uuid,text,uuid,uuid)'::regprocedure
     )
-  ),
-  '%count%',
+  ) not like '%count%',
   'the event helper exposes no counts'
 );
 

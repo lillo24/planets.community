@@ -486,6 +486,16 @@ select
 from public.project_chat_system_events as event
 where event.id = current_setting('test.resurface_event_one')::uuid;
 
+select set_config(
+  'test.resurface_event_one_created_at',
+  (
+    select event.created_at::text
+    from public.project_chat_system_events as event
+    where event.id = current_setting('test.resurface_event_one')::uuid
+  ),
+  true
+);
+
 set local role authenticated;
 select set_config(
   'request.jwt.claim.sub',
@@ -503,11 +513,8 @@ select results_eq(
       null,
       null
     ) as feed
-    where feed.created_at = (
-      select event.created_at
-      from public.project_chat_system_events as event
-      where event.id = current_setting('test.resurface_event_one')::uuid
-    )
+    where feed.created_at =
+      current_setting('test.resurface_event_one_created_at')::timestamptz
   $$,
   $$values
     ('message'::text, 'b1500000-0000-4000-8000-000000000001'::uuid),
@@ -525,11 +532,7 @@ select results_eq(
       'b1100000-0000-4000-8000-000000000001',
       current_setting('test.resurface_chat_id')::uuid,
       1,
-      (
-        select event.created_at
-        from public.project_chat_system_events as event
-        where event.id = current_setting('test.resurface_event_one')::uuid
-      ),
+      current_setting('test.resurface_event_one_created_at')::timestamptz,
       'message',
       'b1500000-0000-4000-8000-000000000001'
     ) as feed
@@ -659,6 +662,15 @@ select ok(
   ),
   'a leave-caused system event is strictly after the membership frontier'
 );
+select set_config(
+  'test.resurface_event_after_leave_created_at',
+  (
+    select event.created_at::text
+    from public.project_chat_system_events as event
+    where event.id = current_setting('test.resurface_event_after_leave')::uuid
+  ),
+  true
+);
 
 set local role authenticated;
 select set_config(
@@ -701,16 +713,15 @@ select is(
 );
 select ok(
   (
-    select summary.activity_at < event.created_at
+    select summary.activity_at <
+      current_setting('test.resurface_event_after_leave_created_at')::timestamptz
     from public.list_own_project_group_chats(
       'b1100000-0000-4000-8000-000000000003',
       20,
       null,
       null
     ) as summary
-    cross join public.project_chat_system_events as event
     where summary.chat_id = current_setting('test.resurface_chat_id')::uuid
-      and event.id = current_setting('test.resurface_event_after_leave')::uuid
   ),
   'post-leave system activity does not move a former member historical chat'
 );
@@ -737,15 +748,14 @@ select results_eq(
   $$
     select
       summary.last_visible_message_body,
-      summary.activity_at = event.created_at
+      summary.activity_at =
+        current_setting('test.resurface_event_after_leave_created_at')::timestamptz
     from public.list_own_project_group_chats(
       'b1100000-0000-4000-8000-000000000001',
       20,
       null,
       null
     ) as summary
-    join public.project_chat_system_events as event
-      on event.id = current_setting('test.resurface_event_after_leave')::uuid
     where summary.chat_id = current_setting('test.resurface_chat_id')::uuid
   $$,
   $$values ('Equal timestamp human'::text, true)$$,

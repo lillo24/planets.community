@@ -188,6 +188,12 @@ values
   ('e5400000-0000-4000-8000-000000000011', 'e5200000-0000-4000-8000-000000000004', 'e5100000-0000-4000-8000-000000000002', 'accepted', statement_timestamp() - interval '5 days', statement_timestamp() - interval '4 days', 'e5100000-0000-4000-8000-000000000001'),
   ('e5400000-0000-4000-8000-000000000012', 'e5200000-0000-4000-8000-000000000006', 'e5100000-0000-4000-8000-000000000002', 'accepted', statement_timestamp() - interval '5 days', statement_timestamp() - interval '4 days', 'e5100000-0000-4000-8000-000000000001');
 
+-- These rows model historical memberships across ended/cancelled/draft
+-- lifecycles. Bypass only the later live-coverage initializer while preserving
+-- the canonical commitment-seeding trigger used by this attribution fixture.
+alter table public.project_memberships
+  disable trigger project_memberships_z_initialize_live_coverage;
+
 insert into public.project_memberships (
   id,
   project_id,
@@ -204,13 +210,16 @@ values
   ('e5500000-0000-4000-8000-000000000003', 'e5200000-0000-4000-8000-000000000001', 'e5100000-0000-4000-8000-000000000005', 'e5400000-0000-4000-8000-000000000003', statement_timestamp() - interval '4 days', null, statement_timestamp() - interval '2 days 1 hour', 'e5100000-0000-4000-8000-000000000001'),
   ('e5500000-0000-4000-8000-000000000004', 'e5200000-0000-4000-8000-000000000001', 'e5100000-0000-4000-8000-000000000006', 'e5400000-0000-4000-8000-000000000004', statement_timestamp() - interval '4 days', statement_timestamp() - interval '1 day', null, null),
   ('e5500000-0000-4000-8000-000000000005', 'e5200000-0000-4000-8000-000000000001', 'e5100000-0000-4000-8000-000000000007', 'e5400000-0000-4000-8000-000000000005', statement_timestamp() - interval '4 days', null, statement_timestamp() - interval '1 day', 'e5100000-0000-4000-8000-000000000001'),
-  ('e5500000-0000-4000-8000-000000000006', 'e5200000-0000-4000-8000-000000000001', 'e5100000-0000-4000-8000-000000000008', 'e5400000-0000-4000-8000-000000000006', statement_timestamp() - interval '4 days', statement_timestamp() - interval '2 days', null, null),
+  ('e5500000-0000-4000-8000-000000000006', 'e5200000-0000-4000-8000-000000000001', 'e5100000-0000-4000-8000-000000000008', 'e5400000-0000-4000-8000-000000000006', statement_timestamp() - interval '4 days', (select ends_at from public.proposals where id = 'e5200000-0000-4000-8000-000000000001'), null, null),
   ('e5500000-0000-4000-8000-000000000007', 'e5200000-0000-4000-8000-000000000001', 'e5100000-0000-4000-8000-000000000009', 'e5400000-0000-4000-8000-000000000007', statement_timestamp() - interval '4 days', statement_timestamp() - interval '2 days 1 hour', null, null),
   ('e5500000-0000-4000-8000-000000000008', 'e5200000-0000-4000-8000-000000000001', 'e5100000-0000-4000-8000-000000000009', 'e5400000-0000-4000-8000-000000000008', statement_timestamp() - interval '2 days 2 hours', null, null, null),
   ('e5500000-0000-4000-8000-000000000009', 'e5200000-0000-4000-8000-000000000002', 'e5100000-0000-4000-8000-000000000002', 'e5400000-0000-4000-8000-000000000009', statement_timestamp() - interval '1 day', null, null, null),
   ('e5500000-0000-4000-8000-000000000010', 'e5200000-0000-4000-8000-000000000003', 'e5100000-0000-4000-8000-000000000002', 'e5400000-0000-4000-8000-000000000010', statement_timestamp() - interval '4 days', null, null, null),
   ('e5500000-0000-4000-8000-000000000011', 'e5200000-0000-4000-8000-000000000004', 'e5100000-0000-4000-8000-000000000002', 'e5400000-0000-4000-8000-000000000011', statement_timestamp() - interval '4 days', null, null, null),
   ('e5500000-0000-4000-8000-000000000012', 'e5200000-0000-4000-8000-000000000006', 'e5100000-0000-4000-8000-000000000002', 'e5400000-0000-4000-8000-000000000012', statement_timestamp() - interval '4 days', null, null, null);
+
+alter table public.project_memberships
+  enable trigger project_memberships_z_initialize_live_coverage;
 
 insert into public.project_membership_skill_commitments (membership_id, skill_id)
 values
@@ -377,6 +386,8 @@ select results_eq(
   $$,
   'effective read overlays sparse exclusions/additions and the separate effort marker'
 );
+
+reset role;
 select is(
   (
     select count(*)
@@ -417,6 +428,7 @@ select is(
   'the update event is identifier-only'
 );
 
+set local role authenticated;
 select lives_ok(
   $$
     select public.replace_project_membership_actual_contributions(
@@ -432,6 +444,8 @@ select lives_ok(
   $$,
   'an exact full-set no-op succeeds'
 );
+
+reset role;
 select is(
   (
     select count(*)
@@ -443,6 +457,7 @@ select is(
   'an exact no-op emits no event and does not duplicate the effort marker'
 );
 
+set local role authenticated;
 select throws_ok(
   $$
     select public.replace_project_membership_actual_contributions(
@@ -476,6 +491,8 @@ select lives_ok(
   $$,
   'returning to baseline succeeds'
 );
+
+reset role;
 select is(
   (
     select count(*)
@@ -494,6 +511,7 @@ select is(
   'returning to automatic truth removes every redundant override and marker'
 );
 
+set local role authenticated;
 select throws_ok(
   $$
     select public.replace_project_membership_actual_contributions(

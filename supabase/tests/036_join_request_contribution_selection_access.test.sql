@@ -704,7 +704,10 @@ select is(
         '92000000-0000-4000-8000-000000000003',
         '94000000-0000-4000-8000-000000000001'
       )
-      and jsonb_object_length(event.payload) = 6
+      and (
+        select count(*)
+        from jsonb_object_keys(event.payload)
+      ) = 6
       and event.payload ?& array[
         'project_kind',
         'request_id',
@@ -754,7 +757,10 @@ select is(
         '94000000-0000-4000-8000-000000000001'::uuid
       )
       and (
-        jsonb_object_length(event.metadata) <> 4
+        (
+          select count(*)
+          from jsonb_object_keys(event.metadata)
+        ) <> 4
         or event.metadata ?| array[
           'skill_ids',
           'resource_need_ids',

@@ -72,10 +72,10 @@ insert into public.project_resource_needs (
 )
 values
   ('c3000000-0000-4000-8000-000000000001', 'c2000000-0000-4000-8000-000000000001', 'Needed paint', 'open', statement_timestamp(), statement_timestamp()),
-  ('c3000000-0000-4000-8000-000000000002', 'c2000000-0000-4000-8000-000000000001', 'Extra ladder', 'open', statement_timestamp() + interval '1 second', statement_timestamp()),
-  ('c3000000-0000-4000-8000-000000000003', 'c2000000-0000-4000-8000-000000000001', 'Already found brush', 'open', statement_timestamp() + interval '2 seconds', statement_timestamp()),
-  ('c3000000-0000-4000-8000-000000000004', 'c2000000-0000-4000-8000-000000000001', 'Claimable tarp', 'open', statement_timestamp() + interval '3 seconds', statement_timestamp()),
-  ('c3000000-0000-4000-8000-000000000005', 'c2000000-0000-4000-8000-000000000001', 'Generic commitment only', 'open', statement_timestamp() + interval '4 seconds', statement_timestamp()),
+  ('c3000000-0000-4000-8000-000000000002', 'c2000000-0000-4000-8000-000000000001', 'Extra ladder', 'open', statement_timestamp() + interval '1 second', statement_timestamp() + interval '1 second'),
+  ('c3000000-0000-4000-8000-000000000003', 'c2000000-0000-4000-8000-000000000001', 'Already found brush', 'open', statement_timestamp() + interval '2 seconds', statement_timestamp() + interval '2 seconds'),
+  ('c3000000-0000-4000-8000-000000000004', 'c2000000-0000-4000-8000-000000000001', 'Claimable tarp', 'open', statement_timestamp() + interval '3 seconds', statement_timestamp() + interval '3 seconds'),
+  ('c3000000-0000-4000-8000-000000000005', 'c2000000-0000-4000-8000-000000000001', 'Generic commitment only', 'open', statement_timestamp() + interval '4 seconds', statement_timestamp() + interval '4 seconds'),
   ('c3000000-0000-4000-8000-000000000006', 'c2000000-0000-4000-8000-000000000002', 'Lifecycle resource', 'open', statement_timestamp(), statement_timestamp());
 
 insert into public.project_join_requests (
@@ -753,14 +753,16 @@ insert into public.recurring_activities (
   creator_profile_id,
   lifecycle_state,
   title,
-  published_at
+  published_at,
+  paused_at
 )
 values (
   'c6000000-0000-4000-8000-000000000001',
   'c1000000-0000-4000-8000-000000000001',
   'paused',
   'Coverage Tavolo',
-  statement_timestamp() - interval '1 day'
+  statement_timestamp() - interval '1 day',
+  statement_timestamp()
 );
 insert into public.project_resource_needs (
   id,
@@ -848,7 +850,7 @@ select
   'Limit resource ' || series.value,
   'open',
   statement_timestamp() + (series.value || ' seconds')::interval,
-  statement_timestamp()
+  statement_timestamp() + (series.value || ' seconds')::interval
 from generate_series(1, 51) as series(value);
 
 update public.project_join_requests
