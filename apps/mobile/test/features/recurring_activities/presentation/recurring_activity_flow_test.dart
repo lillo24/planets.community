@@ -1,9 +1,13 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:planets_mobile/app/planets_app.dart';
 import 'package:planets_mobile/app/router/app_router.dart';
 import 'package:planets_mobile/core/config/app_config.dart';
+import 'package:planets_mobile/core/widgets/error_state.dart';
+import 'package:planets_mobile/core/widgets/loading_state.dart';
 import 'package:planets_mobile/features/auth/data/auth_gateway.dart';
 import 'package:planets_mobile/features/auth/domain/auth_models.dart';
 import 'package:planets_mobile/features/profile/data/profile_gateway.dart';
@@ -22,6 +26,42 @@ import '../../../support/fake_proposal.dart';
 import '../../../support/fake_recurring_activity.dart';
 
 void main() {
+  testWidgets('Tavolo detail keeps idle and loading out of ErrorState', (
+    tester,
+  ) async {
+    final pending = Completer<PublicRecurringActivityDetail?>();
+    final recurring = FakeRecurringActivityGateway()
+      ..publicDetailResult = pending.future;
+    final app = await _pump(tester, recurring: recurring, signedIn: false);
+
+    app.read(appRouterProvider).go('/tavoli/tavolo-1');
+    await tester.pump();
+    expect(find.byType(LoadingState), findsOneWidget);
+    expect(find.byType(ErrorState), findsNothing);
+
+    await tester.pump();
+    expect(find.byType(LoadingState), findsOneWidget);
+    expect(find.byType(ErrorState), findsNothing);
+
+    pending.complete(publicRecurringDetailFixture());
+    await tester.pumpAndSettle();
+    expect(find.text('Neighborhood philosophy table'), findsOneWidget);
+    expect(find.byType(ErrorState), findsNothing);
+  });
+
+  testWidgets('Tavolo detail still renders a genuine failure', (tester) async {
+    final recurring = FakeRecurringActivityGateway()
+      ..error = StateError('private Tavolo failure');
+    final app = await _pump(tester, recurring: recurring, signedIn: false);
+
+    app.read(appRouterProvider).go('/tavoli/tavolo-1');
+    await tester.pumpAndSettle();
+
+    expect(find.byType(ErrorState), findsOneWidget);
+    expect(find.text('Try again'), findsOneWidget);
+    expect(find.textContaining('private Tavolo failure'), findsNothing);
+  });
+
   testWidgets(
     'requested Tavolo is first, marked, unique, and remains tappable',
     (tester) async {

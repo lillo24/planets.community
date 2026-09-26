@@ -1,8 +1,13 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:planets_mobile/app/planets_app.dart';
+import 'package:planets_mobile/app/router/app_router.dart';
 import 'package:planets_mobile/core/config/app_config.dart';
+import 'package:planets_mobile/core/widgets/error_state.dart';
+import 'package:planets_mobile/core/widgets/loading_state.dart';
 import 'package:planets_mobile/features/auth/data/auth_gateway.dart';
 import 'package:planets_mobile/features/auth/domain/auth_models.dart';
 import 'package:planets_mobile/features/auth/presentation/request_code_screen.dart';
@@ -13,6 +18,79 @@ import '../../../support/fake_auth.dart';
 import '../../../support/fake_profile.dart';
 
 void main() {
+  testWidgets('Profile idle and loading render loading without a fake error', (
+    tester,
+  ) async {
+    final pending = Completer<ProfileEditorData>();
+    final auth = FakeAuthGateway(
+      snapshot: const AuthSnapshot(identity: AuthIdentity(id: 'user-1')),
+    );
+    final anchor = FakeProfileAnchorGateway()
+      ..readiness = ProfileAnchorReadiness.complete;
+    final profile = FakeProfileGateway()..loadResult = (_) => pending.future;
+    addTearDown(auth.close);
+    final app = await _pumpApp(tester, auth, anchor, profile);
+
+    app.read(appRouterProvider).go('/profile');
+    await tester.pump();
+    expect(find.byType(LoadingState), findsOneWidget);
+    expect(find.byType(ErrorState), findsNothing);
+
+    await tester.pump();
+    expect(find.byType(LoadingState), findsOneWidget);
+    expect(find.byType(ErrorState), findsNothing);
+
+    pending.complete(profileFixture(complete: true));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('profile-display-name')), findsOneWidget);
+  });
+
+  testWidgets('Profile setup idle and loading render loading', (tester) async {
+    final pending = Completer<ProfileEditorData>();
+    final auth = FakeAuthGateway(
+      snapshot: const AuthSnapshot(identity: AuthIdentity(id: 'user-1')),
+    );
+    final anchor = FakeProfileAnchorGateway()
+      ..readiness = ProfileAnchorReadiness.incomplete;
+    final profile = FakeProfileGateway()..loadResult = (_) => pending.future;
+    addTearDown(auth.close);
+    final app = await _pumpApp(tester, auth, anchor, profile);
+
+    app.read(appRouterProvider).go('/profile/edit');
+    await tester.pump();
+    expect(find.byType(LoadingState), findsOneWidget);
+    expect(find.byType(ErrorState), findsNothing);
+
+    await tester.pump();
+    expect(find.byType(LoadingState), findsOneWidget);
+    expect(find.byType(ErrorState), findsNothing);
+
+    pending.complete(profileFixture());
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('profile-display-name-field')), findsOneWidget);
+  });
+
+  testWidgets('a genuine Profile load failure remains retryable', (
+    tester,
+  ) async {
+    final auth = FakeAuthGateway(
+      snapshot: const AuthSnapshot(identity: AuthIdentity(id: 'user-1')),
+    );
+    final anchor = FakeProfileAnchorGateway()
+      ..readiness = ProfileAnchorReadiness.complete;
+    final profile = FakeProfileGateway()
+      ..loadError = StateError('private Profile diagnostic');
+    addTearDown(auth.close);
+    final app = await _pumpApp(tester, auth, anchor, profile);
+
+    app.read(appRouterProvider).go('/profile');
+    await tester.pumpAndSettle();
+
+    expect(find.byType(ErrorState), findsOneWidget);
+    expect(find.text('Try again'), findsOneWidget);
+    expect(find.textContaining('private Profile diagnostic'), findsNothing);
+  });
+
   testWidgets('signed-out Profile is a static example with explicit Auth CTA', (
     tester,
   ) async {
@@ -240,7 +318,7 @@ void main() {
   });
 }
 
-Future<void> _pumpApp(
+Future<ProviderContainer> _pumpApp(
   WidgetTester tester,
   FakeAuthGateway auth,
   FakeProfileAnchorGateway anchor,
@@ -264,6 +342,7 @@ Future<void> _pumpApp(
     ),
   );
   await tester.pumpAndSettle();
+  return ProviderScope.containerOf(tester.element(find.byType(PlanetsApp)));
 }
 
 Future<void> _tapVisible(WidgetTester tester, Finder finder) async {

@@ -42,6 +42,10 @@ creator-review, Project resource management, Messages request/chat/group-info, a
 through OTP and profile completion. Missing-anchor retry and email-OTP behavior
 are unchanged. Saving a valid profile returns to the preserved participation or
 Messages/Notifications route when present, otherwise to Profile.
+For guarded Proposal/Tavolo Join setup, Profile edit keeps separate destinations:
+Save resumes the exact sanitized Join route, while the visible Back action and
+system Back return to the corresponding public Project detail. Other Profile
+edit flows conservatively cancel to Profile.
 
 ## Retention and identity
 

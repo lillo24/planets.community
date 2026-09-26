@@ -213,6 +213,9 @@ RoutingConfig _routingConfig(
                           : sanitizeReturnDestination(
                               state.uri.queryParameters['returnTo'],
                             ),
+                      cancelTo: profileEditCancelDestination(
+                        state.uri.queryParameters['returnTo'],
+                      ),
                     ),
                   ),
                 ],

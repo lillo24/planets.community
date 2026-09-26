@@ -1,9 +1,13 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:planets_mobile/app/planets_app.dart';
 import 'package:planets_mobile/app/router/app_router.dart';
 import 'package:planets_mobile/core/config/app_config.dart';
+import 'package:planets_mobile/core/widgets/error_state.dart';
+import 'package:planets_mobile/core/widgets/loading_state.dart';
 import 'package:planets_mobile/features/auth/data/auth_gateway.dart';
 import 'package:planets_mobile/features/auth/domain/auth_models.dart';
 import 'package:planets_mobile/features/messages/data/messages_gateway.dart';
@@ -37,6 +41,52 @@ import '../../../support/fake_recurring_activity.dart';
 import '../../../support/fake_resource_chat.dart';
 
 void main() {
+  testWidgets('Project chat idle and loading render loading', (tester) async {
+    final pending = Completer<void>();
+    final chats = FakeProjectChatGateway()
+      ..summaries = [projectChatSummaryFixture()]
+      ..histories['chat-1'] = []
+      ..historyDelay = pending.future;
+    final app = await _pump(tester, chats: chats);
+
+    app.read(appRouterProvider).go('/messages/chats/chat-1');
+    await tester.pump();
+    expect(find.byType(LoadingState), findsOneWidget);
+    expect(find.byType(ErrorState), findsNothing);
+
+    await tester.pump();
+    expect(find.byType(LoadingState), findsOneWidget);
+    expect(find.byType(ErrorState), findsNothing);
+
+    pending.complete();
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('project-chat-composer')), findsOneWidget);
+  });
+
+  testWidgets('Project chat info idle and loading render loading', (
+    tester,
+  ) async {
+    final pending = Completer<void>();
+    final chats = FakeProjectChatGateway()
+      ..summaries = [projectChatSummaryFixture()]
+      ..histories['chat-1'] = []
+      ..historyDelay = pending.future;
+    final app = await _pump(tester, chats: chats);
+
+    app.read(appRouterProvider).go('/messages/chats/chat-1/info');
+    await tester.pump();
+    expect(find.byType(LoadingState), findsOneWidget);
+    expect(find.byType(ErrorState), findsNothing);
+
+    await tester.pump();
+    expect(find.byType(LoadingState), findsOneWidget);
+    expect(find.byType(ErrorState), findsNothing);
+
+    pending.complete();
+    await tester.pumpAndSettle();
+    expect(find.text('Paint the square'), findsOneWidget);
+  });
+
   testWidgets('Messages defaults to chat previews without unread state', (
     tester,
   ) async {

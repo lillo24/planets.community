@@ -7,10 +7,13 @@ import 'package:planets_mobile/app/planets_app.dart';
 import 'package:planets_mobile/app/router/app_navigation_shell.dart';
 import 'package:planets_mobile/app/router/app_router.dart';
 import 'package:planets_mobile/core/config/app_config.dart';
+import 'package:planets_mobile/core/widgets/error_state.dart';
+import 'package:planets_mobile/core/widgets/loading_state.dart';
 import 'package:planets_mobile/features/auth/application/auth_session_controller.dart';
 import 'package:planets_mobile/features/auth/data/auth_gateway.dart';
 import 'package:planets_mobile/features/auth/domain/auth_models.dart';
 import 'package:planets_mobile/features/profile/data/profile_gateway.dart';
+import 'package:planets_mobile/features/profile/domain/profile_models.dart';
 import 'package:planets_mobile/features/participation/data/participation_gateway.dart';
 import 'package:planets_mobile/features/project_resource_needs/data/project_resource_needs_gateway.dart';
 import 'package:planets_mobile/features/proposals/data/proposal_gateway.dart';
@@ -291,6 +294,100 @@ void main() {
       router.routeInformationProvider.value.uri.path,
       '/proposals/proposal-1/join',
     );
+  });
+
+  testWidgets('OTP to Profile setup stays loading until Profile is ready', (
+    tester,
+  ) async {
+    final pending = Completer<ProfileEditorData>();
+    final profile = FakeProfileGateway()..loadResult = (_) => pending.future;
+    final app = await _pump(
+      tester,
+      signedIn: false,
+      complete: false,
+      profile: profile,
+    );
+    final router = app.read(appRouterProvider);
+    router.go('/proposals/proposal-1/join');
+    await tester.pumpAndSettle();
+    await tester.enterText(
+      find.byKey(const Key('auth-email-field')),
+      'person@example.com',
+    );
+    await _tap(tester, 'auth-request-button');
+    await tester.enterText(find.byKey(const Key('auth-code-field')), '123456');
+    await tester.tap(find.byKey(const Key('auth-verify-button')));
+    for (var frame = 0; frame < 4; frame++) {
+      await tester.pump();
+    }
+
+    expect(router.routeInformationProvider.value.uri.path, '/profile/edit');
+    expect(find.byType(LoadingState), findsOneWidget);
+    expect(find.byType(ErrorState), findsNothing);
+
+    pending.complete(profileFixture());
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('profile-display-name-field')), findsOneWidget);
+  });
+
+  testWidgets('Proposal setup cancel and system Back return to its detail', (
+    tester,
+  ) async {
+    final app = await _pump(tester, complete: false);
+    final router = app.read(appRouterProvider);
+
+    router.go('/proposals/proposal-1/join');
+    await tester.pumpAndSettle();
+    expect(router.routeInformationProvider.value.uri.path, '/profile/edit');
+    await _tap(tester, 'profile-cancel-button');
+    expect(
+      router.routeInformationProvider.value.uri.path,
+      '/proposals/proposal-1',
+    );
+
+    router.go('/proposals/proposal-1/join');
+    await tester.pumpAndSettle();
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+    expect(
+      router.routeInformationProvider.value.uri.path,
+      '/proposals/proposal-1',
+    );
+  });
+
+  testWidgets('Tavolo setup cancel and system Back return to its detail', (
+    tester,
+  ) async {
+    final app = await _pump(tester, complete: false);
+    final router = app.read(appRouterProvider);
+
+    router.go('/tavoli/tavolo-1/join');
+    await tester.pumpAndSettle();
+    await _tap(tester, 'profile-cancel-button');
+    expect(router.routeInformationProvider.value.uri.path, '/tavoli/tavolo-1');
+
+    router.go('/tavoli/tavolo-1/join');
+    await tester.pumpAndSettle();
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+    expect(router.routeInformationProvider.value.uri.path, '/tavoli/tavolo-1');
+  });
+
+  testWidgets('ordinary Profile edit Back and Save return to Profile', (
+    tester,
+  ) async {
+    final app = await _pump(tester);
+    final router = app.read(appRouterProvider);
+
+    router.go('/profile/edit');
+    await tester.pumpAndSettle();
+    await _tap(tester, 'profile-cancel-button');
+    expect(router.routeInformationProvider.value.uri.path, '/profile');
+
+    router.go('/profile/edit');
+    await tester.pumpAndSettle();
+    await _tap(tester, 'profile-save-button');
+    expect(router.routeInformationProvider.value.uri.path, '/profile');
   });
 
   testWidgets('account switch discards an inactive private join message', (

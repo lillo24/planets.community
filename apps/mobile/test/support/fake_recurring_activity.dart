@@ -20,6 +20,7 @@ class FakeRecurringActivityGateway implements RecurringActivityGateway {
   List<PublicRecurringActivitySummary> publicItems = [];
   List<RequestedRecurringActivitySummary> requestedItems = [];
   PublicRecurringActivityDetail? publicDetail;
+  Future<PublicRecurringActivityDetail?>? publicDetailResult;
   List<OwnRecurringActivity> ownItems = [];
   PublicTavoliLoader? publicLoader;
   RequestedTavoliLoader? requestedLoader;
@@ -88,6 +89,7 @@ class FakeRecurringActivityGateway implements RecurringActivityGateway {
     _throwIfNeeded();
     calls.add('public-detail:$activityId:$occurrenceLimit');
     referenceTimes.add(referenceTime);
+    if (publicDetailResult case final result?) return result;
     return publicDetail;
   }
 

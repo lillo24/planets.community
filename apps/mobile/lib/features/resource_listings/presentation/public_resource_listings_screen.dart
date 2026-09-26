@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/theme/app_tokens.dart';
+import '../../../core/widgets/async_data_presentation.dart';
 import '../../../core/widgets/empty_state.dart';
 import '../../../core/widgets/error_state.dart';
 import '../../../core/widgets/loading_state.dart';
@@ -298,18 +299,26 @@ class _PublicResourceListingDetailScreenState
     final profileId = session.phase == AuthSessionPhase.ready
         ? session.identity?.id
         : null;
-    final emptyDetail = switch (state.phase) {
-      ResourceListingLoadPhase.idle || ResourceListingLoadPhase.loading =>
-        LoadingState(message: l10n.resourceLoading),
-      ResourceListingLoadPhase.ready => ErrorState(
+    final presentation = classifyAsyncDataPresentation(
+      hasData: detail != null,
+      isPending:
+          state.phase == ResourceListingLoadPhase.idle ||
+          state.phase == ResourceListingLoadPhase.loading,
+      hasFailed: state.phase == ResourceListingLoadPhase.failure,
+    );
+    final emptyDetail = switch (presentation) {
+      AsyncDataPresentation.loading => LoadingState(
+        message: l10n.resourceLoading,
+      ),
+      AsyncDataPresentation.absent => ErrorState(
         message: l10n.resourceNotFound,
         onRetry: _load,
       ),
-      ResourceListingLoadPhase.loadingMore ||
-      ResourceListingLoadPhase.failure => ErrorState(
+      AsyncDataPresentation.failure => ErrorState(
         message: resourceListingFailureMessage(l10n, state.failure),
         onRetry: _load,
       ),
+      AsyncDataPresentation.content => const SizedBox.shrink(),
     };
     return Scaffold(
       appBar: AppBar(

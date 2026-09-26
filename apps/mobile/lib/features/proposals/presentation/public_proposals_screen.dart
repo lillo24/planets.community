@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../app/router/browse_activity_switcher.dart';
 import '../../../core/theme/app_tokens.dart';
+import '../../../core/widgets/async_data_presentation.dart';
 import '../../../core/widgets/empty_state.dart';
 import '../../../core/widgets/error_state.dart';
 import '../../../core/widgets/loading_state.dart';
@@ -256,16 +257,24 @@ class _ProposalDetailScreenState extends ConsumerState<ProposalDetailScreen> {
     final l10n = AppLocalizations.of(context);
     final state = ref.watch(proposalDetailProvider);
     final detail = state.proposalId == widget.proposalId ? state.detail : null;
-    final emptyDetail = switch (state.phase) {
-      ProposalLoadPhase.idle ||
-      ProposalLoadPhase.loading => LoadingState(message: l10n.proposalLoading),
-      ProposalLoadPhase.ready ||
-      ProposalLoadPhase.loadingMore ||
-      ProposalLoadPhase.failure => ErrorState(
+    final presentation = classifyAsyncDataPresentation(
+      hasData: detail != null,
+      isPending:
+          state.phase == ProposalLoadPhase.idle ||
+          state.phase == ProposalLoadPhase.loading,
+      hasFailed: state.phase == ProposalLoadPhase.failure,
+    );
+    final emptyDetail = switch (presentation) {
+      AsyncDataPresentation.loading => LoadingState(
+        message: l10n.proposalLoading,
+      ),
+      AsyncDataPresentation.absent ||
+      AsyncDataPresentation.failure => ErrorState(
         message: l10n.proposalSafeError,
         onRetry: () =>
             ref.read(proposalDetailProvider.notifier).load(widget.proposalId),
       ),
+      AsyncDataPresentation.content => const SizedBox.shrink(),
     };
     return Scaffold(
       appBar: AppBar(title: Text(l10n.proposalDetailTitle)),

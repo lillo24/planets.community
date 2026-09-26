@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 import '../../../core/theme/app_tokens.dart';
+import '../../../core/widgets/async_data_presentation.dart';
 import '../../../core/widgets/error_state.dart';
 import '../../../core/widgets/loading_state.dart';
 import '../../../l10n/generated/app_localizations.dart';
@@ -76,6 +77,14 @@ class _ProjectChatInfoScreenState extends ConsumerState<ProjectChatInfoScreen> {
         detail.expectedProfileId == _expectedProfileId &&
         detail.chatId == widget.chatId;
     final summary = belongs ? detail.summary : null;
+    final presentation = classifyAsyncDataPresentation(
+      hasData: summary != null,
+      isPending:
+          !belongs ||
+          detail.phase == ProjectChatDetailPhase.idle ||
+          detail.phase == ProjectChatDetailPhase.loading,
+      hasFailed: belongs && detail.phase == ProjectChatDetailPhase.failure,
+    );
 
     if (summary != null && !summary.hasCurrentEntitlement) {
       final meeting = ref.read(participantMeetingDetailsProvider);
@@ -91,11 +100,9 @@ class _ProjectChatInfoScreenState extends ConsumerState<ProjectChatInfoScreen> {
     return Scaffold(
       appBar: AppBar(title: Text(l10n.projectChatGroupInfo)),
       body: SafeArea(
-        child:
-            summary == null &&
-                (!belongs || detail.phase == ProjectChatDetailPhase.loading)
+        child: presentation == AsyncDataPresentation.loading
             ? LoadingState(message: l10n.projectChatInfoLoading)
-            : summary == null
+            : presentation != AsyncDataPresentation.content
             ? ErrorState(
                 message: projectChatFailureMessage(
                   l10n,
@@ -107,7 +114,7 @@ class _ProjectChatInfoScreenState extends ConsumerState<ProjectChatInfoScreen> {
                 padding: const EdgeInsets.all(AppSpacing.medium),
                 children: [
                   Text(
-                    summary.projectTitle,
+                    summary!.projectTitle,
                     style: Theme.of(context).textTheme.headlineSmall,
                   ),
                   const SizedBox(height: AppSpacing.small),

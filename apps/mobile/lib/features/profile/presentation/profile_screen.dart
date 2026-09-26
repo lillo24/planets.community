@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/theme/app_tokens.dart';
+import '../../../core/widgets/async_data_presentation.dart';
 import '../../../core/widgets/error_state.dart';
 import '../../../core/widgets/loading_state.dart';
 import '../../../l10n/generated/app_localizations.dart';
@@ -44,19 +45,27 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       Future<void>.microtask(_load);
     }
 
+    final presentation = classifyAsyncDataPresentation(
+      hasData: data != null,
+      isPending:
+          state.phase == ProfilePhase.idle ||
+          state.phase == ProfilePhase.loading,
+      hasFailed: state.phase == ProfilePhase.failure,
+    );
+
     return Scaffold(
       appBar: AppBar(title: Text(l10n.profileTitle)),
       body: SafeArea(
         child: userId == null
             ? const _ExampleProfile()
-            : data == null && state.phase == ProfilePhase.loading
+            : presentation == AsyncDataPresentation.loading
             ? LoadingState(message: l10n.profileLoading)
-            : data == null
+            : presentation != AsyncDataPresentation.content
             ? ErrorState(
                 message: l10n.profileLoadError,
                 onRetry: () => ref.read(profileProvider.notifier).load(userId),
               )
-            : _ProfileBody(data: data),
+            : _ProfileBody(data: data!),
       ),
     );
   }
