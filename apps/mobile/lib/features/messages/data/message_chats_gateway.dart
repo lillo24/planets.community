@@ -10,6 +10,7 @@ import '../domain/message_chat_models.dart';
 abstract interface class MessageChatsGateway {
   Future<MessageChatPage> listItems({
     required String expectedProfileId,
+    required MessageChatScope scope,
     required int limit,
     MessageChatCursor? cursor,
   });
@@ -24,13 +25,15 @@ class SupabaseMessageChatsGateway implements MessageChatsGateway {
   @override
   Future<MessageChatPage> listItems({
     required String expectedProfileId,
+    required MessageChatScope scope,
     required int limit,
     MessageChatCursor? cursor,
   }) async {
     final response = await _client.rpc<List<dynamic>>(
-      'list_own_message_chat_items',
+      'list_own_scoped_message_chat_items',
       params: {
         'p_expected_profile_id': expectedProfileId,
+        'p_scope': scope.wireValue,
         'p_limit': limit + 1,
         'p_cursor_activity_at': cursor?.activityAt.toUtc().toIso8601String(),
         'p_cursor_item_kind': cursor?.itemKind.wireValue,
@@ -67,6 +70,16 @@ class MessageChatsPayloadParser {
     'resource_listing_id',
     'agreement_lifecycle',
     'coordination_closed_at',
+    'project_request_id',
+    'project_request_project_id',
+    'project_request_project_kind',
+    'project_request_project_title',
+    'project_request_counterparty_profile_id',
+    'project_request_counterparty_display_name',
+    'project_request_status',
+    'project_request_message',
+    'project_request_resolved_at',
+    'accepted_project_group_chat_id',
   };
 
   MessageChatItem item(Object? value) {
@@ -77,6 +90,7 @@ class MessageChatsPayloadParser {
     return switch (kind) {
       MessageChatItemKind.projectChat => _projectItem(row),
       MessageChatItemKind.resourceChat => _resourceItem(row),
+      MessageChatItemKind.projectRequestChat => _projectRequestItem(row),
     };
   }
 
@@ -87,6 +101,7 @@ class MessageChatsPayloadParser {
       'resource_listing_id',
       'agreement_lifecycle',
       'coordination_closed_at',
+      ..._projectRequestKeys,
     });
     return ProjectMessageChatItem(
       chatId: _uuid(row, 'chat_id'),
@@ -111,7 +126,11 @@ class MessageChatsPayloadParser {
   }
 
   ResourceMessageChatItem _resourceItem(Map<String, dynamic> row) {
-    _requireNulls(row, const {'project_id', 'project_kind'});
+    _requireNulls(row, const {
+      'project_id',
+      'project_kind',
+      ..._projectRequestKeys,
+    });
     final lifecycle = ResourceExchangeLifecycle.fromWire(
       _string(row, 'agreement_lifecycle'),
     );
@@ -145,6 +164,69 @@ class MessageChatsPayloadParser {
       listingId: _uuid(row, 'resource_listing_id'),
       agreementLifecycle: lifecycle,
       coordinationClosedAt: closedAt,
+    );
+  }
+
+  ProjectRequestMessageChatItem _projectRequestItem(Map<String, dynamic> row) {
+    _requireNulls(row, const {
+      'project_id',
+      'project_kind',
+      'resource_request_id',
+      'resource_agreement_id',
+      'resource_listing_id',
+      'agreement_lifecycle',
+      'coordination_closed_at',
+    });
+    final status = JoinRequestStatus.fromWire(
+      _string(row, 'project_request_status'),
+    );
+    final resolvedAt = _optionalDate(row, 'project_request_resolved_at');
+    final acceptedChatId = _optionalUuid(row, 'accepted_project_group_chat_id');
+    final readOnly = _bool(row, 'is_read_only');
+    if ((status == JoinRequestStatus.pending) != !readOnly ||
+        (status == JoinRequestStatus.pending) != (resolvedAt == null) ||
+        (status != JoinRequestStatus.accepted && acceptedChatId != null)) {
+      throw const FormatException(
+        'Participation-request chat lifecycle shape was inconsistent.',
+      );
+    }
+    return ProjectRequestMessageChatItem(
+      chatId: _uuid(row, 'chat_id'),
+      activityAt: _date(row, 'activity_at'),
+      displayTitle: _string(row, 'display_title'),
+      viewerRole: ProjectRequestChatViewerRole.fromWire(
+        _string(row, 'viewer_role'),
+      ),
+      isReadOnly: readOnly,
+      lastVisibleMessageId: _optionalUuid(row, 'last_visible_message_id'),
+      lastVisibleMessageBody: _optionalString(row, 'last_visible_message_body'),
+      lastVisibleMessageAt: _optionalDate(row, 'last_visible_message_at'),
+      lastVisibleSenderProfileId: _optionalUuid(
+        row,
+        'last_visible_sender_profile_id',
+      ),
+      lastVisibleSenderDisplayName: _optionalString(
+        row,
+        'last_visible_sender_display_name',
+      ),
+      requestId: _uuid(row, 'project_request_id'),
+      projectId: _uuid(row, 'project_request_project_id'),
+      projectKind: ProjectKind.fromWire(
+        _string(row, 'project_request_project_kind'),
+      ),
+      projectTitle: _string(row, 'project_request_project_title'),
+      counterpartyProfileId: _uuid(
+        row,
+        'project_request_counterparty_profile_id',
+      ),
+      counterpartyDisplayName: _string(
+        row,
+        'project_request_counterparty_display_name',
+      ),
+      requestStatus: status,
+      requestMessage: _optionalString(row, 'project_request_message'),
+      resolvedAt: resolvedAt,
+      acceptedProjectGroupChatId: acceptedChatId,
     );
   }
 
@@ -227,6 +309,19 @@ class MessageChatsPayloadParser {
   DateTime? _optionalDate(Map<String, dynamic> row, String key) =>
       row[key] == null ? null : _date(row, key);
 }
+
+const _projectRequestKeys = {
+  'project_request_id',
+  'project_request_project_id',
+  'project_request_project_kind',
+  'project_request_project_title',
+  'project_request_counterparty_profile_id',
+  'project_request_counterparty_display_name',
+  'project_request_status',
+  'project_request_message',
+  'project_request_resolved_at',
+  'accepted_project_group_chat_id',
+};
 
 final _uuidPattern = RegExp(
   r'^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$',

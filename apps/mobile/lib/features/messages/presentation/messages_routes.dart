@@ -10,6 +10,9 @@ String projectChatRoute(String chatId) =>
 String resourceChatRoute(String chatId) =>
     '/messages/chats/resource/${Uri.encodeComponent(chatId)}';
 
+String projectRequestChatRoute(String requestId) =>
+    '/messages/chats/request/${Uri.encodeComponent(requestId)}';
+
 String projectChatInfoRoute(String chatId) =>
     '${projectChatRoute(chatId)}/info';
 

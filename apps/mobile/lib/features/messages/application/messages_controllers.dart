@@ -4,8 +4,10 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../auth/application/auth_session_controller.dart';
 import '../../auth/domain/auth_models.dart';
 import '../../participation/application/participation_controllers.dart';
+import '../../project_chat/application/project_chat_refresh.dart';
 import '../data/messages_gateway.dart';
 import '../domain/message_models.dart';
+import 'message_chats_refresh.dart';
 
 const messagesPageSize = 20;
 
@@ -475,6 +477,8 @@ class MessagesDetailController extends Notifier<MessagesDetailState> {
     ParticipationRequestMessageItem item,
     String profileId,
   ) async {
+    ref.read(messageChatsRefreshProvider.notifier).notifyChanged();
+    ref.read(projectChatRefreshProvider.notifier).notifyChanged();
     await ref
         .read(messagesInboxProvider.notifier)
         .load(profileId, refresh: true);
@@ -510,6 +514,7 @@ class MessagesDetailController extends Notifier<MessagesDetailState> {
     await ref
         .read(messagesInboxProvider.notifier)
         .load(profileId, refresh: true);
+    ref.read(messageChatsRefreshProvider.notifier).notifyChanged();
     if (ref.read(authSessionProvider).identity?.id != profileId ||
         state.requestId != requestId) {
       return false;

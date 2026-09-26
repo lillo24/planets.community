@@ -2895,6 +2895,46 @@ export type Database = {
           viewer_role: string
         }[]
       }
+      list_own_scoped_message_chat_items: {
+        Args: {
+          p_cursor_activity_at?: string
+          p_cursor_chat_id?: string
+          p_cursor_item_kind?: string
+          p_expected_profile_id: string
+          p_limit: number
+          p_scope: string
+        }
+        Returns: {
+          accepted_project_group_chat_id: string
+          activity_at: string
+          agreement_lifecycle: string
+          chat_id: string
+          coordination_closed_at: string
+          display_title: string
+          is_read_only: boolean
+          item_kind: string
+          last_visible_message_at: string
+          last_visible_message_body: string
+          last_visible_message_id: string
+          last_visible_sender_display_name: string
+          last_visible_sender_profile_id: string
+          project_id: string
+          project_kind: string
+          project_request_counterparty_display_name: string
+          project_request_counterparty_profile_id: string
+          project_request_id: string
+          project_request_message: string
+          project_request_project_id: string
+          project_request_project_kind: string
+          project_request_project_title: string
+          project_request_resolved_at: string
+          project_request_status: string
+          resource_agreement_id: string
+          resource_listing_id: string
+          resource_request_id: string
+          viewer_role: string
+        }[]
+      }
       list_own_structured_request_message_items: {
         Args: {
           p_cursor_activity_at?: string

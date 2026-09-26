@@ -109,6 +109,8 @@ void main() {
 
     expect(find.text('Chats'), findsOneWidget);
     expect(find.text('Requests'), findsOneWidget);
+    await tester.tap(find.text('Groups'));
+    await tester.pumpAndSettle();
     expect(find.text('Jordan: Bring a small brush.'), findsOneWidget);
     expect(find.text('No messages yet'), findsOneWidget);
     expect(find.text('Read-only'), findsOneWidget);

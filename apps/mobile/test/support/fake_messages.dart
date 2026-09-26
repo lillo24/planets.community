@@ -16,6 +16,7 @@ class FakeMessagesGateway implements MessagesGateway {
   Future<void>? selectionDelay;
   Future<void>? mutationDelay;
   Object? mutationError;
+  void Function(JoinRequestStatus status)? onParticipationResolved;
   final List<String> calls = [];
   MessageCursor? lastCursor;
   String? lastExpectedProfileId;
@@ -131,6 +132,7 @@ class FakeMessagesGateway implements MessagesGateway {
         else
           item,
     ];
+    onParticipationResolved?.call(status);
   }
 
   void _throwIfNeeded() {

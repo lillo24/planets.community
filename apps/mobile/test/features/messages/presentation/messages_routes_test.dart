@@ -39,4 +39,12 @@ void main() {
     );
     expect(isMessagesPath('/messages/chats/resource/chat-1'), isTrue);
   });
+
+  test('participation private chats use a non-colliding request route', () {
+    expect(
+      projectRequestChatRoute('request/with space'),
+      '/messages/chats/request/request%2Fwith%20space',
+    );
+    expect(isMessagesPath('/messages/chats/request/request-1'), isTrue);
+  });
 }

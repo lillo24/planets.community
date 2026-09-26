@@ -635,6 +635,10 @@
   },
   "resourceRequestTypeLabel": "Scambio-Dona request",
   "messageChatsLoading": "Loading chats…",
+  "messageChatsPrivate": "Private",
+  "messageChatsGroups": "Groups",
+  "messageChatsPrivateEmptyTitle": "No private chats yet",
+  "messageChatsPrivateEmptyMessage": "Participation-request and Scambio-Dona conversations will appear here.",
   "messageChatsEmptyTitle": "No chats yet",
   "messageChatsEmptyMessage": "Project and resource conversations will appear here when they become available.",
   "messageChatsUnavailable": "We couldn't load chats. Check your connection and try again.",
@@ -647,6 +651,59 @@
     "placeholders": {
       "title": { "type": "String" },
       "status": { "type": "String" }
+    }
+  },
+  "messageProjectRequestChatCardSemantics": "Private conversation with {name} about {project}",
+  "@messageProjectRequestChatCardSemantics": {
+    "placeholders": {
+      "name": { "type": "String" },
+      "project": { "type": "String" }
+    }
+  },
+  "projectRequestChatTitle": "Participation conversation",
+  "projectRequestChatLoading": "Loading private conversation…",
+  "projectRequestChatRequestCardTitle": "Request to join",
+  "projectRequestChatViewDetails": "View request details",
+  "projectRequestChatPendingCreator": "{name} wants to join {project}",
+  "@projectRequestChatPendingCreator": {
+    "placeholders": {
+      "name": { "type": "String" },
+      "project": { "type": "String" }
+    }
+  },
+  "projectRequestChatPendingRequester": "Your request to join {project} is pending",
+  "@projectRequestChatPendingRequester": {
+    "placeholders": { "project": { "type": "String" } }
+  },
+  "projectRequestChatAcceptedTitle": "Request accepted",
+  "projectRequestChatAcceptedBody": "You are now part of {project}.",
+  "@projectRequestChatAcceptedBody": {
+    "placeholders": { "project": { "type": "String" } }
+  },
+  "projectRequestChatRejectedTitle": "Request declined",
+  "projectRequestChatWithdrawnTitle": "Request withdrawn",
+  "projectRequestChatResolvedBody": "This conversation is now read-only.",
+  "projectRequestChatOpenGroup": "Open group chat",
+  "projectRequestChatEmpty": "No replies yet.",
+  "projectRequestChatLoadOlder": "Load older messages",
+  "projectRequestChatMessageHint": "Write a private message",
+  "projectRequestChatSend": "Send",
+  "projectRequestChatReadOnly": "This participation conversation is read-only.",
+  "projectRequestChatSendConflict": "The request was resolved before this message could be sent. The conversation is now read-only.",
+  "projectRequestChatInvalidMessage": "Enter a message between 1 and 4,000 characters.",
+  "projectRequestChatForbidden": "This private participation conversation is not available for the current account.",
+  "projectRequestChatNotFound": "This participation conversation is no longer available.",
+  "projectRequestChatUnavailable": "We couldn't load this private conversation. Check your connection and try again.",
+  "projectRequestChatUnableSend": "We couldn't send this message.",
+  "projectRequestChatConnectionIssue": "Live updates are temporarily unavailable. Refresh to check for new messages.",
+  "projectRequestChatYou": "You",
+  "projectRequestChatUnknownSender": "Participant",
+  "projectRequestChatMessageSemantics": "{sender}, {message}, {time}",
+  "@projectRequestChatMessageSemantics": {
+    "placeholders": {
+      "sender": { "type": "String" },
+      "message": { "type": "String" },
+      "time": { "type": "String" }
     }
   },
   "projectChatsLoading": "Loading project chats…",

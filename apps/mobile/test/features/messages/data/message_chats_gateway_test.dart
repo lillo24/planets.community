@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:planets_mobile/features/messages/data/message_chats_gateway.dart';
 import 'package:planets_mobile/features/messages/domain/message_chat_models.dart';
+import 'package:planets_mobile/features/participation/domain/participation_models.dart';
 import 'package:planets_mobile/features/project_chat/domain/project_chat_models.dart';
 import 'package:planets_mobile/features/resource_chat/domain/resource_chat_models.dart';
 
@@ -30,6 +31,26 @@ void main() {
         expect(item.isReadOnly, lifecycle.isClosed);
       }
     }
+  });
+
+  test('strictly parses participation-request chat context and fallback', () {
+    final item =
+        parser.item(_projectRequestRow()) as ProjectRequestMessageChatItem;
+
+    expect(item.viewerRole, ProjectRequestChatViewerRole.creator);
+    expect(item.requestStatus, JoinRequestStatus.pending);
+    expect(item.counterpartyDisplayName, 'Jordan');
+    expect(item.previewBody, 'Hello');
+
+    final fallback = parser.item(
+      _projectRequestRow()
+        ..['last_visible_message_id'] = null
+        ..['last_visible_message_body'] = null
+        ..['last_visible_message_at'] = null
+        ..['last_visible_sender_profile_id'] = null
+        ..['last_visible_sender_display_name'] = null,
+    ) as ProjectRequestMessageChatItem;
+    expect(fallback.previewBody, 'I can help.');
   });
 
   test('rejects cross-branch fields and partial previews', () {
@@ -86,7 +107,8 @@ void main() {
     final source = File('lib/features/messages/data/message_chats_gateway.dart')
         .readAsStringSync();
 
-    expect(source, contains("'list_own_message_chat_items'"));
+    expect(source, contains("'list_own_scoped_message_chat_items'"));
+    expect(source, contains("'p_scope'"));
     expect(source, contains("'p_cursor_activity_at'"));
     expect(source, contains("'p_cursor_item_kind'"));
     expect(source, contains("'p_cursor_chat_id'"));
@@ -115,6 +137,16 @@ Map<String, dynamic> _commonRow({String chatId = _chatId}) => {
   'last_visible_message_at': '2026-09-20T11:00:00Z',
   'last_visible_sender_profile_id': '00000000-0000-4000-8000-000000000102',
   'last_visible_sender_display_name': 'Jordan',
+  'project_request_id': null,
+  'project_request_project_id': null,
+  'project_request_project_kind': null,
+  'project_request_project_title': null,
+  'project_request_counterparty_profile_id': null,
+  'project_request_counterparty_display_name': null,
+  'project_request_status': null,
+  'project_request_message': null,
+  'project_request_resolved_at': null,
+  'accepted_project_group_chat_id': null,
 };
 
 Map<String, dynamic> _projectRow({String viewerRole = 'current_member'}) => {
@@ -147,4 +179,28 @@ Map<String, dynamic> _resourceRow({
   'resource_listing_id': '00000000-0000-4000-8000-000000000201',
   'agreement_lifecycle': lifecycle.wireValue,
   'coordination_closed_at': lifecycle.isClosed ? '2026-09-20T12:00:00Z' : null,
+};
+
+Map<String, dynamic> _projectRequestRow() => {
+  ..._commonRow(),
+  'item_kind': 'project_request_chat',
+  'viewer_role': 'creator',
+  'project_id': null,
+  'project_kind': null,
+  'resource_request_id': null,
+  'resource_agreement_id': null,
+  'resource_listing_id': null,
+  'agreement_lifecycle': null,
+  'coordination_closed_at': null,
+  'project_request_id': _requestId,
+  'project_request_project_id': _projectId,
+  'project_request_project_kind': 'one_time',
+  'project_request_project_title': 'Paint the square',
+  'project_request_counterparty_profile_id':
+      '00000000-0000-4000-8000-000000000102',
+  'project_request_counterparty_display_name': 'Jordan',
+  'project_request_status': 'pending',
+  'project_request_message': 'I can help.',
+  'project_request_resolved_at': null,
+  'accepted_project_group_chat_id': null,
 };

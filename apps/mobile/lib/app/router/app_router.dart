@@ -18,6 +18,7 @@ import '../../features/profile/presentation/profile_edit_screen.dart';
 import '../../features/profile/presentation/profile_screen.dart';
 import '../../features/project_chat/presentation/project_chat_info_screen.dart';
 import '../../features/project_chat/presentation/project_chat_screen.dart';
+import '../../features/project_request_chat/presentation/project_request_chat_screen.dart';
 import '../../features/project_resource_needs/presentation/project_resource_need_routes.dart';
 import '../../features/project_resource_needs/presentation/project_resource_needs_screen.dart';
 import '../../features/participation/domain/participation_models.dart';
@@ -252,6 +253,13 @@ RoutingConfig _routingConfig(
                     builder: (context, state) => ResourceChatScreen(
                       key: state.pageKey,
                       chatId: state.pathParameters['chatId']!,
+                    ),
+                  ),
+                  GoRoute(
+                    path: 'chats/request/:requestId',
+                    builder: (context, state) => ProjectRequestChatScreen(
+                      key: state.pageKey,
+                      requestId: state.pathParameters['requestId']!,
                     ),
                   ),
                   GoRoute(

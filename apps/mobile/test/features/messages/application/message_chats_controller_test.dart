@@ -8,24 +8,76 @@ import 'package:planets_mobile/features/auth/domain/auth_models.dart';
 import 'package:planets_mobile/features/messages/application/message_chats_controller.dart';
 import 'package:planets_mobile/features/messages/data/message_chats_gateway.dart';
 import 'package:planets_mobile/features/project_chat/data/project_chat_gateway.dart';
+import 'package:planets_mobile/features/project_request_chat/data/project_request_chat_gateway.dart';
 import 'package:planets_mobile/features/resource_chat/data/resource_chat_gateway.dart';
 import 'package:planets_mobile/features/resource_chat/domain/resource_chat_models.dart';
 
 import '../../../support/fake_auth.dart';
 import '../../../support/fake_message_chats.dart';
 import '../../../support/fake_project_chat.dart';
+import '../../../support/fake_project_request_chat.dart';
 import '../../../support/fake_resource_chat.dart';
 
 void main() {
+  test('Private and Groups keep independent backend pages', () async {
+    final list = FakeMessageChatsGateway()
+      ..items = [
+        ...List.generate(
+          25,
+          (index) => resourceMessageChatFixture(
+            chatId:
+                '00000000-0000-4000-8001-${index.toString().padLeft(12, '0')}',
+          ),
+        ),
+        ...List.generate(
+          25,
+          (index) => projectMessageChatFixture(
+            chatId:
+                '00000000-0000-4000-8002-${index.toString().padLeft(12, '0')}',
+          ),
+        ),
+      ];
+    final session = _readyContainer(list);
+    addTearDown(session.dispose);
+    final privateController = session.container.read(
+      messageChatsProvider.notifier,
+    );
+    final groupController = session.container.read(
+      groupMessageChatsProvider.notifier,
+    );
+
+    await Future.wait([
+      privateController.load('user-1'),
+      groupController.load('user-1'),
+    ]);
+    expect(session.container.read(messageChatsProvider).items, hasLength(20));
+    expect(
+      session.container.read(groupMessageChatsProvider).items,
+      hasLength(20),
+    );
+
+    await privateController.loadMore('user-1');
+    expect(session.container.read(messageChatsProvider).items, hasLength(25));
+    expect(
+      session.container.read(groupMessageChatsProvider).items,
+      hasLength(20),
+    );
+    await groupController.loadMore('user-1');
+    expect(
+      session.container.read(groupMessageChatsProvider).items,
+      hasLength(25),
+    );
+  });
+
   test('loads mixed pages and dedupes by kind plus chat ID', () async {
     const shared = '00000000-0000-4000-8000-000000000401';
     final list = FakeMessageChatsGateway()
       ..items = [
-        projectMessageChatFixture(chatId: shared),
+        projectRequestMessageChatFixture(chatId: shared),
         resourceMessageChatFixture(chatId: shared),
         ...List.generate(
           19,
-          (index) => projectMessageChatFixture(
+          (index) => resourceMessageChatFixture(
             chatId:
                 '00000000-0000-4000-8000-${(index + 1000).toString().padLeft(12, '0')}',
           ),
@@ -45,10 +97,11 @@ void main() {
 
   test('subscribes only loaded writable rows and closes stale rows', () async {
     final project = FakeProjectChatGateway();
+    final request = FakeProjectRequestChatGateway();
     final resource = FakeResourceChatGateway();
     final list = FakeMessageChatsGateway()
       ..items = [
-        projectMessageChatFixture(),
+        projectRequestMessageChatFixture(),
         resourceMessageChatFixture(),
         resourceMessageChatFixture(
           chatId: '00000000-0000-4000-8000-000000000402',
@@ -56,35 +109,52 @@ void main() {
           isReadOnly: true,
         ),
       ];
-    final session = _readyContainer(list, project: project, resource: resource);
+    final session = _readyContainer(
+      list,
+      project: project,
+      request: request,
+      resource: resource,
+    );
     addTearDown(session.dispose);
     final controller = session.container.read(messageChatsProvider.notifier);
     await controller.load('user-1');
     controller.startSignals('user-1');
 
-    expect(project.subscriptions, hasLength(1));
+    expect(project.subscriptions, isEmpty);
+    expect(request.subscriptions, hasLength(1));
     expect(resource.subscriptions, hasLength(1));
     final resourceSubscription = resource.subscriptions.single;
 
+    final requestSubscription = request.subscriptions.single;
     list.items = [projectMessageChatFixture()];
     await controller.load('user-1', refresh: true);
     await Future<void>.delayed(Duration.zero);
 
     expect(resourceSubscription.isClosed, isTrue);
+    expect(requestSubscription.isClosed, isTrue);
   });
 
   test('signal bursts debounce one canonical list refresh', () async {
     final project = FakeProjectChatGateway();
+    final request = FakeProjectRequestChatGateway();
     final resource = FakeResourceChatGateway();
     final list = FakeMessageChatsGateway()
-      ..items = [projectMessageChatFixture(), resourceMessageChatFixture()];
-    final session = _readyContainer(list, project: project, resource: resource);
+      ..items = [
+        projectRequestMessageChatFixture(),
+        resourceMessageChatFixture(),
+      ];
+    final session = _readyContainer(
+      list,
+      project: project,
+      request: request,
+      resource: resource,
+    );
     addTearDown(session.dispose);
     final controller = session.container.read(messageChatsProvider.notifier);
     await controller.load('user-1');
     controller.startSignals('user-1');
 
-    project.emitSignal(project.subscriptions.single.chatId);
+    request.emitSignal();
     resource.emitMessage(resource.subscriptions.single.chatId);
     await Future<void>.delayed(const Duration(milliseconds: 350));
 
@@ -160,6 +230,7 @@ class _Session {
 _Session _readyContainer(
   FakeMessageChatsGateway list, {
   FakeProjectChatGateway? project,
+  FakeProjectRequestChatGateway? request,
   FakeResourceChatGateway? resource,
 }) {
   final auth = FakeAuthGateway(
@@ -174,6 +245,9 @@ _Session _readyContainer(
       messageChatsGatewayProvider.overrideWithValue(list),
       projectChatGatewayProvider.overrideWithValue(
         project ?? FakeProjectChatGateway(),
+      ),
+      projectRequestChatGatewayProvider.overrideWithValue(
+        request ?? FakeProjectRequestChatGateway(),
       ),
       resourceChatGatewayProvider.overrideWithValue(
         resource ?? FakeResourceChatGateway(),
