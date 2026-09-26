@@ -2,6 +2,73 @@
 -- by embedded SQL. Keep both public contracts unchanged while making variable
 -- binding explicit for runtime and plpgsql_check.
 
+create or replace function private.validate_project_chat_system_event()
+returns trigger
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  resolved_project_id uuid;
+  source_event private.outbox_events%rowtype;
+begin
+  select chat.project_id
+  into resolved_project_id
+  from public.project_group_chats as chat
+  where chat.id = new.chat_id;
+
+  if not found then
+    raise exception using
+      errcode = '23514',
+      message = 'A Project chat system event requires a canonical chat.';
+  end if;
+
+  select * into source_event
+  from private.outbox_events as event
+  where event.id = new.source_outbox_event_id;
+
+  if not found
+    or source_event.event_type <> 'project.requirement_needed_again'
+    or source_event.created_at is distinct from new.created_at
+    or source_event.payload ->> 'project_id'
+      is distinct from resolved_project_id::text
+    or source_event.payload ->> 'requirement_kind'
+      is distinct from new.requirement_kind
+    or source_event.payload ->> 'requirement_id' is distinct from coalesce(
+      new.skill_id,
+      new.resource_need_id
+    )::text then
+    raise exception using
+      errcode = '23514',
+      message = 'Project chat system-event provenance is inconsistent.';
+  end if;
+
+  if new.requirement_kind = 'skill' and not exists (
+    select 1
+    from public.projects as project
+    where project.id = resolved_project_id
+      and project.project_kind = 'one_time'
+  ) then
+    raise exception using
+      errcode = '23514',
+      message = 'Only a Proposal chat may reference a skill requirement.';
+  end if;
+
+  if new.requirement_kind = 'resource' and not exists (
+    select 1
+    from public.project_resource_needs as need
+    where need.id = new.resource_need_id
+      and need.project_id = resolved_project_id
+  ) then
+    raise exception using
+      errcode = '23514',
+      message = 'A resource system event must reference its chat Project.';
+  end if;
+
+  return new;
+end;
+$$;
+
 create or replace function private.record_project_requirement_coverage_event(
   p_event_type text,
   p_actor_profile_id uuid,
