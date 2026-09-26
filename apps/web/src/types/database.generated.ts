@@ -269,6 +269,38 @@ export type Database = {
           },
         ]
       }
+      profile_photos: {
+        Row: {
+          audience: string
+          created_at: string
+          object_path: string
+          profile_id: string
+          updated_at: string
+        }
+        Insert: {
+          audience?: string
+          created_at?: string
+          object_path: string
+          profile_id: string
+          updated_at?: string
+        }
+        Update: {
+          audience?: string
+          created_at?: string
+          object_path?: string
+          profile_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "profile_photos_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profile_skills: {
         Row: {
           created_at: string
@@ -2014,6 +2046,10 @@ export type Database = {
         }
         Returns: string
       }
+      clear_own_profile_photo: {
+        Args: { p_expected_profile_id: string }
+        Returns: string
+      }
       close_project_resource_need: {
         Args: {
           p_expected_creator_profile_id: string
@@ -2127,6 +2163,16 @@ export type Database = {
           resolved_at: string
           status: string
           viewer_role: string
+        }[]
+      }
+      get_own_profile_photo: {
+        Args: { p_expected_profile_id: string }
+        Returns: {
+          audience: string
+          created_at: string
+          object_path: string
+          profile_id: string
+          updated_at: string
         }[]
       }
       get_own_project_group_chat: {
@@ -3330,6 +3376,28 @@ export type Database = {
           p_push_enabled: boolean
         }
         Returns: undefined
+      }
+      set_own_profile_photo: {
+        Args: {
+          p_audience: string
+          p_expected_profile_id: string
+          p_object_path: string
+        }
+        Returns: {
+          audience: string
+          current_object_path: string
+          previous_object_path: string
+          updated_at: string
+        }[]
+      }
+      set_own_profile_photo_audience: {
+        Args: { p_audience: string; p_expected_profile_id: string }
+        Returns: {
+          audience: string
+          object_path: string
+          profile_id: string
+          updated_at: string
+        }[]
       }
       set_project_requirement_manual_coverage: {
         Args: {

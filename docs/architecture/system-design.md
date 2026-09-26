@@ -573,7 +573,9 @@ must not invent those rules.
 
 Media should be divided by purpose and access policy rather than stored in one unrestricted bucket.
 
-The production object store is intentionally unresolved. Plan 08 must evaluate at least self-hosted Supabase Storage and an external object store such as Cloudflare R2, including bandwidth and storage cost, privacy/access control, backup coverage, migration complexity, and operating burden. Until that decision is accepted, clients and domain rules must not treat a Supabase Cloud Storage URL or dashboard-configured bucket as the permanent authorization boundary.
+08A1 selects Supabase Storage specifically for profile photos while the production object store for broader media remains unresolved. Plan 08 must still evaluate at least self-hosted Supabase Storage and an external object store such as Cloudflare R2 for those later media categories, including bandwidth and storage cost, privacy/access control, backup coverage, migration complexity, and operating burden. Clients and domain rules must not treat a Supabase Cloud Storage URL or dashboard-configured bucket as the permanent authorization boundary.
+
+Profile photos use a repository-defined private `profile-photos` bucket and immutable `<profile-id>/<photo-version>.webp` paths. PostgreSQL stores the path, audience, and timestamps only—never the project hostname, full URL, signed URL, provider ID, bytes, or original image. The client production contract is 512×512 WebP targeting roughly 100 KB, and Storage enforces `image/webp` plus a 250 KiB hard maximum. The audience is `public` or `interactions` (“Only people I interact with”), defaulting to `interactions`; both remain owner-only until 08A3 defines non-owner authorization and delivery.
 
 Expected categories include:
 
