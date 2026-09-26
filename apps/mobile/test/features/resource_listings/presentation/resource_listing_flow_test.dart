@@ -81,7 +81,8 @@ void main() {
 
       await _tap(tester, 'resource-card-$resourceListingId');
       expect(find.text('Listing details'), findsOneWidget);
-      expect(find.textContaining('Listed by Casey'), findsOneWidget);
+      expect(find.text('3h ago · Listed by Casey'), findsOneWidget);
+      expect(find.textContaining('ago ago'), findsNothing);
       expect(
         find.byKey(const Key('resource-signed-out-request-action')),
         findsOneWidget,
@@ -199,7 +200,7 @@ void main() {
       Key('resource-interest-count-$resourceListingId'),
     );
     final location = find.byKey(Key('resource-location-$resourceListingId'));
-    expect(tester.widget<Text>(age).data, '3h');
+    expect(tester.widget<Text>(age).data, '3h ago');
     expect(find.byKey(const Key('resource-mode-exchange')), findsOneWidget);
     expect(tester.getTopLeft(age).dx, greaterThan(tester.getTopLeft(title).dx));
     expect(
@@ -213,6 +214,7 @@ void main() {
     (tester) async {
       final gateway = FakeResourceListingGateway()
         ..publicDetail = publicResourceListingDetailFixture(
+          ownerDisplayName: null,
           locality: 'Trento',
           administrativeArea: 'Trento',
           publicLocationLabel: 'Trento',
@@ -229,6 +231,8 @@ void main() {
         find.byKey(const Key('resource-detail-published-age')),
         findsOneWidget,
       );
+      expect(find.text('Published 3h ago'), findsOneWidget);
+      expect(find.textContaining('ago ago'), findsNothing);
       expect(
         find.byKey(const Key('resource-request-flow-helper')),
         findsOneWidget,

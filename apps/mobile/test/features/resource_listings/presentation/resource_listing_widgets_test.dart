@@ -25,10 +25,10 @@ void main() {
     expect(
       formatResourceListingRelativeAge(
         context,
-        now.subtract(const Duration(minutes: 30)),
+        now.subtract(const Duration(minutes: 22)),
         now: now,
       ),
-      '30m',
+      '22m ago',
     );
     expect(
       formatResourceListingRelativeAge(
@@ -36,15 +36,15 @@ void main() {
         now.subtract(const Duration(hours: 3)),
         now: now,
       ),
-      '3h',
+      '3h ago',
     );
     expect(
       formatResourceListingRelativeAge(
         context,
-        now.subtract(const Duration(days: 3)),
+        now.subtract(const Duration(days: 2)),
         now: now,
       ),
-      '3d',
+      '2d ago',
     );
     expect(
       formatResourceListingRelativeAge(

@@ -43,6 +43,15 @@ void main() {
     expect(find.byType(FilterChip), findsNothing);
     expect(find.byType(CheckboxListTile), findsNothing);
     expect(find.byType(Chip), findsNothing);
+    final skillTrigger = find.byKey(const Key('skill-filter-trigger'));
+    expect(
+      find.descendant(of: skillTrigger, matching: find.text('Select skills')),
+      findsOneWidget,
+    );
+    expect(
+      find.descendant(of: skillTrigger, matching: find.text('Skills')),
+      findsNothing,
+    );
     await tester.enterText(
       find.byKey(const Key('proposal-locality-filter')),
       ' Bologna ',
@@ -74,6 +83,14 @@ void main() {
     expect(find.byType(CheckboxListTile), findsNothing);
     expect(find.byType(InputChip), findsNWidgets(2));
     expect(find.text('+2 more'), findsOneWidget);
+    expect(
+      find.descendant(of: skillTrigger, matching: find.text('Select skills')),
+      findsNothing,
+    );
+    expect(
+      find.descendant(of: skillTrigger, matching: find.text('Skills')),
+      findsOneWidget,
+    );
 
     await _tap(tester, 'skill-filter-trigger');
     expect(tester.testTextInput.isVisible, isFalse);
@@ -116,6 +133,14 @@ void main() {
     expect(gateway.lastSkillIds, isNull);
     expect(gateway.lastLocality, 'Bologna');
     expect(find.byKey(const Key('skill-filter-summary')), findsNothing);
+    expect(
+      find.descendant(of: skillTrigger, matching: find.text('Select skills')),
+      findsOneWidget,
+    );
+    expect(
+      find.descendant(of: skillTrigger, matching: find.text('Skills')),
+      findsNothing,
+    );
     expect(find.text('No proposals found'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });

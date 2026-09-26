@@ -22,7 +22,7 @@ class SkillFilter extends StatelessWidget {
   @override
   Widget build(BuildContext context) => TagMultiSelect(
     label: AppLocalizations.of(context).profileSkillsTitle,
-    placeholder: AppLocalizations.of(context).skillSelectorPlaceholder,
+    emptyLabel: AppLocalizations.of(context).skillSelectorPlaceholder,
     categories: [
       for (final category in categories)
         TagMultiSelectCategory(

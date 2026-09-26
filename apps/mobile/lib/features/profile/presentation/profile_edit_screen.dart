@@ -247,7 +247,7 @@ class _ProfileEditFormState extends ConsumerState<_ProfileEditForm> {
                           const SizedBox(height: AppSpacing.medium),
                           TagMultiSelect(
                             label: l10n.profileSkillsTitle,
-                            placeholder: l10n.skillSelectorPlaceholder,
+                            emptyLabel: l10n.skillSelectorPlaceholder,
                             categories: [
                               for (final category in widget.data.categories)
                                 TagMultiSelectCategory(

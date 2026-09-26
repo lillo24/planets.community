@@ -943,19 +943,19 @@
   "resourceLocationTitle": "Location",
   "resourceDescriptionTitle": "Description",
   "resourceAgeNow": "now",
-  "resourceAgeMinutes": "{count}m",
+  "resourceAgeMinutes": "{count}m ago",
   "@resourceAgeMinutes": {
     "placeholders": { "count": { "type": "int" } }
   },
-  "resourceAgeHours": "{count}h",
+  "resourceAgeHours": "{count}h ago",
   "@resourceAgeHours": {
     "placeholders": { "count": { "type": "int" } }
   },
-  "resourceAgeDays": "{count}d",
+  "resourceAgeDays": "{count}d ago",
   "@resourceAgeDays": {
     "placeholders": { "count": { "type": "int" } }
   },
-  "resourcePublishedRelative": "Published {age} ago",
+  "resourcePublishedRelative": "Published {age}",
   "@resourcePublishedRelative": {
     "placeholders": { "age": { "type": "String" } }
   },

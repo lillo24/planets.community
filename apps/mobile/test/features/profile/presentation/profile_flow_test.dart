@@ -61,7 +61,16 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byType(CheckboxListTile), findsNothing);
-    expect(find.byKey(const Key('profile-skills-trigger')), findsOneWidget);
+    final skillsTrigger = find.byKey(const Key('profile-skills-trigger'));
+    expect(skillsTrigger, findsOneWidget);
+    expect(
+      find.descendant(of: skillsTrigger, matching: find.text('Select skills')),
+      findsOneWidget,
+    );
+    expect(
+      find.descendant(of: skillsTrigger, matching: find.text('Skills')),
+      findsNothing,
+    );
     expect(
       find.byKey(const Key('profile-save-button')).hitTestable(),
       findsOneWidget,
@@ -70,7 +79,7 @@ void main() {
       find.byKey(const Key('profile-display-name-field')),
       '  Casey  ',
     );
-    await _tapVisible(tester, find.byKey(const Key('profile-skills-trigger')));
+    await _tapVisible(tester, skillsTrigger);
     expect(find.text('Art & Creativity'), findsOneWidget);
     expect(find.text('Music'), findsOneWidget);
     await _tapVisible(
@@ -79,6 +88,14 @@ void main() {
     );
     expect(profile.updateCount, 0, reason: 'selection stays local until Save');
     await _tapVisible(tester, find.byKey(const Key('profile-skills-apply')));
+    expect(
+      find.descendant(of: skillsTrigger, matching: find.text('Select skills')),
+      findsNothing,
+    );
+    expect(
+      find.descendant(of: skillsTrigger, matching: find.text('Skills')),
+      findsOneWidget,
+    );
     final bioVisibility = find.byKey(const Key('profile-visibility-bio'));
     await _tapVisible(
       tester,

@@ -34,7 +34,7 @@ class TagMultiSelectCategory {
 class TagMultiSelect extends StatelessWidget {
   const TagMultiSelect({
     required this.label,
-    required this.placeholder,
+    required this.emptyLabel,
     required this.categories,
     required this.selectedIds,
     required this.onChanged,
@@ -44,8 +44,11 @@ class TagMultiSelect extends StatelessWidget {
     super.key,
   });
 
+  /// Floating field label shown when at least one tag is selected.
   final String label;
-  final String placeholder;
+
+  /// Sole in-field label shown while the selection is empty.
+  final String emptyLabel;
   final List<TagMultiSelectCategory> categories;
   final Set<String> selectedIds;
   final ValueChanged<Set<String>> onChanged;
@@ -84,32 +87,33 @@ class TagMultiSelect extends StatelessWidget {
         .where((option) => selectedIds.contains(option.id))
         .toList(growable: false);
     final visible = selected.take(2).toList(growable: false);
+    final isEmpty = selected.isEmpty;
+    final selectionCount = l10n.skillSelectorSelectionCount(selected.length);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Semantics(
+          key: Key('$keyPrefix-trigger'),
           button: true,
           enabled: enabled,
-          label: l10n.skillSelectorSelectionCount(selected.length),
+          label: isEmpty ? '$emptyLabel. $selectionCount' : selectionCount,
+          excludeSemantics: isEmpty,
           child: InkWell(
-            key: Key('$keyPrefix-trigger'),
             borderRadius: AppRadii.medium,
             onTap: enabled ? () => _open(context) : null,
             child: InputDecorator(
               decoration: InputDecoration(
-                labelText: label,
+                labelText: isEmpty ? emptyLabel : label,
+                floatingLabelBehavior: isEmpty
+                    ? FloatingLabelBehavior.never
+                    : FloatingLabelBehavior.auto,
                 enabled: enabled,
                 suffixIcon: const Icon(Icons.expand_more),
               ),
-              isEmpty: selected.isEmpty,
-              child: selected.isEmpty
-                  ? Text(
-                      placeholder,
-                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      ),
-                    )
+              isEmpty: isEmpty,
+              child: isEmpty
+                  ? const SizedBox(height: 24)
                   : Wrap(
                       key: Key('$keyPrefix-summary'),
                       spacing: AppSpacing.small,

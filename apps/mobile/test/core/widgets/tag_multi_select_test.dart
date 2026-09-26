@@ -5,6 +5,41 @@ import 'package:planets_mobile/core/widgets/tag_multi_select.dart';
 import 'package:planets_mobile/l10n/generated/app_localizations.dart';
 
 void main() {
+  testWidgets('empty selector uses one prompt and restores it after removal', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      const _App(child: _SelectorHarness(initialSelection: {})),
+    );
+
+    final trigger = find.byKey(const Key('test-selector-trigger'));
+    expect(find.text('Select skills'), findsOneWidget);
+    expect(find.text('Skills'), findsNothing);
+    expect(tester.getSemantics(trigger).label, contains('Select skills'));
+    expect(tester.getSemantics(trigger).label, contains('No skills selected'));
+
+    await tester.tap(trigger);
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('test-selector-option-gardening')));
+    await tester.pump();
+    await tester.tap(find.byKey(const Key('test-selector-apply')));
+    await tester.pumpAndSettle();
+
+    final gardenTag = find.byKey(const Key('test-selector-selected-gardening'));
+    expect(find.text('Skills'), findsOneWidget);
+    expect(find.text('Select skills'), findsNothing);
+    expect(gardenTag, findsOneWidget);
+    expect(tester.getSemantics(trigger).label, contains('1 skill selected'));
+
+    await tester.tap(
+      find.descendant(of: gardenTag, matching: find.byIcon(Icons.cancel)),
+    );
+    await tester.pump();
+    expect(gardenTag, findsNothing);
+    expect(find.text('Select skills'), findsOneWidget);
+    expect(find.text('Skills'), findsNothing);
+  });
+
   testWidgets('compact selector supports tags, search, toggle and clear', (
     tester,
   ) async {
@@ -126,21 +161,25 @@ class _App extends StatelessWidget {
 }
 
 class _SelectorHarness extends StatefulWidget {
-  const _SelectorHarness({this.enabled = true});
+  const _SelectorHarness({
+    this.enabled = true,
+    this.initialSelection = const {'garden', 'photo'},
+  });
 
   final bool enabled;
+  final Set<String> initialSelection;
 
   @override
   State<_SelectorHarness> createState() => _SelectorHarnessState();
 }
 
 class _SelectorHarnessState extends State<_SelectorHarness> {
-  Set<String> selection = {'garden', 'photo'};
+  late Set<String> selection = {...widget.initialSelection};
 
   @override
   Widget build(BuildContext context) => TagMultiSelect(
     label: 'Skills',
-    placeholder: 'Select skills',
+    emptyLabel: 'Select skills',
     categories: const [
       TagMultiSelectCategory(
         id: 'practical',

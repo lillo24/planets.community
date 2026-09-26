@@ -159,7 +159,7 @@ void main() {
     },
   );
 
-  testWidgets('Scambio opens Browse while Home stays canonical and retained', (
+  testWidgets('Home destinations are canonical while Browse retains state', (
     tester,
   ) async {
     final app = await _pump(tester, signedIn: false);
@@ -181,6 +181,20 @@ void main() {
 
     await _tap(tester, 'nav-browse');
     expect(router.routeInformationProvider.value.uri.path, '/resources');
+
+    await _tap(tester, 'nav-home');
+    await _tap(tester, 'browse-proposals-button');
+    expect(router.routeInformationProvider.value.uri.path, '/proposals');
+    expect(
+      tester.widget<NavigationBar>(find.byType(NavigationBar)).selectedIndex,
+      AppBranch.browse.index,
+    );
+
+    router.go('/tavoli');
+    await tester.pumpAndSettle();
+    await _tap(tester, 'nav-home');
+    await _tap(tester, 'browse-proposals-button');
+    expect(router.routeInformationProvider.value.uri.path, '/proposals');
   });
 
   testWidgets('public Tavoli routes stay available signed out', (tester) async {
@@ -371,47 +385,57 @@ void main() {
     expect(find.text('Private Tavolo A', skipOffstage: false), findsNothing);
   });
 
-  testWidgets('tabs and Home CTA restore Browse details, filters and scroll', (
-    tester,
-  ) async {
-    final proposals = FakeProposalGateway()
-      ..publicItems = List.generate(
-        20,
-        (i) => proposalSummaryFixture(id: 'proposal-$i'),
-      )
-      ..publicDetail = proposalDetailFixture();
-    final app = await _pump(tester, proposals: proposals);
-    await _tap(tester, 'browse-proposals-button');
-    await tester.enterText(
-      find.byKey(const Key('proposal-locality-filter')),
-      'Bologna',
-    );
-    await _tap(tester, 'proposal-apply-filters');
-    await _tap(tester, 'skill-filter-trigger');
-    await _tap(tester, 'skill-filter-option-mural');
-    await _tap(tester, 'skill-filter-apply');
-    final list = find.byType(ListView);
-    await tester.drag(list, const Offset(0, -600));
-    await tester.pumpAndSettle();
-    final scroll = tester.state<ScrollableState>(
-      find.descendant(of: list, matching: find.byType(Scrollable)).first,
-    );
-    final offset = scroll.position.pixels;
-    await _tap(tester, 'nav-home');
-    await _tap(tester, 'browse-proposals-button');
-    expect(scroll.position.pixels, offset);
-    app.read(appRouterProvider).push('/proposals/proposal-1');
-    await tester.pumpAndSettle();
-    await _tap(tester, 'nav-home');
-    await _tap(tester, 'browse-proposals-button');
-    expect(find.text('Proposal details'), findsOneWidget);
-    await tester.tap(find.byType(BackButton));
-    await tester.pumpAndSettle();
-    expect(scroll.position.pixels, offset);
-    expect(proposals.lastLocality, 'Bologna');
-    expect(proposals.lastSkillIds, {'skill-mural'});
-    expect(proposals.calls.where((call) => call == 'list-public').length, 3);
-  });
+  testWidgets(
+    'Browse restores details and filters while Home CTA opens Proposal root',
+    (tester) async {
+      final proposals = FakeProposalGateway()
+        ..publicItems = List.generate(
+          20,
+          (i) => proposalSummaryFixture(id: 'proposal-$i'),
+        )
+        ..publicDetail = proposalDetailFixture();
+      final app = await _pump(tester, proposals: proposals);
+      await _tap(tester, 'browse-proposals-button');
+      await tester.enterText(
+        find.byKey(const Key('proposal-locality-filter')),
+        'Bologna',
+      );
+      await _tap(tester, 'proposal-apply-filters');
+      await _tap(tester, 'skill-filter-trigger');
+      await _tap(tester, 'skill-filter-option-mural');
+      await _tap(tester, 'skill-filter-apply');
+      final list = find.byType(ListView);
+      await tester.drag(list, const Offset(0, -600));
+      await tester.pumpAndSettle();
+      final scroll = tester.state<ScrollableState>(
+        find.descendant(of: list, matching: find.byType(Scrollable)).first,
+      );
+      final offset = scroll.position.pixels;
+      await _tap(tester, 'nav-home');
+      await _tap(tester, 'nav-browse');
+      expect(scroll.position.pixels, offset);
+      app.read(appRouterProvider).push('/proposals/proposal-1');
+      await tester.pumpAndSettle();
+      await _tap(tester, 'nav-home');
+      await _tap(tester, 'nav-browse');
+      expect(find.text('Proposal details'), findsOneWidget);
+      await tester.tap(find.byType(BackButton));
+      await tester.pumpAndSettle();
+      expect(scroll.position.pixels, offset);
+      app.read(appRouterProvider).push('/proposals/proposal-1');
+      await tester.pumpAndSettle();
+      await _tap(tester, 'nav-home');
+      await _tap(tester, 'browse-proposals-button');
+      expect(
+        app.read(appRouterProvider).routeInformationProvider.value.uri.path,
+        '/proposals',
+      );
+      expect(find.text('Proposal details'), findsNothing);
+      expect(proposals.lastLocality, 'Bologna');
+      expect(proposals.lastSkillIds, {'skill-mural'});
+      expect(proposals.calls.where((call) => call == 'list-public').length, 3);
+    },
+  );
 
   testWidgets(
     'profile and proposal edits survive switching and retapping tabs',
