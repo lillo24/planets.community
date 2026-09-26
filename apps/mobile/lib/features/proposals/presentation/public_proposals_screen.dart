@@ -253,11 +253,21 @@ class _ProposalDetailScreenState extends ConsumerState<ProposalDetailScreen> {
   }
 
   @override
+  void didUpdateWidget(covariant ProposalDetailScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.proposalId == widget.proposalId) return;
+    Future<void>.microtask(
+      () => ref.read(proposalDetailProvider.notifier).load(widget.proposalId),
+    );
+  }
+
+  @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final state = ref.watch(proposalDetailProvider);
     final detail = state.proposalId == widget.proposalId ? state.detail : null;
     final presentation = classifyAsyncDataPresentation(
+      belongsToTarget: state.proposalId == widget.proposalId,
       hasData: detail != null,
       isPending:
           state.phase == ProposalLoadPhase.idle ||

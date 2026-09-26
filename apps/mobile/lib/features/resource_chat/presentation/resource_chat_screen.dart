@@ -343,26 +343,33 @@ class _MessageBubble extends StatelessWidget {
     return Semantics(
       label: l10n.resourceChatMessageSemantics(sender, message.body, time),
       excludeSemantics: true,
-      child: Align(
-        key: Key('resource-chat-message-${message.messageId}'),
-        alignment: isMine ? Alignment.centerRight : Alignment.centerLeft,
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 360),
-          child: Card(
-            color: isMine
-                ? Theme.of(context).colorScheme.primaryContainer
-                : Theme.of(context).colorScheme.surfaceContainerHigh,
-            child: Padding(
-              padding: const EdgeInsets.all(AppSpacing.small),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(sender, style: Theme.of(context).textTheme.labelMedium),
-                  const SizedBox(height: AppSpacing.xSmall),
-                  Text(message.body),
-                  const SizedBox(height: AppSpacing.xSmall),
-                  Text(time, style: Theme.of(context).textTheme.bodySmall),
-                ],
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: AppSpacing.xSmall),
+        child: Align(
+          alignment: isMine ? Alignment.centerRight : Alignment.centerLeft,
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 360),
+            child: Card(
+              key: Key('resource-chat-message-${message.messageId}'),
+              margin: EdgeInsets.zero,
+              color: isMine
+                  ? Theme.of(context).colorScheme.primaryContainer
+                  : Theme.of(context).colorScheme.surfaceContainerHigh,
+              child: Padding(
+                padding: const EdgeInsets.all(AppSpacing.small),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      sender,
+                      style: Theme.of(context).textTheme.labelMedium,
+                    ),
+                    const SizedBox(height: AppSpacing.xSmall),
+                    Text(message.body),
+                    const SizedBox(height: AppSpacing.xSmall),
+                    Text(time, style: Theme.of(context).textTheme.bodySmall),
+                  ],
+                ),
               ),
             ),
           ),

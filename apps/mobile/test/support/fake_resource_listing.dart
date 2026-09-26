@@ -270,6 +270,8 @@ PublicResourceListingSummary publicResourceListingFixture({
 );
 
 PublicResourceListingDetail publicResourceListingDetailFixture({
+  String id = resourceListingId,
+  String title = 'Garden tools',
   String ownerId = resourceOwnerProfileId,
   String? ownerDisplayName = 'Casey',
   int activeRequestCount = 0,
@@ -278,6 +280,8 @@ PublicResourceListingDetail publicResourceListingDetailFixture({
   String publicLocationLabel = 'Central Bologna',
 }) => PublicResourceListingDetail(
   summary: publicResourceListingFixture(
+    id: id,
+    title: title,
     activeRequestCount: activeRequestCount,
     locality: locality,
     administrativeArea: administrativeArea,

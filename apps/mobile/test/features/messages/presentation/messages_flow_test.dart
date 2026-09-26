@@ -6,6 +6,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:planets_mobile/app/planets_app.dart';
 import 'package:planets_mobile/app/router/app_router.dart';
 import 'package:planets_mobile/core/config/app_config.dart';
+import 'package:planets_mobile/core/theme/app_tokens.dart';
 import 'package:planets_mobile/core/widgets/error_state.dart';
 import 'package:planets_mobile/core/widgets/loading_state.dart';
 import 'package:planets_mobile/features/auth/data/auth_gateway.dart';
@@ -260,9 +261,60 @@ void main() {
     expect(find.byKey(const Key('resource-chat-composer')), findsNothing);
   });
 
+  testWidgets('Resource conversation applies explicit bubble spacing', (
+    tester,
+  ) async {
+    const chatId = '00000000-0000-4000-8000-000000000401';
+    final resourceChats = FakeResourceChatGateway()
+      ..histories[chatId] = [
+        resourceChatMessageFixture(
+          messageId: '00000000-0000-4000-8000-000000000901',
+          body: 'First message',
+          createdAt: DateTime.utc(2026, 9, 20, 10),
+        ),
+        resourceChatMessageFixture(
+          messageId: '00000000-0000-4000-8000-000000000902',
+          body: 'Second message',
+          createdAt: DateTime.utc(2026, 9, 20, 11),
+        ),
+      ];
+    final app = await _pump(
+      tester,
+      messages: FakeMessagesGateway(),
+      resourceChats: resourceChats,
+    );
+    app.read(appRouterProvider).go('/messages/chats/resource/$chatId');
+    await tester.pumpAndSettle();
+
+    final first = tester.getRect(
+      find.byKey(
+        const Key('resource-chat-message-00000000-0000-4000-8000-000000000901'),
+      ),
+    );
+    final second = tester.getRect(
+      find.byKey(
+        const Key('resource-chat-message-00000000-0000-4000-8000-000000000902'),
+      ),
+    );
+    final ordered = [first, second]
+      ..sort((left, right) => left.top.compareTo(right.top));
+    expect(
+      ordered.last.top - ordered.first.bottom,
+      greaterThanOrEqualTo(AppSpacing.small),
+    );
+    expect(
+      ordered.last.bottom,
+      lessThanOrEqualTo(
+        tester.getRect(find.byKey(const Key('resource-chat-composer'))).top,
+      ),
+    );
+  });
+
   testWidgets('Resource conversation tolerates large text and long content', (
     tester,
   ) async {
+    await tester.binding.setSurfaceSize(const Size(320, 900));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
     tester.platformDispatcher.textScaleFactorTestValue = 2;
     addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
     const chatId = '00000000-0000-4000-8000-000000000401';
@@ -273,6 +325,7 @@ void main() {
       )
       ..histories[chatId] = [
         resourceChatMessageFixture(
+          messageId: '00000000-0000-4000-8000-000000000901',
           body: List.filled(30, 'coordination').join(' '),
         ),
       ];
@@ -286,6 +339,13 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byKey(const Key('resource-chat-history')), findsOneWidget);
+    expect(
+      find.byKey(
+        const Key('resource-chat-message-00000000-0000-4000-8000-000000000901'),
+        skipOffstage: false,
+      ),
+      findsOneWidget,
+    );
     expect(tester.takeException(), isNull);
   });
 

@@ -200,11 +200,12 @@ List<ProposalSkillCategory> proposalCategoriesFixture() => const [
 
 ProposalSummary proposalSummaryFixture({
   String id = 'proposal-1',
+  String title = 'Paint the square',
   ProposalStatus status = ProposalStatus.upcoming,
   List<ProposalSkill>? skills,
 }) => ProposalSummary(
   id: id,
-  title: 'Paint the square',
+  title: title,
   summary: 'Create a community mural together.',
   startsAt: DateTime.utc(2026, 9, 10, 10),
   endsAt: DateTime.utc(2026, 9, 10, 12),
@@ -240,12 +241,19 @@ RequestedProposalSummary requestedProposalFixture({
 );
 
 ProposalDetail proposalDetailFixture({
+  String id = 'proposal-1',
+  String title = 'Paint the square',
   bool restricted = true,
   ProposalStatus status = ProposalStatus.upcoming,
   List<ProposalSkill>? skills,
   String creatorProfileId = 'user-1',
 }) => ProposalDetail(
-  summary: proposalSummaryFixture(status: status, skills: skills),
+  summary: proposalSummaryFixture(
+    id: id,
+    title: title,
+    status: status,
+    skills: skills,
+  ),
   creatorProfileId: creatorProfileId,
   creatorDisplayName: 'Casey',
   description: 'A full proposal description.',

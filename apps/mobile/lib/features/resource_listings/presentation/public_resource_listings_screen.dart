@@ -275,6 +275,13 @@ class _PublicResourceListingDetailScreenState
     Future<void>.microtask(_load);
   }
 
+  @override
+  void didUpdateWidget(covariant PublicResourceListingDetailScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.listingId == widget.listingId) return;
+    Future<void>.microtask(_load);
+  }
+
   Future<void> _load() async {
     await ref
         .read(publicResourceListingDetailProvider.notifier)
@@ -300,6 +307,7 @@ class _PublicResourceListingDetailScreenState
         ? session.identity?.id
         : null;
     final presentation = classifyAsyncDataPresentation(
+      belongsToTarget: state.listingId == widget.listingId,
       hasData: detail != null,
       isPending:
           state.phase == ResourceListingLoadPhase.idle ||

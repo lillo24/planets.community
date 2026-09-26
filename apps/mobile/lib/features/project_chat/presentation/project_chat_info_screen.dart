@@ -78,12 +78,12 @@ class _ProjectChatInfoScreenState extends ConsumerState<ProjectChatInfoScreen> {
         detail.chatId == widget.chatId;
     final summary = belongs ? detail.summary : null;
     final presentation = classifyAsyncDataPresentation(
+      belongsToTarget: belongs,
       hasData: summary != null,
       isPending:
-          !belongs ||
           detail.phase == ProjectChatDetailPhase.idle ||
           detail.phase == ProjectChatDetailPhase.loading,
-      hasFailed: belongs && detail.phase == ProjectChatDetailPhase.failure,
+      hasFailed: detail.phase == ProjectChatDetailPhase.failure,
     );
 
     if (summary != null && !summary.hasCurrentEntitlement) {

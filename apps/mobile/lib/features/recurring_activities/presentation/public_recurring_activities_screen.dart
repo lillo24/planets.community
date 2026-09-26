@@ -215,11 +215,25 @@ class _PublicRecurringActivityDetailScreenState
   }
 
   @override
+  void didUpdateWidget(
+    covariant PublicRecurringActivityDetailScreen oldWidget,
+  ) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.activityId == widget.activityId) return;
+    Future<void>.microtask(
+      () => ref
+          .read(publicRecurringActivityDetailProvider.notifier)
+          .load(widget.activityId),
+    );
+  }
+
+  @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final state = ref.watch(publicRecurringActivityDetailProvider);
     final detail = state.activityId == widget.activityId ? state.detail : null;
     final presentation = classifyAsyncDataPresentation(
+      belongsToTarget: state.activityId == widget.activityId,
       hasData: detail != null,
       isPending:
           state.phase == RecurringActivityLoadPhase.idle ||

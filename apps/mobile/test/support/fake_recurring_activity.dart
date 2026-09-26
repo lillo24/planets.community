@@ -198,10 +198,11 @@ RecurringSchedule recurringScheduleFixture({
 
 PublicRecurringActivitySummary publicRecurringSummaryFixture({
   String id = 'tavolo-1',
+  String title = 'Neighborhood philosophy table',
   RecurrenceType type = RecurrenceType.weekly,
 }) => PublicRecurringActivitySummary(
   id: id,
-  title: 'Neighborhood philosophy table',
+  title: title,
   summary: 'A recurring conversation about ideas and local life.',
   topic: 'Philosophy',
   countryCode: 'IT',
@@ -227,16 +228,18 @@ RequestedRecurringActivitySummary requestedRecurringActivityFixture({
 );
 
 PublicRecurringActivityDetail publicRecurringDetailFixture({
+  String id = 'tavolo-1',
+  String title = 'Neighborhood philosophy table',
   RecurringActivityLifecycle lifecycle = RecurringActivityLifecycle.published,
   bool restricted = true,
   RecurrenceType type = RecurrenceType.weekly,
   String creatorProfileId = 'user-1',
 }) => PublicRecurringActivityDetail(
-  id: 'tavolo-1',
+  id: id,
   creatorProfileId: creatorProfileId,
   creatorDisplayName: 'Casey',
   lifecycle: lifecycle,
-  title: 'Neighborhood philosophy table',
+  title: title,
   summary: 'A recurring conversation about ideas and local life.',
   description: 'Bring one question for a welcoming discussion.',
   topic: 'Philosophy',

@@ -627,6 +627,39 @@ void main() {
     },
   );
 
+  testWidgets('Scambio detail hides retained data from another listing', (
+    tester,
+  ) async {
+    final gateway = FakeResourceListingGateway()
+      ..publicDetail = publicResourceListingDetailFixture(title: 'Listing A');
+    final app = await _pump(tester, gateway: gateway, signedIn: false);
+    app.read(appRouterProvider).go('/resources/$resourceListingId');
+    await tester.pumpAndSettle();
+    expect(find.text('Listing A'), findsOneWidget);
+
+    final pending = Completer<PublicResourceListingDetail?>();
+    gateway.publicDetailResult = pending.future;
+    app.read(appRouterProvider).go('/resources/$secondResourceListingId');
+    await tester.pump();
+
+    expect(find.text('Loading listings…'), findsOneWidget);
+    expect(find.text('Listing A'), findsNothing);
+    expect(find.text('Something went wrong'), findsNothing);
+    await tester.pump();
+    expect(find.text('Loading listings…'), findsOneWidget);
+
+    pending.complete(
+      publicResourceListingDetailFixture(
+        id: secondResourceListingId,
+        title: 'Listing B',
+      ),
+    );
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 1));
+    expect(find.text('Listing B'), findsOneWidget);
+    expect(find.text('Listing A'), findsNothing);
+  });
+
   testWidgets('Scambio detail renders a genuine load failure with Retry', (
     tester,
   ) async {

@@ -49,6 +49,39 @@ void main() {
     expect(find.byType(ErrorState), findsNothing);
   });
 
+  testWidgets('Tavolo detail hides retained data from another Tavolo', (
+    tester,
+  ) async {
+    final recurring = FakeRecurringActivityGateway()
+      ..publicDetail = publicRecurringDetailFixture(
+        id: 'tavolo-a',
+        title: 'Tavolo A',
+      );
+    final app = await _pump(tester, recurring: recurring, signedIn: false);
+    app.read(appRouterProvider).go('/tavoli/tavolo-a');
+    await tester.pumpAndSettle();
+    expect(find.text('Tavolo A'), findsOneWidget);
+
+    final pending = Completer<PublicRecurringActivityDetail?>();
+    recurring.publicDetailResult = pending.future;
+    app.read(appRouterProvider).go('/tavoli/tavolo-b');
+    await tester.pump();
+
+    expect(find.byType(LoadingState), findsOneWidget);
+    expect(find.text('Tavolo A'), findsNothing);
+    expect(find.byType(ErrorState), findsNothing);
+    await tester.pump();
+    expect(find.byType(LoadingState), findsOneWidget);
+
+    pending.complete(
+      publicRecurringDetailFixture(id: 'tavolo-b', title: 'Tavolo B'),
+    );
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 1));
+    expect(find.text('Tavolo B'), findsOneWidget);
+    expect(find.text('Tavolo A'), findsNothing);
+  });
+
   testWidgets('Tavolo detail still renders a genuine failure', (tester) async {
     final recurring = FakeRecurringActivityGateway()
       ..error = StateError('private Tavolo failure');

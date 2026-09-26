@@ -292,6 +292,51 @@ void main() {
     },
   );
 
+  testWidgets('Proposal detail hides retained data from another proposal', (
+    tester,
+  ) async {
+    final gateway = FakeProposalGateway()
+      ..publicDetail = proposalDetailFixture(
+        id: 'proposal-a',
+        title: 'Proposal A',
+      );
+    final container = ProviderContainer(
+      overrides: [proposalGatewayProvider.overrideWithValue(gateway)],
+    );
+    addTearDown(container.dispose);
+
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: _localized(const ProposalDetailScreen(proposalId: 'proposal-a')),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('Proposal A'), findsOneWidget);
+
+    final pending = Completer<ProposalDetail?>();
+    gateway.publicDetailResult = pending.future;
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: _localized(const ProposalDetailScreen(proposalId: 'proposal-b')),
+      ),
+    );
+
+    expect(find.text('Loading proposals…'), findsOneWidget);
+    expect(find.text('Proposal A'), findsNothing);
+    expect(find.text('Something went wrong'), findsNothing);
+    await tester.pump();
+    expect(find.text('Loading proposals…'), findsOneWidget);
+
+    pending.complete(
+      proposalDetailFixture(id: 'proposal-b', title: 'Proposal B'),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('Proposal B'), findsOneWidget);
+    expect(find.text('Proposal A'), findsNothing);
+  });
+
   testWidgets('Proposal detail renders a genuine load failure with Retry', (
     tester,
   ) async {

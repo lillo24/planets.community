@@ -5,9 +5,9 @@ This folder owns small presentation primitives reused across feature boundaries.
 - `empty_state.dart`, `error_state.dart`, and `loading_state.dart` provide the
   standard asynchronous screen states.
 - `async_data_presentation.dart` keeps nullable async screens consistent:
-  not-yet-started/loading states render loading, only explicit failures render
-  errors, retained data stays visible, and ready-without-data remains a
-  domain-specific absent state.
+  not-yet-started/loading and different-target states render loading, only
+  explicit same-target failures render errors, retained same-target data stays
+  visible, and ready-without-data remains a domain-specific absent state.
 - `requested_badge.dart` renders the shared Requested marker used by discovery
   surfaces.
 - `tag_multi_select.dart` provides the controlled compact tag summary and
