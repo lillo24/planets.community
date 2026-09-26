@@ -28,7 +28,7 @@ void main() {
         'Guitar',
       );
       await tester.pump();
-      await _tap(tester, 'proposal-filter-skill-guitar');
+      await _tap(tester, 'skill-filter-option-guitar');
       await _tap(tester, 'skill-filter-apply');
       expect(gateway.lastSkillIds, {'guitar'});
       expect(tester.takeException(), isNull);
@@ -43,6 +43,15 @@ void main() {
     expect(find.byType(FilterChip), findsNothing);
     expect(find.byType(CheckboxListTile), findsNothing);
     expect(find.byType(Chip), findsNothing);
+    final skillTrigger = find.byKey(const Key('skill-filter-trigger'));
+    expect(
+      find.descendant(of: skillTrigger, matching: find.text('Select skills')),
+      findsOneWidget,
+    );
+    expect(
+      find.descendant(of: skillTrigger, matching: find.text('Skills')),
+      findsNothing,
+    );
     await tester.enterText(
       find.byKey(const Key('proposal-locality-filter')),
       ' Bologna ',
@@ -61,8 +70,8 @@ void main() {
     for (final skill in ['Painting', 'Drawing', 'Singing', 'Guitar']) {
       await tester.enterText(search, skill);
       await tester.pump();
-      expect(find.byType(CheckboxListTile), findsOneWidget);
-      await tester.tap(find.byType(CheckboxListTile));
+      expect(find.byType(FilterChip), findsOneWidget);
+      await tester.tap(find.byType(FilterChip));
       await tester.pump();
     }
     expect(gateway.calls.where((call) => call == 'list-public').length, 1);
@@ -72,8 +81,16 @@ void main() {
     expect(gateway.lastLocality, 'Bologna');
     expect(gateway.lastSkillIds, {'painting', 'drawing', 'singing', 'guitar'});
     expect(find.byType(CheckboxListTile), findsNothing);
-    expect(find.byType(Chip), findsNWidgets(3));
+    expect(find.byType(InputChip), findsNWidgets(2));
     expect(find.text('+2 more'), findsOneWidget);
+    expect(
+      find.descendant(of: skillTrigger, matching: find.text('Select skills')),
+      findsNothing,
+    );
+    expect(
+      find.descendant(of: skillTrigger, matching: find.text('Skills')),
+      findsOneWidget,
+    );
 
     await _tap(tester, 'skill-filter-trigger');
     expect(tester.testTextInput.isVisible, isFalse);
@@ -82,16 +99,16 @@ void main() {
       'Music',
     ); // Category search keeps both skills.
     await tester.pump();
-    expect(find.byType(CheckboxListTile), findsNWidgets(2));
+    expect(find.byType(FilterChip), findsNWidgets(2));
     expect(
       tester
-          .widget<CheckboxListTile>(
-            find.byKey(const Key('proposal-filter-skill-singing')),
+          .widget<FilterChip>(
+            find.byKey(const Key('skill-filter-option-singing')),
           )
-          .value,
+          .selected,
       isTrue,
     );
-    await _tap(tester, 'proposal-filter-skill-singing');
+    await _tap(tester, 'skill-filter-option-singing');
     await _tap(tester, 'skill-filter-apply');
     expect(gateway.lastSkillIds, {'painting', 'drawing', 'guitar'});
     expect(find.text('+1 more'), findsOneWidget);
@@ -105,10 +122,10 @@ void main() {
     await _tap(tester, 'skill-filter-trigger');
     expect(
       tester
-          .widget<CheckboxListTile>(
-            find.byKey(const Key('proposal-filter-skill-painting')),
+          .widget<FilterChip>(
+            find.byKey(const Key('skill-filter-option-painting')),
           )
-          .value,
+          .selected,
       isTrue,
     );
     await _tap(tester, 'skill-filter-clear');
@@ -116,8 +133,60 @@ void main() {
     expect(gateway.lastSkillIds, isNull);
     expect(gateway.lastLocality, 'Bologna');
     expect(find.byKey(const Key('skill-filter-summary')), findsNothing);
+    expect(
+      find.descendant(of: skillTrigger, matching: find.text('Select skills')),
+      findsOneWidget,
+    );
+    expect(
+      find.descendant(of: skillTrigger, matching: find.text('Skills')),
+      findsNothing,
+    );
     expect(find.text('No proposals found'), findsOneWidget);
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('Proposal query debounces, clears and submits immediately', (
+    tester,
+  ) async {
+    final gateway = FakeProposalGateway();
+    await _pump(tester, gateway);
+    final query = find.byKey(const Key('proposal-query-filter'));
+
+    await tester.enterText(query, 'paint');
+    await tester.pump(const Duration(milliseconds: 100));
+    await tester.enterText(query, 'paint the');
+    await tester.pump(const Duration(milliseconds: 100));
+    await tester.enterText(query, 'paint the square');
+    await tester.pump(const Duration(milliseconds: 349));
+    expect(gateway.calls.where((call) => call == 'list-public'), hasLength(1));
+    await tester.pump(const Duration(milliseconds: 1));
+    await tester.pumpAndSettle();
+    expect(gateway.lastQuery, 'paint the square');
+    expect(gateway.calls.where((call) => call == 'list-public'), hasLength(2));
+
+    await tester.enterText(query, '');
+    await tester.pump(const Duration(milliseconds: 350));
+    await tester.pumpAndSettle();
+    expect(gateway.lastQuery, isNull);
+
+    await tester.enterText(query, 'repair');
+    await tester.testTextInput.receiveAction(TextInputAction.search);
+    await tester.pumpAndSettle();
+    expect(gateway.lastQuery, 'repair');
+  });
+
+  testWidgets('disposing Proposal search cancels its pending debounce', (
+    tester,
+  ) async {
+    final gateway = FakeProposalGateway();
+    await _pump(tester, gateway);
+    await tester.enterText(
+      find.byKey(const Key('proposal-query-filter')),
+      'pending',
+    );
+    await tester.pumpWidget(const SizedBox());
+    await tester.pump(const Duration(milliseconds: 400));
+    expect(gateway.calls.where((call) => call == 'list-public'), hasLength(1));
   });
 
   testWidgets(
@@ -130,7 +199,7 @@ void main() {
         'Bologna',
       );
       await _tap(tester, 'skill-filter-trigger');
-      await _tap(tester, 'proposal-filter-skill-painting');
+      await _tap(tester, 'skill-filter-option-painting');
       gateway.error = StateError('secret diagnostics');
       await _tap(tester, 'skill-filter-apply');
       expect(find.textContaining('secret diagnostics'), findsNothing);

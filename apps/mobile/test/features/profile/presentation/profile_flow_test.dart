@@ -1,10 +1,16 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:planets_mobile/app/planets_app.dart';
+import 'package:planets_mobile/app/router/app_router.dart';
 import 'package:planets_mobile/core/config/app_config.dart';
+import 'package:planets_mobile/core/widgets/error_state.dart';
+import 'package:planets_mobile/core/widgets/loading_state.dart';
 import 'package:planets_mobile/features/auth/data/auth_gateway.dart';
 import 'package:planets_mobile/features/auth/domain/auth_models.dart';
+import 'package:planets_mobile/features/auth/presentation/request_code_screen.dart';
 import 'package:planets_mobile/features/profile/data/profile_gateway.dart';
 import 'package:planets_mobile/features/profile/domain/profile_models.dart';
 
@@ -12,6 +18,110 @@ import '../../../support/fake_auth.dart';
 import '../../../support/fake_profile.dart';
 
 void main() {
+  testWidgets('Profile idle and loading render loading without a fake error', (
+    tester,
+  ) async {
+    final pending = Completer<ProfileEditorData>();
+    final auth = FakeAuthGateway(
+      snapshot: const AuthSnapshot(identity: AuthIdentity(id: 'user-1')),
+    );
+    final anchor = FakeProfileAnchorGateway()
+      ..readiness = ProfileAnchorReadiness.complete;
+    final profile = FakeProfileGateway()..loadResult = (_) => pending.future;
+    addTearDown(auth.close);
+    final app = await _pumpApp(tester, auth, anchor, profile);
+
+    app.read(appRouterProvider).go('/profile');
+    await tester.pump();
+    expect(find.byType(LoadingState), findsOneWidget);
+    expect(find.byType(ErrorState), findsNothing);
+
+    await tester.pump();
+    expect(find.byType(LoadingState), findsOneWidget);
+    expect(find.byType(ErrorState), findsNothing);
+
+    pending.complete(profileFixture(complete: true));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('profile-display-name')), findsOneWidget);
+  });
+
+  testWidgets('Profile setup idle and loading render loading', (tester) async {
+    final pending = Completer<ProfileEditorData>();
+    final auth = FakeAuthGateway(
+      snapshot: const AuthSnapshot(identity: AuthIdentity(id: 'user-1')),
+    );
+    final anchor = FakeProfileAnchorGateway()
+      ..readiness = ProfileAnchorReadiness.incomplete;
+    final profile = FakeProfileGateway()..loadResult = (_) => pending.future;
+    addTearDown(auth.close);
+    final app = await _pumpApp(tester, auth, anchor, profile);
+
+    app.read(appRouterProvider).go('/profile/edit');
+    await tester.pump();
+    expect(find.byType(LoadingState), findsOneWidget);
+    expect(find.byType(ErrorState), findsNothing);
+
+    await tester.pump();
+    expect(find.byType(LoadingState), findsOneWidget);
+    expect(find.byType(ErrorState), findsNothing);
+
+    pending.complete(profileFixture());
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('profile-display-name-field')), findsOneWidget);
+  });
+
+  testWidgets('a genuine Profile load failure remains retryable', (
+    tester,
+  ) async {
+    final auth = FakeAuthGateway(
+      snapshot: const AuthSnapshot(identity: AuthIdentity(id: 'user-1')),
+    );
+    final anchor = FakeProfileAnchorGateway()
+      ..readiness = ProfileAnchorReadiness.complete;
+    final profile = FakeProfileGateway()
+      ..loadError = StateError('private Profile diagnostic');
+    addTearDown(auth.close);
+    final app = await _pumpApp(tester, auth, anchor, profile);
+
+    app.read(appRouterProvider).go('/profile');
+    await tester.pumpAndSettle();
+
+    expect(find.byType(ErrorState), findsOneWidget);
+    expect(find.text('Try again'), findsOneWidget);
+    expect(find.textContaining('private Profile diagnostic'), findsNothing);
+  });
+
+  testWidgets('signed-out Profile is a static example with explicit Auth CTA', (
+    tester,
+  ) async {
+    final auth = FakeAuthGateway(snapshot: const AuthSnapshot());
+    final anchor = FakeProfileAnchorGateway();
+    final profile = FakeProfileGateway();
+    addTearDown(auth.close);
+    await _pumpApp(tester, auth, anchor, profile);
+
+    await tester.tap(find.byKey(const Key('nav-profile')));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('auth-email-field')), findsNothing);
+    expect(find.byKey(const Key('profile-example-label')), findsOneWidget);
+    expect(find.text('Example profile'), findsOneWidget);
+    expect(find.text('Your name'), findsOneWidget);
+    expect(find.text('Community activity — example'), findsOneWidget);
+    expect(find.text('Example community badge'), findsOneWidget);
+    expect(profile.loadCount, 0);
+
+    await _tapVisible(
+      tester,
+      find.byKey(const Key('profile-example-sign-in-button')),
+    );
+    await tester.pumpAndSettle();
+    expect(
+      tester.widget<RequestCodeScreen>(find.byType(RequestCodeScreen)).returnTo,
+      '/profile',
+    );
+  });
+
   testWidgets('incomplete owner selects categorized skills and visibility', (
     tester,
   ) async {
@@ -28,19 +138,41 @@ void main() {
     await tester.tap(find.text('Complete profile'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Art & Creativity'), findsOneWidget);
+    expect(find.byType(CheckboxListTile), findsNothing);
+    final skillsTrigger = find.byKey(const Key('profile-skills-trigger'));
+    expect(skillsTrigger, findsOneWidget);
+    expect(
+      find.descendant(of: skillsTrigger, matching: find.text('Select skills')),
+      findsOneWidget,
+    );
+    expect(
+      find.descendant(of: skillsTrigger, matching: find.text('Skills')),
+      findsNothing,
+    );
     expect(
       find.byKey(const Key('profile-save-button')).hitTestable(),
       findsOneWidget,
     );
-    expect(find.text('Music'), findsOneWidget);
     await tester.enterText(
       find.byKey(const Key('profile-display-name-field')),
       '  Casey  ',
     );
+    await _tapVisible(tester, skillsTrigger);
+    expect(find.text('Art & Creativity'), findsOneWidget);
+    expect(find.text('Music'), findsOneWidget);
     await _tapVisible(
       tester,
-      find.byKey(const Key('profile-skill-mural-painting')),
+      find.byKey(const Key('profile-skills-option-mural-painting')),
+    );
+    expect(profile.updateCount, 0, reason: 'selection stays local until Save');
+    await _tapVisible(tester, find.byKey(const Key('profile-skills-apply')));
+    expect(
+      find.descendant(of: skillsTrigger, matching: find.text('Select skills')),
+      findsNothing,
+    );
+    expect(
+      find.descendant(of: skillsTrigger, matching: find.text('Skills')),
+      findsOneWidget,
     );
     final bioVisibility = find.byKey(const Key('profile-visibility-bio'));
     await _tapVisible(
@@ -141,14 +273,15 @@ void main() {
 
     await _tapVisible(tester, find.byKey(const Key('profile-edit-button')));
     await tester.pumpAndSettle();
-    final musician = find.byKey(const Key('profile-skill-musician'));
-    expect(tester.widget<CheckboxListTile>(musician).value, isTrue);
+    final musician = find.byKey(const Key('profile-skills-selected-musician'));
+    expect(musician, findsOneWidget);
+    expect(find.byType(CheckboxListTile), findsNothing);
     await _tapVisible(
       tester,
-      find.descendant(of: musician, matching: find.byType(Checkbox)),
+      find.descendant(of: musician, matching: find.byIcon(Icons.cancel)),
     );
     await tester.pump();
-    expect(tester.widget<CheckboxListTile>(musician).value, isFalse);
+    expect(musician, findsNothing);
     await _tapVisible(tester, find.byKey(const Key('profile-save-button')));
     await tester.pumpAndSettle();
 
@@ -185,7 +318,7 @@ void main() {
   });
 }
 
-Future<void> _pumpApp(
+Future<ProviderContainer> _pumpApp(
   WidgetTester tester,
   FakeAuthGateway auth,
   FakeProfileAnchorGateway anchor,
@@ -209,6 +342,7 @@ Future<void> _pumpApp(
     ),
   );
   await tester.pumpAndSettle();
+  return ProviderScope.containerOf(tester.element(find.byType(PlanetsApp)));
 }
 
 Future<void> _tapVisible(WidgetTester tester, Finder finder) async {
@@ -219,6 +353,7 @@ Future<void> _tapVisible(WidgetTester tester, Finder finder) async {
   );
   await tester.pumpAndSettle();
   await tester.tap(finder);
+  await tester.pumpAndSettle();
 }
 
 Future<void> _scrollToBottom(WidgetTester tester) async {

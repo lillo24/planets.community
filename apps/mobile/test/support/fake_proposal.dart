@@ -4,6 +4,7 @@ import 'package:planets_mobile/features/proposals/domain/proposal_models.dart';
 typedef RequestedProposalLoader =
     Future<List<RequestedProposalSummary>> Function(
       String expectedProfileId, {
+      String? query,
       String? locality,
       Set<String>? skillIds,
     });
@@ -11,6 +12,7 @@ typedef RequestedProposalLoader =
 typedef PublicProposalLoader = Future<List<ProposalSummary>> Function({
   required int limit,
   ProposalCursor? cursor,
+  String? query,
   String? locality,
   Set<String>? skillIds,
 });
@@ -20,6 +22,7 @@ class FakeProposalGateway implements ProposalGateway {
   List<ProposalSummary> publicItems = [];
   List<RequestedProposalSummary> requestedItems = [];
   ProposalDetail? publicDetail;
+  Future<ProposalDetail?>? publicDetailResult;
   List<OwnProposal> ownItems = [];
   Object? error;
   Object? requestedError;
@@ -32,9 +35,11 @@ class FakeProposalGateway implements ProposalGateway {
   String? lastExpectedIdentity;
   ProposalInput? lastInput;
   ProposalCursor? lastCursor;
+  String? lastQuery;
   String? lastLocality;
   Set<String>? lastSkillIds;
   String? lastRequestedIdentity;
+  String? lastRequestedQuery;
   String? lastRequestedLocality;
   Set<String>? lastRequestedSkillIds;
 
@@ -48,18 +53,21 @@ class FakeProposalGateway implements ProposalGateway {
   Future<List<ProposalSummary>> listPublicProposals({
     required int limit,
     ProposalCursor? cursor,
+    String? query,
     String? locality,
     Set<String>? skillIds,
   }) async {
     _throwIfNeeded();
     calls.add('list-public');
     lastCursor = cursor;
+    lastQuery = query;
     lastLocality = locality;
     lastSkillIds = skillIds;
     if (publicLoader case final loader?) {
       return loader(
         limit: limit,
         cursor: cursor,
+        query: query,
         locality: locality,
         skillIds: skillIds,
       );
@@ -70,16 +78,23 @@ class FakeProposalGateway implements ProposalGateway {
   @override
   Future<List<RequestedProposalSummary>> listOwnPendingRequestedProposals(
     String expectedProfileId, {
+    String? query,
     String? locality,
     Set<String>? skillIds,
   }) async {
     calls.add('list-requested');
     lastRequestedIdentity = expectedProfileId;
+    lastRequestedQuery = query;
     lastRequestedLocality = locality;
     lastRequestedSkillIds = skillIds;
     if (requestedError case final failure?) throw failure;
     if (requestedLoader case final loader?) {
-      return loader(expectedProfileId, locality: locality, skillIds: skillIds);
+      return loader(
+        expectedProfileId,
+        query: query,
+        locality: locality,
+        skillIds: skillIds,
+      );
     }
     return requestedItems;
   }
@@ -88,7 +103,7 @@ class FakeProposalGateway implements ProposalGateway {
   Future<ProposalDetail?> getPublicProposal(String proposalId) async {
     _throwIfNeeded();
     calls.add('public-detail:$proposalId');
-    return publicDetail;
+    return publicDetailResult ?? publicDetail;
   }
 
   @override

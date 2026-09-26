@@ -440,7 +440,7 @@ select lives_ok(
     select public.update_own_proposal(
       '91000000-0000-4000-8000-000000000001',
       current_setting('test.public_proposal_id')::uuid,
-      'Updated community repair workshop',
+      'Updated 100%_ community repair workshop',
       'Repair useful household items together.',
       'Bring a small item and learn practical repair skills.',
       statement_timestamp() + interval '4 days',
@@ -489,6 +489,76 @@ select is(
   ),
   1::bigint,
   'public discovery filters by rough locality and selected controlled skills'
+);
+select results_eq(
+  $$select proposal_id from public.list_public_proposals(p_query => null)$$,
+  $$select proposal_id from public.list_public_proposals(p_query => '   ')$$,
+  'blank Proposal queries normalize to the same unfiltered result as null'
+);
+select results_eq(
+  $$
+    select proposal_id
+    from public.list_public_proposals(p_query => 'PAINT A NEIGHBORHOOD')
+  $$,
+  $$values (current_setting('test.restricted_proposal_id')::uuid)$$,
+  'Proposal title search is case-insensitive'
+);
+select results_eq(
+  $$
+    select proposal_id
+    from public.list_public_proposals(p_query => 'HOUSEHOLD ITEMS')
+  $$,
+  $$values (current_setting('test.public_proposal_id')::uuid)$$,
+  'Proposal summary search is case-insensitive'
+);
+select results_eq(
+  $$
+    select proposal_id
+    from public.list_public_proposals(p_query => 'PRACTICAL REPAIR')
+  $$,
+  $$values (current_setting('test.public_proposal_id')::uuid)$$,
+  'Proposal description search is case-insensitive'
+);
+select results_eq(
+  $$select proposal_id from public.list_public_proposals(p_query => '100%_')$$,
+  $$values (current_setting('test.public_proposal_id')::uuid)$$,
+  'Proposal search treats percent and underscore as literal text'
+);
+select results_eq(
+  $$
+    select proposal_id
+    from public.list_public_proposals(
+      p_locality => ' trento ',
+      p_skill_ids => array['d0000000-0000-4000-8003-000000000003'::uuid],
+      p_query => 'household'
+    )
+  $$,
+  $$values (current_setting('test.public_proposal_id')::uuid)$$,
+  'Proposal query composes with locality and skill filters'
+);
+select is(
+  (
+    with first_page as (
+      select starts_at, proposal_id
+      from public.list_public_proposals(p_limit => 1, p_query => 'community')
+    )
+    select count(*)
+    from first_page
+    cross join lateral public.list_public_proposals(
+      p_limit => 1,
+      p_cursor_starts_at => first_page.starts_at,
+      p_cursor_id => first_page.proposal_id,
+      p_query => 'community'
+    )
+  ),
+  1::bigint,
+  'Proposal pagination preserves the active query'
+);
+select throws_ok(
+  $$select * from public.list_public_proposals(p_query => repeat('x', 121))$$,
+  '22023',
+  'Proposal search query must contain at most 120 characters.',
+  'public Proposal discovery rejects oversized search queries'
 );
 select is(
   (select count(*) from public.list_public_proposals(1, null, null, null, null)),

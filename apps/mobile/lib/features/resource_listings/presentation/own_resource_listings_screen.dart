@@ -83,7 +83,7 @@ class _OwnResourceListingsScreenState
       ),
       floatingActionButton: FloatingActionButton.extended(
         key: const Key('resource-create-from-mine'),
-        onPressed: () => context.go('/resources/create'),
+        onPressed: () => context.push('/resources/create'),
         icon: const Icon(Icons.add),
         label: Text(l10n.resourceCreateListing),
       ),
@@ -133,7 +133,7 @@ class _OwnResourceListingCard extends StatelessWidget {
             const SizedBox(height: AppSpacing.medium),
             OutlinedButton(
               key: Key('resource-edit-${listing.id}'),
-              onPressed: () => context.go('/resources/${listing.id}/edit'),
+              onPressed: () => context.push('/resources/${listing.id}/edit'),
               child: Text(
                 listing.lifecycle == ResourceListingLifecycle.closed
                     ? l10n.resourceViewListing
@@ -144,7 +144,7 @@ class _OwnResourceListingCard extends StatelessWidget {
               OutlinedButton.icon(
                 key: Key('resource-loan-schedule-${listing.id}'),
                 onPressed: () =>
-                    context.go('/resources/${listing.id}/loan-schedule'),
+                    context.push('/resources/${listing.id}/loan-schedule'),
                 icon: const Icon(Icons.event_note_outlined),
                 label: Text(l10n.resourceLoanScheduleTitle),
               ),

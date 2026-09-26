@@ -6,6 +6,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:planets_mobile/app/planets_app.dart';
 import 'package:planets_mobile/app/router/app_router.dart';
 import 'package:planets_mobile/core/config/app_config.dart';
+import 'package:planets_mobile/core/widgets/error_state.dart';
+import 'package:planets_mobile/core/widgets/loading_state.dart';
 import 'package:planets_mobile/features/auth/data/auth_gateway.dart';
 import 'package:planets_mobile/features/auth/domain/auth_models.dart';
 import 'package:planets_mobile/features/messages/data/messages_gateway.dart';
@@ -44,6 +46,36 @@ import '../../../support/fake_resource_chat.dart';
 import '../../../support/fake_resource_exchange.dart';
 
 void main() {
+  testWidgets('Resource request detail idle and loading render loading', (
+    tester,
+  ) async {
+    final pending = Completer<void>();
+    final resourceRequests = FakeResourceRequestGateway()
+      ..detail = resourceRequestFixture()
+      ..getDelay = pending.future;
+    final app = await _pump(
+      tester,
+      messages: FakeMessagesGateway(),
+      identityId: resourceOwnerProfileId,
+      resourceRequests: resourceRequests,
+    );
+
+    app
+        .read(appRouterProvider)
+        .go('/messages/requests/resource/$resourceRequestId');
+    await tester.pump();
+    expect(find.byType(LoadingState), findsOneWidget);
+    expect(find.byType(ErrorState), findsNothing);
+
+    await tester.pump();
+    expect(find.byType(LoadingState), findsOneWidget);
+    expect(find.byType(ErrorState), findsNothing);
+
+    pending.complete();
+    await tester.pumpAndSettle();
+    expect(find.text('Resource request'), findsOneWidget);
+  });
+
   testWidgets('Chats mixes Project and Resource cards without fake events', (
     tester,
   ) async {
@@ -105,12 +137,15 @@ void main() {
     await tester.tap(link.hitTestable());
     await tester.pumpAndSettle();
 
-    expect(
-      app.read(appRouterProvider).routeInformationProvider.value.uri.path,
-      '/messages/chats/resource/00000000-0000-4000-8000-000000000401',
-    );
     expect(find.byKey(const Key('resource-chat-composer')), findsOneWidget);
     expect(find.byKey(const Key('project-needs-button')), findsNothing);
+
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+    expect(
+      app.read(appRouterProvider).routerDelegate.currentConfiguration.uri.path,
+      '/messages',
+    );
   });
 
   testWidgets('Resource conversation shows counterpart, bubbles, and sends', (
@@ -282,7 +317,7 @@ void main() {
     expect(find.text('Messages'), findsOneWidget);
     expect(
       tester.widget<NavigationBar>(find.byType(NavigationBar)).selectedIndex,
-      2,
+      1,
     );
     expect(find.text('Jordan wants to join'), findsOneWidget);
     expect(
@@ -1745,7 +1780,7 @@ Future<void> _expectViewProject(
   await tester.pumpAndSettle();
   expect(
     tester.widget<NavigationBar>(find.byType(NavigationBar)).selectedIndex,
-    2,
+    1,
   );
   await tester.scrollUntilVisible(
     find.byKey(const Key('message-view-project')),

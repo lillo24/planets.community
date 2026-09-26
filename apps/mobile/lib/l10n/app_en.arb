@@ -11,6 +11,24 @@
   "skillFilterNoMatches": "No matching skills",
   "skillFilterClear": "Clear all",
   "skillFilterApply": "Apply",
+  "skillSelectorPlaceholder": "Select skills",
+  "skillSelectorDone": "Done",
+  "skillSelectorSelectionCount": "{count, plural, =0{No skills selected} =1{1 skill selected} other{{count} skills selected}}",
+  "@skillSelectorSelectionCount": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "skillSelectorSelected": "{skill}, selected",
+  "@skillSelectorSelected": {
+    "placeholders": { "skill": { "type": "String" } }
+  },
+  "skillSelectorNotSelected": "{skill}, not selected",
+  "@skillSelectorNotSelected": {
+    "placeholders": { "skill": { "type": "String" } }
+  },
+  "skillSelectorRemove": "Remove {skill}",
+  "@skillSelectorRemove": {
+    "placeholders": { "skill": { "type": "String" } }
+  },
   "skillFilterMore": "+{count} more",
   "@skillFilterMore": {
     "description": "Count of additional selected skills beyond the visible badges.",
@@ -202,6 +220,32 @@
   "@profileTitle": {
     "description": "Title for the signed-in owner's basic profile."
   },
+  "profileExampleLabel": "Example profile",
+  "@profileExampleLabel": {
+    "description": "Label making clear that the signed-out profile is an illustrative fac-simile."
+  },
+  "profileExampleName": "Your name",
+  "@profileExampleName": {
+    "description": "Generic display name in the signed-out example profile."
+  },
+  "profileExampleBio": "Share what you enjoy doing and how you would like to help your community.",
+  "@profileExampleBio": {
+    "description": "Illustrative biography in the signed-out example profile."
+  },
+  "profileExampleGardening": "Gardening",
+  "profileExamplePhotography": "Photography",
+  "profileExampleRepairs": "Repairs",
+  "profileExampleActivityTitle": "Community activity — example",
+  "@profileExampleActivityTitle": {
+    "description": "Heading that explicitly marks the example community statistics as illustrative."
+  },
+  "profileExampleProjectsJoined": "Projects joined: 4",
+  "profileExampleProjectsCreated": "Projects created: 1",
+  "profileExampleBadge": "Example community badge",
+  "profileExampleSignInAction": "Sign in / Create your profile",
+  "@profileExampleSignInAction": {
+    "description": "Signed-out profile call to action that opens Auth and returns to Profile."
+  },
   "profileSetupTitle": "Set up your profile",
   "@profileSetupTitle": {
     "description": "Title for first-time basic profile setup."
@@ -311,6 +355,7 @@
   "proposalMyEmpty": "No proposals yet",
   "proposalMyEmptyMessage": "Create a draft when you are ready to organize a one-time activity.",
   "proposalLoading": "Loading proposals…",
+  "proposalSearchLabel": "Search projects",
   "proposalEmptyTitle": "No proposals found",
   "proposalEmptyMessage": "Try different filters or check again later.",
   "proposalSafeError": "We couldn't complete that proposal request. Check your connection and try again.",
@@ -651,6 +696,10 @@
   "projectChatSafeError": "We couldn't load the project chat. Check your connection and try again.",
   "notificationsTitle": "Notifications",
   "notificationsOpenTooltip": "Open Notifications",
+  "notificationsSignInMessage": "Sign in to see your notifications.",
+  "@notificationsSignInMessage": {
+    "description": "Explanation shown when a signed-out user taps the Home notification bell."
+  },
   "notificationsUnreadSemantics": "{count, plural, =1{Notifications, 1 unread} other{Notifications, {count} unread}}",
   "@notificationsUnreadSemantics": {
     "placeholders": { "count": { "type": "int" } }
@@ -836,6 +885,8 @@
   "resourceRequestAccept": "Accept",
   "resourceRequestOpenConversation": "Open conversation",
   "resourceRequestAction": "Request resource",
+  "resourceSignedOutRequestAction": "Request this resource",
+  "resourceRequestFlowHelper": "After the owner accepts your request, you can chat and agree whether the item is given or lent and what is exchanged.",
   "resourceRequestAlreadyActive": "You already have an active request for this listing. The latest request has been loaded.",
   "resourceRequestView": "View request",
   "resourceChatTitle": "Resource conversation",
@@ -889,7 +940,32 @@
   "resourceFilteredEmptyTitle": "No listings found",
   "resourceFilteredEmptyMessage": "Try changing the search or filters.",
   "resourceLoadMore": "Load more",
-  "resourceLocationTitle": "Public location",
+  "resourceLocationTitle": "Location",
+  "resourceDescriptionTitle": "Description",
+  "resourceAgeNow": "now",
+  "resourceAgeMinutes": "{count}m ago",
+  "@resourceAgeMinutes": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "resourceAgeHours": "{count}h ago",
+  "@resourceAgeHours": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "resourceAgeDays": "{count}d ago",
+  "@resourceAgeDays": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "resourcePublishedRelative": "Published {age}",
+  "@resourcePublishedRelative": {
+    "placeholders": { "age": { "type": "String" } }
+  },
+  "resourceDetailMetadata": "{age} · Listed by {owner}",
+  "@resourceDetailMetadata": {
+    "placeholders": {
+      "age": { "type": "String" },
+      "owner": { "type": "String" }
+    }
+  },
   "resourcePublishedDate": "Published {date}",
   "@resourcePublishedDate": {
     "placeholders": { "date": { "type": "String" } }

@@ -17,6 +17,7 @@ typedef OwnResourceListingLoader = Future<List<OwnResourceListing>> Function(
 class FakeResourceListingGateway implements ResourceListingGateway {
   List<PublicResourceListingSummary> publicItems = [];
   PublicResourceListingDetail? publicDetail;
+  Future<PublicResourceListingDetail?>? publicDetailResult;
   List<OwnResourceListing> ownItems = [];
   Object? error;
   Object? publicListError;
@@ -68,7 +69,7 @@ class FakeResourceListingGateway implements ResourceListingGateway {
   ) async {
     _throw(error ?? publicDetailError);
     calls.add('get-public:$listingId');
-    return publicDetail;
+    return publicDetailResult ?? publicDetail;
   }
 
   @override
@@ -247,17 +248,23 @@ ResourceListingInput resourceListingInputFixture({
 PublicResourceListingSummary publicResourceListingFixture({
   String id = resourceListingId,
   ResourceListingMode mode = ResourceListingMode.donate,
+  String title = 'Garden tools',
+  String description = 'A rake and a shovel ready for a new garden.',
+  String countryCode = 'IT',
+  String locality = 'Bologna',
+  String? administrativeArea = 'Emilia-Romagna',
+  String publicLocationLabel = 'Central Bologna',
   DateTime? publishedAt,
   int activeRequestCount = 0,
 }) => PublicResourceListingSummary(
   id: id,
   mode: mode,
-  title: 'Garden tools',
-  description: 'A rake and a shovel ready for a new garden.',
-  countryCode: 'IT',
-  locality: 'Bologna',
-  administrativeArea: 'Emilia-Romagna',
-  publicLocationLabel: 'Central Bologna',
+  title: title,
+  description: description,
+  countryCode: countryCode,
+  locality: locality,
+  administrativeArea: administrativeArea,
+  publicLocationLabel: publicLocationLabel,
   publishedAt: publishedAt ?? DateTime.utc(2026, 9, 14, 12),
   activeRequestCount: activeRequestCount,
 );
@@ -266,8 +273,16 @@ PublicResourceListingDetail publicResourceListingDetailFixture({
   String ownerId = resourceOwnerProfileId,
   String? ownerDisplayName = 'Casey',
   int activeRequestCount = 0,
+  String locality = 'Bologna',
+  String? administrativeArea = 'Emilia-Romagna',
+  String publicLocationLabel = 'Central Bologna',
 }) => PublicResourceListingDetail(
-  summary: publicResourceListingFixture(activeRequestCount: activeRequestCount),
+  summary: publicResourceListingFixture(
+    activeRequestCount: activeRequestCount,
+    locality: locality,
+    administrativeArea: administrativeArea,
+    publicLocationLabel: publicLocationLabel,
+  ),
   ownerProfileId: ownerId,
   ownerDisplayName: ownerDisplayName,
 );

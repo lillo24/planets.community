@@ -73,7 +73,7 @@ RoutingConfig _routingConfig(
       final isRequestRoute = path == '/auth';
       final isVerifyRoute = path == '/auth/verify';
       final isAuthRoute = isRequestRoute || isVerifyRoute;
-      final isProfileRoute = path == '/profile' || path == '/profile/edit';
+      final isProfileEditRoute = path == '/profile/edit';
       final isProposalManagementRoute =
           path == '/proposals/mine' ||
           path == '/proposals/create' ||
@@ -104,7 +104,7 @@ RoutingConfig _routingConfig(
       }
 
       if (session.phase == AuthSessionPhase.signedOut &&
-          (isProfileRoute || isActivityManagementRoute)) {
+          (isProfileEditRoute || isActivityManagementRoute)) {
         return Uri(
           path: '/auth',
           queryParameters: {'returnTo': state.uri.toString()},
@@ -213,7 +213,73 @@ RoutingConfig _routingConfig(
                           : sanitizeReturnDestination(
                               state.uri.queryParameters['returnTo'],
                             ),
+                      cancelTo: profileEditCancelDestination(
+                        state.uri.queryParameters['returnTo'],
+                      ),
                     ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/',
+                builder: (context, state) => const FoundationScreen(),
+              ),
+              GoRoute(
+                path: '/messages',
+                builder: (context, state) => const MessagesScreen(),
+                routes: [
+                  GoRoute(
+                    path: 'requests/resource/:requestId',
+                    builder: (context, state) => ResourceRequestScreen(
+                      key: state.pageKey,
+                      requestId: state.pathParameters['requestId']!,
+                    ),
+                  ),
+                  GoRoute(
+                    path: 'requests/:requestId',
+                    builder: (context, state) =>
+                        ParticipationRequestMessageScreen(
+                          key: state.pageKey,
+                          requestId: state.pathParameters['requestId']!,
+                        ),
+                  ),
+                  GoRoute(
+                    path: 'chats/resource/:chatId',
+                    builder: (context, state) => ResourceChatScreen(
+                      key: state.pageKey,
+                      chatId: state.pathParameters['chatId']!,
+                    ),
+                  ),
+                  GoRoute(
+                    path: 'chats/:chatId',
+                    builder: (context, state) => ProjectChatScreen(
+                      key: state.pageKey,
+                      chatId: state.pathParameters['chatId']!,
+                    ),
+                    routes: [
+                      GoRoute(
+                        path: 'info',
+                        builder: (context, state) => ProjectChatInfoScreen(
+                          key: state.pageKey,
+                          chatId: state.pathParameters['chatId']!,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+              GoRoute(
+                path: '/notifications',
+                builder: (context, state) => const NotificationsScreen(),
+                routes: [
+                  GoRoute(
+                    path: 'preferences',
+                    builder: (context, state) =>
+                        const NotificationPreferencesScreen(),
                   ),
                 ],
               ),
@@ -321,69 +387,6 @@ RoutingConfig _routingConfig(
                         ),
                       ),
                     ],
-                  ),
-                ],
-              ),
-            ],
-          ),
-          StatefulShellBranch(
-            routes: [
-              GoRoute(
-                path: '/',
-                builder: (context, state) => const FoundationScreen(),
-              ),
-              GoRoute(
-                path: '/messages',
-                builder: (context, state) => const MessagesScreen(),
-                routes: [
-                  GoRoute(
-                    path: 'requests/resource/:requestId',
-                    builder: (context, state) => ResourceRequestScreen(
-                      key: state.pageKey,
-                      requestId: state.pathParameters['requestId']!,
-                    ),
-                  ),
-                  GoRoute(
-                    path: 'requests/:requestId',
-                    builder: (context, state) =>
-                        ParticipationRequestMessageScreen(
-                          key: state.pageKey,
-                          requestId: state.pathParameters['requestId']!,
-                        ),
-                  ),
-                  GoRoute(
-                    path: 'chats/resource/:chatId',
-                    builder: (context, state) => ResourceChatScreen(
-                      key: state.pageKey,
-                      chatId: state.pathParameters['chatId']!,
-                    ),
-                  ),
-                  GoRoute(
-                    path: 'chats/:chatId',
-                    builder: (context, state) => ProjectChatScreen(
-                      key: state.pageKey,
-                      chatId: state.pathParameters['chatId']!,
-                    ),
-                    routes: [
-                      GoRoute(
-                        path: 'info',
-                        builder: (context, state) => ProjectChatInfoScreen(
-                          key: state.pageKey,
-                          chatId: state.pathParameters['chatId']!,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-              GoRoute(
-                path: '/notifications',
-                builder: (context, state) => const NotificationsScreen(),
-                routes: [
-                  GoRoute(
-                    path: 'preferences',
-                    builder: (context, state) =>
-                        const NotificationPreferencesScreen(),
                   ),
                 ],
               ),

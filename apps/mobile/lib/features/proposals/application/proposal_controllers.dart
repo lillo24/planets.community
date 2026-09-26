@@ -51,6 +51,7 @@ class PublicProposalsController extends Notifier<PublicProposalsState> {
     }
     final revision = ++_publicRevision;
     final currentItems = reset ? const <ProposalSummary>[] : state.items;
+    final query = state.query;
     final locality = state.locality;
     final skillIds = state.selectedSkillIds;
     final profileId = reset ? _readyProfileId() : null;
@@ -60,6 +61,7 @@ class PublicProposalsController extends Notifier<PublicProposalsState> {
       items: currentItems,
       requestedItems: state.requestedItems,
       categories: state.categories,
+      query: query,
       locality: locality,
       selectedSkillIds: skillIds,
       hasMore: state.hasMore,
@@ -74,6 +76,7 @@ class PublicProposalsController extends Notifier<PublicProposalsState> {
         gateway.listPublicProposals(
           limit: proposalPageSize,
           cursor: cursor,
+          query: query.isEmpty ? null : query,
           locality: locality.isEmpty ? null : locality,
           skillIds: skillIds.isEmpty ? null : skillIds,
         ),
@@ -85,6 +88,7 @@ class PublicProposalsController extends Notifier<PublicProposalsState> {
           gateway
               .listOwnPendingRequestedProposals(
                 profileId,
+                query: query.isEmpty ? null : query,
                 locality: locality.isEmpty ? null : locality,
                 skillIds: skillIds.isEmpty ? null : skillIds,
               )
@@ -92,7 +96,7 @@ class PublicProposalsController extends Notifier<PublicProposalsState> {
         else
           Future.value(const <RequestedProposalSummary>[]),
       ]);
-      if (!_isPublicCurrent(revision, locality, skillIds)) {
+      if (!_isPublicCurrent(revision, query, locality, skillIds)) {
         return;
       }
       final page = results[0] as List<ProposalSummary>;
@@ -109,17 +113,19 @@ class PublicProposalsController extends Notifier<PublicProposalsState> {
             ? List.unmodifiable(requested)
             : state.requestedItems,
         categories: List.unmodifiable(categories),
+        query: query,
         locality: locality,
         selectedSkillIds: skillIds,
         hasMore: page.length == proposalPageSize,
       );
     } catch (error) {
-      if (_isPublicCurrent(revision, locality, skillIds)) {
+      if (_isPublicCurrent(revision, query, locality, skillIds)) {
         state = PublicProposalsState(
           phase: ProposalLoadPhase.failure,
           items: currentItems,
           requestedItems: state.requestedItems,
           categories: state.categories,
+          query: state.query,
           locality: state.locality,
           selectedSkillIds: state.selectedSkillIds,
           hasMore: state.hasMore,
@@ -130,6 +136,7 @@ class PublicProposalsController extends Notifier<PublicProposalsState> {
   }
 
   Future<void> applyFilters({
+    String? query,
     required String locality,
     required Set<String> skillIds,
   }) async {
@@ -138,6 +145,7 @@ class PublicProposalsController extends Notifier<PublicProposalsState> {
     state = PublicProposalsState(
       items: const [],
       categories: state.categories,
+      query: (query ?? state.query).trim(),
       locality: locality.trim(),
       selectedSkillIds: Set.unmodifiable(skillIds),
     );
@@ -146,6 +154,7 @@ class PublicProposalsController extends Notifier<PublicProposalsState> {
 
   Future<void> refreshRequested() async {
     final profileId = _readyProfileId();
+    final query = state.query;
     final locality = state.locality;
     final skillIds = state.selectedSkillIds;
     final revision = ++_requestedRevision;
@@ -158,14 +167,15 @@ class PublicProposalsController extends Notifier<PublicProposalsState> {
           .read(proposalGatewayProvider)
           .listOwnPendingRequestedProposals(
             profileId,
+            query: query.isEmpty ? null : query,
             locality: locality.isEmpty ? null : locality,
             skillIds: skillIds.isEmpty ? null : skillIds,
           );
-      if (_isRequestedCurrent(revision, profileId, locality, skillIds)) {
+      if (_isRequestedCurrent(revision, profileId, query, locality, skillIds)) {
         state = _stateWithRequested(List.unmodifiable(requested));
       }
     } catch (_) {
-      if (_isRequestedCurrent(revision, profileId, locality, skillIds)) {
+      if (_isRequestedCurrent(revision, profileId, query, locality, skillIds)) {
         state = _stateWithRequested(const []);
       }
     }
@@ -178,21 +188,29 @@ class PublicProposalsController extends Notifier<PublicProposalsState> {
         : null;
   }
 
-  bool _isPublicCurrent(int revision, String locality, Set<String> skillIds) =>
+  bool _isPublicCurrent(
+    int revision,
+    String query,
+    String locality,
+    Set<String> skillIds,
+  ) =>
       ref.mounted &&
       revision == _publicRevision &&
+      state.query == query &&
       state.locality == locality &&
       state.selectedSkillIds == skillIds;
 
   bool _isRequestedCurrent(
     int revision,
     String profileId,
+    String query,
     String locality,
     Set<String> skillIds,
   ) =>
       ref.mounted &&
       revision == _requestedRevision &&
       _readyProfileId() == profileId &&
+      state.query == query &&
       state.locality == locality &&
       state.selectedSkillIds == skillIds;
 
@@ -203,6 +221,7 @@ class PublicProposalsController extends Notifier<PublicProposalsState> {
     items: state.items,
     requestedItems: requested,
     categories: state.categories,
+    query: state.query,
     locality: state.locality,
     selectedSkillIds: state.selectedSkillIds,
     hasMore: state.hasMore,

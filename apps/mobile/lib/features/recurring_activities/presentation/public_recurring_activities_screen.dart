@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../app/router/browse_activity_switcher.dart';
 import '../../../core/theme/app_tokens.dart';
 import '../../../core/time/event_time.dart';
+import '../../../core/widgets/async_data_presentation.dart';
 import '../../../core/widgets/empty_state.dart';
 import '../../../core/widgets/error_state.dart';
 import '../../../core/widgets/loading_state.dart';
@@ -61,7 +62,7 @@ class _PublicRecurringActivitiesScreenState
           IconButton(
             key: const Key('my-tavoli-action'),
             tooltip: l10n.tavoliMyTitle,
-            onPressed: () => context.go('/tavoli/mine'),
+            onPressed: () => context.push('/tavoli/mine'),
             icon: const Icon(Icons.folder_outlined),
           ),
         ],
@@ -129,8 +130,9 @@ class _PublicRecurringActivitiesScreenState
                           RecurringActivityCard(
                             activity: requested.activity,
                             isRequested: true,
-                            onTap: () =>
-                                context.go('/tavoli/${requested.activity.id}'),
+                            onTap: () => context.push(
+                              '/tavoli/${requested.activity.id}',
+                            ),
                           ),
                           const SizedBox(height: AppSpacing.small),
                         ],
@@ -147,7 +149,7 @@ class _PublicRecurringActivitiesScreenState
                       for (final activity in state.ordinaryItems) ...[
                         RecurringActivityCard(
                           activity: activity,
-                          onTap: () => context.go('/tavoli/${activity.id}'),
+                          onTap: () => context.push('/tavoli/${activity.id}'),
                         ),
                         const SizedBox(height: AppSpacing.small),
                       ],
@@ -180,7 +182,7 @@ class _PublicRecurringActivitiesScreenState
       ),
       floatingActionButton: FloatingActionButton.extended(
         key: const Key('tavoli-create-action'),
-        onPressed: () => context.go('/tavoli/create'),
+        onPressed: () => context.push('/tavoli/create'),
         icon: const Icon(Icons.add),
         label: Text(l10n.tavoliCreateTitle),
       ),
@@ -217,13 +219,20 @@ class _PublicRecurringActivityDetailScreenState
     final l10n = AppLocalizations.of(context);
     final state = ref.watch(publicRecurringActivityDetailProvider);
     final detail = state.activityId == widget.activityId ? state.detail : null;
-    if (detail == null && state.phase == RecurringActivityLoadPhase.loading) {
+    final presentation = classifyAsyncDataPresentation(
+      hasData: detail != null,
+      isPending:
+          state.phase == RecurringActivityLoadPhase.idle ||
+          state.phase == RecurringActivityLoadPhase.loading,
+      hasFailed: state.phase == RecurringActivityLoadPhase.failure,
+    );
+    if (presentation == AsyncDataPresentation.loading) {
       return Scaffold(
         appBar: AppBar(title: Text(l10n.tavoliDetailTitle)),
         body: LoadingState(message: l10n.tavoliLoading),
       );
     }
-    if (detail == null) {
+    if (presentation != AsyncDataPresentation.content) {
       return Scaffold(
         appBar: AppBar(title: Text(l10n.tavoliDetailTitle)),
         body: ErrorState(
@@ -234,6 +243,7 @@ class _PublicRecurringActivityDetailScreenState
         ),
       );
     }
+    final resolvedDetail = detail!;
     final locale = Localizations.localeOf(context).toLanguageTag();
     return Scaffold(
       appBar: AppBar(title: Text(l10n.tavoliDetailTitle)),
@@ -245,43 +255,43 @@ class _PublicRecurringActivityDetailScreenState
               children: [
                 Expanded(
                   child: Text(
-                    detail.title,
+                    resolvedDetail.title,
                     style: Theme.of(context).textTheme.headlineSmall,
                   ),
                 ),
-                RecurringLifecycleBadge(lifecycle: detail.lifecycle),
+                RecurringLifecycleBadge(lifecycle: resolvedDetail.lifecycle),
               ],
             ),
             const SizedBox(height: AppSpacing.small),
             Text(
-              detail.summary,
+              resolvedDetail.summary,
               style: Theme.of(context).textTheme.titleMedium,
             ),
-            if (detail.topic case final topic?) ...[
+            if (resolvedDetail.topic case final topic?) ...[
               const SizedBox(height: AppSpacing.small),
               Text(topic, style: Theme.of(context).textTheme.labelLarge),
             ],
             const SizedBox(height: AppSpacing.large),
-            Text(detail.description),
+            Text(resolvedDetail.description),
             const SizedBox(height: AppSpacing.large),
             Text(
               l10n.tavoliScheduleTitle,
               style: Theme.of(context).textTheme.titleLarge,
             ),
             const SizedBox(height: AppSpacing.small),
-            Text(formatRecurringSchedule(detail.schedule, context)),
-            Text(l10n.tavoliTimezone(detail.schedule.eventTimezone)),
-            Text(l10n.tavoliDuration(detail.schedule.durationMinutes)),
+            Text(formatRecurringSchedule(resolvedDetail.schedule, context)),
+            Text(l10n.tavoliTimezone(resolvedDetail.schedule.eventTimezone)),
+            Text(l10n.tavoliDuration(resolvedDetail.schedule.durationMinutes)),
             const SizedBox(height: AppSpacing.large),
             Text(
               l10n.tavoliUpcomingMeetings,
               style: Theme.of(context).textTheme.titleLarge,
             ),
             const SizedBox(height: AppSpacing.small),
-            if (detail.nextOccurrences.isEmpty)
+            if (resolvedDetail.nextOccurrences.isEmpty)
               Text(l10n.tavoliNoUpcomingMeetings)
             else
-              for (final occurrence in detail.nextOccurrences)
+              for (final occurrence in resolvedDetail.nextOccurrences)
                 ListTile(
                   contentPadding: EdgeInsets.zero,
                   leading: const Icon(Icons.schedule),
@@ -296,16 +306,16 @@ class _PublicRecurringActivityDetailScreenState
                     '${formatEventDateTime(occurrence.endsAt, occurrence.eventTimezone, locale)} · ${occurrence.eventTimezone}',
                   ),
                 ),
-            ProjectResourceNeedsSection(projectId: detail.id),
+            ProjectResourceNeedsSection(projectId: resolvedDetail.id),
             if (ref.watch(authSessionProvider).identity?.id ==
-                detail.creatorProfileId) ...[
+                resolvedDetail.creatorProfileId) ...[
               const SizedBox(height: AppSpacing.medium),
               OutlinedButton.icon(
-                key: Key('project-resources-manage-${detail.id}'),
+                key: Key('project-resources-manage-${resolvedDetail.id}'),
                 onPressed: () => context.push(
                   ProjectResourceNeedRoutes.manage(
                     ProjectKind.recurring,
-                    detail.id,
+                    resolvedDetail.id,
                   ),
                 ),
                 icon: const Icon(Icons.inventory_2_outlined),
@@ -314,19 +324,20 @@ class _PublicRecurringActivityDetailScreenState
             ],
             const SizedBox(height: AppSpacing.large),
             ProjectParticipationSection(
-              projectId: detail.id,
+              projectId: resolvedDetail.id,
               projectKind: ProjectKind.recurring,
-              creatorProfileId: detail.creatorProfileId,
+              creatorProfileId: resolvedDetail.creatorProfileId,
               acceptsNewRequests:
-                  detail.lifecycle == RecurringActivityLifecycle.published,
+                  resolvedDetail.lifecycle ==
+                  RecurringActivityLifecycle.published,
               publicLocationLines: [
-                '${detail.publicLocationLabel} · ${detail.locality}',
-                ?detail.administrativeArea,
+                '${resolvedDetail.publicLocationLabel} · ${resolvedDetail.locality}',
+                ?resolvedDetail.administrativeArea,
               ],
-              publicExactMeetingText: detail.exactMeetingText,
-              exactLocationRestricted: detail.exactLocationRestricted,
+              publicExactMeetingText: resolvedDetail.exactMeetingText,
+              exactLocationRestricted: resolvedDetail.exactLocationRestricted,
             ),
-            if (detail.creatorDisplayName case final creator?) ...[
+            if (resolvedDetail.creatorDisplayName case final creator?) ...[
               const SizedBox(height: AppSpacing.large),
               Text(l10n.tavoliOrganizedBy(creator)),
             ],

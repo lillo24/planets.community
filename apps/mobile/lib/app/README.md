@@ -6,7 +6,7 @@ This folder owns application startup presentation and navigation, not backend ru
 - `router/app_router.dart` owns routes, Auth/readiness redirects and the identity-scoped routing configuration.
 - `router/app_navigation_shell.dart` owns the single Material 3 navigation bar and branch ordering.
 - `foundation_screen.dart` is Home; its Progetti entry uses the shell's Browse
-  branch switch and its Scambio-Dona entry opens the Home-owned resource routes.
+  branch switch and its Scambio-Dona entry opens the Browse-owned resource routes.
 - `startup_failure_app.dart` is the safe fallback when bootstrap cannot launch the application.
 
 ## Navigation contract
@@ -16,28 +16,36 @@ This folder owns application startup presentation and navigation, not backend ru
 | Index / destination | Routes |
 | --- | --- |
 | 0 / Profile | `/profile`, nested `/profile/edit` with an optional sanitized post-setup `returnTo` |
-| 1 / Browse | `/proposals` and `/tavoli`, each with nested `mine`, `create`, `:id`, `:id/edit`, protected `:id/resources`, `:id/join`, and `:id/participants` |
-| 2 / Home | `/`, public `/resources` and `/resources/:listingId`, protected `/resources/mine`, `/resources/create`, and `/resources/:listingId/edit`, `/messages`, nested `/messages/requests/:requestId`, `/messages/chats/:chatId`, `/messages/chats/:chatId/info`, `/notifications`, nested `/notifications/preferences` |
+| 1 / Home | `/`, `/messages`, nested `/messages/requests/:requestId`, `/messages/chats/:chatId`, `/messages/chats/:chatId/info`, `/notifications`, and nested `/notifications/preferences` |
+| 2 / Browse | `/proposals` and `/tavoli`, each with nested `mine`, `create`, `:id`, `:id/edit`, protected `:id/resources`, `:id/join`, and `:id/participants`; public `/resources` and `/resources/:listingId`; protected `/resources/mine`, `/resources/create`, `/resources/:listingId/edit`, and `/resources/:listingId/loan-schedule` |
 
 Static Browse children precede each dynamic activity-ID route. A route-backed
 Proposals/Tavoli switcher changes the public list within Browse without adding a
 fourth bottom destination. Each list's Riverpod state survives switching. Direct entry creates
-the matching nested stack and selects its owning destination. Nested AppBar and
-system Back pop within that stack. Branch switches use `goBranch`, restoring its
-last route, scroll and unsaved form state; re-tapping the active destination is a
-no-op. Browse root actions use `go` to build canonical nested stacks, including
-when a guard redirects Create/My activity routes into a different branch.
+the matching nested stack and selects its owning destination. Drill-down actions
+use `push`, so nested AppBar and system Back return to the previous screen.
+Branch switches use `goBranch`, restoring Profile/Browse route, scroll, and
+unsaved form state. Home always resets to `/`, including when re-tapped from a
+Home-owned Messages or Notifications route. Browse list-family switches use
+`go` to build canonical nested stacks, including when a guard redirects
+Create/My activity routes into a different branch.
 
 `/auth` and `/auth/verify` live outside the shell and have no bottom navigation.
-Home and Browse list/detail, including Scambio-Dona list/detail, remain public. Signed-out Profile/management access
-uses the existing Auth flow with a sanitized internal `returnTo`. Incomplete
-profiles can use Home/Browse freely; Profile opens completion when the profile
+Home and Browse list/detail, including Scambio-Dona list/detail, remain public.
+Signed-out Profile shows a static, clearly labelled example without loading
+account data; its explicit call to action opens Auth with `/profile` as the
+sanitized `returnTo`. Profile edit and management access remain protected.
+Incomplete profiles can use Home/Browse freely; Profile opens completion when the profile
 anchor exists, and management redirects to `/profile/edit`. Scambio-Dona
 management preserves the exact destination through both OTP and profile setup. Participation Join,
 creator-review, Project resource management, Messages request/chat/group-info, and Notifications routes preserve their exact internal destination
 through OTP and profile completion. Missing-anchor retry and email-OTP behavior
 are unchanged. Saving a valid profile returns to the preserved participation or
 Messages/Notifications route when present, otherwise to Profile.
+For guarded Proposal/Tavolo Join setup, Profile edit keeps separate destinations:
+Save resumes the exact sanitized Join route, while the visible Back action and
+system Back return to the corresponding public Project detail. Other Profile
+edit flows conservatively cancel to Profile.
 
 ## Retention and identity
 
@@ -71,7 +79,9 @@ navigation.
 Notifications is a second authenticated Home AppBar surface. Its bell omits the
 badge while signed out, at zero, or after an unread-count failure; a ready
 identity receives an accessible count capped visually at `99+`. The inbox and
-preferences routes retain exact OTP/profile-setup `returnTo` values. Known
+preferences routes retain exact OTP/profile-setup `returnTo` values. A signed-out
+bell tap stays on Home and offers an explicit Sign in Snackbar action before Auth
+opens with `/notifications` as its return destination. Known
 semantic targets cross to the existing Messages or Browse routes with canonical
 `go` navigation, while unknown targets never guess a destination.
 

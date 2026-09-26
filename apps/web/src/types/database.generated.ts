@@ -2459,6 +2459,7 @@ export type Database = {
         Args: {
           p_expected_requester_profile_id: string
           p_locality?: string
+          p_query?: string
           p_skill_ids?: string[]
         }
         Returns: {
@@ -2873,6 +2874,7 @@ export type Database = {
           p_cursor_starts_at?: string
           p_limit?: number
           p_locality?: string
+          p_query?: string
           p_skill_ids?: string[]
         }
         Returns: {

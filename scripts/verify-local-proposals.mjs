@@ -138,6 +138,7 @@ async function verifyProposals() {
       p_cursor_id: null,
       p_locality: "Trento",
       p_skill_ids: [muralSkillId],
+      p_query: "NEIGHBORHOOD MURAL",
     });
   const restrictedCard = restrictedList?.find(
     (proposal) => proposal.proposal_id === restrictedProposalId,
@@ -189,7 +190,7 @@ async function verifyProposals() {
 
   const publicExactText = "Piazza Duomo, by the fountain";
   const publicProposalId = await createDraft(userA, {
-    title: "Community repair session",
+    title: "Community 100%_ repair session",
     summary: "Repair useful household items together.",
     description: "Bring a small item and learn basic repair skills.",
     startsAt: new Date(now + 24 * 60 * 60 * 1000).toISOString(),
@@ -216,6 +217,7 @@ async function verifyProposals() {
       p_cursor_id: null,
       p_locality: null,
       p_skill_ids: null,
+      p_query: "COMMUNITY 100%_ REPAIR SESSION",
     }),
     anonymous.rpc("get_public_proposal", { p_proposal_id: publicProposalId }),
   ]);
@@ -235,6 +237,16 @@ async function verifyProposals() {
       "Public exact meeting information did not remain detail-only.",
     );
   }
+  if (
+    publicList?.length === 0 ||
+    publicList.some(
+      (proposal) => proposal.title !== "Community 100%_ repair session",
+    )
+  ) {
+    throw new Error(
+      "Literal, case-insensitive Proposal search did not filter the backend page.",
+    );
+  }
 
   const { error: cancelError } = await userA.client.rpc("cancel_proposal", {
     p_expected_creator_profile_id: userA.id,
@@ -250,6 +262,7 @@ async function verifyProposals() {
       p_cursor_id: null,
       p_locality: null,
       p_skill_ids: null,
+      p_query: null,
     });
   if (
     afterCancellationError ||
@@ -263,7 +276,7 @@ async function verifyProposals() {
   }
 
   console.log(
-    "Confirmed two-user proposal ownership, stale-identity rejection, public discovery sanitization, detail-only exact location, lifecycle, filters, and time-derived current statuses.",
+    "Confirmed two-user proposal ownership, stale-identity rejection, literal backend search, public discovery sanitization, detail-only exact location, lifecycle, filters, and time-derived current statuses.",
   );
 }
 

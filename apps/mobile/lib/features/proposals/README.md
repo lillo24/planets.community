@@ -7,22 +7,32 @@ This feature owns one-time proposal discovery and authenticated owner management
 - `application/` coordinates pagination, requester-only Requested enrichment, detail loading and race-safe owner commands. Every owner mutation carries the identity for which the screen was rendered.
 - `presentation/` contains public list/detail screens and complete-profile create/edit/my-proposals screens.
 
-`presentation/skill_filter.dart` owns the compact, searchable Skills popover:
-categorized checkboxes stage a selection, Apply sends the entire ID set once,
-and Clear all stages an empty selection. Dismissing without Apply discards the
-pending selection. Reopening starts from the applied IDs. Search does not focus
-or open a keyboard until explicitly tapped. The public list displays at most
-two skill badges plus `+N more`; locality composes with the skills using the
-existing backend OR semantics. The reference `general_modular_components` Fancy
-Multi Select was inspected for its controlled selection/badge/search pattern;
-this is a native Flutter MenuAnchor implementation, without React/CSS reuse.
+`presentation/skill_filter.dart` adapts the shared compact tag selector for a
+staged discovery filter. The bounded bottom sheet uses searchable category
+headings and chip/button toggles, Apply sends the entire ID set once, and Clear
+stages an empty selection. Dismissing without Apply discards the pending
+selection. Reopening starts from the applied IDs, and search does not focus or
+open a keyboard until explicitly tapped. The public list displays at most two
+skill badges plus `+N more`; locality and the literal free-text query compose
+with the skills using backend OR-within-skills semantics. The reference
+`general_modular_components` Fancy Multi Select was inspected for its
+controlled selection, compact-tag, search, bounded-surface, and clear-action
+patterns; the implementation remains native Flutter without React/CSS reuse.
+
+The Browse query is trimmed, limited to 120 characters, and debounced for 350
+milliseconds, while submit flushes immediately. Both the paginated public RPC
+and the authenticated pending-request projection receive the same query. The
+database applies a case-insensitive literal substring match across title,
+summary, and description, so `%` and `_` have no wildcard meaning. Controller
+revisions keep pagination on the active query and reject late results from an
+older filter set.
 
 Browse owns list, detail, mine and editor routes inside the app's stateful shell.
 Switching tabs preserves the list scroll/filters and an unsaved editor. Identity
 changes discard the shell's retained stacks and clear owner controllers. Revision
 checks after each await reject late loads/mutations and prevent an old draft
 creation from proceeding to publish in a later session. Every owner RPC still
-receives the form's expected identity; no database rule changes are made here.
+receives the form's expected identity.
 
 The public client never reads proposal tables directly. Rough location is available on public cards; exact meeting text is rendered only when the sanitized detail RPC returns it. The shared `participation/` feature adds request/member actions and may replace the restricted explanation with participant-authorized operational meeting text without adding that data to Proposal models. Recurring activities, maps and media remain outside this feature.
 
