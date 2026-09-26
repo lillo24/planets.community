@@ -165,6 +165,11 @@ void main() {
       );
       expect(find.byKey(const Key('browse-requested-badge')), findsOneWidget);
       expect(find.byKey(const Key('proposal-card-proposal-1')), findsOneWidget);
+      await tester.scrollUntilVisible(
+        find.byKey(const Key('proposal-card-proposal-2')),
+        200,
+        scrollable: find.byType(Scrollable).first,
+      );
       expect(find.byKey(const Key('proposal-card-proposal-2')), findsOneWidget);
       expect(
         tester.getTopLeft(find.byKey(const Key('proposal-card-proposal-1'))).dy,
@@ -181,6 +186,11 @@ void main() {
         contains('Requested to join'),
       );
 
+      await tester.scrollUntilVisible(
+        find.byKey(const Key('proposal-card-proposal-1')),
+        -200,
+        scrollable: find.byType(Scrollable).first,
+      );
       await tester.tap(find.byKey(const Key('proposal-card-proposal-1')));
       await tester.pumpAndSettle();
       expect(find.text('Proposal details'), findsOneWidget);

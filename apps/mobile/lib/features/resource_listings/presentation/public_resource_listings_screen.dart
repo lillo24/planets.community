@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -30,9 +32,12 @@ class PublicResourceListingsScreen extends ConsumerStatefulWidget {
 
 class _PublicResourceListingsScreenState
     extends ConsumerState<PublicResourceListingsScreen> {
+  static const _filterDebounce = Duration(milliseconds: 350);
+
   late final TextEditingController _queryController;
   late final TextEditingController _localityController;
   late _ResourceModeChoice _modeChoice;
+  Timer? _filterTimer;
 
   @override
   void initState() {
@@ -54,6 +59,7 @@ class _PublicResourceListingsScreenState
 
   @override
   void dispose() {
+    _filterTimer?.cancel();
     _queryController.dispose();
     _localityController.dispose();
     super.dispose();
@@ -63,6 +69,7 @@ class _PublicResourceListingsScreenState
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final state = ref.watch(publicResourceListingsProvider);
+    final now = ref.watch(resourceListingClockProvider)();
     return Scaffold(
       appBar: AppBar(
         title: Text(l10n.resourceTitle),
@@ -123,11 +130,10 @@ class _PublicResourceListingsScreenState
                           ),
                         ],
                         selected: {_modeChoice},
-                        onSelectionChanged: state.isBusy
-                            ? null
-                            : (selection) => setState(
-                                () => _modeChoice = selection.single,
-                              ),
+                        onSelectionChanged: (selection) {
+                          setState(() => _modeChoice = selection.single);
+                          _flushFilters();
+                        },
                       ),
                     ),
                     const SizedBox(height: AppSpacing.medium),
@@ -139,7 +145,8 @@ class _PublicResourceListingsScreenState
                       decoration: InputDecoration(
                         labelText: l10n.resourceSearchLabel,
                       ),
-                      onSubmitted: (_) => _applyFilters(),
+                      onChanged: (_) => _scheduleFilters(),
+                      onSubmitted: (_) => _flushFilters(),
                     ),
                     TextField(
                       key: const Key('resource-locality-filter'),
@@ -149,17 +156,18 @@ class _PublicResourceListingsScreenState
                       decoration: InputDecoration(
                         labelText: l10n.resourceLocalityLabel,
                       ),
-                      onSubmitted: (_) => _applyFilters(),
+                      onChanged: (_) => _scheduleFilters(),
+                      onSubmitted: (_) => _flushFilters(),
                     ),
-                    Align(
-                      alignment: Alignment.centerRight,
-                      child: FilledButton.icon(
-                        key: const Key('resource-apply-filters'),
-                        onPressed: state.isBusy ? null : _applyFilters,
-                        icon: const Icon(Icons.search),
-                        label: Text(l10n.resourceSearchAction),
+                    if (state.phase == ResourceListingLoadPhase.loading &&
+                        state.items.isNotEmpty)
+                      Padding(
+                        padding: const EdgeInsets.only(top: AppSpacing.small),
+                        child: LinearProgressIndicator(
+                          key: const Key('resource-filter-progress'),
+                          semanticsLabel: l10n.resourceLoading,
+                        ),
                       ),
-                    ),
                     const SizedBox(height: AppSpacing.medium),
                     if (state.items.isEmpty)
                       EmptyState(
@@ -175,6 +183,7 @@ class _PublicResourceListingsScreenState
                       for (final listing in state.items) ...[
                         PublicResourceListingCard(
                           listing: listing,
+                          now: now,
                           onTap: () => context.push('/resources/${listing.id}'),
                         ),
                         const SizedBox(height: AppSpacing.small),
@@ -219,19 +228,31 @@ class _PublicResourceListingsScreenState
     );
   }
 
+  void _scheduleFilters() {
+    _filterTimer?.cancel();
+    _filterTimer = Timer(_filterDebounce, _applyFilters);
+  }
+
+  void _flushFilters() {
+    _filterTimer?.cancel();
+    _applyFilters();
+  }
+
   void _applyFilters() {
     final mode = switch (_modeChoice) {
       _ResourceModeChoice.all => null,
       _ResourceModeChoice.donate => ResourceListingMode.donate,
       _ResourceModeChoice.exchange => ResourceListingMode.exchange,
     };
-    ref
-        .read(publicResourceListingsProvider.notifier)
-        .applyFilters(
-          mode: mode,
-          locality: _localityController.text,
-          query: _queryController.text,
-        );
+    unawaited(
+      ref
+          .read(publicResourceListingsProvider.notifier)
+          .applyFilters(
+            mode: mode,
+            locality: _localityController.text,
+            query: _queryController.text,
+          ),
+    );
   }
 }
 
@@ -270,6 +291,7 @@ class _PublicResourceListingDetailScreenState
     final state = ref.watch(publicResourceListingDetailProvider);
     final detail = state.listingId == widget.listingId ? state.detail : null;
     final session = ref.watch(authSessionProvider);
+    final now = ref.watch(resourceListingClockProvider)();
     final isOwner =
         session.phase == AuthSessionPhase.ready &&
         session.identity?.id == detail?.ownerProfileId;
@@ -320,28 +342,47 @@ class _PublicResourceListingDetailScreenState
                     detail.summary.title,
                     style: Theme.of(context).textTheme.headlineSmall,
                   ),
-                  const SizedBox(height: AppSpacing.large),
-                  Text(detail.summary.description),
-                  const SizedBox(height: AppSpacing.large),
-                  ResourceListingLocation(
-                    publicLocationLabel: detail.summary.publicLocationLabel,
-                    locality: detail.summary.locality,
-                    administrativeArea: detail.summary.administrativeArea,
-                    countryCode: detail.summary.countryCode,
-                  ),
-                  const SizedBox(height: AppSpacing.large),
-                  Text(
-                    l10n.resourcePublishedDate(
-                      formatResourceListingDate(
+                  const SizedBox(height: AppSpacing.xSmall),
+                  Builder(
+                    builder: (context) {
+                      final age = formatResourceListingRelativeAge(
                         context,
                         detail.summary.publishedAt,
-                      ),
+                        now: now,
+                      );
+                      final owner = detail.ownerDisplayName;
+                      final metadata = owner == null
+                          ? l10n.resourcePublishedRelative(age)
+                          : l10n.resourceDetailMetadata(age, owner);
+                      return Semantics(
+                        label: metadata,
+                        child: Text(
+                          metadata,
+                          key: const Key('resource-detail-published-age'),
+                          style: Theme.of(context).textTheme.bodyMedium
+                              ?.copyWith(
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .onSurfaceVariant,
+                              ),
+                        ),
+                      );
+                    },
+                  ),
+                  const SizedBox(height: AppSpacing.large),
+                  _ResourceDetailSection(
+                    title: l10n.resourceDescriptionTitle,
+                    child: Text(detail.summary.description),
+                  ),
+                  const SizedBox(height: AppSpacing.medium),
+                  _ResourceDetailSection(
+                    child: ResourceListingLocation(
+                      publicLocationLabel: detail.summary.publicLocationLabel,
+                      locality: detail.summary.locality,
+                      administrativeArea: detail.summary.administrativeArea,
+                      countryCode: detail.summary.countryCode,
                     ),
                   ),
-                  if (detail.ownerDisplayName case final owner?) ...[
-                    const SizedBox(height: AppSpacing.large),
-                    Text(l10n.resourceListedBy(owner)),
-                  ],
                   const SizedBox(height: AppSpacing.medium),
                   Semantics(
                     label: l10n.resourceInterestCount(
@@ -369,11 +410,64 @@ class _PublicResourceListingDetailScreenState
                       expectedProfileId: profileId,
                     ),
                   ],
+                  if (session.phase == AuthSessionPhase.signedOut) ...[
+                    const SizedBox(height: AppSpacing.large),
+                    FilledButton.icon(
+                      key: const Key('resource-signed-out-request-action'),
+                      onPressed: () => context.go(
+                        Uri(
+                          path: '/auth',
+                          queryParameters: {
+                            'returnTo': '/resources/${widget.listingId}',
+                          },
+                        ).toString(),
+                      ),
+                      icon: const Icon(Icons.front_hand_outlined),
+                      label: Text(l10n.resourceSignedOutRequestAction),
+                    ),
+                  ],
+                  if (!isOwner &&
+                      (profileId != null ||
+                          session.phase == AuthSessionPhase.signedOut)) ...[
+                    const SizedBox(height: AppSpacing.small),
+                    Text(
+                      l10n.resourceRequestFlowHelper,
+                      key: const Key('resource-request-flow-helper'),
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
                 ],
               ),
       ),
     );
   }
+}
+
+class _ResourceDetailSection extends StatelessWidget {
+  const _ResourceDetailSection({this.title, required this.child});
+
+  final String? title;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) => Card(
+    margin: EdgeInsets.zero,
+    child: Padding(
+      padding: const EdgeInsets.all(AppSpacing.medium),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (title case final value?) ...[
+            Text(value, style: Theme.of(context).textTheme.titleMedium),
+            const SizedBox(height: AppSpacing.small),
+          ],
+          child,
+        ],
+      ),
+    ),
+  );
 }
 
 class _ResourceRequestListingActions extends ConsumerWidget {

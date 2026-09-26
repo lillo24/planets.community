@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_tokens.dart';
 import '../../../core/widgets/error_state.dart';
 import '../../../core/widgets/loading_state.dart';
+import '../../../core/widgets/tag_multi_select.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../auth/application/auth_session_controller.dart';
 import '../application/profile_controller.dart';
@@ -242,40 +243,36 @@ class _ProfileEditFormState extends ConsumerState<_ProfileEditForm> {
                                 : l10n.profileBioError,
                           ),
                           const SizedBox(height: AppSpacing.large),
-                          Text(
-                            l10n.profileSkillsTitle,
-                            style: Theme.of(context).textTheme.titleLarge,
-                          ),
-                          const SizedBox(height: AppSpacing.xSmall),
                           Text(l10n.profileSkillsDescription),
                           const SizedBox(height: AppSpacing.medium),
-                          for (final category in widget.data.categories) ...[
-                            Text(
-                              category.label,
-                              style: Theme.of(context).textTheme.titleMedium,
-                            ),
-                            for (final skill in category.skills)
-                              CheckboxListTile(
-                                key: Key('profile-skill-${skill.slug}'),
-                                contentPadding: EdgeInsets.zero,
-                                controlAffinity:
-                                    ListTileControlAffinity.leading,
-                                title: Text(skill.label),
-                                value: _selectedSkillIds.contains(skill.id),
-                                onChanged: state.isBusy
-                                    ? null
-                                    : (selected) {
-                                        setState(() {
-                                          if (selected ?? false) {
-                                            _selectedSkillIds.add(skill.id);
-                                          } else {
-                                            _selectedSkillIds.remove(skill.id);
-                                          }
-                                        });
-                                      },
-                              ),
-                            const SizedBox(height: AppSpacing.medium),
-                          ],
+                          TagMultiSelect(
+                            label: l10n.profileSkillsTitle,
+                            emptyLabel: l10n.skillSelectorPlaceholder,
+                            categories: [
+                              for (final category in widget.data.categories)
+                                TagMultiSelectCategory(
+                                  id: category.slug,
+                                  label: category.label,
+                                  options: [
+                                    for (final skill in category.skills)
+                                      TagMultiSelectOption(
+                                        id: skill.id,
+                                        label: skill.label,
+                                        keyValue: skill.slug,
+                                      ),
+                                  ],
+                                ),
+                            ],
+                            selectedIds: _selectedSkillIds,
+                            enabled: !state.isBusy,
+                            keyPrefix: 'profile-skills',
+                            onChanged: (selection) => setState(() {
+                              _selectedSkillIds
+                                ..clear()
+                                ..addAll(selection);
+                            }),
+                          ),
+                          const SizedBox(height: AppSpacing.large),
                           Text(
                             l10n.profileVisibilityTitle,
                             style: Theme.of(context).textTheme.titleLarge,

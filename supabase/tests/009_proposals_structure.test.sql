@@ -223,7 +223,7 @@ select ok(
   'the canonical cancel operation exists'
 );
 select ok(
-  to_regprocedure('public.list_public_proposals(integer,timestamptz,uuid,text,uuid[])') is not null,
+  to_regprocedure('public.list_public_proposals(integer,timestamptz,uuid,text,uuid[],text)') is not null,
   'the sanitized public list operation exists'
 );
 select ok(
@@ -248,7 +248,7 @@ select is(
       'public.update_own_proposal(uuid,uuid,text,text,text,timestamptz,timestamptz,text,text,text,text,text,text,text,uuid[],text[])'::regprocedure,
       'public.publish_proposal(uuid,uuid)'::regprocedure,
       'public.cancel_proposal(uuid,uuid)'::regprocedure,
-      'public.list_public_proposals(integer,timestamptz,uuid,text,uuid[])'::regprocedure,
+      'public.list_public_proposals(integer,timestamptz,uuid,text,uuid[],text)'::regprocedure,
       'public.get_public_proposal(uuid)'::regprocedure,
       'public.list_own_proposals(uuid)'::regprocedure,
       'public.get_own_proposal(uuid,uuid)'::regprocedure
@@ -266,7 +266,7 @@ select is(
       'public.update_own_proposal(uuid,uuid,text,text,text,timestamptz,timestamptz,text,text,text,text,text,text,text,uuid[],text[])'::regprocedure,
       'public.publish_proposal(uuid,uuid)'::regprocedure,
       'public.cancel_proposal(uuid,uuid)'::regprocedure,
-      'public.list_public_proposals(integer,timestamptz,uuid,text,uuid[])'::regprocedure,
+      'public.list_public_proposals(integer,timestamptz,uuid,text,uuid[],text)'::regprocedure,
       'public.get_public_proposal(uuid)'::regprocedure,
       'public.list_own_proposals(uuid)'::regprocedure,
       'public.get_own_proposal(uuid,uuid)'::regprocedure
@@ -277,7 +277,7 @@ select is(
 );
 
 select is(
-  has_function_privilege('anon', 'public.list_public_proposals(integer,timestamptz,uuid,text,uuid[])', 'EXECUTE'),
+  has_function_privilege('anon', 'public.list_public_proposals(integer,timestamptz,uuid,text,uuid[],text)', 'EXECUTE'),
   true,
   'anonymous users can call the sanitized proposal list'
 );

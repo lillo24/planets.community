@@ -110,11 +110,53 @@ void main() {
 
     await container
         .read(publicProposalsProvider.notifier)
-        .applyFilters(locality: ' Bologna ', skillIds: {'skill-mural'});
+        .applyFilters(
+          query: ' mural ',
+          locality: ' Bologna ',
+          skillIds: {'skill-mural'},
+        );
+    expect(gateway.lastQuery, 'mural');
     expect(gateway.lastLocality, 'Bologna');
     expect(gateway.lastSkillIds, {'skill-mural'});
     await container.read(publicProposalsProvider.notifier).load(reset: false);
     expect(gateway.lastCursor?.id, 'proposal-1');
+    expect(gateway.lastQuery, 'mural');
+  });
+
+  test('a late Proposal query cannot overwrite the newest result', () async {
+    final first = Completer<List<ProposalSummary>>();
+    final second = Completer<List<ProposalSummary>>();
+    final gateway = FakeProposalGateway()
+      ..publicLoader = ({required limit, cursor, query, locality, skillIds}) =>
+          switch (query) {
+            'first' => first.future,
+            'second' => second.future,
+            _ => Future.value(const <ProposalSummary>[]),
+          };
+    final container = ProviderContainer(
+      overrides: [proposalGatewayProvider.overrideWithValue(gateway)],
+    );
+    addTearDown(container.dispose);
+    final controller = container.read(publicProposalsProvider.notifier);
+
+    final firstLoad = controller.applyFilters(
+      query: 'first',
+      locality: '',
+      skillIds: const {},
+    );
+    final secondLoad = controller.applyFilters(
+      query: 'second',
+      locality: '',
+      skillIds: const {},
+    );
+    second.complete([proposalSummaryFixture(id: 'second-result')]);
+    await secondLoad;
+    first.complete([proposalSummaryFixture(id: 'stale-result')]);
+    await firstLoad;
+
+    final state = container.read(publicProposalsProvider);
+    expect(state.query, 'second');
+    expect(state.items.single.id, 'second-result');
   });
 
   test('signed-out Browse skips the personalized RPC', () async {
@@ -154,6 +196,31 @@ void main() {
     },
   );
 
+  test(
+    'requested projection receives the same active Proposal query',
+    () async {
+      final gateway = FakeProposalGateway()
+        ..publicItems = [proposalSummaryFixture()]
+        ..requestedItems = [requestedProposalFixture()];
+      final session = _readyContainer(gateway);
+      addTearDown(session.container.dispose);
+      addTearDown(session.auth.close);
+
+      await session.container
+          .read(publicProposalsProvider.notifier)
+          .applyFilters(
+            query: ' mural ',
+            locality: 'Bologna',
+            skillIds: {'skill-mural'},
+          );
+
+      expect(gateway.lastQuery, 'mural');
+      expect(gateway.lastRequestedQuery, 'mural');
+      expect(gateway.lastRequestedLocality, 'Bologna');
+      expect(gateway.lastRequestedSkillIds, {'skill-mural'});
+    },
+  );
+
   test('personalized failure degrades to the successful public feed', () async {
     final gateway = FakeProposalGateway()
       ..publicItems = [proposalSummaryFixture()]
@@ -175,7 +242,7 @@ void main() {
     final first = Completer<List<RequestedProposalSummary>>();
     final gateway = FakeProposalGateway()
       ..publicItems = [proposalSummaryFixture()]
-      ..requestedLoader = (identity, {locality, skillIds}) =>
+      ..requestedLoader = (identity, {query, locality, skillIds}) =>
           identity == 'user-1'
           ? first.future
           : Future.value([
@@ -213,7 +280,8 @@ void main() {
       final filtered = Completer<List<RequestedProposalSummary>>();
       final gateway = FakeProposalGateway()
         ..publicItems = [proposalSummaryFixture()]
-        ..requestedLoader = (_, {locality, skillIds}) => locality == 'Rome'
+        ..requestedLoader = (_, {query, locality, skillIds}) =>
+            locality == 'Rome'
             ? filtered.future
             : Future.value([requestedProposalFixture(proposalId: 'old')]);
       final session = _readyContainer(gateway);
@@ -262,8 +330,13 @@ void main() {
         ..requestedItems = [
           requestedProposalFixture(proposalId: 'requested-later'),
         ]
-        ..publicLoader = ({required limit, cursor, locality, skillIds}) =>
-            Future.value(cursor == null ? firstPage : secondPage);
+        ..publicLoader = ({
+          required limit,
+          cursor,
+          query,
+          locality,
+          skillIds,
+        }) => Future.value(cursor == null ? firstPage : secondPage);
       final session = _readyContainer(gateway);
       addTearDown(session.container.dispose);
       addTearDown(session.auth.close);

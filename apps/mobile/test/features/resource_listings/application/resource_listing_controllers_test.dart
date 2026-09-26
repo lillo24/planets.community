@@ -82,6 +82,55 @@ void main() {
     expect(state.failure, ResourceListingFailureKind.unavailable);
   });
 
+  test(
+    'filter refresh retains rows and rejects an older query response',
+    () async {
+      final first = Completer<List<PublicResourceListingSummary>>();
+      final second = Completer<List<PublicResourceListingSummary>>();
+      final gateway = FakeResourceListingGateway()
+        ..publicItems = [publicResourceListingFixture(id: resourceListingId)];
+      final container = ProviderContainer(
+        overrides: [resourceListingGatewayProvider.overrideWithValue(gateway)],
+      );
+      addTearDown(container.dispose);
+      final controller = container.read(
+        publicResourceListingsProvider.notifier,
+      );
+      await controller.load();
+      gateway.publicLoader =
+          ({required limit, cursor, mode, locality, query}) => switch (query) {
+            'first' => first.future,
+            'second' => second.future,
+            _ => Future.value(const <PublicResourceListingSummary>[]),
+          };
+
+      final firstLoad = controller.applyFilters(
+        mode: null,
+        locality: '',
+        query: 'first',
+      );
+      expect(
+        container.read(publicResourceListingsProvider).items,
+        hasLength(1),
+      );
+      final secondLoad = controller.applyFilters(
+        mode: null,
+        locality: '',
+        query: 'second',
+      );
+      second.complete([
+        publicResourceListingFixture(id: secondResourceListingId),
+      ]);
+      await secondLoad;
+      first.complete([publicResourceListingFixture(id: newResourceListingId)]);
+      await firstLoad;
+
+      final state = container.read(publicResourceListingsProvider);
+      expect(state.query, 'second');
+      expect(state.items.single.id, secondResourceListingId);
+    },
+  );
+
   test('incomplete content saves one private draft', () async {
     final gateway = FakeResourceListingGateway();
     final session = _readyContainer(gateway);
