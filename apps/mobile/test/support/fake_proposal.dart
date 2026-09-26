@@ -22,6 +22,7 @@ class FakeProposalGateway implements ProposalGateway {
   List<ProposalSummary> publicItems = [];
   List<RequestedProposalSummary> requestedItems = [];
   ProposalDetail? publicDetail;
+  Future<ProposalDetail?>? publicDetailResult;
   List<OwnProposal> ownItems = [];
   Object? error;
   Object? requestedError;
@@ -102,7 +103,7 @@ class FakeProposalGateway implements ProposalGateway {
   Future<ProposalDetail?> getPublicProposal(String proposalId) async {
     _throwIfNeeded();
     calls.add('public-detail:$proposalId');
-    return publicDetail;
+    return publicDetailResult ?? publicDetail;
   }
 
   @override

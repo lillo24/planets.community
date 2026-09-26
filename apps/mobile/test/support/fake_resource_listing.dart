@@ -17,6 +17,7 @@ typedef OwnResourceListingLoader = Future<List<OwnResourceListing>> Function(
 class FakeResourceListingGateway implements ResourceListingGateway {
   List<PublicResourceListingSummary> publicItems = [];
   PublicResourceListingDetail? publicDetail;
+  Future<PublicResourceListingDetail?>? publicDetailResult;
   List<OwnResourceListing> ownItems = [];
   Object? error;
   Object? publicListError;
@@ -68,7 +69,7 @@ class FakeResourceListingGateway implements ResourceListingGateway {
   ) async {
     _throw(error ?? publicDetailError);
     calls.add('get-public:$listingId');
-    return publicDetail;
+    return publicDetailResult ?? publicDetail;
   }
 
   @override

@@ -298,6 +298,19 @@ class _PublicResourceListingDetailScreenState
     final profileId = session.phase == AuthSessionPhase.ready
         ? session.identity?.id
         : null;
+    final emptyDetail = switch (state.phase) {
+      ResourceListingLoadPhase.idle || ResourceListingLoadPhase.loading =>
+        LoadingState(message: l10n.resourceLoading),
+      ResourceListingLoadPhase.ready => ErrorState(
+        message: l10n.resourceNotFound,
+        onRetry: _load,
+      ),
+      ResourceListingLoadPhase.loadingMore ||
+      ResourceListingLoadPhase.failure => ErrorState(
+        message: resourceListingFailureMessage(l10n, state.failure),
+        onRetry: _load,
+      ),
+    };
     return Scaffold(
       appBar: AppBar(
         title: Text(l10n.resourceDetailTitle),
@@ -321,15 +334,8 @@ class _PublicResourceListingDetailScreenState
         ],
       ),
       body: SafeArea(
-        child: detail == null && state.phase == ResourceListingLoadPhase.loading
-            ? LoadingState(message: l10n.resourceLoading)
-            : detail == null
-            ? ErrorState(
-                message: state.phase == ResourceListingLoadPhase.ready
-                    ? l10n.resourceNotFound
-                    : resourceListingFailureMessage(l10n, state.failure),
-                onRetry: _load,
-              )
+        child: detail == null
+            ? emptyDetail
             : ListView(
                 padding: const EdgeInsets.all(AppSpacing.large),
                 children: [

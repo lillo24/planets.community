@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -260,6 +262,53 @@ void main() {
     expect(find.text('Required: Mural painting'), findsOneWidget);
     expect(find.text('Useful: Gardening'), findsOneWidget);
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets(
+    'Proposal detail renders idle and loading as loading, then ready',
+    (tester) async {
+      final pending = Completer<ProposalDetail?>();
+      final gateway = FakeProposalGateway()
+        ..publicDetailResult = pending.future;
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [proposalGatewayProvider.overrideWithValue(gateway)],
+          child: _localized(
+            const ProposalDetailScreen(proposalId: 'proposal-1'),
+          ),
+        ),
+      );
+
+      expect(find.text('Loading proposals…'), findsOneWidget);
+      expect(find.text('Something went wrong'), findsNothing);
+      await tester.pump();
+      expect(find.text('Loading proposals…'), findsOneWidget);
+      expect(find.text('Something went wrong'), findsNothing);
+
+      pending.complete(proposalDetailFixture());
+      await tester.pumpAndSettle();
+      expect(find.text('Paint the square'), findsOneWidget);
+      expect(find.text('Something went wrong'), findsNothing);
+    },
+  );
+
+  testWidgets('Proposal detail renders a genuine load failure with Retry', (
+    tester,
+  ) async {
+    final gateway = FakeProposalGateway()
+      ..error = StateError('private failure detail');
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [proposalGatewayProvider.overrideWithValue(gateway)],
+        child: _localized(const ProposalDetailScreen(proposalId: 'proposal-1')),
+      ),
+    );
+    expect(find.text('Something went wrong'), findsNothing);
+
+    await tester.pumpAndSettle();
+    expect(find.text('Something went wrong'), findsOneWidget);
+    expect(find.text('Try again'), findsOneWidget);
+    expect(find.textContaining('private failure detail'), findsNothing);
   });
 }
 

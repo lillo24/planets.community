@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -600,6 +602,45 @@ void main() {
       findsOneWidget,
     );
     expect(find.textContaining(raw), findsNothing);
+  });
+
+  testWidgets(
+    'Scambio detail renders idle and loading as loading, then ready',
+    (tester) async {
+      final pending = Completer<PublicResourceListingDetail?>();
+      final gateway = FakeResourceListingGateway()
+        ..publicDetailResult = pending.future;
+      final app = await _pump(tester, gateway: gateway, signedIn: false);
+      app.read(appRouterProvider).go('/resources/$resourceListingId');
+      await tester.pump();
+
+      expect(find.text('Loading listings…'), findsOneWidget);
+      expect(find.text('Something went wrong'), findsNothing);
+      await tester.pump();
+      expect(find.text('Loading listings…'), findsOneWidget);
+      expect(find.text('Something went wrong'), findsNothing);
+
+      pending.complete(publicResourceListingDetailFixture());
+      await tester.pumpAndSettle();
+      expect(find.text('Garden tools'), findsOneWidget);
+      expect(find.text('Something went wrong'), findsNothing);
+    },
+  );
+
+  testWidgets('Scambio detail renders a genuine load failure with Retry', (
+    tester,
+  ) async {
+    final gateway = FakeResourceListingGateway()
+      ..publicDetailError = StateError('private failure detail');
+    final app = await _pump(tester, gateway: gateway, signedIn: false);
+    app.read(appRouterProvider).go('/resources/$resourceListingId');
+    await tester.pump();
+    expect(find.text('Something went wrong'), findsNothing);
+
+    await tester.pumpAndSettle();
+    expect(find.text('Something went wrong'), findsOneWidget);
+    expect(find.text('Try again'), findsOneWidget);
+    expect(find.textContaining('private failure detail'), findsNothing);
   });
 }
 

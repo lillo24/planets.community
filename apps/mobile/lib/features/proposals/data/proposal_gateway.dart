@@ -46,10 +46,112 @@ abstract interface class ProposalGateway {
   Future<void> cancelProposal(String expectedCreatorId, String proposalId);
 }
 
+class ProposalPayloadParser {
+  const ProposalPayloadParser();
+
+  ProposalSummary publicSummary(Map<String, dynamic> row) => ProposalSummary(
+    id: _uuid(row, 'proposal_id'),
+    title: _string(row, 'title'),
+    summary: _string(row, 'summary'),
+    startsAt: _date(row, 'starts_at'),
+    endsAt: _date(row, 'ends_at'),
+    eventTimezone: _string(row, 'event_timezone'),
+    countryCode: _string(row, 'country_code'),
+    locality: _string(row, 'locality'),
+    administrativeArea: _optionalString(row, 'administrative_area'),
+    publicLocationLabel: _string(row, 'public_location_label'),
+    status: ProposalStatus.fromWire(_string(row, 'derived_status')),
+    skills: skills(row['skills']),
+  );
+
+  ProposalDetail publicDetail(Map<String, dynamic> row) => ProposalDetail(
+    summary: publicSummary(row),
+    creatorProfileId: _uuid(row, 'creator_profile_id'),
+    creatorDisplayName: _optionalString(row, 'creator_display_name'),
+    description: _string(row, 'description'),
+    exactMeetingText: _optionalString(row, 'exact_meeting_text'),
+    exactLocationRestricted: _boolean(row, 'exact_location_restricted'),
+  );
+
+  List<ProposalSkill> skills(dynamic value) {
+    if (value is! List) {
+      throw const FormatException('Proposal skills were not a list.');
+    }
+    return value
+        .map((entry) {
+          if (entry is! Map<String, dynamic>) {
+            throw const FormatException(
+              'Proposal skill entry was not an object.',
+            );
+          }
+          return ProposalSkill(
+            id: _uuid(entry, 'id'),
+            slug: _string(entry, 'slug'),
+            label: _string(entry, 'label'),
+            categoryId: _uuid(entry, 'category_id'),
+            categorySlug: _string(entry, 'category_slug'),
+            categoryLabel: _string(entry, 'category_label'),
+            importance: ProposalSkillImportance.fromWire(
+              _string(entry, 'importance'),
+            ),
+          );
+        })
+        .toList(growable: false);
+  }
+
+  String _string(Map<String, dynamic> row, String key) {
+    final value = row[key];
+    if (value is! String || value.isEmpty) {
+      throw FormatException('Proposal $key was not a string.');
+    }
+    return value;
+  }
+
+  String? _optionalString(Map<String, dynamic> row, String key) {
+    final value = row[key];
+    if (value == null) return null;
+    if (value is! String || value.isEmpty) {
+      throw FormatException('Proposal $key was malformed.');
+    }
+    return value;
+  }
+
+  String _uuid(Map<String, dynamic> row, String key) {
+    final value = _string(row, key);
+    if (!RegExp(
+      r'^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$',
+    ).hasMatch(value)) {
+      throw FormatException('Proposal $key was not a UUID.');
+    }
+    return value;
+  }
+
+  DateTime _date(Map<String, dynamic> row, String key) {
+    final value = _string(row, key);
+    final parsed = DateTime.tryParse(value);
+    if (parsed == null) {
+      throw FormatException('Proposal $key was not a timestamp.');
+    }
+    return parsed;
+  }
+
+  bool _boolean(Map<String, dynamic> row, String key) {
+    final value = row[key];
+    if (value is! bool) {
+      throw FormatException('Proposal $key was not a boolean.');
+    }
+    return value;
+  }
+}
+
 class SupabaseProposalGateway implements ProposalGateway {
-  const SupabaseProposalGateway(this._client);
+  const SupabaseProposalGateway(
+    this._client, {
+    this.parser = const ProposalPayloadParser(),
+  });
 
   final SupabaseClient _client;
+  final ProposalPayloadParser parser;
 
   @override
   Future<List<ProposalSkillCategory>> loadSkillCatalog() async {
@@ -103,7 +205,7 @@ class SupabaseProposalGateway implements ProposalGateway {
     );
     return response
         .cast<Map<String, dynamic>>()
-        .map(_publicSummaryFromRow)
+        .map(parser.publicSummary)
         .toList(growable: false);
   }
 
@@ -131,7 +233,7 @@ class SupabaseProposalGateway implements ProposalGateway {
             requestCreatedAt: DateTime.parse(
               row['request_created_at'] as String,
             ),
-            proposal: _publicSummaryFromRow(row),
+            proposal: parser.publicSummary(row),
           ),
         )
         .toList(growable: false);
@@ -144,7 +246,7 @@ class SupabaseProposalGateway implements ProposalGateway {
       params: {'p_proposal_id': proposalId},
     );
     final rows = response.cast<Map<String, dynamic>>();
-    return rows.isEmpty ? null : _publicDetailFromRow(rows.single);
+    return rows.isEmpty ? null : parser.publicDetail(rows.single);
   }
 
   @override
@@ -256,32 +358,6 @@ class SupabaseProposalGateway implements ProposalGateway {
     };
   }
 
-  ProposalSummary _publicSummaryFromRow(Map<String, dynamic> row) =>
-      ProposalSummary(
-        id: row['proposal_id'] as String,
-        title: row['title'] as String,
-        summary: row['summary'] as String,
-        startsAt: DateTime.parse(row['starts_at'] as String),
-        endsAt: DateTime.parse(row['ends_at'] as String),
-        eventTimezone: row['event_timezone'] as String,
-        countryCode: row['country_code'] as String,
-        locality: row['locality'] as String,
-        administrativeArea: row['administrative_area'] as String?,
-        publicLocationLabel: row['public_location_label'] as String,
-        status: ProposalStatus.fromWire(row['derived_status'] as String),
-        skills: _skillsFromJson(row['skills']),
-      );
-
-  ProposalDetail _publicDetailFromRow(Map<String, dynamic> row) =>
-      ProposalDetail(
-        summary: _publicSummaryFromRow(row),
-        creatorProfileId: row['creator_profile_id'] as String,
-        creatorDisplayName: row['creator_display_name'] as String?,
-        description: row['description'] as String,
-        exactMeetingText: row['exact_meeting_text'] as String?,
-        exactLocationRestricted: row['exact_location_restricted'] as bool,
-      );
-
   OwnProposal _ownProposalFromRow(Map<String, dynamic> row) => OwnProposal(
     id: row['proposal_id'] as String,
     lifecycle: ProposalLifecycle.fromWire(row['lifecycle_state'] as String),
@@ -298,7 +374,7 @@ class SupabaseProposalGateway implements ProposalGateway {
     status: row['derived_status'] == null
         ? null
         : ProposalStatus.fromWire(row['derived_status'] as String),
-    skills: _skillsFromJson(row['skills']),
+    skills: parser.skills(row['skills']),
     exactMeetingText: row['exact_meeting_text'] as String?,
     exactLocationVisibility: ExactLocationVisibility.fromWire(
       row['exact_location_visibility'] as String,
@@ -308,28 +384,6 @@ class SupabaseProposalGateway implements ProposalGateway {
     publishedAt: _optionalDate(row['published_at']),
     cancelledAt: _optionalDate(row['cancelled_at']),
   );
-
-  List<ProposalSkill> _skillsFromJson(dynamic value) {
-    if (value is! List) {
-      throw const FormatException('Proposal skills were not a list.');
-    }
-    return value
-        .cast<Map<String, dynamic>>()
-        .map(
-          (row) => ProposalSkill(
-            id: row['id'] as String,
-            slug: row['slug'] as String,
-            label: row['label'] as String,
-            categoryId: row['category_id'] as String,
-            categorySlug: row['category_slug'] as String,
-            categoryLabel: row['category_label'] as String,
-            importance: ProposalSkillImportance.fromWire(
-              row['importance'] as String,
-            ),
-          ),
-        )
-        .toList(growable: false);
-  }
 
   ProposalCatalogSkill _catalogSkillFromRow(Map<String, dynamic> row) =>
       ProposalCatalogSkill(

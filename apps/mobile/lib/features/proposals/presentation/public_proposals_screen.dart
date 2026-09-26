@@ -256,18 +256,22 @@ class _ProposalDetailScreenState extends ConsumerState<ProposalDetailScreen> {
     final l10n = AppLocalizations.of(context);
     final state = ref.watch(proposalDetailProvider);
     final detail = state.proposalId == widget.proposalId ? state.detail : null;
+    final emptyDetail = switch (state.phase) {
+      ProposalLoadPhase.idle ||
+      ProposalLoadPhase.loading => LoadingState(message: l10n.proposalLoading),
+      ProposalLoadPhase.ready ||
+      ProposalLoadPhase.loadingMore ||
+      ProposalLoadPhase.failure => ErrorState(
+        message: l10n.proposalSafeError,
+        onRetry: () =>
+            ref.read(proposalDetailProvider.notifier).load(widget.proposalId),
+      ),
+    };
     return Scaffold(
       appBar: AppBar(title: Text(l10n.proposalDetailTitle)),
       body: SafeArea(
-        child: detail == null && state.phase == ProposalLoadPhase.loading
-            ? LoadingState(message: l10n.proposalLoading)
-            : detail == null
-            ? ErrorState(
-                message: l10n.proposalSafeError,
-                onRetry: () => ref
-                    .read(proposalDetailProvider.notifier)
-                    .load(widget.proposalId),
-              )
+        child: detail == null
+            ? emptyDetail
             : ListView(
                 padding: const EdgeInsets.all(AppSpacing.large),
                 children: [

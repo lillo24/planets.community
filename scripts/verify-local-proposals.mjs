@@ -217,7 +217,7 @@ async function verifyProposals() {
       p_cursor_id: null,
       p_locality: null,
       p_skill_ids: null,
-      p_query: "HOUSEHOLD ITEMS",
+      p_query: "COMMUNITY 100%_ REPAIR SESSION",
     }),
     anonymous.rpc("get_public_proposal", { p_proposal_id: publicProposalId }),
   ]);
@@ -238,8 +238,10 @@ async function verifyProposals() {
     );
   }
   if (
-    publicList?.length !== 1 ||
-    publicCard.title !== "Community 100%_ repair session"
+    publicList?.length === 0 ||
+    publicList.some(
+      (proposal) => proposal.title !== "Community 100%_ repair session",
+    )
   ) {
     throw new Error(
       "Literal, case-insensitive Proposal search did not filter the backend page.",
