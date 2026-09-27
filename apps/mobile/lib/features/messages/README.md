@@ -10,7 +10,7 @@ group chats. Project and Resource detail transport remain in the adjacent
 feature owns their shared entry point.
 
 The 07C1A backend also gives every Project participation-request episode a
-private requester/creator conversation with a structured Request item, immutable
+private requester/organizer conversation with a structured Request item, immutable
 human follow-ups, pending-only send entitlement, and permanent resolved history.
 07C1B surfaces that conversation as an explicit typed variant in the Private
 scope and routes it to the adjacent feature. Request-chat push/notification
@@ -60,8 +60,8 @@ projection remains deliberately deferred.
 
 ## Privacy and state
 
-The backend returns an item only when the authenticated profile is its requester
-or the owning Project creator/Resource owner. Private request messages and
+The backend returns an item only when the authenticated profile is its requester,
+a current Project manager, or the Resource owner. Private request messages and
 narrow display identities never come from public discovery reads. Missing and
 unauthorized exact IDs fail identically. The client displays safe localized
 errors and never renders backend diagnostics.
@@ -73,18 +73,18 @@ selection history is valid. Unknown selection kinds fail safely rather than
 being rendered as an invented contribution type. These chips remain immutable
 request history and are not reused as mutable acceptance state.
 
-Creator Accept opens the participation-owned 04C3D2 triage sheet, which performs
+Manager Accept opens the participation-owned 04C3D2 triage sheet, which performs
 its own action-local canonical selection read even when the Messages display
 read previously succeeded or failed. The shared sheet requires every offered
 item to be classified and is the only mobile owner of the D1 eight-argument
 acceptance call. On return, request detail, inbox, and an already-loaded matching
-creator participation view reload canonical state. Reject and requester
+manager participation view reload canonical state. Reject and requester
 Withdraw remain owned here and unchanged.
 
 Inbox and detail data live only in identity-bound Riverpod memory. Every load or
 mutation captures the rendered identity and a request revision; sign-out or an
 account switch clears state and rejects late responses. Pending actions are
-role-specific: creators may Accept/Reject and requesters may Withdraw. A
+role-specific: owners/delegates may Accept/Reject and requesters may Withdraw. A
 successful action reloads the canonical item and inbox, then refreshes the
 corresponding 05B participation view. Conflicts also reload current canonical
 state. Resolved requests remain read-only request history and do not themselves

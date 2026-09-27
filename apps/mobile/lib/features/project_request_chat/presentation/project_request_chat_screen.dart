@@ -137,7 +137,7 @@ class _ProjectRequestChatScreenState
     final profileId = _expectedProfileId;
     if (profileId == null ||
         !_hasExpectedIdentity ||
-        summary.viewerRole != ProjectRequestChatViewerRole.creator ||
+        summary.viewerRole == ProjectRequestChatViewerRole.requester ||
         _isResolving) {
       return;
     }
@@ -145,7 +145,7 @@ class _ProjectRequestChatScreenState
     try {
       await showJoinAcceptanceTriageSheet(
         context,
-        expectedCreatorProfileId: profileId,
+        expectedManagerProfileId: profileId,
         requestId: summary.requestId,
         projectId: summary.projectId,
         projectKind: summary.projectKind,
@@ -161,7 +161,7 @@ class _ProjectRequestChatScreenState
     final profileId = _expectedProfileId;
     if (profileId == null ||
         !_hasExpectedIdentity ||
-        summary.viewerRole != ProjectRequestChatViewerRole.creator ||
+        summary.viewerRole == ProjectRequestChatViewerRole.requester ||
         _isResolving) {
       return;
     }
@@ -361,7 +361,8 @@ class _RequestStatusBanner extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final pending = summary.requestStatus == JoinRequestStatus.pending;
-    final creator = summary.viewerRole == ProjectRequestChatViewerRole.creator;
+    final creator =
+        summary.viewerRole != ProjectRequestChatViewerRole.requester;
     final (title, body, icon) = switch (summary.requestStatus) {
       JoinRequestStatus.pending => (
         l10n.participationRequestPending,

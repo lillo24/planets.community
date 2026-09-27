@@ -4,6 +4,7 @@ const projectChatMessageMaxLength = 4000;
 
 enum ProjectChatViewerRole {
   creator('creator'),
+  delegate('delegate'),
   currentMember('current_member'),
   formerMember('former_member');
 
@@ -13,6 +14,7 @@ enum ProjectChatViewerRole {
 
   static ProjectChatViewerRole fromWire(String value) => switch (value) {
     'creator' => ProjectChatViewerRole.creator,
+    'delegate' => ProjectChatViewerRole.delegate,
     'current_member' => ProjectChatViewerRole.currentMember,
     'former_member' => ProjectChatViewerRole.formerMember,
     _ => throw const FormatException('Unsupported Project chat viewer role.'),
@@ -89,6 +91,9 @@ class ProjectChatSummary {
   final DateTime activityAt;
 
   bool get isCreator => viewerRole == ProjectChatViewerRole.creator;
+  bool get isManager =>
+      viewerRole == ProjectChatViewerRole.creator ||
+      viewerRole == ProjectChatViewerRole.delegate;
   bool get isReadOnly => !hasCurrentEntitlement;
 }
 

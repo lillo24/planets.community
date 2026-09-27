@@ -268,7 +268,7 @@ Future<ProviderContainer> _pumpHost(
                 onPressed: () async {
                   final result = await showJoinAcceptanceTriageSheet(
                     context,
-                    expectedCreatorProfileId: 'user-1',
+                    expectedManagerProfileId: 'user-1',
                     requestId: 'request-1',
                     projectId: 'proposal-1',
                     projectKind: projectKind,

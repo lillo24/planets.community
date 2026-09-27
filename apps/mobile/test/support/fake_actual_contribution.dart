@@ -37,11 +37,11 @@ class FakeActualContributionGateway implements ActualContributionGateway {
 
   @override
   Future<List<ActualContributionOption>> listActualContributionOptions({
-    required String expectedCreatorProfileId,
+    required String expectedManagerProfileId,
     required String membershipId,
   }) async {
     calls.add('options:$membershipId');
-    lastExpectedProfileId = expectedCreatorProfileId;
+    lastExpectedProfileId = expectedManagerProfileId;
     lastMembershipId = membershipId;
     if (optionsDelay case final delay?) await delay;
     if (optionsError case final error?) throw error;
@@ -50,7 +50,7 @@ class FakeActualContributionGateway implements ActualContributionGateway {
 
   @override
   Future<void> replaceActualContributions({
-    required String expectedCreatorProfileId,
+    required String expectedManagerProfileId,
     required String membershipId,
     required Set<String> expectedSkillIds,
     required Set<String> expectedResourceNeedIds,
@@ -60,7 +60,7 @@ class FakeActualContributionGateway implements ActualContributionGateway {
     required bool substantialEffort,
   }) async {
     calls.add('replace:$membershipId');
-    lastExpectedProfileId = expectedCreatorProfileId;
+    lastExpectedProfileId = expectedManagerProfileId;
     lastMembershipId = membershipId;
     lastExpectedSkillIds = Set.unmodifiable(expectedSkillIds);
     lastExpectedResourceNeedIds = Set.unmodifiable(expectedResourceNeedIds);

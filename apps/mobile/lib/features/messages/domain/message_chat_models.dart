@@ -30,7 +30,8 @@ enum MessageChatScope {
 
 enum ProjectRequestChatViewerRole {
   requester('requester'),
-  creator('creator');
+  creator('creator'),
+  delegate('delegate');
 
   const ProjectRequestChatViewerRole(this.wireValue);
 
@@ -39,6 +40,7 @@ enum ProjectRequestChatViewerRole {
   static ProjectRequestChatViewerRole fromWire(String value) => switch (value) {
     'requester' => ProjectRequestChatViewerRole.requester,
     'creator' => ProjectRequestChatViewerRole.creator,
+    'delegate' => ProjectRequestChatViewerRole.delegate,
     _ => throw const FormatException(
       'Unsupported participation-request chat viewer role.',
     ),
@@ -94,6 +96,9 @@ final class ProjectMessageChatItem extends MessageChatItem {
   final ProjectChatViewerRole viewerRole;
 
   bool get isCreator => viewerRole == ProjectChatViewerRole.creator;
+  bool get isManager =>
+      viewerRole == ProjectChatViewerRole.creator ||
+      viewerRole == ProjectChatViewerRole.delegate;
 }
 
 final class ResourceMessageChatItem extends MessageChatItem {

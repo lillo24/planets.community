@@ -111,8 +111,8 @@ class OwnProjectMembership {
   bool get isCurrent => status == MembershipStatus.current;
 }
 
-class CreatorProjectJoinRequest {
-  const CreatorProjectJoinRequest({
+class ManagerProjectJoinRequest {
+  const ManagerProjectJoinRequest({
     required this.id,
     required this.requesterProfileId,
     required this.requesterDisplayName,
@@ -135,8 +135,8 @@ class CreatorProjectJoinRequest {
   bool get isPending => status == JoinRequestStatus.pending;
 }
 
-class CreatorProjectMember {
-  const CreatorProjectMember({
+class ManagerProjectMember {
+  const ManagerProjectMember({
     required this.id,
     required this.participantProfileId,
     required this.participantDisplayName,

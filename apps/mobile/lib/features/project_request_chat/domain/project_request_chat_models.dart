@@ -4,7 +4,8 @@ const projectRequestChatMessageMaxLength = 4000;
 
 enum ProjectRequestChatViewerRole {
   requester('requester'),
-  creator('creator');
+  creator('creator'),
+  delegate('delegate');
 
   const ProjectRequestChatViewerRole(this.wireValue);
 
@@ -13,6 +14,7 @@ enum ProjectRequestChatViewerRole {
   static ProjectRequestChatViewerRole fromWire(String value) => switch (value) {
     'requester' => ProjectRequestChatViewerRole.requester,
     'creator' => ProjectRequestChatViewerRole.creator,
+    'delegate' => ProjectRequestChatViewerRole.delegate,
     _ => throw const FormatException(
       'Unsupported participation-request chat viewer role.',
     ),
@@ -61,9 +63,9 @@ class ProjectRequestChatSummary {
   final String? acceptedProjectGroupChatId;
 
   String get counterpartyDisplayName =>
-      viewerRole == ProjectRequestChatViewerRole.creator
-      ? requesterDisplayName
-      : creatorDisplayName;
+      viewerRole == ProjectRequestChatViewerRole.requester
+      ? creatorDisplayName
+      : requesterDisplayName;
 }
 
 enum ProjectRequestChatFeedItemKind {

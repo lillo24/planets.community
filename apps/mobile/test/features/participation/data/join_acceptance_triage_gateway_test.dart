@@ -45,7 +45,7 @@ void main() {
     });
     expect(
       contract.acceptParams(
-        expectedCreatorProfileId: 'creator-1',
+        expectedManagerProfileId: 'creator-1',
         requestId: 'request-1',
         neededSkillIds: const {'skill-b', 'skill-a'},
         alreadyFoundSkillIds: const {'skill-c'},
@@ -55,7 +55,7 @@ void main() {
         extraResourceNeedIds: const {'need-5'},
       ),
       {
-        'p_expected_creator_profile_id': 'creator-1',
+        'p_expected_manager_profile_id': 'creator-1',
         'p_request_id': 'request-1',
         'p_needed_skill_ids': ['skill-a', 'skill-b'],
         'p_already_found_skill_ids': ['skill-c'],
@@ -69,7 +69,7 @@ void main() {
 
   test('all-empty acceptance still supplies all six arrays', () {
     final params = contract.acceptParams(
-      expectedCreatorProfileId: 'creator-1',
+      expectedManagerProfileId: 'creator-1',
       requestId: 'request-1',
       neededSkillIds: const {},
       alreadyFoundSkillIds: const {},
@@ -99,7 +99,7 @@ void main() {
       source,
       contains("'list_own_project_join_request_contribution_selections'"),
     );
-    expect(source, contains("'accept_project_join_request'"));
+    expect(source, contains("'accept_project_join_request_as_manager'"));
     expect(source, isNot(contains('.from(')));
 
     final participation = File(
@@ -107,7 +107,13 @@ void main() {
     ).readAsStringSync();
     final messages = File('lib/features/messages/data/messages_gateway.dart')
         .readAsStringSync();
-    expect(participation, isNot(contains("'accept_project_join_request'")));
-    expect(messages, isNot(contains("'accept_project_join_request'")));
+    expect(
+      participation,
+      isNot(contains("'accept_project_join_request_as_manager'")),
+    );
+    expect(
+      messages,
+      isNot(contains("'accept_project_join_request_as_manager'")),
+    );
   });
 }

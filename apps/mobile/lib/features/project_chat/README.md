@@ -14,7 +14,7 @@ or project content.
 - `data/project_chat_gateway.dart` owns chat-list, mixed-feed, send, and the
   single private per-chat/per-profile Broadcast channel.
 - `data/project_needs_gateway.dart` is the RPC-only boundary for current
-  coverage, participant claims, creator manual coverage, and attention.
+  coverage, participant claims, manager manual coverage, and attention.
 - `application/project_chat_controllers.dart` owns identity-bound chat-list and
   detail state, mixed-feed pagination, ordering, deduplication, send flow,
   durable reconciliation, and entitlement-scoped subscriptions.
@@ -30,7 +30,7 @@ or project content.
   Needs drawer and acknowledges attention only after refreshed canonical
   content has completed a frame.
 - `presentation/project_chat_info_screen.dart` renders canonical summary
-  context, Project/Tavolo and creator Participation navigation, and lazy access
+  context, Project/Tavolo and manager Participation navigation, and lazy access
   to the existing protected meeting operation.
 - `presentation/project_chat_failure_message.dart` maps failures to safe,
   localized copy without backend diagnostics.
@@ -46,7 +46,7 @@ kind ordering. Chat-list pages use `(activity_at, chat_id)`.
 
 Current-entitled users load live Needs through
 `list_project_live_requirement_coverage` and
-`get_own_project_requirement_attention`. Participant claims and creator manual
+`get_own_project_requirement_attention`. Participant claims and manager manual
 coverage use their canonical RPCs; the client never fabricates coverage or
 commitment state. The drawer acknowledges only the explicit event ID it loaded,
 after both coverage and attention succeed and that content is rendered. Former
@@ -62,7 +62,8 @@ refresh also reload durable state, with feed items deduplicated by kind plus
 canonical ID.
 
 Subscriptions exist only while the Messages/chat screen is active and the
-backend reports current entitlement. Former members keep only the
+backend reports current entitlement. Owners, active delegates, and current
+members are current-entitled. Former members keep only the
 server-authorized history frontier, with no composer, live channel, protected
 meeting request, current Needs control, or indication of newer activity.
 
@@ -82,7 +83,7 @@ The feature remains inside the existing Home branch:
 /messages/chats/:chatId/info
 ```
 
-The info route uses `ParticipationRoutes.detail(...)` and, for creators only,
+The info route uses `ParticipationRoutes.detail(...)` and, for current managers,
 `ParticipationRoutes.participants(...)`. Protected meeting text remains owned
 by Participation and is loaded only after a current-entitled user explicitly
 requests it from group info. The unstructured location value is intentionally
@@ -108,7 +109,7 @@ pass. On Android and iOS, verify:
 9. the persistent `Needed again` callout and subtle one-shot reduced-motion
    pulse, including TalkBack/VoiceOver count and attention semantics;
 10. participant claim races on two devices and canonical `PT409` recovery;
-11. creator `Found outside app` and `Needed again` manual-coverage flows,
+11. owner/delegate `Found outside app` and `Needed again` manual-coverage flows,
     including participant-plus-manual coverage;
 12. closed-drawer and open-drawer Realtime resurfacing, ensuring attention is
     acknowledged only after refreshed current Needs are visible;

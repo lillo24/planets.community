@@ -30,21 +30,21 @@ class CreatorParticipationScreen extends ConsumerStatefulWidget {
 
 class _CreatorParticipationScreenState
     extends ConsumerState<CreatorParticipationScreen> {
-  late final String? _expectedCreatorId;
+  late final String? _expectedManagerId;
 
   @override
   void initState() {
     super.initState();
-    _expectedCreatorId = ref.read(authSessionProvider).identity?.id;
+    _expectedManagerId = ref.read(authSessionProvider).identity?.id;
     Future<void>.microtask(_load);
   }
 
   Future<void> _load() async {
-    final expectedCreatorId = _expectedCreatorId;
-    if (expectedCreatorId == null) return;
+    final expectedManagerId = _expectedManagerId;
+    if (expectedManagerId == null) return;
     await ref
         .read(creatorParticipationProvider.notifier)
-        .load(expectedCreatorId, widget.projectId);
+        .load(expectedManagerId, widget.projectId);
   }
 
   @override
@@ -52,14 +52,14 @@ class _CreatorParticipationScreenState
     final l10n = AppLocalizations.of(context);
     final state = ref.watch(creatorParticipationProvider);
     final belongsToScreen =
-        state.expectedCreatorId == _expectedCreatorId &&
+        state.expectedManagerId == _expectedManagerId &&
         state.projectId == widget.projectId;
     final requests = belongsToScreen
         ? state.requests
-        : const <CreatorProjectJoinRequest>[];
+        : const <ManagerProjectJoinRequest>[];
     final members = belongsToScreen
         ? state.members
-        : const <CreatorProjectMember>[];
+        : const <ManagerProjectMember>[];
     final isInitialLoading =
         !belongsToScreen ||
         (state.phase == CreatorParticipationPhase.loading &&
@@ -147,45 +147,45 @@ class _CreatorParticipationScreenState
     );
   }
 
-  Future<void> _accept(CreatorProjectJoinRequest request) async {
-    final expectedCreatorId = _expectedCreatorId;
-    if (expectedCreatorId == null ||
-        ref.read(authSessionProvider).identity?.id != expectedCreatorId) {
+  Future<void> _accept(ManagerProjectJoinRequest request) async {
+    final expectedManagerId = _expectedManagerId;
+    if (expectedManagerId == null ||
+        ref.read(authSessionProvider).identity?.id != expectedManagerId) {
       return;
     }
     await showJoinAcceptanceTriageSheet(
       context,
-      expectedCreatorProfileId: expectedCreatorId,
+      expectedManagerProfileId: expectedManagerId,
       requestId: request.id,
       projectId: widget.projectId,
       projectKind: widget.projectKind,
       requesterDisplayName: request.requesterDisplayName,
     );
     if (!mounted ||
-        ref.read(authSessionProvider).identity?.id != expectedCreatorId) {
+        ref.read(authSessionProvider).identity?.id != expectedManagerId) {
       return;
     }
     await ref
         .read(creatorParticipationProvider.notifier)
-        .load(expectedCreatorId, widget.projectId);
+        .load(expectedManagerId, widget.projectId);
   }
 
-  Future<void> _reject(CreatorProjectJoinRequest request) async {
-    final expectedCreatorId = _expectedCreatorId;
-    if (expectedCreatorId == null ||
-        ref.read(authSessionProvider).identity?.id != expectedCreatorId) {
+  Future<void> _reject(ManagerProjectJoinRequest request) async {
+    final expectedManagerId = _expectedManagerId;
+    if (expectedManagerId == null ||
+        ref.read(authSessionProvider).identity?.id != expectedManagerId) {
       return;
     }
     await ref
         .read(creatorParticipationProvider.notifier)
         .reject(
-          expectedCreatorId: expectedCreatorId,
+          expectedManagerId: expectedManagerId,
           projectId: widget.projectId,
           requestId: request.id,
         );
   }
 
-  Future<void> _confirmRemove(CreatorProjectMember member) async {
+  Future<void> _confirmRemove(ManagerProjectMember member) async {
     final l10n = AppLocalizations.of(context);
     final confirmed = await showDialog<bool>(
       context: context,
@@ -208,44 +208,44 @@ class _CreatorParticipationScreenState
       ),
     );
     if (confirmed != true || !mounted) return;
-    final expectedCreatorId = _expectedCreatorId;
-    if (expectedCreatorId == null ||
-        ref.read(authSessionProvider).identity?.id != expectedCreatorId) {
+    final expectedManagerId = _expectedManagerId;
+    if (expectedManagerId == null ||
+        ref.read(authSessionProvider).identity?.id != expectedManagerId) {
       return;
     }
     await ref
         .read(creatorParticipationProvider.notifier)
         .remove(
-          expectedCreatorId: expectedCreatorId,
+          expectedManagerId: expectedManagerId,
           projectId: widget.projectId,
           membershipId: member.id,
         );
   }
 
-  Future<void> _openCommitments(CreatorProjectMember member) async {
-    final expectedCreatorId = _expectedCreatorId;
-    if (expectedCreatorId == null ||
-        ref.read(authSessionProvider).identity?.id != expectedCreatorId) {
+  Future<void> _openCommitments(ManagerProjectMember member) async {
+    final expectedManagerId = _expectedManagerId;
+    if (expectedManagerId == null ||
+        ref.read(authSessionProvider).identity?.id != expectedManagerId) {
       return;
     }
     await showMembershipCommitmentSheet(
       context,
-      expectedProfileId: expectedCreatorId,
+      expectedProfileId: expectedManagerId,
       membershipId: member.id,
       editable: member.isCurrent,
       historical: !member.isCurrent,
     );
   }
 
-  Future<void> _openActualContributions(CreatorProjectMember member) async {
-    final expectedCreatorId = _expectedCreatorId;
-    if (expectedCreatorId == null ||
-        ref.read(authSessionProvider).identity?.id != expectedCreatorId) {
+  Future<void> _openActualContributions(ManagerProjectMember member) async {
+    final expectedManagerId = _expectedManagerId;
+    if (expectedManagerId == null ||
+        ref.read(authSessionProvider).identity?.id != expectedManagerId) {
       return;
     }
     await showActualContributionSheet(
       context,
-      expectedProfileId: expectedCreatorId,
+      expectedProfileId: expectedManagerId,
       membershipId: member.id,
       editable: true,
       participantDisplayName: member.participantDisplayName,
@@ -262,7 +262,7 @@ class _RequestCard extends StatelessWidget {
     required this.onReject,
   });
 
-  final CreatorProjectJoinRequest request;
+  final ManagerProjectJoinRequest request;
   final bool enabled;
   final bool isActing;
   final VoidCallback onAccept;
@@ -340,7 +340,7 @@ class _MemberCard extends StatelessWidget {
     required this.onRemove,
   });
 
-  final CreatorProjectMember member;
+  final ManagerProjectMember member;
   final bool enabled;
   final bool isActing;
   final VoidCallback onCommitments;

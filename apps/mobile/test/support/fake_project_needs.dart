@@ -65,7 +65,7 @@ class FakeProjectNeedsGateway implements ProjectNeedsGateway {
 
   @override
   Future<void> setManualCoverage({
-    required String expectedCreatorProfileId,
+    required String expectedManagerProfileId,
     required String projectId,
     required ProjectRequirementKind kind,
     required String id,

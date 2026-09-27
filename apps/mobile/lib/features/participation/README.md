@@ -24,12 +24,12 @@ their existing features; participation uses only a project ID plus the narrow
   commitment boundary. It owns current/final reads, addable-option reads, and
   six-argument compare-and-swap replacement parameters.
 - `data/actual_contribution_gateway.dart` is the RPC-only 05C1 mobile boundary
-  for factual reads, creator options, and exact eight-argument CAS replacement.
+  for factual reads, manager options, and exact eight-argument CAS replacement.
 - `data/join_acceptance_triage_gateway.dart` is the RPC-only 04C3D2 boundary
   for action-local selection reads and the explicit eight-argument acceptance
   overload; it deterministically sorts all six disposition arrays.
 - `application/participation_controllers.dart` owns identity-bound own
-  participation, requester/member commands, creator review, protected meeting
+  participation, requester/member commands, manager review, protected meeting
   data, request revisions, and safe failure mapping.
 - `application/contribution_options_controller.dart` independently loads the
   current Proposal skill requirements plus open Project resource needs, or
@@ -50,17 +50,18 @@ their existing features; participation uses only a project ID plus the narrow
 - `presentation/join_request_screen.dart` owns typed multi-select contribution
   chips, stale-option recovery, the optional private 500-character request
   message, and the single canonical submit flow.
-- `presentation/creator_participation_screen.dart` owns creator request/history
-  review and current/historical membership management.
-- `presentation/join_acceptance_triage_sheet.dart` is the single creator
+- `presentation/creator_participation_screen.dart` owns manager request/history
+  review and current/historical membership management. Its name is retained as
+  a route compatibility detail until the final 07C2B navigation pass.
+- `presentation/join_acceptance_triage_sheet.dart` is the single manager
   acceptance surface shared by Manage participation and Messages request
   detail, including accessible validation, one-shot guidance, and
   reduced-motion-safe shake feedback.
 - `presentation/membership_commitment_sheet.dart` is the shared participant and
-  creator commitment editor/read-only sheet, including retained stale options
+  manager commitment editor/read-only sheet, including retained stale options
   and accessible live recovery messages.
 - `presentation/actual_contribution_sheet.dart` is the shared participant
-  read-only and creator-editable factual attribution sheet with a dedicated
+  read-only and manager-editable factual attribution sheet with a dedicated
   effort control and accessible lifecycle/race recovery messages.
 
 ## Canonical lifecycle and privacy
@@ -68,7 +69,7 @@ their existing features; participation uses only a project ID plus the narrow
 All mutations carry the expected profile ID for which the screen was rendered.
 After every asynchronous boundary, controllers recheck their request revision
 and current Auth identity. Signing out or changing accounts clears own request,
-membership, creator-review, command, and protected-meeting state. The router
+membership, manager-review, command, and protected-meeting state. The router
 also rebuilds its retained shell so unsent messages and private review screens
 cannot cross identities.
 
@@ -77,13 +78,13 @@ The mobile client presents, but does not reproduce, the 05A state machine:
 - a requester may send one optional trimmed message, withdraw a pending
   request, and retry after withdrawal or rejection;
 - a current accepted participant may leave;
-- ordinary leave or creator removal remains historical and does not create a
+- ordinary leave or manager removal remains historical and does not create a
   permanent client-side ban;
-- a creator may accept/reject pending requests and remove current members;
+- a current Project manager may accept/reject pending requests and remove current members;
 - creators are organizers through ownership and are filtered from membership
   rows.
 
-07C1A now creates a permanent private requester/creator chat anchor inside each
+07C1A now creates a permanent private requester/organizer chat anchor inside each
 request transaction. The optional join note remains structured request data;
 later human messages are a separate immutable feed, writable only while that
 exact request is pending and read-only after accept/reject/withdraw. Acceptance
@@ -91,7 +92,7 @@ may expose the separate Project group chat, but does not merge the two histories
 This feature continues to own request creation and resolution; 07C1B owns the
 mobile request-conversation presentation and live refresh.
 
-04C3D2 routes both creator Accept entry points through one action-local triage
+04C3D2 routes both manager Accept entry points through one action-local triage
 sheet. The sheet reads only the tapped request, requires an explicit needed,
 already-found, or extra decision for every offered item, and always calls the
 D1 eight-argument overload. Zero-offer requests use the same contract with six
@@ -136,14 +137,14 @@ refresh signal. Chat controllers then re-read canonical entitlement and never
 predict membership or chat visibility from a client command result.
 
 Protected operational meeting information is fetched only for the current
-creator or a current accepted participant. It is held only in the
+Project manager or a current accepted participant. It is held only in the
 identity-bound project controller, cleared on sign-out/account change/leave,
 and never copied into public Proposal or Tavolo models, logs, or monitoring
 context.
 
 Current membership commitments are resolved by membership episode rather than
 Project alone. Group info uses the current episode for a current/rejoined
-participant and the latest ended episode for a former participant. Creator
+participant and the latest ended episode for a former participant. Manager
 member cards carry the canonical membership ID and load commitment data only
 after their action is tapped, avoiding per-row fan-out. Ended memberships call
 only the current/final commitment read; current memberships keep that read
@@ -164,7 +165,7 @@ immutable history and are not replaced by this membership state.
 Actual contributions are shown only for one-time Projects. A participant opens
 them from Project chat → Group info and receives one read-only action or a
 newest-first episode list when they rejoined; opening one episode performs only
-that membership read. A creator opens the same sheet from Manage participation
+that membership read. A manager opens the same sheet from Manage participation
 on the exact current or historical member card. Member lists and episode lists
 never fan out attribution reads.
 
@@ -194,8 +195,8 @@ destination in `/profile/edit?returnTo=...` and resumes it after a successful
 save. The persistent bottom navigation remains Profile / Browse / Home.
 
 Notification delivery, standalone Scambio-Dona, capacity/fullness,
-participation roles, invitations, central participation history, delegated or
-co-organizer commitment management, contribution verification, badges, maps,
+the final delegate invitation/management UI, central participation history,
+contribution verification, badges, maps,
 and final unified Progetti discovery remain deferred.
 
 ## Deferred native QA notes

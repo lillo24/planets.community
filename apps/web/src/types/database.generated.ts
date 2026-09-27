@@ -470,6 +470,132 @@ export type Database = {
           },
         ]
       }
+      project_delegate_invitations: {
+        Row: {
+          accepted_at: string | null
+          accepted_by_profile_id: string | null
+          created_at: string
+          expires_at: string
+          id: string
+          owner_profile_id: string
+          project_id: string
+          revoked_at: string | null
+          revoked_by_profile_id: string | null
+          status: string
+          token_digest: string
+        }
+        Insert: {
+          accepted_at?: string | null
+          accepted_by_profile_id?: string | null
+          created_at?: string
+          expires_at: string
+          id?: string
+          owner_profile_id: string
+          project_id: string
+          revoked_at?: string | null
+          revoked_by_profile_id?: string | null
+          status?: string
+          token_digest: string
+        }
+        Update: {
+          accepted_at?: string | null
+          accepted_by_profile_id?: string | null
+          created_at?: string
+          expires_at?: string
+          id?: string
+          owner_profile_id?: string
+          project_id?: string
+          revoked_at?: string | null
+          revoked_by_profile_id?: string | null
+          status?: string
+          token_digest?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_delegate_invitations_accepted_by_profile_id_fkey"
+            columns: ["accepted_by_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_delegate_invitations_project_owner_fkey"
+            columns: ["project_id", "owner_profile_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id", "creator_profile_id"]
+          },
+          {
+            foreignKeyName: "project_delegate_invitations_revoked_by_profile_id_fkey"
+            columns: ["revoked_by_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      project_delegates: {
+        Row: {
+          delegate_profile_id: string
+          delegated_at: string
+          id: string
+          invitation_id: string
+          owner_profile_id: string
+          project_id: string
+          revoked_at: string | null
+          revoked_by_profile_id: string | null
+        }
+        Insert: {
+          delegate_profile_id: string
+          delegated_at: string
+          id?: string
+          invitation_id: string
+          owner_profile_id: string
+          project_id: string
+          revoked_at?: string | null
+          revoked_by_profile_id?: string | null
+        }
+        Update: {
+          delegate_profile_id?: string
+          delegated_at?: string
+          id?: string
+          invitation_id?: string
+          owner_profile_id?: string
+          project_id?: string
+          revoked_at?: string | null
+          revoked_by_profile_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_delegates_delegate_profile_id_fkey"
+            columns: ["delegate_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_delegates_invitation_id_fkey"
+            columns: ["invitation_id"]
+            isOneToOne: true
+            referencedRelation: "project_delegate_invitations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_delegates_project_owner_fkey"
+            columns: ["project_id", "owner_profile_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id", "creator_profile_id"]
+          },
+          {
+            foreignKeyName: "project_delegates_revoked_by_profile_id_fkey"
+            columns: ["revoked_by_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       project_group_chats: {
         Row: {
           activated_at: string
@@ -1972,6 +2098,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      accept_project_delegate_invitation: {
+        Args: { p_expected_delegate_profile_id: string; p_token: string }
+        Returns: string
+      }
       accept_project_join_request:
         | {
             Args: {
@@ -1985,6 +2115,27 @@ export type Database = {
               p_already_found_resource_need_ids: string[]
               p_already_found_skill_ids: string[]
               p_expected_creator_profile_id: string
+              p_extra_resource_need_ids: string[]
+              p_extra_skill_ids: string[]
+              p_needed_resource_need_ids: string[]
+              p_needed_skill_ids: string[]
+              p_request_id: string
+            }
+            Returns: string
+          }
+      accept_project_join_request_as_manager:
+        | {
+            Args: {
+              p_expected_manager_profile_id: string
+              p_request_id: string
+            }
+            Returns: string
+          }
+        | {
+            Args: {
+              p_already_found_resource_need_ids: string[]
+              p_already_found_skill_ids: string[]
+              p_expected_manager_profile_id: string
               p_extra_resource_need_ids: string[]
               p_extra_skill_ids: string[]
               p_needed_resource_need_ids: string[]
@@ -2051,6 +2202,14 @@ export type Database = {
       close_resource_listing: {
         Args: { p_expected_owner_profile_id: string; p_listing_id: string }
         Returns: string
+      }
+      create_project_delegate_invitation: {
+        Args: { p_expected_owner_profile_id: string; p_project_id: string }
+        Returns: {
+          expires_at: string
+          invitation_id: string
+          invite_token: string
+        }[]
       }
       create_project_resource_need: {
         Args: {
@@ -2986,8 +3145,41 @@ export type Database = {
           terms_id: string
         }[]
       }
+      list_project_delegate_invitations_for_owner: {
+        Args: { p_expected_owner_profile_id: string; p_project_id: string }
+        Returns: {
+          accepted_at: string
+          created_at: string
+          expires_at: string
+          invitation_id: string
+          revoked_at: string
+          status: string
+        }[]
+      }
+      list_project_delegates_for_owner: {
+        Args: { p_expected_owner_profile_id: string; p_project_id: string }
+        Returns: {
+          delegate_display_name: string
+          delegate_id: string
+          delegate_profile_id: string
+          delegated_at: string
+        }[]
+      }
       list_project_join_requests: {
         Args: { p_expected_creator_profile_id: string; p_project_id: string }
+        Returns: {
+          created_at: string
+          request_id: string
+          request_message: string
+          requester_display_name: string
+          requester_profile_id: string
+          resolved_at: string
+          resolved_by_profile_id: string
+          status: string
+        }[]
+      }
+      list_project_join_requests_for_manager: {
+        Args: { p_expected_manager_profile_id: string; p_project_id: string }
         Returns: {
           created_at: string
           request_id: string
@@ -3025,8 +3217,30 @@ export type Database = {
           removed_by_profile_id: string
         }[]
       }
+      list_project_members_for_manager: {
+        Args: { p_expected_manager_profile_id: string; p_project_id: string }
+        Returns: {
+          joined_at: string
+          left_at: string
+          membership_id: string
+          membership_status: string
+          originating_request_id: string
+          participant_display_name: string
+          participant_profile_id: string
+          removed_at: string
+          removed_by_profile_id: string
+        }[]
+      }
       list_project_membership_actual_contribution_options: {
         Args: { p_expected_creator_profile_id: string; p_membership_id: string }
+        Returns: {
+          label: string
+          option_id: string
+          option_kind: string
+        }[]
+      }
+      list_project_membership_actual_contribution_options_for_manager: {
+        Args: { p_expected_manager_profile_id: string; p_membership_id: string }
         Returns: {
           label: string
           option_id: string
@@ -3197,6 +3411,17 @@ export type Database = {
         }
         Returns: string
       }
+      preview_project_delegate_invitation: {
+        Args: { p_token: string }
+        Returns: {
+          expires_at: string
+          is_available: boolean
+          owner_display_name: string
+          project_id: string
+          project_kind: string
+          project_title: string
+        }[]
+      }
       process_notification_outbox_batch: {
         Args: { p_limit?: number }
         Returns: {
@@ -3273,6 +3498,10 @@ export type Database = {
         Args: { p_expected_creator_profile_id: string; p_request_id: string }
         Returns: string
       }
+      reject_project_join_request_as_manager: {
+        Args: { p_expected_manager_profile_id: string; p_request_id: string }
+        Returns: string
+      }
       reject_resource_exchange_terms: {
         Args: {
           p_agreement_id: string
@@ -3289,9 +3518,26 @@ export type Database = {
         Args: { p_expected_creator_profile_id: string; p_membership_id: string }
         Returns: string
       }
+      remove_project_member_as_manager: {
+        Args: { p_expected_manager_profile_id: string; p_membership_id: string }
+        Returns: string
+      }
       replace_project_membership_actual_contributions: {
         Args: {
           p_expected_creator_profile_id: string
+          p_expected_resource_need_ids: string[]
+          p_expected_skill_ids: string[]
+          p_expected_substantial_effort: boolean
+          p_membership_id: string
+          p_resource_need_ids: string[]
+          p_skill_ids: string[]
+          p_substantial_effort: boolean
+        }
+        Returns: string
+      }
+      replace_project_membership_actual_contributions_as_manager: {
+        Args: {
+          p_expected_manager_profile_id: string
           p_expected_resource_need_ids: string[]
           p_expected_skill_ids: string[]
           p_expected_substantial_effort: boolean
@@ -3336,6 +3582,14 @@ export type Database = {
           p_expected_creator_profile_id: string
           p_recurring_activity_id: string
         }
+        Returns: string
+      }
+      revoke_project_delegate: {
+        Args: { p_delegate_id: string; p_expected_owner_profile_id: string }
+        Returns: string
+      }
+      revoke_project_delegate_invitation: {
+        Args: { p_expected_owner_profile_id: string; p_invitation_id: string }
         Returns: string
       }
       send_project_chat_message: {
@@ -3392,6 +3646,16 @@ export type Database = {
       set_project_requirement_manual_coverage: {
         Args: {
           p_expected_creator_profile_id: string
+          p_is_covered: boolean
+          p_project_id: string
+          p_requirement_id: string
+          p_requirement_kind: string
+        }
+        Returns: string
+      }
+      set_project_requirement_manual_coverage_as_manager: {
+        Args: {
+          p_expected_manager_profile_id: string
           p_is_covered: boolean
           p_project_id: string
           p_requirement_id: string

@@ -77,11 +77,11 @@ class FakeMessagesGateway implements MessagesGateway {
 
   @override
   Future<void> reject({
-    required String expectedCreatorProfileId,
+    required String expectedManagerProfileId,
     required String requestId,
   }) => _resolve(
     call: 'reject:$requestId',
-    expectedProfileId: expectedCreatorProfileId,
+    expectedProfileId: expectedManagerProfileId,
     requestId: requestId,
     status: JoinRequestStatus.rejected,
   );

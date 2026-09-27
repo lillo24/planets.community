@@ -379,7 +379,7 @@ class MessagesDetailController extends Notifier<MessagesDetailState> {
       switch (action) {
         case MessageAction.rejecting:
           await gateway.reject(
-            expectedCreatorProfileId: profileId,
+            expectedManagerProfileId: profileId,
             requestId: requestId,
           );
         case MessageAction.withdrawing:
@@ -468,6 +468,7 @@ class MessagesDetailController extends Notifier<MessagesDetailState> {
     MessageAction action,
   ) => switch ((item.viewerRole, action)) {
     (MessageViewerRole.creator, MessageAction.rejecting) ||
+    (MessageViewerRole.delegate, MessageAction.rejecting) ||
     (MessageViewerRole.requester, MessageAction.withdrawing) => true,
     _ => false,
   };
@@ -487,7 +488,7 @@ class MessagesDetailController extends Notifier<MessagesDetailState> {
       return;
     }
     final creatorState = ref.read(creatorParticipationProvider);
-    if (creatorState.expectedCreatorId == profileId &&
+    if (creatorState.expectedManagerId == profileId &&
         creatorState.projectId == item.projectId) {
       await ref
           .read(creatorParticipationProvider.notifier)
@@ -522,7 +523,7 @@ class MessagesDetailController extends Notifier<MessagesDetailState> {
     final canonical = state.item;
     final creatorState = ref.read(creatorParticipationProvider);
     if (canonical != null &&
-        creatorState.expectedCreatorId == profileId &&
+        creatorState.expectedManagerId == profileId &&
         creatorState.projectId == canonical.projectId) {
       await ref
           .read(creatorParticipationProvider.notifier)

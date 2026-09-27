@@ -448,7 +448,7 @@ class _ProjectChatCard extends StatelessWidget {
                       label: Text(
                         item.isReadOnly
                             ? l10n.projectChatReadOnlyLabel
-                            : item.isCreator
+                            : item.isManager
                             ? l10n.projectChatRoleCreator
                             : l10n.projectChatRoleCurrent,
                       ),
@@ -676,7 +676,7 @@ class _ParticipationRequestCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final title = item.viewerRole == MessageViewerRole.creator
+    final title = item.viewerRole != MessageViewerRole.requester
         ? l10n.messagesIncomingTitle(item.requesterDisplayName)
         : l10n.messagesOutgoingTitle(item.projectTitle);
     final preview = item.requestMessage ?? l10n.messagesNoRequestMessage;

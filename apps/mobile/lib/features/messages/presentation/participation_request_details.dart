@@ -96,13 +96,13 @@ class _ParticipationRequestDetailsContentState
   Future<void> _accept(ParticipationRequestMessageItem item) async {
     final profileId = _expectedProfileId;
     if (profileId == null ||
-        item.viewerRole != MessageViewerRole.creator ||
+        item.viewerRole == MessageViewerRole.requester ||
         ref.read(authSessionProvider).identity?.id != profileId) {
       return;
     }
     await showJoinAcceptanceTriageSheet(
       context,
-      expectedCreatorProfileId: profileId,
+      expectedManagerProfileId: profileId,
       requestId: item.requestId,
       projectId: item.projectId,
       projectKind: item.projectKind,
@@ -157,7 +157,7 @@ class _ParticipationRequestDetailsContentState
             const SizedBox(height: AppSpacing.medium),
           ],
           Text(
-            item.viewerRole == MessageViewerRole.creator
+            item.viewerRole != MessageViewerRole.requester
                 ? l10n.messagesIncomingTitle(item.requesterDisplayName)
                 : l10n.messagesOutgoingDetailTitle(item.creatorDisplayName),
             style: Theme.of(context).textTheme.headlineSmall,

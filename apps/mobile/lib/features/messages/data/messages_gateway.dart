@@ -26,7 +26,7 @@ abstract interface class MessagesGateway {
   });
 
   Future<void> reject({
-    required String expectedCreatorProfileId,
+    required String expectedManagerProfileId,
     required String requestId,
   });
 
@@ -106,13 +106,13 @@ class SupabaseMessagesGateway implements MessagesGateway {
 
   @override
   Future<void> reject({
-    required String expectedCreatorProfileId,
+    required String expectedManagerProfileId,
     required String requestId,
   }) async {
     await _client.rpc<String>(
-      'reject_project_join_request',
+      'reject_project_join_request_as_manager',
       params: {
-        'p_expected_creator_profile_id': expectedCreatorProfileId,
+        'p_expected_manager_profile_id': expectedManagerProfileId,
         'p_request_id': requestId,
       },
     );
@@ -193,7 +193,8 @@ class MessagesPayloadParser {
       'project_creator_display_name',
     ]);
     final viewerRole = MessageViewerRole.fromWire(_string(row, 'viewer_role'));
-    if (viewerRole == MessageViewerRole.creator) {
+    if (viewerRole == MessageViewerRole.creator ||
+        viewerRole == MessageViewerRole.delegate) {
       throw const FormatException(
         'Resource request used a Project creator role.',
       );

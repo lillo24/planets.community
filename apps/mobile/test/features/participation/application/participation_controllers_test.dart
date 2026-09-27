@@ -319,7 +319,7 @@ void main() {
     await controller.load('user-1', 'proposal-1');
     expect(
       await controller.reject(
-        expectedCreatorId: 'user-1',
+        expectedManagerId: 'user-1',
         projectId: 'proposal-1',
         requestId: 'reject-me',
       ),
@@ -331,7 +331,7 @@ void main() {
     final membershipId = gateway.creatorMembers.single.id;
     expect(
       await controller.remove(
-        expectedCreatorId: 'user-1',
+        expectedManagerId: 'user-1',
         projectId: 'proposal-1',
         membershipId: membershipId,
       ),

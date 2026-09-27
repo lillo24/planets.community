@@ -140,7 +140,7 @@ class _ProjectChatInfoScreenState extends ConsumerState<ProjectChatInfoScreen> {
                     icon: const Icon(Icons.open_in_new),
                     label: Text(l10n.projectChatOpenProject),
                   ),
-                  if (summary.isCreator) ...[
+                  if (summary.isManager) ...[
                     const SizedBox(height: AppSpacing.small),
                     OutlinedButton.icon(
                       key: const Key('project-chat-manage-participation'),
@@ -154,7 +154,7 @@ class _ProjectChatInfoScreenState extends ConsumerState<ProjectChatInfoScreen> {
                       label: Text(l10n.projectChatManageParticipation),
                     ),
                   ],
-                  if (!summary.isCreator) ...[
+                  if (!summary.isManager) ...[
                     const SizedBox(height: AppSpacing.large),
                     _ParticipantCommitments(
                       expectedProfileId: _expectedProfileId,
@@ -597,7 +597,8 @@ String _kindLabel(AppLocalizations l10n, ProjectKind kind) => switch (kind) {
 
 String _roleLabel(AppLocalizations l10n, ProjectChatViewerRole role) =>
     switch (role) {
-      ProjectChatViewerRole.creator => l10n.projectChatRoleCreator,
+      ProjectChatViewerRole.creator ||
+      ProjectChatViewerRole.delegate => l10n.projectChatRoleCreator,
       ProjectChatViewerRole.currentMember => l10n.projectChatRoleCurrent,
       ProjectChatViewerRole.formerMember => l10n.projectChatRoleFormer,
     };
