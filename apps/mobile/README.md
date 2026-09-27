@@ -20,7 +20,7 @@ This folder owns the Flutter application and its generated Android/iOS platform 
 - `lib/features/participation/` owns shared Proposal/Tavolo join requests, own participation state, creator review, membership actions, and participant-authorized meeting information over the canonical 05A RPCs. See its [feature boundary](lib/features/participation/README.md).
 - `lib/features/messages/` owns the Home-branch Messages inbox, exact structured participation-request detail/history, and role-specific canonical actions over the 07A reads and existing 05A transitions. See its [feature boundary](lib/features/messages/README.md).
 - `lib/features/project_chat/` owns Project-chat summaries, history, send, private Realtime reconciliation, current/former UI, and group information over the canonical 07B2B boundary. See its [feature boundary](lib/features/project_chat/README.md).
-- `lib/l10n/` owns the English ARB source. `flutter gen-l10n` regenerates ignored Dart output under `lib/l10n/generated/`.
+- `lib/l10n/` owns the English template ARB and the complete Italian catalog. English remains the fallback for unsupported locales. `flutter gen-l10n` regenerates ignored Dart output under `lib/l10n/generated/`.
 - `config/` contains committed configuration examples; runtime files without `.example` are ignored.
 - `test/` mirrors the application responsibility boundaries.
 - `android/` and `ios/` contain conventional Flutter platform configuration. Local HTTP exceptions are debug-only; shared iOS plist changes must be mirrored in `Info.plist` and `Info-Debug.plist`.
