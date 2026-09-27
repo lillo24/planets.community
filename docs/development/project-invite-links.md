@@ -71,9 +71,10 @@ identifiers, not signing material; never commit private keys or credentials.
 The mobile project already limits Android handling to HTTPS host
 `planets.community` and path prefix `/invite/project/` with `autoVerify`. iOS
 already declares `applinks:planets.community` in `Runner.entitlements`; a real
-signed provisioning profile must enable Associated Domains. The generated
-Digital Asset Links and Apple association documents limit the association to
-the production app identity and `/invite/project/*`.
+signed provisioning profile must enable Associated Domains. Digital Asset
+Links binds the production Android identity while the Android manifest limits
+the claimed path to `/invite/project/`. The Apple association document binds
+the production iOS identity and limits its paths to `/invite/project/*`.
 
 `share_plus` 13 requires Flutter 3.41+, Dart 3.11+, iOS 13+, Android Gradle
 Plugin 8.12.1+, and Gradle 8.13+. This repository currently uses Flutter 3.47,
