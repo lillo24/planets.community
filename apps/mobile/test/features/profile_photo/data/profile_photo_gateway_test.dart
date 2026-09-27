@@ -122,6 +122,23 @@ void main() {
       expect(await gateway.loadProjectCreatorPhoto(_viewerC), isNull);
     });
 
+    test('Resource owner read uses only the context listing id', () async {
+      remote.rpcResult = [_visibleRow(_viewerA)];
+
+      final photo = await gateway.loadResourceListingOwnerPhoto(_viewerC);
+
+      expect(photo?.profileId, _viewerA);
+      expect(
+        remote.rpcNames.single,
+        'get_resource_listing_owner_profile_photo_for_viewer',
+      );
+      expect(remote.rpcParams.single, {'p_listing_id': _viewerC});
+      expect(remote.downloads, isEmpty);
+
+      remote.rpcResult = [];
+      expect(await gateway.loadResourceListingOwnerPhoto(_viewerC), isNull);
+    });
+
     test(
       'batch rejects invalid bounds, targets, duplicates, and order',
       () async {

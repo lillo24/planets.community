@@ -10,6 +10,8 @@ import '../../../l10n/generated/app_localizations.dart';
 import '../../auth/application/auth_session_controller.dart';
 import '../../auth/domain/auth_models.dart';
 import '../../messages/presentation/messages_routes.dart';
+import '../../profile_photo/application/resource_listing_owner_photo_controller.dart';
+import '../../profile_photo/presentation/visible_profile_photo_avatar.dart';
 import '../../resource_requests/application/resource_request_controllers.dart';
 import '../../resource_requests/domain/resource_request_models.dart';
 import '../../resource_requests/presentation/resource_request_composer.dart';
@@ -369,9 +371,14 @@ class _PublicResourceListingDetailScreenState
   }
 
   Future<void> _load() async {
-    await ref
-        .read(publicResourceListingDetailProvider.notifier)
-        .load(widget.listingId);
+    await Future.wait([
+      ref
+          .read(publicResourceListingDetailProvider.notifier)
+          .load(widget.listingId),
+      ref
+          .read(resourceListingOwnerPhotoProvider.notifier)
+          .load(widget.listingId, force: true),
+    ]);
     if (!mounted) return;
     final profileId = ref.read(authSessionProvider).identity?.id;
     if (profileId != null) {
@@ -385,6 +392,9 @@ class _PublicResourceListingDetailScreenState
     final state = ref.watch(publicResourceListingDetailProvider);
     final detail = state.listingId == widget.listingId ? state.detail : null;
     final session = ref.watch(authSessionProvider);
+    final ownerPhoto = ref
+        .watch(resourceListingOwnerPhotoProvider)
+        .entryFor(widget.listingId);
     final isOwner =
         session.phase == AuthSessionPhase.ready &&
         session.identity?.id == detail?.ownerProfileId;
@@ -453,10 +463,23 @@ class _PublicResourceListingDetailScreenState
                       ),
                     ),
                   ),
-                  if (detail.ownerDisplayName case final owner?) ...[
-                    const SizedBox(height: AppSpacing.large),
-                    Text(l10n.resourceListedBy(owner)),
-                  ],
+                  const SizedBox(height: AppSpacing.large),
+                  Row(
+                    key: const Key('resource-listing-owner'),
+                    children: [
+                      VisibleProfilePhotoAvatar(
+                        entry: ownerPhoto,
+                        imageSemanticsLabel:
+                            l10n.resourceListingOwnerPhotoLabel,
+                        placeholderSemanticsLabel:
+                            l10n.resourceListingOwnerPhotoLabel,
+                      ),
+                      if (detail.ownerDisplayName case final owner?) ...[
+                        const SizedBox(width: AppSpacing.small),
+                        Expanded(child: Text(l10n.resourceListedBy(owner))),
+                      ],
+                    ],
+                  ),
                   const SizedBox(height: AppSpacing.medium),
                   Semantics(
                     label: l10n.resourceInterestCount(

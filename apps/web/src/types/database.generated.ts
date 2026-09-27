@@ -2022,6 +2022,10 @@ export type Database = {
         Args: { p_object_path: string }
         Returns: boolean
       }
+      can_read_public_resource_listing_owner_photo_object: {
+        Args: { p_object_path: string }
+        Returns: boolean
+      }
       cancel_proposal: {
         Args: { p_expected_creator_profile_id: string; p_proposal_id: string }
         Returns: string
@@ -2467,6 +2471,14 @@ export type Database = {
           request_id: string
           requester_lend_return_overdue: boolean
           requester_profile_id: string
+        }[]
+      }
+      get_resource_listing_owner_profile_photo_for_viewer: {
+        Args: { p_listing_id: string }
+        Returns: {
+          object_path: string
+          profile_id: string
+          updated_at: string
         }[]
       }
       get_resource_listing_request: {

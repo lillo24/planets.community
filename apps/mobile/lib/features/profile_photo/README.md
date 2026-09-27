@@ -31,6 +31,9 @@ non-owner delivery over the private Supabase Storage and RPC boundary.
 - `application/project_creator_photo_controller.dart` keeps Project-context
   organizer metadata and bytes in a separate project-keyed, identity-bound
   cache so contextual authorization never populates the generic profile cache.
+- `application/resource_listing_owner_photo_controller.dart` does the same for
+  an exact Scambio-Dona listing. Its listing-keyed cache retains the resolved
+  owner identity and is invalidated independently of generic interaction reads.
 - `presentation/` contains the circular avatar, fixed-square crop view, and
   owner management section plus the reusable publish/join trust dialog.
   `VisibleProfilePhotoAvatar` accepts already-loaded viewer state and never
@@ -46,11 +49,25 @@ rejected/withdrawn requesters, co-participants, and reverse applicant-to-
 organizer reads do not qualify. This is the first relationship set rather than
 the permanent exhaustive meaning of interaction.
 
+Scambio-Dona extends `interactions` without changing that Project matrix. A
+listing owner may see a pending requester's photo, while the requester gains no
+reverse generic access. Acceptance makes owner and requester mutually visible
+until canonical agreement coordination closes; closing the listing alone does
+not end that accepted relationship. Rejection, withdrawal, `listing_closed`,
+agreement completion, or agreement cancellation ends the corresponding access
+unless another qualifying relationship still exists.
+
 Creator publication and a new join request require only that a canonical photo
 exists; both audiences qualify and the app never rewrites the audience. The
 database remains authoritative. Missing-photo prompts open the existing profile
 editor as a pushed route, preserving the authoring/request form, and never
 resubmit after return.
+
+Scambio-Dona publication and creation of a new Resource request use the same
+canonical-photo presence rule. Draft create/edit, already-published idempotent
+publication, historical rows, and later photo removal remain unchanged. Mobile
+preflight failure opens the same profile editor with Scambio-specific copy,
+keeps the form or retained draft ID, and never submits automatically on return.
 
 Generic viewer metadata is exact-ID or bounded batch (`1..50`) only. A distinct
 Project-context RPC resolves the creator from an authorized Project ID and is
@@ -61,6 +78,12 @@ downloaded bytes in memory, clears them on login/logout/account switch, and
 persists neither provider URLs nor files. Creator review batch-loads pending
 applicant avatars and invalidates target cache entries after rejection,
 withdrawal, leave, or removal.
+
+An exact Resource-listing context RPC likewise resolves the owner server-side
+for an owner or a currently public listing and never broadens generic profile
+visibility. Resource request and chat surfaces use the generic relationship
+cache for counterpart avatars, invalidating it when coordination ends or the
+signed-in identity changes.
 
 Native/package notes:
 

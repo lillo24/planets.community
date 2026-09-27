@@ -7,6 +7,8 @@ import '../../../core/widgets/error_state.dart';
 import '../../../core/widgets/loading_state.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../auth/application/auth_session_controller.dart';
+import '../../profile_photo/application/visible_profile_photo_controller.dart';
+import '../../profile_photo/presentation/visible_profile_photo_avatar.dart';
 import '../../resource_exchange/application/resource_exchange_controller.dart';
 import '../../resource_exchange/presentation/resource_exchange_widgets.dart';
 import '../application/resource_chat_controller.dart';
@@ -299,14 +301,17 @@ class _ResourceChatScreenState extends ConsumerState<ResourceChatScreen>
   }
 }
 
-class _CounterpartyHeader extends StatelessWidget {
+class _CounterpartyHeader extends ConsumerWidget {
   const _CounterpartyHeader({required this.summary});
 
   final ResourceChatSummary summary;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
+    final photo = ref
+        .watch(visibleProfilePhotoProvider)
+        .entryFor(summary.counterpartyProfileId);
     final role = summary.viewerRole == ResourceChatViewerRole.owner
         ? l10n.resourceChatRequester
         : l10n.resourceChatOwner;
@@ -318,10 +323,30 @@ class _CounterpartyHeader extends StatelessWidget {
         vertical: AppSpacing.small,
       ),
       color: Theme.of(context).colorScheme.surfaceContainerLow,
-      child: Text(
-        l10n.resourceChatCounterparty(role, summary.counterpartyDisplayName),
-        maxLines: 2,
-        overflow: TextOverflow.ellipsis,
+      child: Row(
+        children: [
+          VisibleProfilePhotoAvatar(
+            key: const Key('resource-chat-counterparty-photo'),
+            entry: photo,
+            imageSemanticsLabel: l10n.resourceChatCounterpartyPhotoLabel(
+              summary.counterpartyDisplayName,
+            ),
+            placeholderSemanticsLabel: l10n.resourceChatCounterpartyPhotoLabel(
+              summary.counterpartyDisplayName,
+            ),
+          ),
+          const SizedBox(width: AppSpacing.small),
+          Expanded(
+            child: Text(
+              l10n.resourceChatCounterparty(
+                role,
+                summary.counterpartyDisplayName,
+              ),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+        ],
       ),
     );
   }

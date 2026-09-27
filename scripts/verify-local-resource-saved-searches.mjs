@@ -4,6 +4,7 @@ import { createClient } from "@supabase/supabase-js";
 import postgres from "postgres";
 
 import { signInLocalOtpUser } from "./lib/local-authenticated-user.mjs";
+import { ensureLocalProfilePhoto } from "./lib/local-profile-photo.mjs";
 import { readLocalSupabaseStatus } from "./lib/local-supabase-status.mjs";
 
 const { apiUrl, publishableKey, databaseUrl } = readLocalSupabaseStatus(
@@ -51,6 +52,10 @@ async function verifyResourceSavedSearches() {
   await Promise.all([
     completeProfile(searchOwner, "Saved Search Owner"),
     completeProfile(listingOwner, "Saved Search Listing Owner"),
+  ]);
+  await Promise.all([
+    ensureLocalProfilePhoto(searchOwner),
+    ensureLocalProfilePhoto(listingOwner),
   ]);
   await Promise.all([
     clearSavedSearches(searchOwner),

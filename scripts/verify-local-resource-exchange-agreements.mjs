@@ -3,6 +3,7 @@ import postgres from "postgres";
 
 import { signInLocalOtpUser } from "./lib/local-authenticated-user.mjs";
 import { readLocalSupabaseStatus } from "./lib/local-supabase-status.mjs";
+import { ensureLocalProfilePhoto } from "./lib/local-profile-photo.mjs";
 
 const repositoryRoot = process.cwd();
 const mailpitUrl = (
@@ -45,6 +46,11 @@ async function verifyLoanReservationsOnly() {
     ensureCompleteProfile(requesterB, "Loan Verifier Requester B"),
     ensureCompleteProfile(unrelated, "Loan Verifier Unrelated"),
   ]);
+  await Promise.all(
+    [owner, requester, requesterB, unrelated].map((user) =>
+      ensureLocalProfilePhoto(user),
+    ),
+  );
   await verifyLoanReservations(owner, requester, requesterB, unrelated);
   console.log(
     "Confirmed real-OTP loan reservation, privacy, replacement, release, overdue/risk, and deterministic acceptance/cancellation/completion races.",
@@ -65,6 +71,11 @@ async function verifyResourceExchangeAgreements() {
     ensureCompleteProfile(requesterB, "Agreement Verifier Requester B"),
     ensureCompleteProfile(unrelated, "Agreement Verifier Unrelated"),
   ]);
+  await Promise.all(
+    [owner, requester, requesterB, unrelated].map((user) =>
+      ensureLocalProfilePhoto(user),
+    ),
+  );
 
   const listingId = await createPublishedListing(
     owner,

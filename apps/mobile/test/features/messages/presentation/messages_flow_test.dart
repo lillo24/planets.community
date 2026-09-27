@@ -366,8 +366,11 @@ void main() {
     );
     expect(find.text('Resource request'), findsOneWidget);
     expect(find.text('Requester: Jordan'), findsOneWidget);
-    expect(find.byKey(const Key('resource-request-accept')), findsOneWidget);
-    await tester.tap(find.byKey(const Key('resource-request-accept')));
+    final accept = find.byKey(const Key('resource-request-accept'));
+    expect(accept, findsOneWidget);
+    await tester.ensureVisible(accept);
+    await tester.pumpAndSettle();
+    await tester.tap(accept);
     await tester.pumpAndSettle();
     expect(resourceRequests.calls, contains('accept:$resourceRequestId'));
     expect(find.text('Coordination is open.'), findsOneWidget);

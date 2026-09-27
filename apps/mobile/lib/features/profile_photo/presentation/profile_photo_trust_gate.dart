@@ -6,7 +6,11 @@ import '../../../l10n/generated/app_localizations.dart';
 import '../../profile/presentation/profile_edit_screen.dart';
 import '../application/profile_photo_requirement.dart';
 
-enum ProfilePhotoTrustReason { publishPersonalActivity, requestToJoin }
+enum ProfilePhotoTrustReason {
+  publishPersonalActivity,
+  requestToJoin,
+  scambioDona,
+}
 
 Future<bool> requireProfilePhotoForTrustAction({
   required BuildContext context,
@@ -42,6 +46,10 @@ Future<void> showProfilePhotoTrustGate({
         ProfilePhotoTrustReason.requestToJoin => (
           l10n.profilePhotoJoinRequiredTitle,
           l10n.profilePhotoJoinRequiredDescription,
+        ),
+        ProfilePhotoTrustReason.scambioDona => (
+          l10n.profilePhotoScambioRequiredTitle,
+          l10n.profilePhotoScambioRequiredDescription,
         ),
       };
       return AlertDialog(

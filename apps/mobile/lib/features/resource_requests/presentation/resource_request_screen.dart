@@ -8,6 +8,8 @@ import '../../../core/widgets/loading_state.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../auth/application/auth_session_controller.dart';
 import '../../messages/presentation/messages_routes.dart';
+import '../../profile_photo/application/visible_profile_photo_controller.dart';
+import '../../profile_photo/presentation/visible_profile_photo_avatar.dart';
 import '../../resource_listings/domain/resource_listing_models.dart';
 import '../../resource_listings/presentation/resource_listing_widgets.dart';
 import '../application/resource_request_controllers.dart';
@@ -51,6 +53,17 @@ class _ResourceRequestScreenState extends ConsumerState<ResourceRequestScreen> {
     final state = ref.watch(resourceRequestDetailProvider(widget.requestId));
     final belongs = state.expectedProfileId == _expectedProfileId;
     final item = belongs ? state.item : null;
+    final showRequesterPhoto =
+        item != null &&
+        item.ownerProfileId == _expectedProfileId &&
+        (item.status == ResourceRequestStatus.pending ||
+            (item.status == ResourceRequestStatus.accepted &&
+                item.coordinationClosedAt == null));
+    final requesterPhoto = item == null
+        ? null
+        : ref
+              .watch(visibleProfilePhotoProvider)
+              .entryFor(item.requesterProfileId);
     final initialLoading =
         !belongs ||
         (state.phase == ResourceRequestDetailPhase.loading && item == null);
@@ -123,10 +136,32 @@ class _ResourceRequestScreenState extends ConsumerState<ResourceRequestScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            l10n.resourceRequestRequesterLabel(
-                              item.requesterDisplayName,
-                            ),
+                          Row(
+                            children: [
+                              if (showRequesterPhoto)
+                                Padding(
+                                  padding: const EdgeInsets.only(
+                                    right: AppSpacing.small,
+                                  ),
+                                  child: VisibleProfilePhotoAvatar(
+                                    key: const Key(
+                                      'resource-request-requester-photo',
+                                    ),
+                                    entry: requesterPhoto,
+                                    imageSemanticsLabel:
+                                        l10n.resourceRequestRequesterPhotoLabel,
+                                    placeholderSemanticsLabel:
+                                        l10n.resourceRequestRequesterPhotoLabel,
+                                  ),
+                                ),
+                              Expanded(
+                                child: Text(
+                                  l10n.resourceRequestRequesterLabel(
+                                    item.requesterDisplayName,
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
                           Text(
                             l10n.resourceRequestOwnerLabel(

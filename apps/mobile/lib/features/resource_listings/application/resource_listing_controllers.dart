@@ -553,6 +553,7 @@ ResourceListingFailureKind mapResourceListingFailure(Object error) {
   if (error is PostgrestException) {
     return switch (error.code) {
       '22023' => ResourceListingFailureKind.invalidInput,
+      'PT422' => ResourceListingFailureKind.profilePhotoRequired,
       '42501' => ResourceListingFailureKind.forbidden,
       '55000' => ResourceListingFailureKind.invalidState,
       'P0002' => ResourceListingFailureKind.notFound,

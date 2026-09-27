@@ -6,16 +6,23 @@ import 'package:planets_mobile/app/router/app_router.dart';
 import 'package:planets_mobile/core/config/app_config.dart';
 import 'package:planets_mobile/features/auth/data/auth_gateway.dart';
 import 'package:planets_mobile/features/auth/domain/auth_models.dart';
+import 'package:planets_mobile/features/messages/presentation/messages_routes.dart';
 import 'package:planets_mobile/features/profile/data/profile_gateway.dart';
+import 'package:planets_mobile/features/profile/presentation/profile_edit_screen.dart';
+import 'package:planets_mobile/features/profile_photo/application/visible_profile_photo_controller.dart';
+import 'package:planets_mobile/features/profile_photo/data/profile_photo_gateway.dart';
+import 'package:planets_mobile/features/profile_photo/domain/visible_profile_photo_models.dart';
 import 'package:planets_mobile/features/resource_listings/application/resource_listing_controllers.dart';
 import 'package:planets_mobile/features/resource_listings/data/resource_listing_gateway.dart';
 import 'package:planets_mobile/features/resource_listings/domain/resource_listing_models.dart';
 import 'package:planets_mobile/features/resource_requests/data/resource_request_gateway.dart';
 import 'package:planets_mobile/features/resource_requests/domain/resource_request_models.dart';
 import 'package:planets_mobile/features/resource_loans/data/resource_loan_gateway.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../support/fake_auth.dart';
 import '../../../support/fake_profile.dart';
+import '../../../support/fake_profile_photo.dart';
 import '../../../support/fake_resource_listing.dart';
 import '../../../support/fake_resource_request.dart';
 import '../../../support/fake_resource_loan.dart';
@@ -437,6 +444,129 @@ void main() {
     );
   });
 
+  testWidgets('anonymous public detail loads the contextual owner avatar', (
+    tester,
+  ) async {
+    final gateway = FakeResourceListingGateway()
+      ..publicDetail = publicResourceListingDetailFixture();
+    final photos = FakeProfilePhotoGateway()
+      ..resourceListingOwnerPhotos[resourceListingId] = _ownerPhoto;
+    final app = await _pump(
+      tester,
+      gateway: gateway,
+      signedIn: false,
+      profilePhotos: photos,
+    );
+    app.read(appRouterProvider).go('/resources/$resourceListingId');
+    await tester.pumpAndSettle();
+
+    expect(photos.resourceListingOwnerLoadIds, [resourceListingId]);
+    expect(find.byKey(const Key('resource-listing-owner')), findsOneWidget);
+    expect(find.byKey(const Key('profile-photo-avatar')), findsOneWidget);
+  });
+
+  testWidgets(
+    'publish without photo opens Scambio gate and preserves unsaved editor state',
+    (tester) async {
+      final gateway = FakeResourceListingGateway();
+      final app = await _pump(
+        tester,
+        gateway: gateway,
+        profilePhotos: FakeProfilePhotoGateway(),
+      );
+      app.read(appRouterProvider).go('/resources/create');
+      await tester.pumpAndSettle();
+      await _fillPublishableListing(tester);
+
+      await _tap(tester, 'resource-publish');
+      expect(find.byKey(const Key('profile-photo-trust-gate')), findsOneWidget);
+      expect(
+        find.text('Add a profile photo for Scambio-Dona.'),
+        findsOneWidget,
+      );
+      expect(gateway.createCount, 0);
+
+      await _tap(tester, 'profile-photo-trust-add');
+      expect(find.byType(ProfileEditScreen), findsOneWidget);
+      Navigator.of(tester.element(find.byType(ProfileEditScreen))).pop();
+      await tester.pumpAndSettle();
+      expect(
+        tester
+            .widget<TextFormField>(
+              find.byKey(const Key('resource-title-field')),
+            )
+            .controller!
+            .text,
+        'Community ladder',
+      );
+      expect(gateway.createCount, 0);
+    },
+  );
+
+  testWidgets('backend photo gate retains one draft and retry publishes it', (
+    tester,
+  ) async {
+    final gateway = FakeResourceListingGateway()
+      ..publishError = const PostgrestException(
+        message: 'Photo required',
+        code: 'PT422',
+      );
+    final photos = FakeProfilePhotoGateway()
+      ..photo = profilePhotoFixture(profileId: resourceOwnerProfileId);
+    final app = await _pump(tester, gateway: gateway, profilePhotos: photos);
+    app.read(appRouterProvider).go('/resources/create');
+    await tester.pumpAndSettle();
+    await _fillPublishableListing(tester);
+
+    await _tap(tester, 'resource-publish');
+    expect(find.byKey(const Key('profile-photo-trust-gate')), findsOneWidget);
+    expect(gateway.createCount, 1);
+
+    await _tap(tester, 'profile-photo-trust-go-back');
+    gateway.publishError = null;
+    await _tap(tester, 'resource-publish');
+    expect(gateway.createCount, 1);
+    expect(gateway.calls, contains('update:$newResourceListingId'));
+    expect(gateway.calls, contains('publish:$newResourceListingId'));
+  });
+
+  testWidgets('pending owner detail shows then invalidates requester avatar', (
+    tester,
+  ) async {
+    final requestGateway = FakeResourceRequestGateway()
+      ..detail = resourceRequestFixture();
+    final photos = FakeProfilePhotoGateway()
+      ..visiblePhotos[otherProfileId] = _requesterPhoto;
+    final app = await _pump(
+      tester,
+      gateway: FakeResourceListingGateway()
+        ..publicDetail = publicResourceListingDetailFixture(),
+      resourceRequests: requestGateway,
+      profilePhotos: photos,
+    );
+    app
+        .read(appRouterProvider)
+        .go(resourceRequestMessageRoute(resourceRequestId));
+    await tester.pumpAndSettle();
+
+    expect(
+      find.byKey(const Key('resource-request-requester-photo')),
+      findsOneWidget,
+    );
+    expect(find.byKey(const Key('resource-request-accept')), findsOneWidget);
+    expect(find.byKey(const Key('resource-request-reject')), findsOneWidget);
+
+    await _tap(tester, 'resource-request-reject');
+    expect(
+      app.read(visibleProfilePhotoProvider).entryFor(otherProfileId),
+      isNull,
+    );
+    expect(
+      find.byKey(const Key('resource-request-requester-photo')),
+      findsNothing,
+    );
+  });
+
   testWidgets('unsafe backend failures render only safe copy', (tester) async {
     const raw = 'private database host and stack';
     final gateway = FakeResourceListingGateway()
@@ -462,6 +592,7 @@ Future<ProviderContainer> _pump(
   String? identityId,
   FakeResourceRequestGateway? resourceRequests,
   FakeResourceLoanGateway? resourceLoans,
+  FakeProfilePhotoGateway? profilePhotos,
 }) async {
   final signedInProfileId = identityId ?? resourceOwnerProfileId;
   final auth = FakeAuthGateway(
@@ -495,6 +626,9 @@ Future<ProviderContainer> _pump(
         resourceLoanGatewayProvider.overrideWithValue(
           resourceLoans ?? FakeResourceLoanGateway(),
         ),
+        profilePhotoGatewayProvider.overrideWithValue(
+          profilePhotos ?? FakeProfilePhotoGateway(),
+        ),
       ],
       child: const PlanetsApp(),
     ),
@@ -503,7 +637,37 @@ Future<ProviderContainer> _pump(
   return ProviderScope.containerOf(tester.element(find.byType(PlanetsApp)));
 }
 
-Future<void> _tap(WidgetTester tester, String key) async {
-  await tester.tap(find.byKey(Key(key)));
+Future<void> _fillPublishableListing(WidgetTester tester) async {
+  for (final entry in <Key, String>{
+    const Key('resource-title-field'): 'Community ladder',
+    const Key('resource-description-field'):
+        'A sturdy ladder available for a neighborhood project.',
+    const Key('resource-country-field'): 'IT',
+    const Key('resource-locality-field'): 'Trento',
+    const Key('resource-public-location-field'): 'Central Trento',
+  }.entries) {
+    await tester.enterText(find.byKey(entry.key), entry.value);
+  }
   await tester.pumpAndSettle();
 }
+
+Future<void> _tap(WidgetTester tester, String key) async {
+  final target = find.byKey(Key(key));
+  await tester.ensureVisible(target);
+  await tester.pumpAndSettle();
+  await tester.tap(target);
+  await tester.pumpAndSettle();
+}
+
+const _ownerVersion = 'b6900000-0000-4000-8000-000000000001';
+const _requesterVersion = 'b6900000-0000-4000-8000-000000000002';
+final _ownerPhoto = VisibleProfilePhoto(
+  profileId: resourceOwnerProfileId,
+  objectPath: '$resourceOwnerProfileId/$_ownerVersion.webp',
+  updatedAt: DateTime.utc(2026, 9, 27),
+);
+final _requesterPhoto = VisibleProfilePhoto(
+  profileId: otherProfileId,
+  objectPath: '$otherProfileId/$_requesterVersion.webp',
+  updatedAt: DateTime.utc(2026, 9, 27),
+);

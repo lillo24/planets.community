@@ -13,10 +13,11 @@ Participation, and Project resources.
   filters, public detail, identity-bound owner history, editor lifecycle, stale
   response rejection, and focused refresh coordination.
 - `presentation/public_resource_listings_screen.dart` owns signed-out
-  discovery, public detail, canonical filter controls, the authenticated Save
-  search entry point into adjacent `resource_saved_searches/`, the sanitized
-  active-interest count, and the authenticated non-owner entry point into the
-  adjacent `resource_requests/` feature.
+  discovery, public detail with its exact-context owner avatar, canonical
+  filter controls, the authenticated Save search entry point into adjacent
+  `resource_saved_searches/`, the sanitized active-interest count, and the
+  authenticated non-owner entry point into the adjacent `resource_requests/`
+  feature.
 - `presentation/own_resource_listings_screen.dart` owns the canonical
   draft/published/closed owner history and the non-draft owner entry point to
   the adjacent private `resource_loans/` schedule.
@@ -30,6 +31,19 @@ creates one draft and then publishes that exact ID; if publication fails, the
 controller retains the ID so a retry cannot create a second draft. Public
 discovery uses backend mode/locality/literal-keyword filters and paired
 `published_at + listing_id` keyset pagination.
+
+Draft creation and editing remain photo-independent. Only the actual
+draft-to-published transition requires a canonical owner photo; both photo
+audiences qualify. The editor performs a best-effort local preflight and maps
+the authoritative `PT422` response to the reusable profile-photo trust dialog.
+Returning from Profile never auto-publishes, and a failed first publication
+keeps its one retained draft for an explicit retry.
+
+Public detail loads owner-photo metadata through the exact listing-context
+boundary, separately from generic interaction caches. Anonymous and unrelated
+viewers can therefore see the current owner avatar for a published listing
+without receiving generic profile-photo access. Draft and closed listing
+contexts remain private except to their canonical owner.
 
 The listing feature does not own private request state. It renders only the
 backend-derived active-interest count and delegates Request/Withdraw/View to

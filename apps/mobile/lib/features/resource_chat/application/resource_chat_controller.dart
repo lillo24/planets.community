@@ -6,6 +6,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../auth/application/auth_session_controller.dart';
 import '../../auth/domain/auth_models.dart';
 import '../../messages/application/message_chats_refresh.dart';
+import '../../profile_photo/application/visible_profile_photo_controller.dart';
 import '../../resource_exchange/application/resource_exchange_refresh.dart';
 import '../data/resource_chat_gateway.dart';
 import '../domain/resource_chat_models.dart';
@@ -101,6 +102,7 @@ class ResourceChatDetailController extends Notifier<ResourceChatDetailState> {
     final revision = ++_revision;
     final sameTarget =
         state.expectedProfileId == expectedProfileId && state.chatId == chatId;
+    final previousSummary = sameTarget ? state.summary : null;
     if (!sameTarget) _closeSubscription();
     state = ResourceChatDetailState(
       phase: ResourceChatDetailPhase.loading,
@@ -135,6 +137,7 @@ class ResourceChatDetailController extends Notifier<ResourceChatDetailState> {
         hasMoreOlder: page.hasMore,
       );
       _syncSubscription(expectedProfileId, summary);
+      _reconcileCounterpartyPhoto(previousSummary, summary);
       return true;
     } catch (error) {
       if (!_isCurrent(revision, expectedProfileId, chatId)) return false;
@@ -166,6 +169,7 @@ class ResourceChatDetailController extends Notifier<ResourceChatDetailState> {
     }
     _isReconciling = true;
     final revision = _revision;
+    final previousSummary = state.summary;
     try {
       final gateway = ref.read(resourceChatGatewayProvider);
       _requireReadyIdentity(expectedProfileId);
@@ -191,6 +195,7 @@ class ResourceChatDetailController extends Notifier<ResourceChatDetailState> {
         hasConnectionIssue: state.hasConnectionIssue,
       );
       _syncSubscription(expectedProfileId, summary);
+      _reconcileCounterpartyPhoto(previousSummary, summary);
       return true;
     } catch (error) {
       if (!_isCurrent(revision, expectedProfileId, chatId)) return false;
@@ -216,6 +221,7 @@ class ResourceChatDetailController extends Notifier<ResourceChatDetailState> {
     }
     _isReconciling = true;
     final revision = _revision;
+    final previousSummary = state.summary;
     try {
       _requireReadyIdentity(expectedProfileId);
       final summary = await ref
@@ -233,6 +239,7 @@ class ResourceChatDetailController extends Notifier<ResourceChatDetailState> {
         hasConnectionIssue: state.hasConnectionIssue,
       );
       _syncSubscription(expectedProfileId, summary);
+      _reconcileCounterpartyPhoto(previousSummary, summary);
       return true;
     } catch (error) {
       if (!_isCurrent(revision, expectedProfileId, chatId)) return false;
@@ -437,6 +444,7 @@ class ResourceChatDetailController extends Notifier<ResourceChatDetailState> {
     String chatId,
     int revision,
   ) async {
+    final previousSummary = state.summary;
     ResourceChatSummary? summary;
     try {
       summary = await ref
@@ -459,7 +467,10 @@ class ResourceChatDetailController extends Notifier<ResourceChatDetailState> {
       failure: ResourceChatFailureKind.conflict,
       hasConnectionIssue: state.hasConnectionIssue,
     );
-    if (summary != null) _syncSubscription(expectedProfileId, summary);
+    if (summary != null) {
+      _syncSubscription(expectedProfileId, summary);
+      _reconcileCounterpartyPhoto(previousSummary, summary);
+    }
     ref.read(messageChatsRefreshProvider.notifier).notifyChanged();
   }
 
@@ -552,6 +563,22 @@ class ResourceChatDetailController extends Notifier<ResourceChatDetailState> {
       _wasDisconnected = true;
       _setConnectionIssue(true);
     }
+  }
+
+  void _reconcileCounterpartyPhoto(
+    ResourceChatSummary? previous,
+    ResourceChatSummary current,
+  ) {
+    final photos = ref.read(visibleProfilePhotoProvider.notifier);
+    if (previous != null &&
+        previous.counterpartyProfileId != current.counterpartyProfileId) {
+      photos.invalidate(previous.counterpartyProfileId);
+    }
+    if (current.coordinationClosedAt != null) {
+      photos.invalidate(current.counterpartyProfileId);
+      return;
+    }
+    unawaited(photos.load(current.counterpartyProfileId));
   }
 
   void _handleStatus(

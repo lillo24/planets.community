@@ -114,6 +114,7 @@ bool isValidResourceRequestMessage(String value) => value.trim().length <= 500;
 
 enum ResourceRequestFailureKind {
   invalidInput,
+  profilePhotoRequired,
   forbidden,
   conflict,
   listingUnavailable,

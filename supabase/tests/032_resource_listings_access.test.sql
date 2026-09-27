@@ -14,6 +14,20 @@ values
   ('a2000000-0000-4000-8000-000000000002', 'Listing Owner B'),
   ('a3000000-0000-4000-8000-000000000003', null);
 
+-- Ordinary legacy listing scenarios are not trust-gate negatives. Dedicated
+-- 08A4B coverage exercises missing photos explicitly.
+insert into public.profile_photos (profile_id, object_path, audience)
+select
+  profile.id,
+  profile.id::text || '/' || profile.id::text || '.webp',
+  'interactions'
+from public.profiles as profile
+where profile.id in (
+  'a1000000-0000-4000-8000-000000000001',
+  'a2000000-0000-4000-8000-000000000002',
+  'a3000000-0000-4000-8000-000000000003'
+);
+
 set local role authenticated;
 select set_config(
   'request.jwt.claim.sub',

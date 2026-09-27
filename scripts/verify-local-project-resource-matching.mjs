@@ -1,6 +1,7 @@
 import { createClient } from "@supabase/supabase-js";
 
 import { signInLocalOtpUser } from "./lib/local-authenticated-user.mjs";
+import { ensureLocalProfilePhoto } from "./lib/local-profile-photo.mjs";
 import { readLocalSupabaseStatus } from "./lib/local-supabase-status.mjs";
 
 const { apiUrl, publishableKey } = readLocalSupabaseStatus(process.cwd());
@@ -31,6 +32,10 @@ const [creator, listingOwner] = await Promise.all([
 await Promise.all([
   completeProfile(creator, "Matching Creator"),
   completeProfile(listingOwner, "Matching Listing Owner"),
+]);
+await Promise.all([
+  ensureLocalProfilePhoto(creator),
+  ensureLocalProfilePhoto(listingOwner),
 ]);
 
 const proposalId = await rpcId(creator.client, "create_proposal_draft", {

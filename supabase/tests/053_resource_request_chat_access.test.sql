@@ -18,6 +18,14 @@ values
   ('f6100000-0000-4000-8000-000000000004', 'Resource Chat Unrelated'),
   ('f6100000-0000-4000-8000-000000000005', null);
 
+insert into public.profile_photos (profile_id, object_path, audience)
+select
+  profile.id,
+  profile.id::text || '/' || profile.id::text || '.webp',
+  'interactions'
+from public.profiles as profile
+where profile.id::text like 'f6100000-0000-4000-8000-%';
+
 insert into public.resource_listings (
   id,
   owner_profile_id,

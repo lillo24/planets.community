@@ -8,11 +8,20 @@ import 'package:planets_mobile/features/auth/domain/auth_models.dart';
 import 'package:planets_mobile/features/resource_listings/application/resource_listing_controllers.dart';
 import 'package:planets_mobile/features/resource_listings/data/resource_listing_gateway.dart';
 import 'package:planets_mobile/features/resource_listings/domain/resource_listing_models.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../support/fake_auth.dart';
 import '../../../support/fake_resource_listing.dart';
 
 void main() {
+  test('maps the authoritative photo gate to a dedicated failure', () {
+    expect(
+      mapResourceListingFailure(
+        const PostgrestException(message: 'private', code: 'PT422'),
+      ),
+      ResourceListingFailureKind.profilePhotoRequired,
+    );
+  });
   test('signed-out discovery applies backend filters and keyset dedupe', () async {
     final firstPage = List.generate(
       resourceListingPageSize,

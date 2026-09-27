@@ -22,6 +22,8 @@ String resourceRequestFailureMessage(
   required bool loading,
 }) => switch (failure) {
   ResourceRequestFailureKind.invalidInput => l10n.resourceRequestInvalidInput,
+  ResourceRequestFailureKind.profilePhotoRequired =>
+    l10n.profilePhotoScambioRequiredTitle,
   ResourceRequestFailureKind.forbidden => l10n.resourceRequestForbidden,
   ResourceRequestFailureKind.conflict => l10n.resourceRequestChangedElsewhere,
   ResourceRequestFailureKind.listingUnavailable =>

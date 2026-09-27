@@ -8,6 +8,7 @@ import '../../../core/widgets/error_state.dart';
 import '../../../core/widgets/loading_state.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../auth/application/auth_session_controller.dart';
+import '../../profile_photo/presentation/profile_photo_trust_gate.dart';
 import '../application/resource_listing_controllers.dart';
 import '../domain/resource_listing_models.dart';
 import 'resource_listing_widgets.dart';
@@ -353,12 +354,31 @@ class _ResourceListingEditorScreenState
     if (!(_formKey.currentState?.validate() ?? false)) return;
     final identity = ref.read(authSessionProvider).identity;
     if (identity == null) return;
+    if (publish) {
+      final mayContinue = await requireProfilePhotoForTrustAction(
+        context: context,
+        ref: ref,
+        expectedProfileId: identity.id,
+        reason: ProfilePhotoTrustReason.scambioDona,
+      );
+      if (!mayContinue || !mounted) return;
+    }
     final controller = ref.read(resourceListingEditorProvider.notifier);
     final id = publish
         ? await controller.publish(identity.id, _input())
         : await controller.save(identity.id, _input());
     if (!mounted) return;
-    if (id == null) return;
+    if (id == null) {
+      if (publish &&
+          ref.read(resourceListingEditorProvider).failure ==
+              ResourceListingFailureKind.profilePhotoRequired) {
+        await showProfilePhotoTrustGate(
+          context: context,
+          reason: ProfilePhotoTrustReason.scambioDona,
+        );
+      }
+      return;
+    }
     if (publish) {
       context.go('/resources/mine');
     } else if (widget.listingId == null) {

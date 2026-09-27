@@ -1,9 +1,12 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../auth/application/auth_session_controller.dart';
 import '../../auth/domain/auth_models.dart';
 import '../../messages/application/messages_controllers.dart';
+import '../../profile_photo/application/visible_profile_photo_controller.dart';
 import '../../resource_listings/application/resource_listing_controllers.dart';
 import '../data/resource_request_gateway.dart';
 import '../domain/resource_request_models.dart';
@@ -331,6 +334,7 @@ class ResourceRequestDetailController
         phase: ResourceRequestDetailPhase.ready,
         item: item,
       );
+      _reconcileRequesterPhoto(previous, item, expectedProfileId);
       return true;
     } catch (error) {
       if (!_isCurrent(revision, expectedProfileId)) return false;
@@ -420,6 +424,7 @@ class ResourceRequestDetailController
         phase: ResourceRequestDetailPhase.ready,
         item: canonical,
       );
+      _reconcileRequesterPhoto(item, canonical, expectedProfileId);
       await _refreshRequestSurfaces(
         ref,
         expectedProfileId: expectedProfileId,
@@ -459,6 +464,9 @@ class ResourceRequestDetailController
         item: canonical,
         failure: failure,
       );
+      if (canonical != null) {
+        _reconcileRequesterPhoto(item, canonical, expectedProfileId);
+      }
       return false;
     }
   }
@@ -476,6 +484,35 @@ class ResourceRequestDetailController
     ) => true,
     _ => false,
   };
+
+  void _reconcileRequesterPhoto(
+    ResourceRequest? previous,
+    ResourceRequest current,
+    String viewerProfileId,
+  ) {
+    final wasAuthorized =
+        previous != null &&
+        _ownerCanSeeRequesterPhoto(previous, viewerProfileId);
+    final isAuthorized = _ownerCanSeeRequesterPhoto(current, viewerProfileId);
+    final photos = ref.read(visibleProfilePhotoProvider.notifier);
+    if (!isAuthorized &&
+        (wasAuthorized || current.ownerProfileId == viewerProfileId)) {
+      photos.invalidate(current.requesterProfileId);
+      return;
+    }
+    if (isAuthorized) {
+      unawaited(photos.load(current.requesterProfileId));
+    }
+  }
+
+  bool _ownerCanSeeRequesterPhoto(
+    ResourceRequest item,
+    String viewerProfileId,
+  ) =>
+      item.ownerProfileId == viewerProfileId &&
+      (item.status == ResourceRequestStatus.pending ||
+          (item.status == ResourceRequestStatus.accepted &&
+              item.coordinationClosedAt == null));
 
   bool _isCurrent(int revision, String profileId) =>
       ref.mounted &&
@@ -531,6 +568,7 @@ ResourceRequestFailureKind mapResourceRequestFailure(Object error) {
   if (error is PostgrestException) {
     return switch (error.code) {
       '22023' => ResourceRequestFailureKind.invalidInput,
+      'PT422' => ResourceRequestFailureKind.profilePhotoRequired,
       '42501' => ResourceRequestFailureKind.forbidden,
       '55000' => ResourceRequestFailureKind.listingUnavailable,
       'P0002' => ResourceRequestFailureKind.notFound,

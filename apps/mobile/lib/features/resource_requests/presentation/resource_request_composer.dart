@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/theme/app_tokens.dart';
 import '../../../l10n/generated/app_localizations.dart';
+import '../../profile_photo/presentation/profile_photo_trust_gate.dart';
 import '../application/resource_request_controllers.dart';
 import '../domain/resource_request_models.dart';
 
@@ -146,12 +147,30 @@ class _ResourceRequestComposerState
   }
 
   Future<void> _submit() async {
+    final mayContinue = await requireProfilePhotoForTrustAction(
+      context: context,
+      ref: ref,
+      expectedProfileId: widget.expectedRequesterProfileId,
+      reason: ProfilePhotoTrustReason.scambioDona,
+    );
+    if (!mayContinue || !mounted) return;
     final success = await ref
         .read(resourceRequestComposerProvider(widget.listingId).notifier)
         .submit(
           expectedRequesterProfileId: widget.expectedRequesterProfileId,
           message: _messageController.text,
         );
-    if (mounted && success) Navigator.of(context).pop(true);
+    if (!mounted) return;
+    if (success) {
+      Navigator.of(context).pop(true);
+      return;
+    }
+    if (ref.read(resourceRequestComposerProvider(widget.listingId)).failure ==
+        ResourceRequestFailureKind.profilePhotoRequired) {
+      await showProfilePhotoTrustGate(
+        context: context,
+        reason: ProfilePhotoTrustReason.scambioDona,
+      );
+    }
   }
 }

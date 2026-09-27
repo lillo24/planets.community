@@ -160,6 +160,7 @@ bool isPublishableResourceListingInput(ResourceListingInput input) =>
 
 enum ResourceListingFailureKind {
   invalidInput,
+  profilePhotoRequired,
   unavailable,
   forbidden,
   invalidState,

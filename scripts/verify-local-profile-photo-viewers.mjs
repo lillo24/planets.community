@@ -40,11 +40,16 @@ async function verifyProfilePhotoViewers() {
   });
   const firstPath = `${applicant.id}/a8100000-0000-4000-8000-000000000001.webp`;
   const replacementPath = `${applicant.id}/a8100000-0000-4000-8000-000000000002.webp`;
+  const organizerReplacementPath = `${organizer.id}/a8200000-0000-4000-8000-000000000001.webp`;
 
   await cleanup(applicant, [firstPath, replacementPath]);
+  await cleanup(organizer, [organizerReplacementPath]);
   await applicant.client.rpc("clear_own_profile_photo", {
     p_expected_profile_id: applicant.id,
   });
+  let resourceListingId = null;
+  let resourceRequestId = null;
+  let resourceAgreementId = null;
 
   try {
     const proposalId = await createProposal(organizer);
@@ -76,6 +81,18 @@ async function verifyProfilePhotoViewers() {
       anonymous,
       organizer.id,
       "context-visible interactions organizer",
+    );
+    const noPhotoListingId = await createResourceListingDraft(
+      applicant,
+      "No-photo publication verifier",
+    );
+    await expectRpcCode(
+      applicant.client.rpc("publish_resource_listing", {
+        p_expected_owner_profile_id: applicant.id,
+        p_listing_id: noPhotoListingId,
+      }),
+      "PT422",
+      "reject a no-photo Resource publication",
     );
     await expectRpcCode(
       applicant.client.rpc("request_to_join_project", {
@@ -179,6 +196,135 @@ async function verifyProfilePhotoViewers() {
       "organizer after participant removal",
     );
 
+    const listingId = await createPublishedResourceListing(organizer);
+    resourceListingId = listingId;
+    await expectResourceOwnerVisible(
+      anonymous,
+      listingId,
+      organizer.id,
+      organizerPhoto.object_path,
+      "public Resource owner",
+    );
+    await expectGenericMetadataHidden(
+      anonymous,
+      organizer.id,
+      "Resource-context interactions owner",
+    );
+    await expectBucketNotEnumerable(
+      anonymous,
+      organizer.id,
+      "anonymous Resource detail viewer",
+    );
+
+    await unrelated.client.rpc("clear_own_profile_photo", {
+      p_expected_profile_id: unrelated.id,
+    });
+    await expectRpcCode(
+      unrelated.client.rpc("request_resource_listing", {
+        p_expected_requester_profile_id: unrelated.id,
+        p_listing_id: listingId,
+        p_message: null,
+      }),
+      "PT422",
+      "reject a no-photo Resource request",
+    );
+    await ensureLocalProfilePhoto(unrelated);
+
+    resourceRequestId = await requestResourceListing(applicant, listingId);
+    await expectVisible(
+      organizer.client,
+      applicant.id,
+      firstPath,
+      "pending Resource owner",
+    );
+    await expectGenericMetadataHidden(
+      applicant.client,
+      organizer.id,
+      "pending Resource requester reverse direction",
+    );
+
+    await upload(organizer, organizerReplacementPath);
+    const organizerReplacement = await setPhoto(
+      organizer,
+      organizerReplacementPath,
+      "interactions",
+    );
+    if (
+      organizerReplacement.previous_object_path !== organizerPhoto.object_path
+    ) {
+      throw new Error(
+        "Resource-context replacement did not retain the old owner path.",
+      );
+    }
+    await expectStorageFailure(
+      anonymous.storage.from(bucket).download(organizerPhoto.object_path),
+      "download the replaced Resource owner photo",
+    );
+    await expectResourceOwnerVisible(
+      anonymous,
+      listingId,
+      organizer.id,
+      organizerReplacementPath,
+      "replacement public Resource owner",
+    );
+    await expectBucketNotEnumerable(
+      applicant.client,
+      organizer.id,
+      "pending Resource requester",
+    );
+
+    await acceptResourceRequest(organizer, resourceRequestId);
+    await Promise.all([
+      expectVisible(
+        organizer.client,
+        applicant.id,
+        firstPath,
+        "accepted Resource owner",
+      ),
+      expectVisible(
+        applicant.client,
+        organizer.id,
+        organizerReplacementPath,
+        "accepted Resource requester",
+      ),
+    ]);
+    await closeResourceListing(organizer, listingId);
+    await expectResourceOwnerHidden(
+      anonymous,
+      listingId,
+      "closed Resource owner",
+    );
+    await Promise.all([
+      expectVisible(
+        organizer.client,
+        applicant.id,
+        firstPath,
+        "accepted Resource owner after listing closure",
+      ),
+      expectVisible(
+        applicant.client,
+        organizer.id,
+        organizerReplacementPath,
+        "accepted Resource requester after listing closure",
+      ),
+    ]);
+    const agreement = await getResourceAgreement(applicant, resourceRequestId);
+    resourceAgreementId = agreement.agreement_id;
+    await cancelResourceAgreement(applicant, agreement.agreement_id);
+    await Promise.all([
+      expectHidden(
+        organizer.client,
+        applicant.id,
+        firstPath,
+        "Resource owner after coordination closure",
+      ),
+      expectGenericMetadataHidden(
+        applicant.client,
+        organizer.id,
+        "Resource requester after coordination closure",
+      ),
+    ]);
+
     await setAudience(applicant, "public");
     await Promise.all([
       expectVisible(
@@ -237,13 +383,40 @@ async function verifyProfilePhotoViewers() {
     );
 
     console.log(
-      "Confirmed publication-ready organizer photos, no-photo join rejection, context-only anonymous Proposal/Tavolo organizer reads, draft denial, exact/batch non-enumerating viewer metadata, directional organizer authorization, relationship revocation, canonical-only replacement reads, and removal through real Auth and Storage clients.",
+      "Confirmed publication-ready organizer photos, no-photo join, Resource publication, and Resource request rejection, context-only anonymous Proposal/Tavolo/Resource owner reads, draft and closed-listing denial, exact/batch non-enumerating viewer metadata, directional pending Resource authorization, symmetric accepted coordination that survives listing closure, relationship revocation, canonical-only replacement reads, and removal through real Auth and Storage clients.",
     );
   } finally {
+    if (resourceAgreementId) {
+      await applicant.client.rpc("cancel_resource_exchange_agreement", {
+        p_expected_profile_id: applicant.id,
+        p_agreement_id: resourceAgreementId,
+      });
+    }
+    if (resourceRequestId) {
+      await organizer.client.rpc("reject_resource_listing_request", {
+        p_expected_owner_profile_id: organizer.id,
+        p_request_id: resourceRequestId,
+      });
+      await applicant.client.rpc("withdraw_resource_listing_request", {
+        p_expected_requester_profile_id: applicant.id,
+        p_request_id: resourceRequestId,
+      });
+    }
+    if (resourceListingId) {
+      await organizer.client.rpc("close_resource_listing", {
+        p_expected_owner_profile_id: organizer.id,
+        p_listing_id: resourceListingId,
+      });
+    }
     await applicant.client.rpc("clear_own_profile_photo", {
       p_expected_profile_id: applicant.id,
     });
     await cleanup(applicant, [firstPath, replacementPath]);
+    await organizer.client.rpc("clear_own_profile_photo", {
+      p_expected_profile_id: organizer.id,
+    });
+    await cleanup(organizer, [organizerReplacementPath]);
+    await ensureLocalProfilePhoto(organizer);
   }
 }
 
@@ -362,6 +535,54 @@ async function expectProjectCreatorHidden(client, projectId, label) {
   }
 }
 
+async function expectResourceOwnerVisible(
+  client,
+  listingId,
+  ownerId,
+  objectPath,
+  label,
+) {
+  const { data, error } = await client.rpc(
+    "get_resource_listing_owner_profile_photo_for_viewer",
+    { p_listing_id: listingId },
+  );
+  if (
+    error ||
+    data?.length !== 1 ||
+    data[0].profile_id !== ownerId ||
+    data[0].object_path !== objectPath ||
+    Object.keys(data[0]).sort().join(",") !==
+      "object_path,profile_id,updated_at"
+  ) {
+    throw safeDatabaseFailure(`read ${label} context metadata`, error ?? {});
+  }
+  const { data: bytes, error: downloadError } = await client.storage
+    .from(bucket)
+    .download(objectPath);
+  if (downloadError || !bytes || bytes.size === 0) {
+    throw safeStorageFailure(`download ${label}`, downloadError ?? {});
+  }
+}
+
+async function expectResourceOwnerHidden(client, listingId, label) {
+  const { data, error } = await client.rpc(
+    "get_resource_listing_owner_profile_photo_for_viewer",
+    { p_listing_id: listingId },
+  );
+  if (error || data?.length !== 0) {
+    throw safeDatabaseFailure(`confirm hidden ${label}`, error ?? {});
+  }
+}
+
+async function expectBucketNotEnumerable(client, profileId, label) {
+  const { data, error } = await client.storage.from(bucket).list(profileId, {
+    limit: 100,
+  });
+  if (!error && data?.length !== 0) {
+    throw new Error(`Profile-photo bucket was enumerable by ${label}.`);
+  }
+}
+
 async function expectGenericMetadataHidden(client, profileId, label) {
   const { data, error } = await client.rpc("get_profile_photo_for_viewer", {
     p_profile_id: profileId,
@@ -420,6 +641,128 @@ async function createTavolo(creator) {
     throw safeDatabaseFailure("publish the photo viewer Tavolo", publishError);
   }
   return data;
+}
+
+async function createResourceListingDraft(owner, title) {
+  const { data, error } = await owner.client.rpc(
+    "create_resource_listing_draft",
+    {
+      p_expected_owner_profile_id: owner.id,
+      p_listing_mode: "exchange",
+      p_title: title,
+      p_description:
+        "A deterministic Resource listing for photo viewer authorization.",
+      p_country_code: "IT",
+      p_locality: "Trento",
+      p_administrative_area: "Povo",
+      p_public_location_label: "Trento · Povo",
+    },
+  );
+  if (error || typeof data !== "string") {
+    throw safeDatabaseFailure(
+      "create the photo viewer Resource listing",
+      error ?? {},
+    );
+  }
+  return data;
+}
+
+async function createPublishedResourceListing(owner) {
+  const listingId = await createResourceListingDraft(
+    owner,
+    "Profile photo viewer Resource",
+  );
+  const { data, error } = await owner.client.rpc("publish_resource_listing", {
+    p_expected_owner_profile_id: owner.id,
+    p_listing_id: listingId,
+  });
+  if (error || data !== listingId) {
+    throw safeDatabaseFailure(
+      "publish the photo viewer Resource listing",
+      error ?? {},
+    );
+  }
+  return listingId;
+}
+
+async function requestResourceListing(requester, listingId) {
+  const { data, error } = await requester.client.rpc(
+    "request_resource_listing",
+    {
+      p_expected_requester_profile_id: requester.id,
+      p_listing_id: listingId,
+      p_message: null,
+    },
+  );
+  if (error || typeof data !== "string") {
+    throw safeDatabaseFailure(
+      "request the photo viewer Resource listing",
+      error ?? {},
+    );
+  }
+  return data;
+}
+
+async function acceptResourceRequest(owner, requestId) {
+  const { data, error } = await owner.client.rpc(
+    "accept_resource_listing_request",
+    {
+      p_expected_owner_profile_id: owner.id,
+      p_request_id: requestId,
+    },
+  );
+  if (error || data !== requestId) {
+    throw safeDatabaseFailure(
+      "accept the photo viewer Resource request",
+      error ?? {},
+    );
+  }
+}
+
+async function closeResourceListing(owner, listingId) {
+  const { data, error } = await owner.client.rpc("close_resource_listing", {
+    p_expected_owner_profile_id: owner.id,
+    p_listing_id: listingId,
+  });
+  if (error || data !== listingId) {
+    throw safeDatabaseFailure(
+      "close the photo viewer Resource listing",
+      error ?? {},
+    );
+  }
+}
+
+async function getResourceAgreement(actor, requestId) {
+  const { data, error } = await actor.client.rpc(
+    "get_resource_exchange_agreement",
+    {
+      p_expected_profile_id: actor.id,
+      p_request_id: requestId,
+    },
+  );
+  if (error || data?.length !== 1) {
+    throw safeDatabaseFailure(
+      "read the photo viewer Resource agreement",
+      error ?? {},
+    );
+  }
+  return data[0];
+}
+
+async function cancelResourceAgreement(actor, agreementId) {
+  const { data, error } = await actor.client.rpc(
+    "cancel_resource_exchange_agreement",
+    {
+      p_expected_profile_id: actor.id,
+      p_agreement_id: agreementId,
+    },
+  );
+  if (error || data !== agreementId) {
+    throw safeDatabaseFailure(
+      "cancel the photo viewer Resource agreement",
+      error ?? {},
+    );
+  }
 }
 
 async function requestToJoin(user, projectId) {

@@ -70,6 +70,9 @@ class ResourceChatSummary {
       viewerRole == ResourceChatViewerRole.owner
       ? requesterDisplayName
       : ownerDisplayName;
+  String get counterpartyProfileId => viewerRole == ResourceChatViewerRole.owner
+      ? requesterProfileId
+      : ownerProfileId;
 }
 
 class ResourceChatMessage {

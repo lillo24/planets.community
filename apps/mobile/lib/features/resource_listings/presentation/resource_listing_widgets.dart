@@ -27,6 +27,8 @@ String resourceListingFailureMessage(
   ResourceListingFailureKind? failure,
 ) => switch (failure) {
   ResourceListingFailureKind.invalidInput => l10n.resourceInvalidInput,
+  ResourceListingFailureKind.profilePhotoRequired =>
+    l10n.profilePhotoScambioRequiredTitle,
   ResourceListingFailureKind.forbidden => l10n.resourceForbidden,
   ResourceListingFailureKind.invalidState => l10n.resourceInvalidState,
   ResourceListingFailureKind.notFound => l10n.resourceNotFound,

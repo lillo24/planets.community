@@ -15,7 +15,8 @@ messaging.
   reading request tables directly.
 - `application/resource_request_controllers.dart` owns one identity-bound
   requester-history cache, request composition, exact detail, mutations, race
-  recovery, and canonical refresh coordination.
+  recovery, canonical refresh coordination, and generic requester-photo
+  loading/invalidation for qualifying owner rows.
 - `presentation/resource_request_composer.dart` owns the bounded optional
   interest message and its safe live-region feedback.
 - `presentation/resource_request_screen.dart` owns the dedicated owner/requester
@@ -25,3 +26,11 @@ messaging.
 Requester history loads once per authenticated identity and is reused by public
 listing detail. Every mutation reloads canonical request/listing/Messages state;
 the client never treats an optimistic status or count as authoritative.
+
+Creating a request requires a canonical requester photo. The composer uses a
+best-effort preflight plus the authoritative `PT422` mapping, opens the shared
+profile editor with Scambio-specific copy, preserves the message, and never
+auto-submits on return. In owner history, only pending or accepted/open request
+rows load requester avatars. Rejection, withdrawal, listing-closed pending
+requests, or accepted coordination closure invalidate and remove that cached
+relationship image.

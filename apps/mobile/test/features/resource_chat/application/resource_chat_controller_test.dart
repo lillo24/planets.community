@@ -5,6 +5,9 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:planets_mobile/features/auth/application/auth_session_controller.dart';
 import 'package:planets_mobile/features/auth/data/auth_gateway.dart';
 import 'package:planets_mobile/features/auth/domain/auth_models.dart';
+import 'package:planets_mobile/features/profile_photo/application/visible_profile_photo_controller.dart';
+import 'package:planets_mobile/features/profile_photo/data/profile_photo_gateway.dart';
+import 'package:planets_mobile/features/profile_photo/domain/visible_profile_photo_models.dart';
 import 'package:planets_mobile/features/resource_exchange/application/resource_exchange_refresh.dart';
 import 'package:planets_mobile/features/resource_chat/application/resource_chat_controller.dart';
 import 'package:planets_mobile/features/resource_chat/data/resource_chat_gateway.dart';
@@ -12,6 +15,7 @@ import 'package:planets_mobile/features/resource_chat/domain/resource_chat_model
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../support/fake_auth.dart';
+import '../../../support/fake_profile_photo.dart';
 import '../../../support/fake_resource_chat.dart';
 
 void main() {
@@ -323,6 +327,132 @@ void main() {
       isEmpty,
     );
   });
+
+  test(
+    'open coordination loads the role-specific counterparty photo',
+    () async {
+      final gateway = FakeResourceChatGateway()..histories[gatewayChatId] = [];
+      final photos = FakeProfilePhotoGateway()
+        ..visiblePhotos[_requesterId] = _requesterPhoto;
+      final session = _readyContainer(gateway, photos: photos);
+      addTearDown(session.dispose);
+
+      await session.container
+          .read(resourceChatDetailProvider.notifier)
+          .load(expectedProfileId: 'user-1', chatId: gatewayChatId);
+      await Future<void>.delayed(Duration.zero);
+
+      expect(photos.visibleLoadIds, [_requesterId]);
+      expect(
+        session.container
+            .read(visibleProfilePhotoProvider)
+            .entryFor(_requesterId)
+            ?.hasVisiblePhoto,
+        isTrue,
+      );
+    },
+  );
+
+  test('requester loads the owner photo during open coordination', () async {
+    final gateway = FakeResourceChatGateway()
+      ..summary = resourceChatSummaryFixture(
+        viewerRole: ResourceChatViewerRole.requester,
+      )
+      ..histories[gatewayChatId] = [];
+    final photos = FakeProfilePhotoGateway()
+      ..visiblePhotos[_ownerId] = _ownerPhoto;
+    final session = _readyContainer(
+      gateway,
+      profileId: _requesterId,
+      photos: photos,
+    );
+    addTearDown(session.dispose);
+
+    await session.container
+        .read(resourceChatDetailProvider.notifier)
+        .load(expectedProfileId: _requesterId, chatId: gatewayChatId);
+    await Future<void>.delayed(Duration.zero);
+
+    expect(photos.visibleLoadIds, [_ownerId]);
+    expect(
+      session.container
+          .read(visibleProfilePhotoProvider)
+          .entryFor(_ownerId)
+          ?.hasVisiblePhoto,
+      isTrue,
+    );
+  });
+
+  test('account switch clears loaded counterparty bytes', () async {
+    final gateway = FakeResourceChatGateway()..histories[gatewayChatId] = [];
+    final photos = FakeProfilePhotoGateway()
+      ..visiblePhotos[_requesterId] = _requesterPhoto;
+    final session = _readyContainer(gateway, photos: photos);
+    addTearDown(session.dispose);
+
+    await session.container
+        .read(resourceChatDetailProvider.notifier)
+        .load(expectedProfileId: 'user-1', chatId: gatewayChatId);
+    await Future<void>.delayed(Duration.zero);
+    expect(
+      session.container
+          .read(visibleProfilePhotoProvider)
+          .entryFor(_requesterId)
+          ?.hasVisiblePhoto,
+      isTrue,
+    );
+
+    session.container
+        .read(authSessionProvider.notifier)
+        .markProfileReady(const AuthIdentity(id: 'user-2'));
+    await Future<void>.delayed(Duration.zero);
+
+    expect(
+      session.container
+          .read(visibleProfilePhotoProvider)
+          .entryFor(_requesterId),
+      isNull,
+    );
+  });
+
+  test(
+    'coordination closure invalidates counterpart bytes but keeps history',
+    () async {
+      final gateway = FakeResourceChatGateway()
+        ..histories[gatewayChatId] = [resourceChatMessageFixture()];
+      final photos = FakeProfilePhotoGateway()
+        ..visiblePhotos[_requesterId] = _requesterPhoto;
+      final session = _readyContainer(gateway, photos: photos);
+      addTearDown(session.dispose);
+      final controller = session.container.read(
+        resourceChatDetailProvider.notifier,
+      );
+      await controller.load(expectedProfileId: 'user-1', chatId: gatewayChatId);
+      await Future<void>.delayed(Duration.zero);
+
+      gateway.summary = resourceChatSummaryFixture(
+        lifecycle: ResourceExchangeLifecycle.cancelled,
+      );
+      expect(
+        await controller.refreshSummary(
+          expectedProfileId: 'user-1',
+          chatId: gatewayChatId,
+        ),
+        isTrue,
+      );
+
+      expect(
+        session.container
+            .read(visibleProfilePhotoProvider)
+            .entryFor(_requesterId),
+        isNull,
+      );
+      expect(
+        session.container.read(resourceChatDetailProvider).messages,
+        hasLength(1),
+      );
+    },
+  );
 }
 
 const gatewayChatId = '00000000-0000-4000-8000-000000000401';
@@ -339,9 +469,13 @@ class _Session {
   }
 }
 
-_Session _readyContainer(FakeResourceChatGateway gateway) {
+_Session _readyContainer(
+  FakeResourceChatGateway gateway, {
+  String profileId = 'user-1',
+  FakeProfilePhotoGateway? photos,
+}) {
   final auth = FakeAuthGateway(
-    snapshot: const AuthSnapshot(identity: AuthIdentity(id: 'user-1')),
+    snapshot: AuthSnapshot(identity: AuthIdentity(id: profileId)),
   );
   final container = ProviderContainer(
     overrides: [
@@ -350,10 +484,26 @@ _Session _readyContainer(FakeResourceChatGateway gateway) {
         FakeProfileAnchorGateway(),
       ),
       resourceChatGatewayProvider.overrideWithValue(gateway),
+      if (photos != null) profilePhotoGatewayProvider.overrideWithValue(photos),
     ],
   );
   container
       .read(authSessionProvider.notifier)
-      .markProfileReady(const AuthIdentity(id: 'user-1'));
+      .markProfileReady(AuthIdentity(id: profileId));
   return _Session(container, auth);
 }
+
+const _requesterId = '00000000-0000-4000-8000-000000000102';
+const _ownerId = '00000000-0000-4000-8000-000000000101';
+const _requesterVersion = 'b6700000-0000-4000-8000-000000000001';
+const _ownerVersion = 'b6700000-0000-4000-8000-000000000002';
+final _requesterPhoto = VisibleProfilePhoto(
+  profileId: _requesterId,
+  objectPath: '$_requesterId/$_requesterVersion.webp',
+  updatedAt: DateTime.utc(2026, 9, 27),
+);
+final _ownerPhoto = VisibleProfilePhoto(
+  profileId: _ownerId,
+  objectPath: '$_ownerId/$_ownerVersion.webp',
+  updatedAt: DateTime.utc(2026, 9, 27),
+);

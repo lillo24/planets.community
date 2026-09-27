@@ -23,6 +23,7 @@ class FakeProfilePhotoGateway implements ProfilePhotoGateway {
   Future<ProfilePhotoCommit>? commitResult;
   final Map<String, VisibleProfilePhoto> visiblePhotos = {};
   final Map<String, VisibleProfilePhoto> projectCreatorPhotos = {};
+  final Map<String, VisibleProfilePhoto> resourceListingOwnerPhotos = {};
   Object? visibleLoadError;
   Object? visibleDownloadError;
   Future<VisibleProfilePhoto?> Function(String profileId)? visibleLoadResult;
@@ -42,6 +43,7 @@ class FakeProfilePhotoGateway implements ProfilePhotoGateway {
   final List<List<String>> visibleBatchLoadIds = [];
   final List<String> visibleDownloadPaths = [];
   final List<String> projectCreatorLoadIds = [];
+  final List<String> resourceListingOwnerLoadIds = [];
 
   @override
   Future<OwnProfilePhoto?> loadOwnPhoto(String expectedProfileId) async {
@@ -89,6 +91,15 @@ class FakeProfilePhotoGateway implements ProfilePhotoGateway {
     projectCreatorLoadIds.add(projectId);
     if (visibleLoadError case final error?) throw error;
     return projectCreatorPhotos[projectId];
+  }
+
+  @override
+  Future<VisibleProfilePhoto?> loadResourceListingOwnerPhoto(
+    String listingId,
+  ) async {
+    resourceListingOwnerLoadIds.add(listingId);
+    if (visibleLoadError case final error?) throw error;
+    return resourceListingOwnerPhotos[listingId];
   }
 
   @override

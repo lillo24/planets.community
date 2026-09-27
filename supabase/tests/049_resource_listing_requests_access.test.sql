@@ -22,6 +22,16 @@ values
   ('f4100000-0000-4000-8000-000000000006', null),
   ('f4100000-0000-4000-8000-000000000007', 'Unrelated User');
 
+-- Existing request-domain scenarios provision canonical photos; missing-photo
+-- behavior is isolated in the 08A4B trust tests.
+insert into public.profile_photos (profile_id, object_path, audience)
+select
+  profile.id,
+  profile.id::text || '/' || profile.id::text || '.webp',
+  'interactions'
+from public.profiles as profile
+where profile.id::text like 'f4100000-0000-4000-8000-%';
+
 insert into public.resource_listings (
   id,
   owner_profile_id,

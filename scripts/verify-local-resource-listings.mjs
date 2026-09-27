@@ -2,6 +2,7 @@ import { createClient } from "@supabase/supabase-js";
 import postgres from "postgres";
 
 import { readLocalSupabaseStatus } from "./lib/local-supabase-status.mjs";
+import { ensureLocalProfilePhoto } from "./lib/local-profile-photo.mjs";
 
 const repositoryRoot = process.cwd();
 const mailpitUrl = (
@@ -35,6 +36,9 @@ async function verifyResourceListings() {
     ensureCompleteProfile(userA, "Resource Owner A", "private"),
     ensureCompleteProfile(userB, "Resource Owner B", "public"),
   ]);
+  await Promise.all(
+    [userA, userB].map((user) => ensureLocalProfilePhoto(user)),
+  );
 
   const anonymous = createClient(apiUrl, publishableKey, {
     auth: { persistSession: false },

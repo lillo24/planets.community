@@ -854,6 +854,7 @@
   "@resourceRequestRequesterLabel": {
     "placeholders": { "name": { "type": "String" } }
   },
+  "resourceRequestRequesterPhotoLabel": "Requester profile photo",
   "resourceRequestOwnerLabel": "Owner: {name}",
   "@resourceRequestOwnerLabel": {
     "placeholders": { "name": { "type": "String" } }
@@ -887,6 +888,10 @@
       "role": { "type": "String" },
       "name": { "type": "String" }
     }
+  },
+  "resourceChatCounterpartyPhotoLabel": "Profile photo of {name}",
+  "@resourceChatCounterpartyPhotoLabel": {
+    "placeholders": { "name": { "type": "String" } }
   },
   "resourceChatNoMessages": "No messages yet.",
   "resourceChatEmptyGuidance": "Use this conversation to coordinate the resource exchange.",
@@ -986,6 +991,7 @@
   "@resourceListedBy": {
     "placeholders": { "owner": { "type": "String" } }
   },
+  "resourceListingOwnerPhotoLabel": "Resource listing owner profile photo",
   "resourceMyEmptyTitle": "No listings yet",
   "resourceMyEmptyMessage": "Create a draft when you have something to donate or exchange.",
   "resourceUntitled": "Untitled draft",
@@ -1501,6 +1507,8 @@
   "profilePhotoPublishRequiredDescription": "PLANETS is built on trust between people who may meet in person. Showing who is organizing helps protect both sides and makes the community more trustworthy. Your photo will be visible to people who can view this activity.",
   "profilePhotoJoinRequiredTitle": "Add a profile photo before requesting to join.",
   "profilePhotoJoinRequiredDescription": "PLANETS connects people who may meet in person. A recognizable photo helps the organizer know who is asking to participate and helps protect both sides.",
+  "profilePhotoScambioRequiredTitle": "Add a profile photo for Scambio-Dona.",
+  "profilePhotoScambioRequiredDescription": "Scambio-Dona connects people who may meet to give, exchange, lend, or return resources. A recognizable photo helps both sides know who they are coordinating with and supports trust in the community.",
   "profilePhotoTrustAddAction": "Add profile photo",
   "profilePhotoTrustGoBackAction": "Go back",
   "profilePhotoApplicantAvatarLabel": "Applicant profile photo",

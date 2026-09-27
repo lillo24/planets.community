@@ -22,6 +22,8 @@ abstract interface class ProfilePhotoGateway {
 
   Future<VisibleProfilePhoto?> loadProjectCreatorPhoto(String projectId);
 
+  Future<VisibleProfilePhoto?> loadResourceListingOwnerPhoto(String listingId);
+
   Future<Uint8List> downloadVisiblePhoto(String objectPath);
 
   Future<void> uploadNewPhoto(String objectPath, Uint8List webpBytes);
@@ -192,6 +194,28 @@ class SupabaseProfilePhotoGateway implements ProfilePhotoGateway {
     if (rows.length != 1) {
       throw const ProfilePhotoDataException(
         'Project creator photo read returned multiple rows.',
+      );
+    }
+    return VisibleProfilePhoto.fromRpcRow(rows.single);
+  }
+
+  @override
+  Future<VisibleProfilePhoto?> loadResourceListingOwnerPhoto(
+    String listingId,
+  ) async {
+    _requireProfileId(listingId);
+    final response = await _remote.rpc(
+      'get_resource_listing_owner_profile_photo_for_viewer',
+      {'p_listing_id': listingId},
+    );
+    final rows = _rows(
+      response,
+      operation: 'Resource listing owner photo read',
+    );
+    if (rows.isEmpty) return null;
+    if (rows.length != 1) {
+      throw const ProfilePhotoDataException(
+        'Resource listing owner photo read returned multiple rows.',
       );
     }
     return VisibleProfilePhoto.fromRpcRow(rows.single);

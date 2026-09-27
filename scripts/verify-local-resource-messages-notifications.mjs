@@ -3,6 +3,7 @@ import { randomUUID } from "node:crypto";
 import postgres from "postgres";
 
 import { signInLocalOtpUser } from "./lib/local-authenticated-user.mjs";
+import { ensureLocalProfilePhoto } from "./lib/local-profile-photo.mjs";
 import { readLocalSupabaseStatus } from "./lib/local-supabase-status.mjs";
 
 const repositoryRoot = process.cwd();
@@ -36,6 +37,11 @@ async function verifyResourceMessagesNotifications() {
     ensureCompleteProfile(owner, "Resource Projection Owner"),
     ensureCompleteProfile(requester, "Resource Projection Requester"),
     ensureCompleteProfile(unrelated, "Resource Projection Unrelated"),
+  ]);
+  await Promise.all([
+    ensureLocalProfilePhoto(owner),
+    ensureLocalProfilePhoto(requester),
+    ensureLocalProfilePhoto(unrelated),
   ]);
 
   const listingId = await createPublishedListing(owner);
