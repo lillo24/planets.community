@@ -3,6 +3,7 @@ import postgres from "postgres";
 
 import { signInLocalOtpUser } from "./lib/local-authenticated-user.mjs";
 import { readLocalSupabaseStatus } from "./lib/local-supabase-status.mjs";
+import { ensureLocalProfilePhoto } from "./lib/local-profile-photo.mjs";
 
 const repositoryRoot = process.cwd();
 const mailpitUrl = (
@@ -34,6 +35,9 @@ async function verifyProjectResourceNeeds() {
     ensureCompleteProfile(creator, "Project Needs Creator"),
     ensureCompleteProfile(unrelated, "Project Needs Unrelated"),
   ]);
+  await Promise.all(
+    [creator, unrelated].map((user) => ensureLocalProfilePhoto(user)),
+  );
 
   const anonymous = createClient(apiUrl, publishableKey, {
     auth: { persistSession: false },

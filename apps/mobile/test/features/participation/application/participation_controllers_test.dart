@@ -322,6 +322,7 @@ void main() {
         expectedCreatorId: 'user-1',
         projectId: 'proposal-1',
         requestId: 'reject-me',
+        requesterProfileId: 'user-2',
       ),
       isTrue,
     );
@@ -334,6 +335,7 @@ void main() {
         expectedCreatorId: 'user-1',
         projectId: 'proposal-1',
         membershipId: membershipId,
+        participantProfileId: 'user-2',
       ),
       isTrue,
     );

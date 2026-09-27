@@ -7,6 +7,9 @@ import 'package:planets_mobile/core/config/app_config.dart';
 import 'package:planets_mobile/features/auth/data/auth_gateway.dart';
 import 'package:planets_mobile/features/auth/domain/auth_models.dart';
 import 'package:planets_mobile/features/profile/data/profile_gateway.dart';
+import 'package:planets_mobile/features/profile/presentation/profile_edit_screen.dart';
+import 'package:planets_mobile/features/profile_photo/data/profile_photo_gateway.dart';
+import 'package:planets_mobile/features/profile_photo/domain/visible_profile_photo_models.dart';
 import 'package:planets_mobile/features/project_resource_needs/data/project_resource_needs_gateway.dart';
 import 'package:planets_mobile/features/participation/data/participation_gateway.dart';
 import 'package:planets_mobile/features/participation/domain/participation_models.dart';
@@ -16,12 +19,40 @@ import 'package:planets_mobile/features/recurring_activities/domain/recurring_ac
 
 import '../../../support/fake_auth.dart';
 import '../../../support/fake_profile.dart';
+import '../../../support/fake_profile_photo.dart';
 import '../../../support/fake_project_resource_needs.dart';
 import '../../../support/fake_participation.dart';
 import '../../../support/fake_proposal.dart';
 import '../../../support/fake_recurring_activity.dart';
 
 void main() {
+  testWidgets('Tavolo publish without photo opens the creator trust gate', (
+    tester,
+  ) async {
+    final recurring = FakeRecurringActivityGateway();
+    final app = await _pump(tester, recurring: recurring, hasPhoto: false);
+    final router = app.read(appRouterProvider);
+    router.go('/tavoli/create');
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('tavoli-fill-sample')));
+    await tester.pumpAndSettle();
+    await _scrollTo(tester, find.byKey(const Key('tavoli-publish')), 500);
+    tester
+        .widget<FilledButton>(find.byKey(const Key('tavoli-publish')))
+        .onPressed!();
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('profile-photo-trust-gate')), findsOneWidget);
+    expect(recurring.calls, isNot(contains('create')));
+    await tester.tap(find.byKey(const Key('profile-photo-trust-add')));
+    await tester.pumpAndSettle();
+    expect(find.byType(ProfileEditScreen), findsOneWidget);
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('tavoli-publish')), findsOneWidget);
+    expect(recurring.calls, isNot(contains('create')));
+  });
+
   testWidgets(
     'requested Tavolo is first, marked, unique, and remains tappable',
     (tester) async {
@@ -60,7 +91,18 @@ void main() {
     (tester) async {
       final recurring = FakeRecurringActivityGateway()
         ..publicDetail = publicRecurringDetailFixture();
-      final app = await _pump(tester, recurring: recurring, signedIn: false);
+      final photoGateway = FakeProfilePhotoGateway()
+        ..projectCreatorPhotos['tavolo-1'] = VisibleProfilePhoto(
+          profileId: 'a7100000-0000-4000-8000-000000000001',
+          objectPath: 'a7100000-0000-4000-8000-000000000001/a7200000-0000-4000-8000-000000000001.webp',
+          updatedAt: DateTime.utc(2026, 9, 27),
+        );
+      final app = await _pump(
+        tester,
+        recurring: recurring,
+        signedIn: false,
+        photoGateway: photoGateway,
+      );
       app.read(appRouterProvider).go('/tavoli/tavolo-1');
       await tester.pumpAndSettle();
       await tester.scrollUntilVisible(
@@ -74,6 +116,7 @@ void main() {
       expect(find.text('At the long reading-room table'), findsNothing);
       expect(find.textContaining('Sep 9, 2026 19:00'), findsWidgets);
       expect(find.text('Organized by Casey'), findsOneWidget);
+      expect(photoGateway.projectCreatorLoadIds, contains('tavolo-1'));
     },
   );
 
@@ -222,6 +265,8 @@ Future<ProviderContainer> _pump(
   WidgetTester tester, {
   required FakeRecurringActivityGateway recurring,
   bool signedIn = true,
+  bool hasPhoto = true,
+  FakeProfilePhotoGateway? photoGateway,
 }) async {
   final auth = FakeAuthGateway(
     snapshot: signedIn
@@ -246,6 +291,11 @@ Future<ProviderContainer> _pump(
         ),
         profileGatewayProvider.overrideWithValue(
           FakeProfileGateway(data: profileFixture(complete: true)),
+        ),
+        profilePhotoGatewayProvider.overrideWithValue(
+          photoGateway ??
+              (FakeProfilePhotoGateway()
+                ..photo = hasPhoto ? profilePhotoFixture() : null),
         ),
         participationGatewayProvider.overrideWithValue(
           FakeParticipationGateway()

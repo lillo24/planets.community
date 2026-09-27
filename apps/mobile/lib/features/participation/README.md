@@ -49,9 +49,11 @@ their existing features; participation uses only a project ID plus the narrow
   location/action area.
 - `presentation/join_request_screen.dart` owns typed multi-select contribution
   chips, stale-option recovery, the optional private 500-character request
-  message, and the single canonical submit flow.
+  message, the local profile-photo trust preflight, and the single canonical
+  submit flow.
 - `presentation/creator_participation_screen.dart` owns creator request/history
-  review and current/historical membership management.
+  review, bounded-batch pending-applicant avatars, and current/historical
+  membership management.
 - `presentation/join_acceptance_triage_sheet.dart` is the single creator
   acceptance surface shared by Manage participation and Messages request
   detail, including accessible validation, one-shot guidance, and
@@ -75,7 +77,8 @@ cannot cross identities.
 The mobile client presents, but does not reproduce, the 05A state machine:
 
 - a requester may send one optional trimmed message, withdraw a pending
-  request, and retry after withdrawal or rejection;
+  request, and retry after withdrawal or rejection; a current canonical photo
+  is required by the database before a new request is created;
 - a current accepted participant may leave;
 - ordinary leave or creator removal remains historical and does not create a
   permanent client-side ban;
@@ -89,6 +92,13 @@ already-found, or extra decision for every offered item, and always calls the
 D1 eight-argument overload. Zero-offer requests use the same contract with six
 empty arrays. No production mobile two-argument acceptance helper remains.
 Reject and requester Withdraw retain their existing direct paths.
+
+Pending requester avatars use the profile-photo feature's 08A3 bounded batch
+boundary, never direct metadata-table reads. Missing, historical, or failed
+photo reads remain neutral placeholders and never block review. Reject,
+withdraw, leave, and remove invalidate the relevant in-memory visible-photo
+entry after the canonical mutation; acceptance retains access through current
+membership.
 
 Incomplete submission never calls the backend. Every undecided composite item
 gets an error border, semantic error, and one short validation-pulse shake; the

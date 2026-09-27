@@ -10,6 +10,7 @@ import '../../../core/widgets/loading_state.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../auth/application/auth_session_controller.dart';
 import '../../participation/domain/participation_models.dart';
+import '../../profile_photo/presentation/profile_photo_trust_gate.dart';
 import '../../project_resource_needs/presentation/project_resource_need_routes.dart';
 import '../application/recurring_activity_controllers.dart';
 import '../domain/recurring_activity_models.dart';
@@ -170,6 +171,7 @@ class _OwnTavoloCard extends ConsumerWidget {
                       ref,
                       (controller) =>
                           controller.publish(identityId, activity.id),
+                      requirePhoto: true,
                     ),
                     child: Text(l10n.tavoliPublish),
                   ),
@@ -208,12 +210,32 @@ class _OwnTavoloCard extends ConsumerWidget {
     BuildContext context,
     WidgetRef ref,
     Future<bool> Function(OwnRecurringActivitiesController controller)
-    operation,
-  ) async {
+    operation, {
+    bool requirePhoto = false,
+  }) async {
+    if (requirePhoto &&
+        !await requireProfilePhotoForTrustAction(
+          context: context,
+          ref: ref,
+          expectedProfileId: identityId,
+          reason: ProfilePhotoTrustReason.publishPersonalActivity,
+        )) {
+      return;
+    }
+    if (!context.mounted) return;
     final ok = await operation(
       ref.read(ownRecurringActivitiesProvider.notifier),
     );
     if (!ok && context.mounted) {
+      if (requirePhoto &&
+          ref.read(ownRecurringActivitiesProvider).failure ==
+              RecurringActivityFailureKind.profilePhotoRequired) {
+        await showProfilePhotoTrustGate(
+          context: context,
+          reason: ProfilePhotoTrustReason.publishPersonalActivity,
+        );
+        return;
+      }
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(AppLocalizations.of(context).tavoliSafeError)),
       );

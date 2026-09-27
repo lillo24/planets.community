@@ -1496,5 +1496,14 @@
   "resourceLoanDatesConflictGuidance": "Choose different dates before accepting.",
   "resourceLoanAvailabilityUnavailable": "Couldn't verify availability right now.",
   "resourceLoanAcceptanceChecksAgain": "Acceptance will check again.",
-  "resourceLoanDatesNoLongerAvailable": "These dates are no longer available. Review the proposal and choose another period."
+  "resourceLoanDatesNoLongerAvailable": "These dates are no longer available. Review the proposal and choose another period.",
+  "profilePhotoPublishRequiredTitle": "A profile photo is required to publish a personal activity.",
+  "profilePhotoPublishRequiredDescription": "PLANETS is built on trust between people who may meet in person. Showing who is organizing helps protect both sides and makes the community more trustworthy. Your photo will be visible to people who can view this activity.",
+  "profilePhotoJoinRequiredTitle": "Add a profile photo before requesting to join.",
+  "profilePhotoJoinRequiredDescription": "PLANETS connects people who may meet in person. A recognizable photo helps the organizer know who is asking to participate and helps protect both sides.",
+  "profilePhotoTrustAddAction": "Add profile photo",
+  "profilePhotoTrustGoBackAction": "Go back",
+  "profilePhotoApplicantAvatarLabel": "Applicant profile photo",
+  "profilePhotoOrganizerAvatarLabel": "Project organizer profile photo",
+  "profilePhotoOrganizerFallback": "Project organizer"
 }

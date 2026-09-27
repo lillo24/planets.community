@@ -552,6 +552,7 @@ RecurringActivityFailureKind mapRecurringActivityFailure(Object error) {
   }
   if (error is PostgrestException) {
     return switch (error.code) {
+      'PT422' => RecurringActivityFailureKind.profilePhotoRequired,
       '22023' ||
       '23514' ||
       '23502' => RecurringActivityFailureKind.invalidInput,

@@ -12,6 +12,10 @@ import 'package:planets_mobile/features/participation/data/participation_gateway
 import 'package:planets_mobile/features/participation/data/join_acceptance_triage_gateway.dart';
 import 'package:planets_mobile/features/participation/domain/participation_models.dart';
 import 'package:planets_mobile/features/profile/data/profile_gateway.dart';
+import 'package:planets_mobile/features/profile/presentation/profile_edit_screen.dart';
+import 'package:planets_mobile/features/profile_photo/data/profile_photo_gateway.dart';
+import 'package:planets_mobile/features/profile_photo/application/visible_profile_photo_controller.dart';
+import 'package:planets_mobile/features/profile_photo/domain/visible_profile_photo_models.dart';
 import 'package:planets_mobile/features/project_resource_needs/data/project_resource_needs_gateway.dart';
 import 'package:planets_mobile/features/project_chat/application/project_chat_refresh.dart';
 import 'package:planets_mobile/features/proposals/data/proposal_gateway.dart';
@@ -26,11 +30,54 @@ import '../../../support/fake_membership_commitment.dart';
 import '../../../support/fake_participation.dart';
 import '../../../support/fake_join_acceptance_triage.dart';
 import '../../../support/fake_profile.dart';
+import '../../../support/fake_profile_photo.dart';
 import '../../../support/fake_project_resource_needs.dart';
 import '../../../support/fake_proposal.dart';
 import '../../../support/fake_recurring_activity.dart';
 
 void main() {
+  testWidgets('join without photo opens applicant gate and never auto-sends', (
+    tester,
+  ) async {
+    final participation = FakeParticipationGateway();
+    final app = await _pump(
+      tester,
+      participation: participation,
+      hasPhoto: false,
+    );
+    final router = app.read(appRouterProvider);
+    router.go('/proposals/proposal-1/join');
+    await tester.pumpAndSettle();
+    await tester.enterText(
+      find.byKey(const Key('participation-message-field')),
+      'I can help with painting.',
+    );
+    await _scrollTo(
+      tester,
+      find.byKey(const Key('participation-send-request')),
+    );
+    await tester.tap(find.byKey(const Key('participation-send-request')));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('profile-photo-trust-gate')), findsOneWidget);
+    expect(participation.calls, isNot(contains('request:proposal-1')));
+    await tester.tap(find.byKey(const Key('profile-photo-trust-add')));
+    await tester.pumpAndSettle();
+    expect(find.byType(ProfileEditScreen), findsOneWidget);
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+    expect(
+      tester
+          .widget<TextFormField>(
+            find.byKey(const Key('participation-message-field')),
+          )
+          .controller!
+          .text,
+      'I can help with painting.',
+    );
+    expect(participation.calls, isNot(contains('request:proposal-1')));
+  });
+
   testWidgets('Proposal join, pending, withdraw, and retry stay on detail', (
     tester,
   ) async {
@@ -202,10 +249,12 @@ void main() {
         creatorJoinRequestFixture(id: 'pending'),
         creatorJoinRequestFixture(
           id: 'reject-me',
+          requesterProfileId: 'user-3',
           message: 'A second private request.',
         ),
         creatorJoinRequestFixture(
           id: 'resolved',
+          requesterProfileId: 'user-4',
           status: JoinRequestStatus.rejected,
           message: null,
         ),
@@ -240,11 +289,24 @@ void main() {
           creatorMemberFixture(id: 'membership-4'),
         ];
       };
+    final photoGateway = FakeProfilePhotoGateway()
+      ..photo = profilePhotoFixture()
+      ..visiblePhotos.addAll({
+        'user-2': _visiblePhoto(
+          'user-2',
+          'a7000000-0000-4000-8000-000000000002',
+        ),
+        'user-3': _visiblePhoto(
+          'user-3',
+          'a7000000-0000-4000-8000-000000000003',
+        ),
+      });
     final app = await _pump(
       tester,
       identityId: 'user-1',
       participation: participation,
       triage: triage,
+      photoGateway: photoGateway,
     );
     app.read(appRouterProvider).go('/proposals/proposal-1');
     await tester.pumpAndSettle();
@@ -268,10 +330,17 @@ void main() {
       find.byKey(const Key('participation-member-creator-row')),
       findsNothing,
     );
+    expect(photoGateway.visibleBatchLoadIds, [
+      ['user-2', 'user-3'],
+    ]);
+    expect(app.read(visibleProfilePhotoProvider).entryFor('user-2'), isNotNull);
+    expect(app.read(visibleProfilePhotoProvider).entryFor('user-3'), isNotNull);
 
     await tester.tap(find.byKey(const Key('participation-reject-reject-me')));
     await tester.pumpAndSettle();
     expect(participation.calls, contains('reject:reject-me'));
+    expect(app.read(visibleProfilePhotoProvider).entryFor('user-3'), isNull);
+    expect(app.read(visibleProfilePhotoProvider).entryFor('user-2'), isNotNull);
     await tester.tap(find.byKey(const Key('participation-accept-pending')));
     await tester.pumpAndSettle();
     expect(find.text('No contribution offers to classify.'), findsOneWidget);
@@ -298,6 +367,7 @@ void main() {
     await tester.tap(find.byKey(const Key('participation-confirm-remove')));
     await tester.pumpAndSettle();
     expect(participation.calls, contains('remove:current'));
+    expect(app.read(visibleProfilePhotoProvider).entryFor('user-2'), isNull);
     expect(find.byKey(const Key('participation-remove-left')), findsNothing);
   });
 
@@ -622,6 +692,8 @@ Future<ProviderContainer> _pump(
   FakeMembershipCommitmentGateway? commitments,
   FakeActualContributionGateway? actualContributions,
   FakeJoinAcceptanceTriageGateway? triage,
+  bool hasPhoto = true,
+  FakeProfilePhotoGateway? photoGateway,
 }) async {
   final auth = FakeAuthGateway(
     snapshot: AuthSnapshot(identity: AuthIdentity(id: identityId)),
@@ -662,6 +734,13 @@ Future<ProviderContainer> _pump(
             ),
           ),
         ),
+        profilePhotoGatewayProvider.overrideWithValue(
+          photoGateway ??
+              (FakeProfilePhotoGateway()
+                ..photo = hasPhoto
+                    ? profilePhotoFixture(profileId: identityId)
+                    : null),
+        ),
         proposalGatewayProvider.overrideWithValue(proposals),
         recurringActivityGatewayProvider.overrideWithValue(recurringGateway),
         participationGatewayProvider.overrideWithValue(participation),
@@ -684,6 +763,13 @@ Future<ProviderContainer> _pump(
   await tester.pumpAndSettle();
   return ProviderScope.containerOf(tester.element(find.byType(PlanetsApp)));
 }
+
+VisibleProfilePhoto _visiblePhoto(String profileId, String version) =>
+    VisibleProfilePhoto(
+      profileId: profileId,
+      objectPath: '$profileId/$version.webp',
+      updatedAt: DateTime.utc(2026, 9, 27),
+    );
 
 Future<void> _scrollTo(WidgetTester tester, Finder target) async {
   final scrollable = find.byType(Scrollable).hitTestable().first;

@@ -645,6 +645,7 @@ ProposalFailureKind mapProposalFailure(Object error) {
   }
   if (error is PostgrestException) {
     return switch (error.code) {
+      'PT422' => ProposalFailureKind.profilePhotoRequired,
       '22023' => ProposalFailureKind.invalidInput,
       '42501' => ProposalFailureKind.forbidden,
       '55000' => ProposalFailureKind.invalidState,

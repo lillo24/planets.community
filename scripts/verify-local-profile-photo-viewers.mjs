@@ -2,6 +2,7 @@ import { createClient } from "@supabase/supabase-js";
 
 import { signInLocalOtpUser } from "./lib/local-authenticated-user.mjs";
 import { readLocalSupabaseStatus } from "./lib/local-supabase-status.mjs";
+import { ensureLocalProfilePhoto } from "./lib/local-profile-photo.mjs";
 
 const repositoryRoot = process.cwd();
 const mailpitUrl = (
@@ -29,6 +30,11 @@ async function verifyProfilePhotoViewers() {
     ensureCompleteProfile(unrelated, "Photo Unrelated"),
     ensureCompleteProfile(peer, "Photo Peer"),
   ]);
+  const [organizerPhoto] = await Promise.all(
+    [organizer, applicant, unrelated, peer].map((user) =>
+      ensureLocalProfilePhoto(user),
+    ),
+  );
   const anonymous = createClient(apiUrl, publishableKey, {
     auth: { persistSession: false },
   });
@@ -41,6 +47,48 @@ async function verifyProfilePhotoViewers() {
   });
 
   try {
+    const proposalId = await createProposal(organizer);
+    const tavoloId = await createTavolo(organizer);
+    const draftProposalId = await createProposal(organizer, {
+      publish: false,
+      title: "Private photo verifier draft",
+    });
+    await expectProjectCreatorVisible(
+      anonymous,
+      proposalId,
+      organizer.id,
+      organizerPhoto.object_path,
+      "public Proposal organizer",
+    );
+    await expectProjectCreatorVisible(
+      anonymous,
+      tavoloId,
+      organizer.id,
+      organizerPhoto.object_path,
+      "public Tavolo organizer",
+    );
+    await expectProjectCreatorHidden(
+      anonymous,
+      draftProposalId,
+      "private draft organizer",
+    );
+    await expectGenericMetadataHidden(
+      anonymous,
+      organizer.id,
+      "context-visible interactions organizer",
+    );
+    await expectRpcCode(
+      applicant.client.rpc("request_to_join_project", {
+        p_expected_requester_profile_id: applicant.id,
+        p_project_id: proposalId,
+        p_request_message: null,
+        p_skill_ids: [],
+        p_resource_need_ids: [],
+      }),
+      "PT422",
+      "reject a no-photo participation request",
+    );
+
     await upload(applicant, firstPath);
     await setPhoto(applicant, firstPath, "interactions");
     await expectHidden(anonymous, applicant.id, firstPath, "anonymous viewer");
@@ -57,8 +105,6 @@ async function verifyProfilePhotoViewers() {
       "pre-request organizer",
     );
 
-    const proposalId = await createProposal(organizer);
-    const tavoloId = await createTavolo(organizer);
     const proposalRequest = await requestToJoin(applicant, proposalId);
     await expectVisible(
       organizer.client,
@@ -191,7 +237,7 @@ async function verifyProfilePhotoViewers() {
     );
 
     console.log(
-      "Confirmed exact/batch non-enumerating viewer metadata, anonymous public reads, directional Proposal/Tavolo organizer authorization, rejection/withdrawal/leave/removal revocation, co-participant denial, canonical-only replacement reads, and removal through real Auth and Storage clients.",
+      "Confirmed publication-ready organizer photos, no-photo join rejection, context-only anonymous Proposal/Tavolo organizer reads, draft denial, exact/batch non-enumerating viewer metadata, directional organizer authorization, relationship revocation, canonical-only replacement reads, and removal through real Auth and Storage clients.",
     );
   } finally {
     await applicant.client.rpc("clear_own_profile_photo", {
@@ -238,10 +284,13 @@ async function ensureCompleteProfile(user, displayName) {
   }
 }
 
-async function createProposal(creator) {
+async function createProposal(
+  creator,
+  { publish = true, title = "Profile photo viewer Proposal" } = {},
+) {
   const { data, error } = await creator.client.rpc("create_proposal_draft", {
     p_expected_creator_profile_id: creator.id,
-    p_title: "Profile photo viewer Proposal",
+    p_title: title,
     p_summary: "A deterministic Proposal for photo viewer authorization.",
     p_description:
       "This Proposal verifies pending and current participation photo access.",
@@ -260,6 +309,7 @@ async function createProposal(creator) {
   if (error || typeof data !== "string") {
     throw safeDatabaseFailure("create the photo viewer Proposal", error ?? {});
   }
+  if (!publish) return data;
   const { error: publishError } = await creator.client.rpc("publish_proposal", {
     p_expected_creator_profile_id: creator.id,
     p_proposal_id: data,
@@ -271,6 +321,64 @@ async function createProposal(creator) {
     );
   }
   return data;
+}
+
+async function expectProjectCreatorVisible(
+  client,
+  projectId,
+  organizerId,
+  objectPath,
+  label,
+) {
+  const { data, error } = await client.rpc(
+    "get_project_creator_profile_photo_for_viewer",
+    { p_project_id: projectId },
+  );
+  if (
+    error ||
+    data?.length !== 1 ||
+    data[0].profile_id !== organizerId ||
+    data[0].object_path !== objectPath ||
+    Object.keys(data[0]).sort().join(",") !==
+      "object_path,profile_id,updated_at"
+  ) {
+    throw safeDatabaseFailure(`read ${label} context metadata`, error ?? {});
+  }
+  const { data: bytes, error: downloadError } = await client.storage
+    .from(bucket)
+    .download(objectPath);
+  if (downloadError || !bytes || bytes.size === 0) {
+    throw safeStorageFailure(`download ${label}`, downloadError ?? {});
+  }
+}
+
+async function expectProjectCreatorHidden(client, projectId, label) {
+  const { data, error } = await client.rpc(
+    "get_project_creator_profile_photo_for_viewer",
+    { p_project_id: projectId },
+  );
+  if (error || data?.length !== 0) {
+    throw safeDatabaseFailure(`confirm hidden ${label}`, error ?? {});
+  }
+}
+
+async function expectGenericMetadataHidden(client, profileId, label) {
+  const { data, error } = await client.rpc("get_profile_photo_for_viewer", {
+    p_profile_id: profileId,
+  });
+  if (error || data?.length !== 0) {
+    throw safeDatabaseFailure(
+      `confirm generic metadata hidden for ${label}`,
+      error ?? {},
+    );
+  }
+}
+
+async function expectRpcCode(operation, expectedCode, label) {
+  const { error } = await operation;
+  if (error?.code !== expectedCode) {
+    throw safeDatabaseFailure(label, error ?? {});
+  }
 }
 
 async function createTavolo(creator) {

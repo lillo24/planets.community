@@ -10,6 +10,7 @@ import '../../../core/widgets/loading_state.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../auth/application/auth_session_controller.dart';
 import '../../participation/domain/participation_models.dart';
+import '../../profile_photo/presentation/profile_photo_trust_gate.dart';
 import '../../project_resource_needs/presentation/project_resource_need_routes.dart';
 import '../application/proposal_controllers.dart';
 import '../domain/proposal_models.dart';
@@ -218,10 +219,31 @@ class _ProposalFormState extends ConsumerState<_ProposalForm> {
     }
     final identity = ref.read(authSessionProvider).identity;
     if (identity?.id != widget.identityId) return;
+    if (publish &&
+        !await requireProfilePhotoForTrustAction(
+          context: context,
+          ref: ref,
+          expectedProfileId: widget.identityId,
+          reason: ProfilePhotoTrustReason.publishPersonalActivity,
+        )) {
+      return;
+    }
+    if (!mounted) return;
     final controller = ref.read(proposalEditorProvider.notifier);
     final id = publish
         ? await controller.publish(widget.identityId, input)
         : await controller.saveDraft(widget.identityId, input);
+    if (id == null &&
+        mounted &&
+        publish &&
+        ref.read(proposalEditorProvider).failure ==
+            ProposalFailureKind.profilePhotoRequired) {
+      await showProfilePhotoTrustGate(
+        context: context,
+        reason: ProfilePhotoTrustReason.publishPersonalActivity,
+      );
+      return;
+    }
     if (id != null && mounted) context.go('/proposals/mine');
   }
 
@@ -584,7 +606,9 @@ class _ProposalFormState extends ConsumerState<_ProposalForm> {
                       }),
                     ),
                 ],
-                if (state.phase == ProposalEditorPhase.failure) ...[
+                if (state.phase == ProposalEditorPhase.failure &&
+                    state.failure !=
+                        ProposalFailureKind.profilePhotoRequired) ...[
                   const SizedBox(height: AppSpacing.medium),
                   Text(
                     state.failure == ProposalFailureKind.invalidInput

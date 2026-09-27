@@ -2018,6 +2018,10 @@ export type Database = {
         }
         Returns: string
       }
+      can_read_public_project_creator_photo_object: {
+        Args: { p_object_path: string }
+        Returns: boolean
+      }
       cancel_proposal: {
         Args: { p_expected_creator_profile_id: string; p_proposal_id: string }
         Returns: string
@@ -2343,6 +2347,14 @@ export type Database = {
       }
       get_profile_photo_for_viewer: {
         Args: { p_profile_id: string }
+        Returns: {
+          object_path: string
+          profile_id: string
+          updated_at: string
+        }[]
+      }
+      get_project_creator_profile_photo_for_viewer: {
+        Args: { p_project_id: string }
         Returns: {
           object_path: string
           profile_id: string

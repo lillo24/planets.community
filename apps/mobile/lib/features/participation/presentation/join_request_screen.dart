@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_tokens.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../auth/application/auth_session_controller.dart';
+import '../../profile_photo/presentation/profile_photo_trust_gate.dart';
 import '../application/contribution_options_controller.dart';
 import '../application/participation_controllers.dart';
 import '../domain/participation_models.dart';
@@ -56,6 +57,15 @@ class _JoinRequestScreenState extends ConsumerState<JoinRequestScreen> {
     }
     final options = ref.read(contributionOptionsProvider);
     if (!options.isReadyFor(expectedProfileId, widget.projectId)) return;
+    if (!await requireProfilePhotoForTrustAction(
+      context: context,
+      ref: ref,
+      expectedProfileId: expectedProfileId,
+      reason: ProfilePhotoTrustReason.requestToJoin,
+    )) {
+      return;
+    }
+    if (!mounted) return;
     if (_requirementsChanged) setState(() => _requirementsChanged = false);
     final succeeded = await ref
         .read(participationCommandProvider.notifier)
@@ -67,6 +77,16 @@ class _JoinRequestScreenState extends ConsumerState<JoinRequestScreen> {
           skillIds: {..._selectedSkillIds},
           resourceNeedIds: {..._selectedResourceNeedIds},
         );
+    if (!succeeded &&
+        mounted &&
+        ref.read(participationCommandProvider).failure ==
+            ParticipationFailureKind.profilePhotoRequired) {
+      await showProfilePhotoTrustGate(
+        context: context,
+        reason: ProfilePhotoTrustReason.requestToJoin,
+      );
+      return;
+    }
     if (!succeeded &&
         mounted &&
         ref.read(participationCommandProvider).failure ==
@@ -268,7 +288,9 @@ class _JoinRequestScreenState extends ConsumerState<JoinRequestScreen> {
                       : null,
                 ),
                 if (failure != null &&
-                    failure != ParticipationFailureKind.invalidInput) ...[
+                    failure != ParticipationFailureKind.invalidInput &&
+                    failure !=
+                        ParticipationFailureKind.profilePhotoRequired) ...[
                   const SizedBox(height: AppSpacing.small),
                   Semantics(
                     liveRegion: true,

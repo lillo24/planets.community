@@ -1,6 +1,7 @@
 import { createClient } from "@supabase/supabase-js";
 
 import { readLocalSupabaseStatus } from "./lib/local-supabase-status.mjs";
+import { ensureLocalProfilePhoto } from "./lib/local-profile-photo.mjs";
 
 const repositoryRoot = process.cwd();
 const mailpitUrl = (
@@ -21,6 +22,9 @@ async function verifyProposals() {
     ensureCompleteProfile(userA, "Proposal Owner A"),
     ensureCompleteProfile(userB, "Proposal Owner B"),
   ]);
+  await Promise.all(
+    [userA, userB].map((user) => ensureLocalProfilePhoto(user)),
+  );
 
   const { data: skills, error: skillError } = await userA.client
     .from("skills")

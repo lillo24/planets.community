@@ -6,6 +6,9 @@ import '../../../core/theme/app_tokens.dart';
 import '../../../core/widgets/loading_state.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../auth/application/auth_session_controller.dart';
+import '../../profile_photo/application/visible_profile_photo_controller.dart';
+import '../../profile_photo/domain/visible_profile_photo_models.dart';
+import '../../profile_photo/presentation/visible_profile_photo_avatar.dart';
 import '../application/participation_controllers.dart';
 import '../domain/participation_models.dart';
 import 'actual_contribution_sheet.dart';
@@ -45,12 +48,33 @@ class _CreatorParticipationScreenState
     await ref
         .read(creatorParticipationProvider.notifier)
         .load(expectedCreatorId, widget.projectId);
+    if (!mounted ||
+        ref.read(authSessionProvider).identity?.id != expectedCreatorId) {
+      return;
+    }
+    final state = ref.read(creatorParticipationProvider);
+    if (state.expectedCreatorId != expectedCreatorId ||
+        state.projectId != widget.projectId) {
+      return;
+    }
+    final profileIds = state.requests
+        .where((request) => request.isPending)
+        .map((request) => request.requesterProfileId)
+        .toSet()
+        .toList(growable: false);
+    for (var offset = 0; offset < profileIds.length; offset += 50) {
+      final end = (offset + 50).clamp(0, profileIds.length);
+      await ref
+          .read(visibleProfilePhotoProvider.notifier)
+          .loadBatch(profileIds.sublist(offset, end));
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final state = ref.watch(creatorParticipationProvider);
+    final visiblePhotos = ref.watch(visibleProfilePhotoProvider);
     final belongsToScreen =
         state.expectedCreatorId == _expectedCreatorId &&
         state.projectId == widget.projectId;
@@ -107,6 +131,11 @@ class _CreatorParticipationScreenState
                       for (final request in requests) ...[
                         _RequestCard(
                           request: request,
+                          photoEntry: request.isPending
+                              ? visiblePhotos.entryFor(
+                                  request.requesterProfileId,
+                                )
+                              : null,
                           enabled: !state.isBusy,
                           isActing:
                               state.actionTargetId == request.id &&
@@ -182,6 +211,7 @@ class _CreatorParticipationScreenState
           expectedCreatorId: expectedCreatorId,
           projectId: widget.projectId,
           requestId: request.id,
+          requesterProfileId: request.requesterProfileId,
         );
   }
 
@@ -219,6 +249,7 @@ class _CreatorParticipationScreenState
           expectedCreatorId: expectedCreatorId,
           projectId: widget.projectId,
           membershipId: member.id,
+          participantProfileId: member.participantProfileId,
         );
   }
 
@@ -256,6 +287,7 @@ class _CreatorParticipationScreenState
 class _RequestCard extends StatelessWidget {
   const _RequestCard({
     required this.request,
+    required this.photoEntry,
     required this.enabled,
     required this.isActing,
     required this.onAccept,
@@ -263,6 +295,7 @@ class _RequestCard extends StatelessWidget {
   });
 
   final CreatorProjectJoinRequest request;
+  final VisibleProfilePhotoEntry? photoEntry;
   final bool enabled;
   final bool isActing;
   final VoidCallback onAccept;
@@ -278,9 +311,22 @@ class _RequestCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text(
-              request.requesterDisplayName,
-              style: Theme.of(context).textTheme.titleMedium,
+            Row(
+              children: [
+                VisibleProfilePhotoAvatar(
+                  entry: photoEntry,
+                  imageSemanticsLabel: l10n.profilePhotoApplicantAvatarLabel,
+                  placeholderSemanticsLabel:
+                      l10n.profilePhotoApplicantAvatarLabel,
+                ),
+                const SizedBox(width: AppSpacing.medium),
+                Expanded(
+                  child: Text(
+                    request.requesterDisplayName,
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                ),
+              ],
             ),
             const SizedBox(height: AppSpacing.xSmall),
             Text(_requestStatusLabel(l10n, request.status)),

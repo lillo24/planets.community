@@ -14,9 +14,14 @@ import '../application/profile_controller.dart';
 import '../domain/profile_models.dart';
 
 class ProfileEditScreen extends ConsumerStatefulWidget {
-  const ProfileEditScreen({this.returnTo = '/profile', super.key});
+  const ProfileEditScreen({
+    this.returnTo = '/profile',
+    this.returnByPop = false,
+    super.key,
+  });
 
   final String returnTo;
+  final bool returnByPop;
 
   @override
   ConsumerState<ProfileEditScreen> createState() => _ProfileEditScreenState();
@@ -54,10 +59,13 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
     }
     if (identity != null && data != null) {
       return _ProfileEditForm(
-        key: ValueKey('${identity.id}:${widget.returnTo}'),
+        key: ValueKey(
+          '${identity.id}:${widget.returnTo}:${widget.returnByPop}',
+        ),
         data: data,
         identityId: identity.id,
         returnTo: widget.returnTo,
+        returnByPop: widget.returnByPop,
       );
     }
 
@@ -89,12 +97,14 @@ class _ProfileEditForm extends ConsumerStatefulWidget {
     required this.data,
     required this.identityId,
     required this.returnTo,
+    required this.returnByPop,
     super.key,
   });
 
   final ProfileEditorData data;
   final String identityId;
   final String returnTo;
+  final bool returnByPop;
 
   @override
   ConsumerState<_ProfileEditForm> createState() => _ProfileEditFormState();
@@ -146,7 +156,11 @@ class _ProfileEditFormState extends ConsumerState<_ProfileEditForm> {
           ),
         );
     if (saved && mounted) {
-      context.go(widget.returnTo);
+      if (widget.returnByPop && context.canPop()) {
+        context.pop();
+      } else {
+        context.go(widget.returnTo);
+      }
     }
   }
 

@@ -11,6 +11,8 @@ import '../../../l10n/generated/app_localizations.dart';
 import '../../auth/application/auth_session_controller.dart';
 import '../../participation/domain/participation_models.dart';
 import '../../participation/presentation/project_participation_section.dart';
+import '../../profile_photo/application/project_creator_photo_controller.dart';
+import '../../profile_photo/presentation/visible_profile_photo_avatar.dart';
 import '../../project_resource_needs/presentation/project_resource_need_routes.dart';
 import '../../project_resource_needs/presentation/project_resource_needs_section.dart';
 import '../application/proposal_controllers.dart';
@@ -212,9 +214,16 @@ class _ProposalDetailScreenState extends ConsumerState<ProposalDetailScreen> {
   @override
   void initState() {
     super.initState();
-    Future<void>.microtask(
-      () => ref.read(proposalDetailProvider.notifier).load(widget.proposalId),
-    );
+    Future<void>.microtask(_load);
+  }
+
+  Future<void> _load() async {
+    await Future.wait([
+      ref.read(proposalDetailProvider.notifier).load(widget.proposalId),
+      ref
+          .read(projectCreatorPhotoProvider.notifier)
+          .load(widget.proposalId, force: true),
+    ]);
   }
 
   @override
@@ -222,18 +231,16 @@ class _ProposalDetailScreenState extends ConsumerState<ProposalDetailScreen> {
     final l10n = AppLocalizations.of(context);
     final state = ref.watch(proposalDetailProvider);
     final detail = state.proposalId == widget.proposalId ? state.detail : null;
+    final organizerPhoto = ref
+        .watch(projectCreatorPhotoProvider)
+        .entryFor(widget.proposalId);
     return Scaffold(
       appBar: AppBar(title: Text(l10n.proposalDetailTitle)),
       body: SafeArea(
         child: detail == null && state.phase == ProposalLoadPhase.loading
             ? LoadingState(message: l10n.proposalLoading)
             : detail == null
-            ? ErrorState(
-                message: l10n.proposalSafeError,
-                onRetry: () => ref
-                    .read(proposalDetailProvider.notifier)
-                    .load(widget.proposalId),
-              )
+            ? ErrorState(message: l10n.proposalSafeError, onRetry: _load)
             : ListView(
                 padding: const EdgeInsets.all(AppSpacing.large),
                 children: [
@@ -305,12 +312,22 @@ class _ProposalDetailScreenState extends ConsumerState<ProposalDetailScreen> {
                     publicExactMeetingText: detail.exactMeetingText,
                     exactLocationRestricted: detail.exactLocationRestricted,
                   ),
-                  if (detail.creatorDisplayName != null) ...[
-                    const SizedBox(height: AppSpacing.large),
-                    Text(
-                      '${l10n.proposalOrganizedBy} ${detail.creatorDisplayName}',
+                  const SizedBox(height: AppSpacing.large),
+                  ListTile(
+                    key: const Key('proposal-organizer-identity'),
+                    contentPadding: EdgeInsets.zero,
+                    leading: VisibleProfilePhotoAvatar(
+                      entry: organizerPhoto,
+                      imageSemanticsLabel:
+                          l10n.profilePhotoOrganizerAvatarLabel,
+                      placeholderSemanticsLabel:
+                          l10n.profilePhotoOrganizerAvatarLabel,
                     ),
-                  ],
+                    title: Text(
+                      '${l10n.proposalOrganizedBy} '
+                      '${detail.creatorDisplayName ?? l10n.profilePhotoOrganizerFallback}',
+                    ),
+                  ),
                 ],
               ),
       ),

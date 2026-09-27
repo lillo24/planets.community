@@ -24,9 +24,17 @@ non-owner delivery over the private Supabase Storage and RPC boundary.
   downloads only authorized paths, caches bytes in memory by viewer/target/
   object version, drops stale responses on account changes, and exposes target
   invalidation for participation transitions.
+- `application/profile_photo_requirement.dart` performs the optional local
+  owner-metadata preflight used before trust-sensitive mutations. Only a
+  successful empty read is treated as missing; transport failure defers to the
+  authoritative database gate.
+- `application/project_creator_photo_controller.dart` keeps Project-context
+  organizer metadata and bytes in a separate project-keyed, identity-bound
+  cache so contextual authorization never populates the generic profile cache.
 - `presentation/` contains the circular avatar, fixed-square crop view, and
-  owner management section. `VisibleProfilePhotoAvatar` accepts already-loaded
-  viewer state and never performs per-row RPC calls.
+  owner management section plus the reusable publish/join trust dialog.
+  `VisibleProfilePhotoAvatar` accepts already-loaded viewer state and never
+  performs per-row RPC calls.
 
 The picker is gallery-only. The app keeps neither the original nor the cropped
 intermediate after the flow, and uploaded objects are fresh WebP encodings.
@@ -38,10 +46,21 @@ rejected/withdrawn requesters, co-participants, and reverse applicant-to-
 organizer reads do not qualify. This is the first relationship set rather than
 the permanent exhaustive meaning of interaction.
 
-Viewer metadata is exact-ID or bounded batch (`1..50`) only. The app keeps
+Creator publication and a new join request require only that a canonical photo
+exists; both audiences qualify and the app never rewrites the audience. The
+database remains authoritative. Missing-photo prompts open the existing profile
+editor as a pushed route, preserving the authoring/request form, and never
+resubmit after return.
+
+Generic viewer metadata is exact-ID or bounded batch (`1..50`) only. A distinct
+Project-context RPC resolves the creator from an authorized Project ID and is
+used only on Proposal/Tavolo detail. Public Project context may therefore render
+an `interactions` organizer photo without making the generic exact-profile RPC
+public. The app keeps
 downloaded bytes in memory, clears them on login/logout/account switch, and
-persists neither provider URLs nor files. Production requester-avatar placement
-and join/create reminders remain 08A4 work.
+persists neither provider URLs nor files. Creator review batch-loads pending
+applicant avatars and invalidates target cache entries after rejection,
+withdrawal, leave, or removal.
 
 Native/package notes:
 

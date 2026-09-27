@@ -1,5 +1,12 @@
 # Recurring activities (Tavoli)
 
+Draft Tavoli remain editable without a profile photo. Publishing performs a
+local trust preflight, while `publish_recurring_activity` authoritatively
+requires a current canonical photo only for the draft-to-published transition;
+`public` and `interactions` both qualify. Public detail loads the organizer
+avatar through the separate Project-context boundary, with a safe placeholder
+on missing legacy data or delivery failure.
+
 This feature owns the Flutter experience for Tavoli, the recurring-activity
 domain introduced by 04B1. It is deliberately separate from one-time
 Proposals and does not define the shared participation state machine, chat,

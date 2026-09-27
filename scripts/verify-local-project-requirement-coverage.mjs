@@ -2,6 +2,7 @@ import postgres from "postgres";
 
 import { signInLocalOtpUser } from "./lib/local-authenticated-user.mjs";
 import { readLocalSupabaseStatus } from "./lib/local-supabase-status.mjs";
+import { ensureLocalProfilePhoto } from "./lib/local-profile-photo.mjs";
 
 const repositoryRoot = process.cwd();
 const mailpitUrl = (
@@ -42,6 +43,11 @@ async function verifyLiveProjectRequirementCoverage() {
     ensureCompleteProfile(participantC, "Requirement Coverage C"),
     ensureCompleteProfile(unrelated, "Requirement Coverage Unrelated"),
   ]);
+  await Promise.all(
+    [creator, participantA, participantB, participantC, unrelated].map((user) =>
+      ensureLocalProfilePhoto(user),
+    ),
+  );
 
   await verifyPrimaryFlows(
     creator,

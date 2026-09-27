@@ -11,6 +11,7 @@ import '../../../core/widgets/error_state.dart';
 import '../../../core/widgets/loading_state.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../auth/application/auth_session_controller.dart';
+import '../../profile_photo/presentation/profile_photo_trust_gate.dart';
 import '../../participation/domain/participation_models.dart';
 import '../../project_resource_needs/presentation/project_resource_need_routes.dart';
 import '../application/recurring_activity_controllers.dart';
@@ -393,7 +394,9 @@ class _RecurringActivityEditorScreenState
                           ),
                         ),
                       ),
-                    if (isFailure)
+                    if (isFailure &&
+                        state.failure !=
+                            RecurringActivityFailureKind.profilePhotoRequired)
                       Padding(
                         padding: const EdgeInsets.only(top: AppSpacing.medium),
                         child: Text(
@@ -547,10 +550,31 @@ class _RecurringActivityEditorScreenState
     if (!valid || (publish && !_schedulePublishable)) return;
     final identity = _expectedIdentity;
     if (identity == null) return;
+    if (publish &&
+        !await requireProfilePhotoForTrustAction(
+          context: context,
+          ref: ref,
+          expectedProfileId: identity,
+          reason: ProfilePhotoTrustReason.publishPersonalActivity,
+        )) {
+      return;
+    }
+    if (!mounted) return;
     final controller = ref.read(recurringActivityEditorProvider.notifier);
     final id = publish
         ? await controller.publish(identity, _input())
         : await controller.saveDraft(identity, _input());
+    if (id == null &&
+        mounted &&
+        publish &&
+        ref.read(recurringActivityEditorProvider).failure ==
+            RecurringActivityFailureKind.profilePhotoRequired) {
+      await showProfilePhotoTrustGate(
+        context: context,
+        reason: ProfilePhotoTrustReason.publishPersonalActivity,
+      );
+      return;
+    }
     if (id == null || !mounted) return;
     ref.invalidate(ownRecurringActivitiesProvider);
     ref.invalidate(publicRecurringActivitiesProvider);

@@ -105,6 +105,23 @@ void main() {
       },
     );
 
+    test('project creator read uses only the context project id', () async {
+      remote.rpcResult = [_visibleRow(_viewerA)];
+
+      final photo = await gateway.loadProjectCreatorPhoto(_viewerC);
+
+      expect(photo?.profileId, _viewerA);
+      expect(
+        remote.rpcNames.single,
+        'get_project_creator_profile_photo_for_viewer',
+      );
+      expect(remote.rpcParams.single, {'p_project_id': _viewerC});
+      expect(remote.downloads, isEmpty);
+
+      remote.rpcResult = [];
+      expect(await gateway.loadProjectCreatorPhoto(_viewerC), isNull);
+    });
+
     test(
       'batch rejects invalid bounds, targets, duplicates, and order',
       () async {

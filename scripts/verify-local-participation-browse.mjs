@@ -1,6 +1,7 @@
 import { createClient } from "@supabase/supabase-js";
 
 import { readLocalSupabaseStatus } from "./lib/local-supabase-status.mjs";
+import { ensureLocalProfilePhoto } from "./lib/local-profile-photo.mjs";
 
 const repositoryRoot = process.cwd();
 const mailpitUrl = (
@@ -23,6 +24,9 @@ async function verifyParticipationAwareBrowse() {
     ensureCompleteProfile(other, "Browse User B"),
     ensureCompleteProfile(creator, "Browse Creator C"),
   ]);
+  await Promise.all(
+    [requester, other, creator].map((user) => ensureLocalProfilePhoto(user)),
+  );
 
   const runId = Date.now().toString(36);
   const locality = `Browse05D-${runId}`;

@@ -9,6 +9,7 @@ import '../../../core/widgets/loading_state.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../auth/application/auth_session_controller.dart';
 import '../../participation/domain/participation_models.dart';
+import '../../profile_photo/presentation/profile_photo_trust_gate.dart';
 import '../../project_resource_needs/presentation/project_resource_need_routes.dart';
 import '../application/proposal_controllers.dart';
 import '../domain/proposal_models.dart';
@@ -143,10 +144,28 @@ class _OwnProposalCard extends ConsumerWidget {
                   FilledButton(
                     key: Key('proposal-publish-${proposal.id}'),
                     onPressed: () async {
+                      if (!await requireProfilePhotoForTrustAction(
+                        context: context,
+                        ref: ref,
+                        expectedProfileId: identityId,
+                        reason: ProfilePhotoTrustReason.publishPersonalActivity,
+                      )) {
+                        return;
+                      }
+                      if (!context.mounted) return;
                       final published = await ref
                           .read(ownProposalsProvider.notifier)
                           .publish(identityId, proposal.id);
                       if (!published && context.mounted) {
+                        if (ref.read(ownProposalsProvider).failure ==
+                            ProposalFailureKind.profilePhotoRequired) {
+                          await showProfilePhotoTrustGate(
+                            context: context,
+                            reason:
+                                ProfilePhotoTrustReason.publishPersonalActivity,
+                          );
+                          return;
+                        }
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(content: Text(l10n.proposalSafeError)),
                         );

@@ -347,4 +347,6 @@ String participationFailureMessage(
   ParticipationFailureKind.conflict ||
   ParticipationFailureKind.notFound => l10n.participationConflict,
   ParticipationFailureKind.unavailable => l10n.participationSafeError,
+  ParticipationFailureKind.profilePhotoRequired =>
+    l10n.profilePhotoJoinRequiredTitle,
 };

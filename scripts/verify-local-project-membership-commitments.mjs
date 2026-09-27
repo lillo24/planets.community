@@ -2,6 +2,7 @@ import postgres from "postgres";
 
 import { signInLocalOtpUser } from "./lib/local-authenticated-user.mjs";
 import { readLocalSupabaseStatus } from "./lib/local-supabase-status.mjs";
+import { ensureLocalProfilePhoto } from "./lib/local-profile-photo.mjs";
 
 const repositoryRoot = process.cwd();
 const mailpitUrl = (
@@ -37,6 +38,11 @@ async function verifyProjectMembershipCommitments() {
     ensureCompleteProfile(participant, "Membership Commitment Participant"),
     ensureCompleteProfile(unrelated, "Membership Commitment Unrelated"),
   ]);
+  await Promise.all(
+    [creator, participant, unrelated].map((user) =>
+      ensureLocalProfilePhoto(user),
+    ),
+  );
 
   await verifyPrimaryFlows(creator, participant, unrelated);
   await verifyOptimisticConcurrency(creator, participant);

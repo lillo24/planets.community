@@ -22,7 +22,15 @@ Switching tabs preserves the list scroll/filters and an unsaved editor. Identity
 changes discard the shell's retained stacks and clear owner controllers. Revision
 checks after each await reject late loads/mutations and prevent an old draft
 creation from proceeding to publish in a later session. Every owner RPC still
-receives the form's expected identity; no database rule changes are made here.
+receives the form's expected identity, and publication remains
+database-authoritative.
+
+Draft creation and editing remain available without a profile photo. Publish
+performs a local owner-metadata preflight for guidance, while
+`publish_proposal` authoritatively requires a current canonical photo for the
+actual draft-to-published transition. Either photo audience qualifies. The
+detail screen loads the organizer avatar through the distinct Project-context
+photo boundary and degrades to a placeholder independently of detail content.
 
 The public client never reads proposal tables directly. Rough location is available on public cards; exact meeting text is rendered only when the sanitized detail RPC returns it. The shared `participation/` feature adds request/member actions and may replace the restricted explanation with participant-authorized operational meeting text without adding that data to Proposal models. Recurring activities, maps and media remain outside this feature.
 

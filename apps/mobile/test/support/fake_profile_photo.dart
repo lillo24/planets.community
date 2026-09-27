@@ -22,6 +22,7 @@ class FakeProfilePhotoGateway implements ProfilePhotoGateway {
   Future<void>? uploadDelay;
   Future<ProfilePhotoCommit>? commitResult;
   final Map<String, VisibleProfilePhoto> visiblePhotos = {};
+  final Map<String, VisibleProfilePhoto> projectCreatorPhotos = {};
   Object? visibleLoadError;
   Object? visibleDownloadError;
   Future<VisibleProfilePhoto?> Function(String profileId)? visibleLoadResult;
@@ -40,6 +41,7 @@ class FakeProfilePhotoGateway implements ProfilePhotoGateway {
   final List<String> visibleLoadIds = [];
   final List<List<String>> visibleBatchLoadIds = [];
   final List<String> visibleDownloadPaths = [];
+  final List<String> projectCreatorLoadIds = [];
 
   @override
   Future<OwnProfilePhoto?> loadOwnPhoto(String expectedProfileId) async {
@@ -80,6 +82,13 @@ class FakeProfilePhotoGateway implements ProfilePhotoGateway {
         .toList();
     photos.sort((left, right) => left.profileId.compareTo(right.profileId));
     return List.unmodifiable(photos);
+  }
+
+  @override
+  Future<VisibleProfilePhoto?> loadProjectCreatorPhoto(String projectId) async {
+    projectCreatorLoadIds.add(projectId);
+    if (visibleLoadError case final error?) throw error;
+    return projectCreatorPhotos[projectId];
   }
 
   @override

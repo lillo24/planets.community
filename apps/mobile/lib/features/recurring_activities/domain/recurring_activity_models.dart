@@ -383,6 +383,7 @@ enum RecurringActivityFailureKind {
   unavailable,
   forbidden,
   invalidState,
+  profilePhotoRequired,
 }
 
 enum RecurringActivityLoadPhase { idle, loading, ready, loadingMore, failure }

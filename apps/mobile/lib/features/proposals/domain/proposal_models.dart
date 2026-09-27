@@ -312,7 +312,13 @@ bool isPublishableProposalInput(ProposalInput input) =>
     input.publicLocationLabel.trim().isNotEmpty &&
     input.exactMeetingText.trim().isNotEmpty;
 
-enum ProposalFailureKind { invalidInput, unavailable, forbidden, invalidState }
+enum ProposalFailureKind {
+  invalidInput,
+  unavailable,
+  forbidden,
+  invalidState,
+  profilePhotoRequired,
+}
 
 enum ProposalLoadPhase { idle, loading, ready, loadingMore, failure }
 
