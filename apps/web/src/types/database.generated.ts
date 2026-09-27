@@ -2337,6 +2337,10 @@ export type Database = {
           viewer_role: string
         }[]
       }
+      get_own_project_management_role: {
+        Args: { p_expected_profile_id: string; p_project_id: string }
+        Returns: string
+      }
       get_own_project_requirement_attention: {
         Args: { p_expected_profile_id: string; p_project_id: string }
         Returns: {
@@ -2615,6 +2619,16 @@ export type Database = {
           p_membership_id: string
         }
         Returns: string
+      }
+      list_own_delegated_projects: {
+        Args: { p_expected_profile_id: string }
+        Returns: {
+          delegated_at: string
+          project_id: string
+          project_kind: string
+          project_status: string
+          project_title: string
+        }[]
       }
       list_own_message_chat_items: {
         Args: {

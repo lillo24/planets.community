@@ -71,7 +71,18 @@ export function AuthStatusCard({ state, returnTo = "/" }: AuthStatusCardProps) {
       <CardFooter className="items-stretch">
         <div className="flex w-full flex-col gap-3">
           {incompleteProfile ? (
-            <Button render={<Link href="/profile" />} nativeButton={false}>
+            <Button
+              render={
+                <Link
+                  href={
+                    returnTo === "/"
+                      ? "/profile"
+                      : `/profile?returnTo=${encodeURIComponent(returnTo)}`
+                  }
+                />
+              }
+              nativeButton={false}
+            >
               Complete profile
             </Button>
           ) : null}

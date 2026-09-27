@@ -187,6 +187,15 @@ Anonymous and authenticated public reads expose only open needs while the concre
 
 Delegate grants use seven-day, single-use, 256-bit bearer invitations. `project_delegate_invitations` stores only a SHA-256 digest and lifecycle metadata; plaintext is returned once by the owner-only creation RPC and is excluded from audit/outbox data and owner reads. Preview is non-mutating and returns one indistinguishable unavailable shape for malformed, unknown, consumed, revoked, expired, or non-operational invitations. Explicit authenticated acceptance serializes on the concrete Project, shared Project, and invitation, permits a lost-response retry only for the successful accepter, and never trusts a client-supplied Project or owner identity. New grants are allowed for published Proposals strictly before `ends_at`, and for published or paused Tavoli; draft, cancelled, ended, and elapsed Projects fail closed.
 
+Mobile and web share `https://planets.community/invite/project/<token>` as the
+canonical invitation route. The website remains a complete fallback and only
+an explicit authenticated client action accepts. Flutter resolves exact
+current-user owner/delegate/none state before showing participation actions,
+uses one Manage project hub for manager operations, and lists active delegated
+Projects separately from owned Projects. Android/iOS claim only the invite path
+when their production app identities are associated; website association
+endpoints fail closed until those external signing identifiers are configured.
+
 `project_join_requests` preserves each private `pending`, `accepted`, `rejected`, or `withdrawn` attempt and an optional trimmed 500-character requester message. Optional child rows retain canonical skill and resource-need IDs selected for that exact attempt. Proposal selections must be current `required` or `useful` skills; Tavolo skill arrays are empty-only because no canonical recurring skill-requirement relation exists. Resource selections must be open and belong to the same Project. Request, child rows, and the unchanged identifier-only event commit atomically under concrete Project → shared Project → ordered resource-need locks.
 
 A requester or current Project manager can resolve the historical IDs to current canonical skill labels and need titles through one narrow expected-identity RPC; no selection table is client-readable. Withdrawal, rejection, acceptance, later requirement removal, need renaming, and need closure preserve the rows. A complete non-owner may request a published one-time project strictly before its end or a currently published Tavolo. There may be at most one pending attempt and no request while the person is a current member. Terminal attempts remain history, so withdrawal, rejection, voluntary leave, or manager removal permits a fresh request with an independent selection set whenever eligibility returns.

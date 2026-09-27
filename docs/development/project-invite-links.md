@@ -1,0 +1,131 @@
+# Project delegate invite links
+
+PLANETS uses one canonical bearer URL for Project co-organizer invitations:
+
+```text
+https://planets.community/invite/project/<43-character-token>
+```
+
+The route is a complete browser flow and, when production associations are
+deployed, an Android App Link / iOS Universal Link. Opening, previewing, or
+crawling it never accepts an invitation. Acceptance is an explicit
+authenticated action backed by the canonical database RPC.
+
+## User and navigation flow
+
+An owner opens Project detail → Manage project → Co-organizers, creates an
+invitation, and may copy its URL or open the native share sheet. The raw token
+is returned once and exists only in the immediate result surface. Pending
+invitation history contains dates and status, never the token; a lost link must
+be revoked and replaced.
+
+Mobile handles `/invite/project/:token` as a public route. It previews first,
+then uses `/auth?returnTo=...` or `/profile/edit?returnTo=...` when required.
+The web fallback uses the same sequence with `/auth` and `/profile`. Both
+surfaces require an explicit Accept and then navigate to the Proposal or Tavolo
+detail. Return destinations remain subject to the existing internal-path
+sanitizer; external and encoded-open-redirect values are rejected.
+
+Owner and active-delegate Project detail resolve the signed-in profile's exact
+role before rendering private actions. Both roles receive Manage project and
+protected meeting access; only the owner receives Co-organizers management or
+existing authoring/lifecycle actions. My Proposals and My Tavoli show separate
+Created by you and Co-organizing sections.
+
+## Browser privacy controls
+
+The Next.js invite route is dynamic and non-indexable. Its response applies:
+
+```text
+Cache-Control: private, no-store, max-age=0
+Referrer-Policy: no-referrer
+X-Robots-Tag: noindex, nofollow, noarchive
+```
+
+Static metadata is generic and contains no token or invite-specific text. GET
+and server rendering call only the side-effect-free preview; the accept RPC is
+reachable only from the pressed client action. Application code does not put
+the token into logs, analytics, structured data, error copy, or persistence.
+
+## Production association configuration
+
+The repository intentionally retains bootstrap Android/iOS identifiers and has
+no production signing identity. The `/.well-known` handlers therefore fail
+closed with `404` and `Cache-Control: no-store` until all corresponding values
+are valid. Values containing `.bootstrap.` are rejected.
+
+Configure the deployed web application with:
+
+```text
+PLANETS_ANDROID_APP_LINK_PACKAGE_ID=<final Android application ID>
+PLANETS_ANDROID_APP_LINK_SHA256_CERT_FINGERPRINTS=<SHA-256 fingerprint[,fingerprint...]>
+PLANETS_IOS_TEAM_ID=<10-character Apple Team ID>
+PLANETS_IOS_BUNDLE_ID=<final iOS bundle ID>
+```
+
+Android fingerprints use uppercase colon-separated byte pairs. Include every
+certificate that can sign an installed production-like build, including the
+store/distribution certificate where applicable. These are public association
+identifiers, not signing material; never commit private keys or credentials.
+
+The mobile project already limits Android handling to HTTPS host
+`planets.community` and path prefix `/invite/project/` with `autoVerify`. iOS
+already declares `applinks:planets.community` in `Runner.entitlements`; a real
+signed provisioning profile must enable Associated Domains. The generated
+Digital Asset Links and Apple association documents limit the association to
+the production app identity and `/invite/project/*`.
+
+`share_plus` 13 requires Flutter 3.41+, Dart 3.11+, iOS 13+, Android Gradle
+Plugin 8.12.1+, and Gradle 8.13+. This repository currently uses Flutter 3.47,
+Dart 3.13, iOS 15, AGP 9.1, and Gradle 9.3.
+
+## Deployment and device verification
+
+After deploying real association values, verify that both endpoints return
+HTTP 200 directly, without redirects, and with JSON content:
+
+```text
+curl -i https://planets.community/.well-known/assetlinks.json
+curl -i https://planets.community/.well-known/apple-app-site-association
+```
+
+On an Android device with the production-like signed app installed:
+
+```text
+adb shell pm verify-app-links --re-verify <final-package-id>
+adb shell pm get-app-links <final-package-id>
+adb shell am start -a android.intent.action.VIEW -c android.intent.category.BROWSABLE -d "https://planets.community/invite/project/<test-token>"
+```
+
+Confirm the domain is verified, the installed app opens the exact invite, and
+the same style of URL falls back to the browser after uninstalling the app.
+
+For iOS, install a build signed with the final Team/bundle identity and an
+Associated Domains provisioning profile. Open the invite from Messages, Notes,
+or another app; confirm it opens PLANETS, then confirm Safari fallback with the
+app absent. Recheck the AASA response above when diagnosing. Apple's CDN and
+device cache can delay association changes, so immediate propagation is not a
+reliable test result. A macOS/Xcode build and real-device verification remain
+required before claiming Universal Links are production-verified.
+
+## Manual invite QA
+
+- As an owner, create an invite, copy it, and invoke the system share sheet
+  (WhatsApp is an ordinary share target).
+- Fetch or preview the URL and confirm the invitation remains pending.
+- On mobile and web, confirm signed-out Auth and incomplete-profile completion
+  return to the same invite before explicit acceptance.
+- Accept as the recipient, confirm the owner sees the new Co-organizer, and
+  confirm the recipient can rediscover and manage the Project.
+- Confirm delegate cards expose no owner-only edit/lifecycle controls and that
+  an independent participant membership remains separate.
+- Revoke a pending invite while its preview is open and confirm Accept fails
+  safely. Repeat for expiry, a competing accepter, an owner opening their own
+  invite, an already-active delegate, and a lost-response same-user retry.
+- Remove an active delegate and confirm Project detail and an already-open
+  Manage project screen lose manager-only access after reload.
+- Switch accounts with an invite or management screen open and confirm no
+  previous-account token, role, or protected location remains.
+- Exercise both cold-start and already-running app links, malformed tokens,
+  Projects without a group chat, and browser fallback while associations are
+  absent or intentionally disabled.

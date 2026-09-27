@@ -449,7 +449,9 @@ class _ProjectChatCard extends StatelessWidget {
                         item.isReadOnly
                             ? l10n.projectChatReadOnlyLabel
                             : item.isManager
-                            ? l10n.projectChatRoleCreator
+                            ? item.isDelegate
+                                  ? l10n.projectChatRoleDelegate
+                                  : l10n.projectChatRoleCreator
                             : l10n.projectChatRoleCurrent,
                       ),
                     ),

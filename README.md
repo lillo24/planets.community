@@ -39,6 +39,7 @@ See [Getting started](docs/development/getting-started.md) for prerequisites, ex
 - [System design and responsibility boundaries](docs/architecture/system-design.md)
 - [Architecture decision records](docs/architecture/decisions/README.md)
 - [Database development workflow](docs/development/database.md)
+- [Project delegate invite links and native association](docs/development/project-invite-links.md)
 - [Continuous integration](docs/development/ci.md)
 - [Codex tooling policy](docs/development/codex-tooling.md)
 - [Implementation roadmap](docs/implementation/roadmap.md)

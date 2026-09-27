@@ -12,6 +12,8 @@ import 'package:planets_mobile/features/participation/data/participation_gateway
 import 'package:planets_mobile/features/participation/data/join_acceptance_triage_gateway.dart';
 import 'package:planets_mobile/features/participation/domain/participation_models.dart';
 import 'package:planets_mobile/features/profile/data/profile_gateway.dart';
+import 'package:planets_mobile/features/project_delegates/data/project_delegate_gateway.dart';
+import 'package:planets_mobile/features/project_delegates/domain/project_delegate_models.dart';
 import 'package:planets_mobile/features/project_resource_needs/data/project_resource_needs_gateway.dart';
 import 'package:planets_mobile/features/project_chat/application/project_chat_refresh.dart';
 import 'package:planets_mobile/features/proposals/data/proposal_gateway.dart';
@@ -26,6 +28,7 @@ import '../../../support/fake_membership_commitment.dart';
 import '../../../support/fake_participation.dart';
 import '../../../support/fake_join_acceptance_triage.dart';
 import '../../../support/fake_profile.dart';
+import '../../../support/fake_project_delegates.dart';
 import '../../../support/fake_project_resource_needs.dart';
 import '../../../support/fake_proposal.dart';
 import '../../../support/fake_recurring_activity.dart';
@@ -254,6 +257,8 @@ void main() {
     );
     expect(find.text('Meet beside the blue workshop door.'), findsOneWidget);
     await tester.tap(find.byKey(const Key('participation-manage-proposal-1')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('project-manage-participation')));
     await tester.pumpAndSettle();
     expect(find.text('I can bring paint brushes.'), findsOneWidget);
     expect(
@@ -664,6 +669,12 @@ Future<ProviderContainer> _pump(
         ),
         proposalGatewayProvider.overrideWithValue(proposals),
         recurringActivityGatewayProvider.overrideWithValue(recurringGateway),
+        projectDelegateGatewayProvider.overrideWithValue(
+          FakeProjectDelegateGateway()
+            ..role = identityId == 'user-1'
+                ? ProjectManagementRole.owner
+                : ProjectManagementRole.none,
+        ),
         participationGatewayProvider.overrideWithValue(participation),
         joinAcceptanceTriageGatewayProvider.overrideWithValue(
           triage ?? FakeJoinAcceptanceTriageGateway(),

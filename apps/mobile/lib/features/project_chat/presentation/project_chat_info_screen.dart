@@ -597,8 +597,8 @@ String _kindLabel(AppLocalizations l10n, ProjectKind kind) => switch (kind) {
 
 String _roleLabel(AppLocalizations l10n, ProjectChatViewerRole role) =>
     switch (role) {
-      ProjectChatViewerRole.creator ||
-      ProjectChatViewerRole.delegate => l10n.projectChatRoleCreator,
+      ProjectChatViewerRole.creator => l10n.projectChatRoleCreator,
+      ProjectChatViewerRole.delegate => l10n.projectChatRoleDelegate,
       ProjectChatViewerRole.currentMember => l10n.projectChatRoleCurrent,
       ProjectChatViewerRole.formerMember => l10n.projectChatRoleFormer,
     };

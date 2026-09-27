@@ -51,8 +51,9 @@ their existing features; participation uses only a project ID plus the narrow
   chips, stale-option recovery, the optional private 500-character request
   message, and the single canonical submit flow.
 - `presentation/creator_participation_screen.dart` owns manager request/history
-  review and current/historical membership management. Its name is retained as
-  a route compatibility detail until the final 07C2B navigation pass.
+  review and current/historical membership management. Its filename is retained
+  as a compatibility detail; owner and active delegate enter it through the
+  shared Manage project hub.
 - `presentation/join_acceptance_triage_sheet.dart` is the single manager
   acceptance surface shared by Manage participation and Messages request
   detail, including accessible validation, one-shot guidance, and
@@ -81,7 +82,8 @@ The mobile client presents, but does not reproduce, the 05A state machine:
 - ordinary leave or manager removal remains historical and does not create a
   permanent client-side ban;
 - a current Project manager may accept/reject pending requests and remove current members;
-- creators are organizers through ownership and are filtered from membership
+- creators are organizers through ownership, active delegates are managers
+  through the canonical role read, and creators are filtered from membership
   rows.
 
 07C1A now creates a permanent private requester/organizer chat anchor inside each
@@ -180,13 +182,15 @@ while identity changes clear state and reject late responses.
 
 ## Routes
 
-Participation stays in the Browse branch:
+Participation and Project management stay in the Browse branch:
 
 ```text
 /proposals/:id/join
 /proposals/:id/participants
+/proposals/:id/manage
 /tavoli/:id/join
 /tavoli/:id/participants
+/tavoli/:id/manage
 ```
 
 These routes require authentication and a complete profile. Email OTP keeps
@@ -195,8 +199,7 @@ destination in `/profile/edit?returnTo=...` and resumes it after a successful
 save. The persistent bottom navigation remains Profile / Browse / Home.
 
 Notification delivery, standalone Scambio-Dona, capacity/fullness,
-the final delegate invitation/management UI, central participation history,
-contribution verification, badges, maps,
+central participation history, contribution verification, badges, maps,
 and final unified Progetti discovery remain deferred.
 
 ## Deferred native QA notes

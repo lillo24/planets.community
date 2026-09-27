@@ -96,6 +96,7 @@ final class ProjectMessageChatItem extends MessageChatItem {
   final ProjectChatViewerRole viewerRole;
 
   bool get isCreator => viewerRole == ProjectChatViewerRole.creator;
+  bool get isDelegate => viewerRole == ProjectChatViewerRole.delegate;
   bool get isManager =>
       viewerRole == ProjectChatViewerRole.creator ||
       viewerRole == ProjectChatViewerRole.delegate;

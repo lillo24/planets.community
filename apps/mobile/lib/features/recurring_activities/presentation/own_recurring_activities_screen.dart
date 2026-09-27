@@ -10,6 +10,9 @@ import '../../../core/widgets/loading_state.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../auth/application/auth_session_controller.dart';
 import '../../participation/domain/participation_models.dart';
+import '../../project_delegates/application/project_delegate_controllers.dart';
+import '../../project_delegates/domain/project_delegate_models.dart';
+import '../../project_delegates/presentation/project_delegate_routes.dart';
 import '../../project_resource_needs/presentation/project_resource_need_routes.dart';
 import '../application/recurring_activity_controllers.dart';
 import '../domain/recurring_activity_models.dart';
@@ -33,11 +36,14 @@ class _OwnRecurringActivitiesScreenState
     Future<void>.microtask(_load);
   }
 
-  Future<void> _load() async {
+  Future<void> _load({bool force = false}) async {
     final identity = ref.read(authSessionProvider).identity;
-    if (identity != null && _requestedIdentity != identity.id) {
+    if (identity != null && (force || _requestedIdentity != identity.id)) {
       _requestedIdentity = identity.id;
-      await ref.read(ownRecurringActivitiesProvider.notifier).load(identity.id);
+      await Future.wait([
+        ref.read(ownRecurringActivitiesProvider.notifier).load(identity.id),
+        ref.read(delegatedProjectsProvider.notifier).load(identity.id),
+      ]);
     }
   }
 
@@ -49,6 +55,12 @@ class _OwnRecurringActivitiesScreenState
     final items = state.expectedCreatorId == identity?.id
         ? state.items
         : const <OwnRecurringActivity>[];
+    final delegatedState = ref.watch(delegatedProjectsProvider);
+    final delegated = delegatedState.expectedProfileId == identity?.id
+        ? delegatedState.items
+              .where((item) => item.kind == ProjectKind.recurring)
+              .toList(growable: false)
+        : const <DelegatedProject>[];
     if (identity != null && _requestedIdentity != identity.id) {
       Future<void>.microtask(_load);
     }
@@ -57,28 +69,73 @@ class _OwnRecurringActivitiesScreenState
       body: SafeArea(
         child: identity == null
             ? const SizedBox.shrink()
-            : items.isEmpty && state.phase == RecurringActivityLoadPhase.loading
+            : items.isEmpty &&
+                  delegated.isEmpty &&
+                  (state.phase == RecurringActivityLoadPhase.loading ||
+                      delegatedState.phase == ProjectDelegateLoadPhase.loading)
             ? LoadingState(message: l10n.tavoliLoading)
-            : items.isEmpty && state.phase == RecurringActivityLoadPhase.failure
-            ? ErrorState(message: l10n.tavoliSafeError, onRetry: _load)
-            : items.isEmpty
+            : items.isEmpty &&
+                  delegated.isEmpty &&
+                  (state.phase == RecurringActivityLoadPhase.failure ||
+                      delegatedState.phase == ProjectDelegateLoadPhase.failure)
+            ? ErrorState(
+                message: l10n.tavoliSafeError,
+                onRetry: () => _load(force: true),
+              )
+            : items.isEmpty && delegated.isEmpty
             ? EmptyState(
                 title: l10n.tavoliMyEmpty,
                 message: l10n.tavoliMyEmptyMessage,
               )
             : RefreshIndicator(
-                onRefresh: () => ref
-                    .read(ownRecurringActivitiesProvider.notifier)
-                    .load(identity.id),
-                child: ListView.separated(
+                onRefresh: () => _load(force: true),
+                child: ListView(
                   padding: const EdgeInsets.all(AppSpacing.medium),
-                  itemCount: items.length,
-                  separatorBuilder: (_, _) =>
-                      const SizedBox(height: AppSpacing.small),
-                  itemBuilder: (context, index) => _OwnTavoloCard(
-                    activity: items[index],
-                    identityId: identity.id,
-                  ),
+                  children: [
+                    Text(
+                      l10n.projectCreatedByYouTitle,
+                      style: Theme.of(context).textTheme.titleLarge,
+                    ),
+                    const SizedBox(height: AppSpacing.small),
+                    if (items.isEmpty &&
+                        state.phase == RecurringActivityLoadPhase.failure) ...[
+                      Text(l10n.tavoliSafeError),
+                      TextButton(
+                        onPressed: () => _load(force: true),
+                        child: Text(l10n.retryAction),
+                      ),
+                    ] else if (items.isEmpty)
+                      Text(l10n.projectCreatedByYouEmpty)
+                    else
+                      for (final activity in items) ...[
+                        _OwnTavoloCard(
+                          activity: activity,
+                          identityId: identity.id,
+                        ),
+                        const SizedBox(height: AppSpacing.small),
+                      ],
+                    const SizedBox(height: AppSpacing.medium),
+                    Text(
+                      l10n.projectCoorganizingTitle,
+                      style: Theme.of(context).textTheme.titleLarge,
+                    ),
+                    const SizedBox(height: AppSpacing.small),
+                    if (delegated.isEmpty &&
+                        delegatedState.phase ==
+                            ProjectDelegateLoadPhase.failure) ...[
+                      Text(l10n.projectDelegateSafeError),
+                      TextButton(
+                        onPressed: () => _load(force: true),
+                        child: Text(l10n.retryAction),
+                      ),
+                    ] else if (delegated.isEmpty)
+                      Text(l10n.projectCoorganizingEmpty)
+                    else
+                      for (final project in delegated) ...[
+                        _DelegatedTavoloCard(project: project),
+                        const SizedBox(height: AppSpacing.small),
+                      ],
+                  ],
                 ),
               ),
       ),
@@ -87,6 +144,53 @@ class _OwnRecurringActivitiesScreenState
         onPressed: () => context.push('/tavoli/create'),
         icon: const Icon(Icons.add),
         label: Text(l10n.tavoliCreateTitle),
+      ),
+    );
+  }
+}
+
+class _DelegatedTavoloCard extends StatelessWidget {
+  const _DelegatedTavoloCard({required this.project});
+
+  final DelegatedProject project;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final lifecycle = switch (project.status) {
+      'paused' => l10n.tavoliLifecyclePaused,
+      'ended' => l10n.tavoliLifecycleEnded,
+      _ => l10n.tavoliLifecycleActive,
+    };
+    return Card(
+      key: Key('delegated-tavolo-${project.id}'),
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.medium),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(project.title, style: Theme.of(context).textTheme.titleLarge),
+            const SizedBox(height: AppSpacing.xSmall),
+            Text('${l10n.projectCoorganizerBadge} · $lifecycle'),
+            const SizedBox(height: AppSpacing.medium),
+            Wrap(
+              spacing: AppSpacing.small,
+              children: [
+                OutlinedButton(
+                  onPressed: () => context.push('/tavoli/${project.id}'),
+                  child: Text(l10n.tavoliView),
+                ),
+                FilledButton.tonal(
+                  key: Key('delegated-tavolo-manage-${project.id}'),
+                  onPressed: () => context.push(
+                    ProjectDelegateRoutes.manage(project.kind, project.id),
+                  ),
+                  child: Text(l10n.projectManageTitle),
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }

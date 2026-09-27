@@ -9,6 +9,9 @@ import '../../../core/widgets/loading_state.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../auth/application/auth_session_controller.dart';
 import '../../participation/domain/participation_models.dart';
+import '../../project_delegates/application/project_delegate_controllers.dart';
+import '../../project_delegates/domain/project_delegate_models.dart';
+import '../../project_delegates/presentation/project_delegate_routes.dart';
 import '../../project_resource_needs/presentation/project_resource_need_routes.dart';
 import '../application/proposal_controllers.dart';
 import '../domain/proposal_models.dart';
@@ -29,11 +32,14 @@ class _OwnProposalsScreenState extends ConsumerState<OwnProposalsScreen> {
     Future<void>.microtask(_load);
   }
 
-  Future<void> _load() async {
+  Future<void> _load({bool force = false}) async {
     final identity = ref.read(authSessionProvider).identity;
-    if (identity != null && _requestedIdentity != identity.id) {
+    if (identity != null && (force || _requestedIdentity != identity.id)) {
       _requestedIdentity = identity.id;
-      await ref.read(ownProposalsProvider.notifier).load(identity.id);
+      await Future.wait([
+        ref.read(ownProposalsProvider.notifier).load(identity.id),
+        ref.read(delegatedProjectsProvider.notifier).load(identity.id),
+      ]);
     }
   }
 
@@ -45,6 +51,12 @@ class _OwnProposalsScreenState extends ConsumerState<OwnProposalsScreen> {
     final items = state.expectedCreatorId == identity?.id
         ? state.items
         : const <OwnProposal>[];
+    final delegatedState = ref.watch(delegatedProjectsProvider);
+    final delegated = delegatedState.expectedProfileId == identity?.id
+        ? delegatedState.items
+              .where((item) => item.kind == ProjectKind.oneTime)
+              .toList(growable: false)
+        : const <DelegatedProject>[];
     if (identity != null && _requestedIdentity != identity.id) {
       Future<void>.microtask(_load);
     }
@@ -54,27 +66,73 @@ class _OwnProposalsScreenState extends ConsumerState<OwnProposalsScreen> {
       body: SafeArea(
         child: identity == null
             ? const SizedBox.shrink()
-            : items.isEmpty && state.phase == ProposalLoadPhase.loading
+            : items.isEmpty &&
+                  delegated.isEmpty &&
+                  (state.phase == ProposalLoadPhase.loading ||
+                      delegatedState.phase == ProjectDelegateLoadPhase.loading)
             ? LoadingState(message: l10n.proposalLoading)
-            : items.isEmpty && state.phase == ProposalLoadPhase.failure
-            ? ErrorState(message: l10n.proposalSafeError, onRetry: _load)
-            : items.isEmpty
+            : items.isEmpty &&
+                  delegated.isEmpty &&
+                  (state.phase == ProposalLoadPhase.failure ||
+                      delegatedState.phase == ProjectDelegateLoadPhase.failure)
+            ? ErrorState(
+                message: l10n.proposalSafeError,
+                onRetry: () => _load(force: true),
+              )
+            : items.isEmpty && delegated.isEmpty
             ? EmptyState(
                 title: l10n.proposalMyEmpty,
                 message: l10n.proposalMyEmptyMessage,
               )
             : RefreshIndicator(
-                onRefresh: () =>
-                    ref.read(ownProposalsProvider.notifier).load(identity.id),
-                child: ListView.separated(
+                onRefresh: () => _load(force: true),
+                child: ListView(
                   padding: const EdgeInsets.all(AppSpacing.medium),
-                  itemCount: items.length,
-                  separatorBuilder: (_, _) =>
-                      const SizedBox(height: AppSpacing.small),
-                  itemBuilder: (context, index) => _OwnProposalCard(
-                    proposal: items[index],
-                    identityId: identity.id,
-                  ),
+                  children: [
+                    Text(
+                      l10n.projectCreatedByYouTitle,
+                      style: Theme.of(context).textTheme.titleLarge,
+                    ),
+                    const SizedBox(height: AppSpacing.small),
+                    if (items.isEmpty &&
+                        state.phase == ProposalLoadPhase.failure) ...[
+                      Text(l10n.proposalSafeError),
+                      TextButton(
+                        onPressed: () => _load(force: true),
+                        child: Text(l10n.retryAction),
+                      ),
+                    ] else if (items.isEmpty)
+                      Text(l10n.projectCreatedByYouEmpty)
+                    else
+                      for (final proposal in items) ...[
+                        _OwnProposalCard(
+                          proposal: proposal,
+                          identityId: identity.id,
+                        ),
+                        const SizedBox(height: AppSpacing.small),
+                      ],
+                    const SizedBox(height: AppSpacing.medium),
+                    Text(
+                      l10n.projectCoorganizingTitle,
+                      style: Theme.of(context).textTheme.titleLarge,
+                    ),
+                    const SizedBox(height: AppSpacing.small),
+                    if (delegated.isEmpty &&
+                        delegatedState.phase ==
+                            ProjectDelegateLoadPhase.failure) ...[
+                      Text(l10n.projectDelegateSafeError),
+                      TextButton(
+                        onPressed: () => _load(force: true),
+                        child: Text(l10n.retryAction),
+                      ),
+                    ] else if (delegated.isEmpty)
+                      Text(l10n.projectCoorganizingEmpty)
+                    else
+                      for (final project in delegated) ...[
+                        _DelegatedProposalCard(project: project),
+                        const SizedBox(height: AppSpacing.small),
+                      ],
+                  ],
                 ),
               ),
       ),
@@ -82,6 +140,53 @@ class _OwnProposalsScreenState extends ConsumerState<OwnProposalsScreen> {
         onPressed: () => context.push('/proposals/create'),
         icon: const Icon(Icons.add),
         label: Text(l10n.proposalCreateTitle),
+      ),
+    );
+  }
+}
+
+class _DelegatedProposalCard extends StatelessWidget {
+  const _DelegatedProposalCard({required this.project});
+
+  final DelegatedProject project;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final lifecycle = switch (project.status) {
+      'completed' => l10n.proposalStatusCompleted,
+      'cancelled' => l10n.proposalLifecycleCancelled,
+      _ => l10n.proposalLifecyclePublished,
+    };
+    return Card(
+      key: Key('delegated-proposal-${project.id}'),
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.medium),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(project.title, style: Theme.of(context).textTheme.titleLarge),
+            const SizedBox(height: AppSpacing.xSmall),
+            Text('${l10n.projectCoorganizerBadge} · $lifecycle'),
+            const SizedBox(height: AppSpacing.medium),
+            Wrap(
+              spacing: AppSpacing.small,
+              children: [
+                OutlinedButton(
+                  onPressed: () => context.push('/proposals/${project.id}'),
+                  child: Text(l10n.tavoliView),
+                ),
+                FilledButton.tonal(
+                  key: Key('delegated-proposal-manage-${project.id}'),
+                  onPressed: () => context.push(
+                    ProjectDelegateRoutes.manage(project.kind, project.id),
+                  ),
+                  child: Text(l10n.projectManageTitle),
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }

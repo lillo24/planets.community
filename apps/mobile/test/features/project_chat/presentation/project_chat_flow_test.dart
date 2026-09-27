@@ -997,6 +997,21 @@ void main() {
     );
   });
 
+  testWidgets('delegate group info is labeled Co-organizer', (tester) async {
+    final chats = FakeProjectChatGateway()
+      ..summaries = [
+        projectChatSummaryFixture(viewerRole: ProjectChatViewerRole.delegate),
+      ]
+      ..histories['chat-1'] = [];
+    final app = await _pump(tester, chats: chats);
+    app.read(appRouterProvider).go('/messages/chats/chat-1/info');
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('project-chat-viewer-role')), findsOneWidget);
+    expect(find.text('Co-organizer'), findsOneWidget);
+    expect(find.text('Organizer'), findsNothing);
+  });
+
   testWidgets('identity swap reconstructs the protected chat branch', (
     tester,
   ) async {

@@ -11,6 +11,8 @@ import 'package:planets_mobile/core/widgets/loading_state.dart';
 import 'package:planets_mobile/features/auth/data/auth_gateway.dart';
 import 'package:planets_mobile/features/auth/domain/auth_models.dart';
 import 'package:planets_mobile/features/profile/data/profile_gateway.dart';
+import 'package:planets_mobile/features/project_delegates/data/project_delegate_gateway.dart';
+import 'package:planets_mobile/features/project_delegates/domain/project_delegate_models.dart';
 import 'package:planets_mobile/features/project_resource_needs/data/project_resource_needs_gateway.dart';
 import 'package:planets_mobile/features/participation/data/participation_gateway.dart';
 import 'package:planets_mobile/features/participation/domain/participation_models.dart';
@@ -20,6 +22,7 @@ import 'package:planets_mobile/features/recurring_activities/domain/recurring_ac
 
 import '../../../support/fake_auth.dart';
 import '../../../support/fake_profile.dart';
+import '../../../support/fake_project_delegates.dart';
 import '../../../support/fake_project_resource_needs.dart';
 import '../../../support/fake_participation.dart';
 import '../../../support/fake_proposal.dart';
@@ -337,6 +340,12 @@ Future<ProviderContainer> _pump(
         ),
         proposalGatewayProvider.overrideWithValue(FakeProposalGateway()),
         recurringActivityGatewayProvider.overrideWithValue(recurring),
+        projectDelegateGatewayProvider.overrideWithValue(
+          FakeProjectDelegateGateway()
+            ..role = signedIn
+                ? ProjectManagementRole.owner
+                : ProjectManagementRole.none,
+        ),
         projectResourceNeedsGatewayProvider.overrideWithValue(
           FakeProjectResourceNeedsGateway(),
         ),

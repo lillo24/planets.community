@@ -18,6 +18,10 @@ import '../../features/profile/presentation/profile_edit_screen.dart';
 import '../../features/profile/presentation/profile_screen.dart';
 import '../../features/project_chat/presentation/project_chat_info_screen.dart';
 import '../../features/project_chat/presentation/project_chat_screen.dart';
+import '../../features/project_delegates/presentation/project_coorganizers_screen.dart';
+import '../../features/project_delegates/presentation/project_delegate_routes.dart';
+import '../../features/project_delegates/presentation/project_invite_screen.dart';
+import '../../features/project_delegates/presentation/project_manage_screen.dart';
 import '../../features/project_request_chat/presentation/project_request_chat_screen.dart';
 import '../../features/project_resource_needs/presentation/project_resource_need_routes.dart';
 import '../../features/project_resource_needs/presentation/project_resource_needs_screen.dart';
@@ -89,6 +93,8 @@ RoutingConfig _routingConfig(
       );
       final isProjectResourceNeedManagementRoute =
           ProjectResourceNeedRoutes.isManagementPath(path);
+      final isProjectDelegateManagementRoute =
+          ProjectDelegateRoutes.isManagementPath(path);
       final isMessagesRoute = isMessagesPath(path);
       final isNotificationsRoute = isNotificationsPath(path);
       final isActivityManagementRoute =
@@ -96,6 +102,7 @@ RoutingConfig _routingConfig(
           isTavoliManagementRoute ||
           isResourceManagementRoute ||
           isProjectResourceNeedManagementRoute ||
+          isProjectDelegateManagementRoute ||
           isParticipationRoute ||
           isMessagesRoute ||
           isNotificationsRoute;
@@ -115,6 +122,7 @@ RoutingConfig _routingConfig(
       if (session.phase == AuthSessionPhase.profileSetupRequired &&
           (isParticipationRoute ||
               isProjectResourceNeedManagementRoute ||
+              isProjectDelegateManagementRoute ||
               isMessagesRoute ||
               isNotificationsRoute)) {
         return Uri(
@@ -154,6 +162,8 @@ RoutingConfig _routingConfig(
             sanitizeReturnDestination(state.uri.queryParameters['returnTo']);
         if (ParticipationRoutes.isParticipationPath(returnTo) ||
             ProjectResourceNeedRoutes.isManagementPath(returnTo) ||
+            ProjectDelegateRoutes.isManagementPath(returnTo) ||
+            ProjectDelegateRoutes.isInvitePath(returnTo) ||
             isMessagesPath(returnTo) ||
             isNotificationsPath(returnTo) ||
             _isResourceManagementPath(returnTo)) {
@@ -195,6 +205,13 @@ RoutingConfig _routingConfig(
       GoRoute(
         path: '/auth/verify',
         builder: (context, state) => const VerifyCodeScreen(),
+      ),
+      GoRoute(
+        path: '/invite/project/:token',
+        builder: (context, state) => ProjectInviteScreen(
+          key: state.pageKey,
+          token: state.pathParameters['token']!,
+        ),
       ),
       StatefulShellRoute.indexedStack(
         builder: (context, state, shell) =>
@@ -340,6 +357,20 @@ RoutingConfig _routingConfig(
                           projectKind: ProjectKind.oneTime,
                         ),
                       ),
+                      GoRoute(
+                        path: 'manage',
+                        builder: (context, state) => ProjectManageScreen(
+                          projectId: state.pathParameters['id']!,
+                          projectKind: ProjectKind.oneTime,
+                        ),
+                      ),
+                      GoRoute(
+                        path: 'co-organizers',
+                        builder: (context, state) => ProjectCoorganizersScreen(
+                          projectId: state.pathParameters['id']!,
+                          projectKind: ProjectKind.oneTime,
+                        ),
+                      ),
                     ],
                   ),
                 ],
@@ -390,6 +421,20 @@ RoutingConfig _routingConfig(
                       GoRoute(
                         path: 'participants',
                         builder: (context, state) => CreatorParticipationScreen(
+                          projectId: state.pathParameters['id']!,
+                          projectKind: ProjectKind.recurring,
+                        ),
+                      ),
+                      GoRoute(
+                        path: 'manage',
+                        builder: (context, state) => ProjectManageScreen(
+                          projectId: state.pathParameters['id']!,
+                          projectKind: ProjectKind.recurring,
+                        ),
+                      ),
+                      GoRoute(
+                        path: 'co-organizers',
+                        builder: (context, state) => ProjectCoorganizersScreen(
                           projectId: state.pathParameters['id']!,
                           projectKind: ProjectKind.recurring,
                         ),
