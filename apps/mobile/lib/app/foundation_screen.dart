@@ -25,6 +25,12 @@ class FoundationScreen extends StatelessWidget {
             onPressed: () => context.push('/messages'),
             icon: const Icon(Icons.mail_outline),
           ),
+          IconButton(
+            key: const Key('open-settings-button'),
+            tooltip: l10n.settingsOpenTooltip,
+            onPressed: () => context.push('/settings'),
+            icon: const Icon(Icons.settings_outlined),
+          ),
         ],
       ),
       body: SafeArea(

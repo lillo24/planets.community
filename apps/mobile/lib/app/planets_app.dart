@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../core/theme/app_theme.dart';
 import '../features/auth/application/auth_session_controller.dart';
+import '../features/settings/application/language_preference_controller.dart';
 import '../l10n/generated/app_localizations.dart';
 import 'router/app_router.dart';
 
@@ -27,6 +28,7 @@ class _PlanetsAppState extends ConsumerState<PlanetsApp> {
   @override
   Widget build(BuildContext context) {
     final router = ref.watch(appRouterProvider);
+    final languagePreference = ref.watch(languagePreferenceProvider);
 
     return MaterialApp.router(
       onGenerateTitle: (context) => AppLocalizations.of(context).appTitle,
@@ -34,6 +36,7 @@ class _PlanetsAppState extends ConsumerState<PlanetsApp> {
       theme: AppTheme.light,
       darkTheme: AppTheme.dark,
       themeMode: ThemeMode.system,
+      locale: languagePreference.locale,
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,
       routerConfig: router,

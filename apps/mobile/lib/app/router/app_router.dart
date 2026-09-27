@@ -31,6 +31,7 @@ import '../../features/recurring_activities/presentation/recurring_activity_edit
 import '../../features/resource_listings/presentation/own_resource_listings_screen.dart';
 import '../../features/resource_listings/presentation/public_resource_listings_screen.dart';
 import '../../features/resource_listings/presentation/resource_listing_editor_screen.dart';
+import '../../features/settings/presentation/settings_screen.dart';
 import '../../l10n/generated/app_localizations.dart';
 import '../foundation_screen.dart';
 import 'app_navigation_shell.dart';
@@ -305,6 +306,17 @@ RoutingConfig _routingConfig(
               GoRoute(
                 path: '/',
                 builder: (context, state) => const FoundationScreen(),
+              ),
+              GoRoute(
+                path: '/settings',
+                builder: (context, state) => const SettingsScreen(),
+                routes: [
+                  GoRoute(
+                    path: 'language',
+                    builder: (context, state) =>
+                        const LanguageSelectionScreen(),
+                  ),
+                ],
               ),
               GoRoute(
                 path: '/messages',

@@ -12,6 +12,8 @@ This folder owns the Flutter application and its generated Android/iOS platform 
 - `lib/core/monitoring/` owns optional, privacy-safe Sentry startup.
 - `lib/core/theme/` and `lib/core/widgets/` own neutral design tokens and common loading/empty/error UI.
 - `lib/core/time/` owns named event-time-zone conversion and formatting shared by one-time and recurring activities.
+- `lib/features/settings/` owns public Settings, the local language preference,
+  and links to existing account preference surfaces.
 - `lib/features/auth/` owns numeric email-OTP request/verification, session state, profile-anchor readiness, sign-out, and Auth UI.
 - `lib/features/profile/` owns basic profile display/setup/editing, controlled skill selection, and public/private field choices.
 - `lib/features/proposals/` owns public one-time proposal browse/detail plus complete-profile create/edit/my-proposals flows. It calls canonical RPCs and carries the screen's expected identity on every owner mutation.
@@ -25,7 +27,19 @@ This folder owns the Flutter application and its generated Android/iOS platform 
 - `test/` mirrors the application responsibility boundaries.
 - `android/` and `ios/` contain conventional Flutter platform configuration. Local HTTP exceptions are debug-only; shared iOS plist changes must be mirrored in `Info.plist` and `Info-Debug.plist`.
 
-Startup follows one order: parse and validate config, initialize the canonical Supabase client, configure Sentry only when a DSN exists, then launch one Riverpod `ProviderScope`. The app starts the Auth session observer explicitly after launch. `/`, Proposal browse/detail, Tavoli browse/detail, and Scambio-Dona browse/detail remain public; `/auth` requests a code; `/auth/verify` verifies it; `/profile` and `/profile/edit` own authenticated profile display/setup. Proposal/Tavolo/Scambio-Dona create/edit/my, participation join/creator-review, and Messages routes require a complete profile and route incomplete profiles to setup. Scambio-Dona management, Participation, and Messages intent survives OTP and profile completion through sanitized internal `returnTo` values. Magic links, social providers, maps/media, and final branding remain deferred.
+Startup follows one order: parse and validate config, restore the noncritical
+local language preference with a System-default fallback, initialize the
+canonical Supabase client, configure Sentry only when a DSN exists, then launch
+one Riverpod `ProviderScope`. The app starts the Auth session observer explicitly
+after launch. `/`, `/settings`, `/settings/language`, Proposal browse/detail,
+Tavoli browse/detail, and Scambio-Dona browse/detail remain public; `/auth`
+requests a code; `/auth/verify` verifies it; `/profile` and `/profile/edit` own
+authenticated profile display/setup. Proposal/Tavolo/Scambio-Dona create/edit/my,
+participation join/creator-review, and Messages routes require a complete profile
+and route incomplete profiles to setup. Scambio-Dona management, Participation,
+and Messages intent survives OTP and profile completion through sanitized
+internal `returnTo` values. Magic links, social providers, maps/media, and final
+branding remain deferred.
 
 Proposal date/time input is interpreted in an explicit IANA time zone with the bundled `timezone` data and sent to PostgreSQL as UTC instants. Draft/publish/update/cancel authorization and stored/derived lifecycle rules remain canonical database behavior. Public cards receive rough location only; detail shows exact meeting text only when the sanitized backend response marks it public.
 

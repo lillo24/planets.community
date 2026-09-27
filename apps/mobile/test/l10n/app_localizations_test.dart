@@ -55,14 +55,49 @@ void main() {
     expect(find.text('Browse'), findsOneWidget);
     expect(find.text('en'), findsOneWidget);
   });
+
+  testWidgets('an English override wins over an Italian device locale', (
+    tester,
+  ) async {
+    tester.binding.platformDispatcher.localesTestValue = const [
+      Locale('it', 'IT'),
+    ];
+    addTearDown(tester.binding.platformDispatcher.clearLocalesTestValue);
+
+    await tester.pumpWidget(const _LocalizationProbeApp(locale: Locale('en')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Browse'), findsOneWidget);
+    expect(find.text('en'), findsOneWidget);
+    expect(find.text('Monday'), findsOneWidget);
+  });
+
+  testWidgets('an Italian override wins over an English device locale', (
+    tester,
+  ) async {
+    tester.binding.platformDispatcher.localesTestValue = const [
+      Locale('en', 'US'),
+    ];
+    addTearDown(tester.binding.platformDispatcher.clearLocalesTestValue);
+
+    await tester.pumpWidget(const _LocalizationProbeApp(locale: Locale('it')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Esplora'), findsOneWidget);
+    expect(find.text('it'), findsOneWidget);
+    expect(find.text('lunedì'), findsOneWidget);
+  });
 }
 
 class _LocalizationProbeApp extends StatelessWidget {
-  const _LocalizationProbeApp();
+  const _LocalizationProbeApp({this.locale});
+
+  final Locale? locale;
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      locale: locale,
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,
       home: Builder(
