@@ -81,10 +81,18 @@ The mobile client presents, but does not reproduce, the 05A state machine:
 - a current accepted participant may leave;
 - ordinary leave or manager removal remains historical and does not create a
   permanent client-side ban;
-- a current Project manager may accept/reject pending requests and remove current members;
-- creators are organizers through ownership, active delegates are managers
-  through the canonical role read, and creators are filtered from membership
-  rows.
+- a current Project manager may accept/reject pending requests and remove other
+  current members, but must leave their own independent membership through the
+  ordinary participant action;
+- creators are organizers through ownership, while an active delegate may also
+  independently be a requester or participant. Manager review keeps a real
+  self-membership row visible but omits its manager Remove action.
+
+Ownership, delegation, and participation are separate relationships. Leaving
+participation does not revoke delegation, and revoking delegation does not end
+or remove participation. Project detail therefore composes Manage project with
+the delegate's ordinary request/current-membership actions after both canonical
+reads resolve; owners remain management-only because owners cannot participate.
 
 07C1A now creates a permanent private requester/organizer chat anchor inside each
 request transaction. The optional join note remains structured request data;

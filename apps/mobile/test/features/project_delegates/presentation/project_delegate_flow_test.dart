@@ -186,7 +186,7 @@ void main() {
   });
 
   testWidgets(
-    'delegate detail never flashes Join and loads protected meeting',
+    'delegate detail waits for role then shows management and participation',
     (tester) async {
       final delayedRole = Completer<ProjectManagementRole>();
       final gateway = FakeProjectDelegateGateway()
@@ -227,11 +227,141 @@ void main() {
       );
       expect(
         find.byKey(const Key('participation-join-proposal-1')),
-        findsNothing,
+        findsOneWidget,
       );
       expect(find.text('Meet beside the blue workshop door.'), findsOneWidget);
     },
   );
+
+  testWidgets('delegate keeps pending request actions beside management', (
+    tester,
+  ) async {
+    final gateway = FakeProjectDelegateGateway()
+      ..role = ProjectManagementRole.delegate;
+    final participation = FakeParticipationGateway()
+      ..ownRequests = [ownJoinRequestFixture()];
+    final proposal = FakeProposalGateway()
+      ..publicDetail = proposalDetailFixture(creatorProfileId: 'owner-1');
+    final session = _readyContainer(
+      gateway,
+      participation: participation,
+      proposal: proposal,
+    );
+    addTearDown(session.dispose);
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: session.container,
+        child: _localized(const ProposalDetailScreen(proposalId: 'proposal-1')),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.ensureVisible(
+      find.byKey(const Key('participation-manage-proposal-1')),
+    );
+    expect(
+      find.byKey(const Key('participation-manage-proposal-1')),
+      findsOneWidget,
+    );
+    expect(find.text('Request pending'), findsOneWidget);
+    expect(
+      find.byKey(const Key('participation-withdraw-proposal-1')),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('delegate participant leaves without losing management', (
+    tester,
+  ) async {
+    final gateway = FakeProjectDelegateGateway()
+      ..role = ProjectManagementRole.delegate;
+    final participation = FakeParticipationGateway()
+      ..ownMemberships = [ownMembershipFixture()]
+      ..meetingDetails = meetingDetailsFixture();
+    final proposal = FakeProposalGateway()
+      ..publicDetail = proposalDetailFixture(creatorProfileId: 'owner-1');
+    final session = _readyContainer(
+      gateway,
+      participation: participation,
+      proposal: proposal,
+    );
+    addTearDown(session.dispose);
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: session.container,
+        child: _localized(const ProposalDetailScreen(proposalId: 'proposal-1')),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.ensureVisible(
+      find.byKey(const Key('participation-leave-proposal-1')),
+    );
+    await tester.pumpAndSettle();
+    expect(
+      find.byKey(const Key('participation-manage-proposal-1')),
+      findsOneWidget,
+    );
+    expect(find.text('You are participating'), findsOneWidget);
+    await tester.tap(find.byKey(const Key('participation-leave-proposal-1')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('participation-confirm-leave')));
+    await tester.pumpAndSettle();
+
+    expect(participation.calls, contains('leave:membership-1'));
+    expect(
+      find.byKey(const Key('participation-manage-proposal-1')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const Key('participation-join-proposal-1')),
+      findsOneWidget,
+    );
+    expect(gateway.role, ProjectManagementRole.delegate);
+  });
+
+  testWidgets('revoked delegate keeps participant actions and location', (
+    tester,
+  ) async {
+    final gateway = FakeProjectDelegateGateway()
+      ..role = ProjectManagementRole.delegate;
+    final participation = FakeParticipationGateway()
+      ..ownMemberships = [ownMembershipFixture()]
+      ..meetingDetails = meetingDetailsFixture();
+    final proposal = FakeProposalGateway()
+      ..publicDetail = proposalDetailFixture(creatorProfileId: 'owner-1');
+    final session = _readyContainer(
+      gateway,
+      participation: participation,
+      proposal: proposal,
+    );
+    addTearDown(session.dispose);
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: session.container,
+        child: _localized(const ProposalDetailScreen(proposalId: 'proposal-1')),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.ensureVisible(
+      find.byKey(const Key('participation-refresh-proposal-1')),
+    );
+    await tester.pumpAndSettle();
+    gateway.role = ProjectManagementRole.none;
+    await tester.tap(find.byKey(const Key('participation-refresh-proposal-1')));
+    await tester.pumpAndSettle();
+
+    expect(
+      find.byKey(const Key('participation-manage-proposal-1')),
+      findsNothing,
+    );
+    expect(
+      find.byKey(const Key('participation-leave-proposal-1')),
+      findsOneWidget,
+    );
+    expect(find.text('Meet beside the blue workshop door.'), findsOneWidget);
+  });
 
   testWidgets('My Proposals separates delegated cards from owner actions', (
     tester,

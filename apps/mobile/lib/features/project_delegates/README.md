@@ -37,6 +37,11 @@ public Project data. `list_own_delegated_projects` supplies one current-profile
 projection for My Proposals/My Tavoli without per-card role calls or owner-only
 actions.
 
+Delegation is independent from participation. An active delegate can also have
+an ordinary pending request or current/historical membership; Project detail
+shows both role surfaces. Participant Leave changes only the membership, while
+owner delegate revocation changes only the co-organizer relationship.
+
 Invitation creation returns plaintext once. The token is held only in the
 immediate controller/result-sheet state, is never included in the pending
 invitation list, and is cleared when that surface is replaced or disposed.

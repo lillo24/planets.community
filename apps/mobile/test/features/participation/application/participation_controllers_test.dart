@@ -273,7 +273,7 @@ void main() {
   );
 
   test(
-    'creator review sorts pending first and excludes creator membership',
+    'manager review sorts pending first and retains manager membership',
     () async {
       final gateway = FakeParticipationGateway()
         ..creatorRequests = [
@@ -303,7 +303,10 @@ void main() {
           .load('user-1', 'proposal-1');
       final state = session.container.read(creatorParticipationProvider);
       expect(state.requests.map((item) => item.id), ['pending', 'resolved']);
-      expect(state.members.map((item) => item.id), ['participant-row']);
+      expect(state.members.map((item) => item.id), [
+        'creator-row',
+        'participant-row',
+      ]);
     },
   );
 

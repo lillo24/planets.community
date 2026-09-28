@@ -216,11 +216,6 @@ void main() {
       ..creatorMembers = [
         creatorMemberFixture(id: 'current'),
         creatorMemberFixture(id: 'left', status: MembershipStatus.left),
-        creatorMemberFixture(
-          id: 'creator-row',
-          participantProfileId: 'user-1',
-          participantDisplayName: 'Casey',
-        ),
       ]
       ..meetingDetails = meetingDetailsFixture();
     final triage = FakeJoinAcceptanceTriageGateway()
@@ -269,11 +264,6 @@ void main() {
       find.byKey(const Key('participation-accept-resolved')),
       findsNothing,
     );
-    expect(
-      find.byKey(const Key('participation-member-creator-row')),
-      findsNothing,
-    );
-
     await tester.tap(find.byKey(const Key('participation-reject-reject-me')));
     await tester.pumpAndSettle();
     expect(participation.calls, contains('reject:reject-me'));
@@ -304,6 +294,57 @@ void main() {
     await tester.pumpAndSettle();
     expect(participation.calls, contains('remove:current'));
     expect(find.byKey(const Key('participation-remove-left')), findsNothing);
+  });
+
+  testWidgets('manager sees own member row without self-remove action', (
+    tester,
+  ) async {
+    final participation = FakeParticipationGateway()
+      ..creatorMembers = [
+        creatorMemberFixture(
+          id: 'self-membership',
+          participantProfileId: 'user-2',
+          participantDisplayName: 'Jordan',
+        ),
+        creatorMemberFixture(
+          id: 'other-membership',
+          participantProfileId: 'user-3',
+          participantDisplayName: 'Riley',
+        ),
+      ];
+    final app = await _pump(
+      tester,
+      identityId: 'user-2',
+      participation: participation,
+    );
+    app.read(appRouterProvider).go('/proposals/proposal-1/participants');
+    await tester.pumpAndSettle();
+
+    expect(
+      find.byKey(const Key('participation-member-self-membership')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const Key('participation-remove-self-membership')),
+      findsNothing,
+    );
+    expect(
+      find.byKey(const Key('participation-remove-other-membership')),
+      findsOneWidget,
+    );
+
+    await _scrollTo(
+      tester,
+      find.byKey(const Key('participation-remove-other-membership')),
+    );
+    await tester.tap(
+      find.byKey(const Key('participation-remove-other-membership')),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('participation-confirm-remove')));
+    await tester.pumpAndSettle();
+    expect(participation.calls, contains('remove:other-membership'));
+    expect(participation.calls, isNot(contains('remove:self-membership')));
   });
 
   testWidgets(

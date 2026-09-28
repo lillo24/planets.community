@@ -68,7 +68,8 @@ class ProjectParticipationSection extends ConsumerWidget {
     final isCurrentMember = participation?.currentMembership != null;
 
     if (session.phase == AuthSessionPhase.ready &&
-        role == ProjectManagementRole.none &&
+        role != null &&
+        role != ProjectManagementRole.owner &&
         profileId != null &&
         ownState.expectedProfileId != profileId &&
         !ownState.isBusy) {
@@ -241,25 +242,22 @@ class ProjectParticipationSection extends ConsumerWidget {
         ),
       ];
     }
-    if (role?.isManager == true) {
-      return [
-        FilledButton.icon(
-          key: Key('participation-manage-$projectId'),
-          onPressed: () => context.push(
-            ProjectDelegateRoutes.manage(projectKind, projectId),
-          ),
-          icon: const Icon(Icons.groups_outlined),
-          label: Text(l10n.projectManageTitle),
-        ),
-      ];
+    if (role == ProjectManagementRole.owner) {
+      return [_manageProjectButton(context, l10n)];
     }
+    final delegateActions = role == ProjectManagementRole.delegate
+        ? <Widget>[
+            _manageProjectButton(context, l10n),
+            const SizedBox(height: AppSpacing.small),
+          ]
+        : const <Widget>[];
     if (session.phase == AuthSessionPhase.restoring ||
         session.phase == AuthSessionPhase.checkingProfile) {
-      return [Text(l10n.participationLoading)];
+      return [...delegateActions, Text(l10n.participationLoading)];
     }
     if (session.phase == AuthSessionPhase.signedOut ||
         session.phase == AuthSessionPhase.profileSetupRequired) {
-      return acceptsNewRequests
+      final ordinaryActions = acceptsNewRequests
           ? [
               FilledButton.icon(
                 key: Key('participation-join-$projectId'),
@@ -271,11 +269,13 @@ class ProjectParticipationSection extends ConsumerWidget {
               ),
             ]
           : [Text(l10n.participationClosed)];
+      return [...delegateActions, ...ordinaryActions];
     }
     if (profileId == null) return const [];
     if (ownState.expectedProfileId == profileId &&
         ownState.phase == ParticipationLoadPhase.failure) {
       return [
+        ...delegateActions,
         Text(
           l10n.participationSafeError,
           key: Key('participation-own-error-$projectId'),
@@ -293,10 +293,11 @@ class ProjectParticipationSection extends ConsumerWidget {
       ];
     }
     if (participation == null) {
-      return [Text(l10n.participationLoading)];
+      return [...delegateActions, Text(l10n.participationLoading)];
     }
     if (participation.currentMembership case final membership?) {
       return [
+        ...delegateActions,
         ListTile(
           contentPadding: EdgeInsets.zero,
           leading: const Icon(Icons.check_circle_outline),
@@ -314,6 +315,7 @@ class ProjectParticipationSection extends ConsumerWidget {
     }
     if (participation.pendingRequest case final request?) {
       return [
+        ...delegateActions,
         ListTile(
           contentPadding: EdgeInsets.zero,
           leading: const Icon(Icons.hourglass_top),
@@ -335,8 +337,11 @@ class ProjectParticipationSection extends ConsumerWidget {
         ),
       ];
     }
-    if (!acceptsNewRequests) return [Text(l10n.participationClosed)];
+    if (!acceptsNewRequests) {
+      return [...delegateActions, Text(l10n.participationClosed)];
+    }
     return [
+      ...delegateActions,
       FilledButton.icon(
         key: Key('participation-join-$projectId'),
         onPressed: command?.isBusy == true
@@ -350,6 +355,15 @@ class ProjectParticipationSection extends ConsumerWidget {
     ];
   }
 
+  Widget _manageProjectButton(BuildContext context, AppLocalizations l10n) =>
+      FilledButton.icon(
+        key: Key('participation-manage-$projectId'),
+        onPressed: () =>
+            context.push(ProjectDelegateRoutes.manage(projectKind, projectId)),
+        icon: const Icon(Icons.groups_outlined),
+        label: Text(l10n.projectManageTitle),
+      );
+
   Future<void> _refresh(WidgetRef ref, String profileId) async {
     await ref
         .read(projectManagementRoleProvider.notifier)
@@ -359,7 +373,7 @@ class ProjectParticipationSection extends ConsumerWidget {
           projectKind: projectKind,
         );
     final role = ref.read(projectManagementRoleProvider).role;
-    if (role == ProjectManagementRole.none) {
+    if (role != ProjectManagementRole.owner) {
       await ref.read(ownParticipationProvider.notifier).load(profileId);
     }
   }

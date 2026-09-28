@@ -659,16 +659,13 @@ class CreatorParticipationController
         if (left.isPending != right.isPending) return left.isPending ? -1 : 1;
         return right.createdAt.compareTo(left.createdAt);
       });
-    final members =
-        (values[1] as List<ManagerProjectMember>)
-            .where((member) => member.participantProfileId != expectedManagerId)
-            .toList()
-          ..sort((left, right) {
-            if (left.isCurrent != right.isCurrent) {
-              return left.isCurrent ? -1 : 1;
-            }
-            return right.joinedAt.compareTo(left.joinedAt);
-          });
+    final members = [...values[1] as List<ManagerProjectMember>]
+      ..sort((left, right) {
+        if (left.isCurrent != right.isCurrent) {
+          return left.isCurrent ? -1 : 1;
+        }
+        return right.joinedAt.compareTo(left.joinedAt);
+      });
     return (
       requests: List<ManagerProjectJoinRequest>.unmodifiable(requests),
       members: List<ManagerProjectMember>.unmodifiable(members),

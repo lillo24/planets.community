@@ -136,7 +136,10 @@ class _CreatorParticipationScreenState
                               widget.projectKind == ProjectKind.oneTime
                               ? () => _openActualContributions(member)
                               : null,
-                          onRemove: () => _confirmRemove(member),
+                          onRemove:
+                              member.participantProfileId == _expectedManagerId
+                              ? null
+                              : () => _confirmRemove(member),
                         ),
                         const SizedBox(height: AppSpacing.small),
                       ],
@@ -345,7 +348,7 @@ class _MemberCard extends StatelessWidget {
   final bool isActing;
   final VoidCallback onCommitments;
   final VoidCallback? onActualContributions;
-  final VoidCallback onRemove;
+  final VoidCallback? onRemove;
 
   @override
   Widget build(BuildContext context) {
@@ -402,7 +405,7 @@ class _MemberCard extends StatelessWidget {
                 ],
               ],
             ),
-            if (member.isCurrent) ...[
+            if (member.isCurrent && onRemove != null) ...[
               const SizedBox(height: AppSpacing.small),
               OutlinedButton.icon(
                 key: Key('participation-remove-${member.id}'),
