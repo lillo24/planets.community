@@ -105,6 +105,10 @@ void main() {
       );
       app.read(appRouterProvider).go('/tavoli/tavolo-1');
       await tester.pumpAndSettle();
+      expect(
+        find.byKey(const Key('tavolo-detail-cover-tavolo-1')),
+        findsOneWidget,
+      );
       await tester.scrollUntilVisible(
         find.text('Exact location available after joining.'),
         300,
@@ -115,6 +119,11 @@ void main() {
       );
       expect(find.text('At the long reading-room table'), findsNothing);
       expect(find.textContaining('Sep 9, 2026 19:00'), findsWidgets);
+      await _scrollTo(
+        tester,
+        find.byKey(const Key('tavoli-organizer-identity')),
+        300,
+      );
       expect(find.text('Organized by Casey'), findsOneWidget);
       expect(photoGateway.projectCreatorLoadIds, contains('tavolo-1'));
     },
@@ -137,7 +146,8 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text('Monthly on day 12 at 19:00'), findsOneWidget);
       expect(find.text('At the long reading-room table'), findsNothing);
-      await tester.tap(find.byKey(const Key('tavolo-card-tavolo-1')));
+      final card = find.byKey(const Key('tavolo-card-tavolo-1'));
+      await tester.tapAt(tester.getTopLeft(card) + const Offset(24, 24));
       await tester.pumpAndSettle();
       await tester.scrollUntilVisible(
         find.text('At the long reading-room table'),
@@ -231,23 +241,16 @@ void main() {
     final app = await _pump(tester, recurring: recurring);
     app.read(appRouterProvider).go('/tavoli/mine');
     await tester.pumpAndSettle();
+    expect(find.byKey(const Key('own-tavolo-cover-draft')), findsOneWidget);
     expect(find.byKey(const Key('tavoli-publish-draft')), findsOneWidget);
+    await _scrollTo(tester, find.byKey(const Key('tavoli-pause-active')), 400);
     expect(find.byKey(const Key('tavoli-pause-active')), findsOneWidget);
-    await tester.scrollUntilVisible(
-      find.byKey(const Key('tavoli-resume-paused')),
-      400,
-    );
+    await _scrollTo(tester, find.byKey(const Key('tavoli-resume-paused')), 400);
     expect(find.byKey(const Key('tavoli-resume-paused')), findsOneWidget);
-    await tester.scrollUntilVisible(
-      find.text('This ended Tavolo is read-only.'),
-      400,
-    );
+    await _scrollTo(tester, find.text('This ended Tavolo is read-only.'), 400);
     expect(find.byKey(const Key('tavoli-edit-ended')), findsNothing);
     expect(find.text('This ended Tavolo is read-only.'), findsOneWidget);
-    await tester.scrollUntilVisible(
-      find.byKey(const Key('tavoli-end-active')),
-      -500,
-    );
+    await _scrollTo(tester, find.byKey(const Key('tavoli-end-active')), -500);
     await tester.tap(find.byKey(const Key('tavoli-end-active')));
     await tester.pumpAndSettle();
     expect(find.text('End this Tavolo?'), findsOneWidget);

@@ -613,6 +613,7 @@ void main() {
     final app = await _pump(tester, participation: participation);
     app.read(appRouterProvider).go('/proposals/proposal-1');
     await tester.pumpAndSettle();
+    await _scrollTo(tester, find.text('A full proposal description.'));
     expect(find.text('A full proposal description.'), findsOneWidget);
     await _scrollTo(
       tester,

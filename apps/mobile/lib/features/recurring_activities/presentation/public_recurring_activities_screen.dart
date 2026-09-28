@@ -10,6 +10,7 @@ import '../../../core/widgets/error_state.dart';
 import '../../../core/widgets/loading_state.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../auth/application/auth_session_controller.dart';
+import '../../cover_media/presentation/project_cover_image.dart';
 import '../../participation/domain/participation_models.dart';
 import '../../participation/presentation/project_participation_section.dart';
 import '../../profile_photo/application/project_creator_photo_controller.dart';
@@ -248,6 +249,13 @@ class _PublicRecurringActivityDetailScreenState
         child: ListView(
           padding: const EdgeInsets.all(AppSpacing.large),
           children: [
+            ProjectCoverImage(
+              key: Key('tavolo-detail-cover-${detail.id}'),
+              title: detail.title,
+              objectPath: detail.coverObjectPath,
+              borderRadius: AppRadii.medium,
+            ),
+            const SizedBox(height: AppSpacing.large),
             Row(
               children: [
                 Expanded(

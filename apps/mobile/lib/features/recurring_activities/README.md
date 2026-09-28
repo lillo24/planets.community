@@ -22,7 +22,8 @@ notifications, resources, or occurrence-level editing. The sibling
   malformed payloads during parsing.
 - `application/recurring_activity_controllers.dart` owns discovery snapshots,
   requester-only Requested enrichment, detail/owner loading, lifecycle commands,
-  editor chains, request revisions, and account-switch invalidation.
+  editor chains, cover-before-publish reconciliation, request revisions, and
+  account-switch invalidation.
 - `presentation/` owns the separate Tavoli list/detail, constrained editor,
   My Tavoli lifecycle surface, and narrow recurring widgets.
 
@@ -84,3 +85,10 @@ Owner providers clear and increment their revision on identity changes, and
 every post-`await` continuation rechecks revision and identity. The router also
 rebuilds its stateful shell on account changes, discarding retained private
 forms and stacks.
+
+The sibling `cover_media/` feature supplies Tavolo's optional 16:9 editor,
+normalizer, canonical Project-cover reconciliation, and path-keyed display.
+Selection and removal remain local until Save/Publish. A new Tavolo draft is
+created before upload, and publication runs only after cover reconciliation;
+partial cover failure retains the same draft for retry. Cards and details use
+the cover path already present in canonical Tavolo reads, never metadata RPCs.

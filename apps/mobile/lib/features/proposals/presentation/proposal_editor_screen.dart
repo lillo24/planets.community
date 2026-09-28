@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart' show ScrollCacheExtent;
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -9,6 +10,8 @@ import '../../../core/widgets/error_state.dart';
 import '../../../core/widgets/loading_state.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../auth/application/auth_session_controller.dart';
+import '../../cover_media/domain/cover_media_models.dart';
+import '../../cover_media/presentation/cover_editor_section.dart';
 import '../../participation/domain/participation_models.dart';
 import '../../profile_photo/presentation/profile_photo_trust_gate.dart';
 import '../../project_resource_needs/presentation/project_resource_need_routes.dart';
@@ -77,7 +80,7 @@ class _ProposalEditorScreenState extends ConsumerState<ProposalEditorScreen> {
                   state.categories.isEmpty
             ? ErrorState(message: l10n.proposalSafeError, onRetry: _load)
             : _ProposalForm(
-                key: ValueKey('${identity.id}:${state.proposal?.id ?? 'new'}'),
+                key: ValueKey('${identity.id}:${widget.proposalId ?? 'new'}'),
                 identityId: identity.id,
                 proposal: state.proposal,
                 categories: state.categories,
@@ -131,6 +134,7 @@ class _ProposalFormState extends ConsumerState<_ProposalForm> {
   DateTime? _endsAt;
   bool _validatingPublish = false;
   List<String> _validationIssues = const [];
+  ProjectCoverChange _coverChange = const ProjectCoverChange.unchanged();
 
   @override
   void initState() {
@@ -231,8 +235,16 @@ class _ProposalFormState extends ConsumerState<_ProposalForm> {
     if (!mounted) return;
     final controller = ref.read(proposalEditorProvider.notifier);
     final id = publish
-        ? await controller.publish(widget.identityId, input)
-        : await controller.saveDraft(widget.identityId, input);
+        ? await controller.publish(
+            widget.identityId,
+            input,
+            coverChange: _coverChange,
+          )
+        : await controller.saveDraft(
+            widget.identityId,
+            input,
+            coverChange: _coverChange,
+          );
     if (id == null &&
         mounted &&
         publish &&
@@ -244,7 +256,11 @@ class _ProposalFormState extends ConsumerState<_ProposalForm> {
       );
       return;
     }
-    if (id != null && mounted) context.go('/proposals/mine');
+    if (id != null && mounted) {
+      ref.invalidate(ownProposalsProvider);
+      ref.invalidate(publicProposalsProvider);
+      context.go('/proposals/mine');
+    }
   }
 
   void _fillSampleData() {
@@ -363,6 +379,9 @@ class _ProposalFormState extends ConsumerState<_ProposalForm> {
             ),
           Expanded(
             child: ListView(
+              // The bounded editor keeps validated fields mounted while an
+              // error summary scrolls between them after submission.
+              scrollCacheExtent: const ScrollCacheExtent.pixels(1200),
               padding: const EdgeInsets.all(AppSpacing.large),
               children: [
                 if (kDebugMode && widget.proposal == null) ...[
@@ -386,6 +405,14 @@ class _ProposalFormState extends ConsumerState<_ProposalForm> {
                   required: true,
                   minimumLength: 2,
                 ),
+                CoverEditorSection(
+                  ownerProfileId: widget.identityId,
+                  title: widget.proposal?.title ?? l10n.proposalCreateTitle,
+                  canonicalObjectPath: widget.proposal?.coverObjectPath,
+                  enabled: !busy,
+                  onChanged: (change) => _coverChange = change,
+                ),
+                const SizedBox(height: AppSpacing.large),
                 _field(
                   _summary,
                   l10n.proposalSummaryLabel,
@@ -606,7 +633,22 @@ class _ProposalFormState extends ConsumerState<_ProposalForm> {
                       }),
                     ),
                 ],
-                if (state.phase == ProposalEditorPhase.failure &&
+                if (state.coverPartialSave != null) ...[
+                  const SizedBox(height: AppSpacing.medium),
+                  Semantics(
+                    liveRegion: true,
+                    child: Text(
+                      state.coverPartialSave ==
+                              CoverPartialSaveKind.draftCreated
+                          ? l10n.coverDraftPartialError
+                          : l10n.coverChangesPartialError,
+                      key: const Key('proposal-cover-save-error'),
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.error,
+                      ),
+                    ),
+                  ),
+                ] else if (state.phase == ProposalEditorPhase.failure &&
                     state.failure !=
                         ProposalFailureKind.profilePhotoRequired) ...[
                   const SizedBox(height: AppSpacing.medium),

@@ -1513,5 +1513,25 @@
   "profilePhotoTrustGoBackAction": "Go back",
   "profilePhotoApplicantAvatarLabel": "Applicant profile photo",
   "profilePhotoOrganizerAvatarLabel": "Project organizer profile photo",
-  "profilePhotoOrganizerFallback": "Project organizer"
+  "profilePhotoOrganizerFallback": "Project organizer",
+  "coverImage": "Cover image",
+  "coverAddImage": "Add image",
+  "coverChangeImage": "Change image",
+  "coverRemoveImage": "Remove image",
+  "coverAdjust": "Adjust cover",
+  "coverUseImage": "Use image",
+  "coverCancel": "Cancel",
+  "coverPreparing": "Preparing image…",
+  "coverPrepareError": "Cover could not be prepared.",
+  "coverTooLargeError": "Cover is too large.",
+  "coverUploadError": "Cover could not be uploaded.",
+  "coverSaveError": "Cover could not be saved.",
+  "coverLoadError": "Cover could not be loaded.",
+  "coverDraftPartialError": "Draft saved, but the cover could not be saved.",
+  "coverChangesPartialError": "Changes saved, but the cover could not be updated.",
+  "coverRetry": "Retry",
+  "coverImageSemantics": "Cover image for {title}",
+  "@coverImageSemantics": {
+    "placeholders": { "title": { "type": "String" } }
+  }
 }

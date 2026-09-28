@@ -8,6 +8,7 @@ import '../../../core/widgets/error_state.dart';
 import '../../../core/widgets/loading_state.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../auth/application/auth_session_controller.dart';
+import '../../cover_media/presentation/project_cover_image.dart';
 import '../../participation/domain/participation_models.dart';
 import '../../profile_photo/presentation/profile_photo_trust_gate.dart';
 import '../../project_resource_needs/presentation/project_resource_need_routes.dart';
@@ -107,82 +108,95 @@ class _OwnProposalCard extends ConsumerWidget {
       ProposalLifecycle.cancelled => l10n.proposalLifecycleCancelled,
     };
     return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.medium),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              proposal.title ?? l10n.proposalUntitled,
-              style: Theme.of(context).textTheme.titleLarge,
-            ),
-            const SizedBox(height: AppSpacing.xSmall),
-            Text(lifecycle, key: Key('own-proposal-state-${proposal.id}')),
-            const SizedBox(height: AppSpacing.medium),
-            Wrap(
-              spacing: AppSpacing.small,
+      clipBehavior: Clip.antiAlias,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          ProjectCoverImage(
+            key: Key('own-proposal-cover-${proposal.id}'),
+            title: proposal.title ?? l10n.proposalUntitled,
+            objectPath: proposal.coverObjectPath,
+            ownerProfileId: identityId,
+          ),
+          Padding(
+            padding: const EdgeInsets.all(AppSpacing.medium),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                OutlinedButton.icon(
-                  key: Key('proposal-resources-${proposal.id}'),
-                  onPressed: () => context.push(
-                    ProjectResourceNeedRoutes.manage(
-                      ProjectKind.oneTime,
-                      proposal.id,
-                    ),
-                  ),
-                  icon: const Icon(Icons.inventory_2_outlined),
-                  label: Text(l10n.projectResourcesManage),
+                Text(
+                  proposal.title ?? l10n.proposalUntitled,
+                  style: Theme.of(context).textTheme.titleLarge,
                 ),
-                if (proposal.isEditableAt(now))
-                  OutlinedButton(
-                    key: Key('proposal-edit-${proposal.id}'),
-                    onPressed: () =>
-                        context.push('/proposals/${proposal.id}/edit'),
-                    child: Text(l10n.proposalEditAction),
-                  ),
-                if (proposal.lifecycle == ProposalLifecycle.draft)
-                  FilledButton(
-                    key: Key('proposal-publish-${proposal.id}'),
-                    onPressed: () async {
-                      if (!await requireProfilePhotoForTrustAction(
-                        context: context,
-                        ref: ref,
-                        expectedProfileId: identityId,
-                        reason: ProfilePhotoTrustReason.publishPersonalActivity,
-                      )) {
-                        return;
-                      }
-                      if (!context.mounted) return;
-                      final published = await ref
-                          .read(ownProposalsProvider.notifier)
-                          .publish(identityId, proposal.id);
-                      if (!published && context.mounted) {
-                        if (ref.read(ownProposalsProvider).failure ==
-                            ProposalFailureKind.profilePhotoRequired) {
-                          await showProfilePhotoTrustGate(
+                const SizedBox(height: AppSpacing.xSmall),
+                Text(lifecycle, key: Key('own-proposal-state-${proposal.id}')),
+                const SizedBox(height: AppSpacing.medium),
+                Wrap(
+                  spacing: AppSpacing.small,
+                  children: [
+                    OutlinedButton.icon(
+                      key: Key('proposal-resources-${proposal.id}'),
+                      onPressed: () => context.push(
+                        ProjectResourceNeedRoutes.manage(
+                          ProjectKind.oneTime,
+                          proposal.id,
+                        ),
+                      ),
+                      icon: const Icon(Icons.inventory_2_outlined),
+                      label: Text(l10n.projectResourcesManage),
+                    ),
+                    if (proposal.isEditableAt(now))
+                      OutlinedButton(
+                        key: Key('proposal-edit-${proposal.id}'),
+                        onPressed: () =>
+                            context.push('/proposals/${proposal.id}/edit'),
+                        child: Text(l10n.proposalEditAction),
+                      ),
+                    if (proposal.lifecycle == ProposalLifecycle.draft)
+                      FilledButton(
+                        key: Key('proposal-publish-${proposal.id}'),
+                        onPressed: () async {
+                          if (!await requireProfilePhotoForTrustAction(
                             context: context,
+                            ref: ref,
+                            expectedProfileId: identityId,
                             reason:
                                 ProfilePhotoTrustReason.publishPersonalActivity,
-                          );
-                          return;
-                        }
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text(l10n.proposalSafeError)),
-                        );
-                      }
-                    },
-                    child: Text(l10n.proposalPublishAction),
-                  ),
-                if (proposal.canCancelAt(now))
-                  TextButton(
-                    key: Key('proposal-cancel-${proposal.id}'),
-                    onPressed: () => _confirmCancel(context, ref),
-                    child: Text(l10n.proposalCancelAction),
-                  ),
+                          )) {
+                            return;
+                          }
+                          if (!context.mounted) return;
+                          final published = await ref
+                              .read(ownProposalsProvider.notifier)
+                              .publish(identityId, proposal.id);
+                          if (!published && context.mounted) {
+                            if (ref.read(ownProposalsProvider).failure ==
+                                ProposalFailureKind.profilePhotoRequired) {
+                              await showProfilePhotoTrustGate(
+                                context: context,
+                                reason: ProfilePhotoTrustReason
+                                    .publishPersonalActivity,
+                              );
+                              return;
+                            }
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text(l10n.proposalSafeError)),
+                            );
+                          }
+                        },
+                        child: Text(l10n.proposalPublishAction),
+                      ),
+                    if (proposal.canCancelAt(now))
+                      TextButton(
+                        key: Key('proposal-cancel-${proposal.id}'),
+                        onPressed: () => _confirmCancel(context, ref),
+                        child: Text(l10n.proposalCancelAction),
+                      ),
+                  ],
+                ),
               ],
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

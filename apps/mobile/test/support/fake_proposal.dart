@@ -22,6 +22,7 @@ class FakeProposalGateway implements ProposalGateway {
   ProposalDetail? publicDetail;
   List<OwnProposal> ownItems = [];
   Object? error;
+  Object? publishError;
   Object? requestedError;
   RequestedProposalLoader? requestedLoader;
   PublicProposalLoader? publicLoader;
@@ -145,6 +146,7 @@ class FakeProposalGateway implements ProposalGateway {
   ) async {
     _throwIfNeeded();
     calls.add('publish:$proposalId');
+    if (publishError case final failure?) throw failure;
     if (mutationDelay case final delay?) await delay;
     lastExpectedIdentity = expectedCreatorId;
   }
@@ -187,6 +189,7 @@ ProposalSummary proposalSummaryFixture({
   String id = 'proposal-1',
   ProposalStatus status = ProposalStatus.upcoming,
   List<ProposalSkill>? skills,
+  String? coverObjectPath,
 }) => ProposalSummary(
   id: id,
   title: 'Paint the square',
@@ -212,6 +215,7 @@ ProposalSummary proposalSummaryFixture({
           importance: ProposalSkillImportance.required,
         ),
       ],
+  coverObjectPath: coverObjectPath,
 );
 
 RequestedProposalSummary requestedProposalFixture({
@@ -261,6 +265,7 @@ ProposalInput proposalInputFixture({
 OwnProposal ownProposalFixture({
   String id = 'proposal-1',
   ProposalInput? input,
+  String? coverObjectPath,
 }) {
   final value = input ?? proposalInputFixture();
   return OwnProposal(
@@ -284,5 +289,6 @@ OwnProposal ownProposalFixture({
     updatedAt: DateTime.utc(2026, 9, 1),
     publishedAt: null,
     cancelledAt: null,
+    coverObjectPath: coverObjectPath,
   );
 }

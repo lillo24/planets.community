@@ -5,11 +5,14 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:planets_mobile/features/auth/application/auth_session_controller.dart';
 import 'package:planets_mobile/features/auth/data/auth_gateway.dart';
 import 'package:planets_mobile/features/auth/domain/auth_models.dart';
+import 'package:planets_mobile/features/cover_media/application/project_cover_reconciler.dart';
+import 'package:planets_mobile/features/cover_media/domain/cover_media_models.dart';
 import 'package:planets_mobile/features/recurring_activities/application/recurring_activity_controllers.dart';
 import 'package:planets_mobile/features/recurring_activities/data/recurring_activity_gateway.dart';
 import 'package:planets_mobile/features/recurring_activities/domain/recurring_activity_models.dart';
 
 import '../../../support/fake_auth.dart';
+import '../../../support/fake_cover_media.dart';
 import '../../../support/fake_recurring_activity.dart';
 
 void main() {
@@ -272,6 +275,134 @@ void main() {
     },
   );
 
+  test('new Tavolo reconciles its cover before publish', () async {
+    final gateway = FakeRecurringActivityGateway();
+    final covers = FakeProjectCoverReconciler()
+      ..onCall = (projectId, change) async {
+        expect(projectId, 'new-tavolo');
+        expect(gateway.calls, ['create']);
+      };
+    final session = _readyContainer(gateway, coverReconciler: covers);
+    addTearDown(session.container.dispose);
+    addTearDown(session.auth.close);
+    final controller = session.container.read(
+      recurringActivityEditorProvider.notifier,
+    );
+    await controller.load('user-1', null);
+
+    final result = await controller.publish(
+      'user-1',
+      recurringInputFixture(),
+      coverChange: ProjectCoverChange.replacement(processedCoverFixture()),
+    );
+
+    expect(result, 'new-tavolo');
+    expect(covers.calls, hasLength(1));
+    expect(gateway.calls, containsAllInOrder(['create', 'publish:new-tavolo']));
+  });
+
+  test(
+    'Tavolo cover failure retains the same draft and prevents publish',
+    () async {
+      final gateway = FakeRecurringActivityGateway();
+      final covers = FakeProjectCoverReconciler()
+        ..failure = const CoverPersistenceException(
+          CoverPersistenceFailureKind.commit,
+        );
+      final session = _readyContainer(gateway, coverReconciler: covers);
+      addTearDown(session.container.dispose);
+      addTearDown(session.auth.close);
+      final controller = session.container.read(
+        recurringActivityEditorProvider.notifier,
+      );
+      await controller.load('user-1', null);
+
+      final result = await controller.publish(
+        'user-1',
+        recurringInputFixture(),
+        coverChange: ProjectCoverChange.replacement(processedCoverFixture()),
+      );
+
+      final state = session.container.read(recurringActivityEditorProvider);
+      expect(result, isNull);
+      expect(state.activity?.id, 'new-tavolo');
+      expect(state.coverFailure, CoverPersistenceFailureKind.commit);
+      expect(state.coverPartialSave, CoverPartialSaveKind.draftCreated);
+      expect(gateway.calls, isNot(contains('publish:new-tavolo')));
+
+      covers.failure = null;
+      final retry = await controller.publish(
+        'user-1',
+        recurringInputFixture(),
+        coverChange: ProjectCoverChange.replacement(processedCoverFixture()),
+      );
+      expect(retry, 'new-tavolo');
+      expect(gateway.calls.where((call) => call == 'create'), hasLength(1));
+      expect(gateway.calls, contains('update:new-tavolo'));
+      expect(covers.calls, hasLength(2));
+    },
+  );
+
+  test(
+    'Tavolo publish failure leaves the cover-bearing draft retained',
+    () async {
+      final gateway = FakeRecurringActivityGateway()
+        ..publishError = StateError('raw publish failure');
+      final covers = FakeProjectCoverReconciler();
+      final session = _readyContainer(gateway, coverReconciler: covers);
+      addTearDown(session.container.dispose);
+      addTearDown(session.auth.close);
+      final controller = session.container.read(
+        recurringActivityEditorProvider.notifier,
+      );
+      await controller.load('user-1', null);
+
+      final result = await controller.publish(
+        'user-1',
+        recurringInputFixture(),
+        coverChange: ProjectCoverChange.replacement(processedCoverFixture()),
+      );
+
+      expect(result, isNull);
+      expect(covers.calls, hasLength(1));
+      expect(
+        session.container.read(recurringActivityEditorProvider).activity?.id,
+        'new-tavolo',
+      );
+    },
+  );
+
+  test('ended Tavolo rejects content and cover persistence', () async {
+    final gateway = FakeRecurringActivityGateway()
+      ..ownItems = [
+        ownRecurringActivityFixture(
+          lifecycle: RecurringActivityLifecycle.ended,
+        ),
+      ];
+    final covers = FakeProjectCoverReconciler();
+    final session = _readyContainer(gateway, coverReconciler: covers);
+    addTearDown(session.container.dispose);
+    addTearDown(session.auth.close);
+    final controller = session.container.read(
+      recurringActivityEditorProvider.notifier,
+    );
+    await controller.load('user-1', 'tavolo-1');
+
+    final result = await controller.saveDraft(
+      'user-1',
+      recurringInputFixture(),
+      coverChange: ProjectCoverChange.replacement(processedCoverFixture()),
+    );
+
+    expect(result, isNull);
+    expect(gateway.calls, isNot(contains('update:tavolo-1')));
+    expect(covers.calls, isEmpty);
+    expect(
+      session.container.read(recurringActivityEditorProvider).failure,
+      RecurringActivityFailureKind.invalidInput,
+    );
+  });
+
   for (final command in ['publish', 'pause', 'resume', 'end']) {
     test('account switch rejects late $command continuation', () async {
       final pending = Completer<void>();
@@ -323,8 +454,9 @@ void main() {
 }
 
 ({ProviderContainer container, FakeAuthGateway auth}) _readyContainer(
-  FakeRecurringActivityGateway gateway,
-) {
+  FakeRecurringActivityGateway gateway, {
+  ProjectCoverReconciler? coverReconciler,
+}) {
   final auth = FakeAuthGateway(
     snapshot: const AuthSnapshot(identity: AuthIdentity(id: 'user-1')),
   );
@@ -335,6 +467,8 @@ void main() {
         FakeProfileAnchorGateway(),
       ),
       recurringActivityGatewayProvider.overrideWithValue(gateway),
+      if (coverReconciler != null)
+        projectCoverReconcilerProvider.overrideWithValue(coverReconciler),
       recurringActivityClockProvider.overrideWithValue(
         () => DateTime.utc(2026, 9, 4, 10),
       ),

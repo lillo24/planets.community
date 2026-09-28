@@ -1,4 +1,5 @@
 import '../../../core/time/event_time.dart';
+import '../../cover_media/domain/cover_media_models.dart';
 
 enum RecurringActivityLifecycle {
   draft('draft'),
@@ -468,11 +469,15 @@ class RecurringActivityEditorState {
     this.expectedCreatorId,
     this.activity,
     this.failure,
+    this.coverFailure,
+    this.coverPartialSave,
   });
   final RecurringActivityEditorPhase phase;
   final String? expectedCreatorId;
   final OwnRecurringActivity? activity;
   final RecurringActivityFailureKind? failure;
+  final CoverPersistenceFailureKind? coverFailure;
+  final CoverPartialSaveKind? coverPartialSave;
   bool get isBusy => switch (phase) {
     RecurringActivityEditorPhase.loading ||
     RecurringActivityEditorPhase.saving ||

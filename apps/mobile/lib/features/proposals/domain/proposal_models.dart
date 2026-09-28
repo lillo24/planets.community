@@ -1,3 +1,5 @@
+import '../../cover_media/domain/cover_media_models.dart';
+
 enum ProposalLifecycle {
   draft('draft'),
   published('published'),
@@ -407,6 +409,8 @@ class ProposalEditorState {
     this.proposal,
     this.categories = const [],
     this.failure,
+    this.coverFailure,
+    this.coverPartialSave,
   });
 
   final ProposalEditorPhase phase;
@@ -414,6 +418,8 @@ class ProposalEditorState {
   final OwnProposal? proposal;
   final List<ProposalSkillCategory> categories;
   final ProposalFailureKind? failure;
+  final CoverPersistenceFailureKind? coverFailure;
+  final CoverPartialSaveKind? coverPartialSave;
 
   bool get isBusy => switch (phase) {
     ProposalEditorPhase.loading ||

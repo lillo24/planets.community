@@ -5,6 +5,8 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../auth/application/auth_session_controller.dart';
 import '../../auth/domain/auth_models.dart';
+import '../../cover_media/application/project_cover_reconciler.dart';
+import '../../cover_media/domain/cover_media_models.dart';
 import '../../participation/application/participation_controllers.dart';
 import '../data/proposal_gateway.dart';
 import '../domain/proposal_models.dart';
@@ -478,8 +480,9 @@ class ProposalEditorController extends Notifier<ProposalEditorState> {
 
   Future<String?> saveDraft(
     String expectedCreatorId,
-    ProposalInput input,
-  ) async {
+    ProposalInput input, {
+    ProjectCoverChange coverChange = const ProjectCoverChange.unchanged(),
+  }) async {
     if (state.isBusy ||
         !isValidProposalDraft(input) ||
         (input.eventTimezone.trim().isNotEmpty &&
@@ -493,10 +496,19 @@ class ProposalEditorController extends Notifier<ProposalEditorState> {
       );
       return null;
     }
-    return _saveContent(expectedCreatorId, input, publish: false);
+    return _saveContent(
+      expectedCreatorId,
+      input,
+      publish: false,
+      coverChange: coverChange,
+    );
   }
 
-  Future<String?> publish(String expectedCreatorId, ProposalInput input) async {
+  Future<String?> publish(
+    String expectedCreatorId,
+    ProposalInput input, {
+    ProjectCoverChange coverChange = const ProjectCoverChange.unchanged(),
+  }) async {
     if (state.isBusy ||
         !isPublishableProposalInput(input) ||
         !isKnownProposalTimeZone(input.eventTimezone)) {
@@ -509,16 +521,23 @@ class ProposalEditorController extends Notifier<ProposalEditorState> {
       );
       return null;
     }
-    return _saveContent(expectedCreatorId, input, publish: true);
+    return _saveContent(
+      expectedCreatorId,
+      input,
+      publish: true,
+      coverChange: coverChange,
+    );
   }
 
   Future<String?> _saveContent(
     String expectedCreatorId,
     ProposalInput input, {
     required bool publish,
+    required ProjectCoverChange coverChange,
   }) async {
     final revision = ++_revision;
     final existingProposal = state.proposal;
+    String? persistedProposalId;
     state = ProposalEditorState(
       phase: publish
           ? ProposalEditorPhase.publishing
@@ -535,10 +554,45 @@ class ProposalEditorController extends Notifier<ProposalEditorState> {
           : existingProposal.isEditableAt(ref.read(proposalClockProvider)())
           ? existingProposal.id
           : throw const ProposalInvalidStateException();
+      persistedProposalId = proposalId;
       if (!_isCurrent(revision)) return null;
       if (existingProposal != null) {
         await gateway.updateOwnProposal(expectedCreatorId, proposalId, input);
         if (!_isCurrent(revision)) return null;
+      }
+      _requireReadyIdentity(expectedCreatorId);
+      if (coverChange.kind != ProjectCoverChangeKind.unchanged) {
+        try {
+          await ref
+              .read(projectCoverReconcilerProvider)
+              .reconcile(
+                ownerProfileId: expectedCreatorId,
+                projectId: proposalId,
+                change: coverChange,
+              );
+        } on CoverPersistenceException catch (error) {
+          if (!_isCurrent(revision)) return null;
+          final canonical = await _refreshAfterPartialSave(
+            gateway,
+            expectedCreatorId,
+            proposalId,
+            fallback: existingProposal,
+          );
+          if (!_isCurrent(revision)) return null;
+          state = ProposalEditorState(
+            phase: ProposalEditorPhase.failure,
+            expectedCreatorId: expectedCreatorId,
+            proposal: canonical,
+            categories: state.categories,
+            coverFailure: error.kind,
+            coverPartialSave: existingProposal == null
+                ? CoverPartialSaveKind.draftCreated
+                : CoverPartialSaveKind.changesSaved,
+          );
+          return null;
+        }
+        if (!_isCurrent(revision)) return null;
+        _requireReadyIdentity(expectedCreatorId);
       }
       if (publish) {
         await gateway.publishProposal(expectedCreatorId, proposalId);
@@ -561,14 +615,37 @@ class ProposalEditorController extends Notifier<ProposalEditorState> {
       return proposalId;
     } catch (error) {
       if (!_isCurrent(revision)) return null;
+      final canonical = persistedProposalId == null
+          ? existingProposal
+          : await _refreshAfterPartialSave(
+              ref.read(proposalGatewayProvider),
+              expectedCreatorId,
+              persistedProposalId,
+              fallback: existingProposal,
+            );
+      if (!_isCurrent(revision)) return null;
       state = ProposalEditorState(
         phase: ProposalEditorPhase.failure,
         expectedCreatorId: expectedCreatorId,
-        proposal: existingProposal,
+        proposal: canonical,
         categories: state.categories,
         failure: mapProposalFailure(error),
       );
       return null;
+    }
+  }
+
+  Future<OwnProposal?> _refreshAfterPartialSave(
+    ProposalGateway gateway,
+    String expectedCreatorId,
+    String proposalId, {
+    required OwnProposal? fallback,
+  }) async {
+    try {
+      return await gateway.getOwnProposal(expectedCreatorId, proposalId) ??
+          fallback;
+    } catch (_) {
+      return fallback;
     }
   }
 

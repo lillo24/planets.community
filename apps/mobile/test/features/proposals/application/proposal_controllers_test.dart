@@ -5,6 +5,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:planets_mobile/features/auth/application/auth_session_controller.dart';
 import 'package:planets_mobile/features/auth/data/auth_gateway.dart';
 import 'package:planets_mobile/features/auth/domain/auth_models.dart';
+import 'package:planets_mobile/features/cover_media/application/project_cover_reconciler.dart';
+import 'package:planets_mobile/features/cover_media/domain/cover_media_models.dart';
 import 'package:planets_mobile/features/participation/application/participation_controllers.dart';
 import 'package:planets_mobile/features/participation/data/participation_gateway.dart';
 import 'package:planets_mobile/features/proposals/application/proposal_controllers.dart';
@@ -12,6 +14,7 @@ import 'package:planets_mobile/features/proposals/data/proposal_gateway.dart';
 import 'package:planets_mobile/features/proposals/domain/proposal_models.dart';
 
 import '../../../support/fake_auth.dart';
+import '../../../support/fake_cover_media.dart';
 import '../../../support/fake_participation.dart';
 import '../../../support/fake_proposal.dart';
 
@@ -366,6 +369,168 @@ void main() {
     expect(gateway.calls, contains('cancel:proposal-1'));
   });
 
+  test(
+    'new draft exists before cover reconciliation and is retained on failure',
+    () async {
+      final gateway = FakeProposalGateway();
+      final covers = FakeProjectCoverReconciler()
+        ..failure = const CoverPersistenceException(
+          CoverPersistenceFailureKind.upload,
+        )
+        ..onCall = (projectId, change) async {
+          expect(projectId, 'new-draft');
+          expect(gateway.calls, contains('create'));
+          expect(gateway.calls, isNot(contains('publish:new-draft')));
+        };
+      final session = _readyContainer(gateway, coverReconciler: covers);
+      addTearDown(session.container.dispose);
+      addTearDown(session.auth.close);
+      final controller = session.container.read(
+        proposalEditorProvider.notifier,
+      );
+      await controller.load('user-1', null);
+
+      final result = await controller.publish(
+        'user-1',
+        proposalInputFixture(),
+        coverChange: ProjectCoverChange.replacement(processedCoverFixture()),
+      );
+
+      final state = session.container.read(proposalEditorProvider);
+      expect(result, isNull);
+      expect(state.proposal?.id, 'new-draft');
+      expect(state.coverFailure, CoverPersistenceFailureKind.upload);
+      expect(state.coverPartialSave, CoverPartialSaveKind.draftCreated);
+      expect(gateway.calls, isNot(contains('publish:new-draft')));
+
+      covers.failure = null;
+      final retry = await controller.publish(
+        'user-1',
+        proposalInputFixture(),
+        coverChange: ProjectCoverChange.replacement(processedCoverFixture()),
+      );
+      expect(retry, 'new-draft');
+      expect(gateway.calls.where((call) => call == 'create'), hasLength(1));
+      expect(gateway.calls, contains('update:new-draft'));
+      expect(covers.calls, hasLength(2));
+    },
+  );
+
+  test('pending cover is reconciled before a new draft is published', () async {
+    final gateway = FakeProposalGateway();
+    final covers = FakeProjectCoverReconciler()
+      ..onCall = (projectId, change) async {
+        expect(gateway.calls, ['create']);
+      };
+    final session = _readyContainer(gateway, coverReconciler: covers);
+    addTearDown(session.container.dispose);
+    addTearDown(session.auth.close);
+    final controller = session.container.read(proposalEditorProvider.notifier);
+    await controller.load('user-1', null);
+
+    final result = await controller.publish(
+      'user-1',
+      proposalInputFixture(),
+      coverChange: ProjectCoverChange.replacement(processedCoverFixture()),
+    );
+
+    expect(result, 'new-draft');
+    expect(covers.calls.single.project, 'new-draft');
+    expect(gateway.calls, containsAllInOrder(['create', 'publish:new-draft']));
+  });
+
+  test(
+    'existing content save plus cover failure reports accurate partial success',
+    () async {
+      final gateway = FakeProposalGateway()..ownItems = [ownProposalFixture()];
+      final covers = FakeProjectCoverReconciler()
+        ..failure = const CoverPersistenceException(
+          CoverPersistenceFailureKind.commit,
+        );
+      final session = _readyContainer(gateway, coverReconciler: covers);
+      addTearDown(session.container.dispose);
+      addTearDown(session.auth.close);
+      final controller = session.container.read(
+        proposalEditorProvider.notifier,
+      );
+      await controller.load('user-1', 'proposal-1');
+
+      final result = await controller.saveDraft(
+        'user-1',
+        proposalInputFixture(),
+        coverChange: ProjectCoverChange.replacement(processedCoverFixture()),
+      );
+
+      final state = session.container.read(proposalEditorProvider);
+      expect(result, isNull);
+      expect(gateway.calls, contains('update:proposal-1'));
+      expect(state.proposal?.id, 'proposal-1');
+      expect(state.coverFailure, CoverPersistenceFailureKind.commit);
+      expect(state.coverPartialSave, CoverPartialSaveKind.changesSaved);
+    },
+  );
+
+  test(
+    'publish failure after cover success retains the created draft',
+    () async {
+      final gateway = FakeProposalGateway()
+        ..publishError = StateError('raw publish failure');
+      final covers = FakeProjectCoverReconciler();
+      final session = _readyContainer(gateway, coverReconciler: covers);
+      addTearDown(session.container.dispose);
+      addTearDown(session.auth.close);
+      final controller = session.container.read(
+        proposalEditorProvider.notifier,
+      );
+      await controller.load('user-1', null);
+
+      final result = await controller.publish(
+        'user-1',
+        proposalInputFixture(),
+        coverChange: ProjectCoverChange.replacement(processedCoverFixture()),
+      );
+
+      expect(result, isNull);
+      expect(covers.calls, hasLength(1));
+      expect(
+        session.container.read(proposalEditorProvider).proposal?.id,
+        'new-draft',
+      );
+    },
+  );
+
+  test(
+    'account switch rejects late cover reconciliation and publish',
+    () async {
+      final pending = Completer<void>();
+      final gateway = FakeProposalGateway();
+      final covers = FakeProjectCoverReconciler()
+        ..onCall = (_, _) => pending.future;
+      final session = _readyContainer(gateway, coverReconciler: covers);
+      addTearDown(session.container.dispose);
+      addTearDown(session.auth.close);
+      final controller = session.container.read(
+        proposalEditorProvider.notifier,
+      );
+      await controller.load('user-1', null);
+      final saving = controller.publish(
+        'user-1',
+        proposalInputFixture(),
+        coverChange: ProjectCoverChange.replacement(processedCoverFixture()),
+      );
+      await Future<void>.delayed(Duration.zero);
+
+      session.container
+          .read(authSessionProvider.notifier)
+          .markProfileReady(const AuthIdentity(id: 'user-2'));
+      pending.complete();
+
+      expect(await saving, isNull);
+      expect(gateway.calls, isNot(contains('publish:new-draft')));
+      expect(session.container.read(proposalEditorProvider).proposal, isNull);
+    },
+  );
+
   test('started published proposal is rejected before update', () async {
     final value = ownProposalFixture();
     final started = OwnProposal(
@@ -391,7 +556,8 @@ void main() {
       cancelledAt: null,
     );
     final gateway = FakeProposalGateway()..ownItems = [started];
-    final session = _readyContainer(gateway);
+    final covers = FakeProjectCoverReconciler();
+    final session = _readyContainer(gateway, coverReconciler: covers);
     addTearDown(session.container.dispose);
     addTearDown(session.auth.close);
     await session.container
@@ -399,8 +565,13 @@ void main() {
         .load('user-1', started.id);
     await session.container
         .read(proposalEditorProvider.notifier)
-        .saveDraft('user-1', proposalInputFixture());
+        .saveDraft(
+          'user-1',
+          proposalInputFixture(),
+          coverChange: ProjectCoverChange.replacement(processedCoverFixture()),
+        );
     expect(gateway.calls, isNot(contains('update:proposal-1')));
+    expect(covers.calls, isEmpty);
     expect(
       session.container.read(proposalEditorProvider).failure,
       ProposalFailureKind.invalidState,
@@ -469,6 +640,7 @@ void main() {
 ({ProviderContainer container, FakeAuthGateway auth}) _readyContainer(
   FakeProposalGateway gateway, {
   FakeParticipationGateway? participationGateway,
+  ProjectCoverReconciler? coverReconciler,
 }) {
   final auth = FakeAuthGateway(
     snapshot: const AuthSnapshot(identity: AuthIdentity(id: 'user-1')),
@@ -480,6 +652,8 @@ void main() {
         FakeProfileAnchorGateway(),
       ),
       proposalGatewayProvider.overrideWithValue(gateway),
+      if (coverReconciler != null)
+        projectCoverReconcilerProvider.overrideWithValue(coverReconciler),
       if (participationGateway != null)
         participationGatewayProvider.overrideWithValue(participationGateway),
       proposalClockProvider.overrideWithValue(() => DateTime.utc(2026, 9, 3)),
