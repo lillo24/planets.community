@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../../core/backend/cover_media_path.dart';
 import '../../../core/backend/supabase_backend.dart';
 import '../domain/resource_listing_models.dart';
 
@@ -91,6 +92,11 @@ class ResourceListingPayloadParser {
   PublicResourceListingSummary publicSummary(Map<String, dynamic> row) =>
       PublicResourceListingSummary(
         id: _uuid(row, 'listing_id'),
+        coverObjectPath: parseCoverObjectPath(
+          row['cover_object_path'],
+          parentId: _uuid(row, 'listing_id'),
+          parentSegment: 'resources',
+        ),
         mode: ResourceListingMode.fromWire(_string(row, 'listing_mode')),
         title: _string(row, 'title'),
         description: _string(row, 'description'),
@@ -131,6 +137,11 @@ class ResourceListingPayloadParser {
     }
     return OwnResourceListing(
       id: _uuid(row, 'listing_id'),
+      coverObjectPath: parseCoverObjectPath(
+        row['cover_object_path'],
+        parentId: _uuid(row, 'listing_id'),
+        parentSegment: 'resources',
+      ),
       ownerProfileId: _uuid(row, 'owner_profile_id'),
       mode: ResourceListingMode.fromWire(_string(row, 'listing_mode')),
       lifecycle: lifecycle,

@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../../core/backend/cover_media_path.dart';
 import '../../../core/backend/supabase_backend.dart';
 import '../../resource_listings/domain/resource_listing_models.dart';
 import '../domain/project_resource_match_models.dart';
@@ -55,9 +56,15 @@ class ProjectResourceMatchPayloadParser {
         'Project resource match belonged to another need.',
       );
     }
+    final listingId = _uuid(row, 'listing_id');
     return ProjectResourceListingMatch(
       resourceNeedId: resourceNeedId,
-      listingId: _uuid(row, 'listing_id'),
+      listingId: listingId,
+      coverObjectPath: parseCoverObjectPath(
+        row['cover_object_path'],
+        parentId: listingId,
+        parentSegment: 'resources',
+      ),
       listingMode: ResourceListingMode.fromWire(
         _requiredString(row, 'listing_mode'),
       ),

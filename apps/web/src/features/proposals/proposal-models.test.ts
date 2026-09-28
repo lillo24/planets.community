@@ -4,12 +4,17 @@ import {
   decodeProposalCursor,
   encodeProposalCursor,
   parsePublicProposalDetail,
+  parsePublicProposalSummary,
 } from "./proposal-models";
+
+const proposalId = "00000000-0000-4000-8000-000000000001";
+const coverObjectPath = `00000000-0000-4000-8000-000000000099/projects/${proposalId}/00000000-0000-4000-8000-000000000002.webp`;
 
 describe("public proposal models", () => {
   it("keeps only the sanitized detail contract", () => {
     const parsed = parsePublicProposalDetail({
-      proposal_id: "proposal-1",
+      proposal_id: proposalId,
+      cover_object_path: coverObjectPath,
       creator_profile_id: "user-1",
       creator_display_name: null,
       title: "Community mural",
@@ -31,7 +36,34 @@ describe("public proposal models", () => {
 
     expect(parsed.exact_location_restricted).toBe(true);
     expect(parsed.exact_meeting_text).toBeNull();
+    expect(parsed.cover_object_path).toBe(coverObjectPath);
     expect(parsed).not.toHaveProperty("private_meeting_value");
+  });
+
+  it("accepts no cover and rejects a non-null path for another Proposal", () => {
+    const row = {
+      proposal_id: proposalId,
+      cover_object_path: null,
+      title: "Community mural",
+      summary: "Paint together",
+      starts_at: "2026-09-03T10:00:00Z",
+      ends_at: "2026-09-03T12:00:00Z",
+      event_timezone: "Europe/Rome",
+      country_code: "IT",
+      locality: "Bologna",
+      administrative_area: null,
+      public_location_label: "Central Bologna",
+      derived_status: "happening",
+      skills: [],
+    };
+    expect(parsePublicProposalSummary(row).cover_object_path).toBeNull();
+    expect(() =>
+      parsePublicProposalSummary({
+        ...row,
+        cover_object_path:
+          "00000000-0000-4000-8000-000000000099/projects/00000000-0000-4000-8000-000000000098/00000000-0000-4000-8000-000000000002.webp",
+      }),
+    ).toThrow("Invalid cover object path");
   });
 
   it("round-trips bounded cursors and rejects malformed values", () => {

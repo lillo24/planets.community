@@ -77,8 +77,8 @@ select is((
   select pg_get_function_result(
     'public.list_project_resource_need_listing_matches(uuid,uuid,text,integer,text,text,text,timestamptz,uuid)'::regprocedure
   )
-), 'TABLE(resource_need_id uuid, listing_id uuid, listing_mode text, title text, description text, country_code text, locality text, administrative_area text, public_location_label text, published_at timestamp with time zone, active_request_count bigint, text_match_kind text, location_match_kind text)',
-  'RPC result includes public-safe listing fields and two reasons only');
+), 'TABLE(resource_need_id uuid, listing_id uuid, cover_object_path text, listing_mode text, title text, description text, country_code text, locality text, administrative_area text, public_location_label text, published_at timestamp with time zone, active_request_count bigint, text_match_kind text, location_match_kind text)',
+  'RPC result includes the nullable canonical cover path, public-safe listing fields, and two reasons only');
 
 select finish();
 rollback;

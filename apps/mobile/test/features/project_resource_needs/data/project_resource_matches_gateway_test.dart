@@ -51,6 +51,8 @@ void main() {
     expect(match.locality, 'Bologna');
     expect(match.activeRequestCount, 4);
     expect(match.cursor.listingId, matchListingId);
+    expect(match.coverObjectPath, _coverObjectPath);
+    expect(match.listingSummary.coverObjectPath, _coverObjectPath);
   });
 
   test('rejects malformed identifiers and mismatched need identity', () {
@@ -109,6 +111,28 @@ void main() {
         throwsFormatException,
       );
     }
+  });
+
+  test('cover path is nullable and rejects another listing identity', () {
+    expect(
+      parser
+          .match(
+            _row(coverObjectPath: null),
+            expectedResourceNeedId: matchNeedId,
+          )
+          .coverObjectPath,
+      isNull,
+    );
+    expect(
+      () => parser.match(
+        _row(
+          coverObjectPath:
+              '$matchCreatorId/resources/30000000-0000-4000-8000-000000000099/40000000-0000-4000-8000-000000000001.webp',
+        ),
+        expectedResourceNeedId: matchNeedId,
+      ),
+      throwsFormatException,
+    );
   });
 
   test('maps null mode and an empty complete cursor to exact RPC params', () {
@@ -180,9 +204,11 @@ Map<String, dynamic> _row({
   int activeRequestCount = 2,
   String textMatchKind = 'need_title_in_listing_title',
   String locationMatchKind = 'same_locality',
+  String? coverObjectPath = _coverObjectPath,
 }) => {
   'resource_need_id': resourceNeedId,
   'listing_id': listingId,
+  'cover_object_path': coverObjectPath,
   'listing_mode': listingMode,
   'title': 'Cordless drill',
   'description': 'A drill suitable for wood and masonry.',
@@ -195,3 +221,6 @@ Map<String, dynamic> _row({
   'text_match_kind': textMatchKind,
   'location_match_kind': locationMatchKind,
 };
+
+const _coverObjectPath =
+    '$matchCreatorId/resources/$matchListingId/40000000-0000-4000-8000-000000000001.webp';

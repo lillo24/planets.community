@@ -138,6 +138,7 @@ async function verifyResourceListings() {
   assertExactKeys(donateCard, [
     "active_request_count",
     "administrative_area",
+    "cover_object_path",
     "country_code",
     "description",
     "listing_id",
@@ -150,6 +151,7 @@ async function verifyResourceListings() {
   assertExactKeys(donateDetail[0], [
     "active_request_count",
     "administrative_area",
+    "cover_object_path",
     "country_code",
     "description",
     "listing_id",

@@ -49,6 +49,7 @@ class PublicResourceListingSummary {
     required this.publicLocationLabel,
     required this.publishedAt,
     required this.activeRequestCount,
+    this.coverObjectPath,
   });
 
   final String id;
@@ -61,6 +62,7 @@ class PublicResourceListingSummary {
   final String publicLocationLabel;
   final DateTime publishedAt;
   final int activeRequestCount;
+  final String? coverObjectPath;
 
   ResourceListingCursor get cursor =>
       ResourceListingCursor(publishedAt: publishedAt, id: id);
@@ -94,6 +96,7 @@ class OwnResourceListing {
     required this.updatedAt,
     required this.publishedAt,
     required this.closedAt,
+    this.coverObjectPath,
   });
 
   final String id;
@@ -110,6 +113,7 @@ class OwnResourceListing {
   final DateTime updatedAt;
   final DateTime? publishedAt;
   final DateTime? closedAt;
+  final String? coverObjectPath;
 
   bool get isEditable => lifecycle != ResourceListingLifecycle.closed;
 }

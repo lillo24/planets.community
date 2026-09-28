@@ -77,6 +77,7 @@ describe("public recurring activity server boundary", () => {
 function summaryRow() {
   return {
     recurring_activity_id: activityId,
+    cover_object_path: null,
     title: "Philosophy table",
     summary: "Discuss one philosophical question every week.",
     topic: "Philosophy",

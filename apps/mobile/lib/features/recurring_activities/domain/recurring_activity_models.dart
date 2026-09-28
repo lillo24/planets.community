@@ -114,6 +114,7 @@ class PublicRecurringActivitySummary {
     required this.publicLocationLabel,
     required this.nextOccurrence,
     required this.schedule,
+    this.coverObjectPath,
   });
 
   final String id;
@@ -126,6 +127,7 @@ class PublicRecurringActivitySummary {
   final String publicLocationLabel;
   final RecurringActivityOccurrence nextOccurrence;
   final RecurringSchedule schedule;
+  final String? coverObjectPath;
 
   RecurringActivityCursor get cursor =>
       RecurringActivityCursor(nextStartsAt: nextOccurrence.startsAt, id: id);
@@ -161,6 +163,7 @@ class PublicRecurringActivityDetail {
     required this.nextOccurrences,
     required this.exactMeetingText,
     required this.exactLocationRestricted,
+    this.coverObjectPath,
   });
 
   final String id;
@@ -179,6 +182,7 @@ class PublicRecurringActivityDetail {
   final List<RecurringActivityOccurrence> nextOccurrences;
   final String? exactMeetingText;
   final bool exactLocationRestricted;
+  final String? coverObjectPath;
 }
 
 class OwnRecurringActivity {
@@ -203,6 +207,7 @@ class OwnRecurringActivity {
     required this.pausedAt,
     required this.resumedAt,
     required this.endedAt,
+    this.coverObjectPath,
   });
 
   final String id;
@@ -225,6 +230,7 @@ class OwnRecurringActivity {
   final DateTime? pausedAt;
   final DateTime? resumedAt;
   final DateTime? endedAt;
+  final String? coverObjectPath;
 
   bool get isEditable => lifecycle != RecurringActivityLifecycle.ended;
   bool get canPublish => lifecycle == RecurringActivityLifecycle.draft;

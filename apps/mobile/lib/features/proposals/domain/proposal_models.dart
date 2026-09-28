@@ -137,6 +137,7 @@ class ProposalSummary {
     required this.publicLocationLabel,
     required this.status,
     required this.skills,
+    this.coverObjectPath,
   });
 
   final String id;
@@ -151,6 +152,7 @@ class ProposalSummary {
   final String publicLocationLabel;
   final ProposalStatus status;
   final List<ProposalSkill> skills;
+  final String? coverObjectPath;
 
   ProposalCursor get cursor => ProposalCursor(startsAt: startsAt, id: id);
 }
@@ -207,6 +209,7 @@ class OwnProposal {
     required this.updatedAt,
     required this.publishedAt,
     required this.cancelledAt,
+    this.coverObjectPath,
   });
 
   final String id;
@@ -229,6 +232,7 @@ class OwnProposal {
   final DateTime updatedAt;
   final DateTime? publishedAt;
   final DateTime? cancelledAt;
+  final String? coverObjectPath;
 
   bool isEditableAt(DateTime now) =>
       lifecycle == ProposalLifecycle.draft ||

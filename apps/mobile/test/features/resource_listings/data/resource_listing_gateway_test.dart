@@ -19,6 +19,7 @@ void main() {
     expect(summary.cursor.id, resourceListingId);
     expect(summary.cursor.publishedAt, DateTime.parse(_publishedAt));
     expect(summary.activeRequestCount, 3);
+    expect(summary.coverObjectPath, _coverObjectPath);
   });
 
   test('public detail preserves present and absent owner display name', () {
@@ -84,6 +85,24 @@ void main() {
     expect(
       () =>
           parser.publicSummary({..._publicRow(), 'active_request_count': '3'}),
+      throwsFormatException,
+    );
+  });
+
+  test('cover path is nullable and rejects another Resource identity', () {
+    expect(
+      parser.publicSummary({
+        ..._publicRow(),
+        'cover_object_path': null,
+      }).coverObjectPath,
+      isNull,
+    );
+    expect(
+      () => parser.publicSummary({
+        ..._publicRow(),
+        'cover_object_path':
+            '$resourceOwnerProfileId/resources/10000000-0000-4000-8000-000000000099/30000000-0000-4000-8000-000000000001.webp',
+      }),
       throwsFormatException,
     );
   });
@@ -154,9 +173,12 @@ void main() {
 }
 
 const _publishedAt = '2026-09-14T12:00:00Z';
+const _coverObjectPath =
+    '$resourceOwnerProfileId/resources/$resourceListingId/30000000-0000-4000-8000-000000000001.webp';
 
 Map<String, dynamic> _publicRow() => {
   'listing_id': resourceListingId,
+  'cover_object_path': _coverObjectPath,
   'listing_mode': 'donate',
   'title': 'Garden tools',
   'description': 'A rake and a shovel ready for a new garden.',

@@ -20,6 +20,7 @@ vi.mock("@/features/proposals/proposal-server", () => ({
 
 const summary: PublicProposalSummary = {
   proposal_id: "00000000-0000-4000-8000-000000000001",
+  cover_object_path: null,
   title: "Community mural",
   summary: "Paint together",
   starts_at: "2026-09-03T10:00:00Z",

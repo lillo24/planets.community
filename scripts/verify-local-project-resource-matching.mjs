@@ -134,6 +134,7 @@ if (
 const expectedKeys = [
   "resource_need_id",
   "listing_id",
+  "cover_object_path",
   "listing_mode",
   "title",
   "description",

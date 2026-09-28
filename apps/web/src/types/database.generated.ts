@@ -502,6 +502,35 @@ export type Database = {
           },
         ]
       }
+      project_covers: {
+        Row: {
+          created_at: string
+          object_path: string
+          project_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          object_path: string
+          project_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          object_path?: string
+          project_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_covers_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: true
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       project_group_chats: {
         Row: {
           activated_at: string
@@ -1689,6 +1718,35 @@ export type Database = {
           },
         ]
       }
+      resource_listing_covers: {
+        Row: {
+          created_at: string
+          listing_id: string
+          object_path: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          listing_id: string
+          object_path: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          listing_id?: string
+          object_path?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "resource_listing_covers_listing_id_fkey"
+            columns: ["listing_id"]
+            isOneToOne: true
+            referencedRelation: "resource_listings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       resource_listing_requests: {
         Row: {
           coordination_closed_at: string | null
@@ -2018,11 +2076,23 @@ export type Database = {
         }
         Returns: string
       }
+      can_manage_cover_image_object: {
+        Args: { p_object_path: string }
+        Returns: boolean
+      }
+      can_read_public_cover_image_object: {
+        Args: { p_object_path: string }
+        Returns: boolean
+      }
       can_read_public_project_creator_photo_object: {
         Args: { p_object_path: string }
         Returns: boolean
       }
       can_read_public_resource_listing_owner_photo_object: {
+        Args: { p_object_path: string }
+        Returns: boolean
+      }
+      can_upload_cover_image_object: {
         Args: { p_object_path: string }
         Returns: boolean
       }
@@ -2056,6 +2126,14 @@ export type Database = {
       }
       clear_own_profile_photo: {
         Args: { p_expected_profile_id: string }
+        Returns: string
+      }
+      clear_own_project_cover: {
+        Args: { p_expected_creator_profile_id: string; p_project_id: string }
+        Returns: string
+      }
+      clear_own_resource_listing_cover: {
+        Args: { p_expected_owner_profile_id: string; p_listing_id: string }
         Returns: string
       }
       close_project_resource_need: {
@@ -2183,6 +2261,15 @@ export type Database = {
           updated_at: string
         }[]
       }
+      get_own_project_cover: {
+        Args: { p_expected_creator_profile_id: string; p_project_id: string }
+        Returns: {
+          created_at: string
+          object_path: string
+          project_id: string
+          updated_at: string
+        }[]
+      }
       get_own_project_group_chat: {
         Args: { p_expected_profile_id: string; p_project_id: string }
         Returns: {
@@ -2210,6 +2297,7 @@ export type Database = {
           administrative_area: string
           cancelled_at: string
           country_code: string
+          cover_object_path: string
           created_at: string
           derived_status: string
           description: string
@@ -2237,6 +2325,7 @@ export type Database = {
         Returns: {
           administrative_area: string
           country_code: string
+          cover_object_path: string
           created_at: string
           current_schedule: Json
           description: string
@@ -2263,6 +2352,7 @@ export type Database = {
           administrative_area: string
           closed_at: string
           country_code: string
+          cover_object_path: string
           created_at: string
           description: string
           lifecycle_state: string
@@ -2273,6 +2363,15 @@ export type Database = {
           public_location_label: string
           published_at: string
           title: string
+          updated_at: string
+        }[]
+      }
+      get_own_resource_listing_cover: {
+        Args: { p_expected_owner_profile_id: string; p_listing_id: string }
+        Returns: {
+          created_at: string
+          listing_id: string
+          object_path: string
           updated_at: string
         }[]
       }
@@ -2388,6 +2487,7 @@ export type Database = {
         Returns: {
           administrative_area: string
           country_code: string
+          cover_object_path: string
           creator_display_name: string
           creator_profile_id: string
           derived_status: string
@@ -2414,6 +2514,7 @@ export type Database = {
         Returns: {
           administrative_area: string
           country_code: string
+          cover_object_path: string
           creator_display_name: string
           creator_profile_id: string
           day_of_month: number
@@ -2442,6 +2543,7 @@ export type Database = {
           active_request_count: number
           administrative_area: string
           country_code: string
+          cover_object_path: string
           description: string
           listing_id: string
           listing_mode: string
@@ -2615,6 +2717,7 @@ export type Database = {
         Returns: {
           administrative_area: string
           country_code: string
+          cover_object_path: string
           derived_status: string
           ends_at: string
           event_timezone: string
@@ -2638,6 +2741,7 @@ export type Database = {
         Returns: {
           administrative_area: string
           country_code: string
+          cover_object_path: string
           day_of_month: number
           duration_minutes: number
           event_timezone: string
@@ -2790,6 +2894,7 @@ export type Database = {
           administrative_area: string
           cancelled_at: string
           country_code: string
+          cover_object_path: string
           created_at: string
           derived_status: string
           description: string
@@ -2814,6 +2919,7 @@ export type Database = {
         Returns: {
           administrative_area: string
           country_code: string
+          cover_object_path: string
           created_at: string
           current_schedule: Json
           description: string
@@ -2858,6 +2964,7 @@ export type Database = {
           administrative_area: string
           closed_at: string
           country_code: string
+          cover_object_path: string
           created_at: string
           description: string
           lifecycle_state: string
@@ -3065,6 +3172,7 @@ export type Database = {
           active_request_count: number
           administrative_area: string
           country_code: string
+          cover_object_path: string
           description: string
           listing_id: string
           listing_mode: string
@@ -3097,6 +3205,7 @@ export type Database = {
         Returns: {
           administrative_area: string
           country_code: string
+          cover_object_path: string
           derived_status: string
           ends_at: string
           event_timezone: string
@@ -3120,6 +3229,7 @@ export type Database = {
         Returns: {
           administrative_area: string
           country_code: string
+          cover_object_path: string
           event_timezone: string
           locality: string
           next_ends_at: string
@@ -3159,6 +3269,7 @@ export type Database = {
           active_request_count: number
           administrative_area: string
           country_code: string
+          cover_object_path: string
           description: string
           listing_id: string
           listing_mode: string
@@ -3436,6 +3547,30 @@ export type Database = {
           audience: string
           object_path: string
           profile_id: string
+          updated_at: string
+        }[]
+      }
+      set_own_project_cover: {
+        Args: {
+          p_expected_creator_profile_id: string
+          p_object_path: string
+          p_project_id: string
+        }
+        Returns: {
+          current_object_path: string
+          previous_object_path: string
+          updated_at: string
+        }[]
+      }
+      set_own_resource_listing_cover: {
+        Args: {
+          p_expected_owner_profile_id: string
+          p_listing_id: string
+          p_object_path: string
+        }
+        Returns: {
+          current_object_path: string
+          previous_object_path: string
           updated_at: string
         }[]
       }

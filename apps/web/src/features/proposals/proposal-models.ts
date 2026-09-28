@@ -15,6 +15,7 @@ export interface ProposalSkill {
 
 export interface PublicProposalSummary {
   proposal_id: string;
+  cover_object_path: string | null;
   title: string;
   summary: string;
   starts_at: string;
@@ -58,13 +59,23 @@ const statusValues = new Set<ProposalStatus>([
   "just_finished",
   "completed",
 ]);
+const uuidPattern =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const coverFilePattern =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\.webp$/i;
 
 export function parsePublicProposalSummary(
   value: unknown,
 ): PublicProposalSummary {
   const row = record(value);
+  const proposalId = text(row.proposal_id);
   return {
-    proposal_id: text(row.proposal_id),
+    proposal_id: proposalId,
+    cover_object_path: coverObjectPath(
+      row.cover_object_path,
+      "projects",
+      proposalId,
+    ),
     title: text(row.title),
     summary: text(row.summary),
     starts_at: instant(row.starts_at),
@@ -77,6 +88,26 @@ export function parsePublicProposalSummary(
     derived_status: status(row.derived_status),
     skills: array(row.skills).map(parseSkill),
   };
+}
+
+function coverObjectPath(
+  value: unknown,
+  parentSegment: "projects" | "resources",
+  parentId: string,
+): string | null {
+  if (value === null) return null;
+  const parsed = text(value);
+  const parts = parsed.split("/");
+  if (
+    parts.length !== 4 ||
+    !uuidPattern.test(parts[0] ?? "") ||
+    parts[1] !== parentSegment ||
+    parts[2]?.toLowerCase() !== parentId.toLowerCase() ||
+    !coverFilePattern.test(parts[3] ?? "")
+  ) {
+    throw new TypeError("Invalid cover object path");
+  }
+  return parsed;
 }
 
 export function parsePublicProposalDetail(

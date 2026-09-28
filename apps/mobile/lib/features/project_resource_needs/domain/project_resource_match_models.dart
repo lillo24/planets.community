@@ -100,6 +100,7 @@ class ProjectResourceListingMatch {
     required this.activeRequestCount,
     required this.textMatchKind,
     required this.locationMatchKind,
+    this.coverObjectPath,
   });
 
   final String resourceNeedId;
@@ -115,6 +116,7 @@ class ProjectResourceListingMatch {
   final int activeRequestCount;
   final ProjectResourceTextMatchKind textMatchKind;
   final ProjectResourceLocationMatchKind locationMatchKind;
+  final String? coverObjectPath;
 
   ProjectResourceMatchCursor get cursor => ProjectResourceMatchCursor(
     textMatchKind: textMatchKind,
@@ -135,6 +137,7 @@ class ProjectResourceListingMatch {
         publicLocationLabel: publicLocationLabel,
         publishedAt: publishedAt,
         activeRequestCount: activeRequestCount,
+        coverObjectPath: coverObjectPath,
       );
 }
 

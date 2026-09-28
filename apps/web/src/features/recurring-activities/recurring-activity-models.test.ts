@@ -9,6 +9,7 @@ import {
 } from "./recurring-activity-models";
 
 const activityId = "00000000-0000-4000-8000-000000000001";
+const coverObjectPath = `00000000-0000-4000-8000-000000000099/projects/${activityId}/00000000-0000-4000-8000-000000000002.webp`;
 
 describe("public recurring activity payloads", () => {
   it("parses a compact public summary with no exact-location field", () => {
@@ -16,11 +17,29 @@ describe("public recurring activity payloads", () => {
 
     expect(parsed).toMatchObject({
       recurring_activity_id: activityId,
+      cover_object_path: coverObjectPath,
       title: "Philosophy table",
       public_location_label: "Trento · Povo",
       event_timezone: "Europe/Rome",
     });
     expect(parsed).not.toHaveProperty("exact_meeting_text");
+    expect(parsed.cover_object_path).toBe(coverObjectPath);
+  });
+
+  it("accepts no cover and rejects a path for another Tavolo", () => {
+    expect(
+      parsePublicRecurringActivitySummary(
+        summaryRow({ cover_object_path: null }),
+      ).cover_object_path,
+    ).toBeNull();
+    expect(() =>
+      parsePublicRecurringActivitySummary(
+        summaryRow({
+          cover_object_path:
+            "00000000-0000-4000-8000-000000000099/projects/00000000-0000-4000-8000-000000000098/00000000-0000-4000-8000-000000000002.webp",
+        }),
+      ),
+    ).toThrow("Invalid recurring activity cover object path");
   });
 
   it("rejects an exact-location field on a list payload", () => {
@@ -256,6 +275,7 @@ describe("recurring activity snapshot cursor", () => {
 function summaryRow(overrides: Record<string, unknown> = {}) {
   return {
     recurring_activity_id: activityId,
+    cover_object_path: coverObjectPath,
     title: "Philosophy table",
     summary: "Discuss one philosophical question every week.",
     topic: "Philosophy",
