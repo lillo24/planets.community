@@ -86,17 +86,17 @@ class _ProjectManageScreenState extends ConsumerState<ProjectManageScreen> {
                       ),
                     ),
                   ),
-                  if (role == ProjectManagementRole.creator) ...[
+                  if (role.hasStructuralAuthority) ...[
                     const SizedBox(height: AppSpacing.small),
                     Card(
                       child: ListTile(
-                        key: const Key('project-manage-coorganizers'),
+                        key: const Key('project-manage-team'),
                         leading: const Icon(Icons.supervisor_account_outlined),
                         title: Text(l10n.projectCoorganizersTitle),
                         subtitle: Text(l10n.projectCoorganizersDescription),
                         trailing: const Icon(Icons.chevron_right),
                         onTap: () => context.push(
-                          ProjectDelegateRoutes.coorganizers(
+                          ProjectDelegateRoutes.team(
                             widget.projectKind,
                             widget.projectId,
                           ),

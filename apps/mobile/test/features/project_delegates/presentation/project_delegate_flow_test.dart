@@ -17,15 +17,18 @@ import 'package:planets_mobile/features/project_delegates/presentation/project_m
 import 'package:planets_mobile/features/proposals/data/proposal_gateway.dart';
 import 'package:planets_mobile/features/proposals/presentation/own_proposals_screen.dart';
 import 'package:planets_mobile/features/proposals/presentation/public_proposals_screen.dart';
+import 'package:planets_mobile/features/recurring_activities/data/recurring_activity_gateway.dart';
+import 'package:planets_mobile/features/recurring_activities/presentation/own_recurring_activities_screen.dart';
 import 'package:planets_mobile/l10n/generated/app_localizations.dart';
 
 import '../../../support/fake_auth.dart';
 import '../../../support/fake_participation.dart';
 import '../../../support/fake_project_delegates.dart';
 import '../../../support/fake_proposal.dart';
+import '../../../support/fake_recurring_activity.dart';
 
 void main() {
-  testWidgets('owner management hub shows Participation and Co-organizers', (
+  testWidgets('Creator management hub shows Participation and Project team', (
     tester,
   ) async {
     final gateway = FakeProjectDelegateGateway()
@@ -48,10 +51,7 @@ void main() {
       find.byKey(const Key('project-manage-participation')),
       findsOneWidget,
     );
-    expect(
-      find.byKey(const Key('project-manage-coorganizers')),
-      findsOneWidget,
-    );
+    expect(find.byKey(const Key('project-manage-team')), findsOneWidget);
   });
 
   testWidgets('delegate management hub exposes Participation only', (
@@ -77,10 +77,10 @@ void main() {
       find.byKey(const Key('project-manage-participation')),
       findsOneWidget,
     );
-    expect(find.byKey(const Key('project-manage-coorganizers')), findsNothing);
+    expect(find.byKey(const Key('project-manage-team')), findsNothing);
   });
 
-  testWidgets('Co-creator management hub remains operational and buildable', (
+  testWidgets('Co-creator management hub exposes structural Project team', (
     tester,
   ) async {
     final gateway = FakeProjectDelegateGateway()
@@ -103,19 +103,22 @@ void main() {
       find.byKey(const Key('project-manage-participation')),
       findsOneWidget,
     );
-    expect(find.byKey(const Key('project-manage-coorganizers')), findsNothing);
+    expect(find.byKey(const Key('project-manage-team')), findsOneWidget);
   });
 
   testWidgets('owner lists, creates, copies, shares, and removes delegates', (
     tester,
   ) async {
     final gateway = FakeProjectDelegateGateway()
+      ..role = ProjectManagementRole.creator
       ..delegates = [
         ProjectDelegate(
           id: 'delegate-1',
           profileId: 'profile-2',
           displayName: 'Jordan',
           delegatedAt: DateTime.utc(2029, 12, 1),
+          grantedByProfileId: 'user-1',
+          grantedByDisplayName: 'Alex',
         ),
       ]
       ..invitations = [
@@ -123,6 +126,8 @@ void main() {
           id: 'invitation-1',
           createdAt: DateTime.utc(2029, 12, 2),
           expiresAt: DateTime.utc(2030, 1, 8),
+          issuerProfileId: 'user-1',
+          issuerDisplayName: 'Alex',
         ),
       ];
     final sharing = FakeProjectInviteSharing();
@@ -132,7 +137,7 @@ void main() {
       UncontrolledProviderScope(
         container: session.container,
         child: _localized(
-          const ProjectCoorganizersScreen(
+          const ProjectTeamScreen(
             projectId: 'project-1',
             projectKind: ProjectKind.oneTime,
           ),
@@ -141,6 +146,9 @@ void main() {
     );
     await tester.pumpAndSettle();
     expect(find.text('Jordan'), findsOneWidget);
+    expect(find.text('Co-organizer'), findsNWidgets(3));
+    expect(find.text('Added by Alex'), findsOneWidget);
+    expect(find.text('Issued by Alex'), findsOneWidget);
     expect(
       find.byKey(const Key('project-invitation-invitation-1')),
       findsOneWidget,
@@ -162,7 +170,12 @@ void main() {
         .pop();
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('Revoke'));
+    final revokeInvitation = find.byKey(
+      const Key('project-invitation-revoke-invitation-1'),
+    );
+    await tester.drag(find.byType(ListView), const Offset(0, -240));
+    await tester.pumpAndSettle();
+    await tester.tap(revokeInvitation);
     await tester.pumpAndSettle();
     await tester.tap(find.widgetWithText(FilledButton, 'Revoke'));
     await tester.pumpAndSettle();
@@ -172,9 +185,14 @@ void main() {
     );
     expect(gateway.calls, contains('revoke-invitation:user-1:invitation-1'));
 
-    await tester.tap(find.text('Remove'));
+    final revokeDelegate = find.byKey(
+      const Key('project-delegate-revoke-delegate-1'),
+    );
+    await tester.drag(find.byType(ListView), const Offset(0, 240));
     await tester.pumpAndSettle();
-    await tester.tap(find.widgetWithText(FilledButton, 'Remove'));
+    await tester.tap(revokeDelegate);
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(FilledButton, 'Revoke authority'));
     await tester.pumpAndSettle();
     expect(find.text('Jordan'), findsNothing);
     expect(gateway.calls, contains('revoke-delegate:user-1:delegate-1'));
@@ -183,14 +201,15 @@ void main() {
   testWidgets('account switch dismisses the one-time raw invite result', (
     tester,
   ) async {
-    final gateway = FakeProjectDelegateGateway();
+    final gateway = FakeProjectDelegateGateway()
+      ..role = ProjectManagementRole.creator;
     final session = _readyContainer(gateway);
     addTearDown(session.dispose);
     await tester.pumpWidget(
       UncontrolledProviderScope(
         container: session.container,
         child: _localized(
-          const ProjectCoorganizersScreen(
+          const ProjectTeamScreen(
             projectId: 'project-1',
             projectKind: ProjectKind.oneTime,
           ),
@@ -209,6 +228,184 @@ void main() {
     await tester.pump(const Duration(milliseconds: 250));
 
     expect(find.byKey(const Key('delegate-invite-url')), findsNothing);
+  });
+
+  testWidgets(
+    'Co-creator invitation requires explicit high-privilege consent',
+    (tester) async {
+      final gateway = FakeProjectDelegateGateway()
+        ..role = ProjectManagementRole.coCreator;
+      final session = _readyContainer(gateway);
+      addTearDown(session.dispose);
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: session.container,
+          child: _localized(
+            const ProjectTeamScreen(
+              projectId: 'project-1',
+              projectKind: ProjectKind.oneTime,
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byKey(const Key('project-team-role-co-creator')));
+      await tester.pump();
+      await tester.tap(find.byKey(const Key('project-delegate-create')));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Create a Co-creator invitation?'), findsOneWidget);
+      expect(find.textContaining('bearer link'), findsOneWidget);
+      await tester.tap(
+        find.descendant(
+          of: find.byType(AlertDialog),
+          matching: find.widgetWithText(FilledButton, 'Create invitation'),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Invitation role: Co-creator'), findsOneWidget);
+      expect(gateway.calls, contains('create:user-1:project-1:co_creator'));
+    },
+  );
+
+  testWidgets('team roles can change while self authority has no actions', (
+    tester,
+  ) async {
+    final gateway = FakeProjectDelegateGateway()
+      ..role = ProjectManagementRole.coCreator
+      ..delegates = [
+        ProjectDelegate(
+          id: 'self',
+          profileId: 'user-1',
+          displayName: 'Current person',
+          delegatedAt: DateTime.utc(2029, 12, 1),
+          grantedByProfileId: 'owner-1',
+          grantedByDisplayName: 'Creator',
+          authorityRole: ProjectDelegatedAuthorityRole.coCreator,
+        ),
+        ProjectDelegate(
+          id: 'operator',
+          profileId: 'user-2',
+          displayName: 'Operator',
+          delegatedAt: DateTime.utc(2029, 12, 2),
+          grantedByProfileId: 'owner-1',
+          grantedByDisplayName: 'Creator',
+        ),
+        ProjectDelegate(
+          id: 'structural',
+          profileId: 'user-3',
+          displayName: 'Structural teammate',
+          delegatedAt: DateTime.utc(2029, 12, 3),
+          grantedByProfileId: 'user-1',
+          grantedByDisplayName: 'Current person',
+          authorityRole: ProjectDelegatedAuthorityRole.coCreator,
+        ),
+      ];
+    final session = _readyContainer(gateway);
+    addTearDown(session.dispose);
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: session.container,
+        child: _localized(
+          const ProjectTeamScreen(
+            projectId: 'project-1',
+            projectKind: ProjectKind.oneTime,
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('project-delegate-self-self')), findsOneWidget);
+    expect(find.byKey(const Key('project-delegate-revoke-self')), findsNothing);
+
+    final promote = find.byKey(const Key('project-delegate-promote-operator'));
+    await tester.ensureVisible(promote);
+    await tester.tap(promote);
+    await tester.pumpAndSettle();
+    await tester.tap(
+      find.widgetWithText(FilledButton, 'Promote to Co-creator'),
+    );
+    await tester.pumpAndSettle();
+    expect(gateway.calls, contains('change-role:user-1:operator:co_creator'));
+
+    final demote = find.byKey(const Key('project-delegate-demote-operator'));
+    await tester.ensureVisible(demote);
+    await tester.tap(demote);
+    await tester.pumpAndSettle();
+    expect(
+      find.textContaining('Pending authority invitations'),
+      findsOneWidget,
+    );
+    await tester.tap(
+      find.widgetWithText(FilledButton, 'Change to Co-organizer'),
+    );
+    await tester.pumpAndSettle();
+    expect(gateway.calls, contains('change-role:user-1:operator:co_organizer'));
+
+    final revoke = find.byKey(const Key('project-delegate-revoke-structural'));
+    await tester.ensureVisible(revoke);
+    await tester.tap(revoke);
+    await tester.pumpAndSettle();
+    expect(
+      find.textContaining('pending authority invitations'),
+      findsOneWidget,
+    );
+    expect(find.textContaining('participation membership'), findsOneWidget);
+    await tester.tap(find.widgetWithText(FilledButton, 'Revoke authority'));
+    await tester.pumpAndSettle();
+    expect(find.text('Structural teammate'), findsNothing);
+  });
+
+  testWidgets('stale structural authority removes team controls', (
+    tester,
+  ) async {
+    final gateway = FakeProjectDelegateGateway()
+      ..role = ProjectManagementRole.creator
+      ..delegates = [
+        ProjectDelegate(
+          id: 'delegate-1',
+          profileId: 'user-2',
+          displayName: 'Jordan',
+          delegatedAt: DateTime.utc(2029, 12, 1),
+          grantedByProfileId: 'user-1',
+          grantedByDisplayName: 'Creator',
+        ),
+      ];
+    final session = _readyContainer(gateway);
+    addTearDown(session.dispose);
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: session.container,
+        child: _localized(
+          const ProjectTeamScreen(
+            projectId: 'project-1',
+            projectKind: ProjectKind.oneTime,
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    gateway
+      ..role = ProjectManagementRole.none
+      ..mutationFailure = StateError('authority changed');
+
+    await tester.tap(
+      find.byKey(const Key('project-delegate-promote-delegate-1')),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(
+      find.widgetWithText(FilledButton, 'Promote to Co-creator'),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('project-delegate-create')), findsNothing);
+    expect(
+      find.text('Project team information is unavailable. Try again.'),
+      findsOneWidget,
+    );
   });
 
   testWidgets(
@@ -400,6 +597,7 @@ void main() {
           title: 'Delegated mural',
           status: 'published',
           delegatedAt: DateTime.utc(2029, 12, 1),
+          authorityRole: ProjectDelegatedAuthorityRole.coCreator,
         ),
       ];
     final session = _readyContainer(gateway);
@@ -413,14 +611,51 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Created by you'), findsOneWidget);
-    expect(find.text('Co-organizing'), findsOneWidget);
+    expect(find.text('Projects you help manage'), findsOneWidget);
     expect(find.text('Delegated mural'), findsOneWidget);
+    expect(find.text('Co-creator · Published'), findsOneWidget);
     expect(
       find.byKey(const Key('delegated-proposal-manage-delegated-1')),
       findsOneWidget,
     );
     expect(find.text('Publish'), findsNothing);
     expect(find.text('Cancel proposal'), findsNothing);
+  });
+
+  testWidgets('My Tavoli shows the delegated authority role badge', (
+    tester,
+  ) async {
+    final gateway = FakeProjectDelegateGateway()
+      ..delegatedProjects = [
+        DelegatedProject(
+          id: 'delegated-tavolo-1',
+          kind: ProjectKind.recurring,
+          title: 'Shared garden table',
+          status: 'active',
+          delegatedAt: DateTime.utc(2029, 12, 1),
+          authorityRole: ProjectDelegatedAuthorityRole.coCreator,
+        ),
+      ];
+    final session = _readyContainer(
+      gateway,
+      recurring: FakeRecurringActivityGateway(),
+    );
+    addTearDown(session.dispose);
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: session.container,
+        child: _localized(const OwnRecurringActivitiesScreen()),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Projects you help manage'), findsOneWidget);
+    expect(find.text('Shared garden table'), findsOneWidget);
+    expect(find.text('Co-creator · Active'), findsOneWidget);
+    expect(
+      find.byKey(const Key('delegated-tavolo-manage-delegated-tavolo-1')),
+      findsOneWidget,
+    );
   });
 }
 
@@ -429,6 +664,7 @@ void main() {
   FakeProjectInviteSharing? sharing,
   FakeParticipationGateway? participation,
   FakeProposalGateway? proposal,
+  FakeRecurringActivityGateway? recurring,
 }) {
   final auth = FakeAuthGateway(
     snapshot: const AuthSnapshot(identity: AuthIdentity(id: 'user-1')),
@@ -448,6 +684,8 @@ void main() {
       proposalGatewayProvider.overrideWithValue(
         proposal ?? FakeProposalGateway(),
       ),
+      if (recurring != null)
+        recurringActivityGatewayProvider.overrideWithValue(recurring),
     ],
   );
   container

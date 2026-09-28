@@ -171,7 +171,7 @@ class _DelegatedTavoloCard extends StatelessWidget {
           children: [
             Text(project.title, style: Theme.of(context).textTheme.titleLarge),
             const SizedBox(height: AppSpacing.xSmall),
-            Text('${l10n.projectCoorganizerBadge} · $lifecycle'),
+            Text('${_roleLabel(l10n, project.authorityRole)} · $lifecycle'),
             const SizedBox(height: AppSpacing.medium),
             Wrap(
               spacing: AppSpacing.small,
@@ -195,6 +195,12 @@ class _DelegatedTavoloCard extends StatelessWidget {
     );
   }
 }
+
+String _roleLabel(AppLocalizations l10n, ProjectDelegatedAuthorityRole role) =>
+    switch (role) {
+      ProjectDelegatedAuthorityRole.coCreator => l10n.projectCocreatorBadge,
+      ProjectDelegatedAuthorityRole.coOrganizer => l10n.projectCoorganizerBadge,
+    };
 
 class _OwnTavoloCard extends ConsumerWidget {
   const _OwnTavoloCard({required this.activity, required this.identityId});

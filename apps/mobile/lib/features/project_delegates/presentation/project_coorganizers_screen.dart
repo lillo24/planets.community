@@ -12,8 +12,8 @@ import '../application/project_delegate_controllers.dart';
 import '../application/project_invite_sharing.dart';
 import '../domain/project_delegate_models.dart';
 
-class ProjectCoorganizersScreen extends ConsumerStatefulWidget {
-  const ProjectCoorganizersScreen({
+class ProjectTeamScreen extends ConsumerStatefulWidget {
+  const ProjectTeamScreen({
     required this.projectId,
     required this.projectKind,
     super.key,
@@ -23,12 +23,12 @@ class ProjectCoorganizersScreen extends ConsumerStatefulWidget {
   final ProjectKind projectKind;
 
   @override
-  ConsumerState<ProjectCoorganizersScreen> createState() =>
-      _ProjectCoorganizersScreenState();
+  ConsumerState<ProjectTeamScreen> createState() => _ProjectTeamScreenState();
 }
 
-class _ProjectCoorganizersScreenState
-    extends ConsumerState<ProjectCoorganizersScreen> {
+class _ProjectTeamScreenState extends ConsumerState<ProjectTeamScreen> {
+  var _inviteRole = ProjectDelegatedAuthorityRole.coOrganizer;
+
   @override
   void initState() {
     super.initState();
@@ -36,12 +36,12 @@ class _ProjectCoorganizersScreenState
   }
 
   Future<void> _load() async {
-    final ownerId = ref.read(authSessionProvider).identity?.id;
-    if (ownerId == null) return;
+    final profileId = ref.read(authSessionProvider).identity?.id;
+    if (profileId == null) return;
     await ref
-        .read(projectCoorganizersProvider.notifier)
+        .read(projectTeamProvider.notifier)
         .load(
-          expectedOwnerId: ownerId,
+          expectedProfileId: profileId,
           projectId: widget.projectId,
           projectKind: widget.projectKind,
         );
@@ -50,11 +50,12 @@ class _ProjectCoorganizersScreenState
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final ownerId = ref.watch(authSessionProvider).identity?.id;
-    final state = ref.watch(projectCoorganizersProvider);
+    final profileId = ref.watch(authSessionProvider).identity?.id;
+    final state = ref.watch(projectTeamProvider);
     final current =
-        ownerId != null &&
-        state.isFor(ownerId, widget.projectId, widget.projectKind);
+        profileId != null &&
+        state.isFor(profileId, widget.projectId, widget.projectKind);
+    final authorized = state.actorRole?.hasStructuralAuthority == true;
 
     return Scaffold(
       appBar: AppBar(title: Text(l10n.projectCoorganizersTitle)),
@@ -62,9 +63,10 @@ class _ProjectCoorganizersScreenState
         child:
             !current ||
                 (state.phase == ProjectDelegateLoadPhase.loading &&
-                    state.delegates.isEmpty &&
-                    state.invitations.isEmpty)
+                    state.actorRole == null)
             ? LoadingState(message: l10n.participationLoading)
+            : !authorized
+            ? ErrorState(message: l10n.projectDelegateSafeError, onRetry: _load)
             : state.phase == ProjectDelegateLoadPhase.failure &&
                   state.delegates.isEmpty &&
                   state.invitations.isEmpty
@@ -74,6 +76,43 @@ class _ProjectCoorganizersScreenState
                 child: ListView(
                   padding: const EdgeInsets.all(AppSpacing.medium),
                   children: [
+                    Text(l10n.projectTeamIntro),
+                    const SizedBox(height: AppSpacing.medium),
+                    Text(
+                      l10n.projectDelegateInviteRoleTitle,
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                    const SizedBox(height: AppSpacing.small),
+                    SegmentedButton<ProjectDelegatedAuthorityRole>(
+                      segments: [
+                        ButtonSegment(
+                          value: ProjectDelegatedAuthorityRole.coOrganizer,
+                          label: Text(
+                            l10n.projectInviteCoOrganizerRole,
+                            key: const Key('project-team-role-co-organizer'),
+                          ),
+                        ),
+                        ButtonSegment(
+                          value: ProjectDelegatedAuthorityRole.coCreator,
+                          label: Text(
+                            l10n.projectInviteCoCreatorRole,
+                            key: const Key('project-team-role-co-creator'),
+                          ),
+                        ),
+                      ],
+                      selected: {_inviteRole},
+                      onSelectionChanged: state.mutating
+                          ? null
+                          : (selection) =>
+                                setState(() => _inviteRole = selection.single),
+                    ),
+                    const SizedBox(height: AppSpacing.xSmall),
+                    Text(
+                      _inviteRole == ProjectDelegatedAuthorityRole.coCreator
+                          ? l10n.projectDelegateCoCreatorDescription
+                          : l10n.projectDelegateCoOrganizerDescription,
+                    ),
+                    const SizedBox(height: AppSpacing.small),
                     FilledButton.icon(
                       key: const Key('project-delegate-create'),
                       onPressed: state.mutating ? null : _createInvitation,
@@ -99,22 +138,11 @@ class _ProjectCoorganizersScreenState
                       Text(l10n.projectDelegateActiveEmpty)
                     else
                       for (final delegate in state.delegates)
-                        Card(
-                          child: ListTile(
-                            key: Key('project-delegate-${delegate.id}'),
-                            title: Text(delegate.displayName),
-                            subtitle: Text(
-                              l10n.projectDelegateAcceptedDate(
-                                _formatDate(context, delegate.delegatedAt),
-                              ),
-                            ),
-                            trailing: TextButton(
-                              onPressed: state.mutating
-                                  ? null
-                                  : () => _removeDelegate(delegate),
-                              child: Text(l10n.projectDelegateRemoveAction),
-                            ),
-                          ),
+                        _delegateCard(
+                          context,
+                          delegate,
+                          isCurrentUser: delegate.profileId == profileId,
+                          mutating: state.mutating,
                         ),
                     const SizedBox(height: AppSpacing.large),
                     Text(
@@ -126,22 +154,10 @@ class _ProjectCoorganizersScreenState
                       Text(l10n.projectDelegatePendingEmpty)
                     else
                       for (final invitation in state.invitations)
-                        Card(
-                          child: ListTile(
-                            key: Key('project-invitation-${invitation.id}'),
-                            title: Text(
-                              l10n.projectDelegateInviteDates(
-                                _formatDate(context, invitation.createdAt),
-                                _formatDate(context, invitation.expiresAt),
-                              ),
-                            ),
-                            trailing: TextButton(
-                              onPressed: state.mutating
-                                  ? null
-                                  : () => _revokeInvitation(invitation),
-                              child: Text(l10n.projectDelegateRevokeAction),
-                            ),
-                          ),
+                        _invitationCard(
+                          context,
+                          invitation,
+                          mutating: state.mutating,
                         ),
                     const SizedBox(height: AppSpacing.medium),
                     Text(l10n.projectDelegateLostLinkHelp),
@@ -152,39 +168,190 @@ class _ProjectCoorganizersScreenState
     );
   }
 
+  Widget _delegateCard(
+    BuildContext context,
+    ProjectDelegate delegate, {
+    required bool isCurrentUser,
+    required bool mutating,
+  }) {
+    final l10n = AppLocalizations.of(context);
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.only(bottom: AppSpacing.small),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            ListTile(
+              key: Key('project-delegate-${delegate.id}'),
+              title: Text(delegate.displayName),
+              trailing: Chip(
+                label: Text(_roleLabel(l10n, delegate.authorityRole)),
+              ),
+              subtitle: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    l10n.projectDelegateAcceptedDate(
+                      _formatDate(context, delegate.delegatedAt),
+                    ),
+                  ),
+                  Text(
+                    l10n.projectDelegateAddedBy(delegate.grantedByDisplayName),
+                  ),
+                  if (isCurrentUser)
+                    Text(
+                      l10n.projectDelegateCurrentUser,
+                      key: Key('project-delegate-self-${delegate.id}'),
+                    ),
+                ],
+              ),
+            ),
+            if (!isCurrentUser)
+              Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.small,
+                ),
+                child: Wrap(
+                  alignment: WrapAlignment.end,
+                  spacing: AppSpacing.xSmall,
+                  children: [
+                    if (delegate.authorityRole ==
+                        ProjectDelegatedAuthorityRole.coOrganizer)
+                      TextButton(
+                        key: Key('project-delegate-promote-${delegate.id}'),
+                        onPressed: mutating
+                            ? null
+                            : () => _changeRole(
+                                delegate,
+                                ProjectDelegatedAuthorityRole.coCreator,
+                              ),
+                        child: Text(l10n.projectDelegatePromoteAction),
+                      )
+                    else
+                      TextButton(
+                        key: Key('project-delegate-demote-${delegate.id}'),
+                        onPressed: mutating
+                            ? null
+                            : () => _changeRole(
+                                delegate,
+                                ProjectDelegatedAuthorityRole.coOrganizer,
+                              ),
+                        child: Text(l10n.projectDelegateDemoteAction),
+                      ),
+                    TextButton(
+                      key: Key('project-delegate-revoke-${delegate.id}'),
+                      onPressed: mutating
+                          ? null
+                          : () => _removeDelegate(delegate),
+                      child: Text(l10n.projectDelegateRemoveAction),
+                    ),
+                  ],
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _invitationCard(
+    BuildContext context,
+    ProjectDelegateInvitation invitation, {
+    required bool mutating,
+  }) {
+    final l10n = AppLocalizations.of(context);
+    return Card(
+      child: ListTile(
+        key: Key('project-invitation-${invitation.id}'),
+        title: Text(_roleLabel(l10n, invitation.requestedAuthorityRole)),
+        subtitle: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              l10n.projectDelegateInviteDates(
+                _formatDate(context, invitation.createdAt),
+                _formatDate(context, invitation.expiresAt),
+              ),
+            ),
+            Text(l10n.projectDelegateIssuedBy(invitation.issuerDisplayName)),
+          ],
+        ),
+        trailing: TextButton(
+          key: Key('project-invitation-revoke-${invitation.id}'),
+          onPressed: mutating ? null : () => _revokeInvitation(invitation),
+          child: Text(l10n.projectDelegateRevokeAction),
+        ),
+      ),
+    );
+  }
+
   String _formatDate(BuildContext context, DateTime value) =>
       DateFormat.yMMMd(Localizations.localeOf(context).toLanguageTag())
           .add_jm()
           .format(value.toLocal());
 
   Future<void> _createInvitation() async {
-    final expectedOwnerId = ref.read(authSessionProvider).identity?.id;
-    if (expectedOwnerId == null) return;
+    final l10n = AppLocalizations.of(context);
+    if (_inviteRole == ProjectDelegatedAuthorityRole.coCreator) {
+      final confirmed = await _confirm(
+        l10n.projectDelegateHighPrivilegeConfirmTitle,
+        l10n.projectDelegateHighPrivilegeConfirmMessage,
+        l10n.projectDelegateInviteAction,
+      );
+      if (!confirmed || !mounted) return;
+    }
+    final expectedProfileId = ref.read(authSessionProvider).identity?.id;
+    if (expectedProfileId == null) return;
     final result = await ref
-        .read(projectCoorganizersProvider.notifier)
-        .createInvitation();
+        .read(projectTeamProvider.notifier)
+        .createInvitation(_inviteRole);
     if (result == null || !mounted) return;
     await showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
       builder: (_) => _InvitationResultSheet(
         result: result,
-        expectedOwnerId: expectedOwnerId,
+        expectedProfileId: expectedProfileId,
       ),
     );
+  }
+
+  Future<void> _changeRole(
+    ProjectDelegate delegate,
+    ProjectDelegatedAuthorityRole role,
+  ) async {
+    final l10n = AppLocalizations.of(context);
+    final promotes = role == ProjectDelegatedAuthorityRole.coCreator;
+    final confirmed = await _confirm(
+      promotes
+          ? l10n.projectDelegatePromoteConfirmTitle
+          : l10n.projectDelegateDemoteConfirmTitle,
+      promotes
+          ? l10n.projectDelegatePromoteConfirmMessage
+          : l10n.projectDelegateDemoteConfirmMessage,
+      promotes
+          ? l10n.projectDelegatePromoteAction
+          : l10n.projectDelegateDemoteAction,
+    );
+    if (!confirmed || !mounted) return;
+    await ref
+        .read(projectTeamProvider.notifier)
+        .changeDelegateRole(delegate.id, role);
   }
 
   Future<void> _removeDelegate(ProjectDelegate delegate) async {
     final l10n = AppLocalizations.of(context);
     final confirmed = await _confirm(
-      l10n.projectDelegateRemoveConfirmTitle,
-      l10n.projectDelegateRemoveConfirmMessage,
+      l10n.projectDelegateRemoveRoleConfirmTitle(
+        _roleLabel(l10n, delegate.authorityRole),
+      ),
+      delegate.authorityRole == ProjectDelegatedAuthorityRole.coCreator
+          ? l10n.projectDelegateRemoveCocreatorConfirmMessage
+          : l10n.projectDelegateRemoveConfirmMessage,
       l10n.projectDelegateRemoveAction,
     );
     if (!confirmed || !mounted) return;
-    await ref
-        .read(projectCoorganizersProvider.notifier)
-        .revokeDelegate(delegate.id);
+    await ref.read(projectTeamProvider.notifier).revokeDelegate(delegate.id);
   }
 
   Future<void> _revokeInvitation(ProjectDelegateInvitation invitation) async {
@@ -196,7 +363,7 @@ class _ProjectCoorganizersScreenState
     );
     if (!confirmed || !mounted) return;
     await ref
-        .read(projectCoorganizersProvider.notifier)
+        .read(projectTeamProvider.notifier)
         .revokeInvitation(invitation.id);
   }
 
@@ -227,21 +394,22 @@ class _ProjectCoorganizersScreenState
 class _InvitationResultSheet extends ConsumerWidget {
   const _InvitationResultSheet({
     required this.result,
-    required this.expectedOwnerId,
+    required this.expectedProfileId,
   });
 
   final ProjectDelegateInvitationResult result;
-  final String expectedOwnerId;
+  final String expectedProfileId;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
-    final shareText = l10n.projectDelegateShareText(result.url);
+    final role = _roleLabel(l10n, result.requestedAuthorityRole);
+    final shareText = l10n.projectDelegateShareRoleText(role, result.url);
     ref.listen(authSessionProvider.select((value) => value.identity?.id), (
       _,
       identityId,
     ) {
-      if (identityId != expectedOwnerId && context.mounted) {
+      if (identityId != expectedProfileId && context.mounted) {
         Navigator.of(context).pop();
       }
     });
@@ -256,6 +424,8 @@ class _InvitationResultSheet extends ConsumerWidget {
               l10n.projectDelegateCreatedTitle,
               style: Theme.of(context).textTheme.titleLarge,
             ),
+            const SizedBox(height: AppSpacing.small),
+            Text(l10n.projectDelegateCreatedRole(role)),
             const SizedBox(height: AppSpacing.small),
             SelectableText(result.url, key: const Key('delegate-invite-url')),
             const SizedBox(height: AppSpacing.small),
@@ -304,3 +474,11 @@ class _InvitationResultSheet extends ConsumerWidget {
     );
   }
 }
+
+String _roleLabel(AppLocalizations l10n, ProjectDelegatedAuthorityRole role) =>
+    switch (role) {
+      ProjectDelegatedAuthorityRole.coCreator =>
+        l10n.projectInviteCoCreatorRole,
+      ProjectDelegatedAuthorityRole.coOrganizer =>
+        l10n.projectInviteCoOrganizerRole,
+    };

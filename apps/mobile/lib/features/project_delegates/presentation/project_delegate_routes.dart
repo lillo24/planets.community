@@ -14,6 +14,10 @@ class ProjectDelegateRoutes {
   static String coorganizers(ProjectKind kind, String projectId) =>
       '${detail(kind, projectId)}/co-organizers';
 
+  /// Project team keeps the existing route path so saved links remain valid.
+  static String team(ProjectKind kind, String projectId) =>
+      coorganizers(kind, projectId);
+
   static String invite(String token) => '/invite/project/$token';
 
   static bool isManagementPath(String destination) {

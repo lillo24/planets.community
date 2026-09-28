@@ -58,6 +58,8 @@ class ProjectDelegate {
     required this.profileId,
     required this.displayName,
     required this.delegatedAt,
+    required this.grantedByProfileId,
+    required this.grantedByDisplayName,
     this.authorityRole = ProjectDelegatedAuthorityRole.coOrganizer,
   });
 
@@ -65,6 +67,8 @@ class ProjectDelegate {
   final String profileId;
   final String displayName;
   final DateTime delegatedAt;
+  final String grantedByProfileId;
+  final String grantedByDisplayName;
   final ProjectDelegatedAuthorityRole authorityRole;
 }
 
@@ -73,12 +77,16 @@ class ProjectDelegateInvitation {
     required this.id,
     required this.createdAt,
     required this.expiresAt,
+    required this.issuerProfileId,
+    required this.issuerDisplayName,
     this.requestedAuthorityRole = ProjectDelegatedAuthorityRole.coOrganizer,
   });
 
   final String id;
   final DateTime createdAt;
   final DateTime expiresAt;
+  final String issuerProfileId;
+  final String issuerDisplayName;
   final ProjectDelegatedAuthorityRole requestedAuthorityRole;
 }
 
@@ -87,11 +95,13 @@ class ProjectDelegateInvitationResult {
     required this.id,
     required this.token,
     required this.expiresAt,
+    required this.requestedAuthorityRole,
   });
 
   final String id;
   final String token;
   final DateTime expiresAt;
+  final ProjectDelegatedAuthorityRole requestedAuthorityRole;
 
   String get url => 'https://planets.community/invite/project/$token';
 }
@@ -159,12 +169,13 @@ class ProjectManagementRoleState {
       projectKind == kind;
 }
 
-class ProjectCoorganizersState {
-  const ProjectCoorganizersState({
+class ProjectTeamState {
+  const ProjectTeamState({
     this.phase = ProjectDelegateLoadPhase.idle,
-    this.expectedOwnerId,
+    this.expectedProfileId,
     this.projectId,
     this.projectKind,
+    this.actorRole,
     this.delegates = const [],
     this.invitations = const [],
     this.failure,
@@ -172,16 +183,17 @@ class ProjectCoorganizersState {
   });
 
   final ProjectDelegateLoadPhase phase;
-  final String? expectedOwnerId;
+  final String? expectedProfileId;
   final String? projectId;
   final ProjectKind? projectKind;
+  final ProjectManagementRole? actorRole;
   final List<ProjectDelegate> delegates;
   final List<ProjectDelegateInvitation> invitations;
   final ProjectDelegateFailureKind? failure;
   final bool mutating;
 
-  bool isFor(String ownerId, String targetProjectId, ProjectKind kind) =>
-      expectedOwnerId == ownerId &&
+  bool isFor(String profileId, String targetProjectId, ProjectKind kind) =>
+      expectedProfileId == profileId &&
       projectId == targetProjectId &&
       projectKind == kind;
 }

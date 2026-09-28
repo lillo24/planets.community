@@ -366,7 +366,7 @@ RoutingConfig _routingConfig(
                       ),
                       GoRoute(
                         path: 'co-organizers',
-                        builder: (context, state) => ProjectCoorganizersScreen(
+                        builder: (context, state) => ProjectTeamScreen(
                           projectId: state.pathParameters['id']!,
                           projectKind: ProjectKind.oneTime,
                         ),
@@ -434,7 +434,7 @@ RoutingConfig _routingConfig(
                       ),
                       GoRoute(
                         path: 'co-organizers',
-                        builder: (context, state) => ProjectCoorganizersScreen(
+                        builder: (context, state) => ProjectTeamScreen(
                           projectId: state.pathParameters['id']!,
                           projectKind: ProjectKind.recurring,
                         ),

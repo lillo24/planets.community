@@ -7,7 +7,9 @@ class FakeProjectDelegateGateway implements ProjectDelegateGateway {
   ProjectManagementRole role = ProjectManagementRole.none;
   Future<ProjectManagementRole>? roleResult;
   List<ProjectDelegate> delegates = [];
+  Future<List<ProjectDelegate>>? delegatesResult;
   List<ProjectDelegateInvitation> invitations = [];
+  Future<List<ProjectDelegateInvitation>>? invitationsResult;
   List<DelegatedProject> delegatedProjects = [];
   ProjectDelegateInvitePreview preview = const ProjectDelegateInvitePreview(
     isAvailable: false,
@@ -16,9 +18,12 @@ class FakeProjectDelegateGateway implements ProjectDelegateGateway {
     id: 'invitation-1',
     token: 'A' * 43,
     expiresAt: DateTime.utc(2030, 1, 8),
+    requestedAuthorityRole: ProjectDelegatedAuthorityRole.coOrganizer,
   );
   Object? failure;
+  Object? mutationFailure;
   Object? listFailure;
+  Future<void>? mutationDelay;
   final calls = <String>[];
 
   @override
@@ -32,12 +37,22 @@ class FakeProjectDelegateGateway implements ProjectDelegateGateway {
 
   @override
   Future<ProjectDelegateInvitationResult> createInvitation({
-    required String expectedOwnerId,
+    required String expectedStructuralActorId,
     required String projectId,
+    required ProjectDelegatedAuthorityRole requestedAuthorityRole,
   }) async {
-    calls.add('create:$expectedOwnerId:$projectId');
+    calls.add(
+      'create:$expectedStructuralActorId:$projectId:${requestedAuthorityRole.wireValue}',
+    );
+    await _waitForMutation();
+    if (mutationFailure case final error?) throw error;
     if (failure case final error?) throw error;
-    return created;
+    return ProjectDelegateInvitationResult(
+      id: created.id,
+      token: created.token,
+      expiresAt: created.expiresAt,
+      requestedAuthorityRole: requestedAuthorityRole,
+    );
   }
 
   @override
@@ -52,24 +67,24 @@ class FakeProjectDelegateGateway implements ProjectDelegateGateway {
 
   @override
   Future<List<ProjectDelegate>> listDelegates({
-    required String expectedOwnerId,
+    required String expectedStructuralActorId,
     required String projectId,
   }) async {
-    calls.add('delegates:$expectedOwnerId:$projectId');
+    calls.add('delegates:$expectedStructuralActorId:$projectId');
     if (listFailure case final error?) throw error;
     if (failure case final error?) throw error;
-    return delegates;
+    return delegatesResult ?? delegates;
   }
 
   @override
   Future<List<ProjectDelegateInvitation>> listPendingInvitations({
-    required String expectedOwnerId,
+    required String expectedStructuralActorId,
     required String projectId,
   }) async {
-    calls.add('invitations:$expectedOwnerId:$projectId');
+    calls.add('invitations:$expectedStructuralActorId:$projectId');
     if (listFailure case final error?) throw error;
     if (failure case final error?) throw error;
-    return invitations;
+    return invitationsResult ?? invitations;
   }
 
   @override
@@ -90,22 +105,59 @@ class FakeProjectDelegateGateway implements ProjectDelegateGateway {
 
   @override
   Future<void> revokeDelegate({
-    required String expectedOwnerId,
+    required String expectedStructuralActorId,
     required String delegateId,
   }) async {
-    calls.add('revoke-delegate:$expectedOwnerId:$delegateId');
+    calls.add('revoke-delegate:$expectedStructuralActorId:$delegateId');
+    await _waitForMutation();
+    if (mutationFailure case final error?) throw error;
     if (failure case final error?) throw error;
     delegates = delegates.where((item) => item.id != delegateId).toList();
   }
 
   @override
   Future<void> revokeInvitation({
-    required String expectedOwnerId,
+    required String expectedStructuralActorId,
     required String invitationId,
   }) async {
-    calls.add('revoke-invitation:$expectedOwnerId:$invitationId');
+    calls.add('revoke-invitation:$expectedStructuralActorId:$invitationId');
+    await _waitForMutation();
+    if (mutationFailure case final error?) throw error;
     if (failure case final error?) throw error;
     invitations = invitations.where((item) => item.id != invitationId).toList();
+  }
+
+  @override
+  Future<void> changeDelegateRole({
+    required String expectedStructuralActorId,
+    required String delegateId,
+    required ProjectDelegatedAuthorityRole authorityRole,
+  }) async {
+    calls.add(
+      'change-role:$expectedStructuralActorId:$delegateId:${authorityRole.wireValue}',
+    );
+    await _waitForMutation();
+    if (mutationFailure case final error?) throw error;
+    if (failure case final error?) throw error;
+    delegates = delegates
+        .map(
+          (item) => item.id != delegateId
+              ? item
+              : ProjectDelegate(
+                  id: item.id,
+                  profileId: item.profileId,
+                  displayName: item.displayName,
+                  delegatedAt: item.delegatedAt,
+                  grantedByProfileId: item.grantedByProfileId,
+                  grantedByDisplayName: item.grantedByDisplayName,
+                  authorityRole: authorityRole,
+                ),
+        )
+        .toList();
+  }
+
+  Future<void> _waitForMutation() async {
+    if (mutationDelay case final delay?) await delay;
   }
 }
 

@@ -14,20 +14,23 @@ Manage project hub. It does not own Project authoring or lifecycle actions.
   binds private calls to the rendered profile identity and never reads the
   delegate tables directly.
 - `application/project_delegate_controllers.dart` owns route- and
-  identity-scoped role, owner-management, delegated-project, and invite state.
-  Account changes clear private state and late responses are ignored.
+  identity-scoped role, structural Project-team, delegated-project, and invite
+  state. Account changes clear private state and late responses are ignored.
+  Team mutations re-read canonical authority; losing structural authority
+  clears the privileged data and controls.
 - `application/project_invite_sharing.dart` is the injectable clipboard and OS
   share-sheet boundary. The production implementation uses Flutter's clipboard
   and `share_plus`; tests use an in-memory fake.
 - `presentation/project_delegate_routes.dart` maps Proposal and Tavolo IDs to
-  their Manage project and Co-organizers routes and maps the shared HTTPS
-  invitation path.
+  their Manage project and Project team routes and maps the shared HTTPS
+  invitation path. The team route retains the existing `co-organizers` URL
+  segment for saved-link compatibility.
 - `presentation/project_manage_screen.dart` exposes Participation to every
-  manager. The existing role-management entry remains Creator-only until the
-  following dedicated role-management UX task.
-- `presentation/project_coorganizers_screen.dart` owns the Creator-only active
-  delegate/pending invite lists, confirmations, invitation creation, and the
-  immediate one-time Copy/Share result.
+  manager and Project team to Creator and Co-creator only.
+- `presentation/project_coorganizers_screen.dart` owns the structural actors'
+  active role and pending invite lists, provenance, role selection,
+  promotion/demotion/revocation confirmations, and the immediate one-time
+  Copy/Share result. A delegated actor cannot mutate their own row here.
 - `presentation/project_invite_screen.dart` owns anonymous preview, Auth/Profile
   return paths, explicit acceptance, and navigation to the Project.
 
@@ -51,6 +54,10 @@ client rollout safeguard.
 Invitation creation returns plaintext once. The token is held only in the
 immediate controller/result-sheet state, is never included in the pending
 invitation list, and is cleared when that surface is replaced or disposed.
+Co-organizer is the default selection. Creating a Co-creator invitation needs
+an additional confirmation that identifies both its structural powers and the
+bearer-link risk. Active and pending rows retain their exact role and issuer or
+grantor provenance; missing or unknown authority roles fail closed.
 Copy and Share receive the canonical
 `https://planets.community/invite/project/<token>` URL only from that immediate
 result. Preview remains side-effect-free; only the explicit authenticated

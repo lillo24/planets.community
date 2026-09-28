@@ -14,14 +14,22 @@ authenticated action backed by the canonical database RPC.
 
 ## User and navigation flow
 
-The current 07C2B UI lets the original Creator open Project detail → Manage
-project → Co-organizers and create a Co-organizer invitation. The 07C2C domain
-also lets a Creator or active Co-creator issue either role; the full role
-selection/management UI is intentionally deferred to the following UX task. An actor creates an
-invitation, and may copy its URL or open the native share sheet. The raw token
-is returned once and exists only in the immediate result surface. Pending
-invitation history contains dates and status, never the token; a lost link must
-be revoked and replaced.
+The mobile UI lets a Creator or active Co-creator open Project detail → Manage
+project → Project team. Co-organizer is the default invitation role. Selecting
+Co-creator requires an extra confirmation that explains its structural powers
+and the one-time bearer-link risk. The actor may then copy the role-labelled
+URL or open the native share sheet. The raw token is returned once and exists
+only in the immediate result surface. Pending invitation history contains the
+requested role, dates, and issuer, never the token; a lost link must be revoked
+and replaced.
+
+The same Project team surface shows active delegated actors with their exact
+role, delegation date, and grantor. Structural actors may promote, demote, or
+revoke another delegated actor. Demoting or revoking a Co-creator warns that
+their pending authority invitations are invalidated. These actions do not
+change an independent participation membership. A delegated actor's own row
+does not expose the generic role mutation or revocation actions; self-
+resignation remains a separate deferred product decision.
 
 Mobile handles `/invite/project/:token` as a public route. It previews first,
 then uses `/auth?returnTo=...` or `/profile/edit?returnTo=...` when required.
@@ -36,6 +44,9 @@ three manager roles receive operational Manage project and protected meeting
 access. Creator and Co-creator are structurally authorized in the backend;
 Co-organizer is not. My Proposals and My Tavoli keep owned and delegated
 Projects separate, and delegated cards retain the caller's exact role.
+Co-creator Project authoring and lifecycle controls are intentionally outside
+this role-management surface and remain assigned to the next dedicated UX
+change.
 
 ## Browser privacy controls
 
@@ -116,20 +127,30 @@ required before claiming Universal Links are production-verified.
 
 ## Manual invite QA
 
-- As the Creator, create an invite, copy it, and invoke the system share sheet
-  (WhatsApp is an ordinary share target).
+- As the Creator and as a Co-creator, create each role of invite, copy it, and
+  invoke the system share sheet (WhatsApp is an ordinary share target). Confirm
+  Co-organizer is the default and Co-creator requires the high-privilege/bearer
+  confirmation.
 - Fetch or preview the URL and confirm the invitation remains pending.
 - On mobile and web, confirm signed-out Auth and incomplete-profile completion
   return to the same invite before explicit acceptance.
-- Accept as the recipient, confirm the Creator sees the new Co-organizer, and
-  confirm the recipient can rediscover and manage the Project.
+- Accept each role as the recipient, confirm the Project team shows the exact
+  role and provenance, and confirm the recipient can rediscover the Project
+  with a truthful role badge.
+- Promote and demote another delegated actor, then revoke them. Confirm the
+  role updates after every authoritative reload, Co-creator pending invitations
+  are invalidated when warned, and the current delegated actor's own row has no
+  generic self-mutation actions.
 - Confirm Co-organizer cards expose no structural edit/lifecycle controls and that
   an independent participant membership remains separate.
 - Revoke a pending invite while its preview is open and confirm Accept fails
   safely. Repeat for expiry, a competing accepter, an owner opening their own
   invite, an already-active delegate, and a lost-response same-user retry.
 - Remove an active delegate and confirm Project detail and an already-open
-  Manage project screen lose manager-only access after reload.
+  Manage project screen lose manager-only access after reload while any
+  participation membership remains unchanged. If the current structural actor
+  loses authority during a mutation, confirm Project team reloads and removes
+  its privileged controls.
 - Switch accounts with an invite or management screen open and confirm no
   previous-account token, role, or protected location remains.
 - Exercise both cold-start and already-running app links, malformed tokens,
