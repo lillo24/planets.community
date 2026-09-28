@@ -393,7 +393,7 @@ void main() {
       final result = await controller.publish(
         'user-1',
         proposalInputFixture(),
-        coverChange: ProjectCoverChange.replacement(processedCoverFixture()),
+        coverChange: CoverChange.replacement(processedCoverFixture()),
       );
 
       final state = session.container.read(proposalEditorProvider);
@@ -407,7 +407,7 @@ void main() {
       final retry = await controller.publish(
         'user-1',
         proposalInputFixture(),
-        coverChange: ProjectCoverChange.replacement(processedCoverFixture()),
+        coverChange: CoverChange.replacement(processedCoverFixture()),
       );
       expect(retry, 'new-draft');
       expect(gateway.calls.where((call) => call == 'create'), hasLength(1));
@@ -431,7 +431,7 @@ void main() {
     final result = await controller.publish(
       'user-1',
       proposalInputFixture(),
-      coverChange: ProjectCoverChange.replacement(processedCoverFixture()),
+      coverChange: CoverChange.replacement(processedCoverFixture()),
     );
 
     expect(result, 'new-draft');
@@ -458,7 +458,7 @@ void main() {
       final result = await controller.saveDraft(
         'user-1',
         proposalInputFixture(),
-        coverChange: ProjectCoverChange.replacement(processedCoverFixture()),
+        coverChange: CoverChange.replacement(processedCoverFixture()),
       );
 
       final state = session.container.read(proposalEditorProvider);
@@ -487,7 +487,7 @@ void main() {
       final result = await controller.publish(
         'user-1',
         proposalInputFixture(),
-        coverChange: ProjectCoverChange.replacement(processedCoverFixture()),
+        coverChange: CoverChange.replacement(processedCoverFixture()),
       );
 
       expect(result, isNull);
@@ -516,7 +516,7 @@ void main() {
       final saving = controller.publish(
         'user-1',
         proposalInputFixture(),
-        coverChange: ProjectCoverChange.replacement(processedCoverFixture()),
+        coverChange: CoverChange.replacement(processedCoverFixture()),
       );
       await Future<void>.delayed(Duration.zero);
 
@@ -568,7 +568,7 @@ void main() {
         .saveDraft(
           'user-1',
           proposalInputFixture(),
-          coverChange: ProjectCoverChange.replacement(processedCoverFixture()),
+          coverChange: CoverChange.replacement(processedCoverFixture()),
         );
     expect(gateway.calls, isNot(contains('update:proposal-1')));
     expect(covers.calls, isEmpty);

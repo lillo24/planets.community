@@ -293,7 +293,7 @@ void main() {
     final result = await controller.publish(
       'user-1',
       recurringInputFixture(),
-      coverChange: ProjectCoverChange.replacement(processedCoverFixture()),
+      coverChange: CoverChange.replacement(processedCoverFixture()),
     );
 
     expect(result, 'new-tavolo');
@@ -320,7 +320,7 @@ void main() {
       final result = await controller.publish(
         'user-1',
         recurringInputFixture(),
-        coverChange: ProjectCoverChange.replacement(processedCoverFixture()),
+        coverChange: CoverChange.replacement(processedCoverFixture()),
       );
 
       final state = session.container.read(recurringActivityEditorProvider);
@@ -334,7 +334,7 @@ void main() {
       final retry = await controller.publish(
         'user-1',
         recurringInputFixture(),
-        coverChange: ProjectCoverChange.replacement(processedCoverFixture()),
+        coverChange: CoverChange.replacement(processedCoverFixture()),
       );
       expect(retry, 'new-tavolo');
       expect(gateway.calls.where((call) => call == 'create'), hasLength(1));
@@ -360,7 +360,7 @@ void main() {
       final result = await controller.publish(
         'user-1',
         recurringInputFixture(),
-        coverChange: ProjectCoverChange.replacement(processedCoverFixture()),
+        coverChange: CoverChange.replacement(processedCoverFixture()),
       );
 
       expect(result, isNull);
@@ -391,7 +391,7 @@ void main() {
     final result = await controller.saveDraft(
       'user-1',
       recurringInputFixture(),
-      coverChange: ProjectCoverChange.replacement(processedCoverFixture()),
+      coverChange: CoverChange.replacement(processedCoverFixture()),
     );
 
     expect(result, isNull);

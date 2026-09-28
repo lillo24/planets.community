@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart' show ScrollCacheExtent;
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -8,6 +9,8 @@ import '../../../core/widgets/error_state.dart';
 import '../../../core/widgets/loading_state.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../auth/application/auth_session_controller.dart';
+import '../../cover_media/domain/cover_media_models.dart';
+import '../../cover_media/presentation/cover_editor_section.dart';
 import '../../profile_photo/presentation/profile_photo_trust_gate.dart';
 import '../application/resource_listing_controllers.dart';
 import '../domain/resource_listing_models.dart';
@@ -36,6 +39,7 @@ class _ResourceListingEditorScreenState
   String? _requestedIdentity;
   String? _hydratedVersion;
   bool _attemptPublish = false;
+  CoverChange _coverChange = const CoverChange.unchanged();
 
   @override
   void initState() {
@@ -57,6 +61,9 @@ class _ResourceListingEditorScreenState
   Future<void> _load() async {
     final identity = ref.read(authSessionProvider).identity;
     if (identity != null) {
+      if (_requestedIdentity != identity.id) {
+        _coverChange = const CoverChange.unchanged();
+      }
       _requestedIdentity = identity.id;
       await ref
           .read(resourceListingEditorProvider.notifier)
@@ -113,182 +120,206 @@ class _ResourceListingEditorScreenState
               )
             : Form(
                 key: _formKey,
-                child: SingleChildScrollView(
+                child: ListView(
+                  // Keep the bounded form fields mounted while validation or
+                  // a partial-save message moves focus through the editor.
+                  scrollCacheExtent: const ScrollCacheExtent.pixels(1200),
                   padding: const EdgeInsets.all(AppSpacing.large),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      if (isClosed) ...[
-                        ResourceListingLifecycleBadge(
-                          lifecycle: ResourceListingLifecycle.closed,
-                        ),
-                        const SizedBox(height: AppSpacing.small),
-                        Text(
-                          l10n.resourceClosedReadOnly,
-                          key: const Key('resource-closed-read-only'),
-                        ),
-                        const SizedBox(height: AppSpacing.medium),
-                      ],
-                      Semantics(
-                        label: l10n.resourceModeField,
-                        child: SegmentedButton<ResourceListingMode>(
-                          key: const Key('resource-editor-mode'),
-                          segments: [
-                            ButtonSegment(
-                              value: ResourceListingMode.donate,
-                              label: Text(l10n.resourceModeDonate),
-                            ),
-                            ButtonSegment(
-                              value: ResourceListingMode.exchange,
-                              label: Text(l10n.resourceModeExchange),
-                            ),
-                          ],
-                          selected: {_mode},
-                          onSelectionChanged: isClosed || state.isBusy
-                              ? null
-                              : (selection) =>
-                                    setState(() => _mode = selection.single),
-                        ),
+                  children: [
+                    if (isClosed) ...[
+                      ResourceListingLifecycleBadge(
+                        lifecycle: ResourceListingLifecycle.closed,
                       ),
-                      _field(
-                        key: const Key('resource-title-field'),
-                        controller: _title,
-                        label: l10n.resourceTitleField,
-                        max: 120,
-                        min: 2,
-                        requiredForPublish: true,
-                        enabled: !isClosed,
+                      const SizedBox(height: AppSpacing.small),
+                      Text(
+                        l10n.resourceClosedReadOnly,
+                        key: const Key('resource-closed-read-only'),
                       ),
-                      _field(
-                        key: const Key('resource-description-field'),
-                        controller: _description,
-                        label: l10n.resourceDescriptionField,
-                        max: 5000,
-                        requiredForPublish: true,
-                        maxLines: 6,
-                        enabled: !isClosed,
-                      ),
-                      _field(
-                        key: const Key('resource-country-field'),
-                        controller: _country,
-                        label: l10n.resourceCountryCodeField,
-                        max: 2,
-                        requiredForPublish: true,
-                        enabled: !isClosed,
-                        inputFormatters: [
-                          LengthLimitingTextInputFormatter(2),
-                          _UpperCaseTextFormatter(),
-                        ],
-                        validator: (value) {
-                          final trimmed = value?.trim() ?? '';
-                          if (_attemptPublish && trimmed.isEmpty) {
-                            return l10n.resourceRequiredField;
-                          }
-                          if (trimmed.isNotEmpty &&
-                              !RegExp(r'^[A-Z]{2}$').hasMatch(trimmed)) {
-                            return l10n.resourceCountryCodeValidation;
-                          }
-                          return null;
-                        },
-                      ),
-                      _field(
-                        key: const Key('resource-locality-field'),
-                        controller: _locality,
-                        label: l10n.resourceLocalityField,
-                        max: 120,
-                        requiredForPublish: true,
-                        enabled: !isClosed,
-                      ),
-                      _field(
-                        key: const Key('resource-administrative-area-field'),
-                        controller: _administrativeArea,
-                        label: l10n.resourceAdministrativeAreaField,
-                        max: 120,
-                        enabled: !isClosed,
-                      ),
-                      _field(
-                        key: const Key('resource-public-location-field'),
-                        controller: _publicLocation,
-                        label: l10n.resourcePublicLocationField,
-                        max: 180,
-                        requiredForPublish: true,
-                        enabled: !isClosed,
-                      ),
-                      if (state.phase ==
-                          ResourceListingEditorPhase.failure) ...[
-                        const SizedBox(height: AppSpacing.medium),
-                        Text(
-                          state.draftSavedAfterPublishFailure
-                              ? l10n.resourceDraftSavedPublishFailed
-                              : resourceListingFailureMessage(
-                                  l10n,
-                                  state.failure,
-                                ),
-                          key: const Key('resource-editor-error'),
-                        ),
-                      ],
-                      if (!isClosed) ...[
-                        const SizedBox(height: AppSpacing.large),
-                        Wrap(
-                          spacing: AppSpacing.small,
-                          runSpacing: AppSpacing.small,
-                          children: [
-                            if (!isPublished)
-                              OutlinedButton(
-                                key: const Key('resource-save-draft'),
-                                onPressed: state.isBusy
-                                    ? null
-                                    : () => _submit(publish: false),
-                                child:
-                                    state.phase ==
-                                        ResourceListingEditorPhase.saving
-                                    ? const SizedBox.square(
-                                        dimension: 20,
-                                        child: CircularProgressIndicator(),
-                                      )
-                                    : Text(l10n.resourceSaveDraft),
-                              ),
-                            if (!isPublished)
-                              FilledButton(
-                                key: const Key('resource-publish'),
-                                onPressed: state.isBusy
-                                    ? null
-                                    : () => _submit(publish: true),
-                                child:
-                                    state.phase ==
-                                        ResourceListingEditorPhase.publishing
-                                    ? const SizedBox.square(
-                                        dimension: 20,
-                                        child: CircularProgressIndicator(),
-                                      )
-                                    : Text(l10n.resourcePublish),
-                              ),
-                            if (isPublished)
-                              FilledButton(
-                                key: const Key('resource-save-changes'),
-                                onPressed: state.isBusy
-                                    ? null
-                                    : () => _submit(publish: false),
-                                child:
-                                    state.phase ==
-                                        ResourceListingEditorPhase.saving
-                                    ? const SizedBox.square(
-                                        dimension: 20,
-                                        child: CircularProgressIndicator(),
-                                      )
-                                    : Text(l10n.resourceSaveChanges),
-                              ),
-                            if (isPublished)
-                              TextButton(
-                                key: const Key('resource-close-listing'),
-                                onPressed: state.isBusy ? null : _confirmClose,
-                                child: Text(l10n.resourceCloseListing),
-                              ),
-                          ],
-                        ),
-                      ],
+                      const SizedBox(height: AppSpacing.medium),
                     ],
-                  ),
+                    Semantics(
+                      label: l10n.resourceModeField,
+                      child: SegmentedButton<ResourceListingMode>(
+                        key: const Key('resource-editor-mode'),
+                        segments: [
+                          ButtonSegment(
+                            value: ResourceListingMode.donate,
+                            label: Text(l10n.resourceModeDonate),
+                          ),
+                          ButtonSegment(
+                            value: ResourceListingMode.exchange,
+                            label: Text(l10n.resourceModeExchange),
+                          ),
+                        ],
+                        selected: {_mode},
+                        onSelectionChanged: isClosed || state.isBusy
+                            ? null
+                            : (selection) =>
+                                  setState(() => _mode = selection.single),
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.medium),
+                    CoverEditorSection(
+                      ownerProfileId: identity.id,
+                      title: listing?.title ?? l10n.resourceUntitled,
+                      canonicalObjectPath: listing?.coverObjectPath,
+                      enabled: !isClosed && !state.isBusy,
+                      onChanged: (change) => _coverChange = change,
+                    ),
+                    const SizedBox(height: AppSpacing.medium),
+                    _field(
+                      key: const Key('resource-title-field'),
+                      controller: _title,
+                      label: l10n.resourceTitleField,
+                      max: 120,
+                      min: 2,
+                      requiredForPublish: true,
+                      enabled: !isClosed,
+                    ),
+                    _field(
+                      key: const Key('resource-description-field'),
+                      controller: _description,
+                      label: l10n.resourceDescriptionField,
+                      max: 5000,
+                      requiredForPublish: true,
+                      maxLines: 6,
+                      enabled: !isClosed,
+                    ),
+                    _field(
+                      key: const Key('resource-country-field'),
+                      controller: _country,
+                      label: l10n.resourceCountryCodeField,
+                      max: 2,
+                      requiredForPublish: true,
+                      enabled: !isClosed,
+                      inputFormatters: [
+                        LengthLimitingTextInputFormatter(2),
+                        _UpperCaseTextFormatter(),
+                      ],
+                      validator: (value) {
+                        final trimmed = value?.trim() ?? '';
+                        if (_attemptPublish && trimmed.isEmpty) {
+                          return l10n.resourceRequiredField;
+                        }
+                        if (trimmed.isNotEmpty &&
+                            !RegExp(r'^[A-Z]{2}$').hasMatch(trimmed)) {
+                          return l10n.resourceCountryCodeValidation;
+                        }
+                        return null;
+                      },
+                    ),
+                    _field(
+                      key: const Key('resource-locality-field'),
+                      controller: _locality,
+                      label: l10n.resourceLocalityField,
+                      max: 120,
+                      requiredForPublish: true,
+                      enabled: !isClosed,
+                    ),
+                    _field(
+                      key: const Key('resource-administrative-area-field'),
+                      controller: _administrativeArea,
+                      label: l10n.resourceAdministrativeAreaField,
+                      max: 120,
+                      enabled: !isClosed,
+                    ),
+                    _field(
+                      key: const Key('resource-public-location-field'),
+                      controller: _publicLocation,
+                      label: l10n.resourcePublicLocationField,
+                      max: 180,
+                      requiredForPublish: true,
+                      enabled: !isClosed,
+                    ),
+                    if (state.coverPartialSave != null) ...[
+                      const SizedBox(height: AppSpacing.medium),
+                      Semantics(
+                        liveRegion: true,
+                        child: Text(
+                          state.coverPartialSave ==
+                                  CoverPartialSaveKind.draftCreated
+                              ? l10n.coverDraftPartialError
+                              : l10n.coverChangesPartialError,
+                          key: const Key('resource-cover-save-error'),
+                          style: TextStyle(
+                            color: Theme.of(context).colorScheme.error,
+                          ),
+                        ),
+                      ),
+                    ] else if (state.phase ==
+                        ResourceListingEditorPhase.failure) ...[
+                      const SizedBox(height: AppSpacing.medium),
+                      Text(
+                        state.draftSavedAfterPublishFailure
+                            ? l10n.resourceDraftSavedPublishFailed
+                            : resourceListingFailureMessage(
+                                l10n,
+                                state.failure,
+                              ),
+                        key: const Key('resource-editor-error'),
+                      ),
+                    ],
+                    if (!isClosed) ...[
+                      const SizedBox(height: AppSpacing.large),
+                      Wrap(
+                        spacing: AppSpacing.small,
+                        runSpacing: AppSpacing.small,
+                        children: [
+                          if (!isPublished)
+                            OutlinedButton(
+                              key: const Key('resource-save-draft'),
+                              onPressed: state.isBusy
+                                  ? null
+                                  : () => _submit(publish: false),
+                              child:
+                                  state.phase ==
+                                      ResourceListingEditorPhase.saving
+                                  ? const SizedBox.square(
+                                      dimension: 20,
+                                      child: CircularProgressIndicator(),
+                                    )
+                                  : Text(l10n.resourceSaveDraft),
+                            ),
+                          if (!isPublished)
+                            FilledButton(
+                              key: const Key('resource-publish'),
+                              onPressed: state.isBusy
+                                  ? null
+                                  : () => _submit(publish: true),
+                              child:
+                                  state.phase ==
+                                      ResourceListingEditorPhase.publishing
+                                  ? const SizedBox.square(
+                                      dimension: 20,
+                                      child: CircularProgressIndicator(),
+                                    )
+                                  : Text(l10n.resourcePublish),
+                            ),
+                          if (isPublished)
+                            FilledButton(
+                              key: const Key('resource-save-changes'),
+                              onPressed: state.isBusy
+                                  ? null
+                                  : () => _submit(publish: false),
+                              child:
+                                  state.phase ==
+                                      ResourceListingEditorPhase.saving
+                                  ? const SizedBox.square(
+                                      dimension: 20,
+                                      child: CircularProgressIndicator(),
+                                    )
+                                  : Text(l10n.resourceSaveChanges),
+                            ),
+                          if (isPublished)
+                            TextButton(
+                              key: const Key('resource-close-listing'),
+                              onPressed: state.isBusy ? null : _confirmClose,
+                              child: Text(l10n.resourceCloseListing),
+                            ),
+                        ],
+                      ),
+                    ],
+                  ],
                 ),
               ),
       ),
@@ -365,8 +396,16 @@ class _ResourceListingEditorScreenState
     }
     final controller = ref.read(resourceListingEditorProvider.notifier);
     final id = publish
-        ? await controller.publish(identity.id, _input())
-        : await controller.save(identity.id, _input());
+        ? await controller.publish(
+            identity.id,
+            _input(),
+            coverChange: _coverChange,
+          )
+        : await controller.save(
+            identity.id,
+            _input(),
+            coverChange: _coverChange,
+          );
     if (!mounted) return;
     if (id == null) {
       if (publish &&
@@ -379,6 +418,7 @@ class _ResourceListingEditorScreenState
       }
       return;
     }
+    _coverChange = const CoverChange.unchanged();
     if (publish) {
       context.go('/resources/mine');
     } else if (widget.listingId == null) {

@@ -1,3 +1,5 @@
+import '../../cover_media/domain/cover_media_models.dart';
+
 enum ResourceListingMode {
   donate('donate'),
   exchange('exchange');
@@ -248,6 +250,8 @@ class ResourceListingEditorState {
     this.listing,
     this.failure,
     this.draftSavedAfterPublishFailure = false,
+    this.coverFailure,
+    this.coverPartialSave,
   });
 
   final ResourceListingEditorPhase phase;
@@ -256,6 +260,8 @@ class ResourceListingEditorState {
   final OwnResourceListing? listing;
   final ResourceListingFailureKind? failure;
   final bool draftSavedAfterPublishFailure;
+  final CoverPersistenceFailureKind? coverFailure;
+  final CoverPartialSaveKind? coverPartialSave;
 
   bool get isBusy => switch (phase) {
     ResourceListingEditorPhase.loading ||

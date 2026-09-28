@@ -54,7 +54,7 @@ class _RecurringActivityEditorScreenState
   DateTime? _effectiveFrom;
   RecurringExactLocationVisibility _visibility =
       RecurringExactLocationVisibility.participants;
-  ProjectCoverChange _coverChange = const ProjectCoverChange.unchanged();
+  CoverChange _coverChange = const CoverChange.unchanged();
 
   @override
   void initState() {
@@ -616,7 +616,7 @@ class _RecurringActivityEditorScreenState
       return;
     }
     if (id == null || !mounted) return;
-    _coverChange = const ProjectCoverChange.unchanged();
+    _coverChange = const CoverChange.unchanged();
     ref.invalidate(ownRecurringActivitiesProvider);
     ref.invalidate(publicRecurringActivitiesProvider);
     if (publish) {

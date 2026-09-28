@@ -8,6 +8,8 @@ const _owner = 'c1000000-0000-4000-8000-000000000001';
 const _project = 'c2000000-0000-4000-8000-000000000001';
 const _version = 'c3000000-0000-4000-8000-000000000001';
 const _path = '$_owner/projects/$_project/$_version.webp';
+const _listing = 'c4000000-0000-4000-8000-000000000001';
+const _resourcePath = '$_owner/resources/$_listing/$_version.webp';
 
 void main() {
   late FakeCoverMediaRemoteApi remote;
@@ -51,13 +53,37 @@ void main() {
     },
   );
 
+  test('Resource owner read maps the exact RPC and parent binding', () async {
+    remote.rpcResult = [_resourceOwnerRow()];
+
+    final cover = await gateway.loadOwnResourceListingCover(_owner, _listing);
+
+    expect(cover?.objectPath, _resourcePath);
+    expect(remote.rpcNames.single, 'get_own_resource_listing_cover');
+    expect(remote.rpcParams.single, {
+      'p_expected_owner_profile_id': _owner,
+      'p_listing_id': _listing,
+    });
+
+    remote.rpcResult = [
+      {
+        ..._resourceOwnerRow(),
+        'object_path': '$_owner/resources/$_project/$_version.webp',
+      },
+    ];
+    await expectLater(
+      gateway.loadOwnResourceListingCover(_owner, _listing),
+      throwsA(isA<CoverMediaDataException>()),
+    );
+  });
+
   test(
     'download and immutable upload use the private WebP bucket contract',
     () async {
       final bytes = Uint8List.fromList([1, 2, 3]);
 
       expect(await gateway.downloadCover(_path), remote.downloadResult);
-      await gateway.uploadProjectCover(_path, bytes);
+      await gateway.uploadCover(_path, bytes);
 
       expect(remote.downloads.single, (coverMediaBucket, _path));
       expect(remote.uploads.single.bucket, coverMediaBucket);
@@ -69,8 +95,7 @@ void main() {
 
   test('upload rejects bytes above the backend hard limit', () async {
     expect(
-      () =>
-          gateway.uploadProjectCover(_path, Uint8List(coverMediaMaxBytes + 1)),
+      () => gateway.uploadCover(_path, Uint8List(coverMediaMaxBytes + 1)),
       throwsA(isA<CoverMediaDataException>()),
     );
     expect(remote.uploads, isEmpty);
@@ -101,6 +126,60 @@ void main() {
       'p_expected_creator_profile_id': _owner,
       'p_project_id': _project,
     });
+  });
+
+  test('Resource set and clear map exact owner-bound RPC contracts', () async {
+    remote.rpcResult = [
+      {
+        'current_object_path': _resourcePath,
+        'previous_object_path': null,
+        'updated_at': '2026-09-02T10:00:00Z',
+      },
+    ];
+
+    final commit = await gateway.setOwnResourceListingCover(
+      _owner,
+      _listing,
+      _resourcePath,
+    );
+    expect(commit.currentObjectPath, _resourcePath);
+    expect(remote.rpcNames.last, 'set_own_resource_listing_cover');
+    expect(remote.rpcParams.last, {
+      'p_expected_owner_profile_id': _owner,
+      'p_listing_id': _listing,
+      'p_object_path': _resourcePath,
+    });
+
+    remote.rpcResult = _resourcePath;
+    expect(
+      await gateway.clearOwnResourceListingCover(_owner, _listing),
+      _resourcePath,
+    );
+    expect(remote.rpcNames.last, 'clear_own_resource_listing_cover');
+    expect(remote.rpcParams.last, {
+      'p_expected_owner_profile_id': _owner,
+      'p_listing_id': _listing,
+    });
+  });
+
+  test('Resource commit and clear reject cross-parent paths', () async {
+    remote.rpcResult = [
+      {
+        'current_object_path': '$_owner/resources/$_project/$_version.webp',
+        'previous_object_path': null,
+        'updated_at': '2026-09-02T10:00:00Z',
+      },
+    ];
+    await expectLater(
+      gateway.setOwnResourceListingCover(_owner, _listing, _resourcePath),
+      throwsA(isA<CoverMediaDataException>()),
+    );
+
+    remote.rpcResult = '$_owner/resources/$_project/$_version.webp';
+    await expectLater(
+      gateway.clearOwnResourceListingCover(_owner, _listing),
+      throwsA(isA<CoverMediaDataException>()),
+    );
   });
 
   test('set rejects malformed current and previous paths', () async {
@@ -148,6 +227,13 @@ void main() {
 Map<String, dynamic> _ownerRow() => {
   'project_id': _project,
   'object_path': _path,
+  'created_at': '2026-09-01T10:00:00Z',
+  'updated_at': '2026-09-02T10:00:00Z',
+};
+
+Map<String, dynamic> _resourceOwnerRow() => {
+  'listing_id': _listing,
+  'object_path': _resourcePath,
   'created_at': '2026-09-01T10:00:00Z',
   'updated_at': '2026-09-02T10:00:00Z',
 };

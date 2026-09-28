@@ -9,7 +9,7 @@ import '../application/cover_media_processor.dart';
 import '../data/cover_media_picker.dart';
 import '../domain/cover_media_models.dart';
 import 'cover_crop_view.dart';
-import 'project_cover_image.dart';
+import 'cover_image.dart';
 
 typedef CoverCropPageBuilder = Widget Function(Uint8List sourceBytes);
 
@@ -32,7 +32,7 @@ class CoverEditorSection extends ConsumerStatefulWidget {
   final String ownerProfileId;
   final String title;
   final String? canonicalObjectPath;
-  final ValueChanged<ProjectCoverChange> onChanged;
+  final ValueChanged<CoverChange> onChanged;
   final bool enabled;
 
   @override
@@ -40,7 +40,7 @@ class CoverEditorSection extends ConsumerStatefulWidget {
 }
 
 class _CoverEditorSectionState extends ConsumerState<CoverEditorSection> {
-  ProjectCoverChange _change = const ProjectCoverChange.unchanged();
+  CoverChange _change = const CoverChange.unchanged();
   Uint8List? _previewBytes;
   CoverEditorFailureKind? _failure;
   var _busy = false;
@@ -58,7 +58,7 @@ class _CoverEditorSectionState extends ConsumerState<CoverEditorSection> {
   }
 
   void _resetLocalChange() {
-    _change = const ProjectCoverChange.unchanged();
+    _change = const CoverChange.unchanged();
     _previewBytes = null;
     _failure = null;
     _busy = false;
@@ -106,7 +106,7 @@ class _CoverEditorSectionState extends ConsumerState<CoverEditorSection> {
           .read(coverMediaProcessorProvider)
           .process(cropped);
       if (!_accepts(revision, ownerProfileId)) return;
-      final change = ProjectCoverChange.replacement(processed);
+      final change = CoverChange.replacement(processed);
       setState(() {
         _busy = false;
         _change = change;
@@ -139,8 +139,8 @@ class _CoverEditorSectionState extends ConsumerState<CoverEditorSection> {
   void _removeImage() {
     if (_busy || !widget.enabled) return;
     final change = widget.canonicalObjectPath == null
-        ? const ProjectCoverChange.unchanged()
-        : const ProjectCoverChange.removal();
+        ? const CoverChange.unchanged()
+        : const CoverChange.removal();
     setState(() {
       _change = change;
       _previewBytes = null;
@@ -153,8 +153,8 @@ class _CoverEditorSectionState extends ConsumerState<CoverEditorSection> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final hasImage =
-        _change.kind == ProjectCoverChangeKind.replacement ||
-        (_change.kind == ProjectCoverChangeKind.unchanged &&
+        _change.kind == CoverChangeKind.replacement ||
+        (_change.kind == CoverChangeKind.unchanged &&
             widget.canonicalObjectPath != null);
     final failureText = switch (_failure) {
       null => null,
@@ -169,10 +169,10 @@ class _CoverEditorSectionState extends ConsumerState<CoverEditorSection> {
       children: [
         Text(l10n.coverImage, style: Theme.of(context).textTheme.titleLarge),
         const SizedBox(height: AppSpacing.small),
-        ProjectCoverImage(
+        CoverImage(
           key: const Key('cover-editor-preview'),
           title: widget.title,
-          objectPath: _change.kind == ProjectCoverChangeKind.removal
+          objectPath: _change.kind == CoverChangeKind.removal
               ? null
               : widget.canonicalObjectPath,
           ownerProfileId: widget.ownerProfileId,

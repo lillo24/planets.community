@@ -1,7 +1,7 @@
 # Implementation Roadmap
 
 **Status:** Planning baseline  
-**Current implementation:** Plans 00–04B2B, 04C1–04C2, 05A, 05B, 05D, 06A, 06B, provider-independent 06C1, provider-neutral 06C2A, 06D, 07A, 07B1, 07B2B, 07B2C, and public informational SITE-00 through SITE-02 plus SITE-02W implemented; 04C3A and stacked 04C3B1/04C3B2/04C3C1/04C3C2/04C3D1/04C3D2/04C3D3A/04C3D3B1/04C3D3B2/05C1/05C2/04C4A/04C4B/04C4C1/04C4C2/04C4C3A/04C4C3B/04C4C3C1/04C4C3C2/04C4C3D/04C4D1/04C4D2/04C4E1/04C4E2/04C4F1/04C4F2/04C4F3A/04C4F3B1/04C4F3B2/08B1/08B2A are in progress; provider-specific 06C2B and Scambio-Dona 08B2B cover UX remain not started
+**Current implementation:** Plans 00–04B2B, 04C1–04C2, 05A, 05B, 05D, 06A, 06B, provider-independent 06C1, provider-neutral 06C2A, 06D, 07A, 07B1, 07B2B, 07B2C, and public informational SITE-00 through SITE-02 plus SITE-02W implemented; 04C3A and stacked 04C3B1/04C3B2/04C3C1/04C3C2/04C3D1/04C3D2/04C3D3A/04C3D3B1/04C3D3B2/05C1/05C2/04C4A/04C4B/04C4C1/04C4C2/04C4C3A/04C4C3B/04C4C3C1/04C4C3C2/04C4C3D/04C4D1/04C4D2/04C4E1/04C4E2/04C4F1/04C4F2/04C4F3A/04C4F3B1/04C4F3B2/08B1/08B2A/08B2B are in progress; provider-specific 06C2B remains not started
 
 This roadmap divides the first PLANETS build into reviewable Codex tasks. Each numbered item should normally become its own implementation prompt, branch, and pull request.
 
@@ -123,10 +123,10 @@ Do not begin a dependent plan until the prior plan is merged or its branch is ex
 | 08A3        | Photo Read Access + Interactions                          | Reusable relationship authorization and non-owner private photo delivery                                                  | 08A2                   | PR #98; organizer pending/current-participant relationship is the first interaction set                              | In progress                        |
 | 08A4A       | Personal Project Trust Gates + Contextual Photos          | Canonical photo gates, creator-review avatars, and Project-context organizer delivery                                     | 08A3                   | PR #101; native device QA remains in Plan 12                                                                         | In progress                        |
 | 08A4B       | Scambio-Dona Profile Photo Trust Integration              | Resource-exchange counterpart gates and contextual photo placement                                                        | 08A4A                  | Current stacked PR; native device QA remains in Plan 12                                                              | In progress                        |
-| 08B         | Project + Listing Cover Images (parent)                   | One optional canonical cover for Proposals, Tavoli, and Scambio-Dona followed by separate mobile UX slices                | 08A4B                  | No gallery, chat attachment, Drive hosting, or publication requirement                                               | In progress                        |
+| 08B         | Project + Listing Cover Images (parent)                   | One optional canonical cover for Proposals, Tavoli, and Scambio-Dona followed by separate mobile UX slices                | 08A4B                  | No multi-image gallery, chat attachment, Drive hosting, or publication requirement                                   | In progress                        |
 | 08B1        | Cover Image Storage + Domain Foundation                   | Private WebP bucket, parent-bound immutable paths, canonical metadata, lifecycle-aware delivery, and nullable read fields | 08A4B                  | Open dependency PR #106; cover rendering and selection remain 08B2                                                  | In progress                        |
-| 08B2A       | Proposal + Tavolo Cover Mobile UX                         | Mobile normalization, owner management, and presentation for shared Project covers                                        | 08B1                   | Current stacked PR; native interaction and crop review remains Plan 12; no gallery                                   | In progress                        |
-| 08B2B       | Scambio-Dona Cover Mobile UX                              | Mobile normalization, owner management, and presentation for Resource covers                                              | 08B1                   | Native interaction and crop review; no gallery                                                                       | Not started                        |
+| 08B2A       | Proposal + Tavolo Cover Mobile UX                         | Mobile normalization, owner management, and presentation for shared Project covers                                        | 08B1                   | Open stacked PR #110; native interaction and crop review remains Plan 12; no multi-image gallery                     | In progress                        |
+| 08B2B       | Scambio-Dona Cover Mobile UX                              | Shared normalization, owner management, and presentation for Resource covers and matching cards                           | 08B2A                  | Current stacked PR; native interaction and crop review remains Plan 12; no multi-image gallery                       | In progress                        |
 | 09          | Safety, moderation and admin                              | Reporting, blocking, content states, admin roles, moderation queue/actions, audit trail and minimal custom admin UI       | 04–08                  | Community rules, prohibited content, escalation, suspension, appeals, minimum age                                    | Not started                        |
 | 10          | Account deletion and privacy operations                   | In-app and web deletion paths, cleanup/anonymization jobs, export groundwork, privacy documentation inputs                | 03–09                  | Legal retention and anonymization policy; legal text remains founder/legal work                                      | Not started                        |
 | 11          | Analytics and operational foundations                     | Explicit product events, privacy scrubbing, health/queue signals, alert requirements, and incident ownership inputs       | 00–10                  | Success metrics and analytics consent/legal choices                                                                  | Not started                        |
@@ -1160,6 +1160,20 @@ Deferred 08B2A native checklist:
 - verify account switching during owner-cover selection/loading never exposes
   or applies the prior account's pending or draft image;
 - verify TalkBack and VoiceOver crop/action controls on both platforms.
+
+Additional 08B2B Resource checklist:
+
+- verify Android/iOS gallery selection and fixed 16:9 crop gestures with large
+  item photos;
+- verify slow/offline new-listing upload, retry against the retained draft,
+  replacement, and removal;
+- verify public Scambio-Dona scrolling and Project-resource matching cards with
+  many immutable cover paths;
+- verify light/dark themes, narrow-phone/tablet layouts, and clear visual
+  distinction between the Resource cover and owner avatar;
+- verify an account switch with a draft editor open never exposes or applies
+  the prior owner's private cover;
+- verify restrained TalkBack/VoiceOver cover semantics and editor actions.
 
 ### 13 — Self-hosted production infrastructure readiness
 

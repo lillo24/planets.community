@@ -18,21 +18,21 @@ class ProcessedCoverImage {
   final int encodingAttempts;
 }
 
-enum ProjectCoverChangeKind { unchanged, replacement, removal }
+enum CoverChangeKind { unchanged, replacement, removal }
 
-class ProjectCoverChange {
-  const ProjectCoverChange.unchanged()
-    : kind = ProjectCoverChangeKind.unchanged,
+class CoverChange {
+  const CoverChange.unchanged()
+    : kind = CoverChangeKind.unchanged,
       replacement = null;
 
-  const ProjectCoverChange.replacement(this.replacement)
-    : kind = ProjectCoverChangeKind.replacement;
+  const CoverChange.replacement(this.replacement)
+    : kind = CoverChangeKind.replacement;
 
-  const ProjectCoverChange.removal()
-    : kind = ProjectCoverChangeKind.removal,
+  const CoverChange.removal()
+    : kind = CoverChangeKind.removal,
       replacement = null;
 
-  final ProjectCoverChangeKind kind;
+  final CoverChangeKind kind;
   final ProcessedCoverImage? replacement;
 }
 
@@ -120,6 +120,101 @@ class ProjectCoverCommit {
       );
     }
     return ProjectCoverCommit(
+      currentObjectPath: currentObjectPath,
+      previousObjectPath: previousObjectPath,
+      updatedAt: updatedAt,
+    );
+  }
+
+  final String currentObjectPath;
+  final String? previousObjectPath;
+  final DateTime updatedAt;
+}
+
+class OwnResourceListingCover {
+  const OwnResourceListingCover({
+    required this.listingId,
+    required this.objectPath,
+    required this.createdAt,
+    required this.updatedAt,
+  });
+
+  factory OwnResourceListingCover.fromRpcRow(Map<String, dynamic> row) {
+    final listingId = row['listing_id'];
+    final createdAt = DateTime.tryParse(row['created_at']?.toString() ?? '');
+    final updatedAt = DateTime.tryParse(row['updated_at']?.toString() ?? '');
+    if (listingId is! String || createdAt == null || updatedAt == null) {
+      throw const CoverMediaDataException(
+        'Owner Resource cover read returned malformed metadata.',
+      );
+    }
+    final String? objectPath;
+    try {
+      objectPath = parseCoverObjectPath(
+        row['object_path'],
+        parentId: listingId,
+        parentSegment: 'resources',
+      );
+    } on FormatException {
+      throw const CoverMediaDataException(
+        'Owner Resource cover read returned malformed metadata.',
+      );
+    }
+    if (objectPath == null) {
+      throw const CoverMediaDataException(
+        'Owner Resource cover read omitted its object path.',
+      );
+    }
+    return OwnResourceListingCover(
+      listingId: listingId,
+      objectPath: objectPath,
+      createdAt: createdAt,
+      updatedAt: updatedAt,
+    );
+  }
+
+  final String listingId;
+  final String objectPath;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+}
+
+class ResourceListingCoverCommit {
+  const ResourceListingCoverCommit({
+    required this.currentObjectPath,
+    required this.previousObjectPath,
+    required this.updatedAt,
+  });
+
+  factory ResourceListingCoverCommit.fromRpcRow(
+    Map<String, dynamic> row, {
+    required String listingId,
+  }) {
+    final String? currentObjectPath;
+    final String? previousObjectPath;
+    try {
+      currentObjectPath = parseCoverObjectPath(
+        row['current_object_path'],
+        parentId: listingId,
+        parentSegment: 'resources',
+      );
+      previousObjectPath = parseCoverObjectPath(
+        row['previous_object_path'],
+        parentId: listingId,
+        parentSegment: 'resources',
+      );
+    } on FormatException {
+      throw const CoverMediaDataException(
+        'Resource cover commit returned malformed metadata.',
+      );
+    }
+    final updatedAt = DateTime.tryParse(row['updated_at']?.toString() ?? '');
+    if (currentObjectPath == null || updatedAt == null) {
+      throw const CoverMediaDataException(
+        'Resource cover commit returned malformed metadata.',
+      );
+    }
+    return ResourceListingCoverCommit(
       currentObjectPath: currentObjectPath,
       previousObjectPath: previousObjectPath,
       updatedAt: updatedAt,

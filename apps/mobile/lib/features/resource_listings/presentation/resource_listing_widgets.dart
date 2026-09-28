@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 
 import '../../../core/theme/app_tokens.dart';
 import '../../../l10n/generated/app_localizations.dart';
+import '../../cover_media/presentation/cover_image.dart';
 import '../domain/resource_listing_models.dart';
 
 String resourceListingModeLabel(
@@ -117,56 +118,66 @@ class PublicResourceListingCard extends StatelessWidget {
         child: InkWell(
           key: Key('resource-card-${listing.id}'),
           onTap: onTap,
-          child: Padding(
-            padding: const EdgeInsets.all(AppSpacing.medium),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              CoverImage(
+                key: Key('resource-cover-${listing.id}'),
+                title: listing.title,
+                objectPath: listing.coverObjectPath,
+              ),
+              Padding(
+                padding: const EdgeInsets.all(AppSpacing.medium),
+                child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Expanded(
-                      child: Text(
-                        listing.title,
-                        style: Theme.of(context).textTheme.titleLarge,
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: Text(
+                            listing.title,
+                            style: Theme.of(context).textTheme.titleLarge,
+                          ),
+                        ),
+                        const SizedBox(width: AppSpacing.small),
+                        ResourceListingModeBadge(mode: listing.mode),
+                      ],
+                    ),
+                    const SizedBox(height: AppSpacing.small),
+                    Text(
+                      listing.description,
+                      maxLines: 3,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: AppSpacing.medium),
+                    _IconText(
+                      icon: Icons.location_on_outlined,
+                      text: listing.publicLocationLabel,
+                    ),
+                    const SizedBox(height: AppSpacing.xSmall),
+                    _IconText(
+                      icon: Icons.calendar_today_outlined,
+                      text: l10n.resourcePublishedDate(
+                        formatResourceListingDate(context, listing.publishedAt),
                       ),
                     ),
-                    const SizedBox(width: AppSpacing.small),
-                    ResourceListingModeBadge(mode: listing.mode),
+                    if (interest != null) ...[
+                      const SizedBox(height: AppSpacing.xSmall),
+                      _IconText(
+                        icon: Icons.people_outline,
+                        text: interest,
+                        key: Key('resource-interest-count-${listing.id}'),
+                      ),
+                    ],
+                    if (footer case final footer?) ...[
+                      const SizedBox(height: AppSpacing.medium),
+                      footer,
+                    ],
                   ],
                 ),
-                const SizedBox(height: AppSpacing.small),
-                Text(
-                  listing.description,
-                  maxLines: 3,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const SizedBox(height: AppSpacing.medium),
-                _IconText(
-                  icon: Icons.location_on_outlined,
-                  text: listing.publicLocationLabel,
-                ),
-                const SizedBox(height: AppSpacing.xSmall),
-                _IconText(
-                  icon: Icons.calendar_today_outlined,
-                  text: l10n.resourcePublishedDate(
-                    formatResourceListingDate(context, listing.publishedAt),
-                  ),
-                ),
-                if (interest != null) ...[
-                  const SizedBox(height: AppSpacing.xSmall),
-                  _IconText(
-                    icon: Icons.people_outline,
-                    text: interest,
-                    key: Key('resource-interest-count-${listing.id}'),
-                  ),
-                ],
-                if (footer case final footer?) ...[
-                  const SizedBox(height: AppSpacing.medium),
-                  footer,
-                ],
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),

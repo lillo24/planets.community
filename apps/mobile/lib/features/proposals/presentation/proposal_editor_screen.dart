@@ -134,7 +134,7 @@ class _ProposalFormState extends ConsumerState<_ProposalForm> {
   DateTime? _endsAt;
   bool _validatingPublish = false;
   List<String> _validationIssues = const [];
-  ProjectCoverChange _coverChange = const ProjectCoverChange.unchanged();
+  CoverChange _coverChange = const CoverChange.unchanged();
 
   @override
   void initState() {

@@ -23,7 +23,7 @@ void main() {
     'selection, crop, and processing remain local until parent save',
     (tester) async {
       final gateway = FakeCoverMediaGateway();
-      ProjectCoverChange? change;
+      CoverChange? change;
       await tester.pumpWidget(
         _host(
           gateway: gateway,
@@ -38,7 +38,7 @@ void main() {
       await tester.tap(find.byKey(const Key('test-crop-use')));
       await tester.pumpAndSettle();
 
-      expect(change?.kind, ProjectCoverChangeKind.replacement);
+      expect(change?.kind, CoverChangeKind.replacement);
       expect(find.byKey(const Key('cover-change')), findsOneWidget);
       expect(gateway.calls, isEmpty);
     },
@@ -47,7 +47,7 @@ void main() {
   testWidgets('cancelling crop keeps canonical state unchanged', (
     tester,
   ) async {
-    ProjectCoverChange? change;
+    CoverChange? change;
     await tester.pumpWidget(
       _host(
         gateway: FakeCoverMediaGateway(),
@@ -70,7 +70,7 @@ void main() {
     tester,
   ) async {
     final gateway = FakeCoverMediaGateway();
-    ProjectCoverChange? change;
+    CoverChange? change;
     await tester.pumpWidget(
       _host(
         gateway: gateway,
@@ -111,7 +111,7 @@ void main() {
     tester,
   ) async {
     final gateway = FakeCoverMediaGateway();
-    ProjectCoverChange? change;
+    CoverChange? change;
     await tester.pumpWidget(
       _host(
         gateway: gateway,
@@ -126,7 +126,7 @@ void main() {
     await tester.tap(find.byKey(const Key('cover-remove')));
     await tester.pump();
 
-    expect(change?.kind, ProjectCoverChangeKind.removal);
+    expect(change?.kind, CoverChangeKind.removal);
     expect(find.byKey(const Key('cover-add')), findsOneWidget);
     expect(gateway.calls, isEmpty);
   });
@@ -173,7 +173,7 @@ Widget _host({
   required CoverMediaGateway gateway,
   required CoverMediaPicker picker,
   required CoverMediaProcessor processor,
-  required ValueChanged<ProjectCoverChange> onChanged,
+  required ValueChanged<CoverChange> onChanged,
   String? canonicalPath,
 }) {
   return ProviderScope(

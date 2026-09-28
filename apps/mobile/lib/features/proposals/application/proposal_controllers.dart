@@ -481,7 +481,7 @@ class ProposalEditorController extends Notifier<ProposalEditorState> {
   Future<String?> saveDraft(
     String expectedCreatorId,
     ProposalInput input, {
-    ProjectCoverChange coverChange = const ProjectCoverChange.unchanged(),
+    CoverChange coverChange = const CoverChange.unchanged(),
   }) async {
     if (state.isBusy ||
         !isValidProposalDraft(input) ||
@@ -507,7 +507,7 @@ class ProposalEditorController extends Notifier<ProposalEditorState> {
   Future<String?> publish(
     String expectedCreatorId,
     ProposalInput input, {
-    ProjectCoverChange coverChange = const ProjectCoverChange.unchanged(),
+    CoverChange coverChange = const CoverChange.unchanged(),
   }) async {
     if (state.isBusy ||
         !isPublishableProposalInput(input) ||
@@ -533,7 +533,7 @@ class ProposalEditorController extends Notifier<ProposalEditorState> {
     String expectedCreatorId,
     ProposalInput input, {
     required bool publish,
-    required ProjectCoverChange coverChange,
+    required CoverChange coverChange,
   }) async {
     final revision = ++_revision;
     final existingProposal = state.proposal;
@@ -561,7 +561,7 @@ class ProposalEditorController extends Notifier<ProposalEditorState> {
         if (!_isCurrent(revision)) return null;
       }
       _requireReadyIdentity(expectedCreatorId);
-      if (coverChange.kind != ProjectCoverChangeKind.unchanged) {
+      if (coverChange.kind != CoverChangeKind.unchanged) {
         try {
           await ref
               .read(projectCoverReconcilerProvider)

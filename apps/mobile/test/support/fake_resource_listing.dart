@@ -134,6 +134,7 @@ class FakeResourceListingGateway implements ResourceListingGateway {
             ownerProfileId: item.ownerProfileId,
             lifecycle: item.lifecycle,
             input: input,
+            coverObjectPath: item.coverObjectPath,
           )
         else
           item,
@@ -145,8 +146,9 @@ class FakeResourceListingGateway implements ResourceListingGateway {
     String expectedOwnerId,
     String listingId,
   ) async {
-    _throw(error ?? publishError);
+    _throw(error);
     calls.add('publish:$listingId');
+    _throw(publishError);
     lastExpectedOwnerId = expectedOwnerId;
     ownItems = [
       for (final item in ownItems)
@@ -218,6 +220,7 @@ PublicResourceListingSummary _publicSummary(OwnResourceListing listing) =>
       publicLocationLabel: listing.publicLocationLabel!,
       publishedAt: listing.publishedAt!,
       activeRequestCount: 0,
+      coverObjectPath: listing.coverObjectPath,
     );
 
 const resourceOwnerProfileId = '00000000-0000-4000-8000-000000000101';
@@ -249,6 +252,7 @@ PublicResourceListingSummary publicResourceListingFixture({
   ResourceListingMode mode = ResourceListingMode.donate,
   DateTime? publishedAt,
   int activeRequestCount = 0,
+  String? coverObjectPath,
 }) => PublicResourceListingSummary(
   id: id,
   mode: mode,
@@ -260,6 +264,7 @@ PublicResourceListingSummary publicResourceListingFixture({
   publicLocationLabel: 'Central Bologna',
   publishedAt: publishedAt ?? DateTime.utc(2026, 9, 14, 12),
   activeRequestCount: activeRequestCount,
+  coverObjectPath: coverObjectPath,
 );
 
 PublicResourceListingDetail publicResourceListingDetailFixture({
@@ -277,6 +282,7 @@ OwnResourceListing ownResourceListingFixture({
   String ownerProfileId = resourceOwnerProfileId,
   ResourceListingLifecycle lifecycle = ResourceListingLifecycle.draft,
   ResourceListingInput? input,
+  String? coverObjectPath,
 }) {
   final value = input ?? resourceListingInputFixture();
   final published = lifecycle != ResourceListingLifecycle.draft
@@ -303,6 +309,7 @@ OwnResourceListing ownResourceListingFixture({
     closedAt: lifecycle == ResourceListingLifecycle.closed
         ? DateTime.utc(2026, 9, 15, 12)
         : null,
+    coverObjectPath: coverObjectPath,
   );
 }
 
@@ -311,6 +318,7 @@ OwnResourceListing copyOwnResourceListing(
   required ResourceListingLifecycle lifecycle,
   DateTime? publishedAt,
   DateTime? closedAt,
+  String? coverObjectPath,
 }) => OwnResourceListing(
   id: item.id,
   ownerProfileId: item.ownerProfileId,
@@ -326,4 +334,26 @@ OwnResourceListing copyOwnResourceListing(
   updatedAt: DateTime.utc(2026, 9, 15),
   publishedAt: publishedAt ?? item.publishedAt,
   closedAt: closedAt,
+  coverObjectPath: coverObjectPath ?? item.coverObjectPath,
+);
+
+OwnResourceListing copyOwnResourceListingCover(
+  OwnResourceListing item,
+  String? coverObjectPath,
+) => OwnResourceListing(
+  id: item.id,
+  ownerProfileId: item.ownerProfileId,
+  mode: item.mode,
+  lifecycle: item.lifecycle,
+  title: item.title,
+  description: item.description,
+  countryCode: item.countryCode,
+  locality: item.locality,
+  administrativeArea: item.administrativeArea,
+  publicLocationLabel: item.publicLocationLabel,
+  createdAt: item.createdAt,
+  updatedAt: item.updatedAt,
+  publishedAt: item.publishedAt,
+  closedAt: item.closedAt,
+  coverObjectPath: coverObjectPath,
 );

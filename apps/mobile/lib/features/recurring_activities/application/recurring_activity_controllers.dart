@@ -428,7 +428,7 @@ class RecurringActivityEditorController
   Future<String?> saveDraft(
     String expectedCreatorId,
     RecurringActivityInput input, {
-    ProjectCoverChange coverChange = const ProjectCoverChange.unchanged(),
+    CoverChange coverChange = const CoverChange.unchanged(),
   }) {
     if (!isValidRecurringActivityDraft(input) ||
         !isValidRecurringScheduleTransition(
@@ -449,7 +449,7 @@ class RecurringActivityEditorController
   Future<String?> publish(
     String expectedCreatorId,
     RecurringActivityInput input, {
-    ProjectCoverChange coverChange = const ProjectCoverChange.unchanged(),
+    CoverChange coverChange = const CoverChange.unchanged(),
   }) {
     if (!isPublishableRecurringActivityInput(input) ||
         !isValidRecurringScheduleTransition(
@@ -481,7 +481,7 @@ class RecurringActivityEditorController
     String expectedCreatorId,
     RecurringActivityInput input, {
     required bool publishAfterSave,
-    required ProjectCoverChange coverChange,
+    required CoverChange coverChange,
   }) async {
     if (state.isBusy) return null;
     final revision = ++_revision;
@@ -510,7 +510,7 @@ class RecurringActivityEditorController
         if (!_isCurrent(revision)) return null;
         _requireReadyIdentity(expectedCreatorId);
       }
-      if (coverChange.kind != ProjectCoverChangeKind.unchanged) {
+      if (coverChange.kind != CoverChangeKind.unchanged) {
         try {
           await ref
               .read(projectCoverReconcilerProvider)

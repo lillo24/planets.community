@@ -1,11 +1,21 @@
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:image/image.dart' as image;
 import 'package:planets_mobile/app/planets_app.dart';
 import 'package:planets_mobile/app/router/app_router.dart';
 import 'package:planets_mobile/core/config/app_config.dart';
 import 'package:planets_mobile/features/auth/data/auth_gateway.dart';
 import 'package:planets_mobile/features/auth/domain/auth_models.dart';
+import 'package:planets_mobile/features/cover_media/application/cover_media_processor.dart';
+import 'package:planets_mobile/features/cover_media/application/resource_listing_cover_reconciler.dart';
+import 'package:planets_mobile/features/cover_media/data/cover_media_gateway.dart';
+import 'package:planets_mobile/features/cover_media/data/cover_media_picker.dart';
+import 'package:planets_mobile/features/cover_media/domain/cover_media_models.dart';
+import 'package:planets_mobile/features/cover_media/presentation/cover_editor_section.dart';
+import 'package:planets_mobile/features/cover_media/presentation/cover_image.dart';
 import 'package:planets_mobile/features/messages/presentation/messages_routes.dart';
 import 'package:planets_mobile/features/profile/data/profile_gateway.dart';
 import 'package:planets_mobile/features/profile/presentation/profile_edit_screen.dart';
@@ -21,6 +31,7 @@ import 'package:planets_mobile/features/resource_loans/data/resource_loan_gatewa
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../support/fake_auth.dart';
+import '../../../support/fake_cover_media.dart';
 import '../../../support/fake_profile.dart';
 import '../../../support/fake_profile_photo.dart';
 import '../../../support/fake_resource_listing.dart';
@@ -28,6 +39,70 @@ import '../../../support/fake_resource_request.dart';
 import '../../../support/fake_resource_loan.dart';
 
 void main() {
+  testWidgets('public card and detail render the canonical shared cover', (
+    tester,
+  ) async {
+    final coverMedia = FakeCoverMediaGateway()..downloadResult = _pngBytes();
+    final gateway = FakeResourceListingGateway()
+      ..publicItems = [
+        publicResourceListingFixture(coverObjectPath: _publicCoverPath),
+      ]
+      ..publicDetail = PublicResourceListingDetail(
+        summary: publicResourceListingFixture(
+          coverObjectPath: _publicCoverPath,
+          activeRequestCount: 2,
+        ),
+        ownerProfileId: resourceOwnerProfileId,
+        ownerDisplayName: 'Casey',
+      );
+    final app = await _pump(
+      tester,
+      gateway: gateway,
+      signedIn: false,
+      coverMedia: coverMedia,
+    );
+    app.read(appRouterProvider).go('/resources');
+    await tester.pumpAndSettle();
+
+    expect(
+      find.byKey(Key('resource-cover-$resourceListingId')),
+      findsOneWidget,
+    );
+    expect(find.byType(CoverImage), findsOneWidget);
+    expect(find.byType(Image), findsOneWidget);
+    expect(find.text('Garden tools'), findsOneWidget);
+    expect(find.text('Dona'), findsWidgets);
+
+    await _tap(tester, 'resource-card-$resourceListingId');
+    expect(find.byKey(const Key('resource-detail-cover')), findsOneWidget);
+    expect(find.byKey(const Key('resource-listing-owner')), findsOneWidget);
+    expect(find.text('2 people interested'), findsOneWidget);
+  });
+
+  testWidgets('cover failure keeps Resource card content and tap usable', (
+    tester,
+  ) async {
+    final gateway = FakeResourceListingGateway()
+      ..publicItems = [
+        publicResourceListingFixture(coverObjectPath: _publicCoverPath),
+      ]
+      ..publicDetail = publicResourceListingDetailFixture();
+    final app = await _pump(
+      tester,
+      gateway: gateway,
+      signedIn: false,
+      coverMedia: _ThrowingCoverMediaGateway(),
+    );
+    app.read(appRouterProvider).go('/resources');
+    await tester.pumpAndSettle();
+
+    expect(find.byIcon(Icons.broken_image_outlined), findsOneWidget);
+    expect(find.text('Garden tools'), findsOneWidget);
+    expect(find.text('Central Bologna'), findsOneWidget);
+    await _tap(tester, 'resource-card-$resourceListingId');
+    expect(find.text('Listing details'), findsOneWidget);
+  });
+
   testWidgets(
     'Home exposes Progetti and Scambio-Dona with three destinations',
     (tester) async {
@@ -368,6 +443,32 @@ void main() {
   });
 
   testWidgets(
+    'My Listings uses identity-safe owner covers with lifecycle actions',
+    (tester) async {
+      final coverMedia = FakeCoverMediaGateway()..downloadResult = _pngBytes();
+      final gateway = FakeResourceListingGateway()
+        ..ownItems = [
+          ownResourceListingFixture(coverObjectPath: _ownerCoverPath),
+        ];
+      final app = await _pump(tester, gateway: gateway, coverMedia: coverMedia);
+      app.read(appRouterProvider).go('/resources/mine');
+      await tester.pumpAndSettle();
+
+      expect(
+        find.byKey(Key('resource-owner-cover-$resourceListingId')),
+        findsOneWidget,
+      );
+      expect(find.byType(Image), findsOneWidget);
+      expect(find.byKey(const Key('resource-lifecycle-draft')), findsOneWidget);
+      expect(
+        find.byKey(Key('resource-edit-$resourceListingId')),
+        findsOneWidget,
+      );
+      expect(coverMedia.calls, contains('download:$_ownerCoverPath'));
+    },
+  );
+
+  testWidgets(
     'Create stays local, validates publish, and saves incomplete draft',
     (tester) async {
       final gateway = FakeResourceListingGateway();
@@ -393,6 +494,33 @@ void main() {
       );
     },
   );
+
+  testWidgets('Resource cover selection remains local until Save', (
+    tester,
+  ) async {
+    final gateway = FakeResourceListingGateway();
+    final coverMedia = FakeCoverMediaGateway();
+    final covers = FakeResourceListingCoverReconciler();
+    final app = await _pump(
+      tester,
+      gateway: gateway,
+      coverMedia: coverMedia,
+      covers: covers,
+      coverPicker: _Picker(Uint8List.fromList([1, 2, 3])),
+      coverProcessor: _Processor(processedCoverFixture()),
+      cropBuilder: (bytes) => _CropPage(bytes: bytes),
+    );
+    app.read(appRouterProvider).go('/resources/create');
+    await tester.pumpAndSettle();
+
+    await _tap(tester, 'cover-add');
+    await _tap(tester, 'test-resource-crop-use');
+
+    expect(find.byKey(const Key('cover-change')), findsOneWidget);
+    expect(gateway.createCount, 0);
+    expect(coverMedia.calls, isEmpty);
+    expect(covers.calls, isEmpty);
+  });
 
   testWidgets('published edit offers save and semantic close confirmation', (
     tester,
@@ -442,6 +570,34 @@ void main() {
           .enabled,
       isFalse,
     );
+    expect(
+      tester.widget<FilledButton>(find.byKey(const Key('cover-add'))).onPressed,
+      isNull,
+    );
+  });
+
+  testWidgets('an existing cover does not bypass the profile-photo gate', (
+    tester,
+  ) async {
+    final gateway = FakeResourceListingGateway()
+      ..ownItems = [
+        ownResourceListingFixture(coverObjectPath: _ownerCoverPath),
+      ];
+    final covers = FakeResourceListingCoverReconciler();
+    final app = await _pump(
+      tester,
+      gateway: gateway,
+      covers: covers,
+      coverMedia: FakeCoverMediaGateway()..downloadResult = _pngBytes(),
+      profilePhotos: FakeProfilePhotoGateway(),
+    );
+    app.read(appRouterProvider).go('/resources/$resourceListingId/edit');
+    await tester.pumpAndSettle();
+
+    await _tap(tester, 'resource-publish');
+    expect(find.byKey(const Key('profile-photo-trust-gate')), findsOneWidget);
+    expect(covers.calls, isEmpty);
+    expect(gateway.calls, isNot(contains('publish:$resourceListingId')));
   });
 
   testWidgets('anonymous public detail loads the contextual owner avatar', (
@@ -593,7 +749,14 @@ Future<ProviderContainer> _pump(
   FakeResourceRequestGateway? resourceRequests,
   FakeResourceLoanGateway? resourceLoans,
   FakeProfilePhotoGateway? profilePhotos,
+  CoverMediaGateway? coverMedia,
+  ResourceListingCoverReconciler? covers,
+  CoverMediaPicker? coverPicker,
+  CoverMediaProcessor? coverProcessor,
+  CoverCropPageBuilder? cropBuilder,
 }) async {
+  await tester.binding.setSurfaceSize(const Size(900, 4200));
+  addTearDown(() => tester.binding.setSurfaceSize(null));
   final signedInProfileId = identityId ?? resourceOwnerProfileId;
   final auth = FakeAuthGateway(
     snapshot: signedIn
@@ -620,6 +783,18 @@ Future<ProviderContainer> _pump(
           FakeProfileGateway(data: profileFixture()),
         ),
         resourceListingGatewayProvider.overrideWithValue(gateway),
+        coverMediaGatewayProvider.overrideWithValue(
+          coverMedia ?? FakeCoverMediaGateway(),
+        ),
+        resourceListingCoverReconcilerProvider.overrideWithValue(
+          covers ?? FakeResourceListingCoverReconciler(),
+        ),
+        if (coverPicker != null)
+          coverMediaPickerProvider.overrideWithValue(coverPicker),
+        if (coverProcessor != null)
+          coverMediaProcessorProvider.overrideWithValue(coverProcessor),
+        if (cropBuilder != null)
+          coverCropPageBuilderProvider.overrideWithValue(cropBuilder),
         resourceRequestGatewayProvider.overrideWithValue(
           resourceRequests ?? FakeResourceRequestGateway(),
         ),
@@ -671,3 +846,58 @@ final _requesterPhoto = VisibleProfilePhoto(
   objectPath: '$otherProfileId/$_requesterVersion.webp',
   updatedAt: DateTime.utc(2026, 9, 27),
 );
+
+const _coverVersion = 'b7900000-0000-4000-8000-000000000001';
+const _publicCoverPath =
+    '$resourceOwnerProfileId/resources/$resourceListingId/$_coverVersion.webp';
+const _ownerCoverPath = _publicCoverPath;
+
+Uint8List _pngBytes() {
+  final source = image.Image(width: 32, height: 18);
+  image.fill(source, color: image.ColorRgb8(40, 120, 80));
+  return image.encodePng(source);
+}
+
+class _ThrowingCoverMediaGateway extends FakeCoverMediaGateway {
+  @override
+  Future<Uint8List> downloadCover(String objectPath) {
+    throw StateError('private storage failure');
+  }
+}
+
+class _Picker implements CoverMediaPicker {
+  const _Picker(this.result);
+
+  final Uint8List? result;
+
+  @override
+  Future<Uint8List?> pickFromGallery() async => result;
+}
+
+class _Processor implements CoverMediaProcessor {
+  const _Processor(this.result);
+
+  final ProcessedCoverImage result;
+
+  @override
+  Future<ProcessedCoverImage> process(Uint8List croppedBytes) async => result;
+}
+
+class _CropPage extends StatelessWidget {
+  const _CropPage({required this.bytes});
+
+  final Uint8List bytes;
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: Center(
+        child: TextButton(
+          key: const Key('test-resource-crop-use'),
+          onPressed: () => Navigator.pop(context, bytes),
+          child: const Text('Use'),
+        ),
+      ),
+    );
+  }
+}

@@ -1,12 +1,16 @@
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:image/image.dart' as image;
 import 'package:go_router/go_router.dart';
 import 'package:planets_mobile/features/auth/application/auth_session_controller.dart';
 import 'package:planets_mobile/features/auth/data/auth_gateway.dart';
 import 'package:planets_mobile/features/auth/domain/auth_models.dart';
+import 'package:planets_mobile/features/cover_media/data/cover_media_gateway.dart';
+import 'package:planets_mobile/features/cover_media/presentation/cover_image.dart';
 import 'package:planets_mobile/features/project_resource_needs/data/project_resource_matches_gateway.dart';
 import 'package:planets_mobile/features/project_resource_needs/data/project_resource_needs_gateway.dart';
 import 'package:planets_mobile/features/project_resource_needs/domain/project_resource_match_models.dart';
@@ -15,6 +19,7 @@ import 'package:planets_mobile/l10n/generated/app_localizations.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../support/fake_auth.dart';
+import '../../../support/fake_cover_media.dart';
 import '../../../support/fake_project_resource_matches.dart';
 import '../../../support/fake_project_resource_needs.dart';
 
@@ -76,6 +81,33 @@ void main() {
     expect(find.textContaining('reservation'), findsNothing);
     expect(find.textContaining('queue'), findsNothing);
     expect(find.textContaining('available to borrow'), findsNothing);
+  });
+
+  testWidgets('match card inherits cover while preserving its reason footer', (
+    tester,
+  ) async {
+    const coverPath =
+        '$matchCreatorId/resources/$matchListingId/'
+        '40000000-0000-4000-8000-000000000099.webp';
+    final gateway = FakeProjectResourceMatchesGateway()
+      ..page = ProjectResourceMatchPage(
+        items: [projectResourceMatchFixture(coverObjectPath: coverPath)],
+        hasMore: false,
+      );
+    final coverMedia = FakeCoverMediaGateway()..downloadResult = _pngBytes();
+    final harness = await _pump(
+      tester,
+      gateway: gateway,
+      coverMedia: coverMedia,
+    );
+    addTearDown(harness.dispose);
+
+    expect(find.byKey(Key('resource-cover-$matchListingId')), findsOneWidget);
+    expect(find.byType(CoverImage), findsOneWidget);
+    expect(find.byType(Image), findsOneWidget);
+    expect(find.text('Why it matches'), findsOneWidget);
+    expect(find.text('Need keywords match the listing title'), findsOneWidget);
+    expect(coverMedia.calls, contains('download:$coverPath'));
   });
 
   testWidgets('changes visible filters and shows differentiated empty states', (
@@ -240,7 +272,10 @@ _pump(
   WidgetTester tester, {
   required FakeProjectResourceMatchesGateway gateway,
   double textScale = 1,
+  CoverMediaGateway? coverMedia,
 }) async {
+  await tester.binding.setSurfaceSize(const Size(900, 4200));
+  addTearDown(() => tester.binding.setSurfaceSize(null));
   final auth = FakeAuthGateway(
     snapshot: const AuthSnapshot(identity: AuthIdentity(id: matchCreatorId)),
   );
@@ -277,6 +312,9 @@ _pump(
       authGatewayProvider.overrideWithValue(auth),
       projectResourceNeedsGatewayProvider.overrideWithValue(needsGateway),
       projectResourceMatchesGatewayProvider.overrideWithValue(gateway),
+      coverMediaGatewayProvider.overrideWithValue(
+        coverMedia ?? FakeCoverMediaGateway(),
+      ),
     ],
   );
   container
@@ -312,3 +350,9 @@ _pump(
 
 String _listingId(int suffix) =>
     '40000000-0000-4000-8000-${suffix.toString().padLeft(12, '0')}';
+
+Uint8List _pngBytes() {
+  final source = image.Image(width: 32, height: 18);
+  image.fill(source, color: image.ColorRgb8(40, 120, 80));
+  return image.encodePng(source);
+}

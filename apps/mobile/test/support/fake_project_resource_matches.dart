@@ -80,6 +80,7 @@ ProjectResourceListingMatch projectResourceMatchFixture({
       ProjectResourceTextMatchKind.needTitleInListingTitle,
   ProjectResourceLocationMatchKind locationMatchKind =
       ProjectResourceLocationMatchKind.sameLocality,
+  String? coverObjectPath,
 }) => ProjectResourceListingMatch(
   resourceNeedId: resourceNeedId,
   listingId: listingId,
@@ -94,6 +95,7 @@ ProjectResourceListingMatch projectResourceMatchFixture({
   activeRequestCount: activeRequestCount,
   textMatchKind: textMatchKind,
   locationMatchKind: locationMatchKind,
+  coverObjectPath: coverObjectPath,
 );
 
 Completer<void> pendingMatchRequest() => Completer<void>();

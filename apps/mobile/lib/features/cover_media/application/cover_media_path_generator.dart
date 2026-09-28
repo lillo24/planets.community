@@ -12,6 +12,13 @@ class CoverMediaPathGenerator {
   }) {
     return '$ownerProfileId/projects/$projectId/${_uuid.v4()}.webp';
   }
+
+  String forResource({
+    required String ownerProfileId,
+    required String listingId,
+  }) {
+    return '$ownerProfileId/resources/$listingId/${_uuid.v4()}.webp';
+  }
 }
 
 final coverMediaPathGeneratorProvider = Provider<CoverMediaPathGenerator>((

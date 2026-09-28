@@ -4,16 +4,20 @@ import '../data/cover_media_gateway.dart';
 import '../domain/cover_media_models.dart';
 import 'cover_media_path_generator.dart';
 
-abstract interface class ProjectCoverReconciler {
+abstract interface class ResourceListingCoverReconciler {
   Future<String?> reconcile({
     required String ownerProfileId,
-    required String projectId,
+    required String listingId,
     required CoverChange change,
   });
 }
 
-class GatewayProjectCoverReconciler implements ProjectCoverReconciler {
-  const GatewayProjectCoverReconciler(this._gateway, this._pathGenerator);
+class GatewayResourceListingCoverReconciler
+    implements ResourceListingCoverReconciler {
+  const GatewayResourceListingCoverReconciler(
+    this._gateway,
+    this._pathGenerator,
+  );
 
   final CoverMediaGateway _gateway;
   final CoverMediaPathGenerator _pathGenerator;
@@ -21,7 +25,7 @@ class GatewayProjectCoverReconciler implements ProjectCoverReconciler {
   @override
   Future<String?> reconcile({
     required String ownerProfileId,
-    required String projectId,
+    required String listingId,
     required CoverChange change,
   }) async {
     switch (change.kind) {
@@ -30,9 +34,9 @@ class GatewayProjectCoverReconciler implements ProjectCoverReconciler {
       case CoverChangeKind.removal:
         final String? oldPath;
         try {
-          oldPath = await _gateway.clearOwnProjectCover(
+          oldPath = await _gateway.clearOwnResourceListingCover(
             ownerProfileId,
-            projectId,
+            listingId,
           );
         } catch (_) {
           throw const CoverPersistenceException(
@@ -48,9 +52,9 @@ class GatewayProjectCoverReconciler implements ProjectCoverReconciler {
             CoverPersistenceFailureKind.upload,
           );
         }
-        final newPath = _pathGenerator.forProject(
+        final newPath = _pathGenerator.forResource(
           ownerProfileId: ownerProfileId,
-          projectId: projectId,
+          listingId: listingId,
         );
         try {
           await _gateway.uploadCover(newPath, replacement.bytes);
@@ -60,11 +64,11 @@ class GatewayProjectCoverReconciler implements ProjectCoverReconciler {
           );
         }
 
-        final ProjectCoverCommit commit;
+        final ResourceListingCoverCommit commit;
         try {
-          commit = await _gateway.setOwnProjectCover(
+          commit = await _gateway.setOwnResourceListingCover(
             ownerProfileId,
-            projectId,
+            listingId,
             newPath,
           );
         } catch (_) {
@@ -83,15 +87,16 @@ class GatewayProjectCoverReconciler implements ProjectCoverReconciler {
     try {
       await _gateway.deleteOwnObject(objectPath);
     } catch (_) {
-      // The database is canonical. Failed stale-object cleanup is recoverable
-      // and must not turn a successful replacement or clear into a failure.
+      // Canonical metadata already reflects the requested state. Cleanup can
+      // be retried operationally without misreporting the save as failed.
     }
   }
 }
 
-final projectCoverReconcilerProvider = Provider<ProjectCoverReconciler>((ref) {
-  return GatewayProjectCoverReconciler(
-    ref.watch(coverMediaGatewayProvider),
-    ref.watch(coverMediaPathGeneratorProvider),
-  );
-});
+final resourceListingCoverReconcilerProvider =
+    Provider<ResourceListingCoverReconciler>((ref) {
+      return GatewayResourceListingCoverReconciler(
+        ref.watch(coverMediaGatewayProvider),
+        ref.watch(coverMediaPathGeneratorProvider),
+      );
+    });

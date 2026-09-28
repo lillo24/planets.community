@@ -8,6 +8,7 @@ import '../../../core/widgets/error_state.dart';
 import '../../../core/widgets/loading_state.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../auth/application/auth_session_controller.dart';
+import '../../cover_media/presentation/cover_image.dart';
 import '../../auth/domain/auth_models.dart';
 import '../../messages/presentation/messages_routes.dart';
 import '../../profile_photo/application/resource_listing_owner_photo_controller.dart';
@@ -436,6 +437,13 @@ class _PublicResourceListingDetailScreenState
             : ListView(
                 padding: const EdgeInsets.all(AppSpacing.large),
                 children: [
+                  CoverImage(
+                    key: const Key('resource-detail-cover'),
+                    title: detail.summary.title,
+                    objectPath: detail.summary.coverObjectPath,
+                    borderRadius: AppRadii.medium,
+                  ),
+                  const SizedBox(height: AppSpacing.large),
                   Align(
                     alignment: Alignment.centerLeft,
                     child: ResourceListingModeBadge(mode: detail.summary.mode),

@@ -5,6 +5,8 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../auth/application/auth_session_controller.dart';
 import '../../auth/domain/auth_models.dart';
+import '../../cover_media/application/resource_listing_cover_reconciler.dart';
+import '../../cover_media/domain/cover_media_models.dart';
 import '../data/resource_listing_gateway.dart';
 import '../domain/resource_listing_models.dart';
 
@@ -325,7 +327,11 @@ class ResourceListingEditorController
     }
   }
 
-  Future<String?> save(String expectedOwnerId, ResourceListingInput input) {
+  Future<String?> save(
+    String expectedOwnerId,
+    ResourceListingInput input, {
+    CoverChange coverChange = const CoverChange.unchanged(),
+  }) {
     final published =
         state.listing?.lifecycle == ResourceListingLifecycle.published;
     if (state.isBusy ||
@@ -334,21 +340,36 @@ class ResourceListingEditorController
       _setInvalidInput(expectedOwnerId);
       return Future.value(null);
     }
-    return _saveContent(expectedOwnerId, input, publish: false);
+    return _saveContent(
+      expectedOwnerId,
+      input,
+      publish: false,
+      coverChange: coverChange,
+    );
   }
 
-  Future<String?> publish(String expectedOwnerId, ResourceListingInput input) {
+  Future<String?> publish(
+    String expectedOwnerId,
+    ResourceListingInput input, {
+    CoverChange coverChange = const CoverChange.unchanged(),
+  }) {
     if (state.isBusy || !isPublishableResourceListingInput(input)) {
       _setInvalidInput(expectedOwnerId);
       return Future.value(null);
     }
-    return _saveContent(expectedOwnerId, input, publish: true);
+    return _saveContent(
+      expectedOwnerId,
+      input,
+      publish: true,
+      coverChange: coverChange,
+    );
   }
 
   Future<String?> _saveContent(
     String expectedOwnerId,
     ResourceListingInput input, {
     required bool publish,
+    required CoverChange coverChange,
   }) async {
     final existing = state.listing;
     if (existing?.lifecycle == ResourceListingLifecycle.closed) {
@@ -396,6 +417,46 @@ class ResourceListingEditorController
         );
         if (!_isCurrent(revision, expectedOwnerId)) return null;
       }
+      _requireReadyIdentity(expectedOwnerId);
+      if (coverChange.kind != CoverChangeKind.unchanged) {
+        try {
+          await ref
+              .read(resourceListingCoverReconcilerProvider)
+              .reconcile(
+                ownerProfileId: expectedOwnerId,
+                listingId: retainedId,
+                change: coverChange,
+              );
+        } on CoverPersistenceException catch (error) {
+          if (!_isCurrent(revision, expectedOwnerId)) return null;
+          final canonical = await _refreshAfterPartialSave(
+            gateway,
+            expectedOwnerId,
+            retainedId,
+            fallback: existing,
+          );
+          if (!_isCurrent(revision, expectedOwnerId)) return null;
+          state = ResourceListingEditorState(
+            phase: ResourceListingEditorPhase.failure,
+            expectedOwnerId: expectedOwnerId,
+            listingId: retainedId,
+            listing: canonical,
+            coverFailure: error.kind,
+            coverPartialSave: createdNow
+                ? CoverPartialSaveKind.draftCreated
+                : CoverPartialSaveKind.changesSaved,
+          );
+          _refreshAfterMutation(
+            expectedOwnerId,
+            retainedId,
+            publicChanged:
+                canonical?.lifecycle == ResourceListingLifecycle.published,
+          );
+          return null;
+        }
+        if (!_isCurrent(revision, expectedOwnerId)) return null;
+        _requireReadyIdentity(expectedOwnerId);
+      }
       if (publish) {
         await gateway.publishResourceListing(expectedOwnerId, retainedId);
         publishCompleted = true;
@@ -423,11 +484,20 @@ class ResourceListingEditorController
       return retainedId;
     } catch (error) {
       if (!_isCurrent(revision, expectedOwnerId)) return null;
+      final canonical = retainedId == null
+          ? existing
+          : await _refreshAfterPartialSave(
+              ref.read(resourceListingGatewayProvider),
+              expectedOwnerId,
+              retainedId,
+              fallback: existing,
+            );
+      if (!_isCurrent(revision, expectedOwnerId)) return null;
       state = ResourceListingEditorState(
         phase: ResourceListingEditorPhase.failure,
         expectedOwnerId: expectedOwnerId,
         listingId: retainedId,
-        listing: existing,
+        listing: canonical,
         failure: mapResourceListingFailure(error),
         draftSavedAfterPublishFailure:
             publish && createdNow && !publishCompleted && retainedId != null,
@@ -436,6 +506,20 @@ class ResourceListingEditorController
         _refreshOwn(expectedOwnerId);
       }
       return null;
+    }
+  }
+
+  Future<OwnResourceListing?> _refreshAfterPartialSave(
+    ResourceListingGateway gateway,
+    String expectedOwnerId,
+    String listingId, {
+    required OwnResourceListing? fallback,
+  }) async {
+    try {
+      return await gateway.getOwnResourceListing(expectedOwnerId, listingId) ??
+          fallback;
+    } catch (_) {
+      return fallback;
     }
   }
 

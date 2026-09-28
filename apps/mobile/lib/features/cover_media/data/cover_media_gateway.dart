@@ -17,9 +17,14 @@ abstract interface class CoverMediaGateway {
     String projectId,
   );
 
+  Future<OwnResourceListingCover?> loadOwnResourceListingCover(
+    String expectedProfileId,
+    String listingId,
+  );
+
   Future<Uint8List> downloadCover(String objectPath);
 
-  Future<void> uploadProjectCover(String objectPath, Uint8List webpBytes);
+  Future<void> uploadCover(String objectPath, Uint8List webpBytes);
 
   Future<ProjectCoverCommit> setOwnProjectCover(
     String expectedProfileId,
@@ -30,6 +35,17 @@ abstract interface class CoverMediaGateway {
   Future<String?> clearOwnProjectCover(
     String expectedProfileId,
     String projectId,
+  );
+
+  Future<ResourceListingCoverCommit> setOwnResourceListingCover(
+    String expectedProfileId,
+    String listingId,
+    String objectPath,
+  );
+
+  Future<String?> clearOwnResourceListingCover(
+    String expectedProfileId,
+    String listingId,
   );
 
   Future<void> deleteOwnObject(String objectPath);
@@ -120,12 +136,37 @@ class SupabaseCoverMediaGateway implements CoverMediaGateway {
   }
 
   @override
+  Future<OwnResourceListingCover?> loadOwnResourceListingCover(
+    String expectedProfileId,
+    String listingId,
+  ) async {
+    final response = await _remote.rpc('get_own_resource_listing_cover', {
+      'p_expected_owner_profile_id': expectedProfileId,
+      'p_listing_id': listingId,
+    });
+    final rows = _rows(response, operation: 'Owner Resource cover read');
+    if (rows.isEmpty) return null;
+    if (rows.length != 1) {
+      throw const CoverMediaDataException(
+        'Owner Resource cover read returned multiple rows.',
+      );
+    }
+    final cover = OwnResourceListingCover.fromRpcRow(rows.single);
+    if (cover.listingId != listingId) {
+      throw const CoverMediaDataException(
+        'Owner Resource cover read returned another listing.',
+      );
+    }
+    return cover;
+  }
+
+  @override
   Future<Uint8List> downloadCover(String objectPath) {
     return _remote.download(coverMediaBucket, objectPath);
   }
 
   @override
-  Future<void> uploadProjectCover(String objectPath, Uint8List webpBytes) {
+  Future<void> uploadCover(String objectPath, Uint8List webpBytes) {
     if (webpBytes.length > coverMediaMaxBytes) {
       throw const CoverMediaDataException(
         'Processed cover image exceeds the client limit.',
@@ -175,6 +216,45 @@ class SupabaseCoverMediaGateway implements CoverMediaGateway {
     } on FormatException {
       throw const CoverMediaDataException(
         'Project cover clear returned an invalid object path.',
+      );
+    }
+  }
+
+  @override
+  Future<ResourceListingCoverCommit> setOwnResourceListingCover(
+    String expectedProfileId,
+    String listingId,
+    String objectPath,
+  ) async {
+    final response = await _remote.rpc('set_own_resource_listing_cover', {
+      'p_expected_owner_profile_id': expectedProfileId,
+      'p_listing_id': listingId,
+      'p_object_path': objectPath,
+    });
+    return ResourceListingCoverCommit.fromRpcRow(
+      _singleRow(response, operation: 'Resource cover commit'),
+      listingId: listingId,
+    );
+  }
+
+  @override
+  Future<String?> clearOwnResourceListingCover(
+    String expectedProfileId,
+    String listingId,
+  ) async {
+    final response = await _remote.rpc('clear_own_resource_listing_cover', {
+      'p_expected_owner_profile_id': expectedProfileId,
+      'p_listing_id': listingId,
+    });
+    try {
+      return parseCoverObjectPath(
+        response,
+        parentId: listingId,
+        parentSegment: 'resources',
+      );
+    } on FormatException {
+      throw const CoverMediaDataException(
+        'Resource cover clear returned an invalid object path.',
       );
     }
   }
