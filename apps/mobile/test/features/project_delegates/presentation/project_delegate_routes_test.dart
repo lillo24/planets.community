@@ -11,6 +11,7 @@ import 'package:planets_mobile/features/participation/domain/participation_model
 import 'package:planets_mobile/features/participation/data/participation_gateway.dart';
 import 'package:planets_mobile/features/project_delegates/data/project_delegate_gateway.dart';
 import 'package:planets_mobile/features/project_delegates/domain/project_delegate_models.dart';
+import 'package:planets_mobile/features/project_delegates/presentation/project_delegate_routes.dart';
 import 'package:planets_mobile/features/project_resource_needs/data/project_resource_needs_gateway.dart';
 import 'package:planets_mobile/features/proposals/data/proposal_gateway.dart';
 import 'package:planets_mobile/l10n/generated/app_localizations.dart';
@@ -23,6 +24,17 @@ import '../../../support/fake_project_resource_needs.dart';
 import '../../../support/fake_proposal.dart';
 
 void main() {
+  test('structural edit routes reuse the Proposal and Tavolo editors', () {
+    expect(
+      ProjectDelegateRoutes.edit(ProjectKind.oneTime, 'proposal-1'),
+      '/proposals/proposal-1/edit',
+    );
+    expect(
+      ProjectDelegateRoutes.edit(ProjectKind.recurring, 'tavolo-1'),
+      '/tavoli/tavolo-1/edit',
+    );
+  });
+
   testWidgets(
     'cold signed-out invite remains public then preserves Auth returnTo',
     (tester) async {

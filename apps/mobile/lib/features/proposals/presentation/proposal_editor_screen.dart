@@ -34,9 +34,9 @@ class _ProposalEditorScreenState extends ConsumerState<ProposalEditorScreen> {
     Future<void>.microtask(_load);
   }
 
-  Future<void> _load() async {
+  Future<void> _load({bool force = false}) async {
     final identity = ref.read(authSessionProvider).identity;
-    if (identity != null && _requestedIdentity != identity.id) {
+    if (identity != null && (force || _requestedIdentity != identity.id)) {
       _requestedIdentity = identity.id;
       await ref
           .read(proposalEditorProvider.notifier)
@@ -56,6 +56,9 @@ class _ProposalEditorScreenState extends ConsumerState<ProposalEditorScreen> {
         identity != null &&
         state.expectedCreatorId == identity.id &&
         proposalMatches;
+    final structuralAccessDenied =
+        state.phase == ProposalEditorPhase.failure &&
+        state.failure == ProposalFailureKind.forbidden;
     if (identity != null && _requestedIdentity != identity.id) {
       Future<void>.microtask(_load);
     }
@@ -72,9 +75,13 @@ class _ProposalEditorScreenState extends ConsumerState<ProposalEditorScreen> {
             ? const SizedBox.shrink()
             : !isCurrent || state.phase == ProposalEditorPhase.loading
             ? LoadingState(message: l10n.proposalLoading)
-            : state.phase == ProposalEditorPhase.failure &&
-                  state.categories.isEmpty
-            ? ErrorState(message: l10n.proposalSafeError, onRetry: _load)
+            : structuralAccessDenied ||
+                  (state.phase == ProposalEditorPhase.failure &&
+                      state.categories.isEmpty)
+            ? ErrorState(
+                message: l10n.proposalSafeError,
+                onRetry: () => _load(force: true),
+              )
             : _ProposalForm(
                 key: ValueKey('${identity.id}:${state.proposal?.id ?? 'new'}'),
                 identityId: identity.id,
@@ -191,17 +198,23 @@ class _ProposalFormState extends ConsumerState<_ProposalForm> {
   );
 
   Future<void> _save({required bool publish}) async {
-    setState(() => _validatingPublish = publish);
+    final publishedEdit =
+        widget.proposal?.lifecycle == ProposalLifecycle.published;
+    final validateCompleteContent = publish || publishedEdit;
+    setState(() => _validatingPublish = validateCompleteContent);
     final valid = _formKey.currentState?.validate() ?? false;
     final input = _input();
-    final issues = _validationIssueLabels(input, publish: publish);
+    final issues = _validationIssueLabels(
+      input,
+      publish: validateCompleteContent,
+    );
     if (!valid || issues.isNotEmpty) {
       setState(() => _validationIssues = issues);
       await WidgetsBinding.instance.endOfFrame;
       if (mounted) {
         final target = _firstInvalidAnchor(
           input,
-          publish: publish,
+          publish: validateCompleteContent,
         ).currentContext;
         if (target != null && target.mounted) {
           await Scrollable.ensureVisible(
@@ -221,8 +234,39 @@ class _ProposalFormState extends ConsumerState<_ProposalForm> {
     final controller = ref.read(proposalEditorProvider.notifier);
     final id = publish
         ? await controller.publish(widget.identityId, input)
+        : publishedEdit
+        ? await controller.saveChanges(widget.identityId, input)
         : await controller.saveDraft(widget.identityId, input);
     if (id != null && mounted) context.go('/proposals/mine');
+  }
+
+  Future<void> _confirmCancel() async {
+    final l10n = AppLocalizations.of(context);
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(l10n.proposalCancelConfirmTitle),
+        content: Text(l10n.proposalCancelConfirmMessage),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text(l10n.proposalKeepAction),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: Text(l10n.proposalCancelAction),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+    final cancelled = await ref
+        .read(proposalEditorProvider.notifier)
+        .cancel(widget.identityId);
+    if (!cancelled && mounted) {
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(l10n.proposalSafeError)));
+    }
   }
 
   void _fillSampleData() {
@@ -316,6 +360,21 @@ class _ProposalFormState extends ConsumerState<_ProposalForm> {
     final l10n = AppLocalizations.of(context);
     final state = ref.watch(proposalEditorProvider);
     final busy = state.isBusy;
+    final proposal = widget.proposal;
+    final now = ref.read(proposalClockProvider)();
+    final contentEditable = proposal == null || proposal.isEditableAt(now);
+    final isDraft =
+        proposal == null || proposal.lifecycle == ProposalLifecycle.draft;
+    final isPublished = proposal?.lifecycle == ProposalLifecycle.published;
+    final canCancel = proposal?.canCancelAt(now) ?? false;
+    final readOnlyMessage = proposal == null || contentEditable
+        ? null
+        : proposal.lifecycle == ProposalLifecycle.cancelled
+        ? l10n.proposalCancelledReadOnly
+        : proposal.status == ProposalStatus.completed ||
+              proposal.status == ProposalStatus.justFinished
+        ? l10n.proposalCompletedReadOnly
+        : l10n.proposalStartedReadOnly;
     return Form(
       key: _formKey,
       autovalidateMode: _validationIssues.isEmpty
@@ -343,6 +402,16 @@ class _ProposalFormState extends ConsumerState<_ProposalForm> {
             child: ListView(
               padding: const EdgeInsets.all(AppSpacing.large),
               children: [
+                if (readOnlyMessage != null) ...[
+                  Card(
+                    key: const Key('proposal-editor-read-only'),
+                    child: Padding(
+                      padding: const EdgeInsets.all(AppSpacing.medium),
+                      child: Text(readOnlyMessage),
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.medium),
+                ],
                 if (kDebugMode && widget.proposal == null) ...[
                   Align(
                     alignment: Alignment.centerLeft,
@@ -426,7 +495,7 @@ class _ProposalFormState extends ConsumerState<_ProposalForm> {
                                     ),
                                     TextButton(
                                       key: const Key('proposal-pick-start'),
-                                      onPressed: busy
+                                      onPressed: busy || !contentEditable
                                           ? null
                                           : () => _pickDateTime(start: true),
                                       child: Text(l10n.proposalChooseAction),
@@ -473,7 +542,7 @@ class _ProposalFormState extends ConsumerState<_ProposalForm> {
                                     ),
                                     TextButton(
                                       key: const Key('proposal-pick-end'),
-                                      onPressed: busy
+                                      onPressed: busy || !contentEditable
                                           ? null
                                           : () => _pickDateTime(start: false),
                                       child: Text(l10n.proposalChooseAction),
@@ -556,7 +625,7 @@ class _ProposalFormState extends ConsumerState<_ProposalForm> {
                     ),
                   ],
                   selected: {_visibility},
-                  onSelectionChanged: busy
+                  onSelectionChanged: busy || !contentEditable
                       ? null
                       : (selection) =>
                             setState(() => _visibility = selection.single),
@@ -576,7 +645,7 @@ class _ProposalFormState extends ConsumerState<_ProposalForm> {
                     _SkillControl(
                       skill: skill,
                       value: _skills[skill.id],
-                      enabled: !busy,
+                      enabled: !busy && contentEditable,
                       onChanged: (importance) => setState(() {
                         importance == null
                             ? _skills.remove(skill.id)
@@ -601,7 +670,7 @@ class _ProposalFormState extends ConsumerState<_ProposalForm> {
                   spacing: AppSpacing.small,
                   runSpacing: AppSpacing.small,
                   children: [
-                    if (widget.proposal != null)
+                    if (widget.proposal != null && contentEditable)
                       OutlinedButton.icon(
                         key: const Key('proposal-manage-resources'),
                         onPressed: busy
@@ -615,16 +684,30 @@ class _ProposalFormState extends ConsumerState<_ProposalForm> {
                         icon: const Icon(Icons.inventory_2_outlined),
                         label: Text(l10n.projectResourcesManage),
                       ),
-                    OutlinedButton(
-                      key: const Key('proposal-save-draft'),
-                      onPressed: busy ? null : () => _save(publish: false),
-                      child: Text(l10n.proposalSaveDraftAction),
-                    ),
-                    FilledButton(
-                      key: const Key('proposal-publish'),
-                      onPressed: busy ? null : () => _save(publish: true),
-                      child: Text(l10n.proposalPublishAction),
-                    ),
+                    if (isDraft && contentEditable)
+                      OutlinedButton(
+                        key: const Key('proposal-save-draft'),
+                        onPressed: busy ? null : () => _save(publish: false),
+                        child: Text(l10n.proposalSaveDraftAction),
+                      ),
+                    if (isDraft && contentEditable)
+                      FilledButton(
+                        key: const Key('proposal-publish'),
+                        onPressed: busy ? null : () => _save(publish: true),
+                        child: Text(l10n.proposalPublishAction),
+                      ),
+                    if (isPublished && contentEditable)
+                      FilledButton(
+                        key: const Key('proposal-save-changes'),
+                        onPressed: busy ? null : () => _save(publish: false),
+                        child: Text(l10n.proposalSaveChangesAction),
+                      ),
+                    if (canCancel)
+                      TextButton(
+                        key: const Key('proposal-editor-cancel'),
+                        onPressed: busy ? null : _confirmCancel,
+                        child: Text(l10n.proposalCancelAction),
+                      ),
                   ],
                 ),
               ],
@@ -651,7 +734,10 @@ class _ProposalFormState extends ConsumerState<_ProposalForm> {
     child: TextFormField(
       key: fieldKey ?? Key('proposal-field-${label.hashCode}'),
       controller: controller,
-      enabled: !ref.watch(proposalEditorProvider).isBusy,
+      enabled:
+          !ref.watch(proposalEditorProvider).isBusy &&
+          (widget.proposal == null ||
+              widget.proposal!.isEditableAt(ref.read(proposalClockProvider)())),
       maxLength: maxLength,
       maxLengthEnforcement: MaxLengthEnforcement.none,
       maxLines: lines,

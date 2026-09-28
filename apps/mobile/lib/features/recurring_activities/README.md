@@ -77,3 +77,18 @@ Owner providers clear and increment their revision on identity changes, and
 every post-`await` continuation rechecks revision and identity. The router also
 rebuilds its stateful shell on account changes, discarding retained private
 forms and stacks.
+
+The same exact-record editor serves the immutable Creator and current
+Co-creators for non-draft Tavoli. Active and paused Tavoli use **Save changes**;
+the editor also owns the canonical pause, resume, and end transitions and
+refetches that Tavolo after each mutation. Ended Tavoli are read-only.
+Co-organizers receive no structural editor or lifecycle controls, and another
+Creator's draft remains unavailable to a Co-creator. Draft creation and
+publication stay original-Creator-only.
+
+Ending is a retained-history lifecycle transition, not deletion. Editing,
+pausing, resuming, and ending do not alter participation or delegated
+authority. Successful mutations refresh owned, delegated, and affected public
+state. A backend authority denial invalidates cached management/delegated state
+and removes the editor controls; account revisions continue to discard late
+responses.

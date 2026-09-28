@@ -100,6 +100,8 @@ class _RecurringActivityEditorScreenState
     final existing = belongsToIdentity ? state.activity : null;
     final isLoading = state.phase == RecurringActivityEditorPhase.loading;
     final isFailure = state.phase == RecurringActivityEditorPhase.failure;
+    final structuralAccessDenied =
+        isFailure && state.failure == RecurringActivityFailureKind.forbidden;
     final notFoundFailure =
         isFailure && existing == null && widget.activityId != null;
     final ended = existing?.lifecycle == RecurringActivityLifecycle.ended;
@@ -116,7 +118,7 @@ class _RecurringActivityEditorScreenState
             ? const SizedBox.shrink()
             : isLoading && existing == null
             ? LoadingState(message: l10n.tavoliLoading)
-            : notFoundFailure
+            : structuralAccessDenied || notFoundFailure
             ? ErrorState(message: l10n.tavoliSafeError, onRetry: _load)
             : ended
             ? Center(child: Text(l10n.tavoliEndedReadOnly))
@@ -459,8 +461,32 @@ class _RecurringActivityEditorScreenState
                                   )
                                 : Text(l10n.tavoliPublish),
                           ),
+                        if (existing?.canPause == true)
+                          TextButton(
+                            key: const Key('tavoli-editor-pause'),
+                            onPressed: state.isBusy ? null : _confirmPause,
+                            child: Text(l10n.tavoliPause),
+                          ),
+                        if (existing?.canResume == true)
+                          FilledButton.tonal(
+                            key: const Key('tavoli-editor-resume'),
+                            onPressed: state.isBusy
+                                ? null
+                                : () => _runLifecycle(
+                                    (controller, identity) =>
+                                        controller.resume(identity),
+                                  ),
+                            child: Text(l10n.tavoliResume),
+                          ),
+                        if (existing?.canEnd == true)
+                          TextButton(
+                            key: const Key('tavoli-editor-end'),
+                            onPressed: state.isBusy ? null : _confirmEnd,
+                            child: Text(l10n.tavoliEnd),
+                          ),
                       ],
                     ),
+                    const SizedBox(height: AppSpacing.large * 3),
                   ],
                 ),
               ),
@@ -482,6 +508,7 @@ class _RecurringActivityEditorScreenState
     padding: const EdgeInsets.only(top: AppSpacing.small),
     child: TextFormField(
       controller: controller,
+      enabled: !ref.watch(recurringActivityEditorProvider).isBusy,
       maxLines: maxLines,
       keyboardType: keyboardType,
       inputFormatters: inputFormatters,
@@ -542,18 +569,24 @@ class _RecurringActivityEditorScreenState
   );
 
   Future<void> _submit(bool publish) async {
-    setState(() => _attemptPublish = publish);
+    final existing = ref.read(recurringActivityEditorProvider).activity;
+    final existingPublished =
+        existing != null &&
+        existing.lifecycle != RecurringActivityLifecycle.draft;
+    setState(() => _attemptPublish = publish || existingPublished);
     final valid = _formKey.currentState?.validate() ?? false;
-    if (!valid || (publish && !_schedulePublishable)) return;
+    if (!valid || ((publish || existingPublished) && !_schedulePublishable)) {
+      return;
+    }
     final identity = _expectedIdentity;
     if (identity == null) return;
     final controller = ref.read(recurringActivityEditorProvider.notifier);
     final id = publish
         ? await controller.publish(identity, _input())
+        : existingPublished
+        ? await controller.saveChanges(identity, _input())
         : await controller.saveDraft(identity, _input());
     if (id == null || !mounted) return;
-    ref.invalidate(ownRecurringActivitiesProvider);
-    ref.invalidate(publicRecurringActivitiesProvider);
     if (publish) {
       context.go('/tavoli/mine');
     } else if (widget.activityId == null) {
@@ -563,6 +596,79 @@ class _RecurringActivityEditorScreenState
         SnackBar(content: Text(AppLocalizations.of(context).tavoliSaveChanges)),
       );
     }
+  }
+
+  Future<void> _runLifecycle(
+    Future<bool> Function(
+      RecurringActivityEditorController controller,
+      String identity,
+    )
+    operation,
+  ) async {
+    final identity = _expectedIdentity;
+    if (identity == null) return;
+    final succeeded = await operation(
+      ref.read(recurringActivityEditorProvider.notifier),
+      identity,
+    );
+    if (!succeeded &&
+        mounted &&
+        ref.read(recurringActivityEditorProvider).failure !=
+            RecurringActivityFailureKind.forbidden) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(AppLocalizations.of(context).tavoliSafeError)),
+      );
+    }
+  }
+
+  Future<void> _confirmPause() async {
+    final l10n = AppLocalizations.of(context);
+    final confirmed = await _confirm(
+      title: l10n.tavoliPauseConfirmTitle,
+      message: l10n.tavoliPauseConfirmMessage,
+      action: l10n.tavoliPause,
+    );
+    if (confirmed && mounted) {
+      await _runLifecycle((controller, identity) => controller.pause(identity));
+    }
+  }
+
+  Future<void> _confirmEnd() async {
+    final l10n = AppLocalizations.of(context);
+    final confirmed = await _confirm(
+      title: l10n.tavoliEndConfirmTitle,
+      message: l10n.tavoliEndConfirmMessage,
+      action: l10n.tavoliEnd,
+    );
+    if (confirmed && mounted) {
+      await _runLifecycle((controller, identity) => controller.end(identity));
+    }
+  }
+
+  Future<bool> _confirm({
+    required String title,
+    required String message,
+    required String action,
+  }) async {
+    final l10n = AppLocalizations.of(context);
+    return await showDialog<bool>(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: Text(title),
+            content: Text(message),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: Text(l10n.tavoliKeep),
+              ),
+              FilledButton(
+                onPressed: () => Navigator.pop(context, true),
+                child: Text(action),
+              ),
+            ],
+          ),
+        ) ??
+        false;
   }
 
   Future<void> _chooseTime() async {

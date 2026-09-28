@@ -10,6 +10,7 @@ import 'package:planets_mobile/features/participation/data/participation_gateway
 import 'package:planets_mobile/features/proposals/application/proposal_controllers.dart';
 import 'package:planets_mobile/features/proposals/data/proposal_gateway.dart';
 import 'package:planets_mobile/features/proposals/domain/proposal_models.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../support/fake_auth.dart';
 import '../../../support/fake_participation.dart';
@@ -417,26 +418,108 @@ void main() {
     },
   );
 
-  test('existing draft restores, updates and can cancel', () async {
-    final gateway = FakeProposalGateway()..ownItems = [ownProposalFixture()];
+  test(
+    'existing draft restores and updates without lifecycle cancellation',
+    () async {
+      final gateway = FakeProposalGateway()..ownItems = [ownProposalFixture()];
+      final session = _readyContainer(gateway);
+      addTearDown(session.container.dispose);
+      addTearDown(session.auth.close);
+      await session.container
+          .read(proposalEditorProvider.notifier)
+          .load('user-1', 'proposal-1');
+      expect(
+        session.container.read(proposalEditorProvider).proposal?.title,
+        'Paint the square',
+      );
+      await session.container
+          .read(proposalEditorProvider.notifier)
+          .saveDraft('user-1', proposalInputFixture());
+      expect(gateway.calls, contains('update:proposal-1'));
+      expect(
+        await session.container
+            .read(proposalEditorProvider.notifier)
+            .cancel('user-1'),
+        isFalse,
+      );
+      expect(gateway.calls, isNot(contains('cancel:proposal-1')));
+    },
+  );
+
+  test(
+    'published save uses update only and cancellation refreshes exact state',
+    () async {
+      final gateway = FakeProposalGateway()
+        ..ownItems = [
+          ownProposalFixture(lifecycle: ProposalLifecycle.published),
+        ];
+      final session = _readyContainer(gateway);
+      addTearDown(session.container.dispose);
+      addTearDown(session.auth.close);
+      final controller = session.container.read(
+        proposalEditorProvider.notifier,
+      );
+      await controller.load('user-1', 'proposal-1');
+
+      expect(
+        await controller.saveChanges('user-1', proposalInputFixture()),
+        'proposal-1',
+      );
+      expect(gateway.calls, contains('update:proposal-1'));
+      expect(gateway.calls, isNot(contains('publish:proposal-1')));
+
+      expect(await controller.cancel('user-1'), isTrue);
+      await Future<void>.delayed(Duration.zero);
+      expect(gateway.calls, contains('cancel:proposal-1'));
+      expect(gateway.calls, containsAll(['list-own', 'list-public']));
+      expect(gateway.calls, contains('public-detail:proposal-1'));
+      expect(
+        session.container.read(proposalEditorProvider).proposal?.lifecycle,
+        ProposalLifecycle.cancelled,
+      );
+    },
+  );
+
+  test('stale Co-creator authority fails closed on published save', () async {
+    final gateway = FakeProposalGateway()
+      ..ownItems = [ownProposalFixture(lifecycle: ProposalLifecycle.published)]
+      ..mutationError = const PostgrestException(
+        message: 'private structural denial',
+        code: '42501',
+      );
     final session = _readyContainer(gateway);
     addTearDown(session.container.dispose);
     addTearDown(session.auth.close);
+    final controller = session.container.read(proposalEditorProvider.notifier);
+    await controller.load('user-1', 'proposal-1');
+
+    expect(
+      await controller.saveChanges('user-1', proposalInputFixture()),
+      isNull,
+    );
+    expect(
+      session.container.read(proposalEditorProvider).failure,
+      ProposalFailureKind.forbidden,
+    );
+  });
+
+  test('forbidden structural Proposal read exposes no cached record', () async {
+    final gateway = FakeProposalGateway()
+      ..error = const PostgrestException(
+        message: 'private structural denial',
+        code: '42501',
+      );
+    final session = _readyContainer(gateway);
+    addTearDown(session.container.dispose);
+    addTearDown(session.auth.close);
+
     await session.container
         .read(proposalEditorProvider.notifier)
         .load('user-1', 'proposal-1');
-    expect(
-      session.container.read(proposalEditorProvider).proposal?.title,
-      'Paint the square',
-    );
-    await session.container
-        .read(proposalEditorProvider.notifier)
-        .saveDraft('user-1', proposalInputFixture());
-    await session.container
-        .read(proposalEditorProvider.notifier)
-        .cancel('user-1');
-    expect(gateway.calls, contains('update:proposal-1'));
-    expect(gateway.calls, contains('cancel:proposal-1'));
+
+    final state = session.container.read(proposalEditorProvider);
+    expect(state.failure, ProposalFailureKind.forbidden);
+    expect(state.proposal, isNull);
   });
 
   test('started published proposal is rejected before update', () async {
@@ -472,7 +555,7 @@ void main() {
         .load('user-1', started.id);
     await session.container
         .read(proposalEditorProvider.notifier)
-        .saveDraft('user-1', proposalInputFixture());
+        .saveChanges('user-1', proposalInputFixture());
     expect(gateway.calls, isNot(contains('update:proposal-1')));
     expect(
       session.container.read(proposalEditorProvider).failure,

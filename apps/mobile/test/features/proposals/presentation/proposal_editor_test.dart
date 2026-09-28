@@ -10,6 +10,7 @@ import 'package:planets_mobile/features/proposals/data/proposal_gateway.dart';
 import 'package:planets_mobile/features/proposals/domain/proposal_models.dart';
 import 'package:planets_mobile/features/proposals/presentation/proposal_editor_screen.dart';
 import 'package:planets_mobile/l10n/generated/app_localizations.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../support/fake_auth.dart';
 import '../../../support/fake_proposal.dart';
@@ -191,17 +192,111 @@ void main() {
       expect(tester.takeException(), isNull);
     });
   }
+
+  testWidgets('published proposal exposes Save changes without Publish', (
+    tester,
+  ) async {
+    final proposal = ownProposalFixture(lifecycle: ProposalLifecycle.published);
+    final gateway = await _pumpEditor(tester, null, proposal: proposal);
+
+    expect(find.byKey(const Key('proposal-save-draft')), findsNothing);
+    expect(find.byKey(const Key('proposal-publish')), findsNothing);
+    await _tap(tester, find.byKey(const Key('proposal-save-changes')));
+
+    expect(gateway.calls, contains('update:proposal-1'));
+    expect(gateway.calls, isNot(contains('publish:proposal-1')));
+    expect(find.text('Saved proposal'), findsOneWidget);
+  });
+
+  testWidgets('started proposal is read-only but remains cancellable', (
+    tester,
+  ) async {
+    final proposal = ownProposalFixture(
+      lifecycle: ProposalLifecycle.published,
+      status: ProposalStatus.happening,
+      startsAt: DateTime.utc(2026, 9, 2),
+      endsAt: DateTime.utc(2026, 9, 4),
+    );
+    final gateway = await _pumpEditor(tester, null, proposal: proposal);
+
+    expect(find.byKey(const Key('proposal-editor-read-only')), findsOneWidget);
+    expect(find.byKey(const Key('proposal-save-changes')), findsNothing);
+    expect(find.byKey(const Key('proposal-publish')), findsNothing);
+    expect(
+      tester
+          .widget<TextFormField>(find.byKey(const Key('proposal-title')))
+          .enabled,
+      isFalse,
+    );
+    await _tap(tester, find.byKey(const Key('proposal-editor-cancel')));
+    expect(find.text('Cancel this proposal?'), findsOneWidget);
+    await tester.tap(find.widgetWithText(FilledButton, 'Cancel proposal'));
+    await tester.pumpAndSettle();
+
+    expect(gateway.calls, contains('cancel:proposal-1'));
+    await _seek(tester, find.byKey(const Key('proposal-editor-read-only')));
+    expect(
+      find.textContaining('cancelled proposal is read-only'),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('terminal proposal exposes no structural mutation controls', (
+    tester,
+  ) async {
+    await _pumpEditor(
+      tester,
+      null,
+      proposal: ownProposalFixture(
+        lifecycle: ProposalLifecycle.published,
+        status: ProposalStatus.completed,
+        startsAt: DateTime.utc(2026, 9, 1),
+        endsAt: DateTime.utc(2026, 9, 2),
+      ),
+    );
+
+    expect(find.byKey(const Key('proposal-editor-read-only')), findsOneWidget);
+    expect(find.byKey(const Key('proposal-save-changes')), findsNothing);
+    expect(find.byKey(const Key('proposal-publish')), findsNothing);
+    expect(find.byKey(const Key('proposal-editor-cancel')), findsNothing);
+    expect(find.byKey(const Key('proposal-manage-resources')), findsNothing);
+  });
+
+  testWidgets('forbidden published save removes structural controls', (
+    tester,
+  ) async {
+    final gateway = await _pumpEditor(
+      tester,
+      null,
+      proposal: ownProposalFixture(lifecycle: ProposalLifecycle.published),
+    );
+    gateway.mutationError = const PostgrestException(
+      message: 'private structural denial',
+      code: '42501',
+    );
+
+    await _tap(tester, find.byKey(const Key('proposal-save-changes')));
+
+    expect(find.textContaining("couldn't complete"), findsOneWidget);
+    expect(find.byKey(const Key('proposal-save-changes')), findsNothing);
+    expect(find.byKey(const Key('proposal-editor-cancel')), findsNothing);
+  });
 }
 
 Future<FakeProposalGateway> _pumpEditor(
   WidgetTester tester,
-  ProposalInput? input,
-) async {
+  ProposalInput? input, {
+  OwnProposal? proposal,
+}) async {
   final auth = FakeAuthGateway(
     snapshot: const AuthSnapshot(identity: AuthIdentity(id: 'user-1')),
   );
   final gateway = FakeProposalGateway()
-    ..ownItems = input == null ? [] : [ownProposalFixture(input: input)];
+    ..ownItems = proposal != null
+        ? [proposal]
+        : input == null
+        ? []
+        : [ownProposalFixture(input: input)];
   final container = ProviderContainer(
     overrides: [
       authGatewayProvider.overrideWithValue(auth),
@@ -221,7 +316,7 @@ Future<FakeProposalGateway> _pumpEditor(
       GoRoute(
         path: '/edit',
         builder: (_, _) => ProposalEditorScreen(
-          proposalId: input == null ? null : 'proposal-1',
+          proposalId: proposal?.id ?? (input == null ? null : 'proposal-1'),
         ),
       ),
       GoRoute(

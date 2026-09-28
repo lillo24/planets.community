@@ -26,7 +26,9 @@ Manage project hub. It does not own Project authoring or lifecycle actions.
   invitation path. The team route retains the existing `co-organizers` URL
   segment for saved-link compatibility.
 - `presentation/project_manage_screen.dart` exposes Participation to every
-  manager and Project team to Creator and Co-creator only.
+  manager and the shared Project editor plus Project team to Creator and
+  Co-creator only. It routes to the existing Proposal or Tavolo editor rather
+  than duplicating authoring forms.
 - `presentation/project_coorganizers_screen.dart` owns the structural actors'
   active role and pending invite lists, provenance, role selection,
   promotion/demotion/revocation confirmations, and the immediate one-time
@@ -62,6 +64,24 @@ Copy and Share receive the canonical
 `https://planets.community/invite/project/<token>` URL only from that immediate
 result. Preview remains side-effect-free; only the explicit authenticated
 Accept action grants the role.
+
+## Structural Project actions
+
+The immutable Creator remains the attribution anchor and the only actor who
+can create or publish that Creator's drafts. A current Co-creator can open the
+same editor for an existing non-draft Project: future published Proposals can
+be edited or cancelled, and active/paused Tavoli can be edited, paused,
+resumed, or ended. Co-organizers receive none of those structural controls.
+The backend management read and lifecycle RPCs remain authoritative, so a
+demotion or revocation while an editor is open fails closed on the next read or
+mutation.
+
+Proposal cancellation and Tavolo ending are retained-history lifecycle
+transitions, not physical deletion. Structural edits and lifecycle changes do
+not alter participant membership or delegated authority. Editor mutations
+refresh the exact management record, Creator-owned lists, delegated cards, and
+affected public list/detail state without using Creator-only owned-list reloads
+as the Co-creator mutation path.
 
 See the [link setup and QA guide](../../../../../docs/development/project-invite-links.md)
 for the web fallback and native association boundary.

@@ -11,6 +11,9 @@ class ProjectDelegateRoutes {
   static String manage(ProjectKind kind, String projectId) =>
       '${detail(kind, projectId)}/manage';
 
+  static String edit(ProjectKind kind, String projectId) =>
+      '${detail(kind, projectId)}/edit';
+
   static String coorganizers(ProjectKind kind, String projectId) =>
       '${detail(kind, projectId)}/co-organizers';
 

@@ -452,6 +452,7 @@ enum RecurringActivityEditorPhase {
   ready,
   saving,
   publishing,
+  mutatingLifecycle,
   failure,
 }
 
@@ -469,7 +470,8 @@ class RecurringActivityEditorState {
   bool get isBusy => switch (phase) {
     RecurringActivityEditorPhase.loading ||
     RecurringActivityEditorPhase.saving ||
-    RecurringActivityEditorPhase.publishing => true,
+    RecurringActivityEditorPhase.publishing ||
+    RecurringActivityEditorPhase.mutatingLifecycle => true,
     _ => false,
   };
 }

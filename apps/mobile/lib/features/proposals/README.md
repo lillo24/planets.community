@@ -1,6 +1,7 @@
 # Proposals feature
 
-This feature owns one-time proposal discovery and authenticated owner management.
+This feature owns one-time proposal discovery and authenticated structural
+management for the immutable Creator and current Co-creators.
 
 - `domain/` defines proposal, lifecycle, status, skill and time-zone models.
 - `data/` calls only the canonical Supabase proposal RPCs and reads the existing controlled skill catalog.
@@ -56,3 +57,16 @@ that remains visible while the form scrolls, inline errors for text, timezone,
 country and schedule controls, and brings the first mounted invalid field into
 view. Drafts keep their intentionally optional fields while still validating
 any values that were supplied.
+
+Draft creation, draft saving, and publication remain original-Creator-only.
+For an existing published Proposal, the shared editor instead shows **Save
+changes** and never invokes the draft-only publish operation. Content becomes
+read-only once the Proposal starts, while cancellation remains available until
+the canonical end boundary. Completed and cancelled Proposals expose no
+mutation controls. Cancellation is a retained-history transition rather than
+deletion and does not change participation or delegated authority.
+
+The editor uses the exact structural management read for both Creator and
+Co-creator access. Co-organizers and stale/demoted/revoked Co-creators fail
+closed. Successful structural mutations refresh the exact record and affected
+owned, delegated, public-list, and public-detail state.

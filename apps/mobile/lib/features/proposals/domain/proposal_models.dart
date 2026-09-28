@@ -233,11 +233,13 @@ class OwnProposal {
   bool isEditableAt(DateTime now) =>
       lifecycle == ProposalLifecycle.draft ||
       (lifecycle == ProposalLifecycle.published &&
+          (status == null || status == ProposalStatus.upcoming) &&
           startsAt != null &&
           now.isBefore(startsAt!));
 
   bool canCancelAt(DateTime now) =>
       lifecycle == ProposalLifecycle.published &&
+      status != ProposalStatus.completed &&
       endsAt != null &&
       now.isBefore(endsAt!);
 }

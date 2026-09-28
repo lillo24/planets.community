@@ -19,6 +19,7 @@ import 'package:planets_mobile/features/participation/domain/participation_model
 import 'package:planets_mobile/features/proposals/data/proposal_gateway.dart';
 import 'package:planets_mobile/features/recurring_activities/data/recurring_activity_gateway.dart';
 import 'package:planets_mobile/features/recurring_activities/domain/recurring_activity_models.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../support/fake_auth.dart';
 import '../../../support/fake_profile.dart';
@@ -250,6 +251,99 @@ void main() {
     },
   );
 
+  testWidgets('active Tavolo editor saves changes and owns lifecycle actions', (
+    tester,
+  ) async {
+    final recurring = FakeRecurringActivityGateway()
+      ..ownItems = [
+        ownRecurringActivityFixture(
+          lifecycle: RecurringActivityLifecycle.published,
+        ),
+      ];
+    final app = await _pump(tester, recurring: recurring);
+    app.read(appRouterProvider).go('/tavoli/tavolo-1/edit');
+    await tester.pumpAndSettle();
+
+    await _scrollTo(tester, find.byKey(const Key('tavoli-save-draft')), 500);
+    expect(find.widgetWithText(FilledButton, 'Save changes'), findsOneWidget);
+    expect(find.byKey(const Key('tavoli-publish')), findsNothing);
+    expect(find.byKey(const Key('tavoli-editor-pause')), findsOneWidget);
+    expect(find.byKey(const Key('tavoli-editor-end')), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('tavoli-save-draft')));
+    await tester.pumpAndSettle();
+    expect(recurring.calls, contains('update:tavolo-1'));
+    expect(recurring.calls, isNot(contains('publish:tavolo-1')));
+
+    await _center(tester, find.byKey(const Key('tavoli-editor-pause')));
+    await tester.tap(find.byKey(const Key('tavoli-editor-pause')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(FilledButton, 'Pause'));
+    await tester.pumpAndSettle();
+    expect(recurring.calls, contains('pause:tavolo-1'));
+    expect(find.byKey(const Key('tavoli-editor-resume')), findsOneWidget);
+
+    await _center(tester, find.byKey(const Key('tavoli-editor-resume')));
+    await tester.tap(find.byKey(const Key('tavoli-editor-resume')));
+    await tester.pumpAndSettle();
+    expect(recurring.calls, contains('resume:tavolo-1'));
+
+    await _center(tester, find.byKey(const Key('tavoli-editor-end')));
+    await tester.tap(find.byKey(const Key('tavoli-editor-end')));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('does not delete it'), findsOneWidget);
+    await tester.tap(find.widgetWithText(FilledButton, 'End'));
+    await tester.pumpAndSettle();
+    expect(recurring.calls, contains('end:tavolo-1'));
+    expect(find.text('This ended Tavolo is read-only.'), findsOneWidget);
+  });
+
+  testWidgets('ended Tavolo editor has no structural controls', (tester) async {
+    final recurring = FakeRecurringActivityGateway()
+      ..ownItems = [
+        ownRecurringActivityFixture(
+          lifecycle: RecurringActivityLifecycle.ended,
+        ),
+      ];
+    final app = await _pump(tester, recurring: recurring);
+    app.read(appRouterProvider).go('/tavoli/tavolo-1/edit');
+    await tester.pumpAndSettle();
+
+    expect(find.text('This ended Tavolo is read-only.'), findsOneWidget);
+    expect(find.byKey(const Key('tavoli-save-draft')), findsNothing);
+    expect(find.byKey(const Key('tavoli-editor-pause')), findsNothing);
+    expect(find.byKey(const Key('tavoli-editor-resume')), findsNothing);
+    expect(find.byKey(const Key('tavoli-editor-end')), findsNothing);
+  });
+
+  testWidgets('forbidden Tavolo lifecycle removes structural controls', (
+    tester,
+  ) async {
+    final recurring = FakeRecurringActivityGateway()
+      ..ownItems = [
+        ownRecurringActivityFixture(
+          lifecycle: RecurringActivityLifecycle.published,
+        ),
+      ];
+    final app = await _pump(tester, recurring: recurring);
+    app.read(appRouterProvider).go('/tavoli/tavolo-1/edit');
+    await tester.pumpAndSettle();
+    recurring.mutationError = const PostgrestException(
+      message: 'private structural denial',
+      code: '42501',
+    );
+
+    await _center(tester, find.byKey(const Key('tavoli-editor-pause')));
+    await tester.tap(find.byKey(const Key('tavoli-editor-pause')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(FilledButton, 'Pause'));
+    await tester.pumpAndSettle();
+
+    expect(find.textContaining("couldn't complete"), findsOneWidget);
+    expect(find.byKey(const Key('tavoli-save-draft')), findsNothing);
+    expect(find.byKey(const Key('tavoli-editor-end')), findsNothing);
+  });
+
   testWidgets('owner cards expose only lifecycle-valid actions', (
     tester,
   ) async {
@@ -301,6 +395,18 @@ Future<void> _scrollTo(WidgetTester tester, Finder target, double delta) =>
       delta,
       scrollable: find.byType(Scrollable).hitTestable().first,
     );
+
+Future<void> _center(WidgetTester tester, Finder target) async {
+  if (target.evaluate().isEmpty) {
+    await _scrollTo(tester, target, 400);
+  }
+  await Scrollable.ensureVisible(
+    tester.element(target),
+    alignment: 0.5,
+    duration: const Duration(milliseconds: 100),
+  );
+  await tester.pumpAndSettle();
+}
 
 Future<ProviderContainer> _pump(
   WidgetTester tester, {

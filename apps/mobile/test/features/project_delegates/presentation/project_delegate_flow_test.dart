@@ -52,6 +52,10 @@ void main() {
       findsOneWidget,
     );
     expect(find.byKey(const Key('project-manage-team')), findsOneWidget);
+    expect(
+      find.byKey(const Key('project-manage-structural-edit')),
+      findsOneWidget,
+    );
   });
 
   testWidgets('delegate management hub exposes Participation only', (
@@ -78,6 +82,10 @@ void main() {
       findsOneWidget,
     );
     expect(find.byKey(const Key('project-manage-team')), findsNothing);
+    expect(
+      find.byKey(const Key('project-manage-structural-edit')),
+      findsNothing,
+    );
   });
 
   testWidgets('Co-creator management hub exposes structural Project team', (
@@ -104,6 +112,10 @@ void main() {
       findsOneWidget,
     );
     expect(find.byKey(const Key('project-manage-team')), findsOneWidget);
+    expect(
+      find.byKey(const Key('project-manage-structural-edit')),
+      findsOneWidget,
+    );
   });
 
   testWidgets('owner lists, creates, copies, shares, and removes delegates', (
@@ -599,6 +611,14 @@ void main() {
           delegatedAt: DateTime.utc(2029, 12, 1),
           authorityRole: ProjectDelegatedAuthorityRole.coCreator,
         ),
+        DelegatedProject(
+          id: 'delegated-operational',
+          kind: ProjectKind.oneTime,
+          title: 'Operational mural',
+          status: 'published',
+          delegatedAt: DateTime.utc(2029, 12, 2),
+          authorityRole: ProjectDelegatedAuthorityRole.coOrganizer,
+        ),
       ];
     final session = _readyContainer(gateway);
     addTearDown(session.dispose);
@@ -618,6 +638,14 @@ void main() {
       find.byKey(const Key('delegated-proposal-manage-delegated-1')),
       findsOneWidget,
     );
+    expect(
+      find.byKey(const Key('delegated-proposal-edit-delegated-1')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const Key('delegated-proposal-edit-delegated-operational')),
+      findsNothing,
+    );
     expect(find.text('Publish'), findsNothing);
     expect(find.text('Cancel proposal'), findsNothing);
   });
@@ -634,6 +662,14 @@ void main() {
           status: 'active',
           delegatedAt: DateTime.utc(2029, 12, 1),
           authorityRole: ProjectDelegatedAuthorityRole.coCreator,
+        ),
+        DelegatedProject(
+          id: 'delegated-tavolo-operational',
+          kind: ProjectKind.recurring,
+          title: 'Operational table',
+          status: 'active',
+          delegatedAt: DateTime.utc(2029, 12, 2),
+          authorityRole: ProjectDelegatedAuthorityRole.coOrganizer,
         ),
       ];
     final session = _readyContainer(
@@ -655,6 +691,16 @@ void main() {
     expect(
       find.byKey(const Key('delegated-tavolo-manage-delegated-tavolo-1')),
       findsOneWidget,
+    );
+    expect(
+      find.byKey(const Key('delegated-tavolo-edit-delegated-tavolo-1')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(
+        const Key('delegated-tavolo-edit-delegated-tavolo-operational'),
+      ),
+      findsNothing,
     );
   });
 }

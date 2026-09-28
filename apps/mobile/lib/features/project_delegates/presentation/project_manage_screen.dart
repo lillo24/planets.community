@@ -29,10 +29,24 @@ class ProjectManageScreen extends ConsumerStatefulWidget {
 }
 
 class _ProjectManageScreenState extends ConsumerState<ProjectManageScreen> {
+  bool _loadScheduled = false;
+
   @override
   void initState() {
     super.initState();
-    Future<void>.microtask(_load);
+    _scheduleLoad();
+  }
+
+  void _scheduleLoad() {
+    if (_loadScheduled) return;
+    _loadScheduled = true;
+    Future<void>.microtask(() async {
+      try {
+        await _load();
+      } finally {
+        if (mounted) _loadScheduled = false;
+      }
+    });
   }
 
   Future<void> _load() async {
@@ -56,6 +70,10 @@ class _ProjectManageScreenState extends ConsumerState<ProjectManageScreen> {
         profileId != null &&
         state.isFor(profileId, widget.projectId, widget.projectKind);
     final role = current ? state.role : null;
+    if (profileId != null &&
+        (state.phase == ProjectDelegateLoadPhase.idle || !current)) {
+      _scheduleLoad();
+    }
 
     return Scaffold(
       appBar: AppBar(title: Text(l10n.projectManageTitle)),
@@ -87,6 +105,22 @@ class _ProjectManageScreenState extends ConsumerState<ProjectManageScreen> {
                     ),
                   ),
                   if (role.hasStructuralAuthority) ...[
+                    const SizedBox(height: AppSpacing.small),
+                    Card(
+                      child: ListTile(
+                        key: const Key('project-manage-structural-edit'),
+                        leading: const Icon(Icons.edit_outlined),
+                        title: Text(l10n.projectManageStructuralTitle),
+                        subtitle: Text(l10n.projectManageStructuralDescription),
+                        trailing: const Icon(Icons.chevron_right),
+                        onTap: () => context.push(
+                          ProjectDelegateRoutes.edit(
+                            widget.projectKind,
+                            widget.projectId,
+                          ),
+                        ),
+                      ),
+                    ),
                     const SizedBox(height: AppSpacing.small),
                     Card(
                       child: ListTile(

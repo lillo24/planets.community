@@ -63,6 +63,10 @@ class _OwnRecurringActivitiesScreenState
         : const <DelegatedProject>[];
     if (identity != null && _requestedIdentity != identity.id) {
       Future<void>.microtask(_load);
+    } else if (identity != null &&
+        (state.phase == RecurringActivityLoadPhase.idle ||
+            delegatedState.phase == ProjectDelegateLoadPhase.idle)) {
+      Future<void>.microtask(() => _load(force: true));
     }
     return Scaffold(
       appBar: AppBar(title: Text(l10n.tavoliMyTitle)),
@@ -162,6 +166,9 @@ class _DelegatedTavoloCard extends StatelessWidget {
       'ended' => l10n.tavoliLifecycleEnded,
       _ => l10n.tavoliLifecycleActive,
     };
+    final canEdit =
+        project.authorityRole == ProjectDelegatedAuthorityRole.coCreator &&
+        project.status != 'ended';
     return Card(
       key: Key('delegated-tavolo-${project.id}'),
       child: Padding(
@@ -187,6 +194,14 @@ class _DelegatedTavoloCard extends StatelessWidget {
                   ),
                   child: Text(l10n.projectManageTitle),
                 ),
+                if (canEdit)
+                  OutlinedButton(
+                    key: Key('delegated-tavolo-edit-${project.id}'),
+                    onPressed: () => context.push(
+                      ProjectDelegateRoutes.edit(project.kind, project.id),
+                    ),
+                    child: Text(l10n.projectManageStructuralTitle),
+                  ),
               ],
             ),
           ],

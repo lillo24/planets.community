@@ -6,6 +6,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../auth/application/auth_session_controller.dart';
 import '../../auth/domain/auth_models.dart';
 import '../../participation/application/participation_controllers.dart';
+import '../../project_delegates/application/project_delegate_controllers.dart';
 import '../data/proposal_gateway.dart';
 import '../domain/proposal_models.dart';
 import '../domain/proposal_time.dart';
@@ -484,12 +485,16 @@ class ProposalEditorController extends Notifier<ProposalEditorState> {
       );
     } catch (error) {
       if (_isCurrent(revision)) {
+        final failure = mapProposalFailure(error);
+        if (failure == ProposalFailureKind.forbidden && proposalId != null) {
+          _invalidateStructuralAuthority();
+        }
         state = ProposalEditorState(
           phase: ProposalEditorPhase.failure,
           expectedCreatorId: expectedCreatorId,
           proposal: state.proposal,
           categories: state.categories,
-          failure: mapProposalFailure(error),
+          failure: failure,
         );
       }
     }
@@ -499,36 +504,68 @@ class ProposalEditorController extends Notifier<ProposalEditorState> {
     String expectedCreatorId,
     ProposalInput input,
   ) async {
-    if (state.isBusy ||
-        !isValidProposalDraft(input) ||
+    if (state.isBusy) return null;
+    final existing = state.proposal;
+    if (existing != null && existing.lifecycle != ProposalLifecycle.draft) {
+      return _reject(expectedCreatorId, ProposalFailureKind.invalidState);
+    }
+    if (!isValidProposalDraft(input) ||
         (input.eventTimezone.trim().isNotEmpty &&
             !isKnownProposalTimeZone(input.eventTimezone))) {
-      state = ProposalEditorState(
-        phase: ProposalEditorPhase.failure,
-        expectedCreatorId: expectedCreatorId,
-        proposal: state.proposal,
-        categories: state.categories,
-        failure: ProposalFailureKind.invalidInput,
-      );
-      return null;
+      return _reject(expectedCreatorId, ProposalFailureKind.invalidInput);
     }
     return _saveContent(expectedCreatorId, input, publish: false);
   }
 
   Future<String?> publish(String expectedCreatorId, ProposalInput input) async {
-    if (state.isBusy ||
-        !isPublishableProposalInput(input) ||
+    if (state.isBusy) return null;
+    final existing = state.proposal;
+    if (existing != null && existing.lifecycle != ProposalLifecycle.draft) {
+      return _reject(expectedCreatorId, ProposalFailureKind.invalidState);
+    }
+    if (!isPublishableProposalInput(input) ||
         !isKnownProposalTimeZone(input.eventTimezone)) {
-      state = ProposalEditorState(
-        phase: ProposalEditorPhase.failure,
-        expectedCreatorId: expectedCreatorId,
-        proposal: state.proposal,
-        categories: state.categories,
-        failure: ProposalFailureKind.invalidInput,
-      );
-      return null;
+      return _reject(expectedCreatorId, ProposalFailureKind.invalidInput);
     }
     return _saveContent(expectedCreatorId, input, publish: true);
+  }
+
+  Future<String?> saveChanges(
+    String expectedStructuralActorId,
+    ProposalInput input,
+  ) async {
+    if (state.isBusy) return null;
+    final existing = state.proposal;
+    if (existing == null ||
+        existing.lifecycle != ProposalLifecycle.published ||
+        !existing.isEditableAt(ref.read(proposalClockProvider)())) {
+      return _reject(
+        expectedStructuralActorId,
+        ProposalFailureKind.invalidState,
+      );
+    }
+    if (!isPublishableProposalInput(input) ||
+        !isKnownProposalTimeZone(input.eventTimezone)) {
+      return _reject(
+        expectedStructuralActorId,
+        ProposalFailureKind.invalidInput,
+      );
+    }
+    return _saveContent(expectedStructuralActorId, input, publish: false);
+  }
+
+  Future<String?> _reject(
+    String expectedCreatorId,
+    ProposalFailureKind failure,
+  ) async {
+    state = ProposalEditorState(
+      phase: ProposalEditorPhase.failure,
+      expectedCreatorId: expectedCreatorId,
+      proposal: state.proposal,
+      categories: state.categories,
+      failure: failure,
+    );
+    return null;
   }
 
   Future<String?> _saveContent(
@@ -577,15 +614,39 @@ class ProposalEditorController extends Notifier<ProposalEditorState> {
         proposal: proposal,
         categories: state.categories,
       );
+      _refreshProposalSurfaces(
+        expectedCreatorId,
+        proposalId,
+        refreshPublic:
+            publish ||
+            existingProposal?.lifecycle == ProposalLifecycle.published,
+      );
       return proposalId;
     } catch (error) {
       if (!_isCurrent(revision)) return null;
+      final failure = mapProposalFailure(error);
+      var authoritativeProposal = existingProposal;
+      if (failure == ProposalFailureKind.invalidState &&
+          existingProposal != null) {
+        try {
+          authoritativeProposal = await ref
+              .read(proposalGatewayProvider)
+              .getOwnProposal(expectedCreatorId, existingProposal.id);
+        } catch (_) {
+          // Preserve the original safe failure when the recovery read fails.
+        }
+      }
+      if (!_isCurrent(revision)) return null;
+      if (failure == ProposalFailureKind.forbidden &&
+          existingProposal != null) {
+        _invalidateStructuralAuthority();
+      }
       state = ProposalEditorState(
         phase: ProposalEditorPhase.failure,
         expectedCreatorId: expectedCreatorId,
-        proposal: existingProposal,
+        proposal: authoritativeProposal,
         categories: state.categories,
-        failure: mapProposalFailure(error),
+        failure: failure,
       );
       return null;
     }
@@ -593,7 +654,9 @@ class ProposalEditorController extends Notifier<ProposalEditorState> {
 
   Future<bool> cancel(String expectedCreatorId) async {
     final proposal = state.proposal;
-    if (state.isBusy || proposal == null) {
+    if (state.isBusy ||
+        proposal == null ||
+        !proposal.canCancelAt(ref.read(proposalClockProvider)())) {
       return false;
     }
     final revision = ++_revision;
@@ -613,24 +676,65 @@ class ProposalEditorController extends Notifier<ProposalEditorState> {
           .read(proposalGatewayProvider)
           .getOwnProposal(expectedCreatorId, proposal.id);
       if (!_isCurrent(revision)) return false;
+      if (updated == null) throw const ProposalNotFoundException();
       state = ProposalEditorState(
         phase: ProposalEditorPhase.ready,
         expectedCreatorId: expectedCreatorId,
         proposal: updated,
         categories: state.categories,
       );
+      _refreshProposalSurfaces(
+        expectedCreatorId,
+        proposal.id,
+        refreshPublic: true,
+      );
       return true;
     } catch (error) {
       if (!_isCurrent(revision)) return false;
+      final failure = mapProposalFailure(error);
+      var authoritativeProposal = proposal;
+      if (failure == ProposalFailureKind.invalidState) {
+        try {
+          authoritativeProposal =
+              await ref
+                  .read(proposalGatewayProvider)
+                  .getOwnProposal(expectedCreatorId, proposal.id) ??
+              proposal;
+        } catch (_) {
+          // Keep the previously loaded record with the safe failure state.
+        }
+      }
+      if (!_isCurrent(revision)) return false;
+      if (failure == ProposalFailureKind.forbidden) {
+        _invalidateStructuralAuthority();
+      }
       state = ProposalEditorState(
         phase: ProposalEditorPhase.failure,
         expectedCreatorId: expectedCreatorId,
-        proposal: proposal,
+        proposal: authoritativeProposal,
         categories: state.categories,
-        failure: mapProposalFailure(error),
+        failure: failure,
       );
       return false;
     }
+  }
+
+  void _refreshProposalSurfaces(
+    String expectedProfileId,
+    String proposalId, {
+    required bool refreshPublic,
+  }) {
+    ref.invalidate(delegatedProjectsProvider);
+    unawaited(ref.read(ownProposalsProvider.notifier).load(expectedProfileId));
+    if (refreshPublic) {
+      unawaited(ref.read(publicProposalsProvider.notifier).load());
+      unawaited(ref.read(proposalDetailProvider.notifier).load(proposalId));
+    }
+  }
+
+  void _invalidateStructuralAuthority() {
+    ref.invalidate(projectManagementRoleProvider);
+    ref.invalidate(delegatedProjectsProvider);
   }
 
   void _requireCurrentIdentity(String expectedCreatorId) {

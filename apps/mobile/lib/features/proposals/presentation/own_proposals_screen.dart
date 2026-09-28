@@ -59,6 +59,10 @@ class _OwnProposalsScreenState extends ConsumerState<OwnProposalsScreen> {
         : const <DelegatedProject>[];
     if (identity != null && _requestedIdentity != identity.id) {
       Future<void>.microtask(_load);
+    } else if (identity != null &&
+        (state.phase == ProposalLoadPhase.idle ||
+            delegatedState.phase == ProjectDelegateLoadPhase.idle)) {
+      Future<void>.microtask(() => _load(force: true));
     }
 
     return Scaffold(
@@ -158,6 +162,10 @@ class _DelegatedProposalCard extends StatelessWidget {
       'cancelled' => l10n.proposalLifecycleCancelled,
       _ => l10n.proposalLifecyclePublished,
     };
+    final canEdit =
+        project.authorityRole == ProjectDelegatedAuthorityRole.coCreator &&
+        project.status != 'completed' &&
+        project.status != 'cancelled';
     return Card(
       key: Key('delegated-proposal-${project.id}'),
       child: Padding(
@@ -183,6 +191,14 @@ class _DelegatedProposalCard extends StatelessWidget {
                   ),
                   child: Text(l10n.projectManageTitle),
                 ),
+                if (canEdit)
+                  OutlinedButton(
+                    key: Key('delegated-proposal-edit-${project.id}'),
+                    onPressed: () => context.push(
+                      ProjectDelegateRoutes.edit(project.kind, project.id),
+                    ),
+                    child: Text(l10n.projectManageStructuralTitle),
+                  ),
               ],
             ),
           ],

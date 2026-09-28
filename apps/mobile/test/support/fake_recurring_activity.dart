@@ -26,6 +26,7 @@ class FakeRecurringActivityGateway implements RecurringActivityGateway {
   RequestedTavoliLoader? requestedLoader;
   Future<void>? mutationDelay;
   Object? error;
+  Object? mutationError;
   Object? requestedError;
   final calls = <String>[];
   final referenceTimes = <DateTime>[];
@@ -121,6 +122,7 @@ class FakeRecurringActivityGateway implements RecurringActivityGateway {
   ) async {
     _throwIfNeeded();
     calls.add('create');
+    _throwMutationIfNeeded();
     if (mutationDelay case final delay?) await delay;
     lastExpectedIdentity = expectedCreatorId;
     lastInput = input;
@@ -136,6 +138,7 @@ class FakeRecurringActivityGateway implements RecurringActivityGateway {
   ) async {
     _throwIfNeeded();
     calls.add('update:$activityId');
+    _throwMutationIfNeeded();
     if (mutationDelay case final delay?) await delay;
     lastExpectedIdentity = expectedCreatorId;
     lastInput = input;
@@ -150,31 +153,103 @@ class FakeRecurringActivityGateway implements RecurringActivityGateway {
 
   @override
   Future<void> publish(String expectedCreatorId, String activityId) =>
-      _mutation('publish:$activityId', expectedCreatorId);
+      _mutation(
+        'publish:$activityId',
+        expectedCreatorId,
+        activityId,
+        RecurringActivityLifecycle.published,
+      );
 
   @override
-  Future<void> pause(String expectedCreatorId, String activityId) =>
-      _mutation('pause:$activityId', expectedCreatorId);
+  Future<void> pause(String expectedCreatorId, String activityId) => _mutation(
+    'pause:$activityId',
+    expectedCreatorId,
+    activityId,
+    RecurringActivityLifecycle.paused,
+  );
 
   @override
-  Future<void> resume(String expectedCreatorId, String activityId) =>
-      _mutation('resume:$activityId', expectedCreatorId);
+  Future<void> resume(String expectedCreatorId, String activityId) => _mutation(
+    'resume:$activityId',
+    expectedCreatorId,
+    activityId,
+    RecurringActivityLifecycle.published,
+  );
 
   @override
-  Future<void> end(String expectedCreatorId, String activityId) =>
-      _mutation('end:$activityId', expectedCreatorId);
+  Future<void> end(String expectedCreatorId, String activityId) => _mutation(
+    'end:$activityId',
+    expectedCreatorId,
+    activityId,
+    RecurringActivityLifecycle.ended,
+  );
 
-  Future<void> _mutation(String call, String identity) async {
+  Future<void> _mutation(
+    String call,
+    String identity,
+    String activityId,
+    RecurringActivityLifecycle lifecycle,
+  ) async {
     _throwIfNeeded();
     calls.add(call);
+    _throwMutationIfNeeded();
     if (mutationDelay case final delay?) await delay;
     lastExpectedIdentity = identity;
+    ownItems = [
+      for (final activity in ownItems)
+        if (activity.id == activityId)
+          _copyRecurringActivity(activity, lifecycle)
+        else
+          activity,
+    ];
   }
 
   void _throwIfNeeded() {
     if (error case final value?) throw value;
   }
+
+  void _throwMutationIfNeeded() {
+    if (mutationError case final value?) throw value;
+  }
 }
+
+OwnRecurringActivity _copyRecurringActivity(
+  OwnRecurringActivity activity,
+  RecurringActivityLifecycle lifecycle,
+) => OwnRecurringActivity(
+  id: activity.id,
+  lifecycle: lifecycle,
+  title: activity.title,
+  summary: activity.summary,
+  description: activity.description,
+  topic: activity.topic,
+  countryCode: activity.countryCode,
+  locality: activity.locality,
+  administrativeArea: activity.administrativeArea,
+  publicLocationLabel: activity.publicLocationLabel,
+  currentSchedule: activity.currentSchedule,
+  scheduleHistory: activity.scheduleHistory,
+  exactMeetingText: activity.exactMeetingText,
+  exactLocationVisibility: activity.exactLocationVisibility,
+  createdAt: activity.createdAt,
+  updatedAt: activity.updatedAt,
+  publishedAt: lifecycle == RecurringActivityLifecycle.published
+      ? activity.publishedAt ?? DateTime.utc(2026, 9, 2)
+      : activity.publishedAt,
+  pausedAt: lifecycle == RecurringActivityLifecycle.paused
+      ? DateTime.utc(2026, 9, 3)
+      : lifecycle == RecurringActivityLifecycle.published
+      ? null
+      : activity.pausedAt,
+  resumedAt:
+      lifecycle == RecurringActivityLifecycle.published &&
+          activity.lifecycle == RecurringActivityLifecycle.paused
+      ? DateTime.utc(2026, 9, 4)
+      : activity.resumedAt,
+  endedAt: lifecycle == RecurringActivityLifecycle.ended
+      ? DateTime.utc(2026, 9, 5)
+      : activity.endedAt,
+);
 
 RecurringSchedule recurringScheduleFixture({
   String id = 'schedule-1',

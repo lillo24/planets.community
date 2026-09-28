@@ -25,6 +25,7 @@ class FakeProposalGateway implements ProposalGateway {
   Future<ProposalDetail?>? publicDetailResult;
   List<OwnProposal> ownItems = [];
   Object? error;
+  Object? mutationError;
   Object? requestedError;
   RequestedProposalLoader? requestedLoader;
   PublicProposalLoader? publicLoader;
@@ -109,6 +110,7 @@ class FakeProposalGateway implements ProposalGateway {
   @override
   Future<List<OwnProposal>> listOwnProposals(String expectedCreatorId) async {
     _throwIfNeeded();
+    calls.add('list-own');
     lastExpectedIdentity = expectedCreatorId;
     return ownListResult ?? Future.value(ownItems);
   }
@@ -133,6 +135,7 @@ class FakeProposalGateway implements ProposalGateway {
   ) async {
     _throwIfNeeded();
     calls.add('create');
+    _throwMutationIfNeeded();
     if (mutationDelay case final delay?) await delay;
     lastExpectedIdentity = expectedCreatorId;
     lastInput = input;
@@ -148,9 +151,17 @@ class FakeProposalGateway implements ProposalGateway {
   ) async {
     _throwIfNeeded();
     calls.add('update:$proposalId');
+    _throwMutationIfNeeded();
     if (mutationDelay case final delay?) await delay;
     lastExpectedIdentity = expectedCreatorId;
     lastInput = input;
+    ownItems = [
+      for (final proposal in ownItems)
+        if (proposal.id == proposalId)
+          _copyProposal(proposal, input: input)
+        else
+          proposal,
+    ];
   }
 
   @override
@@ -160,8 +171,20 @@ class FakeProposalGateway implements ProposalGateway {
   ) async {
     _throwIfNeeded();
     calls.add('publish:$proposalId');
+    _throwMutationIfNeeded();
     if (mutationDelay case final delay?) await delay;
     lastExpectedIdentity = expectedCreatorId;
+    ownItems = [
+      for (final proposal in ownItems)
+        if (proposal.id == proposalId)
+          _copyProposal(
+            proposal,
+            lifecycle: ProposalLifecycle.published,
+            status: ProposalStatus.upcoming,
+          )
+        else
+          proposal,
+    ];
   }
 
   @override
@@ -171,14 +194,62 @@ class FakeProposalGateway implements ProposalGateway {
   ) async {
     _throwIfNeeded();
     calls.add('cancel:$proposalId');
+    _throwMutationIfNeeded();
     if (mutationDelay case final delay?) await delay;
     lastExpectedIdentity = expectedCreatorId;
+    ownItems = [
+      for (final proposal in ownItems)
+        if (proposal.id == proposalId)
+          _copyProposal(proposal, lifecycle: ProposalLifecycle.cancelled)
+        else
+          proposal,
+    ];
   }
 
   void _throwIfNeeded() {
     if (error case final failure?) throw failure;
   }
+
+  void _throwMutationIfNeeded() {
+    if (mutationError case final failure?) throw failure;
+  }
 }
+
+OwnProposal _copyProposal(
+  OwnProposal proposal, {
+  ProposalInput? input,
+  ProposalLifecycle? lifecycle,
+  ProposalStatus? status,
+}) => OwnProposal(
+  id: proposal.id,
+  lifecycle: lifecycle ?? proposal.lifecycle,
+  title: input?.title ?? proposal.title,
+  summary: input?.summary ?? proposal.summary,
+  description: input?.description ?? proposal.description,
+  startsAt: input?.startsAt ?? proposal.startsAt,
+  endsAt: input?.endsAt ?? proposal.endsAt,
+  eventTimezone: input?.eventTimezone ?? proposal.eventTimezone,
+  countryCode: input?.countryCode ?? proposal.countryCode,
+  locality: input?.locality ?? proposal.locality,
+  administrativeArea: input?.administrativeArea ?? proposal.administrativeArea,
+  publicLocationLabel:
+      input?.publicLocationLabel ?? proposal.publicLocationLabel,
+  status: lifecycle == ProposalLifecycle.cancelled
+      ? null
+      : status ?? proposal.status,
+  skills: proposal.skills,
+  exactMeetingText: input?.exactMeetingText ?? proposal.exactMeetingText,
+  exactLocationVisibility:
+      input?.exactLocationVisibility ?? proposal.exactLocationVisibility,
+  createdAt: proposal.createdAt,
+  updatedAt: proposal.updatedAt,
+  publishedAt: lifecycle == ProposalLifecycle.published
+      ? proposal.publishedAt ?? DateTime.utc(2026, 9, 2)
+      : proposal.publishedAt,
+  cancelledAt: lifecycle == ProposalLifecycle.cancelled
+      ? DateTime.utc(2026, 9, 3)
+      : proposal.cancelledAt,
+);
 
 List<ProposalSkillCategory> proposalCategoriesFixture() => const [
   ProposalSkillCategory(
@@ -284,28 +355,38 @@ ProposalInput proposalInputFixture({
 OwnProposal ownProposalFixture({
   String id = 'proposal-1',
   ProposalInput? input,
+  ProposalLifecycle lifecycle = ProposalLifecycle.draft,
+  ProposalStatus? status,
+  DateTime? startsAt,
+  DateTime? endsAt,
 }) {
   final value = input ?? proposalInputFixture();
   return OwnProposal(
     id: id,
-    lifecycle: ProposalLifecycle.draft,
+    lifecycle: lifecycle,
     title: value.title,
     summary: value.summary,
     description: value.description,
-    startsAt: value.startsAt,
-    endsAt: value.endsAt,
+    startsAt: startsAt ?? value.startsAt,
+    endsAt: endsAt ?? value.endsAt,
     eventTimezone: value.eventTimezone,
     countryCode: value.countryCode,
     locality: value.locality,
     administrativeArea: value.administrativeArea,
     publicLocationLabel: value.publicLocationLabel,
-    status: null,
+    status: lifecycle == ProposalLifecycle.published
+        ? status ?? ProposalStatus.upcoming
+        : null,
     skills: proposalSummaryFixture().skills,
     exactMeetingText: value.exactMeetingText,
     exactLocationVisibility: value.exactLocationVisibility,
     createdAt: DateTime.utc(2026, 9, 1),
     updatedAt: DateTime.utc(2026, 9, 1),
-    publishedAt: null,
-    cancelledAt: null,
+    publishedAt: lifecycle == ProposalLifecycle.published
+        ? DateTime.utc(2026, 9, 2)
+        : null,
+    cancelledAt: lifecycle == ProposalLifecycle.cancelled
+        ? DateTime.utc(2026, 9, 3)
+        : null,
   );
 }
