@@ -713,7 +713,7 @@ Future<ProviderContainer> _pump(
         projectDelegateGatewayProvider.overrideWithValue(
           FakeProjectDelegateGateway()
             ..role = identityId == 'user-1'
-                ? ProjectManagementRole.owner
+                ? ProjectManagementRole.creator
                 : ProjectManagementRole.none,
         ),
         participationGatewayProvider.overrideWithValue(participation),

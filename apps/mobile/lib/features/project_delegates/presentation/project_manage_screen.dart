@@ -86,7 +86,7 @@ class _ProjectManageScreenState extends ConsumerState<ProjectManageScreen> {
                       ),
                     ),
                   ),
-                  if (role == ProjectManagementRole.owner) ...[
+                  if (role == ProjectManagementRole.creator) ...[
                     const SizedBox(height: AppSpacing.small),
                     Card(
                       child: ListTile(

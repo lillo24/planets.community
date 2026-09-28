@@ -34,38 +34,38 @@ The stack should:
 
 ## Selected tools
 
-| Area | Tool | Responsibility |
-| --- | --- | --- |
-| Mobile applications | Flutter and Dart | Shared Android/iOS application |
-| Mobile state and dependency boundaries | Riverpod | Feature state, dependency injection, and testable controllers |
-| Mobile routing | `go_router` | Declarative navigation and deep links |
-| Mobile models | Freezed and `json_serializable` | Immutable typed models and predictable serialization |
-| Mobile design foundation | Material 3 with centralized design tokens | Functional, coherent default UI before brand-focused design |
-| Backend platform | Supabase platform | PostgreSQL, authentication, Data API, realtime, and server-function capabilities; managed environments are allowed for development/testing and self-hosted Supabase is the intended production target |
-| Database | PostgreSQL | Canonical relational data and transactional business rules |
-| Geographic data | PostGIS | Radius filtering, approximate locations, and future maps/statistics |
-| Authorization | PostgreSQL Row Level Security | Enforce access independently of client UI |
-| Atomic server operations | PostgreSQL functions | Multi-step domain transitions close to the data |
-| External integrations | Repository-owned Supabase Edge Functions or compatible workers | FCM, email, and other server-only service calls without making a managed-only deployment workflow a product invariant |
-| Background processing | Database-backed state with Supabase/PostgreSQL-compatible queues and scheduling | Durable delivery, retries, cleanup, and scheduled jobs reproducible outside a managed control plane |
-| Authentication | Supabase Auth | Email one-time code initially; social login only when justified |
-| Realtime project chat | Supabase Realtime with PostgreSQL persistence | Project-scoped group messaging without a separate chat vendor |
-| Media | Deferred production storage choice | Plan 08 must evaluate self-hosted Supabase Storage and an external object store such as Cloudflare R2 while retaining database-owned authorization metadata |
-| Push notifications | Firebase Cloud Messaging | Android and iOS push delivery; iOS uses APNs through FCM |
-| Transactional email | Resend | Authentication, security, and exceptional account messages |
-| Public informational site | Vite, React, and TypeScript | Small static-first informational and launch website under `apps/site` |
-| One-time launch waitlist | Cloudflare Workers with Static Assets, D1, and Turnstile | One server-side signup operation, minimal durable storage, and abuse validation without adding product-domain behavior |
-| Public discovery | Next.js with TypeScript | Dynamic public discovery routes under `apps/web` |
-| Admin interface | Next.js with TypeScript | Future authenticated moderation and administration routes under `apps/web` |
-| Dynamic web components | Tailwind CSS and shadcn/ui | Fast construction of ordinary responsive pages, forms, and tables in `apps/web` |
-| Web deployment | Later operational choices | SITE-03 owns Cloudflare deployment for `apps/site`; `apps/web` requires independently selected hosting compatible with the dynamic functionality retained at release |
-| DNS | Cloudflare | DNS, DNSSEC, and separation between domain ownership and hosting |
-| Error monitoring | Sentry with EU data location | Mobile, web, and server error/release visibility |
-| Product analytics | PostHog EU | Explicit beta product events and later feature flags |
-| General CI | GitHub Actions | Formatting, analysis, tests, builds, migrations, and security checks |
-| Mobile build/release CI | Codemagic | Hosted macOS builds, signing, TestFlight, and Play distribution |
-| Database testing | pgTAP | Constraints, functions, permissions, and RLS behavior |
-| Web end-to-end testing | Playwright | Public and admin user journeys |
+| Area                                   | Tool                                                                            | Responsibility                                                                                                                                                                                        |
+| -------------------------------------- | ------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Mobile applications                    | Flutter and Dart                                                                | Shared Android/iOS application                                                                                                                                                                        |
+| Mobile state and dependency boundaries | Riverpod                                                                        | Feature state, dependency injection, and testable controllers                                                                                                                                         |
+| Mobile routing                         | `go_router`                                                                     | Declarative navigation and deep links                                                                                                                                                                 |
+| Mobile models                          | Freezed and `json_serializable`                                                 | Immutable typed models and predictable serialization                                                                                                                                                  |
+| Mobile design foundation               | Material 3 with centralized design tokens                                       | Functional, coherent default UI before brand-focused design                                                                                                                                           |
+| Backend platform                       | Supabase platform                                                               | PostgreSQL, authentication, Data API, realtime, and server-function capabilities; managed environments are allowed for development/testing and self-hosted Supabase is the intended production target |
+| Database                               | PostgreSQL                                                                      | Canonical relational data and transactional business rules                                                                                                                                            |
+| Geographic data                        | PostGIS                                                                         | Radius filtering, approximate locations, and future maps/statistics                                                                                                                                   |
+| Authorization                          | PostgreSQL Row Level Security                                                   | Enforce access independently of client UI                                                                                                                                                             |
+| Atomic server operations               | PostgreSQL functions                                                            | Multi-step domain transitions close to the data                                                                                                                                                       |
+| External integrations                  | Repository-owned Supabase Edge Functions or compatible workers                  | FCM, email, and other server-only service calls without making a managed-only deployment workflow a product invariant                                                                                 |
+| Background processing                  | Database-backed state with Supabase/PostgreSQL-compatible queues and scheduling | Durable delivery, retries, cleanup, and scheduled jobs reproducible outside a managed control plane                                                                                                   |
+| Authentication                         | Supabase Auth                                                                   | Email one-time code initially; social login only when justified                                                                                                                                       |
+| Realtime project chat                  | Supabase Realtime with PostgreSQL persistence                                   | Project-scoped group messaging without a separate chat vendor                                                                                                                                         |
+| Media                                  | Deferred production storage choice                                              | Plan 08 must evaluate self-hosted Supabase Storage and an external object store such as Cloudflare R2 while retaining database-owned authorization metadata                                           |
+| Push notifications                     | Firebase Cloud Messaging                                                        | Android and iOS push delivery; iOS uses APNs through FCM                                                                                                                                              |
+| Transactional email                    | Resend                                                                          | Authentication, security, and exceptional account messages                                                                                                                                            |
+| Public informational site              | Vite, React, and TypeScript                                                     | Small static-first informational and launch website under `apps/site`                                                                                                                                 |
+| One-time launch waitlist               | Cloudflare Workers with Static Assets, D1, and Turnstile                        | One server-side signup operation, minimal durable storage, and abuse validation without adding product-domain behavior                                                                                |
+| Public discovery                       | Next.js with TypeScript                                                         | Dynamic public discovery routes under `apps/web`                                                                                                                                                      |
+| Admin interface                        | Next.js with TypeScript                                                         | Future authenticated moderation and administration routes under `apps/web`                                                                                                                            |
+| Dynamic web components                 | Tailwind CSS and shadcn/ui                                                      | Fast construction of ordinary responsive pages, forms, and tables in `apps/web`                                                                                                                       |
+| Web deployment                         | Later operational choices                                                       | SITE-03 owns Cloudflare deployment for `apps/site`; `apps/web` requires independently selected hosting compatible with the dynamic functionality retained at release                                  |
+| DNS                                    | Cloudflare                                                                      | DNS, DNSSEC, and separation between domain ownership and hosting                                                                                                                                      |
+| Error monitoring                       | Sentry with EU data location                                                    | Mobile, web, and server error/release visibility                                                                                                                                                      |
+| Product analytics                      | PostHog EU                                                                      | Explicit beta product events and later feature flags                                                                                                                                                  |
+| General CI                             | GitHub Actions                                                                  | Formatting, analysis, tests, builds, migrations, and security checks                                                                                                                                  |
+| Mobile build/release CI                | Codemagic                                                                       | Hosted macOS builds, signing, TestFlight, and Play distribution                                                                                                                                       |
+| Database testing                       | pgTAP                                                                           | Constraints, functions, permissions, and RLS behavior                                                                                                                                                 |
+| Web end-to-end testing                 | Playwright                                                                      | Public and admin user journeys                                                                                                                                                                        |
 
 Exact service tiers and prices are operational choices and must be rechecked when staging or production is provisioned.
 
@@ -134,7 +134,7 @@ The initial seven-category skill catalog is deliberately small and system-manage
 
 ### Structured request Messages and project-scoped chat
 
-The mobile Messages surface presents join requests as persistent structured actionable items backed by canonical participation state; notifications are alerts, and requests do not become free-form chat messages. Project group chat is separate: the first accepted join request transactionally ensures one canonical anchor, with no manual Create Chat action or fixed three-person threshold. Immutable ownership, active Project delegates, and canonical membership intervals determine manager/current/historical entitlement; revocation removes delegate authorization immediately without manufacturing a membership or deleting the chat. Plan 07B2B stores ordinary server-readable MVP messages and sends private identifier-only Realtime hints; E2EE remains deferred research, while 07B2C owns the mobile chat experience. General direct messaging, calls, reactions, and typing indicators remain outside the initial backbone.
+The mobile Messages surface presents join requests as persistent structured actionable items backed by canonical participation state; notifications are alerts, and requests do not become free-form chat messages. Project group chat is separate: the first accepted join request transactionally ensures one canonical anchor, with no manual Create Chat action or fixed three-person threshold. Immutable original-Creator attribution, active Co-creator/Co-organizer authority, and canonical membership intervals determine manager/current/historical entitlement; authority revocation removes manager authorization immediately without manufacturing a membership or deleting the chat. Plan 07B2B stores ordinary server-readable MVP messages and sends private identifier-only Realtime hints; E2EE remains deferred research, while 07B2C owns the mobile chat experience. General direct messaging, calls, reactions, and typing indicators remain outside the initial backbone.
 
 An optional meeting URL should be stored or exposed from the project chat. PLANETS should not implement video infrastructure or provider OAuth integrations initially.
 
@@ -195,25 +195,25 @@ The production host, topology, deployment automation, HTTPS/DNS, SMTP, backups, 
 
 ## Deferred alternatives
 
-| Alternative | Why deferred | Reconsider when |
-| --- | --- | --- |
-| Specific production host/VPS and topology | Selection requires current cost, location, capacity, security, and operational evidence | The dedicated self-hosted production-infrastructure phase begins |
-| Supabase Cloud as the permanent production backend | It would reintroduce a managed control-plane dependency that the current direction avoids | A demonstrated requirement outweighs portability and an ADR updates the direction |
-| Firebase SQL Connect | Credible relational alternative, but a newer and more provider-specific application layer | Its ecosystem or generated client workflow offers a clear project advantage |
-| Firestore | Less natural fit for transactional, strongly relational workflows | A separate document/event use case appears |
-| Expo/React Native | Reduces language count but would discard existing Flutter experience | Full web/mobile sharing becomes more important than Flutter continuity |
-| Custom NestJS/Django API | Duplicates many platform capabilities and adds deployment surface | Domain needs can no longer be represented safely through database functions and Edge Functions |
-| Flutter Web for public/admin web | Weaker fit for SEO, conventional document pages, and dense desktop admin tools | A contained internal tool benefits materially from Dart/UI reuse |
-| Retool/Directus/Strapi/react-admin | Adds another authorization and data abstraction | Admin breadth grows beyond a small purpose-built moderation interface |
-| Stream/Sendbird | Extra vendor and cost for a deliberately limited chat model | Chat becomes a major product with advanced messaging requirements |
-| Google Maps/Mapbox/MapLibre UI | Not needed for initial list-first validation | A visual map becomes a tested product requirement |
-| Algolia/Elasticsearch/Meilisearch | PostgreSQL search and indexes should cover the initial corpus | Search quality or scale is measured as insufficient |
-| Redis | No current cache, rate-limit, or distributed-lock requirement | PostgreSQL/platform facilities become inadequate under measured load |
-| Kubernetes or microservices | Operational complexity without current scale or team need | Independent scaling or deployment boundaries are demonstrated |
-| Full offline-first synchronization | Substantial conflict and data-consistency complexity | Field use without reliable connectivity is a core validated requirement |
-| Built-in video calling | Expensive infrastructure unrelated to the first product hypothesis | Video coordination becomes strategically central |
-| Direct payment/donation processing | Business, legal, and accounting behavior is unresolved | The donation model and responsible legal entity are defined |
-| AI matching or moderation | Deterministic taxonomy and human moderation are easier to validate | Data and measured limitations justify ML/LLM support |
+| Alternative                                        | Why deferred                                                                              | Reconsider when                                                                                |
+| -------------------------------------------------- | ----------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| Specific production host/VPS and topology          | Selection requires current cost, location, capacity, security, and operational evidence   | The dedicated self-hosted production-infrastructure phase begins                               |
+| Supabase Cloud as the permanent production backend | It would reintroduce a managed control-plane dependency that the current direction avoids | A demonstrated requirement outweighs portability and an ADR updates the direction              |
+| Firebase SQL Connect                               | Credible relational alternative, but a newer and more provider-specific application layer | Its ecosystem or generated client workflow offers a clear project advantage                    |
+| Firestore                                          | Less natural fit for transactional, strongly relational workflows                         | A separate document/event use case appears                                                     |
+| Expo/React Native                                  | Reduces language count but would discard existing Flutter experience                      | Full web/mobile sharing becomes more important than Flutter continuity                         |
+| Custom NestJS/Django API                           | Duplicates many platform capabilities and adds deployment surface                         | Domain needs can no longer be represented safely through database functions and Edge Functions |
+| Flutter Web for public/admin web                   | Weaker fit for SEO, conventional document pages, and dense desktop admin tools            | A contained internal tool benefits materially from Dart/UI reuse                               |
+| Retool/Directus/Strapi/react-admin                 | Adds another authorization and data abstraction                                           | Admin breadth grows beyond a small purpose-built moderation interface                          |
+| Stream/Sendbird                                    | Extra vendor and cost for a deliberately limited chat model                               | Chat becomes a major product with advanced messaging requirements                              |
+| Google Maps/Mapbox/MapLibre UI                     | Not needed for initial list-first validation                                              | A visual map becomes a tested product requirement                                              |
+| Algolia/Elasticsearch/Meilisearch                  | PostgreSQL search and indexes should cover the initial corpus                             | Search quality or scale is measured as insufficient                                            |
+| Redis                                              | No current cache, rate-limit, or distributed-lock requirement                             | PostgreSQL/platform facilities become inadequate under measured load                           |
+| Kubernetes or microservices                        | Operational complexity without current scale or team need                                 | Independent scaling or deployment boundaries are demonstrated                                  |
+| Full offline-first synchronization                 | Substantial conflict and data-consistency complexity                                      | Field use without reliable connectivity is a core validated requirement                        |
+| Built-in video calling                             | Expensive infrastructure unrelated to the first product hypothesis                        | Video coordination becomes strategically central                                               |
+| Direct payment/donation processing                 | Business, legal, and accounting behavior is unresolved                                    | The donation model and responsible legal entity are defined                                    |
+| AI matching or moderation                          | Deterministic taxonomy and human moderation are easier to validate                        | Data and measured limitations justify ML/LLM support                                           |
 
 ## Architecture decisions still required
 

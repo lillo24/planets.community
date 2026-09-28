@@ -63,9 +63,15 @@ class _ProjectInviteScreenState extends ConsumerState<ProjectInviteScreen> {
     if (!current && state.phase != ProjectDelegateLoadPhase.loading) {
       Future<void>.microtask(() => _load(widget.token));
     }
+    final requestedRole = current
+        ? state.preview?.requestedAuthorityRole
+        : null;
+    final title = requestedRole == null
+        ? l10n.projectInviteTitle
+        : l10n.projectInviteRoleTitle(_roleLabel(l10n, requestedRole));
 
     return Scaffold(
-      appBar: AppBar(title: Text(l10n.projectInviteTitle)),
+      appBar: AppBar(title: Text(title)),
       body: SafeArea(
         child: !current || state.phase == ProjectDelegateLoadPhase.loading
             ? LoadingState(message: l10n.participationLoading)
@@ -87,6 +93,13 @@ class _ProjectInviteScreenState extends ConsumerState<ProjectInviteScreen> {
         preview?.projectKind == null) {
       return _UnavailableInvite(onRetry: () => _load(widget.token));
     }
+    final roleLabel = _roleLabel(
+      l10n,
+      preview!.requestedAuthorityRole ??
+          ProjectDelegatedAuthorityRole.coOrganizer,
+    );
+    final issuerDisplayName =
+        preview.issuerDisplayName ?? preview.ownerDisplayName;
     return ListView(
       padding: const EdgeInsets.all(AppSpacing.large),
       children: [
@@ -97,9 +110,9 @@ class _ProjectInviteScreenState extends ConsumerState<ProjectInviteScreen> {
         ),
         const SizedBox(height: AppSpacing.medium),
         Text(
-          preview!.ownerDisplayName == null
-              ? l10n.projectInviteFromGeneric
-              : l10n.projectInviteFromOwner(preview.ownerDisplayName!),
+          issuerDisplayName == null
+              ? l10n.projectInviteFromGenericRole(roleLabel)
+              : l10n.projectInviteFromActor(issuerDisplayName, roleLabel),
           textAlign: TextAlign.center,
         ),
         const SizedBox(height: AppSpacing.small),
@@ -134,6 +147,15 @@ class _ProjectInviteScreenState extends ConsumerState<ProjectInviteScreen> {
       ],
     );
   }
+
+  String _roleLabel(
+    AppLocalizations l10n,
+    ProjectDelegatedAuthorityRole role,
+  ) => switch (role) {
+    ProjectDelegatedAuthorityRole.coCreator => l10n.projectInviteCoCreatorRole,
+    ProjectDelegatedAuthorityRole.coOrganizer =>
+      l10n.projectInviteCoOrganizerRole,
+  };
 
   Widget _action(
     BuildContext context,

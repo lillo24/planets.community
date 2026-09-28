@@ -16,7 +16,9 @@ describe("Project delegate invitation server preview", () => {
           project_kind: "one_time",
           project_title: "Community mural",
           owner_display_name: "Casey",
+          issuer_display_name: "Morgan",
           expires_at: "2030-01-01T12:00:00Z",
+          requested_authority_role: "co_creator",
         },
       ],
       error: null,
@@ -27,6 +29,8 @@ describe("Project delegate invitation server preview", () => {
     ).resolves.toMatchObject({
       isAvailable: true,
       projectTitle: "Community mural",
+      requestedAuthorityRole: "co_creator",
+      issuerDisplayName: "Morgan",
     });
     expect(rpc).toHaveBeenCalledOnce();
     expect(rpc).toHaveBeenCalledWith("preview_project_delegate_invitation", {

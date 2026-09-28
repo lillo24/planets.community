@@ -50,7 +50,7 @@ values (
 
 insert into public.project_delegate_invitations (
   id, project_id, owner_profile_id, token_digest, status, created_at,
-  expires_at, accepted_at, accepted_by_profile_id
+  expires_at, accepted_at, accepted_by_profile_id, issuer_profile_id
 )
 values (
   'e8400000-0000-4000-8000-000000000001',
@@ -61,11 +61,12 @@ values (
   statement_timestamp() - interval '1 day',
   statement_timestamp() + interval '6 days',
   statement_timestamp(),
-  'e8100000-0000-4000-8000-000000000002'
+  'e8100000-0000-4000-8000-000000000002',
+  'e8100000-0000-4000-8000-000000000001'
 );
 insert into public.project_delegates (
   id, project_id, owner_profile_id, delegate_profile_id, invitation_id,
-  delegated_at
+  delegated_at, granted_by_profile_id
 )
 values (
   'e8500000-0000-4000-8000-000000000001',
@@ -77,7 +78,8 @@ values (
     select invitation.accepted_at
     from public.project_delegate_invitations as invitation
     where invitation.id = 'e8400000-0000-4000-8000-000000000001'
-  )
+  ),
+  'e8100000-0000-4000-8000-000000000001'
 );
 
 set local role authenticated;
@@ -114,8 +116,8 @@ select is(
     'e8100000-0000-4000-8000-000000000001',
     'e8200000-0000-4000-8000-000000000001'
   ),
-  'owner',
-  'the immutable creator resolves as owner'
+  'creator',
+  'the immutable original Creator resolves as creator'
 );
 
 select set_config(
@@ -144,16 +146,16 @@ select is(
     'e8100000-0000-4000-8000-000000000002',
     'e8200000-0000-4000-8000-000000000001'
   ),
-  'delegate',
-  'an active Proposal delegate resolves as delegate'
+  'co_organizer',
+  'an active Proposal delegate resolves as Co-organizer'
 );
 select is(
   public.get_own_project_management_role(
     'e8100000-0000-4000-8000-000000000002',
     'e8300000-0000-4000-8000-000000000001'
   ),
-  'delegate',
-  'an active Tavolo delegate resolves as delegate'
+  'co_organizer',
+  'an active Tavolo delegate resolves as Co-organizer'
 );
 select results_eq(
   $$

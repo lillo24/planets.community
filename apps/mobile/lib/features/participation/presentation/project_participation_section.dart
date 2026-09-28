@@ -69,7 +69,7 @@ class ProjectParticipationSection extends ConsumerWidget {
 
     if (session.phase == AuthSessionPhase.ready &&
         role != null &&
-        role != ProjectManagementRole.owner &&
+        role != ProjectManagementRole.creator &&
         profileId != null &&
         ownState.expectedProfileId != profileId &&
         !ownState.isBusy) {
@@ -169,7 +169,7 @@ class ProjectParticipationSection extends ConsumerWidget {
               ),
             ),
             if (session.phase == AuthSessionPhase.ready &&
-                role != ProjectManagementRole.owner &&
+                role != ProjectManagementRole.creator &&
                 profileId != null)
               IconButton(
                 key: Key('participation-refresh-$projectId'),
@@ -242,10 +242,10 @@ class ProjectParticipationSection extends ConsumerWidget {
         ),
       ];
     }
-    if (role == ProjectManagementRole.owner) {
+    if (role == ProjectManagementRole.creator) {
       return [_manageProjectButton(context, l10n)];
     }
-    final delegateActions = role == ProjectManagementRole.delegate
+    final delegateActions = role?.isDelegated == true
         ? <Widget>[
             _manageProjectButton(context, l10n),
             const SizedBox(height: AppSpacing.small),
@@ -373,7 +373,7 @@ class ProjectParticipationSection extends ConsumerWidget {
           projectKind: projectKind,
         );
     final role = ref.read(projectManagementRoleProvider).role;
-    if (role != ProjectManagementRole.owner) {
+    if (role != ProjectManagementRole.creator) {
       await ref.read(ownParticipationProvider.notifier).load(profileId);
     }
   }

@@ -27,12 +27,31 @@ Accepted Scambio-Dona requests now atomically create both the existing exchange-
 
 The migrations establish database infrastructure, identity/audit/outbox primitives, profiles, Proposal/Tavolo discovery, standalone Scambio-Dona resource listings, private request episodes, and immutable two-leg exchange agreements, Project-owned plain-text resource needs, private join-request contribution selections, immutable three-way acceptance decisions, accepted-membership commitment sets, one-time Project actual-contribution attribution, shared participation, the canonical notification domain, Project-chat message-time notification/push fan-out, and the private provider-independent push installation/delivery protocol. Project needs attach to the shared Project identity; join-request attempts may reference their open IDs and current Proposal skill requirements without becoming Scambio-Dona listings. Selection, acceptance-decision, and commitment tables are fail-closed: request creation is atomic, selected-request acceptance requires exact `needed`/`already_found`/`extra` triage, and only needed plus extra seed the separate membership-episode desired set. Commitment replacement retains ended history without rewriting acceptance history, validates only new IDs against current Proposal/open-need options, serializes with membership and option changes, and emits no notification. After an ended published one-time Proposal, actual attribution derives automatically from the commitments of a membership active at the exact end instant; creator corrections are stored only as sparse overrides plus an independent effort marker, use full-set compare-and-swap replacement, and never derive from live coverage history. The focused real-OTP verifier is `npm run project:actual-contributions:verify:local`, and the full database gate includes it before generated-type drift validation. Resource listings expose sanitized rough-location public RPCs and only a derived pending-plus-coordination-open-accepted interest count. Their request rows remain RPC-only; acceptance creates one agreement anchor whose immutable current/pending terms use a required owner give/lend leg and optional requester none/give/lend leg. Actor-authorized append-only milestones freeze terms at handoff, automatically complete fully confirmed give/lend legs, and retain accepted coordination after listing closure. Completion or pre-handoff cancellation closes request coordination and permits a later episode without rewriting history. Agreement terms, dates, notes, and counterparties remain private; audit/outbox transitions contain identifiers only and project no notifications or conversations. These flows are covered by `npm run resource:listings:requests:verify:local` and `npm run resource:agreements:verify:local`; `donate`/`exchange` remain compatibility discovery intents rather than rigid agreement semantics. The push protocol owns recipient jobs, one-time installation targets, expiring leases, safe append-only attempts, retries, and terminal aggregation without provider network calls. Its token-returning worker routines remain in the unexposed `private` schema and are available only to a direct-database `service_role`; that role has no table privileges. Tests prove security properties from a clean replay, including owner isolation, sanitized public reads, Scambio-Dona request/agreement lifecycle and concurrency, Project-need, request-selection, acceptance-triage, membership-commitment and actual-attribution lifecycle/concurrency, recipient-only notification APIs, private provider-token handling, channel-independent multi-recipient projection, worker concurrency/recovery, sender exclusion, membership-time targeting, and per-consumer outbox idempotency. Contributor commands and the checklist for future objects live in the [database development guide](../docs/development/database.md).
 
-The 07C2A migration adds shared-Project delegates without creating participant memberships or changing immutable ownership. Owner-only 256-bit bearer invitations expire after exactly seven days, retain only SHA-256 digests, serialize first-winner acceptance, and support same-accepter retry. Active delegates use manager-named participation, contribution, private-request-chat, group-chat, Needs, and meeting boundaries; creator-named compatibility calls and Project authoring/lifecycle remain owner-only. Revocation removes manager and private Realtime authorization on the next check. Run `npm run project:delegates:verify:local` for the real-OTP race, secrecy, lifecycle, and revocation evidence.
+The 07C2A migration introduced shared-Project Co-organizers without creating
+participant memberships or changing immutable original-Creator attribution.
+Its Creator-issued 256-bit bearer invitations expire after exactly seven days,
+retain only SHA-256 digests, serialize first-winner acceptance, and support
+same-accepter retry. Active Co-organizers use the existing operational manager
+boundaries. Run `npm run project:delegates:verify:local` for the real-OTP race,
+secrecy, lifecycle, and revocation evidence.
 
 The 07C2B read migration adds two expected-identity-bound projections without
-expanding authority. `get_own_project_management_role` reports only
-`owner`/`delegate`/`none` for the current profile and one exact Project.
+expanding data visibility. `get_own_project_management_role` reports only
+`creator`/`co_creator`/`co_organizer`/`none` for the current profile and one
+exact Project.
 `list_own_delegated_projects` returns the current profile's active non-draft
 Proposal/Tavolo navigation cards in one call. Neither read exposes invite
 tokens, delegate lists, participant data, draft owner content, or exact
 location. Focused pgTAP coverage lives in tests 065 and 066.
+
+The 07C2C migration evolves the same delegate tables rather than adding a
+second authority source. Existing relationships and pending links backfill as
+Co-organizer; invitations record the actual issuer, relationships record the
+actual grantor and initial/current role, and `project_delegate_role_changes`
+retains promotions/demotions. Creator/Co-creator structural RPCs list, invite,
+revoke, promote, and demote. Co-creators may edit already-published Proposals
+and published/paused Tavoli and use their existing non-destructive lifecycle
+transitions under the same validation rules as the Creator. Draft creation and
+publication remain original-Creator-only. Tests 068 and 069 cover the role
+model, provenance, stale issuer authority, lifecycle access, and participation
+independence.

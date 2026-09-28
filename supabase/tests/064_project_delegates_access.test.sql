@@ -169,7 +169,7 @@ select throws_ok(
     )
   $$,
   '55000',
-  'A Project owner cannot accept their own delegate invitation.',
+  'The original Project Creator cannot accept delegated authority.',
   'an owner cannot consume their own invite'
 );
 
@@ -322,7 +322,7 @@ select throws_ok(
     )
   $$,
   '42501',
-  'The delegate invitation is unavailable.',
+  'The delegated-authority invitation is unavailable.',
   'a consumed invite cannot be claimed by another profile'
 );
 select throws_ok(
@@ -369,8 +369,8 @@ select throws_ok(
     )
   $$,
   '42501',
-  'Only the Project owner can create delegate invitations.',
-  'a delegate cannot invite another delegate'
+  'Only a current Project structural actor can create authority invitations.',
+  'a Co-organizer cannot invite another delegated actor'
 );
 select throws_ok(
   $$
@@ -380,8 +380,8 @@ select throws_ok(
     )
   $$,
   '42501',
-  'The delegate invitation is unavailable.',
-  'a delegate cannot revoke an owner invitation'
+  'The delegated-authority invitation is unavailable.',
+  'a Co-organizer cannot revoke a Creator invitation'
 );
 
 select set_config(

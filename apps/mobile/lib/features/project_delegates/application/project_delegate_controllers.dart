@@ -463,11 +463,15 @@ ProjectDelegateFailureKind mapProjectDelegateFailure(Object error) {
   }
   if (error is PostgrestException) {
     if (error.message ==
-        'A Project owner cannot accept their own delegate invitation.') {
+            'A Project owner cannot accept their own delegate invitation.' ||
+        error.message ==
+            'The original Project Creator cannot accept delegated authority.') {
       return ProjectDelegateFailureKind.ownerSelfAccept;
     }
     if (error.message ==
-        'This profile is already an active delegate for the Project.') {
+            'This profile is already an active delegate for the Project.' ||
+        error.message ==
+            'This profile already has active delegated authority for the Project.') {
       return ProjectDelegateFailureKind.alreadyDelegate;
     }
     return switch (error.code) {

@@ -23,7 +23,9 @@ const preview = {
   projectKind: "one_time" as const,
   projectTitle: "Community mural",
   ownerDisplayName: "Casey",
+  issuerDisplayName: "Casey",
   expiresAt: "2030-01-01T12:00:00Z",
+  requestedAuthorityRole: "co_organizer" as const,
 };
 
 describe("ProjectInviteAction", () => {

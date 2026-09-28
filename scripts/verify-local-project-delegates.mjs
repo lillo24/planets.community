@@ -344,7 +344,7 @@ async function verifyProjectDelegates() {
   }
 
   console.log(
-    "Confirmed secure preview, first-winner invite races, same-user retry, no fake membership, owner-only role management, delegate participation/chat/Realtime/meeting access, immediate revocation, exact expiry, lifecycle fail-closed behavior, and identifier-only events.",
+    "Confirmed secure preview, first-winner invite races, same-user retry, no fake membership, the structural role-management boundary, delegate participation/chat/Realtime/meeting access, immediate revocation, exact expiry, lifecycle fail-closed behavior, and identifier-only events.",
   );
 }
 

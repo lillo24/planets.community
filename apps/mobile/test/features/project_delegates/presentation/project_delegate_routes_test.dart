@@ -55,6 +55,7 @@ void main() {
       );
       await tester.pumpAndSettle();
       expect(find.text('Community mural'), findsOneWidget);
+      expect(find.text('Co-creator invitation'), findsOneWidget);
       tester
           .widget<FilledButton>(find.byKey(const Key('project-invite-sign-in')))
           .onPressed!();
@@ -227,7 +228,10 @@ ProjectDelegateInvitePreview projectInvitePreviewFixture() =>
       projectId: '00000000-0000-4000-8000-000000000001',
       projectKind: ProjectKind.oneTime,
       projectTitle: 'Community mural',
+      ownerDisplayName: 'Casey',
+      issuerDisplayName: 'Morgan',
       expiresAt: DateTime.utc(2030),
+      requestedAuthorityRole: ProjectDelegatedAuthorityRole.coCreator,
     );
 
 Widget _routerApp(GoRouter router) => MaterialApp.router(

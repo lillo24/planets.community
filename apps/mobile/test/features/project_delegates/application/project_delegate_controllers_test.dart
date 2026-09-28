@@ -14,7 +14,7 @@ import '../../../support/fake_project_delegates.dart';
 void main() {
   test('loads exact management role and clears it on account switch', () async {
     final gateway = FakeProjectDelegateGateway()
-      ..role = ProjectManagementRole.delegate;
+      ..role = ProjectManagementRole.coOrganizer;
     final session = _readyContainer(gateway);
     addTearDown(session.dispose);
 
@@ -27,7 +27,7 @@ void main() {
         );
     expect(
       session.container.read(projectManagementRoleProvider).role,
-      ProjectManagementRole.delegate,
+      ProjectManagementRole.coOrganizer,
     );
 
     session.container

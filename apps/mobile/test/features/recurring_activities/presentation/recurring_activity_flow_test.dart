@@ -343,7 +343,7 @@ Future<ProviderContainer> _pump(
         projectDelegateGatewayProvider.overrideWithValue(
           FakeProjectDelegateGateway()
             ..role = signedIn
-                ? ProjectManagementRole.owner
+                ? ProjectManagementRole.creator
                 : ProjectManagementRole.none,
         ),
         projectResourceNeedsGatewayProvider.overrideWithValue(

@@ -26,7 +26,9 @@ select columns_are(
     'accepted_at',
     'accepted_by_profile_id',
     'revoked_at',
-    'revoked_by_profile_id'
+    'revoked_by_profile_id',
+    'issuer_profile_id',
+    'requested_authority_role'
   ],
   'invites persist only lifecycle metadata and a token digest'
 );
@@ -41,7 +43,10 @@ select columns_are(
     'invitation_id',
     'delegated_at',
     'revoked_at',
-    'revoked_by_profile_id'
+    'revoked_by_profile_id',
+    'granted_by_profile_id',
+    'initial_authority_role',
+    'authority_role'
   ],
   'delegate history is distinct from participation membership'
 );

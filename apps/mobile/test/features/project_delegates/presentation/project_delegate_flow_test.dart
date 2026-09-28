@@ -29,7 +29,7 @@ void main() {
     tester,
   ) async {
     final gateway = FakeProjectDelegateGateway()
-      ..role = ProjectManagementRole.owner;
+      ..role = ProjectManagementRole.creator;
     final session = _readyContainer(gateway);
     addTearDown(session.dispose);
     await tester.pumpWidget(
@@ -58,7 +58,7 @@ void main() {
     tester,
   ) async {
     final gateway = FakeProjectDelegateGateway()
-      ..role = ProjectManagementRole.delegate;
+      ..role = ProjectManagementRole.coOrganizer;
     final session = _readyContainer(gateway);
     addTearDown(session.dispose);
     await tester.pumpWidget(
@@ -68,6 +68,32 @@ void main() {
           const ProjectManageScreen(
             projectId: 'project-1',
             projectKind: ProjectKind.recurring,
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(
+      find.byKey(const Key('project-manage-participation')),
+      findsOneWidget,
+    );
+    expect(find.byKey(const Key('project-manage-coorganizers')), findsNothing);
+  });
+
+  testWidgets('Co-creator management hub remains operational and buildable', (
+    tester,
+  ) async {
+    final gateway = FakeProjectDelegateGateway()
+      ..role = ProjectManagementRole.coCreator;
+    final session = _readyContainer(gateway);
+    addTearDown(session.dispose);
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: session.container,
+        child: _localized(
+          const ProjectManageScreen(
+            projectId: 'project-1',
+            projectKind: ProjectKind.oneTime,
           ),
         ),
       ),
@@ -216,7 +242,7 @@ void main() {
         findsNothing,
       );
 
-      delayedRole.complete(ProjectManagementRole.delegate);
+      delayedRole.complete(ProjectManagementRole.coOrganizer);
       await tester.pumpAndSettle();
       await tester.ensureVisible(
         find.byKey(const Key('participation-manage-proposal-1')),
@@ -237,7 +263,7 @@ void main() {
     tester,
   ) async {
     final gateway = FakeProjectDelegateGateway()
-      ..role = ProjectManagementRole.delegate;
+      ..role = ProjectManagementRole.coOrganizer;
     final participation = FakeParticipationGateway()
       ..ownRequests = [ownJoinRequestFixture()];
     final proposal = FakeProposalGateway()
@@ -274,7 +300,7 @@ void main() {
     tester,
   ) async {
     final gateway = FakeProjectDelegateGateway()
-      ..role = ProjectManagementRole.delegate;
+      ..role = ProjectManagementRole.coOrganizer;
     final participation = FakeParticipationGateway()
       ..ownMemberships = [ownMembershipFixture()]
       ..meetingDetails = meetingDetailsFixture();
@@ -317,14 +343,14 @@ void main() {
       find.byKey(const Key('participation-join-proposal-1')),
       findsOneWidget,
     );
-    expect(gateway.role, ProjectManagementRole.delegate);
+    expect(gateway.role, ProjectManagementRole.coOrganizer);
   });
 
   testWidgets('revoked delegate keeps participant actions and location', (
     tester,
   ) async {
     final gateway = FakeProjectDelegateGateway()
-      ..role = ProjectManagementRole.delegate;
+      ..role = ProjectManagementRole.coOrganizer;
     final participation = FakeParticipationGateway()
       ..ownMemberships = [ownMembershipFixture()]
       ..meetingDetails = meetingDetailsFixture();

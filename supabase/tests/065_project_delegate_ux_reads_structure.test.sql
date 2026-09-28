@@ -19,7 +19,7 @@ select function_returns(
   'get_own_project_management_role',
   array['uuid', 'uuid'],
   'text',
-  'the management-role read returns only owner, delegate, or none'
+  'the management-role read distinguishes Creator and both delegated roles'
 );
 select function_privs_are(
   'public',

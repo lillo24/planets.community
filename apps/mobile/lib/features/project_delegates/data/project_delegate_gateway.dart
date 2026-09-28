@@ -180,7 +180,9 @@ class SupabaseProjectDelegateGateway implements ProjectDelegateGateway {
       projectKind: ProjectKind.fromWire(_string(row, 'project_kind')),
       projectTitle: _string(row, 'project_title'),
       ownerDisplayName: _optionalString(row, 'owner_display_name'),
+      issuerDisplayName: _optionalString(row, 'issuer_display_name'),
       expiresAt: _date(row, 'expires_at'),
+      requestedAuthorityRole: _authorityRole(row, 'requested_authority_role'),
     );
   }
 
@@ -217,6 +219,7 @@ ProjectDelegate _delegate(dynamic value) {
     profileId: _string(row, 'delegate_profile_id'),
     displayName: _string(row, 'delegate_display_name'),
     delegatedAt: _date(row, 'delegated_at'),
+    authorityRole: _authorityRole(row, 'authority_role'),
   );
 }
 
@@ -226,6 +229,7 @@ ProjectDelegateInvitation _invitation(dynamic value) {
     id: _string(row, 'invitation_id'),
     createdAt: _date(row, 'created_at'),
     expiresAt: _date(row, 'expires_at'),
+    requestedAuthorityRole: _authorityRole(row, 'requested_authority_role'),
   );
 }
 
@@ -237,7 +241,20 @@ DelegatedProject _delegatedProject(dynamic value) {
     title: _string(row, 'project_title'),
     status: _string(row, 'project_status'),
     delegatedAt: _date(row, 'delegated_at'),
+    authorityRole: _authorityRole(row, 'authority_role'),
   );
+}
+
+ProjectDelegatedAuthorityRole _authorityRole(
+  Map<String, dynamic> row,
+  String key,
+) {
+  final value = row[key];
+  if (value == null) return ProjectDelegatedAuthorityRole.coOrganizer;
+  if (value is! String || value.isEmpty) {
+    throw FormatException('Project delegate $key was malformed.');
+  }
+  return ProjectDelegatedAuthorityRole.fromWire(value);
 }
 
 Map<String, dynamic> _row(dynamic value) {

@@ -477,8 +477,10 @@ export type Database = {
           created_at: string
           expires_at: string
           id: string
+          issuer_profile_id: string
           owner_profile_id: string
           project_id: string
+          requested_authority_role: string
           revoked_at: string | null
           revoked_by_profile_id: string | null
           status: string
@@ -490,8 +492,10 @@ export type Database = {
           created_at?: string
           expires_at: string
           id?: string
+          issuer_profile_id: string
           owner_profile_id: string
           project_id: string
+          requested_authority_role?: string
           revoked_at?: string | null
           revoked_by_profile_id?: string | null
           status?: string
@@ -503,8 +507,10 @@ export type Database = {
           created_at?: string
           expires_at?: string
           id?: string
+          issuer_profile_id?: string
           owner_profile_id?: string
           project_id?: string
+          requested_authority_role?: string
           revoked_at?: string | null
           revoked_by_profile_id?: string | null
           status?: string
@@ -514,6 +520,13 @@ export type Database = {
           {
             foreignKeyName: "project_delegate_invitations_accepted_by_profile_id_fkey"
             columns: ["accepted_by_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_delegate_invitations_issuer_profile_id_fkey"
+            columns: ["issuer_profile_id"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
@@ -534,11 +547,62 @@ export type Database = {
           },
         ]
       }
+      project_delegate_role_changes: {
+        Row: {
+          changed_at: string
+          changed_by_profile_id: string
+          delegate_id: string
+          delegate_profile_id: string
+          from_authority_role: string
+          id: string
+          project_id: string
+          to_authority_role: string
+        }
+        Insert: {
+          changed_at?: string
+          changed_by_profile_id: string
+          delegate_id: string
+          delegate_profile_id: string
+          from_authority_role: string
+          id?: string
+          project_id: string
+          to_authority_role: string
+        }
+        Update: {
+          changed_at?: string
+          changed_by_profile_id?: string
+          delegate_id?: string
+          delegate_profile_id?: string
+          from_authority_role?: string
+          id?: string
+          project_id?: string
+          to_authority_role?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_delegate_role_changes_changed_by_profile_id_fkey"
+            columns: ["changed_by_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_delegate_role_changes_delegate_identity_fkey"
+            columns: ["delegate_id", "project_id", "delegate_profile_id"]
+            isOneToOne: false
+            referencedRelation: "project_delegates"
+            referencedColumns: ["id", "project_id", "delegate_profile_id"]
+          },
+        ]
+      }
       project_delegates: {
         Row: {
+          authority_role: string
           delegate_profile_id: string
           delegated_at: string
+          granted_by_profile_id: string
           id: string
+          initial_authority_role: string
           invitation_id: string
           owner_profile_id: string
           project_id: string
@@ -546,9 +610,12 @@ export type Database = {
           revoked_by_profile_id: string | null
         }
         Insert: {
+          authority_role?: string
           delegate_profile_id: string
           delegated_at: string
+          granted_by_profile_id: string
           id?: string
+          initial_authority_role?: string
           invitation_id: string
           owner_profile_id: string
           project_id: string
@@ -556,9 +623,12 @@ export type Database = {
           revoked_by_profile_id?: string | null
         }
         Update: {
+          authority_role?: string
           delegate_profile_id?: string
           delegated_at?: string
+          granted_by_profile_id?: string
           id?: string
+          initial_authority_role?: string
           invitation_id?: string
           owner_profile_id?: string
           project_id?: string
@@ -569,6 +639,13 @@ export type Database = {
           {
             foreignKeyName: "project_delegates_delegate_profile_id_fkey"
             columns: ["delegate_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_delegates_granted_by_profile_id_fkey"
+            columns: ["granted_by_profile_id"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
@@ -2172,6 +2249,14 @@ export type Database = {
         Args: { p_agreement_id: string; p_expected_profile_id: string }
         Returns: string
       }
+      change_project_delegate_role: {
+        Args: {
+          p_authority_role: string
+          p_delegate_id: string
+          p_expected_structural_profile_id: string
+        }
+        Returns: string
+      }
       check_resource_exchange_pending_loan_availability: {
         Args: {
           p_agreement_id: string
@@ -2203,14 +2288,27 @@ export type Database = {
         Args: { p_expected_owner_profile_id: string; p_listing_id: string }
         Returns: string
       }
-      create_project_delegate_invitation: {
-        Args: { p_expected_owner_profile_id: string; p_project_id: string }
-        Returns: {
-          expires_at: string
-          invitation_id: string
-          invite_token: string
-        }[]
-      }
+      create_project_delegate_invitation:
+        | {
+            Args: { p_expected_owner_profile_id: string; p_project_id: string }
+            Returns: {
+              expires_at: string
+              invitation_id: string
+              invite_token: string
+            }[]
+          }
+        | {
+            Args: {
+              p_expected_owner_profile_id: string
+              p_project_id: string
+              p_requested_authority_role: string
+            }
+            Returns: {
+              expires_at: string
+              invitation_id: string
+              invite_token: string
+            }[]
+          }
       create_project_resource_need: {
         Args: {
           p_details?: string
@@ -2623,6 +2721,7 @@ export type Database = {
       list_own_delegated_projects: {
         Args: { p_expected_profile_id: string }
         Returns: {
+          authority_role: string
           delegated_at: string
           project_id: string
           project_kind: string
@@ -3166,6 +3265,9 @@ export type Database = {
           created_at: string
           expires_at: string
           invitation_id: string
+          issuer_display_name: string
+          issuer_profile_id: string
+          requested_authority_role: string
           revoked_at: string
           status: string
         }[]
@@ -3173,10 +3275,13 @@ export type Database = {
       list_project_delegates_for_owner: {
         Args: { p_expected_owner_profile_id: string; p_project_id: string }
         Returns: {
+          authority_role: string
           delegate_display_name: string
           delegate_id: string
           delegate_profile_id: string
           delegated_at: string
+          granted_by_display_name: string
+          granted_by_profile_id: string
         }[]
       }
       list_project_join_requests: {
@@ -3430,10 +3535,12 @@ export type Database = {
         Returns: {
           expires_at: string
           is_available: boolean
+          issuer_display_name: string
           owner_display_name: string
           project_id: string
           project_kind: string
           project_title: string
+          requested_authority_role: string
         }[]
       }
       process_notification_outbox_batch: {

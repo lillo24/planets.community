@@ -1,6 +1,7 @@
 # Project delegate invite links
 
-PLANETS uses one canonical bearer URL for Project co-organizer invitations:
+PLANETS uses one canonical bearer URL for Project Co-organizer and Co-creator
+invitations:
 
 ```text
 https://planets.community/invite/project/<43-character-token>
@@ -13,7 +14,10 @@ authenticated action backed by the canonical database RPC.
 
 ## User and navigation flow
 
-An owner opens Project detail → Manage project → Co-organizers, creates an
+The current 07C2B UI lets the original Creator open Project detail → Manage
+project → Co-organizers and create a Co-organizer invitation. The 07C2C domain
+also lets a Creator or active Co-creator issue either role; the full role
+selection/management UI is intentionally deferred to the following UX task. An actor creates an
 invitation, and may copy its URL or open the native share sheet. The raw token
 is returned once and exists only in the immediate result surface. Pending
 invitation history contains dates and status, never the token; a lost link must
@@ -26,11 +30,12 @@ surfaces require an explicit Accept and then navigate to the Proposal or Tavolo
 detail. Return destinations remain subject to the existing internal-path
 sanitizer; external and encoded-open-redirect values are rejected.
 
-Owner and active-delegate Project detail resolve the signed-in profile's exact
-role before rendering private actions. Both roles receive Manage project and
-protected meeting access; only the owner receives Co-organizers management or
-existing authoring/lifecycle actions. My Proposals and My Tavoli show separate
-Created by you and Co-organizing sections.
+Project detail resolves the signed-in profile's exact
+creator/co_creator/co_organizer/none role before rendering private actions. All
+three manager roles receive operational Manage project and protected meeting
+access. Creator and Co-creator are structurally authorized in the backend;
+Co-organizer is not. My Proposals and My Tavoli keep owned and delegated
+Projects separate, and delegated cards retain the caller's exact role.
 
 ## Browser privacy controls
 
@@ -111,14 +116,14 @@ required before claiming Universal Links are production-verified.
 
 ## Manual invite QA
 
-- As an owner, create an invite, copy it, and invoke the system share sheet
+- As the Creator, create an invite, copy it, and invoke the system share sheet
   (WhatsApp is an ordinary share target).
 - Fetch or preview the URL and confirm the invitation remains pending.
 - On mobile and web, confirm signed-out Auth and incomplete-profile completion
   return to the same invite before explicit acceptance.
-- Accept as the recipient, confirm the owner sees the new Co-organizer, and
+- Accept as the recipient, confirm the Creator sees the new Co-organizer, and
   confirm the recipient can rediscover and manage the Project.
-- Confirm delegate cards expose no owner-only edit/lifecycle controls and that
+- Confirm Co-organizer cards expose no structural edit/lifecycle controls and that
   an independent participant membership remains separate.
 - Revoke a pending invite while its preview is open and confirm Accept fails
   safely. Repeat for expiry, a competing accepter, an owner opening their own

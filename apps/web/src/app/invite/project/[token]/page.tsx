@@ -18,7 +18,7 @@ import { previewProjectDelegateInvitation } from "@/features/project-delegates/p
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 export const metadata: Metadata = {
-  title: "Co-organizer invitation | PLANETS",
+  title: "Project authority invitation | PLANETS",
   robots: { index: false, follow: false, noarchive: true },
 };
 
@@ -38,8 +38,8 @@ export default async function ProjectDelegateInvitePage({
           <CardHeader>
             <CardTitle id="invite-title">Invitation unavailable</CardTitle>
             <CardDescription>
-              This invitation can&apos;t be used. Ask the Project owner for a
-              new link.
+              This invitation can&apos;t be used. Ask the Project Creator or a
+              Co-creator for a new link.
             </CardDescription>
           </CardHeader>
           <CardFooter>
@@ -51,11 +51,23 @@ export default async function ProjectDelegateInvitePage({
       ) : (
         <Card className="w-full" aria-labelledby="invite-title">
           <CardHeader>
-            <CardTitle id="invite-title">Co-organizer invitation</CardTitle>
+            <CardTitle id="invite-title">
+              {preview.requestedAuthorityRole === "co_creator"
+                ? "Co-creator invitation"
+                : "Co-organizer invitation"}
+            </CardTitle>
             <CardDescription>
-              {preview.ownerDisplayName
-                ? `${preview.ownerDisplayName} invited you to help organize:`
-                : "You've been invited to help organize:"}
+              {preview.issuerDisplayName
+                ? `${preview.issuerDisplayName} invited you to become a ${
+                    preview.requestedAuthorityRole === "co_creator"
+                      ? "Co-creator"
+                      : "Co-organizer"
+                  }:`
+                : `You've been invited to become a ${
+                    preview.requestedAuthorityRole === "co_creator"
+                      ? "Co-creator"
+                      : "Co-organizer"
+                  }:`}
             </CardDescription>
           </CardHeader>
           <CardContent className="grid gap-3">

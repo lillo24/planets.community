@@ -109,7 +109,7 @@ select is(
     'e9100000-0000-4000-8000-000000000002',
     'e9200000-0000-4000-8000-000000000001'
   ),
-  'delegate',
+  'co_organizer',
   'a current participant retains the independent delegate role'
 );
 select is(
@@ -228,7 +228,7 @@ select is(
     'e9100000-0000-4000-8000-000000000002',
     'e9200000-0000-4000-8000-000000000001'
   ),
-  'delegate',
+  'co_organizer',
   'voluntary participant exit preserves management role'
 );
 select lives_ok(

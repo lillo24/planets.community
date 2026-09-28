@@ -27,7 +27,9 @@ describe("Project delegate invite route", () => {
       projectKind: "one_time",
       projectTitle: "Community mural",
       ownerDisplayName: "Casey",
+      issuerDisplayName: "Morgan",
       expiresAt: "2030-01-01T12:00:00Z",
+      requestedAuthorityRole: "co_creator",
     });
     const { default: Page } = await import("@/app/invite/project/[token]/page");
     render(
@@ -38,7 +40,8 @@ describe("Project delegate invite route", () => {
     );
 
     expect(screen.getByText("Community mural")).toBeVisible();
-    expect(screen.getByText(/Casey invited you/u)).toBeVisible();
+    expect(screen.getByText("Co-creator invitation")).toBeVisible();
+    expect(screen.getByText(/Morgan invited you/u)).toBeVisible();
     expect(
       screen.getByRole("button", { name: "Accept invitation" }),
     ).toBeVisible();
