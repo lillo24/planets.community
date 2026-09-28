@@ -187,6 +187,14 @@ class _ProfileBody extends StatelessWidget {
                 icon: const Icon(Icons.flag_outlined),
                 label: Text(l10n.moderationOwnReportsAction),
               ),
+              const SizedBox(height: AppSpacing.small),
+              OutlinedButton.icon(
+                key: const Key('profile-corroboration-requests-button'),
+                onPressed: () =>
+                    context.go(ModerationRoutes.corroborationRequests),
+                icon: const Icon(Icons.fact_check_outlined),
+                label: Text(l10n.corroborationRequestsAction),
+              ),
             ],
           ),
         ),

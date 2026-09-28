@@ -630,6 +630,19 @@ private tables have RLS enabled and no API-role table privileges. Review state
 uses compare-and-swap versions and permits received → under review → completed,
 plus an explicit audited completed → under review reopen.
 
+Plan 09A2A adds one private group-corroboration evidence path for qualifying
+Project-context person/conduct cases. The Project creator and accepted
+memberships whose half-open participation interval contains case creation are
+snapshotted in the report transaction, excluding the reporter and subject.
+Later joins, departures, case completion, and reopen do not rewrite that
+cohort. Each invitee can read the first reporter explanation without reporter
+identity and submit one immutable `agree`, `disagree`, or `unsure` response
+with an optional bounded explanation. Invitees never receive peer responses or
+aggregates; only current moderation staff receive responder identity, choice,
+explanation, timestamp, and neutral counts. Project membership is an
+eligibility proxy, not evidence of physical attendance. Corroboration never
+changes case state, content visibility, account access, or notification state.
+
 The minimum moderation backbone before public user-generated content should include:
 
 - reporting of users, proposals, messages, and supported media;
@@ -647,11 +660,12 @@ Codex can build this machinery, but founders must define prohibited content, esc
 
 Direct database editing through Supabase Studio is acceptable for development. It is not the long-term moderation interface and should not be required for routine production operations.
 
-09A2 still owns group-participant corroboration and the private Scambio-Dona
-counterstatement flow. 09B owns user blocking, 09C owns sanctions/content
-visibility/suspension/appeals, and 09D owns minimum-age behavior. Plan 10 must
-decide report/note retention and deletion/anonymization; 09A1 deliberately uses
-restrictive references and makes no irreversible retention-policy choice.
+09A2B still owns the private Scambio-Dona counterstatement flow. 09B owns user
+blocking, 09C owns consequences including restrictions, content visibility,
+suspension, and later escalation/appeals, and 09D owns minimum-age behavior.
+Plan 10 must decide report, note, and corroboration retention plus
+deletion/anonymization; 09A1/09A2A deliberately use restrictive references and
+make no irreversible retention-policy choice.
 
 ## Security baseline
 

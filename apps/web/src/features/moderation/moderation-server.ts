@@ -5,6 +5,7 @@ import {
   encodeModerationCursor,
   moderationQueuePageSize,
   parseModerationCase,
+  parseModerationCorroboration,
   parseModerationQueue,
   type ModerationCaseDetail,
   type ModerationQueueCursor,
@@ -120,10 +121,29 @@ export async function readModerationCase(
     p_case_id: caseId,
   });
   if (result.error) throw new Error("The moderation case could not be loaded.");
+  const detail = parseModerationCase(result.data);
+  if (!detail || !detail.projectContextId) {
+    return { status: "ready", staffRole: access.role, detail };
+  }
+  const corroboration = await access.client.rpc(
+    "get_moderation_case_corroboration",
+    {
+      p_expected_staff_profile_id: access.profileId,
+      p_case_id: caseId,
+    },
+  );
+  if (corroboration.error) {
+    throw new Error(
+      "The moderation corroboration evidence could not be loaded.",
+    );
+  }
   return {
     status: "ready",
     staffRole: access.role,
-    detail: parseModerationCase(result.data),
+    detail: {
+      ...detail,
+      corroboration: parseModerationCorroboration(corroboration.data),
+    },
   };
 }
 

@@ -41,6 +41,25 @@ export type ModerationCaseEvent = Readonly<{
   createdAt: string;
 }>;
 
+export type ModerationCorroborationResponse = Readonly<{
+  responseId: string;
+  responderProfileId: string;
+  responderDisplayName: string;
+  choice: "agree" | "disagree" | "unsure";
+  explanation: string | null;
+  createdAt: string;
+}>;
+
+export type ModerationCorroborationEvidence = Readonly<{
+  invitedCount: number;
+  respondedCount: number;
+  pendingCount: number;
+  agreeCount: number;
+  disagreeCount: number;
+  unsureCount: number;
+  responses: ModerationCorroborationResponse[];
+}>;
+
 export type ModerationCaseDetail = Readonly<{
   caseId: string;
   state: ModerationState;
@@ -62,6 +81,7 @@ export type ModerationCaseDetail = Readonly<{
   resourceChatContextId: string | null;
   notes: ModerationCaseNote[];
   events: ModerationCaseEvent[];
+  corroboration?: ModerationCorroborationEvidence | null;
 }>;
 
 export type ModerationQueuePage = Readonly<{
@@ -131,6 +151,22 @@ export function parseModerationCase(
   };
 }
 
+export function parseModerationCorroboration(
+  data: unknown,
+): ModerationCorroborationEvidence {
+  if (!Array.isArray(data) || data.length !== 1) throw malformed();
+  const row = record(data[0]);
+  return {
+    invitedCount: integer(row.invited_count),
+    respondedCount: integer(row.responded_count),
+    pendingCount: integer(row.pending_count),
+    agreeCount: integer(row.agree_count),
+    disagreeCount: integer(row.disagree_count),
+    unsureCount: integer(row.unsure_count),
+    responses: array(row.responses).map(parseCorroborationResponse),
+  };
+}
+
 export function encodeModerationCursor(cursor: ModerationQueueCursor): string {
   return Buffer.from(JSON.stringify(cursor), "utf8").toString("base64url");
 }
@@ -180,6 +216,24 @@ function parseEvent(value: unknown): ModerationCaseEvent {
     toState: row.to_state === null ? null : state(row.to_state),
     stateVersion: integer(row.state_version),
     noteId: optionalUuid(row.note_id),
+    createdAt: timestamp(row.created_at),
+  };
+}
+
+function parseCorroborationResponse(
+  value: unknown,
+): ModerationCorroborationResponse {
+  const row = record(value);
+  const choice = row.choice;
+  if (choice !== "agree" && choice !== "disagree" && choice !== "unsure") {
+    throw malformed();
+  }
+  return {
+    responseId: uuid(row.response_id),
+    responderProfileId: uuid(row.responder_profile_id),
+    responderDisplayName: bounded(row.responder_display_name, 120),
+    choice,
+    explanation: optionalBounded(row.explanation, 4000),
     createdAt: timestamp(row.created_at),
   };
 }

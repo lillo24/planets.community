@@ -13,6 +13,7 @@ import '../../features/messages/presentation/messages_screen.dart';
 import '../../features/messages/presentation/participation_request_message_screen.dart';
 import '../../features/moderation/domain/moderation_models.dart';
 import '../../features/moderation/presentation/own_reports_screen.dart';
+import '../../features/moderation/presentation/corroboration_screens.dart';
 import '../../features/moderation/presentation/report_form_screen.dart';
 import '../../features/notifications/presentation/notification_preferences_screen.dart';
 import '../../features/notifications/presentation/notification_routes.dart';
@@ -227,6 +228,20 @@ RoutingConfig _routingConfig(
                     path: 'reports',
                     builder: (context, state) => const OwnReportsScreen(),
                     routes: [
+                      GoRoute(
+                        path: 'corroboration',
+                        builder: (context, state) =>
+                            const CorroborationRequestsScreen(),
+                        routes: [
+                          GoRoute(
+                            path: ':requestId',
+                            builder: (context, state) =>
+                                CorroborationDetailScreen(
+                                  requestId: state.pathParameters['requestId']!,
+                                ),
+                          ),
+                        ],
+                      ),
                       GoRoute(
                         path: 'new',
                         builder: (context, state) {

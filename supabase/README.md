@@ -7,6 +7,14 @@ This folder owns the reproducible local PLANETS database and its security valida
 - `tests/` contains native pgTAP invariants and transactional security probes.
 - `seed.sql` runs after migrations during reset and currently contains no data; the system-managed starter skill catalog is migration-owned reference data.
 
+09A2A stores Project group-corroboration invitations and one-shot responses in
+private append-only moderation evidence tables. Qualifying reports snapshot
+the Project creator and accepted membership intervals in the report
+transaction while excluding reporter/subject; later joins, departures, case
+completion, and reopen never rewrite the cohort. Clients use expected-identity
+RPCs only, invitees never receive peer evidence or counts, staff evidence is
+read-only, and there is no notification/outbox or enforcement side effect.
+
 The 04C4D1 forward migration derives active listing-owner loan reservations
 from accepted current LEND terms and agreement lifecycle. It rejects half-open
 period overlaps under a listing-row lock, exposes only an owner schedule and

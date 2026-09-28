@@ -137,6 +137,86 @@ export function ModerationCaseDetailView({
         </CardContent>
       </Card>
 
+      {detail.corroboration ? (
+        <Card>
+          <CardHeader>
+            <CardTitle>
+              <h2>Group corroboration</h2>
+            </CardTitle>
+            <CardDescription>
+              Private participant evidence for staff review. These responses are
+              not a vote, verdict, score, or automatic consequence.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="grid gap-4">
+            <dl className="grid gap-3 sm:grid-cols-3 lg:grid-cols-6">
+              <EvidenceCount
+                label="Invited"
+                value={detail.corroboration.invitedCount}
+              />
+              <EvidenceCount
+                label="Responded"
+                value={detail.corroboration.respondedCount}
+              />
+              <EvidenceCount
+                label="Pending"
+                value={detail.corroboration.pendingCount}
+              />
+              <EvidenceCount
+                label="Agree"
+                value={detail.corroboration.agreeCount}
+              />
+              <EvidenceCount
+                label="Disagree"
+                value={detail.corroboration.disagreeCount}
+              />
+              <EvidenceCount
+                label="Unsure"
+                value={detail.corroboration.unsureCount}
+              />
+            </dl>
+            <p className="rounded-lg bg-muted p-3 text-sm">
+              Eligibility is based on the Project creator and accepted
+              membership history at report creation. Membership is only a
+              coordination proxy: it does not prove physical attendance or that
+              a person witnessed the reported conduct.
+            </p>
+            {detail.corroboration.responses.length === 0 ? (
+              <p className="text-muted-foreground">No responses yet.</p>
+            ) : (
+              <ol className="grid gap-3">
+                {detail.corroboration.responses.map((response) => (
+                  <li
+                    key={response.responseId}
+                    className="rounded-lg border p-3"
+                  >
+                    <p>
+                      <strong>{response.responderDisplayName}</strong> ·{" "}
+                      {response.choice}
+                    </p>
+                    {response.explanation ? (
+                      <p className="mt-2 whitespace-pre-wrap">
+                        {response.explanation}
+                      </p>
+                    ) : (
+                      <p className="mt-2 text-muted-foreground">
+                        No private explanation.
+                      </p>
+                    )}
+                    <time
+                      className="mt-2 block text-sm text-muted-foreground"
+                      dateTime={response.createdAt}
+                    >
+                      {formatDate(response.createdAt)}
+                    </time>
+                  </li>
+                ))}
+              </ol>
+            )}
+          </CardContent>
+        </Card>
+      ) : null}
+
       <Card>
         <CardHeader>
           <CardTitle>Private staff notes</CardTitle>
@@ -194,6 +274,15 @@ export function ModerationCaseDetailView({
           </ol>
         </CardContent>
       </Card>
+    </div>
+  );
+}
+
+function EvidenceCount({ label, value }: { label: string; value: number }) {
+  return (
+    <div className="rounded-lg border p-3">
+      <dt className="text-sm text-muted-foreground">{label}</dt>
+      <dd className="text-2xl font-semibold">{value}</dd>
     </div>
   );
 }

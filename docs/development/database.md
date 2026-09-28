@@ -42,6 +42,20 @@ execute only to `authenticated`. All moderation tables retain RLS as defense in
 depth and grant no direct table privileges to `anon`, `authenticated`, or
 `service_role`.
 
+09A2A adds private append-only `moderation_evidence_requests` and
+`moderation_evidence_responses`. An after-insert report trigger participates in
+the report transaction and takes the established Project participation lock
+before snapshotting the creator plus accepted membership intervals containing
+case creation. The `(case_id, request_kind, recipient_profile_id)` key makes
+report delivery retries harmless. Recipient RPCs expose only the assigned
+request, reporter wording without reporter identity, and the caller's own
+response; they never expose peers or counts. Submission locks the case before
+the request so completion and first response have one deterministic boundary,
+accepts only an exact client retry, and otherwise preserves the first response.
+The staff-only evidence RPC returns identified submitted responses and neutral
+counts. Generic audit metadata contains identifiers/counts only, and no
+corroboration outbox/Realtime/push event exists.
+
 The first staff role is intentionally an operator/database-owner bootstrap,
 never a client path. After the profile exists, run a reviewed owner session:
 
@@ -55,9 +69,10 @@ setting `is_active = false` and `deactivated_at = statement_timestamp()`;
 subsequent staff operations deny immediately. Do not grant direct moderation
 table access or distribute a service-role key to make an admin browser work.
 
-09A1 intentionally defines no sanctions, public warning, automated hiding,
-blocking, suspension, evidence solicitation or retention/deletion policy.
-09A2, 09B, 09C and Plan 10 own those decisions respectively.
+09A1/09A2A intentionally define no sanctions, public warning, automated
+hiding, blocking, suspension, Scambio-Dona counterstatement or
+retention/deletion policy. 09A2B, 09B, 09C and Plan 10 own those decisions
+respectively.
 
 ## Application conflict SQLSTATEs
 
@@ -473,6 +488,7 @@ npm run project:resource-matching:verify:local
 npm run project:contribution-selections:verify:local
 npm run project:membership-commitments:verify:local
 npm run moderation:verify:local
+npm run moderation:corroboration:verify:local
 npm run db:types
 npm run db:types:check
 ```
@@ -563,6 +579,14 @@ isolation, operator-provisioned staff access, detail/note/state operations,
 identifier-only generic audit/outbox behavior, and immediate denial after role
 deactivation. It never prints emails, OTPs, tokens, keys, database URLs, report
 explanations, note bodies, or moderation records.
+
+`moderation:corroboration:verify:local` authenticates a Project reporter,
+reported profile, creator, eligible member, and staff profile. It creates a
+deterministic local membership cohort, proves reporter-anonymous recipient
+detail, exact response retry, reported-subject denial, staff-only identified
+evidence, completed-case pending suppression, and the absence of sensitive
+audit/outbox projection. It prints no emails, OTPs, tokens, keys, database
+URLs, report wording, response content, or evidence records.
 
 `auth:web:verify:local` adds web-specific evidence after a locally configured production Next.js build. It obtains session cookies through supported `@supabase/ssr` callbacks, confirms the Server Component recognizes the authenticated session, rejects private-auth material in the rendered response, and confirms `/admin` returns 404 for signed-out and ordinary signed-in requests. It does not invent or log Supabase's cookie encoding.
 

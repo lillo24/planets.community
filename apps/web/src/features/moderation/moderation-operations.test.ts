@@ -66,12 +66,10 @@ function client(
   let accessIndex = 0;
   return {
     auth: {
-      getClaims: vi
-        .fn()
-        .mockResolvedValue({
-          data: { claims: { sub: profileId } },
-          error: null,
-        }),
+      getClaims: vi.fn().mockResolvedValue({
+        data: { claims: { sub: profileId } },
+        error: null,
+      }),
     },
     rpc: vi.fn(async (name: string) => {
       if (name === "get_own_moderation_staff_access") {

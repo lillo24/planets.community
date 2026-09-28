@@ -6,6 +6,7 @@ import {
   type ModerationServerClient,
 } from "./moderation-server";
 import {
+  moderationCorroborationRow,
   moderationDetailRow,
   moderationQueueRow,
 } from "./moderation-test-fixtures";
@@ -52,12 +53,14 @@ describe("moderation server authorization", () => {
       profileId,
       staffRole: "moderator",
       detail: [moderationDetailRow()],
+      corroboration: [moderationCorroborationRow()],
     });
     const result = await readModerationCase(caseId, async () => staff);
     expect(result.status).toBe("ready");
     if (result.status === "ready") {
       expect(result.detail?.explanation).toContain("original report");
       expect(result.detail?.notes[0].body).toBe("Private note");
+      expect(result.detail?.corroboration?.responses[0].choice).toBe("unsure");
     }
   });
 
@@ -81,12 +84,14 @@ function client({
   staffRole,
   queue = [],
   detail = [],
+  corroboration = [],
   queueError = false,
 }: {
   profileId: string | null;
   staffRole?: "moderator" | "admin" | null;
   queue?: unknown[];
   detail?: unknown[];
+  corroboration?: unknown[];
   queueError?: boolean;
 }): ModerationServerClient {
   return {
@@ -108,6 +113,9 @@ function client({
       }
       if (name === "get_moderation_case_detail")
         return { data: detail, error: null };
+      if (name === "get_moderation_case_corroboration") {
+        return { data: corroboration, error: null };
+      }
       throw new Error(`Unexpected RPC: ${name}`);
     }),
   };

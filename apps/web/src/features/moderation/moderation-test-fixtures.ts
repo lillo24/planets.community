@@ -59,3 +59,24 @@ export function moderationDetailRow() {
     ],
   };
 }
+
+export function moderationCorroborationRow() {
+  return {
+    invited_count: 3,
+    responded_count: 2,
+    pending_count: 1,
+    agree_count: 1,
+    disagree_count: 0,
+    unsure_count: 1,
+    responses: [
+      {
+        response_id: "00000000-0000-4000-8000-000000000911",
+        responder_profile_id: "00000000-0000-4000-8000-000000000912",
+        responder_display_name: "Riley",
+        choice: "unsure",
+        explanation: "I attended only the first part.",
+        created_at: "2026-09-28T10:05:00Z",
+      },
+    ],
+  };
+}

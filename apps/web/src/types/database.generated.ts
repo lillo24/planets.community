@@ -2165,6 +2165,18 @@ export type Database = {
         }
         Returns: string
       }
+      get_moderation_case_corroboration: {
+        Args: { p_case_id: string; p_expected_staff_profile_id: string }
+        Returns: {
+          agree_count: number
+          disagree_count: number
+          invited_count: number
+          pending_count: number
+          responded_count: number
+          responses: Json
+          unsure_count: number
+        }[]
+      }
       get_moderation_case_detail: {
         Args: { p_case_id: string; p_expected_staff_profile_id: string }
         Returns: {
@@ -2186,6 +2198,24 @@ export type Database = {
           state_version: number
           subject_display_name: string
           subject_profile_id: string
+          target_kind: string
+          target_summary: string
+        }[]
+      }
+      get_own_group_corroboration_request: {
+        Args: { p_expected_recipient_profile_id: string; p_request_id: string }
+        Returns: {
+          can_respond: boolean
+          case_id: string
+          case_state: string
+          category: string
+          context_summary: string
+          created_at: string
+          explanation: string
+          request_id: string
+          responded_at: string
+          response_choice: string
+          response_explanation: string
           target_kind: string
           target_summary: string
         }[]
@@ -2568,6 +2598,27 @@ export type Database = {
           state_version: number
           subject_display_name: string
           subject_profile_id: string
+          target_kind: string
+          target_summary: string
+        }[]
+      }
+      list_own_group_corroboration_requests: {
+        Args: {
+          p_before_created_at?: string
+          p_before_request_id?: string
+          p_expected_recipient_profile_id: string
+          p_limit?: number
+          p_pending_only?: boolean
+        }
+        Returns: {
+          can_respond: boolean
+          case_id: string
+          case_state: string
+          context_summary: string
+          created_at: string
+          request_id: string
+          responded_at: string
+          response_choice: string
           target_kind: string
           target_summary: string
         }[]
@@ -3530,6 +3581,21 @@ export type Database = {
           p_requirement_kind: string
         }
         Returns: string
+      }
+      submit_group_corroboration_response: {
+        Args: {
+          p_choice: string
+          p_client_submission_id: string
+          p_expected_recipient_profile_id: string
+          p_explanation?: string
+          p_request_id: string
+        }
+        Returns: {
+          choice: string
+          created_at: string
+          explanation: string
+          response_id: string
+        }[]
       }
       submit_moderation_report: {
         Args: {

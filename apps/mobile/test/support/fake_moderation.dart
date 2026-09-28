@@ -1,6 +1,8 @@
 import 'dart:async';
 
 import 'package:planets_mobile/features/moderation/data/moderation_gateway.dart';
+import 'package:planets_mobile/features/moderation/data/corroboration_gateway.dart';
+import 'package:planets_mobile/features/moderation/domain/corroboration_models.dart';
 import 'package:planets_mobile/features/moderation/domain/moderation_models.dart';
 
 class FakeModerationGateway implements ModerationGateway {
@@ -65,5 +67,106 @@ OwnModerationReport ownModerationReportFixture({
   targetSummary: 'Community garden',
   contextSummary: 'Community garden',
   state: state,
+  createdAt: DateTime.utc(2026, 9, 28, 10),
+);
+
+class FakeCorroborationGateway implements CorroborationGateway {
+  Object? listError;
+  Object? detailError;
+  Object? submitError;
+  Future<void>? listDelay;
+  Future<void>? submitDelay;
+  List<GroupCorroborationSummary> items = [];
+  GroupCorroborationDetail? detail = corroborationDetailFixture();
+  int listCount = 0;
+  int submitCount = 0;
+  bool? pendingOnly;
+  String? expectedProfileId;
+  String? requestId;
+  String? clientSubmissionId;
+  CorroborationChoice? choice;
+  String? explanation;
+
+  @override
+  Future<List<GroupCorroborationSummary>> listOwn({
+    required String expectedProfileId,
+    required bool pendingOnly,
+  }) async {
+    listCount++;
+    this.expectedProfileId = expectedProfileId;
+    this.pendingOnly = pendingOnly;
+    if (listDelay case final delay?) await delay;
+    if (listError case final error?) throw error;
+    return List.unmodifiable(items);
+  }
+
+  @override
+  Future<GroupCorroborationDetail?> getOwn({
+    required String expectedProfileId,
+    required String requestId,
+  }) async {
+    this.expectedProfileId = expectedProfileId;
+    this.requestId = requestId;
+    if (detailError case final error?) throw error;
+    return detail;
+  }
+
+  @override
+  Future<GroupCorroborationResponse> submit({
+    required String expectedProfileId,
+    required String requestId,
+    required String clientSubmissionId,
+    required CorroborationChoice choice,
+    required String explanation,
+  }) async {
+    submitCount++;
+    this.expectedProfileId = expectedProfileId;
+    this.requestId = requestId;
+    this.clientSubmissionId = clientSubmissionId;
+    this.choice = choice;
+    this.explanation = explanation;
+    if (submitDelay case final delay?) await delay;
+    if (submitError case final error?) throw error;
+    return GroupCorroborationResponse(
+      responseId: '00000000-0000-4000-8000-000000000915',
+      choice: choice,
+      explanation: explanation.trim().isEmpty ? null : explanation.trim(),
+      createdAt: DateTime.utc(2026, 9, 28, 10, 5),
+    );
+  }
+}
+
+GroupCorroborationSummary corroborationSummaryFixture({
+  bool canRespond = true,
+  CorroborationChoice? responseChoice,
+}) => GroupCorroborationSummary(
+  requestId: '00000000-0000-4000-8000-000000000911',
+  caseId: '00000000-0000-4000-8000-000000000912',
+  caseState: ModerationReviewState.received,
+  targetKind: ModerationTargetKind.profile,
+  targetSummary: 'Reported profile',
+  contextSummary: 'Community garden',
+  responseChoice: responseChoice,
+  respondedAt: responseChoice == null ? null : DateTime.utc(2026, 9, 28, 10, 5),
+  canRespond: canRespond,
+  createdAt: DateTime.utc(2026, 9, 28, 10),
+);
+
+GroupCorroborationDetail corroborationDetailFixture({
+  bool canRespond = true,
+  CorroborationChoice? responseChoice,
+}) => GroupCorroborationDetail(
+  requestId: '00000000-0000-4000-8000-000000000911',
+  caseId: '00000000-0000-4000-8000-000000000912',
+  caseState: ModerationReviewState.received,
+  category: ModerationCategory.harassmentAbuse,
+  explanation: 'The original reporter wording.',
+  targetKind: ModerationTargetKind.profile,
+  targetSummary: 'Reported profile',
+  contextSummary: 'Community garden',
+  responseChoice: responseChoice,
+  responseExplanation: null,
+  respondedAt: null,
+  canRespond: canRespond,
   createdAt: DateTime.utc(2026, 9, 28, 10),
 );
