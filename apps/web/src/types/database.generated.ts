@@ -2018,6 +2018,17 @@ export type Database = {
         }
         Returns: string
       }
+      add_moderation_case_note: {
+        Args: {
+          p_body: string
+          p_case_id: string
+          p_expected_staff_profile_id: string
+        }
+        Returns: {
+          created_at: string
+          note_id: string
+        }[]
+      }
       can_read_public_project_creator_photo_object: {
         Args: { p_object_path: string }
         Returns: boolean
@@ -2153,6 +2164,37 @@ export type Database = {
           p_recurring_activity_id: string
         }
         Returns: string
+      }
+      get_moderation_case_detail: {
+        Args: { p_case_id: string; p_expected_staff_profile_id: string }
+        Returns: {
+          case_id: string
+          category: string
+          completed_at: string
+          context_summary: string
+          created_at: string
+          events: Json
+          explanation: string
+          notes: Json
+          project_context_id: string
+          reporter_display_name: string
+          reporter_profile_id: string
+          resource_chat_context_id: string
+          resource_listing_context_id: string
+          resource_request_context_id: string
+          state: string
+          state_version: number
+          subject_display_name: string
+          subject_profile_id: string
+          target_kind: string
+          target_summary: string
+        }[]
+      }
+      get_own_moderation_staff_access: {
+        Args: { p_expected_profile_id: string }
+        Returns: {
+          staff_role: string
+        }[]
       }
       get_own_participation_request_message_item: {
         Args: { p_expected_profile_id: string; p_request_id: string }
@@ -2509,6 +2551,27 @@ export type Database = {
         }
         Returns: string
       }
+      list_moderation_cases: {
+        Args: {
+          p_before_case_id?: string
+          p_before_created_at?: string
+          p_expected_staff_profile_id: string
+          p_limit?: number
+          p_state?: string
+        }
+        Returns: {
+          case_id: string
+          category: string
+          context_summary: string
+          created_at: string
+          state: string
+          state_version: number
+          subject_display_name: string
+          subject_profile_id: string
+          target_kind: string
+          target_summary: string
+        }[]
+      }
       list_own_message_chat_items: {
         Args: {
           p_cursor_activity_at?: string
@@ -2536,6 +2599,25 @@ export type Database = {
           resource_listing_id: string
           resource_request_id: string
           viewer_role: string
+        }[]
+      }
+      list_own_moderation_reports: {
+        Args: {
+          p_before_created_at?: string
+          p_before_report_id?: string
+          p_expected_reporter_profile_id: string
+          p_limit?: number
+        }
+        Returns: {
+          case_id: string
+          category: string
+          context_summary: string
+          created_at: string
+          explanation: string
+          report_id: string
+          state: string
+          target_kind: string
+          target_summary: string
         }[]
       }
       list_own_notification_preferences: {
@@ -3448,6 +3530,37 @@ export type Database = {
           p_requirement_kind: string
         }
         Returns: string
+      }
+      submit_moderation_report: {
+        Args: {
+          p_category: string
+          p_client_submission_id: string
+          p_context_id?: string
+          p_context_kind?: string
+          p_expected_reporter_profile_id: string
+          p_explanation: string
+          p_target_id: string
+          p_target_kind: string
+        }
+        Returns: {
+          case_id: string
+          created_at: string
+          report_id: string
+          state: string
+        }[]
+      }
+      transition_moderation_case: {
+        Args: {
+          p_case_id: string
+          p_expected_staff_profile_id: string
+          p_expected_state_version: number
+          p_target_state: string
+        }
+        Returns: {
+          state: string
+          state_version: number
+          updated_at: string
+        }[]
       }
       unregister_own_push_installation: {
         Args: { p_expected_profile_id: string; p_installation_id: string }

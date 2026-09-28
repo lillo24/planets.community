@@ -11,6 +11,9 @@ import '../../features/auth/presentation/verify_code_screen.dart';
 import '../../features/messages/presentation/messages_routes.dart';
 import '../../features/messages/presentation/messages_screen.dart';
 import '../../features/messages/presentation/participation_request_message_screen.dart';
+import '../../features/moderation/domain/moderation_models.dart';
+import '../../features/moderation/presentation/own_reports_screen.dart';
+import '../../features/moderation/presentation/report_form_screen.dart';
 import '../../features/notifications/presentation/notification_preferences_screen.dart';
 import '../../features/notifications/presentation/notification_routes.dart';
 import '../../features/notifications/presentation/notifications_screen.dart';
@@ -76,7 +79,8 @@ RoutingConfig _routingConfig(
       final isRequestRoute = path == '/auth';
       final isVerifyRoute = path == '/auth/verify';
       final isAuthRoute = isRequestRoute || isVerifyRoute;
-      final isProfileRoute = path == '/profile' || path == '/profile/edit';
+      final isProfileRoute = path == '/profile' || path.startsWith('/profile/');
+      final isModerationRoute = path.startsWith('/profile/reports');
       final isProposalManagementRoute =
           path == '/proposals/mine' ||
           path == '/proposals/create' ||
@@ -100,7 +104,8 @@ RoutingConfig _routingConfig(
           isProjectResourceNeedManagementRoute ||
           isParticipationRoute ||
           isMessagesRoute ||
-          isNotificationsRoute;
+          isNotificationsRoute ||
+          isModerationRoute;
 
       if (session.phase == AuthSessionPhase.restoring) {
         return null;
@@ -217,6 +222,22 @@ RoutingConfig _routingConfig(
                               state.uri.queryParameters['returnTo'],
                             ),
                     ),
+                  ),
+                  GoRoute(
+                    path: 'reports',
+                    builder: (context, state) => const OwnReportsScreen(),
+                    routes: [
+                      GoRoute(
+                        path: 'new',
+                        builder: (context, state) {
+                          final target = state.extra;
+                          if (target is! ModerationReportTarget) {
+                            return const _UnknownRouteScreen();
+                          }
+                          return ReportFormScreen(target: target);
+                        },
+                      ),
+                    ],
                   ),
                 ],
               ),

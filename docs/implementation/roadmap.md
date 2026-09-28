@@ -123,7 +123,7 @@ Do not begin a dependent plan until the prior plan is merged or its branch is ex
 | 08A3        | Photo Read Access + Interactions                          | Reusable relationship authorization and non-owner private photo delivery                                                 | 08A2                   | PR #98; organizer pending/current-participant relationship is the first interaction set                              | In progress                        |
 | 08A4A       | Personal Project Trust Gates + Contextual Photos          | Canonical photo gates, creator-review avatars, and Project-context organizer delivery                                    | 08A3                   | PR #101; native device QA remains in Plan 12                                                                         | In progress                        |
 | 08A4B       | Scambio-Dona Profile Photo Trust Integration              | Resource-exchange counterpart gates and contextual photo placement                                                       | 08A4A                  | Current stacked PR; native device QA remains in Plan 12                                                              | In progress                        |
-| 09          | Safety, moderation and admin                              | Reporting, blocking, content states, admin roles, moderation queue/actions, audit trail and minimal custom admin UI      | 04–08                  | Community rules, prohibited content, escalation, suspension, appeals, minimum age                                    | Not started                        |
+| 09          | Safety, moderation and admin                              | Reporting, blocking, content states, admin roles, moderation queue/actions, audit trail and minimal custom admin UI      | 04–08                  | Community rules, prohibited content, escalation, suspension, appeals, minimum age                                    | In progress through 09A1           |
 | 10          | Account deletion and privacy operations                   | In-app and web deletion paths, cleanup/anonymization jobs, export groundwork, privacy documentation inputs               | 03–09                  | Legal retention and anonymization policy; legal text remains founder/legal work                                      | Not started                        |
 | 11          | Analytics and operational foundations                     | Explicit product events, privacy scrubbing, health/queue signals, alert requirements, and incident ownership inputs      | 00–10                  | Success metrics and analytics consent/legal choices                                                                  | Not started                        |
 | 12          | Consolidated UI/UX and native QA pass                     | Coherent visual/interaction design, accessibility, responsive behavior, and deferred native flow validation              | 00–11                  | Final visual identity, high-impact interaction decisions, and native review                                          | Not started                        |
@@ -1036,6 +1036,33 @@ Expected scope:
 ### 09 — Safety, moderation and admin
 
 **Goal:** Meet the minimum backbone needed before public user-generated content is released.
+
+#### 09A1 — Reporting + manual-review foundation
+
+**Status:** Implemented in the current stacked PR.
+
+- private typed cases, append-only reports/notes/events, canonical subject and
+  Project/Scambio-Dona context derivation, and retry-safe submission;
+- authenticated Flutter report actions, explicit manual-review/privacy copy,
+  and a narrow owner-only status list;
+- private operator-managed `moderator`/`admin` roles and bounded canonical
+  queue/detail/note/versioned-transition operations;
+- a staff-only Next.js `/admin` queue and detail surface with no enforcement
+  controls;
+- identifier-only generic audit records and no moderation outbox event;
+- no automatic content/account consequence.
+
+Parent Plan 09 remains in progress. Its next explicit boundaries are:
+
+- **09A2 — Case evidence collection:** group-participant
+  Agree/Disagree/Unsure corroboration using only the first explanation while
+  hiding reporter identity at the product layer, plus a private Scambio-Dona
+  counterparty response; neither is an automatic punishment;
+- **09B — User blocking:** user-controlled relationship blocking and its
+  product-surface effects;
+- **09C — Moderation consequences:** content states, restrictions, suspension,
+  escalation and appeals after founder policy decisions;
+- **09D — Minimum age:** approved eligibility policy and enforcement.
 
 Expected scope:
 

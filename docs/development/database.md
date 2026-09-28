@@ -1,6 +1,6 @@
 # Database development
 
-PostgreSQL is the canonical PLANETS product record. This guide owns the local schema-change, security-test, and generated-type workflow. The current schema includes application identity, basic profiles, the private profile-photo Storage/domain foundation, a controlled starter skill catalog, field visibility, one-time proposals, the Tavoli recurring-activity domain, standalone Scambio-Dona resource listings, accepted-request agreements and conversations, Project resource needs, join-request contribution selections, immutable acceptance decisions, accepted-membership commitment sets, shared project participation, structured Messages reads, the Project group-chat lifecycle/authorization foundation, the in-app notification domain, the provider-independent push installation/delivery-job foundation, and private audit/outbox primitives.
+PostgreSQL is the canonical PLANETS product record. This guide owns the local schema-change, security-test, and generated-type workflow. The current schema includes application identity, basic profiles, the private profile-photo Storage/domain foundation, a controlled starter skill catalog, field visibility, one-time proposals, the Tavoli recurring-activity domain, standalone Scambio-Dona resource listings, accepted-request agreements and conversations, Project resource needs, join-request contribution selections, immutable acceptance decisions, accepted-membership commitment sets, shared project participation, structured Messages reads, the Project group-chat lifecycle/authorization foundation, the in-app notification domain, the provider-independent push installation/delivery-job foundation, the private reporting/manual-review foundation, and private audit/outbox primitives.
 
 ## Source of truth and daily workflow
 
@@ -21,6 +21,43 @@ The seed file is for deterministic development/test rows without real personal d
 Later migrations should use lowercase `snake_case`, UUID primary keys for ordinary application entities unless a stronger reason exists, and the relevant `auth.users.id` for an auth-linked entity when appropriate. Timestamps use `timestamptz`; `created_at` is normally non-null with a database default, while `updated_at` is added only when useful and must be maintained server-side. Express enforceable invariants as constraints and choose each foreign key's delete behavior deliberately rather than defaulting mechanically to cascade.
 
 There is no universal soft-delete or content-state convention. Deletion, anonymization, historical retention, and moderation state have product and legal consequences and belong to their later plans.
+
+## Reporting and manual moderation review
+
+The private `moderation_cases` table owns one immutable typed target, its
+canonically derived subject, and Project or Scambio-Dona context. The private
+`moderation_reports` row owns the original reporter evidence, category and
+reporter-scoped submission key; repeat delivery of one client key is
+idempotent, while a fresh key can represent a later incident. Private
+`moderation_case_notes` and `moderation_case_events` are append-only. Evidence
+bodies remain only in report/note records and are never copied into generic
+audit metadata or outbox events.
+
+Authenticated clients use only the public security-definer operations for
+submission, reporter-owned status, staff access, bounded queue/detail reads,
+note append and versioned state transition. Those operations fix an empty
+`search_path`, bind expected identity to `auth.uid()`, derive content authors
+and counterparties server-side, validate private-object access and grant
+execute only to `authenticated`. All moderation tables retain RLS as defense in
+depth and grant no direct table privileges to `anon`, `authenticated`, or
+`service_role`.
+
+The first staff role is intentionally an operator/database-owner bootstrap,
+never a client path. After the profile exists, run a reviewed owner session:
+
+```sql
+insert into private.moderation_staff_roles (profile_id, staff_role)
+values ('00000000-0000-4000-8000-000000000000', 'admin');
+```
+
+Use the real profile UUID and record the operator change. Deactivate access by
+setting `is_active = false` and `deactivated_at = statement_timestamp()`;
+subsequent staff operations deny immediately. Do not grant direct moderation
+table access or distribute a service-role key to make an admin browser work.
+
+09A1 intentionally defines no sanctions, public warning, automated hiding,
+blocking, suspension, evidence solicitation or retention/deletion policy.
+09A2, 09B, 09C and Plan 10 own those decisions respectively.
 
 ## Application conflict SQLSTATEs
 
@@ -435,6 +472,7 @@ npm run project:resource-needs:verify:local
 npm run project:resource-matching:verify:local
 npm run project:contribution-selections:verify:local
 npm run project:membership-commitments:verify:local
+npm run moderation:verify:local
 npm run db:types
 npm run db:types:check
 ```
@@ -518,7 +556,15 @@ messages, or meeting details.
 
 `project:membership-commitments:verify:local` uses three real OTP-authenticated identities plus narrow direct-database transactions across Proposals and a Tavolo. It proves atomic acceptance seeding, participant/creator-only current and ended reads, authorized addable-option snapshots including paused Tavoli and stale-option omission, full desired-set replacement and no-op preservation, creator clearing, stale-option retention/removal, independent rejoin episodes, Proposal/Tavolo lifecycle rules, read-event absence, exact identifier-only mutation events without notifications, and both serialization outcomes for replacement versus leave, removal, resource closure, and Proposal-skill removal. It never prints OTPs, tokens, keys, database URLs, request text, commitment labels, emails, or private Project data.
 
-`auth:web:verify:local` adds web-specific evidence after a locally configured production Next.js build. It obtains session cookies through supported `@supabase/ssr` callbacks, confirms the Server Component recognizes the authenticated session, rejects private-auth material in the rendered response, and confirms `/admin` returns 404 for signed-out and signed-in requests. It does not invent or log Supabase's cookie encoding.
+`moderation:verify:local` authenticates a reporter, reported profile, and staff
+profile through real local OTP sessions. It proves ordinary-user queue denial,
+public-profile report submission, reporter-only status, reported-user
+isolation, operator-provisioned staff access, detail/note/state operations,
+identifier-only generic audit/outbox behavior, and immediate denial after role
+deactivation. It never prints emails, OTPs, tokens, keys, database URLs, report
+explanations, note bodies, or moderation records.
+
+`auth:web:verify:local` adds web-specific evidence after a locally configured production Next.js build. It obtains session cookies through supported `@supabase/ssr` callbacks, confirms the Server Component recognizes the authenticated session, rejects private-auth material in the rendered response, and confirms `/admin` returns 404 for signed-out and ordinary signed-in requests. It does not invent or log Supabase's cookie encoding.
 
 `tavoli:web:verify:local` uses synthetic local OTP data and the production Next.js server to prove signed-out Tavoli list/detail rendering, rough-location and next-meeting output, exclusion of paused/ended rows from discovery, retained sanitized historical detail, exact-ID 404 behavior, and detail-only public/restricted exact-location handling. It never prints test addresses, tokens, keys, or protected meeting content.
 

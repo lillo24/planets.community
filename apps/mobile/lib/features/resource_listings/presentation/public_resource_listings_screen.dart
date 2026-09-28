@@ -10,6 +10,7 @@ import '../../../l10n/generated/app_localizations.dart';
 import '../../auth/application/auth_session_controller.dart';
 import '../../auth/domain/auth_models.dart';
 import '../../messages/presentation/messages_routes.dart';
+import '../../moderation/presentation/moderation_routes.dart';
 import '../../profile_photo/application/resource_listing_owner_photo_controller.dart';
 import '../../profile_photo/presentation/visible_profile_photo_avatar.dart';
 import '../../resource_requests/application/resource_request_controllers.dart';
@@ -505,6 +506,19 @@ class _PublicResourceListingDetailScreenState
                     _ResourceRequestListingActions(
                       listingId: widget.listingId,
                       expectedProfileId: profileId,
+                    ),
+                    const SizedBox(height: AppSpacing.small),
+                    OutlinedButton.icon(
+                      key: const Key('resource-listing-report-action'),
+                      onPressed: () => ModerationRoutes.openReport(
+                        context,
+                        resourceListingReportTarget(
+                          widget.listingId,
+                          detail.summary.title,
+                        ),
+                      ),
+                      icon: const Icon(Icons.flag_outlined),
+                      label: Text(l10n.moderationReportAction),
                     ),
                   ],
                 ],

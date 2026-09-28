@@ -7,6 +7,7 @@ import '../../../core/widgets/error_state.dart';
 import '../../../core/widgets/loading_state.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../auth/application/auth_session_controller.dart';
+import '../../moderation/presentation/moderation_routes.dart';
 import '../../profile_photo/application/visible_profile_photo_controller.dart';
 import '../../profile_photo/presentation/visible_profile_photo_avatar.dart';
 import '../../resource_exchange/application/resource_exchange_controller.dart';
@@ -270,6 +271,17 @@ class _ResourceChatScreenState extends ConsumerState<ResourceChatScreen>
                                 isMine:
                                     message.senderProfileId ==
                                     _expectedProfileId,
+                                onReport:
+                                    message.senderProfileId ==
+                                        _expectedProfileId
+                                    ? null
+                                    : () => ModerationRoutes.openReport(
+                                        context,
+                                        resourceMessageReportTarget(
+                                          message.messageId,
+                                          l10n.moderationResourceMessageTarget,
+                                        ),
+                                      ),
                               ),
                         ],
                       ),
@@ -353,10 +365,15 @@ class _CounterpartyHeader extends ConsumerWidget {
 }
 
 class _MessageBubble extends StatelessWidget {
-  const _MessageBubble({required this.message, required this.isMine});
+  const _MessageBubble({
+    required this.message,
+    required this.isMine,
+    required this.onReport,
+  });
 
   final ResourceChatMessage message;
   final bool isMine;
+  final VoidCallback? onReport;
 
   @override
   Widget build(BuildContext context) {
@@ -386,7 +403,21 @@ class _MessageBubble extends StatelessWidget {
                   const SizedBox(height: AppSpacing.xSmall),
                   Text(message.body),
                   const SizedBox(height: AppSpacing.xSmall),
-                  Text(time, style: Theme.of(context).textTheme.bodySmall),
+                  Wrap(
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    spacing: AppSpacing.xSmall,
+                    children: [
+                      Text(time, style: Theme.of(context).textTheme.bodySmall),
+                      if (onReport != null)
+                        IconButton(
+                          key: Key('resource-chat-report-${message.messageId}'),
+                          visualDensity: VisualDensity.compact,
+                          tooltip: l10n.moderationReportAction,
+                          onPressed: onReport,
+                          icon: const Icon(Icons.flag_outlined, size: 18),
+                        ),
+                    ],
+                  ),
                 ],
               ),
             ),

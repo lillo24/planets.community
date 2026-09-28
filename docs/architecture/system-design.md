@@ -88,7 +88,7 @@ The web application defines one public `local`, `staging`, or `production` envir
 
 Ordinary web authentication uses an in-memory two-step numeric email-OTP flow. The browser `@supabase/ssr` client owns the cookie-backed session; Next.js Proxy validates/refreshes and propagates those cookies without authorizing or redirecting; Server Components derive trusted identity through `getClaims()`, not `getSession()`. Optional post-auth returns accept only sanitized internal paths. The application stores no pending email/code outside component memory and implements no magic-link callback, deep link, password, or social provider.
 
-The public `/` route remains informational and reports only minimal signed-out, ready, or profile-setup-required state. The authenticated `/profile` route server-loads owner-authorized settings and hands interaction to a narrow Client Component. The reserved `/admin` route fails closed with a 404 for signed-out and ordinary authenticated users until a later plan defines admin authorization. Optional Sentry instrumentation sends no default PII and disables tracing and replay; missing Sentry configuration is a valid disabled state.
+The public `/` route remains informational and reports only minimal signed-out, ready, or profile-setup-required state. The authenticated `/profile` route server-loads owner-authorized settings and hands interaction to a narrow Client Component. `/admin` is the private moderation surface: signed-out and ordinary authenticated users receive the not-found boundary, while every staff read and mutation re-checks a canonical active `moderator` or `admin` role through narrow database operations. It uses the request-owned Supabase session and never a browser service-role credential. Optional Sentry instrumentation sends no default PII and disables tracing and replay; missing Sentry configuration is a valid disabled state.
 
 ### The backend owns authorization and invariants
 
@@ -613,6 +613,23 @@ Community statistics should be derived from canonical records through SQL views 
 
 Administrative tools are separate from normal user flows but use the same canonical backend.
 
+Plan 09A1 implements the first manual-review slice. Private moderation cases
+anchor an immutable typed target and canonical subject/context; append-only
+reports retain the submitting profile, bounded category/explanation and a
+reporter-scoped client idempotency key. Append-only staff notes and
+identifier-only case/audit events retain review chronology without copying
+evidence text into generic audit or outbox payloads. Reporter reads expose only
+their own report, safe target/context summaries and the neutral `received`,
+`under_review`, or `completed` review state. Reports do not change content or
+account visibility.
+
+Active `moderator` and `admin` roles are private, operator-managed records.
+Both roles currently have the same queue/detail/note/review-transition
+capability. Public RPCs own the full identity and authorization boundary;
+private tables have RLS enabled and no API-role table privileges. Review state
+uses compare-and-swap versions and permits received → under review → completed,
+plus an explicit audited completed → under review reopen.
+
 The minimum moderation backbone before public user-generated content should include:
 
 - reporting of users, proposals, messages, and supported media;
@@ -629,6 +646,12 @@ The minimum moderation backbone before public user-generated content should incl
 Codex can build this machinery, but founders must define prohibited content, escalation, appeals, retention, minimum age, and response expectations.
 
 Direct database editing through Supabase Studio is acceptable for development. It is not the long-term moderation interface and should not be required for routine production operations.
+
+09A2 still owns group-participant corroboration and the private Scambio-Dona
+counterstatement flow. 09B owns user blocking, 09C owns sanctions/content
+visibility/suspension/appeals, and 09D owns minimum-age behavior. Plan 10 must
+decide report/note retention and deletion/anonymization; 09A1 deliberately uses
+restrictive references and makes no irreversible retention-policy choice.
 
 ## Security baseline
 
