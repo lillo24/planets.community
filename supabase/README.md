@@ -15,6 +15,18 @@ completion, and reopen never rewrite the cohort. Clients use expected-identity
 RPCs only, invitees never receive peer evidence or counts, staff evidence is
 read-only, and there is no notification/outbox or enforcement side effect.
 
+09A2B extends that request discriminator with Resource counterstatements and a
+separate append-only response table. Supported report targets with a canonical
+Resource request context atomically create one request for the revalidated
+reported counterparty; generic listing reports without that context do not.
+Recipient RPCs expose reporter-anonymous accusation/context data and only the
+recipient's final statement, while current staff get the assigned identity and
+pending/submitted evidence. Exact retries are idempotent, conflicting retries
+fail, completed cases suppress unanswered pending work, and reopen restores the
+same request. Audit remains identifier-only and there is no Resource mutation,
+notification, Realtime, outbox, or enforcement side effect. Run
+`npm run moderation:counterstatement:verify:local` after a clean reset.
+
 The 04C4D1 forward migration derives active listing-owner loan reservations
 from accepted current LEND terms and agreement lifecycle. It rejects half-open
 period overlaps under a listing-row lock, exposes only an owner schedule and

@@ -189,11 +189,10 @@ class _ProfileBody extends StatelessWidget {
               ),
               const SizedBox(height: AppSpacing.small),
               OutlinedButton.icon(
-                key: const Key('profile-corroboration-requests-button'),
-                onPressed: () =>
-                    context.go(ModerationRoutes.corroborationRequests),
+                key: const Key('profile-moderation-review-requests-button'),
+                onPressed: () => context.go(ModerationRoutes.reviewRequests),
                 icon: const Icon(Icons.fact_check_outlined),
-                label: Text(l10n.corroborationRequestsAction),
+                label: Text(l10n.moderationReviewRequestsAction),
               ),
             ],
           ),

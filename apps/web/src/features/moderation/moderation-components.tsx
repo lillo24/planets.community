@@ -217,6 +217,61 @@ export function ModerationCaseDetailView({
         </Card>
       ) : null}
 
+      {detail.counterstatement ? (
+        <Card>
+          <CardHeader>
+            <CardTitle>
+              <h2>Counterparty statement</h2>
+            </CardTitle>
+            <CardDescription>
+              Private Scambio-Dona evidence from the reported counterparty for
+              manual staff review.
+            </CardDescription>
+            <CardAction>
+              <Badge variant="secondary">
+                {detail.counterstatement.submittedAt ? "Submitted" : "Pending"}
+              </Badge>
+            </CardAction>
+          </CardHeader>
+          <CardContent className="grid gap-4">
+            <dl className="grid gap-2 sm:grid-cols-2">
+              <div>
+                <dt className="text-sm text-muted-foreground">
+                  Assigned recipient
+                </dt>
+                <dd>{detail.counterstatement.recipientDisplayName}</dd>
+              </div>
+              <div>
+                <dt className="text-sm text-muted-foreground">Requested</dt>
+                <dd>{formatDate(detail.counterstatement.requestedAt)}</dd>
+              </div>
+            </dl>
+            {detail.counterstatement.statement ? (
+              <div className="grid gap-2">
+                <p className="whitespace-pre-wrap rounded-lg border p-4">
+                  {detail.counterstatement.statement}
+                </p>
+                <time
+                  className="text-sm text-muted-foreground"
+                  dateTime={detail.counterstatement.submittedAt ?? undefined}
+                >
+                  Submitted {formatDate(detail.counterstatement.submittedAt!)}
+                </time>
+              </div>
+            ) : (
+              <p className="text-muted-foreground">
+                No statement submitted yet.
+              </p>
+            )}
+            <p className="rounded-lg bg-muted p-3 text-sm">
+              A counterstatement is private evidence, not a verdict or an
+              automatic consequence. It does not change the case state, request,
+              listing, agreement, or resource availability.
+            </p>
+          </CardContent>
+        </Card>
+      ) : null}
+
       <Card>
         <CardHeader>
           <CardTitle>Private staff notes</CardTitle>

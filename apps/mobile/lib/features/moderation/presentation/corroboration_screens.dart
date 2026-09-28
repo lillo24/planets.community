@@ -10,6 +10,7 @@ import '../../../core/widgets/loading_state.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../auth/application/auth_session_controller.dart';
 import '../application/corroboration_controllers.dart';
+import '../application/moderation_evidence_controllers.dart';
 import '../domain/corroboration_models.dart';
 import 'moderation_routes.dart';
 
@@ -201,6 +202,7 @@ class _CorroborationDetailScreenState
         );
     if (succeeded && mounted) {
       ref.invalidate(corroborationRequestsProvider);
+      ref.invalidate(moderationEvidenceRequestsProvider);
     }
   }
 

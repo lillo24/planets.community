@@ -56,6 +56,21 @@ The staff-only evidence RPC returns identified submitted responses and neutral
 counts. Generic audit metadata contains identifiers/counts only, and no
 corroboration outbox/Realtime/push event exists.
 
+09A2B extends the request discriminator and adds private append-only
+`moderation_counterstatements`. A report-transaction trigger creates one
+`resource_counterstatement` request only for supported profile, Resource
+request, or Resource chat-message targets with a canonical request context.
+It revalidates the listing owner/requester pair and subject rather than trusting
+client-supplied recipient data; generic listing reports without that context do
+not qualify. Recipient operations use a unified discriminated request list plus
+a counterstatement-specific detail/submit boundary. Submission locks case then
+request, revalidates the current canonical counterparty, trims and requires
+10–4000 characters, accepts only an exact client retry, and preserves the first
+statement. The reporter has no request/status/statement read. Current staff get
+only the assigned recipient and pending/submitted statement projection.
+Identifier-only audit rows omit statement bodies, and no outbox, Realtime,
+notification, or Resource-domain mutation is emitted.
+
 The first staff role is intentionally an operator/database-owner bootstrap,
 never a client path. After the profile exists, run a reviewed owner session:
 
@@ -69,10 +84,9 @@ setting `is_active = false` and `deactivated_at = statement_timestamp()`;
 subsequent staff operations deny immediately. Do not grant direct moderation
 table access or distribute a service-role key to make an admin browser work.
 
-09A1/09A2A intentionally define no sanctions, public warning, automated
-hiding, blocking, suspension, Scambio-Dona counterstatement or
-retention/deletion policy. 09A2B, 09B, 09C and Plan 10 own those decisions
-respectively.
+09A1/09A2A/09A2B intentionally define no sanctions, public warning, automated
+hiding, blocking, suspension, or retention/deletion policy. 09B, 09C and Plan
+10 own those decisions respectively.
 
 ## Application conflict SQLSTATEs
 
@@ -489,6 +503,7 @@ npm run project:contribution-selections:verify:local
 npm run project:membership-commitments:verify:local
 npm run moderation:verify:local
 npm run moderation:corroboration:verify:local
+npm run moderation:counterstatement:verify:local
 npm run db:types
 npm run db:types:check
 ```
@@ -587,6 +602,14 @@ detail, exact response retry, reported-subject denial, staff-only identified
 evidence, completed-case pending suppression, and the absence of sensitive
 audit/outbox projection. It prints no emails, OTPs, tokens, keys, database
 URLs, report wording, response content, or evidence records.
+
+`moderation:counterstatement:verify:local` authenticates canonical Resource
+counterparties, an unrelated profile, and staff. It proves automatic request
+creation, subject-only reporter-anonymous detail, exact immutable retry,
+unrelated/reporter denial, staff-only pending/submitted evidence, unchanged
+Resource-domain state, and body-free audit/outbox records. It prints no emails,
+OTPs, tokens, keys, database URLs, report wording, statement content, or
+evidence records.
 
 `auth:web:verify:local` adds web-specific evidence after a locally configured production Next.js build. It obtains session cookies through supported `@supabase/ssr` callbacks, confirms the Server Component recognizes the authenticated session, rejects private-auth material in the rendered response, and confirms `/admin` returns 404 for signed-out and ordinary signed-in requests. It does not invent or log Supabase's cookie encoding.
 

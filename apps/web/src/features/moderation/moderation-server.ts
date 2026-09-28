@@ -6,6 +6,7 @@ import {
   moderationQueuePageSize,
   parseModerationCase,
   parseModerationCorroboration,
+  parseModerationCounterstatement,
   parseModerationQueue,
   type ModerationCaseDetail,
   type ModerationQueueCursor,
@@ -122,27 +123,43 @@ export async function readModerationCase(
   });
   if (result.error) throw new Error("The moderation case could not be loaded.");
   const detail = parseModerationCase(result.data);
-  if (!detail || !detail.projectContextId) {
+  if (!detail) {
     return { status: "ready", staffRole: access.role, detail };
   }
-  const corroboration = await access.client.rpc(
-    "get_moderation_case_corroboration",
-    {
-      p_expected_staff_profile_id: access.profileId,
-      p_case_id: caseId,
-    },
-  );
-  if (corroboration.error) {
+
+  const [corroboration, counterstatement] = await Promise.all([
+    detail.projectContextId
+      ? access.client.rpc("get_moderation_case_corroboration", {
+          p_expected_staff_profile_id: access.profileId,
+          p_case_id: caseId,
+        })
+      : Promise.resolve(null),
+    detail.resourceRequestContextId
+      ? access.client.rpc("get_moderation_case_counterstatement", {
+          p_expected_staff_profile_id: access.profileId,
+          p_case_id: caseId,
+        })
+      : Promise.resolve(null),
+  ]);
+  if (corroboration?.error) {
     throw new Error(
       "The moderation corroboration evidence could not be loaded.",
     );
+  }
+  if (counterstatement?.error) {
+    throw new Error("The moderation counterstatement could not be loaded.");
   }
   return {
     status: "ready",
     staffRole: access.role,
     detail: {
       ...detail,
-      corroboration: parseModerationCorroboration(corroboration.data),
+      corroboration: corroboration
+        ? parseModerationCorroboration(corroboration.data)
+        : null,
+      counterstatement: counterstatement
+        ? parseModerationCounterstatement(counterstatement.data)
+        : null,
     },
   };
 }

@@ -12,8 +12,10 @@ import '../../features/messages/presentation/messages_routes.dart';
 import '../../features/messages/presentation/messages_screen.dart';
 import '../../features/messages/presentation/participation_request_message_screen.dart';
 import '../../features/moderation/domain/moderation_models.dart';
+import '../../features/moderation/presentation/counterstatement_screen.dart';
 import '../../features/moderation/presentation/own_reports_screen.dart';
 import '../../features/moderation/presentation/corroboration_screens.dart';
+import '../../features/moderation/presentation/moderation_evidence_requests_screen.dart';
 import '../../features/moderation/presentation/report_form_screen.dart';
 import '../../features/notifications/presentation/notification_preferences_screen.dart';
 import '../../features/notifications/presentation/notification_routes.dart';
@@ -229,14 +231,21 @@ RoutingConfig _routingConfig(
                     builder: (context, state) => const OwnReportsScreen(),
                     routes: [
                       GoRoute(
-                        path: 'corroboration',
+                        path: 'review-requests',
                         builder: (context, state) =>
-                            const CorroborationRequestsScreen(),
+                            const ModerationEvidenceRequestsScreen(),
                         routes: [
                           GoRoute(
-                            path: ':requestId',
+                            path: 'corroboration/:requestId',
                             builder: (context, state) =>
                                 CorroborationDetailScreen(
+                                  requestId: state.pathParameters['requestId']!,
+                                ),
+                          ),
+                          GoRoute(
+                            path: 'counterstatement/:requestId',
+                            builder: (context, state) =>
+                                CounterstatementDetailScreen(
                                   requestId: state.pathParameters['requestId']!,
                                 ),
                           ),

@@ -7,7 +7,7 @@ import 'package:go_router/go_router.dart';
 import '../../features/auth/application/auth_session_controller.dart';
 import '../../features/auth/domain/auth_models.dart';
 import '../../features/notifications/application/notifications_controllers.dart';
-import '../../features/moderation/presentation/corroboration_session_prompt.dart';
+import '../../features/moderation/presentation/moderation_evidence_session_prompt.dart';
 import '../../l10n/generated/app_localizations.dart';
 
 enum AppBranch { profile, browse, home }
@@ -77,7 +77,7 @@ class AppNavigationShell extends ConsumerWidget {
           navigationShell.goBranch(AppBranch.home.index);
         }
       },
-      child: CorroborationSessionPromptHost(child: scaffold),
+      child: ModerationEvidenceSessionPromptHost(child: scaffold),
     );
   }
 }

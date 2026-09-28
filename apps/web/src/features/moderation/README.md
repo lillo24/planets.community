@@ -18,3 +18,10 @@ identified submitted responses and private explanations. It labels this as
 evidence rather than a verdict and states that Project membership is only an
 eligibility proxy, not proof of physical attendance. No enforcement control is
 introduced.
+
+09A2B adds a separate staff-authorized counterstatement RPC for qualifying
+Scambio-Dona cases. Case detail shows the assigned counterparty, Pending or
+Submitted status, and the immutable private statement when present. The card
+labels this as evidence rather than a verdict and does not add enforcement or
+resource-state controls. Reporter identity remains part of the staff case
+detail only; recipient-facing projections never expose it.

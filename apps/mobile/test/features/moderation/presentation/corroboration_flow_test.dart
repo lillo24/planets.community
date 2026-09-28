@@ -7,7 +7,6 @@ import 'package:planets_mobile/features/auth/domain/auth_models.dart';
 import 'package:planets_mobile/features/moderation/application/corroboration_controllers.dart';
 import 'package:planets_mobile/features/moderation/data/corroboration_gateway.dart';
 import 'package:planets_mobile/features/moderation/presentation/corroboration_screens.dart';
-import 'package:planets_mobile/features/moderation/presentation/corroboration_session_prompt.dart';
 import 'package:planets_mobile/l10n/generated/app_localizations.dart';
 
 import '../../../support/fake_moderation.dart';
@@ -16,38 +15,6 @@ const profileId = '00000000-0000-4000-8000-000000000001';
 const requestId = '00000000-0000-4000-8000-000000000911';
 
 void main() {
-  testWidgets('prompts one pending request only once in the app session', (
-    tester,
-  ) async {
-    final gateway = FakeCorroborationGateway()
-      ..items = [corroborationSummaryFixture()];
-    final container = _container(gateway);
-    addTearDown(container.dispose);
-    await _pump(
-      tester,
-      container,
-      const CorroborationSessionPromptHost(child: Scaffold()),
-    );
-    await tester.pumpAndSettle();
-
-    expect(find.byKey(const Key('corroboration-session-prompt')), findsOne);
-    expect(find.textContaining('identity is hidden'), findsOneWidget);
-    expect(find.textContaining('does not mean you witnessed'), findsOneWidget);
-    expect(gateway.pendingOnly, isTrue);
-
-    await tester.tap(find.byKey(const Key('corroboration-later')));
-    await tester.pumpAndSettle();
-    expect(find.byKey(const Key('corroboration-session-prompt')), findsNothing);
-
-    await _pump(
-      tester,
-      container,
-      const CorroborationSessionPromptHost(child: Scaffold()),
-    );
-    await tester.pumpAndSettle();
-    expect(gateway.listCount, 1);
-  });
-
   testWidgets('shows private wording and records a final unsure response', (
     tester,
   ) async {

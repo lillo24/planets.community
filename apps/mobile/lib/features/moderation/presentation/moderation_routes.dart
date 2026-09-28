@@ -6,10 +6,13 @@ import '../domain/moderation_models.dart';
 abstract final class ModerationRoutes {
   static const ownReports = '/profile/reports';
   static const newReport = '/profile/reports/new';
-  static const corroborationRequests = '/profile/reports/corroboration';
+  static const reviewRequests = '/profile/reports/review-requests';
 
   static String corroborationDetail(String requestId) =>
-      '$corroborationRequests/$requestId';
+      '$reviewRequests/corroboration/$requestId';
+
+  static String counterstatementDetail(String requestId) =>
+      '$reviewRequests/counterstatement/$requestId';
 
   static Future<T?> openReport<T>(
     BuildContext context,

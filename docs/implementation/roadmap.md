@@ -123,7 +123,7 @@ Do not begin a dependent plan until the prior plan is merged or its branch is ex
 | 08A3        | Photo Read Access + Interactions                          | Reusable relationship authorization and non-owner private photo delivery                                                 | 08A2                   | PR #98; organizer pending/current-participant relationship is the first interaction set                              | In progress                        |
 | 08A4A       | Personal Project Trust Gates + Contextual Photos          | Canonical photo gates, creator-review avatars, and Project-context organizer delivery                                    | 08A3                   | PR #101; native device QA remains in Plan 12                                                                         | In progress                        |
 | 08A4B       | Scambio-Dona Profile Photo Trust Integration              | Resource-exchange counterpart gates and contextual photo placement                                                       | 08A4A                  | Current stacked PR; native device QA remains in Plan 12                                                              | In progress                        |
-| 09          | Safety, moderation and admin                              | Reporting, blocking, content states, admin roles, moderation queue/actions, audit trail and minimal custom admin UI      | 04–08                  | Community rules, prohibited content, escalation, suspension, appeals, minimum age                                    | In progress through 09A2A          |
+| 09          | Safety, moderation and admin                              | Reporting, blocking, content states, admin roles, moderation queue/actions, audit trail and minimal custom admin UI      | 04–08                  | Community rules, prohibited content, escalation, suspension, appeals, minimum age                                    | In progress through 09A2B          |
 | 10          | Account deletion and privacy operations                   | In-app and web deletion paths, cleanup/anonymization jobs, export groundwork, privacy documentation inputs               | 03–09                  | Legal retention and anonymization policy; legal text remains founder/legal work                                      | Not started                        |
 | 11          | Analytics and operational foundations                     | Explicit product events, privacy scrubbing, health/queue signals, alert requirements, and incident ownership inputs      | 00–10                  | Success metrics and analytics consent/legal choices                                                                  | Not started                        |
 | 12          | Consolidated UI/UX and native QA pass                     | Coherent visual/interaction design, accessibility, responsive behavior, and deferred native flow validation              | 00–11                  | Final visual identity, high-impact interaction decisions, and native review                                          | Not started                        |
@@ -1060,8 +1060,12 @@ Parent Plan 09 remains in progress. Its next explicit boundaries are:
   Agree/Disagree/Unsure response, and staff-only identified evidence/counts;
   membership is only an eligibility proxy and evidence has no automatic
   consequence;
-- **09A2B — Scambio-Dona counterstatement:** one private canonical
-  counterparty response, without broadening the Project corroboration model;
+- **09A2B — Scambio-Dona counterstatement (implemented in this stacked PR):**
+  automatic requests only for supported targets with canonical Resource
+  request context, one private immutable canonical-counterparty statement,
+  unified mobile Review Requests prompting/history, and staff-only
+  pending/submitted evidence; no reporter read, Resource mutation,
+  notification, or automatic consequence;
 - **09B — User blocking:** user-controlled relationship blocking and its
   product-surface effects;
 - **09C — Moderation consequences:** restrictions, content states and

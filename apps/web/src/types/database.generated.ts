@@ -2177,6 +2177,17 @@ export type Database = {
           unsure_count: number
         }[]
       }
+      get_moderation_case_counterstatement: {
+        Args: { p_case_id: string; p_expected_staff_profile_id: string }
+        Returns: {
+          recipient_display_name: string
+          recipient_profile_id: string
+          request_id: string
+          requested_at: string
+          statement: string
+          submitted_at: string
+        }[]
+      }
       get_moderation_case_detail: {
         Args: { p_case_id: string; p_expected_staff_profile_id: string }
         Returns: {
@@ -2327,6 +2338,23 @@ export type Database = {
           title: string
           topic: string
           updated_at: string
+        }[]
+      }
+      get_own_resource_counterstatement_request: {
+        Args: { p_expected_recipient_profile_id: string; p_request_id: string }
+        Returns: {
+          can_respond: boolean
+          case_id: string
+          case_state: string
+          category: string
+          context_summary: string
+          created_at: string
+          explanation: string
+          request_id: string
+          statement: string
+          submitted_at: string
+          target_kind: string
+          target_summary: string
         }[]
       }
       get_own_resource_listing: {
@@ -2650,6 +2678,24 @@ export type Database = {
           resource_listing_id: string
           resource_request_id: string
           viewer_role: string
+        }[]
+      }
+      list_own_moderation_evidence_requests: {
+        Args: {
+          p_expected_recipient_profile_id: string
+          p_limit?: number
+          p_pending_only?: boolean
+        }
+        Returns: {
+          can_respond: boolean
+          case_state: string
+          context_summary: string
+          created_at: string
+          request_id: string
+          request_kind: string
+          responded_at: string
+          target_kind: string
+          target_summary: string
         }[]
       }
       list_own_moderation_reports: {
@@ -3613,6 +3659,19 @@ export type Database = {
           created_at: string
           report_id: string
           state: string
+        }[]
+      }
+      submit_resource_counterstatement: {
+        Args: {
+          p_client_submission_id: string
+          p_expected_recipient_profile_id: string
+          p_request_id: string
+          p_statement: string
+        }
+        Returns: {
+          counterstatement_id: string
+          created_at: string
+          statement: string
         }[]
       }
       transition_moderation_case: {

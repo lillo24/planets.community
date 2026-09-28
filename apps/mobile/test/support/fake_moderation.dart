@@ -1,8 +1,12 @@
 import 'dart:async';
 
-import 'package:planets_mobile/features/moderation/data/moderation_gateway.dart';
+import 'package:planets_mobile/features/moderation/data/counterstatement_gateway.dart';
 import 'package:planets_mobile/features/moderation/data/corroboration_gateway.dart';
+import 'package:planets_mobile/features/moderation/data/moderation_evidence_gateway.dart';
+import 'package:planets_mobile/features/moderation/data/moderation_gateway.dart';
+import 'package:planets_mobile/features/moderation/domain/counterstatement_models.dart';
 import 'package:planets_mobile/features/moderation/domain/corroboration_models.dart';
+import 'package:planets_mobile/features/moderation/domain/moderation_evidence_models.dart';
 import 'package:planets_mobile/features/moderation/domain/moderation_models.dart';
 
 class FakeModerationGateway implements ModerationGateway {
@@ -168,5 +172,116 @@ GroupCorroborationDetail corroborationDetailFixture({
   responseExplanation: null,
   respondedAt: null,
   canRespond: canRespond,
+  createdAt: DateTime.utc(2026, 9, 28, 10),
+);
+
+class FakeModerationEvidenceGateway implements ModerationEvidenceGateway {
+  Object? listError;
+  Future<void>? listDelay;
+  List<ModerationEvidenceSummary> items = [];
+  int listCount = 0;
+  String? expectedProfileId;
+  bool? pendingOnly;
+  int? limit;
+
+  @override
+  Future<List<ModerationEvidenceSummary>> listOwn({
+    required String expectedProfileId,
+    required bool pendingOnly,
+    int limit = moderationEvidencePageSize,
+  }) async {
+    listCount++;
+    this.expectedProfileId = expectedProfileId;
+    this.pendingOnly = pendingOnly;
+    this.limit = limit;
+    if (listDelay case final delay?) await delay;
+    if (listError case final error?) throw error;
+    return List.unmodifiable(items.take(limit));
+  }
+}
+
+ModerationEvidenceSummary moderationEvidenceSummaryFixture({
+  String requestId = '00000000-0000-4000-8000-000000000921',
+  ModerationEvidenceKind kind = ModerationEvidenceKind.resourceCounterstatement,
+  bool canRespond = true,
+  DateTime? respondedAt,
+  DateTime? createdAt,
+}) => ModerationEvidenceSummary(
+  requestId: requestId,
+  kind: kind,
+  caseState: ModerationReviewState.received,
+  targetKind: ModerationTargetKind.resourceRequest,
+  targetSummary: 'Shared ladder request',
+  contextSummary: 'Shared ladder',
+  respondedAt: respondedAt,
+  canRespond: canRespond,
+  createdAt: createdAt ?? DateTime.utc(2026, 9, 28, 10),
+);
+
+class FakeCounterstatementGateway implements CounterstatementGateway {
+  Object? detailError;
+  Object? submitError;
+  Future<void>? detailDelay;
+  Future<void>? submitDelay;
+  ResourceCounterstatementDetail? detail = counterstatementDetailFixture();
+  int detailCount = 0;
+  int submitCount = 0;
+  String? expectedProfileId;
+  String? requestId;
+  String? clientSubmissionId;
+  String? statement;
+
+  @override
+  Future<ResourceCounterstatementDetail?> getOwn({
+    required String expectedProfileId,
+    required String requestId,
+  }) async {
+    detailCount++;
+    this.expectedProfileId = expectedProfileId;
+    this.requestId = requestId;
+    if (detailDelay case final delay?) await delay;
+    if (detailError case final error?) throw error;
+    return detail;
+  }
+
+  @override
+  Future<ResourceCounterstatementResponse> submit({
+    required String expectedProfileId,
+    required String requestId,
+    required String clientSubmissionId,
+    required String statement,
+  }) async {
+    submitCount++;
+    this.expectedProfileId = expectedProfileId;
+    this.requestId = requestId;
+    this.clientSubmissionId = clientSubmissionId;
+    this.statement = statement;
+    if (submitDelay case final delay?) await delay;
+    if (submitError case final error?) throw error;
+    return ResourceCounterstatementResponse(
+      counterstatementId: '00000000-0000-4000-8000-000000000925',
+      statement: statement.trim(),
+      createdAt: DateTime.utc(2026, 9, 28, 10, 5),
+    );
+  }
+}
+
+ResourceCounterstatementDetail counterstatementDetailFixture({
+  bool canRespond = true,
+  String? statement,
+}) => ResourceCounterstatementDetail(
+  requestId: '00000000-0000-4000-8000-000000000921',
+  caseId: '00000000-0000-4000-8000-000000000922',
+  caseState: canRespond
+      ? ModerationReviewState.received
+      : ModerationReviewState.completed,
+  category: ModerationCategory.safetyConcern,
+  explanation: 'The original Resource request report wording.',
+  targetKind: ModerationTargetKind.resourceRequest,
+  targetSummary: 'Shared ladder request',
+  contextSummary: 'Shared ladder',
+  statement: statement,
+  submittedAt: statement == null ? null : DateTime.utc(2026, 9, 28, 10, 5),
+  canRespond: canRespond && statement == null,
   createdAt: DateTime.utc(2026, 9, 28, 10),
 );

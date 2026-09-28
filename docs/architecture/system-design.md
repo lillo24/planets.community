@@ -643,6 +643,19 @@ explanation, timestamp, and neutral counts. Project membership is an
 eligibility proxy, not evidence of physical attendance. Corroboration never
 changes case state, content visibility, account access, or notification state.
 
+Plan 09A2B adds a separate private counterstatement path for qualifying
+Scambio-Dona reports with a canonical Resource request context. The case
+subject is revalidated as the other owner/requester counterparty and receives
+the original category, explanation, and safe Resource context without the
+reporter identity, staff notes, peer evidence, or other cases. One required
+trimmed statement is append-only and exact retries are idempotent; a different
+retry conflicts. Current staff can read the assigned counterparty and pending
+or submitted evidence. Completion suppresses an unanswered request from the
+pending queue, reopening restores that same request, and an already submitted
+statement remains final. Counterstatements do not change moderation state,
+Resource requests/listings/agreements, notifications, Realtime, or outbox
+state.
+
 The minimum moderation backbone before public user-generated content should include:
 
 - reporting of users, proposals, messages, and supported media;
@@ -660,12 +673,11 @@ Codex can build this machinery, but founders must define prohibited content, esc
 
 Direct database editing through Supabase Studio is acceptable for development. It is not the long-term moderation interface and should not be required for routine production operations.
 
-09A2B still owns the private Scambio-Dona counterstatement flow. 09B owns user
-blocking, 09C owns consequences including restrictions, content visibility,
-suspension, and later escalation/appeals, and 09D owns minimum-age behavior.
-Plan 10 must decide report, note, and corroboration retention plus
-deletion/anonymization; 09A1/09A2A deliberately use restrictive references and
-make no irreversible retention-policy choice.
+09B owns user blocking, 09C owns consequences including restrictions, content
+visibility, suspension, and later escalation/appeals, and 09D owns minimum-age
+behavior. Plan 10 must decide report, note, corroboration, and counterstatement
+retention plus deletion/anonymization; 09A1/09A2A/09A2B deliberately use
+restrictive references and make no irreversible retention-policy choice.
 
 ## Security baseline
 

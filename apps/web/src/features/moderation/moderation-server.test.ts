@@ -6,9 +6,11 @@ import {
   type ModerationServerClient,
 } from "./moderation-server";
 import {
+  moderationCounterstatementRow,
   moderationCorroborationRow,
   moderationDetailRow,
   moderationQueueRow,
+  moderationResourceDetailRow,
 } from "./moderation-test-fixtures";
 
 vi.mock("server-only", () => ({}));
@@ -64,6 +66,31 @@ describe("moderation server authorization", () => {
     }
   });
 
+  it("loads pending counterparty evidence only for a Resource request case", async () => {
+    const staff = client({
+      profileId,
+      staffRole: "moderator",
+      detail: [moderationResourceDetailRow()],
+      counterstatement: [moderationCounterstatementRow()],
+    });
+    const result = await readModerationCase(caseId, async () => staff);
+    expect(result.status).toBe("ready");
+    if (result.status === "ready") {
+      expect(result.detail?.counterstatement).toMatchObject({
+        recipientDisplayName: "Taylor",
+        statement: null,
+      });
+    }
+    expect(staff.rpc).toHaveBeenCalledWith(
+      "get_moderation_case_counterstatement",
+      expect.objectContaining({ p_case_id: caseId }),
+    );
+    expect(staff.rpc).not.toHaveBeenCalledWith(
+      "get_moderation_case_corroboration",
+      expect.anything(),
+    );
+  });
+
   it("fails loudly when an authorized queue RPC fails", async () => {
     const staff = client({
       profileId,
@@ -85,6 +112,7 @@ function client({
   queue = [],
   detail = [],
   corroboration = [],
+  counterstatement = [],
   queueError = false,
 }: {
   profileId: string | null;
@@ -92,6 +120,7 @@ function client({
   queue?: unknown[];
   detail?: unknown[];
   corroboration?: unknown[];
+  counterstatement?: unknown[];
   queueError?: boolean;
 }): ModerationServerClient {
   return {
@@ -115,6 +144,9 @@ function client({
         return { data: detail, error: null };
       if (name === "get_moderation_case_corroboration") {
         return { data: corroboration, error: null };
+      }
+      if (name === "get_moderation_case_counterstatement") {
+        return { data: counterstatement, error: null };
       }
       throw new Error(`Unexpected RPC: ${name}`);
     }),

@@ -60,6 +60,15 @@ export type ModerationCorroborationEvidence = Readonly<{
   responses: ModerationCorroborationResponse[];
 }>;
 
+export type ModerationCounterstatementEvidence = Readonly<{
+  requestId: string;
+  recipientProfileId: string;
+  recipientDisplayName: string;
+  statement: string | null;
+  submittedAt: string | null;
+  requestedAt: string;
+}>;
+
 export type ModerationCaseDetail = Readonly<{
   caseId: string;
   state: ModerationState;
@@ -82,6 +91,7 @@ export type ModerationCaseDetail = Readonly<{
   notes: ModerationCaseNote[];
   events: ModerationCaseEvent[];
   corroboration?: ModerationCorroborationEvidence | null;
+  counterstatement?: ModerationCounterstatementEvidence | null;
 }>;
 
 export type ModerationQueuePage = Readonly<{
@@ -164,6 +174,25 @@ export function parseModerationCorroboration(
     disagreeCount: integer(row.disagree_count),
     unsureCount: integer(row.unsure_count),
     responses: array(row.responses).map(parseCorroborationResponse),
+  };
+}
+
+export function parseModerationCounterstatement(
+  data: unknown,
+): ModerationCounterstatementEvidence | null {
+  if (!Array.isArray(data) || data.length > 1) throw malformed();
+  if (data.length === 0) return null;
+  const row = record(data[0]);
+  const statement = optionalBounded(row.statement, 4000);
+  const submittedAt = optionalTimestamp(row.submitted_at);
+  if ((statement === null) !== (submittedAt === null)) throw malformed();
+  return {
+    requestId: uuid(row.request_id),
+    recipientProfileId: uuid(row.recipient_profile_id),
+    recipientDisplayName: bounded(row.recipient_display_name, 120),
+    statement,
+    submittedAt,
+    requestedAt: timestamp(row.requested_at),
   };
 }
 

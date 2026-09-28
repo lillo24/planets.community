@@ -1,14 +1,17 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
 import { ModerationCaseDetailView } from "./moderation-components";
 import {
   parseModerationCase,
   parseModerationCorroboration,
+  parseModerationCounterstatement,
 } from "./moderation-models";
 import {
+  moderationCounterstatementRow,
   moderationCorroborationRow,
   moderationDetailRow,
+  moderationResourceDetailRow,
 } from "./moderation-test-fixtures";
 
 vi.mock("./moderation-actions", () => ({
@@ -55,4 +58,43 @@ describe("moderation case detail", () => {
       screen.getByText(/does not prove physical attendance/iu),
     ).toBeInTheDocument();
   });
+
+  it.each([
+    [null, "Pending", "No statement submitted yet."],
+    [
+      "My private version of events.",
+      "Submitted",
+      "My private version of events.",
+    ],
+  ])(
+    "shows counterparty evidence with its final status",
+    (statement, status, expectedText) => {
+      const detail = parseModerationCase([moderationResourceDetailRow()]);
+      if (!detail) throw new Error("missing fixture");
+      const { container } = render(
+        <ModerationCaseDetailView
+          detail={{
+            ...detail,
+            counterstatement: parseModerationCounterstatement([
+              moderationCounterstatementRow(statement),
+            ]),
+          }}
+        />,
+      );
+      const view = within(container);
+
+      expect(
+        view.getByRole("heading", { name: "Counterparty statement" }),
+      ).toBeInTheDocument();
+      expect(view.getByText(status)).toBeInTheDocument();
+      expect(view.getAllByText("Taylor")).not.toHaveLength(0);
+      expect(view.getByText(expectedText)).toBeInTheDocument();
+      expect(
+        view.getByText(/not a verdict or an automatic consequence/iu),
+      ).toBeInTheDocument();
+      expect(
+        view.queryByRole("button", { name: /suspend|hide|flag|block/iu }),
+      ).not.toBeInTheDocument();
+    },
+  );
 });

@@ -80,3 +80,27 @@ export function moderationCorroborationRow() {
     ],
   };
 }
+
+export function moderationResourceDetailRow() {
+  return {
+    ...moderationDetailRow(),
+    target_kind: "resource_request",
+    target_summary: "Shared ladder request",
+    context_summary: "Shared ladder",
+    project_context_id: null,
+    resource_listing_context_id: "00000000-0000-4000-8000-000000000921",
+    resource_request_context_id: "00000000-0000-4000-8000-000000000922",
+    resource_chat_context_id: null,
+  };
+}
+
+export function moderationCounterstatementRow(statement: string | null = null) {
+  return {
+    request_id: "00000000-0000-4000-8000-000000000923",
+    recipient_profile_id: "00000000-0000-4000-8000-000000000902",
+    recipient_display_name: "Taylor",
+    statement,
+    submitted_at: statement ? "2026-09-28T10:05:00Z" : null,
+    requested_at: "2026-09-28T10:00:00Z",
+  };
+}
