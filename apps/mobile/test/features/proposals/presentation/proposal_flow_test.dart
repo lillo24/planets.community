@@ -65,6 +65,38 @@ void main() {
     },
   );
 
+  testWidgets('Proposal cards show occupancy and legacy capacity copy', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      _localized(
+        Column(
+          children: [
+            ProposalCard(
+              proposal: proposalSummaryFixture(
+                capacity: projectCapacityFixture(
+                  peopleCapacity: 4,
+                  currentParticipantCount: 2,
+                ),
+              ),
+              onTap: () {},
+            ),
+            ProposalCard(
+              proposal: proposalSummaryFixture(
+                id: 'legacy',
+                capacity: projectCapacityFixture(peopleCapacity: null),
+              ),
+              onTap: () {},
+            ),
+          ],
+        ),
+      ),
+    );
+
+    expect(find.text('3 / 4 people'), findsOneWidget);
+    expect(find.text('Capacity not set'), findsOneWidget);
+  });
+
   testWidgets(
     'signed-out public card navigates to detail through public gateway',
     (tester) async {
@@ -99,12 +131,14 @@ void main() {
       );
       await tester.pumpAndSettle();
       expect(find.text('Paint the square'), findsOneWidget);
+      expect(find.text('1 / 20 people'), findsOneWidget);
       expect(find.byKey(const Key('proposal-requested-section')), findsNothing);
       expect(gateway.calls, isNot(contains('list-requested')));
 
       await tester.tap(find.byKey(const Key('proposal-card-proposal-1')));
       await tester.pumpAndSettle();
       expect(find.text('A full proposal description.'), findsOneWidget);
+      expect(find.text('1 / 20 people'), findsWidgets);
       expect(gateway.calls, contains('public-detail:proposal-1'));
     },
   );

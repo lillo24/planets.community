@@ -1,3 +1,5 @@
+import '../../participation/domain/project_capacity.dart';
+
 enum ProposalLifecycle {
   draft('draft'),
   published('published'),
@@ -137,6 +139,7 @@ class ProposalSummary {
     required this.publicLocationLabel,
     required this.status,
     required this.skills,
+    required this.capacity,
   });
 
   final String id;
@@ -151,6 +154,7 @@ class ProposalSummary {
   final String publicLocationLabel;
   final ProposalStatus status;
   final List<ProposalSkill> skills;
+  final ProjectCapacitySnapshot capacity;
 
   ProposalCursor get cursor => ProposalCursor(startsAt: startsAt, id: id);
 }
@@ -207,6 +211,7 @@ class OwnProposal {
     required this.updatedAt,
     required this.publishedAt,
     required this.cancelledAt,
+    required this.capacity,
   });
 
   final String id;
@@ -229,6 +234,7 @@ class OwnProposal {
   final DateTime updatedAt;
   final DateTime? publishedAt;
   final DateTime? cancelledAt;
+  final ProjectCapacitySnapshot capacity;
 
   bool isEditableAt(DateTime now) =>
       lifecycle == ProposalLifecycle.draft ||
@@ -259,6 +265,7 @@ class ProposalInput {
     required this.exactMeetingText,
     required this.exactLocationVisibility,
     required this.skillImportanceById,
+    required this.peopleCapacity,
   });
 
   final String title;
@@ -274,6 +281,7 @@ class ProposalInput {
   final String exactMeetingText;
   final ExactLocationVisibility exactLocationVisibility;
   final Map<String, ProposalSkillImportance> skillImportanceById;
+  final int? peopleCapacity;
 }
 
 bool isValidProposalDraft(ProposalInput input) {
@@ -296,6 +304,7 @@ bool isValidProposalDraft(ProposalInput input) {
       administrativeAreaLength <= 120 &&
       labelLength <= 180 &&
       exactLength <= 1000 &&
+      isValidProjectPeopleCapacity(input.peopleCapacity) &&
       (input.startsAt == null ||
           input.endsAt == null ||
           input.endsAt!.isAfter(input.startsAt!));
@@ -312,7 +321,8 @@ bool isPublishableProposalInput(ProposalInput input) =>
     input.countryCode.trim().isNotEmpty &&
     input.locality.trim().isNotEmpty &&
     input.publicLocationLabel.trim().isNotEmpty &&
-    input.exactMeetingText.trim().isNotEmpty;
+    input.exactMeetingText.trim().isNotEmpty &&
+    input.peopleCapacity != null;
 
 enum ProposalFailureKind { invalidInput, unavailable, forbidden, invalidState }
 

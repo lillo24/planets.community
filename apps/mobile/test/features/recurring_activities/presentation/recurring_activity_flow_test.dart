@@ -116,6 +116,7 @@ void main() {
       expect(find.byKey(const Key('browse-requested-badge')), findsOneWidget);
       expect(find.byKey(const Key('tavolo-card-tavolo-1')), findsOneWidget);
       expect(find.byKey(const Key('tavolo-card-tavolo-2')), findsOneWidget);
+      expect(find.text('1 / 20 people'), findsNWidgets(2));
       expect(
         tester.getTopLeft(find.byKey(const Key('tavolo-card-tavolo-1'))).dy,
         lessThan(
@@ -126,6 +127,7 @@ void main() {
       await tester.tap(find.byKey(const Key('tavolo-card-tavolo-1')));
       await tester.pumpAndSettle();
       expect(find.text('Tavolo details'), findsOneWidget);
+      expect(find.text('1 / 20 people'), findsWidgets);
       await tester.binding.handlePopRoute();
       await tester.pumpAndSettle();
       expect(
@@ -158,6 +160,7 @@ void main() {
       );
       expect(find.text('At the long reading-room table'), findsNothing);
       expect(find.textContaining('Sep 9, 2026 19:00'), findsWidgets);
+      await _scrollTo(tester, find.text('Organized by Casey'), 300);
       expect(find.text('Organized by Casey'), findsOneWidget);
     },
   );

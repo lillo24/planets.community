@@ -672,7 +672,7 @@ select lives_ok(
       statement_timestamp() + interval '3 days',
       'Europe/Rome', 'IT', 'Rome', 'Lazio', 'Rome',
       'Future Proposal exact meeting point', 'participants',
-      array[]::uuid[], array[]::text[]
+      array[]::uuid[], array[]::text[], 20
     )
   $$,
   'a Co-creator can edit a future published Proposal'
@@ -932,7 +932,8 @@ select lives_ok(
       'Community', 'IT', 'Rome', 'Lazio', 'Rome',
       'Tavolo exact meeting point', 'participants',
       'weekly', 4, null, '20:00'::time, 90, 'Europe/Rome',
-      current_date - 7
+      current_date - 7,
+      20
     )
   $$,
   'a Co-creator can edit a published Tavolo under existing schedule rules'

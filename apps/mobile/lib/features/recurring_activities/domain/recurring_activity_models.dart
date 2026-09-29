@@ -1,4 +1,5 @@
 import '../../../core/time/event_time.dart';
+import '../../participation/domain/project_capacity.dart';
 
 enum RecurringActivityLifecycle {
   draft('draft'),
@@ -114,6 +115,7 @@ class PublicRecurringActivitySummary {
     required this.publicLocationLabel,
     required this.nextOccurrence,
     required this.schedule,
+    required this.capacity,
   });
 
   final String id;
@@ -126,6 +128,7 @@ class PublicRecurringActivitySummary {
   final String publicLocationLabel;
   final RecurringActivityOccurrence nextOccurrence;
   final RecurringSchedule schedule;
+  final ProjectCapacitySnapshot capacity;
 
   RecurringActivityCursor get cursor =>
       RecurringActivityCursor(nextStartsAt: nextOccurrence.startsAt, id: id);
@@ -161,6 +164,7 @@ class PublicRecurringActivityDetail {
     required this.nextOccurrences,
     required this.exactMeetingText,
     required this.exactLocationRestricted,
+    required this.capacity,
   });
 
   final String id;
@@ -179,6 +183,7 @@ class PublicRecurringActivityDetail {
   final List<RecurringActivityOccurrence> nextOccurrences;
   final String? exactMeetingText;
   final bool exactLocationRestricted;
+  final ProjectCapacitySnapshot capacity;
 }
 
 class OwnRecurringActivity {
@@ -203,6 +208,7 @@ class OwnRecurringActivity {
     required this.pausedAt,
     required this.resumedAt,
     required this.endedAt,
+    required this.capacity,
   });
 
   final String id;
@@ -225,6 +231,7 @@ class OwnRecurringActivity {
   final DateTime? pausedAt;
   final DateTime? resumedAt;
   final DateTime? endedAt;
+  final ProjectCapacitySnapshot capacity;
 
   bool get isEditable => lifecycle != RecurringActivityLifecycle.ended;
   bool get canPublish => lifecycle == RecurringActivityLifecycle.draft;
@@ -257,6 +264,7 @@ class RecurringActivityInput {
     required this.durationMinutes,
     required this.eventTimezone,
     required this.effectiveFrom,
+    required this.peopleCapacity,
   });
 
   final String title;
@@ -276,6 +284,7 @@ class RecurringActivityInput {
   final int? durationMinutes;
   final String eventTimezone;
   final DateTime? effectiveFrom;
+  final int? peopleCapacity;
 
   bool get hasAnyScheduleValue =>
       recurrenceType != null ||
@@ -307,7 +316,8 @@ bool isValidRecurringActivityDraft(RecurringActivityInput input) {
     return length == 0 || (length >= min && length <= max);
   }
 
-  if (!bounded(input.title, 100, min: 2) ||
+  if (!isValidProjectPeopleCapacity(input.peopleCapacity) ||
+      !bounded(input.title, 100, min: 2) ||
       !bounded(input.summary, 240) ||
       !bounded(input.description, 5000) ||
       !bounded(input.topic, 120) ||
@@ -344,6 +354,7 @@ bool isPublishableRecurringActivityInput(RecurringActivityInput input) =>
     input.locality.trim().isNotEmpty &&
     input.publicLocationLabel.trim().isNotEmpty &&
     input.exactMeetingText.trim().isNotEmpty &&
+    input.peopleCapacity != null &&
     input.hasCompleteSchedule;
 
 bool isValidRecurringScheduleTransition(

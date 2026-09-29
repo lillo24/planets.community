@@ -545,6 +545,7 @@ class ProposalEditorController extends Notifier<ProposalEditorState> {
       );
     }
     if (!isPublishableProposalInput(input) ||
+        input.peopleCapacity! < existing.capacity.currentPeopleCount ||
         !isKnownProposalTimeZone(input.eventTimezone)) {
       return _reject(
         expectedStructuralActorId,

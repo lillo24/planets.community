@@ -446,6 +446,25 @@ void main() {
     },
   );
 
+  test('draft accepts missing capacity but publish rejects it', () async {
+    final gateway = FakeProposalGateway();
+    final session = _readyContainer(gateway);
+    addTearDown(session.container.dispose);
+    addTearDown(session.auth.close);
+    final controller = session.container.read(proposalEditorProvider.notifier);
+    await controller.load('user-1', null);
+    final input = proposalInputFixture(peopleCapacity: null);
+
+    expect(await controller.saveDraft('user-1', input), 'new-draft');
+    expect(gateway.lastInput?.peopleCapacity, isNull);
+    expect(await controller.publish('user-1', input), isNull);
+    expect(gateway.calls, isNot(contains('publish:new-draft')));
+    expect(
+      session.container.read(proposalEditorProvider).failure,
+      ProposalFailureKind.invalidInput,
+    );
+  });
+
   test(
     'published save uses update only and cancellation refreshes exact state',
     () async {
@@ -503,6 +522,70 @@ void main() {
     );
   });
 
+  test(
+    'published save rejects capacity below the current people count',
+    () async {
+      final gateway = FakeProposalGateway()
+        ..ownItems = [
+          ownProposalFixture(
+            lifecycle: ProposalLifecycle.published,
+            capacity: projectCapacityFixture(
+              peopleCapacity: 5,
+              currentParticipantCount: 3,
+            ),
+          ),
+        ];
+      final session = _readyContainer(gateway);
+      addTearDown(session.container.dispose);
+      addTearDown(session.auth.close);
+      final controller = session.container.read(
+        proposalEditorProvider.notifier,
+      );
+      await controller.load('user-1', 'proposal-1');
+
+      expect(
+        await controller.saveChanges(
+          'user-1',
+          proposalInputFixture(peopleCapacity: 3),
+        ),
+        isNull,
+      );
+      expect(gateway.calls, isNot(contains('update:proposal-1')));
+      expect(
+        session.container.read(proposalEditorProvider).failure,
+        ProposalFailureKind.invalidInput,
+      );
+    },
+  );
+
+  test('legacy published save requires capacity', () async {
+    final gateway = FakeProposalGateway()
+      ..ownItems = [
+        ownProposalFixture(
+          lifecycle: ProposalLifecycle.published,
+          input: proposalInputFixture(peopleCapacity: null),
+        ),
+      ];
+    final session = _readyContainer(gateway);
+    addTearDown(session.container.dispose);
+    addTearDown(session.auth.close);
+    final controller = session.container.read(proposalEditorProvider.notifier);
+    await controller.load('user-1', 'proposal-1');
+
+    expect(
+      await controller.saveChanges(
+        'user-1',
+        proposalInputFixture(peopleCapacity: null),
+      ),
+      isNull,
+    );
+    expect(gateway.calls, isNot(contains('update:proposal-1')));
+    expect(
+      session.container.read(proposalEditorProvider).failure,
+      ProposalFailureKind.invalidInput,
+    );
+  });
+
   test('forbidden structural Proposal read exposes no cached record', () async {
     final gateway = FakeProposalGateway()
       ..error = const PostgrestException(
@@ -545,6 +628,7 @@ void main() {
       updatedAt: value.updatedAt,
       publishedAt: value.createdAt,
       cancelledAt: null,
+      capacity: value.capacity,
     );
     final gateway = FakeProposalGateway()..ownItems = [started];
     final session = _readyContainer(gateway);

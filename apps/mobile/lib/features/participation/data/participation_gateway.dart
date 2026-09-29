@@ -3,6 +3,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/backend/supabase_backend.dart';
 import '../domain/participation_models.dart';
+import '../domain/project_capacity.dart';
 
 abstract interface class ParticipationGateway {
   Future<List<OwnProjectJoinRequest>> listOwnJoinRequests(
@@ -32,6 +33,11 @@ abstract interface class ParticipationGateway {
   });
 
   Future<List<ManagerProjectMember>> listProjectMembers({
+    required String expectedManagerProfileId,
+    required String projectId,
+  });
+
+  Future<ProjectCapacitySnapshot> getProjectCapacityForManager({
     required String expectedManagerProfileId,
     required String projectId,
   });
@@ -147,6 +153,28 @@ class SupabaseParticipationGateway implements ParticipationGateway {
       },
     );
     return response.map(parser.managerMember).toList(growable: false);
+  }
+
+  @override
+  Future<ProjectCapacitySnapshot> getProjectCapacityForManager({
+    required String expectedManagerProfileId,
+    required String projectId,
+  }) async {
+    final response = await _client.rpc<List<dynamic>>(
+      'get_project_capacity_for_manager',
+      params: {
+        'p_expected_manager_profile_id': expectedManagerProfileId,
+        'p_project_id': projectId,
+      },
+    );
+    if (response.length != 1) {
+      throw const FormatException(
+        'Project capacity status did not contain one row.',
+      );
+    }
+    return ProjectCapacitySnapshot.fromRow(
+      (response.single as Map).cast<String, dynamic>(),
+    );
   }
 
   @override

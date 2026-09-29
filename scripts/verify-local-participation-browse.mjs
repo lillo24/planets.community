@@ -240,6 +240,7 @@ async function createProposal(creator, input) {
     p_exact_location_visibility: "participants",
     p_skill_ids: input.skillIds,
     p_skill_importances: input.skillIds.map(() => "required"),
+    p_people_capacity: 20,
   });
   if (error || typeof data !== "string") {
     throw safeDatabaseFailure(
@@ -282,6 +283,7 @@ async function createTavolo(creator, input) {
       p_duration_minutes: 90,
       p_event_timezone: "Europe/Rome",
       p_effective_from: "2098-01-01",
+      p_people_capacity: 20,
     },
   );
   if (error || typeof data !== "string") {

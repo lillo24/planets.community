@@ -136,13 +136,17 @@ Triaged acceptance now initializes live state in the same transaction after comm
 
 ## Shared project participation
 
-`public.projects` is a private identity registry whose UUID equals one concrete `proposals.id` or `recurring_activities.id`. It stores only the concrete kind, synchronized creator, and source creation timestamp. Insert triggers register every future trusted source insert; ownership/ID changes are rejected; deletion removes the registry only when no request or membership history exists. It is not a public directory.
+`public.projects` is the private cross-kind Project anchor whose UUID equals one concrete `proposals.id` or `recurring_activities.id`. It stores the concrete kind, synchronized Creator, source creation timestamp, and one nullable `people_capacity` shared by both Project kinds. Insert triggers register every future trusted source insert; ownership/ID changes are rejected; deletion removes the registry only when no request or membership history exists. It is not a public directory and has no direct client grants.
+
+Capacity is total people, not participant slots: the immutable original Creator always contributes one person and each current membership (`left_at is null` and `removed_at is null`) contributes one additional person. Pending requests, historical memberships, and delegated authority without a current membership do not count; a delegate who also participates contributes exactly once through that membership. `current_people_count` is derived as `1 + current_participant_count`, never stored. Capacity is constrained to 1–100,000 when present. Null preserves incomplete drafts and pre-05E published Projects as unspecified/uncapped legacy state; public copy calls it “Capacity not set,” and the next structural save requires a value. Proposal and Tavolo publication always requires capacity.
+
+`list_public_project_capacity_statuses` exposes bounded aggregate-only occupancy for public Project IDs, `list_project_capacity_statuses_for_structural_actor` supplies exact editor/management state to Creators and Co-creators, and `get_project_capacity_for_manager` supplies the participation screen to any current manager. The established concrete-source → shared-Project lock order serializes structural changes with participation. Capacity cannot be reduced below current people count. Pending-request insertion and every transition to a current membership recheck fullness while the shared Project row is locked; failed acceptance rolls back request resolution, triage, membership, chat, coverage, and events. Leave/removal frees a spot by ending the membership, with no counter maintenance. Null-capacity legacy rows retain prior request/accept behavior. There is no waitlist, reservation, automatic promotion, per-occurrence Tavolo limit, size band, or popularity ranking.
 
 `public.project_join_requests` preserves private attempts with one of `pending`, `accepted`, `rejected`, or `withdrawn`. Optional requester messages are trimmed and capped at 500 characters. `public.project_memberships` records exactly one accepted request origin and preserves current, voluntarily-left, and creator-removed history. Partial unique indexes enforce at most one pending request and one current membership for each project/profile.
 
 Authenticated clients use `request_to_join_project`, `withdraw_project_join_request`, manager-named accept/reject/remove operations, `leave_project`, and owner-only compatibility operations; the tables themselves have no client privileges or RLS policies. All operations bind an expected rendered identity to `auth.uid()`, validate manager/requester/member authorization, and lock in a consistent source-project-row order. Request/accept eligibility uses the concrete lifecycle: a published one-time project accepts strictly before `ends_at`; a Tavolo accepts only while published. Pause/end/completion preserve membership history. The two-argument acceptance path works only for requests with no contribution selections.
 
-Requester, manager-review, own-membership, and manager-member-history reads are separate narrow operations. Request messages never become public, and the manager projection contains display name but no Auth email. The separate request-selection and accepted-membership-commitment reads expose only current canonical labels to their authorized requester/participant or manager. `get_project_participant_meeting_details` returns only exact operational meeting text/point and concrete kind to a current manager or current accepted participant. Every participation transition adds an identifier-only audit/outbox event. The later 07B1 migration derives chat activation from canonical membership insertion without changing those event contracts; capacity and badges remain deferred.
+Requester, manager-review, own-membership, and manager-member-history reads are separate narrow operations. Request messages never become public, and the manager projection contains display name but no Auth email. The separate request-selection and accepted-membership-commitment reads expose only current canonical labels to their authorized requester/participant or manager. `get_project_participant_meeting_details` returns only exact operational meeting text/point and concrete kind to a current manager or current accepted participant. Every participation transition adds an identifier-only audit/outbox event. The later 07B1 migration derives chat activation from canonical membership insertion without changing those event contracts; badges remain deferred.
 
 ## Project delegates and manager authorization
 
@@ -429,6 +433,7 @@ The native pgTAP files under `supabase/tests/` verify:
 - one-time proposal constraints, lifecycle/status boundaries, owner/cross-account access, expected-identity protection, rough/exact privacy, skill relationships, function hardening, pagination, and historical retention.
 - recurring activity constraints, owner isolation, stale expected identity, weekly/monthly wall-clock recurrence, Rome DST changes, bounded occurrence windows, non-overlapping schedule history, pause/resume/end transitions, public privacy, and function hardening.
 - shared project registry synchronization, request/membership state and uniqueness, concrete lifecycle eligibility, stale identity, private read projections, participant meeting authorization, retained history, deletion protection, and content-free audit/outbox events.
+- shared total-people capacity shape and bounds, draft/legacy null behavior, Creator/delegate counting semantics, public aggregate privacy, publication and structural-edit validation, request/accept fullness, failed-acceptance rollback, natural spot release, and concurrent final-spot serialization.
 - delegated-authority invitation/relationship/history constraints and grants, digest-only token storage, exact expiry, role-aware single-use race/retry behavior, stale-issuer invalidation, operational versus structural authorization, participation independence, Co-creator authoring/lifecycle access, chat/Realtime access, and identifier-only events.
 - controlled notification categories/defaults, sparse owner preferences, participation plus Project-chat semantic constraints, send-time multi-recipient fan-out, sender exclusion, private multi-consumer receipts, projector idempotency/concurrency, suppression receipts, own-only inbox/read state, privacy, and service/client grants.
 - private push installation constraints/grants, expected-identity registration and unregister behavior, token rotation/reuse and account transfer, provider-token privacy, shared semantic resolution, recipient-level job constraints, six-event mapping, all four channel-preference combinations, independent receipts, historical rollout, retries, and service-only projection.
@@ -459,6 +464,7 @@ npm run proposal:verify:local
 npm run recurring:verify:local
 npm run participation:verify:local
 npm run participation:browse:verify:local
+npm run project:capacity:verify:local
 npm run project:delegates:verify:local
 npm run notification:verify:local
 npm run push:delivery:verify:local
@@ -502,6 +508,14 @@ pending promotion without changing public order, expected-identity isolation,
 locality/skill filtering, withdrawal and acceptance removal, pause/resume/end
 eligibility, and sanitized card payloads. It never logs OTPs, tokens, keys,
 request messages, or protected meeting values.
+
+`project:capacity:verify:local` uses a disposable local Project with two
+pending requests and two independent authenticated database transactions to
+race the single remaining participant spot. Exactly one acceptance commits;
+the other returns `PT409`, the losing request remains pending, and canonical
+occupancy never exceeds capacity. Run it only against a reset disposable local
+stack; it prints no credentials, request text, private profile data, or
+protected meeting information.
 
 `notification:verify:local` uses three complete authenticated identities, a service-role client, and one narrow direct local-database assertion. It proves pre-projection absence, concurrent projector idempotency, request/accept/withdraw/reject/leave mappings, stable request IDs and `participation_request` targets, cross-account denial, structured safe context, unread/read changes, preference suppression with a receipt, later re-enable behavior, and coexistence with an independent synthetic consumer receipt. It never logs OTPs, keys, database URLs, request messages, or protected meeting values.
 

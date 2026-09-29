@@ -1,11 +1,13 @@
 import 'package:planets_mobile/features/participation/data/participation_gateway.dart';
 import 'package:planets_mobile/features/participation/domain/participation_models.dart';
+import 'package:planets_mobile/features/participation/domain/project_capacity.dart';
 
 class FakeParticipationGateway implements ParticipationGateway {
   List<OwnProjectJoinRequest> ownRequests = [];
   List<OwnProjectMembership> ownMemberships = [];
   List<ManagerProjectJoinRequest> creatorRequests = [];
   List<ManagerProjectMember> creatorMembers = [];
+  ProjectCapacitySnapshot capacity = capacityFixture();
   ParticipantMeetingDetails? meetingDetails;
   Object? error;
   Future<void>? mutationDelay;
@@ -124,6 +126,19 @@ class FakeParticipationGateway implements ParticipationGateway {
     if (creatorLoadDelay case final delay?) await delay;
     _throwIfNeeded();
     return List.unmodifiable(creatorMembers);
+  }
+
+  @override
+  Future<ProjectCapacitySnapshot> getProjectCapacityForManager({
+    required String expectedManagerProfileId,
+    required String projectId,
+  }) async {
+    calls.add('capacity:$projectId');
+    lastExpectedIdentity = expectedManagerProfileId;
+    lastProjectId = projectId;
+    if (creatorLoadDelay case final delay?) await delay;
+    _throwIfNeeded();
+    return capacity;
   }
 
   @override
@@ -309,3 +324,20 @@ ParticipantMeetingDetails meetingDetailsFixture({
   exactMeetingText: 'Meet beside the blue workshop door.',
   exactLocation: null,
 );
+
+ProjectCapacitySnapshot capacityFixture({
+  int? peopleCapacity = 20,
+  int currentParticipantCount = 0,
+}) {
+  final people = currentParticipantCount + 1;
+  final remaining = peopleCapacity == null
+      ? null
+      : (peopleCapacity > people ? peopleCapacity - people : 0);
+  return ProjectCapacitySnapshot(
+    peopleCapacity: peopleCapacity,
+    currentParticipantCount: currentParticipantCount,
+    currentPeopleCount: people,
+    spotsRemaining: remaining,
+    isFull: peopleCapacity != null && people >= peopleCapacity,
+  );
+}

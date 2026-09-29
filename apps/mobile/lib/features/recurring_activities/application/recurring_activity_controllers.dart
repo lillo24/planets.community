@@ -492,6 +492,7 @@ class RecurringActivityEditorController
       );
     }
     if (!isPublishableRecurringActivityInput(input) ||
+        input.peopleCapacity! < existing.capacity.currentPeopleCount ||
         !isValidRecurringScheduleTransition(
           existing,
           input,

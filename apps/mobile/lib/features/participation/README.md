@@ -11,6 +11,8 @@ their existing features; participation uses only a project ID plus the narrow
 - `domain/participation_models.dart` defines strict project kinds, request and
   membership states, private read models, and project-specific state
   derivation.
+- `domain/project_capacity.dart` defines the strict shared total-people
+  snapshot, bounds, and canonical aggregate consistency checks.
 - `domain/membership_commitment_models.dart` defines the strict skill/resource
   commitment, addable-option, and merged editor-item shapes.
 - `domain/actual_contribution_models.dart` defines strict skill/resource/effort
@@ -46,7 +48,9 @@ their existing features; participation uses only a project ID plus the narrow
 - `presentation/participation_routes.dart` maps the shared feature onto the
   concrete Proposal and Tavolo routes.
 - `presentation/project_participation_section.dart` supplies the shared detail
-  location/action area.
+  location/action area, including Full/no-spots behavior.
+- `presentation/project_capacity_label.dart` renders one localized occupancy,
+  Full, or legacy capacity-not-set label across Project surfaces.
 - `presentation/join_request_screen.dart` owns typed multi-select contribution
   chips, stale-option recovery, the optional private 500-character request
   message, and the single canonical submit flow.
@@ -87,6 +91,15 @@ The mobile client presents, but does not reproduce, the 05A state machine:
 - creators are organizers through ownership, while an active delegate may also
   independently be a requester or participant. Manager review keeps a real
   self-membership row visible but omits its manager Remove action.
+
+05E adds one canonical total-people capacity without changing those role
+relationships. The original Creator counts once, each current membership
+counts once, and delegated authority by itself does not count. Public detail
+suppresses the join action when its aggregate is Full. Manager review keeps
+pending requests visible and Reject available, but disables Accept while full;
+a stale enabled action still maps the server's `PT409` to specific safe copy.
+Leaving or removal releases a spot through the existing membership end state,
+and refresh reloads canonical occupancy. No client counter or waitlist exists.
 
 Ownership, delegation, and participation are separate relationships. Leaving
 participation does not revoke delegation, and revoking delegation does not end
@@ -206,8 +219,8 @@ the exact safe internal `returnTo`; incomplete profile setup carries the same
 destination in `/profile/edit?returnTo=...` and resumes it after a successful
 save. The persistent bottom navigation remains Profile / Browse / Home.
 
-Notification delivery, standalone Scambio-Dona, capacity/fullness,
-central participation history, contribution verification, badges, maps,
+Notification delivery, standalone Scambio-Dona, central participation
+history, contribution verification, badges, maps,
 and final unified Progetti discovery remain deferred.
 
 ## Deferred native QA notes

@@ -14,6 +14,7 @@ import '../../../l10n/generated/app_localizations.dart';
 import '../../auth/application/auth_session_controller.dart';
 import '../../participation/domain/participation_models.dart';
 import '../../participation/presentation/project_participation_section.dart';
+import '../../participation/presentation/project_capacity_label.dart';
 import '../../project_resource_needs/presentation/project_resource_need_routes.dart';
 import '../../project_resource_needs/presentation/project_resource_needs_section.dart';
 import '../application/proposal_controllers.dart';
@@ -312,6 +313,8 @@ class _ProposalDetailScreenState extends ConsumerState<ProposalDetailScreen> {
                   ),
                   const SizedBox(height: AppSpacing.large),
                   Text(detail.description),
+                  const SizedBox(height: AppSpacing.medium),
+                  ProjectCapacityLabel(capacity: detail.summary.capacity),
                   const SizedBox(height: AppSpacing.large),
                   Text(
                     l10n.proposalScheduleTitle,
@@ -361,6 +364,7 @@ class _ProposalDetailScreenState extends ConsumerState<ProposalDetailScreen> {
                     publicLocationLines: [detail.summary.publicLocationLabel],
                     publicExactMeetingText: detail.exactMeetingText,
                     exactLocationRestricted: detail.exactLocationRestricted,
+                    capacity: detail.summary.capacity,
                   ),
                   if (detail.creatorDisplayName != null) ...[
                     const SizedBox(height: AppSpacing.large),

@@ -314,6 +314,90 @@ void main() {
     },
   );
 
+  test('draft accepts missing capacity but publish rejects it', () async {
+    final gateway = FakeRecurringActivityGateway();
+    final session = _readyContainer(gateway);
+    addTearDown(session.container.dispose);
+    addTearDown(session.auth.close);
+    final controller = session.container.read(
+      recurringActivityEditorProvider.notifier,
+    );
+    await controller.load('user-1', null);
+    final input = recurringInputFixture(peopleCapacity: null);
+
+    expect(await controller.saveDraft('user-1', input), 'new-tavolo');
+    expect(gateway.lastInput?.peopleCapacity, isNull);
+    expect(await controller.publish('user-1', input), isNull);
+    expect(gateway.calls, isNot(contains('publish:new-tavolo')));
+    expect(
+      session.container.read(recurringActivityEditorProvider).failure,
+      RecurringActivityFailureKind.invalidInput,
+    );
+  });
+
+  test('active save rejects capacity below current people count', () async {
+    final gateway = FakeRecurringActivityGateway()
+      ..ownItems = [
+        ownRecurringActivityFixture(
+          lifecycle: RecurringActivityLifecycle.published,
+          capacity: recurringCapacityFixture(
+            peopleCapacity: 5,
+            currentParticipantCount: 3,
+          ),
+        ),
+      ];
+    final session = _readyContainer(gateway);
+    addTearDown(session.container.dispose);
+    addTearDown(session.auth.close);
+    final controller = session.container.read(
+      recurringActivityEditorProvider.notifier,
+    );
+    await controller.load('user-1', 'tavolo-1');
+
+    expect(
+      await controller.saveChanges(
+        'user-1',
+        recurringInputFixture(peopleCapacity: 3),
+      ),
+      isNull,
+    );
+    expect(gateway.calls, isNot(contains('update:tavolo-1')));
+    expect(
+      session.container.read(recurringActivityEditorProvider).failure,
+      RecurringActivityFailureKind.invalidInput,
+    );
+  });
+
+  test('legacy active save requires capacity', () async {
+    final gateway = FakeRecurringActivityGateway()
+      ..ownItems = [
+        ownRecurringActivityFixture(
+          lifecycle: RecurringActivityLifecycle.published,
+          input: recurringInputFixture(peopleCapacity: null),
+        ),
+      ];
+    final session = _readyContainer(gateway);
+    addTearDown(session.container.dispose);
+    addTearDown(session.auth.close);
+    final controller = session.container.read(
+      recurringActivityEditorProvider.notifier,
+    );
+    await controller.load('user-1', 'tavolo-1');
+
+    expect(
+      await controller.saveChanges(
+        'user-1',
+        recurringInputFixture(peopleCapacity: null),
+      ),
+      isNull,
+    );
+    expect(gateway.calls, isNot(contains('update:tavolo-1')));
+    expect(
+      session.container.read(recurringActivityEditorProvider).failure,
+      RecurringActivityFailureKind.invalidInput,
+    );
+  });
+
   test('editor pause resume and end refetch the exact Tavolo', () async {
     final gateway = FakeRecurringActivityGateway()
       ..ownItems = [

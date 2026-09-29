@@ -1,12 +1,13 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:planets_mobile/features/proposals/data/proposal_gateway.dart';
 import 'package:planets_mobile/features/proposals/domain/proposal_models.dart';
+import 'package:planets_mobile/features/participation/domain/project_capacity.dart';
 
 void main() {
   const parser = ProposalPayloadParser();
 
   test('parses the seeded restricted public Proposal detail shape', () {
-    final detail = parser.publicDetail(_publicDetailRow());
+    final detail = parser.publicDetail(_publicDetailRow(), _capacity);
 
     expect(detail.summary.id, _proposalId);
     expect(detail.summary.title, 'DEMO · Riverside mural');
@@ -28,7 +29,7 @@ void main() {
       'derived_status': 'just_finished',
       'exact_meeting_text': 'Demo civic courtyard, Piazza Aperta 4',
       'exact_location_restricted': false,
-    });
+    }, _capacity);
 
     expect(detail.summary.status, ProposalStatus.justFinished);
     expect(detail.exactMeetingText, 'Demo civic courtyard, Piazza Aperta 4');
@@ -40,7 +41,7 @@ void main() {
       () => parser.publicDetail({
         ..._publicDetailRow(),
         'exact_location_restricted': null,
-      }),
+      }, _capacity),
       throwsA(
         isA<FormatException>().having(
           (error) => error.message,
@@ -50,7 +51,8 @@ void main() {
       ),
     );
     expect(
-      () => parser.publicDetail({..._publicDetailRow(), 'skills': {}}),
+      () =>
+          parser.publicDetail({..._publicDetailRow(), 'skills': {}}, _capacity),
       throwsA(
         isA<FormatException>().having(
           (error) => error.message,
@@ -64,6 +66,13 @@ void main() {
 
 const _proposalId = '3ab6fc1a-03e9-4d4a-9a3b-d7ab19670e29';
 const _creatorProfileId = '43036e28-e46c-417f-bbcb-27e04de2d0f1';
+const _capacity = ProjectCapacitySnapshot(
+  peopleCapacity: 20,
+  currentParticipantCount: 2,
+  currentPeopleCount: 3,
+  spotsRemaining: 17,
+  isFull: false,
+);
 
 Map<String, dynamic> _publicDetailRow() => {
   'proposal_id': _proposalId,

@@ -1,5 +1,6 @@
 import 'package:planets_mobile/features/recurring_activities/data/recurring_activity_gateway.dart';
 import 'package:planets_mobile/features/recurring_activities/domain/recurring_activity_models.dart';
+import 'package:planets_mobile/features/participation/domain/project_capacity.dart';
 
 typedef PublicTavoliLoader =
     Future<List<PublicRecurringActivitySummary>> Function({
@@ -249,11 +250,13 @@ OwnRecurringActivity _copyRecurringActivity(
   endedAt: lifecycle == RecurringActivityLifecycle.ended
       ? DateTime.utc(2026, 9, 5)
       : activity.endedAt,
+  capacity: activity.capacity,
 );
 
 RecurringSchedule recurringScheduleFixture({
   String id = 'schedule-1',
   RecurrenceType type = RecurrenceType.weekly,
+  ProjectCapacitySnapshot? capacity,
   int? weekday = DateTime.wednesday,
   int? dayOfMonth,
   DateTime? effectiveFrom,
@@ -275,6 +278,7 @@ PublicRecurringActivitySummary publicRecurringSummaryFixture({
   String id = 'tavolo-1',
   String title = 'Neighborhood philosophy table',
   RecurrenceType type = RecurrenceType.weekly,
+  ProjectCapacitySnapshot? capacity,
 }) => PublicRecurringActivitySummary(
   id: id,
   title: title,
@@ -290,6 +294,7 @@ PublicRecurringActivitySummary publicRecurringSummaryFixture({
     eventTimezone: 'Europe/Rome',
   ),
   schedule: recurringScheduleFixture(type: type),
+  capacity: capacity ?? recurringCapacityFixture(),
 );
 
 RequestedRecurringActivitySummary requestedRecurringActivityFixture({
@@ -309,6 +314,7 @@ PublicRecurringActivityDetail publicRecurringDetailFixture({
   bool restricted = true,
   RecurrenceType type = RecurrenceType.weekly,
   String creatorProfileId = 'user-1',
+  ProjectCapacitySnapshot? capacity,
 }) => PublicRecurringActivityDetail(
   id: id,
   creatorProfileId: creatorProfileId,
@@ -328,11 +334,13 @@ PublicRecurringActivityDetail publicRecurringDetailFixture({
       : const [],
   exactMeetingText: restricted ? null : 'At the long reading-room table',
   exactLocationRestricted: restricted,
+  capacity: capacity ?? recurringCapacityFixture(),
 );
 
 RecurringActivityInput recurringInputFixture({
   RecurrenceType? type = RecurrenceType.weekly,
   DateTime? effectiveFrom,
+  int? peopleCapacity = 20,
 }) => RecurringActivityInput(
   title: 'Neighborhood philosophy table',
   summary: 'A recurring conversation about ideas and local life.',
@@ -351,6 +359,7 @@ RecurringActivityInput recurringInputFixture({
   durationMinutes: type == null ? null : 90,
   eventTimezone: type == null ? '' : 'Europe/Rome',
   effectiveFrom: type == null ? null : effectiveFrom ?? DateTime(2026, 9, 1),
+  peopleCapacity: peopleCapacity,
 );
 
 OwnRecurringActivity ownRecurringActivityFixture({
@@ -358,6 +367,7 @@ OwnRecurringActivity ownRecurringActivityFixture({
   RecurringActivityLifecycle? lifecycle,
   RecurringActivityInput? input,
   RecurringSchedule? schedule,
+  ProjectCapacitySnapshot? capacity,
 }) {
   final value = input ?? recurringInputFixture();
   final current =
@@ -395,5 +405,25 @@ OwnRecurringActivity ownRecurringActivityFixture({
     pausedAt: null,
     resumedAt: null,
     endedAt: null,
+    capacity:
+        capacity ??
+        recurringCapacityFixture(peopleCapacity: value.peopleCapacity),
+  );
+}
+
+ProjectCapacitySnapshot recurringCapacityFixture({
+  int? peopleCapacity = 20,
+  int currentParticipantCount = 0,
+}) {
+  final people = currentParticipantCount + 1;
+  final remaining = peopleCapacity == null
+      ? null
+      : (peopleCapacity > people ? peopleCapacity - people : 0);
+  return ProjectCapacitySnapshot(
+    peopleCapacity: peopleCapacity,
+    currentParticipantCount: currentParticipantCount,
+    currentPeopleCount: people,
+    spotsRemaining: remaining,
+    isFull: peopleCapacity != null && people >= peopleCapacity,
   );
 }

@@ -12,6 +12,7 @@ enum JoinAcceptanceTriageLoadPhase { idle, loading, ready, failure }
 enum JoinAcceptanceTriageFailureKind {
   projectNeedsChanged,
   conflict,
+  full,
   forbidden,
   unavailable,
 }
@@ -48,6 +49,7 @@ class JoinAcceptanceTriageState {
 
   bool get isTerminal =>
       failure == JoinAcceptanceTriageFailureKind.conflict ||
+      failure == JoinAcceptanceTriageFailureKind.full ||
       failure == JoinAcceptanceTriageFailureKind.forbidden;
 
   Set<JoinAcceptanceItemKey> get undecidedKeys => {
@@ -337,6 +339,7 @@ JoinAcceptanceTriageFailureKind mapJoinAcceptanceTriageFailure(Object error) {
       '22023' => JoinAcceptanceTriageFailureKind.projectNeedsChanged,
       '42501' => JoinAcceptanceTriageFailureKind.forbidden,
       '55000' => JoinAcceptanceTriageFailureKind.conflict,
+      'PT409' => JoinAcceptanceTriageFailureKind.full,
       _ => JoinAcceptanceTriageFailureKind.unavailable,
     };
   }

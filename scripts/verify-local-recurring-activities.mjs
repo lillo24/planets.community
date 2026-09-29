@@ -457,6 +457,7 @@ function recurringActivityParams(
     p_duration_minutes: input.durationMinutes ?? null,
     p_event_timezone: input.eventTimezone ?? null,
     p_effective_from: input.effectiveFrom ?? null,
+    p_people_capacity: 20,
   };
 }
 

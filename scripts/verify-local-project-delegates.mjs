@@ -366,6 +366,7 @@ async function createPublishedProposal(owner) {
     p_exact_location_visibility: "participants",
     p_skill_ids: [],
     p_skill_importances: [],
+    p_people_capacity: 20,
   });
   await rpc(owner, "publish_proposal", {
     p_expected_creator_profile_id: owner.id,

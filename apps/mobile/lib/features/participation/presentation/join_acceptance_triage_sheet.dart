@@ -560,6 +560,7 @@ String joinAcceptanceFailureMessage(
     l10n.joinAcceptanceProjectNeedsChanged,
   JoinAcceptanceTriageFailureKind.conflict =>
     l10n.joinAcceptanceRequestUnavailable,
+  JoinAcceptanceTriageFailureKind.full => l10n.projectFullNow,
   JoinAcceptanceTriageFailureKind.forbidden => l10n.joinAcceptanceForbidden,
   JoinAcceptanceTriageFailureKind.unavailable => l10n.joinAcceptanceLoadError,
 };

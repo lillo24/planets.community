@@ -320,6 +320,7 @@ function proposalParams(expectedCreatorId, proposalId, input) {
       input.exactLocationVisibility ?? "participants",
     p_skill_ids: input.skillIds,
     p_skill_importances: input.skillImportances,
+    p_people_capacity: 20,
   };
 }
 

@@ -146,7 +146,8 @@ select set_config(
     '  Via Private 10, courtyard entrance  ',
     'participants',
     array['d0000000-0000-4000-8001-000000000001'::uuid],
-    array['required']::text[]
+    array['required']::text[],
+    20
   )::text,
   true
 );
@@ -422,7 +423,8 @@ select set_config(
     'Piazza Pubblica, by the fountain',
     'public',
     array['d0000000-0000-4000-8003-000000000003'::uuid],
-    array['useful']::text[]
+    array['useful']::text[],
+    20
   )::text,
   true
 );

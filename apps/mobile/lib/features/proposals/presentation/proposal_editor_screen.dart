@@ -114,6 +114,7 @@ class _ProposalFormState extends ConsumerState<_ProposalForm> {
   final _titleAnchor = GlobalKey();
   final _summaryAnchor = GlobalKey();
   final _descriptionAnchor = GlobalKey();
+  final _capacityAnchor = GlobalKey();
   final _timezoneAnchor = GlobalKey();
   final _startAnchor = GlobalKey();
   final _endAnchor = GlobalKey();
@@ -125,6 +126,7 @@ class _ProposalFormState extends ConsumerState<_ProposalForm> {
   late final TextEditingController _title;
   late final TextEditingController _summary;
   late final TextEditingController _description;
+  late final TextEditingController _capacity;
   late final TextEditingController _timezone;
   late final TextEditingController _country;
   late final TextEditingController _locality;
@@ -145,6 +147,9 @@ class _ProposalFormState extends ConsumerState<_ProposalForm> {
     _title = TextEditingController(text: p?.title ?? '');
     _summary = TextEditingController(text: p?.summary ?? '');
     _description = TextEditingController(text: p?.description ?? '');
+    _capacity = TextEditingController(
+      text: p?.capacity.peopleCapacity?.toString() ?? '',
+    );
     _timezone = TextEditingController(text: p?.eventTimezone ?? 'UTC');
     _country = TextEditingController(text: p?.countryCode ?? '');
     _locality = TextEditingController(text: p?.locality ?? '');
@@ -169,6 +174,7 @@ class _ProposalFormState extends ConsumerState<_ProposalForm> {
       _title,
       _summary,
       _description,
+      _capacity,
       _timezone,
       _country,
       _locality,
@@ -195,6 +201,7 @@ class _ProposalFormState extends ConsumerState<_ProposalForm> {
     exactMeetingText: _exactLocation.text,
     exactLocationVisibility: _visibility,
     skillImportanceById: {..._skills},
+    peopleCapacity: int.tryParse(_capacity.text.trim()),
   );
 
   Future<void> _save({required bool publish}) async {
@@ -278,6 +285,7 @@ class _ProposalFormState extends ConsumerState<_ProposalForm> {
       _title.text = 'Community garden build day';
       _summary.text = 'Build raised beds together for a neighborhood garden.';
       _description.text = 'We will prepare the site, assemble raised beds, and share the work in small teams.';
+      _capacity.text = '20';
       _timezone.text = 'UTC';
       _country.text = 'IT';
       _locality.text = 'Bologna';
@@ -449,6 +457,24 @@ class _ProposalFormState extends ConsumerState<_ProposalForm> {
                   fieldKey: const Key('proposal-description'),
                   required: true,
                   lines: 6,
+                ),
+                Padding(
+                  key: _capacityAnchor,
+                  padding: const EdgeInsets.only(bottom: AppSpacing.medium),
+                  child: TextFormField(
+                    key: const Key('proposal-people-capacity'),
+                    controller: _capacity,
+                    enabled: !busy && contentEditable,
+                    keyboardType: TextInputType.number,
+                    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                    maxLength: 6,
+                    decoration: InputDecoration(
+                      labelText: l10n.projectPeopleCapacityLabel,
+                      helperText: l10n.projectPeopleCapacityHelp,
+                    ),
+                    onChanged: (_) => _refreshValidationSummary(),
+                    validator: (_) => _validateCapacity(),
+                  ),
                 ),
                 _field(
                   _timezone,
@@ -824,6 +850,9 @@ class _ProposalFormState extends ConsumerState<_ProposalForm> {
       5000,
       required: true,
     );
+    if (_validateCapacity() != null) {
+      issues.add(l10n.projectPeopleCapacityLabel);
+    }
     if ((publish && input.eventTimezone.trim().isEmpty) ||
         (input.eventTimezone.trim().isNotEmpty &&
             !isKnownProposalTimeZone(input.eventTimezone))) {
@@ -873,6 +902,7 @@ class _ProposalFormState extends ConsumerState<_ProposalForm> {
         input.description.trim().length > 5000) {
       return _descriptionAnchor;
     }
+    if (_validateCapacity() != null) return _capacityAnchor;
     final timezone = input.eventTimezone.trim();
     if ((publish && timezone.isEmpty) ||
         (timezone.isNotEmpty && !isKnownProposalTimeZone(timezone))) {
@@ -902,6 +932,23 @@ class _ProposalFormState extends ConsumerState<_ProposalForm> {
       return _publicLocationAnchor;
     }
     return _exactLocationAnchor;
+  }
+
+  String? _validateCapacity() {
+    final l10n = AppLocalizations.of(context);
+    final text = _capacity.text.trim();
+    if (text.isEmpty) {
+      return _validatingPublish ? l10n.projectPeopleCapacityRequired : null;
+    }
+    final capacity = int.tryParse(text);
+    if (capacity == null || capacity < 1 || capacity > 100000) {
+      return l10n.projectPeopleCapacityRange;
+    }
+    final currentPeople = widget.proposal?.capacity.currentPeopleCount ?? 1;
+    if (capacity < currentPeople) {
+      return l10n.projectPeopleCapacityBelowCurrent(currentPeople);
+    }
+    return null;
   }
 }
 

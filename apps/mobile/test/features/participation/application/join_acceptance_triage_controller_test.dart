@@ -303,6 +303,17 @@ void main() {
       expect(state.failure, JoinAcceptanceTriageFailureKind.unavailable);
     },
   );
+
+  test('PT409 maps to a terminal full-state failure', () {
+    const error = PostgrestException(
+      message: 'private capacity conflict',
+      code: 'PT409',
+    );
+    expect(
+      mapJoinAcceptanceTriageFailure(error),
+      JoinAcceptanceTriageFailureKind.full,
+    );
+  });
 }
 
 ProviderContainer _readyContainer(FakeJoinAcceptanceTriageGateway gateway) {

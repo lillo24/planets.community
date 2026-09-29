@@ -12,6 +12,7 @@ import 'actual_contribution_sheet.dart';
 import 'join_acceptance_triage_sheet.dart';
 import 'membership_commitment_sheet.dart';
 import 'project_participation_section.dart';
+import 'project_capacity_label.dart';
 
 class CreatorParticipationScreen extends ConsumerStatefulWidget {
   const CreatorParticipationScreen({
@@ -60,6 +61,7 @@ class _CreatorParticipationScreenState
     final members = belongsToScreen
         ? state.members
         : const <ManagerProjectMember>[];
+    final capacity = belongsToScreen ? state.capacity : null;
     final isInitialLoading =
         !belongsToScreen ||
         (state.phase == CreatorParticipationPhase.loading &&
@@ -96,6 +98,40 @@ class _CreatorParticipationScreenState
                       ),
                       const SizedBox(height: AppSpacing.medium),
                     ],
+                    if (capacity != null) ...[
+                      Card(
+                        key: const Key('creator-participation-capacity'),
+                        child: Padding(
+                          padding: const EdgeInsets.all(AppSpacing.medium),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              ProjectCapacityLabel(capacity: capacity),
+                              Text(
+                                capacity.peopleCapacity == null
+                                    ? l10n.projectCapacityNotSet
+                                    : l10n.projectCapacityManagerSummary(
+                                        capacity.currentParticipantCount,
+                                        capacity.currentPeopleCount,
+                                        capacity.peopleCapacity!,
+                                      ),
+                              ),
+                              if (capacity.isFull)
+                                Text(
+                                  l10n.projectNoSpots,
+                                  style: TextStyle(
+                                    color: Theme.of(context).colorScheme.error,
+                                  ),
+                                )
+                              else if (capacity.spotsRemaining
+                                  case final spots?)
+                                Text(l10n.projectCapacityRemaining(spots)),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: AppSpacing.medium),
+                    ],
                     Text(
                       l10n.participationRequests,
                       style: Theme.of(context).textTheme.titleLarge,
@@ -108,6 +144,8 @@ class _CreatorParticipationScreenState
                         _RequestCard(
                           request: request,
                           enabled: !state.isBusy,
+                          acceptEnabled:
+                              !state.isBusy && capacity?.isFull != true,
                           isActing:
                               state.actionTargetId == request.id &&
                               state.isBusy,
@@ -260,6 +298,7 @@ class _RequestCard extends StatelessWidget {
   const _RequestCard({
     required this.request,
     required this.enabled,
+    required this.acceptEnabled,
     required this.isActing,
     required this.onAccept,
     required this.onReject,
@@ -267,6 +306,7 @@ class _RequestCard extends StatelessWidget {
 
   final ManagerProjectJoinRequest request;
   final bool enabled;
+  final bool acceptEnabled;
   final bool isActing;
   final VoidCallback onAccept;
   final VoidCallback onReject;
@@ -314,7 +354,7 @@ class _RequestCard extends StatelessWidget {
                   Expanded(
                     child: FilledButton(
                       key: Key('participation-accept-${request.id}'),
-                      onPressed: enabled ? onAccept : null,
+                      onPressed: acceptEnabled ? onAccept : null,
                       child: isActing
                           ? const SizedBox.square(
                               dimension: 18,

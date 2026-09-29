@@ -37,6 +37,7 @@
     "recurring:verify:local": "node scripts/verify-local-recurring-activities.mjs",
     "participation:verify:local": "node scripts/verify-local-participation.mjs",
     "participation:browse:verify:local": "node scripts/verify-local-participation-browse.mjs",
+    "project:capacity:verify:local": "node scripts/verify-local-project-capacity-concurrency.mjs",
     "notification:verify:local": "node scripts/verify-local-notifications.mjs",
     "notification:project:local": "node scripts/process-local-notification-outbox.mjs",
     "push:verify:local": "node scripts/verify-local-push-foundation.mjs",

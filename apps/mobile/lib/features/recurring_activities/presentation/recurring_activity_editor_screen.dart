@@ -31,6 +31,7 @@ class _RecurringActivityEditorScreenState
   final _title = TextEditingController();
   final _summary = TextEditingController();
   final _description = TextEditingController();
+  final _capacity = TextEditingController();
   final _topic = TextEditingController();
   final _country = TextEditingController();
   final _locality = TextEditingController();
@@ -73,6 +74,7 @@ class _RecurringActivityEditorScreenState
       _title,
       _summary,
       _description,
+      _capacity,
       _topic,
       _country,
       _locality,
@@ -156,6 +158,18 @@ class _RecurringActivityEditorScreenState
                       max: 5000,
                       requiredForPublish: true,
                       maxLines: 5,
+                    ),
+                    _field(
+                      controller: _capacity,
+                      label: l10n.projectPeopleCapacityLabel,
+                      max: 6,
+                      keyboardType: TextInputType.number,
+                      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                      validator: (_) => _validateCapacity(existing),
+                    ),
+                    Text(
+                      l10n.projectPeopleCapacityHelp,
+                      style: Theme.of(context).textTheme.bodySmall,
                     ),
                     _field(
                       controller: _topic,
@@ -566,6 +580,7 @@ class _RecurringActivityEditorScreenState
     durationMinutes: _hasSchedule ? int.tryParse(_duration.text) : null,
     eventTimezone: _hasSchedule ? _timezone.text : '',
     effectiveFrom: _hasSchedule ? _effectiveFrom : null,
+    peopleCapacity: int.tryParse(_capacity.text.trim()),
   );
 
   Future<void> _submit(bool publish) async {
@@ -697,6 +712,7 @@ class _RecurringActivityEditorScreenState
     _title.text = activity.title ?? '';
     _summary.text = activity.summary ?? '';
     _description.text = activity.description ?? '';
+    _capacity.text = activity.capacity.peopleCapacity?.toString() ?? '';
     _topic.text = activity.topic ?? '';
     _country.text = activity.countryCode ?? '';
     _locality.text = activity.locality ?? '';
@@ -731,6 +747,7 @@ class _RecurringActivityEditorScreenState
       _summary.text = 'A recurring conversation about ideas and local life.';
       _description.text =
           'Bring one question and join a welcoming, facilitated discussion.';
+      _capacity.text = '20';
       _topic.text = 'Philosophy and community';
       _country.text = 'IT';
       _locality.text = 'Bologna';
@@ -755,5 +772,22 @@ class _RecurringActivityEditorScreenState
   DateTime _todayInEventZone() {
     final zone = isKnownEventTimeZone(_timezone.text) ? _timezone.text : 'UTC';
     return eventLocalDate(ref.read(recurringActivityClockProvider)(), zone);
+  }
+
+  String? _validateCapacity(OwnRecurringActivity? existing) {
+    final l10n = AppLocalizations.of(context);
+    final text = _capacity.text.trim();
+    if (text.isEmpty) {
+      return _attemptPublish ? l10n.projectPeopleCapacityRequired : null;
+    }
+    final capacity = int.tryParse(text);
+    if (capacity == null || capacity < 1 || capacity > 100000) {
+      return l10n.projectPeopleCapacityRange;
+    }
+    final currentPeople = existing?.capacity.currentPeopleCount ?? 1;
+    if (capacity < currentPeople) {
+      return l10n.projectPeopleCapacityBelowCurrent(currentPeople);
+    }
+    return null;
   }
 }

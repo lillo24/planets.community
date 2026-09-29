@@ -9,6 +9,7 @@ import 'package:planets_mobile/features/participation/application/participation_
 import 'package:planets_mobile/features/participation/data/participation_gateway.dart';
 import 'package:planets_mobile/features/participation/domain/participation_models.dart';
 import 'package:planets_mobile/features/project_chat/application/project_chat_refresh.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../support/fake_auth.dart';
 import '../../../support/fake_participation.dart';
@@ -373,6 +374,18 @@ void main() {
     expect(
       session.container.read(participantMeetingDetailsProvider).details,
       isNull,
+    );
+  });
+
+  test('PT409 maps to the specific full-state failure', () {
+    expect(
+      mapParticipationFailure(
+        const PostgrestException(
+          message: 'private capacity conflict',
+          code: 'PT409',
+        ),
+      ),
+      ParticipationFailureKind.full,
     );
   });
 }

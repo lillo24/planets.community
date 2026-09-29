@@ -6,11 +6,13 @@ import 'package:planets_mobile/app/router/app_router.dart';
 import 'package:planets_mobile/core/config/app_config.dart';
 import 'package:planets_mobile/features/auth/data/auth_gateway.dart';
 import 'package:planets_mobile/features/auth/domain/auth_models.dart';
+import 'package:planets_mobile/features/participation/application/participation_controllers.dart';
 import 'package:planets_mobile/features/participation/data/actual_contribution_gateway.dart';
 import 'package:planets_mobile/features/participation/data/membership_commitment_gateway.dart';
 import 'package:planets_mobile/features/participation/data/participation_gateway.dart';
 import 'package:planets_mobile/features/participation/data/join_acceptance_triage_gateway.dart';
 import 'package:planets_mobile/features/participation/domain/participation_models.dart';
+import 'package:planets_mobile/features/participation/domain/project_capacity.dart';
 import 'package:planets_mobile/features/profile/data/profile_gateway.dart';
 import 'package:planets_mobile/features/project_delegates/data/project_delegate_gateway.dart';
 import 'package:planets_mobile/features/project_delegates/domain/project_delegate_models.dart';
@@ -197,6 +199,76 @@ void main() {
     );
   });
 
+  testWidgets('full Project shows no-spots state and suppresses join', (
+    tester,
+  ) async {
+    final app = await _pump(
+      tester,
+      participation: FakeParticipationGateway(),
+      proposalCapacity: projectCapacityFixture(peopleCapacity: 1),
+    );
+    app.read(appRouterProvider).go('/proposals/proposal-1');
+    await tester.pumpAndSettle();
+    await _scrollTo(
+      tester,
+      find.byKey(const Key('participation-full-proposal-1')),
+    );
+
+    expect(find.text('No spots available.'), findsWidgets);
+    expect(find.text('Full · 1 / 1'), findsWidgets);
+    expect(
+      find.byKey(const Key('participation-join-proposal-1')),
+      findsNothing,
+    );
+  });
+
+  testWidgets('full manager view keeps pending request rejectable', (
+    tester,
+  ) async {
+    final participation = FakeParticipationGateway()
+      ..creatorRequests = [creatorJoinRequestFixture(id: 'pending')]
+      ..capacity = capacityFixture(
+        peopleCapacity: 2,
+        currentParticipantCount: 1,
+      );
+    final app = await _pump(
+      tester,
+      identityId: 'user-1',
+      participation: participation,
+    );
+    app.read(appRouterProvider).go('/proposals/proposal-1/participants');
+    await tester.pumpAndSettle();
+
+    final accept = tester.widget<FilledButton>(
+      find.byKey(const Key('participation-accept-pending')),
+    );
+    final reject = tester.widget<OutlinedButton>(
+      find.byKey(const Key('participation-reject-pending')),
+    );
+    expect(
+      find.byKey(const Key('participation-request-pending')),
+      findsOneWidget,
+    );
+    expect(accept.onPressed, isNull);
+    expect(reject.onPressed, isNotNull);
+    expect(find.text('No spots available.'), findsOneWidget);
+
+    participation.capacity = capacityFixture(peopleCapacity: 2);
+    await app
+        .read(creatorParticipationProvider.notifier)
+        .load('user-1', 'proposal-1');
+    await tester.pumpAndSettle();
+    expect(
+      tester
+          .widget<FilledButton>(
+            find.byKey(const Key('participation-accept-pending')),
+          )
+          .onPressed,
+      isNotNull,
+    );
+    expect(find.text('No spots available.'), findsNothing);
+  });
+
   testWidgets('creator reviews private requests and current/history members', (
     tester,
   ) async {
@@ -264,9 +336,18 @@ void main() {
       find.byKey(const Key('participation-accept-resolved')),
       findsNothing,
     );
+    await _scrollTo(
+      tester,
+      find.byKey(const Key('participation-reject-reject-me')),
+    );
     await tester.tap(find.byKey(const Key('participation-reject-reject-me')));
     await tester.pumpAndSettle();
     expect(participation.calls, contains('reject:reject-me'));
+    await tester.scrollUntilVisible(
+      find.byKey(const Key('participation-accept-pending')),
+      -350,
+      scrollable: find.byType(Scrollable).hitTestable().first,
+    );
     await tester.tap(find.byKey(const Key('participation-accept-pending')));
     await tester.pumpAndSettle();
     expect(find.text('No contribution offers to classify.'), findsOneWidget);
@@ -664,6 +745,7 @@ Future<ProviderContainer> _pump(
   required FakeParticipationGateway participation,
   FakeRecurringActivityGateway? recurring,
   ProposalStatus proposalStatus = ProposalStatus.upcoming,
+  ProjectCapacitySnapshot? proposalCapacity,
   FakeProjectResourceNeedsGateway? projectResourceNeeds,
   FakeMembershipCommitmentGateway? commitments,
   FakeActualContributionGateway? actualContributions,
@@ -677,6 +759,7 @@ Future<ProviderContainer> _pump(
     ..publicDetail = proposalDetailFixture(
       creatorProfileId: 'user-1',
       status: proposalStatus,
+      capacity: proposalCapacity,
     );
   final recurringGateway =
       recurring ??

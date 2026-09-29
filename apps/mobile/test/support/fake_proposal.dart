@@ -1,5 +1,6 @@
 import 'package:planets_mobile/features/proposals/data/proposal_gateway.dart';
 import 'package:planets_mobile/features/proposals/domain/proposal_models.dart';
+import 'package:planets_mobile/features/participation/domain/project_capacity.dart';
 
 typedef RequestedProposalLoader =
     Future<List<RequestedProposalSummary>> Function(
@@ -249,6 +250,10 @@ OwnProposal _copyProposal(
   cancelledAt: lifecycle == ProposalLifecycle.cancelled
       ? DateTime.utc(2026, 9, 3)
       : proposal.cancelledAt,
+  capacity: projectCapacityFixture(
+    peopleCapacity: input?.peopleCapacity ?? proposal.capacity.peopleCapacity,
+    currentParticipantCount: proposal.capacity.currentParticipantCount,
+  ),
 );
 
 List<ProposalSkillCategory> proposalCategoriesFixture() => const [
@@ -274,6 +279,7 @@ ProposalSummary proposalSummaryFixture({
   String title = 'Paint the square',
   ProposalStatus status = ProposalStatus.upcoming,
   List<ProposalSkill>? skills,
+  ProjectCapacitySnapshot? capacity,
 }) => ProposalSummary(
   id: id,
   title: title,
@@ -299,6 +305,7 @@ ProposalSummary proposalSummaryFixture({
           importance: ProposalSkillImportance.required,
         ),
       ],
+  capacity: capacity ?? projectCapacityFixture(),
 );
 
 RequestedProposalSummary requestedProposalFixture({
@@ -318,12 +325,14 @@ ProposalDetail proposalDetailFixture({
   ProposalStatus status = ProposalStatus.upcoming,
   List<ProposalSkill>? skills,
   String creatorProfileId = 'user-1',
+  ProjectCapacitySnapshot? capacity,
 }) => ProposalDetail(
   summary: proposalSummaryFixture(
     id: id,
     title: title,
     status: status,
     skills: skills,
+    capacity: capacity,
   ),
   creatorProfileId: creatorProfileId,
   creatorDisplayName: 'Casey',
@@ -336,6 +345,7 @@ ProposalInput proposalInputFixture({
   DateTime? startsAt,
   DateTime? endsAt,
   String eventTimezone = 'Europe/Rome',
+  int? peopleCapacity = 20,
 }) => ProposalInput(
   title: 'Paint the square',
   summary: 'Create a community mural together.',
@@ -350,6 +360,7 @@ ProposalInput proposalInputFixture({
   exactMeetingText: 'At the fountain',
   exactLocationVisibility: ExactLocationVisibility.participants,
   skillImportanceById: const {'skill-mural': ProposalSkillImportance.required},
+  peopleCapacity: peopleCapacity,
 );
 
 OwnProposal ownProposalFixture({
@@ -359,6 +370,7 @@ OwnProposal ownProposalFixture({
   ProposalStatus? status,
   DateTime? startsAt,
   DateTime? endsAt,
+  ProjectCapacitySnapshot? capacity,
 }) {
   final value = input ?? proposalInputFixture();
   return OwnProposal(
@@ -388,5 +400,25 @@ OwnProposal ownProposalFixture({
     cancelledAt: lifecycle == ProposalLifecycle.cancelled
         ? DateTime.utc(2026, 9, 3)
         : null,
+    capacity:
+        capacity ??
+        projectCapacityFixture(peopleCapacity: value.peopleCapacity),
+  );
+}
+
+ProjectCapacitySnapshot projectCapacityFixture({
+  int? peopleCapacity = 20,
+  int currentParticipantCount = 0,
+}) {
+  final people = currentParticipantCount + 1;
+  final remaining = peopleCapacity == null
+      ? null
+      : (peopleCapacity > people ? peopleCapacity - people : 0);
+  return ProjectCapacitySnapshot(
+    peopleCapacity: peopleCapacity,
+    currentParticipantCount: currentParticipantCount,
+    currentPeopleCount: people,
+    spotsRemaining: remaining,
+    isFull: peopleCapacity != null && people >= peopleCapacity,
   );
 }

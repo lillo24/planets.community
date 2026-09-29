@@ -1417,18 +1417,21 @@ export type Database = {
           created_at: string
           creator_profile_id: string
           id: string
+          people_capacity: number | null
           project_kind: string
         }
         Insert: {
           created_at: string
           creator_profile_id: string
           id: string
+          people_capacity?: number | null
           project_kind: string
         }
         Update: {
           created_at?: string
           creator_profile_id?: string
           id?: string
+          people_capacity?: number | null
           project_kind?: string
         }
         Relationships: [
@@ -2318,49 +2321,96 @@ export type Database = {
         }
         Returns: string
       }
-      create_proposal_draft: {
-        Args: {
-          p_administrative_area: string
-          p_country_code: string
-          p_description: string
-          p_ends_at: string
-          p_event_timezone: string
-          p_exact_location_visibility: string
-          p_exact_meeting_text: string
-          p_expected_creator_profile_id: string
-          p_locality: string
-          p_public_location_label: string
-          p_skill_ids: string[]
-          p_skill_importances: string[]
-          p_starts_at: string
-          p_summary: string
-          p_title: string
-        }
-        Returns: string
-      }
-      create_recurring_activity_draft: {
-        Args: {
-          p_administrative_area: string
-          p_country_code: string
-          p_day_of_month: number
-          p_description: string
-          p_duration_minutes: number
-          p_effective_from: string
-          p_event_timezone: string
-          p_exact_location_visibility: string
-          p_exact_meeting_text: string
-          p_expected_creator_profile_id: string
-          p_local_start_time: string
-          p_locality: string
-          p_public_location_label: string
-          p_recurrence_type: string
-          p_summary: string
-          p_title: string
-          p_topic: string
-          p_weekday: number
-        }
-        Returns: string
-      }
+      create_proposal_draft:
+        | {
+            Args: {
+              p_administrative_area: string
+              p_country_code: string
+              p_description: string
+              p_ends_at: string
+              p_event_timezone: string
+              p_exact_location_visibility: string
+              p_exact_meeting_text: string
+              p_expected_creator_profile_id: string
+              p_locality: string
+              p_public_location_label: string
+              p_skill_ids: string[]
+              p_skill_importances: string[]
+              p_starts_at: string
+              p_summary: string
+              p_title: string
+            }
+            Returns: string
+          }
+        | {
+            Args: {
+              p_administrative_area: string
+              p_country_code: string
+              p_description: string
+              p_ends_at: string
+              p_event_timezone: string
+              p_exact_location_visibility: string
+              p_exact_meeting_text: string
+              p_expected_creator_profile_id: string
+              p_locality: string
+              p_people_capacity: number
+              p_public_location_label: string
+              p_skill_ids: string[]
+              p_skill_importances: string[]
+              p_starts_at: string
+              p_summary: string
+              p_title: string
+            }
+            Returns: string
+          }
+      create_recurring_activity_draft:
+        | {
+            Args: {
+              p_administrative_area: string
+              p_country_code: string
+              p_day_of_month: number
+              p_description: string
+              p_duration_minutes: number
+              p_effective_from: string
+              p_event_timezone: string
+              p_exact_location_visibility: string
+              p_exact_meeting_text: string
+              p_expected_creator_profile_id: string
+              p_local_start_time: string
+              p_locality: string
+              p_public_location_label: string
+              p_recurrence_type: string
+              p_summary: string
+              p_title: string
+              p_topic: string
+              p_weekday: number
+            }
+            Returns: string
+          }
+        | {
+            Args: {
+              p_administrative_area: string
+              p_country_code: string
+              p_day_of_month: number
+              p_description: string
+              p_duration_minutes: number
+              p_effective_from: string
+              p_event_timezone: string
+              p_exact_location_visibility: string
+              p_exact_meeting_text: string
+              p_expected_creator_profile_id: string
+              p_local_start_time: string
+              p_locality: string
+              p_people_capacity: number
+              p_public_location_label: string
+              p_recurrence_type: string
+              p_summary: string
+              p_title: string
+              p_topic: string
+              p_weekday: number
+            }
+            Returns: string
+          }
       create_resource_listing_draft: {
         Args: {
           p_administrative_area: string
@@ -2581,6 +2631,17 @@ export type Database = {
       get_own_unread_notification_count: {
         Args: { p_expected_profile_id: string }
         Returns: number
+      }
+      get_project_capacity_for_manager: {
+        Args: { p_expected_manager_profile_id: string; p_project_id: string }
+        Returns: {
+          current_participant_count: number
+          current_people_count: number
+          is_full: boolean
+          people_capacity: number
+          project_id: string
+          spots_remaining: number
+        }[]
       }
       get_project_participant_meeting_details: {
         Args: { p_expected_profile_id: string; p_project_id: string }
@@ -3258,6 +3319,17 @@ export type Database = {
           terms_id: string
         }[]
       }
+      list_project_capacity_statuses_for_structural_actor: {
+        Args: { p_expected_profile_id: string; p_project_ids: string[] }
+        Returns: {
+          current_participant_count: number
+          current_people_count: number
+          is_full: boolean
+          people_capacity: number
+          project_id: string
+          spots_remaining: number
+        }[]
+      }
       list_project_delegate_invitations_for_owner: {
         Args: { p_expected_owner_profile_id: string; p_project_id: string }
         Returns: {
@@ -3373,6 +3445,17 @@ export type Database = {
           contribution_id: string
           contribution_kind: string
           label: string
+        }[]
+      }
+      list_public_project_capacity_statuses: {
+        Args: { p_project_ids: string[] }
+        Returns: {
+          current_participant_count: number
+          current_people_count: number
+          is_full: boolean
+          people_capacity: number
+          project_id: string
+          spots_remaining: number
         }[]
       }
       list_public_project_resource_needs: {
@@ -3800,51 +3883,100 @@ export type Database = {
         }
         Returns: undefined
       }
-      update_own_proposal: {
-        Args: {
-          p_administrative_area: string
-          p_country_code: string
-          p_description: string
-          p_ends_at: string
-          p_event_timezone: string
-          p_exact_location_visibility: string
-          p_exact_meeting_text: string
-          p_expected_creator_profile_id: string
-          p_locality: string
-          p_proposal_id: string
-          p_public_location_label: string
-          p_skill_ids: string[]
-          p_skill_importances: string[]
-          p_starts_at: string
-          p_summary: string
-          p_title: string
-        }
-        Returns: string
-      }
-      update_own_recurring_activity: {
-        Args: {
-          p_administrative_area: string
-          p_country_code: string
-          p_day_of_month: number
-          p_description: string
-          p_duration_minutes: number
-          p_effective_from: string
-          p_event_timezone: string
-          p_exact_location_visibility: string
-          p_exact_meeting_text: string
-          p_expected_creator_profile_id: string
-          p_local_start_time: string
-          p_locality: string
-          p_public_location_label: string
-          p_recurrence_type: string
-          p_recurring_activity_id: string
-          p_summary: string
-          p_title: string
-          p_topic: string
-          p_weekday: number
-        }
-        Returns: string
-      }
+      update_own_proposal:
+        | {
+            Args: {
+              p_administrative_area: string
+              p_country_code: string
+              p_description: string
+              p_ends_at: string
+              p_event_timezone: string
+              p_exact_location_visibility: string
+              p_exact_meeting_text: string
+              p_expected_creator_profile_id: string
+              p_locality: string
+              p_proposal_id: string
+              p_public_location_label: string
+              p_skill_ids: string[]
+              p_skill_importances: string[]
+              p_starts_at: string
+              p_summary: string
+              p_title: string
+            }
+            Returns: string
+          }
+        | {
+            Args: {
+              p_administrative_area: string
+              p_country_code: string
+              p_description: string
+              p_ends_at: string
+              p_event_timezone: string
+              p_exact_location_visibility: string
+              p_exact_meeting_text: string
+              p_expected_creator_profile_id: string
+              p_locality: string
+              p_people_capacity: number
+              p_proposal_id: string
+              p_public_location_label: string
+              p_skill_ids: string[]
+              p_skill_importances: string[]
+              p_starts_at: string
+              p_summary: string
+              p_title: string
+            }
+            Returns: string
+          }
+      update_own_recurring_activity:
+        | {
+            Args: {
+              p_administrative_area: string
+              p_country_code: string
+              p_day_of_month: number
+              p_description: string
+              p_duration_minutes: number
+              p_effective_from: string
+              p_event_timezone: string
+              p_exact_location_visibility: string
+              p_exact_meeting_text: string
+              p_expected_creator_profile_id: string
+              p_local_start_time: string
+              p_locality: string
+              p_public_location_label: string
+              p_recurrence_type: string
+              p_recurring_activity_id: string
+              p_summary: string
+              p_title: string
+              p_topic: string
+              p_weekday: number
+            }
+            Returns: string
+          }
+        | {
+            Args: {
+              p_administrative_area: string
+              p_country_code: string
+              p_day_of_month: number
+              p_description: string
+              p_duration_minutes: number
+              p_effective_from: string
+              p_event_timezone: string
+              p_exact_location_visibility: string
+              p_exact_meeting_text: string
+              p_expected_creator_profile_id: string
+              p_local_start_time: string
+              p_locality: string
+              p_people_capacity: number
+              p_public_location_label: string
+              p_recurrence_type: string
+              p_recurring_activity_id: string
+              p_summary: string
+              p_title: string
+              p_topic: string
+              p_weekday: number
+            }
+            Returns: string
+          }
       update_own_resource_listing: {
         Args: {
           p_administrative_area: string

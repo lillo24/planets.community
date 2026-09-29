@@ -1,7 +1,7 @@
 # Implementation Roadmap
 
 **Status:** Planning baseline  
-**Current implementation:** Plans 00–04B2B, 04C1–04C2, 05A, 05B, 05D, 06A, 06B, provider-independent 06C1, provider-neutral 06C2A, 06D, 07A, 07B1, 07B2B, 07B2C, and public informational SITE-00 through SITE-02 plus SITE-02W implemented; 04C3A and stacked 04C3B1/04C3B2/04C3C1/04C3C2/04C3D1/04C3D2/04C3D3A/04C3D3B1/04C3D3B2/05C1/05C2/04C4A/04C4B/04C4C1/04C4C2/04C4C3A/04C4C3B/04C4C3C1/04C4C3C2/04C4C3D/04C4D1/04C4D2 are in progress; provider-specific 06C2B and 04C4E–04C4F remain not started
+**Current implementation:** Plans 00–04B2B, 04C1–04C2, 05A, 05B, 05D, 06A, 06B, provider-independent 06C1, provider-neutral 06C2A, 06D, 07A, 07B1, 07B2B, 07B2C, and public informational SITE-00 through SITE-02 plus SITE-02W implemented; 04C3A and stacked 04C3B1/04C3B2/04C3C1/04C3C2/04C3D1/04C3D2/04C3D3A/04C3D3B1/04C3D3B2/05C1/05C2/05E/04C4A/04C4B/04C4C1/04C4C2/04C4C3A/04C4C3B/04C4C3C1/04C4C3C2/04C4C3D/04C4D1/04C4D2 are in progress; provider-specific 06C2B and 04C4E–04C4F remain not started
 
 This roadmap divides the first PLANETS build into reviewable Codex tasks. Each numbered item should normally become its own implementation prompt, branch, and pull request.
 
@@ -86,10 +86,11 @@ Do not begin a dependent plan until the prior plan is merged or its branch is ex
 | 04C4D2  | Mobile Loan Schedule + Availability UX                     | Owner schedule visualization, pending availability, and at-risk warning UX                                               | 04C4D1                 | No automatic promotion                                                                                                 | In progress |
 | 04C4E   | Project Resource Matching                                 | Explainable text/location/availability matching between Project needs and Scambio-Dona listings                        | 04C3A, 04C4D1          | Matching thresholds and private availability use                                                                      | Not started |
 | 04C4F   | Saved Searches + Matching Notifications                   | Personal saved filters, later taxonomy/radius refinements, matching events, and notification projection                | 04C4E, 06A             | Saved-search scope, notification copy/frequency, and later taxonomy                                                  | Not started |
-| 05      | Participation lifecycle (parent)                          | Shared project participation foundation, later mobile experience, and verified-contribution review                     | 04A, 04B1              | Capacity/fullness and later contribution/resource semantics remain unresolved                                        | In progress |
+| 05      | Participation lifecycle (parent)                          | Shared project participation foundation, later mobile experience, and verified-contribution review                     | 04A, 04B1              | Later contribution/resource semantics remain unresolved                                                             | In progress |
 | 05A     | Project Participation Domain Foundation                   | Shared identity, private join requests, canonical membership history, protected meeting access, events, and tests      | 04A, 04B1              | No blocking decision; 07B1 derives chat activation from accepted membership                                          | Implemented |
 | 05B     | Mobile Project Participation Experience                   | Join/status/withdraw, creator review, member state, leave/remove, and protected meeting UI                             | 05A                    | Functional/native UX review                                                                                          | Implemented |
 | 05D     | Participation-Aware Browse and Pending Request Visibility | Own pending requests promoted in mobile Proposal/Tavolo Browse without changing public pagination                      | 04A, 04B1, 05A, 05B    | Native QA deferred to the consolidated Plan 12 pass                                                                  | Implemented |
+| 05E     | Project People Capacity and Fullness                      | Shared total-people capacity, derived occupancy, atomic request/accept fullness enforcement, and mobile UX             | 05A, 05B, 07C2E        | Native interaction review deferred to the consolidated Plan 12 pass                                                  | In progress |
 | 05C     | One-Time Project Actual Contribution Attribution (parent) | Derived final-commitment attribution, sparse creator corrections, and a later mobile experience                        | 05A, 04C3D3B           | Delegate scope, participant reminder/correction flow, and Tavoli finalization                                        | In progress |
 | 05C1    | Actual Contribution Attribution Domain                    | Membership-at-end baseline, sparse creator overrides/additions, effort marker, secure RPCs, events, and tests          | 05A, 04C3D3B           | None for canonical creator-only one-time Project ownership                                                           | In progress |
 | 05C2    | Mobile Actual Contribution Experience                     | Participant read-only visibility plus creator post-end correction UI                                                   | 05C1, 05B              | Native interaction review; participant-to-creator reminder remains a separate future follow-up                       | In progress |
@@ -675,6 +676,28 @@ meeting data, creator-side incoming requests, resolved request history, and
 non-public projects are excluded. Native Android/iOS QA is deferred to the
 consolidated Plan 12 pass and is not marked passed or failed here.
 
+#### 05E — Project People Capacity and Fullness
+
+**Status:** In progress as a draft PR stacked on 07C2E.
+
+Stores one nullable `people_capacity` on the shared private Project row for
+both Proposals and Tavoli. Capacity is total people: the immutable original
+Creator counts once and each current membership counts once, while delegated
+authority alone and pending or historical participation do not count. Public
+aggregate reads derive occupancy without exposing member identities. Null is
+preserved only for drafts and legacy published Projects, which remain uncapped
+until their next structural edit requires a value; all new publication
+requires 1–100,000 people.
+
+Join-request and membership-insertion triggers enforce fullness while holding
+the shared Project lock, so every acceptance path is protected and concurrent
+final-spot accepts cannot overbook. Leaving or removal frees a spot by ending
+the canonical membership; no counter or waitlist is introduced. Proposal and
+Tavolo editors, public cards/details, join actions, and manager participation
+render the same capacity snapshot and map a stale full-state race explicitly.
+Size-band filters, normalized popularity, per-occurrence Tavolo limits, and
+Template Workshop/Market ranking remain deferred.
+
 #### 05C — One-Time Project Actual Contribution Attribution
 
 **Status:** In progress through stacked 05C2. Neither PR #68 nor its 05C2 mobile dependent is merged.
@@ -695,14 +718,14 @@ Technical compatibility patch DB-COMPAT-01 is stacked above 05C2. It reserves Po
 
 Future project-presentation work must also represent Tavoli as a Progetti type/filter in the final information architecture and implement the accepted Online/In-Presence mode. Neither is a participation-table field in 05A.
 
-The former combined Plan 05 scope is now split across the four portions above. Remaining parent outcomes include:
+The former combined Plan 05 scope is now split across the portions above. Remaining parent outcomes include:
 
 - join request creation, withdrawal, acceptance, and rejection;
 - duplicate/race protection;
 - membership and role records;
 - leave, removal, and proposal-state interactions as decided;
 - owner review interface (05B);
-- participant counts and history-derived stats after their product semantics are selected;
+- history-derived statistics beyond 05E's current aggregate occupancy;
 - any explicitly selected non-chat participation threshold or activation rule;
 - canonical backend functions for sensitive transitions;
 - outbox events for later notifications;

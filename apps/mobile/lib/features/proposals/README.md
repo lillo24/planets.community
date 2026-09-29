@@ -59,6 +59,14 @@ view. Drafts keep their intentionally optional fields while still validating
 any values that were supplied.
 
 Draft creation, draft saving, and publication remain original-Creator-only.
+Drafts may omit People capacity, but publication requires 1–100,000 total
+people including the immutable Creator. Public cards and detail use the shared
+participation aggregate (`Creator + current memberships`) to show occupancy,
+Full, or the legacy “Capacity not set” state. A Creator or current Co-creator
+may change capacity only while the same structural content is editable and
+never below current occupancy; a legacy published Proposal must receive a
+capacity on its next structural save.
+
 For an existing published Proposal, the shared editor instead shows **Save
 changes** and never invokes the draft-only publish operation. Content becomes
 read-only once the Proposal starts, while cancellation remains available until

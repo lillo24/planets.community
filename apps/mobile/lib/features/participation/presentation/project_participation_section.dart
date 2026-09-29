@@ -11,6 +11,8 @@ import '../../project_delegates/domain/project_delegate_models.dart';
 import '../../project_delegates/presentation/project_delegate_routes.dart';
 import '../application/participation_controllers.dart';
 import '../domain/participation_models.dart';
+import '../domain/project_capacity.dart';
+import 'project_capacity_label.dart';
 import 'participation_routes.dart';
 
 class ProjectParticipationSection extends ConsumerWidget {
@@ -22,6 +24,7 @@ class ProjectParticipationSection extends ConsumerWidget {
     required this.publicLocationLines,
     required this.publicExactMeetingText,
     required this.exactLocationRestricted,
+    required this.capacity,
     super.key,
   });
 
@@ -32,6 +35,7 @@ class ProjectParticipationSection extends ConsumerWidget {
   final List<String> publicLocationLines;
   final String? publicExactMeetingText;
   final bool exactLocationRestricted;
+  final ProjectCapacitySnapshot capacity;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -182,6 +186,12 @@ class ProjectParticipationSection extends ConsumerWidget {
           ],
         ),
         const SizedBox(height: AppSpacing.small),
+        ProjectCapacityLabel(capacity: capacity),
+        if (capacity.isFull) ...[
+          const SizedBox(height: AppSpacing.xSmall),
+          Text(l10n.projectNoSpots, key: Key('participation-full-$projectId')),
+        ],
+        const SizedBox(height: AppSpacing.small),
         if (commandForProject?.failure != null) ...[
           Text(
             participationFailureMessage(l10n, commandForProject!.failure!),
@@ -257,7 +267,7 @@ class ProjectParticipationSection extends ConsumerWidget {
     }
     if (session.phase == AuthSessionPhase.signedOut ||
         session.phase == AuthSessionPhase.profileSetupRequired) {
-      final ordinaryActions = acceptsNewRequests
+      final ordinaryActions = acceptsNewRequests && !capacity.isFull
           ? [
               FilledButton.icon(
                 key: Key('participation-join-$projectId'),
@@ -339,6 +349,9 @@ class ProjectParticipationSection extends ConsumerWidget {
     }
     if (!acceptsNewRequests) {
       return [...delegateActions, Text(l10n.participationClosed)];
+    }
+    if (capacity.isFull) {
+      return [...delegateActions, Text(l10n.projectNoSpots)];
     }
     return [
       ...delegateActions,
@@ -422,5 +435,6 @@ String participationFailureMessage(
   ParticipationFailureKind.forbidden => l10n.participationForbidden,
   ParticipationFailureKind.conflict ||
   ParticipationFailureKind.notFound => l10n.participationConflict,
+  ParticipationFailureKind.full => l10n.projectFullNow,
   ParticipationFailureKind.unavailable => l10n.participationSafeError,
 };

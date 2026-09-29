@@ -6,11 +6,13 @@ import '../../auth/domain/auth_models.dart';
 import '../../project_chat/application/project_chat_refresh.dart';
 import '../data/participation_gateway.dart';
 import '../domain/participation_models.dart';
+import '../domain/project_capacity.dart';
 
 enum ParticipationFailureKind {
   invalidInput,
   forbidden,
   conflict,
+  full,
   notFound,
   unavailable,
 }
@@ -468,6 +470,7 @@ class CreatorParticipationState {
     this.projectId,
     this.requests = const [],
     this.members = const [],
+    this.capacity,
     this.actionTargetId,
     this.failure,
   });
@@ -477,6 +480,7 @@ class CreatorParticipationState {
   final String? projectId;
   final List<ManagerProjectJoinRequest> requests;
   final List<ManagerProjectMember> members;
+  final ProjectCapacitySnapshot? capacity;
   final String? actionTargetId;
   final ParticipationFailureKind? failure;
 
@@ -529,6 +533,7 @@ class CreatorParticipationController
       projectId: projectId,
       requests: preserve ? state.requests : const [],
       members: preserve ? state.members : const [],
+      capacity: preserve ? state.capacity : null,
     );
     try {
       _requireReadyIdentity(expectedManagerId);
@@ -540,6 +545,7 @@ class CreatorParticipationController
         projectId: projectId,
         requests: result.requests,
         members: result.members,
+        capacity: result.capacity,
       );
     } catch (error) {
       if (!_isCurrent(revision, expectedManagerId, projectId)) return;
@@ -549,6 +555,7 @@ class CreatorParticipationController
         projectId: projectId,
         requests: state.requests,
         members: state.members,
+        capacity: state.capacity,
         failure: mapParticipationFailure(error),
       );
     }
@@ -602,6 +609,7 @@ class CreatorParticipationController
       projectId: projectId,
       requests: state.requests,
       members: state.members,
+      capacity: state.capacity,
       actionTargetId: targetId,
     );
     try {
@@ -616,6 +624,7 @@ class CreatorParticipationController
         projectId: projectId,
         requests: result.requests,
         members: result.members,
+        capacity: result.capacity,
       );
       if (refreshProjectChats) {
         ref.read(projectChatRefreshProvider.notifier).notifyChanged();
@@ -629,6 +638,7 @@ class CreatorParticipationController
         projectId: projectId,
         requests: state.requests,
         members: state.members,
+        capacity: state.capacity,
         actionTargetId: targetId,
         failure: mapParticipationFailure(error),
       );
@@ -640,6 +650,7 @@ class CreatorParticipationController
     ({
       List<ManagerProjectJoinRequest> requests,
       List<ManagerProjectMember> members,
+      ProjectCapacitySnapshot capacity,
     })
   >
   _fetch(String expectedManagerId, String projectId) async {
@@ -650,6 +661,10 @@ class CreatorParticipationController
         projectId: projectId,
       ),
       gateway.listProjectMembers(
+        expectedManagerProfileId: expectedManagerId,
+        projectId: projectId,
+      ),
+      gateway.getProjectCapacityForManager(
         expectedManagerProfileId: expectedManagerId,
         projectId: projectId,
       ),
@@ -669,6 +684,7 @@ class CreatorParticipationController
     return (
       requests: List<ManagerProjectJoinRequest>.unmodifiable(requests),
       members: List<ManagerProjectMember>.unmodifiable(members),
+      capacity: values[2] as ProjectCapacitySnapshot,
     );
   }
 
@@ -701,6 +717,7 @@ ParticipationFailureKind mapParticipationFailure(Object error) {
       '22023' => ParticipationFailureKind.invalidInput,
       '42501' => ParticipationFailureKind.forbidden,
       '55000' => ParticipationFailureKind.conflict,
+      'PT409' => ParticipationFailureKind.full,
       'P0002' => ParticipationFailureKind.notFound,
       _ => ParticipationFailureKind.unavailable,
     };

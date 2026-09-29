@@ -13,6 +13,7 @@ import '../../../l10n/generated/app_localizations.dart';
 import '../../auth/application/auth_session_controller.dart';
 import '../../participation/domain/participation_models.dart';
 import '../../participation/presentation/project_participation_section.dart';
+import '../../participation/presentation/project_capacity_label.dart';
 import '../../project_resource_needs/presentation/project_resource_need_routes.dart';
 import '../../project_resource_needs/presentation/project_resource_needs_section.dart';
 import '../application/recurring_activity_controllers.dart';
@@ -287,6 +288,8 @@ class _PublicRecurringActivityDetailScreenState
             ],
             const SizedBox(height: AppSpacing.large),
             Text(resolvedDetail.description),
+            const SizedBox(height: AppSpacing.medium),
+            ProjectCapacityLabel(capacity: resolvedDetail.capacity),
             const SizedBox(height: AppSpacing.large),
             Text(
               l10n.tavoliScheduleTitle,
@@ -350,6 +353,7 @@ class _PublicRecurringActivityDetailScreenState
               ],
               publicExactMeetingText: resolvedDetail.exactMeetingText,
               exactLocationRestricted: resolvedDetail.exactLocationRestricted,
+              capacity: resolvedDetail.capacity,
             ),
             if (resolvedDetail.creatorDisplayName case final creator?) ...[
               const SizedBox(height: AppSpacing.large),
