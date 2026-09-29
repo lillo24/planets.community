@@ -25,6 +25,8 @@ import '../../features/project_delegates/presentation/project_manage_screen.dart
 import '../../features/project_request_chat/presentation/project_request_chat_screen.dart';
 import '../../features/project_resource_needs/presentation/project_resource_need_routes.dart';
 import '../../features/project_resource_needs/presentation/project_resource_needs_screen.dart';
+import '../../features/project_workspace/presentation/project_workspace_routes.dart';
+import '../../features/project_workspace/presentation/project_workspace_screen.dart';
 import '../../features/participation/domain/participation_models.dart';
 import '../../features/participation/presentation/creator_participation_screen.dart';
 import '../../features/participation/presentation/join_request_screen.dart';
@@ -95,6 +97,8 @@ RoutingConfig _routingConfig(
           ProjectResourceNeedRoutes.isManagementPath(path);
       final isProjectDelegateManagementRoute =
           ProjectDelegateRoutes.isManagementPath(path);
+      final isProjectWorkspaceManagementRoute =
+          ProjectWorkspaceRoutes.isManagementPath(path);
       final isMessagesRoute = isMessagesPath(path);
       final isNotificationsRoute = isNotificationsPath(path);
       final isActivityManagementRoute =
@@ -103,6 +107,7 @@ RoutingConfig _routingConfig(
           isResourceManagementRoute ||
           isProjectResourceNeedManagementRoute ||
           isProjectDelegateManagementRoute ||
+          isProjectWorkspaceManagementRoute ||
           isParticipationRoute ||
           isMessagesRoute ||
           isNotificationsRoute;
@@ -123,6 +128,7 @@ RoutingConfig _routingConfig(
           (isParticipationRoute ||
               isProjectResourceNeedManagementRoute ||
               isProjectDelegateManagementRoute ||
+              isProjectWorkspaceManagementRoute ||
               isMessagesRoute ||
               isNotificationsRoute)) {
         return Uri(
@@ -163,6 +169,7 @@ RoutingConfig _routingConfig(
         if (ParticipationRoutes.isParticipationPath(returnTo) ||
             ProjectResourceNeedRoutes.isManagementPath(returnTo) ||
             ProjectDelegateRoutes.isManagementPath(returnTo) ||
+            ProjectWorkspaceRoutes.isManagementPath(returnTo) ||
             ProjectDelegateRoutes.isInvitePath(returnTo) ||
             isMessagesPath(returnTo) ||
             isNotificationsPath(returnTo) ||
@@ -371,6 +378,13 @@ RoutingConfig _routingConfig(
                           projectKind: ProjectKind.oneTime,
                         ),
                       ),
+                      GoRoute(
+                        path: 'workspace',
+                        builder: (context, state) => ProjectWorkspaceScreen(
+                          projectId: state.pathParameters['id']!,
+                          projectKind: ProjectKind.oneTime,
+                        ),
+                      ),
                     ],
                   ),
                 ],
@@ -435,6 +449,13 @@ RoutingConfig _routingConfig(
                       GoRoute(
                         path: 'co-organizers',
                         builder: (context, state) => ProjectTeamScreen(
+                          projectId: state.pathParameters['id']!,
+                          projectKind: ProjectKind.recurring,
+                        ),
+                      ),
+                      GoRoute(
+                        path: 'workspace',
+                        builder: (context, state) => ProjectWorkspaceScreen(
                           projectId: state.pathParameters['id']!,
                           projectKind: ProjectKind.recurring,
                         ),

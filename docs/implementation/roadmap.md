@@ -107,6 +107,7 @@ Do not begin a dependent plan until the prior plan is merged or its branch is ex
 | 07B     | Project Group Chat (parent)                               | First-accept lifecycle/authorization foundation followed by messaging, Realtime, and mobile group experience           | 05A, 07A               | Optional E2EE research remains deferred; native QA remains in Plan 12                                                | Implemented |
 | 07B1    | Project Group Chat Lifecycle and Authorization Foundation | One chat per Project, first-accept activation, and ownership/membership-derived current and historical entitlement     | 05A, 07A               | None for the scoped structural foundation                                                                            | Implemented |
 | 07B2    | Project Chat Messaging, Realtime and Mobile Experience    | Authorized plain-text message model, Realtime hints, mobile chat/group info, and protected meeting access              | 07B1                   | Native QA remains deferred to Plan 12; optional E2EE research remains unmerged                                       | Implemented |
+| 07C3    | Shared Project Workspace + Group Organization Tools       | One private external workspace link plus Project Manage, Group info, and chat organization-tools UX                    | 07C2E                  | External service owns file permissions/content; native launch/accessibility QA remains Plan 12                       | In progress (open PR) |
 | 08      | Storage and media hardening                               | Select the production media approach, then implement purpose-specific access, metadata, cleanup, and processing hooks  | 03–07                  | Profile/proposal photo visibility, retention, and self-hosted Supabase Storage versus external object storage        | Not started |
 | 09      | Safety, moderation and admin                              | Reporting, blocking, content states, admin roles, moderation queue/actions, audit trail and minimal custom admin UI    | 04–08                  | Community rules, prohibited content, escalation, suspension, appeals, minimum age                                    | Not started |
 | 10      | Account deletion and privacy operations                   | In-app and web deletion paths, cleanup/anonymization jobs, export groundwork, privacy documentation inputs             | 03–09                  | Legal retention and anonymization policy; legal text remains founder/legal work                                      | Not started |
@@ -929,6 +930,21 @@ PR #28 (`codex/07b2a-mls-e2ee-prototype`) is intentionally unmerged. It records
 technically useful MLS feasibility research but is deferred and is neither an
 implemented roadmap item nor a dependency of the MVP message schema.
 
+#### 07C3 — Shared Project Workspace + Group Organization Tools
+
+**Status:** In progress on a focused open PR. Depends on the accepted 07C2E
+delegated-authority stack.
+
+Adds one private provider-neutral HTTPS workspace URL per Project. Creator,
+Co-creator, and Co-organizer may manage it before or after chat activation;
+current managers and current participants may read it, while historical or
+unrelated profiles fail closed. Mobile Project Manage provides Add/Open/Edit,
+Group info provides the durable current-group section, and Project chat moves
+the existing Needs control into a horizontally scrollable Needs/Workspace
+organization strip above history. The external provider owns content and
+permissions. OAuth, Drive API integration, PLANETS file storage, attachments,
+Realtime workspace events, public web UI, and media/demo work remain excluded.
+
 ### 08 — Storage and media hardening
 
 **Goal:** Support user media without treating storage URLs as authorization.
@@ -1009,6 +1025,21 @@ Expected scope:
 - regression coverage for behavior changed during the pass.
 
 This phase refines accepted flows; it must not silently decide unresolved authorization, lifecycle, policy, or data-retention behavior.
+
+Deferred 07C3 native checklist:
+
+- paste/edit Google Drive and generic HTTPS links, malformed links, and very
+  long share URLs;
+- confirm Cancel/Open behavior and external Drive app/browser launch on Android
+  and iOS, including a missing-app/browser fallback and offline state;
+- verify current-participant leave and Co-organizer revocation while chat,
+  Group info, or the workspace editor is open;
+- verify Co-creator demotion, manager-without-participation access, and account
+  switching while a private workspace hostname is visible;
+- verify the organization-tools strip on narrow phone/tablet layouts, long
+  localized labels, and the relocated Needs attention indicator;
+- verify VoiceOver/TalkBack destination announcement, Needs versus Workspace
+  navigation, text scaling, and focus behavior.
 
 Deferred 04C2 native checklist:
 

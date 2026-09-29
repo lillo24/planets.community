@@ -187,6 +187,16 @@ Anonymous and authenticated public reads expose only open needs while the concre
 
 Delegated grants use seven-day, single-use, 256-bit bearer invitations. `project_delegate_invitations` stores only a SHA-256 digest plus lifecycle, requested-role, immutable original-Creator, and actual-issuer metadata; plaintext is returned once by a structural actor and is excluded from audit/outbox data and structural reads. Accepted relationships preserve the actual grantor and initial role, while append-only role-change rows preserve later promotions/demotions. Preview is non-mutating and returns one indistinguishable unavailable shape for malformed, unknown, consumed, revoked, expired, non-operational, or stale-issuer invitations. Acceptance and authority changes serialize on the Project before their own row locks. Demotion/revocation atomically revokes a former Co-creator's pending grants, and acceptance independently rechecks current issuer authority.
 
+`project_shared_workspaces` stores at most one provider-neutral absolute HTTPS
+URL per shared Project identity. It has no provider, OAuth, file, attachment,
+or permission metadata and is absent from public Project contracts and generic
+events. Creator, active Co-creator, and active Co-organizer may set or clear it,
+including before chat activation; those managers and current participants may
+read it. Former, pending, rejected, withdrawn, unrelated, and anonymous users
+cannot read it unless they independently retain a manager role. The RPC-only
+table has no client grants or RLS policies, and Project-row locking serializes
+manager replacement. External services own their content and access policy.
+
 Mobile and web share `https://planets.community/invite/project/<token>` as the
 canonical invitation route. The website remains a complete fallback and only
 an explicit authenticated client action accepts. Flutter resolves exact
@@ -384,6 +394,7 @@ Edge Functions and background workers remain valid implementation choices when t
 | Resource request chat       | Accepted-request human history, authorized summaries/send, and private Realtime refresh hints                    | One request/agreement episode; permanent owner/requester read and open-coordination send                       |
 | Participation               | Shared project identity, private requests/decisions, current membership and retained history                     | Profile and concrete one-time/recurring project; source for authorization and later stats                      |
 | Project delegated authority | Structural-actor single-use invitations, Co-creator/Co-organizer roles, and current manager authorization        | Shared Project identity; separate from immutable original-Creator attribution and participation membership     |
+| Project shared workspace    | One private provider-neutral HTTPS link with manager mutation and current-group read authorization              | Shared Project identity; external provider owns files and permissions                                          |
 | Participation request chat  | Pending-request human history, structured request-note feed, exact authorized state, and private Realtime hints  | One join-request episode; permanent requester/current-manager read and pending-only send                       |
 | Messages                    | Authenticated discriminated Project/Resource Requests plus the existing Project-only Chats tab                   | Canonical request domains; complete three-part cursor; Resource chats remain 04C4C3B                           |
 | Project chat                | Structural anchor, immutable message history, authorized list/send APIs, and private Realtime hints              | Owner/active delegates plus current/former participants under canonical membership-time rules                  |

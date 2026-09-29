@@ -1412,6 +1412,35 @@ export type Database = {
           },
         ]
       }
+      project_shared_workspaces: {
+        Row: {
+          created_at: string
+          project_id: string
+          updated_at: string
+          workspace_url: string
+        }
+        Insert: {
+          created_at?: string
+          project_id: string
+          updated_at?: string
+          workspace_url: string
+        }
+        Update: {
+          created_at?: string
+          project_id?: string
+          updated_at?: string
+          workspace_url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_shared_workspaces_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: true
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       projects: {
         Row: {
           created_at: string
@@ -2277,6 +2306,10 @@ export type Database = {
         }
         Returns: string
       }
+      clear_project_shared_workspace: {
+        Args: { p_expected_manager_profile_id: string; p_project_id: string }
+        Returns: boolean
+      }
       close_project_resource_need: {
         Args: {
           p_expected_creator_profile_id: string
@@ -2446,6 +2479,14 @@ export type Database = {
           has_unseen_resurfaced_need: boolean
           latest_unseen_event_at: string
           latest_unseen_event_id: string
+        }[]
+      }
+      get_own_project_shared_workspace: {
+        Args: { p_expected_profile_id: string; p_project_id: string }
+        Returns: {
+          project_id: string
+          updated_at: string
+          workspace_url: string
         }[]
       }
       get_own_proposal: {
@@ -3783,6 +3824,18 @@ export type Database = {
           p_requirement_kind: string
         }
         Returns: string
+      }
+      set_project_shared_workspace: {
+        Args: {
+          p_expected_manager_profile_id: string
+          p_project_id: string
+          p_workspace_url: string
+        }
+        Returns: {
+          project_id: string
+          updated_at: string
+          workspace_url: string
+        }[]
       }
       unregister_own_push_installation: {
         Args: { p_expected_profile_id: string; p_installation_id: string }

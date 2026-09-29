@@ -10,6 +10,9 @@ import '../../../core/widgets/loading_state.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../auth/application/auth_session_controller.dart';
 import '../../messages/presentation/messages_routes.dart';
+import '../../project_workspace/application/project_workspace_controller.dart';
+import '../../project_workspace/domain/project_workspace_models.dart';
+import '../../project_workspace/presentation/project_workspace_widgets.dart';
 import '../application/project_chat_controllers.dart';
 import '../application/project_needs_controller.dart';
 import '../domain/project_chat_models.dart';
@@ -72,6 +75,7 @@ class _ProjectChatScreenState extends ConsumerState<ProjectChatScreen>
     );
     if (!mounted || !_hasExpectedIdentity) return;
     _detailController.startSignals(profileId, widget.chatId);
+    await _syncWorkspace();
   }
 
   Future<void> _refresh() async {
@@ -81,6 +85,27 @@ class _ProjectChatScreenState extends ConsumerState<ProjectChatScreen>
       expectedProfileId: profileId,
       chatId: widget.chatId,
     );
+    if (!mounted || !_hasExpectedIdentity) return;
+    await _syncWorkspace();
+  }
+
+  Future<void> _syncWorkspace() async {
+    final profileId = _expectedProfileId;
+    final detail = ref.read(projectChatDetailProvider);
+    final summary =
+        detail.expectedProfileId == profileId && detail.chatId == widget.chatId
+        ? detail.summary
+        : null;
+    if (profileId == null || summary == null) return;
+    if (!summary.hasCurrentEntitlement) {
+      ref
+          .read(projectWorkspaceProvider.notifier)
+          .clearProject(summary.projectId);
+      return;
+    }
+    await ref
+        .read(projectWorkspaceProvider.notifier)
+        .load(expectedProfileId: profileId, projectId: summary.projectId);
   }
 
   Future<void> _loadOlder() async {
@@ -148,6 +173,18 @@ class _ProjectChatScreenState extends ConsumerState<ProjectChatScreen>
         needsState.expectedProfileId == _expectedProfileId &&
         needsState.projectId == summary?.projectId &&
         needsState.chatId == widget.chatId;
+    final workspaceState = ref.watch(projectWorkspaceProvider);
+    final workspaceBelongs =
+        workspaceState.expectedProfileId == _expectedProfileId &&
+        workspaceState.projectId == summary?.projectId;
+
+    if (summary != null && !summary.hasCurrentEntitlement && workspaceBelongs) {
+      Future<void>.microtask(
+        () => ref
+            .read(projectWorkspaceProvider.notifier)
+            .clearProject(summary.projectId),
+      );
+    }
 
     ref.listen(projectChatDetailProvider, (previous, next) {
       final becameReady =
@@ -208,6 +245,50 @@ class _ProjectChatScreenState extends ConsumerState<ProjectChatScreen>
                           style: TextStyle(
                             color: Theme.of(context).colorScheme.error,
                           ),
+                        ),
+                      ),
+                    ),
+                  if (summary?.hasCurrentEntitlement == true &&
+                      _expectedProfileId != null)
+                    Semantics(
+                      label: l10n.projectWorkspaceToolsSemantics,
+                      container: true,
+                      child: SingleChildScrollView(
+                        key: const Key('project-chat-tools-strip'),
+                        scrollDirection: Axis.horizontal,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: AppSpacing.small,
+                          vertical: AppSpacing.xSmall,
+                        ),
+                        child: Row(
+                          children: [
+                            _NeedsControl(
+                              uncoveredCount: needsBelong
+                                  ? needsState.uncoveredCount
+                                  : 0,
+                              hasAttention:
+                                  needsBelong && needsState.hasUnseenAttention,
+                              pulseRevision: needsBelong
+                                  ? needsState.attentionPulseRevision
+                                  : 0,
+                              onPressed: _openNeeds,
+                            ),
+                            if (workspaceBelongs &&
+                                (workspaceState.phase ==
+                                        ProjectWorkspacePhase.loading ||
+                                    (workspaceState.phase ==
+                                            ProjectWorkspacePhase.ready &&
+                                        (workspaceState.workspace != null ||
+                                            summary!.isManager)))) ...[
+                              const SizedBox(width: AppSpacing.small),
+                              ProjectWorkspaceChatControl(
+                                expectedProfileId: _expectedProfileId,
+                                projectId: summary!.projectId,
+                                projectKind: summary.projectKind,
+                                isManager: summary.isManager,
+                              ),
+                            ],
+                          ],
                         ),
                       ),
                     ),
@@ -279,17 +360,6 @@ class _ProjectChatScreenState extends ConsumerState<ProjectChatScreen>
                       controller: _composer,
                       isSending: state.isSending,
                       onSend: _send,
-                      needsControl: _NeedsControl(
-                        uncoveredCount: needsBelong
-                            ? needsState.uncoveredCount
-                            : 0,
-                        hasAttention:
-                            needsBelong && needsState.hasUnseenAttention,
-                        pulseRevision: needsBelong
-                            ? needsState.attentionPulseRevision
-                            : 0,
-                        onPressed: _openNeeds,
-                      ),
                     )
                   else if (summary != null)
                     Semantics(
@@ -425,18 +495,17 @@ class _Composer extends StatelessWidget {
     required this.controller,
     required this.isSending,
     required this.onSend,
-    required this.needsControl,
   });
 
   final TextEditingController controller;
   final bool isSending;
   final VoidCallback onSend;
-  final Widget needsControl;
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     return Material(
+      key: const Key('project-chat-composer-bar'),
       elevation: 4,
       child: Padding(
         padding: EdgeInsets.fromLTRB(
@@ -448,8 +517,6 @@ class _Composer extends StatelessWidget {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
-            needsControl,
-            const SizedBox(width: AppSpacing.xSmall),
             Expanded(
               child: TextField(
                 key: const Key('project-chat-composer'),

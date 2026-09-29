@@ -15,6 +15,8 @@ import '../../participation/domain/participation_models.dart';
 import '../../participation/presentation/actual_contribution_sheet.dart';
 import '../../participation/presentation/membership_commitment_sheet.dart';
 import '../../participation/presentation/participation_routes.dart';
+import '../../project_workspace/application/project_workspace_controller.dart';
+import '../../project_workspace/presentation/project_workspace_widgets.dart';
 import '../application/project_chat_controllers.dart';
 import '../domain/project_chat_models.dart';
 import 'project_chat_failure_message.dart';
@@ -95,6 +97,14 @@ class _ProjectChatInfoScreenState extends ConsumerState<ProjectChatInfoScreen> {
               .clearProject(summary.projectId),
         );
       }
+      final workspace = ref.read(projectWorkspaceProvider);
+      if (workspace.projectId == summary.projectId) {
+        Future<void>.microtask(
+          () => ref
+              .read(projectWorkspaceProvider.notifier)
+              .clearProject(summary.projectId),
+        );
+      }
     }
 
     return Scaffold(
@@ -152,6 +162,16 @@ class _ProjectChatInfoScreenState extends ConsumerState<ProjectChatInfoScreen> {
                       ),
                       icon: const Icon(Icons.group_outlined),
                       label: Text(l10n.projectChatManageParticipation),
+                    ),
+                  ],
+                  if (summary.hasCurrentEntitlement &&
+                      _expectedProfileId != null) ...[
+                    const SizedBox(height: AppSpacing.large),
+                    ProjectWorkspaceInfoSection(
+                      expectedProfileId: _expectedProfileId,
+                      projectId: summary.projectId,
+                      projectKind: summary.projectKind,
+                      isManager: summary.isManager,
                     ),
                   ],
                   if (!summary.isManager) ...[

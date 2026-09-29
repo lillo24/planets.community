@@ -14,6 +14,7 @@ import 'package:planets_mobile/features/project_delegates/data/project_delegate_
 import 'package:planets_mobile/features/project_delegates/domain/project_delegate_models.dart';
 import 'package:planets_mobile/features/project_delegates/presentation/project_coorganizers_screen.dart';
 import 'package:planets_mobile/features/project_delegates/presentation/project_manage_screen.dart';
+import 'package:planets_mobile/features/project_workspace/data/project_workspace_gateway.dart';
 import 'package:planets_mobile/features/proposals/data/proposal_gateway.dart';
 import 'package:planets_mobile/features/proposals/presentation/own_proposals_screen.dart';
 import 'package:planets_mobile/features/proposals/presentation/public_proposals_screen.dart';
@@ -24,6 +25,7 @@ import 'package:planets_mobile/l10n/generated/app_localizations.dart';
 import '../../../support/fake_auth.dart';
 import '../../../support/fake_participation.dart';
 import '../../../support/fake_project_delegates.dart';
+import '../../../support/fake_project_workspace.dart';
 import '../../../support/fake_proposal.dart';
 import '../../../support/fake_recurring_activity.dart';
 
@@ -52,41 +54,44 @@ void main() {
       findsOneWidget,
     );
     expect(find.byKey(const Key('project-manage-team')), findsOneWidget);
+    expect(find.byKey(const Key('project-manage-workspace')), findsOneWidget);
     expect(
       find.byKey(const Key('project-manage-structural-edit')),
       findsOneWidget,
     );
   });
 
-  testWidgets('delegate management hub exposes Participation only', (
-    tester,
-  ) async {
-    final gateway = FakeProjectDelegateGateway()
-      ..role = ProjectManagementRole.coOrganizer;
-    final session = _readyContainer(gateway);
-    addTearDown(session.dispose);
-    await tester.pumpWidget(
-      UncontrolledProviderScope(
-        container: session.container,
-        child: _localized(
-          const ProjectManageScreen(
-            projectId: 'project-1',
-            projectKind: ProjectKind.recurring,
+  testWidgets(
+    'Co-organizer management hub exposes Participation and workspace',
+    (tester) async {
+      final gateway = FakeProjectDelegateGateway()
+        ..role = ProjectManagementRole.coOrganizer;
+      final session = _readyContainer(gateway);
+      addTearDown(session.dispose);
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: session.container,
+          child: _localized(
+            const ProjectManageScreen(
+              projectId: 'project-1',
+              projectKind: ProjectKind.recurring,
+            ),
           ),
         ),
-      ),
-    );
-    await tester.pumpAndSettle();
-    expect(
-      find.byKey(const Key('project-manage-participation')),
-      findsOneWidget,
-    );
-    expect(find.byKey(const Key('project-manage-team')), findsNothing);
-    expect(
-      find.byKey(const Key('project-manage-structural-edit')),
-      findsNothing,
-    );
-  });
+      );
+      await tester.pumpAndSettle();
+      expect(
+        find.byKey(const Key('project-manage-participation')),
+        findsOneWidget,
+      );
+      expect(find.byKey(const Key('project-manage-team')), findsNothing);
+      expect(find.byKey(const Key('project-manage-workspace')), findsOneWidget);
+      expect(
+        find.byKey(const Key('project-manage-structural-edit')),
+        findsNothing,
+      );
+    },
+  );
 
   testWidgets('Co-creator management hub exposes structural Project team', (
     tester,
@@ -112,6 +117,7 @@ void main() {
       findsOneWidget,
     );
     expect(find.byKey(const Key('project-manage-team')), findsOneWidget);
+    expect(find.byKey(const Key('project-manage-workspace')), findsOneWidget);
     expect(
       find.byKey(const Key('project-manage-structural-edit')),
       findsOneWidget,
@@ -722,6 +728,9 @@ void main() {
         FakeProfileAnchorGateway()..readiness = ProfileAnchorReadiness.complete,
       ),
       projectDelegateGatewayProvider.overrideWithValue(gateway),
+      projectWorkspaceGatewayProvider.overrideWithValue(
+        FakeProjectWorkspaceGateway(),
+      ),
       if (sharing != null)
         projectInviteSharingProvider.overrideWithValue(sharing),
       participationGatewayProvider.overrideWithValue(

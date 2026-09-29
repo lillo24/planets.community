@@ -25,10 +25,11 @@ Manage project hub. It does not own Project authoring or lifecycle actions.
   their Manage project and Project team routes and maps the shared HTTPS
   invitation path. The team route retains the existing `co-organizers` URL
   segment for saved-link compatibility.
-- `presentation/project_manage_screen.dart` exposes Participation to every
-  manager and the shared Project editor plus Project team to Creator and
-  Co-creator only. It routes to the existing Proposal or Tavolo editor rather
-  than duplicating authoring forms.
+- `presentation/project_manage_screen.dart` exposes Participation and Shared
+  workspace to every manager. The shared Project editor plus Project team stay
+  Creator/Co-creator-only. Workspace management deliberately includes
+  Co-organizers and delegates to the separate `project_workspace` feature;
+  authoring forms remain unduplicated.
 - `presentation/project_coorganizers_screen.dart` owns the structural actors'
   active role and pending invite lists, provenance, role selection,
   promotion/demotion/revocation confirmations, and the immediate one-time
@@ -52,6 +53,11 @@ role change/revocation changes only delegated authority. `isManager` includes
 all three manager roles, while `hasStructuralAuthority` includes only Creator
 and Co-creator. Legacy `owner` and `delegate` wire values remain parseable as a
 client rollout safeguard.
+
+All three manager roles may add, replace, open, or remove the single private
+Project workspace link before or after chat activation. Workspace reads also
+include current participants, but delegated-authority revocation immediately
+removes mutation access unless the profile still has another manager role.
 
 Invitation creation returns plaintext once. The token is held only in the
 immediate controller/result-sheet state, is never included in the pending
