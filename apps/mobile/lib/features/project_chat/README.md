@@ -119,3 +119,8 @@ pass. On Android and iOS, verify:
 
 Automated Flutter tests and Android compilation validate the functional
 contract but are not recorded as native-device QA.
+
+09B2 adds a compact confirmed Block/Unblock action beside Report for another
+human sender. Blocking never hides that message, filters later shared messages,
+or removes either Project member. Report remains an independent moderation
+action.

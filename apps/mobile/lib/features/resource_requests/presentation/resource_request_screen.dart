@@ -7,6 +7,7 @@ import '../../../core/widgets/error_state.dart';
 import '../../../core/widgets/loading_state.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../auth/application/auth_session_controller.dart';
+import '../../blocking/presentation/blocking_action.dart';
 import '../../messages/presentation/messages_routes.dart';
 import '../../profile_photo/application/visible_profile_photo_controller.dart';
 import '../../profile_photo/presentation/visible_profile_photo_avatar.dart';
@@ -45,6 +46,17 @@ class _ResourceRequestScreenState extends ConsumerState<ResourceRequestScreen> {
     await ref
         .read(resourceRequestDetailProvider(widget.requestId).notifier)
         .load(profileId);
+  }
+
+  Future<void> _reloadAfterBlocking() async {
+    final profileId = _expectedProfileId;
+    if (profileId == null ||
+        ref.read(authSessionProvider).identity?.id != profileId) {
+      return;
+    }
+    await ref
+        .read(resourceRequestDetailProvider(widget.requestId).notifier)
+        .reloadAfterBlocking(profileId);
   }
 
   @override
@@ -161,12 +173,62 @@ class _ResourceRequestScreenState extends ConsumerState<ResourceRequestScreen> {
                                   ),
                                 ),
                               ),
+                              if (item.ownerProfileId == _expectedProfileId)
+                                BlockingActionButton(
+                                  targetProfileId: item.requesterProfileId,
+                                  targetDisplayName: item.requesterDisplayName,
+                                  consequence:
+                                      item.status ==
+                                          ResourceRequestStatus.pending
+                                      ? BlockingContextConsequence
+                                            .pendingRequest
+                                      : item.status ==
+                                                ResourceRequestStatus
+                                                    .accepted &&
+                                            item.coordinationClosedAt == null
+                                      ? BlockingContextConsequence
+                                            .acceptedResourceCoordination
+                                      : BlockingContextConsequence.none,
+                                  buttonKey: const Key(
+                                    'resource-request-blocking-action',
+                                  ),
+                                  compact: true,
+                                  onChanged: (_) => _reloadAfterBlocking(),
+                                ),
                             ],
                           ),
-                          Text(
-                            l10n.resourceRequestOwnerLabel(
-                              item.ownerDisplayName,
-                            ),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  l10n.resourceRequestOwnerLabel(
+                                    item.ownerDisplayName,
+                                  ),
+                                ),
+                              ),
+                              if (item.ownerProfileId != _expectedProfileId)
+                                BlockingActionButton(
+                                  targetProfileId: item.ownerProfileId,
+                                  targetDisplayName: item.ownerDisplayName,
+                                  consequence:
+                                      item.status ==
+                                          ResourceRequestStatus.pending
+                                      ? BlockingContextConsequence
+                                            .pendingRequest
+                                      : item.status ==
+                                                ResourceRequestStatus
+                                                    .accepted &&
+                                            item.coordinationClosedAt == null
+                                      ? BlockingContextConsequence
+                                            .acceptedResourceCoordination
+                                      : BlockingContextConsequence.none,
+                                  buttonKey: const Key(
+                                    'resource-request-blocking-action',
+                                  ),
+                                  compact: true,
+                                  onChanged: (_) => _reloadAfterBlocking(),
+                                ),
+                            ],
                           ),
                         ],
                       ),

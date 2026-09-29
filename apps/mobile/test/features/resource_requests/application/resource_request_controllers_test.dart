@@ -156,7 +156,7 @@ void main() {
   );
 
   test(
-    'PT409 creation recovers the canonical existing active request',
+    'PT409 creation remains direction-neutral and refreshes canonical state',
     () async {
       final canonical = resourceRequestFixture();
       final gateway = FakeResourceRequestGateway()
@@ -180,7 +180,7 @@ void main() {
       final state = session.read(
         resourceRequestComposerProvider(resourceListingId),
       );
-      expect(state.failure, ResourceRequestFailureKind.conflict);
+      expect(state.failure, ResourceRequestFailureKind.interactionUnavailable);
       expect(state.canonicalActiveRequest?.id, canonical.id);
     },
   );
@@ -269,7 +269,7 @@ void main() {
     },
   );
 
-  test('PT409 mutation reloads the canonical Resource request', () async {
+  test('PT409 mutation remains direction-neutral and reloads state', () async {
     final pending = Completer<void>();
     final gateway = FakeResourceRequestGateway()
       ..detail = resourceRequestFixture()
@@ -297,7 +297,43 @@ void main() {
       resourceRequestDetailProvider(resourceRequestId),
     );
     expect(state.item?.status, ResourceRequestStatus.accepted);
-    expect(state.failure, ResourceRequestFailureKind.conflict);
+    expect(state.failure, ResourceRequestFailureKind.interactionUnavailable);
+  });
+
+  test('blocking reconciliation reloads request, listing, and inbox', () async {
+    final gateway = FakeResourceRequestGateway()
+      ..detail = resourceRequestFixture();
+    final messages = FakeMessagesGateway();
+    final listings = FakeResourceListingGateway()
+      ..publicDetail = publicResourceListingDetailFixture();
+    final session = _readyContainer(
+      gateway,
+      ownerProfileId,
+      messages: messages,
+      listings: listings,
+    );
+    addTearDown(session.dispose);
+    final controller = session.read(
+      resourceRequestDetailProvider(resourceRequestId).notifier,
+    );
+    expect(await controller.load(ownerProfileId), isTrue);
+
+    gateway.detail = copyResourceRequest(
+      resourceRequestFixture(),
+      status: ResourceRequestStatus.rejected,
+    );
+    expect(await controller.reloadAfterBlocking(ownerProfileId), isTrue);
+
+    expect(
+      session
+          .read(resourceRequestDetailProvider(resourceRequestId))
+          .item
+          ?.status,
+      ResourceRequestStatus.rejected,
+    );
+    expect(messages.calls, contains('list'));
+    expect(listings.calls, contains('get-public:$resourceListingId'));
+    expect(listings.calls, contains('list-public'));
   });
 
   test(
@@ -339,6 +375,8 @@ ProviderContainer _readyContainer(
   FakeResourceRequestGateway gateway,
   String profileId, {
   FakeProfilePhotoGateway? photos,
+  FakeMessagesGateway? messages,
+  FakeResourceListingGateway? listings,
 }) {
   final auth = FakeAuthGateway(
     snapshot: AuthSnapshot(identity: AuthIdentity(id: profileId)),
@@ -351,10 +389,13 @@ ProviderContainer _readyContainer(
       ),
       resourceRequestGatewayProvider.overrideWithValue(gateway),
       resourceListingGatewayProvider.overrideWithValue(
-        FakeResourceListingGateway()
-          ..publicDetail = publicResourceListingDetailFixture(),
+        listings ??
+            (FakeResourceListingGateway()
+              ..publicDetail = publicResourceListingDetailFixture()),
       ),
-      messagesGatewayProvider.overrideWithValue(FakeMessagesGateway()),
+      messagesGatewayProvider.overrideWithValue(
+        messages ?? FakeMessagesGateway(),
+      ),
       if (photos != null) profilePhotoGatewayProvider.overrideWithValue(photos),
     ],
   );

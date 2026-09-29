@@ -9,6 +9,9 @@ import '../../../core/widgets/loading_state.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../auth/application/auth_session_controller.dart';
 import '../../auth/domain/auth_models.dart';
+import '../../blocking/application/blocking_controller.dart';
+import '../../blocking/presentation/blocking_action.dart';
+import '../../messages/application/messages_controllers.dart';
 import '../../messages/presentation/messages_routes.dart';
 import '../../moderation/presentation/moderation_routes.dart';
 import '../../profile_photo/application/resource_listing_owner_photo_controller.dart';
@@ -506,6 +509,30 @@ class _PublicResourceListingDetailScreenState
                     _ResourceRequestListingActions(
                       listingId: widget.listingId,
                       expectedProfileId: profileId,
+                      ownerProfileId: detail.ownerProfileId,
+                      ownerDisplayName: detail.ownerDisplayName,
+                    ),
+                    const SizedBox(height: AppSpacing.small),
+                    BlockingActionButton(
+                      targetProfileId: detail.ownerProfileId,
+                      targetDisplayName: detail.ownerDisplayName,
+                      buttonKey: const Key('resource-listing-blocking-action'),
+                      onChanged: (_) async {
+                        ref
+                            .read(resourceListingOwnerPhotoProvider.notifier)
+                            .invalidate(widget.listingId);
+                        await Future.wait([
+                          ref
+                              .read(resourceListingOwnerPhotoProvider.notifier)
+                              .load(widget.listingId, force: true),
+                          ref
+                              .read(resourceRequestHistoryProvider.notifier)
+                              .load(profileId, force: true),
+                          ref
+                              .read(messagesInboxProvider.notifier)
+                              .load(profileId, refresh: true),
+                        ]);
+                      },
                     ),
                     const SizedBox(height: AppSpacing.small),
                     OutlinedButton.icon(
@@ -532,14 +559,28 @@ class _ResourceRequestListingActions extends ConsumerWidget {
   const _ResourceRequestListingActions({
     required this.listingId,
     required this.expectedProfileId,
+    required this.ownerProfileId,
+    required this.ownerDisplayName,
   });
 
   final String listingId;
   final String expectedProfileId;
+  final String ownerProfileId;
+  final String? ownerDisplayName;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
+    final blocking = ref.watch(blockingProvider);
+    if (!blocking.hasExactStatus(ownerProfileId) &&
+        !blocking.isLoadingStatus(ownerProfileId) &&
+        !blocking.hasStatusFailure(ownerProfileId)) {
+      Future<void>.microtask(
+        () => ref
+            .read(blockingProvider.notifier)
+            .loadStatus(expectedProfileId, ownerProfileId),
+      );
+    }
     final history = ref.watch(resourceRequestHistoryProvider);
     final belongs = history.expectedRequesterProfileId == expectedProfileId;
     if (!belongs || history.phase == ResourceRequestHistoryPhase.loading) {
@@ -573,6 +614,33 @@ class _ResourceRequestListingActions extends ConsumerWidget {
         .read(resourceRequestHistoryProvider.notifier)
         .activeRequestForListing(listingId);
     if (active == null) {
+      if (blocking.exactStatus(ownerProfileId) != null) {
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              l10n.blockingOwnBlockInteractionExplanation,
+              key: const Key('resource-request-blocked-explanation'),
+            ),
+            const SizedBox(height: AppSpacing.small),
+            BlockingActionButton(
+              targetProfileId: ownerProfileId,
+              targetDisplayName: ownerDisplayName,
+              buttonKey: const Key('resource-request-unblock-owner'),
+              onChanged: (_) async {
+                await Future.wait([
+                  ref
+                      .read(resourceRequestHistoryProvider.notifier)
+                      .load(expectedProfileId, force: true),
+                  ref
+                      .read(messagesInboxProvider.notifier)
+                      .load(expectedProfileId, refresh: true),
+                ]);
+              },
+            ),
+          ],
+        );
+      }
       return FilledButton.icon(
         key: const Key('resource-request-action'),
         onPressed: () => showResourceRequestComposer(

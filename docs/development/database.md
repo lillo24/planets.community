@@ -94,7 +94,10 @@ hiding, blocking, suspension, or retention/deletion policy. 09B, 09C and Plan
 with one active episode per `(blocker, blocked)` direction. API roles have no
 table privileges. Expected-identity `block_user`/`unblock_user` mutations and a
 bounded keyset `list_own_blocked_profiles` read expose only the caller's outbound
-state. No API reveals inbound/reciprocal state, no target notification or
+state. `get_own_blocked_profile_status` is the matching exact-target read: it
+returns zero or one active caller-owned episode and prevents mobile from paging
+through the management list merely to render Block versus Unblock. No API
+reveals inbound/reciprocal state, no target notification or
 block-specific outbox event exists, and audit metadata contains identifiers
 only. Unblock closes the active interval and never revives a request,
 membership, agreement, or chat.
@@ -117,6 +120,11 @@ Projects and Resources in UUID order. When active co-creators/managers from 07C2
 converge, organizer resolution before the pair lock must include every active
 profile with applicant-management authority; no block-model redesign is
 required.
+
+The mobile status/list caches are identity-bound and cleared on account change.
+After Block/Unblock, only the affected target photo and Project/Resource/request
+projections are invalidated. A zero-row exact result never means that the target
+does not block the caller; direction-neutral `PT409` copy preserves that privacy.
 
 ## Application conflict SQLSTATEs
 

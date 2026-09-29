@@ -39,3 +39,7 @@ summary's canonical counterpart profile ID and invalidates that target when a
 Realtime/read reconciliation reports coordination closure or the signed-in
 account changes. Closed history remains readable without retaining a stale
 relationship-authorized avatar.
+
+09B2 adds confirmed Block/Unblock beside the canonical counterparty. The action
+invalidates that person's cached photo but never makes accepted/open chat
+read-only; ordinary agreement lifecycle still owns send availability.

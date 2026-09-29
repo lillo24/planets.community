@@ -9,6 +9,7 @@ import '../../../core/widgets/error_state.dart';
 import '../../../core/widgets/loading_state.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../auth/application/auth_session_controller.dart';
+import '../../blocking/presentation/blocking_action.dart';
 import '../../messages/presentation/messages_routes.dart';
 import '../../moderation/presentation/moderation_routes.dart';
 import '../application/project_chat_controllers.dart';
@@ -373,6 +374,16 @@ class _MessageBubble extends StatelessWidget {
                           tooltip: l10n.moderationReportAction,
                           onPressed: onReport,
                           icon: const Icon(Icons.flag_outlined, size: 18),
+                        ),
+                      if (!isMine)
+                        BlockingActionButton(
+                          targetProfileId: message.senderProfileId,
+                          targetDisplayName: message.senderDisplayName,
+                          consequence: BlockingContextConsequence.projectChat,
+                          compact: true,
+                          buttonKey: Key(
+                            'project-chat-block-${message.itemId}',
+                          ),
                         ),
                     ],
                   ),

@@ -31,3 +31,7 @@ old data or mark a previous session ready, even after signing back in as the sam
 Display name is the only required field. A photo remains optional. Location,
 custom skills, proficiency, public profile search, and
 organizer/participant audiences remain deferred.
+
+Profile also links to the independently owned `blocking` feature's outbound
+`Blocked users` management screen. No inbound/reciprocal state is part of the
+Profile model.

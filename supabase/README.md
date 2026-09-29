@@ -9,7 +9,9 @@ This folder owns the reproducible local PLANETS database and its security valida
 
 09B1 stores append-preserved directional block episodes in the private schema
 and exposes only expected-identity Block/Unblock plus an outbound-only keyset
-read. Either active direction creates one symmetric barrier for new Project and
+read. 09B2 adds `get_own_blocked_profile_status`, a zero-or-one exact-target
+outbound read with the same identity check and no reciprocal/inbound field.
+Either active direction creates one symmetric barrier for new Project and
 Resource request creation/acceptance. Blocking closes pending pair requests with
 their existing withdrawn/rejected semantics; accepted Project membership/group
 chat/meeting access and accepted Resource agreement/chat coordination remain

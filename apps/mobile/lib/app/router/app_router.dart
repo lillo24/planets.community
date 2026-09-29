@@ -8,6 +8,7 @@ import '../../features/auth/application/return_destination.dart';
 import '../../features/auth/domain/auth_models.dart';
 import '../../features/auth/presentation/request_code_screen.dart';
 import '../../features/auth/presentation/verify_code_screen.dart';
+import '../../features/blocking/presentation/blocked_users_screen.dart';
 import '../../features/messages/presentation/messages_routes.dart';
 import '../../features/messages/presentation/messages_screen.dart';
 import '../../features/messages/presentation/participation_request_message_screen.dart';
@@ -225,6 +226,10 @@ RoutingConfig _routingConfig(
                               state.uri.queryParameters['returnTo'],
                             ),
                     ),
+                  ),
+                  GoRoute(
+                    path: 'blocked-users',
+                    builder: (context, state) => const BlockedUsersScreen(),
                   ),
                   GoRoute(
                     path: 'reports',

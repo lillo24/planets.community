@@ -777,6 +777,10 @@ Future<void> _scrollTo(WidgetTester tester, Finder target) async {
     await tester.drag(scrollable, const Offset(0, -350));
     await tester.pump();
   }
+  for (var attempt = 0; attempt < 8 && target.evaluate().isEmpty; attempt++) {
+    await tester.drag(scrollable, const Offset(0, 350));
+    await tester.pump();
+  }
   await tester.ensureVisible(target);
   await tester.pumpAndSettle();
 }

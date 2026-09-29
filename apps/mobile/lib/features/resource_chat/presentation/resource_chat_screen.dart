@@ -7,6 +7,7 @@ import '../../../core/widgets/error_state.dart';
 import '../../../core/widgets/loading_state.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../auth/application/auth_session_controller.dart';
+import '../../blocking/presentation/blocking_action.dart';
 import '../../moderation/presentation/moderation_routes.dart';
 import '../../profile_photo/application/visible_profile_photo_controller.dart';
 import '../../profile_photo/presentation/visible_profile_photo_avatar.dart';
@@ -185,7 +186,11 @@ class _ResourceChatScreenState extends ConsumerState<ResourceChatScreen>
               )
             : Column(
                 children: [
-                  if (summary != null) _CounterpartyHeader(summary: summary),
+                  if (summary != null)
+                    _CounterpartyHeader(
+                      summary: summary,
+                      onBlockingChanged: _refresh,
+                    ),
                   if (summary != null)
                     ResourceExchangeAgreementSection(
                       listingTitle: summary.listingTitle,
@@ -314,9 +319,13 @@ class _ResourceChatScreenState extends ConsumerState<ResourceChatScreen>
 }
 
 class _CounterpartyHeader extends ConsumerWidget {
-  const _CounterpartyHeader({required this.summary});
+  const _CounterpartyHeader({
+    required this.summary,
+    required this.onBlockingChanged,
+  });
 
   final ResourceChatSummary summary;
+  final Future<void> Function() onBlockingChanged;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -357,6 +366,15 @@ class _CounterpartyHeader extends ConsumerWidget {
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
             ),
+          ),
+          BlockingActionButton(
+            targetProfileId: summary.counterpartyProfileId,
+            targetDisplayName: summary.counterpartyDisplayName,
+            consequence:
+                BlockingContextConsequence.acceptedResourceCoordination,
+            compact: true,
+            buttonKey: const Key('resource-chat-blocking-action'),
+            onChanged: (_) => onBlockingChanged(),
           ),
         ],
       ),

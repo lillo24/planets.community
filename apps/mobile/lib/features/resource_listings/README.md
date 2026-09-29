@@ -58,3 +58,7 @@ Published and closed owner listings retain a private schedule entry point;
 the owner-only D1 RPC remains the authority for schedule access. No schedule
 RPC is called per listing card, and public discovery does not expose borrower
 names or reserved periods.
+
+09B2 composes Block/Unblock for a visible non-owner listing. A caller-owned
+owner block explains why a new request is unavailable and offers Unblock;
+public listing visibility and accepted Resource coordination remain unchanged.

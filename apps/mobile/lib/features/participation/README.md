@@ -253,3 +253,10 @@ Android and iOS devices:
   and historical membership editing without per-row preload;
 - verify the pre-end informational state, CAS conflict/options recovery, and an
   account switch while the sheet is open.
+
+09B2 composes the separate blocking action for organizers, pending applicants,
+current members, and historical members. Blocking a pending applicant refreshes
+the canonical projection after backend rejection; blocking a current member
+does not remove them or change shared Project/chat/meeting access. A caller-owned
+organizer block replaces a new Join CTA with an explanation and Unblock path.
+Inbound-only `PT409` remains direction-neutral.

@@ -11,7 +11,9 @@ import '../../../core/widgets/loading_state.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../auth/application/auth_session_controller.dart';
 import '../../auth/domain/auth_models.dart';
+import '../../blocking/presentation/blocking_action.dart';
 import '../../moderation/presentation/moderation_routes.dart';
+import '../../participation/application/participation_controllers.dart';
 import '../../participation/domain/participation_models.dart';
 import '../../participation/presentation/project_participation_section.dart';
 import '../../profile_photo/application/project_creator_photo_controller.dart';
@@ -356,6 +358,27 @@ class _PublicRecurringActivityDetailScreenState
                     AuthSessionPhase.ready &&
                 ref.watch(authSessionProvider).identity?.id !=
                     detail.creatorProfileId) ...[
+              const SizedBox(height: AppSpacing.small),
+              BlockingActionButton(
+                targetProfileId: detail.creatorProfileId,
+                targetDisplayName: detail.creatorDisplayName,
+                buttonKey: const Key('tavoli-blocking-action'),
+                onChanged: (_) async {
+                  ref
+                      .read(projectCreatorPhotoProvider.notifier)
+                      .invalidate(detail.id);
+                  await Future.wait([
+                    ref
+                        .read(projectCreatorPhotoProvider.notifier)
+                        .load(detail.id, force: true),
+                    if (ref.read(authSessionProvider).identity?.id
+                        case final profileId?)
+                      ref
+                          .read(ownParticipationProvider.notifier)
+                          .load(profileId),
+                  ]);
+                },
+              ),
               const SizedBox(height: AppSpacing.small),
               OutlinedButton.icon(
                 key: const Key('tavoli-report-action'),

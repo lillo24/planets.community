@@ -6,6 +6,7 @@ import '../../../core/theme/app_tokens.dart';
 import '../../../core/widgets/loading_state.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../auth/application/auth_session_controller.dart';
+import '../../blocking/presentation/blocking_action.dart';
 import '../../profile_photo/application/visible_profile_photo_controller.dart';
 import '../../profile_photo/domain/visible_profile_photo_models.dart';
 import '../../profile_photo/presentation/visible_profile_photo_avatar.dart';
@@ -142,6 +143,7 @@ class _CreatorParticipationScreenState
                               state.isBusy,
                           onAccept: () => _accept(request),
                           onReject: () => _reject(request),
+                          onBlockingChanged: _load,
                         ),
                         const SizedBox(height: AppSpacing.small),
                       ],
@@ -166,6 +168,7 @@ class _CreatorParticipationScreenState
                               ? () => _openActualContributions(member)
                               : null,
                           onRemove: () => _confirmRemove(member),
+                          onBlockingChanged: _load,
                         ),
                         const SizedBox(height: AppSpacing.small),
                       ],
@@ -292,6 +295,7 @@ class _RequestCard extends StatelessWidget {
     required this.isActing,
     required this.onAccept,
     required this.onReject,
+    required this.onBlockingChanged,
   });
 
   final CreatorProjectJoinRequest request;
@@ -300,6 +304,7 @@ class _RequestCard extends StatelessWidget {
   final bool isActing;
   final VoidCallback onAccept;
   final VoidCallback onReject;
+  final Future<void> Function() onBlockingChanged;
 
   @override
   Widget build(BuildContext context) {
@@ -325,6 +330,16 @@ class _RequestCard extends StatelessWidget {
                     request.requesterDisplayName,
                     style: Theme.of(context).textTheme.titleMedium,
                   ),
+                ),
+                BlockingActionButton(
+                  targetProfileId: request.requesterProfileId,
+                  targetDisplayName: request.requesterDisplayName,
+                  consequence: request.isPending
+                      ? BlockingContextConsequence.pendingRequest
+                      : BlockingContextConsequence.none,
+                  buttonKey: Key('participation-block-${request.id}'),
+                  compact: true,
+                  onChanged: (_) => onBlockingChanged(),
                 ),
               ],
             ),
@@ -384,6 +399,7 @@ class _MemberCard extends StatelessWidget {
     required this.onCommitments,
     required this.onActualContributions,
     required this.onRemove,
+    required this.onBlockingChanged,
   });
 
   final CreatorProjectMember member;
@@ -392,6 +408,7 @@ class _MemberCard extends StatelessWidget {
   final VoidCallback onCommitments;
   final VoidCallback? onActualContributions;
   final VoidCallback onRemove;
+  final Future<void> Function() onBlockingChanged;
 
   @override
   Widget build(BuildContext context) {
@@ -403,9 +420,25 @@ class _MemberCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text(
-              member.participantDisplayName,
-              style: Theme.of(context).textTheme.titleMedium,
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    member.participantDisplayName,
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                ),
+                BlockingActionButton(
+                  targetProfileId: member.participantProfileId,
+                  targetDisplayName: member.participantDisplayName,
+                  consequence: member.isCurrent
+                      ? BlockingContextConsequence.projectMember
+                      : BlockingContextConsequence.none,
+                  buttonKey: Key('participation-member-block-${member.id}'),
+                  compact: true,
+                  onChanged: (_) => onBlockingChanged(),
+                ),
+              ],
             ),
             const SizedBox(height: AppSpacing.xSmall),
             Text(_membershipStatusLabel(l10n, member.status)),

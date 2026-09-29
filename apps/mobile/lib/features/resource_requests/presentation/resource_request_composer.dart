@@ -103,8 +103,10 @@ class _ResourceRequestComposerState
               Semantics(
                 liveRegion: true,
                 child: Text(
-                  failure == ResourceRequestFailureKind.conflict &&
-                          state.canonicalActiveRequest != null
+                  failure == ResourceRequestFailureKind.interactionUnavailable
+                      ? l10n.blockingInteractionUnavailable
+                      : failure == ResourceRequestFailureKind.conflict &&
+                            state.canonicalActiveRequest != null
                       ? l10n.resourceRequestAlreadyActive
                       : failure == ResourceRequestFailureKind.invalidInput
                       ? l10n.resourceRequestInvalidInput

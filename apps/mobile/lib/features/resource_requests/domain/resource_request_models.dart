@@ -117,6 +117,7 @@ enum ResourceRequestFailureKind {
   profilePhotoRequired,
   forbidden,
   conflict,
+  interactionUnavailable,
   listingUnavailable,
   notFound,
   unavailable,

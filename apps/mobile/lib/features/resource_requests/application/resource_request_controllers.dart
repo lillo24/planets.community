@@ -223,6 +223,7 @@ class ResourceRequestComposerController
       final failure = mapResourceRequestFailure(error);
       OwnResourceRequest? canonical;
       if (failure == ResourceRequestFailureKind.conflict ||
+          failure == ResourceRequestFailureKind.interactionUnavailable ||
           failure == ResourceRequestFailureKind.listingUnavailable ||
           failure == ResourceRequestFailureKind.notFound) {
         await _refreshRequestSurfaces(
@@ -358,6 +359,23 @@ class ResourceRequestDetailController
   Future<bool> withdraw(String expectedProfileId) =>
       _mutate(expectedProfileId, ResourceRequestMutation.withdrawing);
 
+  Future<bool> reloadAfterBlocking(String expectedProfileId) async {
+    final previous = state.expectedProfileId == expectedProfileId
+        ? state.item
+        : null;
+    if (previous == null) return load(expectedProfileId);
+    final loaded = await load(expectedProfileId);
+    final revision = _revision;
+    if (!_isCurrent(revision, expectedProfileId)) return false;
+    await _refreshRequestSurfaces(
+      ref,
+      expectedProfileId: expectedProfileId,
+      listingId: previous.listingId,
+      refreshRequesterHistory: previous.requesterProfileId == expectedProfileId,
+    );
+    return loaded && _isCurrent(revision, expectedProfileId);
+  }
+
   Future<bool> withdrawFromHistory({
     required String expectedProfileId,
     required OwnResourceRequest request,
@@ -437,7 +455,8 @@ class ResourceRequestDetailController
       if (!_isCurrent(revision, expectedProfileId)) return false;
       final failure = mapResourceRequestFailure(error);
       ResourceRequest? canonical = item;
-      if (failure == ResourceRequestFailureKind.conflict) {
+      if (failure == ResourceRequestFailureKind.conflict ||
+          failure == ResourceRequestFailureKind.interactionUnavailable) {
         try {
           canonical = await ref
               .read(resourceRequestGatewayProvider)
@@ -572,7 +591,7 @@ ResourceRequestFailureKind mapResourceRequestFailure(Object error) {
       '42501' => ResourceRequestFailureKind.forbidden,
       '55000' => ResourceRequestFailureKind.listingUnavailable,
       'P0002' => ResourceRequestFailureKind.notFound,
-      'PT409' => ResourceRequestFailureKind.conflict,
+      'PT409' => ResourceRequestFailureKind.interactionUnavailable,
       _ => ResourceRequestFailureKind.unavailable,
     };
   }

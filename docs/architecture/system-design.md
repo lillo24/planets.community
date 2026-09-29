@@ -200,6 +200,10 @@ All mutations and private reads use expected-identity-bound project RPCs. Tables
 `private.user_block_episodes` preserves directional block/unblock intervals. A
 user can list only their own active outbound blocks; there is no inbound or
 reciprocal-state API, public marker, target notification, or block outbox event.
+The mobile client also has one expected-identity exact-target read returning
+zero or one caller-owned outbound episode. It exists only to render Block versus
+Unblock without enumerating the management list and returns no symmetric or
+inbound state.
 Public profiles, Projects, Scambio-Dona listings, historical content, and
 `public` profile photos remain visible under their ordinary rules.
 
@@ -215,6 +219,16 @@ ends. Interaction-audience photo delivery is the deliberate exception: generic,
 contextual, and exact Storage authorization deny it while either block direction
 is active, without affecting owner or public-photo access. Reporting, assigned
 corroboration/counterstatement evidence, and staff review ignore user blocks.
+
+Mobile exposes confirmed Block/Unblock actions only where a canonical person is
+already visible: Project organizers and participation people, Resource owners
+and counterparties, and human Project-chat senders. Profile owns the paginated
+outbound `Blocked users` list. Successful mutations invalidate the exact status,
+affected request projections, and target/context photo caches. Public content
+is never filtered; shared Project membership/chat and accepted Resource
+coordination remain visible and usable. An outbound block may explain a disabled
+new-interaction action, while `PT409` with no caller-owned block always uses the
+direction-neutral “interaction isn't available” message.
 
 Block, request creation, and request acceptance first acquire the same
 transaction-scoped advisory lock for the lexically sorted profile pair. They

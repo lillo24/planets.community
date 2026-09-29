@@ -84,3 +84,6 @@ Owner providers clear and increment their revision on identity changes, and
 every post-`await` continuation rechecks revision and identity. The router also
 rebuilds its stateful shell on account changes, discarding retained private
 forms and stacks.
+
+09B2 composes the separate blocking feature on Tavolo organizer detail without
+filtering the public Tavolo or changing current Project membership/chat access.

@@ -2220,6 +2220,18 @@ export type Database = {
           target_summary: string
         }[]
       }
+      get_own_blocked_profile_status: {
+        Args: {
+          p_expected_blocker_profile_id: string
+          p_target_profile_id: string
+        }
+        Returns: {
+          block_episode_id: string
+          blocked_at: string
+          blocked_display_name: string
+          blocked_profile_id: string
+        }[]
+      }
       get_own_group_corroboration_request: {
         Args: { p_expected_recipient_profile_id: string; p_request_id: string }
         Returns: {

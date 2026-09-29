@@ -85,6 +85,11 @@ visibility. Resource request and chat surfaces use the generic relationship
 cache for counterpart avatars, invalidating it when coordination ends or the
 signed-in identity changes.
 
+09B2 also invalidates exact-target and contextual Project/Resource owner photo
+caches after Block/Unblock. A Block therefore cannot leave interaction-only
+bytes rendered from memory; subsequent reloads remain canonical and may still
+return a public photo. Unblock never assumes private photo access was restored.
+
 Native/package notes:
 
 - `image_picker` uses the Android system picker with no storage or camera
