@@ -2029,6 +2029,13 @@ export type Database = {
           note_id: string
         }[]
       }
+      block_user: {
+        Args: {
+          p_blocked_profile_id: string
+          p_expected_blocker_profile_id: string
+        }
+        Returns: string
+      }
       can_read_public_project_creator_photo_object: {
         Args: { p_object_path: string }
         Returns: boolean
@@ -2628,6 +2635,20 @@ export type Database = {
           subject_profile_id: string
           target_kind: string
           target_summary: string
+        }[]
+      }
+      list_own_blocked_profiles: {
+        Args: {
+          p_cursor_block_episode_id?: string
+          p_cursor_blocked_at?: string
+          p_expected_blocker_profile_id: string
+          p_limit?: number
+        }
+        Returns: {
+          block_episode_id: string
+          blocked_at: string
+          blocked_display_name: string
+          blocked_profile_id: string
         }[]
       }
       list_own_group_corroboration_requests: {
@@ -3686,6 +3707,13 @@ export type Database = {
           state_version: number
           updated_at: string
         }[]
+      }
+      unblock_user: {
+        Args: {
+          p_blocked_profile_id: string
+          p_expected_blocker_profile_id: string
+        }
+        Returns: string
       }
       unregister_own_push_installation: {
         Args: { p_expected_profile_id: string; p_installation_id: string }

@@ -195,6 +195,37 @@ Request selection (what was offered), acceptance decision (what the creator deci
 
 All mutations and private reads use expected-identity-bound project RPCs. Tables have RLS but no client grants/policies. Request messages are visible only to the requester and project creator; creator review exposes a narrow authenticated display identity but never Auth email. Protected meeting details are available only to the creator or a current accepted member. Each successful transition writes identifier-only audit/outbox events; acceptance adds no disposition arrays, labels, or message text, while exact live-source transitions add only Project/requirement/actor and optional membership identifiers. In 07B1, insertion of the canonical accepted membership also ensures the one Project group-chat anchor transactionally; it does not consume or repurpose the accepted outbox event.
 
+### User blocking domain and interaction barrier
+
+`private.user_block_episodes` preserves directional block/unblock intervals. A
+user can list only their own active outbound blocks; there is no inbound or
+reciprocal-state API, public marker, target notification, or block outbox event.
+Public profiles, Projects, Scambio-Dona listings, historical content, and
+`public` profile photos remain visible under their ordinary rules.
+
+Either active direction creates one symmetric barrier for starting or accepting
+a new direct Project join or Resource request between the pair. Activating a
+block immediately resolves every pending pair-connected request with existing
+semantics: blocker-as-requester withdraws, while blocker-as-creator/owner
+rejects. Unblock closes only the caller-owned direction and never resurrects
+requests or relationships. Existing accepted Project membership, group-chat
+and meeting entitlement remain membership-derived; existing accepted Resource
+agreement/chat/loan coordination remains usable until its ordinary lifecycle
+ends. Interaction-audience photo delivery is the deliberate exception: generic,
+contextual, and exact Storage authorization deny it while either block direction
+is active, without affecting owner or public-photo access. Reporting, assigned
+corroboration/counterstatement evidence, and staff review ignore user blocks.
+
+Block, request creation, and request acceptance first acquire the same
+transaction-scoped advisory lock for the lexically sorted profile pair. They
+then follow the established domain order: concrete Project, shared Project,
+request; or Resource listing, request. A block that serializes first prevents a
+new pending/accepted relationship; acceptance that serializes first may remain
+accepted when the later block activates. When 07C2 co-creators/managers are
+integrated, organizer identities resolved before this pair lock must include
+every active applicant manager; the episode model and pair primitive do not
+change.
+
 ### Unified structured-request Messages
 
 The authenticated mobile Requests tab is a discriminated projection of
@@ -565,9 +596,10 @@ experience and meeting-link access through the existing protected operation.
 06D projects safe body-free Project-chat alerts into the notification and push
 backbones. General direct
 messages, independent group creation, calls, voice messages, typing indicators,
-reactions, and complex read receipts remain excluded. Plan 09 may later
-override ordinary entitlement for blocking, suspension, or moderation; clients
-must not invent those rules.
+reactions, and complex read receipts remain excluded. User blocking deliberately
+does not override existing shared-group entitlement or censor pairwise messages
+inside a group. Later suspension or moderation overrides remain Plan 09C;
+clients must not invent those rules.
 
 ## Media and storage
 
@@ -673,11 +705,14 @@ Codex can build this machinery, but founders must define prohibited content, esc
 
 Direct database editing through Supabase Studio is acceptable for development. It is not the long-term moderation interface and should not be required for routine production operations.
 
-09B owns user blocking, 09C owns consequences including restrictions, content
-visibility, suspension, and later escalation/appeals, and 09D owns minimum-age
-behavior. Plan 10 must decide report, note, corroboration, and counterstatement
-retention plus deletion/anonymization; 09A1/09A2A/09A2B deliberately use
-restrictive references and make no irreversible retention-policy choice.
+09B1 owns the backend user-block episode and cross-domain interaction barrier;
+09B2 owns ordinary-user mobile Block/Unblock actions, management, confirmations,
+cache refresh, and failure copy. 09C owns consequences including restrictions,
+content visibility, suspension, and later escalation/appeals, and 09D owns
+minimum-age behavior. Plan 10 must decide report, note, corroboration,
+counterstatement, and block-history retention plus deletion/anonymization;
+09A1/09A2A/09A2B/09B1 deliberately use restrictive references and make no
+irreversible retention-policy choice.
 
 ## Security baseline
 

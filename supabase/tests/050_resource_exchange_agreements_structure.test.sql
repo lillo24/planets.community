@@ -469,9 +469,12 @@ select is(
 
 select ok(
   pg_get_functiondef(
+    'private.accept_resource_listing_request_without_block(uuid,uuid)'::regprocedure
+  ) like '%ensure_resource_exchange_agreement_for_request%'
+  and pg_get_functiondef(
     'public.accept_resource_listing_request(uuid,uuid)'::regprocedure
-  ) like '%ensure_resource_exchange_agreement_for_request%',
-  'request acceptance atomically ensures its agreement anchor'
+  ) like '%accept_resource_listing_request_without_block%',
+  'the preserved acceptance core atomically ensures its agreement anchor and the public barrier delegates to it'
 );
 select ok(
   pg_get_functiondef(

@@ -88,6 +88,36 @@ table access or distribute a service-role key to make an admin browser work.
 hiding, blocking, suspension, or retention/deletion policy. 09B, 09C and Plan
 10 own those decisions respectively.
 
+## User blocking
+
+`private.user_block_episodes` records append-preserved directional intervals
+with one active episode per `(blocker, blocked)` direction. API roles have no
+table privileges. Expected-identity `block_user`/`unblock_user` mutations and a
+bounded keyset `list_own_blocked_profiles` read expose only the caller's outbound
+state. No API reveals inbound/reciprocal state, no target notification or
+block-specific outbox event exists, and audit metadata contains identifiers
+only. Unblock closes the active interval and never revives a request,
+membership, agreement, or chat.
+
+The private symmetric predicate is reused by Project/Resource request creation
+and acceptance. Activating a block closes pair-connected pending requests using
+their existing withdrawn/rejected transitions, but does not alter accepted
+Project membership, group chat, meeting access, or accepted Resource
+coordination. Public discovery and public photos stay unchanged.
+Interaction-audience photo metadata and exact Storage delivery are denied while
+either block direction is active. Moderation reports, group corroboration,
+Resource counterstatements, and staff review intentionally contain no block
+check.
+
+All block/request/accept operations acquire the transaction-scoped advisory
+lock for the sorted profile pair before domain rows. After that lock, Project
+work retains concrete Proposal/Tavolo → shared Project → request order, while
+Resource work retains listing → request order. Pending-close scans visit
+Projects and Resources in UUID order. When active co-creators/managers from 07C2
+converge, organizer resolution before the pair lock must include every active
+profile with applicant-management authority; no block-model redesign is
+required.
+
 ## Application conflict SQLSTATEs
 
 Application-level optimistic-concurrency and already-covered conflicts raised through PostgREST use the custom SQLSTATE `PT409`. Clients must inspect `PostgrestException.code` within the specific RPC context rather than infer a domain conflict from HTTP 409 alone, because ordinary database constraints can also map to that status. SQLSTATE `40001` is reserved for genuine PostgreSQL serialization failures and must not be authored as a PLANETS domain marker.
@@ -504,6 +534,7 @@ npm run project:membership-commitments:verify:local
 npm run moderation:verify:local
 npm run moderation:corroboration:verify:local
 npm run moderation:counterstatement:verify:local
+npm run blocking:verify:local
 npm run db:types
 npm run db:types:check
 ```
@@ -611,8 +642,15 @@ Resource-domain state, and body-free audit/outbox records. It prints no emails,
 OTPs, tokens, keys, database URLs, report wording, statement content, or
 evidence records.
 
+`blocking:verify:local` uses direct local authenticated transactions and holds
+the canonical pair lock across four contenders. It proves block-first Project
+and Resource request creation waits, returns `PT409`, and leaves no pending row;
+it also proves Project and Resource acceptance that commits first is preserved
+as current membership or open agreement/chat when the subsequent block
+activates. It prints no identities, tokens, messages, or database URL.
+
 `auth:web:verify:local` adds web-specific evidence after a locally configured production Next.js build. It obtains session cookies through supported `@supabase/ssr` callbacks, confirms the Server Component recognizes the authenticated session, rejects private-auth material in the rendered response, and confirms `/admin` returns 404 for signed-out and ordinary signed-in requests. It does not invent or log Supabase's cookie encoding.
 
 `tavoli:web:verify:local` uses synthetic local OTP data and the production Next.js server to prove signed-out Tavoli list/detail rendering, rough-location and next-meeting output, exclusion of paused/ended rows from discovery, retained sanitized historical detail, exact-ID 404 behavior, and detail-only public/restricted exact-location handling. It never prints test addresses, tokens, keys, or protected meeting content.
 
-`npm run check:db` performs reset, lint, advisors, pgTAP, the real fake push-delivery worker protocol, the mobile/backend Auth check, the deterministic immediate-session/RLS check, the two-user profile visibility check, the proposal privacy/lifecycle check, the recurring activity recurrence/privacy/lifecycle check, the multi-user project-participation and participation-aware Browse checks, notification/push projection, structured Messages integration, Project-chat lifecycle/message/notification integrations, the Scambio-Dona listing, saved-search, request, agreement, chat, and unified Messages/notification integrations, the Project resource-need Proposal/Tavolo/concurrency integration, the join-request contribution-selection and acceptance-triage Proposal/Tavolo/concurrency integration, the membership-commitment Proposal/Tavolo/concurrency integration, type regeneration, and drift detection as one validation sequence. It assumes `npm run db:start` has already succeeded and leaves stack lifecycle to the caller. CI additionally generates local web configuration, builds Next.js, runs the web-session and public Tavoli integrations, and always stops Supabase.
+`npm run check:db` performs reset, lint, advisors, pgTAP, the real fake push-delivery worker protocol, the mobile/backend Auth check, the deterministic immediate-session/RLS check, the two-user profile visibility check, the proposal privacy/lifecycle check, the recurring activity recurrence/privacy/lifecycle check, the multi-user project-participation and participation-aware Browse checks, notification/push projection, structured Messages integration, Project-chat lifecycle/message/notification integrations, the Scambio-Dona listing, saved-search, request, agreement, chat, and unified Messages/notification integrations, the Project resource-need Proposal/Tavolo/concurrency integration, the join-request contribution-selection and acceptance-triage Proposal/Tavolo/concurrency integration, the membership-commitment Proposal/Tavolo/concurrency integration, moderation evidence integrations, user-block pair-serialization races, type regeneration, and drift detection as one validation sequence. It assumes `npm run db:start` has already succeeded and leaves stack lifecycle to the caller. CI additionally generates local web configuration, builds Next.js, runs the web-session and public Tavoli integrations, and always stops Supabase.

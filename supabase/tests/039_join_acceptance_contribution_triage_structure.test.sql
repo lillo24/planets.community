@@ -314,15 +314,18 @@ select ok(
 select ok(
   position(
     'p_needed_skill_ids' in pg_get_functiondef(
-      'public.accept_project_join_request(uuid,uuid,uuid[],uuid[],uuid[],uuid[],uuid[],uuid[])'::regprocedure
+      'private.accept_project_join_request_without_block(uuid,uuid,uuid[],uuid[],uuid[],uuid[],uuid[],uuid[])'::regprocedure
     )
   ) > 0
   and position(
     'exactly partition' in pg_get_functiondef(
-      'public.accept_project_join_request(uuid,uuid,uuid[],uuid[],uuid[],uuid[],uuid[],uuid[])'::regprocedure
+      'private.accept_project_join_request_without_block(uuid,uuid,uuid[],uuid[],uuid[],uuid[],uuid[],uuid[])'::regprocedure
     )
-  ) > 0,
-  'triaged acceptance implements explicit exact-partition validation'
+  ) > 0
+  and pg_get_functiondef(
+    'public.accept_project_join_request(uuid,uuid,uuid[],uuid[],uuid[],uuid[],uuid[],uuid[])'::regprocedure
+  ) like '%accept_project_join_request_without_block%',
+  'the preserved triage core implements exact-partition validation and the public barrier delegates to it'
 );
 
 select * from finish();
