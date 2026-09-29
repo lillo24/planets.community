@@ -107,7 +107,7 @@ Do not begin a dependent plan until the prior plan is merged or its branch is ex
 | 07B     | Project Group Chat (parent)                               | First-accept lifecycle/authorization foundation followed by messaging, Realtime, and mobile group experience           | 05A, 07A               | Optional E2EE research remains deferred; native QA remains in Plan 12                                                | Implemented |
 | 07B1    | Project Group Chat Lifecycle and Authorization Foundation | One chat per Project, first-accept activation, and ownership/membership-derived current and historical entitlement     | 05A, 07A               | None for the scoped structural foundation                                                                            | Implemented |
 | 07B2    | Project Chat Messaging, Realtime and Mobile Experience    | Authorized plain-text message model, Realtime hints, mobile chat/group info, and protected meeting access              | 07B1                   | Native QA remains deferred to Plan 12; optional E2EE research remains unmerged                                       | Implemented |
-| 07C3    | Shared Project Workspace + Group Organization Tools       | One private external workspace link plus Project Manage, Group info, and chat organization-tools UX                    | 07C2E                  | External service owns file permissions/content; native launch/accessibility QA remains Plan 12                       | In progress (open PR) |
+| 07C3    | Shared Project Workspace + Group Organization Tools       | One private external workspace link plus Project Manage, Group info, and chat organization-tools UX                    | 07C2E                  | External service owns file permissions/content; native launch/accessibility QA remains Plan 12                       | In progress (PR #117) |
 | 08      | Storage and media hardening                               | Select the production media approach, then implement purpose-specific access, metadata, cleanup, and processing hooks  | 03–07                  | Profile/proposal photo visibility, retention, and self-hosted Supabase Storage versus external object storage        | Not started |
 | 09      | Safety, moderation and admin                              | Reporting, blocking, content states, admin roles, moderation queue/actions, audit trail and minimal custom admin UI    | 04–08                  | Community rules, prohibited content, escalation, suspension, appeals, minimum age                                    | Not started |
 | 10      | Account deletion and privacy operations                   | In-app and web deletion paths, cleanup/anonymization jobs, export groundwork, privacy documentation inputs             | 03–09                  | Legal retention and anonymization policy; legal text remains founder/legal work                                      | Not started |
@@ -932,7 +932,7 @@ implemented roadmap item nor a dependency of the MVP message schema.
 
 #### 07C3 — Shared Project Workspace + Group Organization Tools
 
-**Status:** In progress on a focused open PR. Depends on the accepted 07C2E
+**Status:** In progress on focused PR #117. Depends on the accepted 07C2E
 delegated-authority stack.
 
 Adds one private provider-neutral HTTPS workspace URL per Project. Creator,
