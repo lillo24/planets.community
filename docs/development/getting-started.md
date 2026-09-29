@@ -83,10 +83,14 @@ With the committed default configuration, the main local endpoints are:
 
 To populate a coherent real-backend world for mobile QA, run
 `npm run demo:reset:local` after the stack starts. It creates three stable
-synthetic personas and connected Proposal, Tavolo, Messages, notification,
-Project-chat, and Scambio-Dona scenarios. See the
+synthetic personas (Giulia, Marco, and Sara) and connected realistic Italian
+Proposal, Tavolo, Messages, notification, Project-chat, and Scambio-Dona
+scenarios. Vendored profile/cover WebP fixtures make the seed fully offline
+after checkout, while authenticated Storage/RPC paths exercise normal media
+authorization. See the
 [local demo-data guide](demo-data.md) for the non-destructive seed command,
-persona emails, Mailpit sign-in, safety boundary, and clean-reset path.
+persona emails, media provenance, Mailpit sign-in, safety boundary, legacy
+title adoption, and clean-reset path.
 
 Local Auth uses a PLANETS numeric-code template at `supabase/templates/magic_link.html`. Despite Supabase's template category name, it includes `{{ .Token }}` and deliberately omits `{{ .ConfirmationURL }}`, so the mobile and web flows do not require a magic-link or deep-link callback. Local codes are six digits and expire after one hour. Restart the local stack after changing Auth configuration or templates.
 
