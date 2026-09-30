@@ -108,23 +108,30 @@ only. Unblock closes the active interval and never revives a request,
 membership, agreement, or chat.
 
 The private symmetric predicate is reused by Project/Resource request creation
-and acceptance. Activating a block closes pair-connected pending requests using
-their existing withdrawn/rejected transitions, but does not alter accepted
-Project membership, group chat, meeting access, or accepted Resource
-coordination. Public discovery and public photos stay unchanged.
+and acceptance. For Project participation, the interaction boundary is the
+complete current manager set: immutable Creator plus active Co-creators and
+Co-organizers. A block in either direction with any current manager denies new
+request creation and every Creator/delegated-manager acceptance overload.
+Revoked delegates are excluded. Activating a block closes pair-connected
+pending requests using their existing withdrawn/rejected transitions, but does
+not alter accepted Project membership, group chat, meeting or shared-workspace
+access, or accepted Resource coordination. Public discovery and public photos
+stay unchanged.
 Interaction-audience photo metadata and exact Storage delivery are denied while
 either block direction is active. Moderation reports, group corroboration,
 Resource counterstatements, and staff review intentionally contain no block
 check.
 
-All block/request/accept operations acquire the transaction-scoped advisory
-lock for the sorted profile pair before domain rows. After that lock, Project
-work retains concrete Proposal/Tavolo → shared Project → request order, while
-Resource work retains listing → request order. Pending-close scans visit
-Projects and Resources in UUID order. When active co-creators/managers from 07C2
-converge, organizer resolution before the pair lock must include every active
-profile with applicant-management authority; no block-model redesign is
-required.
+All block/request/accept operations acquire transaction-scoped advisory locks
+for sorted profile pairs before domain rows. Project request/accept operations
+snapshot the current manager IDs, acquire every requester/manager pair lock in
+deterministic global pair order, lock the concrete/shared Project, then
+revalidate both manager membership and each symmetric block barrier before
+mutation. Delegate authority changes use the same Project lock, so a changed
+snapshot yields the existing privacy-safe `PT409` retry conflict rather than a
+stale decision. Project work then retains concrete Proposal/Tavolo → shared
+Project → request order, while Resource work retains listing → request order.
+Pending-close scans visit Projects and Resources in UUID order.
 
 The mobile status/list caches are identity-bound and cleared on account change.
 After Block/Unblock, only the affected target photo and Project/Resource/request

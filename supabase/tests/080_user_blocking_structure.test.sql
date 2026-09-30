@@ -111,8 +111,14 @@ select ok(
   ) is not null
   and to_regprocedure(
     'private.lock_user_interaction_pair(uuid,uuid)'
+  ) is not null
+  and to_regprocedure(
+    'private.current_project_manager_profile_ids(uuid)'
+  ) is not null
+  and to_regprocedure(
+    'private.lock_project_manager_interactions(uuid,uuid)'
   ) is not null,
-  'directional lookup, symmetric barrier, and pair serialization are centralized'
+  'directional lookup, symmetric barrier, current managers, and pair serialization are centralized'
 );
 
 select is(
@@ -129,6 +135,8 @@ select is(
       'private.has_active_directional_user_block(uuid,uuid)'::regprocedure,
       'private.has_active_user_block_between(uuid,uuid)'::regprocedure,
       'private.lock_user_interaction_pair(uuid,uuid)'::regprocedure,
+      'private.current_project_manager_profile_ids(uuid)'::regprocedure,
+      'private.lock_project_manager_interactions(uuid,uuid)'::regprocedure,
       'private.close_pending_direct_requests_for_user_block(uuid,uuid)'::regprocedure
     )
   ),
@@ -174,9 +182,12 @@ select is(
       'private.has_active_directional_user_block(uuid,uuid)'::regprocedure,
       'private.has_active_user_block_between(uuid,uuid)'::regprocedure,
       'private.lock_user_interaction_pair(uuid,uuid)'::regprocedure,
+      'private.current_project_manager_profile_ids(uuid)'::regprocedure,
+      'private.lock_project_manager_interactions(uuid,uuid)'::regprocedure,
       'private.close_pending_direct_requests_for_user_block(uuid,uuid)'::regprocedure,
       'private.request_to_join_project_without_block(uuid,uuid,text,uuid[],uuid[])'::regprocedure,
       'private.accept_project_join_request_without_block(uuid,uuid,uuid[],uuid[],uuid[],uuid[],uuid[],uuid[])'::regprocedure,
+      'private.accept_project_join_request_as_manager_without_block(uuid,uuid,uuid[],uuid[],uuid[],uuid[],uuid[],uuid[])'::regprocedure,
       'private.request_resource_listing_without_block(uuid,uuid,text)'::regprocedure,
       'private.accept_resource_listing_request_without_block(uuid,uuid)'::regprocedure
     )
@@ -210,17 +221,20 @@ select ok(
 select ok(
   pg_get_functiondef(
     'public.request_to_join_project(uuid,uuid,text,uuid[],uuid[])'::regprocedure
-  ) like '%lock_user_interaction_pair%'
-  and pg_get_functiondef(
-    'public.request_to_join_project(uuid,uuid,text,uuid[],uuid[])'::regprocedure
-  ) like '%assert_user_interaction_available%'
+  ) like '%lock_project_manager_interactions%'
   and pg_get_functiondef(
     'public.accept_project_join_request(uuid,uuid,uuid[],uuid[],uuid[],uuid[],uuid[],uuid[])'::regprocedure
+  ) like '%lock_project_manager_interactions%'
+  and pg_get_functiondef(
+    'public.accept_project_join_request_as_manager(uuid,uuid,uuid[],uuid[],uuid[],uuid[],uuid[],uuid[])'::regprocedure
+  ) like '%lock_project_manager_interactions%'
+  and pg_get_functiondef(
+    'private.lock_project_manager_interactions(uuid,uuid)'::regprocedure
   ) like '%lock_user_interaction_pair%'
   and pg_get_functiondef(
-    'public.accept_project_join_request(uuid,uuid,uuid[],uuid[],uuid[],uuid[],uuid[],uuid[])'::regprocedure
+    'private.lock_project_manager_interactions(uuid,uuid)'::regprocedure
   ) like '%assert_user_interaction_available%',
-  'Project creation and canonical acceptance share the pair lock and barrier'
+  'Project request and both acceptance boundaries share the all-manager pair lock and barrier'
 );
 
 select ok(

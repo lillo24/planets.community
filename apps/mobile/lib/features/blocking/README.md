@@ -15,5 +15,8 @@ receives or infers inbound/reciprocal block state.
   screen.
 
 Blocking never filters public content, removes Project members/messages, or
-closes accepted Scambio-Dona coordination. Pending request closure and all
-symmetric interaction enforcement remain canonical PostgreSQL behavior.
+closes accepted Scambio-Dona coordination. For Project participation, the
+database checks a requester against the Creator and every active Co-creator or
+Co-organizer, excluding revoked delegates. Pending request closure and all
+symmetric interaction enforcement remain canonical PostgreSQL behavior; the
+client receives only the existing direction-neutral failure shape.

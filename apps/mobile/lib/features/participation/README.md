@@ -94,6 +94,14 @@ The mobile client presents, but does not reproduce, the 05A state machine:
   independently be a requester or participant. Manager review keeps a real
   self-membership row visible but omits its manager Remove action.
 
+The database treats the Creator plus every active Co-creator and Co-organizer
+as one Project interaction boundary. A block in either direction between a
+requester and any current manager prevents new request creation and acceptance;
+blocking a pending requester rejects it, while a pending requester blocking a
+manager withdraws it. Revoked delegates no longer affect future eligibility,
+and existing accepted membership/access remain unchanged. Mobile does not
+enumerate managers or infer the private block direction to reproduce this rule.
+
 05E adds one canonical total-people capacity without changing those role
 relationships. The original Creator counts once, each current membership
 counts once, and delegated authority by itself does not count. Public detail

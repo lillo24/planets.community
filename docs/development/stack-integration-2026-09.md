@@ -53,7 +53,7 @@ No incompatible founder-owned product semantics were found during integration.
 
 ## Database ordering and tests
 
-The final inventory has 54 unique migration timestamps and 100 unique pgTAP
+The final inventory has 54 unique migration timestamps and 102 unique pgTAP
 numeric prefixes. Parallel-branch test collisions were resolved as follows:
 
 - Resource matching and saved-search suites: `058`–`065` to `083`–`090`.
@@ -61,6 +61,7 @@ numeric prefixes. Parallel-branch test collisions were resolved as follows:
 - Capacity suites: `070`–`071` to `098`–`099`.
 - Workspace suites: `070`–`071` to `100`–`101`.
 - Cover suites: `074`–`075` to `102`–`103`.
+- Manager-blocking convergence coverage was added as `104`–`105`.
 
 Migration replay found and fixed two cumulative production-schema regressions:
 
@@ -88,6 +89,31 @@ Historical and parallel-branch tests were adapted to the cumulative schema:
 
 The cumulative database lint is clean; no warning suppression was added.
 
+## Founder-review manager-blocking correction
+
+Founder review found one cumulative production bug at exact pre-fix candidate
+head `3d822dc8318a58766c90ef196a50dafaa54c06df`: Project blocking had been
+integrated before delegated-manager authority and therefore still enforced
+Creator-only Project interaction checks; manager-specific acceptance and
+pending-request closure bypassed the intended current-manager block barrier.
+
+The unmerged cumulative blocking migration now owns one deterministic manager
+set (immutable Creator plus active Co-creators and Co-organizers, excluding
+revoked delegates). Request creation and both Creator/delegated-manager
+acceptance boundaries snapshot that set, acquire all requester/manager advisory
+pair locks in global canonical order, lock the Project, and revalidate manager
+membership and block state before mutation. Blocking cleanup reuses the same
+manager predicate, so manager-side blocks reject pending requests and
+requester-side blocks withdraw them without rewriting terminal history.
+
+Focused pgTAP files `104` and `105` cover manager-set structure, privileges,
+both request block directions for every manager role, revoked-manager behavior,
+pending cleanup, all compatibility/triage acceptance paths, capacity, privacy,
+and preservation of accepted membership/chat/meeting/workspace access. The
+real-transaction blocking verifier now covers delegated-manager block/request
+and block/accept races in both winner orders plus concurrent final-spot
+capacity. No mobile production code or public RPC signature changed.
+
 ## Client and demo fixture repairs
 
 Local verifiers and demo data now provide the photo/capacity prerequisites added
@@ -97,11 +123,12 @@ These are test/fixture repairs and do not add product behavior.
 
 ## Validation
 
-Completed locally on the final working tree before the stabilization commit:
+Completed locally on the final working tree, including the founder-review
+manager-blocking correction:
 
 - Database reset, lint, advisors, type generation/check, domain verifiers, and
   `npm run check:db`: passed.
-- pgTAP: 100 files and 3,171 assertions passed.
+- pgTAP: 102 files and 3,213 assertions passed.
 - Demo sequence `reset -> verify -> seed -> verify`: passed; the second verify
   confirms idempotent cumulative demo behavior.
 - Mobile: localization generation, formatting, static analysis, and 1,062 tests

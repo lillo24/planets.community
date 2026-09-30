@@ -11,16 +11,21 @@ This folder owns the reproducible local PLANETS database and its security valida
 and exposes only expected-identity Block/Unblock plus an outbound-only keyset
 read. 09B2 adds `get_own_blocked_profile_status`, a zero-or-one exact-target
 outbound read with the same identity check and no reciprocal/inbound field.
-Either active direction creates one symmetric barrier for new Project and
-Resource request creation/acceptance. Blocking closes pending pair requests with
-their existing withdrawn/rejected semantics; accepted Project membership/group
-chat/meeting access and accepted Resource agreement/chat coordination remain
-ordinary domain state. Public discovery and public photos are unchanged, while
+Either active direction creates one symmetric barrier for new Resource
+request creation/acceptance. Project participation checks the requester against
+the immutable Creator plus every active Co-creator and Co-organizer; revoked
+delegates are excluded. Blocking by a current manager rejects the pending
+request, while a requester blocking a current manager withdraws it. Accepted
+Project membership/group chat/meeting/workspace access and accepted Resource
+agreement/chat coordination remain ordinary domain state. Public discovery and
+public photos are unchanged, while
 interaction-only photo metadata and Storage delivery are revoked across the
 pair. Moderation evidence ignores block state. A sorted-profile transaction
-advisory lock is always taken before Project or Resource row locks; run
-`npm run blocking:verify:local` after a clean reset to prove both block-first and
-acceptance-first serial outcomes.
+advisory lock is always taken before Project or Resource row locks. Project
+request/accept paths acquire every current-manager pair lock deterministically,
+then lock and revalidate the Project/manager set. Run
+`npm run blocking:verify:local` after a clean reset to prove block-first,
+request-first, acceptance-first, and final-capacity serial outcomes.
 
 09A2A stores Project group-corroboration invitations and one-shot responses in
 private append-only moderation evidence tables. Qualifying reports snapshot
