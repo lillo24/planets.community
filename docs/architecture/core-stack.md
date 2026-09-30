@@ -4,7 +4,7 @@
 **Recorded:** 2026-09-01  
 **Direction updated:** 2026-09-14
 
-**Implementation status:** Foundations, authentication, profiles, one-time proposals, Tavoli mobile/public-web discovery, participation, in-app notifications, structured request Messages, the provider-independent push/job foundation, provider-neutral push delivery worker protocol, the standalone Scambio-Dona listing foundation, and the static-first informational site with its local/CI one-time waitlist boundary and native Workers runtime implemented; the Scambio-Dona mobile client is in focused review; production Cloudflare resources and production self-hosting are not implemented
+**Implementation status:** Foundations, authentication, profiles, one-time proposals, Tavoli mobile/public-web discovery, participation, in-app notifications, structured request Messages, Project chat, the provider-independent push/job foundation, provider-neutral push delivery worker protocol, standalone Scambio-Dona listing/mobile foundations, and the static-first informational site with its local/CI one-time waitlist boundary and native Workers runtime implemented; the Project resource-need foundation is in progress; production Cloudflare resources and production self-hosting are not implemented
 
 ## Decision summary
 

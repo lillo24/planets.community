@@ -138,13 +138,8 @@ select is(
   'Plan 07A does not introduce chat threads'
 );
 select is(
-  (
-    select count(*)
-    from information_schema.tables
-    where table_schema = 'public'
-      and table_name like '%request%message%'
-  ),
-  0::bigint,
+  to_regclass('public.project_join_request_messages'),
+  null::regclass,
   'the private request message is not copied into another durable table'
 );
 

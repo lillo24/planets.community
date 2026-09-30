@@ -98,6 +98,10 @@
   "@authSendCodeAction": {
     "description": "Action that requests an email OTP."
   },
+  "authSendingCode": "Sending sign-in code…",
+  "@authSendingCode": {
+    "description": "Accessible progress label while an email OTP request is pending."
+  },
   "authPrivacyNote": "We use this address to sign you in. Never share your sign-in code with anyone.",
   "@authPrivacyNote": {
     "description": "Privacy and security note on the OTP request screen."
@@ -134,6 +138,10 @@
   "authRateLimited": "Please wait before requesting or checking another code.",
   "@authRateLimited": {
     "description": "Safe auth rate-limit message."
+  },
+  "authRequestTimedOut": "The sign-in request took too long. Check your connection and try again.",
+  "@authRequestTimedOut": {
+    "description": "Safe timeout message for an email OTP request."
   },
   "authNetworkUnavailable": "Check your connection and try again.",
   "@authNetworkUnavailable": {
@@ -300,6 +308,33 @@
   "@profileSaveError": {
     "description": "Safe retryable atomic profile-save failure."
   },
+  "profilePhotoTitle": "Profile photo",
+  "profilePhotoAdd": "Add photo",
+  "profilePhotoChange": "Change photo",
+  "profilePhotoRemove": "Remove photo",
+  "profilePhotoRemoveTitle": "Remove profile photo?",
+  "profilePhotoRemoveDescription": "Your current profile photo will be removed.",
+  "profilePhotoChoose": "Choose from photos",
+  "profilePhotoAdjust": "Adjust photo",
+  "profilePhotoCancel": "Cancel",
+  "profilePhotoUse": "Use photo",
+  "profilePhotoPreparing": "Preparing photo…",
+  "profilePhotoUploading": "Uploading photo…",
+  "profilePhotoUpdating": "Updating photo visibility…",
+  "profilePhotoRemoving": "Removing photo…",
+  "profilePhotoVisibility": "Photo visibility",
+  "profilePhotoAudiencePublic": "Public",
+  "profilePhotoAudienceInteractions": "Only people I interact with",
+  "profilePhotoDefaultAudience": "Your first photo will be visible only to people you interact with.",
+  "profilePhotoAvatarLabel": "Your profile photo",
+  "profilePhotoPlaceholderLabel": "Profile photo placeholder",
+  "profilePhotoReadError": "Unable to read this photo.",
+  "profilePhotoPrepareError": "Unable to prepare this photo.",
+  "profilePhotoTooLargeError": "This photo could not be made small enough.",
+  "profilePhotoUploadError": "Unable to upload the photo.",
+  "profilePhotoSaveError": "Unable to save the profile photo.",
+  "profilePhotoRemoveError": "Unable to remove the profile photo.",
+  "profilePhotoRetry": "Try again",
   "proposalsTitle": "One-time proposals",
   "proposalsBrowseAction": "Browse proposals",
   "proposalDetailTitle": "Proposal details",
@@ -530,7 +565,7 @@
   "messagesLoading": "Loading messages…",
   "messagesLoadingRequest": "Loading participation request…",
   "messagesEmptyTitle": "No messages yet",
-  "messagesEmptyMessage": "Participation requests you send or receive will appear here.",
+  "messagesEmptyMessage": "Participation and resource requests you send or receive will appear here.",
   "messagesLoadMore": "Load more",
   "messagesIncomingTitle": "{name} wants to join",
   "@messagesIncomingTitle": {
@@ -578,6 +613,30 @@
   "messagesForbidden": "This participation request is not available for the current account.",
   "messagesConflict": "This request changed while the screen was open. Its current status has been reloaded.",
   "messagesNotFound": "This participation request is no longer available.",
+  "resourceRequestInboxIncomingTitle": "{name} is interested in your listing",
+  "@resourceRequestInboxIncomingTitle": {
+    "placeholders": { "name": { "type": "String" } }
+  },
+  "resourceRequestInboxOutgoingTitle": "Your request for {resource}",
+  "@resourceRequestInboxOutgoingTitle": {
+    "placeholders": { "resource": { "type": "String" } }
+  },
+  "resourceRequestTypeLabel": "Scambio-Dona request",
+  "messageChatsLoading": "Loading chats…",
+  "messageChatsEmptyTitle": "No chats yet",
+  "messageChatsEmptyMessage": "Project and resource conversations will appear here when they become available.",
+  "messageChatsUnavailable": "We couldn't load chats. Check your connection and try again.",
+  "messageProjectChatCardSemantics": "Project chat for {title}",
+  "@messageProjectChatCardSemantics": {
+    "placeholders": { "title": { "type": "String" } }
+  },
+  "messageResourceChatCardSemantics": "Resource conversation for {title}, {status}",
+  "@messageResourceChatCardSemantics": {
+    "placeholders": {
+      "title": { "type": "String" },
+      "status": { "type": "String" }
+    }
+  },
   "projectChatsLoading": "Loading project chats…",
   "projectChatsEmptyTitle": "No project chats yet",
   "projectChatsEmptyMessage": "A group chat appears after the first participation request is accepted.",
@@ -631,7 +690,7 @@
   },
   "notificationsLoading": "Loading notifications…",
   "notificationsEmptyTitle": "No notifications yet",
-  "notificationsEmptyMessage": "Participation alerts will appear here when there is something new.",
+  "notificationsEmptyMessage": "Participation, chat, Resource, and saved-search match alerts will appear here when there is something new.",
   "notificationsMarkAllRead": "Mark all as read",
   "notificationsSettingsTooltip": "Notification settings",
   "notificationsSettingsTitle": "Notification settings",
@@ -646,10 +705,22 @@
   "notificationsPreferencesLoading": "Loading notification settings…",
   "notificationsParticipationAlerts": "Participation alerts",
   "notificationsChatMessages": "Chat messages",
+  "notificationsResourceActivity": "Resource activity",
+  "notificationsResourcePreferenceExplanation": "Requests, Resource conversations, and exchange updates. This setting affects future in-app alerts; existing history remains available.",
+  "notificationsMatchingAlerts": "Saved search matches",
+  "notificationsMatchingInApp": "In-app",
+  "notificationsMatchingPreferenceExplanation": "Show an alert when a newly published Scambio-Dona listing matches one of your saved searches.",
   "notificationsInApp": "In-app notifications",
   "notificationsPreferenceExplanation": "This setting affects future in-app participation alerts. Existing notification history remains.",
   "notificationsChatPreferenceExplanation": "This setting affects future in-app chat alerts. Project chat and existing notification history remain available.",
   "notificationsPreferenceUpdateError": "We couldn't confirm this setting. Its last loaded value is shown.",
+  "notificationMatchingAvailable": "New listing matches one of your saved searches: “{listingTitle}”.",
+  "@notificationMatchingAvailable": {
+    "placeholders": {
+      "listingTitle": { "type": "String" }
+    }
+  },
+  "notificationMatchingAvailableGeneric": "A new Resource listing matches one of your saved searches.",
   "notificationRequestReceived": "{actor} requested to join “{project}”",
   "@notificationRequestReceived": {
     "placeholders": {
@@ -703,6 +774,48 @@
     }
   },
   "notificationChatMessageGeneric": "New project chat message",
+  "notificationResourceFallbackActor": "Someone",
+  "notificationResourceFallbackListing": "a Resource listing",
+  "notificationResourceRequestReceived": "{actor} is interested in “{listing}”",
+  "@notificationResourceRequestReceived": {"placeholders":{"actor":{"type":"String"},"listing":{"type":"String"}}},
+  "notificationResourceRequestWithdrawn": "{actor} withdrew their request for “{listing}”",
+  "@notificationResourceRequestWithdrawn": {"placeholders":{"actor":{"type":"String"},"listing":{"type":"String"}}},
+  "notificationResourceRequestAccepted": "Your request for “{listing}” was accepted",
+  "@notificationResourceRequestAccepted": {"placeholders":{"listing":{"type":"String"}}},
+  "notificationResourceRequestRejected": "Your request for “{listing}” was declined",
+  "@notificationResourceRequestRejected": {"placeholders":{"listing":{"type":"String"}}},
+  "notificationResourceRequestListingClosed": "“{listing}” was closed before your request was accepted",
+  "@notificationResourceRequestListingClosed": {"placeholders":{"listing":{"type":"String"}}},
+  "notificationResourceChatMessage": "{actor} sent a message about “{listing}”",
+  "@notificationResourceChatMessage": {"placeholders":{"actor":{"type":"String"},"listing":{"type":"String"}}},
+  "notificationResourceTermsProposed": "{actor} proposed exchange terms for “{listing}”",
+  "@notificationResourceTermsProposed": {"placeholders":{"actor":{"type":"String"},"listing":{"type":"String"}}},
+  "notificationResourceTermsAccepted": "{actor} accepted the exchange terms for “{listing}”",
+  "@notificationResourceTermsAccepted": {"placeholders":{"actor":{"type":"String"},"listing":{"type":"String"}}},
+  "notificationResourceTermsRejected": "{actor} rejected the proposed terms for “{listing}”",
+  "@notificationResourceTermsRejected": {"placeholders":{"actor":{"type":"String"},"listing":{"type":"String"}}},
+  "notificationResourceTermsWithdrawn": "{actor} withdrew their terms proposal for “{listing}”",
+  "@notificationResourceTermsWithdrawn": {"placeholders":{"actor":{"type":"String"},"listing":{"type":"String"}}},
+  "notificationResourceExchangeCancelled": "{actor} cancelled the coordination for “{listing}”",
+  "@notificationResourceExchangeCancelled": {"placeholders":{"actor":{"type":"String"},"listing":{"type":"String"}}},
+  "notificationResourceExchangeCompleted": "The exchange for “{listing}” was completed",
+  "@notificationResourceExchangeCompleted": {"placeholders":{"listing":{"type":"String"}}},
+  "notificationResourceOwnerProvided": "{actor} marked “{listing}” as handed over",
+  "@notificationResourceOwnerProvided": {"placeholders":{"actor":{"type":"String"},"listing":{"type":"String"}}},
+  "notificationResourceOwnerReceived": "{actor} confirmed receiving “{listing}”",
+  "@notificationResourceOwnerReceived": {"placeholders":{"actor":{"type":"String"},"listing":{"type":"String"}}},
+  "notificationResourceOwnerReturned": "{actor} marked “{listing}” as returned",
+  "@notificationResourceOwnerReturned": {"placeholders":{"actor":{"type":"String"},"listing":{"type":"String"}}},
+  "notificationResourceOwnerReturnReceived": "{actor} confirmed “{listing}” was returned",
+  "@notificationResourceOwnerReturnReceived": {"placeholders":{"actor":{"type":"String"},"listing":{"type":"String"}}},
+  "notificationResourceRequesterProvided": "{actor} marked their exchange item as handed over",
+  "@notificationResourceRequesterProvided": {"placeholders":{"actor":{"type":"String"}}},
+  "notificationResourceRequesterReceived": "{actor} confirmed receiving the other exchange item",
+  "@notificationResourceRequesterReceived": {"placeholders":{"actor":{"type":"String"}}},
+  "notificationResourceRequesterReturned": "{actor} marked their exchange item as returned",
+  "@notificationResourceRequesterReturned": {"placeholders":{"actor":{"type":"String"}}},
+  "notificationResourceRequesterReturnReceived": "{actor} confirmed the other exchange item was returned",
+  "@notificationResourceRequesterReturnReceived": {"placeholders":{"actor":{"type":"String"}}},
   "homeProjectsTitle": "Progetti",
   "homeProjectsMessage": "Discover one-time projects and Tavoli.",
   "homeResourcesMessage": "Discover things offered to donate or exchange.",
@@ -716,6 +829,99 @@
   "resourceCreateListing": "Create listing",
   "resourceEditListing": "Edit listing",
   "resourceViewListing": "View listing",
+  "resourceInterestCount": "{count, plural, =0{No one interested yet} =1{1 person interested} other{{count} people interested}}",
+  "@resourceInterestCount": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "resourceRequestStatusPending": "Pending",
+  "resourceRequestStatusAccepted": "Accepted",
+  "resourceRequestStatusRejected": "Rejected",
+  "resourceRequestStatusWithdrawn": "Withdrawn",
+  "resourceRequestStatusListingClosed": "Listing closed",
+  "resourceRequestInvalidInput": "Check the request message and try again.",
+  "resourceRequestForbidden": "This request is not available for the current account.",
+  "resourceRequestChangedElsewhere": "This request changed while the screen was open. The latest status has been reloaded.",
+  "resourceRequestListingUnavailable": "This listing is no longer accepting requests.",
+  "resourceRequestNotFound": "This request is no longer available.",
+  "resourceRequestUnableLoad": "We couldn't load this resource request. Check your connection and try again.",
+  "resourceRequestUnableUpdate": "We couldn't update this resource request. Try again.",
+  "resourceRequestUnableSend": "We couldn't send this request. Try again.",
+  "resourceRequestComposerTitle": "Request this resource",
+  "resourceRequestComposerGuidance": "Sending a request shows interest. It does not reserve the resource. You can include an optional message for the listing owner.",
+  "resourceRequestOptionalMessage": "Message (optional)",
+  "resourceRequestSend": "Send request",
+  "resourceRequestCancel": "Cancel",
+  "resourceRequestDetailTitle": "Resource request",
+  "resourceRequestLoading": "Loading resource request…",
+  "resourceRequestCoordinationOpen": "Coordination is open.",
+  "resourceRequestCoordinationFinished": "Coordination has finished.",
+  "resourceRequestPeopleLabel": "People",
+  "resourceRequestRequesterLabel": "Requester: {name}",
+  "@resourceRequestRequesterLabel": {
+    "placeholders": { "name": { "type": "String" } }
+  },
+  "resourceRequestRequesterPhotoLabel": "Requester profile photo",
+  "resourceRequestOwnerLabel": "Owner: {name}",
+  "@resourceRequestOwnerLabel": {
+    "placeholders": { "name": { "type": "String" } }
+  },
+  "resourceRequestMessageLabel": "Private request message",
+  "resourceRequestTimelineLabel": "Timeline",
+  "resourceRequestRequestedAt": "Requested {date}",
+  "@resourceRequestRequestedAt": {
+    "placeholders": { "date": { "type": "String" } }
+  },
+  "resourceRequestResolvedAt": "Resolved {date}",
+  "@resourceRequestResolvedAt": {
+    "placeholders": { "date": { "type": "String" } }
+  },
+  "resourceRequestWithdraw": "Withdraw request",
+  "resourceRequestReject": "Reject",
+  "resourceRequestAccept": "Accept",
+  "resourceRequestOpenConversation": "Open conversation",
+  "resourceRequestAction": "Request resource",
+  "resourceRequestAlreadyActive": "You already have an active request for this listing. The latest request has been loaded.",
+  "resourceRequestView": "View request",
+  "resourceChatTitle": "Resource conversation",
+  "resourceChatLoading": "Loading conversation…",
+  "resourceChatCardContext": "Scambio-Dona · Resource conversation",
+  "resourceChatOpenLabel": "Open",
+  "resourceChatOwner": "Owner",
+  "resourceChatRequester": "Requester",
+  "resourceChatCounterparty": "{role}: {name}",
+  "@resourceChatCounterparty": {
+    "placeholders": {
+      "role": { "type": "String" },
+      "name": { "type": "String" }
+    }
+  },
+  "resourceChatCounterpartyPhotoLabel": "Profile photo of {name}",
+  "@resourceChatCounterpartyPhotoLabel": {
+    "placeholders": { "name": { "type": "String" } }
+  },
+  "resourceChatNoMessages": "No messages yet.",
+  "resourceChatEmptyGuidance": "Use this conversation to coordinate the resource exchange.",
+  "resourceChatReadOnlyNotice": "This conversation is read-only because this resource coordination has ended.",
+  "resourceChatSendConflict": "This conversation is now read-only. Your message was not sent.",
+  "resourceChatMessageHint": "Message",
+  "resourceChatSend": "Send",
+  "resourceChatLoadOlder": "Load older messages",
+  "resourceChatUnavailable": "Unable to load conversation. Check your connection and try again.",
+  "resourceChatUnableSend": "Unable to send message.",
+  "resourceChatInvalidInput": "Enter a message between 1 and 4,000 characters.",
+  "resourceChatForbidden": "This resource conversation is not available for the current account.",
+  "resourceChatNotFound": "This resource conversation is no longer available.",
+  "resourceChatConnectionIssue": "Connection issue. Refresh to check for new messages.",
+  "resourceChatYou": "You",
+  "resourceChatUnknownSender": "Participant",
+  "resourceChatMessageSemantics": "{sender}, {message}, {time}",
+  "@resourceChatMessageSemantics": {
+    "placeholders": {
+      "sender": { "type": "String" },
+      "message": { "type": "String" },
+      "time": { "type": "String" }
+    }
+  },
   "resourceDetailTitle": "Listing details",
   "resourceLoading": "Loading listings…",
   "resourceSafeError": "We couldn't load the listing information. Check your connection and try again.",
@@ -726,6 +932,53 @@
   "resourceSearchLabel": "Search title and description",
   "resourceLocalityLabel": "Locality",
   "resourceSearchAction": "Search",
+  "resourceSavedSearchesTitle": "Saved searches",
+  "resourceSavedSearchesLoading": "Loading saved searches…",
+  "resourceSavedSearchSaveAction": "Save search",
+  "resourceSavedSearchCreated": "Search saved.",
+  "resourceSavedSearchUpdated": "Saved search updated.",
+  "resourceSavedSearchDeleted": "Saved search deleted.",
+  "resourceSavedSearchCreateDuplicate": "This search is already saved.",
+  "resourceSavedSearchUpdateDuplicate": "Another saved search already uses these filters.",
+  "resourceSavedSearchInvalidInput": "At least one filter is required. Query and locality can use at most 120 characters.",
+  "resourceSavedSearchAtLeastOneFilter": "At least one filter is required.",
+  "resourceSavedSearchForbidden": "Saved searches are not available for the current account.",
+  "resourceSavedSearchNoLongerAvailable": "This saved search is no longer available.",
+  "resourceSavedSearchUnavailable": "Unable to load saved searches.",
+  "resourceSavedSearchUnableCreate": "We couldn't save this search. Try again.",
+  "resourceSavedSearchUnableUpdate": "Unable to update saved search.",
+  "resourceSavedSearchUnableDelete": "Unable to delete saved search.",
+  "resourceSavedSearchesEmptyTitle": "No saved searches yet.",
+  "resourceSavedSearchesEmptyMessage": "Set filters in Scambio-Dona and save a search to reuse it later.",
+  "resourceSavedSearchBrowseResources": "Browse resources",
+  "resourceSavedSearchOpen": "Open",
+  "resourceSavedSearchEdit": "Edit",
+  "resourceSavedSearchEditTitle": "Edit saved search",
+  "resourceSavedSearchSaveChanges": "Save changes",
+  "resourceSavedSearchCancel": "Cancel",
+  "resourceSavedSearchDeleteAction": "Delete",
+  "resourceSavedSearchDeleteTitle": "Delete this saved search?",
+  "resourceSavedSearchDeleteMessage": "This permanently removes the saved filter definition. It does not change any Resource listings.",
+  "resourceSavedSearchModeFilter": "Mode: {mode}",
+  "@resourceSavedSearchModeFilter": {
+    "placeholders": { "mode": { "type": "String" } }
+  },
+  "resourceSavedSearchQueryFilter": "Keywords: {query}",
+  "@resourceSavedSearchQueryFilter": {
+    "placeholders": { "query": { "type": "String" } }
+  },
+  "resourceSavedSearchLocalityFilter": "Locality: {locality}",
+  "@resourceSavedSearchLocalityFilter": {
+    "placeholders": { "locality": { "type": "String" } }
+  },
+  "resourceSavedSearchUpdatedDate": "Updated {date}",
+  "@resourceSavedSearchUpdatedDate": {
+    "placeholders": { "date": { "type": "String" } }
+  },
+  "resourceSavedSearchCardSemantics": "Saved search, {filters}",
+  "@resourceSavedSearchCardSemantics": {
+    "placeholders": { "filters": { "type": "String" } }
+  },
   "resourceEmptyTitle": "Nothing in Scambio-Dona yet",
   "resourceEmptyMessage": "Published listings will appear here.",
   "resourceFilteredEmptyTitle": "No listings found",
@@ -744,6 +997,7 @@
   "@resourceListedBy": {
     "placeholders": { "owner": { "type": "String" } }
   },
+  "resourceListingOwnerPhotoLabel": "Resource listing owner profile photo",
   "resourceMyEmptyTitle": "No listings yet",
   "resourceMyEmptyMessage": "Create a draft when you have something to donate or exchange.",
   "resourceUntitled": "Untitled draft",
@@ -775,5 +1029,515 @@
   "resourceDraftSavedPublishFailed": "Your draft was saved, but it could not be published. Review it and retry; no second draft will be created.",
   "resourceCloseConfirmTitle": "Close this listing?",
   "resourceCloseConfirmMessage": "This removes the listing from public discovery. It does not record whether a donation or exchange happened.",
-  "resourceClosedReadOnly": "Closed listings remain in your history and cannot be edited or reopened."
+  "resourceClosedReadOnly": "Closed listings remain in your history and cannot be edited or reopened.",
+  "projectResourcesNeededTitle": "Resources / Materials needed",
+  "projectResourcesLoading": "Loading resources and materials…",
+  "projectResourcesSafeError": "We couldn't load the Project's resources and materials. Try again.",
+  "projectResourcesManage": "Manage resources / materials",
+  "projectResourcesManageTitle": "Project resources and materials",
+  "projectResourcesOpen": "Open",
+  "projectResourcesClosed": "Closed",
+  "projectResourcesNoOpenNeeds": "No open needs.",
+  "projectResourcesEmptyTitle": "No resource needs yet",
+  "projectResourcesEmptyMessage": "Add what this Project currently needs so applicants can select it.",
+  "projectResourcesAddNeed": "Add need",
+  "projectResourcesEditNeed": "Edit need",
+  "projectResourcesCloseNeed": "Close need",
+  "projectResourcesNeedTitleField": "Resource need title",
+  "projectResourcesDetailsOptional": "Details (optional)",
+  "projectResourcesInvalidTitle": "Use between {min} and {max} characters.",
+  "@projectResourcesInvalidTitle": {
+    "placeholders": {
+      "min": { "type": "int" },
+      "max": { "type": "int" }
+    }
+  },
+  "projectResourcesDetailsTooLong": "Use at most {max} characters.",
+  "@projectResourcesDetailsTooLong": {
+    "placeholders": { "max": { "type": "int" } }
+  },
+  "projectResourcesSaveAction": "Save",
+  "projectResourcesCancelAction": "Cancel",
+  "projectResourcesCloseConfirmTitle": "Close this need?",
+  "projectResourcesCloseConfirmMessage": "It will no longer be offered as a selectable Project need. This does not record that it was supplied or fulfilled.",
+  "projectResourcesClosedReadOnly": "Closed history · not marked as supplied or fulfilled",
+  "projectResourcesInvalidInput": "Check the resource-need fields and try again.",
+  "projectResourcesForbidden": "These Project resources are not available for the current account.",
+  "projectResourcesConflict": "This Project need can no longer be changed that way. Refresh and try again.",
+  "projectResourcesNotFound": "This Project need is no longer available.",
+  "projectResourcesFindMatchingResources": "Find matching resources",
+  "projectResourceMatchesTitle": "Matching resources",
+  "projectResourceMatchesLoading": "Loading matching resources…",
+  "projectResourceMatchesNeedLabel": "Need",
+  "projectResourceMatchesNeedUnavailable": "Project resource need",
+  "projectResourceMatchesLocationFilter": "Location",
+  "projectResourceMatchesModeFilter": "Mode",
+  "projectResourceMatchesWhy": "Why it matches",
+  "projectResourceMatchesAnywhere": "Anywhere",
+  "projectResourceMatchesSameCountry": "Same country",
+  "projectResourceMatchesSameArea": "Same area",
+  "projectResourceMatchesSameLocality": "Same locality",
+  "projectResourceMatchesOtherLocation": "Other / location not comparable",
+  "projectResourceMatchesTitlePhrase": "Need phrase appears in the listing title",
+  "projectResourceMatchesNeedTitleInListingTitle": "Need keywords match the listing title",
+  "projectResourceMatchesNeedTitleInListingDescription": "Need keywords match the listing description",
+  "projectResourceMatchesNeedDetailsInListingTitle": "Need details match the listing title",
+  "projectResourceMatchesNeedDetailsInListingDescription": "Need details match the listing description",
+  "projectResourceMatchesFilteredEmptyTitle": "No matching resources found.",
+  "projectResourceMatchesFilteredEmptyMessage": "Try a broader location or include both Dona and Scambia.",
+  "projectResourceMatchesBroadEmptyTitle": "No matching published resources found yet.",
+  "projectResourceMatchesBroadEmptyMessage": "Pull to refresh when new resources have been published.",
+  "projectResourceMatchesInvalidInput": "Review the matching filters and try again.",
+  "projectResourceMatchesForbidden": "Matching resources aren't available for the current account.",
+  "projectResourceMatchesProjectStateUnavailable": "Matching isn't available with the current Project state or location filter. Try a broader location filter or check the Project details.",
+  "projectResourceMatchesNotFound": "This Project resource need is no longer available.",
+  "projectResourceMatchesUnavailable": "Unable to load matching resources.",
+  "projectResourceMatchesLoadMore": "Load more",
+  "participationContributionTitle": "What can you contribute?",
+  "participationCompetencesGroup": "Competences / Knowledge",
+  "participationResourcesGroup": "Resources / Materials",
+  "participationContributionLoading": "Loading contribution options…",
+  "participationContributionLoadError": "We couldn't load the current contribution options.",
+  "participationNoContributionOptions": "No contribution options are currently listed. You can still send an optional message.",
+  "participationContributionSelectionLimit": "Maximum {max} selections.",
+  "@participationContributionSelectionLimit": {
+    "description": "Guidance shown when a contribution-option group reaches its canonical selection limit.",
+    "placeholders": { "max": { "type": "int" } }
+  },
+  "participationRequirementsChanged": "The Project requirements changed. Review your selections and try again.",
+  "messagesCanContribute": "Can contribute",
+  "messagesNoContributionsSelected": "No contributions selected",
+  "messagesContributionsLoading": "Loading contribution selections…",
+  "messagesContributionsLoadError": "We couldn't load the selected contributions. The request actions are still available.",
+  "participationMyCommitments": "My commitments",
+  "participationLastCommitments": "Last commitments",
+  "participationCommitments": "Commitments",
+  "participationViewCommitments": "View commitments",
+  "participationEditCommitments": "Edit",
+  "participationCommitmentsEditorTitle": "Manage commitments",
+  "participationCommitmentsReadOnly": "Read-only",
+  "participationNoCurrentCommitments": "No current commitments",
+  "participationNoCommitmentsRecorded": "No commitments recorded",
+  "participationCommitmentsLoading": "Loading commitments…",
+  "participationCommitmentsLoadError": "Unable to load commitments. Try again.",
+  "participationCommitmentOptionsLoading": "Checking what can be changed…",
+  "participationCommitmentOptionsLoadError": "We couldn't load the current commitment options.",
+  "participationCommitmentsNoLongerEditable": "These commitments can no longer be changed.",
+  "participationCommitmentRetainedLabel": "{label} · No longer requested",
+  "@participationCommitmentRetainedLabel": {
+    "placeholders": { "label": { "type": "String" } }
+  },
+  "participationClearCommitments": "Clear all",
+  "participationSaveCommitments": "Save commitments",
+  "participationCommitmentsChangedElsewhere": "These commitments were changed elsewhere. Latest commitments reloaded.",
+  "participationCommitmentOptionsChanged": "The available options changed. Latest commitments reloaded.",
+  "participationCommitmentsForbidden": "These commitments are not available for the current account.",
+  "participationCommitmentsNotFound": "These commitments are no longer available.",
+  "participationCommitmentsSaveError": "We couldn't save these commitments. Try again.",
+  "participationCommitmentSkillLimit": "You can select up to {max} competences or knowledge items.",
+  "@participationCommitmentSkillLimit": {
+    "placeholders": { "max": { "type": "int" } }
+  },
+  "participationCommitmentResourceLimit": "You can select up to {max} resources or materials.",
+  "@participationCommitmentResourceLimit": {
+    "placeholders": { "max": { "type": "int" } }
+  },
+  "actualContributionsTitle": "Actual contributions",
+  "actualContributionsAction": "Actual contributions",
+  "actualContributionsViewAction": "View actual contributions",
+  "actualContributionsViewTitle": "Actual contributions",
+  "actualContributionsEditTitle": "Edit actual contributions",
+  "actualContributionsOtherGroup": "Other contribution",
+  "actualContributionsSubstantialEffort": "Substantial Effort / Energy",
+  "actualContributionsEmpty": "No actual contributions recorded.",
+  "actualContributionSourceFinal": "From final commitment",
+  "actualContributionSourceCreator": "Added by organizer",
+  "actualContributionsLoading": "Loading actual contributions…",
+  "actualContributionsNotAvailable": "Actual contributions are available after an eligible one-time Project ends.",
+  "actualContributionsLoadError": "Unable to load actual contributions.",
+  "actualContributionOptionsLoading": "Loading contribution options…",
+  "actualContributionOptionsLoadError": "Unable to load contribution options.",
+  "actualContributionsSaveError": "Unable to update actual contributions.",
+  "actualContributionsChangedElsewhere": "These actual contributions changed elsewhere. We loaded the latest version. Review it before saving again.",
+  "actualContributionOptionsChanged": "The available contribution options changed. Review the latest version and try again.",
+  "actualContributionsForbidden": "Actual contributions are not available for the current account.",
+  "actualContributionsNotFound": "These actual contributions are no longer available.",
+  "actualContributionMaximumSelections": "Maximum {count} selections",
+  "@actualContributionMaximumSelections": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "actualContributionsSave": "Save contributions",
+  "actualContributionsClearAll": "Clear all",
+  "actualContributionParticipation": "Participation {number}",
+  "@actualContributionParticipation": {
+    "placeholders": { "number": { "type": "int" } }
+  },
+  "actualContributionJoinedDate": "Joined {date}",
+  "@actualContributionJoinedDate": {
+    "placeholders": { "date": { "type": "String" } }
+  },
+  "actualContributionLeftDate": "Left {date}",
+  "@actualContributionLeftDate": {
+    "placeholders": { "date": { "type": "String" } }
+  },
+  "actualContributionRemovedDate": "Removed {date}",
+  "@actualContributionRemovedDate": {
+    "placeholders": { "date": { "type": "String" } }
+  },
+  "joinAcceptanceTitle": "Review contribution offers",
+  "joinAcceptanceIntroduction": "Before accepting {name}, decide what each offer means.",
+  "@joinAcceptanceIntroduction": {
+    "placeholders": { "name": { "type": "String" } }
+  },
+  "joinAcceptanceLoading": "Loading contribution offers…",
+  "joinAcceptanceNeeded": "Needed",
+  "joinAcceptanceAlreadyFound": "Already found",
+  "joinAcceptanceExtra": "Extra is fine",
+  "joinAcceptanceNeededHelper": "This person is expected to help with or bring this.",
+  "joinAcceptanceAlreadyFoundHelper": "You do not need this from this person.",
+  "joinAcceptanceExtraHelper": "They may still help with or bring this, but it is not being used as the needed contribution.",
+  "joinAcceptanceAcceptPerson": "Accept person",
+  "joinAcceptanceDecideEveryContribution": "Decide what this person should bring or help with before accepting.",
+  "joinAcceptanceFirstGuidance": "Decide what this person should bring or help with before accepting. You can change this participant's current commitments later from Project management.",
+  "joinAcceptanceNoOffers": "No contribution offers to classify.",
+  "joinAcceptanceNoDecision": "No decision selected",
+  "joinAcceptanceItemDecisionRequired": "A decision is required before accepting.",
+  "joinAcceptanceProjectNeedsChanged": "The Project needs changed. Review the items marked Needed before accepting.",
+  "joinAcceptanceRequestUnavailable": "This request can no longer be accepted.",
+  "joinAcceptanceForbidden": "This request is not available for the current account.",
+  "joinAcceptanceLoadError": "Unable to load contribution offers. Try again.",
+  "projectNeedsTitle": "Needs",
+  "projectNeedsNeededNow": "Needed now",
+  "projectNeedsAllCovered": "Everything currently needed is covered.",
+  "projectNeedsCompetencesGroup": "Competences / Knowledge",
+  "projectNeedsResourcesGroup": "Resources / Materials",
+  "projectNeedsRequired": "Required",
+  "projectNeedsUseful": "Useful",
+  "projectNeedsCanHelp": "I can help",
+  "projectNeedsCanBring": "I can bring it",
+  "projectNeedsFoundOutsideAction": "Found outside app",
+  "projectNeedsFoundOutsideSection": "Found outside the app",
+  "projectNeedsNeededAgain": "Needed again",
+  "projectNeedsSystemEvent": "{name} is needed again.",
+  "@projectNeedsSystemEvent": {
+    "placeholders": { "name": { "type": "String" } }
+  },
+  "projectNeedsCoveredElsewhere": "Someone else just covered this need.",
+  "projectNeedsChanged": "This need changed. Review the latest list.",
+  "projectNeedsLoadError": "Unable to load current needs.",
+  "projectNeedsUpdateError": "Unable to update this need.",
+  "projectNeedsCoordinationEnded": "Live Project coordination is no longer available.",
+  "projectNeedsTryAgain": "Try again",
+  "projectNeedsNewAttention": "New Project need",
+  "projectNeedsCountSemantics": "{count, plural, =0{No current needs} =1{1 current need} other{{count} current needs}}",
+  "@projectNeedsCountSemantics": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "projectNeedsButtonSemantics": "{countLabel}. Open current Project needs.",
+  "@projectNeedsButtonSemantics": {
+    "placeholders": { "countLabel": { "type": "String" } }
+  },
+  "projectNeedsButtonAttentionSemantics": "{countLabel}. Needed again. Open current Project needs.",
+  "@projectNeedsButtonAttentionSemantics": {
+    "placeholders": { "countLabel": { "type": "String" } }
+  },
+  "projectNeedsLoading": "Loading current needs…",
+  "projectNeedsActionProgress": "Updating {name}…",
+  "@projectNeedsActionProgress": {
+    "placeholders": { "name": { "type": "String" } }
+  },
+  "projectNeedsSystemEventSemantics": "Project update: {name} is needed again at {time}.",
+  "@projectNeedsSystemEventSemantics": {
+    "placeholders": {
+      "name": { "type": "String" },
+      "time": { "type": "String" }
+    }
+  },
+  "resourceExchangeAgreementTitle": "Agreement",
+  "resourceExchangeLoading": "Loading agreement…",
+  "resourceExchangeNoTerms": "No terms agreed yet.",
+  "resourceExchangeYourProposalWaiting": "Your proposal is waiting for the other person.",
+  "resourceExchangeNewProposal": "New proposal to review.",
+  "resourceExchangeTermsAgreed": "Terms agreed.",
+  "resourceExchangeInProgress": "Exchange in progress",
+  "resourceExchangeTermsLocked": "The agreed terms are now locked.",
+  "resourceExchangeCompleted": "Exchange completed",
+  "resourceExchangeCancelled": "Coordination cancelled",
+  "resourceExchangeSetTerms": "Set terms",
+  "resourceExchangeReview": "Review",
+  "resourceExchangeReviewProposal": "Review proposal",
+  "resourceExchangeViewTerms": "View terms",
+  "resourceExchangeCurrentTerms": "Current terms",
+  "resourceExchangePendingTerms": "Pending proposal",
+  "resourceExchangeProposedByYou": "Proposed by You",
+  "resourceExchangeProposedBy": "Proposed by {name}",
+  "@resourceExchangeProposedBy": {
+    "placeholders": { "name": { "type": "String" } }
+  },
+  "resourceExchangeOwnerProvides": "Listing owner provides",
+  "resourceExchangeRequesterProvides": "Requester provides",
+  "resourceExchangeGivePermanently": "Give permanently",
+  "resourceExchangeLendTemporarily": "Lend temporarily",
+  "resourceExchangeNothingInReturn": "Nothing in return",
+  "resourceExchangeGiveSomething": "Give something",
+  "resourceExchangeLendSomething": "Lend something",
+  "resourceExchangeGiveShort": "Give",
+  "resourceExchangeLendShort": "Lend",
+  "resourceExchangeNothingShort": "Nothing",
+  "resourceExchangeLendWithRange": "Lend · {start} to {end}",
+  "@resourceExchangeLendWithRange": {
+    "placeholders": {
+      "start": { "type": "String" },
+      "end": { "type": "String" }
+    }
+  },
+  "resourceExchangeGiveDescription": "Give · {description}",
+  "@resourceExchangeGiveDescription": {
+    "placeholders": { "description": { "type": "String" } }
+  },
+  "resourceExchangeLendDescription": "Lend · {description} · {start} to {end}",
+  "@resourceExchangeLendDescription": {
+    "placeholders": {
+      "description": { "type": "String" },
+      "start": { "type": "String" },
+      "end": { "type": "String" }
+    }
+  },
+  "resourceExchangePrivateNote": "Private note",
+  "resourceExchangePrivateNoteHelp": "Visible only to the two people coordinating this exchange.",
+  "resourceExchangeEditCounterproposal": "Edit / Counter-propose",
+  "resourceExchangeWithdrawProposal": "Withdraw proposal",
+  "resourceExchangeAcceptProposal": "Accept",
+  "resourceExchangeRejectProposal": "Reject",
+  "resourceExchangeCounterproposal": "Counter-propose",
+  "resourceExchangeProposeChanges": "Propose changes",
+  "resourceExchangeCancelCoordination": "Cancel coordination",
+  "resourceExchangeCancelTitle": "Cancel coordination?",
+  "resourceExchangeCancelExplanation": "This ends the current coordination. The conversation and agreement history will remain visible.",
+  "resourceExchangeKeepCoordination": "Keep coordination",
+  "resourceExchangeCancelAction": "Cancel coordination",
+  "resourceExchangeEditorTitle": "Propose agreement terms",
+  "resourceExchangeChooseOwnerTransfer": "Choose whether the listing owner's resource is given or lent.",
+  "resourceExchangeChooseRequesterTransfer": "Choose what the requester provides.",
+  "resourceExchangeOwnerLendStart": "Listing owner's loan starts",
+  "resourceExchangeOwnerLendEnd": "Listing owner's loan ends",
+  "resourceExchangeRequesterLendStart": "Requester's loan starts",
+  "resourceExchangeRequesterLendEnd": "Requester's loan ends",
+  "resourceExchangeChooseDateTime": "Choose date and time",
+  "resourceExchangeLendPeriodError": "Choose a start and an end after it.",
+  "resourceExchangeOfferingLabel": "What are you offering?",
+  "resourceExchangeDescriptionError": "Enter 2 to 500 characters.",
+  "resourceExchangePrivateNoteError": "Use at most 1000 characters.",
+  "resourceExchangeSendProposal": "Send proposal",
+  "resourceExchangeDiscardDraft": "Discard draft",
+  "resourceExchangeInvalidInput": "Review the highlighted agreement fields.",
+  "resourceExchangeForbidden": "You can no longer change this agreement.",
+  "resourceExchangeNotFound": "This agreement is no longer available.",
+  "resourceExchangeConflict": "The agreement changed elsewhere. We loaded the latest terms. Review them before trying again.",
+  "resourceExchangeCancellationConflict": "This agreement changed and can no longer be cancelled here.",
+  "resourceExchangeUnavailable": "Agreement details are unavailable. The conversation still works.",
+  "resourceExchangeRefreshWarning": "We could not refresh the agreement. The last known terms remain visible.",
+  "resourceExchangeTimelineWarning": "Agreement history could not be refreshed. Terms remain visible, but handoff actions are paused.",
+  "resourceExchangeMilestoneConflict": "The agreement changed elsewhere. We loaded the latest handoff status.",
+  "resourceExchangeHistoryTitle": "Agreement history",
+  "resourceExchangeHistoryAction": "History",
+  "resourceExchangeHistoryTrust": "These entries record participant confirmations in PLANETS.",
+  "resourceExchangeProposalHistoryTitle": "Proposal history",
+  "resourceExchangeTermsVersion": "Version {number}",
+  "@resourceExchangeTermsVersion": {
+    "placeholders": { "number": { "type": "int" } }
+  },
+  "resourceExchangeViewHistoricalTerms": "View terms",
+  "resourceExchangeOutcomePending": "Pending",
+  "resourceExchangeOutcomeAccepted": "Accepted",
+  "resourceExchangeOutcomeRejected": "Rejected",
+  "resourceExchangeOutcomeWithdrawn": "Withdrawn",
+  "resourceExchangeOutcomeSuperseded": "Superseded",
+  "resourceExchangeOutcomeHistoricalAccepted": "Previously accepted",
+  "resourceExchangeProgressTitle": "Handoff progress",
+  "resourceExchangeHandedOver": "Handed over",
+  "resourceExchangeReceived": "Received",
+  "resourceExchangeReturned": "Returned",
+  "resourceExchangeReturnConfirmed": "Return confirmed",
+  "resourceExchangeMilestoneDone": "Recorded",
+  "resourceExchangeMilestoneNotDone": "Not yet recorded",
+  "resourceExchangeMarkHandedOver": "Mark as handed over",
+  "resourceExchangeConfirmReceived": "Confirm received",
+  "resourceExchangeMarkReturned": "Mark as returned",
+  "resourceExchangeConfirmReturn": "Confirm return",
+  "resourceExchangeWaitingFor": "Waiting for {name}",
+  "@resourceExchangeWaitingFor": {
+    "placeholders": { "name": { "type": "String" } }
+  },
+  "resourceExchangeYourNextStep": "Your next step: {action}",
+  "@resourceExchangeYourNextStep": {
+    "placeholders": { "action": { "type": "String" } }
+  },
+  "resourceExchangeOwnerResource": "{title} — {transfer}",
+  "@resourceExchangeOwnerResource": {
+    "placeholders": {
+      "title": { "type": "String" },
+      "transfer": { "type": "String" }
+    }
+  },
+  "resourceExchangeRequesterResource": "{description} — {transfer}",
+  "@resourceExchangeRequesterResource": {
+    "placeholders": {
+      "description": { "type": "String" },
+      "transfer": { "type": "String" }
+    }
+  },
+  "resourceExchangeReturnOverdue": "Return is overdue",
+  "resourceExchangeExpectedReturn": "Expected return: {date}",
+  "@resourceExchangeExpectedReturn": {
+    "placeholders": { "date": { "type": "String" } }
+  },
+  "resourceExchangeMilestoneConfirmTitle": "Record this handoff update?",
+  "resourceExchangeMilestoneConfirmHandedOver": "Confirm that you handed over this resource?",
+  "resourceExchangeMilestoneConfirmReceived": "Confirm that you received this resource?",
+  "resourceExchangeMilestoneConfirmReturned": "Confirm that you returned this resource?",
+  "resourceExchangeMilestoneConfirmReturn": "Confirm that the resource was returned to you?",
+  "resourceExchangeMilestoneConfirmExplanation": "PLANETS records this statement in the agreement history.",
+  "resourceExchangeMilestoneConfirmAction": "Record update",
+  "resourceExchangeMilestoneUpdating": "Recording handoff update…",
+  "resourceExchangeHandoffLocked": "Handoff has started. Agreed terms are locked.",
+  "resourceExchangeTimelineAgreementCreated": "Agreement created",
+  "resourceExchangeTimelineTermsProposed": "Terms proposed by {name}",
+  "@resourceExchangeTimelineTermsProposed": {
+    "placeholders": { "name": { "type": "String" } }
+  },
+  "resourceExchangeTimelineTermsSuperseded": "Previous proposal superseded by {name}",
+  "@resourceExchangeTimelineTermsSuperseded": {
+    "placeholders": { "name": { "type": "String" } }
+  },
+  "resourceExchangeTimelineTermsAccepted": "Terms accepted by {name}",
+  "@resourceExchangeTimelineTermsAccepted": {
+    "placeholders": { "name": { "type": "String" } }
+  },
+  "resourceExchangeTimelineTermsRejected": "Proposal rejected by {name}",
+  "@resourceExchangeTimelineTermsRejected": {
+    "placeholders": { "name": { "type": "String" } }
+  },
+  "resourceExchangeTimelineTermsWithdrawn": "Proposal withdrawn by {name}",
+  "@resourceExchangeTimelineTermsWithdrawn": {
+    "placeholders": { "name": { "type": "String" } }
+  },
+  "resourceExchangeTimelineCancelled": "Coordination cancelled by {name}",
+  "@resourceExchangeTimelineCancelled": {
+    "placeholders": { "name": { "type": "String" } }
+  },
+  "resourceExchangeTimelineCompleted": "Exchange completed",
+  "resourceExchangeTimelineHandedOver": "{name} marked “{resource}” as handed over.",
+  "@resourceExchangeTimelineHandedOver": {
+    "placeholders": {
+      "name": { "type": "String" },
+      "resource": { "type": "String" }
+    }
+  },
+  "resourceExchangeTimelineReceived": "{name} confirmed receiving “{resource}”.",
+  "@resourceExchangeTimelineReceived": {
+    "placeholders": {
+      "name": { "type": "String" },
+      "resource": { "type": "String" }
+    }
+  },
+  "resourceExchangeTimelineReturned": "{name} marked “{resource}” as returned.",
+  "@resourceExchangeTimelineReturned": {
+    "placeholders": {
+      "name": { "type": "String" },
+      "resource": { "type": "String" }
+    }
+  },
+  "resourceExchangeTimelineReturnReceived": "{name} confirmed “{resource}” was returned.",
+  "@resourceExchangeTimelineReturnReceived": {
+    "placeholders": {
+      "name": { "type": "String" },
+      "resource": { "type": "String" }
+    }
+  },
+  "resourceExchangeEventSemantics": "{description}, {date}",
+  "@resourceExchangeEventSemantics": {
+    "placeholders": {
+      "description": { "type": "String" },
+      "date": { "type": "String" }
+    }
+  },
+  "resourceLoanScheduleTitle": "Loan schedule",
+  "resourceLoanScheduleView": "View loan schedule",
+  "resourceLoanScheduleChronological": "Active loans in chronological order. This schedule does not set priority for future requests.",
+  "resourceLoanScheduleForbidden": "This loan schedule is only available to the listing owner.",
+  "resourceLoanScheduleUnavailable": "The loan schedule is unavailable. Try again.",
+  "resourceLoanScheduleRefreshFailed": "Couldn't refresh the schedule. Showing the previous result.",
+  "resourceLoanScheduleEmptyTitle": "No active loans",
+  "resourceLoanScheduleEmptyMessage": "Accepted loans for this listing will appear here.",
+  "resourceLoanSchedulePeriod": "{start} → {end}",
+  "@resourceLoanSchedulePeriod": {
+    "placeholders": {
+      "start": { "type": "String" },
+      "end": { "type": "String" }
+    }
+  },
+  "resourceLoanScheduleRowSemantics": "Loan to {requester}, {period}, {lifecycle}",
+  "@resourceLoanScheduleRowSemantics": {
+    "placeholders": {
+      "requester": { "type": "String" },
+      "period": { "type": "String" },
+      "lifecycle": { "type": "String" }
+    }
+  },
+  "resourceLoanTermsAgreed": "Terms agreed",
+  "resourceLoanExchangeInProgress": "Exchange in progress",
+  "resourceLoanReturnOverdue": "Return overdue",
+  "resourceLoanReturnOverdueExplanation": "The expected return time has passed.",
+  "resourceLoanAtRisk": "At risk",
+  "resourceLoanAtRiskExplanation": "An earlier loan has not yet been confirmed returned.",
+  "resourceLoanAtRiskStillValid": "This reservation is still valid.",
+  "resourceLoanOpenRequest": "Open request",
+  "resourceLoanStart": "Start: {date}",
+  "@resourceLoanStart": {
+    "placeholders": { "date": { "type": "String" } }
+  },
+  "resourceLoanExpectedReturn": "Expected return: {date}",
+  "@resourceLoanExpectedReturn": {
+    "placeholders": { "date": { "type": "String" } }
+  },
+  "resourceLoanCheckingDates": "Checking loan dates…",
+  "resourceLoanDatesAvailable": "Dates currently available",
+  "resourceLoanAvailableGuidance": "No accepted loan overlaps this period. Availability is checked again when you accept.",
+  "resourceLoanDatesConflict": "These dates conflict with another accepted loan.",
+  "resourceLoanDatesConflictGuidance": "Choose different dates before accepting.",
+  "resourceLoanAvailabilityUnavailable": "Couldn't verify availability right now.",
+  "resourceLoanAcceptanceChecksAgain": "Acceptance will check again.",
+  "resourceLoanDatesNoLongerAvailable": "These dates are no longer available. Review the proposal and choose another period.",
+  "profilePhotoPublishRequiredTitle": "A profile photo is required to publish a personal activity.",
+  "profilePhotoPublishRequiredDescription": "PLANETS is built on trust between people who may meet in person. Showing who is organizing helps protect both sides and makes the community more trustworthy. Your photo will be visible to people who can view this activity.",
+  "profilePhotoJoinRequiredTitle": "Add a profile photo before requesting to join.",
+  "profilePhotoJoinRequiredDescription": "PLANETS connects people who may meet in person. A recognizable photo helps the organizer know who is asking to participate and helps protect both sides.",
+  "profilePhotoScambioRequiredTitle": "Add a profile photo for Scambio-Dona.",
+  "profilePhotoScambioRequiredDescription": "Scambio-Dona connects people who may meet to give, exchange, lend, or return resources. A recognizable photo helps both sides know who they are coordinating with and supports trust in the community.",
+  "profilePhotoTrustAddAction": "Add profile photo",
+  "profilePhotoTrustGoBackAction": "Go back",
+  "profilePhotoApplicantAvatarLabel": "Applicant profile photo",
+  "profilePhotoOrganizerAvatarLabel": "Project organizer profile photo",
+  "profilePhotoOrganizerFallback": "Project organizer",
+  "coverImage": "Cover image",
+  "coverAddImage": "Add image",
+  "coverChangeImage": "Change image",
+  "coverRemoveImage": "Remove image",
+  "coverAdjust": "Adjust cover",
+  "coverUseImage": "Use image",
+  "coverCancel": "Cancel",
+  "coverPreparing": "Preparing image…",
+  "coverPrepareError": "Cover could not be prepared.",
+  "coverTooLargeError": "Cover is too large.",
+  "coverUploadError": "Cover could not be uploaded.",
+  "coverSaveError": "Cover could not be saved.",
+  "coverLoadError": "Cover could not be loaded.",
+  "coverDraftPartialError": "Draft saved, but the cover could not be saved.",
+  "coverChangesPartialError": "Changes saved, but the cover could not be updated.",
+  "coverRetry": "Retry",
+  "coverImageSemantics": "Cover image for {title}",
+  "@coverImageSemantics": {
+    "placeholders": { "title": { "type": "String" } }
+  }
 }

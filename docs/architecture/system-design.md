@@ -1,7 +1,7 @@
 # System Design and Responsibility Boundaries
 
 **Status:** Initial accepted design  
-**Implementation status:** Foundations, authentication, profiles, one-time proposals, Tavoli mobile/public-web discovery, shared project participation, in-app notification projection, structured participation-request Messages, Project group-chat lifecycle/durable message/mobile experience, Project-chat notification/push projection, the provider-independent push/job foundation, provider-neutral push delivery worker protocol, and the static-first informational site with its local/CI one-time waitlist boundary and native Workers runtime implemented or in focused review
+**Implementation status:** Foundations, authentication, profiles, one-time proposals, Tavoli mobile/public-web discovery, shared project participation, request contribution selections, membership commitments, join-acceptance contribution triage, in-app notification projection, unified structured Project/Resource Requests in mobile Messages, mobile Resource request actions, Project group-chat lifecycle/durable message/mobile experience, Project-chat notification/push projection, the provider-independent push/job foundation, provider-neutral push delivery worker protocol, the one-cover Project/Resource media foundation, and the static-first informational site with its local/CI one-time waitlist boundary and native Workers runtime implemented or in focused review
 
 This document describes how the major parts of PLANETS should interact. Technology choices are recorded separately in [`core-stack.md`](core-stack.md).
 
@@ -147,44 +147,77 @@ Complete-profile creators use expected-identity-bound create/publish/resume oper
 
 `resource_listings` stores standalone owner-managed Scambio-Dona availability separately from Projects and participation. `donate` and `exchange` are discovery intents only: `exchange` does not define lending, barter, transfer, return, payment, reservation, contact, or handoff behavior. The stored lifecycle is `draft`, `published`, or terminal `closed`; closure means only that the listing is no longer publicly available.
 
-Drafts may be incomplete and remain private. Publication requires a bounded plain-text title and description plus country, locality, and a public rough-location label. There is no exact address, point, contact field, media reference, resource taxonomy, quantity, price, Project foreign key, requester, or transaction state. An editable published listing must remain publishable atomically, and changing its mode changes only its discovery bucket.
+Drafts may be incomplete and remain private. Publication requires a bounded plain-text title and description plus country, locality, and a public rough-location label. There is no exact address, point, contact field, inline media field, resource taxonomy, quantity, price, Project foreign key, requester, or transaction state; the one optional cover is separate canonical metadata. An editable published listing must remain publishable atomically, and changing its mode changes only its discovery bucket.
 
 Complete-profile owners use expected-identity-bound create and publish operations, while authenticated owners use the same identity boundary for update, close, and owner history. The table has RLS but no client policies or direct grants. Anonymous and authenticated clients use narrow list/detail functions; list discovery is newest-first paired keyset pagination with optional mode, case-insensitive locality equality, and literal case-insensitive title/description substring filters. Detail returns an owner display name only when the existing profile visibility row is public. Publish and close write identifier-only audit/outbox state for later consumers without projecting notifications.
+
+`resource_listing_requests` adds a separate private expression-of-interest lifecycle with `pending`, `accepted`, `rejected`, `withdrawn`, and `listing_closed` states. A requester/listing pair has at most one active pending request or accepted request whose later coordination remains open, while closed coordination and other terminal attempts remain independent history. Multiple accepted requesters are valid because request acceptance means willingness to coordinate, not reservation, agreement completion, handoff, or transfer. All mutations and private reads cross expected-identity RPC boundaries; the table has RLS without direct client policies or grants. Listing-first locks serialize creation and close, and listing-then-request locks serialize owner decisions with requester withdrawal. Public listing reads expose only the derived pending-plus-coordination-open-accepted count. Identifier-only request events deliberately precede any later Messages, conversation, or notification projection.
+
+Every accepted request atomically owns one private `resource_exchange_agreements` anchor. Its separate `negotiating`/`agreed`/`in_progress`/`completed`/`cancelled` lifecycle preserves the accepted request decision while completion or cancellation closes that request's active coordination episode. Immutable terms versions model a required owner `give`/`lend` leg plus an optional requester `none`/`give`/`lend` leg, with bounded loan periods, server-snapshotted listing title/description, and CAS-controlled current/pending pointers. Either counterparty may propose; only the other may accept or reject, while the proposer may withdraw. The first actor-authorized structured resource milestone freezes terms. Give legs require provider and recipient statements; lend legs additionally require returned and return-received statements. The final required statement completes atomically. Cancellation is available only before the first milestone. Listing closure still affects pending requests only and does not destroy accepted private coordination.
+
+Agreement anchors, terms, and timelines use RLS with no direct client policies or grants; hardened counterparty RPCs are the only boundary. Timeline and outbox/audit records are structured and identifier-only, while terms text, notes, loan dates, contact data, and exact locations remain private or absent. Authorized reads derive overdue return indicators from current lend terms without timers or events. One listing is one reservable lending unit: its owner-side current accepted LEND period in an agreed/in-progress agreement is the canonical half-open reservation. Listing-row serialization rejects overlapping acceptance with PT409; cancellation/completion release automatically, while listing closure does not. The owner-only chronological schedule derives overdue and later-reservation at-risk flags at read time, and counterparties can check only an exact pending version's availability. This is not FIFO, a public calendar, or a reservation ledger; requester-side free-text items are not globally reserved. Recurring availability, multi-unit capacity, automatic promotion, and post-handoff amendments remain deferred. Milestone statements record who asserted what and when; they are not independent PLANETS verification, legal judgment, liability, insurance, or reputation evidence. Disputes, matching, and further notifications remain separate future domains.
+
+Every accepted request also atomically owns one `resource_request_chats` anchor and one immutable, human-only `resource_request_chat_messages` history. Listing owner and requester keep permanent read entitlement; both may send only while the accepted agreement coordination episode remains open. Completion or cancellation makes the chat read-only without deleting it, and listing closure does not affect an already accepted open chat. A later request episode receives a distinct chat. RPC-only exact/history/list/send boundaries provide honest human previews and activity ordered by activation, latest human message, or latest structured agreement event. Sends lock the same agreement row as completion/cancellation. Private per-profile `resource-chat:<chatId>:profile:<profileId>` Broadcast topics remain readable to the two historical counterparties so the final close refresh arrives, while send authorization remains separate. Human-message and agreement-change hints plus message audit/outbox events contain identifiers only; durable PostgreSQL state is authoritative and structured agreement events never become fake chat messages.
 
 The 04C2 Flutter client keeps Scambio-Dona in the Home pillar beside Progetti,
 without changing the persistent Profile / Browse / Home navigation. Its public
 list and detail are signed-out, while My Listings and create/edit routes require
 a complete profile and preserve their Auth/setup return destination. The client
-uses only the canonical listing RPCs; closing remains availability-only, and
-post-listing request/contact/handoff behavior remains deferred to 04C4.
+uses only the canonical listing RPCs; closing remains availability-only. The
+04C4C3A Flutter slice renders the public derived active-interest count, keeps
+requester history in identity-bound memory, and exposes canonical
+Request/Withdraw and owner Accept/Reject actions through only the 04C4A RPCs.
+It also consumes the 04C4C2 unified structured Requests projection. Agreement
+negotiation/milestones, Resource conversation/Realtime, and Resource-specific
+notification UX remain in 04C4C3C, 04C4C3B, and 04C4C3D respectively.
+
+### Project resource-need domain
+
+`project_resource_needs` attaches stable plain-text needs to the shared `projects` identity for both Proposals and Tavoli. A need is separate from participation, a join request, a contribution offer, and a standalone Scambio-Dona listing. It stores only a UUID, Project UUID, trimmed title, optional trimmed details, `open`/terminal `closed` state, and server-owned timestamps. Closure means the Project is no longer asking; it does not assert fulfillment, supply, delivery, verification, or credit.
+
+Expected-identity-bound creator RPCs create, update, and close needs only while the concrete Project remains owner-manageable. They lock the concrete Proposal/Tavolo row before the shared Project and need rows, so lifecycle transitions serialize deterministically. Proposal management follows its existing draft/pre-start edit boundary; Tavolo management permits draft, published, and paused states but not ended state. Creators retain ordered open/closed history after mutation closes.
+
+Anonymous and authenticated public reads expose only open needs while the concrete Project is currently joinable: published before `ends_at` for a Proposal and currently published for a Tavolo. Draft, cancelled, expired, paused, ended, and missing Projects return the same empty shape. The table has RLS with no client policies or direct grants; hardened RPCs are the only client boundary. Events contain only Project kind/ID, need ID, and creator ID. Taxonomy, quantities, prices, priorities, Scambio-Dona matching, accepted commitments, and notifications remain absent until focused later slices.
 
 ### Shared project participation domain
 
 `projects` is a private, narrow identity registry across `proposals` and `recurring_activities`. Its UUID equals the concrete activity UUID and it stores only kind, synchronized creator, and creation time. Source insert/delete triggers preserve the one-to-one invariant for migration replay and trusted fixtures; content, lifecycle, schedules, skills, and location remain solely in the concrete tables. A source with request or membership history cannot be deleted.
 
-`project_join_requests` preserves each private `pending`, `accepted`, `rejected`, or `withdrawn` attempt and an optional trimmed 500-character requester message. A complete non-creator may request a published one-time project strictly before its end or a currently published Tavolo. There may be at most one pending attempt and no request while the person is a current member. Terminal attempts remain history, so withdrawal, rejection, voluntary leave, or creator removal permits a fresh request whenever eligibility returns.
+`project_join_requests` preserves each private `pending`, `accepted`, `rejected`, or `withdrawn` attempt and an optional trimmed 500-character requester message. Optional child rows retain canonical skill and resource-need IDs selected for that exact attempt. Proposal selections must be current `required` or `useful` skills; Tavolo skill arrays are empty-only because no canonical recurring skill-requirement relation exists. Resource selections must be open and belong to the same Project. Request, child rows, and the unchanged identifier-only event commit atomically under concrete Project → shared Project → ordered resource-need locks.
 
-`project_memberships` is acceptance history, not contribution proof. Acceptance atomically closes the request and creates one current membership; creator ownership is separate. Leave/removal ends a membership without deleting it, and pause/end/completion does not rewrite history. One current membership per project/profile is enforced centrally. Capacity, waitlists, participation roles, resources, badges, and creator-verified contribution remain deferred.
+A requester or Project creator can resolve the historical IDs to current canonical skill labels and need titles through one narrow expected-identity RPC; no selection table is client-readable. Withdrawal, rejection, acceptance, later requirement removal, need renaming, and need closure preserve the rows. A complete non-creator may request a published one-time project strictly before its end or a currently published Tavolo. There may be at most one pending attempt and no request while the person is a current member. Terminal attempts remain history, so withdrawal, rejection, voluntary leave, or creator removal permits a fresh request with an independent selection set whenever eligibility returns.
 
-All mutations and private reads use expected-identity-bound project RPCs. Tables have RLS but no client grants/policies. Request messages are visible only to the requester and project creator; creator review exposes a narrow authenticated display identity but never Auth email. Protected meeting details are available only to the creator or a current accepted member. Each successful transition writes identifier-only audit/outbox events. In 07B1, insertion of the canonical accepted membership also ensures the one Project group-chat anchor transactionally; it does not consume or repurpose the accepted outbox event.
+`project_join_request_skill_acceptance_decisions` and `project_join_request_resource_acceptance_decisions` preserve the creator's immutable classification of every selected offer as `needed`, `already_found`, or `extra`. Triaged acceptance requires an exact partition. `needed` must still be a current Proposal requirement or open same-Project resource at the serialized boundary; historical removed/closed selections may remain `extra` or `already_found`. A two-argument compatibility call accepts only requests with zero selections. Decisions, request resolution, membership insertion, chat activation, and the existing identifier-only event commit atomically.
 
-### Structured participation-request Messages
+`project_memberships` is acceptance history, not contribution proof or mutable availability. Acceptance atomically closes the request and creates one current membership; its trigger fails closed on incomplete selected-request decisions and seeds the membership's mutable current commitments only from `needed` and `extra`. `already_found` remains historical without seeding a commitment. Leave/removal ends a membership without deleting it, and pause/end/completion does not rewrite selection, decision, or commitment history. One current membership per project/profile is enforced centrally. A rejoin owns independent decisions and commitments.
 
-The authenticated mobile Messages surface is a projection of canonical
-`project_join_requests`, not a second message or request-copy store. Narrow
-expected-identity-bound list and exact RPCs return a request only to its
-requester or the concrete Project creator, including the authorized private
-request message, current Proposal/Tavolo title, both display identities, state,
-and activity chronology. Missing and unauthorized exact IDs fail identically.
+Request selection (what was offered), acceptance decision (what the creator decided at that acceptance), current commitment (the mutable membership expectation), live Project requirement coverage (current participant/manual sources), and future final actual contribution are five separate concepts. None alone proves delivery or rates the person. D3A keeps coverage separate from the requirement `open`/`closed` lifecycle and exposes it only through expected-identity-bound claim, creator-manual, and current creator/member read RPCs; D3B owns chat coordination and resurfacing, while one-time final attribution remains 05C.
 
-The inbox uses bounded `(activity_at, request_id)` keyset pagination where
-`activity_at` is resolution time or creation time for a pending request.
-Creators may Accept/Reject and requesters may Withdraw through the existing 05A
-transitions; the client reloads canonical state and synchronizes its existing
-05B participation view. Resolved items remain read-only history. The routes
-`/messages` and `/messages/requests/:requestId` belong to Home and require a
-complete authenticated profile. No unread badge, generic chat message, thread,
-or group-chat authorization is introduced by 07A.
+All mutations and private reads use expected-identity-bound project RPCs. Tables have RLS but no client grants/policies. Request messages are visible only to the requester and project creator; creator review exposes a narrow authenticated display identity but never Auth email. Protected meeting details are available only to the creator or a current accepted member. Each successful transition writes identifier-only audit/outbox events; acceptance adds no disposition arrays, labels, or message text, while exact live-source transitions add only Project/requirement/actor and optional membership identifiers. In 07B1, insertion of the canonical accepted membership also ensures the one Project group-chat anchor transactionally; it does not consume or repurpose the accepted outbox event.
+
+### Unified structured-request Messages
+
+The authenticated mobile Requests tab is a discriminated projection of
+canonical `project_join_requests` and `resource_listing_requests`, not a second
+message or request-copy store. Narrow expected-identity-bound unified list and
+exact RPCs return an item only to its requester or concrete Project
+creator/Resource owner, including the authorized private message, display
+identities, state, domain context, and activity chronology. Missing and
+unauthorized exact IDs fail identically.
+
+The inbox uses bounded `(activity_at, item_kind, request_id)` keyset pagination
+and the same composite identity for client deduplication. The centralized sealed
+model/parser rejects unknown discriminators, invalid viewer roles, and mixed
+Project/Resource payload shapes. This boundary may later gain explicit Group or
+invitation variants without spreading kind checks through unrelated routes; no
+Group or invitation feature is implemented.
+
+Project creators retain the existing 05A/04C3D2 actions. Resource owners may
+Accept/Reject and Resource requesters may Withdraw through the 04C4A boundary;
+each mutation reloads canonical detail and affected projections. Resolved items
+remain read-only history. `/messages`, `/messages/requests/:requestId`, and
+`/messages/requests/resource/:requestId` belong to Home and require a complete
+authenticated profile. The Chats tab remains Project-only until 04C4C3B.
 
 ### Project group-chat lifecycle and authorization foundation
 
@@ -243,6 +276,24 @@ history after a signal or reconnect. Message bodies are absent from Realtime,
 outbox payloads, and audit records. The message outbox event is reserved for a
 future projector and existing notification/push consumers ignore it.
 
+Coverage resurfacing extends that same private channel without weakening the
+human message model. D3A's canonical transition transaction creates one
+identifier-only immutable `project_chat_system_events` row only for
+`project.requirement_needed_again` when the Project chat already exists, and
+broadcasts both needed-again and covered refresh signals only to profiles with
+current entitlement at the serialized transition. Covered transitions have no
+durable system item. The mixed chat feed owns cross-kind keyset ordering and
+applies the established creator/current/former history frontier while resolving
+current requirement labels at read time.
+
+Current creator/member attention is a separate durable cursor, not chat unread
+or notification read state. The attention read combines system events after the
+profile's explicit event-time/UUID frontier with current canonical truth: the
+requirement must still exist, remain uncovered, and belong to an operational
+Project. A monotonic acknowledgement through one loaded event cannot consume a
+later transition serialized behind it. Former members retain authorized system
+history but cannot read or mutate current coordination attention.
+
 ### Clients use shared operations rather than duplicate workflows
 
 Safe simple reads may query authorized views/tables directly. Multi-step or security-sensitive changes should use named backend operations, for example:
@@ -282,22 +333,23 @@ Edge Functions and background workers remain valid implementation choices when t
 
 ## Main data domains
 
-| Domain                  | Responsibility                                                                                              | Important relationships                                                                   |
-| ----------------------- | ----------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
-| Authentication identity | Login identity, verified contact method, session                                                            | Linked one-to-one with an application profile                                             |
-| Profiles                | Display identity, competences, interests, preferences, visibility settings                                  | User, skills, participation history, media                                                |
-| Skills/competences      | Controlled taxonomy used by users and proposals                                                             | Many-to-many with profiles and proposal requirements                                      |
-| One-time proposals      | Creator-owned content, schedule, rough/exact location separation, stored lifecycle, derived temporal status | Creator, controlled skill requirements, future participation, future template source      |
-| Recurring activities    | Persistent Tavoli, versioned weekly/monthly schedules, bounded occurrences, rough/exact privacy, lifecycle  | Separate from one-time proposals; Flutter experience and public web discovery implemented |
-| Resource listings       | Standalone Scambio-Dona owner lifecycle, rough-location discovery, and sanitized public detail             | Profile owner only; no Project, transaction, taxonomy, media, request, or handoff linkage  |
-| Participation           | Shared project identity, private requests/decisions, current membership and retained history                | Profile and concrete one-time/recurring project; source for authorization and later stats |
-| Messages                | Authenticated structured participation-request inbox/detail; future mobile Project-chat entry points        | Canonical join requests in 07A; separate Project-chat domain                              |
-| Project chat            | Structural anchor, immutable message history, authorized list/send APIs, and private Realtime hints         | Creator plus current/former participants under canonical membership-time rules            |
-| Notifications           | Controlled categories/preferences, recipient in-app records, private installations, and recipient push jobs | Recipient, per-consumer source event receipt, optional project/request/membership         |
-| Templates               | Reusable proposal structure derived from approved past/community content                                    | Source proposal, attribution, moderation/publication state                                |
-| Community statistics    | Aggregated views over canonical activity and participation                                                  | Proposal type, location, participation, time                                              |
-| Moderation              | Reports, blocks, content status, actions, internal notes, appeals if introduced                             | Users, proposals, messages, media, administrators                                         |
-| Audit/operations        | Security-relevant and administrative action history                                                         | Actor, target, action, timestamps, metadata                                               |
+| Domain                  | Responsibility                                                                                                   | Important relationships                                                                                        |
+| ----------------------- | ---------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| Authentication identity | Login identity, verified contact method, session                                                                 | Linked one-to-one with an application profile                                                                  |
+| Profiles                | Display identity, competences, interests, preferences, visibility settings                                       | User, skills, participation history, media                                                                     |
+| Skills/competences      | Controlled taxonomy used by users and proposals                                                                  | Many-to-many with profiles and proposal requirements                                                           |
+| One-time proposals      | Creator-owned content, schedule, rough/exact location separation, stored lifecycle, derived temporal status      | Creator, controlled skill requirements, future participation, future template source                           |
+| Recurring activities    | Persistent Tavoli, versioned weekly/monthly schedules, bounded occurrences, rough/exact privacy, lifecycle       | Separate from one-time proposals; Flutter experience and public web discovery implemented                      |
+| Resource listings       | Standalone Scambio-Dona lifecycle, rough-location discovery, sanitized detail, and derived active-interest count | Profile owner plus separate private Resource request episodes; no Project, taxonomy, media, or handoff linkage |
+| Resource request chat   | Accepted-request human history, authorized summaries/send, and private Realtime refresh hints                    | One request/agreement episode; permanent owner/requester read and open-coordination send                       |
+| Participation           | Shared project identity, private requests/decisions, current membership and retained history                     | Profile and concrete one-time/recurring project; source for authorization and later stats                      |
+| Messages                | Authenticated discriminated Project/Resource Requests plus the existing Project-only Chats tab                   | Canonical request domains; complete three-part cursor; Resource chats remain 04C4C3B                           |
+| Project chat            | Structural anchor, immutable message history, authorized list/send APIs, and private Realtime hints              | Creator plus current/former participants under canonical membership-time rules                                 |
+| Notifications           | Controlled categories/preferences, recipient in-app records, private installations, and recipient push jobs      | Recipient, per-consumer source event receipt, optional project/request/membership                              |
+| Templates               | Reusable proposal structure derived from approved past/community content                                         | Source proposal, attribution, moderation/publication state                                                     |
+| Community statistics    | Aggregated views over canonical activity and participation                                                       | Proposal type, location, participation, time                                                                   |
+| Moderation              | Reports, blocks, content status, actions, internal notes, appeals if introduced                                  | Users, proposals, messages, media, administrators                                                              |
+| Audit/operations        | Security-relevant and administrative action history                                                              | Actor, target, action, timestamps, metadata                                                                    |
 
 Later schema plans must extend this model deliberately and record unresolved product choices instead of guessing them.
 
@@ -521,7 +573,17 @@ must not invent those rules.
 
 Media should be divided by purpose and access policy rather than stored in one unrestricted bucket.
 
-The production object store is intentionally unresolved. Plan 08 must evaluate at least self-hosted Supabase Storage and an external object store such as Cloudflare R2, including bandwidth and storage cost, privacy/access control, backup coverage, migration complexity, and operating burden. Until that decision is accepted, clients and domain rules must not treat a Supabase Cloud Storage URL or dashboard-configured bucket as the permanent authorization boundary.
+08A1 and 08B1 select the portable Supabase Storage boundary for profile photos and single activity/listing covers respectively, while the production object store for other media categories remains unresolved. Plan 08 must still evaluate at least self-hosted Supabase Storage and an external object store such as Cloudflare R2 for those later categories, including bandwidth and storage cost, privacy/access control, backup coverage, migration complexity, and operating burden. Clients and domain rules must not treat a Supabase Cloud Storage URL or dashboard-configured bucket as the permanent authorization boundary.
+
+Profile photos use a repository-defined private `profile-photos` bucket and immutable `<profile-id>/<photo-version>.webp` paths. PostgreSQL stores the path, audience, and timestamps only—never the project hostname, full URL, signed URL, provider ID, bytes, or original image. The client production contract is 512×512 WebP targeting roughly 100 KB, and Storage enforces `image/webp` plus a 250 KiB hard maximum. The audience is `public` or `interactions` (“Only people I interact with”), defaulting to `interactions`. Public canonical photos are exact-object readable by anonymous and authenticated viewers. The Project interaction set is deliberately directional and grants only a Project/Tavolo organizer whose Project has a pending request or current membership for the photo subject; rejected/withdrawn requests, left/removed memberships, co-participation, and the reverse applicant-to-organizer direction do not qualify. Scambio-Dona composes a separate set: a listing owner may view a pending requester, and an accepted request grants owner/requester symmetry while agreement coordination remains open, even if the listing later closes. Rejection, withdrawal, a pending `listing_closed` transition, agreement completion, and agreement cancellation end that Resource relationship unless another relationship independently qualifies. Viewer delivery uses non-enumerating exact/bounded-batch metadata RPCs followed by private Storage downloads, and old noncanonical object versions remain cross-user unreadable.
+
+Person-created Proposal/Tavolo publication, new join-request creation, Scambio-Dona draft-to-published transitions, and new Resource requests require the actor to have a current canonical photo; photo presence is the gate and both audiences qualify. Draft create/edit and historical state remain valid, already-published idempotent calls do not become retention checks, and later photo removal is not blocked. Separate Project- and Resource-listing-context metadata RPCs resolve the organizer/owner server-side and follow each canonical public-detail lifecycle boundary, allowing a public detail viewer to render an `interactions` owner photo without broadening the generic exact-profile RPC. Each returns only `profile_id`, `object_path`, and `updated_at`; Storage remains non-listable and canonical-object-only, and replaced paths are denied.
+
+Proposal and Tavolo covers share a separate private `cover-images` bucket and `project_covers` row keyed by the shared Project identity; Scambio-Dona uses `resource_listing_covers` keyed by its listing. Each parent has zero or one current cover. Immutable paths bind owner, parent kind, exact parent ID, and version UUID: `<owner-id>/projects/<project-id>/<version>.webp` or `<owner-id>/resources/<listing-id>/<version>.webp`. Storage accepts only WebP up to 512 KiB. The shared Flutter cover processor creates a 16:9 image no larger than 1280×720, targets 280 KiB through a deterministic quality sequence, never upscales, strips inherited metadata, and retains no original. PostgreSQL and canonical reads expose only a nullable object path, never a public/signed URL or bytes.
+
+Owners upload first and then atomically commit the canonical path while the parent remains editable. Replacement returns the old path and clear returns the current path so the client can delete objects separately through Storage; failed cleanup can therefore leave an unreferenced object for later operational cleanup. Anonymous and authenticated public viewers can download only the current canonical object when the parent passes its existing exact-detail visibility: published Proposal; published, paused, or ended Tavolo; or published Resource listing. Storage reads remain exact and non-listable, so drafts, cancelled/closed parents, replaced versions, and cleared paths do not become public. Covers are optional and independent from profile-photo trust gates.
+
+08B2A adds the Flutter Proposal/Tavolo picker, fixed 16:9 crop, reusable processing and immutable-path byte loader, editor-local desired state, and public/owner card and detail rendering. 08B2B reuses that same media boundary for Scambio-Dona Resources, adds typed `resources/<listing-id>` reconciliation, and renders canonical paths on public discovery/detail, owner cards, and Project-resource match cards through the shared Resource card. A new Project or Resource listing is created as a draft before its pending cover can be uploaded; the cover is reconciled while the parent remains editable and only then may publication run. Cover failure retains that same draft and reports partial success, while successful replacement/clear treats old-object deletion as best effort. Public bytes are cached by immutable path, and owner draft loads are bound to the current identity. Covers stay optional and do not satisfy the independent profile-photo trust gate. Multi-image galleries, chat attachments, Google Drive/external hosting, moderation workflow, scheduled orphan collection, and account-deletion object cleanup remain out of scope.
 
 Expected categories include:
 

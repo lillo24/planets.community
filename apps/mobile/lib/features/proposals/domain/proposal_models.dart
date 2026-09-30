@@ -1,3 +1,5 @@
+import '../../cover_media/domain/cover_media_models.dart';
+
 enum ProposalLifecycle {
   draft('draft'),
   published('published'),
@@ -137,6 +139,7 @@ class ProposalSummary {
     required this.publicLocationLabel,
     required this.status,
     required this.skills,
+    this.coverObjectPath,
   });
 
   final String id;
@@ -151,6 +154,7 @@ class ProposalSummary {
   final String publicLocationLabel;
   final ProposalStatus status;
   final List<ProposalSkill> skills;
+  final String? coverObjectPath;
 
   ProposalCursor get cursor => ProposalCursor(startsAt: startsAt, id: id);
 }
@@ -207,6 +211,7 @@ class OwnProposal {
     required this.updatedAt,
     required this.publishedAt,
     required this.cancelledAt,
+    this.coverObjectPath,
   });
 
   final String id;
@@ -229,6 +234,7 @@ class OwnProposal {
   final DateTime updatedAt;
   final DateTime? publishedAt;
   final DateTime? cancelledAt;
+  final String? coverObjectPath;
 
   bool isEditableAt(DateTime now) =>
       lifecycle == ProposalLifecycle.draft ||
@@ -312,7 +318,13 @@ bool isPublishableProposalInput(ProposalInput input) =>
     input.publicLocationLabel.trim().isNotEmpty &&
     input.exactMeetingText.trim().isNotEmpty;
 
-enum ProposalFailureKind { invalidInput, unavailable, forbidden, invalidState }
+enum ProposalFailureKind {
+  invalidInput,
+  unavailable,
+  forbidden,
+  invalidState,
+  profilePhotoRequired,
+}
 
 enum ProposalLoadPhase { idle, loading, ready, loadingMore, failure }
 
@@ -397,6 +409,8 @@ class ProposalEditorState {
     this.proposal,
     this.categories = const [],
     this.failure,
+    this.coverFailure,
+    this.coverPartialSave,
   });
 
   final ProposalEditorPhase phase;
@@ -404,6 +418,8 @@ class ProposalEditorState {
   final OwnProposal? proposal;
   final List<ProposalSkillCategory> categories;
   final ProposalFailureKind? failure;
+  final CoverPersistenceFailureKind? coverFailure;
+  final CoverPartialSaveKind? coverPartialSave;
 
   bool get isBusy => switch (phase) {
     ProposalEditorPhase.loading ||

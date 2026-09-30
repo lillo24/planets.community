@@ -7,6 +7,7 @@ String authFailureMessage(AppLocalizations l10n, AuthFailureKind failure) {
     AuthFailureKind.invalidCode => l10n.authInvalidCode,
     AuthFailureKind.expiredCode => l10n.authExpiredCode,
     AuthFailureKind.rateLimited => l10n.authRateLimited,
+    AuthFailureKind.requestTimedOut => l10n.authRequestTimedOut,
     AuthFailureKind.networkUnavailable => l10n.authNetworkUnavailable,
     AuthFailureKind.serviceUnavailable => l10n.authServiceUnavailable,
     AuthFailureKind.profileSetup => l10n.authProfileSetupFailure,

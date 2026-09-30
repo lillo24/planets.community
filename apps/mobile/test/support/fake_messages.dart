@@ -3,12 +3,17 @@ import 'dart:async';
 import 'package:planets_mobile/features/messages/data/messages_gateway.dart';
 import 'package:planets_mobile/features/messages/domain/message_models.dart';
 import 'package:planets_mobile/features/participation/domain/participation_models.dart';
+import 'package:planets_mobile/features/resource_listings/domain/resource_listing_models.dart';
+import 'package:planets_mobile/features/resource_requests/domain/resource_request_models.dart';
 
 class FakeMessagesGateway implements MessagesGateway {
-  List<ParticipationRequestMessageItem> items = [];
+  List<StructuredRequestMessageItem> items = [];
+  List<RequestContributionSelection> selections = [];
   Object? error;
+  Object? selectionError;
   Future<void>? listDelay;
   Future<void>? detailDelay;
+  Future<void>? selectionDelay;
   Future<void>? mutationDelay;
   Object? mutationError;
   final List<String> calls = [];
@@ -16,7 +21,7 @@ class FakeMessagesGateway implements MessagesGateway {
   String? lastExpectedProfileId;
 
   @override
-  Future<ParticipationRequestMessagePage> listItems({
+  Future<StructuredRequestMessagePage> listItems({
     required String expectedProfileId,
     required int limit,
     MessageCursor? cursor,
@@ -28,37 +33,46 @@ class FakeMessagesGateway implements MessagesGateway {
     _throwIfNeeded();
     final start = cursor == null
         ? 0
-        : items.indexWhere((item) => item.requestId == cursor.requestId) + 1;
+        : items.indexWhere(
+                (item) =>
+                    item.kind == cursor.itemKind &&
+                    item.requestId == cursor.requestId,
+              ) +
+              1;
     final safeStart = start < 0 ? 0 : start;
     final page = items.skip(safeStart).take(limit).toList(growable: false);
-    return ParticipationRequestMessagePage(
+    return StructuredRequestMessagePage(
       items: page,
       hasMore: safeStart + page.length < items.length,
     );
   }
 
   @override
-  Future<ParticipationRequestMessageItem> getItem({
+  Future<StructuredRequestMessageItem> getItem({
     required String expectedProfileId,
+    required StructuredRequestItemKind itemKind,
     required String requestId,
   }) async {
-    calls.add('get:$requestId');
+    calls.add('get:${itemKind.wireValue}:$requestId');
     lastExpectedProfileId = expectedProfileId;
     if (detailDelay case final delay?) await delay;
     _throwIfNeeded();
-    return items.singleWhere((item) => item.requestId == requestId);
+    return items.singleWhere(
+      (item) => item.kind == itemKind && item.requestId == requestId,
+    );
   }
 
   @override
-  Future<void> accept({
-    required String expectedCreatorProfileId,
+  Future<List<RequestContributionSelection>> listContributionSelections({
+    required String expectedProfileId,
     required String requestId,
-  }) => _resolve(
-    call: 'accept:$requestId',
-    expectedProfileId: expectedCreatorProfileId,
-    requestId: requestId,
-    status: JoinRequestStatus.accepted,
-  );
+  }) async {
+    calls.add('selections:$requestId');
+    lastExpectedProfileId = expectedProfileId;
+    if (selectionDelay case final delay?) await delay;
+    if (selectionError case final failure?) throw failure;
+    return List.unmodifiable(selections);
+  }
 
   @override
   Future<void> reject({
@@ -98,20 +112,21 @@ class FakeMessagesGateway implements MessagesGateway {
     _throwIfNeeded();
     items = [
       for (final item in items)
-        if (item.requestId == requestId)
+        if (item case ParticipationRequestMessageItem participation
+            when participation.requestId == requestId)
           messageItemFixture(
-            requestId: item.requestId,
-            projectId: item.projectId,
-            projectKind: item.projectKind,
-            projectTitle: item.projectTitle,
-            viewerRole: item.viewerRole,
-            requesterProfileId: item.requesterProfileId,
-            requesterDisplayName: item.requesterDisplayName,
-            creatorProfileId: item.creatorProfileId,
-            creatorDisplayName: item.creatorDisplayName,
-            requestMessage: item.requestMessage,
+            requestId: participation.requestId,
+            projectId: participation.projectId,
+            projectKind: participation.projectKind,
+            projectTitle: participation.projectTitle,
+            viewerRole: participation.viewerRole,
+            requesterProfileId: participation.requesterProfileId,
+            requesterDisplayName: participation.requesterDisplayName,
+            creatorProfileId: participation.creatorProfileId,
+            creatorDisplayName: participation.creatorDisplayName,
+            requestMessage: participation.requestMessage,
             status: status,
-            createdAt: item.createdAt,
+            createdAt: participation.createdAt,
           )
         else
           item,
@@ -121,6 +136,50 @@ class FakeMessagesGateway implements MessagesGateway {
   void _throwIfNeeded() {
     if (error case final failure?) throw failure;
   }
+}
+
+ResourceRequestMessageItem resourceMessageItemFixture({
+  String requestId = 'resource-request-1',
+  String listingId = 'listing-1',
+  ResourceListingMode listingMode = ResourceListingMode.donate,
+  String listingTitle = 'Garden tools',
+  ResourceListingLifecycle listingLifecycle =
+      ResourceListingLifecycle.published,
+  MessageViewerRole viewerRole = MessageViewerRole.owner,
+  String requesterProfileId = 'user-2',
+  String requesterDisplayName = 'Jordan',
+  String ownerProfileId = 'user-1',
+  String ownerDisplayName = 'Casey',
+  String? requestMessage = 'Could I use these this weekend?',
+  ResourceRequestStatus status = ResourceRequestStatus.pending,
+  DateTime? createdAt,
+  DateTime? coordinationClosedAt,
+}) {
+  final created = createdAt ?? DateTime.utc(2026, 9, 10, 10);
+  final resolved = status == ResourceRequestStatus.pending
+      ? null
+      : created.add(const Duration(hours: 1));
+  final accepted = status == ResourceRequestStatus.accepted;
+  return ResourceRequestMessageItem(
+    requestId: requestId,
+    viewerRole: viewerRole,
+    requesterProfileId: requesterProfileId,
+    requesterDisplayName: requesterDisplayName,
+    requestMessage: requestMessage,
+    createdAt: created,
+    resolvedAt: resolved,
+    activityAt: coordinationClosedAt ?? resolved ?? created,
+    listingId: listingId,
+    listingMode: listingMode,
+    listingTitle: listingTitle,
+    listingLifecycle: listingLifecycle,
+    ownerProfileId: ownerProfileId,
+    ownerDisplayName: ownerDisplayName,
+    status: status,
+    chatId: accepted ? 'chat-1' : null,
+    agreementId: accepted ? 'agreement-1' : null,
+    coordinationClosedAt: coordinationClosedAt,
+  );
 }
 
 ParticipationRequestMessageItem messageItemFixture({

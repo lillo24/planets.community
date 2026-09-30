@@ -14,6 +14,45 @@ values
   ('e2000000-0000-4000-8000-000000000002', 'Protocol Other'),
   ('e3000000-0000-4000-8000-000000000003', 'Protocol Retry');
 
+-- Matching jobs now carry real listing-only routing context. These synthetic
+-- protocol fixtures use one distinct canonical listing per semantic job.
+insert into public.resource_listings (
+  id,
+  owner_profile_id,
+  listing_mode,
+  lifecycle_state,
+  title,
+  description,
+  country_code,
+  locality,
+  public_location_label,
+  created_at,
+  updated_at,
+  published_at
+)
+select
+  fixture.id,
+  'e2000000-0000-4000-8000-000000000002'::uuid,
+  'donate',
+  'published',
+  fixture.title,
+  'Push protocol semantic context',
+  'IT',
+  'Trento',
+  'Trento',
+  statement_timestamp() - interval '5 minutes',
+  statement_timestamp() - interval '5 minutes',
+  statement_timestamp() - interval '5 minutes'
+from (
+  values
+    ('d1000000-0000-4000-8000-000000000001'::uuid, 'Protocol listing 1'::text),
+    ('d2000000-0000-4000-8000-000000000002'::uuid, 'Protocol listing 2'::text),
+    ('d3000000-0000-4000-8000-000000000003'::uuid, 'Protocol listing 3'::text),
+    ('d4000000-0000-4000-8000-000000000004'::uuid, 'Protocol listing 4'::text),
+    ('d5000000-0000-4000-8000-000000000005'::uuid, 'Protocol listing 5'::text),
+    ('d6000000-0000-4000-8000-000000000006'::uuid, 'Protocol listing 6'::text)
+) as fixture(id, title);
+
 set local role authenticated;
 select set_config(
   'request.jwt.claim.sub',
@@ -210,6 +249,7 @@ insert into private.push_delivery_jobs (
   category_slug,
   notification_kind,
   destination_kind,
+  resource_listing_id,
   created_at,
   available_at
 )
@@ -221,6 +261,7 @@ values
     'matching',
     'matching_available',
     'matching_result',
+    'd1000000-0000-4000-8000-000000000001',
     statement_timestamp() - interval '2 minutes',
     statement_timestamp()
   ),
@@ -231,6 +272,7 @@ values
     'matching',
     'matching_available',
     'matching_result',
+    'd2000000-0000-4000-8000-000000000002',
     statement_timestamp() - interval '1 minute',
     statement_timestamp()
   );
@@ -481,6 +523,7 @@ insert into private.push_delivery_jobs (
   category_slug,
   notification_kind,
   destination_kind,
+  resource_listing_id,
   created_at,
   available_at
 )
@@ -491,6 +534,7 @@ values (
   'matching',
   'matching_available',
   'matching_result',
+  'd3000000-0000-4000-8000-000000000003',
   statement_timestamp() - interval '1 minute',
   statement_timestamp()
 );
@@ -717,6 +761,7 @@ insert into private.push_delivery_jobs (
   category_slug,
   notification_kind,
   destination_kind,
+  resource_listing_id,
   created_at,
   available_at
 )
@@ -727,6 +772,7 @@ values (
   'matching',
   'matching_available',
   'matching_result',
+  'd4000000-0000-4000-8000-000000000004',
   statement_timestamp() - interval '1 minute',
   statement_timestamp()
 );
@@ -814,6 +860,7 @@ insert into private.push_delivery_jobs (
   category_slug,
   notification_kind,
   destination_kind,
+  resource_listing_id,
   created_at,
   available_at
 )
@@ -824,6 +871,7 @@ values (
   'matching',
   'matching_available',
   'matching_result',
+  'd5000000-0000-4000-8000-000000000005',
   statement_timestamp() - interval '1 minute',
   statement_timestamp()
 );
@@ -912,6 +960,7 @@ insert into private.push_delivery_jobs (
   category_slug,
   notification_kind,
   destination_kind,
+  resource_listing_id,
   created_at,
   available_at
 )
@@ -922,6 +971,7 @@ values (
   'matching',
   'matching_available',
   'matching_result',
+  'd6000000-0000-4000-8000-000000000006',
   statement_timestamp() - interval '1 minute',
   statement_timestamp()
 );

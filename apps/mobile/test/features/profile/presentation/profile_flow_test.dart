@@ -7,9 +7,11 @@ import 'package:planets_mobile/features/auth/data/auth_gateway.dart';
 import 'package:planets_mobile/features/auth/domain/auth_models.dart';
 import 'package:planets_mobile/features/profile/data/profile_gateway.dart';
 import 'package:planets_mobile/features/profile/domain/profile_models.dart';
+import 'package:planets_mobile/features/profile_photo/data/profile_photo_gateway.dart';
 
 import '../../../support/fake_auth.dart';
 import '../../../support/fake_profile.dart';
+import '../../../support/fake_profile_photo.dart';
 
 void main() {
   testWidgets('demo sample fills controlled profile fields without saving', (
@@ -238,6 +240,7 @@ Future<void> _pumpApp(
   FakeProfileAnchorGateway anchor,
   FakeProfileGateway profile, {
   String enableDemoTools = '',
+  FakeProfilePhotoGateway? profilePhoto,
 }) async {
   await tester.pumpWidget(
     ProviderScope(
@@ -253,6 +256,9 @@ Future<void> _pumpApp(
         authGatewayProvider.overrideWithValue(auth),
         profileAnchorGatewayProvider.overrideWithValue(anchor),
         profileGatewayProvider.overrideWithValue(profile),
+        profilePhotoGatewayProvider.overrideWithValue(
+          profilePhoto ?? FakeProfilePhotoGateway(),
+        ),
       ],
       child: const PlanetsApp(),
     ),

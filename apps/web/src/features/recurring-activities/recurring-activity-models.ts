@@ -11,6 +11,7 @@ export interface PublicRecurringActivityOccurrence {
 
 export interface PublicRecurringActivitySummary {
   recurring_activity_id: string;
+  cover_object_path: string | null;
   title: string;
   summary: string;
   topic: string | null;
@@ -51,6 +52,7 @@ export type PublicRecurringExactLocation =
 
 export interface PublicRecurringActivityDetail {
   recurring_activity_id: string;
+  cover_object_path: string | null;
   creator_display_name: string | null;
   lifecycle_state: PublicRecurringActivityLifecycle;
   title: string;
@@ -98,6 +100,8 @@ const lifecycleValues = new Set<PublicRecurringActivityLifecycle>([
 
 const uuidPattern =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const coverFilePattern =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\.webp$/i;
 const instantPattern =
   /^\d{4}-\d{2}-\d{2}T(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$/;
 const localTimestampPattern =
@@ -112,12 +116,14 @@ export function parsePublicRecurringActivitySummary(
   rejectListLocationFields(row);
   const startsAt = instant(row.next_starts_at);
   const endsAt = instant(row.next_ends_at);
+  const activityId = uuid(row.recurring_activity_id);
   if (Date.parse(endsAt) <= Date.parse(startsAt)) {
     throw new TypeError("Invalid recurring activity occurrence");
   }
 
   return {
-    recurring_activity_id: uuid(row.recurring_activity_id),
+    recurring_activity_id: activityId,
+    cover_object_path: coverObjectPath(row.cover_object_path, activityId),
     title: text(row.title),
     summary: text(row.summary),
     topic: nullableText(row.topic),
@@ -138,6 +144,7 @@ export function parsePublicRecurringActivityDetail(
   const lifecycle = recurringLifecycle(row.lifecycle_state);
   const schedule = recurringSchedule(row);
   const occurrences = array(row.next_occurrences).map(parseOccurrence);
+  const activityId = uuid(row.recurring_activity_id);
 
   if (
     occurrences.some(
@@ -163,7 +170,8 @@ export function parsePublicRecurringActivityDetail(
     : { kind: "public", text: text(exactMeetingText) };
 
   return {
-    recurring_activity_id: uuid(row.recurring_activity_id),
+    recurring_activity_id: activityId,
+    cover_object_path: coverObjectPath(row.cover_object_path, activityId),
     creator_display_name: nullableText(row.creator_display_name),
     lifecycle_state: lifecycle,
     title: text(row.title),
@@ -178,6 +186,22 @@ export function parsePublicRecurringActivityDetail(
     next_occurrences: occurrences,
     exact_location: exactLocation,
   };
+}
+
+function coverObjectPath(value: unknown, activityId: string): string | null {
+  if (value === null) return null;
+  const parsed = text(value);
+  const parts = parsed.split("/");
+  if (
+    parts.length !== 4 ||
+    !uuidPattern.test(parts[0] ?? "") ||
+    parts[1] !== "projects" ||
+    parts[2]?.toLowerCase() !== activityId.toLowerCase() ||
+    !coverFilePattern.test(parts[3] ?? "")
+  ) {
+    throw new TypeError("Invalid recurring activity cover object path");
+  }
+  return parsed;
 }
 
 export function normalizeRecurringActivityLocality(

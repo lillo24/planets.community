@@ -1,5 +1,12 @@
 # Recurring activities (Tavoli)
 
+Draft Tavoli remain editable without a profile photo. Publishing performs a
+local trust preflight, while `publish_recurring_activity` authoritatively
+requires a current canonical photo only for the draft-to-published transition;
+`public` and `interactions` both qualify. Public detail loads the organizer
+avatar through the separate Project-context boundary, with a safe placeholder
+on missing legacy data or delivery failure.
+
 This feature owns the Flutter experience for Tavoli, the recurring-activity
 domain introduced by 04B1. It is deliberately separate from one-time
 Proposals and does not define the shared participation state machine, chat,
@@ -15,7 +22,8 @@ notifications, resources, or occurrence-level editing. The sibling
   malformed payloads during parsing.
 - `application/recurring_activity_controllers.dart` owns discovery snapshots,
   requester-only Requested enrichment, detail/owner loading, lifecycle commands,
-  editor chains, request revisions, and account-switch invalidation.
+  editor chains, cover-before-publish reconciliation, request revisions, and
+  account-switch invalidation.
 - `presentation/` owns the separate Tavoli list/detail, constrained editor,
   My Tavoli lifecycle surface, and narrow recurring widgets.
 
@@ -81,3 +89,10 @@ forms and stacks.
 When centrally gated demo tools are enabled, only the Tavolo create form offers
 a synthetic, publishable weekly preset. It mutates local form state without
 saving; Tavolo edit screens never expose the action.
+
+The sibling `cover_media/` feature supplies Tavolo's optional 16:9 editor,
+normalizer, canonical Project-cover reconciliation, and path-keyed display.
+Selection and removal remain local until Save/Publish. A new Tavolo draft is
+created before upload, and publication runs only after cover reconciliation;
+partial cover failure retains the same draft for retry. Cards and details use
+the cover path already present in canonical Tavolo reads, never metadata RPCs.

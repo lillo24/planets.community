@@ -6,14 +6,22 @@ import 'package:go_router/go_router.dart';
 import 'package:planets_mobile/features/auth/application/auth_session_controller.dart';
 import 'package:planets_mobile/features/auth/data/auth_gateway.dart';
 import 'package:planets_mobile/features/auth/domain/auth_models.dart';
+import 'package:planets_mobile/features/cover_media/data/cover_media_gateway.dart';
 import 'package:planets_mobile/features/proposals/data/proposal_gateway.dart';
 import 'package:planets_mobile/features/proposals/domain/proposal_models.dart';
+import 'package:planets_mobile/features/proposals/presentation/own_proposals_screen.dart';
 import 'package:planets_mobile/features/proposals/presentation/proposal_widgets.dart';
 import 'package:planets_mobile/features/proposals/presentation/public_proposals_screen.dart';
 import 'package:planets_mobile/l10n/generated/app_localizations.dart';
 
 import '../../../support/fake_proposal.dart';
 import '../../../support/fake_auth.dart';
+import '../../../support/fake_cover_media.dart';
+
+const _coverPath =
+    'c1000000-0000-4000-8000-000000000001/projects/'
+    'c2000000-0000-4000-8000-000000000001/'
+    'c3000000-0000-4000-8000-000000000001.webp';
 
 void main() {
   testWidgets(
@@ -100,8 +108,19 @@ void main() {
       expect(find.byKey(const Key('proposal-requested-section')), findsNothing);
       expect(gateway.calls, isNot(contains('list-requested')));
 
-      await tester.tap(find.byKey(const Key('proposal-card-proposal-1')));
+      final card = find.byKey(const Key('proposal-card-proposal-1'));
+      await tester.drag(find.byType(ListView), const Offset(0, -250));
       await tester.pumpAndSettle();
+      await tester.tap(card);
+      await tester.pumpAndSettle();
+      await tester.scrollUntilVisible(
+        find.text('A full proposal description.'),
+        200,
+      );
+      expect(
+        find.byKey(const Key('proposal-detail-cover-proposal-1')),
+        findsOneWidget,
+      );
       expect(find.text('A full proposal description.'), findsOneWidget);
       expect(gateway.calls, contains('public-detail:proposal-1'));
     },
@@ -110,6 +129,8 @@ void main() {
   testWidgets(
     'requested Proposal is first, marked, unique, and remains tappable',
     (tester) async {
+      await tester.binding.setSurfaceSize(const Size(800, 1800));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
       final gateway = FakeProposalGateway()
         ..publicItems = [proposalSummaryFixture(id: 'proposal-2')]
         ..requestedItems = [requestedProposalFixture()]
@@ -214,6 +235,45 @@ void main() {
     expect(find.textContaining("couldn't complete"), findsOneWidget);
   });
 
+  testWidgets('owner Proposal card uses owner-authorized cover loading', (
+    tester,
+  ) async {
+    final gateway = FakeProposalGateway()
+      ..ownItems = [
+        ownProposalFixture(id: 'draft', coverObjectPath: _coverPath),
+      ];
+    final covers = FakeCoverMediaGateway();
+    final auth = FakeAuthGateway(
+      snapshot: const AuthSnapshot(identity: AuthIdentity(id: 'user-1')),
+    );
+    final container = ProviderContainer(
+      overrides: [
+        authGatewayProvider.overrideWithValue(auth),
+        profileAnchorGatewayProvider.overrideWithValue(
+          FakeProfileAnchorGateway(),
+        ),
+        proposalGatewayProvider.overrideWithValue(gateway),
+        coverMediaGatewayProvider.overrideWithValue(covers),
+      ],
+    );
+    addTearDown(container.dispose);
+    addTearDown(auth.close);
+    container
+        .read(authSessionProvider.notifier)
+        .markProfileReady(const AuthIdentity(id: 'user-1'));
+
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: _localized(const OwnProposalsScreen()),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('own-proposal-cover-draft')), findsOneWidget);
+    expect(covers.calls, contains('download:$_coverPath'));
+  });
+
   testWidgets('direct detail shows event schedule and Required/Useful skills', (
     tester,
   ) async {
@@ -241,6 +301,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(gateway.calls, ['public-detail:proposal-1']);
+    await tester.scrollUntilVisible(find.text('Schedule'), 200);
     expect(find.text('Schedule'), findsOneWidget);
     expect(find.text('Starts: Sep 10, 2026 12:00'), findsOneWidget);
     expect(find.text('Ends: Sep 10, 2026 14:00'), findsOneWidget);

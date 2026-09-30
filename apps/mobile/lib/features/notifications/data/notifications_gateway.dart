@@ -118,18 +118,11 @@ class SupabaseNotificationsGateway implements NotificationsGateway {
     required bool inAppEnabled,
     required bool pushEnabled,
   }) async {
-    final categorySlug = switch (category) {
-      NotificationCategory.participation => 'participation',
-      NotificationCategory.chat => 'chat',
-      NotificationCategory.unknown => throw ArgumentError(
-        'Unknown notification categories cannot be configured.',
-      ),
-    };
     await _client.rpc(
       'set_own_notification_preference',
       params: {
         'p_expected_profile_id': expectedProfileId,
-        'p_category_slug': categorySlug,
+        'p_category_slug': category.preferenceWireSlug,
         'p_in_app_enabled': inAppEnabled,
         'p_push_enabled': pushEnabled,
       },
@@ -174,8 +167,39 @@ class NotificationsPayloadParser {
         'actor profile ID',
       ),
       actorDisplayName: _optionalDisplayText(row['actor_display_name']),
+      resourceListingId: _optionalUuid(
+        row['resource_listing_id'],
+        'Resource listing ID',
+      ),
+      resourceListingTitle: _optionalDisplayText(row['resource_listing_title']),
+      resourceRequestId: _optionalUuid(
+        row['resource_request_id'],
+        'Resource request ID',
+      ),
+      resourceChatId: _optionalUuid(
+        row['resource_chat_id'],
+        'Resource chat ID',
+      ),
+      resourceChatMessageId: _optionalUuid(
+        row['resource_chat_message_id'],
+        'Resource chat message ID',
+      ),
+      resourceAgreementId: _optionalUuid(
+        row['resource_agreement_id'],
+        'Resource agreement ID',
+      ),
+      resourceAgreementEventId: _optionalUuid(
+        row['resource_agreement_event_id'],
+        'Resource agreement event ID',
+      ),
+      resourceExchangeEventKind: _optionalResourceEventKind(
+        row['resource_exchange_event_kind'],
+      ),
+      resourceExchangeLegKind: _optionalResourceLegKind(
+        row['resource_exchange_leg_kind'],
+      ),
     );
-    _validateKnownNotification(notification);
+    _validateKnownNotification(notification, row);
     return notification;
   }
 
@@ -263,9 +287,98 @@ class NotificationsPayloadParser {
     };
   }
 
-  void _validateKnownNotification(AppNotification item) {
+  ResourceNotificationEventKind? _optionalResourceEventKind(Object? value) {
+    if (value == null) return null;
+    if (value is! String) {
+      throw const FormatException('Resource exchange event kind was invalid.');
+    }
+    return ResourceNotificationEventKind.fromWire(value);
+  }
+
+  ResourceNotificationLegKind? _optionalResourceLegKind(Object? value) {
+    if (value == null) return null;
+    if (value is! String) {
+      throw const FormatException('Resource exchange leg kind was invalid.');
+    }
+    return ResourceNotificationLegKind.fromWire(value);
+  }
+
+  void _validateKnownNotification(
+    AppNotification item,
+    Map<String, dynamic> row,
+  ) {
+    if (item.category != NotificationCategory.matching &&
+        (item.kind == NotificationKind.matchingAvailable ||
+            item.destinationKind ==
+                NotificationDestinationKind.matchingResult)) {
+      throw const FormatException(
+        'Matching notification semantics require the Matching category.',
+      );
+    }
+    if (item.category == NotificationCategory.matching) {
+      if (item.kind != NotificationKind.matchingAvailable ||
+          item.destinationKind != NotificationDestinationKind.matchingResult ||
+          item.resourceListingId == null ||
+          _hasAny(row, const [
+            'project_id',
+            'project_kind',
+            'project_title',
+            'request_id',
+            'chat_id',
+            'message_id',
+            'actor_profile_id',
+            'actor_display_name',
+            'resource_request_id',
+            'resource_chat_id',
+            'resource_chat_message_id',
+            'resource_agreement_id',
+            'resource_agreement_event_id',
+            'resource_exchange_event_kind',
+            'resource_exchange_leg_kind',
+          ])) {
+        throw const FormatException(
+          'Matching notification context was invalid.',
+        );
+      }
+      return;
+    }
+    if (item.category == NotificationCategory.resources) {
+      if (_hasAny(row, const [
+        'project_id',
+        'project_kind',
+        'project_title',
+        'request_id',
+        'chat_id',
+        'message_id',
+      ])) {
+        throw const FormatException(
+          'Resource notification contained Project context.',
+        );
+      }
+      _validateResourceNotification(item);
+      return;
+    }
+    if (item.category == NotificationCategory.chat ||
+        item.category == NotificationCategory.participation) {
+      if (_hasAny(row, const [
+        'resource_listing_id',
+        'resource_listing_title',
+        'resource_request_id',
+        'resource_chat_id',
+        'resource_chat_message_id',
+        'resource_agreement_id',
+        'resource_agreement_event_id',
+        'resource_exchange_event_kind',
+        'resource_exchange_leg_kind',
+      ])) {
+        throw const FormatException(
+          'Project notification contained Resource context.',
+        );
+      }
+    }
     if (item.category == NotificationCategory.chat) {
       if (item.kind != NotificationKind.chatMessageReceived ||
+          !_resourceContextAbsent(item) ||
           item.destinationKind != NotificationDestinationKind.projectChat ||
           item.projectId == null ||
           item.projectKind == null ||
@@ -281,6 +394,11 @@ class NotificationsPayloadParser {
       return;
     }
     if (item.category != NotificationCategory.participation) return;
+    if (!_resourceContextAbsent(item) || item.kind.isResource) {
+      throw const FormatException(
+        'Participation notification contained Resource context.',
+      );
+    }
     switch (item.kind) {
       case NotificationKind.participationRequestReceived:
       case NotificationKind.participationRequestWithdrawn:
@@ -314,8 +432,141 @@ class NotificationsPayloadParser {
         throw const FormatException(
           'Project chat notifications require the chat category.',
         );
+      case NotificationKind.resourceRequestReceived:
+      case NotificationKind.resourceRequestWithdrawn:
+      case NotificationKind.resourceRequestAccepted:
+      case NotificationKind.resourceRequestRejected:
+      case NotificationKind.resourceRequestListingClosed:
+      case NotificationKind.resourceChatMessageReceived:
+      case NotificationKind.resourceExchangeTermsProposed:
+      case NotificationKind.resourceExchangeTermsAccepted:
+      case NotificationKind.resourceExchangeTermsRejected:
+      case NotificationKind.resourceExchangeTermsWithdrawn:
+      case NotificationKind.resourceExchangeMilestoneRecorded:
+      case NotificationKind.resourceExchangeCancelled:
+      case NotificationKind.resourceExchangeCompleted:
+        throw const FormatException(
+          'Resource notifications require the Resources category.',
+        );
+      case NotificationKind.matchingAvailable:
+        throw const FormatException(
+          'Matching notifications require the Matching category.',
+        );
       case NotificationKind.unknown:
         return;
+    }
+  }
+
+  bool _hasAny(Map<String, dynamic> row, List<String> fields) =>
+      fields.any((field) => row[field] != null);
+
+  bool _resourceContextAbsent(AppNotification item) =>
+      item.resourceListingId == null &&
+      item.resourceListingTitle == null &&
+      item.resourceRequestId == null &&
+      item.resourceChatId == null &&
+      item.resourceChatMessageId == null &&
+      item.resourceAgreementId == null &&
+      item.resourceAgreementEventId == null &&
+      item.resourceExchangeEventKind == null &&
+      item.resourceExchangeLegKind == null;
+
+  void _validateResourceNotification(AppNotification item) {
+    if (item.projectId != null ||
+        item.projectKind != null ||
+        item.projectTitle != null ||
+        item.requestId != null ||
+        item.chatId != null ||
+        item.messageId != null ||
+        item.resourceListingId == null ||
+        item.resourceListingTitle == null ||
+        item.resourceRequestId == null ||
+        item.actorProfileId == null) {
+      throw const FormatException('Resource notification context was invalid.');
+    }
+
+    final isRequest = switch (item.kind) {
+      NotificationKind.resourceRequestReceived ||
+      NotificationKind.resourceRequestWithdrawn ||
+      NotificationKind.resourceRequestRejected ||
+      NotificationKind.resourceRequestListingClosed => true,
+      _ => false,
+    };
+    if (isRequest) {
+      if (item.destinationKind != NotificationDestinationKind.resourceRequest ||
+          item.resourceChatId != null ||
+          item.resourceChatMessageId != null ||
+          item.resourceAgreementId != null ||
+          item.resourceAgreementEventId != null ||
+          item.resourceExchangeEventKind != null ||
+          item.resourceExchangeLegKind != null) {
+        throw const FormatException(
+          'Resource request notification shape was invalid.',
+        );
+      }
+      return;
+    }
+
+    if (item.kind == NotificationKind.resourceRequestAccepted ||
+        item.kind == NotificationKind.resourceChatMessageReceived) {
+      if (item.destinationKind != NotificationDestinationKind.resourceChat ||
+          item.resourceChatId == null ||
+          item.resourceAgreementId == null ||
+          (item.kind == NotificationKind.resourceChatMessageReceived) !=
+              (item.resourceChatMessageId != null) ||
+          item.resourceAgreementEventId != null ||
+          item.resourceExchangeEventKind != null ||
+          item.resourceExchangeLegKind != null) {
+        throw const FormatException(
+          'Resource conversation notification shape was invalid.',
+        );
+      }
+      return;
+    }
+
+    if (item.kind.isResourceExchange) {
+      final expectedEvent = switch (item.kind) {
+        NotificationKind.resourceExchangeTermsProposed =>
+          ResourceNotificationEventKind.termsProposed,
+        NotificationKind.resourceExchangeTermsAccepted =>
+          ResourceNotificationEventKind.termsAccepted,
+        NotificationKind.resourceExchangeTermsRejected =>
+          ResourceNotificationEventKind.termsRejected,
+        NotificationKind.resourceExchangeTermsWithdrawn =>
+          ResourceNotificationEventKind.termsWithdrawn,
+        NotificationKind.resourceExchangeCancelled =>
+          ResourceNotificationEventKind.agreementCancelled,
+        NotificationKind.resourceExchangeCompleted =>
+          ResourceNotificationEventKind.agreementCompleted,
+        _ => null,
+      };
+      final isMilestone =
+          item.kind == NotificationKind.resourceExchangeMilestoneRecorded;
+      if (item.destinationKind != NotificationDestinationKind.resourceChat ||
+          item.resourceChatId == null ||
+          item.resourceChatMessageId != null ||
+          item.resourceAgreementId == null ||
+          item.resourceAgreementEventId == null ||
+          item.resourceExchangeEventKind == null ||
+          (isMilestone
+              ? !item.resourceExchangeEventKind!.isMilestone ||
+                    (item.resourceExchangeLegKind !=
+                            ResourceNotificationLegKind.ownerResource &&
+                        item.resourceExchangeLegKind !=
+                            ResourceNotificationLegKind.requesterResource)
+              : item.resourceExchangeEventKind != expectedEvent ||
+                    item.resourceExchangeLegKind != null)) {
+        throw const FormatException(
+          'Resource exchange notification shape was invalid.',
+        );
+      }
+      return;
+    }
+
+    if (item.kind != NotificationKind.unknown) {
+      throw const FormatException(
+        'Resource notification kind did not match its category.',
+      );
     }
   }
 }

@@ -8,6 +8,7 @@ import '../../../core/widgets/loading_state.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../auth/application/auth_session_controller.dart';
 import '../../participation/domain/participation_models.dart';
+import '../../participation/presentation/join_acceptance_triage_sheet.dart';
 import '../../participation/presentation/participation_routes.dart';
 import '../application/messages_controllers.dart';
 import '../domain/message_models.dart';
@@ -144,6 +145,7 @@ class _ParticipationRequestMessageScreenState
                         ],
                       ),
                     ),
+                    _ContributionSelectionsSection(state: state),
                     _DetailSection(
                       title: l10n.messagesRequestMessageLabel,
                       child: SelectableText(
@@ -183,7 +185,11 @@ class _ParticipationRequestMessageScreenState
                     ),
                     if (item.isPending) ...[
                       const SizedBox(height: AppSpacing.medium),
-                      _MessageActions(item: item, state: state),
+                      _MessageActions(
+                        item: item,
+                        state: state,
+                        onAccept: () => _accept(item),
+                      ),
                     ] else ...[
                       const SizedBox(height: AppSpacing.medium),
                       Text(
@@ -198,6 +204,155 @@ class _ParticipationRequestMessageScreenState
       ),
     );
   }
+
+  Future<void> _accept(ParticipationRequestMessageItem item) async {
+    final expectedProfileId = _expectedProfileId;
+    if (expectedProfileId == null ||
+        item.viewerRole != MessageViewerRole.creator ||
+        ref.read(authSessionProvider).identity?.id != expectedProfileId) {
+      return;
+    }
+    await showJoinAcceptanceTriageSheet(
+      context,
+      expectedCreatorProfileId: expectedProfileId,
+      requestId: item.requestId,
+      projectId: item.projectId,
+      projectKind: item.projectKind,
+      requesterDisplayName: item.requesterDisplayName,
+    );
+    if (!mounted ||
+        ref.read(authSessionProvider).identity?.id != expectedProfileId) {
+      return;
+    }
+    await ref
+        .read(messagesDetailProvider.notifier)
+        .reloadAfterJoinAcceptanceTriage();
+  }
+}
+
+class _ContributionSelectionsSection extends ConsumerWidget {
+  const _ContributionSelectionsSection({required this.state});
+
+  final MessagesDetailState state;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
+    final skills = state.selections
+        .where(
+          (selection) =>
+              selection.kind == RequestContributionSelectionKind.skill,
+        )
+        .toList(growable: false);
+    final resources = state.selections
+        .where(
+          (selection) =>
+              selection.kind == RequestContributionSelectionKind.resource,
+        )
+        .toList(growable: false);
+
+    return _DetailSection(
+      title: l10n.messagesCanContribute,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (state.selectionPhase == MessagesSelectionPhase.loading &&
+              state.selections.isEmpty)
+            Row(
+              key: const Key('message-contributions-loading'),
+              children: [
+                const SizedBox.square(
+                  dimension: 18,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                ),
+                const SizedBox(width: AppSpacing.small),
+                Text(l10n.messagesContributionsLoading),
+              ],
+            )
+          else if (state.selectionPhase == MessagesSelectionPhase.ready &&
+              state.selections.isEmpty)
+            Text(l10n.messagesNoContributionsSelected)
+          else ...[
+            if (skills.isNotEmpty)
+              _SelectionGroup(
+                title: l10n.participationCompetencesGroup,
+                selections: skills,
+              ),
+            if (resources.isNotEmpty) ...[
+              if (skills.isNotEmpty) const SizedBox(height: AppSpacing.small),
+              _SelectionGroup(
+                title: l10n.participationResourcesGroup,
+                selections: resources,
+              ),
+            ],
+          ],
+          if (state.selectionPhase == MessagesSelectionPhase.loading &&
+              state.selections.isNotEmpty) ...[
+            const SizedBox(height: AppSpacing.small),
+            const LinearProgressIndicator(),
+          ],
+          if (state.selectionPhase == MessagesSelectionPhase.failure) ...[
+            const SizedBox(height: AppSpacing.small),
+            Semantics(
+              liveRegion: true,
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      l10n.messagesContributionsLoadError,
+                      key: const Key('message-contributions-error'),
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.error,
+                      ),
+                    ),
+                  ),
+                  TextButton(
+                    key: const Key('message-contributions-retry'),
+                    onPressed: ref
+                        .read(messagesDetailProvider.notifier)
+                        .retryContributionSelections,
+                    child: Text(l10n.retryAction),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _SelectionGroup extends StatelessWidget {
+  const _SelectionGroup({required this.title, required this.selections});
+
+  final String title;
+  final List<RequestContributionSelection> selections;
+
+  @override
+  Widget build(BuildContext context) => Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Semantics(
+        header: true,
+        child: Text(title, style: Theme.of(context).textTheme.labelLarge),
+      ),
+      const SizedBox(height: AppSpacing.xSmall),
+      Wrap(
+        spacing: AppSpacing.small,
+        runSpacing: AppSpacing.small,
+        children: [
+          for (final selection in selections)
+            Chip(
+              key: Key(
+                'message-contribution-${selection.kind.wireValue}-${selection.id}',
+              ),
+              label: Text(selection.label),
+            ),
+        ],
+      ),
+    ],
+  );
 }
 
 class _DetailSection extends StatelessWidget {
@@ -221,10 +376,15 @@ class _DetailSection extends StatelessWidget {
 }
 
 class _MessageActions extends ConsumerWidget {
-  const _MessageActions({required this.item, required this.state});
+  const _MessageActions({
+    required this.item,
+    required this.state,
+    required this.onAccept,
+  });
 
   final ParticipationRequestMessageItem item;
   final MessagesDetailState state;
+  final VoidCallback onAccept;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -255,10 +415,8 @@ class _MessageActions extends ConsumerWidget {
         Expanded(
           child: FilledButton(
             key: const Key('message-accept'),
-            onPressed: state.isActing ? null : controller.accept,
-            child: state.action == MessageAction.accepting
-                ? const _ActionProgress()
-                : Text(l10n.participationAccept),
+            onPressed: state.isActing ? null : onAccept,
+            child: Text(l10n.participationAccept),
           ),
         ),
       ],

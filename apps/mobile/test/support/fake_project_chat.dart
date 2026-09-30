@@ -6,7 +6,7 @@ import 'package:planets_mobile/features/project_chat/domain/project_chat_models.
 
 class FakeProjectChatGateway implements ProjectChatGateway {
   List<ProjectChatSummary> summaries = [];
-  final Map<String, List<ProjectChatMessage>> histories = {};
+  final Map<String, List<ProjectChatFeedItem>> histories = {};
   final List<String> calls = [];
   final List<FakeProjectChatSubscription> subscriptions = [];
   Future<void>? listDelay;
@@ -16,7 +16,7 @@ class FakeProjectChatGateway implements ProjectChatGateway {
   Object? historyError;
   Object? sendError;
   ProjectChatListCursor? lastListCursor;
-  ProjectChatMessageCursor? lastMessageCursor;
+  ProjectChatFeedCursor? lastFeedCursor;
   String? lastExpectedProfileId;
   String? lastSentBody;
 
@@ -43,31 +43,36 @@ class FakeProjectChatGateway implements ProjectChatGateway {
   }
 
   @override
-  Future<ProjectChatMessagePage> listOwnProjectChatMessages({
+  Future<ProjectChatFeedPage> listOwnProjectChatFeed({
     required String expectedProfileId,
     required String chatId,
     required int limit,
-    ProjectChatMessageCursor? cursor,
+    ProjectChatFeedCursor? cursor,
   }) async {
     calls.add('history:$chatId');
     lastExpectedProfileId = expectedProfileId;
-    lastMessageCursor = cursor;
+    lastFeedCursor = cursor;
     if (historyDelay case final delay?) await delay;
     if (historyError case final error?) throw error;
     final source = histories[chatId] ?? const [];
     final start = cursor == null
         ? 0
-        : source.indexWhere((item) => item.messageId == cursor.messageId) + 1;
+        : source.indexWhere(
+                (item) =>
+                    item.itemKind == cursor.itemKind &&
+                    item.itemId == cursor.itemId,
+              ) +
+              1;
     final safeStart = start < 0 ? 0 : start;
     final page = source.skip(safeStart).take(limit).toList(growable: false);
-    return ProjectChatMessagePage(
+    return ProjectChatFeedPage(
       items: page,
       hasMore: safeStart + page.length < source.length,
     );
   }
 
   @override
-  Future<ProjectChatMessage> sendProjectChatMessage({
+  Future<ProjectChatHumanMessage> sendProjectChatMessage({
     required String expectedProfileId,
     required String chatId,
     required String body,
@@ -117,9 +122,50 @@ class FakeProjectChatGateway implements ProjectChatGateway {
       (item) => item.chatId == chatId && !item.isClosed,
     )) {
       subscription.onSignal(
-        ProjectChatSignal(
+        ProjectChatMessageSentSignal(
           chatId: chatId,
           messageId: messageId,
+          createdAt: DateTime.utc(2026, 9, 14, 12),
+        ),
+      );
+    }
+  }
+
+  void emitNeededAgain({
+    String chatId = 'chat-1',
+    String projectId = 'proposal-1',
+    String requirementId = 'skill-1',
+  }) {
+    for (final subscription in subscriptions.where(
+      (item) => item.chatId == chatId && !item.isClosed,
+    )) {
+      subscription.onSignal(
+        ProjectChatRequirementNeededAgainSignal(
+          chatId: chatId,
+          projectId: projectId,
+          systemEventId: 'event-1',
+          requirementKind: ProjectRequirementKind.skill,
+          requirementId: requirementId,
+          createdAt: DateTime.utc(2026, 9, 14, 12),
+        ),
+      );
+    }
+  }
+
+  void emitCovered({
+    String chatId = 'chat-1',
+    String projectId = 'proposal-1',
+    String requirementId = 'skill-1',
+  }) {
+    for (final subscription in subscriptions.where(
+      (item) => item.chatId == chatId && !item.isClosed,
+    )) {
+      subscription.onSignal(
+        ProjectChatRequirementCoveredSignal(
+          chatId: chatId,
+          projectId: projectId,
+          requirementKind: ProjectRequirementKind.skill,
+          requirementId: requirementId,
           createdAt: DateTime.utc(2026, 9, 14, 12),
         ),
       );
@@ -201,18 +247,34 @@ ProjectChatSummary projectChatSummaryFixture({
   );
 }
 
-ProjectChatMessage projectChatMessageFixture({
+ProjectChatHumanMessage projectChatMessageFixture({
   String messageId = 'message-1',
   String chatId = 'chat-1',
   String senderProfileId = 'user-2',
   String? senderDisplayName = 'Jordan',
   String body = 'Bring a small brush.',
   DateTime? createdAt,
-}) => ProjectChatMessage(
-  messageId: messageId,
+}) => ProjectChatHumanMessage(
+  itemId: messageId,
   chatId: chatId,
   senderProfileId: senderProfileId,
   senderDisplayName: senderDisplayName,
   body: body,
+  createdAt: createdAt ?? DateTime.utc(2026, 9, 14, 10),
+);
+
+ProjectChatRequirementNeededAgain projectChatSystemEventFixture({
+  String eventId = 'event-1',
+  String chatId = 'chat-1',
+  ProjectRequirementKind requirementKind = ProjectRequirementKind.skill,
+  String requirementId = 'skill-1',
+  String requirementLabel = 'Painting',
+  DateTime? createdAt,
+}) => ProjectChatRequirementNeededAgain(
+  itemId: eventId,
+  chatId: chatId,
+  requirementKind: requirementKind,
+  requirementId: requirementId,
+  requirementLabel: requirementLabel,
   createdAt: createdAt ?? DateTime.utc(2026, 9, 14, 10),
 );

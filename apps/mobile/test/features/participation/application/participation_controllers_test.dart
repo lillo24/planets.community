@@ -63,6 +63,8 @@ void main() {
         projectId: 'proposal-1',
         projectKind: ProjectKind.oneTime,
         message: '  I can help.  ',
+        skillIds: const {'skill-b', 'skill-a'},
+        resourceNeedIds: const {'need-2', 'need-1'},
       );
       final second = await controller.requestToJoin(
         expectedProfileId: 'user-1',
@@ -78,6 +80,8 @@ void main() {
       pending.complete();
       expect(await first, isTrue);
       expect(gateway.lastMessage, 'I can help.');
+      expect(gateway.lastSkillIds, {'skill-a', 'skill-b'});
+      expect(gateway.lastResourceNeedIds, {'need-1', 'need-2'});
       expect(
         session.container
             .read(ownParticipationProvider)
@@ -110,6 +114,8 @@ void main() {
         isTrue,
       );
       expect(gateway.lastMessage, isNull);
+      expect(gateway.lastSkillIds, isEmpty);
+      expect(gateway.lastResourceNeedIds, isEmpty);
       expect(
         await controller.requestToJoin(
           expectedProfileId: 'user-1',
@@ -125,6 +131,67 @@ void main() {
       );
     },
   );
+
+  test('join rejects a 51st selection before calling the gateway', () async {
+    final gateway = FakeParticipationGateway();
+    final session = _readyContainer(gateway);
+    addTearDown(session.container.dispose);
+    addTearDown(session.auth.close);
+    final controller = session.container.read(
+      participationCommandProvider.notifier,
+    );
+    final fiftySkills = {
+      for (var index = 0; index < participationSkillSelectionMax; index++)
+        'skill-$index',
+    };
+    final fiftyResources = {
+      for (
+        var index = 0;
+        index < participationResourceNeedSelectionMax;
+        index++
+      )
+        'need-$index',
+    };
+
+    expect(
+      await controller.requestToJoin(
+        expectedProfileId: 'user-1',
+        projectId: 'proposal-too-many-skills',
+        projectKind: ProjectKind.oneTime,
+        message: '',
+        skillIds: {...fiftySkills, 'skill-50'},
+      ),
+      isFalse,
+    );
+    expect(
+      await controller.requestToJoin(
+        expectedProfileId: 'user-1',
+        projectId: 'proposal-too-many-resources',
+        projectKind: ProjectKind.oneTime,
+        message: '',
+        resourceNeedIds: {...fiftyResources, 'need-50'},
+      ),
+      isFalse,
+    );
+    expect(gateway.calls.where((call) => call.startsWith('request:')), isEmpty);
+
+    expect(
+      await controller.requestToJoin(
+        expectedProfileId: 'user-1',
+        projectId: 'proposal-at-limits',
+        projectKind: ProjectKind.oneTime,
+        message: '',
+        skillIds: fiftySkills,
+        resourceNeedIds: fiftyResources,
+      ),
+      isTrue,
+    );
+    expect(gateway.lastSkillIds, hasLength(participationSkillSelectionMax));
+    expect(
+      gateway.lastResourceNeedIds,
+      hasLength(participationResourceNeedSelectionMax),
+    );
+  });
 
   test(
     'identity change rejects a late join response and clears private state',
@@ -240,111 +307,49 @@ void main() {
     },
   );
 
-  test(
-    'creator accept, reject, and remove use expected identity and refresh',
-    () async {
-      final gateway = FakeParticipationGateway()
-        ..creatorRequests = [
-          creatorJoinRequestFixture(id: 'accept-me'),
-          creatorJoinRequestFixture(id: 'reject-me'),
-        ];
-      final session = _readyContainer(gateway);
-      addTearDown(session.container.dispose);
-      addTearDown(session.auth.close);
-      final controller = session.container.read(
-        creatorParticipationProvider.notifier,
-      );
-      await controller.load('user-1', 'proposal-1');
-      expect(
-        await controller.accept(
-          expectedCreatorId: 'user-1',
-          projectId: 'proposal-1',
-          requestId: 'accept-me',
-        ),
-        isTrue,
-      );
-      expect(session.container.read(projectChatRefreshProvider), 1);
-      expect(
-        session.container
-            .read(creatorParticipationProvider)
-            .members
-            .single
-            .isCurrent,
-        isTrue,
-      );
-      expect(
-        await controller.reject(
-          expectedCreatorId: 'user-1',
-          projectId: 'proposal-1',
-          requestId: 'reject-me',
-        ),
-        isTrue,
-      );
-      expect(session.container.read(projectChatRefreshProvider), 1);
-      final membershipId = gateway.creatorMembers.single.id;
-      expect(
-        await controller.remove(
-          expectedCreatorId: 'user-1',
-          projectId: 'proposal-1',
-          membershipId: membershipId,
-        ),
-        isTrue,
-      );
-      expect(gateway.lastExpectedIdentity, 'user-1');
-      expect(session.container.read(projectChatRefreshProvider), 2);
-      expect(
-        session.container
-            .read(creatorParticipationProvider)
-            .members
-            .single
-            .status,
-        MembershipStatus.removed,
-      );
-    },
-  );
-
-  test(
-    'creator account switch rejects duplicate and late acceptance',
-    () async {
-      final pending = Completer<void>();
-      final gateway = FakeParticipationGateway()
-        ..creatorRequests = [creatorJoinRequestFixture()];
-      final session = _readyContainer(gateway);
-      addTearDown(session.container.dispose);
-      addTearDown(session.auth.close);
-      final controller = session.container.read(
-        creatorParticipationProvider.notifier,
-      );
-      await controller.load('user-1', 'proposal-1');
-      gateway.mutationDelay = pending.future;
-      final first = controller.accept(
+  test('creator reject and remove use expected identity and refresh', () async {
+    final gateway = FakeParticipationGateway()
+      ..creatorRequests = [creatorJoinRequestFixture(id: 'reject-me')];
+    final session = _readyContainer(gateway);
+    addTearDown(session.container.dispose);
+    addTearDown(session.auth.close);
+    final controller = session.container.read(
+      creatorParticipationProvider.notifier,
+    );
+    await controller.load('user-1', 'proposal-1');
+    expect(
+      await controller.reject(
         expectedCreatorId: 'user-1',
         projectId: 'proposal-1',
-        requestId: 'request-1',
-      );
-      expect(
-        await controller.accept(
-          expectedCreatorId: 'user-1',
-          projectId: 'proposal-1',
-          requestId: 'request-1',
-        ),
-        isFalse,
-      );
-      expect(
-        gateway.calls.where((call) => call == 'accept:request-1'),
-        hasLength(1),
-      );
+        requestId: 'reject-me',
+        requesterProfileId: 'user-2',
+      ),
+      isTrue,
+    );
+    expect(session.container.read(projectChatRefreshProvider), 0);
+    gateway.creatorMembers = [creatorMemberFixture()];
+    await controller.load('user-1', 'proposal-1');
+    final membershipId = gateway.creatorMembers.single.id;
+    expect(
+      await controller.remove(
+        expectedCreatorId: 'user-1',
+        projectId: 'proposal-1',
+        membershipId: membershipId,
+        participantProfileId: 'user-2',
+      ),
+      isTrue,
+    );
+    expect(gateway.lastExpectedIdentity, 'user-1');
+    expect(session.container.read(projectChatRefreshProvider), 1);
+    expect(
       session.container
-          .read(authSessionProvider.notifier)
-          .markProfileReady(const AuthIdentity(id: 'user-2'));
-      pending.complete();
-      expect(await first, isFalse);
-      expect(
-        session.container.read(creatorParticipationProvider).requests,
-        isEmpty,
-      );
-    },
-  );
+          .read(creatorParticipationProvider)
+          .members
+          .single
+          .status,
+      MembershipStatus.removed,
+    );
+  });
 
   test('old protected meeting load cannot publish after sign-out', () async {
     final pending = Completer<void>();

@@ -18,6 +18,9 @@ import '../../features/profile/presentation/profile_edit_screen.dart';
 import '../../features/profile/presentation/profile_screen.dart';
 import '../../features/project_chat/presentation/project_chat_info_screen.dart';
 import '../../features/project_chat/presentation/project_chat_screen.dart';
+import '../../features/project_resource_needs/presentation/project_resource_need_routes.dart';
+import '../../features/project_resource_needs/presentation/project_resource_matches_screen.dart';
+import '../../features/project_resource_needs/presentation/project_resource_needs_screen.dart';
 import '../../features/participation/domain/participation_models.dart';
 import '../../features/participation/presentation/creator_participation_screen.dart';
 import '../../features/participation/presentation/join_request_screen.dart';
@@ -31,6 +34,11 @@ import '../../features/recurring_activities/presentation/recurring_activity_edit
 import '../../features/resource_listings/presentation/own_resource_listings_screen.dart';
 import '../../features/resource_listings/presentation/public_resource_listings_screen.dart';
 import '../../features/resource_listings/presentation/resource_listing_editor_screen.dart';
+import '../../features/resource_loans/presentation/resource_loan_schedule_screen.dart';
+import '../../features/resource_chat/presentation/resource_chat_screen.dart';
+import '../../features/resource_requests/presentation/resource_request_screen.dart';
+import '../../features/resource_saved_searches/presentation/resource_saved_search_routes.dart';
+import '../../features/resource_saved_searches/presentation/resource_saved_searches_screen.dart';
 import '../../l10n/generated/app_localizations.dart';
 import '../foundation_screen.dart';
 import 'app_navigation_shell.dart';
@@ -81,12 +89,15 @@ RoutingConfig _routingConfig(
       final isParticipationRoute = ParticipationRoutes.isParticipationPath(
         path,
       );
+      final isProjectResourceNeedManagementRoute =
+          ProjectResourceNeedRoutes.isManagementPath(path);
       final isMessagesRoute = isMessagesPath(path);
       final isNotificationsRoute = isNotificationsPath(path);
       final isActivityManagementRoute =
           isProposalManagementRoute ||
           isTavoliManagementRoute ||
           isResourceManagementRoute ||
+          isProjectResourceNeedManagementRoute ||
           isParticipationRoute ||
           isMessagesRoute ||
           isNotificationsRoute;
@@ -104,7 +115,10 @@ RoutingConfig _routingConfig(
       }
 
       if (session.phase == AuthSessionPhase.profileSetupRequired &&
-          (isParticipationRoute || isMessagesRoute || isNotificationsRoute)) {
+          (isParticipationRoute ||
+              isProjectResourceNeedManagementRoute ||
+              isMessagesRoute ||
+              isNotificationsRoute)) {
         return Uri(
           path: '/profile/edit',
           queryParameters: {'returnTo': state.uri.toString()},
@@ -141,6 +155,7 @@ RoutingConfig _routingConfig(
             pending?.returnTo ??
             sanitizeReturnDestination(state.uri.queryParameters['returnTo']);
         if (ParticipationRoutes.isParticipationPath(returnTo) ||
+            ProjectResourceNeedRoutes.isManagementPath(returnTo) ||
             isMessagesPath(returnTo) ||
             isNotificationsPath(returnTo) ||
             _isResourceManagementPath(returnTo)) {
@@ -234,6 +249,24 @@ RoutingConfig _routingConfig(
                         ),
                       ),
                       GoRoute(
+                        path: 'resources',
+                        builder: (context, state) => ProjectResourceNeedsScreen(
+                          projectId: state.pathParameters['id']!,
+                          projectKind: ProjectKind.oneTime,
+                        ),
+                        routes: [
+                          GoRoute(
+                            path: ':resourceNeedId/matches',
+                            builder: (context, state) =>
+                                ProjectResourceMatchesScreen(
+                                  projectId: state.pathParameters['id']!,
+                                  resourceNeedId:
+                                      state.pathParameters['resourceNeedId']!,
+                                ),
+                          ),
+                        ],
+                      ),
+                      GoRoute(
                         path: 'join',
                         builder: (context, state) => JoinRequestScreen(
                           projectId: state.pathParameters['id']!,
@@ -281,6 +314,24 @@ RoutingConfig _routingConfig(
                             ),
                       ),
                       GoRoute(
+                        path: 'resources',
+                        builder: (context, state) => ProjectResourceNeedsScreen(
+                          projectId: state.pathParameters['id']!,
+                          projectKind: ProjectKind.recurring,
+                        ),
+                        routes: [
+                          GoRoute(
+                            path: ':resourceNeedId/matches',
+                            builder: (context, state) =>
+                                ProjectResourceMatchesScreen(
+                                  projectId: state.pathParameters['id']!,
+                                  resourceNeedId:
+                                      state.pathParameters['resourceNeedId']!,
+                                ),
+                          ),
+                        ],
+                      ),
+                      GoRoute(
                         path: 'join',
                         builder: (context, state) => JoinRequestScreen(
                           projectId: state.pathParameters['id']!,
@@ -311,12 +362,26 @@ RoutingConfig _routingConfig(
                 builder: (context, state) => const MessagesScreen(),
                 routes: [
                   GoRoute(
+                    path: 'requests/resource/:requestId',
+                    builder: (context, state) => ResourceRequestScreen(
+                      key: state.pageKey,
+                      requestId: state.pathParameters['requestId']!,
+                    ),
+                  ),
+                  GoRoute(
                     path: 'requests/:requestId',
                     builder: (context, state) =>
                         ParticipationRequestMessageScreen(
                           key: state.pageKey,
                           requestId: state.pathParameters['requestId']!,
                         ),
+                  ),
+                  GoRoute(
+                    path: 'chats/resource/:chatId',
+                    builder: (context, state) => ResourceChatScreen(
+                      key: state.pageKey,
+                      chatId: state.pathParameters['chatId']!,
+                    ),
                   ),
                   GoRoute(
                     path: 'chats/:chatId',
@@ -363,6 +428,11 @@ RoutingConfig _routingConfig(
                         const ResourceListingEditorScreen(),
                   ),
                   GoRoute(
+                    path: 'saved-searches',
+                    builder: (context, state) =>
+                        const ResourceSavedSearchesScreen(),
+                  ),
+                  GoRoute(
                     path: ':listingId',
                     builder: (context, state) =>
                         PublicResourceListingDetailScreen(
@@ -375,6 +445,12 @@ RoutingConfig _routingConfig(
                             ResourceListingEditorScreen(
                               listingId: state.pathParameters['listingId'],
                             ),
+                      ),
+                      GoRoute(
+                        path: 'loan-schedule',
+                        builder: (context, state) => ResourceLoanScheduleScreen(
+                          listingId: state.pathParameters['listingId']!,
+                        ),
                       ),
                     ],
                   ),
@@ -391,11 +467,12 @@ RoutingConfig _routingConfig(
 bool _isResourceManagementPath(String destination) {
   final path = Uri.tryParse(destination)?.path;
   if (path == null) return false;
+  if (ResourceSavedSearchRoutes.isManagementPath(path)) return true;
   if (path == '/resources/mine' || path == '/resources/create') return true;
   final segments = Uri(path: path).pathSegments;
   return segments.length == 3 &&
       segments.first == 'resources' &&
-      segments.last == 'edit';
+      (segments.last == 'edit' || segments.last == 'loan-schedule');
 }
 
 final appRouterProvider = Provider<GoRouter>((ref) {

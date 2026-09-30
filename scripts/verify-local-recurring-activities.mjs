@@ -1,6 +1,7 @@
 import { createClient } from "@supabase/supabase-js";
 
 import { readLocalSupabaseStatus } from "./lib/local-supabase-status.mjs";
+import { ensureLocalProfilePhoto } from "./lib/local-profile-photo.mjs";
 
 const repositoryRoot = process.cwd();
 const mailpitUrl = (
@@ -22,6 +23,9 @@ async function verifyRecurringActivities() {
     ensureCompleteProfile(userA, "Recurring Owner A"),
     ensureCompleteProfile(userB, "Recurring Owner B"),
   ]);
+  await Promise.all(
+    [userA, userB].map((user) => ensureLocalProfilePhoto(user)),
+  );
 
   const userBDraftId = await createDraft(userB, {
     title: "User B recurring draft",

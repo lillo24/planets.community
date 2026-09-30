@@ -26,6 +26,11 @@ class _RequestCodeScreenState extends ConsumerState<RequestCodeScreen> {
     super.dispose();
   }
 
+  void _closeAuth() {
+    ref.read(authCommandProvider.notifier).cancelFlow();
+    context.go('/');
+  }
+
   Future<void> _requestCode() async {
     if (!(_formKey.currentState?.validate() ?? false)) {
       return;
@@ -50,8 +55,16 @@ class _RequestCodeScreenState extends ConsumerState<RequestCodeScreen> {
     final command = ref.watch(authCommandProvider);
     final error = command.failure;
 
-    return Scaffold(
-      appBar: AppBar(title: Text(l10n.authRequestTitle)),
+    final scaffold = Scaffold(
+      appBar: AppBar(
+        leading: IconButton(
+          key: const Key('auth-close-button'),
+          tooltip: MaterialLocalizations.of(context).closeButtonTooltip,
+          onPressed: _closeAuth,
+          icon: const Icon(Icons.close),
+        ),
+        title: Text(l10n.authRequestTitle),
+      ),
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
@@ -123,13 +136,28 @@ class _RequestCodeScreenState extends ConsumerState<RequestCodeScreen> {
                         key: const Key('auth-request-button'),
                         onPressed: command.isBusy ? null : _requestCode,
                         child: command.isBusy
-                            ? SizedBox.square(
-                                dimension: 20,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  color: Theme.of(context)
-                                      .colorScheme
-                                      .onPrimary,
+                            ? Semantics(
+                                key: const Key('auth-request-progress'),
+                                container: true,
+                                liveRegion: true,
+                                label: l10n.authSendingCode,
+                                child: ExcludeSemantics(
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      SizedBox.square(
+                                        dimension: 20,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                          color: Theme.of(context)
+                                              .colorScheme
+                                              .onPrimary,
+                                        ),
+                                      ),
+                                      const SizedBox(width: AppSpacing.small),
+                                      Text(l10n.authSendingCode),
+                                    ],
+                                  ),
                                 ),
                               )
                             : Text(l10n.authSendCodeAction),
@@ -148,6 +176,15 @@ class _RequestCodeScreenState extends ConsumerState<RequestCodeScreen> {
           ),
         ),
       ),
+    );
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) {
+          _closeAuth();
+        }
+      },
+      child: scaffold,
     );
   }
 }

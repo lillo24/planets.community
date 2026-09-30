@@ -15,6 +15,16 @@ values
   ('a7200000-0000-4000-8000-000000000002', 'Chat Participant A'),
   ('a7300000-0000-4000-8000-000000000003', 'Chat Participant B'),
   ('a7400000-0000-4000-8000-000000000004', 'Chat Unrelated');
+-- Legacy scenarios that exercise publication/participation intentionally satisfy
+-- the 08A4A canonical-photo precondition; dedicated 08A4A tests cover absence.
+insert into public.profile_photos (profile_id, object_path, audience)
+select
+  profile.id,
+  profile.id::text || '/00000000-0000-4000-8000-000000000001.webp',
+  'interactions'
+from public.profiles as profile
+where profile.display_name is not null
+on conflict (profile_id) do nothing;
 
 insert into public.proposals (
   id,

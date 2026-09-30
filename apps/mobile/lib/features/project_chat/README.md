@@ -1,22 +1,34 @@
 # Project chat
 
-This feature owns the authenticated mobile group-chat experience over the
-canonical Project chat backend. It does not own participation membership,
-meeting data, unread state, notification projection, or project content.
+This feature owns the authenticated mobile group-chat and current Needs
+coordination experience over the canonical Project backend. It does not own
+participation membership, meeting data, unread state, notification projection,
+or project content.
 
 ## Source map
 
-- `domain/project_chat_models.dart` defines strict summary, message, cursor,
+- `domain/project_chat_models.dart` defines strict summary, mixed-feed, cursor,
   page, Realtime-signal, and viewer-role models.
-- `data/project_chat_gateway.dart` is the only Supabase boundary. It calls the
-  three 07B2B RPCs and opens private per-chat/per-profile Broadcast channels.
+- `domain/project_needs_models.dart` defines current live-requirement coverage
+  and resurfacing-attention models without exposing provider identity.
+- `data/project_chat_gateway.dart` owns chat-list, mixed-feed, send, and the
+  single private per-chat/per-profile Broadcast channel.
+- `data/project_needs_gateway.dart` is the RPC-only boundary for current
+  coverage, participant claims, creator manual coverage, and attention.
 - `application/project_chat_controllers.dart` owns identity-bound chat-list and
-  detail state, keyset pagination, ordering, deduplication, send flow, durable
-  reconciliation, and entitlement-scoped subscriptions.
+  detail state, mixed-feed pagination, ordering, deduplication, send flow,
+  durable reconciliation, and entitlement-scoped subscriptions.
+- `application/project_needs_controller.dart` independently owns open-chat
+  coverage and attention reads, actions, explicit-frontier acknowledgement,
+  identity resets, and one-shot attention-pulse revisions.
 - `application/project_chat_refresh.dart` is the narrow cross-feature signal
   used after participation acceptance, leave, or removal.
-- `presentation/project_chat_screen.dart` renders history, current-member
-  composer, former-member read-only state, and the group-info entry point.
+- `presentation/project_chat_screen.dart` renders human bubbles, structured
+  resurfacing cards, the current-member composer/Needs control, former-member
+  read-only state, and the group-info entry point.
+- `presentation/project_needs_sheet.dart` renders the scroll-controlled current
+  Needs drawer and acknowledges attention only after refreshed canonical
+  content has completed a frame.
 - `presentation/project_chat_info_screen.dart` renders canonical summary
   context, Project/Tavolo and creator Participation navigation, and lazy access
   to the existing protected meeting operation.
@@ -25,27 +37,40 @@ meeting data, unread state, notification projection, or project content.
 
 ## Canonical data and Realtime
 
-The client reads only `list_own_project_group_chats` and
-`list_own_project_chat_messages`, and sends only through
-`send_project_chat_message`. It does not read chat tables directly. Backend
-history pages arrive newest-first and are transformed to oldest-first UI order;
-older pages use the exact `(created_at, message_id)` cursor. Chat-list pages use
-the exact `(activity_at, chat_id)` cursor.
+The client reads chat state only through `list_own_project_group_chats` and
+`list_own_project_chat_feed`, and sends only through
+`send_project_chat_message`. Mixed pages arrive newest-first and are transformed
+to oldest-first UI order; older pages use the exact
+`(created_at, item_kind, item_id)` cursor and preserve the backend's equal-time
+kind ordering. Chat-list pages use `(activity_at, chat_id)`.
+
+Current-entitled users load live Needs through
+`list_project_live_requirement_coverage` and
+`get_own_project_requirement_attention`. Participant claims and creator manual
+coverage use their canonical RPCs; the client never fabricates coverage or
+commitment state. The drawer acknowledges only the explicit event ID it loaded,
+after both coverage and attention succeed and that content is rendered. Former
+members perform none of these live-Needs calls.
 
 Realtime is a private authenticated Broadcast hint on
-`project-chat:<chatId>:profile:<profileId>`. The identifier-only payload is not
-rendered or trusted as message content. A valid hint, reconnect, app resume, or
-explicit refresh reloads durable RPC state and deduplicates by canonical
-message ID. Subscriptions exist only while the Messages/chat screen is active
-and the backend reports current entitlement. Former members keep only the
-server-authorized history frontier, with no composer, live channel, protected
-meeting request, or indication of newer activity.
+`project-chat:<chatId>:profile:<profileId>`. The three strict identifier-only
+events (`project.chat_message_sent`, `project.requirement_needed_again`, and
+`project.requirement_covered`) are not rendered or trusted as content. They
+reconcile the affected durable feed, coverage, and attention RPCs; the Needs
+boundary does not open another channel. Reconnect, app resume, and explicit
+refresh also reload durable state, with feed items deduplicated by kind plus
+canonical ID.
 
-All cached summaries, messages, composer state, meeting details, async
-revisions, and subscriptions are scoped to the rendered profile identity.
+Subscriptions exist only while the Messages/chat screen is active and the
+backend reports current entitlement. Former members keep only the
+server-authorized history frontier, with no composer, live channel, protected
+meeting request, current Needs control, or indication of newer activity.
+
+All cached summaries, feed items, Needs state, composer state, meeting details,
+async revisions, and subscriptions are scoped to the rendered profile identity.
 Account changes clear state and reject late responses. Accept, leave, and
-remove transitions trigger a canonical refresh rather than predicting chat
-membership in the client.
+remove transitions trigger canonical refreshes rather than predicting chat,
+coverage, or attention state in the client.
 
 ## Navigation
 
@@ -70,14 +95,27 @@ pass. On Android and iOS, verify:
 
 1. keyboard resize, multiline input, send, dismissal, and focus restoration;
 2. initial bottom scroll and viewport preservation when older history loads;
-3. bubble alignment, long text wrapping, text scaling, screen-reader order, and
-   message/composer semantics;
+3. bubble/system-card alignment, long text wrapping, equal-time chronology,
+   text scaling, screen-reader order, and message/composer semantics;
 4. Chats/Requests tab switching, back behavior, deep links, and branch
    restoration;
-5. offline/reconnect/resume catch-up without duplicates;
+5. offline/reconnect/resume catch-up without duplicate feed items;
 6. leave, removal, rejoin, creator, and account-switch transitions;
 7. protected meeting data never remains visible after entitlement or identity
-   changes.
+   changes;
+8. Needs drawer drag/scroll behavior, safe areas, keyboard/view-inset
+   interaction, narrow widths, text scaling, and a 50-item mixed list;
+9. the persistent `Needed again` callout and subtle one-shot reduced-motion
+   pulse, including TalkBack/VoiceOver count and attention semantics;
+10. participant claim races on two devices and canonical `PT409` recovery;
+11. creator `Found outside app` and `Needed again` manual-coverage flows,
+    including participant-plus-manual coverage;
+12. closed-drawer and open-drawer Realtime resurfacing, ensuring attention is
+    acknowledged only after refreshed current Needs are visible;
+13. app restart with unseen attention, account switch while the drawer is open,
+    and leave/removal while the drawer is open;
+14. Proposal skill/resource and Tavolo resource-only behavior with long
+    localized requirement labels.
 
 Automated Flutter tests and Android compilation validate the functional
 contract but are not recorded as native-device QA.

@@ -73,6 +73,7 @@ enum AuthFailureKind {
   invalidCode,
   expiredCode,
   rateLimited,
+  requestTimedOut,
   networkUnavailable,
   serviceUnavailable,
   profileSetup,

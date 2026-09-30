@@ -9,6 +9,10 @@ import '../../../core/widgets/error_state.dart';
 import '../../../core/widgets/loading_state.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../auth/application/auth_session_controller.dart';
+import '../../cover_media/presentation/project_cover_image.dart';
+import '../../participation/domain/participation_models.dart';
+import '../../profile_photo/presentation/profile_photo_trust_gate.dart';
+import '../../project_resource_needs/presentation/project_resource_need_routes.dart';
 import '../application/recurring_activity_controllers.dart';
 import '../domain/recurring_activity_models.dart';
 import 'recurring_activity_widgets.dart';
@@ -100,93 +104,119 @@ class _OwnTavoloCard extends ConsumerWidget {
     final l10n = AppLocalizations.of(context);
     final now = ref.read(recurringActivityClockProvider)();
     return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.medium),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              activity.title?.trim().isNotEmpty == true
-                  ? activity.title!
-                  : l10n.tavoliLifecycleDraft,
-              style: Theme.of(context).textTheme.titleLarge,
-            ),
-            const SizedBox(height: AppSpacing.xSmall),
-            RecurringLifecycleBadge(lifecycle: activity.lifecycle),
-            if (activity.currentSchedule case final schedule?) ...[
-              Text(formatRecurringSchedule(schedule, context)),
-              if (schedule.isPendingAt(now))
-                Text(
-                  l10n.tavoliPendingSchedule(
-                    DateFormat.yMMMd(
-                      Localizations.localeOf(context).toLanguageTag(),
-                    ).format(schedule.effectiveFrom),
-                  ),
-                  key: Key('tavoli-pending-${activity.id}'),
-                ),
-            ],
-            if (activity.exactMeetingText case final exact?) ...[
-              const SizedBox(height: AppSpacing.xSmall),
-              Text(exact, key: Key('own-tavoli-exact-${activity.id}')),
-            ],
-            if (activity.lifecycle == RecurringActivityLifecycle.ended)
-              Text(l10n.tavoliEndedReadOnly),
-            const SizedBox(height: AppSpacing.medium),
-            Wrap(
-              spacing: AppSpacing.small,
-              runSpacing: AppSpacing.xSmall,
+      clipBehavior: Clip.antiAlias,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          ProjectCoverImage(
+            key: Key('own-tavolo-cover-${activity.id}'),
+            title: activity.title?.trim().isNotEmpty == true
+                ? activity.title!
+                : l10n.tavoliLifecycleDraft,
+            objectPath: activity.coverObjectPath,
+            ownerProfileId: identityId,
+          ),
+          Padding(
+            padding: const EdgeInsets.all(AppSpacing.medium),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                if (activity.lifecycle != RecurringActivityLifecycle.draft)
-                  OutlinedButton(
-                    key: Key('tavoli-view-${activity.id}'),
-                    onPressed: () => context.push('/tavoli/${activity.id}'),
-                    child: Text(l10n.tavoliView),
-                  ),
-                if (activity.isEditable)
-                  OutlinedButton(
-                    key: Key('tavoli-edit-${activity.id}'),
-                    onPressed: () =>
-                        context.push('/tavoli/${activity.id}/edit'),
-                    child: Text(l10n.tavoliEdit),
-                  ),
-                if (activity.canPublish)
-                  FilledButton(
-                    key: Key('tavoli-publish-${activity.id}'),
-                    onPressed: () => _run(
-                      context,
-                      ref,
-                      (controller) =>
-                          controller.publish(identityId, activity.id),
+                Text(
+                  activity.title?.trim().isNotEmpty == true
+                      ? activity.title!
+                      : l10n.tavoliLifecycleDraft,
+                  style: Theme.of(context).textTheme.titleLarge,
+                ),
+                const SizedBox(height: AppSpacing.xSmall),
+                RecurringLifecycleBadge(lifecycle: activity.lifecycle),
+                if (activity.currentSchedule case final schedule?) ...[
+                  Text(formatRecurringSchedule(schedule, context)),
+                  if (schedule.isPendingAt(now))
+                    Text(
+                      l10n.tavoliPendingSchedule(
+                        DateFormat.yMMMd(
+                          Localizations.localeOf(context).toLanguageTag(),
+                        ).format(schedule.effectiveFrom),
+                      ),
+                      key: Key('tavoli-pending-${activity.id}'),
                     ),
-                    child: Text(l10n.tavoliPublish),
-                  ),
-                if (activity.canPause)
-                  TextButton(
-                    key: Key('tavoli-pause-${activity.id}'),
-                    onPressed: () => _confirmPause(context, ref),
-                    child: Text(l10n.tavoliPause),
-                  ),
-                if (activity.canResume)
-                  FilledButton.tonal(
-                    key: Key('tavoli-resume-${activity.id}'),
-                    onPressed: () => _run(
-                      context,
-                      ref,
-                      (controller) =>
-                          controller.resume(identityId, activity.id),
+                ],
+                if (activity.exactMeetingText case final exact?) ...[
+                  const SizedBox(height: AppSpacing.xSmall),
+                  Text(exact, key: Key('own-tavoli-exact-${activity.id}')),
+                ],
+                if (activity.lifecycle == RecurringActivityLifecycle.ended)
+                  Text(l10n.tavoliEndedReadOnly),
+                const SizedBox(height: AppSpacing.medium),
+                Wrap(
+                  spacing: AppSpacing.small,
+                  runSpacing: AppSpacing.xSmall,
+                  children: [
+                    OutlinedButton.icon(
+                      key: Key('tavoli-resources-${activity.id}'),
+                      onPressed: () => context.push(
+                        ProjectResourceNeedRoutes.manage(
+                          ProjectKind.recurring,
+                          activity.id,
+                        ),
+                      ),
+                      icon: const Icon(Icons.inventory_2_outlined),
+                      label: Text(l10n.projectResourcesManage),
                     ),
-                    child: Text(l10n.tavoliResume),
-                  ),
-                if (activity.canEnd)
-                  TextButton(
-                    key: Key('tavoli-end-${activity.id}'),
-                    onPressed: () => _confirmEnd(context, ref),
-                    child: Text(l10n.tavoliEnd),
-                  ),
+                    if (activity.lifecycle != RecurringActivityLifecycle.draft)
+                      OutlinedButton(
+                        key: Key('tavoli-view-${activity.id}'),
+                        onPressed: () => context.push('/tavoli/${activity.id}'),
+                        child: Text(l10n.tavoliView),
+                      ),
+                    if (activity.isEditable)
+                      OutlinedButton(
+                        key: Key('tavoli-edit-${activity.id}'),
+                        onPressed: () =>
+                            context.push('/tavoli/${activity.id}/edit'),
+                        child: Text(l10n.tavoliEdit),
+                      ),
+                    if (activity.canPublish)
+                      FilledButton(
+                        key: Key('tavoli-publish-${activity.id}'),
+                        onPressed: () => _run(
+                          context,
+                          ref,
+                          (controller) =>
+                              controller.publish(identityId, activity.id),
+                          requirePhoto: true,
+                        ),
+                        child: Text(l10n.tavoliPublish),
+                      ),
+                    if (activity.canPause)
+                      TextButton(
+                        key: Key('tavoli-pause-${activity.id}'),
+                        onPressed: () => _confirmPause(context, ref),
+                        child: Text(l10n.tavoliPause),
+                      ),
+                    if (activity.canResume)
+                      FilledButton.tonal(
+                        key: Key('tavoli-resume-${activity.id}'),
+                        onPressed: () => _run(
+                          context,
+                          ref,
+                          (controller) =>
+                              controller.resume(identityId, activity.id),
+                        ),
+                        child: Text(l10n.tavoliResume),
+                      ),
+                    if (activity.canEnd)
+                      TextButton(
+                        key: Key('tavoli-end-${activity.id}'),
+                        onPressed: () => _confirmEnd(context, ref),
+                        child: Text(l10n.tavoliEnd),
+                      ),
+                  ],
+                ),
               ],
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -195,12 +225,32 @@ class _OwnTavoloCard extends ConsumerWidget {
     BuildContext context,
     WidgetRef ref,
     Future<bool> Function(OwnRecurringActivitiesController controller)
-    operation,
-  ) async {
+    operation, {
+    bool requirePhoto = false,
+  }) async {
+    if (requirePhoto &&
+        !await requireProfilePhotoForTrustAction(
+          context: context,
+          ref: ref,
+          expectedProfileId: identityId,
+          reason: ProfilePhotoTrustReason.publishPersonalActivity,
+        )) {
+      return;
+    }
+    if (!context.mounted) return;
     final ok = await operation(
       ref.read(ownRecurringActivitiesProvider.notifier),
     );
     if (!ok && context.mounted) {
+      if (requirePhoto &&
+          ref.read(ownRecurringActivitiesProvider).failure ==
+              RecurringActivityFailureKind.profilePhotoRequired) {
+        await showProfilePhotoTrustGate(
+          context: context,
+          reason: ProfilePhotoTrustReason.publishPersonalActivity,
+        );
+        return;
+      }
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(AppLocalizations.of(context).tavoliSafeError)),
       );

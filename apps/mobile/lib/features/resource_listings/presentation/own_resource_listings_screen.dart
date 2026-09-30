@@ -8,6 +8,7 @@ import '../../../core/widgets/error_state.dart';
 import '../../../core/widgets/loading_state.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../auth/application/auth_session_controller.dart';
+import '../../cover_media/presentation/cover_image.dart';
 import '../application/resource_listing_controllers.dart';
 import '../domain/resource_listing_models.dart';
 import 'resource_listing_widgets.dart';
@@ -100,48 +101,68 @@ class _OwnResourceListingCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.medium),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
+      clipBehavior: Clip.antiAlias,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          CoverImage(
+            key: Key('resource-owner-cover-${listing.id}'),
+            title: listing.title ?? l10n.resourceUntitled,
+            objectPath: listing.coverObjectPath,
+            ownerProfileId: listing.ownerProfileId,
+          ),
+          Padding(
+            padding: const EdgeInsets.all(AppSpacing.medium),
+            child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Expanded(
-                  child: Text(
-                    listing.title ?? l10n.resourceUntitled,
-                    style: Theme.of(context).textTheme.titleLarge,
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: Text(
+                        listing.title ?? l10n.resourceUntitled,
+                        style: Theme.of(context).textTheme.titleLarge,
+                      ),
+                    ),
+                    const SizedBox(width: AppSpacing.small),
+                    ResourceListingModeBadge(mode: listing.mode),
+                  ],
+                ),
+                const SizedBox(height: AppSpacing.xSmall),
+                ResourceListingLifecycleBadge(lifecycle: listing.lifecycle),
+                if (listing.publicLocationLabel case final location?) ...[
+                  const SizedBox(height: AppSpacing.small),
+                  Text(location),
+                ],
+                const SizedBox(height: AppSpacing.xSmall),
+                Text(
+                  l10n.resourceUpdatedDate(
+                    formatResourceListingDate(context, listing.updatedAt),
                   ),
                 ),
-                const SizedBox(width: AppSpacing.small),
-                ResourceListingModeBadge(mode: listing.mode),
+                const SizedBox(height: AppSpacing.medium),
+                OutlinedButton(
+                  key: Key('resource-edit-${listing.id}'),
+                  onPressed: () => context.go('/resources/${listing.id}/edit'),
+                  child: Text(
+                    listing.lifecycle == ResourceListingLifecycle.closed
+                        ? l10n.resourceViewListing
+                        : l10n.resourceEditListing,
+                  ),
+                ),
+                if (listing.lifecycle != ResourceListingLifecycle.draft)
+                  OutlinedButton.icon(
+                    key: Key('resource-loan-schedule-${listing.id}'),
+                    onPressed: () =>
+                        context.go('/resources/${listing.id}/loan-schedule'),
+                    icon: const Icon(Icons.event_note_outlined),
+                    label: Text(l10n.resourceLoanScheduleTitle),
+                  ),
               ],
             ),
-            const SizedBox(height: AppSpacing.xSmall),
-            ResourceListingLifecycleBadge(lifecycle: listing.lifecycle),
-            if (listing.publicLocationLabel case final location?) ...[
-              const SizedBox(height: AppSpacing.small),
-              Text(location),
-            ],
-            const SizedBox(height: AppSpacing.xSmall),
-            Text(
-              l10n.resourceUpdatedDate(
-                formatResourceListingDate(context, listing.updatedAt),
-              ),
-            ),
-            const SizedBox(height: AppSpacing.medium),
-            OutlinedButton(
-              key: Key('resource-edit-${listing.id}'),
-              onPressed: () => context.go('/resources/${listing.id}/edit'),
-              child: Text(
-                listing.lifecycle == ResourceListingLifecycle.closed
-                    ? l10n.resourceViewListing
-                    : l10n.resourceEditListing,
-              ),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

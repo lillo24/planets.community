@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart' show ScrollCacheExtent;
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -11,6 +12,11 @@ import '../../../core/widgets/loading_state.dart';
 import '../../../devtools/demo/demo_widgets.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../auth/application/auth_session_controller.dart';
+import '../../cover_media/domain/cover_media_models.dart';
+import '../../cover_media/presentation/cover_editor_section.dart';
+import '../../profile_photo/presentation/profile_photo_trust_gate.dart';
+import '../../participation/domain/participation_models.dart';
+import '../../project_resource_needs/presentation/project_resource_need_routes.dart';
 import '../application/recurring_activity_controllers.dart';
 import '../domain/recurring_activity_models.dart';
 
@@ -48,6 +54,7 @@ class _RecurringActivityEditorScreenState
   DateTime? _effectiveFrom;
   RecurringExactLocationVisibility _visibility =
       RecurringExactLocationVisibility.participants;
+  CoverChange _coverChange = const CoverChange.unchanged();
 
   @override
   void initState() {
@@ -121,6 +128,9 @@ class _RecurringActivityEditorScreenState
             : Form(
                 key: _formKey,
                 child: ListView(
+                  // The bounded editor keeps validated fields mounted while
+                  // an error summary scrolls between them after submission.
+                  scrollCacheExtent: const ScrollCacheExtent.pixels(1200),
                   padding: const EdgeInsets.all(AppSpacing.large),
                   children: [
                     if (widget.activityId == null && existing == null)
@@ -138,6 +148,14 @@ class _RecurringActivityEditorScreenState
                       min: 2,
                       requiredForPublish: true,
                     ),
+                    CoverEditorSection(
+                      ownerProfileId: identity,
+                      title: existing?.title ?? l10n.tavoliCreateTitle,
+                      canonicalObjectPath: existing?.coverObjectPath,
+                      enabled: !state.isBusy,
+                      onChanged: (change) => _coverChange = change,
+                    ),
+                    const SizedBox(height: AppSpacing.large),
                     _field(
                       controller: _summary,
                       label: l10n.tavoliSummaryLabel,
@@ -389,7 +407,26 @@ class _RecurringActivityEditorScreenState
                           ),
                         ),
                       ),
-                    if (isFailure)
+                    if (state.coverPartialSave != null)
+                      Padding(
+                        padding: const EdgeInsets.only(top: AppSpacing.medium),
+                        child: Semantics(
+                          liveRegion: true,
+                          child: Text(
+                            state.coverPartialSave ==
+                                    CoverPartialSaveKind.draftCreated
+                                ? l10n.coverDraftPartialError
+                                : l10n.coverChangesPartialError,
+                            key: const Key('tavoli-cover-save-error'),
+                            style: TextStyle(
+                              color: Theme.of(context).colorScheme.error,
+                            ),
+                          ),
+                        ),
+                      )
+                    else if (isFailure &&
+                        state.failure !=
+                            RecurringActivityFailureKind.profilePhotoRequired)
                       Padding(
                         padding: const EdgeInsets.only(top: AppSpacing.medium),
                         child: Text(
@@ -407,6 +444,20 @@ class _RecurringActivityEditorScreenState
                     Wrap(
                       spacing: AppSpacing.small,
                       children: [
+                        if (existing != null)
+                          OutlinedButton.icon(
+                            key: const Key('tavoli-manage-resources'),
+                            onPressed: state.isBusy
+                                ? null
+                                : () => context.push(
+                                    ProjectResourceNeedRoutes.manage(
+                                      ProjectKind.recurring,
+                                      existing.id,
+                                    ),
+                                  ),
+                            icon: const Icon(Icons.inventory_2_outlined),
+                            label: Text(l10n.projectResourcesManage),
+                          ),
                         FilledButton.tonal(
                           key: const Key('tavoli-save-draft'),
                           onPressed: state.isBusy ? null : () => _submit(false),
@@ -529,11 +580,41 @@ class _RecurringActivityEditorScreenState
     if (!valid || (publish && !_schedulePublishable)) return;
     final identity = _expectedIdentity;
     if (identity == null) return;
+    if (publish &&
+        !await requireProfilePhotoForTrustAction(
+          context: context,
+          ref: ref,
+          expectedProfileId: identity,
+          reason: ProfilePhotoTrustReason.publishPersonalActivity,
+        )) {
+      return;
+    }
+    if (!mounted) return;
     final controller = ref.read(recurringActivityEditorProvider.notifier);
     final id = publish
-        ? await controller.publish(identity, _input())
-        : await controller.saveDraft(identity, _input());
+        ? await controller.publish(
+            identity,
+            _input(),
+            coverChange: _coverChange,
+          )
+        : await controller.saveDraft(
+            identity,
+            _input(),
+            coverChange: _coverChange,
+          );
+    if (id == null &&
+        mounted &&
+        publish &&
+        ref.read(recurringActivityEditorProvider).failure ==
+            RecurringActivityFailureKind.profilePhotoRequired) {
+      await showProfilePhotoTrustGate(
+        context: context,
+        reason: ProfilePhotoTrustReason.publishPersonalActivity,
+      );
+      return;
+    }
     if (id == null || !mounted) return;
+    _coverChange = const CoverChange.unchanged();
     ref.invalidate(ownRecurringActivitiesProvider);
     ref.invalidate(publicRecurringActivitiesProvider);
     if (publish) {

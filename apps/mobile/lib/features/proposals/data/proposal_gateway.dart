@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../../core/backend/cover_media_path.dart';
 import '../../../core/backend/supabase_backend.dart';
 import '../domain/proposal_models.dart';
 
@@ -250,21 +251,28 @@ class SupabaseProposalGateway implements ProposalGateway {
     };
   }
 
-  ProposalSummary _publicSummaryFromRow(Map<String, dynamic> row) =>
-      ProposalSummary(
-        id: row['proposal_id'] as String,
-        title: row['title'] as String,
-        summary: row['summary'] as String,
-        startsAt: DateTime.parse(row['starts_at'] as String),
-        endsAt: DateTime.parse(row['ends_at'] as String),
-        eventTimezone: row['event_timezone'] as String,
-        countryCode: row['country_code'] as String,
-        locality: row['locality'] as String,
-        administrativeArea: row['administrative_area'] as String?,
-        publicLocationLabel: row['public_location_label'] as String,
-        status: ProposalStatus.fromWire(row['derived_status'] as String),
-        skills: _skillsFromJson(row['skills']),
-      );
+  ProposalSummary _publicSummaryFromRow(Map<String, dynamic> row) {
+    final proposalId = row['proposal_id'] as String;
+    return ProposalSummary(
+      id: proposalId,
+      title: row['title'] as String,
+      summary: row['summary'] as String,
+      startsAt: DateTime.parse(row['starts_at'] as String),
+      endsAt: DateTime.parse(row['ends_at'] as String),
+      eventTimezone: row['event_timezone'] as String,
+      countryCode: row['country_code'] as String,
+      locality: row['locality'] as String,
+      administrativeArea: row['administrative_area'] as String?,
+      publicLocationLabel: row['public_location_label'] as String,
+      status: ProposalStatus.fromWire(row['derived_status'] as String),
+      skills: _skillsFromJson(row['skills']),
+      coverObjectPath: parseCoverObjectPath(
+        row['cover_object_path'],
+        parentId: proposalId,
+        parentSegment: 'projects',
+      ),
+    );
+  }
 
   ProposalDetail _publicDetailFromRow(Map<String, dynamic> row) =>
       ProposalDetail(
@@ -276,32 +284,40 @@ class SupabaseProposalGateway implements ProposalGateway {
         exactLocationRestricted: row['exact_location_restricted'] as bool,
       );
 
-  OwnProposal _ownProposalFromRow(Map<String, dynamic> row) => OwnProposal(
-    id: row['proposal_id'] as String,
-    lifecycle: ProposalLifecycle.fromWire(row['lifecycle_state'] as String),
-    title: row['title'] as String?,
-    summary: row['summary'] as String?,
-    description: row['description'] as String?,
-    startsAt: _optionalDate(row['starts_at']),
-    endsAt: _optionalDate(row['ends_at']),
-    eventTimezone: row['event_timezone'] as String?,
-    countryCode: row['country_code'] as String?,
-    locality: row['locality'] as String?,
-    administrativeArea: row['administrative_area'] as String?,
-    publicLocationLabel: row['public_location_label'] as String?,
-    status: row['derived_status'] == null
-        ? null
-        : ProposalStatus.fromWire(row['derived_status'] as String),
-    skills: _skillsFromJson(row['skills']),
-    exactMeetingText: row['exact_meeting_text'] as String?,
-    exactLocationVisibility: ExactLocationVisibility.fromWire(
-      row['exact_location_visibility'] as String,
-    ),
-    createdAt: DateTime.parse(row['created_at'] as String),
-    updatedAt: DateTime.parse(row['updated_at'] as String),
-    publishedAt: _optionalDate(row['published_at']),
-    cancelledAt: _optionalDate(row['cancelled_at']),
-  );
+  OwnProposal _ownProposalFromRow(Map<String, dynamic> row) {
+    final proposalId = row['proposal_id'] as String;
+    return OwnProposal(
+      id: proposalId,
+      lifecycle: ProposalLifecycle.fromWire(row['lifecycle_state'] as String),
+      title: row['title'] as String?,
+      summary: row['summary'] as String?,
+      description: row['description'] as String?,
+      startsAt: _optionalDate(row['starts_at']),
+      endsAt: _optionalDate(row['ends_at']),
+      eventTimezone: row['event_timezone'] as String?,
+      countryCode: row['country_code'] as String?,
+      locality: row['locality'] as String?,
+      administrativeArea: row['administrative_area'] as String?,
+      publicLocationLabel: row['public_location_label'] as String?,
+      status: row['derived_status'] == null
+          ? null
+          : ProposalStatus.fromWire(row['derived_status'] as String),
+      skills: _skillsFromJson(row['skills']),
+      exactMeetingText: row['exact_meeting_text'] as String?,
+      exactLocationVisibility: ExactLocationVisibility.fromWire(
+        row['exact_location_visibility'] as String,
+      ),
+      createdAt: DateTime.parse(row['created_at'] as String),
+      updatedAt: DateTime.parse(row['updated_at'] as String),
+      publishedAt: _optionalDate(row['published_at']),
+      cancelledAt: _optionalDate(row['cancelled_at']),
+      coverObjectPath: parseCoverObjectPath(
+        row['cover_object_path'],
+        parentId: proposalId,
+        parentSegment: 'projects',
+      ),
+    );
+  }
 
   List<ProposalSkill> _skillsFromJson(dynamic value) {
     if (value is! List) {

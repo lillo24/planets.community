@@ -9,8 +9,14 @@ import '../../../core/widgets/empty_state.dart';
 import '../../../core/widgets/error_state.dart';
 import '../../../core/widgets/loading_state.dart';
 import '../../../l10n/generated/app_localizations.dart';
+import '../../auth/application/auth_session_controller.dart';
+import '../../cover_media/presentation/project_cover_image.dart';
 import '../../participation/domain/participation_models.dart';
 import '../../participation/presentation/project_participation_section.dart';
+import '../../profile_photo/application/project_creator_photo_controller.dart';
+import '../../profile_photo/presentation/visible_profile_photo_avatar.dart';
+import '../../project_resource_needs/presentation/project_resource_need_routes.dart';
+import '../../project_resource_needs/presentation/project_resource_needs_section.dart';
 import '../application/recurring_activity_controllers.dart';
 import '../domain/recurring_activity_models.dart';
 import 'recurring_activity_widgets.dart';
@@ -202,11 +208,18 @@ class _PublicRecurringActivityDetailScreenState
   @override
   void initState() {
     super.initState();
-    Future<void>.microtask(
-      () => ref
+    Future<void>.microtask(_load);
+  }
+
+  Future<void> _load() async {
+    await Future.wait([
+      ref
           .read(publicRecurringActivityDetailProvider.notifier)
           .load(widget.activityId),
-    );
+      ref
+          .read(projectCreatorPhotoProvider.notifier)
+          .load(widget.activityId, force: true),
+    ]);
   }
 
   @override
@@ -214,6 +227,9 @@ class _PublicRecurringActivityDetailScreenState
     final l10n = AppLocalizations.of(context);
     final state = ref.watch(publicRecurringActivityDetailProvider);
     final detail = state.activityId == widget.activityId ? state.detail : null;
+    final organizerPhoto = ref
+        .watch(projectCreatorPhotoProvider)
+        .entryFor(widget.activityId);
     if (detail == null && state.phase == RecurringActivityLoadPhase.loading) {
       return Scaffold(
         appBar: AppBar(title: Text(l10n.tavoliDetailTitle)),
@@ -223,12 +239,7 @@ class _PublicRecurringActivityDetailScreenState
     if (detail == null) {
       return Scaffold(
         appBar: AppBar(title: Text(l10n.tavoliDetailTitle)),
-        body: ErrorState(
-          message: l10n.tavoliSafeError,
-          onRetry: () => ref
-              .read(publicRecurringActivityDetailProvider.notifier)
-              .load(widget.activityId),
-        ),
+        body: ErrorState(message: l10n.tavoliSafeError, onRetry: _load),
       );
     }
     final locale = Localizations.localeOf(context).toLanguageTag();
@@ -238,6 +249,13 @@ class _PublicRecurringActivityDetailScreenState
         child: ListView(
           padding: const EdgeInsets.all(AppSpacing.large),
           children: [
+            ProjectCoverImage(
+              key: Key('tavolo-detail-cover-${detail.id}'),
+              title: detail.title,
+              objectPath: detail.coverObjectPath,
+              borderRadius: AppRadii.medium,
+            ),
+            const SizedBox(height: AppSpacing.large),
             Row(
               children: [
                 Expanded(
@@ -293,6 +311,22 @@ class _PublicRecurringActivityDetailScreenState
                     '${formatEventDateTime(occurrence.endsAt, occurrence.eventTimezone, locale)} · ${occurrence.eventTimezone}',
                   ),
                 ),
+            ProjectResourceNeedsSection(projectId: detail.id),
+            if (ref.watch(authSessionProvider).identity?.id ==
+                detail.creatorProfileId) ...[
+              const SizedBox(height: AppSpacing.medium),
+              OutlinedButton.icon(
+                key: Key('project-resources-manage-${detail.id}'),
+                onPressed: () => context.push(
+                  ProjectResourceNeedRoutes.manage(
+                    ProjectKind.recurring,
+                    detail.id,
+                  ),
+                ),
+                icon: const Icon(Icons.inventory_2_outlined),
+                label: Text(l10n.projectResourcesManage),
+              ),
+            ],
             const SizedBox(height: AppSpacing.large),
             ProjectParticipationSection(
               projectId: detail.id,
@@ -307,10 +341,23 @@ class _PublicRecurringActivityDetailScreenState
               publicExactMeetingText: detail.exactMeetingText,
               exactLocationRestricted: detail.exactLocationRestricted,
             ),
-            if (detail.creatorDisplayName case final creator?) ...[
-              const SizedBox(height: AppSpacing.large),
-              Text(l10n.tavoliOrganizedBy(creator)),
-            ],
+            const SizedBox(height: AppSpacing.large),
+            ListTile(
+              key: const Key('tavoli-organizer-identity'),
+              contentPadding: EdgeInsets.zero,
+              leading: VisibleProfilePhotoAvatar(
+                entry: organizerPhoto,
+                imageSemanticsLabel: l10n.profilePhotoOrganizerAvatarLabel,
+                placeholderSemanticsLabel:
+                    l10n.profilePhotoOrganizerAvatarLabel,
+              ),
+              title: Text(
+                l10n.tavoliOrganizedBy(
+                  detail.creatorDisplayName ??
+                      l10n.profilePhotoOrganizerFallback,
+                ),
+              ),
+            ),
           ],
         ),
       ),

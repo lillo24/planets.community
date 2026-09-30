@@ -17,6 +17,8 @@ abstract interface class ParticipationGateway {
     required String expectedRequesterProfileId,
     required String projectId,
     String? message,
+    Set<String> skillIds = const {},
+    Set<String> resourceNeedIds = const {},
   });
 
   Future<void> withdrawRequest({
@@ -32,11 +34,6 @@ abstract interface class ParticipationGateway {
   Future<List<CreatorProjectMember>> listProjectMembers({
     required String expectedCreatorProfileId,
     required String projectId,
-  });
-
-  Future<void> acceptRequest({
-    required String expectedCreatorProfileId,
-    required String requestId,
   });
 
   Future<void> rejectRequest({
@@ -95,12 +92,16 @@ class SupabaseParticipationGateway implements ParticipationGateway {
     required String expectedRequesterProfileId,
     required String projectId,
     String? message,
+    Set<String> skillIds = const {},
+    Set<String> resourceNeedIds = const {},
   }) => _client.rpc<String>(
     'request_to_join_project',
     params: {
       'p_expected_requester_profile_id': expectedRequesterProfileId,
       'p_project_id': projectId,
       'p_request_message': message,
+      'p_skill_ids': (skillIds.toList()..sort()),
+      'p_resource_need_ids': (resourceNeedIds.toList()..sort()),
     },
   );
 
@@ -146,20 +147,6 @@ class SupabaseParticipationGateway implements ParticipationGateway {
       },
     );
     return response.map(parser.creatorMember).toList(growable: false);
-  }
-
-  @override
-  Future<void> acceptRequest({
-    required String expectedCreatorProfileId,
-    required String requestId,
-  }) async {
-    await _client.rpc<String>(
-      'accept_project_join_request',
-      params: {
-        'p_expected_creator_profile_id': expectedCreatorProfileId,
-        'p_request_id': requestId,
-      },
-    );
   }
 
   @override

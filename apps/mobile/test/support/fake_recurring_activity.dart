@@ -25,6 +25,7 @@ class FakeRecurringActivityGateway implements RecurringActivityGateway {
   RequestedTavoliLoader? requestedLoader;
   Future<void>? mutationDelay;
   Object? error;
+  Object? publishError;
   Object? requestedError;
   final calls = <String>[];
   final referenceTimes = <DateTime>[];
@@ -147,8 +148,10 @@ class FakeRecurringActivityGateway implements RecurringActivityGateway {
   }
 
   @override
-  Future<void> publish(String expectedCreatorId, String activityId) =>
-      _mutation('publish:$activityId', expectedCreatorId);
+  Future<void> publish(String expectedCreatorId, String activityId) async {
+    if (publishError case final failure?) throw failure;
+    await _mutation('publish:$activityId', expectedCreatorId);
+  }
 
   @override
   Future<void> pause(String expectedCreatorId, String activityId) =>
@@ -197,6 +200,7 @@ RecurringSchedule recurringScheduleFixture({
 PublicRecurringActivitySummary publicRecurringSummaryFixture({
   String id = 'tavolo-1',
   RecurrenceType type = RecurrenceType.weekly,
+  String? coverObjectPath,
 }) => PublicRecurringActivitySummary(
   id: id,
   title: 'Neighborhood philosophy table',
@@ -212,6 +216,7 @@ PublicRecurringActivitySummary publicRecurringSummaryFixture({
     eventTimezone: 'Europe/Rome',
   ),
   schedule: recurringScheduleFixture(type: type),
+  coverObjectPath: coverObjectPath,
 );
 
 RequestedRecurringActivitySummary requestedRecurringActivityFixture({
@@ -229,6 +234,7 @@ PublicRecurringActivityDetail publicRecurringDetailFixture({
   bool restricted = true,
   RecurrenceType type = RecurrenceType.weekly,
   String creatorProfileId = 'user-1',
+  String? coverObjectPath,
 }) => PublicRecurringActivityDetail(
   id: 'tavolo-1',
   creatorProfileId: creatorProfileId,
@@ -248,6 +254,7 @@ PublicRecurringActivityDetail publicRecurringDetailFixture({
       : const [],
   exactMeetingText: restricted ? null : 'At the long reading-room table',
   exactLocationRestricted: restricted,
+  coverObjectPath: coverObjectPath,
 );
 
 RecurringActivityInput recurringInputFixture({
@@ -278,6 +285,7 @@ OwnRecurringActivity ownRecurringActivityFixture({
   RecurringActivityLifecycle? lifecycle,
   RecurringActivityInput? input,
   RecurringSchedule? schedule,
+  String? coverObjectPath,
 }) {
   final value = input ?? recurringInputFixture();
   final current =
@@ -315,5 +323,6 @@ OwnRecurringActivity ownRecurringActivityFixture({
     pausedAt: null,
     resumedAt: null,
     endedAt: null,
+    coverObjectPath: coverObjectPath,
   );
 }

@@ -11,6 +11,7 @@ import 'package:planets_mobile/features/auth/data/auth_gateway.dart';
 import 'package:planets_mobile/features/auth/domain/auth_models.dart';
 import 'package:planets_mobile/features/profile/data/profile_gateway.dart';
 import 'package:planets_mobile/features/participation/data/participation_gateway.dart';
+import 'package:planets_mobile/features/project_resource_needs/data/project_resource_needs_gateway.dart';
 import 'package:planets_mobile/features/proposals/data/proposal_gateway.dart';
 import 'package:planets_mobile/features/recurring_activities/data/recurring_activity_gateway.dart';
 import 'package:planets_mobile/features/resource_listings/data/resource_listing_gateway.dart';
@@ -19,6 +20,7 @@ import '../../support/fake_auth.dart';
 import '../../support/fake_profile.dart';
 import '../../support/fake_participation.dart';
 import '../../support/fake_proposal.dart';
+import '../../support/fake_project_resource_needs.dart';
 import '../../support/fake_recurring_activity.dart';
 import '../../support/fake_resource_listing.dart';
 
@@ -75,12 +77,14 @@ void main() {
       '/proposals/create': 1,
       '/proposals/proposal-1': 1,
       '/proposals/proposal-1/edit': 1,
+      '/proposals/proposal-1/resources': 1,
       '/proposals/proposal-1/join': 1,
       '/proposals/proposal-1/participants': 1,
       '/tavoli': 1,
       '/tavoli/mine': 1,
       '/tavoli/create': 1,
       '/tavoli/tavolo-1': 1,
+      '/tavoli/tavolo-1/resources': 1,
       '/tavoli/tavolo-1/edit': 1,
       '/tavoli/tavolo-1/join': 1,
       '/tavoli/tavolo-1/participants': 1,
@@ -143,6 +147,24 @@ void main() {
       tester.widget<NavigationBar>(find.byType(NavigationBar)).destinations,
       hasLength(3),
     );
+  });
+
+  testWidgets('signed-out Home Browse CTA returns Home on system Back', (
+    tester,
+  ) async {
+    final app = await _pump(tester, signedIn: false);
+    final router = app.read(appRouterProvider);
+
+    await _tap(tester, 'browse-proposals-button');
+    expect(router.routeInformationProvider.value.uri.path, '/proposals');
+    expect(find.text('One-time proposals'), findsOneWidget);
+
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+
+    expect(router.routeInformationProvider.value.uri.path, '/');
+    expect(find.text('Mobile foundation ready'), findsOneWidget);
+    expect(find.byKey(const Key('auth-email-field')), findsNothing);
   });
 
   testWidgets('public Tavoli routes stay available signed out', (tester) async {
@@ -255,6 +277,10 @@ void main() {
       find.byKey(const Key('participation-message-field')),
       'Private message from A',
     );
+    await tester.tap(
+      find.byKey(const Key('participation-option-skill-skill-mural')),
+    );
+    await tester.pump();
     await _tap(tester, 'nav-home');
     auth.emit(const AuthSnapshot(identity: AuthIdentity(id: 'user-2')));
     await tester.pumpAndSettle();
@@ -272,6 +298,14 @@ void main() {
           .controller
           ?.text,
       isEmpty,
+    );
+    expect(
+      tester
+          .widget<FilterChip>(
+            find.byKey(const Key('participation-option-skill-skill-mural')),
+          )
+          .selected,
+      isFalse,
     );
   });
 
@@ -567,6 +601,7 @@ Future<ProviderContainer> _pump(
   FakeResourceListingGateway? resourceListings,
   String appEnvironment = 'local',
   String enableDemoTools = '',
+  FakeProjectResourceNeedsGateway? projectResourceNeeds,
 }) async {
   final gateway =
       auth ??
@@ -624,6 +659,9 @@ Future<ProviderContainer> _pump(
                 ..publicItems = [publicResourceListingFixture()]
                 ..publicDetail = publicResourceListingDetailFixture()
                 ..ownItems = [ownResourceListingFixture()]),
+        ),
+        projectResourceNeedsGatewayProvider.overrideWithValue(
+          projectResourceNeeds ?? FakeProjectResourceNeedsGateway(),
         ),
       ],
       child: const PlanetsApp(),

@@ -4,6 +4,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../auth/application/auth_session_controller.dart';
 import '../../auth/domain/auth_models.dart';
 import '../../project_chat/application/project_chat_refresh.dart';
+import '../../profile_photo/application/visible_profile_photo_controller.dart';
 import '../data/participation_gateway.dart';
 import '../domain/participation_models.dart';
 
@@ -13,6 +14,7 @@ enum ParticipationFailureKind {
   conflict,
   notFound,
   unavailable,
+  profilePhotoRequired,
 }
 
 enum ParticipationLoadPhase { idle, loading, ready, failure }
@@ -179,10 +181,14 @@ class ParticipationCommandController
     required String projectId,
     required ProjectKind projectKind,
     required String message,
+    Set<String> skillIds = const {},
+    Set<String> resourceNeedIds = const {},
   }) async {
     final normalizedMessage = message.trim();
     if (state.isBusy ||
-        normalizedMessage.length > participationRequestMessageMaxLength) {
+        normalizedMessage.length > participationRequestMessageMaxLength ||
+        skillIds.length > participationSkillSelectionMax ||
+        resourceNeedIds.length > participationResourceNeedSelectionMax) {
       if (!state.isBusy) {
         state = ParticipationCommandState(
           phase: ParticipationCommandPhase.failure,
@@ -207,8 +213,13 @@ class ParticipationCommandController
             expectedRequesterProfileId: expectedProfileId,
             projectId: projectId,
             message: normalizedMessage.isEmpty ? null : normalizedMessage,
+            skillIds: skillIds,
+            resourceNeedIds: resourceNeedIds,
           );
       if (!_isCurrent(revision, expectedProfileId)) return false;
+      ref
+          .read(visibleProfilePhotoProvider.notifier)
+          .invalidate(expectedProfileId);
       await ref.read(ownParticipationProvider.notifier).load(expectedProfileId);
       if (!_isCurrent(revision, expectedProfileId)) return false;
       state = ParticipationCommandState(
@@ -292,6 +303,9 @@ class ParticipationCommandController
             membershipId: membershipId,
           );
       if (!_isCurrent(revision, expectedProfileId)) return false;
+      ref
+          .read(visibleProfilePhotoProvider.notifier)
+          .invalidate(expectedProfileId);
       ref
           .read(participantMeetingDetailsProvider.notifier)
           .clearProject(projectId);
@@ -450,7 +464,6 @@ enum CreatorParticipationPhase {
   idle,
   loading,
   ready,
-  accepting,
   rejecting,
   removing,
   failure,
@@ -477,7 +490,6 @@ class CreatorParticipationState {
 
   bool get isBusy => switch (phase) {
     CreatorParticipationPhase.loading ||
-    CreatorParticipationPhase.accepting ||
     CreatorParticipationPhase.rejecting ||
     CreatorParticipationPhase.removing => true,
     CreatorParticipationPhase.idle ||
@@ -550,31 +562,17 @@ class CreatorParticipationController
     }
   }
 
-  Future<bool> accept({
-    required String expectedCreatorId,
-    required String projectId,
-    required String requestId,
-  }) => _requestMutation(
-    phase: CreatorParticipationPhase.accepting,
-    expectedCreatorId: expectedCreatorId,
-    projectId: projectId,
-    targetId: requestId,
-    refreshProjectChats: true,
-    command: (gateway) => gateway.acceptRequest(
-      expectedCreatorProfileId: expectedCreatorId,
-      requestId: requestId,
-    ),
-  );
-
   Future<bool> reject({
     required String expectedCreatorId,
     required String projectId,
     required String requestId,
+    required String requesterProfileId,
   }) => _requestMutation(
     phase: CreatorParticipationPhase.rejecting,
     expectedCreatorId: expectedCreatorId,
     projectId: projectId,
     targetId: requestId,
+    invalidateProfileId: requesterProfileId,
     refreshProjectChats: false,
     command: (gateway) => gateway.rejectRequest(
       expectedCreatorProfileId: expectedCreatorId,
@@ -586,11 +584,13 @@ class CreatorParticipationController
     required String expectedCreatorId,
     required String projectId,
     required String membershipId,
+    required String participantProfileId,
   }) => _requestMutation(
     phase: CreatorParticipationPhase.removing,
     expectedCreatorId: expectedCreatorId,
     projectId: projectId,
     targetId: membershipId,
+    invalidateProfileId: participantProfileId,
     refreshProjectChats: true,
     command: (gateway) => gateway.removeMember(
       expectedCreatorProfileId: expectedCreatorId,
@@ -603,6 +603,7 @@ class CreatorParticipationController
     required String expectedCreatorId,
     required String projectId,
     required String targetId,
+    required String invalidateProfileId,
     required bool refreshProjectChats,
     required Future<void> Function(ParticipationGateway gateway) command,
   }) async {
@@ -620,6 +621,9 @@ class CreatorParticipationController
       _requireReadyIdentity(expectedCreatorId);
       await command(ref.read(participationGatewayProvider));
       if (!_isCurrent(revision, expectedCreatorId, projectId)) return false;
+      ref
+          .read(visibleProfilePhotoProvider.notifier)
+          .invalidate(invalidateProfileId);
       final result = await _fetch(expectedCreatorId, projectId);
       if (!_isCurrent(revision, expectedCreatorId, projectId)) return false;
       state = CreatorParticipationState(
@@ -713,6 +717,7 @@ ParticipationFailureKind mapParticipationFailure(Object error) {
   }
   if (error is PostgrestException) {
     return switch (error.code) {
+      'PT422' => ParticipationFailureKind.profilePhotoRequired,
       '22023' => ParticipationFailureKind.invalidInput,
       '42501' => ParticipationFailureKind.forbidden,
       '55000' => ParticipationFailureKind.conflict,

@@ -10,12 +10,74 @@ import 'package:planets_mobile/features/proposals/application/proposal_controlle
 import 'package:planets_mobile/features/proposals/data/proposal_gateway.dart';
 import 'package:planets_mobile/features/proposals/domain/proposal_models.dart';
 import 'package:planets_mobile/features/proposals/presentation/proposal_editor_screen.dart';
+import 'package:planets_mobile/features/profile/presentation/profile_edit_screen.dart';
+import 'package:planets_mobile/features/profile_photo/data/profile_photo_gateway.dart';
 import 'package:planets_mobile/l10n/generated/app_localizations.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../support/fake_auth.dart';
 import '../../../support/fake_proposal.dart';
+import '../../../support/fake_profile_photo.dart';
 
 void main() {
+  testWidgets(
+    'publish without photo opens trust gate and preserves the draft on return',
+    (tester) async {
+      final gateway = await _pumpEditor(tester, null, hasPhoto: false);
+      await tester.tap(find.byKey(const Key('proposal-fill-sample')));
+      await tester.pumpAndSettle();
+
+      await _tap(tester, find.byKey(const Key('proposal-publish')));
+      expect(find.byKey(const Key('profile-photo-trust-gate')), findsOneWidget);
+      expect(gateway.calls, isNot(contains('create')));
+
+      await tester.tap(find.byKey(const Key('profile-photo-trust-add')));
+      await tester.pumpAndSettle();
+      expect(find.byType(ProfileEditScreen), findsOneWidget);
+      Navigator.of(tester.element(find.byType(ProfileEditScreen))).pop();
+      await tester.pumpAndSettle();
+      expect(
+        find.byType(ProposalEditorScreen, skipOffstage: false),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const Key('proposal-publish'), skipOffstage: false),
+        findsOneWidget,
+      );
+      for (var attempt = 0; attempt < 4; attempt++) {
+        await tester.drag(find.byType(ListView).first, const Offset(0, 600));
+        await tester.pump();
+      }
+      await tester.pumpAndSettle();
+      expect(
+        tester
+            .widget<TextFormField>(find.byKey(const Key('proposal-title')))
+            .controller!
+            .text,
+        'Community garden build day',
+      );
+      expect(gateway.calls, isNot(contains('create')));
+    },
+  );
+
+  testWidgets('stale backend photo failure opens the same trust gate', (
+    tester,
+  ) async {
+    final gateway = await _pumpEditor(tester, proposalInputFixture());
+    gateway.error = const PostgrestException(
+      message: 'Photo required',
+      code: 'PT422',
+    );
+
+    await _tap(tester, find.byKey(const Key('proposal-publish')));
+
+    expect(find.byKey(const Key('profile-photo-trust-gate')), findsOneWidget);
+    expect(
+      find.text('A profile photo is required to publish a personal activity.'),
+      findsOneWidget,
+    );
+  });
+
   testWidgets(
     'invalid timezone survives rebuilds without changing stored dates',
     (tester) async {
@@ -197,13 +259,16 @@ void main() {
 
 Future<FakeProposalGateway> _pumpEditor(
   WidgetTester tester,
-  ProposalInput? input,
-) async {
+  ProposalInput? input, {
+  bool hasPhoto = true,
+}) async {
   final auth = FakeAuthGateway(
     snapshot: const AuthSnapshot(identity: AuthIdentity(id: 'user-1')),
   );
   final gateway = FakeProposalGateway()
     ..ownItems = input == null ? [] : [ownProposalFixture(input: input)];
+  final photoGateway = FakeProfilePhotoGateway();
+  if (hasPhoto) photoGateway.photo = profilePhotoFixture();
   final container = ProviderContainer(
     overrides: [
       appConfigProvider.overrideWithValue(
@@ -218,6 +283,7 @@ Future<FakeProposalGateway> _pumpEditor(
         FakeProfileAnchorGateway()..readiness = ProfileAnchorReadiness.complete,
       ),
       proposalGatewayProvider.overrideWithValue(gateway),
+      profilePhotoGatewayProvider.overrideWithValue(photoGateway),
       proposalClockProvider.overrideWithValue(() => DateTime.utc(2026, 9, 3)),
     ],
   );
@@ -236,6 +302,10 @@ Future<FakeProposalGateway> _pumpEditor(
       GoRoute(
         path: '/proposals/mine',
         builder: (_, _) => const Scaffold(body: Text('Saved proposal')),
+      ),
+      GoRoute(
+        path: '/profile/edit',
+        builder: (_, _) => const Scaffold(body: Text('Photo management')),
       ),
     ],
   );

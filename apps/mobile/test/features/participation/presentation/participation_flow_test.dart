@@ -6,21 +6,78 @@ import 'package:planets_mobile/app/router/app_router.dart';
 import 'package:planets_mobile/core/config/app_config.dart';
 import 'package:planets_mobile/features/auth/data/auth_gateway.dart';
 import 'package:planets_mobile/features/auth/domain/auth_models.dart';
+import 'package:planets_mobile/features/participation/data/actual_contribution_gateway.dart';
+import 'package:planets_mobile/features/participation/data/membership_commitment_gateway.dart';
 import 'package:planets_mobile/features/participation/data/participation_gateway.dart';
+import 'package:planets_mobile/features/participation/data/join_acceptance_triage_gateway.dart';
 import 'package:planets_mobile/features/participation/domain/participation_models.dart';
 import 'package:planets_mobile/features/profile/data/profile_gateway.dart';
+import 'package:planets_mobile/features/profile/presentation/profile_edit_screen.dart';
+import 'package:planets_mobile/features/profile_photo/data/profile_photo_gateway.dart';
+import 'package:planets_mobile/features/profile_photo/application/visible_profile_photo_controller.dart';
+import 'package:planets_mobile/features/profile_photo/domain/visible_profile_photo_models.dart';
+import 'package:planets_mobile/features/project_resource_needs/data/project_resource_needs_gateway.dart';
+import 'package:planets_mobile/features/project_chat/application/project_chat_refresh.dart';
 import 'package:planets_mobile/features/proposals/data/proposal_gateway.dart';
 import 'package:planets_mobile/features/proposals/domain/proposal_models.dart';
 import 'package:planets_mobile/features/recurring_activities/data/recurring_activity_gateway.dart';
 import 'package:planets_mobile/features/recurring_activities/domain/recurring_activity_models.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../support/fake_auth.dart';
+import '../../../support/fake_actual_contribution.dart';
+import '../../../support/fake_membership_commitment.dart';
 import '../../../support/fake_participation.dart';
+import '../../../support/fake_join_acceptance_triage.dart';
 import '../../../support/fake_profile.dart';
+import '../../../support/fake_profile_photo.dart';
+import '../../../support/fake_project_resource_needs.dart';
 import '../../../support/fake_proposal.dart';
 import '../../../support/fake_recurring_activity.dart';
 
 void main() {
+  testWidgets('join without photo opens applicant gate and never auto-sends', (
+    tester,
+  ) async {
+    final participation = FakeParticipationGateway();
+    final app = await _pump(
+      tester,
+      participation: participation,
+      hasPhoto: false,
+    );
+    final router = app.read(appRouterProvider);
+    router.go('/proposals/proposal-1/join');
+    await tester.pumpAndSettle();
+    await tester.enterText(
+      find.byKey(const Key('participation-message-field')),
+      'I can help with painting.',
+    );
+    await _scrollTo(
+      tester,
+      find.byKey(const Key('participation-send-request')),
+    );
+    await tester.tap(find.byKey(const Key('participation-send-request')));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('profile-photo-trust-gate')), findsOneWidget);
+    expect(participation.calls, isNot(contains('request:proposal-1')));
+    await tester.tap(find.byKey(const Key('profile-photo-trust-add')));
+    await tester.pumpAndSettle();
+    expect(find.byType(ProfileEditScreen), findsOneWidget);
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+    expect(
+      tester
+          .widget<TextFormField>(
+            find.byKey(const Key('participation-message-field')),
+          )
+          .controller!
+          .text,
+      'I can help with painting.',
+    );
+    expect(participation.calls, isNot(contains('request:proposal-1')));
+  });
+
   testWidgets('Proposal join, pending, withdraw, and retry stay on detail', (
     tester,
   ) async {
@@ -39,6 +96,10 @@ void main() {
     await tester.enterText(
       find.byKey(const Key('participation-message-field')),
       '  I can bring brushes.  ',
+    );
+    await _scrollTo(
+      tester,
+      find.byKey(const Key('participation-send-request')),
     );
     await tester.tap(find.byKey(const Key('participation-send-request')));
     await tester.pumpAndSettle();
@@ -188,10 +249,12 @@ void main() {
         creatorJoinRequestFixture(id: 'pending'),
         creatorJoinRequestFixture(
           id: 'reject-me',
+          requesterProfileId: 'user-3',
           message: 'A second private request.',
         ),
         creatorJoinRequestFixture(
           id: 'resolved',
+          requesterProfileId: 'user-4',
           status: JoinRequestStatus.rejected,
           message: null,
         ),
@@ -206,10 +269,44 @@ void main() {
         ),
       ]
       ..meetingDetails = meetingDetailsFixture();
+    final triage = FakeJoinAcceptanceTriageGateway()
+      ..onAccepted = () {
+        participation.creatorRequests = [
+          for (final request in participation.creatorRequests)
+            if (request.id == 'pending')
+              creatorJoinRequestFixture(
+                id: request.id,
+                requesterProfileId: request.requesterProfileId,
+                requesterDisplayName: request.requesterDisplayName,
+                status: JoinRequestStatus.accepted,
+                message: request.message,
+              )
+            else
+              request,
+        ];
+        participation.creatorMembers = [
+          ...participation.creatorMembers,
+          creatorMemberFixture(id: 'membership-4'),
+        ];
+      };
+    final photoGateway = FakeProfilePhotoGateway()
+      ..photo = profilePhotoFixture()
+      ..visiblePhotos.addAll({
+        'user-2': _visiblePhoto(
+          'user-2',
+          'a7000000-0000-4000-8000-000000000002',
+        ),
+        'user-3': _visiblePhoto(
+          'user-3',
+          'a7000000-0000-4000-8000-000000000003',
+        ),
+      });
     final app = await _pump(
       tester,
       identityId: 'user-1',
       participation: participation,
+      triage: triage,
+      photoGateway: photoGateway,
     );
     app.read(appRouterProvider).go('/proposals/proposal-1');
     await tester.pumpAndSettle();
@@ -233,13 +330,25 @@ void main() {
       find.byKey(const Key('participation-member-creator-row')),
       findsNothing,
     );
+    expect(photoGateway.visibleBatchLoadIds, [
+      ['user-2', 'user-3'],
+    ]);
+    expect(app.read(visibleProfilePhotoProvider).entryFor('user-2'), isNotNull);
+    expect(app.read(visibleProfilePhotoProvider).entryFor('user-3'), isNotNull);
 
     await tester.tap(find.byKey(const Key('participation-reject-reject-me')));
     await tester.pumpAndSettle();
     expect(participation.calls, contains('reject:reject-me'));
+    expect(app.read(visibleProfilePhotoProvider).entryFor('user-3'), isNull);
+    expect(app.read(visibleProfilePhotoProvider).entryFor('user-2'), isNotNull);
     await tester.tap(find.byKey(const Key('participation-accept-pending')));
     await tester.pumpAndSettle();
-    expect(participation.calls, contains('accept:pending'));
+    expect(find.text('No contribution offers to classify.'), findsOneWidget);
+    expect(triage.calls, ['selections:pending']);
+    await tester.tap(find.byKey(const Key('join-acceptance-submit')));
+    await tester.pumpAndSettle();
+    expect(triage.calls, ['selections:pending', 'accept:pending']);
+    expect(app.read(projectChatRefreshProvider), 1);
     await _scrollTo(
       tester,
       find.byKey(const Key('participation-member-membership-4')),
@@ -258,7 +367,193 @@ void main() {
     await tester.tap(find.byKey(const Key('participation-confirm-remove')));
     await tester.pumpAndSettle();
     expect(participation.calls, contains('remove:current'));
+    expect(app.read(visibleProfilePhotoProvider).entryFor('user-2'), isNull);
     expect(find.byKey(const Key('participation-remove-left')), findsNothing);
+  });
+
+  testWidgets(
+    'creator member commitment actions load lazily and share editor',
+    (tester) async {
+      final participation = FakeParticipationGateway()
+        ..creatorMembers = [
+          creatorMemberFixture(id: 'current'),
+          creatorMemberFixture(id: 'left', status: MembershipStatus.left),
+        ];
+      final commitments = FakeMembershipCommitmentGateway()
+        ..commitments = [membershipCommitmentFixture()]
+        ..options = [membershipCommitmentOptionFixture()];
+      final app = await _pump(
+        tester,
+        identityId: 'user-1',
+        participation: participation,
+        commitments: commitments,
+      );
+      app.read(appRouterProvider).go('/proposals/proposal-1/participants');
+      await tester.pumpAndSettle();
+
+      expect(commitments.calls, isEmpty);
+      expect(
+        find.byKey(const Key('participation-commitments-current')),
+        findsOneWidget,
+      );
+      await tester.tap(
+        find.byKey(const Key('participation-commitments-current')),
+      );
+      await tester.pumpAndSettle();
+      expect(commitments.calls, contains('commitments:current'));
+      expect(commitments.calls, contains('options:current'));
+      expect(
+        find.byKey(const Key('membership-commitment-save')),
+        findsOneWidget,
+      );
+      await tester.tap(find.byKey(const Key('membership-commitment-close')));
+      await tester.pumpAndSettle();
+
+      await _scrollTo(
+        tester,
+        find.byKey(const Key('participation-commitments-left')),
+      );
+      await tester.tap(find.byKey(const Key('participation-commitments-left')));
+      await tester.pumpAndSettle();
+      expect(commitments.calls, contains('commitments:left'));
+      expect(commitments.calls, isNot(contains('options:left')));
+      expect(find.text('Read-only'), findsOneWidget);
+      expect(find.text('Carpentry'), findsOneWidget);
+      expect(find.text('Carpentry · No longer requested'), findsNothing);
+      expect(find.byKey(const Key('membership-commitment-save')), findsNothing);
+    },
+  );
+
+  testWidgets(
+    'creator actual-contribution actions target exact episodes lazily and exclude Tavoli',
+    (tester) async {
+      final participation = FakeParticipationGateway()
+        ..creatorMembers = [
+          creatorMemberFixture(id: 'current'),
+          creatorMemberFixture(id: 'left', status: MembershipStatus.left),
+        ];
+      final actual = FakeActualContributionGateway()
+        ..contributions = [actualContributionFixture()]
+        ..options = [actualContributionOptionFixture()];
+      final app = await _pump(
+        tester,
+        identityId: 'user-1',
+        participation: participation,
+        actualContributions: actual,
+      );
+      final router = app.read(appRouterProvider);
+      router.go('/proposals/proposal-1/participants');
+      await tester.pumpAndSettle();
+
+      expect(actual.calls, isEmpty);
+      expect(
+        find.byKey(const Key('participation-actual-contributions-current')),
+        findsOneWidget,
+      );
+      await tester.tap(
+        find.byKey(const Key('participation-actual-contributions-current')),
+      );
+      await tester.pumpAndSettle();
+      expect(
+        actual.calls,
+        containsAll(['contributions:current', 'options:current']),
+      );
+      expect(find.text('Jordan'), findsWidgets);
+      expect(find.byKey(const Key('actual-contribution-save')), findsOneWidget);
+      await tester.tap(find.byKey(const Key('actual-contribution-close')));
+      await tester.pumpAndSettle();
+
+      await _scrollTo(
+        tester,
+        find.byKey(const Key('participation-actual-contributions-left')),
+      );
+      await tester.tap(
+        find.byKey(const Key('participation-actual-contributions-left')),
+      );
+      await tester.pumpAndSettle();
+      expect(actual.calls, containsAll(['contributions:left', 'options:left']));
+      expect(find.byKey(const Key('actual-contribution-save')), findsOneWidget);
+      await tester.tap(find.byKey(const Key('actual-contribution-close')));
+      await tester.pumpAndSettle();
+
+      router.go('/tavoli/tavolo-1/participants');
+      await tester.pumpAndSettle();
+      expect(
+        find.byKey(const Key('participation-actual-contributions-current')),
+        findsNothing,
+      );
+      expect(
+        find.byKey(const Key('participation-actual-contributions-left')),
+        findsNothing,
+      );
+    },
+  );
+
+  testWidgets('commitment sheet keeps labels normal when options fail', (
+    tester,
+  ) async {
+    final participation = FakeParticipationGateway()
+      ..creatorMembers = [creatorMemberFixture(id: 'current')];
+    final commitments = FakeMembershipCommitmentGateway()
+      ..commitments = [membershipCommitmentFixture()]
+      ..optionsError = StateError('private options diagnostic');
+    final app = await _pump(
+      tester,
+      identityId: 'user-1',
+      participation: participation,
+      commitments: commitments,
+    );
+    app.read(appRouterProvider).go('/proposals/proposal-1/participants');
+    await tester.pumpAndSettle();
+
+    await tester.tap(
+      find.byKey(const Key('participation-commitments-current')),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Carpentry'), findsOneWidget);
+    expect(find.text('Carpentry · No longer requested'), findsNothing);
+    expect(
+      find.byKey(const Key('membership-commitment-options-error')),
+      findsOneWidget,
+    );
+    expect(find.text('Try again'), findsOneWidget);
+    expect(find.textContaining('private options diagnostic'), findsNothing);
+  });
+
+  testWidgets('lifecycle read-only sheet does not infer stale labels', (
+    tester,
+  ) async {
+    final participation = FakeParticipationGateway()
+      ..creatorMembers = [creatorMemberFixture(id: 'current')];
+    final commitments = FakeMembershipCommitmentGateway()
+      ..commitments = [membershipCommitmentFixture()]
+      ..optionsError = const PostgrestException(
+        message: 'private lifecycle diagnostic',
+        code: '55000',
+      );
+    final app = await _pump(
+      tester,
+      identityId: 'user-1',
+      participation: participation,
+      commitments: commitments,
+    );
+    app.read(appRouterProvider).go('/proposals/proposal-1/participants');
+    await tester.pumpAndSettle();
+
+    await tester.tap(
+      find.byKey(const Key('participation-commitments-current')),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Carpentry'), findsOneWidget);
+    expect(find.text('Carpentry · No longer requested'), findsNothing);
+    expect(
+      find.byKey(const Key('membership-commitment-read-only-notice')),
+      findsOneWidget,
+    );
+    expect(find.byKey(const Key('membership-commitment-save')), findsNothing);
+    expect(find.textContaining('private lifecycle diagnostic'), findsNothing);
   });
 
   testWidgets('pending requester never loads protected meeting information', (
@@ -318,6 +613,7 @@ void main() {
     final app = await _pump(tester, participation: participation);
     app.read(appRouterProvider).go('/proposals/proposal-1');
     await tester.pumpAndSettle();
+    await _scrollTo(tester, find.text('A full proposal description.'));
     expect(find.text('A full proposal description.'), findsOneWidget);
     await _scrollTo(
       tester,
@@ -346,6 +642,45 @@ void main() {
       );
     },
   );
+
+  testWidgets(
+    'Proposal and Tavolo detail both show public open resource needs',
+    (tester) async {
+      final resources = FakeProjectResourceNeedsGateway()
+        ..publicItems = [
+          publicProjectResourceNeedFixture(
+            id: 'boards',
+            title: 'Wooden boards',
+          ),
+        ];
+      final app = await _pump(
+        tester,
+        participation: FakeParticipationGateway(),
+        projectResourceNeeds: resources,
+      );
+      final router = app.read(appRouterProvider);
+
+      router.go('/proposals/proposal-1');
+      await tester.pumpAndSettle();
+      await _scrollTo(
+        tester,
+        find.byKey(const Key('public-resource-need-boards')),
+      );
+      expect(find.text('Wooden boards'), findsWidgets);
+
+      router.go('/tavoli/tavolo-1');
+      await tester.pumpAndSettle();
+      await _scrollTo(
+        tester,
+        find.byKey(const Key('public-resource-need-boards')),
+      );
+      expect(find.text('Wooden boards'), findsWidgets);
+      expect(
+        resources.calls,
+        containsAll(['list-public:proposal-1', 'list-public:tavolo-1']),
+      );
+    },
+  );
 }
 
 Future<ProviderContainer> _pump(
@@ -354,6 +689,12 @@ Future<ProviderContainer> _pump(
   required FakeParticipationGateway participation,
   FakeRecurringActivityGateway? recurring,
   ProposalStatus proposalStatus = ProposalStatus.upcoming,
+  FakeProjectResourceNeedsGateway? projectResourceNeeds,
+  FakeMembershipCommitmentGateway? commitments,
+  FakeActualContributionGateway? actualContributions,
+  FakeJoinAcceptanceTriageGateway? triage,
+  bool hasPhoto = true,
+  FakeProfilePhotoGateway? photoGateway,
 }) async {
   final auth = FakeAuthGateway(
     snapshot: AuthSnapshot(identity: AuthIdentity(id: identityId)),
@@ -394,9 +735,28 @@ Future<ProviderContainer> _pump(
             ),
           ),
         ),
+        profilePhotoGatewayProvider.overrideWithValue(
+          photoGateway ??
+              (FakeProfilePhotoGateway()
+                ..photo = hasPhoto
+                    ? profilePhotoFixture(profileId: identityId)
+                    : null),
+        ),
         proposalGatewayProvider.overrideWithValue(proposals),
         recurringActivityGatewayProvider.overrideWithValue(recurringGateway),
         participationGatewayProvider.overrideWithValue(participation),
+        joinAcceptanceTriageGatewayProvider.overrideWithValue(
+          triage ?? FakeJoinAcceptanceTriageGateway(),
+        ),
+        membershipCommitmentGatewayProvider.overrideWithValue(
+          commitments ?? FakeMembershipCommitmentGateway(),
+        ),
+        actualContributionGatewayProvider.overrideWithValue(
+          actualContributions ?? FakeActualContributionGateway(),
+        ),
+        projectResourceNeedsGatewayProvider.overrideWithValue(
+          projectResourceNeeds ?? FakeProjectResourceNeedsGateway(),
+        ),
       ],
       child: const PlanetsApp(),
     ),
@@ -405,11 +765,19 @@ Future<ProviderContainer> _pump(
   return ProviderScope.containerOf(tester.element(find.byType(PlanetsApp)));
 }
 
+VisibleProfilePhoto _visiblePhoto(String profileId, String version) =>
+    VisibleProfilePhoto(
+      profileId: profileId,
+      objectPath: '$profileId/$version.webp',
+      updatedAt: DateTime.utc(2026, 9, 27),
+    );
+
 Future<void> _scrollTo(WidgetTester tester, Finder target) async {
-  await tester.scrollUntilVisible(
-    target,
-    350,
-    scrollable: find.byType(Scrollable).hitTestable().first,
-  );
+  final scrollable = find.byType(Scrollable).hitTestable().first;
+  for (var attempt = 0; attempt < 8 && target.evaluate().isEmpty; attempt++) {
+    await tester.drag(scrollable, const Offset(0, -350));
+    await tester.pump();
+  }
+  await tester.ensureVisible(target);
   await tester.pumpAndSettle();
 }

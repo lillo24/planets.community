@@ -1,4 +1,20 @@
 const participationRequestMessageMaxLength = 500;
+const participationSkillSelectionMax = 50;
+const participationResourceNeedSelectionMax = 50;
+
+enum ContributionOptionKind { skill, resource }
+
+class ContributionOption {
+  const ContributionOption({
+    required this.id,
+    required this.kind,
+    required this.label,
+  });
+
+  final String id;
+  final ContributionOptionKind kind;
+  final String label;
+}
 
 enum ProjectKind {
   oneTime('one_time'),

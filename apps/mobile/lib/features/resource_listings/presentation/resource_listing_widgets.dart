@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 
 import '../../../core/theme/app_tokens.dart';
 import '../../../l10n/generated/app_localizations.dart';
+import '../../cover_media/presentation/cover_image.dart';
 import '../domain/resource_listing_models.dart';
 
 String resourceListingModeLabel(
@@ -27,6 +28,8 @@ String resourceListingFailureMessage(
   ResourceListingFailureKind? failure,
 ) => switch (failure) {
   ResourceListingFailureKind.invalidInput => l10n.resourceInvalidInput,
+  ResourceListingFailureKind.profilePhotoRequired =>
+    l10n.profilePhotoScambioRequiredTitle,
   ResourceListingFailureKind.forbidden => l10n.resourceForbidden,
   ResourceListingFailureKind.invalidState => l10n.resourceInvalidState,
   ResourceListingFailureKind.notFound => l10n.resourceNotFound,
@@ -84,62 +87,97 @@ class PublicResourceListingCard extends StatelessWidget {
   const PublicResourceListingCard({
     required this.listing,
     required this.onTap,
+    this.footer,
+    this.semanticDetails = const [],
     super.key,
   });
 
   final PublicResourceListingSummary listing;
   final VoidCallback onTap;
+  final Widget? footer;
+  final List<String> semanticDetails;
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final mode = resourceListingModeLabel(l10n, listing.mode);
+    final interest = listing.activeRequestCount == 0
+        ? null
+        : l10n.resourceInterestCount(listing.activeRequestCount);
     return Semantics(
       button: true,
-      label: '$mode, ${listing.title}, ${listing.publicLocationLabel}',
+      label: [
+        mode,
+        listing.title,
+        listing.publicLocationLabel,
+        ?interest,
+        ...semanticDetails,
+      ].join(', '),
       child: Card(
         clipBehavior: Clip.antiAlias,
         child: InkWell(
           key: Key('resource-card-${listing.id}'),
           onTap: onTap,
-          child: Padding(
-            padding: const EdgeInsets.all(AppSpacing.medium),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              CoverImage(
+                key: Key('resource-cover-${listing.id}'),
+                title: listing.title,
+                objectPath: listing.coverObjectPath,
+              ),
+              Padding(
+                padding: const EdgeInsets.all(AppSpacing.medium),
+                child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Expanded(
-                      child: Text(
-                        listing.title,
-                        style: Theme.of(context).textTheme.titleLarge,
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: Text(
+                            listing.title,
+                            style: Theme.of(context).textTheme.titleLarge,
+                          ),
+                        ),
+                        const SizedBox(width: AppSpacing.small),
+                        ResourceListingModeBadge(mode: listing.mode),
+                      ],
+                    ),
+                    const SizedBox(height: AppSpacing.small),
+                    Text(
+                      listing.description,
+                      maxLines: 3,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: AppSpacing.medium),
+                    _IconText(
+                      icon: Icons.location_on_outlined,
+                      text: listing.publicLocationLabel,
+                    ),
+                    const SizedBox(height: AppSpacing.xSmall),
+                    _IconText(
+                      icon: Icons.calendar_today_outlined,
+                      text: l10n.resourcePublishedDate(
+                        formatResourceListingDate(context, listing.publishedAt),
                       ),
                     ),
-                    const SizedBox(width: AppSpacing.small),
-                    ResourceListingModeBadge(mode: listing.mode),
+                    if (interest != null) ...[
+                      const SizedBox(height: AppSpacing.xSmall),
+                      _IconText(
+                        icon: Icons.people_outline,
+                        text: interest,
+                        key: Key('resource-interest-count-${listing.id}'),
+                      ),
+                    ],
+                    if (footer case final footer?) ...[
+                      const SizedBox(height: AppSpacing.medium),
+                      footer,
+                    ],
                   ],
                 ),
-                const SizedBox(height: AppSpacing.small),
-                Text(
-                  listing.description,
-                  maxLines: 3,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const SizedBox(height: AppSpacing.medium),
-                _IconText(
-                  icon: Icons.location_on_outlined,
-                  text: listing.publicLocationLabel,
-                ),
-                const SizedBox(height: AppSpacing.xSmall),
-                _IconText(
-                  icon: Icons.calendar_today_outlined,
-                  text: l10n.resourcePublishedDate(
-                    formatResourceListingDate(context, listing.publishedAt),
-                  ),
-                ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),
@@ -180,7 +218,7 @@ class ResourceListingLocation extends StatelessWidget {
 }
 
 class _IconText extends StatelessWidget {
-  const _IconText({required this.icon, required this.text});
+  const _IconText({required this.icon, required this.text, super.key});
 
   final IconData icon;
   final String text;

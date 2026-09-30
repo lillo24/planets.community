@@ -11,6 +11,14 @@ void main() {
     expect(isMessagesPath('/proposals/request-1'), isFalse);
   });
 
+  test('Resource request messages use a distinct encoded route', () {
+    expect(
+      resourceRequestMessageRoute('request/with space'),
+      '/messages/requests/resource/request%2Fwith%20space',
+    );
+    expect(isMessagesPath('/messages/requests/resource/request-1'), isTrue);
+  });
+
   test('project chats and group info have encoded stable routes', () {
     expect(
       projectChatRoute('chat/with space'),
@@ -22,5 +30,13 @@ void main() {
     );
     expect(isMessagesPath('/messages/chats/chat-1'), isTrue);
     expect(isMessagesPath('/messages/chats/chat-1/info'), isTrue);
+  });
+
+  test('Resource chats use a distinct encoded route', () {
+    expect(
+      resourceChatRoute('chat/with space'),
+      '/messages/chats/resource/chat%2Fwith%20space',
+    );
+    expect(isMessagesPath('/messages/chats/resource/chat-1'), isTrue);
   });
 }

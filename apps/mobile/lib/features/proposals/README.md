@@ -22,9 +22,23 @@ Switching tabs preserves the list scroll/filters and an unsaved editor. Identity
 changes discard the shell's retained stacks and clear owner controllers. Revision
 checks after each await reject late loads/mutations and prevent an old draft
 creation from proceeding to publish in a later session. Every owner RPC still
-receives the form's expected identity; no database rule changes are made here.
+receives the form's expected identity, and publication remains
+database-authoritative.
 
-The public client never reads proposal tables directly. Rough location is available on public cards; exact meeting text is rendered only when the sanitized detail RPC returns it. The shared `participation/` feature adds request/member actions and may replace the restricted explanation with participant-authorized operational meeting text without adding that data to Proposal models. Recurring activities, maps and media remain outside this feature.
+Draft creation and editing remain available without a profile photo. Publish
+performs a local owner-metadata preflight for guidance, while
+`publish_proposal` authoritatively requires a current canonical photo for the
+actual draft-to-published transition. Either photo audience qualifies. The
+detail screen loads the organizer avatar through the distinct Project-context
+photo boundary and degrades to a placeholder independently of detail content.
+
+The public client never reads proposal tables directly. Rough location is available on public cards; exact meeting text is rendered only when the sanitized detail RPC returns it. The shared `participation/` feature adds request/member actions and may replace the restricted explanation with participant-authorized operational meeting text without adding that data to Proposal models. The sibling `cover_media/` feature owns optional cover processing, persistence orchestration, and loading; Proposal controllers create/update the parent before cover reconciliation and publish only after it succeeds. Recurring activities and maps remain outside this feature.
+
+Cover add/change/remove choices stay local to the editor until Save or Publish.
+If cover persistence fails after content succeeds, the controller retains the
+same draft and reports whether a draft or later changes were saved. Public and
+owner cards/details consume only the canonical `coverObjectPath`; they do not
+issue per-card metadata RPCs.
 
 For a ready authenticated identity, Browse loads the raw public first page and
 the filtered own-pending projection in parallel. Requested cards render first

@@ -6,8 +6,14 @@ import '../../../core/theme/app_tokens.dart';
 import '../../../core/widgets/loading_state.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../auth/application/auth_session_controller.dart';
+import '../../profile_photo/application/visible_profile_photo_controller.dart';
+import '../../profile_photo/domain/visible_profile_photo_models.dart';
+import '../../profile_photo/presentation/visible_profile_photo_avatar.dart';
 import '../application/participation_controllers.dart';
 import '../domain/participation_models.dart';
+import 'actual_contribution_sheet.dart';
+import 'join_acceptance_triage_sheet.dart';
+import 'membership_commitment_sheet.dart';
 import 'project_participation_section.dart';
 
 class CreatorParticipationScreen extends ConsumerStatefulWidget {
@@ -42,12 +48,33 @@ class _CreatorParticipationScreenState
     await ref
         .read(creatorParticipationProvider.notifier)
         .load(expectedCreatorId, widget.projectId);
+    if (!mounted ||
+        ref.read(authSessionProvider).identity?.id != expectedCreatorId) {
+      return;
+    }
+    final state = ref.read(creatorParticipationProvider);
+    if (state.expectedCreatorId != expectedCreatorId ||
+        state.projectId != widget.projectId) {
+      return;
+    }
+    final profileIds = state.requests
+        .where((request) => request.isPending)
+        .map((request) => request.requesterProfileId)
+        .toSet()
+        .toList(growable: false);
+    for (var offset = 0; offset < profileIds.length; offset += 50) {
+      final end = (offset + 50).clamp(0, profileIds.length);
+      await ref
+          .read(visibleProfilePhotoProvider.notifier)
+          .loadBatch(profileIds.sublist(offset, end));
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final state = ref.watch(creatorParticipationProvider);
+    final visiblePhotos = ref.watch(visibleProfilePhotoProvider);
     final belongsToScreen =
         state.expectedCreatorId == _expectedCreatorId &&
         state.projectId == widget.projectId;
@@ -104,12 +131,17 @@ class _CreatorParticipationScreenState
                       for (final request in requests) ...[
                         _RequestCard(
                           request: request,
+                          photoEntry: request.isPending
+                              ? visiblePhotos.entryFor(
+                                  request.requesterProfileId,
+                                )
+                              : null,
                           enabled: !state.isBusy,
                           isActing:
                               state.actionTargetId == request.id &&
                               state.isBusy,
-                          onAccept: () => _decide(request, accept: true),
-                          onReject: () => _decide(request, accept: false),
+                          onAccept: () => _accept(request),
+                          onReject: () => _reject(request),
                         ),
                         const SizedBox(height: AppSpacing.small),
                       ],
@@ -128,6 +160,11 @@ class _CreatorParticipationScreenState
                           enabled: !state.isBusy,
                           isActing:
                               state.actionTargetId == member.id && state.isBusy,
+                          onCommitments: () => _openCommitments(member),
+                          onActualContributions:
+                              widget.projectKind == ProjectKind.oneTime
+                              ? () => _openActualContributions(member)
+                              : null,
                           onRemove: () => _confirmRemove(member),
                         ),
                         const SizedBox(height: AppSpacing.small),
@@ -139,29 +176,43 @@ class _CreatorParticipationScreenState
     );
   }
 
-  Future<void> _decide(
-    CreatorProjectJoinRequest request, {
-    required bool accept,
-  }) async {
+  Future<void> _accept(CreatorProjectJoinRequest request) async {
     final expectedCreatorId = _expectedCreatorId;
     if (expectedCreatorId == null ||
         ref.read(authSessionProvider).identity?.id != expectedCreatorId) {
       return;
     }
-    final controller = ref.read(creatorParticipationProvider.notifier);
-    if (accept) {
-      await controller.accept(
-        expectedCreatorId: expectedCreatorId,
-        projectId: widget.projectId,
-        requestId: request.id,
-      );
-    } else {
-      await controller.reject(
-        expectedCreatorId: expectedCreatorId,
-        projectId: widget.projectId,
-        requestId: request.id,
-      );
+    await showJoinAcceptanceTriageSheet(
+      context,
+      expectedCreatorProfileId: expectedCreatorId,
+      requestId: request.id,
+      projectId: widget.projectId,
+      projectKind: widget.projectKind,
+      requesterDisplayName: request.requesterDisplayName,
+    );
+    if (!mounted ||
+        ref.read(authSessionProvider).identity?.id != expectedCreatorId) {
+      return;
     }
+    await ref
+        .read(creatorParticipationProvider.notifier)
+        .load(expectedCreatorId, widget.projectId);
+  }
+
+  Future<void> _reject(CreatorProjectJoinRequest request) async {
+    final expectedCreatorId = _expectedCreatorId;
+    if (expectedCreatorId == null ||
+        ref.read(authSessionProvider).identity?.id != expectedCreatorId) {
+      return;
+    }
+    await ref
+        .read(creatorParticipationProvider.notifier)
+        .reject(
+          expectedCreatorId: expectedCreatorId,
+          projectId: widget.projectId,
+          requestId: request.id,
+          requesterProfileId: request.requesterProfileId,
+        );
   }
 
   Future<void> _confirmRemove(CreatorProjectMember member) async {
@@ -198,13 +249,45 @@ class _CreatorParticipationScreenState
           expectedCreatorId: expectedCreatorId,
           projectId: widget.projectId,
           membershipId: member.id,
+          participantProfileId: member.participantProfileId,
         );
+  }
+
+  Future<void> _openCommitments(CreatorProjectMember member) async {
+    final expectedCreatorId = _expectedCreatorId;
+    if (expectedCreatorId == null ||
+        ref.read(authSessionProvider).identity?.id != expectedCreatorId) {
+      return;
+    }
+    await showMembershipCommitmentSheet(
+      context,
+      expectedProfileId: expectedCreatorId,
+      membershipId: member.id,
+      editable: member.isCurrent,
+      historical: !member.isCurrent,
+    );
+  }
+
+  Future<void> _openActualContributions(CreatorProjectMember member) async {
+    final expectedCreatorId = _expectedCreatorId;
+    if (expectedCreatorId == null ||
+        ref.read(authSessionProvider).identity?.id != expectedCreatorId) {
+      return;
+    }
+    await showActualContributionSheet(
+      context,
+      expectedProfileId: expectedCreatorId,
+      membershipId: member.id,
+      editable: true,
+      participantDisplayName: member.participantDisplayName,
+    );
   }
 }
 
 class _RequestCard extends StatelessWidget {
   const _RequestCard({
     required this.request,
+    required this.photoEntry,
     required this.enabled,
     required this.isActing,
     required this.onAccept,
@@ -212,6 +295,7 @@ class _RequestCard extends StatelessWidget {
   });
 
   final CreatorProjectJoinRequest request;
+  final VisibleProfilePhotoEntry? photoEntry;
   final bool enabled;
   final bool isActing;
   final VoidCallback onAccept;
@@ -227,9 +311,22 @@ class _RequestCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text(
-              request.requesterDisplayName,
-              style: Theme.of(context).textTheme.titleMedium,
+            Row(
+              children: [
+                VisibleProfilePhotoAvatar(
+                  entry: photoEntry,
+                  imageSemanticsLabel: l10n.profilePhotoApplicantAvatarLabel,
+                  placeholderSemanticsLabel:
+                      l10n.profilePhotoApplicantAvatarLabel,
+                ),
+                const SizedBox(width: AppSpacing.medium),
+                Expanded(
+                  child: Text(
+                    request.requesterDisplayName,
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                ),
+              ],
             ),
             const SizedBox(height: AppSpacing.xSmall),
             Text(_requestStatusLabel(l10n, request.status)),
@@ -284,12 +381,16 @@ class _MemberCard extends StatelessWidget {
     required this.member,
     required this.enabled,
     required this.isActing,
+    required this.onCommitments,
+    required this.onActualContributions,
     required this.onRemove,
   });
 
   final CreatorProjectMember member;
   final bool enabled;
   final bool isActing;
+  final VoidCallback onCommitments;
+  final VoidCallback? onActualContributions;
   final VoidCallback onRemove;
 
   @override
@@ -311,8 +412,44 @@ class _MemberCard extends StatelessWidget {
             Text(
               l10n.participationJoinedAt(_formatDate(context, member.joinedAt)),
             ),
+            const SizedBox(height: AppSpacing.medium),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton.icon(
+                    key: Key('participation-commitments-${member.id}'),
+                    onPressed: enabled ? onCommitments : null,
+                    icon: const Icon(Icons.checklist_outlined),
+                    label: Text(
+                      member.isCurrent
+                          ? l10n.participationCommitments
+                          : l10n.participationViewCommitments,
+                      maxLines: 2,
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                ),
+                if (onActualContributions case final action?) ...[
+                  const SizedBox(width: AppSpacing.small),
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      key: Key(
+                        'participation-actual-contributions-${member.id}',
+                      ),
+                      onPressed: enabled ? action : null,
+                      icon: const Icon(Icons.fact_check_outlined),
+                      label: Text(
+                        l10n.actualContributionsAction,
+                        maxLines: 2,
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                  ),
+                ],
+              ],
+            ),
             if (member.isCurrent) ...[
-              const SizedBox(height: AppSpacing.medium),
+              const SizedBox(height: AppSpacing.small),
               OutlinedButton.icon(
                 key: Key('participation-remove-${member.id}'),
                 onPressed: enabled ? onRemove : null,

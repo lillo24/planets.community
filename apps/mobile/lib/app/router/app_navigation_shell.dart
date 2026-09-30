@@ -23,7 +23,11 @@ class AppNavigationShell extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
     final demoToolsEnabled = ref.watch(demoToolsEnabledProvider);
-    return Scaffold(
+    final path = GoRouterState.of(context).uri.path;
+    final isBrowseRoot =
+        navigationShell.currentIndex == AppBranch.browse.index &&
+        (path == '/proposals' || path == '/tavoli');
+    final scaffold = Scaffold(
       body: Stack(
         fit: StackFit.expand,
         children: [
@@ -79,6 +83,15 @@ class AppNavigationShell extends ConsumerWidget {
           ),
         ],
       ),
+    );
+    return PopScope(
+      canPop: !isBrowseRoot,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop && isBrowseRoot) {
+          navigationShell.goBranch(AppBranch.home.index);
+        }
+      },
+      child: scaffold,
     );
   }
 }

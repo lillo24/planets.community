@@ -6,6 +6,8 @@ import '../../participation/domain/participation_models.dart';
 import '../domain/project_chat_models.dart';
 
 const _messageSentEvent = 'project.chat_message_sent';
+const _requirementNeededAgainEvent = 'project.requirement_needed_again';
+const _requirementCoveredEvent = 'project.requirement_covered';
 
 abstract interface class ProjectChatSignalSubscription {
   Future<void> close();
@@ -18,14 +20,14 @@ abstract interface class ProjectChatGateway {
     ProjectChatListCursor? cursor,
   });
 
-  Future<ProjectChatMessagePage> listOwnProjectChatMessages({
+  Future<ProjectChatFeedPage> listOwnProjectChatFeed({
     required String expectedProfileId,
     required String chatId,
     required int limit,
-    ProjectChatMessageCursor? cursor,
+    ProjectChatFeedCursor? cursor,
   });
 
-  Future<ProjectChatMessage> sendProjectChatMessage({
+  Future<ProjectChatHumanMessage> sendProjectChatMessage({
     required String expectedProfileId,
     required String chatId,
     required String body,
@@ -68,31 +70,32 @@ class SupabaseProjectChatGateway implements ProjectChatGateway {
   }
 
   @override
-  Future<ProjectChatMessagePage> listOwnProjectChatMessages({
+  Future<ProjectChatFeedPage> listOwnProjectChatFeed({
     required String expectedProfileId,
     required String chatId,
     required int limit,
-    ProjectChatMessageCursor? cursor,
+    ProjectChatFeedCursor? cursor,
   }) async {
     final response = await _client.rpc<List<dynamic>>(
-      'list_own_project_chat_messages',
+      'list_own_project_chat_feed',
       params: {
         'p_expected_profile_id': expectedProfileId,
         'p_chat_id': chatId,
         'p_limit': limit + 1,
         'p_before_created_at': cursor?.createdAt.toUtc().toIso8601String(),
-        'p_before_message_id': cursor?.messageId,
+        'p_before_item_kind': cursor?.itemKind.wireValue,
+        'p_before_item_id': cursor?.itemId,
       },
     );
-    final parsed = response.map(parser.message).toList(growable: false);
-    return ProjectChatMessagePage(
+    final parsed = response.map(parser.feedItem).toList(growable: false);
+    return ProjectChatFeedPage(
       items: List.unmodifiable(parsed.take(limit)),
       hasMore: parsed.length > limit,
     );
   }
 
   @override
-  Future<ProjectChatMessage> sendProjectChatMessage({
+  Future<ProjectChatHumanMessage> sendProjectChatMessage({
     required String expectedProfileId,
     required String chatId,
     required String body,
@@ -123,20 +126,21 @@ class SupabaseProjectChatGateway implements ProjectChatGateway {
       topic,
       opts: const RealtimeChannelConfig(private: true),
     );
+    void handle(Map<String, dynamic> payload) {
+      try {
+        final signal = parser.signal(payload);
+        if (signal.chatId == chatId) onSignal(signal);
+      } on FormatException {
+        onStatus(ProjectChatConnectionStatus.disconnected);
+      } on TypeError {
+        onStatus(ProjectChatConnectionStatus.disconnected);
+      }
+    }
+
     channel
-        .onBroadcast(
-          event: _messageSentEvent,
-          callback: (payload) {
-            try {
-              final signal = parser.signal(payload);
-              if (signal.chatId == chatId) onSignal(signal);
-            } on FormatException {
-              onStatus(ProjectChatConnectionStatus.disconnected);
-            } on TypeError {
-              onStatus(ProjectChatConnectionStatus.disconnected);
-            }
-          },
-        )
+        .onBroadcast(event: _messageSentEvent, callback: handle)
+        .onBroadcast(event: _requirementNeededAgainEvent, callback: handle)
+        .onBroadcast(event: _requirementCoveredEvent, callback: handle)
         .subscribe((status, _) {
           switch (status) {
             case RealtimeSubscribeStatus.subscribed:
@@ -153,6 +157,20 @@ class SupabaseProjectChatGateway implements ProjectChatGateway {
 
 class ProjectChatPayloadParser {
   const ProjectChatPayloadParser();
+
+  static const _feedKeys = {
+    'item_kind',
+    'item_id',
+    'chat_id',
+    'created_at',
+    'sender_profile_id',
+    'sender_display_name',
+    'body',
+    'system_event_kind',
+    'requirement_kind',
+    'requirement_id',
+    'requirement_label',
+  };
 
   ProjectChatSummary summary(Object? value) {
     final row = _row(value, 'Project chat summary');
@@ -195,22 +213,24 @@ class ProjectChatPayloadParser {
     );
   }
 
-  ProjectChatMessage message(Object? value) {
-    final row = _row(value, 'Project chat message');
-    return ProjectChatMessage(
-      messageId: _requiredString(row, 'message_id'),
-      chatId: _requiredString(row, 'chat_id'),
-      senderProfileId: _requiredString(row, 'sender_profile_id'),
-      senderDisplayName: _requiredString(row, 'sender_display_name'),
-      body: _requiredString(row, 'body'),
-      createdAt: _requiredDate(row, 'created_at'),
+  ProjectChatFeedItem feedItem(Object? value) {
+    final row = _row(value, 'Project chat feed item');
+    _requireExactKeys(row, _feedKeys, 'Project chat feed item');
+    final kind = ProjectChatFeedItemKind.fromWire(
+      _requiredString(row, 'item_kind'),
     );
+    return switch (kind) {
+      ProjectChatFeedItemKind.message => _humanFeedItem(row),
+      ProjectChatFeedItemKind.requirementNeededAgain => _requirementFeedItem(
+        row,
+      ),
+    };
   }
 
-  ProjectChatMessage sentMessage(Object? value) {
+  ProjectChatHumanMessage sentMessage(Object? value) {
     final row = _row(value, 'sent Project chat message');
-    return ProjectChatMessage(
-      messageId: _requiredString(row, 'message_id'),
+    return ProjectChatHumanMessage(
+      itemId: _requiredString(row, 'message_id'),
       chatId: _requiredString(row, 'chat_id'),
       senderProfileId: _requiredString(row, 'sender_profile_id'),
       senderDisplayName: null,
@@ -221,14 +241,115 @@ class ProjectChatPayloadParser {
 
   ProjectChatSignal signal(Object? value) {
     final envelope = _row(value, 'Project chat Realtime envelope');
-    if (_requiredString(envelope, 'type') != 'broadcast' ||
-        _requiredString(envelope, 'event') != _messageSentEvent) {
-      throw const FormatException('Unexpected Project chat Realtime event.');
+    if (_requiredString(envelope, 'type') != 'broadcast') {
+      throw const FormatException('Unexpected Project chat Realtime type.');
     }
+    final event = _requiredString(envelope, 'event');
     final payload = _row(envelope['payload'], 'Project chat Realtime payload');
-    return ProjectChatSignal(
+    return switch (event) {
+      _messageSentEvent => _messageSignal(payload),
+      _requirementNeededAgainEvent => _neededAgainSignal(payload),
+      _requirementCoveredEvent => _coveredSignal(payload),
+      _ => throw const FormatException(
+        'Unexpected Project chat Realtime event.',
+      ),
+    };
+  }
+
+  ProjectChatHumanMessage _humanFeedItem(Map<String, dynamic> row) {
+    _requireNulls(row, const [
+      'system_event_kind',
+      'requirement_kind',
+      'requirement_id',
+      'requirement_label',
+    ]);
+    return ProjectChatHumanMessage(
+      itemId: _requiredString(row, 'item_id'),
+      chatId: _requiredString(row, 'chat_id'),
+      senderProfileId: _requiredString(row, 'sender_profile_id'),
+      senderDisplayName: _requiredString(row, 'sender_display_name'),
+      body: _requiredString(row, 'body'),
+      createdAt: _requiredDate(row, 'created_at'),
+    );
+  }
+
+  ProjectChatRequirementNeededAgain _requirementFeedItem(
+    Map<String, dynamic> row,
+  ) {
+    _requireNulls(row, const [
+      'sender_profile_id',
+      'sender_display_name',
+      'body',
+    ]);
+    if (_requiredString(row, 'system_event_kind') !=
+        'requirement_needed_again') {
+      throw const FormatException('Unsupported Project chat system event.');
+    }
+    return ProjectChatRequirementNeededAgain(
+      itemId: _requiredString(row, 'item_id'),
+      chatId: _requiredString(row, 'chat_id'),
+      requirementKind: ProjectRequirementKind.fromWire(
+        _requiredString(row, 'requirement_kind'),
+      ),
+      requirementId: _requiredString(row, 'requirement_id'),
+      requirementLabel: _requiredString(row, 'requirement_label'),
+      createdAt: _requiredDate(row, 'created_at'),
+    );
+  }
+
+  ProjectChatMessageSentSignal _messageSignal(Map<String, dynamic> payload) {
+    _requireExactKeys(payload, const {
+      'chat_id',
+      'message_id',
+      'created_at',
+    }, 'Project chat message signal');
+    return ProjectChatMessageSentSignal(
       chatId: _requiredString(payload, 'chat_id'),
       messageId: _requiredString(payload, 'message_id'),
+      createdAt: _requiredDate(payload, 'created_at'),
+    );
+  }
+
+  ProjectChatRequirementNeededAgainSignal _neededAgainSignal(
+    Map<String, dynamic> payload,
+  ) {
+    _requireExactKeys(payload, const {
+      'chat_id',
+      'project_id',
+      'system_event_id',
+      'requirement_kind',
+      'requirement_id',
+      'created_at',
+    }, 'Project requirement-needed-again signal');
+    return ProjectChatRequirementNeededAgainSignal(
+      chatId: _requiredString(payload, 'chat_id'),
+      projectId: _requiredString(payload, 'project_id'),
+      systemEventId: _requiredString(payload, 'system_event_id'),
+      requirementKind: ProjectRequirementKind.fromWire(
+        _requiredString(payload, 'requirement_kind'),
+      ),
+      requirementId: _requiredString(payload, 'requirement_id'),
+      createdAt: _requiredDate(payload, 'created_at'),
+    );
+  }
+
+  ProjectChatRequirementCoveredSignal _coveredSignal(
+    Map<String, dynamic> payload,
+  ) {
+    _requireExactKeys(payload, const {
+      'chat_id',
+      'project_id',
+      'requirement_kind',
+      'requirement_id',
+      'created_at',
+    }, 'Project requirement-covered signal');
+    return ProjectChatRequirementCoveredSignal(
+      chatId: _requiredString(payload, 'chat_id'),
+      projectId: _requiredString(payload, 'project_id'),
+      requirementKind: ProjectRequirementKind.fromWire(
+        _requiredString(payload, 'requirement_kind'),
+      ),
+      requirementId: _requiredString(payload, 'requirement_id'),
       createdAt: _requiredDate(payload, 'created_at'),
     );
   }
@@ -236,6 +357,25 @@ class ProjectChatPayloadParser {
   Map<String, dynamic> _row(Object? value, String label) {
     if (value is! Map) throw FormatException('$label was not an object.');
     return value.cast<String, dynamic>();
+  }
+
+  void _requireExactKeys(
+    Map<String, dynamic> row,
+    Set<String> expected,
+    String label,
+  ) {
+    if (row.length != expected.length ||
+        !row.keys.toSet().containsAll(expected)) {
+      throw FormatException('$label had an unexpected shape.');
+    }
+  }
+
+  void _requireNulls(Map<String, dynamic> row, Iterable<String> keys) {
+    if (keys.any((key) => row[key] != null)) {
+      throw const FormatException(
+        'Project chat feed discriminator fields were inconsistent.',
+      );
+    }
   }
 
   String _requiredString(Map<String, dynamic> row, String key) {

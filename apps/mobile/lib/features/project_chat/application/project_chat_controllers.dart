@@ -9,6 +9,7 @@ import '../../participation/application/participation_controllers.dart';
 import '../data/project_chat_gateway.dart';
 import '../domain/project_chat_models.dart';
 import 'project_chat_refresh.dart';
+import 'project_needs_controller.dart';
 
 const projectChatListPageSize = 20;
 const projectChatHistoryPageSize = 30;
@@ -228,7 +229,11 @@ class ProjectChatListController extends Notifier<ProjectChatListState> {
           .subscribeToProjectChatSignals(
             expectedProfileId: expectedProfileId,
             chatId: chatId,
-            onSignal: (_) => _scheduleRefresh(expectedProfileId),
+            onSignal: (signal) {
+              if (signal is! ProjectChatRequirementCoveredSignal) {
+                _scheduleRefresh(expectedProfileId);
+              }
+            },
             onStatus: (status) =>
                 _handleStatus(expectedProfileId, chatId, status),
           );
@@ -320,7 +325,7 @@ class ProjectChatDetailState {
     this.expectedProfileId,
     this.chatId,
     this.summary,
-    this.messages = const [],
+    this.feedItems = const [],
     this.hasMoreOlder = false,
     this.isLoadingOlder = false,
     this.isSending = false,
@@ -334,7 +339,7 @@ class ProjectChatDetailState {
   final ProjectChatSummary? summary;
 
   /// Natural UI order: oldest first.
-  final List<ProjectChatMessage> messages;
+  final List<ProjectChatFeedItem> feedItems;
   final bool hasMoreOlder;
   final bool isLoadingOlder;
   final bool isSending;
@@ -395,7 +400,7 @@ class ProjectChatDetailController extends Notifier<ProjectChatDetailState> {
       expectedProfileId: expectedProfileId,
       chatId: chatId,
       summary: sameTarget ? state.summary : null,
-      messages: sameTarget ? state.messages : const [],
+      feedItems: sameTarget ? state.feedItems : const [],
       hasMoreOlder: sameTarget && state.hasMoreOlder,
       hasConnectionIssue: sameTarget && state.hasConnectionIssue,
     );
@@ -404,25 +409,37 @@ class ProjectChatDetailController extends Notifier<ProjectChatDetailState> {
       final summary = await _findSummary(expectedProfileId, chatId);
       final page = await ref
           .read(projectChatGatewayProvider)
-          .listOwnProjectChatMessages(
+          .listOwnProjectChatFeed(
             expectedProfileId: expectedProfileId,
             chatId: chatId,
             limit: projectChatHistoryPageSize,
           );
       if (!_isCurrent(revision, expectedProfileId, chatId)) return false;
-      _validateMessageChat(page.items, chatId);
+      _validateFeedChat(page.items, chatId);
       state = ProjectChatDetailState(
         phase: ProjectChatDetailPhase.ready,
         expectedProfileId: expectedProfileId,
         chatId: chatId,
         summary: summary,
-        messages: List.unmodifiable(page.items.reversed),
+        feedItems: List.unmodifiable(page.items.reversed),
         hasMoreOlder: page.hasMore,
       );
       if (!summary.hasCurrentEntitlement) {
         ref
             .read(participantMeetingDetailsProvider.notifier)
             .clearProject(summary.projectId);
+        ref.read(projectNeedsProvider.notifier).clear();
+      } else {
+        unawaited(
+          ref
+              .read(projectNeedsProvider.notifier)
+              .load(
+                expectedProfileId: expectedProfileId,
+                projectId: summary.projectId,
+                chatId: chatId,
+                viewerRole: summary.viewerRole,
+              ),
+        );
       }
       _syncSubscription(expectedProfileId, summary);
       _drainPendingReconciliation();
@@ -434,7 +451,7 @@ class ProjectChatDetailController extends Notifier<ProjectChatDetailState> {
         expectedProfileId: expectedProfileId,
         chatId: chatId,
         summary: state.summary,
-        messages: state.messages,
+        feedItems: state.feedItems,
         hasMoreOlder: state.hasMoreOlder,
         failure: mapProjectChatFailure(error),
         hasConnectionIssue: state.hasConnectionIssue,
@@ -463,13 +480,13 @@ class ProjectChatDetailController extends Notifier<ProjectChatDetailState> {
       final summary = await _findSummary(expectedProfileId, chatId);
       final page = await ref
           .read(projectChatGatewayProvider)
-          .listOwnProjectChatMessages(
+          .listOwnProjectChatFeed(
             expectedProfileId: expectedProfileId,
             chatId: chatId,
             limit: projectChatHistoryPageSize,
           );
       if (!_isCurrent(revision, expectedProfileId, chatId)) return false;
-      _validateMessageChat(page.items, chatId);
+      _validateFeedChat(page.items, chatId);
       final becameReadOnly =
           state.summary?.hasCurrentEntitlement == true &&
           !summary.hasCurrentEntitlement;
@@ -478,7 +495,9 @@ class ProjectChatDetailController extends Notifier<ProjectChatDetailState> {
         expectedProfileId: expectedProfileId,
         chatId: chatId,
         summary: summary,
-        messages: List.unmodifiable(_mergeMessages(state.messages, page.items)),
+        feedItems: List.unmodifiable(
+          _mergeFeedItems(state.feedItems, page.items),
+        ),
         hasMoreOlder: state.hasMoreOlder,
         failure: null,
         hasConnectionIssue: state.hasConnectionIssue,
@@ -487,6 +506,23 @@ class ProjectChatDetailController extends Notifier<ProjectChatDetailState> {
         ref
             .read(participantMeetingDetailsProvider.notifier)
             .clearProject(summary.projectId);
+        ref.read(projectNeedsProvider.notifier).clear();
+      } else if (summary.hasCurrentEntitlement) {
+        final needs = ref.read(projectNeedsProvider);
+        if (needs.expectedProfileId != expectedProfileId ||
+            needs.projectId != summary.projectId ||
+            needs.chatId != chatId) {
+          unawaited(
+            ref
+                .read(projectNeedsProvider.notifier)
+                .load(
+                  expectedProfileId: expectedProfileId,
+                  projectId: summary.projectId,
+                  chatId: chatId,
+                  viewerRole: summary.viewerRole,
+                ),
+          );
+        }
       }
       _syncSubscription(expectedProfileId, summary);
       return true;
@@ -497,7 +533,7 @@ class ProjectChatDetailController extends Notifier<ProjectChatDetailState> {
         expectedProfileId: expectedProfileId,
         chatId: chatId,
         summary: state.summary,
-        messages: state.messages,
+        feedItems: state.feedItems,
         hasMoreOlder: state.hasMoreOlder,
         failure: mapProjectChatFailure(error),
         hasConnectionIssue: state.hasConnectionIssue,
@@ -518,18 +554,18 @@ class ProjectChatDetailController extends Notifier<ProjectChatDetailState> {
         state.chatId != chatId ||
         state.isLoadingOlder ||
         !state.hasMoreOlder ||
-        state.messages.isEmpty) {
+        state.feedItems.isEmpty) {
       return false;
     }
     final revision = _revision;
-    final existing = state.messages;
+    final existing = state.feedItems;
     final oldest = existing.first;
     state = ProjectChatDetailState(
       phase: ProjectChatDetailPhase.ready,
       expectedProfileId: expectedProfileId,
       chatId: chatId,
       summary: state.summary,
-      messages: existing,
+      feedItems: existing,
       hasMoreOlder: true,
       isLoadingOlder: true,
       failure: state.failure,
@@ -539,23 +575,24 @@ class ProjectChatDetailController extends Notifier<ProjectChatDetailState> {
       _requireReadyIdentity(expectedProfileId);
       final page = await ref
           .read(projectChatGatewayProvider)
-          .listOwnProjectChatMessages(
+          .listOwnProjectChatFeed(
             expectedProfileId: expectedProfileId,
             chatId: chatId,
             limit: projectChatHistoryPageSize,
-            cursor: ProjectChatMessageCursor(
+            cursor: ProjectChatFeedCursor(
               createdAt: oldest.createdAt,
-              messageId: oldest.messageId,
+              itemKind: oldest.itemKind,
+              itemId: oldest.itemId,
             ),
           );
       if (!_isCurrent(revision, expectedProfileId, chatId)) return false;
-      _validateMessageChat(page.items, chatId);
+      _validateFeedChat(page.items, chatId);
       state = ProjectChatDetailState(
         phase: ProjectChatDetailPhase.ready,
         expectedProfileId: expectedProfileId,
         chatId: chatId,
         summary: state.summary,
-        messages: List.unmodifiable(_mergeMessages(existing, page.items)),
+        feedItems: List.unmodifiable(_mergeFeedItems(existing, page.items)),
         hasMoreOlder: page.hasMore,
         hasConnectionIssue: state.hasConnectionIssue,
       );
@@ -567,7 +604,7 @@ class ProjectChatDetailController extends Notifier<ProjectChatDetailState> {
         expectedProfileId: expectedProfileId,
         chatId: chatId,
         summary: state.summary,
-        messages: existing,
+        feedItems: existing,
         hasMoreOlder: true,
         failure: mapProjectChatFailure(error),
         hasConnectionIssue: state.hasConnectionIssue,
@@ -581,7 +618,7 @@ class ProjectChatDetailController extends Notifier<ProjectChatDetailState> {
           expectedProfileId: state.expectedProfileId,
           chatId: state.chatId,
           summary: state.summary,
-          messages: state.messages,
+          feedItems: state.feedItems,
           hasMoreOlder: state.hasMoreOlder,
           failure: state.failure,
           hasConnectionIssue: state.hasConnectionIssue,
@@ -612,7 +649,7 @@ class ProjectChatDetailController extends Notifier<ProjectChatDetailState> {
         expectedProfileId: state.expectedProfileId,
         chatId: state.chatId,
         summary: state.summary,
-        messages: state.messages,
+        feedItems: state.feedItems,
         hasMoreOlder: state.hasMoreOlder,
         failure: ProjectChatFailureKind.invalidInput,
         hasConnectionIssue: state.hasConnectionIssue,
@@ -625,7 +662,7 @@ class ProjectChatDetailController extends Notifier<ProjectChatDetailState> {
       expectedProfileId: state.expectedProfileId,
       chatId: state.chatId,
       summary: summary,
-      messages: state.messages,
+      feedItems: state.feedItems,
       hasMoreOlder: state.hasMoreOlder,
       isSending: true,
       hasConnectionIssue: state.hasConnectionIssue,
@@ -648,7 +685,7 @@ class ProjectChatDetailController extends Notifier<ProjectChatDetailState> {
         expectedProfileId: expectedProfileId,
         chatId: chatId,
         summary: summary,
-        messages: List.unmodifiable(_mergeMessages(state.messages, [sent])),
+        feedItems: List.unmodifiable(_mergeFeedItems(state.feedItems, [sent])),
         hasMoreOlder: state.hasMoreOlder,
         hasConnectionIssue: state.hasConnectionIssue,
       );
@@ -662,7 +699,7 @@ class ProjectChatDetailController extends Notifier<ProjectChatDetailState> {
         expectedProfileId: expectedProfileId,
         chatId: chatId,
         summary: summary,
-        messages: state.messages,
+        feedItems: state.feedItems,
         hasMoreOlder: state.hasMoreOlder,
         failure: mapProjectChatFailure(error),
         hasConnectionIssue: state.hasConnectionIssue,
@@ -678,6 +715,9 @@ class ProjectChatDetailController extends Notifier<ProjectChatDetailState> {
         state.expectedProfileId == expectedProfileId &&
         state.chatId == chatId) {
       unawaited(refresh(expectedProfileId: expectedProfileId, chatId: chatId));
+      if (state.summary?.hasCurrentEntitlement == true) {
+        ref.read(projectNeedsProvider.notifier).handleAppResumed();
+      }
     }
   }
 
@@ -767,14 +807,15 @@ class ProjectChatDetailController extends Notifier<ProjectChatDetailState> {
     if (!_matchesTarget(expectedProfileId, chatId) || signal.chatId != chatId) {
       return;
     }
-    if (_isReconciling ||
-        state.phase == ProjectChatDetailPhase.loading ||
-        state.isLoadingOlder ||
-        state.isSending) {
-      _reconcilePending = true;
-      return;
+    switch (signal) {
+      case ProjectChatMessageSentSignal():
+        ref.read(projectChatRefreshProvider.notifier).notifyChanged();
+      case ProjectChatRequirementNeededAgainSignal():
+        ref.read(projectChatRefreshProvider.notifier).notifyChanged();
+        ref.read(projectNeedsProvider.notifier).handleRequirementSignal();
+      case ProjectChatRequirementCoveredSignal():
+        ref.read(projectNeedsProvider.notifier).handleRequirementSignal();
     }
-    unawaited(refresh(expectedProfileId: expectedProfileId, chatId: chatId));
   }
 
   void _handleStatus(
@@ -810,7 +851,7 @@ class ProjectChatDetailController extends Notifier<ProjectChatDetailState> {
       expectedProfileId: state.expectedProfileId,
       chatId: state.chatId,
       summary: state.summary,
-      messages: state.messages,
+      feedItems: state.feedItems,
       hasMoreOlder: state.hasMoreOlder,
       isLoadingOlder: state.isLoadingOlder,
       isSending: state.isSending,
@@ -843,28 +884,29 @@ class ProjectChatDetailController extends Notifier<ProjectChatDetailState> {
     if (subscription != null) unawaited(subscription.close());
   }
 
-  List<ProjectChatMessage> _mergeMessages(
-    Iterable<ProjectChatMessage> existing,
-    Iterable<ProjectChatMessage> incoming,
+  List<ProjectChatFeedItem> _mergeFeedItems(
+    Iterable<ProjectChatFeedItem> existing,
+    Iterable<ProjectChatFeedItem> incoming,
   ) {
-    final byId = <String, ProjectChatMessage>{
-      for (final message in existing) message.messageId: message,
-      for (final message in incoming) message.messageId: message,
+    final byId = <String, ProjectChatFeedItem>{
+      for (final item in existing) item.canonicalKey: item,
+      for (final item in incoming) item.canonicalKey: item,
     };
     final values = byId.values.toList();
     values.sort((left, right) {
       final time = left.createdAt.compareTo(right.createdAt);
-      return time != 0 ? time : left.messageId.compareTo(right.messageId);
+      if (time != 0) return time;
+      final kind = left.itemKind.canonicalOrder.compareTo(
+        right.itemKind.canonicalOrder,
+      );
+      return kind != 0 ? kind : left.itemId.compareTo(right.itemId);
     });
     return values;
   }
 
-  void _validateMessageChat(
-    Iterable<ProjectChatMessage> messages,
-    String chatId,
-  ) {
-    if (messages.any((message) => message.chatId != chatId)) {
-      throw const FormatException('Project chat history mismatched.');
+  void _validateFeedChat(Iterable<ProjectChatFeedItem> items, String chatId) {
+    if (items.any((item) => item.chatId != chatId)) {
+      throw const FormatException('Project chat feed mismatched.');
     }
   }
 

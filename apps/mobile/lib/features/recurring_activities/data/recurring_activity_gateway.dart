@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../../core/backend/cover_media_path.dart';
 import '../../../core/backend/supabase_backend.dart';
 import '../domain/recurring_activity_models.dart';
 
@@ -269,77 +270,98 @@ class SupabaseRecurringActivityGateway implements RecurringActivityGateway {
   PublicRecurringActivitySummary _publicSummaryFromRow(
     Map<String, dynamic> row,
     RecurringSchedule schedule,
-  ) => PublicRecurringActivitySummary(
-    id: row['recurring_activity_id'] as String,
-    title: row['title'] as String,
-    summary: row['summary'] as String,
-    topic: row['topic'] as String?,
-    countryCode: row['country_code'] as String,
-    locality: row['locality'] as String,
-    administrativeArea: row['administrative_area'] as String?,
-    publicLocationLabel: row['public_location_label'] as String,
-    nextOccurrence: RecurringActivityOccurrence(
-      startsAt: DateTime.parse(row['next_starts_at'] as String),
-      endsAt: DateTime.parse(row['next_ends_at'] as String),
-      eventTimezone: row['event_timezone'] as String,
-    ),
-    schedule: schedule,
-  );
+  ) {
+    final activityId = row['recurring_activity_id'] as String;
+    return PublicRecurringActivitySummary(
+      id: activityId,
+      title: row['title'] as String,
+      summary: row['summary'] as String,
+      topic: row['topic'] as String?,
+      countryCode: row['country_code'] as String,
+      locality: row['locality'] as String,
+      administrativeArea: row['administrative_area'] as String?,
+      publicLocationLabel: row['public_location_label'] as String,
+      nextOccurrence: RecurringActivityOccurrence(
+        startsAt: DateTime.parse(row['next_starts_at'] as String),
+        endsAt: DateTime.parse(row['next_ends_at'] as String),
+        eventTimezone: row['event_timezone'] as String,
+      ),
+      schedule: schedule,
+      coverObjectPath: parseCoverObjectPath(
+        row['cover_object_path'],
+        parentId: activityId,
+        parentSegment: 'projects',
+      ),
+    );
+  }
 
-  PublicRecurringActivityDetail _publicDetailFromRow(
-    Map<String, dynamic> row,
-  ) => PublicRecurringActivityDetail(
-    id: row['recurring_activity_id'] as String,
-    creatorProfileId: row['creator_profile_id'] as String,
-    creatorDisplayName: row['creator_display_name'] as String?,
-    lifecycle: RecurringActivityLifecycle.fromWire(
-      row['lifecycle_state'] as String,
-    ),
-    title: row['title'] as String,
-    summary: row['summary'] as String,
-    description: row['description'] as String,
-    topic: row['topic'] as String?,
-    countryCode: row['country_code'] as String,
-    locality: row['locality'] as String,
-    administrativeArea: row['administrative_area'] as String?,
-    publicLocationLabel: row['public_location_label'] as String,
-    schedule: _scheduleFromFlatRow(row),
-    nextOccurrences: _occurrences(row['next_occurrences']),
-    exactMeetingText: row['exact_meeting_text'] as String?,
-    exactLocationRestricted: row['exact_location_restricted'] as bool,
-  );
+  PublicRecurringActivityDetail _publicDetailFromRow(Map<String, dynamic> row) {
+    final activityId = row['recurring_activity_id'] as String;
+    return PublicRecurringActivityDetail(
+      id: activityId,
+      creatorProfileId: row['creator_profile_id'] as String,
+      creatorDisplayName: row['creator_display_name'] as String?,
+      lifecycle: RecurringActivityLifecycle.fromWire(
+        row['lifecycle_state'] as String,
+      ),
+      title: row['title'] as String,
+      summary: row['summary'] as String,
+      description: row['description'] as String,
+      topic: row['topic'] as String?,
+      countryCode: row['country_code'] as String,
+      locality: row['locality'] as String,
+      administrativeArea: row['administrative_area'] as String?,
+      publicLocationLabel: row['public_location_label'] as String,
+      schedule: _scheduleFromFlatRow(row),
+      nextOccurrences: _occurrences(row['next_occurrences']),
+      exactMeetingText: row['exact_meeting_text'] as String?,
+      exactLocationRestricted: row['exact_location_restricted'] as bool,
+      coverObjectPath: parseCoverObjectPath(
+        row['cover_object_path'],
+        parentId: activityId,
+        parentSegment: 'projects',
+      ),
+    );
+  }
 
-  OwnRecurringActivity _ownActivityFromRow(Map<String, dynamic> row) =>
-      OwnRecurringActivity(
-        id: row['recurring_activity_id'] as String,
-        lifecycle: RecurringActivityLifecycle.fromWire(
-          row['lifecycle_state'] as String,
-        ),
-        title: row['title'] as String?,
-        summary: row['summary'] as String?,
-        description: row['description'] as String?,
-        topic: row['topic'] as String?,
-        countryCode: row['country_code'] as String?,
-        locality: row['locality'] as String?,
-        administrativeArea: row['administrative_area'] as String?,
-        publicLocationLabel: row['public_location_label'] as String?,
-        currentSchedule: row['current_schedule'] == null
-            ? null
-            : _scheduleFromJson(
-                (row['current_schedule'] as Map).cast<String, dynamic>(),
-              ),
-        scheduleHistory: _schedules(row['schedule_history']),
-        exactMeetingText: row['exact_meeting_text'] as String?,
-        exactLocationVisibility: RecurringExactLocationVisibility.fromWire(
-          row['exact_location_visibility'] as String,
-        ),
-        createdAt: DateTime.parse(row['created_at'] as String),
-        updatedAt: DateTime.parse(row['updated_at'] as String),
-        publishedAt: _optionalDate(row['published_at']),
-        pausedAt: _optionalDate(row['paused_at']),
-        resumedAt: _optionalDate(row['resumed_at']),
-        endedAt: _optionalDate(row['ended_at']),
-      );
+  OwnRecurringActivity _ownActivityFromRow(Map<String, dynamic> row) {
+    final activityId = row['recurring_activity_id'] as String;
+    return OwnRecurringActivity(
+      id: activityId,
+      lifecycle: RecurringActivityLifecycle.fromWire(
+        row['lifecycle_state'] as String,
+      ),
+      title: row['title'] as String?,
+      summary: row['summary'] as String?,
+      description: row['description'] as String?,
+      topic: row['topic'] as String?,
+      countryCode: row['country_code'] as String?,
+      locality: row['locality'] as String?,
+      administrativeArea: row['administrative_area'] as String?,
+      publicLocationLabel: row['public_location_label'] as String?,
+      currentSchedule: row['current_schedule'] == null
+          ? null
+          : _scheduleFromJson(
+              (row['current_schedule'] as Map).cast<String, dynamic>(),
+            ),
+      scheduleHistory: _schedules(row['schedule_history']),
+      exactMeetingText: row['exact_meeting_text'] as String?,
+      exactLocationVisibility: RecurringExactLocationVisibility.fromWire(
+        row['exact_location_visibility'] as String,
+      ),
+      createdAt: DateTime.parse(row['created_at'] as String),
+      updatedAt: DateTime.parse(row['updated_at'] as String),
+      publishedAt: _optionalDate(row['published_at']),
+      pausedAt: _optionalDate(row['paused_at']),
+      resumedAt: _optionalDate(row['resumed_at']),
+      endedAt: _optionalDate(row['ended_at']),
+      coverObjectPath: parseCoverObjectPath(
+        row['cover_object_path'],
+        parentId: activityId,
+        parentSegment: 'projects',
+      ),
+    );
+  }
 
   RecurringSchedule _scheduleFromFlatRow(Map<String, dynamic> row) =>
       RecurringSchedule(

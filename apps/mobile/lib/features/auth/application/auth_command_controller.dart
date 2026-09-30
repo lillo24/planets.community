@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -7,6 +9,7 @@ import 'auth_session_controller.dart';
 import 'return_destination.dart';
 
 const resendCooldown = Duration(seconds: 30);
+const defaultAuthOtpRequestTimeout = Duration(seconds: 15);
 
 final pendingEmailOtpProvider =
     NotifierProvider<PendingEmailOtpController, PendingEmailOtp?>(
@@ -23,15 +26,20 @@ class PendingEmailOtpController extends Notifier<PendingEmailOtp?> {
 }
 
 final authClockProvider = Provider<DateTime Function()>((ref) => DateTime.now);
+final authOtpRequestTimeoutProvider = Provider<Duration>(
+  (ref) => defaultAuthOtpRequestTimeout,
+);
 
 class AuthCommandController extends Notifier<AuthCommandState> {
+  int _flowRevision = 0;
+
   @override
   AuthCommandState build() => const AuthCommandState();
 
-  void resetFlow() {
-    if (state.isBusy) {
-      return;
-    }
+  void resetFlow() => cancelFlow();
+
+  void cancelFlow() {
+    _flowRevision += 1;
     ref.read(pendingEmailOtpProvider.notifier).clear();
     state = const AuthCommandState();
   }
@@ -47,9 +55,16 @@ class AuthCommandController extends Notifier<AuthCommandState> {
       return false;
     }
 
+    final revision = ++_flowRevision;
     state = const AuthCommandState(phase: AuthCommandPhase.requestingCode);
     try {
-      await ref.read(authGatewayProvider).requestEmailOtp(trimmedEmail);
+      await ref
+          .read(authGatewayProvider)
+          .requestEmailOtp(trimmedEmail)
+          .timeout(ref.read(authOtpRequestTimeoutProvider));
+      if (!_isCurrent(revision)) {
+        return false;
+      }
       ref
           .read(pendingEmailOtpProvider.notifier)
           .set(
@@ -63,7 +78,16 @@ class AuthCommandController extends Notifier<AuthCommandState> {
         resendAvailableAt: ref.read(authClockProvider)().add(resendCooldown),
       );
       return true;
+    } on TimeoutException {
+      if (!_isCurrent(revision)) {
+        return false;
+      }
+      state = const AuthCommandState(failure: AuthFailureKind.requestTimedOut);
+      return false;
     } catch (error) {
+      if (!_isCurrent(revision)) {
+        return false;
+      }
       state = AuthCommandState(failure: mapAuthFailure(error));
       return false;
     }
@@ -109,6 +133,7 @@ class AuthCommandController extends Notifier<AuthCommandState> {
       return false;
     }
 
+    final revision = ++_flowRevision;
     state = AuthCommandState(
       phase: AuthCommandPhase.verifyingCode,
       resendAvailableAt: state.resendAvailableAt,
@@ -117,6 +142,9 @@ class AuthCommandController extends Notifier<AuthCommandState> {
       final identity = await ref
           .read(authGatewayProvider)
           .verifyEmailOtp(email: pending.email, token: normalizedToken);
+      if (!_isCurrent(revision)) {
+        return false;
+      }
       ref.read(authSessionProvider.notifier).markCheckingProfile(identity);
       state = AuthCommandState(
         phase: AuthCommandPhase.completingProfile,
@@ -124,9 +152,15 @@ class AuthCommandController extends Notifier<AuthCommandState> {
       );
       try {
         await ref.read(profileAnchorGatewayProvider).ensureFor(identity.id);
+        if (!_isCurrent(revision)) {
+          return false;
+        }
         final readiness = await ref
             .read(profileAnchorGatewayProvider)
             .readinessFor(identity.id);
+        if (!_isCurrent(revision)) {
+          return false;
+        }
         if (readiness == ProfileAnchorReadiness.complete) {
           ref.read(authSessionProvider.notifier).markProfileReady(identity);
         } else {
@@ -139,6 +173,9 @@ class AuthCommandController extends Notifier<AuthCommandState> {
               );
         }
       } catch (_) {
+        if (!_isCurrent(revision)) {
+          return false;
+        }
         ref
             .read(authSessionProvider.notifier)
             .markProfileSetupRequired(identity, hasProfileAnchor: false);
@@ -153,6 +190,9 @@ class AuthCommandController extends Notifier<AuthCommandState> {
       state = const AuthCommandState();
       return true;
     } catch (error) {
+      if (!_isCurrent(revision)) {
+        return false;
+      }
       state = AuthCommandState(
         failure: mapAuthFailure(error),
         resendAvailableAt: state.resendAvailableAt,
@@ -160,6 +200,8 @@ class AuthCommandController extends Notifier<AuthCommandState> {
       return false;
     }
   }
+
+  bool _isCurrent(int revision) => revision == _flowRevision;
 
   Future<bool> retryProfileSetup() async {
     if (state.isBusy) {

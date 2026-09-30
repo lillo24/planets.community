@@ -46,6 +46,22 @@ class _VerifyCodeScreenState extends ConsumerState<VerifyCodeScreen> {
         .verifyCode(_codeController.text);
   }
 
+  void _useDifferentEmail(PendingEmailOtp? pending) {
+    final returnTo = pending?.returnTo ?? '/';
+    ref.read(authCommandProvider.notifier).resetFlow();
+    context.go(
+      Uri(
+        path: '/auth',
+        queryParameters: returnTo == '/' ? null : {'returnTo': returnTo},
+      ).toString(),
+    );
+  }
+
+  void _closeAuth() {
+    ref.read(authCommandProvider.notifier).cancelFlow();
+    context.go('/');
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
@@ -58,8 +74,22 @@ class _VerifyCodeScreenState extends ConsumerState<VerifyCodeScreen> {
         session.phase == AuthSessionPhase.profileSetupRequired &&
         !session.hasProfileAnchor;
 
-    return Scaffold(
-      appBar: AppBar(title: Text(l10n.authVerifyTitle)),
+    final scaffold = Scaffold(
+      appBar: AppBar(
+        leading: BackButton(
+          key: const Key('auth-verify-back-button'),
+          onPressed: () => _useDifferentEmail(pending),
+        ),
+        title: Text(l10n.authVerifyTitle),
+        actions: [
+          IconButton(
+            key: const Key('auth-verify-close-button'),
+            tooltip: MaterialLocalizations.of(context).closeButtonTooltip,
+            onPressed: _closeAuth,
+            icon: const Icon(Icons.close),
+          ),
+        ],
+      ),
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
@@ -160,12 +190,7 @@ class _VerifyCodeScreenState extends ConsumerState<VerifyCodeScreen> {
                     TextButton(
                       onPressed: command.isBusy
                           ? null
-                          : () {
-                              ref
-                                  .read(authCommandProvider.notifier)
-                                  .resetFlow();
-                              context.go('/auth');
-                            },
+                          : () => _useDifferentEmail(pending),
                       child: Text(l10n.authUseDifferentEmailAction),
                     ),
                   ],
@@ -175,6 +200,15 @@ class _VerifyCodeScreenState extends ConsumerState<VerifyCodeScreen> {
           ),
         ),
       ),
+    );
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) {
+          _useDifferentEmail(pending);
+        }
+      },
+      child: scaffold,
     );
   }
 

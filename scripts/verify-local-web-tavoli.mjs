@@ -5,6 +5,7 @@ import { fileURLToPath } from "node:url";
 import { createClient } from "@supabase/supabase-js";
 
 import { readLocalSupabaseStatus } from "./lib/local-supabase-status.mjs";
+import { ensureLocalProfilePhoto } from "./lib/local-profile-photo.mjs";
 
 const repositoryRoot = fileURLToPath(new URL("../", import.meta.url));
 const webRoot = fileURLToPath(new URL("../apps/web/", import.meta.url));
@@ -25,6 +26,7 @@ async function verifyPublicWebTavoli() {
   const locality = `Web Tavoli ${runId}`;
   const user = await signInWithLocalOtp(testEmail);
   await ensureCompleteProfile(user);
+  await ensureLocalProfilePhoto(user);
 
   const restrictedExactText = `Protected room ${runId}`;
   const publicExactText = `Public fountain ${runId}`;
