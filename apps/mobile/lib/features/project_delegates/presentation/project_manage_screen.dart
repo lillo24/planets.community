@@ -9,6 +9,7 @@ import '../../../l10n/generated/app_localizations.dart';
 import '../../auth/application/auth_session_controller.dart';
 import '../../participation/domain/participation_models.dart';
 import '../../participation/presentation/participation_routes.dart';
+import '../../project_workspace/presentation/project_workspace_widgets.dart';
 import '../application/project_delegate_controllers.dart';
 import '../domain/project_delegate_models.dart';
 import 'project_delegate_routes.dart';
@@ -103,6 +104,12 @@ class _ProjectManageScreenState extends ConsumerState<ProjectManageScreen> {
                         ),
                       ),
                     ),
+                  ),
+                  const SizedBox(height: AppSpacing.small),
+                  ProjectWorkspaceManageCard(
+                    expectedProfileId: profileId,
+                    projectId: widget.projectId,
+                    projectKind: widget.projectKind,
                   ),
                   if (role.hasStructuralAuthority) ...[
                     const SizedBox(height: AppSpacing.small),

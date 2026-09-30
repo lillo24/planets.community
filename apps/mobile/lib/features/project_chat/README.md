@@ -1,7 +1,7 @@
 # Project chat
 
-This feature owns the authenticated mobile group-chat and current Needs
-coordination experience over the canonical Project backend. It does not own
+This feature owns the authenticated mobile group-chat and current organization
+tools experience over the canonical Project backend. It does not own
 participation membership, meeting data, unread state, notification projection,
 or project content.
 
@@ -24,14 +24,16 @@ or project content.
 - `application/project_chat_refresh.dart` is the narrow cross-feature signal
   used after participation acceptance, leave, or removal.
 - `presentation/project_chat_screen.dart` renders human bubbles, structured
-  resurfacing cards, the current-member composer/Needs control, former-member
-  read-only state, and the group-info entry point.
+  resurfacing cards, the current-member Needs/Workspace organization strip,
+  text/send-focused composer, former-member read-only state, and group-info
+  entry point.
 - `presentation/project_needs_sheet.dart` renders the scroll-controlled current
   Needs drawer and acknowledges attention only after refreshed canonical
   content has completed a frame.
 - `presentation/project_chat_info_screen.dart` renders canonical summary
-  context, Project/Tavolo and manager Participation navigation, and lazy access
-  to the existing protected meeting operation.
+  context, Project/Tavolo and manager Participation navigation, the
+  current-entitled Shared workspace section, and lazy access to the existing
+  protected meeting operation.
 - `presentation/project_chat_failure_message.dart` maps failures to safe,
   localized copy without backend diagnostics.
 
@@ -51,6 +53,13 @@ coverage use their canonical RPCs; the client never fabricates coverage or
 commitment state. The drawer acknowledges only the explicit event ID it loaded,
 after both coverage and attention succeed and that content is rendered. Former
 members perform none of these live-Needs calls.
+
+The extensible organization strip sits above history and moves the existing
+Needs control out of the composer without duplicating it. Workspace state is
+owned by `project_workspace`: a configured link is confirmed by hostname before
+external opening, a manager with no link gets Add workspace, an ordinary
+participant with no link gets no unusable control, and former members get no
+organization strip or workspace read.
 
 Realtime is a private authenticated Broadcast hint on
 `project-chat:<chatId>:profile:<profileId>`. The three strict identifier-only
@@ -104,7 +113,9 @@ pass. On Android and iOS, verify:
 6. leave, removal, rejoin, creator, and account-switch transitions;
 7. protected meeting data never remains visible after entitlement or identity
    changes;
-8. Needs drawer drag/scroll behavior, safe areas, keyboard/view-inset
+8. Needs/Workspace strip horizontal scrolling, focus order, long labels, text
+   scaling, and narrow-phone/tablet behavior; then Needs drawer drag/scroll
+   behavior, safe areas, keyboard/view-inset
    interaction, narrow widths, text scaling, and a 50-item mixed list;
 9. the persistent `Needed again` callout and subtle one-shot reduced-motion
    pulse, including TalkBack/VoiceOver count and attention semantics;

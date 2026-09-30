@@ -23,6 +23,8 @@ import 'package:planets_mobile/features/project_chat/data/project_chat_gateway.d
 import 'package:planets_mobile/features/project_chat/data/project_needs_gateway.dart';
 import 'package:planets_mobile/features/project_chat/application/project_chat_controllers.dart';
 import 'package:planets_mobile/features/project_chat/domain/project_chat_models.dart';
+import 'package:planets_mobile/features/project_workspace/data/project_workspace_gateway.dart';
+import 'package:planets_mobile/features/project_workspace/application/project_workspace_launcher.dart';
 import 'package:planets_mobile/features/proposals/data/proposal_gateway.dart';
 import 'package:planets_mobile/features/recurring_activities/data/recurring_activity_gateway.dart';
 import 'package:planets_mobile/features/resource_chat/data/resource_chat_gateway.dart';
@@ -37,6 +39,7 @@ import '../../../support/fake_participation.dart';
 import '../../../support/fake_profile.dart';
 import '../../../support/fake_project_chat.dart';
 import '../../../support/fake_project_needs.dart';
+import '../../../support/fake_project_workspace.dart';
 import '../../../support/fake_proposal.dart';
 import '../../../support/fake_recurring_activity.dart';
 import '../../../support/fake_resource_chat.dart';
@@ -62,6 +65,15 @@ void main() {
     pending.complete();
     await tester.pumpAndSettle();
     expect(find.byKey(const Key('project-chat-composer')), findsOneWidget);
+    expect(find.byKey(const Key('project-chat-tools-strip')), findsOneWidget);
+    expect(find.byKey(const Key('project-needs-button')), findsOneWidget);
+    expect(
+      find.descendant(
+        of: find.byKey(const Key('project-chat-composer-bar')),
+        matching: find.byKey(const Key('project-needs-button')),
+      ),
+      findsNothing,
+    );
   });
 
   testWidgets('Project chat info idle and loading render loading', (
@@ -204,6 +216,57 @@ void main() {
     );
   });
 
+  testWidgets('configured workspace appears in the current chat tools strip', (
+    tester,
+  ) async {
+    final chats = FakeProjectChatGateway()
+      ..summaries = [projectChatSummaryFixture()]
+      ..histories['chat-1'] = [];
+    final workspace = FakeProjectWorkspaceGateway()
+      ..workspace = projectWorkspaceFixture();
+    final launcher = FakeProjectWorkspaceLauncher();
+    final app = await _pump(
+      tester,
+      chats: chats,
+      workspace: workspace,
+      workspaceLauncher: launcher,
+    );
+    app.read(appRouterProvider).go('/messages/chats/chat-1');
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('project-chat-tools-strip')), findsOneWidget);
+    expect(
+      find.byKey(const Key('project-workspace-chat-control')),
+      findsOneWidget,
+    );
+    await tester.tap(find.byKey(const Key('project-workspace-chat-control')));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('drive.google.com'), findsOneWidget);
+    expect(find.textContaining('private-token'), findsNothing);
+    await tester.tap(find.byKey(const Key('project-workspace-confirm-open')));
+    await tester.pumpAndSettle();
+    expect(launcher.calls, 1);
+  });
+
+  testWidgets('manager without a link sees Add workspace in chat', (
+    tester,
+  ) async {
+    final chats = FakeProjectChatGateway()
+      ..summaries = [
+        projectChatSummaryFixture(viewerRole: ProjectChatViewerRole.creator),
+      ]
+      ..histories['chat-1'] = [];
+    final app = await _pump(tester, chats: chats);
+    app.read(appRouterProvider).go('/messages/chats/chat-1');
+    await tester.pumpAndSettle();
+
+    expect(
+      find.byKey(const Key('project-workspace-chat-control')),
+      findsOneWidget,
+    );
+    expect(find.text('Add workspace'), findsOneWidget);
+  });
+
   testWidgets('former member keeps history without composer or Realtime', (
     tester,
   ) async {
@@ -222,6 +285,11 @@ void main() {
     expect(find.byKey(const Key('project-chat-read-only')), findsOneWidget);
     expect(find.text('Bring a small brush.'), findsOneWidget);
     expect(find.byKey(const Key('project-needs-button')), findsNothing);
+    expect(find.byKey(const Key('project-chat-tools-strip')), findsNothing);
+    expect(
+      find.byKey(const Key('project-workspace-chat-control')),
+      findsNothing,
+    );
     expect(chats.subscriptions, isEmpty);
   });
 
@@ -330,16 +398,20 @@ void main() {
     app.read(appRouterProvider).go('/messages/chats/chat-1');
     await tester.pumpAndSettle();
 
-    final composer = tester.getRect(
-      find.byKey(const Key('project-chat-composer')),
+    final history = tester.getRect(
+      find.byKey(const Key('project-chat-history')),
     );
-    final visibleMessages = [
+    final composerBar = tester.getRect(
+      find.byKey(const Key('project-chat-composer-bar')),
+    );
+    expect(history.bottom, lessThanOrEqualTo(composerBar.top));
+    final messages = [
       find.byKey(const Key('project-chat-message-message-long-1')),
       find.byKey(const Key('project-chat-message-message-long-2')),
     ].where((finder) => finder.evaluate().isNotEmpty);
-    expect(visibleMessages, isNotEmpty);
-    for (final message in visibleMessages) {
-      expect(tester.getRect(message).bottom, lessThanOrEqualTo(composer.top));
+    expect(messages, isNotEmpty);
+    for (final message in messages) {
+      expect(tester.getRect(message).width, lessThanOrEqualTo(history.width));
     }
     expect(tester.takeException(), isNull);
   });
@@ -551,7 +623,14 @@ void main() {
       ..histories['chat-1'] = [];
     final participation = FakeParticipationGateway()
       ..meetingDetails = meetingDetailsFixture();
-    final app = await _pump(tester, chats: chats, participation: participation);
+    final workspace = FakeProjectWorkspaceGateway()
+      ..workspace = projectWorkspaceFixture();
+    final app = await _pump(
+      tester,
+      chats: chats,
+      participation: participation,
+      workspace: workspace,
+    );
     app.read(appRouterProvider).go('/messages/chats/chat-1/info');
     await tester.pumpAndSettle();
 
@@ -564,6 +643,11 @@ void main() {
       participation.calls.where((call) => call.startsWith('meeting:')),
       isEmpty,
     );
+    expect(
+      find.byKey(const Key('project-workspace-info-section')),
+      findsNothing,
+    );
+    expect(workspace.calls, isEmpty);
   });
 
   testWidgets('current member info uses current rejoin episode and can edit', (
@@ -661,6 +745,8 @@ void main() {
         find.byKey(const Key('project-chat-actual-membership-current')),
         300,
       );
+      await tester.drag(find.byType(ListView).first, const Offset(0, -160));
+      await tester.pumpAndSettle();
       await tester.tap(
         find.byKey(const Key('project-chat-actual-membership-current')),
       );
@@ -997,6 +1083,44 @@ void main() {
     );
   });
 
+  testWidgets('Group info exposes configured workspace to current users', (
+    tester,
+  ) async {
+    final chats = FakeProjectChatGateway()
+      ..summaries = [projectChatSummaryFixture()]
+      ..histories['chat-1'] = [];
+    final workspace = FakeProjectWorkspaceGateway()
+      ..workspace = projectWorkspaceFixture();
+    final app = await _pump(tester, chats: chats, workspace: workspace);
+    app.read(appRouterProvider).go('/messages/chats/chat-1/info');
+    await tester.pumpAndSettle();
+
+    expect(
+      find.byKey(const Key('project-workspace-info-section')),
+      findsOneWidget,
+    );
+    expect(find.text('drive.google.com'), findsOneWidget);
+    expect(find.byKey(const Key('project-workspace-info-edit')), findsNothing);
+  });
+
+  testWidgets('Group info gives a manager Edit workspace', (tester) async {
+    final chats = FakeProjectChatGateway()
+      ..summaries = [
+        projectChatSummaryFixture(viewerRole: ProjectChatViewerRole.creator),
+      ]
+      ..histories['chat-1'] = [];
+    final workspace = FakeProjectWorkspaceGateway()
+      ..workspace = projectWorkspaceFixture();
+    final app = await _pump(tester, chats: chats, workspace: workspace);
+    app.read(appRouterProvider).go('/messages/chats/chat-1/info');
+    await tester.pumpAndSettle();
+
+    expect(
+      find.byKey(const Key('project-workspace-info-edit')),
+      findsOneWidget,
+    );
+  });
+
   testWidgets('delegate group info is labeled Co-organizer', (tester) async {
     final chats = FakeProjectChatGateway()
       ..summaries = [
@@ -1053,6 +1177,8 @@ Future<ProviderContainer> _pump(
   FakeActualContributionGateway? actualContributions,
   FakeAuthGateway? authGateway,
   FakeMessageChatsGateway? unifiedChats,
+  FakeProjectWorkspaceGateway? workspace,
+  FakeProjectWorkspaceLauncher? workspaceLauncher,
 }) async {
   final auth =
       authGateway ??
@@ -1102,6 +1228,11 @@ Future<ProviderContainer> _pump(
         projectNeedsGatewayProvider.overrideWithValue(
           needs ?? FakeProjectNeedsGateway(),
         ),
+        projectWorkspaceGatewayProvider.overrideWithValue(
+          workspace ?? FakeProjectWorkspaceGateway(),
+        ),
+        if (workspaceLauncher != null)
+          projectWorkspaceLauncherProvider.overrideWithValue(workspaceLauncher),
         participationGatewayProvider.overrideWithValue(
           participation ?? FakeParticipationGateway(),
         ),

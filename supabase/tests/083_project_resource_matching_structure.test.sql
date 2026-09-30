@@ -1,5 +1,7 @@
 begin;
 
+-- Renumbered during stack integration to preserve globally unique pgTAP order.
+
 select no_plan();
 
 select ok(exists (

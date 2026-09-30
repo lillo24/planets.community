@@ -294,6 +294,7 @@ Requester, manager-review, own-membership, and manager-member-history reads are 
 | ------------------------------------------------ | ----------- | ---------- | ------------ |
 | Operational participant management               | Yes         | Yes        | Yes          |
 | Existing organizer chats / Needs / contributions | Yes         | Yes        | Yes          |
+| Manage the private shared workspace link          | Yes         | Yes        | Yes          |
 | Edit an existing Project where lifecycle permits | Yes         | Yes        | No           |
 | Cancel Proposal / pause, resume, or end Tavolo   | Yes         | Yes        | No           |
 | Manage Co-organizers                             | Yes         | Yes        | No           |
@@ -301,6 +302,24 @@ Requester, manager-review, own-membership, and manager-member-history reads are 
 | Change original Creator                          | No transfer | No         | No           |
 
 All three delegated-authority tables use RLS with no policies or direct grants. Invite/delegate/role transitions emit only Project, invitation, relationship, role, actor, and profile identifiers under `project.delegate_*` events; bearer values, display names, titles, and messages are excluded. Authoring/lifecycle events identify the actual acting Co-creator while the concrete Project retains the original Creator. Invite/share/deep-link setup is documented in [Project delegate invite links](project-invite-links.md). Final production package, signing, Team, and bundle identities plus profile-photo rule integration remain external/convergence work rather than database configuration.
+
+## Project shared workspace
+
+`public.project_shared_workspaces` stores zero or one trimmed absolute HTTPS URL
+per `public.projects` row. The table is RLS-enabled with no policies and no
+direct Data API privileges; authenticated clients use only
+`get_own_project_shared_workspace`, `set_project_shared_workspace`, and
+`clear_project_shared_workspace`. Reads bind the expected profile to Auth and
+require either `private.profile_is_project_manager` or a current membership.
+Writes serialize on the Project row and require the current manager predicate,
+so Creator, Co-creator, and Co-organizer have the same workspace authority.
+Chat existence is deliberately irrelevant, allowing pre-chat configuration.
+
+The URL is capped at 2,048 characters, must be trimmed absolute HTTPS with a
+host and without whitespace, control characters, or user-info credentials, and
+never appears in public Proposal/Tavolo reads, audit events, or outbox payloads.
+No Drive API, OAuth token, provider identifier, file, or attachment is stored;
+the external service remains responsible for content and permissions.
 
 ## Structured participation-request Messages
 
@@ -600,6 +619,7 @@ npm run participation:verify:local
 npm run participation:browse:verify:local
 npm run project:capacity:verify:local
 npm run project:delegates:verify:local
+npm run project:workspace:verify:local
 npm run notification:verify:local
 npm run push:delivery:verify:local
 npm run push:verify:local
@@ -686,6 +706,14 @@ the deterministic local profiles and device-QA sequence.
 
 `project:delegates:verify:local` uses four real OTP-authenticated profiles, an anonymous preview client, and narrow direct-database assertions. Its 07C2A race/secrecy evidence remains applicable to the backward-compatible Co-organizer overload; focused pgTAP tests 068/069 add Co-creator/Co-organizer role, provenance, stale-issuer invalidation, participation-independence, and authoring/lifecycle coverage. The verifier prints no OTPs, bearer tokens, keys, database URLs, messages, or meeting values.
 
+`project:workspace:verify:local` uses six real OTP-authenticated profiles and
+narrow local-database assertions. It proves pre-chat setup, all-manager
+replacement, demotion continuity, participant read-only access, leave and
+delegate-revocation independence, one-row concurrent replacement, idempotent
+clear, anonymous denial, and URL-free generic event payloads. It refuses
+non-loopback Supabase targets and prints no URL, OTP, token, key, database URL,
+request message, or meeting value.
+
 `project:chat:notifications:verify:local` uses three real authenticated clients,
 canonical join/leave/rejoin/send RPCs, both service-only projectors, and narrow
 direct-database assertions. It proves send-time Proposal/Tavolo fan-out, sender
@@ -768,4 +796,4 @@ activates. It prints no identities, tokens, messages, or database URL.
 
 `tavoli:web:verify:local` uses synthetic local OTP data and the production Next.js server to prove signed-out Tavoli list/detail rendering, rough-location and next-meeting output, exclusion of paused/ended rows from discovery, retained sanitized historical detail, exact-ID 404 behavior, and detail-only public/restricted exact-location handling. It never prints test addresses, tokens, keys, or protected meeting content.
 
-`npm run check:db` performs reset, lint, advisors, pgTAP, the real fake push-delivery worker protocol, the mobile/backend Auth check, the deterministic immediate-session/RLS check, the two-user profile visibility check, the proposal privacy/lifecycle check, the recurring activity recurrence/privacy/lifecycle check, the multi-user Project participation, delegate, participation-request chat, and participation-aware Browse checks, notification/push projection, structured Messages integration, Project-chat lifecycle/message/notification integrations, the Scambio-Dona listing, saved-search, request, agreement, chat, and unified Messages/notification integrations, the Project resource-need and matching integrations, contribution-selection, acceptance-triage, membership-commitment, coverage, resurfacing, and actual-contribution integrations, moderation evidence integrations, user-block pair-serialization races, type regeneration, and drift detection as one validation sequence. It assumes `npm run db:start` has already succeeded and leaves stack lifecycle to the caller. CI additionally generates local web configuration, builds Next.js, runs the web-session and public Tavoli integrations, and always stops Supabase.
+`npm run check:db` performs reset, lint, advisors, pgTAP, the real fake push-delivery worker protocol, the mobile/backend Auth check, the deterministic immediate-session/RLS check, the two-user profile visibility check, the proposal privacy/lifecycle check, the recurring activity recurrence/privacy/lifecycle check, the multi-user Project participation, delegate, shared-workspace, participation-request chat, and participation-aware Browse checks, notification/push projection, structured Messages integration, Project-chat lifecycle/message/notification integrations, the Scambio-Dona listing, saved-search, request, agreement, chat, and unified Messages/notification integrations, the Project resource-need and matching integrations, contribution-selection, acceptance-triage, membership-commitment, coverage, resurfacing, and actual-contribution integrations, moderation evidence integrations, user-block pair-serialization races, type regeneration, and drift detection as one validation sequence. It assumes `npm run db:start` has already succeeded and leaves stack lifecycle to the caller. CI additionally generates local web configuration, builds Next.js, runs the web-session and public Tavoli integrations, and always stops Supabase.
