@@ -91,12 +91,12 @@ void main() {
       'p_membership_id': 'membership-1',
     });
     expect(contract.optionsParams('creator-1', 'membership-1'), {
-      'p_expected_creator_profile_id': 'creator-1',
+      'p_expected_manager_profile_id': 'creator-1',
       'p_membership_id': 'membership-1',
     });
     expect(
       contract.replaceParams(
-        expectedCreatorProfileId: 'creator-1',
+        expectedManagerProfileId: 'creator-1',
         membershipId: 'membership-1',
         expectedSkillIds: const {'skill-b', 'skill-a'},
         expectedResourceNeedIds: const {'need-2', 'need-1'},
@@ -106,7 +106,7 @@ void main() {
         substantialEffort: false,
       ),
       {
-        'p_expected_creator_profile_id': 'creator-1',
+        'p_expected_manager_profile_id': 'creator-1',
         'p_membership_id': 'membership-1',
         'p_expected_skill_ids': ['skill-a', 'skill-b'],
         'p_expected_resource_need_ids': ['need-1', 'need-2'],
@@ -124,8 +124,8 @@ void main() {
     ).readAsStringSync();
     for (final rpc in [
       'list_project_membership_actual_contributions',
-      'list_project_membership_actual_contribution_options',
-      'replace_project_membership_actual_contributions',
+      'list_project_membership_actual_contribution_options_for_manager',
+      'replace_project_membership_actual_contributions_as_manager',
     ]) {
       expect(source, contains("'$rpc'"));
     }

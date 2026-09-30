@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
@@ -17,6 +18,7 @@ import 'package:planets_mobile/features/cover_media/domain/cover_media_models.da
 import 'package:planets_mobile/features/cover_media/presentation/cover_editor_section.dart';
 import 'package:planets_mobile/features/cover_media/presentation/cover_image.dart';
 import 'package:planets_mobile/features/messages/presentation/messages_routes.dart';
+import 'package:planets_mobile/features/auth/presentation/request_code_screen.dart';
 import 'package:planets_mobile/features/profile/data/profile_gateway.dart';
 import 'package:planets_mobile/features/profile/presentation/profile_edit_screen.dart';
 import 'package:planets_mobile/features/profile_photo/application/visible_profile_photo_controller.dart';
@@ -131,7 +133,7 @@ void main() {
   );
 
   testWidgets(
-    'public filters use the backend and detail has no interaction CTA',
+    'public filters debounce through the backend and detail exposes the flow',
     (tester) async {
       final gateway = FakeResourceListingGateway()
         ..publicItems = [
@@ -151,29 +153,94 @@ void main() {
         find.byKey(const Key('resource-locality-filter')),
         'Bologna',
       );
-      await _tap(tester, 'resource-apply-filters');
+      expect(find.byKey(const Key('resource-apply-filters')), findsOneWidget);
+      await tester.pump(const Duration(milliseconds: 349));
+      expect(gateway.lastQuery, isNull);
+      await tester.pump(const Duration(milliseconds: 1));
+      await tester.pumpAndSettle();
       expect(gateway.lastMode, ResourceListingMode.exchange);
       expect(gateway.lastQuery, 'shovel');
       expect(gateway.lastLocality, 'Bologna');
 
       await _tap(tester, 'resource-card-$resourceListingId');
       expect(find.text('Listing details'), findsOneWidget);
-      expect(find.text('Listed by Casey'), findsOneWidget);
-      for (final deferred in [
-        'Request',
-        'Claim',
-        'Reserve',
-        'Message owner',
-        'Borrow',
-        'Trade',
-        'Buy',
-      ]) {
+      expect(find.text('3h ago · Listed by Casey'), findsOneWidget);
+      expect(find.textContaining('ago ago'), findsNothing);
+      expect(
+        find.byKey(const Key('resource-signed-out-request-action')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const Key('resource-request-flow-helper')),
+        findsOneWidget,
+      );
+      for (final deferred in ['Claim', 'Reserve', 'Message owner', 'Buy']) {
         expect(find.text(deferred), findsNothing);
       }
+      await tester.binding.handlePopRoute();
+      await tester.pumpAndSettle();
+      expect(
+        app
+            .read(appRouterProvider)
+            .routerDelegate
+            .currentConfiguration
+            .uri
+            .path,
+        '/resources',
+      );
     },
   );
 
-  testWidgets('public cards hide zero interest and detail always shows count', (
+  testWidgets('Scambio debounce keeps typing live, clears and submits now', (
+    tester,
+  ) async {
+    final gateway = FakeResourceListingGateway();
+    final app = await _pump(tester, gateway: gateway, signedIn: false);
+    app.read(appRouterProvider).go('/resources');
+    await tester.pumpAndSettle();
+    final query = find.byKey(const Key('resource-query-filter'));
+    final locality = find.byKey(const Key('resource-locality-filter'));
+
+    await tester.enterText(query, 'garden');
+    await tester.pump(const Duration(milliseconds: 100));
+    await tester.enterText(query, 'garden tools');
+    await tester.enterText(locality, 'Trento');
+    await tester.pump(const Duration(milliseconds: 349));
+    expect(gateway.calls.where((call) => call == 'list-public'), hasLength(1));
+    expect(tester.widget<TextField>(query).enabled, isNot(false));
+    await tester.pump(const Duration(milliseconds: 1));
+    await tester.pumpAndSettle();
+    expect(gateway.lastQuery, 'garden tools');
+    expect(gateway.lastLocality, 'Trento');
+
+    await tester.enterText(query, '');
+    await tester.pump(const Duration(milliseconds: 350));
+    await tester.pumpAndSettle();
+    expect(gateway.lastQuery, isNull);
+
+    await tester.enterText(query, 'shovel');
+    await tester.testTextInput.receiveAction(TextInputAction.search);
+    await tester.pumpAndSettle();
+    expect(gateway.lastQuery, 'shovel');
+  });
+
+  testWidgets('disposing Scambio filters cancels delayed requests', (
+    tester,
+  ) async {
+    final gateway = FakeResourceListingGateway();
+    final app = await _pump(tester, gateway: gateway, signedIn: false);
+    app.read(appRouterProvider).go('/resources');
+    await tester.pumpAndSettle();
+    await tester.enterText(
+      find.byKey(const Key('resource-query-filter')),
+      'pending',
+    );
+    await tester.pumpWidget(const SizedBox());
+    await tester.pump(const Duration(milliseconds: 400));
+    expect(gateway.calls.where((call) => call == 'list-public'), hasLength(1));
+  });
+
+  testWidgets('public cards and detail show canonical interest metadata', (
     tester,
   ) async {
     final gateway = FakeResourceListingGateway()
@@ -182,7 +249,7 @@ void main() {
     final app = await _pump(tester, gateway: gateway, signedIn: false);
     app.read(appRouterProvider).go('/resources');
     await tester.pumpAndSettle();
-    expect(find.text('No one interested yet'), findsNothing);
+    expect(find.text('No one interested yet'), findsOneWidget);
 
     gateway
       ..publicItems = [publicResourceListingFixture(activeRequestCount: 2)]
@@ -195,6 +262,74 @@ void main() {
     await _tap(tester, 'resource-card-$resourceListingId');
     expect(find.text('2 people interested'), findsOneWidget);
   });
+
+  testWidgets('card places age, mode, interest and location semantically', (
+    tester,
+  ) async {
+    final gateway = FakeResourceListingGateway()
+      ..publicItems = [
+        publicResourceListingFixture(
+          mode: ResourceListingMode.exchange,
+          activeRequestCount: 3,
+        ),
+      ];
+    final app = await _pump(tester, gateway: gateway, signedIn: false);
+    app.read(appRouterProvider).go('/resources');
+    await tester.pumpAndSettle();
+
+    final title = find.text('Garden tools');
+    final age = find.byKey(Key('resource-age-$resourceListingId'));
+    final interest = find.byKey(
+      Key('resource-interest-count-$resourceListingId'),
+    );
+    final location = find.byKey(Key('resource-location-$resourceListingId'));
+    expect(tester.widget<Text>(age).data, '3h ago');
+    expect(find.byKey(const Key('resource-mode-exchange')), findsOneWidget);
+    expect(tester.getTopLeft(age).dx, greaterThan(tester.getTopLeft(title).dx));
+    expect(
+      tester.getTopLeft(interest).dx,
+      lessThan(tester.getTopLeft(location).dx),
+    );
+  });
+
+  testWidgets(
+    'detail deduplicates location and signed-out CTA preserves return',
+    (tester) async {
+      final gateway = FakeResourceListingGateway()
+        ..publicDetail = publicResourceListingDetailFixture(
+          ownerDisplayName: null,
+          locality: 'Trento',
+          administrativeArea: 'Trento',
+          publicLocationLabel: 'Trento',
+        );
+      final app = await _pump(tester, gateway: gateway, signedIn: false);
+      app.read(appRouterProvider).go('/resources/$resourceListingId');
+      await tester.pumpAndSettle();
+
+      expect(find.text('Location'), findsOneWidget);
+      expect(find.text('Trento'), findsOneWidget);
+      expect(find.text('Trento, Trento, IT'), findsNothing);
+      expect(find.textContaining('Public location'), findsNothing);
+      expect(
+        find.byKey(const Key('resource-detail-published-age')),
+        findsOneWidget,
+      );
+      expect(find.text('Published 3h ago'), findsOneWidget);
+      expect(find.textContaining('ago ago'), findsNothing);
+      expect(
+        find.byKey(const Key('resource-request-flow-helper')),
+        findsOneWidget,
+      );
+
+      await _tap(tester, 'resource-signed-out-request-action');
+      expect(
+        tester
+            .widget<RequestCodeScreen>(find.byType(RequestCodeScreen))
+            .returnTo,
+        '/resources/$resourceListingId',
+      );
+    },
+  );
 
   testWidgets('requester sees canonical active request actions on detail', (
     tester,
@@ -216,6 +351,15 @@ void main() {
 
     expect(find.byKey(const Key('resource-request-action')), findsNothing);
     expect(find.byKey(const Key('resource-request-view')), findsOneWidget);
+    await tester.scrollUntilVisible(
+      find.byKey(const Key('resource-request-flow-helper')),
+      200,
+      scrollable: find.byType(Scrollable).first,
+    );
+    expect(
+      find.byKey(const Key('resource-request-flow-helper')),
+      findsOneWidget,
+    );
     expect(
       find.byKey(const Key('resource-request-inline-withdraw')),
       findsOneWidget,
@@ -302,6 +446,11 @@ void main() {
 
     expect(find.byKey(const Key('resource-request-action')), findsNothing);
     expect(find.byKey(const Key('resource-request-view')), findsNothing);
+    expect(find.byKey(const Key('resource-request-flow-helper')), findsNothing);
+    expect(
+      find.byKey(const Key('resource-signed-out-request-action')),
+      findsNothing,
+    );
     expect(
       find.byKey(const Key('resource-owner-loan-schedule-shortcut')),
       findsOneWidget,
@@ -770,6 +919,78 @@ void main() {
     );
     expect(find.textContaining(raw), findsNothing);
   });
+
+  testWidgets(
+    'Scambio detail renders idle and loading as loading, then ready',
+    (tester) async {
+      final pending = Completer<PublicResourceListingDetail?>();
+      final gateway = FakeResourceListingGateway()
+        ..publicDetailResult = pending.future;
+      final app = await _pump(tester, gateway: gateway, signedIn: false);
+      app.read(appRouterProvider).go('/resources/$resourceListingId');
+      await tester.pump();
+
+      expect(find.text('Loading listings…'), findsOneWidget);
+      expect(find.text('Something went wrong'), findsNothing);
+      await tester.pump();
+      expect(find.text('Loading listings…'), findsOneWidget);
+      expect(find.text('Something went wrong'), findsNothing);
+
+      pending.complete(publicResourceListingDetailFixture());
+      await tester.pumpAndSettle();
+      expect(find.text('Garden tools'), findsOneWidget);
+      expect(find.text('Something went wrong'), findsNothing);
+    },
+  );
+
+  testWidgets('Scambio detail hides retained data from another listing', (
+    tester,
+  ) async {
+    final gateway = FakeResourceListingGateway()
+      ..publicDetail = publicResourceListingDetailFixture(title: 'Listing A');
+    final app = await _pump(tester, gateway: gateway, signedIn: false);
+    app.read(appRouterProvider).go('/resources/$resourceListingId');
+    await tester.pumpAndSettle();
+    expect(find.text('Listing A'), findsOneWidget);
+
+    final pending = Completer<PublicResourceListingDetail?>();
+    gateway.publicDetailResult = pending.future;
+    app.read(appRouterProvider).go('/resources/$secondResourceListingId');
+    await tester.pump();
+
+    expect(find.text('Loading listings…'), findsOneWidget);
+    expect(find.text('Listing A'), findsNothing);
+    expect(find.text('Something went wrong'), findsNothing);
+    await tester.pump();
+    expect(find.text('Loading listings…'), findsOneWidget);
+
+    pending.complete(
+      publicResourceListingDetailFixture(
+        id: secondResourceListingId,
+        title: 'Listing B',
+      ),
+    );
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 1));
+    expect(find.text('Listing B'), findsOneWidget);
+    expect(find.text('Listing A'), findsNothing);
+  });
+
+  testWidgets('Scambio detail renders a genuine load failure with Retry', (
+    tester,
+  ) async {
+    final gateway = FakeResourceListingGateway()
+      ..publicDetailError = StateError('private failure detail');
+    final app = await _pump(tester, gateway: gateway, signedIn: false);
+    app.read(appRouterProvider).go('/resources/$resourceListingId');
+    await tester.pump();
+    expect(find.text('Something went wrong'), findsNothing);
+
+    await tester.pumpAndSettle();
+    expect(find.text('Something went wrong'), findsOneWidget);
+    expect(find.text('Try again'), findsOneWidget);
+    expect(find.textContaining('private failure detail'), findsNothing);
+  });
 }
 
 Future<ProviderContainer> _pump(
@@ -826,6 +1047,9 @@ Future<ProviderContainer> _pump(
           coverMediaProcessorProvider.overrideWithValue(coverProcessor),
         if (cropBuilder != null)
           coverCropPageBuilderProvider.overrideWithValue(cropBuilder),
+        resourceListingClockProvider.overrideWithValue(
+          () => DateTime.utc(2026, 9, 14, 15),
+        ),
         resourceRequestGatewayProvider.overrideWithValue(
           resourceRequests ?? FakeResourceRequestGateway(),
         ),

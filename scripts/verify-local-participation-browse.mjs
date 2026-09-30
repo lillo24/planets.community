@@ -80,6 +80,7 @@ async function verifyParticipationAwareBrowse() {
     requester,
     locality,
     null,
+    null,
   );
   assertOnlyId(
     requestedProposals,
@@ -89,18 +90,49 @@ async function verifyParticipationAwareBrowse() {
   );
   assertSafeCards(requestedProposals, [proposalSecret, requestSecret]);
 
-  const skillMatch = await listRequestedProposals(requester, locality, [
-    muralSkillId,
-  ]);
+  const requestedQuery = `REQUESTED ${runId.toUpperCase()}`;
+  const queryMatch = await listRequestedProposals(
+    requester,
+    locality,
+    null,
+    requestedQuery,
+  );
+  assertOnlyId(
+    queryMatch,
+    "proposal_id",
+    requestedProposalId,
+    "query-filtered requested Proposal",
+  );
+  const publicQueryMatch = await listPublicProposals(
+    requester,
+    locality,
+    requestedQuery,
+  );
+  assertOnlyId(
+    publicQueryMatch,
+    "proposal_id",
+    requestedProposalId,
+    "query-filtered public Proposal",
+  );
+
+  const skillMatch = await listRequestedProposals(
+    requester,
+    locality,
+    [muralSkillId],
+    requestedQuery,
+  );
   assertOnlyId(
     skillMatch,
     "proposal_id",
     requestedProposalId,
     "skill-filtered requested Proposal",
   );
-  const skillMiss = await listRequestedProposals(requester, locality, [
-    "d0000000-0000-4000-8004-000000000001",
-  ]);
+  const skillMiss = await listRequestedProposals(
+    requester,
+    locality,
+    ["d0000000-0000-4000-8004-000000000001"],
+    requestedQuery,
+  );
   if (skillMiss.length !== 0) {
     throw new Error("Requested Proposal skill filtering was inconsistent.");
   }
@@ -112,7 +144,12 @@ async function verifyParticipationAwareBrowse() {
   ) {
     throw new Error("Participation changed ordinary Proposal ordering.");
   }
-  const otherOwnRequested = await listRequestedProposals(other, locality, null);
+  const otherOwnRequested = await listRequestedProposals(
+    other,
+    locality,
+    null,
+    requestedQuery,
+  );
   if (otherOwnRequested.length !== 0) {
     throw new Error("User B read user A's requested Proposal state.");
   }
@@ -122,6 +159,7 @@ async function verifyParticipationAwareBrowse() {
       p_expected_requester_profile_id: requester.id,
       p_locality: locality,
       p_skill_ids: null,
+      p_query: requestedQuery,
     },
   );
   if (proposalCrossIdentityError?.code !== "42501") {
@@ -131,7 +169,9 @@ async function verifyParticipationAwareBrowse() {
   }
 
   await withdrawRequest(requester, pendingProposalRequestId);
-  if ((await listRequestedProposals(requester, locality, null)).length !== 0) {
+  if (
+    (await listRequestedProposals(requester, locality, null, null)).length !== 0
+  ) {
     throw new Error("A withdrawn Proposal remained in Requested Browse.");
   }
   const acceptedRequestId = await requestToJoin(
@@ -140,7 +180,9 @@ async function verifyParticipationAwareBrowse() {
     null,
   );
   await acceptRequest(creator, acceptedRequestId);
-  if ((await listRequestedProposals(requester, locality, null)).length !== 0) {
+  if (
+    (await listRequestedProposals(requester, locality, null, null)).length !== 0
+  ) {
     throw new Error("An accepted Proposal remained in Requested Browse.");
   }
 
@@ -181,7 +223,7 @@ async function verifyParticipationAwareBrowse() {
   }
 
   console.log(
-    "Confirmed requester-only pending Proposal/Tavolo Browse promotion, stable public order, filters, withdrawal/acceptance/lifecycle removal, and sanitized card payloads.",
+    "Confirmed requester-only pending Proposal/Tavolo Browse promotion, matching public/requested query filters, stable public order, withdrawal/acceptance/lifecycle removal, and sanitized card payloads.",
   );
 }
 
@@ -202,6 +244,7 @@ async function createProposal(creator, input) {
     p_exact_location_visibility: "participants",
     p_skill_ids: input.skillIds,
     p_skill_importances: input.skillIds.map(() => "required"),
+    p_people_capacity: 20,
   });
   if (error || typeof data !== "string") {
     throw safeDatabaseFailure(
@@ -244,6 +287,7 @@ async function createTavolo(creator, input) {
       p_duration_minutes: 90,
       p_event_timezone: "Europe/Rome",
       p_effective_from: "2098-01-01",
+      p_people_capacity: 20,
     },
   );
   if (error || typeof data !== "string") {
@@ -253,25 +297,27 @@ async function createTavolo(creator, input) {
   return data;
 }
 
-async function listPublicProposals(user, locality) {
+async function listPublicProposals(user, locality, query = null) {
   const { data, error } = await user.client.rpc("list_public_proposals", {
     p_limit: 20,
     p_cursor_starts_at: null,
     p_cursor_id: null,
     p_locality: locality,
     p_skill_ids: null,
+    p_query: query,
   });
   if (error) throw safeDatabaseFailure("list public Proposals", error);
   return data ?? [];
 }
 
-async function listRequestedProposals(user, locality, skillIds) {
+async function listRequestedProposals(user, locality, skillIds, query) {
   const { data, error } = await user.client.rpc(
     "list_own_pending_requested_proposals",
     {
       p_expected_requester_profile_id: user.id,
       p_locality: locality,
       p_skill_ids: skillIds,
+      p_query: query,
     },
   );
   if (error) throw safeDatabaseFailure("list requested Proposals", error);

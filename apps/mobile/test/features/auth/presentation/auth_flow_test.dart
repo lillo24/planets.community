@@ -134,12 +134,12 @@ void main() {
     final app = await _pumpApp(tester, auth, profile);
     final router = app.read(appRouterProvider);
 
-    router.go('/profile');
+    router.go('/profile/edit');
     await tester.pumpAndSettle();
     expect(router.routeInformationProvider.value.uri.path, '/auth');
     expect(
       router.routeInformationProvider.value.uri.queryParameters['returnTo'],
-      '/profile',
+      '/profile/edit',
     );
 
     await tester.binding.handlePopRoute();
@@ -158,7 +158,7 @@ void main() {
     final app = await _pumpApp(tester, auth, profile);
     final router = app.read(appRouterProvider);
 
-    router.go('/profile');
+    router.go('/profile/edit');
     await tester.pumpAndSettle();
     await tester.enterText(
       find.byKey(const Key('auth-email-field')),
@@ -167,14 +167,14 @@ void main() {
     await tester.tap(find.byKey(const Key('auth-request-button')));
     await tester.pumpAndSettle();
     expect(router.routeInformationProvider.value.uri.path, '/auth/verify');
-    expect(app.read(pendingEmailOtpProvider)?.returnTo, '/profile');
+    expect(app.read(pendingEmailOtpProvider)?.returnTo, '/profile/edit');
 
     await tester.binding.handlePopRoute();
     await tester.pumpAndSettle();
     expect(router.routeInformationProvider.value.uri.path, '/auth');
     expect(
       router.routeInformationProvider.value.uri.queryParameters['returnTo'],
-      '/profile',
+      '/profile/edit',
     );
     expect(app.read(pendingEmailOtpProvider), isNull);
     expect(find.byKey(const Key('auth-email-field')), findsOneWidget);

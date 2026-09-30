@@ -251,7 +251,7 @@ class ProjectNeedsController extends Notifier<ProjectNeedsState> {
     ProjectLiveRequirement requirement,
     bool isCovered,
   ) async {
-    if (!_canAct(ProjectChatViewerRole.creator) ||
+    if (!_canManage ||
         (isCovered ? requirement.isCovered : !requirement.isManuallyCovered)) {
       return false;
     }
@@ -263,7 +263,7 @@ class ProjectNeedsController extends Notifier<ProjectNeedsState> {
       () => ref
           .read(projectNeedsGatewayProvider)
           .setManualCoverage(
-            expectedCreatorProfileId: state.expectedProfileId!,
+            expectedManagerProfileId: state.expectedProfileId!,
             projectId: state.projectId!,
             kind: requirement.kind,
             id: requirement.id,
@@ -472,6 +472,10 @@ class ProjectNeedsController extends Notifier<ProjectNeedsState> {
       return false;
     }
   }
+
+  bool get _canManage =>
+      state.viewerRole == ProjectChatViewerRole.creator ||
+      state.viewerRole == ProjectChatViewerRole.delegate;
 
   bool _canAct(ProjectChatViewerRole role) =>
       state.hasTarget &&

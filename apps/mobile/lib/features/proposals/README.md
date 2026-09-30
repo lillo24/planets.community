@@ -1,21 +1,32 @@
 # Proposals feature
 
-This feature owns one-time proposal discovery and authenticated owner management.
+This feature owns one-time proposal discovery and authenticated structural
+management for the immutable Creator and current Co-creators.
 
 - `domain/` defines proposal, lifecycle, status, skill and time-zone models.
 - `data/` calls only the canonical Supabase proposal RPCs and reads the existing controlled skill catalog.
 - `application/` coordinates pagination, requester-only Requested enrichment, detail loading and race-safe owner commands. Every owner mutation carries the identity for which the screen was rendered.
 - `presentation/` contains public list/detail screens and complete-profile create/edit/my-proposals screens.
 
-`presentation/skill_filter.dart` owns the compact, searchable Skills popover:
-categorized checkboxes stage a selection, Apply sends the entire ID set once,
-and Clear all stages an empty selection. Dismissing without Apply discards the
-pending selection. Reopening starts from the applied IDs. Search does not focus
-or open a keyboard until explicitly tapped. The public list displays at most
-two skill badges plus `+N more`; locality composes with the skills using the
-existing backend OR semantics. The reference `general_modular_components` Fancy
-Multi Select was inspected for its controlled selection/badge/search pattern;
-this is a native Flutter MenuAnchor implementation, without React/CSS reuse.
+`presentation/skill_filter.dart` adapts the shared compact tag selector for a
+staged discovery filter. The bounded bottom sheet uses searchable category
+headings and chip/button toggles, Apply sends the entire ID set once, and Clear
+stages an empty selection. Dismissing without Apply discards the pending
+selection. Reopening starts from the applied IDs, and search does not focus or
+open a keyboard until explicitly tapped. The public list displays at most two
+skill badges plus `+N more`; locality and the literal free-text query compose
+with the skills using backend OR-within-skills semantics. The reference
+`general_modular_components` Fancy Multi Select was inspected for its
+controlled selection, compact-tag, search, bounded-surface, and clear-action
+patterns; the implementation remains native Flutter without React/CSS reuse.
+
+The Browse query is trimmed, limited to 120 characters, and debounced for 350
+milliseconds, while submit flushes immediately. Both the paginated public RPC
+and the authenticated pending-request projection receive the same query. The
+database applies a case-insensitive literal substring match across title,
+summary, and description, so `%` and `_` have no wildcard meaning. Controller
+revisions keep pagination on the active query and reject late results from an
+older filter set.
 
 Browse owns list, detail, mine and editor routes inside the app's stateful shell.
 Switching tabs preserves the list scroll/filters and an unsaved editor. Identity
@@ -64,3 +75,24 @@ any values that were supplied.
 09B2 composes the separate blocking feature on public organizer detail. The
 Proposal and organizer remain visible; caller-owned organizer blocks replace a
 new Join action with an Unblock path, while inbound-only denial stays generic.
+
+Draft creation, draft saving, and publication remain original-Creator-only.
+Drafts may omit People capacity, but publication requires 1–100,000 total
+people including the immutable Creator. Public cards and detail use the shared
+participation aggregate (`Creator + current memberships`) to show occupancy,
+Full, or the legacy “Capacity not set” state. A Creator or current Co-creator
+may change capacity only while the same structural content is editable and
+never below current occupancy; a legacy published Proposal must receive a
+capacity on its next structural save.
+
+For an existing published Proposal, the shared editor instead shows **Save
+changes** and never invokes the draft-only publish operation. Content becomes
+read-only once the Proposal starts, while cancellation remains available until
+the canonical end boundary. Completed and cancelled Proposals expose no
+mutation controls. Cancellation is a retained-history transition rather than
+deletion and does not change participation or delegated authority.
+
+The editor uses the exact structural management read for both Creator and
+Co-creator access. Co-organizers and stale/demoted/revoked Co-creators fail
+closed. Successful structural mutations refresh the exact record and affected
+owned, delegated, public-list, and public-detail state.

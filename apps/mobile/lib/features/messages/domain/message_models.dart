@@ -20,6 +20,7 @@ enum StructuredRequestItemKind {
 enum MessageViewerRole {
   requester('requester'),
   creator('creator'),
+  delegate('delegate'),
   owner('owner');
 
   const MessageViewerRole(this.wireValue);
@@ -29,6 +30,7 @@ enum MessageViewerRole {
   static MessageViewerRole fromWire(String value) => switch (value) {
     'requester' => MessageViewerRole.requester,
     'creator' => MessageViewerRole.creator,
+    'delegate' => MessageViewerRole.delegate,
     'owner' => MessageViewerRole.owner,
     _ => throw const FormatException('Unsupported message viewer role.'),
   };

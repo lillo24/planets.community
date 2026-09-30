@@ -134,6 +134,7 @@ class _ProjectResourceMatchesScreenState
                       for (final match in items) ...[
                         PublicResourceListingCard(
                           listing: match.listingSummary,
+                          now: DateTime.now().toUtc(),
                           semanticDetails: [
                             l10n.projectResourceMatchesWhy,
                             _textReason(l10n, match.textMatchKind),

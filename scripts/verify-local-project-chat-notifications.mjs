@@ -587,6 +587,7 @@ async function createProposal(creator) {
     p_exact_location_visibility: "participants",
     p_skill_ids: [],
     p_skill_importances: [],
+    p_people_capacity: 20,
   });
   if (error || typeof data !== "string") {
     throw safeDatabaseFailure("create a chat-alert Proposal", error ?? {});
@@ -624,6 +625,7 @@ async function createTavolo(creator) {
       p_duration_minutes: 90,
       p_event_timezone: "Europe/Rome",
       p_effective_from: "2098-01-01",
+      p_people_capacity: 20,
     },
   );
   if (error || typeof data !== "string") {

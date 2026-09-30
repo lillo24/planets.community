@@ -76,6 +76,14 @@ future-effective, owner `current_schedule` and `schedule_history` identify it as
 pending; the editor keeps that same effective date so a correction updates the
 pending version instead of adding another version.
 
+Drafts may also omit People capacity, while publication requires 1–100,000
+total people including the immutable Creator. Public cards and detail render
+the shared derived occupancy, Full, or the legacy “Capacity not set” state.
+The Creator and current Co-creators can change capacity on active/paused Tavoli
+but never below current occupancy; a legacy active/paused Tavolo must receive a
+capacity on its next structural save. Ended Tavoli retain capacity as read-only
+history. Capacity applies to the membership pool, not each occurrence.
+
 Public cards contain only rough location. Public detail renders exact meeting
 text only when the sanitized RPC returns it; participant-restricted detail uses
 an explanatory message. Owner flows may render their own protected detail.
@@ -99,3 +107,18 @@ the cover path already present in canonical Tavolo reads, never metadata RPCs.
 
 09B2 composes the separate blocking feature on Tavolo organizer detail without
 filtering the public Tavolo or changing current Project membership/chat access.
+
+The same exact-record editor serves the immutable Creator and current
+Co-creators for non-draft Tavoli. Active and paused Tavoli use **Save changes**;
+the editor also owns the canonical pause, resume, and end transitions and
+refetches that Tavolo after each mutation. Ended Tavoli are read-only.
+Co-organizers receive no structural editor or lifecycle controls, and another
+Creator's draft remains unavailable to a Co-creator. Draft creation and
+publication stay original-Creator-only.
+
+Ending is a retained-history lifecycle transition, not deletion. Editing,
+pausing, resuming, and ending do not alter participation or delegated
+authority. Successful mutations refresh owned, delegated, and affected public
+state. A backend authority denial invalidates cached management/delegated state
+and removes the editor controls; account revisions continue to discard late
+responses.

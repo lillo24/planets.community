@@ -12,6 +12,7 @@ enum JoinAcceptanceTriageLoadPhase { idle, loading, ready, failure }
 enum JoinAcceptanceTriageFailureKind {
   projectNeedsChanged,
   conflict,
+  full,
   forbidden,
   unavailable,
 }
@@ -28,7 +29,7 @@ const _unchanged = Object();
 class JoinAcceptanceTriageState {
   const JoinAcceptanceTriageState({
     required this.requestId,
-    this.expectedCreatorProfileId,
+    this.expectedManagerProfileId,
     this.loadPhase = JoinAcceptanceTriageLoadPhase.idle,
     this.items = const [],
     this.validationAttempt = 0,
@@ -38,7 +39,7 @@ class JoinAcceptanceTriageState {
   });
 
   final String requestId;
-  final String? expectedCreatorProfileId;
+  final String? expectedManagerProfileId;
   final JoinAcceptanceTriageLoadPhase loadPhase;
   final List<JoinAcceptanceTriageItem> items;
   final int validationAttempt;
@@ -48,6 +49,7 @@ class JoinAcceptanceTriageState {
 
   bool get isTerminal =>
       failure == JoinAcceptanceTriageFailureKind.conflict ||
+      failure == JoinAcceptanceTriageFailureKind.full ||
       failure == JoinAcceptanceTriageFailureKind.forbidden;
 
   Set<JoinAcceptanceItemKey> get undecidedKeys => {
@@ -59,7 +61,7 @@ class JoinAcceptanceTriageState {
       validationAttempt > 0 && undecidedKeys.contains(key);
 
   JoinAcceptanceTriageState copyWith({
-    String? expectedCreatorProfileId,
+    String? expectedManagerProfileId,
     JoinAcceptanceTriageLoadPhase? loadPhase,
     List<JoinAcceptanceTriageItem>? items,
     int? validationAttempt,
@@ -68,8 +70,8 @@ class JoinAcceptanceTriageState {
     Object? failure = _unchanged,
   }) => JoinAcceptanceTriageState(
     requestId: requestId,
-    expectedCreatorProfileId:
-        expectedCreatorProfileId ?? this.expectedCreatorProfileId,
+    expectedManagerProfileId:
+        expectedManagerProfileId ?? this.expectedManagerProfileId,
     loadPhase: loadPhase ?? this.loadPhase,
     items: items ?? this.items,
     validationAttempt: validationAttempt ?? this.validationAttempt,
@@ -95,12 +97,12 @@ class JoinAcceptanceTriageController
       _,
     ) {
       _revision++;
-      final previousIdentity = state.expectedCreatorProfileId;
+      final previousIdentity = state.expectedManagerProfileId;
       state = previousIdentity == null
           ? JoinAcceptanceTriageState(requestId: requestId)
           : JoinAcceptanceTriageState(
               requestId: requestId,
-              expectedCreatorProfileId: previousIdentity,
+              expectedManagerProfileId: previousIdentity,
               loadPhase: JoinAcceptanceTriageLoadPhase.failure,
               failure: JoinAcceptanceTriageFailureKind.forbidden,
             );
@@ -109,36 +111,36 @@ class JoinAcceptanceTriageController
     return JoinAcceptanceTriageState(requestId: requestId);
   }
 
-  Future<bool> load(String expectedCreatorProfileId) async {
+  Future<bool> load(String expectedManagerProfileId) async {
     final revision = ++_revision;
     state = JoinAcceptanceTriageState(
       requestId: requestId,
-      expectedCreatorProfileId: expectedCreatorProfileId,
+      expectedManagerProfileId: expectedManagerProfileId,
       loadPhase: JoinAcceptanceTriageLoadPhase.loading,
     );
     try {
-      _requireReadyIdentity(expectedCreatorProfileId);
+      _requireReadyIdentity(expectedManagerProfileId);
       final items = await ref
           .read(joinAcceptanceTriageGatewayProvider)
           .listSelections(
-            expectedCreatorProfileId: expectedCreatorProfileId,
+            expectedManagerProfileId: expectedManagerProfileId,
             requestId: requestId,
           );
       _ensureUniqueKeys(items);
-      if (!_isCurrent(revision, expectedCreatorProfileId)) return false;
+      if (!_isCurrent(revision, expectedManagerProfileId)) return false;
       state = JoinAcceptanceTriageState(
         requestId: requestId,
-        expectedCreatorProfileId: expectedCreatorProfileId,
+        expectedManagerProfileId: expectedManagerProfileId,
         loadPhase: JoinAcceptanceTriageLoadPhase.ready,
         items: List.unmodifiable(items),
       );
       return true;
     } catch (error) {
-      if (!_isCurrent(revision, expectedCreatorProfileId)) return false;
+      if (!_isCurrent(revision, expectedManagerProfileId)) return false;
       final failure = mapJoinAcceptanceTriageFailure(error);
       state = JoinAcceptanceTriageState(
         requestId: requestId,
-        expectedCreatorProfileId: expectedCreatorProfileId,
+        expectedManagerProfileId: expectedManagerProfileId,
         loadPhase: JoinAcceptanceTriageLoadPhase.failure,
         failure: failure,
       );
@@ -165,8 +167,8 @@ class JoinAcceptanceTriageController
   }
 
   Future<JoinAcceptanceTriageSubmitResult> accept() async {
-    final expectedCreatorProfileId = state.expectedCreatorProfileId;
-    if (expectedCreatorProfileId == null ||
+    final expectedManagerProfileId = state.expectedManagerProfileId;
+    if (expectedManagerProfileId == null ||
         state.loadPhase != JoinAcceptanceTriageLoadPhase.ready ||
         state.isAccepting ||
         state.isTerminal) {
@@ -188,11 +190,11 @@ class JoinAcceptanceTriageController
     final revision = ++_revision;
     state = state.copyWith(isAccepting: true, failure: null);
     try {
-      _requireReadyIdentity(expectedCreatorProfileId);
+      _requireReadyIdentity(expectedManagerProfileId);
       await ref
           .read(joinAcceptanceTriageGatewayProvider)
           .acceptWithTriage(
-            expectedCreatorProfileId: expectedCreatorProfileId,
+            expectedManagerProfileId: expectedManagerProfileId,
             requestId: requestId,
             neededSkillIds: partition.neededSkillIds,
             alreadyFoundSkillIds: partition.alreadyFoundSkillIds,
@@ -201,21 +203,21 @@ class JoinAcceptanceTriageController
             alreadyFoundResourceNeedIds: partition.alreadyFoundResourceNeedIds,
             extraResourceNeedIds: partition.extraResourceNeedIds,
           );
-      if (!_isCurrent(revision, expectedCreatorProfileId)) {
+      if (!_isCurrent(revision, expectedManagerProfileId)) {
         return JoinAcceptanceTriageSubmitResult.failed;
       }
       state = state.copyWith(isAccepting: false);
       ref.read(projectChatRefreshProvider.notifier).notifyChanged();
       return JoinAcceptanceTriageSubmitResult.accepted;
     } catch (error) {
-      if (!_isCurrent(revision, expectedCreatorProfileId)) {
+      if (!_isCurrent(revision, expectedManagerProfileId)) {
         return JoinAcceptanceTriageSubmitResult.failed;
       }
       final failure = mapJoinAcceptanceTriageFailure(error);
       if (failure == JoinAcceptanceTriageFailureKind.forbidden) {
         state = JoinAcceptanceTriageState(
           requestId: requestId,
-          expectedCreatorProfileId: expectedCreatorProfileId,
+          expectedManagerProfileId: expectedManagerProfileId,
           loadPhase: JoinAcceptanceTriageLoadPhase.failure,
           failure: failure,
         );
@@ -231,17 +233,17 @@ class JoinAcceptanceTriageController
     state = JoinAcceptanceTriageState(requestId: requestId);
   }
 
-  bool _isCurrent(int revision, String expectedCreatorProfileId) =>
+  bool _isCurrent(int revision, String expectedManagerProfileId) =>
       ref.mounted &&
       revision == _revision &&
-      ref.read(authSessionProvider).identity?.id == expectedCreatorProfileId &&
+      ref.read(authSessionProvider).identity?.id == expectedManagerProfileId &&
       state.requestId == requestId &&
-      state.expectedCreatorProfileId == expectedCreatorProfileId;
+      state.expectedManagerProfileId == expectedManagerProfileId;
 
-  void _requireReadyIdentity(String expectedCreatorProfileId) {
+  void _requireReadyIdentity(String expectedManagerProfileId) {
     final session = ref.read(authSessionProvider);
     if (session.phase != AuthSessionPhase.ready ||
-        session.identity?.id != expectedCreatorProfileId) {
+        session.identity?.id != expectedManagerProfileId) {
       throw const JoinAcceptanceIdentityChangedException();
     }
   }
@@ -337,6 +339,7 @@ JoinAcceptanceTriageFailureKind mapJoinAcceptanceTriageFailure(Object error) {
       '22023' => JoinAcceptanceTriageFailureKind.projectNeedsChanged,
       '42501' => JoinAcceptanceTriageFailureKind.forbidden,
       '55000' => JoinAcceptanceTriageFailureKind.conflict,
+      'PT409' => JoinAcceptanceTriageFailureKind.full,
       _ => JoinAcceptanceTriageFailureKind.unavailable,
     };
   }

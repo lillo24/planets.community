@@ -32,7 +32,20 @@ Opening Create keeps the form local and does not create a row. A new Publish
 creates one draft and then publishes that exact ID; if publication fails, the
 controller retains the ID so a retry cannot create a second draft. Public
 discovery uses backend mode/locality/literal-keyword filters and paired
-`published_at + listing_id` keyset pagination.
+`published_at + listing_id` keyset pagination. Query and locality changes share
+a 350-millisecond debounce, submit and mode changes flush immediately, and the
+controller retains current cards with a subtle progress indicator while a
+replacement page loads. Revision checks ignore late responses from an older
+filter set; no speculative local filtering is applied.
+
+Cards place relative publication age at top-right, keep mode as secondary
+metadata, and render interest and one canonical rough-location line at the
+bottom. The same localized age formatter is used on detail. Detail groups the
+description and deduplicated location into restrained sections, keeps the
+existing signed-in request lifecycle and owner shortcuts, and gives signed-out
+visitors a Request CTA routed through `/auth` with the exact listing return
+path. Concise helper copy explains that chat and Give/Lend exchange terms remain
+post-acceptance behaviors owned by the adjacent request/chat/agreement features.
 
 When centrally gated demo tools are enabled, only the create form exposes a
 synthetic listing preset. It fills fields this model already owns, preserves the

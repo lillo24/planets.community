@@ -344,50 +344,60 @@ class _MessageBubble extends StatelessWidget {
     final time = _formatChatDate(context, message.createdAt);
     return Semantics(
       label: l10n.projectChatMessageSemantics(sender, message.body, time),
-      child: Align(
-        key: Key('project-chat-message-${message.itemId}'),
-        alignment: isMine ? Alignment.centerRight : Alignment.centerLeft,
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 360),
-          child: Card(
-            color: isMine
-                ? Theme.of(context).colorScheme.primaryContainer
-                : Theme.of(context).colorScheme.surfaceContainerHigh,
-            child: Padding(
-              padding: const EdgeInsets.all(AppSpacing.small),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(sender, style: Theme.of(context).textTheme.labelMedium),
-                  const SizedBox(height: AppSpacing.xSmall),
-                  Text(message.body),
-                  const SizedBox(height: AppSpacing.xSmall),
-                  Wrap(
-                    crossAxisAlignment: WrapCrossAlignment.center,
-                    spacing: AppSpacing.xSmall,
-                    children: [
-                      Text(time, style: Theme.of(context).textTheme.bodySmall),
-                      if (onReport != null)
-                        IconButton(
-                          key: Key('project-chat-report-${message.itemId}'),
-                          visualDensity: VisualDensity.compact,
-                          tooltip: l10n.moderationReportAction,
-                          onPressed: onReport,
-                          icon: const Icon(Icons.flag_outlined, size: 18),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: AppSpacing.xSmall),
+        child: Align(
+          alignment: isMine ? Alignment.centerRight : Alignment.centerLeft,
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 360),
+            child: Card(
+              key: Key('project-chat-message-${message.itemId}'),
+              margin: EdgeInsets.zero,
+              color: isMine
+                  ? Theme.of(context).colorScheme.primaryContainer
+                  : Theme.of(context).colorScheme.surfaceContainerHigh,
+              child: Padding(
+                padding: const EdgeInsets.all(AppSpacing.small),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      sender,
+                      style: Theme.of(context).textTheme.labelMedium,
+                    ),
+                    const SizedBox(height: AppSpacing.xSmall),
+                    Text(message.body),
+                    const SizedBox(height: AppSpacing.xSmall),
+                    Wrap(
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      spacing: AppSpacing.xSmall,
+                      children: [
+                        Text(
+                          time,
+                          style: Theme.of(context).textTheme.bodySmall,
                         ),
-                      if (!isMine)
-                        BlockingActionButton(
-                          targetProfileId: message.senderProfileId,
-                          targetDisplayName: message.senderDisplayName,
-                          consequence: BlockingContextConsequence.projectChat,
-                          compact: true,
-                          buttonKey: Key(
-                            'project-chat-block-${message.itemId}',
+                        if (onReport != null)
+                          IconButton(
+                            key: Key('project-chat-report-${message.itemId}'),
+                            visualDensity: VisualDensity.compact,
+                            tooltip: l10n.moderationReportAction,
+                            onPressed: onReport,
+                            icon: const Icon(Icons.flag_outlined, size: 18),
                           ),
-                        ),
-                    ],
-                  ),
-                ],
+                        if (!isMine)
+                          BlockingActionButton(
+                            targetProfileId: message.senderProfileId,
+                            targetDisplayName: message.senderDisplayName,
+                            consequence: BlockingContextConsequence.projectChat,
+                            compact: true,
+                            buttonKey: Key(
+                              'project-chat-block-${message.itemId}',
+                            ),
+                          ),
+                      ],
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
@@ -414,12 +424,13 @@ class _RequirementNeededAgainCard extends StatelessWidget {
       ),
       excludeSemantics: true,
       child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: AppSpacing.xSmall),
+        padding: const EdgeInsets.symmetric(vertical: AppSpacing.small),
         child: Center(
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 420),
             child: Card.outlined(
               key: Key('project-chat-system-${event.itemId}'),
+              margin: EdgeInsets.zero,
               color: Theme.of(context).colorScheme.surfaceContainerLow,
               child: Padding(
                 padding: const EdgeInsets.all(AppSpacing.small),

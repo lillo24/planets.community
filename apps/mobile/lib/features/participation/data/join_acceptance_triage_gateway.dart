@@ -6,12 +6,12 @@ import '../domain/join_acceptance_triage_models.dart';
 
 abstract interface class JoinAcceptanceTriageGateway {
   Future<List<JoinAcceptanceTriageItem>> listSelections({
-    required String expectedCreatorProfileId,
+    required String expectedManagerProfileId,
     required String requestId,
   });
 
   Future<void> acceptWithTriage({
-    required String expectedCreatorProfileId,
+    required String expectedManagerProfileId,
     required String requestId,
     required Set<String> neededSkillIds,
     required Set<String> alreadyFoundSkillIds,
@@ -32,19 +32,19 @@ class SupabaseJoinAcceptanceTriageGateway
 
   @override
   Future<List<JoinAcceptanceTriageItem>> listSelections({
-    required String expectedCreatorProfileId,
+    required String expectedManagerProfileId,
     required String requestId,
   }) async {
     final response = await _client.rpc<List<dynamic>>(
       'list_own_project_join_request_contribution_selections',
-      params: contract.selectionParams(expectedCreatorProfileId, requestId),
+      params: contract.selectionParams(expectedManagerProfileId, requestId),
     );
     return response.map(parser.selection).toList(growable: false);
   }
 
   @override
   Future<void> acceptWithTriage({
-    required String expectedCreatorProfileId,
+    required String expectedManagerProfileId,
     required String requestId,
     required Set<String> neededSkillIds,
     required Set<String> alreadyFoundSkillIds,
@@ -54,9 +54,9 @@ class SupabaseJoinAcceptanceTriageGateway
     required Set<String> extraResourceNeedIds,
   }) async {
     await _client.rpc<String>(
-      'accept_project_join_request',
+      'accept_project_join_request_as_manager',
       params: contract.acceptParams(
-        expectedCreatorProfileId: expectedCreatorProfileId,
+        expectedManagerProfileId: expectedManagerProfileId,
         requestId: requestId,
         neededSkillIds: neededSkillIds,
         alreadyFoundSkillIds: alreadyFoundSkillIds,
@@ -93,15 +93,15 @@ class JoinAcceptanceTriageRpcContract {
   const JoinAcceptanceTriageRpcContract();
 
   Map<String, Object> selectionParams(
-    String expectedCreatorProfileId,
+    String expectedManagerProfileId,
     String requestId,
   ) => {
-    'p_expected_profile_id': expectedCreatorProfileId,
+    'p_expected_profile_id': expectedManagerProfileId,
     'p_request_id': requestId,
   };
 
   Map<String, Object> acceptParams({
-    required String expectedCreatorProfileId,
+    required String expectedManagerProfileId,
     required String requestId,
     required Set<String> neededSkillIds,
     required Set<String> alreadyFoundSkillIds,
@@ -110,7 +110,7 @@ class JoinAcceptanceTriageRpcContract {
     required Set<String> alreadyFoundResourceNeedIds,
     required Set<String> extraResourceNeedIds,
   }) => {
-    'p_expected_creator_profile_id': expectedCreatorProfileId,
+    'p_expected_manager_profile_id': expectedManagerProfileId,
     'p_request_id': requestId,
     'p_needed_skill_ids': _sorted(neededSkillIds),
     'p_already_found_skill_ids': _sorted(alreadyFoundSkillIds),

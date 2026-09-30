@@ -3,6 +3,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/backend/cover_media_path.dart';
 import '../../../core/backend/supabase_backend.dart';
+import '../../participation/domain/project_capacity.dart';
 import '../domain/recurring_activity_models.dart';
 
 const recurringActivityPageSize = 20;
@@ -75,6 +76,9 @@ class SupabaseRecurringActivityGateway implements RecurringActivityGateway {
       },
     );
     final rows = response.cast<Map<String, dynamic>>();
+    final capacities = await _publicCapacities(
+      rows.map((row) => row['recurring_activity_id'] as String),
+    );
     // The reviewed list RPC intentionally exposes only the next occurrence.
     // Enrich each bounded page through the sanitized public-detail RPC so cards
     // can state the weekly/monthly cadence without touching owner data.
@@ -84,6 +88,7 @@ class SupabaseRecurringActivityGateway implements RecurringActivityGateway {
           row['recurring_activity_id'] as String,
           referenceTime: referenceTime,
           occurrenceLimit: 1,
+          capacity: capacities[row['recurring_activity_id'] as String],
         ),
       ),
     );
@@ -94,6 +99,10 @@ class SupabaseRecurringActivityGateway implements RecurringActivityGateway {
         schedules[index]?.schedule ??
             (throw const FormatException(
               'A listed recurring activity had no public detail.',
+            )),
+        capacities[rows[index]['recurring_activity_id']] ??
+            (throw const FormatException(
+              'A listed Tavolo had no capacity status.',
             )),
       ),
       growable: false,
@@ -115,15 +124,25 @@ class SupabaseRecurringActivityGateway implements RecurringActivityGateway {
         'p_locality': locality,
       },
     );
-    return response
-        .cast<Map<String, dynamic>>()
+    final rows = response.cast<Map<String, dynamic>>();
+    final capacities = await _publicCapacities(
+      rows.map((row) => row['recurring_activity_id'] as String),
+    );
+    return rows
         .map(
           (row) => RequestedRecurringActivitySummary(
             requestId: row['request_id'] as String,
             requestCreatedAt: DateTime.parse(
               row['request_created_at'] as String,
             ),
-            activity: _publicSummaryFromRow(row, _scheduleFromFlatRow(row)),
+            activity: _publicSummaryFromRow(
+              row,
+              _scheduleFromFlatRow(row),
+              capacities[row['recurring_activity_id']] ??
+                  (throw const FormatException(
+                    'A requested Tavolo had no capacity status.',
+                  )),
+            ),
           ),
         )
         .toList(growable: false);
@@ -144,17 +163,28 @@ class SupabaseRecurringActivityGateway implements RecurringActivityGateway {
     String activityId, {
     required DateTime referenceTime,
     required int occurrenceLimit,
+    ProjectCapacitySnapshot? capacity,
   }) async {
-    final response = await _client.rpc<List<dynamic>>(
-      'get_public_recurring_activity',
-      params: {
-        'p_recurring_activity_id': activityId,
-        'p_occurrence_limit': occurrenceLimit,
-        'p_reference_time': referenceTime.toUtc().toIso8601String(),
-      },
-    );
-    final rows = response.cast<Map<String, dynamic>>();
-    return rows.isEmpty ? null : _publicDetailFromRow(rows.single);
+    final values = await Future.wait<dynamic>([
+      _client.rpc<List<dynamic>>(
+        'get_public_recurring_activity',
+        params: {
+          'p_recurring_activity_id': activityId,
+          'p_occurrence_limit': occurrenceLimit,
+          'p_reference_time': referenceTime.toUtc().toIso8601String(),
+        },
+      ),
+      if (capacity == null) _publicCapacities([activityId]),
+    ]);
+    final rows = (values.first as List<dynamic>).cast<Map<String, dynamic>>();
+    if (rows.isEmpty) return null;
+    final resolvedCapacity =
+        capacity ??
+        (values[1] as Map<String, ProjectCapacitySnapshot>)[activityId];
+    if (resolvedCapacity == null) {
+      throw const FormatException('A public Tavolo had no capacity status.');
+    }
+    return _publicDetailFromRow(rows.single, resolvedCapacity);
   }
 
   @override
@@ -165,9 +195,21 @@ class SupabaseRecurringActivityGateway implements RecurringActivityGateway {
       'list_own_recurring_activities',
       params: {'p_expected_creator_profile_id': expectedCreatorId},
     );
-    return response
-        .cast<Map<String, dynamic>>()
-        .map(_ownActivityFromRow)
+    final rows = response.cast<Map<String, dynamic>>();
+    final capacities = await _structuralCapacities(
+      expectedCreatorId,
+      rows.map((row) => row['recurring_activity_id'] as String),
+    );
+    return rows
+        .map(
+          (row) => _ownActivityFromRow(
+            row,
+            capacities[row['recurring_activity_id']] ??
+                (throw const FormatException(
+                  'A managed Tavolo had no capacity status.',
+                )),
+          ),
+        )
         .toList(growable: false);
   }
 
@@ -176,15 +218,24 @@ class SupabaseRecurringActivityGateway implements RecurringActivityGateway {
     String expectedCreatorId,
     String activityId,
   ) async {
-    final response = await _client.rpc<List<dynamic>>(
-      'get_own_recurring_activity',
-      params: {
-        'p_expected_creator_profile_id': expectedCreatorId,
-        'p_recurring_activity_id': activityId,
-      },
-    );
-    final rows = response.cast<Map<String, dynamic>>();
-    return rows.isEmpty ? null : _ownActivityFromRow(rows.single);
+    final values = await Future.wait<dynamic>([
+      _client.rpc<List<dynamic>>(
+        'get_own_recurring_activity',
+        params: {
+          'p_expected_creator_profile_id': expectedCreatorId,
+          'p_recurring_activity_id': activityId,
+        },
+      ),
+      _structuralCapacities(expectedCreatorId, [activityId]),
+    ]);
+    final rows = (values.first as List<dynamic>).cast<Map<String, dynamic>>();
+    if (rows.isEmpty) return null;
+    final capacity =
+        (values[1] as Map<String, ProjectCapacitySnapshot>)[activityId];
+    if (capacity == null) {
+      throw const FormatException('A managed Tavolo had no capacity status.');
+    }
+    return _ownActivityFromRow(rows.single, capacity);
   }
 
   @override
@@ -265,102 +316,132 @@ class SupabaseRecurringActivityGateway implements RecurringActivityGateway {
     'p_effective_from': input.effectiveFrom == null
         ? null
         : _date(input.effectiveFrom!),
+    'p_people_capacity': input.peopleCapacity,
   };
 
   PublicRecurringActivitySummary _publicSummaryFromRow(
     Map<String, dynamic> row,
     RecurringSchedule schedule,
-  ) {
-    final activityId = row['recurring_activity_id'] as String;
-    return PublicRecurringActivitySummary(
-      id: activityId,
-      title: row['title'] as String,
-      summary: row['summary'] as String,
-      topic: row['topic'] as String?,
-      countryCode: row['country_code'] as String,
-      locality: row['locality'] as String,
-      administrativeArea: row['administrative_area'] as String?,
-      publicLocationLabel: row['public_location_label'] as String,
-      nextOccurrence: RecurringActivityOccurrence(
-        startsAt: DateTime.parse(row['next_starts_at'] as String),
-        endsAt: DateTime.parse(row['next_ends_at'] as String),
-        eventTimezone: row['event_timezone'] as String,
-      ),
-      schedule: schedule,
-      coverObjectPath: parseCoverObjectPath(
-        row['cover_object_path'],
-        parentId: activityId,
-        parentSegment: 'projects',
-      ),
-    );
-  }
+    ProjectCapacitySnapshot capacity,
+  ) => PublicRecurringActivitySummary(
+    id: row['recurring_activity_id'] as String,
+    title: row['title'] as String,
+    summary: row['summary'] as String,
+    topic: row['topic'] as String?,
+    countryCode: row['country_code'] as String,
+    locality: row['locality'] as String,
+    administrativeArea: row['administrative_area'] as String?,
+    publicLocationLabel: row['public_location_label'] as String,
+    nextOccurrence: RecurringActivityOccurrence(
+      startsAt: DateTime.parse(row['next_starts_at'] as String),
+      endsAt: DateTime.parse(row['next_ends_at'] as String),
+      eventTimezone: row['event_timezone'] as String,
+    ),
+    schedule: schedule,
+    capacity: capacity,
+    coverObjectPath: parseCoverObjectPath(
+      row['cover_object_path'],
+      parentId: row['recurring_activity_id'] as String,
+      parentSegment: 'projects',
+    ),
+  );
 
-  PublicRecurringActivityDetail _publicDetailFromRow(Map<String, dynamic> row) {
-    final activityId = row['recurring_activity_id'] as String;
-    return PublicRecurringActivityDetail(
-      id: activityId,
-      creatorProfileId: row['creator_profile_id'] as String,
-      creatorDisplayName: row['creator_display_name'] as String?,
-      lifecycle: RecurringActivityLifecycle.fromWire(
-        row['lifecycle_state'] as String,
-      ),
-      title: row['title'] as String,
-      summary: row['summary'] as String,
-      description: row['description'] as String,
-      topic: row['topic'] as String?,
-      countryCode: row['country_code'] as String,
-      locality: row['locality'] as String,
-      administrativeArea: row['administrative_area'] as String?,
-      publicLocationLabel: row['public_location_label'] as String,
-      schedule: _scheduleFromFlatRow(row),
-      nextOccurrences: _occurrences(row['next_occurrences']),
-      exactMeetingText: row['exact_meeting_text'] as String?,
-      exactLocationRestricted: row['exact_location_restricted'] as bool,
-      coverObjectPath: parseCoverObjectPath(
-        row['cover_object_path'],
-        parentId: activityId,
-        parentSegment: 'projects',
-      ),
-    );
-  }
+  PublicRecurringActivityDetail _publicDetailFromRow(
+    Map<String, dynamic> row,
+    ProjectCapacitySnapshot capacity,
+  ) => PublicRecurringActivityDetail(
+    id: row['recurring_activity_id'] as String,
+    creatorProfileId: row['creator_profile_id'] as String,
+    creatorDisplayName: row['creator_display_name'] as String?,
+    lifecycle: RecurringActivityLifecycle.fromWire(
+      row['lifecycle_state'] as String,
+    ),
+    title: row['title'] as String,
+    summary: row['summary'] as String,
+    description: row['description'] as String,
+    topic: row['topic'] as String?,
+    countryCode: row['country_code'] as String,
+    locality: row['locality'] as String,
+    administrativeArea: row['administrative_area'] as String?,
+    publicLocationLabel: row['public_location_label'] as String,
+    schedule: _scheduleFromFlatRow(row),
+    nextOccurrences: _occurrences(row['next_occurrences']),
+    exactMeetingText: row['exact_meeting_text'] as String?,
+    exactLocationRestricted: row['exact_location_restricted'] as bool,
+    capacity: capacity,
+    coverObjectPath: parseCoverObjectPath(
+      row['cover_object_path'],
+      parentId: row['recurring_activity_id'] as String,
+      parentSegment: 'projects',
+    ),
+  );
 
-  OwnRecurringActivity _ownActivityFromRow(Map<String, dynamic> row) {
-    final activityId = row['recurring_activity_id'] as String;
-    return OwnRecurringActivity(
-      id: activityId,
-      lifecycle: RecurringActivityLifecycle.fromWire(
-        row['lifecycle_state'] as String,
-      ),
-      title: row['title'] as String?,
-      summary: row['summary'] as String?,
-      description: row['description'] as String?,
-      topic: row['topic'] as String?,
-      countryCode: row['country_code'] as String?,
-      locality: row['locality'] as String?,
-      administrativeArea: row['administrative_area'] as String?,
-      publicLocationLabel: row['public_location_label'] as String?,
-      currentSchedule: row['current_schedule'] == null
-          ? null
-          : _scheduleFromJson(
-              (row['current_schedule'] as Map).cast<String, dynamic>(),
-            ),
-      scheduleHistory: _schedules(row['schedule_history']),
-      exactMeetingText: row['exact_meeting_text'] as String?,
-      exactLocationVisibility: RecurringExactLocationVisibility.fromWire(
-        row['exact_location_visibility'] as String,
-      ),
-      createdAt: DateTime.parse(row['created_at'] as String),
-      updatedAt: DateTime.parse(row['updated_at'] as String),
-      publishedAt: _optionalDate(row['published_at']),
-      pausedAt: _optionalDate(row['paused_at']),
-      resumedAt: _optionalDate(row['resumed_at']),
-      endedAt: _optionalDate(row['ended_at']),
-      coverObjectPath: parseCoverObjectPath(
-        row['cover_object_path'],
-        parentId: activityId,
-        parentSegment: 'projects',
-      ),
+  OwnRecurringActivity _ownActivityFromRow(
+    Map<String, dynamic> row,
+    ProjectCapacitySnapshot capacity,
+  ) => OwnRecurringActivity(
+    id: row['recurring_activity_id'] as String,
+    lifecycle: RecurringActivityLifecycle.fromWire(
+      row['lifecycle_state'] as String,
+    ),
+    title: row['title'] as String?,
+    summary: row['summary'] as String?,
+    description: row['description'] as String?,
+    topic: row['topic'] as String?,
+    countryCode: row['country_code'] as String?,
+    locality: row['locality'] as String?,
+    administrativeArea: row['administrative_area'] as String?,
+    publicLocationLabel: row['public_location_label'] as String?,
+    currentSchedule: row['current_schedule'] == null
+        ? null
+        : _scheduleFromJson(
+            (row['current_schedule'] as Map).cast<String, dynamic>(),
+          ),
+    scheduleHistory: _schedules(row['schedule_history']),
+    exactMeetingText: row['exact_meeting_text'] as String?,
+    exactLocationVisibility: RecurringExactLocationVisibility.fromWire(
+      row['exact_location_visibility'] as String,
+    ),
+    createdAt: DateTime.parse(row['created_at'] as String),
+    updatedAt: DateTime.parse(row['updated_at'] as String),
+    publishedAt: _optionalDate(row['published_at']),
+    pausedAt: _optionalDate(row['paused_at']),
+    resumedAt: _optionalDate(row['resumed_at']),
+    endedAt: _optionalDate(row['ended_at']),
+    capacity: capacity,
+    coverObjectPath: parseCoverObjectPath(
+      row['cover_object_path'],
+      parentId: row['recurring_activity_id'] as String,
+      parentSegment: 'projects',
+    ),
+  );
+
+  Future<Map<String, ProjectCapacitySnapshot>> _publicCapacities(
+    Iterable<String> projectIds,
+  ) => _capacityMap('list_public_project_capacity_statuses', {
+    'p_project_ids': projectIds.toList(growable: false),
+  });
+
+  Future<Map<String, ProjectCapacitySnapshot>> _structuralCapacities(
+    String expectedProfileId,
+    Iterable<String> projectIds,
+  ) => _capacityMap('list_project_capacity_statuses_for_structural_actor', {
+    'p_expected_profile_id': expectedProfileId,
+    'p_project_ids': projectIds.toList(growable: false),
+  });
+
+  Future<Map<String, ProjectCapacitySnapshot>> _capacityMap(
+    String functionName,
+    Map<String, dynamic> params,
+  ) async {
+    final response = await _client.rpc<List<dynamic>>(
+      functionName,
+      params: params,
     );
+    return {
+      for (final row in response.cast<Map<String, dynamic>>())
+        row['project_id'] as String: ProjectCapacitySnapshot.fromRow(row),
+    };
   }
 
   RecurringSchedule _scheduleFromFlatRow(Map<String, dynamic> row) =>

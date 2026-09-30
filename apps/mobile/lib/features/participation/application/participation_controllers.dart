@@ -7,12 +7,14 @@ import '../../project_chat/application/project_chat_refresh.dart';
 import '../../profile_photo/application/visible_profile_photo_controller.dart';
 import '../data/participation_gateway.dart';
 import '../domain/participation_models.dart';
+import '../domain/project_capacity.dart';
 
 enum ParticipationFailureKind {
   invalidInput,
   forbidden,
   conflict,
   interactionUnavailable,
+  full,
   notFound,
   unavailable,
   profilePhotoRequired,
@@ -473,19 +475,21 @@ enum CreatorParticipationPhase {
 class CreatorParticipationState {
   const CreatorParticipationState({
     this.phase = CreatorParticipationPhase.idle,
-    this.expectedCreatorId,
+    this.expectedManagerId,
     this.projectId,
     this.requests = const [],
     this.members = const [],
+    this.capacity,
     this.actionTargetId,
     this.failure,
   });
 
   final CreatorParticipationPhase phase;
-  final String? expectedCreatorId;
+  final String? expectedManagerId;
   final String? projectId;
-  final List<CreatorProjectJoinRequest> requests;
-  final List<CreatorProjectMember> members;
+  final List<ManagerProjectJoinRequest> requests;
+  final List<ManagerProjectMember> members;
+  final ProjectCapacitySnapshot? capacity;
   final String? actionTargetId;
   final ParticipationFailureKind? failure;
 
@@ -516,92 +520,95 @@ class CreatorParticipationController
     return const CreatorParticipationState();
   }
 
-  bool _isCurrent(int revision, String expectedCreatorId, String projectId) =>
+  bool _isCurrent(int revision, String expectedManagerId, String projectId) =>
       ref.mounted &&
       revision == _revision &&
-      ref.read(authSessionProvider).identity?.id == expectedCreatorId &&
+      ref.read(authSessionProvider).identity?.id == expectedManagerId &&
       state.projectId == projectId;
 
-  Future<void> load(String expectedCreatorId, String projectId) async {
+  Future<void> load(String expectedManagerId, String projectId) async {
     if (state.isBusy &&
-        state.expectedCreatorId == expectedCreatorId &&
+        state.expectedManagerId == expectedManagerId &&
         state.projectId == projectId) {
       return;
     }
     final revision = ++_revision;
     final preserve =
-        state.expectedCreatorId == expectedCreatorId &&
+        state.expectedManagerId == expectedManagerId &&
         state.projectId == projectId;
     state = CreatorParticipationState(
       phase: CreatorParticipationPhase.loading,
-      expectedCreatorId: expectedCreatorId,
+      expectedManagerId: expectedManagerId,
       projectId: projectId,
       requests: preserve ? state.requests : const [],
       members: preserve ? state.members : const [],
+      capacity: preserve ? state.capacity : null,
     );
     try {
-      _requireReadyIdentity(expectedCreatorId);
-      final result = await _fetch(expectedCreatorId, projectId);
-      if (!_isCurrent(revision, expectedCreatorId, projectId)) return;
+      _requireReadyIdentity(expectedManagerId);
+      final result = await _fetch(expectedManagerId, projectId);
+      if (!_isCurrent(revision, expectedManagerId, projectId)) return;
       state = CreatorParticipationState(
         phase: CreatorParticipationPhase.ready,
-        expectedCreatorId: expectedCreatorId,
+        expectedManagerId: expectedManagerId,
         projectId: projectId,
         requests: result.requests,
         members: result.members,
+        capacity: result.capacity,
       );
     } catch (error) {
-      if (!_isCurrent(revision, expectedCreatorId, projectId)) return;
+      if (!_isCurrent(revision, expectedManagerId, projectId)) return;
       state = CreatorParticipationState(
         phase: CreatorParticipationPhase.failure,
-        expectedCreatorId: expectedCreatorId,
+        expectedManagerId: expectedManagerId,
         projectId: projectId,
         requests: state.requests,
         members: state.members,
+        capacity: state.capacity,
         failure: mapParticipationFailure(error),
       );
     }
   }
 
   Future<bool> reject({
-    required String expectedCreatorId,
+    required String expectedManagerId,
     required String projectId,
     required String requestId,
     required String requesterProfileId,
   }) => _requestMutation(
     phase: CreatorParticipationPhase.rejecting,
-    expectedCreatorId: expectedCreatorId,
+    expectedManagerId: expectedManagerId,
     projectId: projectId,
     targetId: requestId,
     invalidateProfileId: requesterProfileId,
     refreshProjectChats: false,
     command: (gateway) => gateway.rejectRequest(
-      expectedCreatorProfileId: expectedCreatorId,
+      expectedManagerProfileId: expectedManagerId,
       requestId: requestId,
     ),
   );
 
   Future<bool> remove({
-    required String expectedCreatorId,
+    required String expectedManagerId,
     required String projectId,
     required String membershipId,
     required String participantProfileId,
   }) => _requestMutation(
     phase: CreatorParticipationPhase.removing,
-    expectedCreatorId: expectedCreatorId,
+    expectedManagerId: expectedManagerId,
     projectId: projectId,
     targetId: membershipId,
     invalidateProfileId: participantProfileId,
     refreshProjectChats: true,
     command: (gateway) => gateway.removeMember(
-      expectedCreatorProfileId: expectedCreatorId,
+      expectedManagerProfileId: expectedManagerId,
       membershipId: membershipId,
     ),
   );
 
   Future<bool> _requestMutation({
     required CreatorParticipationPhase phase,
-    required String expectedCreatorId,
+    required String expectedManagerId,
     required String projectId,
     required String targetId,
     required String invalidateProfileId,
@@ -612,40 +619,43 @@ class CreatorParticipationController
     final revision = ++_revision;
     state = CreatorParticipationState(
       phase: phase,
-      expectedCreatorId: expectedCreatorId,
+      expectedManagerId: expectedManagerId,
       projectId: projectId,
       requests: state.requests,
       members: state.members,
+      capacity: state.capacity,
       actionTargetId: targetId,
     );
     try {
-      _requireReadyIdentity(expectedCreatorId);
+      _requireReadyIdentity(expectedManagerId);
       await command(ref.read(participationGatewayProvider));
-      if (!_isCurrent(revision, expectedCreatorId, projectId)) return false;
+      if (!_isCurrent(revision, expectedManagerId, projectId)) return false;
       ref
           .read(visibleProfilePhotoProvider.notifier)
           .invalidate(invalidateProfileId);
-      final result = await _fetch(expectedCreatorId, projectId);
-      if (!_isCurrent(revision, expectedCreatorId, projectId)) return false;
+      final result = await _fetch(expectedManagerId, projectId);
+      if (!_isCurrent(revision, expectedManagerId, projectId)) return false;
       state = CreatorParticipationState(
         phase: CreatorParticipationPhase.ready,
-        expectedCreatorId: expectedCreatorId,
+        expectedManagerId: expectedManagerId,
         projectId: projectId,
         requests: result.requests,
         members: result.members,
+        capacity: result.capacity,
       );
       if (refreshProjectChats) {
         ref.read(projectChatRefreshProvider.notifier).notifyChanged();
       }
       return true;
     } catch (error) {
-      if (!_isCurrent(revision, expectedCreatorId, projectId)) return false;
+      if (!_isCurrent(revision, expectedManagerId, projectId)) return false;
       state = CreatorParticipationState(
         phase: CreatorParticipationPhase.failure,
-        expectedCreatorId: expectedCreatorId,
+        expectedManagerId: expectedManagerId,
         projectId: projectId,
         requests: state.requests,
         members: state.members,
+        capacity: state.capacity,
         actionTargetId: targetId,
         failure: mapParticipationFailure(error),
       );
@@ -655,47 +665,50 @@ class CreatorParticipationController
 
   Future<
     ({
-      List<CreatorProjectJoinRequest> requests,
-      List<CreatorProjectMember> members,
+      List<ManagerProjectJoinRequest> requests,
+      List<ManagerProjectMember> members,
+      ProjectCapacitySnapshot capacity,
     })
   >
-  _fetch(String expectedCreatorId, String projectId) async {
+  _fetch(String expectedManagerId, String projectId) async {
     final gateway = ref.read(participationGatewayProvider);
     final values = await Future.wait<dynamic>([
       gateway.listProjectJoinRequests(
-        expectedCreatorProfileId: expectedCreatorId,
+        expectedManagerProfileId: expectedManagerId,
         projectId: projectId,
       ),
       gateway.listProjectMembers(
-        expectedCreatorProfileId: expectedCreatorId,
+        expectedManagerProfileId: expectedManagerId,
+        projectId: projectId,
+      ),
+      gateway.getProjectCapacityForManager(
+        expectedManagerProfileId: expectedManagerId,
         projectId: projectId,
       ),
     ]);
-    final requests = [...values[0] as List<CreatorProjectJoinRequest>]
+    final requests = [...values[0] as List<ManagerProjectJoinRequest>]
       ..sort((left, right) {
         if (left.isPending != right.isPending) return left.isPending ? -1 : 1;
         return right.createdAt.compareTo(left.createdAt);
       });
-    final members =
-        (values[1] as List<CreatorProjectMember>)
-            .where((member) => member.participantProfileId != expectedCreatorId)
-            .toList()
-          ..sort((left, right) {
-            if (left.isCurrent != right.isCurrent) {
-              return left.isCurrent ? -1 : 1;
-            }
-            return right.joinedAt.compareTo(left.joinedAt);
-          });
+    final members = [...values[1] as List<ManagerProjectMember>]
+      ..sort((left, right) {
+        if (left.isCurrent != right.isCurrent) {
+          return left.isCurrent ? -1 : 1;
+        }
+        return right.joinedAt.compareTo(left.joinedAt);
+      });
     return (
-      requests: List<CreatorProjectJoinRequest>.unmodifiable(requests),
-      members: List<CreatorProjectMember>.unmodifiable(members),
+      requests: List<ManagerProjectJoinRequest>.unmodifiable(requests),
+      members: List<ManagerProjectMember>.unmodifiable(members),
+      capacity: values[2] as ProjectCapacitySnapshot,
     );
   }
 
-  void _requireReadyIdentity(String expectedCreatorId) {
+  void _requireReadyIdentity(String expectedManagerId) {
     final session = ref.read(authSessionProvider);
     if (session.phase != AuthSessionPhase.ready ||
-        session.identity?.id != expectedCreatorId) {
+        session.identity?.id != expectedManagerId) {
       throw const ParticipationIdentityChangedException();
     }
   }
@@ -722,7 +735,10 @@ ParticipationFailureKind mapParticipationFailure(Object error) {
       '22023' => ParticipationFailureKind.invalidInput,
       '42501' => ParticipationFailureKind.forbidden,
       '55000' => ParticipationFailureKind.conflict,
-      'PT409' => ParticipationFailureKind.interactionUnavailable,
+      'PT409' =>
+        error.message == 'This interaction is unavailable.'
+            ? ParticipationFailureKind.interactionUnavailable
+            : ParticipationFailureKind.full,
       'P0002' => ParticipationFailureKind.notFound,
       _ => ParticipationFailureKind.unavailable,
     };

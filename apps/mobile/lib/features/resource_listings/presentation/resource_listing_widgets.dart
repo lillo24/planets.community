@@ -40,6 +40,52 @@ String formatResourceListingDate(BuildContext context, DateTime date) =>
     DateFormat.yMMMd(Localizations.localeOf(context).toLanguageTag())
         .format(date.toLocal());
 
+String formatResourceListingRelativeAge(
+  BuildContext context,
+  DateTime publishedAt, {
+  required DateTime now,
+}) {
+  final l10n = AppLocalizations.of(context);
+  final age = now.toUtc().difference(publishedAt.toUtc());
+  if (age.isNegative || age < const Duration(minutes: 1)) {
+    return l10n.resourceAgeNow;
+  }
+  if (age < const Duration(hours: 1)) {
+    return l10n.resourceAgeMinutes(age.inMinutes);
+  }
+  if (age < const Duration(days: 1)) {
+    return l10n.resourceAgeHours(age.inHours);
+  }
+  if (age < const Duration(days: 7)) {
+    return l10n.resourceAgeDays(age.inDays);
+  }
+  return DateFormat.MMMd(Localizations.localeOf(context).toLanguageTag())
+      .format(publishedAt.toLocal());
+}
+
+String canonicalResourceListingLocation({
+  required String publicLocationLabel,
+  required String locality,
+  required String? administrativeArea,
+  required String countryCode,
+}) {
+  final publicLabel = publicLocationLabel.trim();
+  if (publicLabel.isNotEmpty) return publicLabel;
+
+  final result = <String>[];
+  for (final part in [locality, ?administrativeArea, countryCode]) {
+    final normalized = part.trim();
+    if (normalized.isEmpty ||
+        result.any(
+          (value) => value.toLowerCase() == normalized.toLowerCase(),
+        )) {
+      continue;
+    }
+    result.add(normalized);
+  }
+  return result.join(' · ');
+}
+
 class ResourceListingModeBadge extends StatelessWidget {
   const ResourceListingModeBadge({required this.mode, super.key});
 
@@ -87,6 +133,7 @@ class PublicResourceListingCard extends StatelessWidget {
   const PublicResourceListingCard({
     required this.listing,
     required this.onTap,
+    required this.now,
     this.footer,
     this.semanticDetails = const [],
     super.key,
@@ -94,6 +141,7 @@ class PublicResourceListingCard extends StatelessWidget {
 
   final PublicResourceListingSummary listing;
   final VoidCallback onTap;
+  final DateTime now;
   final Widget? footer;
   final List<String> semanticDetails;
 
@@ -101,16 +149,26 @@ class PublicResourceListingCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final mode = resourceListingModeLabel(l10n, listing.mode);
-    final interest = listing.activeRequestCount == 0
-        ? null
-        : l10n.resourceInterestCount(listing.activeRequestCount);
+    final interest = l10n.resourceInterestCount(listing.activeRequestCount);
+    final age = formatResourceListingRelativeAge(
+      context,
+      listing.publishedAt,
+      now: now,
+    );
+    final location = canonicalResourceListingLocation(
+      publicLocationLabel: listing.publicLocationLabel,
+      locality: listing.locality,
+      administrativeArea: listing.administrativeArea,
+      countryCode: listing.countryCode,
+    );
     return Semantics(
       button: true,
       label: [
         mode,
         listing.title,
-        listing.publicLocationLabel,
-        ?interest,
+        l10n.resourcePublishedRelative(age),
+        interest,
+        location,
         ...semanticDetails,
       ].join(', '),
       child: Card(
@@ -141,8 +199,21 @@ class PublicResourceListingCard extends StatelessWidget {
                           ),
                         ),
                         const SizedBox(width: AppSpacing.small),
-                        ResourceListingModeBadge(mode: listing.mode),
+                        Semantics(
+                          label: l10n.resourcePublishedRelative(age),
+                          excludeSemantics: true,
+                          child: Text(
+                            age,
+                            key: Key('resource-age-${listing.id}'),
+                            style: Theme.of(context).textTheme.labelLarge,
+                          ),
+                        ),
                       ],
+                    ),
+                    const SizedBox(height: AppSpacing.xSmall),
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: ResourceListingModeBadge(mode: listing.mode),
                     ),
                     const SizedBox(height: AppSpacing.small),
                     Text(
@@ -151,25 +222,27 @@ class PublicResourceListingCard extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                     ),
                     const SizedBox(height: AppSpacing.medium),
-                    _IconText(
-                      icon: Icons.location_on_outlined,
-                      text: listing.publicLocationLabel,
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: _IconText(
+                            icon: Icons.people_outline,
+                            text: interest,
+                            key: Key('resource-interest-count-${listing.id}'),
+                          ),
+                        ),
+                        const SizedBox(width: AppSpacing.small),
+                        Expanded(
+                          child: _IconText(
+                            icon: Icons.location_on_outlined,
+                            text: location,
+                            textAlign: TextAlign.end,
+                            key: Key('resource-location-${listing.id}'),
+                          ),
+                        ),
+                      ],
                     ),
-                    const SizedBox(height: AppSpacing.xSmall),
-                    _IconText(
-                      icon: Icons.calendar_today_outlined,
-                      text: l10n.resourcePublishedDate(
-                        formatResourceListingDate(context, listing.publishedAt),
-                      ),
-                    ),
-                    if (interest != null) ...[
-                      const SizedBox(height: AppSpacing.xSmall),
-                      _IconText(
-                        icon: Icons.people_outline,
-                        text: interest,
-                        key: Key('resource-interest-count-${listing.id}'),
-                      ),
-                    ],
                     if (footer case final footer?) ...[
                       const SizedBox(height: AppSpacing.medium),
                       footer,
@@ -201,7 +274,12 @@ class ResourceListingLocation extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final parts = [locality, ?administrativeArea, countryCode];
+    final location = canonicalResourceListingLocation(
+      publicLocationLabel: publicLocationLabel,
+      locality: locality,
+      administrativeArea: administrativeArea,
+      countryCode: countryCode,
+    );
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -210,18 +288,23 @@ class ResourceListingLocation extends StatelessWidget {
           style: Theme.of(context).textTheme.titleLarge,
         ),
         const SizedBox(height: AppSpacing.small),
-        Text(publicLocationLabel),
-        Text(parts.join(', ')),
+        Text(location, key: const Key('resource-canonical-location')),
       ],
     );
   }
 }
 
 class _IconText extends StatelessWidget {
-  const _IconText({required this.icon, required this.text, super.key});
+  const _IconText({
+    required this.icon,
+    required this.text,
+    this.textAlign = TextAlign.start,
+    super.key,
+  });
 
   final IconData icon;
   final String text;
+  final TextAlign textAlign;
 
   @override
   Widget build(BuildContext context) => Row(
@@ -229,7 +312,7 @@ class _IconText extends StatelessWidget {
     children: [
       Icon(icon, size: 20),
       const SizedBox(width: AppSpacing.small),
-      Expanded(child: Text(text)),
+      Expanded(child: Text(text, textAlign: textAlign)),
     ],
   );
 }

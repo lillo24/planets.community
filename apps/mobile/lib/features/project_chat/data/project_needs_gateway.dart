@@ -19,7 +19,7 @@ abstract interface class ProjectNeedsGateway {
   });
 
   Future<void> setManualCoverage({
-    required String expectedCreatorProfileId,
+    required String expectedManagerProfileId,
     required String projectId,
     required ProjectRequirementKind kind,
     required String id,
@@ -79,16 +79,16 @@ class SupabaseProjectNeedsGateway implements ProjectNeedsGateway {
 
   @override
   Future<void> setManualCoverage({
-    required String expectedCreatorProfileId,
+    required String expectedManagerProfileId,
     required String projectId,
     required ProjectRequirementKind kind,
     required String id,
     required bool isCovered,
   }) async {
     await _client.rpc<String>(
-      'set_project_requirement_manual_coverage',
+      'set_project_requirement_manual_coverage_as_manager',
       params: {
-        'p_expected_creator_profile_id': expectedCreatorProfileId,
+        'p_expected_manager_profile_id': expectedManagerProfileId,
         'p_project_id': projectId,
         'p_requirement_kind': kind.wireValue,
         'p_requirement_id': id,

@@ -4,8 +4,10 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../auth/application/auth_session_controller.dart';
 import '../../auth/domain/auth_models.dart';
 import '../../participation/application/participation_controllers.dart';
+import '../../project_chat/application/project_chat_refresh.dart';
 import '../data/messages_gateway.dart';
 import '../domain/message_models.dart';
+import 'message_chats_refresh.dart';
 
 const messagesPageSize = 20;
 
@@ -377,7 +379,7 @@ class MessagesDetailController extends Notifier<MessagesDetailState> {
       switch (action) {
         case MessageAction.rejecting:
           await gateway.reject(
-            expectedCreatorProfileId: profileId,
+            expectedManagerProfileId: profileId,
             requestId: requestId,
           );
         case MessageAction.withdrawing:
@@ -466,6 +468,7 @@ class MessagesDetailController extends Notifier<MessagesDetailState> {
     MessageAction action,
   ) => switch ((item.viewerRole, action)) {
     (MessageViewerRole.creator, MessageAction.rejecting) ||
+    (MessageViewerRole.delegate, MessageAction.rejecting) ||
     (MessageViewerRole.requester, MessageAction.withdrawing) => true,
     _ => false,
   };
@@ -475,6 +478,8 @@ class MessagesDetailController extends Notifier<MessagesDetailState> {
     ParticipationRequestMessageItem item,
     String profileId,
   ) async {
+    ref.read(messageChatsRefreshProvider.notifier).notifyChanged();
+    ref.read(projectChatRefreshProvider.notifier).notifyChanged();
     await ref
         .read(messagesInboxProvider.notifier)
         .load(profileId, refresh: true);
@@ -483,7 +488,7 @@ class MessagesDetailController extends Notifier<MessagesDetailState> {
       return;
     }
     final creatorState = ref.read(creatorParticipationProvider);
-    if (creatorState.expectedCreatorId == profileId &&
+    if (creatorState.expectedManagerId == profileId &&
         creatorState.projectId == item.projectId) {
       await ref
           .read(creatorParticipationProvider.notifier)
@@ -510,6 +515,7 @@ class MessagesDetailController extends Notifier<MessagesDetailState> {
     await ref
         .read(messagesInboxProvider.notifier)
         .load(profileId, refresh: true);
+    ref.read(messageChatsRefreshProvider.notifier).notifyChanged();
     if (ref.read(authSessionProvider).identity?.id != profileId ||
         state.requestId != requestId) {
       return false;
@@ -517,7 +523,7 @@ class MessagesDetailController extends Notifier<MessagesDetailState> {
     final canonical = state.item;
     final creatorState = ref.read(creatorParticipationProvider);
     if (canonical != null &&
-        creatorState.expectedCreatorId == profileId &&
+        creatorState.expectedManagerId == profileId &&
         creatorState.projectId == canonical.projectId) {
       await ref
           .read(creatorParticipationProvider.notifier)

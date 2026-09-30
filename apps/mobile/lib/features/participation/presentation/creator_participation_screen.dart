@@ -16,6 +16,7 @@ import 'actual_contribution_sheet.dart';
 import 'join_acceptance_triage_sheet.dart';
 import 'membership_commitment_sheet.dart';
 import 'project_participation_section.dart';
+import 'project_capacity_label.dart';
 
 class CreatorParticipationScreen extends ConsumerStatefulWidget {
   const CreatorParticipationScreen({
@@ -34,27 +35,27 @@ class CreatorParticipationScreen extends ConsumerStatefulWidget {
 
 class _CreatorParticipationScreenState
     extends ConsumerState<CreatorParticipationScreen> {
-  late final String? _expectedCreatorId;
+  late final String? _expectedManagerId;
 
   @override
   void initState() {
     super.initState();
-    _expectedCreatorId = ref.read(authSessionProvider).identity?.id;
+    _expectedManagerId = ref.read(authSessionProvider).identity?.id;
     Future<void>.microtask(_load);
   }
 
   Future<void> _load() async {
-    final expectedCreatorId = _expectedCreatorId;
-    if (expectedCreatorId == null) return;
+    final expectedManagerId = _expectedManagerId;
+    if (expectedManagerId == null) return;
     await ref
         .read(creatorParticipationProvider.notifier)
-        .load(expectedCreatorId, widget.projectId);
+        .load(expectedManagerId, widget.projectId);
     if (!mounted ||
-        ref.read(authSessionProvider).identity?.id != expectedCreatorId) {
+        ref.read(authSessionProvider).identity?.id != expectedManagerId) {
       return;
     }
     final state = ref.read(creatorParticipationProvider);
-    if (state.expectedCreatorId != expectedCreatorId ||
+    if (state.expectedManagerId != expectedManagerId ||
         state.projectId != widget.projectId) {
       return;
     }
@@ -77,14 +78,15 @@ class _CreatorParticipationScreenState
     final state = ref.watch(creatorParticipationProvider);
     final visiblePhotos = ref.watch(visibleProfilePhotoProvider);
     final belongsToScreen =
-        state.expectedCreatorId == _expectedCreatorId &&
+        state.expectedManagerId == _expectedManagerId &&
         state.projectId == widget.projectId;
     final requests = belongsToScreen
         ? state.requests
-        : const <CreatorProjectJoinRequest>[];
+        : const <ManagerProjectJoinRequest>[];
     final members = belongsToScreen
         ? state.members
-        : const <CreatorProjectMember>[];
+        : const <ManagerProjectMember>[];
+    final capacity = belongsToScreen ? state.capacity : null;
     final isInitialLoading =
         !belongsToScreen ||
         (state.phase == CreatorParticipationPhase.loading &&
@@ -121,6 +123,40 @@ class _CreatorParticipationScreenState
                       ),
                       const SizedBox(height: AppSpacing.medium),
                     ],
+                    if (capacity != null) ...[
+                      Card(
+                        key: const Key('creator-participation-capacity'),
+                        child: Padding(
+                          padding: const EdgeInsets.all(AppSpacing.medium),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              ProjectCapacityLabel(capacity: capacity),
+                              Text(
+                                capacity.peopleCapacity == null
+                                    ? l10n.projectCapacityNotSet
+                                    : l10n.projectCapacityManagerSummary(
+                                        capacity.currentParticipantCount,
+                                        capacity.currentPeopleCount,
+                                        capacity.peopleCapacity!,
+                                      ),
+                              ),
+                              if (capacity.isFull)
+                                Text(
+                                  l10n.projectNoSpots,
+                                  style: TextStyle(
+                                    color: Theme.of(context).colorScheme.error,
+                                  ),
+                                )
+                              else if (capacity.spotsRemaining
+                                  case final spots?)
+                                Text(l10n.projectCapacityRemaining(spots)),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: AppSpacing.medium),
+                    ],
                     Text(
                       l10n.participationRequests,
                       style: Theme.of(context).textTheme.titleLarge,
@@ -138,6 +174,8 @@ class _CreatorParticipationScreenState
                                 )
                               : null,
                           enabled: !state.isBusy,
+                          acceptEnabled:
+                              !state.isBusy && capacity?.isFull != true,
                           isActing:
                               state.actionTargetId == request.id &&
                               state.isBusy,
@@ -167,7 +205,10 @@ class _CreatorParticipationScreenState
                               widget.projectKind == ProjectKind.oneTime
                               ? () => _openActualContributions(member)
                               : null,
-                          onRemove: () => _confirmRemove(member),
+                          onRemove:
+                              member.participantProfileId == _expectedManagerId
+                              ? null
+                              : () => _confirmRemove(member),
                           onBlockingChanged: _load,
                         ),
                         const SizedBox(height: AppSpacing.small),
@@ -179,46 +220,46 @@ class _CreatorParticipationScreenState
     );
   }
 
-  Future<void> _accept(CreatorProjectJoinRequest request) async {
-    final expectedCreatorId = _expectedCreatorId;
-    if (expectedCreatorId == null ||
-        ref.read(authSessionProvider).identity?.id != expectedCreatorId) {
+  Future<void> _accept(ManagerProjectJoinRequest request) async {
+    final expectedManagerId = _expectedManagerId;
+    if (expectedManagerId == null ||
+        ref.read(authSessionProvider).identity?.id != expectedManagerId) {
       return;
     }
     await showJoinAcceptanceTriageSheet(
       context,
-      expectedCreatorProfileId: expectedCreatorId,
+      expectedManagerProfileId: expectedManagerId,
       requestId: request.id,
       projectId: widget.projectId,
       projectKind: widget.projectKind,
       requesterDisplayName: request.requesterDisplayName,
     );
     if (!mounted ||
-        ref.read(authSessionProvider).identity?.id != expectedCreatorId) {
+        ref.read(authSessionProvider).identity?.id != expectedManagerId) {
       return;
     }
     await ref
         .read(creatorParticipationProvider.notifier)
-        .load(expectedCreatorId, widget.projectId);
+        .load(expectedManagerId, widget.projectId);
   }
 
-  Future<void> _reject(CreatorProjectJoinRequest request) async {
-    final expectedCreatorId = _expectedCreatorId;
-    if (expectedCreatorId == null ||
-        ref.read(authSessionProvider).identity?.id != expectedCreatorId) {
+  Future<void> _reject(ManagerProjectJoinRequest request) async {
+    final expectedManagerId = _expectedManagerId;
+    if (expectedManagerId == null ||
+        ref.read(authSessionProvider).identity?.id != expectedManagerId) {
       return;
     }
     await ref
         .read(creatorParticipationProvider.notifier)
         .reject(
-          expectedCreatorId: expectedCreatorId,
+          expectedManagerId: expectedManagerId,
           projectId: widget.projectId,
           requestId: request.id,
           requesterProfileId: request.requesterProfileId,
         );
   }
 
-  Future<void> _confirmRemove(CreatorProjectMember member) async {
+  Future<void> _confirmRemove(ManagerProjectMember member) async {
     final l10n = AppLocalizations.of(context);
     final confirmed = await showDialog<bool>(
       context: context,
@@ -241,45 +282,45 @@ class _CreatorParticipationScreenState
       ),
     );
     if (confirmed != true || !mounted) return;
-    final expectedCreatorId = _expectedCreatorId;
-    if (expectedCreatorId == null ||
-        ref.read(authSessionProvider).identity?.id != expectedCreatorId) {
+    final expectedManagerId = _expectedManagerId;
+    if (expectedManagerId == null ||
+        ref.read(authSessionProvider).identity?.id != expectedManagerId) {
       return;
     }
     await ref
         .read(creatorParticipationProvider.notifier)
         .remove(
-          expectedCreatorId: expectedCreatorId,
+          expectedManagerId: expectedManagerId,
           projectId: widget.projectId,
           membershipId: member.id,
           participantProfileId: member.participantProfileId,
         );
   }
 
-  Future<void> _openCommitments(CreatorProjectMember member) async {
-    final expectedCreatorId = _expectedCreatorId;
-    if (expectedCreatorId == null ||
-        ref.read(authSessionProvider).identity?.id != expectedCreatorId) {
+  Future<void> _openCommitments(ManagerProjectMember member) async {
+    final expectedManagerId = _expectedManagerId;
+    if (expectedManagerId == null ||
+        ref.read(authSessionProvider).identity?.id != expectedManagerId) {
       return;
     }
     await showMembershipCommitmentSheet(
       context,
-      expectedProfileId: expectedCreatorId,
+      expectedProfileId: expectedManagerId,
       membershipId: member.id,
       editable: member.isCurrent,
       historical: !member.isCurrent,
     );
   }
 
-  Future<void> _openActualContributions(CreatorProjectMember member) async {
-    final expectedCreatorId = _expectedCreatorId;
-    if (expectedCreatorId == null ||
-        ref.read(authSessionProvider).identity?.id != expectedCreatorId) {
+  Future<void> _openActualContributions(ManagerProjectMember member) async {
+    final expectedManagerId = _expectedManagerId;
+    if (expectedManagerId == null ||
+        ref.read(authSessionProvider).identity?.id != expectedManagerId) {
       return;
     }
     await showActualContributionSheet(
       context,
-      expectedProfileId: expectedCreatorId,
+      expectedProfileId: expectedManagerId,
       membershipId: member.id,
       editable: true,
       participantDisplayName: member.participantDisplayName,
@@ -292,15 +333,17 @@ class _RequestCard extends StatelessWidget {
     required this.request,
     required this.photoEntry,
     required this.enabled,
+    required this.acceptEnabled,
     required this.isActing,
     required this.onAccept,
     required this.onReject,
     required this.onBlockingChanged,
   });
 
-  final CreatorProjectJoinRequest request;
+  final ManagerProjectJoinRequest request;
   final VisibleProfilePhotoEntry? photoEntry;
   final bool enabled;
+  final bool acceptEnabled;
   final bool isActing;
   final VoidCallback onAccept;
   final VoidCallback onReject;
@@ -372,7 +415,7 @@ class _RequestCard extends StatelessWidget {
                   Expanded(
                     child: FilledButton(
                       key: Key('participation-accept-${request.id}'),
-                      onPressed: enabled ? onAccept : null,
+                      onPressed: acceptEnabled ? onAccept : null,
                       child: isActing
                           ? const SizedBox.square(
                               dimension: 18,
@@ -402,12 +445,12 @@ class _MemberCard extends StatelessWidget {
     required this.onBlockingChanged,
   });
 
-  final CreatorProjectMember member;
+  final ManagerProjectMember member;
   final bool enabled;
   final bool isActing;
   final VoidCallback onCommitments;
   final VoidCallback? onActualContributions;
-  final VoidCallback onRemove;
+  final VoidCallback? onRemove;
   final Future<void> Function() onBlockingChanged;
 
   @override
@@ -481,7 +524,7 @@ class _MemberCard extends StatelessWidget {
                 ],
               ],
             ),
-            if (member.isCurrent) ...[
+            if (member.isCurrent && onRemove != null) ...[
               const SizedBox(height: AppSpacing.small),
               OutlinedButton.icon(
                 key: Key('participation-remove-${member.id}'),

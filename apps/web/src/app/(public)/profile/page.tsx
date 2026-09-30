@@ -4,11 +4,29 @@ import { redirect } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { ProfileForm } from "@/features/profile/profile-form";
 import { readProfilePageData } from "@/features/profile/profile-server";
+import { sanitizeReturnDestination } from "@/features/auth/return-destination";
 
-export default async function ProfilePage() {
-  const result = await readProfilePageData();
+export default async function ProfilePage({
+  searchParams,
+}: PageProps<"/profile">) {
+  const [query, result] = await Promise.all([
+    searchParams,
+    readProfilePageData(),
+  ]);
+  const requestedReturnTo =
+    typeof query.returnTo === "string" ? query.returnTo : undefined;
+  const returnTo = requestedReturnTo
+    ? sanitizeReturnDestination(requestedReturnTo)
+    : "/profile";
   if (result.status !== "ready") {
-    redirect("/auth?returnTo=/profile");
+    const profileDestination = requestedReturnTo
+      ? `/profile?returnTo=${encodeURIComponent(returnTo)}`
+      : "/profile";
+    redirect(
+      requestedReturnTo
+        ? `/auth?returnTo=${encodeURIComponent(profileDestination)}`
+        : "/auth?returnTo=/profile",
+    );
   }
 
   return (
@@ -18,7 +36,7 @@ export default async function ProfilePage() {
           Back to home
         </Button>
       </div>
-      <ProfileForm initialData={result.data} />
+      <ProfileForm initialData={result.data} returnTo={returnTo} />
     </main>
   );
 }

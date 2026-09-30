@@ -781,15 +781,16 @@ comment on function public.clear_own_resource_listing_cover(uuid, uuid) is
 drop function public.get_own_proposal(uuid, uuid);
 drop function public.list_own_proposals(uuid);
 drop function public.get_public_proposal(uuid);
-drop function public.list_public_proposals(integer, timestamptz, uuid, text, uuid[]);
-drop function public.list_own_pending_requested_proposals(uuid, text, uuid[]);
+drop function public.list_public_proposals(integer, timestamptz, uuid, text, uuid[], text);
+drop function public.list_own_pending_requested_proposals(uuid, text, uuid[], text);
 
 create function public.list_public_proposals(
   p_limit integer default 20,
   p_cursor_starts_at timestamptz default null,
   p_cursor_id uuid default null,
   p_locality text default null,
-  p_skill_ids uuid[] default null
+  p_skill_ids uuid[] default null,
+  p_query text default null
 )
 returns table (
   proposal_id uuid,
@@ -813,6 +814,7 @@ set search_path = ''
 as $$
 declare
   normalized_locality text := nullif(btrim(p_locality), '');
+  normalized_query text := nullif(lower(btrim(p_query)), '');
 begin
   if p_limit is null or p_limit not between 1 and 50 then
     raise exception using
@@ -830,6 +832,12 @@ begin
     raise exception using
       errcode = '22023',
       message = 'Proposal skill filters cannot contain null identifiers.';
+  end if;
+
+  if normalized_query is not null and char_length(normalized_query) > 120 then
+    raise exception using
+      errcode = '22023',
+      message = 'Proposal search query must contain at most 120 characters.';
   end if;
 
   return query
@@ -878,6 +886,12 @@ begin
   left join public.project_covers as cover on cover.project_id = proposal.id
   where proposal.lifecycle_state = 'published'
     and proposal.ends_at > statement_timestamp() - interval '24 hours'
+    and (
+      normalized_query is null
+      or position(normalized_query in lower(proposal.title)) > 0
+      or position(normalized_query in lower(proposal.summary)) > 0
+      or position(normalized_query in lower(proposal.description)) > 0
+    )
     and (
       normalized_locality is null
       or lower(proposal.locality) = lower(normalized_locality)
@@ -1128,7 +1142,8 @@ $$;
 create function public.list_own_pending_requested_proposals(
   p_expected_requester_profile_id uuid,
   p_locality text default null,
-  p_skill_ids uuid[] default null
+  p_skill_ids uuid[] default null,
+  p_query text default null
 )
 returns table (
   proposal_id uuid,
@@ -1157,11 +1172,18 @@ declare
     p_expected_requester_profile_id
   );
   normalized_locality text := nullif(btrim(p_locality), '');
+  normalized_query text := nullif(lower(btrim(p_query)), '');
 begin
   if p_skill_ids is not null and array_position(p_skill_ids, null) is not null then
     raise exception using
       errcode = '22023',
       message = 'Requested Proposal skill filters cannot contain null identifiers.';
+  end if;
+
+  if normalized_query is not null and char_length(normalized_query) > 120 then
+    raise exception using
+      errcode = '22023',
+      message = 'Proposal search query must contain at most 120 characters.';
   end if;
 
   return query
@@ -1216,6 +1238,12 @@ begin
     and proposal.lifecycle_state = 'published'
     and proposal.ends_at > statement_timestamp() - interval '24 hours'
     and (
+      normalized_query is null
+      or position(normalized_query in lower(proposal.title)) > 0
+      or position(normalized_query in lower(proposal.summary)) > 0
+      or position(normalized_query in lower(proposal.description)) > 0
+    )
+    and (
       normalized_locality is null
       or lower(proposal.locality) = lower(normalized_locality)
     )
@@ -1233,16 +1261,16 @@ begin
 end;
 $$;
 
-comment on function public.list_public_proposals(integer, timestamptz, uuid, text, uuid[]) is
-  'Returns a cursor-paginated sanitized public discovery page with rough location and the nullable canonical cover path.';
+comment on function public.list_public_proposals(integer, timestamptz, uuid, text, uuid[], text) is
+  'Returns a cursor-paginated sanitized public discovery page with rough location, optional literal query, and the nullable canonical cover path.';
 comment on function public.get_public_proposal(uuid) is
   'Returns exact-ID published detail, nullable canonical cover path, and no participant-restricted meeting information.';
 comment on function public.list_own_proposals(uuid) is
   'Returns the expected creator complete proposal history with nullable canonical cover paths.';
 comment on function public.get_own_proposal(uuid, uuid) is
   'Returns one expected creator proposal with its nullable canonical cover path.';
-comment on function public.list_own_pending_requested_proposals(uuid, text, uuid[]) is
-  'Returns at most 200 public Proposal cards with pending-request context and nullable canonical cover paths.';
+comment on function public.list_own_pending_requested_proposals(uuid, text, uuid[], text) is
+  'Returns at most 200 public Proposal cards with pending-request context, optional literal query, and nullable canonical cover paths.';
 
 drop function public.get_own_recurring_activity(uuid, uuid);
 drop function public.list_own_recurring_activities(uuid);
@@ -2355,7 +2383,7 @@ revoke all privileges on function public.set_own_resource_listing_cover(uuid, uu
 revoke all privileges on function public.clear_own_resource_listing_cover(uuid, uuid)
   from public, anon, authenticated, service_role;
 
-revoke all privileges on function public.list_public_proposals(integer, timestamptz, uuid, text, uuid[])
+revoke all privileges on function public.list_public_proposals(integer, timestamptz, uuid, text, uuid[], text)
   from public, anon, authenticated, service_role;
 revoke all privileges on function public.get_public_proposal(uuid)
   from public, anon, authenticated, service_role;
@@ -2363,7 +2391,7 @@ revoke all privileges on function public.list_own_proposals(uuid)
   from public, anon, authenticated, service_role;
 revoke all privileges on function public.get_own_proposal(uuid, uuid)
   from public, anon, authenticated, service_role;
-revoke all privileges on function public.list_own_pending_requested_proposals(uuid, text, uuid[])
+revoke all privileges on function public.list_own_pending_requested_proposals(uuid, text, uuid[], text)
   from public, anon, authenticated, service_role;
 revoke all privileges on function public.list_public_recurring_activities(timestamptz, integer, timestamptz, uuid, text)
   from public, anon, authenticated, service_role;
@@ -2406,7 +2434,7 @@ grant execute on function public.set_own_resource_listing_cover(uuid, uuid, text
 grant execute on function public.clear_own_resource_listing_cover(uuid, uuid)
   to authenticated;
 
-grant execute on function public.list_public_proposals(integer, timestamptz, uuid, text, uuid[])
+grant execute on function public.list_public_proposals(integer, timestamptz, uuid, text, uuid[], text)
   to anon, authenticated;
 grant execute on function public.get_public_proposal(uuid)
   to anon, authenticated;
@@ -2414,7 +2442,7 @@ grant execute on function public.list_own_proposals(uuid)
   to authenticated;
 grant execute on function public.get_own_proposal(uuid, uuid)
   to authenticated;
-grant execute on function public.list_own_pending_requested_proposals(uuid, text, uuid[])
+grant execute on function public.list_own_pending_requested_proposals(uuid, text, uuid[], text)
   to authenticated;
 grant execute on function public.list_public_recurring_activities(timestamptz, integer, timestamptz, uuid, text)
   to anon, authenticated;

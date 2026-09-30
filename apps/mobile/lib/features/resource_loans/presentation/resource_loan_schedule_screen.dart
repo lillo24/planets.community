@@ -185,7 +185,7 @@ class _ReservationCard extends StatelessWidget {
               const SizedBox(height: AppSpacing.small),
               OutlinedButton(
                 key: Key('resource-loan-open-${reservation.requestId}'),
-                onPressed: () => context.go(
+                onPressed: () => context.push(
                   resourceRequestMessageRoute(reservation.requestId),
                 ),
                 child: Text(l10n.resourceLoanOpenRequest),

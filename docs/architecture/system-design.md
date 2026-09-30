@@ -1,7 +1,7 @@
 # System Design and Responsibility Boundaries
 
 **Status:** Initial accepted design  
-**Implementation status:** Foundations, authentication, profiles, one-time proposals, Tavoli mobile/public-web discovery, shared project participation, request contribution selections, membership commitments, join-acceptance contribution triage, in-app notification projection, unified structured Project/Resource Requests in mobile Messages, mobile Resource request actions, Project group-chat lifecycle/durable message/mobile experience, Project-chat notification/push projection, the provider-independent push/job foundation, provider-neutral push delivery worker protocol, the one-cover Project/Resource media foundation, and the static-first informational site with its local/CI one-time waitlist boundary and native Workers runtime implemented or in focused review
+**Implementation status:** Foundations, authentication, profiles, one-time proposals, Tavoli mobile/public-web discovery, shared project participation, Project delegates and manager authorization, request contribution selections, membership commitments, join-acceptance contribution triage, participation-request private chat, in-app notification projection, unified structured Project/Resource Requests in mobile Messages, mobile Resource request actions, Project group-chat lifecycle/durable message/mobile experience, Project-chat notification/push projection, provider-independent push/job foundations, Project/Resource media, moderation and blocking, and the static-first informational site are implemented on the integration candidate or in focused review.
 
 This document describes how the major parts of PLANETS should interact. Technology choices are recorded separately in [`core-stack.md`](core-stack.md).
 
@@ -181,19 +181,36 @@ Anonymous and authenticated public reads expose only open needs while the concre
 
 ### Shared project participation domain
 
-`projects` is a private, narrow identity registry across `proposals` and `recurring_activities`. Its UUID equals the concrete activity UUID and it stores only kind, synchronized creator, and creation time. Source insert/delete triggers preserve the one-to-one invariant for migration replay and trusted fixtures; content, lifecycle, schedules, skills, and location remain solely in the concrete tables. A source with request or membership history cannot be deleted.
+`projects` is the private cross-kind Project anchor across `proposals` and `recurring_activities`. Its UUID equals the concrete activity UUID; it owns immutable kind and synchronized Creator identity, source creation time, and the one shared nullable total-people capacity used by participation. Source insert/delete triggers preserve the one-to-one invariant for migration replay and trusted fixtures; content, lifecycle, schedules, skills, and location remain solely in the concrete tables. A source with request or membership history cannot be deleted.
+
+People capacity is the maximum simultaneous total people across the whole Project. The immutable original Creator contributes one person, every current membership (`left_at` and `removed_at` both null) contributes one more, and pending requests, historical memberships, and delegated authority alone contribute none. An independently joined delegate contributes through that one membership. Occupancy is derived transactionally as `1 + current memberships`; there is no mutable counter. Null means an unspecified draft or legacy published Project, not zero or unlimited. Legacy rows retain existing participation behavior until a structural actor supplies capacity, while all new Proposal/Tavolo publication requires a value from 1 through 100,000.
+
+The existing concrete-Project → shared-Project lock order serializes capacity edits with participation. Join-request insertion rejects a currently full Project and every membership insertion rechecks fullness while the shared row is locked, so concurrent final-spot accepts cannot overbook and a failed acceptance leaves the request and its related state unchanged. Capacity cannot be reduced below derived occupancy. Ending a membership through leave or removal naturally frees its spot. Public reads expose only aggregate capacity, people/participant counts, remaining spots, and fullness; no waitlist, reservation, per-occurrence Tavolo capacity, size band, or popularity score exists.
+
+`project_delegates` is the single append-preserved source for Co-creator and Co-organizer authority without changing ownership or creating participant memberships. The immutable Project creator remains the original Creator. Creator and active Co-creators have structural authority: they may manage delegated roles, edit an already-published Project where its existing lifecycle permits, cancel a Proposal, and pause/resume/end a Tavolo. Co-organizers have only the existing operational manager authority for participation review, requester conversations, member commitment and ended-Proposal attribution operations, protected meeting data, group chat, and operational Needs coverage. Draft creation/publication remain original-Creator-only. Authority and participation are distinct: either delegated role may independently request, join, leave, and rejoin; authority changes never create or end membership.
+
+Delegated grants use seven-day, single-use, 256-bit bearer invitations. `project_delegate_invitations` stores only a SHA-256 digest plus lifecycle, requested-role, immutable original-Creator, and actual-issuer metadata; plaintext is returned once by a structural actor and is excluded from audit/outbox data and structural reads. Accepted relationships preserve the actual grantor and initial role, while append-only role-change rows preserve later promotions/demotions. Preview is non-mutating and returns one indistinguishable unavailable shape for malformed, unknown, consumed, revoked, expired, non-operational, or stale-issuer invitations. Acceptance and authority changes serialize on the Project before their own row locks. Demotion/revocation atomically revokes a former Co-creator's pending grants, and acceptance independently rechecks current issuer authority.
+
+Mobile and web share `https://planets.community/invite/project/<token>` as the
+canonical invitation route. The website remains a complete fallback and only
+an explicit authenticated client action accepts. Flutter resolves exact
+current-user creator/co_creator/co_organizer/none state before showing participation actions,
+uses one Manage project hub for manager operations, and lists active delegated
+Projects separately from owned Projects. Android/iOS claim only the invite path
+when their production app identities are associated; website association
+endpoints fail closed until those external signing identifiers are configured.
 
 `project_join_requests` preserves each private `pending`, `accepted`, `rejected`, or `withdrawn` attempt and an optional trimmed 500-character requester message. Optional child rows retain canonical skill and resource-need IDs selected for that exact attempt. Proposal selections must be current `required` or `useful` skills; Tavolo skill arrays are empty-only because no canonical recurring skill-requirement relation exists. Resource selections must be open and belong to the same Project. Request, child rows, and the unchanged identifier-only event commit atomically under concrete Project → shared Project → ordered resource-need locks.
 
-A requester or Project creator can resolve the historical IDs to current canonical skill labels and need titles through one narrow expected-identity RPC; no selection table is client-readable. Withdrawal, rejection, acceptance, later requirement removal, need renaming, and need closure preserve the rows. A complete non-creator may request a published one-time project strictly before its end or a currently published Tavolo. There may be at most one pending attempt and no request while the person is a current member. Terminal attempts remain history, so withdrawal, rejection, voluntary leave, or creator removal permits a fresh request with an independent selection set whenever eligibility returns.
+A requester or current Project manager can resolve the historical IDs to current canonical skill labels and need titles through one narrow expected-identity RPC; no selection table is client-readable. Withdrawal, rejection, acceptance, later requirement removal, need renaming, and need closure preserve the rows. A complete non-owner may request a published one-time project strictly before its end or a currently published Tavolo. There may be at most one pending attempt and no request while the person is a current member. Terminal attempts remain history, so withdrawal, rejection, voluntary leave, or manager removal permits a fresh request with an independent selection set whenever eligibility returns.
 
-`project_join_request_skill_acceptance_decisions` and `project_join_request_resource_acceptance_decisions` preserve the creator's immutable classification of every selected offer as `needed`, `already_found`, or `extra`. Triaged acceptance requires an exact partition. `needed` must still be a current Proposal requirement or open same-Project resource at the serialized boundary; historical removed/closed selections may remain `extra` or `already_found`. A two-argument compatibility call accepts only requests with zero selections. Decisions, request resolution, membership insertion, chat activation, and the existing identifier-only event commit atomically.
+`project_join_request_skill_acceptance_decisions` and `project_join_request_resource_acceptance_decisions` preserve the accepting manager's immutable classification of every selected offer as `needed`, `already_found`, or `extra`. Triaged acceptance requires an exact partition. `needed` must still be a current Proposal requirement or open same-Project resource at the serialized boundary; historical removed/closed selections may remain `extra` or `already_found`. A two-argument compatibility call accepts only requests with zero selections. Decisions, request resolution, membership insertion, chat activation, and the existing identifier-only event commit atomically. Legacy creator-named acceptance calls remain owner-only compatibility boundaries; delegate-capable clients use manager-named RPCs and expected-manager parameters.
 
 `project_memberships` is acceptance history, not contribution proof or mutable availability. Acceptance atomically closes the request and creates one current membership; its trigger fails closed on incomplete selected-request decisions and seeds the membership's mutable current commitments only from `needed` and `extra`. `already_found` remains historical without seeding a commitment. Leave/removal ends a membership without deleting it, and pause/end/completion does not rewrite selection, decision, or commitment history. One current membership per project/profile is enforced centrally. A rejoin owns independent decisions and commitments.
 
-Request selection (what was offered), acceptance decision (what the creator decided at that acceptance), current commitment (the mutable membership expectation), live Project requirement coverage (current participant/manual sources), and future final actual contribution are five separate concepts. None alone proves delivery or rates the person. D3A keeps coverage separate from the requirement `open`/`closed` lifecycle and exposes it only through expected-identity-bound claim, creator-manual, and current creator/member read RPCs; D3B owns chat coordination and resurfacing, while one-time final attribution remains 05C.
+Request selection (what was offered), acceptance decision (what the manager decided at that acceptance), current commitment (the mutable membership expectation), live Project requirement coverage (current participant/manual sources), and final actual contribution are five separate concepts. None alone proves delivery or rates the person. D3A keeps coverage separate from the requirement `open`/`closed` lifecycle and exposes it only through expected-identity-bound participant claims, manager-manual coverage, and current manager/member reads; D3B owns chat coordination and resurfacing, while one-time final attribution remains 05C.
 
-All mutations and private reads use expected-identity-bound project RPCs. Tables have RLS but no client grants/policies. Request messages are visible only to the requester and project creator; creator review exposes a narrow authenticated display identity but never Auth email. Protected meeting details are available only to the creator or a current accepted member. Each successful transition writes identifier-only audit/outbox events; acceptance adds no disposition arrays, labels, or message text, while exact live-source transitions add only Project/requirement/actor and optional membership identifiers. In 07B1, insertion of the canonical accepted membership also ensures the one Project group-chat anchor transactionally; it does not consume or repurpose the accepted outbox event.
+All mutations and private reads use expected-identity-bound project RPCs. Tables have RLS but no client grants/policies. Request messages are visible only to the requester and current Project managers; manager review exposes a narrow authenticated display identity but never Auth email. Protected meeting details are available only to a current manager or current accepted member. Each successful transition writes identifier-only audit/outbox events; acceptance adds no disposition arrays, labels, or message text, while exact live-source transitions add only Project/requirement/actor and optional membership identifiers. In 07B1, insertion of the canonical accepted membership also ensures the one Project group-chat anchor transactionally; it does not consume or repurpose the accepted outbox event.
 
 ### User blocking domain and interaction barrier
 
@@ -264,6 +281,33 @@ remain read-only history. `/messages`, `/messages/requests/:requestId`, and
 `/messages/requests/resource/:requestId` belong to Home and require a complete
 authenticated profile. The Chats tab remains Project-only until 04C4C3B.
 
+### Participation-request private conversation domain
+
+Every `project_join_requests` episode owns one permanent private
+`project_join_request_chats` anchor from request creation, including historical
+rows backfilled at their canonical `created_at`. The optional 500-character
+request note remains the structured Request feed item; it is never copied into
+`project_join_request_chat_messages`. Human follow-ups are immutable,
+canonically trimmed plain text of 1 through 4,000 Unicode characters with a
+server-owned timestamp. Both tables use restrictive foreign keys, RLS without
+client policies, and no direct client or broad service-role privileges.
+
+Only the requester and a current Project manager can resolve the exact
+conversation, page its strict Request/message feed, or receive its private
+`project-request-chat:<chat-id>:profile:<profile-id>` Broadcast hints. Sending is
+available only while the canonical request is pending. It takes the established
+concrete-Project, shared-Project, then request-row locks, so accept, reject, and
+withdraw races deterministically preserve a send serialized first and reject a
+send serialized after resolution. Terminal episodes retain readable history;
+accepted detail also exposes the separately authorized Project group-chat ID.
+
+Durable audit/outbox event `project.join_request_chat_message_sent` and Realtime
+hints contain identifiers/timestamps only. Existing notification/push
+projectors deliberately ignore this new event until 07C1B owns its projection.
+The existing unified Requests projection is unchanged, and
+`list_own_message_chat_items` is intentionally unchanged; 07C1B owns the mobile
+conversation UI and unified Chats inclusion.
+
 ### Project group-chat lifecycle and authorization foundation
 
 `project_group_chats` is one private structural anchor per shared `projects` row.
@@ -273,9 +317,9 @@ same chat. Existing membership history is reconciled from its earliest
 `joined_at`. Project completion, Tavolo pause/end, and membership termination do
 not delete the anchor.
 
-Chat authorization derives from immutable Project ownership and append-preserved
-`project_memberships`; there is no chat-member mirror. The creator always has
-current and historical organizer entitlement. Current accepted participants
+Chat authorization derives from immutable Project ownership, active delegate
+relationships, and append-preserved `project_memberships`; there is no chat-member
+mirror. The owner and active delegates have current organizer entitlement. Current accepted participants
 have current/send entitlement. Leave or removal ends it immediately while each
 half-open `[joined_at, ended_at)` interval remains available for future
 history-at-time checks; rejoin creates another interval and preserves the gap.
@@ -296,7 +340,7 @@ database constraints, private helpers, RLS, and fail-closed grants enforce
 ordinary server authorization. The PLANETS backend can technically read message
 bodies; this architecture is not end-to-end encrypted.
 
-The creator and every current accepted participant can read the complete durable
+The owner, every active delegate, and every current accepted participant can read the complete durable
 chat history, including messages from before a participant's first join. A
 former participant can read only messages created through the end of their
 latest membership. Rejoin restores the full accumulated history, including the
@@ -396,6 +440,26 @@ Edge Functions and background workers remain valid implementation choices when t
 | Moderation              | Reports, blocks, content status, actions, internal notes, appeals if introduced                                  | Users, proposals, messages, media, administrators                                                              |
 | Audit/operations        | Security-relevant and administrative action history                                                              | Actor, target, action, timestamps, metadata                                                                    |
 
+| Domain                      | Responsibility                                                                                                   | Important relationships                                                                                        |
+| --------------------------- | ---------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| Authentication identity     | Login identity, verified contact method, session                                                                 | Linked one-to-one with an application profile                                                                  |
+| Profiles                    | Display identity, competences, interests, preferences, visibility settings                                       | User, skills, participation history, media                                                                     |
+| Skills/competences          | Controlled taxonomy used by users and proposals                                                                  | Many-to-many with profiles and proposal requirements                                                           |
+| One-time proposals          | Creator-owned content, schedule, rough/exact location separation, stored lifecycle, derived temporal status      | Creator, controlled skill requirements, future participation, future template source                           |
+| Recurring activities        | Persistent Tavoli, versioned weekly/monthly schedules, bounded occurrences, rough/exact privacy, lifecycle       | Separate from one-time proposals; Flutter experience and public web discovery implemented                      |
+| Resource listings           | Standalone Scambio-Dona lifecycle, rough-location discovery, sanitized detail, and derived active-interest count | Profile owner plus separate private Resource request episodes; no Project, taxonomy, media, or handoff linkage |
+| Resource request chat       | Accepted-request human history, authorized summaries/send, and private Realtime refresh hints                    | One request/agreement episode; permanent owner/requester read and open-coordination send                       |
+| Participation               | Shared project identity, private requests/decisions, current membership and retained history                     | Profile and concrete one-time/recurring project; source for authorization and later stats                      |
+| Project delegated authority | Structural-actor single-use invitations, Co-creator/Co-organizer roles, and current manager authorization        | Shared Project identity; separate from immutable original-Creator attribution and participation membership     |
+| Participation request chat  | Pending-request human history, structured request-note feed, exact authorized state, and private Realtime hints  | One join-request episode; permanent requester/current-manager read and pending-only send                       |
+| Messages                    | Authenticated discriminated Project/Resource Requests plus the existing Project-only Chats tab                   | Canonical request domains; complete three-part cursor; Resource chats remain 04C4C3B                           |
+| Project chat                | Structural anchor, immutable message history, authorized list/send APIs, and private Realtime hints              | Owner/active delegates plus current/former participants under canonical membership-time rules                  |
+| Notifications               | Controlled categories/preferences, recipient in-app records, private installations, and recipient push jobs      | Recipient, per-consumer source event receipt, optional project/request/membership                              |
+| Templates                   | Reusable proposal structure derived from approved past/community content                                         | Source proposal, attribution, moderation/publication state                                                     |
+| Community statistics        | Aggregated views over canonical activity and participation                                                       | Proposal type, location, participation, time                                                                   |
+| Moderation                  | Reports, blocks, content status, actions, internal notes, appeals if introduced                                  | Users, proposals, messages, media, administrators                                                              |
+| Audit/operations            | Security-relevant and administrative action history                                                              | Actor, target, action, timestamps, metadata                                                                    |
+
 Later schema plans must extend this model deliberately and record unresolved product choices instead of guessing them.
 
 ## Public and private data separation
@@ -446,10 +510,10 @@ The product document establishes the following general flow:
 
 1. a user creates a proposal from scratch or from a reusable template;
 2. the proposal becomes discoverable after publication;
-3. users request to participate;
+3. users request to participate and that request episode gains a private requester/organizer conversation;
 4. matching may notify users whose competences are relevant;
-5. the proposal owner reviews participation requests;
-6. accepted users become members;
+5. a current Project manager reviews participation requests while either counterparty may follow up until resolution;
+6. accepted users become members and the request conversation becomes read-only;
 7. the first accepted join request transactionally activates the canonical project group chat;
 8. participants coordinate and may share an external meeting link;
 9. a completed proposal can contribute to templates and aggregate community information.
@@ -591,14 +655,22 @@ A failed push does not remove the in-app notification or roll back the domain ac
 Messages will eventually provide an authenticated communication surface containing
 both structured participation-request items and project group conversations. A join
 request item is backed directly by `project_join_requests`, may show its private
-requester message to the authorized creator, and reflects canonical request state.
+requester message to an authorized current manager, and reflects canonical request state.
 Accept/Reject continues to call the participation transition functions; the item is
 not copied into a free-form chat message.
+
+07C1A adds one private requester/organizer conversation per participation-request
+episode at request creation. Its feed keeps that canonical Request item distinct
+from later human messages, allows both counterparties to send only while pending,
+and retains read-only history after accept/reject/withdraw. Acceptance links to,
+but never merges with, the separate Project group chat. The backend contract is
+implemented; 07C1B owns mobile routes, rendering, live refresh, unified Chats
+projection, and any notification/push consumption.
 
 The 07B1 Project-chat foundation now provides:
 
 - one structural conversation anchor per Project after first acceptance;
-- creator, current-member, and former-member entitlement derived from canonical history;
+- owner, active-delegate, current-member, and former-member entitlement derived from canonical history;
 - exact half-open membership intervals for future time-authorized reads;
 - retention across leave, removal, rejoin gaps, Project completion, and Tavolo pause/end;
 - no chat-participant mirror, copied meeting details, message state, or transport.

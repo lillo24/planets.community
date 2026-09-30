@@ -35,6 +35,7 @@ describe("readCurrentAuth", () => {
 
     await expect(readCurrentAuth(async () => client)).resolves.toEqual({
       status: "ready",
+      profileId: "user-1",
     });
   });
 

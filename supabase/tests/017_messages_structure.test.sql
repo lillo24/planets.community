@@ -138,9 +138,18 @@ select is(
   'Plan 07A does not introduce chat threads'
 );
 select is(
-  to_regclass('public.project_join_request_messages'),
-  null::regclass,
-  'the private request message is not copied into another durable table'
+  (
+    select count(*)
+    from information_schema.columns
+    where table_schema = 'public'
+      and column_name = 'request_message'
+      and table_name not in (
+        'project_join_requests',
+        'resource_listing_requests'
+      )
+  ),
+  0::bigint,
+  'private request notes remain only on their canonical request rows'
 );
 
 select * from finish();

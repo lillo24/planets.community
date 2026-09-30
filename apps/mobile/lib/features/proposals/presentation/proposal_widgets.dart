@@ -4,6 +4,7 @@ import '../../../core/theme/app_tokens.dart';
 import '../../../core/widgets/requested_badge.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../cover_media/presentation/project_cover_image.dart';
+import '../../participation/presentation/project_capacity_label.dart';
 import '../domain/proposal_models.dart';
 import '../domain/proposal_time.dart';
 
@@ -118,6 +119,8 @@ class ProposalCard extends StatelessWidget {
                     icon: Icons.location_on_outlined,
                     text: proposal.publicLocationLabel,
                   ),
+                  const SizedBox(height: AppSpacing.small),
+                  ProjectCapacityLabel(capacity: proposal.capacity),
                   if (proposal.skills.isNotEmpty) ...[
                     const SizedBox(height: AppSpacing.medium),
                     ProposalSkillRequirements(skills: proposal.skills),

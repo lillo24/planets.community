@@ -33,7 +33,7 @@ insert into public.proposals (
   cancelled_at
 )
 values
-  ('e5100000-0000-4000-8000-000000000001', 'a5100000-0000-4000-8000-000000000001', 'published', 'Bologna requested Proposal', 'Bologna public summary', 'Private-length description', '2098-02-01 09:00+00', '2098-02-01 11:00+00', 'Europe/Rome', 'IT', 'Bologna', 'Central Bologna', '2097-01-01 00:00+00', null),
+  ('e5100000-0000-4000-8000-000000000001', 'a5100000-0000-4000-8000-000000000001', 'published', 'Bologna 100%_ requested Proposal', 'Bologna public summary', 'Private-length description', '2098-02-01 09:00+00', '2098-02-01 11:00+00', 'Europe/Rome', 'IT', 'Bologna', 'Central Bologna', '2097-01-01 00:00+00', null),
   ('e5200000-0000-4000-8000-000000000002', 'a5100000-0000-4000-8000-000000000001', 'published', 'Rome requested Proposal', 'Rome public summary', 'Private-length description', '2098-03-01 09:00+00', '2098-03-01 11:00+00', 'Europe/Rome', 'IT', 'Rome', 'Central Rome', '2097-01-01 00:00+00', null),
   ('e5300000-0000-4000-8000-000000000003', 'a5100000-0000-4000-8000-000000000001', 'cancelled', 'Cancelled Proposal', 'Cancelled public summary', 'Private-length description', '2098-04-01 09:00+00', '2098-04-01 11:00+00', 'Europe/Rome', 'IT', 'Bologna', 'Cancelled location', '2097-01-01 00:00+00', '2097-02-01 00:00+00'),
   ('e5400000-0000-4000-8000-000000000004', 'a5100000-0000-4000-8000-000000000001', 'published', 'Expired Proposal', 'Expired public summary', 'Private-length description', '2020-01-01 09:00+00', '2020-01-01 11:00+00', 'Europe/Rome', 'IT', 'Bologna', 'Expired location', '2019-01-01 00:00+00', null),
@@ -150,7 +150,7 @@ values
 
 set local role anon;
 select throws_ok(
-  $$select * from public.list_own_pending_requested_proposals(null, null, null)$$,
+  $$select * from public.list_own_pending_requested_proposals(null, null, null, 'Bologna')$$,
   '42501',
   'permission denied for function list_own_pending_requested_proposals',
   'anonymous clients cannot invoke requested Proposal discovery'
@@ -199,6 +199,78 @@ select results_eq(
   $$,
   $$values ('e5100000-0000-4000-8000-000000000001'::uuid)$$,
   'requested Proposal skill filtering matches public discovery semantics'
+);
+select results_eq(
+  $$
+    select proposal_id
+    from public.list_own_pending_requested_proposals(
+      'a5200000-0000-4000-8000-000000000002', null, null, null
+    )
+  $$,
+  $$
+    select proposal_id
+    from public.list_own_pending_requested_proposals(
+      'a5200000-0000-4000-8000-000000000002', null, null, '   '
+    )
+  $$,
+  'blank requested Proposal queries normalize to null'
+);
+select results_eq(
+  $$
+    select proposal_id
+    from public.list_own_pending_requested_proposals(
+      'a5200000-0000-4000-8000-000000000002', null, null, 'bOlOgNa 100%_'
+    )
+  $$,
+  $$values ('e5100000-0000-4000-8000-000000000001'::uuid)$$,
+  'requested Proposal query is case-insensitive and treats wildcard characters literally'
+);
+select results_eq(
+  $$
+    select proposal_id
+    from public.list_own_pending_requested_proposals(
+      'a5200000-0000-4000-8000-000000000002', 'Rome', null, 'public summary'
+    )
+  $$,
+  $$values ('e5200000-0000-4000-8000-000000000002'::uuid)$$,
+  'requested Proposal query composes with locality'
+);
+select results_eq(
+  $$
+    select proposal_id
+    from public.list_own_pending_requested_proposals(
+      'a5200000-0000-4000-8000-000000000002',
+      null,
+      array['d0000000-0000-4000-8001-000000000001'::uuid],
+      'private-length'
+    )
+  $$,
+  $$values ('e5100000-0000-4000-8000-000000000001'::uuid)$$,
+  'requested Proposal query composes with skill filters without exposing description'
+);
+select results_eq(
+  $$
+    select proposal_id
+    from public.list_own_pending_requested_proposals(
+      'a5200000-0000-4000-8000-000000000002', null, null, 'Bologna 100%_'
+    )
+  $$,
+  $$
+    select proposal_id
+    from public.list_public_proposals(p_query => 'Bologna 100%_')
+  $$,
+  'requested and public Proposal projections apply the same query semantics'
+);
+select throws_ok(
+  $$
+    select *
+    from public.list_own_pending_requested_proposals(
+      'a5200000-0000-4000-8000-000000000002', null, null, repeat('x', 121)
+    )
+  $$,
+  '22023',
+  'Proposal search query must contain at most 120 characters.',
+  'requested Proposal discovery rejects oversized search queries'
 );
 select is(
   (
@@ -272,7 +344,7 @@ select throws_ok(
   $$
     select *
     from public.list_own_pending_requested_proposals(
-      'a5300000-0000-4000-8000-000000000003', null, null
+      'a5300000-0000-4000-8000-000000000003', null, null, 'Bologna'
     )
   $$,
   '42501',

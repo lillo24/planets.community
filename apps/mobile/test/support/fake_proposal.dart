@@ -1,9 +1,11 @@
 import 'package:planets_mobile/features/proposals/data/proposal_gateway.dart';
 import 'package:planets_mobile/features/proposals/domain/proposal_models.dart';
+import 'package:planets_mobile/features/participation/domain/project_capacity.dart';
 
 typedef RequestedProposalLoader =
     Future<List<RequestedProposalSummary>> Function(
       String expectedProfileId, {
+      String? query,
       String? locality,
       Set<String>? skillIds,
     });
@@ -11,6 +13,7 @@ typedef RequestedProposalLoader =
 typedef PublicProposalLoader = Future<List<ProposalSummary>> Function({
   required int limit,
   ProposalCursor? cursor,
+  String? query,
   String? locality,
   Set<String>? skillIds,
 });
@@ -20,9 +23,11 @@ class FakeProposalGateway implements ProposalGateway {
   List<ProposalSummary> publicItems = [];
   List<RequestedProposalSummary> requestedItems = [];
   ProposalDetail? publicDetail;
+  Future<ProposalDetail?>? publicDetailResult;
   List<OwnProposal> ownItems = [];
   Object? error;
   Object? publishError;
+  Object? mutationError;
   Object? requestedError;
   RequestedProposalLoader? requestedLoader;
   PublicProposalLoader? publicLoader;
@@ -33,9 +38,11 @@ class FakeProposalGateway implements ProposalGateway {
   String? lastExpectedIdentity;
   ProposalInput? lastInput;
   ProposalCursor? lastCursor;
+  String? lastQuery;
   String? lastLocality;
   Set<String>? lastSkillIds;
   String? lastRequestedIdentity;
+  String? lastRequestedQuery;
   String? lastRequestedLocality;
   Set<String>? lastRequestedSkillIds;
 
@@ -49,18 +56,21 @@ class FakeProposalGateway implements ProposalGateway {
   Future<List<ProposalSummary>> listPublicProposals({
     required int limit,
     ProposalCursor? cursor,
+    String? query,
     String? locality,
     Set<String>? skillIds,
   }) async {
     _throwIfNeeded();
     calls.add('list-public');
     lastCursor = cursor;
+    lastQuery = query;
     lastLocality = locality;
     lastSkillIds = skillIds;
     if (publicLoader case final loader?) {
       return loader(
         limit: limit,
         cursor: cursor,
+        query: query,
         locality: locality,
         skillIds: skillIds,
       );
@@ -71,16 +81,23 @@ class FakeProposalGateway implements ProposalGateway {
   @override
   Future<List<RequestedProposalSummary>> listOwnPendingRequestedProposals(
     String expectedProfileId, {
+    String? query,
     String? locality,
     Set<String>? skillIds,
   }) async {
     calls.add('list-requested');
     lastRequestedIdentity = expectedProfileId;
+    lastRequestedQuery = query;
     lastRequestedLocality = locality;
     lastRequestedSkillIds = skillIds;
     if (requestedError case final failure?) throw failure;
     if (requestedLoader case final loader?) {
-      return loader(expectedProfileId, locality: locality, skillIds: skillIds);
+      return loader(
+        expectedProfileId,
+        query: query,
+        locality: locality,
+        skillIds: skillIds,
+      );
     }
     return requestedItems;
   }
@@ -89,12 +106,13 @@ class FakeProposalGateway implements ProposalGateway {
   Future<ProposalDetail?> getPublicProposal(String proposalId) async {
     _throwIfNeeded();
     calls.add('public-detail:$proposalId');
-    return publicDetail;
+    return publicDetailResult ?? publicDetail;
   }
 
   @override
   Future<List<OwnProposal>> listOwnProposals(String expectedCreatorId) async {
     _throwIfNeeded();
+    calls.add('list-own');
     lastExpectedIdentity = expectedCreatorId;
     return ownListResult ?? Future.value(ownItems);
   }
@@ -119,6 +137,7 @@ class FakeProposalGateway implements ProposalGateway {
   ) async {
     _throwIfNeeded();
     calls.add('create');
+    _throwMutationIfNeeded();
     if (mutationDelay case final delay?) await delay;
     lastExpectedIdentity = expectedCreatorId;
     lastInput = input;
@@ -134,9 +153,17 @@ class FakeProposalGateway implements ProposalGateway {
   ) async {
     _throwIfNeeded();
     calls.add('update:$proposalId');
+    _throwMutationIfNeeded();
     if (mutationDelay case final delay?) await delay;
     lastExpectedIdentity = expectedCreatorId;
     lastInput = input;
+    ownItems = [
+      for (final proposal in ownItems)
+        if (proposal.id == proposalId)
+          _copyProposal(proposal, input: input)
+        else
+          proposal,
+    ];
   }
 
   @override
@@ -147,8 +174,20 @@ class FakeProposalGateway implements ProposalGateway {
     _throwIfNeeded();
     calls.add('publish:$proposalId');
     if (publishError case final failure?) throw failure;
+    _throwMutationIfNeeded();
     if (mutationDelay case final delay?) await delay;
     lastExpectedIdentity = expectedCreatorId;
+    ownItems = [
+      for (final proposal in ownItems)
+        if (proposal.id == proposalId)
+          _copyProposal(
+            proposal,
+            lifecycle: ProposalLifecycle.published,
+            status: ProposalStatus.upcoming,
+          )
+        else
+          proposal,
+    ];
   }
 
   @override
@@ -158,14 +197,66 @@ class FakeProposalGateway implements ProposalGateway {
   ) async {
     _throwIfNeeded();
     calls.add('cancel:$proposalId');
+    _throwMutationIfNeeded();
     if (mutationDelay case final delay?) await delay;
     lastExpectedIdentity = expectedCreatorId;
+    ownItems = [
+      for (final proposal in ownItems)
+        if (proposal.id == proposalId)
+          _copyProposal(proposal, lifecycle: ProposalLifecycle.cancelled)
+        else
+          proposal,
+    ];
   }
 
   void _throwIfNeeded() {
     if (error case final failure?) throw failure;
   }
+
+  void _throwMutationIfNeeded() {
+    if (mutationError case final failure?) throw failure;
+  }
 }
+
+OwnProposal _copyProposal(
+  OwnProposal proposal, {
+  ProposalInput? input,
+  ProposalLifecycle? lifecycle,
+  ProposalStatus? status,
+}) => OwnProposal(
+  id: proposal.id,
+  lifecycle: lifecycle ?? proposal.lifecycle,
+  title: input?.title ?? proposal.title,
+  summary: input?.summary ?? proposal.summary,
+  description: input?.description ?? proposal.description,
+  startsAt: input?.startsAt ?? proposal.startsAt,
+  endsAt: input?.endsAt ?? proposal.endsAt,
+  eventTimezone: input?.eventTimezone ?? proposal.eventTimezone,
+  countryCode: input?.countryCode ?? proposal.countryCode,
+  locality: input?.locality ?? proposal.locality,
+  administrativeArea: input?.administrativeArea ?? proposal.administrativeArea,
+  publicLocationLabel:
+      input?.publicLocationLabel ?? proposal.publicLocationLabel,
+  status: lifecycle == ProposalLifecycle.cancelled
+      ? null
+      : status ?? proposal.status,
+  skills: proposal.skills,
+  exactMeetingText: input?.exactMeetingText ?? proposal.exactMeetingText,
+  exactLocationVisibility:
+      input?.exactLocationVisibility ?? proposal.exactLocationVisibility,
+  createdAt: proposal.createdAt,
+  updatedAt: proposal.updatedAt,
+  publishedAt: lifecycle == ProposalLifecycle.published
+      ? proposal.publishedAt ?? DateTime.utc(2026, 9, 2)
+      : proposal.publishedAt,
+  cancelledAt: lifecycle == ProposalLifecycle.cancelled
+      ? DateTime.utc(2026, 9, 3)
+      : proposal.cancelledAt,
+  capacity: projectCapacityFixture(
+    peopleCapacity: input?.peopleCapacity ?? proposal.capacity.peopleCapacity,
+    currentParticipantCount: proposal.capacity.currentParticipantCount,
+  ),
+);
 
 List<ProposalSkillCategory> proposalCategoriesFixture() => const [
   ProposalSkillCategory(
@@ -187,12 +278,14 @@ List<ProposalSkillCategory> proposalCategoriesFixture() => const [
 
 ProposalSummary proposalSummaryFixture({
   String id = 'proposal-1',
+  String title = 'Paint the square',
   ProposalStatus status = ProposalStatus.upcoming,
   List<ProposalSkill>? skills,
   String? coverObjectPath,
+  ProjectCapacitySnapshot? capacity,
 }) => ProposalSummary(
   id: id,
-  title: 'Paint the square',
+  title: title,
   summary: 'Create a community mural together.',
   startsAt: DateTime.utc(2026, 9, 10, 10),
   endsAt: DateTime.utc(2026, 9, 10, 12),
@@ -216,6 +309,7 @@ ProposalSummary proposalSummaryFixture({
         ),
       ],
   coverObjectPath: coverObjectPath,
+  capacity: capacity ?? projectCapacityFixture(),
 );
 
 RequestedProposalSummary requestedProposalFixture({
@@ -229,12 +323,21 @@ RequestedProposalSummary requestedProposalFixture({
 );
 
 ProposalDetail proposalDetailFixture({
+  String id = 'proposal-1',
+  String title = 'Paint the square',
   bool restricted = true,
   ProposalStatus status = ProposalStatus.upcoming,
   List<ProposalSkill>? skills,
   String creatorProfileId = 'user-1',
+  ProjectCapacitySnapshot? capacity,
 }) => ProposalDetail(
-  summary: proposalSummaryFixture(status: status, skills: skills),
+  summary: proposalSummaryFixture(
+    id: id,
+    title: title,
+    status: status,
+    skills: skills,
+    capacity: capacity,
+  ),
   creatorProfileId: creatorProfileId,
   creatorDisplayName: 'Casey',
   description: 'A full proposal description.',
@@ -246,6 +349,7 @@ ProposalInput proposalInputFixture({
   DateTime? startsAt,
   DateTime? endsAt,
   String eventTimezone = 'Europe/Rome',
+  int? peopleCapacity = 20,
 }) => ProposalInput(
   title: 'Paint the square',
   summary: 'Create a community mural together.',
@@ -260,35 +364,67 @@ ProposalInput proposalInputFixture({
   exactMeetingText: 'At the fountain',
   exactLocationVisibility: ExactLocationVisibility.participants,
   skillImportanceById: const {'skill-mural': ProposalSkillImportance.required},
+  peopleCapacity: peopleCapacity,
 );
 
 OwnProposal ownProposalFixture({
   String id = 'proposal-1',
   ProposalInput? input,
   String? coverObjectPath,
+  ProposalLifecycle lifecycle = ProposalLifecycle.draft,
+  ProposalStatus? status,
+  DateTime? startsAt,
+  DateTime? endsAt,
+  ProjectCapacitySnapshot? capacity,
 }) {
   final value = input ?? proposalInputFixture();
   return OwnProposal(
     id: id,
-    lifecycle: ProposalLifecycle.draft,
+    lifecycle: lifecycle,
     title: value.title,
     summary: value.summary,
     description: value.description,
-    startsAt: value.startsAt,
-    endsAt: value.endsAt,
+    startsAt: startsAt ?? value.startsAt,
+    endsAt: endsAt ?? value.endsAt,
     eventTimezone: value.eventTimezone,
     countryCode: value.countryCode,
     locality: value.locality,
     administrativeArea: value.administrativeArea,
     publicLocationLabel: value.publicLocationLabel,
-    status: null,
+    status: lifecycle == ProposalLifecycle.published
+        ? status ?? ProposalStatus.upcoming
+        : null,
     skills: proposalSummaryFixture().skills,
     exactMeetingText: value.exactMeetingText,
     exactLocationVisibility: value.exactLocationVisibility,
     createdAt: DateTime.utc(2026, 9, 1),
     updatedAt: DateTime.utc(2026, 9, 1),
-    publishedAt: null,
-    cancelledAt: null,
+    publishedAt: lifecycle == ProposalLifecycle.published
+        ? DateTime.utc(2026, 9, 2)
+        : null,
+    cancelledAt: lifecycle == ProposalLifecycle.cancelled
+        ? DateTime.utc(2026, 9, 3)
+        : null,
     coverObjectPath: coverObjectPath,
+    capacity:
+        capacity ??
+        projectCapacityFixture(peopleCapacity: value.peopleCapacity),
+  );
+}
+
+ProjectCapacitySnapshot projectCapacityFixture({
+  int? peopleCapacity = 20,
+  int currentParticipantCount = 0,
+}) {
+  final people = currentParticipantCount + 1;
+  final remaining = peopleCapacity == null
+      ? null
+      : (peopleCapacity > people ? peopleCapacity - people : 0);
+  return ProjectCapacitySnapshot(
+    peopleCapacity: peopleCapacity,
+    currentParticipantCount: currentParticipantCount,
+    currentPeopleCount: people,
+    spotsRemaining: remaining,
+    isFull: peopleCapacity != null && people >= peopleCapacity,
   );
 }

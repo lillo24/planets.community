@@ -1,5 +1,6 @@
 import 'package:planets_mobile/features/recurring_activities/data/recurring_activity_gateway.dart';
 import 'package:planets_mobile/features/recurring_activities/domain/recurring_activity_models.dart';
+import 'package:planets_mobile/features/participation/domain/project_capacity.dart';
 
 typedef PublicTavoliLoader =
     Future<List<PublicRecurringActivitySummary>> Function({
@@ -20,12 +21,14 @@ class FakeRecurringActivityGateway implements RecurringActivityGateway {
   List<PublicRecurringActivitySummary> publicItems = [];
   List<RequestedRecurringActivitySummary> requestedItems = [];
   PublicRecurringActivityDetail? publicDetail;
+  Future<PublicRecurringActivityDetail?>? publicDetailResult;
   List<OwnRecurringActivity> ownItems = [];
   PublicTavoliLoader? publicLoader;
   RequestedTavoliLoader? requestedLoader;
   Future<void>? mutationDelay;
   Object? error;
   Object? publishError;
+  Object? mutationError;
   Object? requestedError;
   final calls = <String>[];
   final referenceTimes = <DateTime>[];
@@ -89,6 +92,7 @@ class FakeRecurringActivityGateway implements RecurringActivityGateway {
     _throwIfNeeded();
     calls.add('public-detail:$activityId:$occurrenceLimit');
     referenceTimes.add(referenceTime);
+    if (publicDetailResult case final result?) return result;
     return publicDetail;
   }
 
@@ -120,6 +124,7 @@ class FakeRecurringActivityGateway implements RecurringActivityGateway {
   ) async {
     _throwIfNeeded();
     calls.add('create');
+    _throwMutationIfNeeded();
     if (mutationDelay case final delay?) await delay;
     lastExpectedIdentity = expectedCreatorId;
     lastInput = input;
@@ -135,6 +140,7 @@ class FakeRecurringActivityGateway implements RecurringActivityGateway {
   ) async {
     _throwIfNeeded();
     calls.add('update:$activityId');
+    _throwMutationIfNeeded();
     if (mutationDelay case final delay?) await delay;
     lastExpectedIdentity = expectedCreatorId;
     lastInput = input;
@@ -150,36 +156,110 @@ class FakeRecurringActivityGateway implements RecurringActivityGateway {
   @override
   Future<void> publish(String expectedCreatorId, String activityId) async {
     if (publishError case final failure?) throw failure;
-    await _mutation('publish:$activityId', expectedCreatorId);
+    await _mutation(
+      'publish:$activityId',
+      expectedCreatorId,
+      activityId,
+      RecurringActivityLifecycle.published,
+    );
   }
 
   @override
-  Future<void> pause(String expectedCreatorId, String activityId) =>
-      _mutation('pause:$activityId', expectedCreatorId);
+  Future<void> pause(String expectedCreatorId, String activityId) => _mutation(
+    'pause:$activityId',
+    expectedCreatorId,
+    activityId,
+    RecurringActivityLifecycle.paused,
+  );
 
   @override
-  Future<void> resume(String expectedCreatorId, String activityId) =>
-      _mutation('resume:$activityId', expectedCreatorId);
+  Future<void> resume(String expectedCreatorId, String activityId) => _mutation(
+    'resume:$activityId',
+    expectedCreatorId,
+    activityId,
+    RecurringActivityLifecycle.published,
+  );
 
   @override
-  Future<void> end(String expectedCreatorId, String activityId) =>
-      _mutation('end:$activityId', expectedCreatorId);
+  Future<void> end(String expectedCreatorId, String activityId) => _mutation(
+    'end:$activityId',
+    expectedCreatorId,
+    activityId,
+    RecurringActivityLifecycle.ended,
+  );
 
-  Future<void> _mutation(String call, String identity) async {
+  Future<void> _mutation(
+    String call,
+    String identity,
+    String activityId,
+    RecurringActivityLifecycle lifecycle,
+  ) async {
     _throwIfNeeded();
     calls.add(call);
+    _throwMutationIfNeeded();
     if (mutationDelay case final delay?) await delay;
     lastExpectedIdentity = identity;
+    ownItems = [
+      for (final activity in ownItems)
+        if (activity.id == activityId)
+          _copyRecurringActivity(activity, lifecycle)
+        else
+          activity,
+    ];
   }
 
   void _throwIfNeeded() {
     if (error case final value?) throw value;
   }
+
+  void _throwMutationIfNeeded() {
+    if (mutationError case final value?) throw value;
+  }
 }
+
+OwnRecurringActivity _copyRecurringActivity(
+  OwnRecurringActivity activity,
+  RecurringActivityLifecycle lifecycle,
+) => OwnRecurringActivity(
+  id: activity.id,
+  lifecycle: lifecycle,
+  title: activity.title,
+  summary: activity.summary,
+  description: activity.description,
+  topic: activity.topic,
+  countryCode: activity.countryCode,
+  locality: activity.locality,
+  administrativeArea: activity.administrativeArea,
+  publicLocationLabel: activity.publicLocationLabel,
+  currentSchedule: activity.currentSchedule,
+  scheduleHistory: activity.scheduleHistory,
+  exactMeetingText: activity.exactMeetingText,
+  exactLocationVisibility: activity.exactLocationVisibility,
+  createdAt: activity.createdAt,
+  updatedAt: activity.updatedAt,
+  publishedAt: lifecycle == RecurringActivityLifecycle.published
+      ? activity.publishedAt ?? DateTime.utc(2026, 9, 2)
+      : activity.publishedAt,
+  pausedAt: lifecycle == RecurringActivityLifecycle.paused
+      ? DateTime.utc(2026, 9, 3)
+      : lifecycle == RecurringActivityLifecycle.published
+      ? null
+      : activity.pausedAt,
+  resumedAt:
+      lifecycle == RecurringActivityLifecycle.published &&
+          activity.lifecycle == RecurringActivityLifecycle.paused
+      ? DateTime.utc(2026, 9, 4)
+      : activity.resumedAt,
+  endedAt: lifecycle == RecurringActivityLifecycle.ended
+      ? DateTime.utc(2026, 9, 5)
+      : activity.endedAt,
+  capacity: activity.capacity,
+);
 
 RecurringSchedule recurringScheduleFixture({
   String id = 'schedule-1',
   RecurrenceType type = RecurrenceType.weekly,
+  ProjectCapacitySnapshot? capacity,
   int? weekday = DateTime.wednesday,
   int? dayOfMonth,
   DateTime? effectiveFrom,
@@ -199,11 +279,13 @@ RecurringSchedule recurringScheduleFixture({
 
 PublicRecurringActivitySummary publicRecurringSummaryFixture({
   String id = 'tavolo-1',
+  String title = 'Neighborhood philosophy table',
   RecurrenceType type = RecurrenceType.weekly,
   String? coverObjectPath,
+  ProjectCapacitySnapshot? capacity,
 }) => PublicRecurringActivitySummary(
   id: id,
-  title: 'Neighborhood philosophy table',
+  title: title,
   summary: 'A recurring conversation about ideas and local life.',
   topic: 'Philosophy',
   countryCode: 'IT',
@@ -217,6 +299,7 @@ PublicRecurringActivitySummary publicRecurringSummaryFixture({
   ),
   schedule: recurringScheduleFixture(type: type),
   coverObjectPath: coverObjectPath,
+  capacity: capacity ?? recurringCapacityFixture(),
 );
 
 RequestedRecurringActivitySummary requestedRecurringActivityFixture({
@@ -230,17 +313,20 @@ RequestedRecurringActivitySummary requestedRecurringActivityFixture({
 );
 
 PublicRecurringActivityDetail publicRecurringDetailFixture({
+  String id = 'tavolo-1',
+  String title = 'Neighborhood philosophy table',
   RecurringActivityLifecycle lifecycle = RecurringActivityLifecycle.published,
   bool restricted = true,
   RecurrenceType type = RecurrenceType.weekly,
   String creatorProfileId = 'user-1',
   String? coverObjectPath,
+  ProjectCapacitySnapshot? capacity,
 }) => PublicRecurringActivityDetail(
-  id: 'tavolo-1',
+  id: id,
   creatorProfileId: creatorProfileId,
   creatorDisplayName: 'Casey',
   lifecycle: lifecycle,
-  title: 'Neighborhood philosophy table',
+  title: title,
   summary: 'A recurring conversation about ideas and local life.',
   description: 'Bring one question for a welcoming discussion.',
   topic: 'Philosophy',
@@ -255,11 +341,13 @@ PublicRecurringActivityDetail publicRecurringDetailFixture({
   exactMeetingText: restricted ? null : 'At the long reading-room table',
   exactLocationRestricted: restricted,
   coverObjectPath: coverObjectPath,
+  capacity: capacity ?? recurringCapacityFixture(),
 );
 
 RecurringActivityInput recurringInputFixture({
   RecurrenceType? type = RecurrenceType.weekly,
   DateTime? effectiveFrom,
+  int? peopleCapacity = 20,
 }) => RecurringActivityInput(
   title: 'Neighborhood philosophy table',
   summary: 'A recurring conversation about ideas and local life.',
@@ -278,6 +366,7 @@ RecurringActivityInput recurringInputFixture({
   durationMinutes: type == null ? null : 90,
   eventTimezone: type == null ? '' : 'Europe/Rome',
   effectiveFrom: type == null ? null : effectiveFrom ?? DateTime(2026, 9, 1),
+  peopleCapacity: peopleCapacity,
 );
 
 OwnRecurringActivity ownRecurringActivityFixture({
@@ -286,6 +375,7 @@ OwnRecurringActivity ownRecurringActivityFixture({
   RecurringActivityInput? input,
   RecurringSchedule? schedule,
   String? coverObjectPath,
+  ProjectCapacitySnapshot? capacity,
 }) {
   final value = input ?? recurringInputFixture();
   final current =
@@ -324,5 +414,25 @@ OwnRecurringActivity ownRecurringActivityFixture({
     resumedAt: null,
     endedAt: null,
     coverObjectPath: coverObjectPath,
+    capacity:
+        capacity ??
+        recurringCapacityFixture(peopleCapacity: value.peopleCapacity),
+  );
+}
+
+ProjectCapacitySnapshot recurringCapacityFixture({
+  int? peopleCapacity = 20,
+  int currentParticipantCount = 0,
+}) {
+  final people = currentParticipantCount + 1;
+  final remaining = peopleCapacity == null
+      ? null
+      : (peopleCapacity > people ? peopleCapacity - people : 0);
+  return ProjectCapacitySnapshot(
+    peopleCapacity: peopleCapacity,
+    currentParticipantCount: currentParticipantCount,
+    currentPeopleCount: people,
+    spotsRemaining: remaining,
+    isFull: peopleCapacity != null && people >= peopleCapacity,
   );
 }

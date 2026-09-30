@@ -68,14 +68,29 @@ void main() {
   );
 
   testWidgets(
-    'signed-out bell does not fetch and preserves exact Auth returnTo',
+    'signed-out bell explains Auth before preserving exact returnTo',
     (tester) async {
       final notifications = FakeNotificationsGateway();
-      await _pump(tester, notifications: notifications, signedIn: false);
+      final app = await _pump(
+        tester,
+        notifications: notifications,
+        signedIn: false,
+      );
 
       expect(notifications.calls.where((call) => call == 'unread'), isEmpty);
       expect(find.text('0'), findsNothing);
       await tester.tap(find.byKey(const Key('open-notifications-button')));
+      await tester.pumpAndSettle();
+      expect(
+        app.read(appRouterProvider).routeInformationProvider.value.uri.path,
+        '/',
+      );
+      expect(find.text('Sign in to see your notifications.'), findsOneWidget);
+      expect(find.byKey(const Key('auth-email-field')), findsNothing);
+
+      await tester.tap(
+        find.widgetWithText(SnackBarAction, 'Sign in').hitTestable(),
+      );
       await tester.pumpAndSettle();
       expect(find.byKey(const Key('auth-email-field')), findsOneWidget);
       expect(
@@ -86,6 +101,25 @@ void main() {
       );
     },
   );
+
+  testWidgets('Home destination resets a nested Home-owned route', (
+    tester,
+  ) async {
+    final app = await _pump(tester, notifications: FakeNotificationsGateway());
+    final router = app.read(appRouterProvider);
+
+    await tester.tap(find.byKey(const Key('open-notifications-button')));
+    await tester.pumpAndSettle();
+    expect(find.text('Notifications'), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('nav-home')));
+    await tester.pumpAndSettle();
+    expect(router.routeInformationProvider.value.uri.path, '/');
+    expect(
+      tester.widget<NavigationBar>(find.byType(NavigationBar)).selectedIndex,
+      1,
+    );
+  });
 
   testWidgets('ready Home omits the badge at zero', (tester) async {
     await _pump(

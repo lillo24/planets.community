@@ -636,6 +636,9 @@ select set_config(
   true
 );
 reset role;
+update public.projects
+set people_capacity = 10
+where id = 'c4000000-0000-4000-8000-000000000004';
 update public.proposals
 set
   starts_at = statement_timestamp() - interval '1 hour',

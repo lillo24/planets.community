@@ -164,7 +164,8 @@ select set_config(
     '19:00'::time,
     90,
     'Europe/Rome',
-    '2026-01-01'::date
+    '2026-01-01'::date,
+    20
   )::text,
   true
 );
@@ -527,7 +528,8 @@ select set_config(
     '18:30'::time,
     120,
     'Europe/Rome',
-    '2026-01-01'::date
+    '2026-01-01'::date,
+    20
   )::text,
   true
 );

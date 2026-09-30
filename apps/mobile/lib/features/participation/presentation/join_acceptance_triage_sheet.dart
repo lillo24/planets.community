@@ -11,7 +11,7 @@ import '../domain/participation_models.dart';
 
 Future<bool> showJoinAcceptanceTriageSheet(
   BuildContext context, {
-  required String expectedCreatorProfileId,
+  required String expectedManagerProfileId,
   required String requestId,
   required String projectId,
   required ProjectKind projectKind,
@@ -24,7 +24,7 @@ Future<bool> showJoinAcceptanceTriageSheet(
     useSafeArea: true,
     builder: (_) => _JoinAcceptanceTriageSheet(
       key: ValueKey('${projectKind.wireValue}:$projectId:$requestId'),
-      expectedCreatorProfileId: expectedCreatorProfileId,
+      expectedManagerProfileId: expectedManagerProfileId,
       requestId: requestId,
       requesterDisplayName: requesterDisplayName,
     ),
@@ -35,13 +35,13 @@ Future<bool> showJoinAcceptanceTriageSheet(
 
 class _JoinAcceptanceTriageSheet extends ConsumerStatefulWidget {
   const _JoinAcceptanceTriageSheet({
-    required this.expectedCreatorProfileId,
+    required this.expectedManagerProfileId,
     required this.requestId,
     required this.requesterDisplayName,
     super.key,
   });
 
-  final String expectedCreatorProfileId;
+  final String expectedManagerProfileId;
   final String requestId;
   final String requesterDisplayName;
 
@@ -62,7 +62,7 @@ class _JoinAcceptanceTriageSheetState
 
   Future<void> _load() => ref
       .read(joinAcceptanceTriageProvider(widget.requestId).notifier)
-      .load(widget.expectedCreatorProfileId);
+      .load(widget.expectedManagerProfileId);
 
   Future<void> _accept() async {
     final result = await ref
@@ -84,7 +84,7 @@ class _JoinAcceptanceTriageSheetState
     final l10n = AppLocalizations.of(context);
     final state = ref.watch(joinAcceptanceTriageProvider(widget.requestId));
     final belongs =
-        state.expectedCreatorProfileId == widget.expectedCreatorProfileId;
+        state.expectedManagerProfileId == widget.expectedManagerProfileId;
     final media = MediaQuery.of(context);
     final isLoading =
         !belongs ||
@@ -560,6 +560,7 @@ String joinAcceptanceFailureMessage(
     l10n.joinAcceptanceProjectNeedsChanged,
   JoinAcceptanceTriageFailureKind.conflict =>
     l10n.joinAcceptanceRequestUnavailable,
+  JoinAcceptanceTriageFailureKind.full => l10n.projectFullNow,
   JoinAcceptanceTriageFailureKind.forbidden => l10n.joinAcceptanceForbidden,
   JoinAcceptanceTriageFailureKind.unavailable => l10n.joinAcceptanceLoadError,
 };

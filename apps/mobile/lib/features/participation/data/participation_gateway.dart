@@ -3,6 +3,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/backend/supabase_backend.dart';
 import '../domain/participation_models.dart';
+import '../domain/project_capacity.dart';
 
 abstract interface class ParticipationGateway {
   Future<List<OwnProjectJoinRequest>> listOwnJoinRequests(
@@ -26,18 +27,23 @@ abstract interface class ParticipationGateway {
     required String requestId,
   });
 
-  Future<List<CreatorProjectJoinRequest>> listProjectJoinRequests({
-    required String expectedCreatorProfileId,
+  Future<List<ManagerProjectJoinRequest>> listProjectJoinRequests({
+    required String expectedManagerProfileId,
     required String projectId,
   });
 
-  Future<List<CreatorProjectMember>> listProjectMembers({
-    required String expectedCreatorProfileId,
+  Future<List<ManagerProjectMember>> listProjectMembers({
+    required String expectedManagerProfileId,
+    required String projectId,
+  });
+
+  Future<ProjectCapacitySnapshot> getProjectCapacityForManager({
+    required String expectedManagerProfileId,
     required String projectId,
   });
 
   Future<void> rejectRequest({
-    required String expectedCreatorProfileId,
+    required String expectedManagerProfileId,
     required String requestId,
   });
 
@@ -47,7 +53,7 @@ abstract interface class ParticipationGateway {
   });
 
   Future<void> removeMember({
-    required String expectedCreatorProfileId,
+    required String expectedManagerProfileId,
     required String membershipId,
   });
 
@@ -120,44 +126,66 @@ class SupabaseParticipationGateway implements ParticipationGateway {
   }
 
   @override
-  Future<List<CreatorProjectJoinRequest>> listProjectJoinRequests({
-    required String expectedCreatorProfileId,
+  Future<List<ManagerProjectJoinRequest>> listProjectJoinRequests({
+    required String expectedManagerProfileId,
     required String projectId,
   }) async {
     final response = await _client.rpc<List<dynamic>>(
-      'list_project_join_requests',
+      'list_project_join_requests_for_manager',
       params: {
-        'p_expected_creator_profile_id': expectedCreatorProfileId,
+        'p_expected_manager_profile_id': expectedManagerProfileId,
         'p_project_id': projectId,
       },
     );
-    return response.map(parser.creatorJoinRequest).toList(growable: false);
+    return response.map(parser.managerJoinRequest).toList(growable: false);
   }
 
   @override
-  Future<List<CreatorProjectMember>> listProjectMembers({
-    required String expectedCreatorProfileId,
+  Future<List<ManagerProjectMember>> listProjectMembers({
+    required String expectedManagerProfileId,
     required String projectId,
   }) async {
     final response = await _client.rpc<List<dynamic>>(
-      'list_project_members',
+      'list_project_members_for_manager',
       params: {
-        'p_expected_creator_profile_id': expectedCreatorProfileId,
+        'p_expected_manager_profile_id': expectedManagerProfileId,
         'p_project_id': projectId,
       },
     );
-    return response.map(parser.creatorMember).toList(growable: false);
+    return response.map(parser.managerMember).toList(growable: false);
+  }
+
+  @override
+  Future<ProjectCapacitySnapshot> getProjectCapacityForManager({
+    required String expectedManagerProfileId,
+    required String projectId,
+  }) async {
+    final response = await _client.rpc<List<dynamic>>(
+      'get_project_capacity_for_manager',
+      params: {
+        'p_expected_manager_profile_id': expectedManagerProfileId,
+        'p_project_id': projectId,
+      },
+    );
+    if (response.length != 1) {
+      throw const FormatException(
+        'Project capacity status did not contain one row.',
+      );
+    }
+    return ProjectCapacitySnapshot.fromRow(
+      (response.single as Map).cast<String, dynamic>(),
+    );
   }
 
   @override
   Future<void> rejectRequest({
-    required String expectedCreatorProfileId,
+    required String expectedManagerProfileId,
     required String requestId,
   }) async {
     await _client.rpc<String>(
-      'reject_project_join_request',
+      'reject_project_join_request_as_manager',
       params: {
-        'p_expected_creator_profile_id': expectedCreatorProfileId,
+        'p_expected_manager_profile_id': expectedManagerProfileId,
         'p_request_id': requestId,
       },
     );
@@ -179,13 +207,13 @@ class SupabaseParticipationGateway implements ParticipationGateway {
 
   @override
   Future<void> removeMember({
-    required String expectedCreatorProfileId,
+    required String expectedManagerProfileId,
     required String membershipId,
   }) async {
     await _client.rpc<String>(
-      'remove_project_member',
+      'remove_project_member_as_manager',
       params: {
-        'p_expected_creator_profile_id': expectedCreatorProfileId,
+        'p_expected_manager_profile_id': expectedManagerProfileId,
         'p_membership_id': membershipId,
       },
     );
@@ -237,9 +265,9 @@ class ParticipationPayloadParser {
     );
   }
 
-  CreatorProjectJoinRequest creatorJoinRequest(Object? value) {
+  ManagerProjectJoinRequest managerJoinRequest(Object? value) {
     final row = _row(value);
-    return CreatorProjectJoinRequest(
+    return ManagerProjectJoinRequest(
       id: row['request_id'] as String,
       requesterProfileId: row['requester_profile_id'] as String,
       requesterDisplayName: row['requester_display_name'] as String,
@@ -251,9 +279,9 @@ class ParticipationPayloadParser {
     );
   }
 
-  CreatorProjectMember creatorMember(Object? value) {
+  ManagerProjectMember managerMember(Object? value) {
     final row = _row(value);
-    return CreatorProjectMember(
+    return ManagerProjectMember(
       id: row['membership_id'] as String,
       participantProfileId: row['participant_profile_id'] as String,
       participantDisplayName: row['participant_display_name'] as String,

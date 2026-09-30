@@ -802,6 +802,7 @@ function proposalContent(title, skillIds, importances) {
     p_exact_location_visibility: "participants",
     p_skill_ids: skillIds,
     p_skill_importances: importances,
+    p_people_capacity: 20,
   };
 }
 
@@ -1154,6 +1155,7 @@ async function createTavoloDraft(creator) {
       p_duration_minutes: 90,
       p_event_timezone: "Europe/Rome",
       p_effective_from: "2098-01-01",
+      p_people_capacity: 20,
     },
   );
   if (error || typeof data !== "string") {

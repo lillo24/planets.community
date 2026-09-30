@@ -1,25 +1,34 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:planets_mobile/app/planets_app.dart';
 import 'package:planets_mobile/app/router/app_router.dart';
 import 'package:planets_mobile/core/config/app_config.dart';
+import 'package:planets_mobile/core/widgets/error_state.dart';
+import 'package:planets_mobile/core/widgets/loading_state.dart';
 import 'package:planets_mobile/features/auth/data/auth_gateway.dart';
 import 'package:planets_mobile/features/auth/domain/auth_models.dart';
 import 'package:planets_mobile/features/profile/data/profile_gateway.dart';
 import 'package:planets_mobile/features/profile/presentation/profile_edit_screen.dart';
 import 'package:planets_mobile/features/profile_photo/data/profile_photo_gateway.dart';
 import 'package:planets_mobile/features/profile_photo/domain/visible_profile_photo_models.dart';
+import 'package:planets_mobile/features/project_delegates/data/project_delegate_gateway.dart';
+import 'package:planets_mobile/features/project_delegates/domain/project_delegate_models.dart';
 import 'package:planets_mobile/features/project_resource_needs/data/project_resource_needs_gateway.dart';
 import 'package:planets_mobile/features/participation/data/participation_gateway.dart';
 import 'package:planets_mobile/features/participation/domain/participation_models.dart';
 import 'package:planets_mobile/features/proposals/data/proposal_gateway.dart';
+import 'package:planets_mobile/features/recurring_activities/application/recurring_activity_controllers.dart';
 import 'package:planets_mobile/features/recurring_activities/data/recurring_activity_gateway.dart';
 import 'package:planets_mobile/features/recurring_activities/domain/recurring_activity_models.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../support/fake_auth.dart';
 import '../../../support/fake_profile.dart';
 import '../../../support/fake_profile_photo.dart';
+import '../../../support/fake_project_delegates.dart';
 import '../../../support/fake_project_resource_needs.dart';
 import '../../../support/fake_participation.dart';
 import '../../../support/fake_proposal.dart';
@@ -53,6 +62,98 @@ void main() {
     expect(recurring.calls, isNot(contains('create')));
   });
 
+  testWidgets('Tavolo detail keeps idle and loading out of ErrorState', (
+    tester,
+  ) async {
+    final pending = Completer<PublicRecurringActivityDetail?>();
+    final recurring = FakeRecurringActivityGateway()
+      ..publicDetailResult = pending.future;
+    final app = await _pump(tester, recurring: recurring, signedIn: false);
+
+    app.read(appRouterProvider).go('/tavoli/tavolo-1');
+    await tester.pump();
+    expect(find.byType(LoadingState), findsOneWidget);
+    expect(find.byType(ErrorState), findsNothing);
+
+    await tester.pump();
+    expect(find.byType(LoadingState), findsOneWidget);
+    expect(find.byType(ErrorState), findsNothing);
+
+    pending.complete(publicRecurringDetailFixture());
+    await tester.pumpAndSettle();
+    expect(
+      app.read(publicRecurringActivityDetailProvider).detail?.title,
+      'Neighborhood philosophy table',
+    );
+    await tester.scrollUntilVisible(
+      find.text('Neighborhood philosophy table'),
+      300,
+      scrollable: find.byType(Scrollable).first,
+    );
+    expect(find.text('Neighborhood philosophy table'), findsOneWidget);
+    expect(find.byType(ErrorState), findsNothing);
+  });
+
+  testWidgets('Tavolo detail hides retained data from another Tavolo', (
+    tester,
+  ) async {
+    final recurring = FakeRecurringActivityGateway()
+      ..publicDetail = publicRecurringDetailFixture(
+        id: 'tavolo-a',
+        title: 'Tavolo A',
+      );
+    final app = await _pump(tester, recurring: recurring, signedIn: false);
+    app.read(appRouterProvider).go('/tavoli/tavolo-a');
+    await tester.pumpAndSettle();
+    expect(
+      app.read(publicRecurringActivityDetailProvider).detail?.title,
+      'Tavolo A',
+    );
+    await tester.scrollUntilVisible(
+      find.text('Tavolo A'),
+      300,
+      scrollable: find.byType(Scrollable).first,
+    );
+    expect(find.text('Tavolo A'), findsOneWidget);
+
+    final pending = Completer<PublicRecurringActivityDetail?>();
+    recurring.publicDetailResult = pending.future;
+    app.read(appRouterProvider).go('/tavoli/tavolo-b');
+    await tester.pump();
+
+    expect(find.byType(LoadingState), findsOneWidget);
+    expect(find.text('Tavolo A'), findsNothing);
+    expect(find.byType(ErrorState), findsNothing);
+    await tester.pump();
+    expect(find.byType(LoadingState), findsOneWidget);
+
+    pending.complete(
+      publicRecurringDetailFixture(id: 'tavolo-b', title: 'Tavolo B'),
+    );
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 1));
+    await tester.scrollUntilVisible(
+      find.text('Tavolo B'),
+      300,
+      scrollable: find.byType(Scrollable).first,
+    );
+    expect(find.text('Tavolo B'), findsOneWidget);
+    expect(find.text('Tavolo A'), findsNothing);
+  });
+
+  testWidgets('Tavolo detail still renders a genuine failure', (tester) async {
+    final recurring = FakeRecurringActivityGateway()
+      ..error = StateError('private Tavolo failure');
+    final app = await _pump(tester, recurring: recurring, signedIn: false);
+
+    app.read(appRouterProvider).go('/tavoli/tavolo-1');
+    await tester.pumpAndSettle();
+
+    expect(find.byType(ErrorState), findsOneWidget);
+    expect(find.text('Try again'), findsOneWidget);
+    expect(find.textContaining('private Tavolo failure'), findsNothing);
+  });
+
   testWidgets(
     'requested Tavolo is first, marked, unique, and remains tappable',
     (tester) async {
@@ -70,6 +171,7 @@ void main() {
       expect(find.byKey(const Key('browse-requested-badge')), findsOneWidget);
       expect(find.byKey(const Key('tavolo-card-tavolo-1')), findsOneWidget);
       expect(find.byKey(const Key('tavolo-card-tavolo-2')), findsOneWidget);
+      expect(find.text('1 / 20 people'), findsNWidgets(2));
       expect(
         tester.getTopLeft(find.byKey(const Key('tavolo-card-tavolo-1'))).dy,
         lessThan(
@@ -79,9 +181,18 @@ void main() {
 
       await tester.tap(find.byKey(const Key('tavolo-card-tavolo-1')));
       await tester.pumpAndSettle();
+      expect(find.text('Tavolo details'), findsOneWidget);
+      expect(find.text('1 / 20 people'), findsWidgets);
+      await tester.binding.handlePopRoute();
+      await tester.pumpAndSettle();
       expect(
-        app.read(appRouterProvider).routeInformationProvider.value.uri.path,
-        '/tavoli/tavolo-1',
+        app
+            .read(appRouterProvider)
+            .routerDelegate
+            .currentConfiguration
+            .uri
+            .path,
+        '/tavoli',
       );
     },
   );
@@ -219,6 +330,99 @@ void main() {
     expect(recurring.calls, contains('publish:new-tavolo'));
   });
 
+  testWidgets('active Tavolo editor saves changes and owns lifecycle actions', (
+    tester,
+  ) async {
+    final recurring = FakeRecurringActivityGateway()
+      ..ownItems = [
+        ownRecurringActivityFixture(
+          lifecycle: RecurringActivityLifecycle.published,
+        ),
+      ];
+    final app = await _pump(tester, recurring: recurring);
+    app.read(appRouterProvider).go('/tavoli/tavolo-1/edit');
+    await tester.pumpAndSettle();
+
+    await _scrollTo(tester, find.byKey(const Key('tavoli-save-draft')), 500);
+    expect(find.widgetWithText(FilledButton, 'Save changes'), findsOneWidget);
+    expect(find.byKey(const Key('tavoli-publish')), findsNothing);
+    expect(find.byKey(const Key('tavoli-editor-pause')), findsOneWidget);
+    expect(find.byKey(const Key('tavoli-editor-end')), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('tavoli-save-draft')));
+    await tester.pumpAndSettle();
+    expect(recurring.calls, contains('update:tavolo-1'));
+    expect(recurring.calls, isNot(contains('publish:tavolo-1')));
+
+    await _center(tester, find.byKey(const Key('tavoli-editor-pause')));
+    await tester.tap(find.byKey(const Key('tavoli-editor-pause')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(FilledButton, 'Pause'));
+    await tester.pumpAndSettle();
+    expect(recurring.calls, contains('pause:tavolo-1'));
+    expect(find.byKey(const Key('tavoli-editor-resume')), findsOneWidget);
+
+    await _center(tester, find.byKey(const Key('tavoli-editor-resume')));
+    await tester.tap(find.byKey(const Key('tavoli-editor-resume')));
+    await tester.pumpAndSettle();
+    expect(recurring.calls, contains('resume:tavolo-1'));
+
+    await _center(tester, find.byKey(const Key('tavoli-editor-end')));
+    await tester.tap(find.byKey(const Key('tavoli-editor-end')));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('does not delete it'), findsOneWidget);
+    await tester.tap(find.widgetWithText(FilledButton, 'End'));
+    await tester.pumpAndSettle();
+    expect(recurring.calls, contains('end:tavolo-1'));
+    expect(find.text('This ended Tavolo is read-only.'), findsOneWidget);
+  });
+
+  testWidgets('ended Tavolo editor has no structural controls', (tester) async {
+    final recurring = FakeRecurringActivityGateway()
+      ..ownItems = [
+        ownRecurringActivityFixture(
+          lifecycle: RecurringActivityLifecycle.ended,
+        ),
+      ];
+    final app = await _pump(tester, recurring: recurring);
+    app.read(appRouterProvider).go('/tavoli/tavolo-1/edit');
+    await tester.pumpAndSettle();
+
+    expect(find.text('This ended Tavolo is read-only.'), findsOneWidget);
+    expect(find.byKey(const Key('tavoli-save-draft')), findsNothing);
+    expect(find.byKey(const Key('tavoli-editor-pause')), findsNothing);
+    expect(find.byKey(const Key('tavoli-editor-resume')), findsNothing);
+    expect(find.byKey(const Key('tavoli-editor-end')), findsNothing);
+  });
+
+  testWidgets('forbidden Tavolo lifecycle removes structural controls', (
+    tester,
+  ) async {
+    final recurring = FakeRecurringActivityGateway()
+      ..ownItems = [
+        ownRecurringActivityFixture(
+          lifecycle: RecurringActivityLifecycle.published,
+        ),
+      ];
+    final app = await _pump(tester, recurring: recurring);
+    app.read(appRouterProvider).go('/tavoli/tavolo-1/edit');
+    await tester.pumpAndSettle();
+    recurring.mutationError = const PostgrestException(
+      message: 'private structural denial',
+      code: '42501',
+    );
+
+    await _center(tester, find.byKey(const Key('tavoli-editor-pause')));
+    await tester.tap(find.byKey(const Key('tavoli-editor-pause')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(FilledButton, 'Pause'));
+    await tester.pumpAndSettle();
+
+    expect(find.textContaining("couldn't complete"), findsOneWidget);
+    expect(find.byKey(const Key('tavoli-save-draft')), findsNothing);
+    expect(find.byKey(const Key('tavoli-editor-end')), findsNothing);
+  });
+
   testWidgets('owner cards expose only lifecycle-valid actions', (
     tester,
   ) async {
@@ -263,6 +467,18 @@ Future<void> _scrollTo(WidgetTester tester, Finder target, double delta) =>
       delta,
       scrollable: find.byType(Scrollable).hitTestable().first,
     );
+
+Future<void> _center(WidgetTester tester, Finder target) async {
+  if (target.evaluate().isEmpty) {
+    await _scrollTo(tester, target, 400);
+  }
+  await Scrollable.ensureVisible(
+    tester.element(target),
+    alignment: 0.5,
+    duration: const Duration(milliseconds: 100),
+  );
+  await tester.pumpAndSettle();
+}
 
 Future<ProviderContainer> _pump(
   WidgetTester tester, {
@@ -309,6 +525,12 @@ Future<ProviderContainer> _pump(
         ),
         proposalGatewayProvider.overrideWithValue(FakeProposalGateway()),
         recurringActivityGatewayProvider.overrideWithValue(recurring),
+        projectDelegateGatewayProvider.overrideWithValue(
+          FakeProjectDelegateGateway()
+            ..role = signedIn
+                ? ProjectManagementRole.creator
+                : ProjectManagementRole.none,
+        ),
         projectResourceNeedsGatewayProvider.overrideWithValue(
           FakeProjectResourceNeedsGateway(),
         ),

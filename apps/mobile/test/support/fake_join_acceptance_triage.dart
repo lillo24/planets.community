@@ -9,7 +9,7 @@ class FakeJoinAcceptanceTriageGateway implements JoinAcceptanceTriageGateway {
   Future<void>? selectionDelay;
   Future<void>? mutationDelay;
   final List<String> calls = [];
-  String? lastExpectedCreatorProfileId;
+  String? lastExpectedManagerProfileId;
   String? lastRequestId;
   Set<String> neededSkillIds = const {};
   Set<String> alreadyFoundSkillIds = const {};
@@ -20,11 +20,11 @@ class FakeJoinAcceptanceTriageGateway implements JoinAcceptanceTriageGateway {
 
   @override
   Future<List<JoinAcceptanceTriageItem>> listSelections({
-    required String expectedCreatorProfileId,
+    required String expectedManagerProfileId,
     required String requestId,
   }) async {
     calls.add('selections:$requestId');
-    lastExpectedCreatorProfileId = expectedCreatorProfileId;
+    lastExpectedManagerProfileId = expectedManagerProfileId;
     lastRequestId = requestId;
     if (selectionDelay case final delay?) await delay;
     if (selectionError case final error?) throw error;
@@ -33,7 +33,7 @@ class FakeJoinAcceptanceTriageGateway implements JoinAcceptanceTriageGateway {
 
   @override
   Future<void> acceptWithTriage({
-    required String expectedCreatorProfileId,
+    required String expectedManagerProfileId,
     required String requestId,
     required Set<String> neededSkillIds,
     required Set<String> alreadyFoundSkillIds,
@@ -43,7 +43,7 @@ class FakeJoinAcceptanceTriageGateway implements JoinAcceptanceTriageGateway {
     required Set<String> extraResourceNeedIds,
   }) async {
     calls.add('accept:$requestId');
-    lastExpectedCreatorProfileId = expectedCreatorProfileId;
+    lastExpectedManagerProfileId = expectedManagerProfileId;
     lastRequestId = requestId;
     this.neededSkillIds = Set.unmodifiable(neededSkillIds);
     this.alreadyFoundSkillIds = Set.unmodifiable(alreadyFoundSkillIds);

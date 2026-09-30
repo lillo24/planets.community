@@ -8,8 +8,13 @@ import '../../auth/application/auth_session_controller.dart';
 import '../../auth/domain/auth_models.dart';
 import '../../blocking/application/blocking_controller.dart';
 import '../../blocking/presentation/blocking_action.dart';
+import '../../project_delegates/application/project_delegate_controllers.dart';
+import '../../project_delegates/domain/project_delegate_models.dart';
+import '../../project_delegates/presentation/project_delegate_routes.dart';
 import '../application/participation_controllers.dart';
 import '../domain/participation_models.dart';
+import '../domain/project_capacity.dart';
+import 'project_capacity_label.dart';
 import 'participation_routes.dart';
 
 class ProjectParticipationSection extends ConsumerWidget {
@@ -21,6 +26,7 @@ class ProjectParticipationSection extends ConsumerWidget {
     required this.publicLocationLines,
     required this.publicExactMeetingText,
     required this.exactLocationRestricted,
+    required this.capacity,
     super.key,
   });
 
@@ -31,13 +37,34 @@ class ProjectParticipationSection extends ConsumerWidget {
   final List<String> publicLocationLines;
   final String? publicExactMeetingText;
   final bool exactLocationRestricted;
+  final ProjectCapacitySnapshot capacity;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
     final session = ref.watch(authSessionProvider);
     final profileId = session.identity?.id;
-    final isCreator = profileId != null && profileId == creatorProfileId;
+    final roleState = ref.watch(projectManagementRoleProvider);
+    final hasCurrentRole =
+        profileId != null && roleState.isFor(profileId, projectId, projectKind);
+    final role =
+        hasCurrentRole && roleState.phase == ProjectDelegateLoadPhase.ready
+        ? roleState.role
+        : null;
+    final isManager = role?.isManager == true;
+    if (session.phase == AuthSessionPhase.ready &&
+        profileId != null &&
+        (!hasCurrentRole || roleState.phase == ProjectDelegateLoadPhase.idle)) {
+      Future<void>.microtask(
+        () => ref
+            .read(projectManagementRoleProvider.notifier)
+            .load(
+              expectedProfileId: profileId,
+              projectId: projectId,
+              projectKind: projectKind,
+            ),
+      );
+    }
     final ownState = ref.watch(ownParticipationProvider);
     final hasReadyOwnState =
         profileId != null && ownState.isReadyFor(profileId);
@@ -47,7 +74,8 @@ class ProjectParticipationSection extends ConsumerWidget {
     final isCurrentMember = participation?.currentMembership != null;
 
     if (session.phase == AuthSessionPhase.ready &&
-        !isCreator &&
+        role != null &&
+        role != ProjectManagementRole.creator &&
         profileId != null &&
         ownState.expectedProfileId != profileId &&
         !ownState.isBusy) {
@@ -60,7 +88,7 @@ class ProjectParticipationSection extends ConsumerWidget {
     final canReadProtectedMeeting =
         exactLocationRestricted &&
         profileId != null &&
-        (isCreator || isCurrentMember);
+        (isManager || isCurrentMember);
     if (canReadProtectedMeeting &&
         (meetingState.expectedProfileId != profileId ||
             meetingState.projectId != projectId ||
@@ -93,7 +121,7 @@ class ProjectParticipationSection extends ConsumerWidget {
     final blockingState = ref.watch(blockingProvider);
     if (session.phase == AuthSessionPhase.ready &&
         profileId != null &&
-        !isCreator &&
+        profileId != creatorProfileId &&
         (!blockingState.hasExactStatus(creatorProfileId) &&
             !blockingState.isLoadingStatus(creatorProfileId) &&
             !blockingState.hasStatusFailure(creatorProfileId))) {
@@ -164,20 +192,24 @@ class ProjectParticipationSection extends ConsumerWidget {
               ),
             ),
             if (session.phase == AuthSessionPhase.ready &&
-                !isCreator &&
+                role != ProjectManagementRole.creator &&
                 profileId != null)
               IconButton(
                 key: Key('participation-refresh-$projectId'),
                 tooltip: l10n.participationRefresh,
                 onPressed: ownState.isBusy
                     ? null
-                    : () => ref
-                          .read(ownParticipationProvider.notifier)
-                          .load(profileId),
+                    : () => _refresh(ref, profileId),
                 icon: const Icon(Icons.refresh),
               ),
           ],
         ),
+        const SizedBox(height: AppSpacing.small),
+        ProjectCapacityLabel(capacity: capacity),
+        if (capacity.isFull) ...[
+          const SizedBox(height: AppSpacing.xSmall),
+          Text(l10n.projectNoSpots, key: Key('participation-full-$projectId')),
+        ],
         const SizedBox(height: AppSpacing.small),
         if (commandForProject?.failure != null) ...[
           Text(
@@ -192,7 +224,8 @@ class ProjectParticipationSection extends ConsumerWidget {
           ref,
           session,
           profileId,
-          isCreator,
+          hasCurrentRole ? roleState : null,
+          role,
           ownState,
           participation,
           commandForProject,
@@ -207,32 +240,55 @@ class ProjectParticipationSection extends ConsumerWidget {
     WidgetRef ref,
     AuthSessionState session,
     String? profileId,
-    bool isCreator,
+    ProjectManagementRoleState? roleState,
+    ProjectManagementRole? role,
     OwnParticipationState ownState,
     ProjectParticipationSnapshot? participation,
     ParticipationCommandState? command,
     bool organizerBlocked,
   ) {
     final l10n = AppLocalizations.of(context);
-    if (isCreator) {
+    if (session.phase == AuthSessionPhase.ready &&
+        (roleState == null ||
+            roleState.phase == ProjectDelegateLoadPhase.loading ||
+            roleState.phase == ProjectDelegateLoadPhase.idle)) {
+      return [Text(l10n.participationLoading)];
+    }
+    if (session.phase == AuthSessionPhase.ready &&
+        roleState?.phase == ProjectDelegateLoadPhase.failure) {
       return [
-        FilledButton.icon(
-          key: Key('participation-manage-$projectId'),
-          onPressed: () => context.push(
-            ParticipationRoutes.participants(projectKind, projectId),
+        Text(
+          l10n.participationSafeError,
+          key: Key('participation-role-error-$projectId'),
+          style: TextStyle(color: Theme.of(context).colorScheme.error),
+        ),
+        Align(
+          alignment: Alignment.centerLeft,
+          child: TextButton(
+            onPressed: profileId == null
+                ? null
+                : () => _refresh(ref, profileId),
+            child: Text(l10n.retryAction),
           ),
-          icon: const Icon(Icons.groups_outlined),
-          label: Text(l10n.participationManage),
         ),
       ];
     }
+    if (role == ProjectManagementRole.creator) {
+      return [_manageProjectButton(context, l10n)];
+    }
+    final delegateActions = role?.isDelegated == true
+        ? <Widget>[
+            _manageProjectButton(context, l10n),
+            const SizedBox(height: AppSpacing.small),
+          ]
+        : const <Widget>[];
     if (session.phase == AuthSessionPhase.restoring ||
         session.phase == AuthSessionPhase.checkingProfile) {
-      return [Text(l10n.participationLoading)];
+      return [...delegateActions, Text(l10n.participationLoading)];
     }
     if (session.phase == AuthSessionPhase.signedOut ||
         session.phase == AuthSessionPhase.profileSetupRequired) {
-      return acceptsNewRequests
+      final ordinaryActions = acceptsNewRequests && !capacity.isFull
           ? [
               FilledButton.icon(
                 key: Key('participation-join-$projectId'),
@@ -244,11 +300,13 @@ class ProjectParticipationSection extends ConsumerWidget {
               ),
             ]
           : [Text(l10n.participationClosed)];
+      return [...delegateActions, ...ordinaryActions];
     }
     if (profileId == null) return const [];
     if (ownState.expectedProfileId == profileId &&
         ownState.phase == ParticipationLoadPhase.failure) {
       return [
+        ...delegateActions,
         Text(
           l10n.participationSafeError,
           key: Key('participation-own-error-$projectId'),
@@ -266,10 +324,11 @@ class ProjectParticipationSection extends ConsumerWidget {
       ];
     }
     if (participation == null) {
-      return [Text(l10n.participationLoading)];
+      return [...delegateActions, Text(l10n.participationLoading)];
     }
     if (participation.currentMembership case final membership?) {
       return [
+        ...delegateActions,
         ListTile(
           contentPadding: EdgeInsets.zero,
           leading: const Icon(Icons.check_circle_outline),
@@ -287,6 +346,7 @@ class ProjectParticipationSection extends ConsumerWidget {
     }
     if (participation.pendingRequest case final request?) {
       return [
+        ...delegateActions,
         ListTile(
           contentPadding: EdgeInsets.zero,
           leading: const Icon(Icons.hourglass_top),
@@ -308,9 +368,15 @@ class ProjectParticipationSection extends ConsumerWidget {
         ),
       ];
     }
-    if (!acceptsNewRequests) return [Text(l10n.participationClosed)];
+    if (!acceptsNewRequests) {
+      return [...delegateActions, Text(l10n.participationClosed)];
+    }
+    if (capacity.isFull) {
+      return [...delegateActions, Text(l10n.projectNoSpots)];
+    }
     if (organizerBlocked) {
       return [
+        ...delegateActions,
         Text(
           l10n.blockingOwnBlockInteractionExplanation,
           key: Key('participation-blocked-explanation-$projectId'),
@@ -325,6 +391,7 @@ class ProjectParticipationSection extends ConsumerWidget {
       ];
     }
     return [
+      ...delegateActions,
       FilledButton.icon(
         key: Key('participation-join-$projectId'),
         onPressed: command?.isBusy == true
@@ -336,6 +403,29 @@ class ProjectParticipationSection extends ConsumerWidget {
         label: Text(l10n.participationRequestToJoin),
       ),
     ];
+  }
+
+  Widget _manageProjectButton(BuildContext context, AppLocalizations l10n) =>
+      FilledButton.icon(
+        key: Key('participation-manage-$projectId'),
+        onPressed: () =>
+            context.push(ProjectDelegateRoutes.manage(projectKind, projectId)),
+        icon: const Icon(Icons.groups_outlined),
+        label: Text(l10n.projectManageTitle),
+      );
+
+  Future<void> _refresh(WidgetRef ref, String profileId) async {
+    await ref
+        .read(projectManagementRoleProvider.notifier)
+        .load(
+          expectedProfileId: profileId,
+          projectId: projectId,
+          projectKind: projectKind,
+        );
+    final role = ref.read(projectManagementRoleProvider).role;
+    if (role != ProjectManagementRole.creator) {
+      await ref.read(ownParticipationProvider.notifier).load(profileId);
+    }
   }
 
   Future<void> _confirmLeave(
@@ -384,6 +474,7 @@ String participationFailureMessage(
   ParticipationFailureKind.notFound => l10n.participationConflict,
   ParticipationFailureKind.interactionUnavailable =>
     l10n.blockingInteractionUnavailable,
+  ParticipationFailureKind.full => l10n.projectFullNow,
   ParticipationFailureKind.unavailable => l10n.participationSafeError,
   ParticipationFailureKind.profilePhotoRequired =>
     l10n.profilePhotoJoinRequiredTitle,

@@ -236,7 +236,7 @@ The table has RLS with no client policies or direct grants. Authenticated creato
 
 `public.project_join_request_skill_selections` and `public.project_join_request_resource_selections` store immutable ID selections for one canonical join-request attempt. Composite primary keys reject duplicates; restrictive foreign keys preserve the request, skill-catalog, and resource-need identities. No label, free-text category, quantity, unit, price, fulfillment, or accepted-commitment field is copied into these relations. Both tables have RLS with no policies or direct client/service grants.
 
-The single `request_to_join_project` signature keeps its existing identity, Project, and optional-message arguments and adds default-empty skill/resource UUID arrays. Null arrays normalize to empty, each group is capped at 50, and null or duplicate IDs fail explicitly. A Proposal accepts only skills currently attached through `proposal_skills`, including both `required` and `useful`; a Tavolo rejects every non-empty skill array. A selected resource need must exist, be open, and belong to the same Project. Request, selections, and the unchanged body-free `project.join_requested` audit/outbox event are one transaction.
+The single `request_to_join_project` signature keeps its existing identity, Project, and optional-message arguments and adds default-empty skill/resource UUID arrays. Null arrays normalize to empty, each group is capped at 50, and null or duplicate IDs fail explicitly. A Proposal accepts only skills currently attached through `proposal_skills`, including both `required` and `useful`; a Tavolo rejects every non-empty skill array. A selected resource need must exist, be open, and belong to the same Project. Request, permanent private request-chat anchor, selections, and the unchanged body-free `project.join_requested` audit/outbox event are one transaction.
 
 The mutation keeps the established concrete Proposal/Tavolo → shared Project lock order, then locks selected resource needs in UUID order. This serializes need closure against request validation and uses the concrete Proposal row to serialize skill replacement. `list_own_project_join_request_contribution_selections` is granted only to `authenticated`, binds expected identity, authorizes only the requester or Project creator, and resolves current canonical labels in skill-catalog order followed by resource-need creation order. Resolution and later requirement/title/state changes never delete historical IDs; later requests start with independent selections. Accepted-participant commitments are a separate membership-episode domain and contribution verification remains later work.
 
@@ -270,13 +270,37 @@ Triaged acceptance now initializes live state in the same transaction after comm
 
 ## Shared project participation
 
-`public.projects` is a private identity registry whose UUID equals one concrete `proposals.id` or `recurring_activities.id`. It stores only the concrete kind, synchronized creator, and source creation timestamp. Insert triggers register every future trusted source insert; ownership/ID changes are rejected; deletion removes the registry only when no request or membership history exists. It is not a public directory.
+`public.projects` is the private cross-kind Project anchor whose UUID equals one concrete `proposals.id` or `recurring_activities.id`. It stores the concrete kind, synchronized Creator, source creation timestamp, and one nullable `people_capacity` shared by both Project kinds. Insert triggers register every future trusted source insert; ownership/ID changes are rejected; deletion removes the registry only when no request or membership history exists. It is not a public directory and has no direct client grants.
+
+Capacity is total people, not participant slots: the immutable original Creator always contributes one person and each current membership (`left_at is null` and `removed_at is null`) contributes one additional person. Pending requests, historical memberships, and delegated authority without a current membership do not count; a delegate who also participates contributes exactly once through that membership. `current_people_count` is derived as `1 + current_participant_count`, never stored. Capacity is constrained to 1–100,000 when present. Null preserves incomplete drafts and pre-05E published Projects as unspecified/uncapped legacy state; public copy calls it “Capacity not set,” and the next structural save requires a value. Proposal and Tavolo publication always requires capacity.
+
+`list_public_project_capacity_statuses` exposes bounded aggregate-only occupancy for public Project IDs, `list_project_capacity_statuses_for_structural_actor` supplies exact editor/management state to Creators and Co-creators, and `get_project_capacity_for_manager` supplies the participation screen to any current manager. The established concrete-source → shared-Project lock order serializes structural changes with participation. Capacity cannot be reduced below current people count. Pending-request insertion and every transition to a current membership recheck fullness while the shared Project row is locked; failed acceptance rolls back request resolution, triage, membership, chat, coverage, and events. Leave/removal frees a spot by ending the membership, with no counter maintenance. Null-capacity legacy rows retain prior request/accept behavior. There is no waitlist, reservation, automatic promotion, per-occurrence Tavolo limit, size band, or popularity ranking.
 
 `public.project_join_requests` preserves private attempts with one of `pending`, `accepted`, `rejected`, or `withdrawn`. Optional requester messages are trimmed and capped at 500 characters. `public.project_memberships` records exactly one accepted request origin and preserves current, voluntarily-left, and creator-removed history. Partial unique indexes enforce at most one pending request and one current membership for each project/profile.
 
-Authenticated clients use `request_to_join_project`, `withdraw_project_join_request`, the zero-selection and explicit-triage `accept_project_join_request` overloads, `reject_project_join_request`, `leave_project`, and `remove_project_member`; the tables themselves have no client privileges or RLS policies. All operations bind an expected rendered identity to `auth.uid()`, validate creator/requester/member ownership, and lock in a consistent source-project-row order. Request/accept eligibility uses the concrete lifecycle: a published one-time project accepts strictly before `ends_at`; a Tavolo accepts only while published. Pause/end/completion preserve membership history. Until 04C3D2 supplies the mandatory creator triage UI, the existing mobile two-argument acceptance path works only for requests with no contribution selections.
+Authenticated clients use `request_to_join_project`, `withdraw_project_join_request`, manager-named accept/reject/remove operations, `leave_project`, and owner-only compatibility operations; the tables themselves have no client privileges or RLS policies. All operations bind an expected rendered identity to `auth.uid()`, validate manager/requester/member authorization, and lock in a consistent source-project-row order. Request/accept eligibility uses the concrete lifecycle: a published one-time project accepts strictly before `ends_at`; a Tavolo accepts only while published. Pause/end/completion preserve membership history. The two-argument acceptance path works only for requests with no contribution selections.
 
-Requester, creator-review, own-membership, and creator-member-history reads are separate narrow operations. Request messages never become public, and the creator projection contains display name but no Auth email. The separate request-selection and accepted-membership-commitment reads expose only current canonical labels to their authorized requester/participant or creator. `get_project_participant_meeting_details` returns only exact operational meeting text/point and concrete kind to the creator or a current accepted participant. Every participation transition adds an identifier-only audit/outbox event. The later 07B1 migration derives chat activation from canonical membership insertion without changing those event contracts; capacity, badges, and contribution verification remain deferred.
+Requester, manager-review, own-membership, and manager-member-history reads are separate narrow operations. Request messages never become public, and the manager projection contains display name but no Auth email. The separate request-selection and accepted-membership-commitment reads expose only current canonical labels to their authorized requester/participant or manager. `get_project_participant_meeting_details` returns only exact operational meeting text/point and concrete kind to a current manager or current accepted participant. Every participation transition adds an identifier-only audit/outbox event. The later 07B1 migration derives chat activation from canonical membership insertion without changing those event contracts; badges remain deferred.
+
+## Project delegates and manager authorization
+
+`public.project_delegates` stores append-preserved Co-creator/Co-organizer relationships against the shared `public.projects` identity. An active row makes that profile an operational Project manager without creating `project_memberships`; the immutable original Creator remains canonical attribution and is never a delegated row. A partial unique index permits only one active relationship per Project/profile. The relationship preserves its accepted invitation, actual grantor, initial role, current role, and optional revocation, while `public.project_delegate_role_changes` appends every promotion/demotion actor and transition. Existing pre-07C2C relationships backfill as Co-organizer.
+
+`public.project_delegate_invitations` stores one seven-day, single-use role grant. Creation returns a 32-byte random base64url token once; only `digest(token, 'sha256')`, Project/original-Creator identifiers, the actual issuer, requested role, timestamps, and resolution metadata persist. Structural listing never returns a token. The two-argument creation overload remains a Co-organizer compatibility path, so pending pre-07C2C links preserve Co-organizer semantics. Anonymous/authenticated preview is non-mutating and returns one null-context unavailable row for malformed, unknown, consumed, revoked, expired, non-operational, or stale-issuer tokens. Acceptance requires a complete authenticated profile, serializes through the concrete/shared Project and invite row, rechecks current issuer structural authority, and is idempotent only for the same successful accepter.
+
+`private.profile_is_project_manager` is the central Creator/Co-creator/Co-organizer operational predicate; `private.profile_has_project_structural_authority` narrows that to Creator/Co-creator. Structural RPCs create/revoke role-aware invitations, list grants, revoke delegated authority, and atomically promote/demote. A demotion or revocation that removes Co-creator authority atomically invalidates every pending invitation issued by that actor. Manager-named RPCs continue to cover participation, contribution, Needs, requester/group chat, and protected meeting access for both delegated roles. `get_own_project_management_role` returns only creator/co_creator/co_organizer/none for one exact Project; delegated discovery includes the caller's role. Co-creators may edit already-published Proposals/Tavoli and use the existing non-destructive lifecycle operations under the Creator's existing state/time validation. Draft creation/publication remain original-Creator-only. Authority changes never touch participation rows.
+
+| Capability                                       | Creator     | Co-creator | Co-organizer |
+| ------------------------------------------------ | ----------- | ---------- | ------------ |
+| Operational participant management               | Yes         | Yes        | Yes          |
+| Existing organizer chats / Needs / contributions | Yes         | Yes        | Yes          |
+| Edit an existing Project where lifecycle permits | Yes         | Yes        | No           |
+| Cancel Proposal / pause, resume, or end Tavolo   | Yes         | Yes        | No           |
+| Manage Co-organizers                             | Yes         | Yes        | No           |
+| Manage Co-creators                               | Yes         | Yes        | No           |
+| Change original Creator                          | No transfer | No         | No           |
+
+All three delegated-authority tables use RLS with no policies or direct grants. Invite/delegate/role transitions emit only Project, invitation, relationship, role, actor, and profile identifiers under `project.delegate_*` events; bearer values, display names, titles, and messages are excluded. Authoring/lifecycle events identify the actual acting Co-creator while the concrete Project retains the original Creator. Invite/share/deep-link setup is documented in [Project delegate invite links](project-invite-links.md). Final production package, signing, Team, and bundle identities plus profile-photo rule integration remain external/convergence work rather than database configuration.
 
 ## Structured participation-request Messages
 
@@ -295,6 +319,50 @@ support both outgoing requester and incoming creator paths. The routines are
 fixed-search-path security definers granted only to `authenticated`. They add no
 table grants, generic message/thread table, or durable copy. Request mutations
 remain the 05A operations.
+
+## Participation-request private chat
+
+`public.project_join_request_chats` stores one opaque chat ID, unique restrictive
+request foreign key, and `activated_at` equal to the canonical request
+`created_at`. The migration backfills every existing request episode and an
+`AFTER INSERT` trigger makes every later `request_to_join_project` call create
+the anchor in the same transaction as its request and contribution selections.
+Anchors remain after accept, reject, or withdraw and cannot be mutated.
+
+`public.project_join_request_chat_messages` stores immutable human-authored
+messages with restrictive chat/sender foreign keys, canonical surrounding-space
+trimming, a 1–4,000 Unicode-character limit, and a server-owned timestamp.
+Neither the optional request note nor any state transition is copied into this
+table. Both request-chat tables have RLS enabled without policies or direct
+client/service privileges, are absent from Postgres Changes, and are accessible
+only through expected-identity security-definer RPCs.
+
+`get_own_project_join_request_chat` accepts a request ID and returns exact
+Project kind/title, requester/creator display identities, request state and
+note, canonical timestamps, read-only/send entitlement, and the canonical
+Project group-chat ID only after acceptance. Missing and unauthorized requests
+fail identically. `list_own_project_join_request_chat_items` returns exactly one
+structured `request` row plus zero or more `message` rows under a strict field
+XOR and descending `(created_at, item_kind_order, item_id)` cursor. The existing
+structured Requests and unified Chats RPCs remain unchanged for 07C1B.
+
+`send_project_join_request_chat_message` authorizes only the requester or
+Project creator and only while the request is pending. It follows the canonical
+concrete-Project → shared Project → request-row lock order used by participation
+resolution, assigning `clock_timestamp()` afterward. A send serialized before
+accept/reject/withdraw commits; a waiting send observes the terminal status and
+fails with `PT409`. Resolved counterparties retain exact/feed read access.
+
+Each send writes identifier-only audit/outbox event
+`project.join_request_chat_message_sent` and calls `realtime.send` with only
+chat/request/message IDs and creation time for both exact counterparties. A
+receive-only policy authorizes private
+`project-request-chat:<chat-id>:profile:<profile-id>` topics against
+`auth.uid()`. Existing notification/push processors have no mapping for this
+event and safely leave it for 07C1B. Run
+`npm run project:request:chat:verify:local` for real-OTP, private Realtime,
+privacy, strict feed, accepted group-chat continuation, and send/accept race
+coverage.
 
 ## Project group-chat lifecycle, messages, and Realtime
 
@@ -499,19 +567,22 @@ The native pgTAP files under `supabase/tests/` verify:
 - one-time proposal constraints, lifecycle/status boundaries, owner/cross-account access, expected-identity protection, rough/exact privacy, skill relationships, function hardening, pagination, and historical retention.
 - recurring activity constraints, owner isolation, stale expected identity, weekly/monthly wall-clock recurrence, Rome DST changes, bounded occurrence windows, non-overlapping schedule history, pause/resume/end transitions, public privacy, and function hardening.
 - shared project registry synchronization, request/membership state and uniqueness, concrete lifecycle eligibility, stale identity, private read projections, participant meeting authorization, retained history, deletion protection, and content-free audit/outbox events.
+- shared total-people capacity shape and bounds, draft/legacy null behavior, Creator/delegate counting semantics, public aggregate privacy, publication and structural-edit validation, request/accept fullness, failed-acceptance rollback, natural spot release, and concurrent final-spot serialization.
+- delegated-authority invitation/relationship/history constraints and grants, digest-only token storage, exact expiry, role-aware single-use race/retry behavior, stale-issuer invalidation, operational versus structural authorization, participation independence, Co-creator authoring/lifecycle access, chat/Realtime access, and identifier-only events.
 - controlled notification categories/defaults, sparse owner preferences, participation plus Project-chat semantic constraints, send-time multi-recipient fan-out, sender exclusion, private multi-consumer receipts, projector idempotency/concurrency, suppression receipts, own-only inbox/read state, privacy, and service/client grants.
 - private push installation constraints/grants, expected-identity registration and unregister behavior, token rotation/reuse and account transfer, provider-token privacy, shared semantic resolution, recipient-level job constraints, six-event mapping, all four channel-preference combinations, independent receipts, historical rollout, retries, and service-only projection.
 - monotonic token generations, one-time fan-out, zero-target completion, target/attempt constraints, service-only private worker grants, concurrent leases, crash reclaim, stale-result rejection, transient scheduling, every terminal outcome, rotation-safe invalid-token cleanup, transfer-before-claim handling, aggregate completion, and protocol-history privacy.
-- structured Messages read shape, requester/creator authorization, fail-closed exact lookup, Proposal/Tavolo context, private-message isolation, bounded keyset pagination, and routine grants.
+- structured Messages read shape, requester/current-manager authorization, fail-closed exact lookup, Proposal/Tavolo context, private-message isolation, bounded keyset pagination, and routine grants.
 - requester-only pending Proposal/Tavolo card projections, public eligibility and filters, deterministic request ordering, resolved/lifecycle omission, sanitized output, and hardened routine grants.
+- one-chat-per-participation-request anchoring/backfill, structured-note versus human-message XOR, counterparty-only exact/feed/send access, resolved read-only history, accepted Project-chat continuation, immutable bodies, identifier-only private Realtime, and send/resolution serialization.
 - immutable Project-chat message shape, canonical body limits, restrictive foreign keys, RPC-only access, full-history/current/former/rejoin rules, visible-frontier pagination and previews, identifier-only outbox payloads, private Realtime authorization, and send/termination serialization.
 - Project-chat notification/push message-time recipients, late-join/leave/rejoin boundaries, zero-to-many event fan-out, independent channel preferences, body-free chat/message context, rollout receipts, Proposal/Tavolo behavior, and projector concurrency/idempotency.
 - Scambio-Dona listing shape, exact mode/lifecycle constraints, restrictive ownership, private drafts/closed history, publish/edit/close behavior, rough-location and owner-display privacy, public filters/keyset ordering, and identifier-only audit/outbox payloads.
 - Scambio-Dona request shape, exact request lifecycle and active uniqueness, bounded private messages, owner/requester authorization, multiple acceptance, derived public interest counts, retained close history, identifier-only events, PT409 conflicts, and decision/listing/duplicate serialization.
 - unified Project/Resource Requests and Chats parity, complete discriminator-aware keysets, strict branch XOR, Resource notification/push references and destinations, canonical counterparty routing, Resources preferences, historical no-backfill receipts, and body-free projection state.
 - Project resource-need shape, stable Project foreign keys, exact open/closed semantics, title/details bounds, creator identity, Proposal/Tavolo lifecycle visibility, retained owner history, restrictive grants, identifier-only events, and lifecycle/mutation serialization.
-- join-request skill/resource selection shape, restrictive historical foreign keys, duplicate/size bounds, Proposal/Tavolo validation, atomic request creation, requester/creator-only reads, retained resolved history, current canonical label resolution, unchanged identifier-only events, and need/skill mutation serialization.
-- membership-episode skill/resource commitment shape, acceptance seeding, retained ended history and rejoin isolation, participant/creator-only commitment and addable-option reads, guarded mutation, full-set/no-op semantics, stale-option retention/removal, paused-Tavolo and other lifecycle validity, read-event absence, identifier-only mutation events without notifications, and leave/removal/need/skill serialization.
+- join-request skill/resource selection shape, restrictive historical foreign keys, duplicate/size bounds, Proposal/Tavolo validation, atomic request creation, requester/manager reads, retained resolved history, current canonical label resolution, unchanged identifier-only events, and need/skill mutation serialization.
+- membership-episode skill/resource commitment shape, acceptance seeding, retained ended history and rejoin isolation, participant/manager commitment and addable-option reads, guarded mutation, full-set/no-op semantics, stale-option retention/removal, paused-Tavolo and other lifecycle validity, read-event absence, identifier-only mutation events without notifications, and leave/removal/need/skill serialization.
 
 Run focused commands while the stack is already running:
 
@@ -527,6 +598,8 @@ npm run proposal:verify:local
 npm run recurring:verify:local
 npm run participation:verify:local
 npm run participation:browse:verify:local
+npm run project:capacity:verify:local
+npm run project:delegates:verify:local
 npm run notification:verify:local
 npm run push:delivery:verify:local
 npm run push:verify:local
@@ -580,6 +653,14 @@ locality/skill filtering, withdrawal and acceptance removal, pause/resume/end
 eligibility, and sanitized card payloads. It never logs OTPs, tokens, keys,
 request messages, or protected meeting values.
 
+`project:capacity:verify:local` uses a disposable local Project with two
+pending requests and two independent authenticated database transactions to
+race the single remaining participant spot. Exactly one acceptance commits;
+the other returns `PT409`, the losing request remains pending, and canonical
+occupancy never exceeds capacity. Run it only against a reset disposable local
+stack; it prints no credentials, request text, private profile data, or
+protected meeting information.
+
 `notification:verify:local` uses three complete authenticated identities, a service-role client, and one narrow direct local-database assertion. It proves pre-projection absence, concurrent projector idempotency, request/accept/withdraw/reject/leave mappings, stable request IDs and `participation_request` targets, cross-account denial, structured safe context, unread/read changes, preference suppression with a receipt, later re-enable behavior, and coexistence with an independent synthetic consumer receipt. It never logs OTPs, keys, database URLs, request messages, or protected meeting values.
 
 `notification:project:local` is the narrower native-QA companion. It derives
@@ -600,6 +681,10 @@ the deterministic local profiles and device-QA sequence.
 `project:chat:verify:local` uses a creator, participants A/B, and an unrelated identity with real local Auth plus narrow direct-database assertions. It proves no pre-acceptance chat, first-accept activation, later reuse, concurrent two-request acceptance with one chat, creator/current/former entitlement, half-open leave/removal intervals, a preserved rejoin gap, stable chat identity, unrelated denial, all-members-ended retention, and shared Proposal/Tavolo behavior across pause/resume/end. It logs no OTPs, tokens, database URLs, request messages, meeting details, or secrets.
 
 `project:chat:messages:verify:local` uses four real authenticated clients, private Supabase Realtime Broadcast channels, and narrow direct-database transactions. It proves durable signal reconciliation, full pre-join history, former-member frontiers, rejoin gap visibility, last-visible previews/activity, current-only subscriptions, no post-leave/removal signal, Proposal/Tavolo behavior, identifier-only outbox state, and both serialization outcomes for send versus leave/removal. It logs no OTPs, tokens, database URLs, message bodies, private request text, or meeting details.
+
+`project:request:chat:verify:local` uses a Project creator, requester, and unrelated real authenticated user with private Supabase Realtime Broadcast channels and one narrow direct-database race. It proves atomic request/chat creation, the structured initial note, strict mixed-feed pagination, exact counterparty access, unrelated denial, identifier-only events/hints, send/accept serialization, durable resolved history, and the accepted Project group-chat continuation. It logs no OTPs, tokens, keys, database URLs, request notes, message bodies, or meeting details.
+
+`project:delegates:verify:local` uses four real OTP-authenticated profiles, an anonymous preview client, and narrow direct-database assertions. Its 07C2A race/secrecy evidence remains applicable to the backward-compatible Co-organizer overload; focused pgTAP tests 068/069 add Co-creator/Co-organizer role, provenance, stale-issuer invalidation, participation-independence, and authoring/lifecycle coverage. The verifier prints no OTPs, bearer tokens, keys, database URLs, messages, or meeting values.
 
 `project:chat:notifications:verify:local` uses three real authenticated clients,
 canonical join/leave/rejoin/send RPCs, both service-only projectors, and narrow
@@ -683,4 +768,4 @@ activates. It prints no identities, tokens, messages, or database URL.
 
 `tavoli:web:verify:local` uses synthetic local OTP data and the production Next.js server to prove signed-out Tavoli list/detail rendering, rough-location and next-meeting output, exclusion of paused/ended rows from discovery, retained sanitized historical detail, exact-ID 404 behavior, and detail-only public/restricted exact-location handling. It never prints test addresses, tokens, keys, or protected meeting content.
 
-`npm run check:db` performs reset, lint, advisors, pgTAP, the real fake push-delivery worker protocol, the mobile/backend Auth check, the deterministic immediate-session/RLS check, the two-user profile visibility check, the proposal privacy/lifecycle check, the recurring activity recurrence/privacy/lifecycle check, the multi-user project-participation and participation-aware Browse checks, notification/push projection, structured Messages integration, Project-chat lifecycle/message/notification integrations, the Scambio-Dona listing, saved-search, request, agreement, chat, and unified Messages/notification integrations, the Project resource-need Proposal/Tavolo/concurrency integration, the join-request contribution-selection and acceptance-triage Proposal/Tavolo/concurrency integration, the membership-commitment Proposal/Tavolo/concurrency integration, moderation evidence integrations, user-block pair-serialization races, type regeneration, and drift detection as one validation sequence. It assumes `npm run db:start` has already succeeded and leaves stack lifecycle to the caller. CI additionally generates local web configuration, builds Next.js, runs the web-session and public Tavoli integrations, and always stops Supabase.
+`npm run check:db` performs reset, lint, advisors, pgTAP, the real fake push-delivery worker protocol, the mobile/backend Auth check, the deterministic immediate-session/RLS check, the two-user profile visibility check, the proposal privacy/lifecycle check, the recurring activity recurrence/privacy/lifecycle check, the multi-user Project participation, delegate, participation-request chat, and participation-aware Browse checks, notification/push projection, structured Messages integration, Project-chat lifecycle/message/notification integrations, the Scambio-Dona listing, saved-search, request, agreement, chat, and unified Messages/notification integrations, the Project resource-need and matching integrations, contribution-selection, acceptance-triage, membership-commitment, coverage, resurfacing, and actual-contribution integrations, moderation evidence integrations, user-block pair-serialization races, type regeneration, and drift detection as one validation sequence. It assumes `npm run db:start` has already succeeded and leaves stack lifecycle to the caller. CI additionally generates local web configuration, builds Next.js, runs the web-session and public Tavoli integrations, and always stops Supabase.

@@ -15,6 +15,8 @@ This folder owns the dynamic Next.js public-discovery application, ordinary web 
 - `src/features/proposals/` owns sanitized public proposal payload validation, server reads, cards, status badges, filters, and cursor pagination. It contains no proposal authoring.
 - `src/features/recurring-activities/` owns sanitized public Tavoli payload validation, fixed-snapshot cursor pagination, server reads, cards, recurrence/lifecycle formatting, and exact-location privacy. It contains no Tavoli authoring or owner reads.
 - `src/features/moderation/` owns verified-claims staff authorization, bounded moderation RPC reads, review-only mutations, strict payload parsing, and the queue/detail components. It contains no sanctions or staff-role assignment.
+- `src/features/project-delegates/` owns the side-effect-free server invite preview and the explicit authenticated browser acceptance boundary.
+- `src/features/deep-links/` owns fail-closed Android/iOS website association payloads; see the [Project invite link guide](../../docs/development/project-invite-links.md).
 - `src/components/activity-discovery-switcher.tsx` provides the small route-backed One-time Proposals/Tavoli selector shared by both list pages.
 - `src/lib/config/` owns the typed public environment contract and redacted diagnostics.
 - `src/lib/supabase/` owns separate typed browser and per-request server factories. `client-only` and `server-only` markers enforce the import boundary.
@@ -68,3 +70,11 @@ authorized canonically on every server read/action through their cookie-backed
 Supabase session; the web server does not use a service-role bypass. The 09A1
 surface supports only queue/detail reads, append-only notes and audited review
 state transitions.
+
+`/invite/project/[token]` is the authoritative browser fallback for Project
+co-organizer invitations. Rendering performs only the anonymous preview read;
+acceptance requires a pressed client action and a verified complete profile.
+Auth and `/profile` preserve the exact sanitized internal return path. The
+token-bearing response is no-store, no-referrer, and noindex. The dynamic
+`/.well-known` association handlers return 404 until final Android package and
+certificate values or Apple Team and bundle identifiers are configured.

@@ -15,3 +15,8 @@ This folder owns the minimal authenticated `/profile` settings surface.
 The database owns validation, atomicity, RLS, and sanitized public reads. Photo
 media, location, custom skills, proficiency, public directory/search, and
 organizer/participant audiences remain deferred.
+
+`/profile?returnTo=...` preserves a sanitized internal destination through a
+successful save so an incomplete invitation recipient can resume the exact
+invite. External, protocol-relative, and encoded external destinations remain
+rejected by the shared Auth return-path sanitizer.

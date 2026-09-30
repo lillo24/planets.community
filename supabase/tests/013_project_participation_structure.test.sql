@@ -17,8 +17,14 @@ select has_table(
 select columns_are(
   'public',
   'projects',
-  array['id', 'project_kind', 'creator_profile_id', 'created_at'],
-  'the project identity anchor stays narrow'
+  array[
+    'id',
+    'project_kind',
+    'creator_profile_id',
+    'created_at',
+    'people_capacity'
+  ],
+  'the shared Project registry owns identity and cross-kind capacity only'
 );
 select columns_are(
   'public',

@@ -11,12 +11,12 @@ abstract interface class ActualContributionGateway {
   });
 
   Future<List<ActualContributionOption>> listActualContributionOptions({
-    required String expectedCreatorProfileId,
+    required String expectedManagerProfileId,
     required String membershipId,
   });
 
   Future<void> replaceActualContributions({
-    required String expectedCreatorProfileId,
+    required String expectedManagerProfileId,
     required String membershipId,
     required Set<String> expectedSkillIds,
     required Set<String> expectedResourceNeedIds,
@@ -48,19 +48,19 @@ class SupabaseActualContributionGateway implements ActualContributionGateway {
 
   @override
   Future<List<ActualContributionOption>> listActualContributionOptions({
-    required String expectedCreatorProfileId,
+    required String expectedManagerProfileId,
     required String membershipId,
   }) async {
     final response = await _client.rpc<List<dynamic>>(
-      'list_project_membership_actual_contribution_options',
-      params: contract.optionsParams(expectedCreatorProfileId, membershipId),
+      'list_project_membership_actual_contribution_options_for_manager',
+      params: contract.optionsParams(expectedManagerProfileId, membershipId),
     );
     return response.map(parser.option).toList(growable: false);
   }
 
   @override
   Future<void> replaceActualContributions({
-    required String expectedCreatorProfileId,
+    required String expectedManagerProfileId,
     required String membershipId,
     required Set<String> expectedSkillIds,
     required Set<String> expectedResourceNeedIds,
@@ -70,9 +70,9 @@ class SupabaseActualContributionGateway implements ActualContributionGateway {
     required bool substantialEffort,
   }) async {
     await _client.rpc<String>(
-      'replace_project_membership_actual_contributions',
+      'replace_project_membership_actual_contributions_as_manager',
       params: contract.replaceParams(
-        expectedCreatorProfileId: expectedCreatorProfileId,
+        expectedManagerProfileId: expectedManagerProfileId,
         membershipId: membershipId,
         expectedSkillIds: expectedSkillIds,
         expectedResourceNeedIds: expectedResourceNeedIds,
@@ -97,15 +97,15 @@ class ActualContributionRpcContract {
   };
 
   Map<String, Object?> optionsParams(
-    String expectedCreatorProfileId,
+    String expectedManagerProfileId,
     String membershipId,
   ) => {
-    'p_expected_creator_profile_id': expectedCreatorProfileId,
+    'p_expected_manager_profile_id': expectedManagerProfileId,
     'p_membership_id': membershipId,
   };
 
   Map<String, Object?> replaceParams({
-    required String expectedCreatorProfileId,
+    required String expectedManagerProfileId,
     required String membershipId,
     required Set<String> expectedSkillIds,
     required Set<String> expectedResourceNeedIds,
@@ -114,7 +114,7 @@ class ActualContributionRpcContract {
     required Set<String> resourceNeedIds,
     required bool substantialEffort,
   }) => {
-    'p_expected_creator_profile_id': expectedCreatorProfileId,
+    'p_expected_manager_profile_id': expectedManagerProfileId,
     'p_membership_id': membershipId,
     'p_expected_skill_ids': _sorted(expectedSkillIds),
     'p_expected_resource_need_ids': _sorted(expectedResourceNeedIds),

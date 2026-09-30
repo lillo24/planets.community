@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -71,6 +73,43 @@ void main() {
     },
   );
 
+  testWidgets('Proposal cards show occupancy and legacy capacity copy', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      _localized(
+        ListView(
+          children: [
+            ProposalCard(
+              proposal: proposalSummaryFixture(
+                capacity: projectCapacityFixture(
+                  peopleCapacity: 4,
+                  currentParticipantCount: 2,
+                ),
+              ),
+              onTap: () {},
+            ),
+            ProposalCard(
+              proposal: proposalSummaryFixture(
+                id: 'legacy',
+                capacity: projectCapacityFixture(peopleCapacity: null),
+              ),
+              onTap: () {},
+            ),
+          ],
+        ),
+      ),
+    );
+
+    expect(find.text('3 / 4 people'), findsOneWidget);
+    await tester.scrollUntilVisible(
+      find.text('Capacity not set'),
+      300,
+      scrollable: find.byType(Scrollable).first,
+    );
+    expect(find.text('Capacity not set'), findsOneWidget);
+  });
+
   testWidgets(
     'signed-out public card navigates to detail through public gateway',
     (tester) async {
@@ -105,6 +144,7 @@ void main() {
       );
       await tester.pumpAndSettle();
       expect(find.text('Paint the square'), findsOneWidget);
+      expect(find.text('1 / 20 people'), findsOneWidget);
       expect(find.byKey(const Key('proposal-requested-section')), findsNothing);
       expect(gateway.calls, isNot(contains('list-requested')));
 
@@ -122,6 +162,7 @@ void main() {
         findsOneWidget,
       );
       expect(find.text('A full proposal description.'), findsOneWidget);
+      expect(find.text('1 / 20 people'), findsWidgets);
       expect(gateway.calls, contains('public-detail:proposal-1'));
     },
   );
@@ -186,6 +227,11 @@ void main() {
       );
       expect(find.byKey(const Key('browse-requested-badge')), findsOneWidget);
       expect(find.byKey(const Key('proposal-card-proposal-1')), findsOneWidget);
+      await tester.scrollUntilVisible(
+        find.byKey(const Key('proposal-card-proposal-2')),
+        200,
+        scrollable: find.byType(Scrollable).first,
+      );
       expect(find.byKey(const Key('proposal-card-proposal-2')), findsOneWidget);
       expect(
         tester.getTopLeft(find.byKey(const Key('proposal-card-proposal-1'))).dy,
@@ -202,12 +248,17 @@ void main() {
         contains('Requested to join'),
       );
 
+      await tester.scrollUntilVisible(
+        find.byKey(const Key('proposal-card-proposal-1')),
+        -200,
+        scrollable: find.byType(Scrollable).first,
+      );
       await tester.tap(find.byKey(const Key('proposal-card-proposal-1')));
       await tester.pumpAndSettle();
-      expect(
-        router.routeInformationProvider.value.uri.path,
-        '/proposals/proposal-1',
-      );
+      expect(find.text('Proposal details'), findsOneWidget);
+      await tester.binding.handlePopRoute();
+      await tester.pumpAndSettle();
+      expect(router.routerDelegate.currentConfiguration.uri.path, '/proposals');
     },
   );
 
@@ -311,6 +362,98 @@ void main() {
     expect(find.text('Required: Mural painting'), findsOneWidget);
     expect(find.text('Useful: Gardening'), findsOneWidget);
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets(
+    'Proposal detail renders idle and loading as loading, then ready',
+    (tester) async {
+      final pending = Completer<ProposalDetail?>();
+      final gateway = FakeProposalGateway()
+        ..publicDetailResult = pending.future;
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [proposalGatewayProvider.overrideWithValue(gateway)],
+          child: _localized(
+            const ProposalDetailScreen(proposalId: 'proposal-1'),
+          ),
+        ),
+      );
+
+      expect(find.text('Loading proposals…'), findsOneWidget);
+      expect(find.text('Something went wrong'), findsNothing);
+      await tester.pump();
+      expect(find.text('Loading proposals…'), findsOneWidget);
+      expect(find.text('Something went wrong'), findsNothing);
+
+      pending.complete(proposalDetailFixture());
+      await tester.pumpAndSettle();
+      expect(find.text('Paint the square'), findsOneWidget);
+      expect(find.text('Something went wrong'), findsNothing);
+    },
+  );
+
+  testWidgets('Proposal detail hides retained data from another proposal', (
+    tester,
+  ) async {
+    final gateway = FakeProposalGateway()
+      ..publicDetail = proposalDetailFixture(
+        id: 'proposal-a',
+        title: 'Proposal A',
+      );
+    final container = ProviderContainer(
+      overrides: [proposalGatewayProvider.overrideWithValue(gateway)],
+    );
+    addTearDown(container.dispose);
+
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: _localized(const ProposalDetailScreen(proposalId: 'proposal-a')),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('Proposal A'), findsOneWidget);
+
+    final pending = Completer<ProposalDetail?>();
+    gateway.publicDetailResult = pending.future;
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: _localized(const ProposalDetailScreen(proposalId: 'proposal-b')),
+      ),
+    );
+
+    expect(find.text('Loading proposals…'), findsOneWidget);
+    expect(find.text('Proposal A'), findsNothing);
+    expect(find.text('Something went wrong'), findsNothing);
+    await tester.pump();
+    expect(find.text('Loading proposals…'), findsOneWidget);
+
+    pending.complete(
+      proposalDetailFixture(id: 'proposal-b', title: 'Proposal B'),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('Proposal B'), findsOneWidget);
+    expect(find.text('Proposal A'), findsNothing);
+  });
+
+  testWidgets('Proposal detail renders a genuine load failure with Retry', (
+    tester,
+  ) async {
+    final gateway = FakeProposalGateway()
+      ..error = StateError('private failure detail');
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [proposalGatewayProvider.overrideWithValue(gateway)],
+        child: _localized(const ProposalDetailScreen(proposalId: 'proposal-1')),
+      ),
+    );
+    expect(find.text('Something went wrong'), findsNothing);
+
+    await tester.pumpAndSettle();
+    expect(find.text('Something went wrong'), findsOneWidget);
+    expect(find.text('Try again'), findsOneWidget);
+    expect(find.textContaining('private failure detail'), findsNothing);
   });
 }
 

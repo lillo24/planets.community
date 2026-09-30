@@ -28,4 +28,29 @@ void main() {
       expect(sanitizeReturnDestination('proposals'), '/');
     });
   });
+
+  group('profileEditCancelDestination', () {
+    test('returns a Proposal or Tavolo Join intent to its public parent', () {
+      expect(
+        profileEditCancelDestination('/proposals/proposal-1/join'),
+        '/proposals/proposal-1',
+      );
+      expect(
+        profileEditCancelDestination('/tavoli/tavolo-1/join'),
+        '/tavoli/tavolo-1',
+      );
+    });
+
+    test('uses Profile for other and unsafe continuation values', () {
+      for (final candidate in [
+        '/messages/chats/chat-1',
+        '/proposals/proposal-1/join/extra',
+        'https://example.com/proposals/proposal-1/join',
+        '//example.com/proposals/proposal-1/join',
+        null,
+      ]) {
+        expect(profileEditCancelDestination(candidate), '/profile');
+      }
+    });
+  });
 }

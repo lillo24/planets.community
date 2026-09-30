@@ -350,7 +350,7 @@ class ActualContributionController extends Notifier<ActualContributionState> {
       await ref
           .read(actualContributionGatewayProvider)
           .replaceActualContributions(
-            expectedCreatorProfileId: expectedProfileId,
+            expectedManagerProfileId: expectedProfileId,
             membershipId: membershipId,
             expectedSkillIds: expectedSkillIds,
             expectedResourceNeedIds: expectedResourceIds,
@@ -403,7 +403,7 @@ class ActualContributionController extends Notifier<ActualContributionState> {
       final options = await ref
           .read(actualContributionGatewayProvider)
           .listActualContributionOptions(
-            expectedCreatorProfileId: expectedProfileId,
+            expectedManagerProfileId: expectedProfileId,
             membershipId: membershipId,
           );
       if (!_isCurrent(revision, expectedProfileId)) return false;

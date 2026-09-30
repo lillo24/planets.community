@@ -10,6 +10,7 @@ import 'package:planets_mobile/features/cover_media/domain/cover_media_models.da
 import 'package:planets_mobile/features/recurring_activities/application/recurring_activity_controllers.dart';
 import 'package:planets_mobile/features/recurring_activities/data/recurring_activity_gateway.dart';
 import 'package:planets_mobile/features/recurring_activities/domain/recurring_activity_models.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../support/fake_auth.dart';
 import '../../../support/fake_cover_media.dart';
@@ -275,6 +276,264 @@ void main() {
     },
   );
 
+  test(
+    'published and paused editor saves update without draft publication',
+    () async {
+      final gateway = FakeRecurringActivityGateway()
+        ..ownItems = [
+          ownRecurringActivityFixture(
+            lifecycle: RecurringActivityLifecycle.published,
+          ),
+        ];
+      final session = _readyContainer(gateway);
+      addTearDown(session.container.dispose);
+      addTearDown(session.auth.close);
+      final controller = session.container.read(
+        recurringActivityEditorProvider.notifier,
+      );
+      await controller.load('user-1', 'tavolo-1');
+
+      expect(
+        await controller.saveChanges('user-1', recurringInputFixture()),
+        'tavolo-1',
+      );
+      expect(gateway.calls, contains('update:tavolo-1'));
+      expect(gateway.calls, isNot(contains('publish:tavolo-1')));
+
+      gateway.ownItems = [
+        ownRecurringActivityFixture(
+          lifecycle: RecurringActivityLifecycle.paused,
+        ),
+      ];
+      await controller.load('user-1', 'tavolo-1');
+      expect(
+        await controller.saveChanges('user-1', recurringInputFixture()),
+        'tavolo-1',
+      );
+      expect(
+        gateway.calls.where((call) => call == 'update:tavolo-1'),
+        hasLength(2),
+      );
+    },
+  );
+
+  test('draft accepts missing capacity but publish rejects it', () async {
+    final gateway = FakeRecurringActivityGateway();
+    final session = _readyContainer(gateway);
+    addTearDown(session.container.dispose);
+    addTearDown(session.auth.close);
+    final controller = session.container.read(
+      recurringActivityEditorProvider.notifier,
+    );
+    await controller.load('user-1', null);
+    final input = recurringInputFixture(peopleCapacity: null);
+
+    expect(await controller.saveDraft('user-1', input), 'new-tavolo');
+    expect(gateway.lastInput?.peopleCapacity, isNull);
+    expect(await controller.publish('user-1', input), isNull);
+    expect(gateway.calls, isNot(contains('publish:new-tavolo')));
+    expect(
+      session.container.read(recurringActivityEditorProvider).failure,
+      RecurringActivityFailureKind.invalidInput,
+    );
+  });
+
+  test('active save rejects capacity below current people count', () async {
+    final gateway = FakeRecurringActivityGateway()
+      ..ownItems = [
+        ownRecurringActivityFixture(
+          lifecycle: RecurringActivityLifecycle.published,
+          capacity: recurringCapacityFixture(
+            peopleCapacity: 5,
+            currentParticipantCount: 3,
+          ),
+        ),
+      ];
+    final session = _readyContainer(gateway);
+    addTearDown(session.container.dispose);
+    addTearDown(session.auth.close);
+    final controller = session.container.read(
+      recurringActivityEditorProvider.notifier,
+    );
+    await controller.load('user-1', 'tavolo-1');
+
+    expect(
+      await controller.saveChanges(
+        'user-1',
+        recurringInputFixture(peopleCapacity: 3),
+      ),
+      isNull,
+    );
+    expect(gateway.calls, isNot(contains('update:tavolo-1')));
+    expect(
+      session.container.read(recurringActivityEditorProvider).failure,
+      RecurringActivityFailureKind.invalidInput,
+    );
+  });
+
+  test('legacy active save requires capacity', () async {
+    final gateway = FakeRecurringActivityGateway()
+      ..ownItems = [
+        ownRecurringActivityFixture(
+          lifecycle: RecurringActivityLifecycle.published,
+          input: recurringInputFixture(peopleCapacity: null),
+        ),
+      ];
+    final session = _readyContainer(gateway);
+    addTearDown(session.container.dispose);
+    addTearDown(session.auth.close);
+    final controller = session.container.read(
+      recurringActivityEditorProvider.notifier,
+    );
+    await controller.load('user-1', 'tavolo-1');
+
+    expect(
+      await controller.saveChanges(
+        'user-1',
+        recurringInputFixture(peopleCapacity: null),
+      ),
+      isNull,
+    );
+    expect(gateway.calls, isNot(contains('update:tavolo-1')));
+    expect(
+      session.container.read(recurringActivityEditorProvider).failure,
+      RecurringActivityFailureKind.invalidInput,
+    );
+  });
+
+  test('editor pause resume and end refetch the exact Tavolo', () async {
+    final gateway = FakeRecurringActivityGateway()
+      ..ownItems = [
+        ownRecurringActivityFixture(
+          lifecycle: RecurringActivityLifecycle.published,
+        ),
+      ];
+    final session = _readyContainer(gateway);
+    addTearDown(session.container.dispose);
+    addTearDown(session.auth.close);
+    final controller = session.container.read(
+      recurringActivityEditorProvider.notifier,
+    );
+    await controller.load('user-1', 'tavolo-1');
+
+    expect(await controller.pause('user-1'), isTrue);
+    expect(
+      session.container
+          .read(recurringActivityEditorProvider)
+          .activity
+          ?.lifecycle,
+      RecurringActivityLifecycle.paused,
+    );
+    expect(await controller.resume('user-1'), isTrue);
+    expect(
+      session.container
+          .read(recurringActivityEditorProvider)
+          .activity
+          ?.lifecycle,
+      RecurringActivityLifecycle.published,
+    );
+    expect(await controller.end('user-1'), isTrue);
+    await Future<void>.delayed(Duration.zero);
+    expect(
+      session.container
+          .read(recurringActivityEditorProvider)
+          .activity
+          ?.lifecycle,
+      RecurringActivityLifecycle.ended,
+    );
+    expect(
+      gateway.calls,
+      containsAll(['pause:tavolo-1', 'resume:tavolo-1', 'end:tavolo-1']),
+    );
+    expect(
+      gateway.calls.where((call) => call == 'own-detail:tavolo-1').length,
+      greaterThanOrEqualTo(4),
+    );
+    expect(gateway.calls, containsAll(['list-own', 'list-public']));
+    expect(
+      gateway.calls,
+      contains('public-detail:tavolo-1:$recurringActivityOccurrenceLimit'),
+    );
+  });
+
+  test('stale Co-creator authority fails closed on Tavolo lifecycle', () async {
+    final gateway = FakeRecurringActivityGateway()
+      ..ownItems = [
+        ownRecurringActivityFixture(
+          lifecycle: RecurringActivityLifecycle.published,
+        ),
+      ]
+      ..mutationError = const PostgrestException(
+        message: 'private structural denial',
+        code: '42501',
+      );
+    final session = _readyContainer(gateway);
+    addTearDown(session.container.dispose);
+    addTearDown(session.auth.close);
+    final controller = session.container.read(
+      recurringActivityEditorProvider.notifier,
+    );
+    await controller.load('user-1', 'tavolo-1');
+
+    expect(await controller.pause('user-1'), isFalse);
+    expect(
+      session.container.read(recurringActivityEditorProvider).failure,
+      RecurringActivityFailureKind.forbidden,
+    );
+  });
+
+  test('forbidden structural Tavolo read exposes no cached record', () async {
+    final gateway = FakeRecurringActivityGateway()
+      ..error = const PostgrestException(
+        message: 'private structural denial',
+        code: '42501',
+      );
+    final session = _readyContainer(gateway);
+    addTearDown(session.container.dispose);
+    addTearDown(session.auth.close);
+
+    await session.container
+        .read(recurringActivityEditorProvider.notifier)
+        .load('user-1', 'tavolo-1');
+
+    final state = session.container.read(recurringActivityEditorProvider);
+    expect(state.failure, RecurringActivityFailureKind.forbidden);
+    expect(state.activity, isNull);
+  });
+
+  test(
+    'account switch rejects an in-flight editor lifecycle mutation',
+    () async {
+      final pending = Completer<void>();
+      final gateway = FakeRecurringActivityGateway()
+        ..ownItems = [
+          ownRecurringActivityFixture(
+            lifecycle: RecurringActivityLifecycle.published,
+          ),
+        ]
+        ..mutationDelay = pending.future;
+      final session = _readyContainer(gateway);
+      addTearDown(session.container.dispose);
+      addTearDown(session.auth.close);
+      final controller = session.container.read(
+        recurringActivityEditorProvider.notifier,
+      );
+      await controller.load('user-1', 'tavolo-1');
+      final mutation = controller.pause('user-1');
+
+      session.container
+          .read(authSessionProvider.notifier)
+          .markProfileReady(const AuthIdentity(id: 'user-2'));
+      pending.complete();
+
+      expect(await mutation, isFalse);
+      expect(
+        session.container.read(recurringActivityEditorProvider).activity,
+        isNull,
+      );
+    },
+  );
+
   test('new Tavolo reconciles its cover before publish', () async {
     final gateway = FakeRecurringActivityGateway();
     final covers = FakeProjectCoverReconciler()
@@ -388,7 +647,7 @@ void main() {
     );
     await controller.load('user-1', 'tavolo-1');
 
-    final result = await controller.saveDraft(
+    final result = await controller.saveChanges(
       'user-1',
       recurringInputFixture(),
       coverChange: CoverChange.replacement(processedCoverFixture()),
@@ -399,7 +658,7 @@ void main() {
     expect(covers.calls, isEmpty);
     expect(
       session.container.read(recurringActivityEditorProvider).failure,
-      RecurringActivityFailureKind.invalidInput,
+      RecurringActivityFailureKind.invalidState,
     );
   });
 

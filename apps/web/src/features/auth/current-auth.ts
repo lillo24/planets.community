@@ -32,7 +32,6 @@ export type CurrentAuthClient = Readonly<{
 export type CurrentAuthClientFactory = () => Promise<CurrentAuthClient>;
 
 const signedOutState = Object.freeze({ status: "signedOut" } as const);
-const readyState = Object.freeze({ status: "ready" } as const);
 const missingProfileState = Object.freeze({
   status: "profileSetupRequired",
   reason: "missing",
@@ -63,7 +62,9 @@ export async function readCurrentAuth(
   if (profileError || profile?.id !== userId) {
     return missingProfileState;
   }
-  return profile.display_name === null ? incompleteProfileState : readyState;
+  return profile.display_name === null
+    ? incompleteProfileState
+    : ({ status: "ready", profileId: userId } as const);
 }
 
 async function createCurrentAuthClient(): Promise<CurrentAuthClient> {

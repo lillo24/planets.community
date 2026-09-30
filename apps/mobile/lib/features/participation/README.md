@@ -11,6 +11,8 @@ their existing features; participation uses only a project ID plus the narrow
 - `domain/participation_models.dart` defines strict project kinds, request and
   membership states, private read models, and project-specific state
   derivation.
+- `domain/project_capacity.dart` defines the strict shared total-people
+  snapshot, bounds, and canonical aggregate consistency checks.
 - `domain/membership_commitment_models.dart` defines the strict skill/resource
   commitment, addable-option, and merged editor-item shapes.
 - `domain/actual_contribution_models.dart` defines strict skill/resource/effort
@@ -24,12 +26,12 @@ their existing features; participation uses only a project ID plus the narrow
   commitment boundary. It owns current/final reads, addable-option reads, and
   six-argument compare-and-swap replacement parameters.
 - `data/actual_contribution_gateway.dart` is the RPC-only 05C1 mobile boundary
-  for factual reads, creator options, and exact eight-argument CAS replacement.
+  for factual reads, manager options, and exact eight-argument CAS replacement.
 - `data/join_acceptance_triage_gateway.dart` is the RPC-only 04C3D2 boundary
   for action-local selection reads and the explicit eight-argument acceptance
   overload; it deterministically sorts all six disposition arrays.
 - `application/participation_controllers.dart` owns identity-bound own
-  participation, requester/member commands, creator review, protected meeting
+  participation, requester/member commands, manager review, protected meeting
   data, request revisions, and safe failure mapping.
 - `application/contribution_options_controller.dart` independently loads the
   current Proposal skill requirements plus open Project resource needs, or
@@ -46,23 +48,26 @@ their existing features; participation uses only a project ID plus the narrow
 - `presentation/participation_routes.dart` maps the shared feature onto the
   concrete Proposal and Tavolo routes.
 - `presentation/project_participation_section.dart` supplies the shared detail
-  location/action area.
+  location/action area, including Full/no-spots behavior.
+- `presentation/project_capacity_label.dart` renders one localized occupancy,
+  Full, or legacy capacity-not-set label across Project surfaces.
 - `presentation/join_request_screen.dart` owns typed multi-select contribution
   chips, stale-option recovery, the optional private 500-character request
   message, the local profile-photo trust preflight, and the single canonical
   submit flow.
-- `presentation/creator_participation_screen.dart` owns creator request/history
+- `presentation/creator_participation_screen.dart` owns manager request/history
   review, bounded-batch pending-applicant avatars, and current/historical
-  membership management.
-- `presentation/join_acceptance_triage_sheet.dart` is the single creator
+  membership management. Its filename is retained as a compatibility detail;
+  owner and active delegate enter it through the shared Manage project hub.
+- `presentation/join_acceptance_triage_sheet.dart` is the single manager
   acceptance surface shared by Manage participation and Messages request
   detail, including accessible validation, one-shot guidance, and
   reduced-motion-safe shake feedback.
 - `presentation/membership_commitment_sheet.dart` is the shared participant and
-  creator commitment editor/read-only sheet, including retained stale options
+  manager commitment editor/read-only sheet, including retained stale options
   and accessible live recovery messages.
 - `presentation/actual_contribution_sheet.dart` is the shared participant
-  read-only and creator-editable factual attribution sheet with a dedicated
+  read-only and manager-editable factual attribution sheet with a dedicated
   effort control and accessible lifecycle/race recovery messages.
 
 ## Canonical lifecycle and privacy
@@ -70,7 +75,7 @@ their existing features; participation uses only a project ID plus the narrow
 All mutations carry the expected profile ID for which the screen was rendered.
 After every asynchronous boundary, controllers recheck their request revision
 and current Auth identity. Signing out or changing accounts clears own request,
-membership, creator-review, command, and protected-meeting state. The router
+membership, manager-review, command, and protected-meeting state. The router
 also rebuilds its retained shell so unsent messages and private review screens
 cannot cross identities.
 
@@ -80,13 +85,39 @@ The mobile client presents, but does not reproduce, the 05A state machine:
   request, and retry after withdrawal or rejection; a current canonical photo
   is required by the database before a new request is created;
 - a current accepted participant may leave;
-- ordinary leave or creator removal remains historical and does not create a
+- ordinary leave or manager removal remains historical and does not create a
   permanent client-side ban;
-- a creator may accept/reject pending requests and remove current members;
-- creators are organizers through ownership and are filtered from membership
-  rows.
+- a current Project manager may accept/reject pending requests and remove other
+  current members, but must leave their own independent membership through the
+  ordinary participant action;
+- creators are organizers through ownership, while an active delegate may also
+  independently be a requester or participant. Manager review keeps a real
+  self-membership row visible but omits its manager Remove action.
 
-04C3D2 routes both creator Accept entry points through one action-local triage
+05E adds one canonical total-people capacity without changing those role
+relationships. The original Creator counts once, each current membership
+counts once, and delegated authority by itself does not count. Public detail
+suppresses the join action when its aggregate is Full. Manager review keeps
+pending requests visible and Reject available, but disables Accept while full;
+a stale enabled action still maps the server's `PT409` to specific safe copy.
+Leaving or removal releases a spot through the existing membership end state,
+and refresh reloads canonical occupancy. No client counter or waitlist exists.
+
+Ownership, delegation, and participation are separate relationships. Leaving
+participation does not revoke delegation, and revoking delegation does not end
+or remove participation. Project detail therefore composes Manage project with
+the delegate's ordinary request/current-membership actions after both canonical
+reads resolve; owners remain management-only because owners cannot participate.
+
+07C1A now creates a permanent private requester/organizer chat anchor inside each
+request transaction. The optional join note remains structured request data;
+later human messages are a separate immutable feed, writable only while that
+exact request is pending and read-only after accept/reject/withdraw. Acceptance
+may expose the separate Project group chat, but does not merge the two histories.
+This feature continues to own request creation and resolution; 07C1B owns the
+mobile request-conversation presentation and live refresh.
+
+04C3D2 routes both manager Accept entry points through one action-local triage
 sheet. The sheet reads only the tapped request, requires an explicit needed,
 already-found, or extra decision for every offered item, and always calls the
 D1 eight-argument overload. Zero-offer requests use the same contract with six
@@ -138,14 +169,14 @@ refresh signal. Chat controllers then re-read canonical entitlement and never
 predict membership or chat visibility from a client command result.
 
 Protected operational meeting information is fetched only for the current
-creator or a current accepted participant. It is held only in the
+Project manager or a current accepted participant. It is held only in the
 identity-bound project controller, cleared on sign-out/account change/leave,
 and never copied into public Proposal or Tavolo models, logs, or monitoring
 context.
 
 Current membership commitments are resolved by membership episode rather than
 Project alone. Group info uses the current episode for a current/rejoined
-participant and the latest ended episode for a former participant. Creator
+participant and the latest ended episode for a former participant. Manager
 member cards carry the canonical membership ID and load commitment data only
 after their action is tapped, avoiding per-row fan-out. Ended memberships call
 only the current/final commitment read; current memberships keep that read
@@ -166,7 +197,7 @@ immutable history and are not replaced by this membership state.
 Actual contributions are shown only for one-time Projects. A participant opens
 them from Project chat → Group info and receives one read-only action or a
 newest-first episode list when they rejoined; opening one episode performs only
-that membership read. A creator opens the same sheet from Manage participation
+that membership read. A manager opens the same sheet from Manage participation
 on the exact current or historical member card. Member lists and episode lists
 never fan out attribution reads.
 
@@ -181,13 +212,15 @@ while identity changes clear state and reject late responses.
 
 ## Routes
 
-Participation stays in the Browse branch:
+Participation and Project management stay in the Browse branch:
 
 ```text
 /proposals/:id/join
 /proposals/:id/participants
+/proposals/:id/manage
 /tavoli/:id/join
 /tavoli/:id/participants
+/tavoli/:id/manage
 ```
 
 These routes require authentication and a complete profile. Email OTP keeps
@@ -195,9 +228,8 @@ the exact safe internal `returnTo`; incomplete profile setup carries the same
 destination in `/profile/edit?returnTo=...` and resumes it after a successful
 save. The persistent bottom navigation remains Profile / Browse / Home.
 
-Notification delivery, standalone Scambio-Dona, capacity/fullness,
-participation roles, invitations, central participation history, delegated or
-co-organizer commitment management, contribution verification, badges, maps,
+Notification delivery, standalone Scambio-Dona, central participation
+history, contribution verification, badges, maps,
 and final unified Progetti discovery remain deferred.
 
 ## Deferred native QA notes

@@ -18,3 +18,16 @@ String sanitizeReturnDestination(String? candidate) {
 
   return uri.toString();
 }
+
+String profileEditCancelDestination(String? continueTo) {
+  final sanitized = sanitizeReturnDestination(continueTo);
+  final segments = Uri.parse(sanitized).pathSegments;
+  final isJoinIntent =
+      segments.length == 3 &&
+      (segments.first == 'proposals' || segments.first == 'tavoli') &&
+      segments.last == 'join';
+  if (isJoinIntent) {
+    return '/${Uri(pathSegments: segments.take(2)).path}';
+  }
+  return '/profile';
+}

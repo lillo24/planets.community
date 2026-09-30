@@ -137,7 +137,8 @@ class _ProjectNeedsSheetState extends ConsumerState<ProjectNeedsSheet> {
                       ),
                     ),
                   _NeededNowSection(state: state),
-                  if (state.viewerRole == ProjectChatViewerRole.creator &&
+                  if ((state.viewerRole == ProjectChatViewerRole.creator ||
+                          state.viewerRole == ProjectChatViewerRole.delegate) &&
                       state.manuallyCoveredRequirements.isNotEmpty) ...[
                     const SizedBox(height: AppSpacing.large),
                     _ManualCoverageSection(state: state),
@@ -245,7 +246,9 @@ class _RequirementTile extends ConsumerWidget {
       ProjectRequirementImportance.useful => l10n.projectNeedsUseful,
       null => null,
     };
-    final actionLabel = state.viewerRole == ProjectChatViewerRole.creator
+    final actionLabel =
+        (state.viewerRole == ProjectChatViewerRole.creator ||
+            state.viewerRole == ProjectChatViewerRole.delegate)
         ? l10n.projectNeedsFoundOutsideAction
         : requirement.kind == ProjectRequirementKind.skill
         ? l10n.projectNeedsCanHelp
@@ -279,7 +282,10 @@ class _RequirementTile extends ConsumerWidget {
                     state.actionTarget != null ||
                         state.coveragePhase != ProjectNeedsPhase.ready
                     ? null
-                    : () => state.viewerRole == ProjectChatViewerRole.creator
+                    : () =>
+                          (state.viewerRole == ProjectChatViewerRole.creator ||
+                              state.viewerRole ==
+                                  ProjectChatViewerRole.delegate)
                           ? ref
                                 .read(projectNeedsProvider.notifier)
                                 .setManualCoverage(requirement, true)

@@ -9,6 +9,7 @@ import 'package:planets_mobile/features/participation/application/participation_
 import 'package:planets_mobile/features/participation/data/participation_gateway.dart';
 import 'package:planets_mobile/features/participation/domain/participation_models.dart';
 import 'package:planets_mobile/features/project_chat/application/project_chat_refresh.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../support/fake_auth.dart';
 import '../../../support/fake_participation.dart';
@@ -273,7 +274,7 @@ void main() {
   );
 
   test(
-    'creator review sorts pending first and excludes creator membership',
+    'manager review sorts pending first and retains manager membership',
     () async {
       final gateway = FakeParticipationGateway()
         ..creatorRequests = [
@@ -303,7 +304,10 @@ void main() {
           .load('user-1', 'proposal-1');
       final state = session.container.read(creatorParticipationProvider);
       expect(state.requests.map((item) => item.id), ['pending', 'resolved']);
-      expect(state.members.map((item) => item.id), ['participant-row']);
+      expect(state.members.map((item) => item.id), [
+        'creator-row',
+        'participant-row',
+      ]);
     },
   );
 
@@ -319,7 +323,7 @@ void main() {
     await controller.load('user-1', 'proposal-1');
     expect(
       await controller.reject(
-        expectedCreatorId: 'user-1',
+        expectedManagerId: 'user-1',
         projectId: 'proposal-1',
         requestId: 'reject-me',
         requesterProfileId: 'user-2',
@@ -332,7 +336,7 @@ void main() {
     final membershipId = gateway.creatorMembers.single.id;
     expect(
       await controller.remove(
-        expectedCreatorId: 'user-1',
+        expectedManagerId: 'user-1',
         projectId: 'proposal-1',
         membershipId: membershipId,
         participantProfileId: 'user-2',
@@ -372,6 +376,39 @@ void main() {
     expect(
       session.container.read(participantMeetingDetailsProvider).details,
       isNull,
+    );
+  });
+
+  test('PT409 maps to the specific full-state failure', () {
+    expect(
+      mapParticipationFailure(
+        const PostgrestException(
+          message: 'private capacity conflict',
+          code: 'PT409',
+        ),
+      ),
+      ParticipationFailureKind.full,
+    );
+  });
+
+  test('privacy-safe blocked PT409 stays distinct from capacity fullness', () {
+    expect(
+      mapParticipationFailure(
+        const PostgrestException(
+          message: 'This interaction is unavailable.',
+          code: 'PT409',
+        ),
+      ),
+      ParticipationFailureKind.interactionUnavailable,
+    );
+    expect(
+      mapParticipationFailure(
+        const PostgrestException(
+          message: 'This Project is full.',
+          code: 'PT409',
+        ),
+      ),
+      ParticipationFailureKind.full,
     );
   });
 }

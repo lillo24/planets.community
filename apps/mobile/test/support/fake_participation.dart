@@ -1,11 +1,13 @@
 import 'package:planets_mobile/features/participation/data/participation_gateway.dart';
 import 'package:planets_mobile/features/participation/domain/participation_models.dart';
+import 'package:planets_mobile/features/participation/domain/project_capacity.dart';
 
 class FakeParticipationGateway implements ParticipationGateway {
   List<OwnProjectJoinRequest> ownRequests = [];
   List<OwnProjectMembership> ownMemberships = [];
-  List<CreatorProjectJoinRequest> creatorRequests = [];
-  List<CreatorProjectMember> creatorMembers = [];
+  List<ManagerProjectJoinRequest> creatorRequests = [];
+  List<ManagerProjectMember> creatorMembers = [];
+  ProjectCapacitySnapshot capacity = capacityFixture();
   ParticipantMeetingDetails? meetingDetails;
   Object? error;
   Future<void>? mutationDelay;
@@ -101,12 +103,12 @@ class FakeParticipationGateway implements ParticipationGateway {
   }
 
   @override
-  Future<List<CreatorProjectJoinRequest>> listProjectJoinRequests({
-    required String expectedCreatorProfileId,
+  Future<List<ManagerProjectJoinRequest>> listProjectJoinRequests({
+    required String expectedManagerProfileId,
     required String projectId,
   }) async {
     calls.add('list-creator-requests:$projectId');
-    lastExpectedIdentity = expectedCreatorProfileId;
+    lastExpectedIdentity = expectedManagerProfileId;
     lastProjectId = projectId;
     if (creatorLoadDelay case final delay?) await delay;
     _throwIfNeeded();
@@ -114,12 +116,12 @@ class FakeParticipationGateway implements ParticipationGateway {
   }
 
   @override
-  Future<List<CreatorProjectMember>> listProjectMembers({
-    required String expectedCreatorProfileId,
+  Future<List<ManagerProjectMember>> listProjectMembers({
+    required String expectedManagerProfileId,
     required String projectId,
   }) async {
     calls.add('list-creator-members:$projectId');
-    lastExpectedIdentity = expectedCreatorProfileId;
+    lastExpectedIdentity = expectedManagerProfileId;
     lastProjectId = projectId;
     if (creatorLoadDelay case final delay?) await delay;
     _throwIfNeeded();
@@ -127,12 +129,25 @@ class FakeParticipationGateway implements ParticipationGateway {
   }
 
   @override
+  Future<ProjectCapacitySnapshot> getProjectCapacityForManager({
+    required String expectedManagerProfileId,
+    required String projectId,
+  }) async {
+    calls.add('capacity:$projectId');
+    lastExpectedIdentity = expectedManagerProfileId;
+    lastProjectId = projectId;
+    if (creatorLoadDelay case final delay?) await delay;
+    _throwIfNeeded();
+    return capacity;
+  }
+
+  @override
   Future<void> rejectRequest({
-    required String expectedCreatorProfileId,
+    required String expectedManagerProfileId,
     required String requestId,
   }) async {
     calls.add('reject:$requestId');
-    lastExpectedIdentity = expectedCreatorProfileId;
+    lastExpectedIdentity = expectedManagerProfileId;
     if (mutationDelay case final delay?) await delay;
     _throwIfNeeded();
     creatorRequests = [
@@ -176,11 +191,11 @@ class FakeParticipationGateway implements ParticipationGateway {
 
   @override
   Future<void> removeMember({
-    required String expectedCreatorProfileId,
+    required String expectedManagerProfileId,
     required String membershipId,
   }) async {
     calls.add('remove:$membershipId');
-    lastExpectedIdentity = expectedCreatorProfileId;
+    lastExpectedIdentity = expectedManagerProfileId;
     if (mutationDelay case final delay?) await delay;
     _throwIfNeeded();
     creatorMembers = [
@@ -259,14 +274,14 @@ OwnProjectMembership ownMembershipFixture({
       : null,
 );
 
-CreatorProjectJoinRequest creatorJoinRequestFixture({
+ManagerProjectJoinRequest creatorJoinRequestFixture({
   String id = 'request-1',
   String requesterProfileId = 'user-2',
   String requesterDisplayName = 'Jordan',
   JoinRequestStatus status = JoinRequestStatus.pending,
   String? message = 'I can bring paint brushes.',
   DateTime? createdAt,
-}) => CreatorProjectJoinRequest(
+}) => ManagerProjectJoinRequest(
   id: id,
   requesterProfileId: requesterProfileId,
   requesterDisplayName: requesterDisplayName,
@@ -279,14 +294,14 @@ CreatorProjectJoinRequest creatorJoinRequestFixture({
   resolvedByProfileId: status == JoinRequestStatus.pending ? null : 'user-1',
 );
 
-CreatorProjectMember creatorMemberFixture({
+ManagerProjectMember creatorMemberFixture({
   String id = 'membership-1',
   String participantProfileId = 'user-2',
   String participantDisplayName = 'Jordan',
   String originatingRequestId = 'request-1',
   MembershipStatus status = MembershipStatus.current,
   DateTime? joinedAt,
-}) => CreatorProjectMember(
+}) => ManagerProjectMember(
   id: id,
   participantProfileId: participantProfileId,
   participantDisplayName: participantDisplayName,
@@ -309,3 +324,20 @@ ParticipantMeetingDetails meetingDetailsFixture({
   exactMeetingText: 'Meet beside the blue workshop door.',
   exactLocation: null,
 );
+
+ProjectCapacitySnapshot capacityFixture({
+  int? peopleCapacity = 20,
+  int currentParticipantCount = 0,
+}) {
+  final people = currentParticipantCount + 1;
+  final remaining = peopleCapacity == null
+      ? null
+      : (peopleCapacity > people ? peopleCapacity - people : 0);
+  return ProjectCapacitySnapshot(
+    peopleCapacity: peopleCapacity,
+    currentParticipantCount: currentParticipantCount,
+    currentPeopleCount: people,
+    spotsRemaining: remaining,
+    isFull: peopleCapacity != null && people >= peopleCapacity,
+  );
+}

@@ -19,11 +19,20 @@ avatar on their Profile screen without coupling those actions to the ordinary
 profile Save operation. Photo mutations do not reconstruct this form, so
 unsaved name, bio, skill, and field-visibility edits remain intact.
 
+Setup and edit use the shared `core/widgets/tag_multi_select.dart` control. Its
+closed state shows removable selected tags without expanding the catalog; the
+bounded bottom sheet groups the canonical catalog, searches labels, reports a
+selection count, and updates only local form state. Save remains the sole
+network boundary and submits the exact complete selected-ID set atomically.
+
 Setup and edit share one canonical Save handler. Its AppBar action remains
 visible while scrolling, disables during requests and shows save progress.
 Safe save failures appear above the scrollable fields as a live-region message;
 validation still blocks invalid required names before any gateway call. A
 successful save/reload marks the current identity ready and returns to Profile.
+When setup was entered through a guarded Proposal/Tavolo Join route, Save keeps
+that Join continuation while AppBar/system Back cancel to the public parent
+detail. Both destinations are derived from sanitized internal routes.
 Switching tabs preserves the unsaved form; changing identity clears both the
 retained form and controller state. Late load/save completions cannot publish
 old data or mark a previous session ready, even after signing back in as the same ID.

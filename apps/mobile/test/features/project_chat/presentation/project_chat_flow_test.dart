@@ -1,9 +1,14 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:planets_mobile/app/planets_app.dart';
 import 'package:planets_mobile/app/router/app_router.dart';
 import 'package:planets_mobile/core/config/app_config.dart';
+import 'package:planets_mobile/core/theme/app_tokens.dart';
+import 'package:planets_mobile/core/widgets/error_state.dart';
+import 'package:planets_mobile/core/widgets/loading_state.dart';
 import 'package:planets_mobile/features/auth/data/auth_gateway.dart';
 import 'package:planets_mobile/features/auth/domain/auth_models.dart';
 import 'package:planets_mobile/features/messages/data/messages_gateway.dart';
@@ -37,6 +42,52 @@ import '../../../support/fake_recurring_activity.dart';
 import '../../../support/fake_resource_chat.dart';
 
 void main() {
+  testWidgets('Project chat idle and loading render loading', (tester) async {
+    final pending = Completer<void>();
+    final chats = FakeProjectChatGateway()
+      ..summaries = [projectChatSummaryFixture()]
+      ..histories['chat-1'] = []
+      ..historyDelay = pending.future;
+    final app = await _pump(tester, chats: chats);
+
+    app.read(appRouterProvider).go('/messages/chats/chat-1');
+    await tester.pump();
+    expect(find.byType(LoadingState), findsOneWidget);
+    expect(find.byType(ErrorState), findsNothing);
+
+    await tester.pump();
+    expect(find.byType(LoadingState), findsOneWidget);
+    expect(find.byType(ErrorState), findsNothing);
+
+    pending.complete();
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('project-chat-composer')), findsOneWidget);
+  });
+
+  testWidgets('Project chat info idle and loading render loading', (
+    tester,
+  ) async {
+    final pending = Completer<void>();
+    final chats = FakeProjectChatGateway()
+      ..summaries = [projectChatSummaryFixture()]
+      ..histories['chat-1'] = []
+      ..historyDelay = pending.future;
+    final app = await _pump(tester, chats: chats);
+
+    app.read(appRouterProvider).go('/messages/chats/chat-1/info');
+    await tester.pump();
+    expect(find.byType(LoadingState), findsOneWidget);
+    expect(find.byType(ErrorState), findsNothing);
+
+    await tester.pump();
+    expect(find.byType(LoadingState), findsOneWidget);
+    expect(find.byType(ErrorState), findsNothing);
+
+    pending.complete();
+    await tester.pumpAndSettle();
+    expect(find.text('Paint the square'), findsOneWidget);
+  });
+
   testWidgets('Messages defaults to chat previews without unread state', (
     tester,
   ) async {
@@ -58,6 +109,8 @@ void main() {
 
     expect(find.text('Chats'), findsOneWidget);
     expect(find.text('Requests'), findsOneWidget);
+    await tester.tap(find.text('Groups'));
+    await tester.pumpAndSettle();
     expect(find.text('Jordan: Bring a small brush.'), findsOneWidget);
     expect(find.text('No messages yet'), findsOneWidget);
     expect(find.text('Read-only'), findsOneWidget);
@@ -191,6 +244,104 @@ void main() {
       findsOneWidget,
     );
     expect(find.text('Jordan'), findsOneWidget);
+  });
+
+  testWidgets('Project chat applies explicit bubble and system-card spacing', (
+    tester,
+  ) async {
+    final chats = FakeProjectChatGateway()
+      ..summaries = [projectChatSummaryFixture()]
+      ..histories['chat-1'] = [
+        projectChatMessageFixture(
+          messageId: 'message-1',
+          body: 'First message',
+          createdAt: DateTime.utc(2026, 9, 14, 9),
+        ),
+        projectChatMessageFixture(
+          messageId: 'message-2',
+          body: 'Second message',
+          createdAt: DateTime.utc(2026, 9, 14, 10),
+        ),
+        projectChatSystemEventFixture(
+          eventId: 'event-1',
+          createdAt: DateTime.utc(2026, 9, 14, 11),
+        ),
+      ];
+    final app = await _pump(tester, chats: chats);
+    app.read(appRouterProvider).go('/messages/chats/chat-1');
+    await tester.pumpAndSettle();
+
+    final entries = <({Rect rect, bool isSystem})>[
+      (
+        rect: tester.getRect(
+          find.byKey(const Key('project-chat-message-message-1')),
+        ),
+        isSystem: false,
+      ),
+      (
+        rect: tester.getRect(
+          find.byKey(const Key('project-chat-message-message-2')),
+        ),
+        isSystem: false,
+      ),
+      (
+        rect: tester.getRect(
+          find.byKey(const Key('project-chat-system-event-1')),
+        ),
+        isSystem: true,
+      ),
+    ]..sort((left, right) => left.rect.top.compareTo(right.rect.top));
+
+    for (var index = 1; index < entries.length; index += 1) {
+      final previous = entries[index - 1];
+      final current = entries[index];
+      final minimumGap = previous.isSystem || current.isSystem
+          ? AppSpacing.small + AppSpacing.xSmall
+          : AppSpacing.small;
+      expect(
+        current.rect.top - previous.rect.bottom,
+        greaterThanOrEqualTo(minimumGap),
+      );
+    }
+  });
+
+  testWidgets('Project chat wraps long messages on a narrow large-text phone', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(320, 900));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    tester.platformDispatcher.textScaleFactorTestValue = 2;
+    addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+    final chats = FakeProjectChatGateway()
+      ..summaries = [projectChatSummaryFixture()]
+      ..histories['chat-1'] = [
+        projectChatMessageFixture(
+          messageId: 'message-long-1',
+          body: List.filled(14, 'coordination').join(' '),
+          createdAt: DateTime.utc(2026, 9, 14, 9),
+        ),
+        projectChatMessageFixture(
+          messageId: 'message-long-2',
+          body: List.filled(14, 'materials').join(' '),
+          createdAt: DateTime.utc(2026, 9, 14, 10),
+        ),
+      ];
+    final app = await _pump(tester, chats: chats);
+    app.read(appRouterProvider).go('/messages/chats/chat-1');
+    await tester.pumpAndSettle();
+
+    final composer = tester.getRect(
+      find.byKey(const Key('project-chat-composer')),
+    );
+    final visibleMessages = [
+      find.byKey(const Key('project-chat-message-message-long-1')),
+      find.byKey(const Key('project-chat-message-message-long-2')),
+    ].where((finder) => finder.evaluate().isNotEmpty);
+    expect(visibleMessages, isNotEmpty);
+    for (final message in visibleMessages) {
+      expect(tester.getRect(message).bottom, lessThanOrEqualTo(composer.top));
+    }
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets('participant opens grouped Needs drawer and claims a need', (
@@ -844,6 +995,21 @@ void main() {
       router.routeInformationProvider.value.uri.path,
       '/proposals/proposal-1/participants',
     );
+  });
+
+  testWidgets('delegate group info is labeled Co-organizer', (tester) async {
+    final chats = FakeProjectChatGateway()
+      ..summaries = [
+        projectChatSummaryFixture(viewerRole: ProjectChatViewerRole.delegate),
+      ]
+      ..histories['chat-1'] = [];
+    final app = await _pump(tester, chats: chats);
+    app.read(appRouterProvider).go('/messages/chats/chat-1/info');
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('project-chat-viewer-role')), findsOneWidget);
+    expect(find.text('Co-organizer'), findsOneWidget);
+    expect(find.text('Organizer'), findsNothing);
   });
 
   testWidgets('identity swap reconstructs the protected chat branch', (

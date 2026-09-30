@@ -8,6 +8,9 @@ import '../../auth/domain/auth_models.dart';
 import '../../project_chat/application/project_chat_refresh.dart';
 import '../../project_chat/data/project_chat_gateway.dart';
 import '../../project_chat/domain/project_chat_models.dart';
+import '../../project_request_chat/data/project_request_chat_gateway.dart';
+import '../../project_request_chat/domain/project_request_chat_models.dart'
+    as request_chat;
 import '../../resource_chat/data/resource_chat_gateway.dart';
 import '../../resource_chat/domain/resource_chat_models.dart';
 import '../data/message_chats_gateway.dart';
@@ -43,8 +46,13 @@ class MessageChatsState {
 }
 
 class MessageChatsController extends Notifier<MessageChatsState> {
+  MessageChatsController(this.scope);
+
+  final MessageChatScope scope;
   final Map<String, ProjectChatSignalSubscription> _projectSubscriptions = {};
   final Map<String, ResourceChatSignalSubscription> _resourceSubscriptions = {};
+  final Map<String, ProjectRequestChatSignalSubscription>
+  _projectRequestSubscriptions = {};
   final Set<String> _disconnectedChats = {};
   Timer? _refreshTimer;
   var _revision = 0;
@@ -92,6 +100,7 @@ class MessageChatsController extends Notifier<MessageChatsState> {
           .read(messageChatsGatewayProvider)
           .listItems(
             expectedProfileId: expectedProfileId,
+            scope: scope,
             limit: messageChatsPageSize,
           );
       if (!_isCurrent(revision, expectedProfileId)) return false;
@@ -141,6 +150,7 @@ class MessageChatsController extends Notifier<MessageChatsState> {
           .read(messageChatsGatewayProvider)
           .listItems(
             expectedProfileId: expectedProfileId,
+            scope: scope,
             limit: messageChatsPageSize,
             cursor: MessageChatCursor(
               activityAt: last.activityAt,
@@ -223,8 +233,14 @@ class MessageChatsController extends Notifier<MessageChatsState> {
       for (final item in state.items)
         if (item case ResourceMessageChatItem(isReadOnly: false)) item.chatId,
     };
+    final desiredProjectRequests = {
+      for (final item in state.items)
+        if (item case ProjectRequestMessageChatItem(isReadOnly: false))
+          item.chatId,
+    };
     _closeStaleProjectSubscriptions(desiredProjects);
     _closeStaleResourceSubscriptions(desiredResources);
+    _closeStaleProjectRequestSubscriptions(desiredProjectRequests);
     for (final chatId in desiredProjects) {
       if (_projectSubscriptions.containsKey(chatId)) continue;
       try {
@@ -265,6 +281,27 @@ class MessageChatsController extends Notifier<MessageChatsState> {
         _setDisconnected(MessageChatItemKind.resourceChat, chatId, true);
       }
     }
+    for (final chatId in desiredProjectRequests) {
+      if (_projectRequestSubscriptions.containsKey(chatId)) continue;
+      try {
+        _projectRequestSubscriptions[chatId] = ref
+            .read(projectRequestChatGatewayProvider)
+            .subscribeToSignals(
+              expectedProfileId: expectedProfileId,
+              chatId: chatId,
+              onSignal: (_) => _scheduleRefresh(expectedProfileId),
+              onStatus: (status) => _handleStatus(
+                expectedProfileId,
+                MessageChatItemKind.projectRequestChat,
+                chatId,
+                status ==
+                    request_chat.ProjectRequestChatConnectionStatus.connected,
+              ),
+            );
+      } catch (_) {
+        _setDisconnected(MessageChatItemKind.projectRequestChat, chatId, true);
+      }
+    }
   }
 
   void _closeStaleProjectSubscriptions(Set<String> desired) {
@@ -281,6 +318,17 @@ class MessageChatsController extends Notifier<MessageChatsState> {
       if (desired.contains(chatId)) continue;
       final subscription = _resourceSubscriptions.remove(chatId);
       _disconnectedChats.remove(_key(MessageChatItemKind.resourceChat, chatId));
+      if (subscription != null) unawaited(subscription.close());
+    }
+  }
+
+  void _closeStaleProjectRequestSubscriptions(Set<String> desired) {
+    for (final chatId in _projectRequestSubscriptions.keys.toList()) {
+      if (desired.contains(chatId)) continue;
+      final subscription = _projectRequestSubscriptions.remove(chatId);
+      _disconnectedChats.remove(
+        _key(MessageChatItemKind.projectRequestChat, chatId),
+      );
       if (subscription != null) unawaited(subscription.close());
     }
   }
@@ -350,8 +398,12 @@ class MessageChatsController extends Notifier<MessageChatsState> {
     for (final subscription in _resourceSubscriptions.values) {
       unawaited(subscription.close());
     }
+    for (final subscription in _projectRequestSubscriptions.values) {
+      unawaited(subscription.close());
+    }
     _projectSubscriptions.clear();
     _resourceSubscriptions.clear();
+    _projectRequestSubscriptions.clear();
     _disconnectedChats.clear();
   }
 
@@ -376,7 +428,12 @@ class MessageChatsController extends Notifier<MessageChatsState> {
 
 final messageChatsProvider =
     NotifierProvider<MessageChatsController, MessageChatsState>(
-      MessageChatsController.new,
+      () => MessageChatsController(MessageChatScope.private),
+    );
+
+final groupMessageChatsProvider =
+    NotifierProvider<MessageChatsController, MessageChatsState>(
+      () => MessageChatsController(MessageChatScope.groups),
     );
 
 MessageChatsFailureKind mapMessageChatsFailure(Object error) {

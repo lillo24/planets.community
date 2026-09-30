@@ -14,7 +14,7 @@ void main() {
     for (final rpc in const [
       'list_project_live_requirement_coverage',
       'claim_project_requirement',
-      'set_project_requirement_manual_coverage',
+      'set_project_requirement_manual_coverage_as_manager',
       'get_own_project_requirement_attention',
       'acknowledge_project_requirement_attention',
     ]) {

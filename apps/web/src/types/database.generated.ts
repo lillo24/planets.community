@@ -531,6 +531,209 @@ export type Database = {
           },
         ]
       }
+      project_delegate_invitations: {
+        Row: {
+          accepted_at: string | null
+          accepted_by_profile_id: string | null
+          created_at: string
+          expires_at: string
+          id: string
+          issuer_profile_id: string
+          owner_profile_id: string
+          project_id: string
+          requested_authority_role: string
+          revoked_at: string | null
+          revoked_by_profile_id: string | null
+          status: string
+          token_digest: string
+        }
+        Insert: {
+          accepted_at?: string | null
+          accepted_by_profile_id?: string | null
+          created_at?: string
+          expires_at: string
+          id?: string
+          issuer_profile_id: string
+          owner_profile_id: string
+          project_id: string
+          requested_authority_role?: string
+          revoked_at?: string | null
+          revoked_by_profile_id?: string | null
+          status?: string
+          token_digest: string
+        }
+        Update: {
+          accepted_at?: string | null
+          accepted_by_profile_id?: string | null
+          created_at?: string
+          expires_at?: string
+          id?: string
+          issuer_profile_id?: string
+          owner_profile_id?: string
+          project_id?: string
+          requested_authority_role?: string
+          revoked_at?: string | null
+          revoked_by_profile_id?: string | null
+          status?: string
+          token_digest?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_delegate_invitations_accepted_by_profile_id_fkey"
+            columns: ["accepted_by_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_delegate_invitations_issuer_profile_id_fkey"
+            columns: ["issuer_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_delegate_invitations_project_owner_fkey"
+            columns: ["project_id", "owner_profile_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id", "creator_profile_id"]
+          },
+          {
+            foreignKeyName: "project_delegate_invitations_revoked_by_profile_id_fkey"
+            columns: ["revoked_by_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      project_delegate_role_changes: {
+        Row: {
+          changed_at: string
+          changed_by_profile_id: string
+          delegate_id: string
+          delegate_profile_id: string
+          from_authority_role: string
+          id: string
+          project_id: string
+          to_authority_role: string
+        }
+        Insert: {
+          changed_at?: string
+          changed_by_profile_id: string
+          delegate_id: string
+          delegate_profile_id: string
+          from_authority_role: string
+          id?: string
+          project_id: string
+          to_authority_role: string
+        }
+        Update: {
+          changed_at?: string
+          changed_by_profile_id?: string
+          delegate_id?: string
+          delegate_profile_id?: string
+          from_authority_role?: string
+          id?: string
+          project_id?: string
+          to_authority_role?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_delegate_role_changes_changed_by_profile_id_fkey"
+            columns: ["changed_by_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_delegate_role_changes_delegate_identity_fkey"
+            columns: ["delegate_id", "project_id", "delegate_profile_id"]
+            isOneToOne: false
+            referencedRelation: "project_delegates"
+            referencedColumns: ["id", "project_id", "delegate_profile_id"]
+          },
+        ]
+      }
+      project_delegates: {
+        Row: {
+          authority_role: string
+          delegate_profile_id: string
+          delegated_at: string
+          granted_by_profile_id: string
+          id: string
+          initial_authority_role: string
+          invitation_id: string
+          owner_profile_id: string
+          project_id: string
+          revoked_at: string | null
+          revoked_by_profile_id: string | null
+        }
+        Insert: {
+          authority_role?: string
+          delegate_profile_id: string
+          delegated_at: string
+          granted_by_profile_id: string
+          id?: string
+          initial_authority_role?: string
+          invitation_id: string
+          owner_profile_id: string
+          project_id: string
+          revoked_at?: string | null
+          revoked_by_profile_id?: string | null
+        }
+        Update: {
+          authority_role?: string
+          delegate_profile_id?: string
+          delegated_at?: string
+          granted_by_profile_id?: string
+          id?: string
+          initial_authority_role?: string
+          invitation_id?: string
+          owner_profile_id?: string
+          project_id?: string
+          revoked_at?: string | null
+          revoked_by_profile_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_delegates_delegate_profile_id_fkey"
+            columns: ["delegate_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_delegates_granted_by_profile_id_fkey"
+            columns: ["granted_by_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_delegates_invitation_id_fkey"
+            columns: ["invitation_id"]
+            isOneToOne: true
+            referencedRelation: "project_delegate_invitations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_delegates_project_owner_fkey"
+            columns: ["project_id", "owner_profile_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id", "creator_profile_id"]
+          },
+          {
+            foreignKeyName: "project_delegates_revoked_by_profile_id_fkey"
+            columns: ["revoked_by_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       project_group_chats: {
         Row: {
           activated_at: string
@@ -556,6 +759,71 @@ export type Database = {
             columns: ["project_id"]
             isOneToOne: true
             referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      project_join_request_chat_messages: {
+        Row: {
+          body: string
+          chat_id: string
+          created_at: string
+          id: string
+          sender_profile_id: string
+        }
+        Insert: {
+          body: string
+          chat_id: string
+          created_at?: string
+          id?: string
+          sender_profile_id: string
+        }
+        Update: {
+          body?: string
+          chat_id?: string
+          created_at?: string
+          id?: string
+          sender_profile_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_join_request_chat_messages_chat_id_fkey"
+            columns: ["chat_id"]
+            isOneToOne: false
+            referencedRelation: "project_join_request_chats"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_join_request_chat_messages_sender_profile_id_fkey"
+            columns: ["sender_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      project_join_request_chats: {
+        Row: {
+          activated_at: string
+          id: string
+          request_id: string
+        }
+        Insert: {
+          activated_at: string
+          id?: string
+          request_id: string
+        }
+        Update: {
+          activated_at?: string
+          id?: string
+          request_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_join_request_chats_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: true
+            referencedRelation: "project_join_requests"
             referencedColumns: ["id"]
           },
         ]
@@ -1210,18 +1478,21 @@ export type Database = {
           created_at: string
           creator_profile_id: string
           id: string
+          people_capacity: number | null
           project_kind: string
         }
         Insert: {
           created_at: string
           creator_profile_id: string
           id: string
+          people_capacity?: number | null
           project_kind: string
         }
         Update: {
           created_at?: string
           creator_profile_id?: string
           id?: string
+          people_capacity?: number | null
           project_kind?: string
         }
         Relationships: [
@@ -2035,6 +2306,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      accept_project_delegate_invitation: {
+        Args: { p_expected_delegate_profile_id: string; p_token: string }
+        Returns: string
+      }
       accept_project_join_request:
         | {
             Args: {
@@ -2048,6 +2323,27 @@ export type Database = {
               p_already_found_resource_need_ids: string[]
               p_already_found_skill_ids: string[]
               p_expected_creator_profile_id: string
+              p_extra_resource_need_ids: string[]
+              p_extra_skill_ids: string[]
+              p_needed_resource_need_ids: string[]
+              p_needed_skill_ids: string[]
+              p_request_id: string
+            }
+            Returns: string
+          }
+      accept_project_join_request_as_manager:
+        | {
+            Args: {
+              p_expected_manager_profile_id: string
+              p_request_id: string
+            }
+            Returns: string
+          }
+        | {
+            Args: {
+              p_already_found_resource_need_ids: string[]
+              p_already_found_skill_ids: string[]
+              p_expected_manager_profile_id: string
               p_extra_resource_need_ids: string[]
               p_extra_skill_ids: string[]
               p_needed_resource_need_ids: string[]
@@ -2076,14 +2372,6 @@ export type Database = {
         }
         Returns: string
       }
-      can_manage_cover_image_object: {
-        Args: { p_object_path: string }
-        Returns: boolean
-      }
-      can_read_public_cover_image_object: {
-        Args: { p_object_path: string }
-        Returns: boolean
-      }
       add_moderation_case_note: {
         Args: {
           p_body: string
@@ -2101,6 +2389,14 @@ export type Database = {
           p_expected_blocker_profile_id: string
         }
         Returns: string
+      }
+      can_manage_cover_image_object: {
+        Args: { p_object_path: string }
+        Returns: boolean
+      }
+      can_read_public_cover_image_object: {
+        Args: { p_object_path: string }
+        Returns: boolean
       }
       can_read_public_project_creator_photo_object: {
         Args: { p_object_path: string }
@@ -2120,6 +2416,14 @@ export type Database = {
       }
       cancel_resource_exchange_agreement: {
         Args: { p_agreement_id: string; p_expected_profile_id: string }
+        Returns: string
+      }
+      change_project_delegate_role: {
+        Args: {
+          p_authority_role: string
+          p_delegate_id: string
+          p_expected_structural_profile_id: string
+        }
         Returns: string
       }
       check_resource_exchange_pending_loan_availability: {
@@ -2165,6 +2469,27 @@ export type Database = {
         Args: { p_expected_owner_profile_id: string; p_listing_id: string }
         Returns: string
       }
+      create_project_delegate_invitation:
+        | {
+            Args: { p_expected_owner_profile_id: string; p_project_id: string }
+            Returns: {
+              expires_at: string
+              invitation_id: string
+              invite_token: string
+            }[]
+          }
+        | {
+            Args: {
+              p_expected_owner_profile_id: string
+              p_project_id: string
+              p_requested_authority_role: string
+            }
+            Returns: {
+              expires_at: string
+              invitation_id: string
+              invite_token: string
+            }[]
+          }
       create_project_resource_need: {
         Args: {
           p_details?: string
@@ -2174,49 +2499,96 @@ export type Database = {
         }
         Returns: string
       }
-      create_proposal_draft: {
-        Args: {
-          p_administrative_area: string
-          p_country_code: string
-          p_description: string
-          p_ends_at: string
-          p_event_timezone: string
-          p_exact_location_visibility: string
-          p_exact_meeting_text: string
-          p_expected_creator_profile_id: string
-          p_locality: string
-          p_public_location_label: string
-          p_skill_ids: string[]
-          p_skill_importances: string[]
-          p_starts_at: string
-          p_summary: string
-          p_title: string
-        }
-        Returns: string
-      }
-      create_recurring_activity_draft: {
-        Args: {
-          p_administrative_area: string
-          p_country_code: string
-          p_day_of_month: number
-          p_description: string
-          p_duration_minutes: number
-          p_effective_from: string
-          p_event_timezone: string
-          p_exact_location_visibility: string
-          p_exact_meeting_text: string
-          p_expected_creator_profile_id: string
-          p_local_start_time: string
-          p_locality: string
-          p_public_location_label: string
-          p_recurrence_type: string
-          p_summary: string
-          p_title: string
-          p_topic: string
-          p_weekday: number
-        }
-        Returns: string
-      }
+      create_proposal_draft:
+        | {
+            Args: {
+              p_administrative_area: string
+              p_country_code: string
+              p_description: string
+              p_ends_at: string
+              p_event_timezone: string
+              p_exact_location_visibility: string
+              p_exact_meeting_text: string
+              p_expected_creator_profile_id: string
+              p_locality: string
+              p_public_location_label: string
+              p_skill_ids: string[]
+              p_skill_importances: string[]
+              p_starts_at: string
+              p_summary: string
+              p_title: string
+            }
+            Returns: string
+          }
+        | {
+            Args: {
+              p_administrative_area: string
+              p_country_code: string
+              p_description: string
+              p_ends_at: string
+              p_event_timezone: string
+              p_exact_location_visibility: string
+              p_exact_meeting_text: string
+              p_expected_creator_profile_id: string
+              p_locality: string
+              p_people_capacity: number
+              p_public_location_label: string
+              p_skill_ids: string[]
+              p_skill_importances: string[]
+              p_starts_at: string
+              p_summary: string
+              p_title: string
+            }
+            Returns: string
+          }
+      create_recurring_activity_draft:
+        | {
+            Args: {
+              p_administrative_area: string
+              p_country_code: string
+              p_day_of_month: number
+              p_description: string
+              p_duration_minutes: number
+              p_effective_from: string
+              p_event_timezone: string
+              p_exact_location_visibility: string
+              p_exact_meeting_text: string
+              p_expected_creator_profile_id: string
+              p_local_start_time: string
+              p_locality: string
+              p_public_location_label: string
+              p_recurrence_type: string
+              p_summary: string
+              p_title: string
+              p_topic: string
+              p_weekday: number
+            }
+            Returns: string
+          }
+        | {
+            Args: {
+              p_administrative_area: string
+              p_country_code: string
+              p_day_of_month: number
+              p_description: string
+              p_duration_minutes: number
+              p_effective_from: string
+              p_event_timezone: string
+              p_exact_location_visibility: string
+              p_exact_meeting_text: string
+              p_expected_creator_profile_id: string
+              p_local_start_time: string
+              p_locality: string
+              p_people_capacity: number
+              p_public_location_label: string
+              p_recurrence_type: string
+              p_summary: string
+              p_title: string
+              p_topic: string
+              p_weekday: number
+            }
+            Returns: string
+          }
       create_resource_listing_draft: {
         Args: {
           p_administrative_area: string
@@ -2383,6 +2755,33 @@ export type Database = {
           project_kind: string
           viewer_role: string
         }[]
+      }
+      get_own_project_join_request_chat: {
+        Args: { p_expected_profile_id: string; p_request_id: string }
+        Returns: {
+          accepted_project_group_chat_id: string
+          activated_at: string
+          chat_id: string
+          creator_display_name: string
+          creator_profile_id: string
+          has_send_entitlement: boolean
+          is_read_only: boolean
+          project_id: string
+          project_kind: string
+          project_title: string
+          request_created_at: string
+          request_id: string
+          request_message: string
+          request_status: string
+          requester_display_name: string
+          requester_profile_id: string
+          resolved_at: string
+          viewer_role: string
+        }[]
+      }
+      get_own_project_management_role: {
+        Args: { p_expected_profile_id: string; p_project_id: string }
+        Returns: string
       }
       get_own_project_requirement_attention: {
         Args: { p_expected_profile_id: string; p_project_id: string }
@@ -2575,6 +2974,17 @@ export type Database = {
           updated_at: string
         }[]
       }
+      get_project_capacity_for_manager: {
+        Args: { p_expected_manager_profile_id: string; p_project_id: string }
+        Returns: {
+          current_participant_count: number
+          current_people_count: number
+          is_full: boolean
+          people_capacity: number
+          project_id: string
+          spots_remaining: number
+        }[]
+      }
       get_project_creator_profile_photo_for_viewer: {
         Args: { p_project_id: string }
         Returns: {
@@ -2765,6 +3175,17 @@ export type Database = {
           blocked_profile_id: string
         }[]
       }
+      list_own_delegated_projects: {
+        Args: { p_expected_profile_id: string }
+        Returns: {
+          authority_role: string
+          delegated_at: string
+          project_id: string
+          project_kind: string
+          project_status: string
+          project_title: string
+        }[]
+      }
       list_own_group_corroboration_requests: {
         Args: {
           p_before_created_at?: string
@@ -2924,6 +3345,7 @@ export type Database = {
         Args: {
           p_expected_requester_profile_id: string
           p_locality?: string
+          p_query?: string
           p_skill_ids?: string[]
         }
         Returns: {
@@ -3035,6 +3457,34 @@ export type Database = {
           project_kind: string
           project_title: string
           viewer_role: string
+        }[]
+      }
+      list_own_project_join_request_chat_items: {
+        Args: {
+          p_before_created_at?: string
+          p_before_item_id?: string
+          p_before_item_kind?: string
+          p_chat_id: string
+          p_expected_profile_id: string
+          p_limit: number
+        }
+        Returns: {
+          body: string
+          chat_id: string
+          created_at: string
+          item_id: string
+          item_kind: string
+          message_id: string
+          project_id: string
+          project_kind: string
+          project_title: string
+          request_id: string
+          request_message: string
+          request_status: string
+          requester_display_name: string
+          requester_profile_id: string
+          sender_display_name: string
+          sender_profile_id: string
         }[]
       }
       list_own_project_join_request_contribution_selections: {
@@ -3253,6 +3703,46 @@ export type Database = {
           updated_at: string
         }[]
       }
+      list_own_scoped_message_chat_items: {
+        Args: {
+          p_cursor_activity_at?: string
+          p_cursor_chat_id?: string
+          p_cursor_item_kind?: string
+          p_expected_profile_id: string
+          p_limit: number
+          p_scope: string
+        }
+        Returns: {
+          accepted_project_group_chat_id: string
+          activity_at: string
+          agreement_lifecycle: string
+          chat_id: string
+          coordination_closed_at: string
+          display_title: string
+          is_read_only: boolean
+          item_kind: string
+          last_visible_message_at: string
+          last_visible_message_body: string
+          last_visible_message_id: string
+          last_visible_sender_display_name: string
+          last_visible_sender_profile_id: string
+          project_id: string
+          project_kind: string
+          project_request_counterparty_display_name: string
+          project_request_counterparty_profile_id: string
+          project_request_id: string
+          project_request_message: string
+          project_request_project_id: string
+          project_request_project_kind: string
+          project_request_project_title: string
+          project_request_resolved_at: string
+          project_request_status: string
+          resource_agreement_id: string
+          resource_listing_id: string
+          resource_request_id: string
+          viewer_role: string
+        }[]
+      }
       list_own_structured_request_message_items: {
         Args: {
           p_cursor_activity_at?: string
@@ -3312,8 +3802,58 @@ export type Database = {
           updated_at: string
         }[]
       }
+      list_project_capacity_statuses_for_structural_actor: {
+        Args: { p_expected_profile_id: string; p_project_ids: string[] }
+        Returns: {
+          current_participant_count: number
+          current_people_count: number
+          is_full: boolean
+          people_capacity: number
+          project_id: string
+          spots_remaining: number
+        }[]
+      }
+      list_project_delegate_invitations_for_owner: {
+        Args: { p_expected_owner_profile_id: string; p_project_id: string }
+        Returns: {
+          accepted_at: string
+          created_at: string
+          expires_at: string
+          invitation_id: string
+          issuer_display_name: string
+          issuer_profile_id: string
+          requested_authority_role: string
+          revoked_at: string
+          status: string
+        }[]
+      }
+      list_project_delegates_for_owner: {
+        Args: { p_expected_owner_profile_id: string; p_project_id: string }
+        Returns: {
+          authority_role: string
+          delegate_display_name: string
+          delegate_id: string
+          delegate_profile_id: string
+          delegated_at: string
+          granted_by_display_name: string
+          granted_by_profile_id: string
+        }[]
+      }
       list_project_join_requests: {
         Args: { p_expected_creator_profile_id: string; p_project_id: string }
+        Returns: {
+          created_at: string
+          request_id: string
+          request_message: string
+          requester_display_name: string
+          requester_profile_id: string
+          resolved_at: string
+          resolved_by_profile_id: string
+          status: string
+        }[]
+      }
+      list_project_join_requests_for_manager: {
+        Args: { p_expected_manager_profile_id: string; p_project_id: string }
         Returns: {
           created_at: string
           request_id: string
@@ -3351,8 +3891,30 @@ export type Database = {
           removed_by_profile_id: string
         }[]
       }
+      list_project_members_for_manager: {
+        Args: { p_expected_manager_profile_id: string; p_project_id: string }
+        Returns: {
+          joined_at: string
+          left_at: string
+          membership_id: string
+          membership_status: string
+          originating_request_id: string
+          participant_display_name: string
+          participant_profile_id: string
+          removed_at: string
+          removed_by_profile_id: string
+        }[]
+      }
       list_project_membership_actual_contribution_options: {
         Args: { p_expected_creator_profile_id: string; p_membership_id: string }
+        Returns: {
+          label: string
+          option_id: string
+          option_kind: string
+        }[]
+      }
+      list_project_membership_actual_contribution_options_for_manager: {
+        Args: { p_expected_manager_profile_id: string; p_membership_id: string }
         Returns: {
           label: string
           option_id: string
@@ -3397,6 +3959,17 @@ export type Database = {
           title: string
         }[]
       }
+      list_public_project_capacity_statuses: {
+        Args: { p_project_ids: string[] }
+        Returns: {
+          current_participant_count: number
+          current_people_count: number
+          is_full: boolean
+          people_capacity: number
+          project_id: string
+          spots_remaining: number
+        }[]
+      }
       list_public_project_resource_needs: {
         Args: { p_project_id: string }
         Returns: {
@@ -3412,6 +3985,7 @@ export type Database = {
           p_cursor_starts_at?: string
           p_limit?: number
           p_locality?: string
+          p_query?: string
           p_skill_ids?: string[]
         }
         Returns: {
@@ -3554,6 +4128,19 @@ export type Database = {
         }
         Returns: string
       }
+      preview_project_delegate_invitation: {
+        Args: { p_token: string }
+        Returns: {
+          expires_at: string
+          is_available: boolean
+          issuer_display_name: string
+          owner_display_name: string
+          project_id: string
+          project_kind: string
+          project_title: string
+          requested_authority_role: string
+        }[]
+      }
       process_notification_outbox_batch: {
         Args: { p_limit?: number }
         Returns: {
@@ -3638,6 +4225,10 @@ export type Database = {
         Args: { p_expected_creator_profile_id: string; p_request_id: string }
         Returns: string
       }
+      reject_project_join_request_as_manager: {
+        Args: { p_expected_manager_profile_id: string; p_request_id: string }
+        Returns: string
+      }
       reject_resource_exchange_terms: {
         Args: {
           p_agreement_id: string
@@ -3654,9 +4245,26 @@ export type Database = {
         Args: { p_expected_creator_profile_id: string; p_membership_id: string }
         Returns: string
       }
+      remove_project_member_as_manager: {
+        Args: { p_expected_manager_profile_id: string; p_membership_id: string }
+        Returns: string
+      }
       replace_project_membership_actual_contributions: {
         Args: {
           p_expected_creator_profile_id: string
+          p_expected_resource_need_ids: string[]
+          p_expected_skill_ids: string[]
+          p_expected_substantial_effort: boolean
+          p_membership_id: string
+          p_resource_need_ids: string[]
+          p_skill_ids: string[]
+          p_substantial_effort: boolean
+        }
+        Returns: string
+      }
+      replace_project_membership_actual_contributions_as_manager: {
+        Args: {
+          p_expected_manager_profile_id: string
           p_expected_resource_need_ids: string[]
           p_expected_skill_ids: string[]
           p_expected_substantial_effort: boolean
@@ -3703,7 +4311,29 @@ export type Database = {
         }
         Returns: string
       }
+      revoke_project_delegate: {
+        Args: { p_delegate_id: string; p_expected_owner_profile_id: string }
+        Returns: string
+      }
+      revoke_project_delegate_invitation: {
+        Args: { p_expected_owner_profile_id: string; p_invitation_id: string }
+        Returns: string
+      }
       send_project_chat_message: {
+        Args: {
+          p_body: string
+          p_chat_id: string
+          p_expected_profile_id: string
+        }
+        Returns: {
+          body: string
+          chat_id: string
+          created_at: string
+          message_id: string
+          sender_profile_id: string
+        }[]
+      }
+      send_project_join_request_chat_message: {
         Args: {
           p_body: string
           p_chat_id: string
@@ -3796,6 +4426,16 @@ export type Database = {
         }
         Returns: string
       }
+      set_project_requirement_manual_coverage_as_manager: {
+        Args: {
+          p_expected_manager_profile_id: string
+          p_is_covered: boolean
+          p_project_id: string
+          p_requirement_id: string
+          p_requirement_kind: string
+        }
+        Returns: string
+      }
       submit_group_corroboration_response: {
         Args: {
           p_choice: string
@@ -3878,51 +4518,100 @@ export type Database = {
         }
         Returns: undefined
       }
-      update_own_proposal: {
-        Args: {
-          p_administrative_area: string
-          p_country_code: string
-          p_description: string
-          p_ends_at: string
-          p_event_timezone: string
-          p_exact_location_visibility: string
-          p_exact_meeting_text: string
-          p_expected_creator_profile_id: string
-          p_locality: string
-          p_proposal_id: string
-          p_public_location_label: string
-          p_skill_ids: string[]
-          p_skill_importances: string[]
-          p_starts_at: string
-          p_summary: string
-          p_title: string
-        }
-        Returns: string
-      }
-      update_own_recurring_activity: {
-        Args: {
-          p_administrative_area: string
-          p_country_code: string
-          p_day_of_month: number
-          p_description: string
-          p_duration_minutes: number
-          p_effective_from: string
-          p_event_timezone: string
-          p_exact_location_visibility: string
-          p_exact_meeting_text: string
-          p_expected_creator_profile_id: string
-          p_local_start_time: string
-          p_locality: string
-          p_public_location_label: string
-          p_recurrence_type: string
-          p_recurring_activity_id: string
-          p_summary: string
-          p_title: string
-          p_topic: string
-          p_weekday: number
-        }
-        Returns: string
-      }
+      update_own_proposal:
+        | {
+            Args: {
+              p_administrative_area: string
+              p_country_code: string
+              p_description: string
+              p_ends_at: string
+              p_event_timezone: string
+              p_exact_location_visibility: string
+              p_exact_meeting_text: string
+              p_expected_creator_profile_id: string
+              p_locality: string
+              p_proposal_id: string
+              p_public_location_label: string
+              p_skill_ids: string[]
+              p_skill_importances: string[]
+              p_starts_at: string
+              p_summary: string
+              p_title: string
+            }
+            Returns: string
+          }
+        | {
+            Args: {
+              p_administrative_area: string
+              p_country_code: string
+              p_description: string
+              p_ends_at: string
+              p_event_timezone: string
+              p_exact_location_visibility: string
+              p_exact_meeting_text: string
+              p_expected_creator_profile_id: string
+              p_locality: string
+              p_people_capacity: number
+              p_proposal_id: string
+              p_public_location_label: string
+              p_skill_ids: string[]
+              p_skill_importances: string[]
+              p_starts_at: string
+              p_summary: string
+              p_title: string
+            }
+            Returns: string
+          }
+      update_own_recurring_activity:
+        | {
+            Args: {
+              p_administrative_area: string
+              p_country_code: string
+              p_day_of_month: number
+              p_description: string
+              p_duration_minutes: number
+              p_effective_from: string
+              p_event_timezone: string
+              p_exact_location_visibility: string
+              p_exact_meeting_text: string
+              p_expected_creator_profile_id: string
+              p_local_start_time: string
+              p_locality: string
+              p_public_location_label: string
+              p_recurrence_type: string
+              p_recurring_activity_id: string
+              p_summary: string
+              p_title: string
+              p_topic: string
+              p_weekday: number
+            }
+            Returns: string
+          }
+        | {
+            Args: {
+              p_administrative_area: string
+              p_country_code: string
+              p_day_of_month: number
+              p_description: string
+              p_duration_minutes: number
+              p_effective_from: string
+              p_event_timezone: string
+              p_exact_location_visibility: string
+              p_exact_meeting_text: string
+              p_expected_creator_profile_id: string
+              p_local_start_time: string
+              p_locality: string
+              p_people_capacity: number
+              p_public_location_label: string
+              p_recurrence_type: string
+              p_recurring_activity_id: string
+              p_summary: string
+              p_title: string
+              p_topic: string
+              p_weekday: number
+            }
+            Returns: string
+          }
       update_own_resource_listing: {
         Args: {
           p_administrative_area: string

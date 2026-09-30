@@ -18,7 +18,7 @@ import '../../../support/fake_resource_loan.dart';
 import '../../../support/fake_resource_saved_search.dart';
 
 void main() {
-  testWidgets('public list and exact detail remain signed-out Home routes', (
+  testWidgets('public list and exact detail remain signed-out Browse routes', (
     tester,
   ) async {
     const session = AuthSessionState.signedOut();
@@ -111,7 +111,7 @@ void main() {
     }
   });
 
-  testWidgets('ready resource routes all select the Home branch', (
+  testWidgets('ready resource routes all select the Browse branch', (
     tester,
   ) async {
     const session = AuthSessionState.ready(

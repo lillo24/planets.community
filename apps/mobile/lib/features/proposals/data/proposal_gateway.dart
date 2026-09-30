@@ -3,6 +3,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/backend/cover_media_path.dart';
 import '../../../core/backend/supabase_backend.dart';
+import '../../participation/domain/project_capacity.dart';
 import '../domain/proposal_models.dart';
 
 const proposalPageSize = 20;
@@ -13,12 +14,14 @@ abstract interface class ProposalGateway {
   Future<List<ProposalSummary>> listPublicProposals({
     required int limit,
     ProposalCursor? cursor,
+    String? query,
     String? locality,
     Set<String>? skillIds,
   });
 
   Future<List<RequestedProposalSummary>> listOwnPendingRequestedProposals(
     String expectedProfileId, {
+    String? query,
     String? locality,
     Set<String>? skillIds,
   });
@@ -45,10 +48,124 @@ abstract interface class ProposalGateway {
   Future<void> cancelProposal(String expectedCreatorId, String proposalId);
 }
 
+class ProposalPayloadParser {
+  const ProposalPayloadParser();
+
+  ProposalSummary publicSummary(
+    Map<String, dynamic> row,
+    ProjectCapacitySnapshot capacity,
+  ) => ProposalSummary(
+    id: _uuid(row, 'proposal_id'),
+    title: _string(row, 'title'),
+    summary: _string(row, 'summary'),
+    startsAt: _date(row, 'starts_at'),
+    endsAt: _date(row, 'ends_at'),
+    eventTimezone: _string(row, 'event_timezone'),
+    countryCode: _string(row, 'country_code'),
+    locality: _string(row, 'locality'),
+    administrativeArea: _optionalString(row, 'administrative_area'),
+    publicLocationLabel: _string(row, 'public_location_label'),
+    status: ProposalStatus.fromWire(_string(row, 'derived_status')),
+    skills: skills(row['skills']),
+    capacity: capacity,
+    coverObjectPath: parseCoverObjectPath(
+      row['cover_object_path'],
+      parentId: _uuid(row, 'proposal_id'),
+      parentSegment: 'projects',
+    ),
+  );
+
+  ProposalDetail publicDetail(
+    Map<String, dynamic> row,
+    ProjectCapacitySnapshot capacity,
+  ) => ProposalDetail(
+    summary: publicSummary(row, capacity),
+    creatorProfileId: _uuid(row, 'creator_profile_id'),
+    creatorDisplayName: _optionalString(row, 'creator_display_name'),
+    description: _string(row, 'description'),
+    exactMeetingText: _optionalString(row, 'exact_meeting_text'),
+    exactLocationRestricted: _boolean(row, 'exact_location_restricted'),
+  );
+
+  List<ProposalSkill> skills(dynamic value) {
+    if (value is! List) {
+      throw const FormatException('Proposal skills were not a list.');
+    }
+    return value
+        .map((entry) {
+          if (entry is! Map<String, dynamic>) {
+            throw const FormatException(
+              'Proposal skill entry was not an object.',
+            );
+          }
+          return ProposalSkill(
+            id: _uuid(entry, 'id'),
+            slug: _string(entry, 'slug'),
+            label: _string(entry, 'label'),
+            categoryId: _uuid(entry, 'category_id'),
+            categorySlug: _string(entry, 'category_slug'),
+            categoryLabel: _string(entry, 'category_label'),
+            importance: ProposalSkillImportance.fromWire(
+              _string(entry, 'importance'),
+            ),
+          );
+        })
+        .toList(growable: false);
+  }
+
+  String _string(Map<String, dynamic> row, String key) {
+    final value = row[key];
+    if (value is! String || value.isEmpty) {
+      throw FormatException('Proposal $key was not a string.');
+    }
+    return value;
+  }
+
+  String? _optionalString(Map<String, dynamic> row, String key) {
+    final value = row[key];
+    if (value == null) return null;
+    if (value is! String || value.isEmpty) {
+      throw FormatException('Proposal $key was malformed.');
+    }
+    return value;
+  }
+
+  String _uuid(Map<String, dynamic> row, String key) {
+    final value = _string(row, key);
+    if (!RegExp(
+      r'^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$',
+    ).hasMatch(value)) {
+      throw FormatException('Proposal $key was not a UUID.');
+    }
+    return value;
+  }
+
+  DateTime _date(Map<String, dynamic> row, String key) {
+    final value = _string(row, key);
+    final parsed = DateTime.tryParse(value);
+    if (parsed == null) {
+      throw FormatException('Proposal $key was not a timestamp.');
+    }
+    return parsed;
+  }
+
+  bool _boolean(Map<String, dynamic> row, String key) {
+    final value = row[key];
+    if (value is! bool) {
+      throw FormatException('Proposal $key was not a boolean.');
+    }
+    return value;
+  }
+}
+
 class SupabaseProposalGateway implements ProposalGateway {
-  const SupabaseProposalGateway(this._client);
+  const SupabaseProposalGateway(
+    this._client, {
+    this.parser = const ProposalPayloadParser(),
+  });
 
   final SupabaseClient _client;
+  final ProposalPayloadParser parser;
 
   @override
   Future<List<ProposalSkillCategory>> loadSkillCatalog() async {
@@ -85,6 +202,7 @@ class SupabaseProposalGateway implements ProposalGateway {
   Future<List<ProposalSummary>> listPublicProposals({
     required int limit,
     ProposalCursor? cursor,
+    String? query,
     String? locality,
     Set<String>? skillIds,
   }) async {
@@ -94,19 +212,32 @@ class SupabaseProposalGateway implements ProposalGateway {
         'p_limit': limit,
         'p_cursor_starts_at': cursor?.startsAt.toUtc().toIso8601String(),
         'p_cursor_id': cursor?.id,
+        'p_query': query,
         'p_locality': locality,
         'p_skill_ids': skillIds?.toList(growable: false),
       },
     );
-    return response
-        .cast<Map<String, dynamic>>()
-        .map(_publicSummaryFromRow)
+    final rows = response.cast<Map<String, dynamic>>();
+    final capacities = await _publicCapacities(
+      rows.map((row) => row['proposal_id'] as String),
+    );
+    return rows
+        .map(
+          (row) => parser.publicSummary(
+            row,
+            capacities[row['proposal_id']] ??
+                (throw const FormatException(
+                  'A public Proposal had no capacity status.',
+                )),
+          ),
+        )
         .toList(growable: false);
   }
 
   @override
   Future<List<RequestedProposalSummary>> listOwnPendingRequestedProposals(
     String expectedProfileId, {
+    String? query,
     String? locality,
     Set<String>? skillIds,
   }) async {
@@ -114,19 +245,29 @@ class SupabaseProposalGateway implements ProposalGateway {
       'list_own_pending_requested_proposals',
       params: {
         'p_expected_requester_profile_id': expectedProfileId,
+        'p_query': query,
         'p_locality': locality,
         'p_skill_ids': skillIds?.toList(growable: false),
       },
     );
-    return response
-        .cast<Map<String, dynamic>>()
+    final rows = response.cast<Map<String, dynamic>>();
+    final capacities = await _publicCapacities(
+      rows.map((row) => row['proposal_id'] as String),
+    );
+    return rows
         .map(
           (row) => RequestedProposalSummary(
             requestId: row['request_id'] as String,
             requestCreatedAt: DateTime.parse(
               row['request_created_at'] as String,
             ),
-            proposal: _publicSummaryFromRow(row),
+            proposal: parser.publicSummary(
+              row,
+              capacities[row['proposal_id']] ??
+                  (throw const FormatException(
+                    'A requested Proposal had no capacity status.',
+                  )),
+            ),
           ),
         )
         .toList(growable: false);
@@ -134,12 +275,21 @@ class SupabaseProposalGateway implements ProposalGateway {
 
   @override
   Future<ProposalDetail?> getPublicProposal(String proposalId) async {
-    final response = await _client.rpc<List<dynamic>>(
-      'get_public_proposal',
-      params: {'p_proposal_id': proposalId},
-    );
-    final rows = response.cast<Map<String, dynamic>>();
-    return rows.isEmpty ? null : _publicDetailFromRow(rows.single);
+    final values = await Future.wait<dynamic>([
+      _client.rpc<List<dynamic>>(
+        'get_public_proposal',
+        params: {'p_proposal_id': proposalId},
+      ),
+      _publicCapacities([proposalId]),
+    ]);
+    final rows = (values[0] as List<dynamic>).cast<Map<String, dynamic>>();
+    if (rows.isEmpty) return null;
+    final capacity =
+        (values[1] as Map<String, ProjectCapacitySnapshot>)[proposalId];
+    if (capacity == null) {
+      throw const FormatException('A public Proposal had no capacity status.');
+    }
+    return parser.publicDetail(rows.single, capacity);
   }
 
   @override
@@ -148,9 +298,21 @@ class SupabaseProposalGateway implements ProposalGateway {
       'list_own_proposals',
       params: {'p_expected_creator_profile_id': expectedCreatorId},
     );
-    return response
-        .cast<Map<String, dynamic>>()
-        .map(_ownProposalFromRow)
+    final rows = response.cast<Map<String, dynamic>>();
+    final capacities = await _structuralCapacities(
+      expectedCreatorId,
+      rows.map((row) => row['proposal_id'] as String),
+    );
+    return rows
+        .map(
+          (row) => _ownProposalFromRow(
+            row,
+            capacities[row['proposal_id']] ??
+                (throw const FormatException(
+                  'A managed Proposal had no capacity status.',
+                )),
+          ),
+        )
         .toList(growable: false);
   }
 
@@ -159,15 +321,24 @@ class SupabaseProposalGateway implements ProposalGateway {
     String expectedCreatorId,
     String proposalId,
   ) async {
-    final response = await _client.rpc<List<dynamic>>(
-      'get_own_proposal',
-      params: {
-        'p_expected_creator_profile_id': expectedCreatorId,
-        'p_proposal_id': proposalId,
-      },
-    );
-    final rows = response.cast<Map<String, dynamic>>();
-    return rows.isEmpty ? null : _ownProposalFromRow(rows.single);
+    final values = await Future.wait<dynamic>([
+      _client.rpc<List<dynamic>>(
+        'get_own_proposal',
+        params: {
+          'p_expected_creator_profile_id': expectedCreatorId,
+          'p_proposal_id': proposalId,
+        },
+      ),
+      _structuralCapacities(expectedCreatorId, [proposalId]),
+    ]);
+    final rows = (values[0] as List<dynamic>).cast<Map<String, dynamic>>();
+    if (rows.isEmpty) return null;
+    final capacity =
+        (values[1] as Map<String, ProjectCapacitySnapshot>)[proposalId];
+    if (capacity == null) {
+      throw const FormatException('A managed Proposal had no capacity status.');
+    }
+    return _ownProposalFromRow(rows.single, capacity);
   }
 
   @override
@@ -248,97 +419,72 @@ class SupabaseProposalGateway implements ProposalGateway {
       'p_skill_importances': skillEntries
           .map((entry) => entry.value.wireValue)
           .toList(),
+      'p_people_capacity': input.peopleCapacity,
     };
   }
 
-  ProposalSummary _publicSummaryFromRow(Map<String, dynamic> row) {
-    final proposalId = row['proposal_id'] as String;
-    return ProposalSummary(
-      id: proposalId,
-      title: row['title'] as String,
-      summary: row['summary'] as String,
-      startsAt: DateTime.parse(row['starts_at'] as String),
-      endsAt: DateTime.parse(row['ends_at'] as String),
-      eventTimezone: row['event_timezone'] as String,
-      countryCode: row['country_code'] as String,
-      locality: row['locality'] as String,
-      administrativeArea: row['administrative_area'] as String?,
-      publicLocationLabel: row['public_location_label'] as String,
-      status: ProposalStatus.fromWire(row['derived_status'] as String),
-      skills: _skillsFromJson(row['skills']),
-      coverObjectPath: parseCoverObjectPath(
-        row['cover_object_path'],
-        parentId: proposalId,
-        parentSegment: 'projects',
-      ),
+  OwnProposal _ownProposalFromRow(
+    Map<String, dynamic> row,
+    ProjectCapacitySnapshot capacity,
+  ) => OwnProposal(
+    id: row['proposal_id'] as String,
+    lifecycle: ProposalLifecycle.fromWire(row['lifecycle_state'] as String),
+    title: row['title'] as String?,
+    summary: row['summary'] as String?,
+    description: row['description'] as String?,
+    startsAt: _optionalDate(row['starts_at']),
+    endsAt: _optionalDate(row['ends_at']),
+    eventTimezone: row['event_timezone'] as String?,
+    countryCode: row['country_code'] as String?,
+    locality: row['locality'] as String?,
+    administrativeArea: row['administrative_area'] as String?,
+    publicLocationLabel: row['public_location_label'] as String?,
+    status: row['derived_status'] == null
+        ? null
+        : ProposalStatus.fromWire(row['derived_status'] as String),
+    skills: parser.skills(row['skills']),
+    exactMeetingText: row['exact_meeting_text'] as String?,
+    exactLocationVisibility: ExactLocationVisibility.fromWire(
+      row['exact_location_visibility'] as String,
+    ),
+    createdAt: DateTime.parse(row['created_at'] as String),
+    updatedAt: DateTime.parse(row['updated_at'] as String),
+    publishedAt: _optionalDate(row['published_at']),
+    cancelledAt: _optionalDate(row['cancelled_at']),
+    capacity: capacity,
+    coverObjectPath: parseCoverObjectPath(
+      row['cover_object_path'],
+      parentId: row['proposal_id'] as String,
+      parentSegment: 'projects',
+    ),
+  );
+
+  Future<Map<String, ProjectCapacitySnapshot>> _publicCapacities(
+    Iterable<String> projectIds,
+  ) => _capacityMap('list_public_project_capacity_statuses', {
+    'p_project_ids': projectIds.toList(growable: false),
+  });
+
+  Future<Map<String, ProjectCapacitySnapshot>> _structuralCapacities(
+    String expectedProfileId,
+    Iterable<String> projectIds,
+  ) => _capacityMap('list_project_capacity_statuses_for_structural_actor', {
+    'p_expected_profile_id': expectedProfileId,
+    'p_project_ids': projectIds.toList(growable: false),
+  });
+
+  Future<Map<String, ProjectCapacitySnapshot>> _capacityMap(
+    String functionName,
+    Map<String, dynamic> params,
+  ) async {
+    final response = await _client.rpc<List<dynamic>>(
+      functionName,
+      params: params,
     );
-  }
-
-  ProposalDetail _publicDetailFromRow(Map<String, dynamic> row) =>
-      ProposalDetail(
-        summary: _publicSummaryFromRow(row),
-        creatorProfileId: row['creator_profile_id'] as String,
-        creatorDisplayName: row['creator_display_name'] as String?,
-        description: row['description'] as String,
-        exactMeetingText: row['exact_meeting_text'] as String?,
-        exactLocationRestricted: row['exact_location_restricted'] as bool,
-      );
-
-  OwnProposal _ownProposalFromRow(Map<String, dynamic> row) {
-    final proposalId = row['proposal_id'] as String;
-    return OwnProposal(
-      id: proposalId,
-      lifecycle: ProposalLifecycle.fromWire(row['lifecycle_state'] as String),
-      title: row['title'] as String?,
-      summary: row['summary'] as String?,
-      description: row['description'] as String?,
-      startsAt: _optionalDate(row['starts_at']),
-      endsAt: _optionalDate(row['ends_at']),
-      eventTimezone: row['event_timezone'] as String?,
-      countryCode: row['country_code'] as String?,
-      locality: row['locality'] as String?,
-      administrativeArea: row['administrative_area'] as String?,
-      publicLocationLabel: row['public_location_label'] as String?,
-      status: row['derived_status'] == null
-          ? null
-          : ProposalStatus.fromWire(row['derived_status'] as String),
-      skills: _skillsFromJson(row['skills']),
-      exactMeetingText: row['exact_meeting_text'] as String?,
-      exactLocationVisibility: ExactLocationVisibility.fromWire(
-        row['exact_location_visibility'] as String,
-      ),
-      createdAt: DateTime.parse(row['created_at'] as String),
-      updatedAt: DateTime.parse(row['updated_at'] as String),
-      publishedAt: _optionalDate(row['published_at']),
-      cancelledAt: _optionalDate(row['cancelled_at']),
-      coverObjectPath: parseCoverObjectPath(
-        row['cover_object_path'],
-        parentId: proposalId,
-        parentSegment: 'projects',
-      ),
-    );
-  }
-
-  List<ProposalSkill> _skillsFromJson(dynamic value) {
-    if (value is! List) {
-      throw const FormatException('Proposal skills were not a list.');
-    }
-    return value
-        .cast<Map<String, dynamic>>()
-        .map(
-          (row) => ProposalSkill(
-            id: row['id'] as String,
-            slug: row['slug'] as String,
-            label: row['label'] as String,
-            categoryId: row['category_id'] as String,
-            categorySlug: row['category_slug'] as String,
-            categoryLabel: row['category_label'] as String,
-            importance: ProposalSkillImportance.fromWire(
-              row['importance'] as String,
-            ),
-          ),
-        )
-        .toList(growable: false);
+    return {
+      for (final row in response.cast<Map<String, dynamic>>())
+        row['project_id'] as String: ProjectCapacitySnapshot.fromRow(row),
+    };
   }
 
   ProposalCatalogSkill _catalogSkillFromRow(Map<String, dynamic> row) =>
