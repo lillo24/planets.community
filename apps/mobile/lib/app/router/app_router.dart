@@ -53,6 +53,7 @@ import '../../features/resource_chat/presentation/resource_chat_screen.dart';
 import '../../features/resource_requests/presentation/resource_request_screen.dart';
 import '../../features/resource_saved_searches/presentation/resource_saved_search_routes.dart';
 import '../../features/resource_saved_searches/presentation/resource_saved_searches_screen.dart';
+import '../../features/settings/presentation/settings_screen.dart';
 import '../../l10n/generated/app_localizations.dart';
 import '../foundation_screen.dart';
 import 'app_navigation_shell.dart';
@@ -305,6 +306,17 @@ RoutingConfig _routingConfig(
               GoRoute(
                 path: '/',
                 builder: (context, state) => const FoundationScreen(),
+              ),
+              GoRoute(
+                path: '/settings',
+                builder: (context, state) => const SettingsScreen(),
+                routes: [
+                  GoRoute(
+                    path: 'language',
+                    builder: (context, state) =>
+                        const LanguageSelectionScreen(),
+                  ),
+                ],
               ),
               GoRoute(
                 path: '/messages',

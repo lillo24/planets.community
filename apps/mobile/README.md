@@ -12,6 +12,8 @@ This folder owns the Flutter application and its generated Android/iOS platform 
 - `lib/core/monitoring/` owns optional, privacy-safe Sentry startup.
 - `lib/core/theme/` and `lib/core/widgets/` own neutral design tokens and common loading/empty/error UI.
 - `lib/core/time/` owns named event-time-zone conversion and formatting shared by one-time and recurring activities.
+- `lib/features/settings/` owns public Settings, the local language preference,
+  and links to existing account preference surfaces.
 - `lib/features/auth/` owns numeric email-OTP request/verification, session state, profile-anchor readiness, sign-out, and Auth UI.
 - `lib/features/profile/` owns basic profile display/setup/editing, controlled skill selection, and public/private field choices.
 - `lib/features/blocking/` owns identity-scoped outbound block status, the
@@ -26,12 +28,26 @@ This folder owns the Flutter application and its generated Android/iOS platform 
 - `lib/features/project_delegates/` owns current-user manager-role reads, the shared Manage project hub, owner invitation/delegate management, native Copy/Share, invite preview/acceptance, and delegated-Project discovery. See its [feature boundary](lib/features/project_delegates/README.md).
 - `lib/features/messages/` owns the Home-branch Messages inbox, exact structured participation-request detail/history, independent historical contribution-label reads, and role-specific canonical actions over the 04C3B1/07A reads and existing 05A transitions. See its [feature boundary](lib/features/messages/README.md).
 - `lib/features/project_chat/` owns Project-chat summaries, history, send, private Realtime reconciliation, current/former UI, and group information over the canonical 07B2B boundary. See its [feature boundary](lib/features/project_chat/README.md).
-- `lib/l10n/` owns the English ARB source. `flutter gen-l10n` regenerates ignored Dart output under `lib/l10n/generated/`.
+- `lib/l10n/` owns the English template ARB and the complete Italian catalog. English remains the fallback for unsupported locales. `flutter gen-l10n` regenerates ignored Dart output under `lib/l10n/generated/`.
 - `config/` contains committed configuration examples; runtime files without `.example` are ignored.
 - `test/` mirrors the application responsibility boundaries.
 - `android/` and `ios/` contain conventional Flutter platform configuration. Local HTTP exceptions are debug-only; shared iOS plist changes must be mirrored in `Info.plist` and `Info-Debug.plist`.
 
-Startup follows one order: parse and validate config, initialize the canonical Supabase client, configure Sentry only when a DSN exists, then launch one Riverpod `ProviderScope`. The app starts the Auth session observer explicitly after launch. `/`, Proposal browse/detail, Tavoli browse/detail, Scambio-Dona browse/detail, and `/invite/project/:token` remain public; `/auth` requests a code; `/auth/verify` verifies it; `/profile` and `/profile/edit` own authenticated profile display/setup. Proposal/Tavolo/Scambio-Dona create/edit/my, Project-resource management, participation review, Project management, Co-organizers, and Messages routes require a complete profile and route incomplete profiles to setup. Protected routes and invitation acceptance preserve exact sanitized internal `returnTo` intent through OTP and profile completion. Magic links, social providers, maps/media, and final branding remain deferred.
+Startup follows one order: parse and validate config, restore the noncritical
+local language preference with a System-default fallback, initialize the
+canonical Supabase client, configure Sentry only when a DSN exists, then launch
+one Riverpod `ProviderScope`. The app starts the Auth session observer explicitly
+after launch. `/`, `/settings`, `/settings/language`, Proposal browse/detail,
+Tavoli browse/detail, Scambio-Dona browse/detail, and `/invite/project/:token`
+remain public; `/auth`
+requests a code; `/auth/verify` verifies it; `/profile` and `/profile/edit` own
+authenticated profile display/setup. Proposal/Tavolo/Scambio-Dona create/edit/my,
+Project-resource management, participation review, Project management,
+Co-organizers, shared workspace, and Messages routes require a complete profile
+and route incomplete profiles to setup. Protected routes and invitation
+acceptance preserve exact sanitized internal `returnTo` intent through OTP and
+profile completion. Magic links, social providers, maps/media, and final branding
+remain deferred.
 
 Proposal date/time input is interpreted in an explicit IANA time zone with the bundled `timezone` data and sent to PostgreSQL as UTC instants. Draft/publish/update/cancel authorization and stored/derived lifecycle rules remain canonical database behavior. Public cards receive rough location only; detail shows exact meeting text only when the sanitized backend response marks it public.
 

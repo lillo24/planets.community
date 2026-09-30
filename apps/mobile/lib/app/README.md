@@ -6,7 +6,8 @@ This folder owns application startup presentation and navigation, not backend ru
 - `router/app_router.dart` owns routes, Auth/readiness redirects and the identity-scoped routing configuration.
 - `router/app_navigation_shell.dart` owns the single Material 3 navigation bar and branch ordering.
 - `foundation_screen.dart` is Home; its Progetti entry uses the shell's Browse
-  branch switch and its Scambio-Dona entry opens the Browse-owned resource routes.
+  branch switch, its Scambio-Dona entry opens the Browse-owned resource routes,
+  and its AppBar opens public Settings.
 - `startup_failure_app.dart` is the safe fallback when bootstrap cannot launch the application.
 
 ## Navigation contract
@@ -18,6 +19,11 @@ This folder owns application startup presentation and navigation, not backend ru
 | 0 / Profile | `/profile`; nested edit, blocked-users, own reports, and moderation review requests |
 | 1 / Home | `/`; Messages request/chat/group-info, Notifications/preferences, and their protected detail routes |
 | 2 / Browse | `/proposals`, `/tavoli`, and `/resources`; public detail plus protected owner/editor, saved-search, loan-schedule, Project resources/matches, participation, delegate, invite, and management routes |
+
+The Home branch also owns public `/settings` and nested `/settings/language`.
+Settings conditionally links ready signed-in profiles to the existing protected
+notification preferences and profile editor routes; it is never itself an Auth
+destination.
 
 Static Browse children precede each dynamic activity-ID route. A route-backed
 Proposals/Tavoli switcher changes the public list within Browse without adding a

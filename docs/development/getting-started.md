@@ -210,7 +210,7 @@ coherent demo records remain the responsibility of the separate DEMO-B plan.
 
 The mobile Auth feature does not log or report email addresses, OTPs, or session tokens. Its 30-second resend countdown is only a UI convenience; Supabase Auth remains authoritative for request and verification limits.
 
-Flutter localization source is `apps/mobile/lib/l10n/app_en.arb`. Generated Dart files are ignored and must not be edited. `npm run restore:mobile`, `npm run mobile:l10n`, and CI run `flutter gen-l10n` deterministically before analysis/tests.
+Flutter localization uses `apps/mobile/lib/l10n/app_en.arb` as the English template and fallback plus `app_it.arb` for Italian. Device/app locale resolution is automatic; unsupported locales resolve to English. Generated Dart files are ignored and must not be edited. `npm run restore:mobile`, `npm run mobile:l10n`, and CI run `flutter gen-l10n` deterministically before analysis/tests.
 
 ## Web configuration
 
