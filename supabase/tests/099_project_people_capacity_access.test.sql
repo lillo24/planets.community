@@ -20,6 +20,20 @@ values
   ('fa100000-0000-4000-8000-000000000004', 'Capacity Three'),
   ('fa100000-0000-4000-8000-000000000005', 'Capacity Delegate');
 
+insert into public.profile_photos (profile_id, object_path, audience)
+select
+  profile.id,
+  profile.id::text || '/fa1f0000-0000-4000-8000-000000000001.webp',
+  'interactions'
+from public.profiles as profile
+where profile.id in (
+  'fa100000-0000-4000-8000-000000000001',
+  'fa100000-0000-4000-8000-000000000002',
+  'fa100000-0000-4000-8000-000000000003',
+  'fa100000-0000-4000-8000-000000000004',
+  'fa100000-0000-4000-8000-000000000005'
+);
+
 insert into public.proposals (
   id, creator_profile_id, lifecycle_state, title, summary, description,
   starts_at, ends_at, event_timezone, country_code, locality,

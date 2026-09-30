@@ -798,7 +798,7 @@ function proposalContent(title, skillIds, importances) {
     p_locality: "Trento",
     p_administrative_area: "Povo",
     p_public_location_label: "Trento · Povo",
-    p_exact_meeting_text: null,
+    p_exact_meeting_text: "Private commitment verification location",
     p_exact_location_visibility: "participants",
     p_skill_ids: skillIds,
     p_skill_importances: importances,
@@ -1088,7 +1088,10 @@ async function assertIdentifierOnlyEventsWithoutNotifications(membershipId) {
     select
       count(*)::integer as total_events,
       count(*) filter (
-        where jsonb_object_length(event.payload) = 5
+        where (
+          select count(*)
+          from jsonb_object_keys(event.payload)
+        ) = 5
           and event.payload ?& array[
             'project_id',
             'project_kind',
@@ -1146,7 +1149,7 @@ async function createTavoloDraft(creator) {
       p_locality: "Trento",
       p_administrative_area: "Povo",
       p_public_location_label: "Trento · Povo",
-      p_exact_meeting_text: null,
+      p_exact_meeting_text: "Private commitment Tavolo location",
       p_exact_location_visibility: "participants",
       p_recurrence_type: "weekly",
       p_weekday: 4,

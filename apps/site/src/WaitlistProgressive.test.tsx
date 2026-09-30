@@ -67,7 +67,9 @@ describe("progressive waitlist verification", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "Avvisami" }));
 
-    expect(document.querySelector(".waitlist__turnstile-reveal")).not.toBeNull();
+    expect(
+      document.querySelector(".waitlist__turnstile-reveal"),
+    ).not.toBeNull();
     expect(apiClient).not.toHaveBeenCalled();
 
     const token = document.createElement("input");

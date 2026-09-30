@@ -131,10 +131,13 @@ void main() {
       find.byKey(const Key('profile-bio-field')),
       'Unsaved biography',
     );
+    await _tapVisible(tester, find.byKey(const Key('profile-skills-trigger')));
+    await tester.pumpAndSettle();
     await _tapVisible(
       tester,
-      find.byKey(const Key('profile-skill-mural-painting')),
+      find.byKey(const Key('profile-skills-option-mural-painting')),
     );
+    await _tapVisible(tester, find.byKey(const Key('profile-skills-apply')));
     final bioVisibility = find.byKey(const Key('profile-visibility-bio'));
     await _tapVisible(
       tester,
@@ -329,12 +332,8 @@ void _expectUnsavedFields(WidgetTester tester) {
     'Unsaved biography',
   );
   expect(
-    tester
-        .widget<CheckboxListTile>(
-          find.byKey(const Key('profile-skill-mural-painting')),
-        )
-        .value,
-    isTrue,
+    find.byKey(const Key('profile-skills-selected-mural-painting')),
+    findsOneWidget,
   );
   expect(
     tester

@@ -514,8 +514,16 @@ function listUnifiedChats(actor) {
 }
 
 async function projectBothChannels() {
-  await sql`select * from public.process_notification_outbox_batch(100)`;
-  await sql`select * from public.process_push_outbox_batch(100)`;
+  for (;;) {
+    const [result] =
+      await sql`select * from public.process_notification_outbox_batch(100)`;
+    if (result?.processed_count === 0) break;
+  }
+  for (;;) {
+    const [result] =
+      await sql`select * from public.process_push_outbox_batch(100)`;
+    if (result?.processed_count === 0) break;
+  }
 }
 
 async function assertInboxKind(actor, kind, expected) {

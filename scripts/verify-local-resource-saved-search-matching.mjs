@@ -73,6 +73,7 @@ async function verifySavedSearchMatching() {
     clearSavedSearches(secondRecipient),
     clearSavedSearches(listingOwner),
   ]);
+  await acknowledgePreexistingPublicationEvents();
   await drainProjector();
 
   const listingIds = [];
@@ -541,6 +542,23 @@ async function getPublicationEvent(listingId) {
     throw new Error("A published listing did not create its canonical event.");
   }
   return event;
+}
+
+async function acknowledgePreexistingPublicationEvents() {
+  await sql`
+    insert into private.outbox_consumer_receipts (
+      outbox_event_id,
+      consumer_key,
+      processed_at
+    )
+    select
+      event.id,
+      'saved-search-matching.v1',
+      statement_timestamp()
+    from private.outbox_events as event
+    where event.event_type = 'resource_listing.published'
+    on conflict do nothing
+  `;
 }
 
 async function processBatch(client, limit) {

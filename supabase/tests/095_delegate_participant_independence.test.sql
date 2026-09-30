@@ -14,6 +14,17 @@ values
   ('e9100000-0000-4000-8000-000000000001', 'Independence Owner'),
   ('e9100000-0000-4000-8000-000000000002', 'Independence Delegate');
 
+insert into public.profile_photos (profile_id, object_path, audience)
+select
+  profile.id,
+  profile.id::text || '/e91f0000-0000-4000-8000-000000000001.webp',
+  'interactions'
+from public.profiles as profile
+where profile.id in (
+  'e9100000-0000-4000-8000-000000000001',
+  'e9100000-0000-4000-8000-000000000002'
+);
+
 insert into public.proposals (
   id,
   creator_profile_id,

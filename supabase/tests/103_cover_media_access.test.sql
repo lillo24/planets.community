@@ -93,6 +93,13 @@ select set_config(
 );
 
 reset role;
+update public.projects
+set people_capacity = 12
+where id in (
+  current_setting('test.cover_proposal_id')::uuid,
+  current_setting('test.cover_tavolo_id')::uuid
+);
+
 insert into public.profile_photos (profile_id, object_path, audience)
 values (
   'c1000000-0000-4000-8000-000000000001',

@@ -198,11 +198,11 @@ select is(
     select count(*)
     from pg_proc
     where oid in (
-      'public.list_public_proposals(integer,timestamptz,uuid,text,uuid[])'::regprocedure,
+      'public.list_public_proposals(integer,timestamptz,uuid,text,uuid[],text)'::regprocedure,
       'public.get_public_proposal(uuid)'::regprocedure,
       'public.list_own_proposals(uuid)'::regprocedure,
       'public.get_own_proposal(uuid,uuid)'::regprocedure,
-      'public.list_own_pending_requested_proposals(uuid,text,uuid[])'::regprocedure,
+      'public.list_own_pending_requested_proposals(uuid,text,uuid[],text)'::regprocedure,
       'public.list_public_recurring_activities(timestamptz,integer,timestamptz,uuid,text)'::regprocedure,
       'public.get_public_recurring_activity(uuid,integer,timestamptz)'::regprocedure,
       'public.list_own_recurring_activities(uuid)'::regprocedure,

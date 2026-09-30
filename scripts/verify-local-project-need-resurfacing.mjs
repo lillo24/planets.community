@@ -629,7 +629,7 @@ async function createProposal(creator) {
     p_locality: "Trento",
     p_administrative_area: "Povo",
     p_public_location_label: "Trento · Povo",
-    p_exact_meeting_text: null,
+    p_exact_meeting_text: "Private resurfacing verification location",
     p_exact_location_visibility: "participants",
     p_skill_ids: [],
     p_skill_importances: [],

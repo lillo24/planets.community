@@ -297,10 +297,7 @@ async function setWorkspace(user, projectId, workspaceUrl) {
 }
 
 async function assertWorkspace(user, projectId, expectedUrl) {
-  const row = singleRow(
-    await getWorkspace(user, projectId),
-    "workspace read",
-  );
+  const row = singleRow(await getWorkspace(user, projectId), "workspace read");
   if (row.project_id !== projectId || row.workspace_url !== expectedUrl) {
     throw new Error("Workspace read did not return canonical state.");
   }

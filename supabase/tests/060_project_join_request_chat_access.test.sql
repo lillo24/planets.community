@@ -14,6 +14,13 @@ values
   ('d1100000-0000-4000-8000-000000000002', 'Request Chat Requester'),
   ('d1100000-0000-4000-8000-000000000003', 'Request Chat Unrelated');
 
+insert into public.profile_photos (profile_id, object_path, audience)
+values (
+  'd1100000-0000-4000-8000-000000000002',
+  'd1100000-0000-4000-8000-000000000002/d11f0000-0000-4000-8000-000000000002.webp',
+  'interactions'
+);
+
 insert into public.proposals (
   id,
   creator_profile_id,

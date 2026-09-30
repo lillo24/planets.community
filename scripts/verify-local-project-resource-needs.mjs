@@ -220,12 +220,14 @@ async function verifyLifecycleNeedSerialization(creator) {
         ${terminalFirstProject}::uuid
       )
     `;
-    blockedCreate = creator.client.rpc("create_project_resource_need", {
-      p_expected_creator_profile_id: creator.id,
-      p_project_id: terminalFirstProject,
-      p_title: "Blocked lifecycle-race need",
-      p_details: null,
-    });
+    blockedCreate = Promise.resolve(
+      creator.client.rpc("create_project_resource_need", {
+        p_expected_creator_profile_id: creator.id,
+        p_project_id: terminalFirstProject,
+        p_title: "Blocked lifecycle-race need",
+        p_details: null,
+      }),
+    );
     blockedCreate.then(
       () => {
         blockedCreateSettled = true;
@@ -271,10 +273,12 @@ async function verifyLifecycleNeedSerialization(creator) {
         null
       )
     `;
-    blockedCancellation = creator.client.rpc("cancel_proposal", {
-      p_expected_creator_profile_id: creator.id,
-      p_proposal_id: mutationFirstProject,
-    });
+    blockedCancellation = Promise.resolve(
+      creator.client.rpc("cancel_proposal", {
+        p_expected_creator_profile_id: creator.id,
+        p_proposal_id: mutationFirstProject,
+      }),
+    );
     blockedCancellation.then(
       () => {
         blockedCancellationSettled = true;
@@ -325,7 +329,10 @@ async function assertIdentifierOnlyEvents() {
     select
       count(*)::integer as total_events,
       count(*) filter (
-        where jsonb_object_length(event.payload) = 4
+        where (
+          select count(*)
+          from jsonb_object_keys(event.payload)
+        ) = 4
           and event.payload ?& array[
             'project_id',
             'project_kind',
@@ -371,7 +378,7 @@ async function createProposalDraft(creator, title) {
     p_locality: "Trento",
     p_administrative_area: "Povo",
     p_public_location_label: "Trento · Povo",
-    p_exact_meeting_text: null,
+    p_exact_meeting_text: "Private Project-needs verification location",
     p_exact_location_visibility: "participants",
     p_skill_ids: [],
     p_skill_importances: [],
@@ -418,7 +425,7 @@ async function createTavoloDraft(creator) {
       p_locality: "Trento",
       p_administrative_area: "Povo",
       p_public_location_label: "Trento · Povo",
-      p_exact_meeting_text: null,
+      p_exact_meeting_text: "Private Tavolo-needs verification location",
       p_exact_location_visibility: "participants",
       p_recurrence_type: "weekly",
       p_weekday: 4,

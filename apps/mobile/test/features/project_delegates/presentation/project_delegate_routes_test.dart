@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:planets_mobile/app/router/app_router.dart';
+import 'package:planets_mobile/core/config/app_config.dart';
 import 'package:planets_mobile/features/auth/application/auth_session_controller.dart';
 import 'package:planets_mobile/features/auth/data/auth_gateway.dart';
 import 'package:planets_mobile/features/auth/domain/auth_models.dart';
@@ -52,6 +53,7 @@ void main() {
 
       final container = ProviderContainer(
         overrides: [
+          appConfigProvider.overrideWithValue(_testConfig()),
           authGatewayProvider.overrideWithValue(auth),
           profileAnchorGatewayProvider.overrideWithValue(profile),
           projectDelegateGatewayProvider.overrideWithValue(delegate),
@@ -101,6 +103,7 @@ void main() {
 
       final container = ProviderContainer(
         overrides: [
+          appConfigProvider.overrideWithValue(_testConfig()),
           authGatewayProvider.overrideWithValue(auth),
           profileAnchorGatewayProvider.overrideWithValue(profile),
           profileGatewayProvider.overrideWithValue(
@@ -151,6 +154,7 @@ void main() {
     addTearDown(router.dispose);
     final container = ProviderContainer(
       overrides: [
+        appConfigProvider.overrideWithValue(_testConfig()),
         authGatewayProvider.overrideWithValue(auth),
         profileAnchorGatewayProvider.overrideWithValue(
           FakeProfileAnchorGateway(),
@@ -194,6 +198,7 @@ void main() {
     addTearDown(router.dispose);
     final container = ProviderContainer(
       overrides: [
+        appConfigProvider.overrideWithValue(_testConfig()),
         authGatewayProvider.overrideWithValue(auth),
         profileAnchorGatewayProvider.overrideWithValue(profile),
         profileGatewayProvider.overrideWithValue(
@@ -250,4 +255,10 @@ Widget _routerApp(GoRouter router) => MaterialApp.router(
   localizationsDelegates: AppLocalizations.localizationsDelegates,
   supportedLocales: AppLocalizations.supportedLocales,
   routerConfig: router,
+);
+
+AppConfig _testConfig() => AppConfig.fromValues(
+  appEnvironment: 'local',
+  supabaseUrl: 'http://127.0.0.1:54321',
+  supabasePublishableKey: 'test-key',
 );

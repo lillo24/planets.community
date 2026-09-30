@@ -1,7 +1,13 @@
 # System Design and Responsibility Boundaries
 
 **Status:** Initial accepted design  
-**Implementation status:** Foundations, authentication, profiles, one-time proposals, Tavoli mobile/public-web discovery, shared project participation, Project delegates and manager authorization, request contribution selections, membership commitments, join-acceptance contribution triage, participation-request private chat, in-app notification projection, unified structured Project/Resource Requests in mobile Messages, mobile Resource request actions, Project group-chat lifecycle/durable message/mobile experience, Project-chat notification/push projection, provider-independent push/job foundations, Project/Resource media, moderation and blocking, and the static-first informational site are implemented on the integration candidate or in focused review.
+**Implementation status:** The main branch remains at the validated DEMO-B
+baseline. The stack-integration candidate additionally implements Project
+resource/contribution flows, the complete Scambio-Dona coordination stack,
+profile/cover media and trust gates, moderation/blocking, Project delegates and
+capacity, shared workspace, Settings, and English/Italian localization. These
+candidate additions are not merged to `main`; optional MLS/E2EE remains deferred
+in excluded PR #28.
 
 This document describes how the major parts of PLANETS should interact. Technology choices are recorded separately in [`core-stack.md`](core-stack.md).
 

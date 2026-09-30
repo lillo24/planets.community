@@ -1,5 +1,10 @@
 # Database development
 
+The stack-integration candidate replays the complete cumulative schema from the
+validated `main` baseline plus the included open product stacks. Candidate-only
+migrations, generated types, and verification commands remain unmerged to
+`main`; optional MLS/E2EE work from PR #28 is intentionally absent.
+
 PostgreSQL is the canonical PLANETS product record. This guide owns the local schema-change, security-test, and generated-type workflow. The current schema includes application identity, basic profiles, the private profile-photo and single-cover Storage/domain foundations, a controlled starter skill catalog, field visibility, one-time proposals, the Tavoli recurring-activity domain, standalone Scambio-Dona resource listings, accepted-request agreements and conversations, Project resource needs, join-request contribution selections, immutable acceptance decisions, accepted-membership commitment sets, shared project participation, structured Messages reads, the Project group-chat lifecycle/authorization foundation, the in-app notification domain, the provider-independent push installation/delivery-job foundation, the private reporting/manual-review and blocking foundations, and private audit/outbox primitives.
 
 ## Source of truth and daily workflow
@@ -294,7 +299,7 @@ Requester, manager-review, own-membership, and manager-member-history reads are 
 | ------------------------------------------------ | ----------- | ---------- | ------------ |
 | Operational participant management               | Yes         | Yes        | Yes          |
 | Existing organizer chats / Needs / contributions | Yes         | Yes        | Yes          |
-| Manage the private shared workspace link          | Yes         | Yes        | Yes          |
+| Manage the private shared workspace link         | Yes         | Yes        | Yes          |
 | Edit an existing Project where lifecycle permits | Yes         | Yes        | No           |
 | Cancel Proposal / pause, resume, or end Tavolo   | Yes         | Yes        | No           |
 | Manage Co-organizers                             | Yes         | Yes        | No           |
@@ -704,7 +709,7 @@ the deterministic local profiles and device-QA sequence.
 
 `project:request:chat:verify:local` uses a Project creator, requester, and unrelated real authenticated user with private Supabase Realtime Broadcast channels and one narrow direct-database race. It proves atomic request/chat creation, the structured initial note, strict mixed-feed pagination, exact counterparty access, unrelated denial, identifier-only events/hints, send/accept serialization, durable resolved history, and the accepted Project group-chat continuation. It logs no OTPs, tokens, keys, database URLs, request notes, message bodies, or meeting details.
 
-`project:delegates:verify:local` uses four real OTP-authenticated profiles, an anonymous preview client, and narrow direct-database assertions. Its 07C2A race/secrecy evidence remains applicable to the backward-compatible Co-organizer overload; focused pgTAP tests 068/069 add Co-creator/Co-organizer role, provenance, stale-issuer invalidation, participation-independence, and authoring/lifecycle coverage. The verifier prints no OTPs, bearer tokens, keys, database URLs, messages, or meeting values.
+`project:delegates:verify:local` uses four real OTP-authenticated profiles, an anonymous preview client, and narrow direct-database assertions. Its 07C2A race/secrecy evidence remains applicable to the backward-compatible Co-organizer overload; the integration-renumbered pgTAP tests 091–097 cover delegate structure/access, Co-creator/Co-organizer role and provenance, stale-issuer invalidation, participation independence, and authoring/lifecycle behavior. The verifier prints no OTPs, bearer tokens, keys, database URLs, messages, or meeting values.
 
 `project:workspace:verify:local` uses six real OTP-authenticated profiles and
 narrow local-database assertions. It proves pre-chat setup, all-manager

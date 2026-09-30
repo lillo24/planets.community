@@ -956,7 +956,7 @@ function proposalContent(title, skillIds, skillImportances) {
     p_locality: "Trento",
     p_administrative_area: "Povo",
     p_public_location_label: "Trento · Povo",
-    p_exact_meeting_text: null,
+    p_exact_meeting_text: "Private contribution verification location",
     p_exact_location_visibility: "participants",
     p_skill_ids: skillIds,
     p_skill_importances: skillImportances,
@@ -988,7 +988,7 @@ async function createTavoloDraft(creator) {
       p_locality: "Trento",
       p_administrative_area: "Povo",
       p_public_location_label: "Trento · Povo",
-      p_exact_meeting_text: null,
+      p_exact_meeting_text: "Private contribution Tavolo location",
       p_exact_location_visibility: "participants",
       p_recurrence_type: "weekly",
       p_weekday: 4,
@@ -1292,7 +1292,10 @@ async function assertAcceptedEventPrivacy(requestId) {
     select
       count(*)::integer as total_events,
       count(*) filter (
-        where jsonb_object_length(event.payload) = 7
+        where (
+          select count(*)
+          from jsonb_object_keys(event.payload)
+        ) = 7
           and event.payload ?& array[
             'project_kind',
             'request_id',
@@ -1378,7 +1381,10 @@ async function assertIdentifierOnlyEvents(requestIds) {
     select
       count(*)::integer as total_events,
       count(*) filter (
-        where jsonb_object_length(event.payload) = 6
+        where (
+          select count(*)
+          from jsonb_object_keys(event.payload)
+        ) = 6
           and event.payload ?& array[
             'project_kind',
             'request_id',

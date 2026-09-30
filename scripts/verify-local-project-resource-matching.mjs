@@ -54,6 +54,7 @@ const proposalId = await rpcId(creator.client, "create_proposal_draft", {
   p_exact_location_visibility: "participants",
   p_skill_ids: [],
   p_skill_importances: [],
+  p_people_capacity: 20,
 });
 const needId = await rpcId(creator.client, "create_project_resource_need", {
   p_expected_creator_profile_id: creator.id,

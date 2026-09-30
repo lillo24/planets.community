@@ -47,6 +47,7 @@ async function verifyActualContributions() {
     signInWithLocalOtp("actual-contribution-remove-race@planets.invalid"),
     signInWithLocalOtp("actual-contribution-unrelated@planets.invalid"),
   ]);
+  await delay(1_100);
   const creatorSecondSession = await signInWithLocalOtp(
     "actual-contribution-creator@planets.invalid",
   );
@@ -467,7 +468,7 @@ async function verifyTavoloRejection(creator, participant) {
       p_locality: "Trento",
       p_administrative_area: "Povo",
       p_public_location_label: "Trento · Povo",
-      p_exact_meeting_text: null,
+      p_exact_meeting_text: "Private actual-contribution Tavolo location",
       p_exact_location_visibility: "participants",
       p_recurrence_type: "weekly",
       p_weekday: 4,
@@ -553,7 +554,7 @@ function proposalContent(skillIds, importances) {
     p_locality: "Trento",
     p_administrative_area: "Povo",
     p_public_location_label: "Trento · Povo",
-    p_exact_meeting_text: null,
+    p_exact_meeting_text: "Private actual-contribution location",
     p_exact_location_visibility: "participants",
     p_skill_ids: skillIds,
     p_skill_importances: importances,
@@ -865,7 +866,10 @@ async function assertIdentifierOnlyEvents(membershipId) {
     select
       count(*)::integer as total,
       count(*) filter (
-        where jsonb_object_length(payload) = 5
+        where (
+          select count(*)
+          from jsonb_object_keys(payload)
+        ) = 5
           and payload ?& array[
             'project_id',
             'project_kind',

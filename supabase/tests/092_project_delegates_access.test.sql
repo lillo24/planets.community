@@ -18,6 +18,19 @@ values
   ('e7100000-0000-4000-8000-000000000003', 'Delegate Requester'),
   ('e7100000-0000-4000-8000-000000000004', 'Delegate Unrelated');
 
+insert into public.profile_photos (profile_id, object_path, audience)
+select
+  profile.id,
+  profile.id::text || '/e71f0000-0000-4000-8000-000000000001.webp',
+  'interactions'
+from public.profiles as profile
+where profile.id in (
+  'e7100000-0000-4000-8000-000000000001',
+  'e7100000-0000-4000-8000-000000000002',
+  'e7100000-0000-4000-8000-000000000003',
+  'e7100000-0000-4000-8000-000000000004'
+);
+
 update public.profile_field_visibility
 set audience = 'public'
 where profile_id = 'e7100000-0000-4000-8000-000000000001'

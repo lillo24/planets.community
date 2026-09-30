@@ -92,6 +92,21 @@ select set_config(
   true
 );
 
+reset role;
+update public.projects
+set people_capacity = 12
+where id in (
+  current_setting('test.trust_proposal_id')::uuid,
+  current_setting('test.trust_draft_id')::uuid,
+  current_setting('test.trust_tavolo_id')::uuid
+);
+set local role authenticated;
+select set_config(
+  'request.jwt.claim.sub',
+  'a4000000-0000-4000-8000-000000000001',
+  true
+);
+
 select lives_ok(
   $$
     select public.update_own_proposal(

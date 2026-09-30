@@ -1,6 +1,7 @@
 import postgres from "postgres";
 
 import { signInLocalOtpUser } from "./lib/local-authenticated-user.mjs";
+import { ensureLocalProfilePhoto } from "./lib/local-profile-photo.mjs";
 import { readLocalSupabaseStatus } from "./lib/local-supabase-status.mjs";
 
 const repositoryRoot = process.cwd();
@@ -39,6 +40,11 @@ async function verifyProjectJoinRequestChat() {
     ensureCompleteProfile(requester, "Request Chat Requester"),
     ensureCompleteProfile(unrelated, "Request Chat Unrelated"),
   ]);
+  await Promise.all(
+    [creator, requester, unrelated].map((user) =>
+      ensureLocalProfilePhoto(user),
+    ),
+  );
 
   const projectId = await createProposal(creator);
   const requestId = await requestParticipation(

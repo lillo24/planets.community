@@ -22,6 +22,21 @@ values
   ('f0100000-0000-4000-8000-000000000005', 'Authority Target Two'),
   ('f0100000-0000-4000-8000-000000000006', 'Authority Requester');
 
+insert into public.profile_photos (profile_id, object_path, audience)
+select
+  profile.id,
+  profile.id::text || '/f01f0000-0000-4000-8000-000000000001.webp',
+  'interactions'
+from public.profiles as profile
+where profile.id in (
+  'f0100000-0000-4000-8000-000000000001',
+  'f0100000-0000-4000-8000-000000000002',
+  'f0100000-0000-4000-8000-000000000003',
+  'f0100000-0000-4000-8000-000000000004',
+  'f0100000-0000-4000-8000-000000000005',
+  'f0100000-0000-4000-8000-000000000006'
+);
+
 update public.profile_field_visibility
 set audience = 'public'
 where profile_id in (

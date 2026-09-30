@@ -2,6 +2,7 @@ import { createClient } from "@supabase/supabase-js";
 import postgres from "postgres";
 
 import { signInLocalOtpUser } from "./lib/local-authenticated-user.mjs";
+import { ensureLocalProfilePhoto } from "./lib/local-profile-photo.mjs";
 import { readLocalSupabaseStatus } from "./lib/local-supabase-status.mjs";
 
 const repositoryRoot = process.cwd();
@@ -43,6 +44,11 @@ async function verifyProjectDelegates() {
     ensureCompleteProfile(candidateB, "Delegate Candidate B"),
     ensureCompleteProfile(requester, "Delegate Requester"),
   ]);
+  await Promise.all(
+    [owner, candidateA, candidateB, requester].map((user) =>
+      ensureLocalProfilePhoto(user),
+    ),
+  );
 
   const projectId = await createPublishedProposal(owner);
   const invite = await createInvite(owner, projectId);
