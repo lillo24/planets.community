@@ -96,3 +96,6 @@ Selection and removal remain local until Save/Publish. A new Tavolo draft is
 created before upload, and publication runs only after cover reconciliation;
 partial cover failure retains the same draft for retry. Cards and details use
 the cover path already present in canonical Tavolo reads, never metadata RPCs.
+
+09B2 composes the separate blocking feature on Tavolo organizer detail without
+filtering the public Tavolo or changing current Project membership/chat access.

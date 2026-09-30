@@ -88,7 +88,7 @@ The web application defines one public `local`, `staging`, or `production` envir
 
 Ordinary web authentication uses an in-memory two-step numeric email-OTP flow. The browser `@supabase/ssr` client owns the cookie-backed session; Next.js Proxy validates/refreshes and propagates those cookies without authorizing or redirecting; Server Components derive trusted identity through `getClaims()`, not `getSession()`. Optional post-auth returns accept only sanitized internal paths. The application stores no pending email/code outside component memory and implements no magic-link callback, deep link, password, or social provider.
 
-The public `/` route remains informational and reports only minimal signed-out, ready, or profile-setup-required state. The authenticated `/profile` route server-loads owner-authorized settings and hands interaction to a narrow Client Component. The reserved `/admin` route fails closed with a 404 for signed-out and ordinary authenticated users until a later plan defines admin authorization. Optional Sentry instrumentation sends no default PII and disables tracing and replay; missing Sentry configuration is a valid disabled state.
+The public `/` route remains informational and reports only minimal signed-out, ready, or profile-setup-required state. The authenticated `/profile` route server-loads owner-authorized settings and hands interaction to a narrow Client Component. `/admin` is the private moderation surface: signed-out and ordinary authenticated users receive the not-found boundary, while every staff read and mutation re-checks a canonical active `moderator` or `admin` role through narrow database operations. It uses the request-owned Supabase session and never a browser service-role credential. Optional Sentry instrumentation sends no default PII and disables tracing and replay; missing Sentry configuration is a valid disabled state.
 
 ### The backend owns authorization and invariants
 
@@ -194,6 +194,51 @@ A requester or Project creator can resolve the historical IDs to current canonic
 Request selection (what was offered), acceptance decision (what the creator decided at that acceptance), current commitment (the mutable membership expectation), live Project requirement coverage (current participant/manual sources), and future final actual contribution are five separate concepts. None alone proves delivery or rates the person. D3A keeps coverage separate from the requirement `open`/`closed` lifecycle and exposes it only through expected-identity-bound claim, creator-manual, and current creator/member read RPCs; D3B owns chat coordination and resurfacing, while one-time final attribution remains 05C.
 
 All mutations and private reads use expected-identity-bound project RPCs. Tables have RLS but no client grants/policies. Request messages are visible only to the requester and project creator; creator review exposes a narrow authenticated display identity but never Auth email. Protected meeting details are available only to the creator or a current accepted member. Each successful transition writes identifier-only audit/outbox events; acceptance adds no disposition arrays, labels, or message text, while exact live-source transitions add only Project/requirement/actor and optional membership identifiers. In 07B1, insertion of the canonical accepted membership also ensures the one Project group-chat anchor transactionally; it does not consume or repurpose the accepted outbox event.
+
+### User blocking domain and interaction barrier
+
+`private.user_block_episodes` preserves directional block/unblock intervals. A
+user can list only their own active outbound blocks; there is no inbound or
+reciprocal-state API, public marker, target notification, or block outbox event.
+The mobile client also has one expected-identity exact-target read returning
+zero or one caller-owned outbound episode. It exists only to render Block versus
+Unblock without enumerating the management list and returns no symmetric or
+inbound state.
+Public profiles, Projects, Scambio-Dona listings, historical content, and
+`public` profile photos remain visible under their ordinary rules.
+
+Either active direction creates one symmetric barrier for starting or accepting
+a new direct Project join or Resource request between the pair. Activating a
+block immediately resolves every pending pair-connected request with existing
+semantics: blocker-as-requester withdraws, while blocker-as-creator/owner
+rejects. Unblock closes only the caller-owned direction and never resurrects
+requests or relationships. Existing accepted Project membership, group-chat
+and meeting entitlement remain membership-derived; existing accepted Resource
+agreement/chat/loan coordination remains usable until its ordinary lifecycle
+ends. Interaction-audience photo delivery is the deliberate exception: generic,
+contextual, and exact Storage authorization deny it while either block direction
+is active, without affecting owner or public-photo access. Reporting, assigned
+corroboration/counterstatement evidence, and staff review ignore user blocks.
+
+Mobile exposes confirmed Block/Unblock actions only where a canonical person is
+already visible: Project organizers and participation people, Resource owners
+and counterparties, and human Project-chat senders. Profile owns the paginated
+outbound `Blocked users` list. Successful mutations invalidate the exact status,
+affected request projections, and target/context photo caches. Public content
+is never filtered; shared Project membership/chat and accepted Resource
+coordination remain visible and usable. An outbound block may explain a disabled
+new-interaction action, while `PT409` with no caller-owned block always uses the
+direction-neutral “interaction isn't available” message.
+
+Block, request creation, and request acceptance first acquire the same
+transaction-scoped advisory lock for the lexically sorted profile pair. They
+then follow the established domain order: concrete Project, shared Project,
+request; or Resource listing, request. A block that serializes first prevents a
+new pending/accepted relationship; acceptance that serializes first may remain
+accepted when the later block activates. When 07C2 co-creators/managers are
+integrated, organizer identities resolved before this pair lock must include
+every active applicant manager; the episode model and pair primitive do not
+change.
 
 ### Unified structured-request Messages
 
@@ -565,9 +610,10 @@ experience and meeting-link access through the existing protected operation.
 06D projects safe body-free Project-chat alerts into the notification and push
 backbones. General direct
 messages, independent group creation, calls, voice messages, typing indicators,
-reactions, and complex read receipts remain excluded. Plan 09 may later
-override ordinary entitlement for blocking, suspension, or moderation; clients
-must not invent those rules.
+reactions, and complex read receipts remain excluded. User blocking deliberately
+does not override existing shared-group entitlement or censor pairwise messages
+inside a group. Later suspension or moderation overrides remain Plan 09C;
+clients must not invent those rules.
 
 ## Media and storage
 
@@ -619,6 +665,49 @@ Community statistics should be derived from canonical records through SQL views 
 
 Administrative tools are separate from normal user flows but use the same canonical backend.
 
+Plan 09A1 implements the first manual-review slice. Private moderation cases
+anchor an immutable typed target and canonical subject/context; append-only
+reports retain the submitting profile, bounded category/explanation and a
+reporter-scoped client idempotency key. Append-only staff notes and
+identifier-only case/audit events retain review chronology without copying
+evidence text into generic audit or outbox payloads. Reporter reads expose only
+their own report, safe target/context summaries and the neutral `received`,
+`under_review`, or `completed` review state. Reports do not change content or
+account visibility.
+
+Active `moderator` and `admin` roles are private, operator-managed records.
+Both roles currently have the same queue/detail/note/review-transition
+capability. Public RPCs own the full identity and authorization boundary;
+private tables have RLS enabled and no API-role table privileges. Review state
+uses compare-and-swap versions and permits received → under review → completed,
+plus an explicit audited completed → under review reopen.
+
+Plan 09A2A adds one private group-corroboration evidence path for qualifying
+Project-context person/conduct cases. The Project creator and accepted
+memberships whose half-open participation interval contains case creation are
+snapshotted in the report transaction, excluding the reporter and subject.
+Later joins, departures, case completion, and reopen do not rewrite that
+cohort. Each invitee can read the first reporter explanation without reporter
+identity and submit one immutable `agree`, `disagree`, or `unsure` response
+with an optional bounded explanation. Invitees never receive peer responses or
+aggregates; only current moderation staff receive responder identity, choice,
+explanation, timestamp, and neutral counts. Project membership is an
+eligibility proxy, not evidence of physical attendance. Corroboration never
+changes case state, content visibility, account access, or notification state.
+
+Plan 09A2B adds a separate private counterstatement path for qualifying
+Scambio-Dona reports with a canonical Resource request context. The case
+subject is revalidated as the other owner/requester counterparty and receives
+the original category, explanation, and safe Resource context without the
+reporter identity, staff notes, peer evidence, or other cases. One required
+trimmed statement is append-only and exact retries are idempotent; a different
+retry conflicts. Current staff can read the assigned counterparty and pending
+or submitted evidence. Completion suppresses an unanswered request from the
+pending queue, reopening restores that same request, and an already submitted
+statement remains final. Counterstatements do not change moderation state,
+Resource requests/listings/agreements, notifications, Realtime, or outbox
+state.
+
 The minimum moderation backbone before public user-generated content should include:
 
 - reporting of users, proposals, messages, and supported media;
@@ -635,6 +724,15 @@ The minimum moderation backbone before public user-generated content should incl
 Codex can build this machinery, but founders must define prohibited content, escalation, appeals, retention, minimum age, and response expectations.
 
 Direct database editing through Supabase Studio is acceptable for development. It is not the long-term moderation interface and should not be required for routine production operations.
+
+09B1 owns the backend user-block episode and cross-domain interaction barrier;
+09B2 owns ordinary-user mobile Block/Unblock actions, management, confirmations,
+cache refresh, and failure copy. 09C owns consequences including restrictions,
+content visibility, suspension, and later escalation/appeals, and 09D owns
+minimum-age behavior. Plan 10 must decide report, note, corroboration,
+counterstatement, and block-history retention plus deletion/anonymization;
+09A1/09A2A/09A2B/09B1 deliberately use restrictive references and make no
+irreversible retention-policy choice.
 
 ## Security baseline
 

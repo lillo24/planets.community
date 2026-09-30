@@ -10,6 +10,10 @@ import '../../../core/widgets/loading_state.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../auth/application/auth_session_controller.dart';
 import '../../cover_media/presentation/project_cover_image.dart';
+import '../../auth/domain/auth_models.dart';
+import '../../blocking/presentation/blocking_action.dart';
+import '../../moderation/presentation/moderation_routes.dart';
+import '../../participation/application/participation_controllers.dart';
 import '../../participation/domain/participation_models.dart';
 import '../../participation/presentation/project_participation_section.dart';
 import '../../profile_photo/application/project_creator_photo_controller.dart';
@@ -336,6 +340,45 @@ class _ProposalDetailScreenState extends ConsumerState<ProposalDetailScreen> {
                       '${detail.creatorDisplayName ?? l10n.profilePhotoOrganizerFallback}',
                     ),
                   ),
+                  if (ref.watch(authSessionProvider).phase ==
+                          AuthSessionPhase.ready &&
+                      ref.watch(authSessionProvider).identity?.id !=
+                          detail.creatorProfileId) ...[
+                    const SizedBox(height: AppSpacing.small),
+                    BlockingActionButton(
+                      targetProfileId: detail.creatorProfileId,
+                      targetDisplayName: detail.creatorDisplayName,
+                      buttonKey: const Key('proposal-blocking-action'),
+                      onChanged: (_) async {
+                        ref
+                            .read(projectCreatorPhotoProvider.notifier)
+                            .invalidate(detail.summary.id);
+                        await Future.wait([
+                          ref
+                              .read(projectCreatorPhotoProvider.notifier)
+                              .load(detail.summary.id, force: true),
+                          if (ref.read(authSessionProvider).identity?.id
+                              case final profileId?)
+                            ref
+                                .read(ownParticipationProvider.notifier)
+                                .load(profileId),
+                        ]);
+                      },
+                    ),
+                    const SizedBox(height: AppSpacing.small),
+                    OutlinedButton.icon(
+                      key: const Key('proposal-report-action'),
+                      onPressed: () => ModerationRoutes.openReport(
+                        context,
+                        projectReportTarget(
+                          detail.summary.id,
+                          detail.summary.title,
+                        ),
+                      ),
+                      icon: const Icon(Icons.flag_outlined),
+                      label: Text(l10n.moderationReportAction),
+                    ),
+                  ],
                 ],
               ),
       ),

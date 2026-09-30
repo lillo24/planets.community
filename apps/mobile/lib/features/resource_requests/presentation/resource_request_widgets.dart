@@ -26,6 +26,8 @@ String resourceRequestFailureMessage(
     l10n.profilePhotoScambioRequiredTitle,
   ResourceRequestFailureKind.forbidden => l10n.resourceRequestForbidden,
   ResourceRequestFailureKind.conflict => l10n.resourceRequestChangedElsewhere,
+  ResourceRequestFailureKind.interactionUnavailable =>
+    l10n.blockingInteractionUnavailable,
   ResourceRequestFailureKind.listingUnavailable =>
     l10n.resourceRequestListingUnavailable,
   ResourceRequestFailureKind.notFound => l10n.resourceRequestNotFound,

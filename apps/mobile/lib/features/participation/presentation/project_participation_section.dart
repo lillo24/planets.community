@@ -6,6 +6,8 @@ import '../../../core/theme/app_tokens.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../auth/application/auth_session_controller.dart';
 import '../../auth/domain/auth_models.dart';
+import '../../blocking/application/blocking_controller.dart';
+import '../../blocking/presentation/blocking_action.dart';
 import '../application/participation_controllers.dart';
 import '../domain/participation_models.dart';
 import 'participation_routes.dart';
@@ -88,6 +90,23 @@ class ProjectParticipationSection extends ConsumerWidget {
         : null;
     final command = ref.watch(participationCommandProvider);
     final commandForProject = command.projectId == projectId ? command : null;
+    final blockingState = ref.watch(blockingProvider);
+    if (session.phase == AuthSessionPhase.ready &&
+        profileId != null &&
+        !isCreator &&
+        (!blockingState.hasExactStatus(creatorProfileId) &&
+            !blockingState.isLoadingStatus(creatorProfileId) &&
+            !blockingState.hasStatusFailure(creatorProfileId))) {
+      Future<void>.microtask(
+        () => ref
+            .read(blockingProvider.notifier)
+            .loadStatus(profileId, creatorProfileId),
+      );
+    }
+    final organizerBlocked =
+        profileId != null &&
+        blockingState.expectedProfileId == profileId &&
+        blockingState.exactStatus(creatorProfileId) != null;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -177,6 +196,7 @@ class ProjectParticipationSection extends ConsumerWidget {
           ownState,
           participation,
           commandForProject,
+          organizerBlocked,
         ),
       ],
     );
@@ -191,6 +211,7 @@ class ProjectParticipationSection extends ConsumerWidget {
     OwnParticipationState ownState,
     ProjectParticipationSnapshot? participation,
     ParticipationCommandState? command,
+    bool organizerBlocked,
   ) {
     final l10n = AppLocalizations.of(context);
     if (isCreator) {
@@ -288,6 +309,21 @@ class ProjectParticipationSection extends ConsumerWidget {
       ];
     }
     if (!acceptsNewRequests) return [Text(l10n.participationClosed)];
+    if (organizerBlocked) {
+      return [
+        Text(
+          l10n.blockingOwnBlockInteractionExplanation,
+          key: Key('participation-blocked-explanation-$projectId'),
+        ),
+        const SizedBox(height: AppSpacing.small),
+        BlockingActionButton(
+          targetProfileId: creatorProfileId,
+          buttonKey: Key('participation-unblock-$projectId'),
+          onChanged: (_) =>
+              ref.read(ownParticipationProvider.notifier).load(profileId),
+        ),
+      ];
+    }
     return [
       FilledButton.icon(
         key: Key('participation-join-$projectId'),
@@ -346,6 +382,8 @@ String participationFailureMessage(
   ParticipationFailureKind.forbidden => l10n.participationForbidden,
   ParticipationFailureKind.conflict ||
   ParticipationFailureKind.notFound => l10n.participationConflict,
+  ParticipationFailureKind.interactionUnavailable =>
+    l10n.blockingInteractionUnavailable,
   ParticipationFailureKind.unavailable => l10n.participationSafeError,
   ParticipationFailureKind.profilePhotoRequired =>
     l10n.profilePhotoJoinRequiredTitle,

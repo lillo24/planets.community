@@ -34,3 +34,8 @@ auto-submits on return. In owner history, only pending or accepted/open request
 rows load requester avatars. Rejection, withdrawal, listing-closed pending
 requests, or accepted coordination closure invalidate and remove that cached
 relationship image.
+
+09B2 composes Block/Unblock for the canonical other counterparty. Pending rows
+refresh after blocking because the backend may withdraw/reject them; accepted
+coordination still exposes its agreement/chat. New-request `PT409` is shown only
+as a generic unavailable interaction and never identifies an inbound block.

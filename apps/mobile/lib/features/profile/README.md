@@ -35,3 +35,7 @@ organizer/participant audiences remain deferred.
 When centrally gated demo tools are enabled, setup and edit expose the shared
 sample-data action. It selects only IDs from the loaded controlled catalog,
 uses a mixed public/private visibility example, and remains local until Save.
+
+Profile also links to the independently owned `blocking` feature's outbound
+`Blocked users` management screen. No inbound/reciprocal state is part of the
+Profile model.

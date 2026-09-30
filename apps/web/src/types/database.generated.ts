@@ -2084,6 +2084,24 @@ export type Database = {
         Args: { p_object_path: string }
         Returns: boolean
       }
+      add_moderation_case_note: {
+        Args: {
+          p_body: string
+          p_case_id: string
+          p_expected_staff_profile_id: string
+        }
+        Returns: {
+          created_at: string
+          note_id: string
+        }[]
+      }
+      block_user: {
+        Args: {
+          p_blocked_profile_id: string
+          p_expected_blocker_profile_id: string
+        }
+        Returns: string
+      }
       can_read_public_project_creator_photo_object: {
         Args: { p_object_path: string }
         Returns: boolean
@@ -2232,6 +2250,90 @@ export type Database = {
         }
         Returns: string
       }
+      get_moderation_case_corroboration: {
+        Args: { p_case_id: string; p_expected_staff_profile_id: string }
+        Returns: {
+          agree_count: number
+          disagree_count: number
+          invited_count: number
+          pending_count: number
+          responded_count: number
+          responses: Json
+          unsure_count: number
+        }[]
+      }
+      get_moderation_case_counterstatement: {
+        Args: { p_case_id: string; p_expected_staff_profile_id: string }
+        Returns: {
+          recipient_display_name: string
+          recipient_profile_id: string
+          request_id: string
+          requested_at: string
+          statement: string
+          submitted_at: string
+        }[]
+      }
+      get_moderation_case_detail: {
+        Args: { p_case_id: string; p_expected_staff_profile_id: string }
+        Returns: {
+          case_id: string
+          category: string
+          completed_at: string
+          context_summary: string
+          created_at: string
+          events: Json
+          explanation: string
+          notes: Json
+          project_context_id: string
+          reporter_display_name: string
+          reporter_profile_id: string
+          resource_chat_context_id: string
+          resource_listing_context_id: string
+          resource_request_context_id: string
+          state: string
+          state_version: number
+          subject_display_name: string
+          subject_profile_id: string
+          target_kind: string
+          target_summary: string
+        }[]
+      }
+      get_own_blocked_profile_status: {
+        Args: {
+          p_expected_blocker_profile_id: string
+          p_target_profile_id: string
+        }
+        Returns: {
+          block_episode_id: string
+          blocked_at: string
+          blocked_display_name: string
+          blocked_profile_id: string
+        }[]
+      }
+      get_own_group_corroboration_request: {
+        Args: { p_expected_recipient_profile_id: string; p_request_id: string }
+        Returns: {
+          can_respond: boolean
+          case_id: string
+          case_state: string
+          category: string
+          context_summary: string
+          created_at: string
+          explanation: string
+          request_id: string
+          responded_at: string
+          response_choice: string
+          response_explanation: string
+          target_kind: string
+          target_summary: string
+        }[]
+      }
+      get_own_moderation_staff_access: {
+        Args: { p_expected_profile_id: string }
+        Returns: {
+          staff_role: string
+        }[]
+      }
       get_own_participation_request_message_item: {
         Args: { p_expected_profile_id: string; p_request_id: string }
         Returns: {
@@ -2344,6 +2446,23 @@ export type Database = {
           title: string
           topic: string
           updated_at: string
+        }[]
+      }
+      get_own_resource_counterstatement_request: {
+        Args: { p_expected_recipient_profile_id: string; p_request_id: string }
+        Returns: {
+          can_respond: boolean
+          case_id: string
+          case_state: string
+          category: string
+          context_summary: string
+          created_at: string
+          explanation: string
+          request_id: string
+          statement: string
+          submitted_at: string
+          target_kind: string
+          target_summary: string
         }[]
       }
       get_own_resource_listing: {
@@ -2611,6 +2730,62 @@ export type Database = {
         }
         Returns: string
       }
+      list_moderation_cases: {
+        Args: {
+          p_before_case_id?: string
+          p_before_created_at?: string
+          p_expected_staff_profile_id: string
+          p_limit?: number
+          p_state?: string
+        }
+        Returns: {
+          case_id: string
+          category: string
+          context_summary: string
+          created_at: string
+          state: string
+          state_version: number
+          subject_display_name: string
+          subject_profile_id: string
+          target_kind: string
+          target_summary: string
+        }[]
+      }
+      list_own_blocked_profiles: {
+        Args: {
+          p_cursor_block_episode_id?: string
+          p_cursor_blocked_at?: string
+          p_expected_blocker_profile_id: string
+          p_limit?: number
+        }
+        Returns: {
+          block_episode_id: string
+          blocked_at: string
+          blocked_display_name: string
+          blocked_profile_id: string
+        }[]
+      }
+      list_own_group_corroboration_requests: {
+        Args: {
+          p_before_created_at?: string
+          p_before_request_id?: string
+          p_expected_recipient_profile_id: string
+          p_limit?: number
+          p_pending_only?: boolean
+        }
+        Returns: {
+          can_respond: boolean
+          case_id: string
+          case_state: string
+          context_summary: string
+          created_at: string
+          request_id: string
+          responded_at: string
+          response_choice: string
+          target_kind: string
+          target_summary: string
+        }[]
+      }
       list_own_message_chat_items: {
         Args: {
           p_cursor_activity_at?: string
@@ -2638,6 +2813,43 @@ export type Database = {
           resource_listing_id: string
           resource_request_id: string
           viewer_role: string
+        }[]
+      }
+      list_own_moderation_evidence_requests: {
+        Args: {
+          p_expected_recipient_profile_id: string
+          p_limit?: number
+          p_pending_only?: boolean
+        }
+        Returns: {
+          can_respond: boolean
+          case_state: string
+          context_summary: string
+          created_at: string
+          request_id: string
+          request_kind: string
+          responded_at: string
+          target_kind: string
+          target_summary: string
+        }[]
+      }
+      list_own_moderation_reports: {
+        Args: {
+          p_before_created_at?: string
+          p_before_report_id?: string
+          p_expected_reporter_profile_id: string
+          p_limit?: number
+        }
+        Returns: {
+          case_id: string
+          category: string
+          context_summary: string
+          created_at: string
+          explanation: string
+          report_id: string
+          state: string
+          target_kind: string
+          target_summary: string
         }[]
       }
       list_own_notification_preferences: {
@@ -3581,6 +3793,72 @@ export type Database = {
           p_project_id: string
           p_requirement_id: string
           p_requirement_kind: string
+        }
+        Returns: string
+      }
+      submit_group_corroboration_response: {
+        Args: {
+          p_choice: string
+          p_client_submission_id: string
+          p_expected_recipient_profile_id: string
+          p_explanation?: string
+          p_request_id: string
+        }
+        Returns: {
+          choice: string
+          created_at: string
+          explanation: string
+          response_id: string
+        }[]
+      }
+      submit_moderation_report: {
+        Args: {
+          p_category: string
+          p_client_submission_id: string
+          p_context_id?: string
+          p_context_kind?: string
+          p_expected_reporter_profile_id: string
+          p_explanation: string
+          p_target_id: string
+          p_target_kind: string
+        }
+        Returns: {
+          case_id: string
+          created_at: string
+          report_id: string
+          state: string
+        }[]
+      }
+      submit_resource_counterstatement: {
+        Args: {
+          p_client_submission_id: string
+          p_expected_recipient_profile_id: string
+          p_request_id: string
+          p_statement: string
+        }
+        Returns: {
+          counterstatement_id: string
+          created_at: string
+          statement: string
+        }[]
+      }
+      transition_moderation_case: {
+        Args: {
+          p_case_id: string
+          p_expected_staff_profile_id: string
+          p_expected_state_version: number
+          p_target_state: string
+        }
+        Returns: {
+          state: string
+          state_version: number
+          updated_at: string
+        }[]
+      }
+      unblock_user: {
+        Args: {
+          p_blocked_profile_id: string
+          p_expected_blocker_profile_id: string
         }
         Returns: string
       }

@@ -9,7 +9,9 @@ import '../../../core/widgets/error_state.dart';
 import '../../../core/widgets/loading_state.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../auth/application/auth_session_controller.dart';
+import '../../blocking/presentation/blocking_action.dart';
 import '../../messages/presentation/messages_routes.dart';
+import '../../moderation/presentation/moderation_routes.dart';
 import '../application/project_chat_controllers.dart';
 import '../application/project_needs_controller.dart';
 import '../domain/project_chat_models.dart';
@@ -266,6 +268,17 @@ class _ProjectChatScreenState extends ConsumerState<ProjectChatScreen>
                                       isMine:
                                           message.senderProfileId ==
                                           _expectedProfileId,
+                                      onReport:
+                                          message.senderProfileId ==
+                                              _expectedProfileId
+                                          ? null
+                                          : () => ModerationRoutes.openReport(
+                                              context,
+                                              projectMessageReportTarget(
+                                                message.itemId,
+                                                l10n.moderationProjectMessageTarget,
+                                              ),
+                                            ),
                                     ),
                                   ProjectChatRequirementNeededAgain event =>
                                     _RequirementNeededAgainCard(event: event),
@@ -312,10 +325,15 @@ class _ProjectChatScreenState extends ConsumerState<ProjectChatScreen>
 }
 
 class _MessageBubble extends StatelessWidget {
-  const _MessageBubble({required this.message, required this.isMine});
+  const _MessageBubble({
+    required this.message,
+    required this.isMine,
+    required this.onReport,
+  });
 
   final ProjectChatHumanMessage message;
   final bool isMine;
+  final VoidCallback? onReport;
 
   @override
   Widget build(BuildContext context) {
@@ -344,7 +362,31 @@ class _MessageBubble extends StatelessWidget {
                   const SizedBox(height: AppSpacing.xSmall),
                   Text(message.body),
                   const SizedBox(height: AppSpacing.xSmall),
-                  Text(time, style: Theme.of(context).textTheme.bodySmall),
+                  Wrap(
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    spacing: AppSpacing.xSmall,
+                    children: [
+                      Text(time, style: Theme.of(context).textTheme.bodySmall),
+                      if (onReport != null)
+                        IconButton(
+                          key: Key('project-chat-report-${message.itemId}'),
+                          visualDensity: VisualDensity.compact,
+                          tooltip: l10n.moderationReportAction,
+                          onPressed: onReport,
+                          icon: const Icon(Icons.flag_outlined, size: 18),
+                        ),
+                      if (!isMine)
+                        BlockingActionButton(
+                          targetProfileId: message.senderProfileId,
+                          targetDisplayName: message.senderDisplayName,
+                          consequence: BlockingContextConsequence.projectChat,
+                          compact: true,
+                          buttonKey: Key(
+                            'project-chat-block-${message.itemId}',
+                          ),
+                        ),
+                    ],
+                  ),
                 ],
               ),
             ),

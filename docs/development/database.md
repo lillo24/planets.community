@@ -1,6 +1,6 @@
 # Database development
 
-PostgreSQL is the canonical PLANETS product record. This guide owns the local schema-change, security-test, and generated-type workflow. The current schema includes application identity, basic profiles, the private profile-photo and single-cover Storage/domain foundations, a controlled starter skill catalog, field visibility, one-time proposals, the Tavoli recurring-activity domain, standalone Scambio-Dona resource listings, accepted-request agreements and conversations, Project resource needs, join-request contribution selections, immutable acceptance decisions, accepted-membership commitment sets, shared project participation, structured Messages reads, the Project group-chat lifecycle/authorization foundation, the in-app notification domain, the provider-independent push installation/delivery-job foundation, and private audit/outbox primitives.
+PostgreSQL is the canonical PLANETS product record. This guide owns the local schema-change, security-test, and generated-type workflow. The current schema includes application identity, basic profiles, the private profile-photo and single-cover Storage/domain foundations, a controlled starter skill catalog, field visibility, one-time proposals, the Tavoli recurring-activity domain, standalone Scambio-Dona resource listings, accepted-request agreements and conversations, Project resource needs, join-request contribution selections, immutable acceptance decisions, accepted-membership commitment sets, shared project participation, structured Messages reads, the Project group-chat lifecycle/authorization foundation, the in-app notification domain, the provider-independent push installation/delivery-job foundation, the private reporting/manual-review and blocking foundations, and private audit/outbox primitives.
 
 ## Source of truth and daily workflow
 
@@ -21,6 +21,110 @@ The seed file is for deterministic development/test rows without real personal d
 Later migrations should use lowercase `snake_case`, UUID primary keys for ordinary application entities unless a stronger reason exists, and the relevant `auth.users.id` for an auth-linked entity when appropriate. Timestamps use `timestamptz`; `created_at` is normally non-null with a database default, while `updated_at` is added only when useful and must be maintained server-side. Express enforceable invariants as constraints and choose each foreign key's delete behavior deliberately rather than defaulting mechanically to cascade.
 
 There is no universal soft-delete or content-state convention. Deletion, anonymization, historical retention, and moderation state have product and legal consequences and belong to their later plans.
+
+## Reporting and manual moderation review
+
+The private `moderation_cases` table owns one immutable typed target, its
+canonically derived subject, and Project or Scambio-Dona context. The private
+`moderation_reports` row owns the original reporter evidence, category and
+reporter-scoped submission key; repeat delivery of one client key is
+idempotent, while a fresh key can represent a later incident. Private
+`moderation_case_notes` and `moderation_case_events` are append-only. Evidence
+bodies remain only in report/note records and are never copied into generic
+audit metadata or outbox events.
+
+Authenticated clients use only the public security-definer operations for
+submission, reporter-owned status, staff access, bounded queue/detail reads,
+note append and versioned state transition. Those operations fix an empty
+`search_path`, bind expected identity to `auth.uid()`, derive content authors
+and counterparties server-side, validate private-object access and grant
+execute only to `authenticated`. All moderation tables retain RLS as defense in
+depth and grant no direct table privileges to `anon`, `authenticated`, or
+`service_role`.
+
+09A2A adds private append-only `moderation_evidence_requests` and
+`moderation_evidence_responses`. An after-insert report trigger participates in
+the report transaction and takes the established Project participation lock
+before snapshotting the creator plus accepted membership intervals containing
+case creation. The `(case_id, request_kind, recipient_profile_id)` key makes
+report delivery retries harmless. Recipient RPCs expose only the assigned
+request, reporter wording without reporter identity, and the caller's own
+response; they never expose peers or counts. Submission locks the case before
+the request so completion and first response have one deterministic boundary,
+accepts only an exact client retry, and otherwise preserves the first response.
+The staff-only evidence RPC returns identified submitted responses and neutral
+counts. Generic audit metadata contains identifiers/counts only, and no
+corroboration outbox/Realtime/push event exists.
+
+09A2B extends the request discriminator and adds private append-only
+`moderation_counterstatements`. A report-transaction trigger creates one
+`resource_counterstatement` request only for supported profile, Resource
+request, or Resource chat-message targets with a canonical request context.
+It revalidates the listing owner/requester pair and subject rather than trusting
+client-supplied recipient data; generic listing reports without that context do
+not qualify. Recipient operations use a unified discriminated request list plus
+a counterstatement-specific detail/submit boundary. Submission locks case then
+request, revalidates the current canonical counterparty, trims and requires
+10–4000 characters, accepts only an exact client retry, and preserves the first
+statement. The reporter has no request/status/statement read. Current staff get
+only the assigned recipient and pending/submitted statement projection.
+Identifier-only audit rows omit statement bodies, and no outbox, Realtime,
+notification, or Resource-domain mutation is emitted.
+
+The first staff role is intentionally an operator/database-owner bootstrap,
+never a client path. After the profile exists, run a reviewed owner session:
+
+```sql
+insert into private.moderation_staff_roles (profile_id, staff_role)
+values ('00000000-0000-4000-8000-000000000000', 'admin');
+```
+
+Use the real profile UUID and record the operator change. Deactivate access by
+setting `is_active = false` and `deactivated_at = statement_timestamp()`;
+subsequent staff operations deny immediately. Do not grant direct moderation
+table access or distribute a service-role key to make an admin browser work.
+
+09A1/09A2A/09A2B intentionally define no sanctions, public warning, automated
+hiding, blocking, suspension, or retention/deletion policy. 09B, 09C and Plan
+10 own those decisions respectively.
+
+## User blocking
+
+`private.user_block_episodes` records append-preserved directional intervals
+with one active episode per `(blocker, blocked)` direction. API roles have no
+table privileges. Expected-identity `block_user`/`unblock_user` mutations and a
+bounded keyset `list_own_blocked_profiles` read expose only the caller's outbound
+state. `get_own_blocked_profile_status` is the matching exact-target read: it
+returns zero or one active caller-owned episode and prevents mobile from paging
+through the management list merely to render Block versus Unblock. No API
+reveals inbound/reciprocal state, no target notification or
+block-specific outbox event exists, and audit metadata contains identifiers
+only. Unblock closes the active interval and never revives a request,
+membership, agreement, or chat.
+
+The private symmetric predicate is reused by Project/Resource request creation
+and acceptance. Activating a block closes pair-connected pending requests using
+their existing withdrawn/rejected transitions, but does not alter accepted
+Project membership, group chat, meeting access, or accepted Resource
+coordination. Public discovery and public photos stay unchanged.
+Interaction-audience photo metadata and exact Storage delivery are denied while
+either block direction is active. Moderation reports, group corroboration,
+Resource counterstatements, and staff review intentionally contain no block
+check.
+
+All block/request/accept operations acquire the transaction-scoped advisory
+lock for the sorted profile pair before domain rows. After that lock, Project
+work retains concrete Proposal/Tavolo → shared Project → request order, while
+Resource work retains listing → request order. Pending-close scans visit
+Projects and Resources in UUID order. When active co-creators/managers from 07C2
+converge, organizer resolution before the pair lock must include every active
+profile with applicant-management authority; no block-model redesign is
+required.
+
+The mobile status/list caches are identity-bound and cleared on account change.
+After Block/Unblock, only the affected target photo and Project/Resource/request
+projections are invalidated. A zero-row exact result never means that the target
+does not block the caller; direction-neutral `PT409` copy preserves that privacy.
 
 ## Application conflict SQLSTATEs
 
@@ -443,6 +547,10 @@ npm run project:resource-needs:verify:local
 npm run project:resource-matching:verify:local
 npm run project:contribution-selections:verify:local
 npm run project:membership-commitments:verify:local
+npm run moderation:verify:local
+npm run moderation:corroboration:verify:local
+npm run moderation:counterstatement:verify:local
+npm run blocking:verify:local
 npm run db:types
 npm run db:types:check
 ```
@@ -540,8 +648,39 @@ does not auto-seed demo rows. The commands reject remote and production targets,
 work offline after checkout, and never print OTPs, credentials, protected
 locations, or message bodies.
 
-`auth:web:verify:local` adds web-specific evidence after a locally configured production Next.js build. It obtains session cookies through supported `@supabase/ssr` callbacks, confirms the Server Component recognizes the authenticated session, rejects private-auth material in the rendered response, and confirms `/admin` returns 404 for signed-out and signed-in requests. It does not invent or log Supabase's cookie encoding.
+`moderation:verify:local` authenticates a reporter, reported profile, and staff
+profile through real local OTP sessions. It proves ordinary-user queue denial,
+public-profile report submission, reporter-only status, reported-user
+isolation, operator-provisioned staff access, detail/note/state operations,
+identifier-only generic audit/outbox behavior, and immediate denial after role
+deactivation. It never prints emails, OTPs, tokens, keys, database URLs, report
+explanations, note bodies, or moderation records.
+
+`moderation:corroboration:verify:local` authenticates a Project reporter,
+reported profile, creator, eligible member, and staff profile. It creates a
+deterministic local membership cohort, proves reporter-anonymous recipient
+detail, exact response retry, reported-subject denial, staff-only identified
+evidence, completed-case pending suppression, and the absence of sensitive
+audit/outbox projection. It prints no emails, OTPs, tokens, keys, database
+URLs, report wording, response content, or evidence records.
+
+`moderation:counterstatement:verify:local` authenticates canonical Resource
+counterparties, an unrelated profile, and staff. It proves automatic request
+creation, subject-only reporter-anonymous detail, exact immutable retry,
+unrelated/reporter denial, staff-only pending/submitted evidence, unchanged
+Resource-domain state, and body-free audit/outbox records. It prints no emails,
+OTPs, tokens, keys, database URLs, report wording, statement content, or
+evidence records.
+
+`blocking:verify:local` uses direct local authenticated transactions and holds
+the canonical pair lock across four contenders. It proves block-first Project
+and Resource request creation waits, returns `PT409`, and leaves no pending row;
+it also proves Project and Resource acceptance that commits first is preserved
+as current membership or open agreement/chat when the subsequent block
+activates. It prints no identities, tokens, messages, or database URL.
+
+`auth:web:verify:local` adds web-specific evidence after a locally configured production Next.js build. It obtains session cookies through supported `@supabase/ssr` callbacks, confirms the Server Component recognizes the authenticated session, rejects private-auth material in the rendered response, and confirms `/admin` returns 404 for signed-out and ordinary signed-in requests. It does not invent or log Supabase's cookie encoding.
 
 `tavoli:web:verify:local` uses synthetic local OTP data and the production Next.js server to prove signed-out Tavoli list/detail rendering, rough-location and next-meeting output, exclusion of paused/ended rows from discovery, retained sanitized historical detail, exact-ID 404 behavior, and detail-only public/restricted exact-location handling. It never prints test addresses, tokens, keys, or protected meeting content.
 
-`npm run check:db` performs reset, lint, advisors, pgTAP, the real fake push-delivery worker protocol, the mobile/backend Auth check, the deterministic immediate-session/RLS check, the two-user profile visibility check, the proposal privacy/lifecycle check, the recurring activity recurrence/privacy/lifecycle check, the multi-user project-participation and participation-aware Browse checks, notification/push projection, structured Messages integration, Project-chat lifecycle/message/notification integrations, the Scambio-Dona listing, saved-search, request, agreement, chat, and unified Messages/notification integrations, the Project resource-need Proposal/Tavolo/concurrency integration, the join-request contribution-selection and acceptance-triage Proposal/Tavolo/concurrency integration, the membership-commitment Proposal/Tavolo/concurrency integration, type regeneration, and drift detection as one validation sequence. It assumes `npm run db:start` has already succeeded and leaves stack lifecycle to the caller. CI additionally generates local web configuration, builds Next.js, runs the web-session and public Tavoli integrations, and always stops Supabase.
+`npm run check:db` performs reset, lint, advisors, pgTAP, the real fake push-delivery worker protocol, the mobile/backend Auth check, the deterministic immediate-session/RLS check, the two-user profile visibility check, the proposal privacy/lifecycle check, the recurring activity recurrence/privacy/lifecycle check, the multi-user project-participation and participation-aware Browse checks, notification/push projection, structured Messages integration, Project-chat lifecycle/message/notification integrations, the Scambio-Dona listing, saved-search, request, agreement, chat, and unified Messages/notification integrations, the Project resource-need Proposal/Tavolo/concurrency integration, the join-request contribution-selection and acceptance-triage Proposal/Tavolo/concurrency integration, the membership-commitment Proposal/Tavolo/concurrency integration, moderation evidence integrations, user-block pair-serialization races, type regeneration, and drift detection as one validation sequence. It assumes `npm run db:start` has already succeeded and leaves stack lifecycle to the caller. CI additionally generates local web configuration, builds Next.js, runs the web-session and public Tavoli integrations, and always stops Supabase.

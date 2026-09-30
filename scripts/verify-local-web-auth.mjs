@@ -156,7 +156,7 @@ async function verifyWebEmailOtpSession() {
       );
     }
     console.log(
-      "Confirmed authenticated SSR state and the signed-in /admin 404 boundary.",
+      "Confirmed authenticated SSR state and the ordinary signed-in /admin 404 boundary.",
     );
   } finally {
     await stopNextServer(server);

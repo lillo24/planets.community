@@ -127,12 +127,14 @@ Do not begin a dependent plan until the prior plan is merged or its branch is ex
 | 08B1        | Cover Image Storage + Domain Foundation                   | Private WebP bucket, parent-bound immutable paths, canonical metadata, lifecycle-aware delivery, and nullable read fields | 08A4B                  | Open dependency PR #106; cover rendering and selection remain 08B2                                                  | In progress                        |
 | 08B2A       | Proposal + Tavolo Cover Mobile UX                         | Mobile normalization, owner management, and presentation for shared Project covers                                        | 08B1                   | Open stacked PR #110; native interaction and crop review remains Plan 12; no multi-image gallery                     | In progress                        |
 | 08B2B       | Scambio-Dona Cover Mobile UX                              | Shared normalization, owner management, and presentation for Resource covers and matching cards                           | 08B2A                  | Current stacked PR; native interaction and crop review remains Plan 12; no multi-image gallery                       | In progress                        |
-| 09          | Safety, moderation and admin                              | Reporting, blocking, content states, admin roles, moderation queue/actions, audit trail and minimal custom admin UI       | 04–08                  | Community rules, prohibited content, escalation, suspension, appeals, minimum age                                    | Not started                        |
-| 10          | Account deletion and privacy operations                   | In-app and web deletion paths, cleanup/anonymization jobs, export groundwork, privacy documentation inputs                | 03–09                  | Legal retention and anonymization policy; legal text remains founder/legal work                                      | Not started                        |
-| 11          | Analytics and operational foundations                     | Explicit product events, privacy scrubbing, health/queue signals, alert requirements, and incident ownership inputs       | 00–10                  | Success metrics and analytics consent/legal choices                                                                  | Not started                        |
-| 12          | Consolidated UI/UX and native QA pass                     | Coherent visual/interaction design, accessibility, responsive behavior, and deferred native flow validation               | 00–11                  | Final visual identity, high-impact interaction decisions, and native review                                          | Not started                        |
-| 13          | Self-hosted production infrastructure readiness           | Provisioned and rehearsed production Supabase stack, security, backups, monitoring, operations, and cutover plan          | 00–12                  | Host/account selection, billing, DNS, credentials, retention objectives, and production-operation approval           | Not started                        |
-| 14          | Release pipeline and store readiness                      | Controlled releases over the proven production backend, signed builds, internal testing, gates, and store checklists      | 00–13                  | Provider accounts, certificates, store listings, policies, and final release approval                                | Not started                        |
+| 09          | Safety, moderation and admin                              | Reporting, blocking, content states, admin roles, moderation queue/actions, audit trail and minimal custom admin UI      | 04–08                  | Community rules, prohibited content, escalation, suspension, appeals, minimum age                                    | In progress through 09B2           |
+| 09B1        | User Blocking Domain + Enforcement                        | Private directional episodes, symmetric new-interaction barrier, pending closure, photo enforcement, and race safety     | 09A2B                  | Founder review of the stacked backend/security boundary                                                              | In focused review                  |
+| 09B2        | Mobile Blocking UX                                        | Contextual Block/Unblock actions, outbound management, confirmations, cache refresh, and safe interaction-failure copy   | 09B1                   | Founder review of the stacked mobile/privacy boundary; localization-stack reconciliation                             | Implemented in focused review      |
+| 10          | Account deletion and privacy operations                   | In-app and web deletion paths, cleanup/anonymization jobs, export groundwork, privacy documentation inputs               | 03–09                  | Legal retention and anonymization policy; legal text remains founder/legal work                                      | Not started                        |
+| 11          | Analytics and operational foundations                     | Explicit product events, privacy scrubbing, health/queue signals, alert requirements, and incident ownership inputs      | 00–10                  | Success metrics and analytics consent/legal choices                                                                  | Not started                        |
+| 12          | Consolidated UI/UX and native QA pass                     | Coherent visual/interaction design, accessibility, responsive behavior, and deferred native flow validation              | 00–11                  | Final visual identity, high-impact interaction decisions, and native review                                          | Not started                        |
+| 13          | Self-hosted production infrastructure readiness           | Provisioned and rehearsed production Supabase stack, security, backups, monitoring, operations, and cutover plan         | 00–12                  | Host/account selection, billing, DNS, credentials, retention objectives, and production-operation approval           | Not started                        |
+| 14          | Release pipeline and store readiness                      | Controlled releases over the proven production backend, signed builds, internal testing, gates, and store checklists     | 00–13                  | Provider accounts, certificates, store listings, policies, and final release approval                                | Not started                        |
 
 ## Public informational site mini-track
 
@@ -1050,6 +1052,49 @@ Expected scope:
 ### 09 — Safety, moderation and admin
 
 **Goal:** Meet the minimum backbone needed before public user-generated content is released.
+
+#### 09A1 — Reporting + manual-review foundation
+
+**Status:** Implemented in the current stacked PR.
+
+- private typed cases, append-only reports/notes/events, canonical subject and
+  Project/Scambio-Dona context derivation, and retry-safe submission;
+- authenticated Flutter report actions, explicit manual-review/privacy copy,
+  and a narrow owner-only status list;
+- private operator-managed `moderator`/`admin` roles and bounded canonical
+  queue/detail/note/versioned-transition operations;
+- a staff-only Next.js `/admin` queue and detail surface with no enforcement
+  controls;
+- identifier-only generic audit records and no moderation outbox event;
+- no automatic content/account consequence.
+
+Parent Plan 09 remains in progress. Its next explicit boundaries are:
+
+- **09A2A — Project group corroboration (implemented in this stacked PR):**
+  creation-time creator/accepted-member snapshots for qualifying
+  person/conduct reports, reporter-anonymous explanation reads, one private
+  Agree/Disagree/Unsure response, and staff-only identified evidence/counts;
+  membership is only an eligibility proxy and evidence has no automatic
+  consequence;
+- **09A2B — Scambio-Dona counterstatement (implemented in this stacked PR):**
+  automatic requests only for supported targets with canonical Resource
+  request context, one private immutable canonical-counterparty statement,
+  unified mobile Review Requests prompting/history, and staff-only
+  pending/submitted evidence; no reporter read, Resource mutation,
+  notification, or automatic consequence;
+- **09B1 — User blocking domain + enforcement (implemented in the current open stack):**
+  directional history, symmetric new-interaction enforcement, pending request
+  closure, interaction-photo denial, and concurrency safety;
+- **09B2 — Mobile blocking UX (implemented in review after 09B1):** confirmed
+  contextual actions, outbound management, focused cache refresh, and
+  direction-neutral interaction failure copy;
+- **09C — Moderation consequences:** restrictions, content states and
+  suspension, followed by escalation and appeals after founder policy
+  decisions;
+- **09D — Minimum age:** approved eligibility policy and enforcement.
+
+Plan 10 remains the owner of report/evidence retention, account deletion, and
+anonymization behavior.
 
 Expected scope:
 

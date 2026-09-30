@@ -5,12 +5,17 @@ const notFound = vi.fn(() => {
 });
 
 vi.mock("next/navigation", () => ({ notFound }));
+vi.mock("@/features/moderation/moderation-server", () => ({
+  readModerationQueue: vi.fn().mockResolvedValue({ status: "denied" }),
+}));
 
-describe("reserved admin route", () => {
-  it("always terminates through the not-found boundary", async () => {
+describe("staff-only admin route", () => {
+  it("terminates through the not-found boundary when canonical staff access is denied", async () => {
     const { default: AdminPage } = await import("@/app/(admin)/admin/page");
 
-    expect(AdminPage).toThrow("NEXT_NOT_FOUND");
+    await expect(
+      AdminPage({ searchParams: Promise.resolve({}) }),
+    ).rejects.toThrow("NEXT_NOT_FOUND");
     expect(notFound).toHaveBeenCalledOnce();
   });
 });

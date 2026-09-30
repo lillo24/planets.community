@@ -109,6 +109,10 @@ void main() {
     expect(find.byKey(const Key('profile-display-name')), findsOneWidget);
     expect(find.text('Casey'), findsOneWidget);
     expect(find.text('Mural painting'), findsOneWidget);
+    expect(
+      find.byKey(const Key('profile-blocked-users-button')),
+      findsOneWidget,
+    );
   });
 
   testWidgets('invalid display name and oversized bio stay in the form', (

@@ -7,6 +7,41 @@ This folder owns the reproducible local PLANETS database and its security valida
 - `tests/` contains native pgTAP invariants and transactional security probes.
 - `seed.sql` runs after migrations during reset and currently contains no data; the system-managed starter skill catalog is migration-owned reference data.
 
+09B1 stores append-preserved directional block episodes in the private schema
+and exposes only expected-identity Block/Unblock plus an outbound-only keyset
+read. 09B2 adds `get_own_blocked_profile_status`, a zero-or-one exact-target
+outbound read with the same identity check and no reciprocal/inbound field.
+Either active direction creates one symmetric barrier for new Project and
+Resource request creation/acceptance. Blocking closes pending pair requests with
+their existing withdrawn/rejected semantics; accepted Project membership/group
+chat/meeting access and accepted Resource agreement/chat coordination remain
+ordinary domain state. Public discovery and public photos are unchanged, while
+interaction-only photo metadata and Storage delivery are revoked across the
+pair. Moderation evidence ignores block state. A sorted-profile transaction
+advisory lock is always taken before Project or Resource row locks; run
+`npm run blocking:verify:local` after a clean reset to prove both block-first and
+acceptance-first serial outcomes.
+
+09A2A stores Project group-corroboration invitations and one-shot responses in
+private append-only moderation evidence tables. Qualifying reports snapshot
+the Project creator and accepted membership intervals in the report
+transaction while excluding reporter/subject; later joins, departures, case
+completion, and reopen never rewrite the cohort. Clients use expected-identity
+RPCs only, invitees never receive peer evidence or counts, staff evidence is
+read-only, and there is no notification/outbox or enforcement side effect.
+
+09A2B extends that request discriminator with Resource counterstatements and a
+separate append-only response table. Supported report targets with a canonical
+Resource request context atomically create one request for the revalidated
+reported counterparty; generic listing reports without that context do not.
+Recipient RPCs expose reporter-anonymous accusation/context data and only the
+recipient's final statement, while current staff get the assigned identity and
+pending/submitted evidence. Exact retries are idempotent, conflicting retries
+fail, completed cases suppress unanswered pending work, and reopen restores the
+same request. Audit remains identifier-only and there is no Resource mutation,
+notification, Realtime, outbox, or enforcement side effect. Run
+`npm run moderation:counterstatement:verify:local` after a clean reset.
+
 The 04C4D1 forward migration derives active listing-owner loan reservations
 from accepted current LEND terms and agreement lifecycle. It rejects half-open
 period overlaps under a listing-row lock, exposes only an owner schedule and

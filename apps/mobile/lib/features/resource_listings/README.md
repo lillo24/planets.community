@@ -81,3 +81,7 @@ names or reserved periods.
 
 Multiple photos, camera capture, chat attachments, and Drive/workspace media
 remain outside this feature.
+
+09B2 composes Block/Unblock for a visible non-owner listing. A caller-owned
+owner block explains why a new request is unavailable and offers Unblock;
+public listing visibility and accepted Resource coordination remain unchanged.

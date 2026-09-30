@@ -430,12 +430,15 @@ select is(
 
 select ok(
   pg_get_functiondef(
-    'public.accept_resource_listing_request(uuid,uuid)'::regprocedure
+    'private.accept_resource_listing_request_without_block(uuid,uuid)'::regprocedure
   ) ilike '%ensure_resource_request_chat_for_request%'
     and pg_get_functiondef(
+      'private.accept_resource_listing_request_without_block(uuid,uuid)'::regprocedure
+    ) ilike '%ensure_resource_exchange_agreement_for_request%'
+    and pg_get_functiondef(
       'public.accept_resource_listing_request(uuid,uuid)'::regprocedure
-    ) ilike '%ensure_resource_exchange_agreement_for_request%',
-  'request acceptance atomically ensures both resource coordination anchors'
+    ) ilike '%accept_resource_listing_request_without_block%',
+  'the preserved acceptance core atomically ensures both coordination anchors and the public barrier delegates to it'
 );
 select ok(
   pg_get_functiondef(

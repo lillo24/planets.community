@@ -9,6 +9,8 @@ import '../../../core/widgets/error_state.dart';
 import '../../../core/widgets/loading_state.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../auth/application/auth_session_controller.dart';
+import '../../blocking/presentation/blocking_routes.dart';
+import '../../moderation/presentation/moderation_routes.dart';
 import '../../profile_photo/application/profile_photo_controller.dart';
 import '../../profile_photo/presentation/profile_photo_avatar.dart';
 import '../application/profile_controller.dart';
@@ -178,6 +180,27 @@ class _ProfileBody extends StatelessWidget {
                       ? l10n.profileEditAction
                       : l10n.profileSetupAction,
                 ),
+              ),
+              const SizedBox(height: AppSpacing.small),
+              OutlinedButton.icon(
+                key: const Key('profile-own-reports-button'),
+                onPressed: () => context.go(ModerationRoutes.ownReports),
+                icon: const Icon(Icons.flag_outlined),
+                label: Text(l10n.moderationOwnReportsAction),
+              ),
+              const SizedBox(height: AppSpacing.small),
+              OutlinedButton.icon(
+                key: const Key('profile-blocked-users-button'),
+                onPressed: () => context.go(BlockingRoutes.blockedUsers),
+                icon: const Icon(Icons.person_off_outlined),
+                label: Text(l10n.blockingBlockedUsersAction),
+              ),
+              const SizedBox(height: AppSpacing.small),
+              OutlinedButton.icon(
+                key: const Key('profile-moderation-review-requests-button'),
+                onPressed: () => context.go(ModerationRoutes.reviewRequests),
+                icon: const Icon(Icons.fact_check_outlined),
+                label: Text(l10n.moderationReviewRequestsAction),
               ),
             ],
           ),

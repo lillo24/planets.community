@@ -60,3 +60,7 @@ that remains visible while the form scrolls, inline errors for text, timezone,
 country and schedule controls, and brings the first mounted invalid field into
 view. Drafts keep their intentionally optional fields while still validating
 any values that were supplied.
+
+09B2 composes the separate blocking feature on public organizer detail. The
+Proposal and organizer remain visible; caller-owned organizer blocks replace a
+new Join action with an Unblock path, while inbound-only denial stays generic.

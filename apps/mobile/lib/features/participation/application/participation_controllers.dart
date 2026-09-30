@@ -12,6 +12,7 @@ enum ParticipationFailureKind {
   invalidInput,
   forbidden,
   conflict,
+  interactionUnavailable,
   notFound,
   unavailable,
   profilePhotoRequired,
@@ -721,6 +722,7 @@ ParticipationFailureKind mapParticipationFailure(Object error) {
       '22023' => ParticipationFailureKind.invalidInput,
       '42501' => ParticipationFailureKind.forbidden,
       '55000' => ParticipationFailureKind.conflict,
+      'PT409' => ParticipationFailureKind.interactionUnavailable,
       'P0002' => ParticipationFailureKind.notFound,
       _ => ParticipationFailureKind.unavailable,
     };
