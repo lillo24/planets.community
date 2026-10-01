@@ -132,6 +132,11 @@ class _ProjectInviteScreenState extends ConsumerState<ProjectInviteScreen> {
             textAlign: TextAlign.center,
           ),
         ],
+        const SizedBox(height: AppSpacing.small),
+        Text(
+          l10n.projectDelegateCapacityImplication,
+          textAlign: TextAlign.center,
+        ),
         const SizedBox(height: AppSpacing.large),
         if (state.failure != null)
           Padding(
@@ -218,6 +223,8 @@ class _ProjectInviteScreenState extends ConsumerState<ProjectInviteScreen> {
       l10n.projectInviteOwnerFailure,
     ProjectDelegateFailureKind.alreadyDelegate =>
       l10n.projectInviteAlreadyDelegateFailure,
+    ProjectDelegateFailureKind.capacityConflict =>
+      l10n.projectDelegateCapacityConflict,
     _ => l10n.projectInviteAcceptFailure,
   };
 }

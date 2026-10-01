@@ -51,7 +51,8 @@ void main() {
       durationMinutes: 90,
       eventTimezone: 'Europe/Rome',
       effectiveFrom: DateTime(2026, 9, 5),
-      peopleCapacity: 20,
+      registrationCapacity: 20,
+      countOrganizersTowardCapacity: false,
     );
     expect(isValidRecurringActivityDraft(invalidDay), isFalse);
   });
@@ -64,7 +65,7 @@ void main() {
   });
 
   test('capacity may be omitted in a draft but is required to publish', () {
-    final input = recurringInputFixture(peopleCapacity: null);
+    final input = recurringInputFixture(registrationCapacity: null);
 
     expect(isValidRecurringActivityDraft(input), isTrue);
     expect(isPublishableRecurringActivityInput(input), isFalse);

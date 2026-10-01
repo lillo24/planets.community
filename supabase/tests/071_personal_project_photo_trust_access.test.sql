@@ -94,7 +94,7 @@ select set_config(
 
 reset role;
 update public.projects
-set people_capacity = 12
+set registration_capacity = 12
 where id in (
   current_setting('test.trust_proposal_id')::uuid,
   current_setting('test.trust_draft_id')::uuid,

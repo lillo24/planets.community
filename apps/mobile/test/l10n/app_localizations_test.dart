@@ -17,6 +17,21 @@ void main() {
     ]);
     expect(english.navigationBrowse, 'Browse');
     expect(italian.navigationBrowse, 'Esplora');
+    expect(english.projectRegistrationCapacityLabel, 'Registration capacity');
+    expect(italian.projectRegistrationCapacityLabel, 'Capienza iscrizioni');
+    expect(
+      english.projectCountOrganizersCapacityLabel,
+      'Count organizers toward capacity',
+    );
+    expect(
+      italian.projectCountOrganizersCapacityLabel,
+      'Conta gli organizzatori nella capienza',
+    );
+    expect(english.projectSocialPeopleInvolved(3), '3 unique people involved');
+    expect(
+      italian.projectSocialPeopleInvolved(3),
+      '3 persone uniche coinvolte',
+    );
     expect(
       italian.authVerifyDescription('m***@example.com'),
       'Abbiamo inviato un codice a 6 cifre a m***@example.com.',

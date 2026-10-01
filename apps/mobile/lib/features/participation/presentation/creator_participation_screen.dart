@@ -133,12 +133,13 @@ class _CreatorParticipationScreenState
                             children: [
                               ProjectCapacityLabel(capacity: capacity),
                               Text(
-                                capacity.peopleCapacity == null
+                                capacity.registrationCapacity == null
                                     ? l10n.projectCapacityNotSet
                                     : l10n.projectCapacityManagerSummary(
                                         capacity.currentParticipantCount,
-                                        capacity.currentPeopleCount,
-                                        capacity.peopleCapacity!,
+                                        capacity.organizerCount,
+                                        capacity.capacityUsedCount,
+                                        capacity.registrationCapacity!,
                                       ),
                               ),
                               if (capacity.isFull)
@@ -175,7 +176,9 @@ class _CreatorParticipationScreenState
                               : null,
                           enabled: !state.isBusy,
                           acceptEnabled:
-                              !state.isBusy && capacity?.isFull != true,
+                              !state.isBusy &&
+                              (capacity?.isFull != true ||
+                                  request.requesterIsOrganizer),
                           isActing:
                               state.actionTargetId == request.id &&
                               state.isBusy,

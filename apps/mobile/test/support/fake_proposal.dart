@@ -253,7 +253,11 @@ OwnProposal _copyProposal(
       ? DateTime.utc(2026, 9, 3)
       : proposal.cancelledAt,
   capacity: projectCapacityFixture(
-    peopleCapacity: input?.peopleCapacity ?? proposal.capacity.peopleCapacity,
+    registrationCapacity:
+        input?.registrationCapacity ?? proposal.capacity.registrationCapacity,
+    countOrganizersTowardCapacity:
+        input?.countOrganizersTowardCapacity ??
+        proposal.capacity.countOrganizersTowardCapacity,
     currentParticipantCount: proposal.capacity.currentParticipantCount,
   ),
 );
@@ -349,7 +353,8 @@ ProposalInput proposalInputFixture({
   DateTime? startsAt,
   DateTime? endsAt,
   String eventTimezone = 'Europe/Rome',
-  int? peopleCapacity = 20,
+  int? registrationCapacity = 20,
+  bool countOrganizersTowardCapacity = false,
 }) => ProposalInput(
   title: 'Paint the square',
   summary: 'Create a community mural together.',
@@ -364,7 +369,8 @@ ProposalInput proposalInputFixture({
   exactMeetingText: 'At the fountain',
   exactLocationVisibility: ExactLocationVisibility.participants,
   skillImportanceById: const {'skill-mural': ProposalSkillImportance.required},
-  peopleCapacity: peopleCapacity,
+  registrationCapacity: registrationCapacity,
+  countOrganizersTowardCapacity: countOrganizersTowardCapacity,
 );
 
 OwnProposal ownProposalFixture({
@@ -408,23 +414,38 @@ OwnProposal ownProposalFixture({
     coverObjectPath: coverObjectPath,
     capacity:
         capacity ??
-        projectCapacityFixture(peopleCapacity: value.peopleCapacity),
+        projectCapacityFixture(
+          registrationCapacity: value.registrationCapacity,
+          countOrganizersTowardCapacity: value.countOrganizersTowardCapacity,
+        ),
   );
 }
 
 ProjectCapacitySnapshot projectCapacityFixture({
-  int? peopleCapacity = 20,
+  int? registrationCapacity = 20,
   int currentParticipantCount = 0,
+  int organizerCount = 1,
+  bool countOrganizersTowardCapacity = false,
 }) {
-  final people = currentParticipantCount + 1;
-  final remaining = peopleCapacity == null
+  final capacityUsed =
+      currentParticipantCount +
+      (countOrganizersTowardCapacity ? organizerCount : 0);
+  final people = currentParticipantCount + organizerCount;
+  final remaining = registrationCapacity == null
       ? null
-      : (peopleCapacity > people ? peopleCapacity - people : 0);
+      : (registrationCapacity > capacityUsed
+            ? registrationCapacity - capacityUsed
+            : 0);
   return ProjectCapacitySnapshot(
-    peopleCapacity: peopleCapacity,
+    registrationCapacity: registrationCapacity,
+    countOrganizersTowardCapacity: countOrganizersTowardCapacity,
     currentParticipantCount: currentParticipantCount,
-    currentPeopleCount: people,
+    ordinaryParticipantCount: currentParticipantCount,
+    organizerCount: organizerCount,
+    capacityUsedCount: capacityUsed,
+    socialPeopleCount: people,
     spotsRemaining: remaining,
-    isFull: peopleCapacity != null && people >= peopleCapacity,
+    isFull:
+        registrationCapacity != null && capacityUsed >= registrationCapacity,
   );
 }

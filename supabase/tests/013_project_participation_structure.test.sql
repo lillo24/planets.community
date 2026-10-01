@@ -22,7 +22,8 @@ select columns_are(
     'project_kind',
     'creator_profile_id',
     'created_at',
-    'people_capacity'
+    'registration_capacity',
+    'count_organizers_toward_capacity'
   ],
   'the shared Project registry owns identity and cross-kind capacity only'
 );

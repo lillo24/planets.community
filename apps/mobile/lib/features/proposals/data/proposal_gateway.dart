@@ -419,7 +419,8 @@ class SupabaseProposalGateway implements ProposalGateway {
       'p_skill_importances': skillEntries
           .map((entry) => entry.value.wireValue)
           .toList(),
-      'p_people_capacity': input.peopleCapacity,
+      'p_registration_capacity': input.registrationCapacity,
+      'p_count_organizers_toward_capacity': input.countOrganizersTowardCapacity,
     };
   }
 

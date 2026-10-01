@@ -175,6 +175,18 @@ void main() {
     );
   });
 
+  test('capacity conflicts map to a dedicated delegate failure', () {
+    expect(
+      mapProjectDelegateFailure(
+        const PostgrestException(
+          message: 'Project capacity cannot add another organizer.',
+          code: 'PT409',
+        ),
+      ),
+      ProjectDelegateFailureKind.capacityConflict,
+    );
+  });
+
   test('role and revoke mutations refresh canonical team state', () async {
     final gateway = FakeProjectDelegateGateway()
       ..role = ProjectManagementRole.creator

@@ -1504,25 +1504,28 @@ export type Database = {
       }
       projects: {
         Row: {
+          count_organizers_toward_capacity: boolean
           created_at: string
           creator_profile_id: string
           id: string
-          people_capacity: number | null
           project_kind: string
+          registration_capacity: number | null
         }
         Insert: {
+          count_organizers_toward_capacity?: boolean
           created_at: string
           creator_profile_id: string
           id: string
-          people_capacity?: number | null
           project_kind: string
+          registration_capacity?: number | null
         }
         Update: {
+          count_organizers_toward_capacity?: boolean
           created_at?: string
           creator_profile_id?: string
           id?: string
-          people_capacity?: number | null
           project_kind?: string
+          registration_capacity?: number | null
         }
         Relationships: [
           {
@@ -2574,6 +2577,28 @@ export type Database = {
             }
             Returns: string
           }
+        | {
+            Args: {
+              p_administrative_area: string
+              p_count_organizers_toward_capacity: boolean
+              p_country_code: string
+              p_description: string
+              p_ends_at: string
+              p_event_timezone: string
+              p_exact_location_visibility: string
+              p_exact_meeting_text: string
+              p_expected_creator_profile_id: string
+              p_locality: string
+              p_public_location_label: string
+              p_registration_capacity: number
+              p_skill_ids: string[]
+              p_skill_importances: string[]
+              p_starts_at: string
+              p_summary: string
+              p_title: string
+            }
+            Returns: string
+          }
       create_recurring_activity_draft:
         | {
             Args: {
@@ -2615,6 +2640,31 @@ export type Database = {
               p_people_capacity: number
               p_public_location_label: string
               p_recurrence_type: string
+              p_summary: string
+              p_title: string
+              p_topic: string
+              p_weekday: number
+            }
+            Returns: string
+          }
+        | {
+            Args: {
+              p_administrative_area: string
+              p_count_organizers_toward_capacity: boolean
+              p_country_code: string
+              p_day_of_month: number
+              p_description: string
+              p_duration_minutes: number
+              p_effective_from: string
+              p_event_timezone: string
+              p_exact_location_visibility: string
+              p_exact_meeting_text: string
+              p_expected_creator_profile_id: string
+              p_local_start_time: string
+              p_locality: string
+              p_public_location_label: string
+              p_recurrence_type: string
+              p_registration_capacity: number
               p_summary: string
               p_title: string
               p_topic: string
@@ -3018,11 +3068,15 @@ export type Database = {
       get_project_capacity_for_manager: {
         Args: { p_expected_manager_profile_id: string; p_project_id: string }
         Returns: {
+          capacity_used_count: number
+          count_organizers_toward_capacity: boolean
           current_participant_count: number
-          current_people_count: number
           is_full: boolean
-          people_capacity: number
+          ordinary_participant_count: number
+          organizer_count: number
           project_id: string
+          registration_capacity: number
+          social_people_count: number
           spots_remaining: number
         }[]
       }
@@ -3846,11 +3900,15 @@ export type Database = {
       list_project_capacity_statuses_for_structural_actor: {
         Args: { p_expected_profile_id: string; p_project_ids: string[] }
         Returns: {
+          capacity_used_count: number
+          count_organizers_toward_capacity: boolean
           current_participant_count: number
-          current_people_count: number
           is_full: boolean
-          people_capacity: number
+          ordinary_participant_count: number
+          organizer_count: number
           project_id: string
+          registration_capacity: number
+          social_people_count: number
           spots_remaining: number
         }[]
       }
@@ -3900,6 +3958,7 @@ export type Database = {
           request_id: string
           request_message: string
           requester_display_name: string
+          requester_is_organizer: boolean
           requester_profile_id: string
           resolved_at: string
           resolved_by_profile_id: string
@@ -4003,11 +4062,15 @@ export type Database = {
       list_public_project_capacity_statuses: {
         Args: { p_project_ids: string[] }
         Returns: {
+          capacity_used_count: number
+          count_organizers_toward_capacity: boolean
           current_participant_count: number
-          current_people_count: number
           is_full: boolean
-          people_capacity: number
+          ordinary_participant_count: number
+          organizer_count: number
           project_id: string
+          registration_capacity: number
+          social_people_count: number
           spots_remaining: number
         }[]
       }
@@ -4615,6 +4678,29 @@ export type Database = {
             }
             Returns: string
           }
+        | {
+            Args: {
+              p_administrative_area: string
+              p_count_organizers_toward_capacity: boolean
+              p_country_code: string
+              p_description: string
+              p_ends_at: string
+              p_event_timezone: string
+              p_exact_location_visibility: string
+              p_exact_meeting_text: string
+              p_expected_creator_profile_id: string
+              p_locality: string
+              p_proposal_id: string
+              p_public_location_label: string
+              p_registration_capacity: number
+              p_skill_ids: string[]
+              p_skill_importances: string[]
+              p_starts_at: string
+              p_summary: string
+              p_title: string
+            }
+            Returns: string
+          }
       update_own_recurring_activity:
         | {
             Args: {
@@ -4658,6 +4744,32 @@ export type Database = {
               p_public_location_label: string
               p_recurrence_type: string
               p_recurring_activity_id: string
+              p_summary: string
+              p_title: string
+              p_topic: string
+              p_weekday: number
+            }
+            Returns: string
+          }
+        | {
+            Args: {
+              p_administrative_area: string
+              p_count_organizers_toward_capacity: boolean
+              p_country_code: string
+              p_day_of_month: number
+              p_description: string
+              p_duration_minutes: number
+              p_effective_from: string
+              p_event_timezone: string
+              p_exact_location_visibility: string
+              p_exact_meeting_text: string
+              p_expected_creator_profile_id: string
+              p_local_start_time: string
+              p_locality: string
+              p_public_location_label: string
+              p_recurrence_type: string
+              p_recurring_activity_id: string
+              p_registration_capacity: number
               p_summary: string
               p_title: string
               p_topic: string

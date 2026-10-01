@@ -66,6 +66,12 @@ Co-organizer is the default selection. Creating a Co-creator invitation needs
 an additional confirmation that identifies both its structural powers and the
 bearer-link risk. Active and pending rows retain their exact role and issuer or
 grantor provenance; missing or unknown authority roles fail closed.
+Every invitation, promotion, and revocation confirmation also explains that
+organizers always contribute to the public unique-people count while their
+registration-capacity usage follows the Project setting. The backend locks the
+shared Project and rejects a post-change over-capacity authority transition;
+the client maps that conflict to dedicated copy without changing the separate
+membership.
 Copy and Share receive the canonical
 `https://planets.community/invite/project/<token>` URL only from that immediate
 result. Preview remains side-effect-free; only the explicit authenticated

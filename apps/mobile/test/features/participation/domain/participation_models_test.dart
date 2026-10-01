@@ -77,6 +77,7 @@ void main() {
         'request_id': 'request-1',
         'requester_profile_id': 'user-2',
         'requester_display_name': 'Jordan',
+        'requester_is_organizer': false,
         'status': 'accepted',
         'request_message': 'Private context',
         'created_at': '2026-09-08T10:00:00Z',
@@ -102,6 +103,7 @@ void main() {
       });
 
       expect(request.message, 'Private context');
+      expect(request.requesterIsOrganizer, isFalse);
       expect(request.resolvedByProfileId, 'user-1');
       expect(member.isCurrent, isTrue);
       expect(meeting.exactMeetingText, 'Private meeting text');

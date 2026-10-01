@@ -371,7 +371,7 @@ class ProjectParticipationSection extends ConsumerWidget {
     if (!acceptsNewRequests) {
       return [...delegateActions, Text(l10n.participationClosed)];
     }
-    if (capacity.isFull) {
+    if (capacity.isFull && role?.isDelegated != true) {
       return [...delegateActions, Text(l10n.projectNoSpots)];
     }
     if (organizerBlocked) {

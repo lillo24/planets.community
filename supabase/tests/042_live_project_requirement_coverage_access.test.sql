@@ -718,7 +718,7 @@ select is(
 );
 
 update public.projects
-set people_capacity = 100
+set registration_capacity = 100
 where id = 'c2000000-0000-4000-8000-000000000002';
 update public.proposals
 set

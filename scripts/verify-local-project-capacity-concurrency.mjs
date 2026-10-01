@@ -58,9 +58,10 @@ try {
 
   await verifyCapacityDecreaseRace();
   await verifyCapacityIncreaseRace();
+  await verifyOrganizerToggleRace();
 
   console.log(
-    "Project capacity concurrency verification passed: final-spot acceptance and concurrent capacity increase/decrease races serialized without overbooking.",
+    "Project capacity concurrency verification passed: participant, capacity-edit, delegate, and organizer-toggle races serialized without overbooking.",
   );
 } finally {
   await sql.end();
@@ -98,7 +99,7 @@ async function seedRace() {
     `;
     await transaction`
       update public.projects
-      set people_capacity = 2
+      set registration_capacity = 1
       where id = ${projectId}::uuid
     `;
     await transaction`
@@ -136,7 +137,7 @@ async function acceptAsOwner(requestId) {
 }
 
 async function verifyCapacityDecreaseRace() {
-  const state = await seedCapacityEditRace(3);
+  const state = await seedCapacityEditRace(2);
   const initialAcceptance = await acceptAsOwner(state.firstRequestId);
   if (!initialAcceptance.ok) {
     throw new Error("Could not prepare the capacity-decrease race membership.");
@@ -144,7 +145,7 @@ async function verifyCapacityDecreaseRace() {
 
   const [acceptance, capacityUpdate] = await Promise.all([
     acceptAsOwner(state.secondRequestId),
-    updateCapacity(state.projectId, 2),
+    updateCapacity(state.projectId, 1),
   ]);
   const validSerializedOutcome =
     (acceptance.ok && !capacityUpdate.ok && capacityUpdate.code === "22023") ||
@@ -159,19 +160,19 @@ async function verifyCapacityDecreaseRace() {
 }
 
 async function verifyCapacityIncreaseRace() {
-  const state = await seedCapacityEditRace(3);
+  const state = await seedCapacityEditRace(2);
   const initialAcceptance = await acceptAsOwner(state.firstRequestId);
   if (!initialAcceptance.ok) {
     throw new Error("Could not prepare the capacity-increase race membership.");
   }
-  const initialReduction = await updateCapacity(state.projectId, 2);
+  const initialReduction = await updateCapacity(state.projectId, 1);
   if (!initialReduction.ok) {
     throw new Error("Could not prepare the full capacity-increase race state.");
   }
 
   const [acceptance, capacityUpdate] = await Promise.all([
     acceptAsOwner(state.secondRequestId),
-    updateCapacity(state.projectId, 3),
+    updateCapacity(state.projectId, 2),
   ]);
   if (!capacityUpdate.ok || (!acceptance.ok && acceptance.code !== "PT409")) {
     throw new Error(
@@ -220,7 +221,7 @@ async function seedCapacityEditRace(capacity) {
     `;
     await transaction`
       update public.projects
-      set people_capacity = ${capacity}
+      set registration_capacity = ${capacity}
       where id = ${raceProjectId}::uuid
     `;
     await transaction`
@@ -276,19 +277,158 @@ async function updateCapacity(targetProjectId, capacity) {
 async function assertProjectWithinCapacity(targetProjectId) {
   const [state] = await sql`
     select
-      project.people_capacity,
-      1 + count(membership.id)::integer as current_people_count
-    from public.projects as project
-    left join public.project_memberships as membership
-      on membership.project_id = project.id
-      and membership.left_at is null
-      and membership.removed_at is null
-    where project.id = ${targetProjectId}::uuid
-    group by project.id, project.people_capacity
+      registration_capacity,
+      capacity_used_count,
+      organizer_count,
+      ordinary_participant_count,
+      social_people_count
+    from private.project_registration_capacity_snapshot(${targetProjectId}::uuid)
   `;
-  if (state.current_people_count > state.people_capacity) {
+  if (state.capacity_used_count > state.registration_capacity) {
     throw new Error(
       `Project ${targetProjectId} overbooked: ${JSON.stringify(state)}.`,
     );
+  }
+}
+
+async function verifyOrganizerToggleRace() {
+  const targetProjectId = randomUUID();
+  await sql.begin(async (transaction) => {
+    await transaction`
+      insert into public.proposals (
+        id, creator_profile_id, lifecycle_state, title, summary, description,
+        starts_at, ends_at, event_timezone, country_code, locality,
+        public_location_label, published_at
+      ) values (
+        ${targetProjectId}::uuid,
+        ${ownerId}::uuid,
+        'published',
+        'Organizer toggle concurrency verifier',
+        'Organizer toggle concurrency summary',
+        'Organizer toggle concurrency description',
+        statement_timestamp() + interval '2 days',
+        statement_timestamp() + interval '3 days',
+        'Europe/Rome',
+        'IT',
+        'Rome',
+        'Central Rome',
+        statement_timestamp()
+      )
+    `;
+    await transaction`
+      insert into public.proposal_meeting_details (
+        proposal_id, exact_meeting_text, exact_location_visibility
+      ) values (
+        ${targetProjectId}::uuid,
+        'Organizer toggle race meeting',
+        'participants'
+      )
+    `;
+    await transaction`
+      update public.projects
+      set registration_capacity = 1
+      where id = ${targetProjectId}::uuid
+    `;
+  });
+
+  const inviteToken = await sql.begin(async (transaction) => {
+    await transaction`
+      select set_config('request.jwt.claim.sub', ${ownerId}, true)
+    `;
+    await transaction.unsafe("set local role authenticated");
+    const [result] = await transaction`
+      select invite_token
+      from public.create_project_delegate_invitation(
+        ${ownerId}::uuid,
+        ${targetProjectId}::uuid,
+        'co_organizer'
+      )
+    `;
+    return result.invite_token;
+  });
+
+  const [delegateAcceptance, toggleUpdate] = await Promise.all([
+    acceptDelegateInvitation(inviteToken, requesterIds[0]),
+    updateCapacitySettings(targetProjectId, 1, true),
+  ]);
+  const validSerializedOutcome =
+    (delegateAcceptance.ok &&
+      !toggleUpdate.ok &&
+      toggleUpdate.code === "PT409") ||
+    (!delegateAcceptance.ok &&
+      delegateAcceptance.code === "PT409" &&
+      toggleUpdate.ok);
+  if (!validSerializedOutcome) {
+    throw new Error(
+      `Organizer-toggle race had an invalid outcome: ${JSON.stringify({ delegateAcceptance, toggleUpdate })}.`,
+    );
+  }
+
+  await assertProjectWithinCapacity(targetProjectId);
+}
+
+async function acceptDelegateInvitation(inviteToken, delegateId) {
+  try {
+    await sql.begin(async (transaction) => {
+      await transaction`
+        select set_config('request.jwt.claim.sub', ${delegateId}, true)
+      `;
+      await transaction.unsafe("set local role authenticated");
+      await transaction`
+        select public.accept_project_delegate_invitation(
+          ${delegateId}::uuid,
+          ${inviteToken}
+        )
+      `;
+    });
+    return { ok: true };
+  } catch (error) {
+    return {
+      ok: false,
+      code: typeof error?.code === "string" ? error.code : "unknown",
+    };
+  }
+}
+
+async function updateCapacitySettings(
+  targetProjectId,
+  registrationCapacity,
+  countOrganizersTowardCapacity,
+) {
+  try {
+    await sql.begin(async (transaction) => {
+      await transaction`
+        select set_config('request.jwt.claim.sub', ${ownerId}, true)
+      `;
+      await transaction.unsafe("set local role authenticated");
+      await transaction`
+        select public.update_own_proposal(
+          ${ownerId}::uuid,
+          ${targetProjectId}::uuid,
+          'Organizer toggle concurrency verifier',
+          'Organizer toggle concurrency summary',
+          'Organizer toggle concurrency description',
+          statement_timestamp() + interval '2 days',
+          statement_timestamp() + interval '3 days',
+          'Europe/Rome',
+          'IT',
+          'Rome',
+          null,
+          'Central Rome',
+          'Organizer toggle race meeting',
+          'participants',
+          '{}'::uuid[],
+          '{}'::text[],
+          ${registrationCapacity},
+          ${countOrganizersTowardCapacity}
+        )
+      `;
+    });
+    return { ok: true };
+  } catch (error) {
+    return {
+      ok: false,
+      code: typeof error?.code === "string" ? error.code : "unknown",
+    };
   }
 }

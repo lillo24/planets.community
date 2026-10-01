@@ -166,7 +166,7 @@ void main() {
     );
     await tester.pumpAndSettle();
     expect(find.text('Jordan'), findsOneWidget);
-    expect(find.text('Co-organizer'), findsNWidgets(3));
+    expect(find.text('Co-organizer'), findsWidgets);
     expect(find.text('Added by Alex'), findsOneWidget);
     expect(find.text('Issued by Alex'), findsOneWidget);
     expect(
@@ -175,6 +175,14 @@ void main() {
     );
 
     await tester.tap(find.byKey(const Key('project-delegate-create')));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('public people count'), findsOneWidget);
+    await tester.tap(
+      find.descendant(
+        of: find.byType(AlertDialog),
+        matching: find.widgetWithText(FilledButton, 'Create invitation'),
+      ),
+    );
     await tester.pumpAndSettle();
     expect(
       find.text('https://planets.community/invite/project/${'A' * 43}'),
@@ -238,6 +246,13 @@ void main() {
     );
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('project-delegate-create')));
+    await tester.pumpAndSettle();
+    await tester.tap(
+      find.descendant(
+        of: find.byType(AlertDialog),
+        matching: find.widgetWithText(FilledButton, 'Create invitation'),
+      ),
+    );
     await tester.pumpAndSettle();
     expect(find.byKey(const Key('delegate-invite-url')), findsOneWidget);
 

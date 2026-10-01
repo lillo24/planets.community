@@ -270,7 +270,8 @@ class ProposalInput {
     required this.exactMeetingText,
     required this.exactLocationVisibility,
     required this.skillImportanceById,
-    required this.peopleCapacity,
+    required this.registrationCapacity,
+    required this.countOrganizersTowardCapacity,
   });
 
   final String title;
@@ -286,7 +287,8 @@ class ProposalInput {
   final String exactMeetingText;
   final ExactLocationVisibility exactLocationVisibility;
   final Map<String, ProposalSkillImportance> skillImportanceById;
-  final int? peopleCapacity;
+  final int? registrationCapacity;
+  final bool countOrganizersTowardCapacity;
 }
 
 bool isValidProposalDraft(ProposalInput input) {
@@ -309,7 +311,7 @@ bool isValidProposalDraft(ProposalInput input) {
       administrativeAreaLength <= 120 &&
       labelLength <= 180 &&
       exactLength <= 1000 &&
-      isValidProjectPeopleCapacity(input.peopleCapacity) &&
+      isValidProjectRegistrationCapacity(input.registrationCapacity) &&
       (input.startsAt == null ||
           input.endsAt == null ||
           input.endsAt!.isAfter(input.startsAt!));
@@ -327,10 +329,11 @@ bool isPublishableProposalInput(ProposalInput input) =>
     input.locality.trim().isNotEmpty &&
     input.publicLocationLabel.trim().isNotEmpty &&
     input.exactMeetingText.trim().isNotEmpty &&
-    input.peopleCapacity != null;
+    input.registrationCapacity != null;
 
 enum ProposalFailureKind {
   invalidInput,
+  capacityConflict,
   unavailable,
   forbidden,
   invalidState,

@@ -77,13 +77,14 @@ Proposal and organizer remain visible; caller-owned organizer blocks replace a
 new Join action with an Unblock path, while inbound-only denial stays generic.
 
 Draft creation, draft saving, and publication remain original-Creator-only.
-Drafts may omit People capacity, but publication requires 1–100,000 total
-people including the immutable Creator. Public cards and detail use the shared
-participation aggregate (`Creator + current memberships`) to show occupancy,
-Full, or the legacy “Capacity not set” state. A Creator or current Co-creator
-may change capacity only while the same structural content is editable and
-never below current occupancy; a legacy published Proposal must receive a
-capacity on its next structural save.
+Drafts may omit registration capacity, but publication requires 1–100,000
+spots. The editor also persists whether the Creator and active organizers use
+spots; this defaults off. Public cards and detail show ordinary-participant
+usage, the organizer breakdown, unique people involved, Full, or the legacy
+“Registration capacity not set” state. A Creator or current Co-creator may
+change both settings only while the same structural content is editable and
+never to a combination below current derived usage; a legacy published
+Proposal must receive a capacity on its next structural save.
 
 For an existing published Proposal, the shared editor instead shows **Save
 changes** and never invokes the draft-only publish operation. Content becomes

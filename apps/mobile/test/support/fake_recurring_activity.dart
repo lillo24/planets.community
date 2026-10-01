@@ -347,7 +347,8 @@ PublicRecurringActivityDetail publicRecurringDetailFixture({
 RecurringActivityInput recurringInputFixture({
   RecurrenceType? type = RecurrenceType.weekly,
   DateTime? effectiveFrom,
-  int? peopleCapacity = 20,
+  int? registrationCapacity = 20,
+  bool countOrganizersTowardCapacity = false,
 }) => RecurringActivityInput(
   title: 'Neighborhood philosophy table',
   summary: 'A recurring conversation about ideas and local life.',
@@ -366,7 +367,8 @@ RecurringActivityInput recurringInputFixture({
   durationMinutes: type == null ? null : 90,
   eventTimezone: type == null ? '' : 'Europe/Rome',
   effectiveFrom: type == null ? null : effectiveFrom ?? DateTime(2026, 9, 1),
-  peopleCapacity: peopleCapacity,
+  registrationCapacity: registrationCapacity,
+  countOrganizersTowardCapacity: countOrganizersTowardCapacity,
 );
 
 OwnRecurringActivity ownRecurringActivityFixture({
@@ -416,23 +418,38 @@ OwnRecurringActivity ownRecurringActivityFixture({
     coverObjectPath: coverObjectPath,
     capacity:
         capacity ??
-        recurringCapacityFixture(peopleCapacity: value.peopleCapacity),
+        recurringCapacityFixture(
+          registrationCapacity: value.registrationCapacity,
+          countOrganizersTowardCapacity: value.countOrganizersTowardCapacity,
+        ),
   );
 }
 
 ProjectCapacitySnapshot recurringCapacityFixture({
-  int? peopleCapacity = 20,
+  int? registrationCapacity = 20,
   int currentParticipantCount = 0,
+  int organizerCount = 1,
+  bool countOrganizersTowardCapacity = false,
 }) {
-  final people = currentParticipantCount + 1;
-  final remaining = peopleCapacity == null
+  final capacityUsed =
+      currentParticipantCount +
+      (countOrganizersTowardCapacity ? organizerCount : 0);
+  final people = currentParticipantCount + organizerCount;
+  final remaining = registrationCapacity == null
       ? null
-      : (peopleCapacity > people ? peopleCapacity - people : 0);
+      : (registrationCapacity > capacityUsed
+            ? registrationCapacity - capacityUsed
+            : 0);
   return ProjectCapacitySnapshot(
-    peopleCapacity: peopleCapacity,
+    registrationCapacity: registrationCapacity,
+    countOrganizersTowardCapacity: countOrganizersTowardCapacity,
     currentParticipantCount: currentParticipantCount,
-    currentPeopleCount: people,
+    ordinaryParticipantCount: currentParticipantCount,
+    organizerCount: organizerCount,
+    capacityUsedCount: capacityUsed,
+    socialPeopleCount: people,
     spotsRemaining: remaining,
-    isFull: peopleCapacity != null && people >= peopleCapacity,
+    isFull:
+        registrationCapacity != null && capacityUsed >= registrationCapacity,
   );
 }
