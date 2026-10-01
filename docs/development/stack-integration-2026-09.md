@@ -160,6 +160,35 @@ product retry regression. Getting-started guidance now says to rerun
 `adb reverse tcp:54321 tcp:54321` after reconnecting the device; no global retry,
 error suppression, or Supabase endpoint workaround was added.
 
+## Final hosted-CI stabilization
+
+Hosted Validation run `36835008884` exposed two final integration issues. The
+delegate role-change widget test relied on `ensureVisible`, which could leave its
+keyed action just below the hosted 800x600 hit-test boundary. The test now owns
+and restores that viewport, scrolls each exact promote/demote/revoke control into
+view, pumps after scrolling, asserts that the control is hittable, and verifies
+each confirmation dialog before exercising the real mutations. No production
+mobile UI changed.
+
+The same hosted run also showed that an exception while establishing moderation
+staff identity could be converted by the page-level operational fallback into an
+HTTP 200 unavailable screen. `requireModerationStaff` now collapses client,
+claims, staff-access RPC, and malformed-role failures into the same denied result;
+failures after moderator/admin authorization has been proven still throw into the
+staff-only unavailable UI. Because `admin/loading.tsx` begins streaming before an
+async page can call `notFound()`, the canonical staff check now also runs in the
+parent admin route-group layout. Its request-scoped React cache is reused by the
+queue/detail reads, preserving one authorization decision and a real HTTP 404
+before the loading boundary for both `/admin` and `/admin/cases/<uuid>`.
+
+The unchanged local web-auth flow, strengthened to cover both admin paths for
+signed-out and ordinary authenticated users, passes. The final local candidate
+also passes 1,072 mobile tests, 142 web tests, 53 site tests, all 104 pgTAP files
+and 3,236 assertions, every database verifier, and the standard builds and
+hygiene checks. The single final-head hosted result is recorded on draft PR #120,
+where the generated job status can be updated without changing the validated
+commit.
+
 ## Validation
 
 Completed locally on the final working tree, including the founder-review

@@ -11,6 +11,7 @@ const nextBin = fileURLToPath(
   new URL("../node_modules/next/dist/bin/next", import.meta.url),
 );
 const testEmail = "web-auth-ci@planets.invalid";
+const nonexistentModerationCaseId = "00000000-0000-4000-8000-000000000000";
 const appUrl = "http://127.0.0.1:3100";
 const mailpitUrl = (
   process.env.MAILPIT_URL ?? "http://127.0.0.1:54324"
@@ -147,16 +148,12 @@ async function verifyWebEmailOtpSession() {
       );
     }
 
-    const authenticatedAdmin = await fetch(`${appUrl}/admin`, {
-      headers: { Cookie: cookieHeader },
-    });
-    if (authenticatedAdmin.status !== 404) {
-      throw new Error(
-        `Authenticated /admin did not fail closed (HTTP ${authenticatedAdmin.status}).`,
-      );
-    }
+    await assertAdminBoundaries(
+      { Cookie: cookieHeader },
+      "Authenticated ordinary-user",
+    );
     console.log(
-      "Confirmed authenticated SSR state and the ordinary signed-in /admin 404 boundary.",
+      "Confirmed authenticated SSR state and ordinary-user admin 404 boundaries.",
     );
   } finally {
     await stopNextServer(server);
@@ -223,13 +220,22 @@ async function assertPublicAndAdminBoundaries() {
     throw new Error("The signed-out public home page did not offer sign-in.");
   }
 
-  const signedOutAdmin = await fetch(`${appUrl}/admin`);
-  if (signedOutAdmin.status !== 404) {
-    throw new Error(
-      `Signed-out /admin did not fail closed (HTTP ${signedOutAdmin.status}).`,
-    );
+  await assertAdminBoundaries({}, "Signed-out");
+  console.log("Confirmed the signed-out public home and admin 404 boundaries.");
+}
+
+async function assertAdminBoundaries(headers, caller) {
+  for (const path of [
+    "/admin",
+    `/admin/cases/${nonexistentModerationCaseId}`,
+  ]) {
+    const response = await fetch(`${appUrl}${path}`, { headers });
+    if (response.status !== 404) {
+      throw new Error(
+        `${caller} ${path} did not fail closed (HTTP ${response.status}).`,
+      );
+    }
   }
-  console.log("Confirmed the signed-out public home and /admin 404 boundary.");
 }
 
 function authFailure(action, error) {
