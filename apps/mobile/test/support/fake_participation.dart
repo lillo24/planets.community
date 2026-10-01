@@ -157,6 +157,7 @@ class FakeParticipationGateway implements ParticipationGateway {
             id: item.id,
             requesterProfileId: item.requesterProfileId,
             requesterDisplayName: item.requesterDisplayName,
+            requesterIsOrganizer: item.requesterIsOrganizer,
             status: JoinRequestStatus.rejected,
             message: item.message,
           )
@@ -278,6 +279,7 @@ ManagerProjectJoinRequest creatorJoinRequestFixture({
   String id = 'request-1',
   String requesterProfileId = 'user-2',
   String requesterDisplayName = 'Jordan',
+  bool requesterIsOrganizer = false,
   JoinRequestStatus status = JoinRequestStatus.pending,
   String? message = 'I can bring paint brushes.',
   DateTime? createdAt,
@@ -285,6 +287,7 @@ ManagerProjectJoinRequest creatorJoinRequestFixture({
   id: id,
   requesterProfileId: requesterProfileId,
   requesterDisplayName: requesterDisplayName,
+  requesterIsOrganizer: requesterIsOrganizer,
   status: status,
   message: message,
   createdAt: createdAt ?? DateTime.utc(2026, 9, 8, 10),
@@ -326,18 +329,30 @@ ParticipantMeetingDetails meetingDetailsFixture({
 );
 
 ProjectCapacitySnapshot capacityFixture({
-  int? peopleCapacity = 20,
+  int? registrationCapacity = 20,
   int currentParticipantCount = 0,
+  int organizerCount = 1,
+  bool countOrganizersTowardCapacity = false,
 }) {
-  final people = currentParticipantCount + 1;
-  final remaining = peopleCapacity == null
+  final capacityUsed =
+      currentParticipantCount +
+      (countOrganizersTowardCapacity ? organizerCount : 0);
+  final people = currentParticipantCount + organizerCount;
+  final remaining = registrationCapacity == null
       ? null
-      : (peopleCapacity > people ? peopleCapacity - people : 0);
+      : (registrationCapacity > capacityUsed
+            ? registrationCapacity - capacityUsed
+            : 0);
   return ProjectCapacitySnapshot(
-    peopleCapacity: peopleCapacity,
+    registrationCapacity: registrationCapacity,
+    countOrganizersTowardCapacity: countOrganizersTowardCapacity,
     currentParticipantCount: currentParticipantCount,
-    currentPeopleCount: people,
+    ordinaryParticipantCount: currentParticipantCount,
+    organizerCount: organizerCount,
+    capacityUsedCount: capacityUsed,
+    socialPeopleCount: people,
     spotsRemaining: remaining,
-    isFull: peopleCapacity != null && people >= peopleCapacity,
+    isFull:
+        registrationCapacity != null && capacityUsed >= registrationCapacity,
   );
 }

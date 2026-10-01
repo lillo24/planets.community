@@ -76,13 +76,16 @@ future-effective, owner `current_schedule` and `schedule_history` identify it as
 pending; the editor keeps that same effective date so a correction updates the
 pending version instead of adding another version.
 
-Drafts may also omit People capacity, while publication requires 1–100,000
-total people including the immutable Creator. Public cards and detail render
-the shared derived occupancy, Full, or the legacy “Capacity not set” state.
-The Creator and current Co-creators can change capacity on active/paused Tavoli
-but never below current occupancy; a legacy active/paused Tavolo must receive a
-capacity on its next structural save. Ended Tavoli retain capacity as read-only
-history. Capacity applies to the membership pool, not each occurrence.
+Drafts may also omit registration capacity, while publication requires
+1–100,000 spots. The editor persists the default-off choice for whether the
+Creator and active organizers use spots. Public cards and detail render
+ordinary-participant usage, organizer breakdown, unique people involved, Full,
+or the legacy “Registration capacity not set” state. The Creator and current
+Co-creators can change both settings on active/paused Tavoli but never to a
+combination below current derived usage; a legacy active/paused Tavolo must
+receive capacity on its next structural save. Ended Tavoli retain the settings
+as read-only history. Capacity applies to the membership pool, not each
+occurrence.
 
 Public cards contain only rough location. Public detail renders exact meeting
 text only when the sanitized RPC returns it; participant-restricted detail uses

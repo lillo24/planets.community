@@ -316,7 +316,8 @@ class SupabaseRecurringActivityGateway implements RecurringActivityGateway {
     'p_effective_from': input.effectiveFrom == null
         ? null
         : _date(input.effectiveFrom!),
-    'p_people_capacity': input.peopleCapacity,
+    'p_registration_capacity': input.registrationCapacity,
+    'p_count_organizers_toward_capacity': input.countOrganizersTowardCapacity,
   };
 
   PublicRecurringActivitySummary _publicSummaryFromRow(

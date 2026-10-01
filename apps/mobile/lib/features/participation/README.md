@@ -102,14 +102,18 @@ manager withdraws it. Revoked delegates no longer affect future eligibility,
 and existing accepted membership/access remain unchanged. Mobile does not
 enumerate managers or infer the private block direction to reproduce this rule.
 
-05E adds one canonical total-people capacity without changing those role
-relationships. The original Creator counts once, each current membership
-counts once, and delegated authority by itself does not count. Public detail
-suppresses the join action when its aggregate is Full. Manager review keeps
-pending requests visible and Reject available, but disables Accept while full;
-a stale enabled action still maps the server's `PT409` to specific safe copy.
-Leaving or removal releases a spot through the existing membership end state,
-and refresh reloads canonical occupancy. No client counter or waitlist exists.
+05E1 separates registration usage from social headcount without changing those
+role relationships. Organizers are the Creator plus active Co-creators and
+Co-organizers; ordinary participants are current memberships excluding those
+organizers. The Project setting decides whether organizers use registration
+spots, while the public people-involved count is always the unique
+organizer/membership union. Public detail suppresses an ordinary person's Join
+action when full, but an active organizer may still independently join because
+that membership does not add usage. Manager review keeps pending requests
+visible and Reject available, while the server remains authoritative for both
+the all-current-manager blocking barrier and organizer-aware Accept races.
+Leaving or removal releases a spot only when it ends an ordinary participant
+membership. No client counter or waitlist exists.
 
 Ownership, delegation, and participation are separate relationships. Leaving
 participation does not revoke delegation, and revoking delegation does not end

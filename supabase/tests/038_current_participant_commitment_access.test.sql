@@ -1492,7 +1492,7 @@ select throws_ok(
 
 reset role;
 update public.projects
-set people_capacity = 100
+set registration_capacity = 100
 where id = 'a2000000-0000-4000-8000-000000000001';
 update public.proposals
 set ends_at = statement_timestamp() - interval '1 minute'

@@ -78,6 +78,22 @@ void main() {
     );
   });
 
+  testWidgets('organizer capacity setting defaults off and persists edits', (
+    tester,
+  ) async {
+    final gateway = await _pumpEditor(tester, proposalInputFixture());
+    final toggle = find.byKey(const Key('proposal-count-organizers-capacity'));
+    await _reveal(tester, toggle);
+    expect(tester.widget<SwitchListTile>(toggle).value, isFalse);
+
+    await tester.tap(toggle);
+    await tester.pumpAndSettle();
+    expect(tester.widget<SwitchListTile>(toggle).value, isTrue);
+
+    await _tap(tester, find.byKey(const Key('proposal-save-draft')));
+    expect(gateway.lastInput?.countOrganizersTowardCapacity, isTrue);
+  });
+
   testWidgets(
     'invalid timezone survives rebuilds without changing stored dates',
     (tester) async {

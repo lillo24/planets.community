@@ -20,7 +20,7 @@ void main() {
   });
 
   test('capacity may be omitted in a draft but is required to publish', () {
-    final input = proposalInputFixture(peopleCapacity: null);
+    final input = proposalInputFixture(registrationCapacity: null);
 
     expect(isValidProposalDraft(input), isTrue);
     expect(isPublishableProposalInput(input), isFalse);

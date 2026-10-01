@@ -55,7 +55,7 @@ values (
 );
 
 update public.projects
-set people_capacity = 20
+set registration_capacity = 20
 where id = 'fd200000-0000-4000-8000-000000000001';
 
 insert into public.project_delegate_invitations (
@@ -185,13 +185,17 @@ select results_eq(
 
 select results_eq(
   $$
-    select current_participant_count, current_people_count
-    from private.project_capacity_snapshot(
+    select
+      current_participant_count,
+      organizer_count,
+      capacity_used_count,
+      social_people_count
+    from private.project_registration_capacity_snapshot(
       'fd200000-0000-4000-8000-000000000001'
     )
   $$,
-  $$values (1, 2)$$,
-  'delegated managers do not consume Project capacity'
+  $$values (1, 3, 1, 4)$$,
+  'delegated managers are unique organizers and default-OFF capacity counts only the ordinary participant'
 );
 
 -- A fresh request is denied in either block direction for every current
@@ -352,7 +356,7 @@ select lives_ok(
 
 reset role;
 update public.projects
-set people_capacity = 2
+set registration_capacity = 1
 where id = 'fd200000-0000-4000-8000-000000000001';
 set local role authenticated;
 select set_config('request.jwt.claim.sub', 'fd100000-0000-4000-8000-000000000005', true);
@@ -366,7 +370,7 @@ select throws_ok(
 );
 reset role;
 update public.projects
-set people_capacity = 20
+set registration_capacity = 20
 where id = 'fd200000-0000-4000-8000-000000000001';
 
 -- Pending-request cleanup uses the current manager set and keeps exactly one
@@ -556,7 +560,7 @@ select throws_ok(
 
 reset role;
 update public.projects
-set people_capacity = 2
+set registration_capacity = 1
 where id = 'fd200000-0000-4000-8000-000000000001';
 set local role authenticated;
 select set_config('request.jwt.claim.sub', 'fd100000-0000-4000-8000-000000000002', true);
@@ -579,7 +583,7 @@ select is(
   'failed full acceptance preserves pending state'
 );
 update public.projects
-set people_capacity = 20
+set registration_capacity = 20
 where id = 'fd200000-0000-4000-8000-000000000001';
 
 -- A revoked-delegate-only block does not affect current-manager acceptance.
@@ -620,10 +624,10 @@ select is(
 -- Blocking after acceptance does not change established Project membership,
 -- group chat, meeting, workspace, or capacity state.
 select set_config(
-  'test.people_before_existing_member_block',
+  'test.social_people_before_existing_member_block',
   (
-    select current_people_count::text
-    from private.project_capacity_snapshot(
+    select social_people_count::text
+    from private.project_registration_capacity_snapshot(
       'fd200000-0000-4000-8000-000000000001'
     )
   ),
@@ -693,12 +697,12 @@ select is(
 );
 select is(
   (
-    select current_people_count::text
-    from private.project_capacity_snapshot(
+    select social_people_count::text
+    from private.project_registration_capacity_snapshot(
       'fd200000-0000-4000-8000-000000000001'
     )
   ),
-  current_setting('test.people_before_existing_member_block'),
+  current_setting('test.social_people_before_existing_member_block'),
   'blocking does not change current Project occupancy'
 );
 

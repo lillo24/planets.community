@@ -47,6 +47,7 @@ class _RecurringActivityEditorScreenState
   String? _expectedIdentity;
   String? _hydratedId;
   bool _attemptPublish = false;
+  bool _countOrganizersTowardCapacity = false;
   bool _hasSchedule = false;
   RecurrenceType _recurrenceType = RecurrenceType.weekly;
   int _weekday = DateTime.monday;
@@ -175,15 +176,27 @@ class _RecurringActivityEditorScreenState
                     ),
                     _field(
                       controller: _capacity,
-                      label: l10n.projectPeopleCapacityLabel,
+                      label: l10n.projectRegistrationCapacityLabel,
                       max: 6,
                       keyboardType: TextInputType.number,
                       inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                       validator: (_) => _validateCapacity(existing),
                     ),
                     Text(
-                      l10n.projectPeopleCapacityHelp,
+                      l10n.projectRegistrationCapacityHelp,
                       style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                    SwitchListTile(
+                      key: const Key('tavoli-count-organizers-capacity'),
+                      contentPadding: EdgeInsets.zero,
+                      title: Text(l10n.projectCountOrganizersCapacityLabel),
+                      subtitle: Text(l10n.projectCountOrganizersCapacityHelp),
+                      value: _countOrganizersTowardCapacity,
+                      onChanged: state.isBusy
+                          ? null
+                          : (value) => setState(
+                              () => _countOrganizersTowardCapacity = value,
+                            ),
                     ),
                     _field(
                       controller: _topic,
@@ -446,10 +459,13 @@ class _RecurringActivityEditorScreenState
                       Padding(
                         padding: const EdgeInsets.only(top: AppSpacing.medium),
                         child: Text(
-                          state.failure ==
-                                  RecurringActivityFailureKind.invalidInput
-                              ? l10n.tavoliValidationError
-                              : l10n.tavoliSafeError,
+                          switch (state.failure) {
+                            RecurringActivityFailureKind.invalidInput =>
+                              l10n.tavoliValidationError,
+                            RecurringActivityFailureKind.capacityConflict =>
+                              l10n.projectOrganizerCapacityConflict,
+                            _ => l10n.tavoliSafeError,
+                          },
                           key: const Key('tavoli-editor-error'),
                           style: TextStyle(
                             color: Theme.of(context).colorScheme.error,
@@ -613,7 +629,8 @@ class _RecurringActivityEditorScreenState
     durationMinutes: _hasSchedule ? int.tryParse(_duration.text) : null,
     eventTimezone: _hasSchedule ? _timezone.text : '',
     effectiveFrom: _hasSchedule ? _effectiveFrom : null,
-    peopleCapacity: int.tryParse(_capacity.text.trim()),
+    registrationCapacity: int.tryParse(_capacity.text.trim()),
+    countOrganizersTowardCapacity: _countOrganizersTowardCapacity,
   );
 
   Future<void> _submit(bool publish) async {
@@ -781,7 +798,9 @@ class _RecurringActivityEditorScreenState
     _title.text = activity.title ?? '';
     _summary.text = activity.summary ?? '';
     _description.text = activity.description ?? '';
-    _capacity.text = activity.capacity.peopleCapacity?.toString() ?? '';
+    _capacity.text = activity.capacity.registrationCapacity?.toString() ?? '';
+    _countOrganizersTowardCapacity =
+        activity.capacity.countOrganizersTowardCapacity;
     _topic.text = activity.topic ?? '';
     _country.text = activity.countryCode ?? '';
     _locality.text = activity.locality ?? '';
@@ -817,6 +836,7 @@ class _RecurringActivityEditorScreenState
       _description.text =
           'Bring one question and join a welcoming, facilitated discussion.';
       _capacity.text = '20';
+      _countOrganizersTowardCapacity = false;
       _topic.text = 'Philosophy and community';
       _country.text = 'IT';
       _locality.text = 'Bologna';
@@ -847,15 +867,17 @@ class _RecurringActivityEditorScreenState
     final l10n = AppLocalizations.of(context);
     final text = _capacity.text.trim();
     if (text.isEmpty) {
-      return _attemptPublish ? l10n.projectPeopleCapacityRequired : null;
+      return _attemptPublish ? l10n.projectRegistrationCapacityRequired : null;
     }
     final capacity = int.tryParse(text);
     if (capacity == null || capacity < 1 || capacity > 100000) {
-      return l10n.projectPeopleCapacityRange;
+      return l10n.projectRegistrationCapacityRange;
     }
-    final currentPeople = existing?.capacity.currentPeopleCount ?? 1;
-    if (capacity < currentPeople) {
-      return l10n.projectPeopleCapacityBelowCurrent(currentPeople);
+    final capacityUsed =
+        existing?.capacity.capacityUsedFor(_countOrganizersTowardCapacity) ??
+        (_countOrganizersTowardCapacity ? 1 : 0);
+    if (capacity < capacityUsed) {
+      return l10n.projectRegistrationCapacityBelowCurrent(capacityUsed);
     }
     return null;
   }

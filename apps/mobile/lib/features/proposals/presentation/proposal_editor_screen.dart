@@ -140,6 +140,7 @@ class _ProposalFormState extends ConsumerState<_ProposalForm> {
   late final TextEditingController _exactLocation;
   late final Map<String, ProposalSkillImportance> _skills;
   late ExactLocationVisibility _visibility;
+  late bool _countOrganizersTowardCapacity;
   DateTime? _startsAt;
   DateTime? _endsAt;
   bool _validatingPublish = false;
@@ -154,7 +155,7 @@ class _ProposalFormState extends ConsumerState<_ProposalForm> {
     _summary = TextEditingController(text: p?.summary ?? '');
     _description = TextEditingController(text: p?.description ?? '');
     _capacity = TextEditingController(
-      text: p?.capacity.peopleCapacity?.toString() ?? '',
+      text: p?.capacity.registrationCapacity?.toString() ?? '',
     );
     _timezone = TextEditingController(text: p?.eventTimezone ?? 'UTC');
     _country = TextEditingController(text: p?.countryCode ?? '');
@@ -168,6 +169,8 @@ class _ProposalFormState extends ConsumerState<_ProposalForm> {
     _endsAt = p?.endsAt;
     _visibility =
         p?.exactLocationVisibility ?? ExactLocationVisibility.participants;
+    _countOrganizersTowardCapacity =
+        p?.capacity.countOrganizersTowardCapacity ?? false;
     _skills = {
       for (final skill in p?.skills ?? const <ProposalSkill>[])
         skill.id: skill.importance,
@@ -207,7 +210,8 @@ class _ProposalFormState extends ConsumerState<_ProposalForm> {
     exactMeetingText: _exactLocation.text,
     exactLocationVisibility: _visibility,
     skillImportanceById: {..._skills},
-    peopleCapacity: int.tryParse(_capacity.text.trim()),
+    registrationCapacity: int.tryParse(_capacity.text.trim()),
+    countOrganizersTowardCapacity: _countOrganizersTowardCapacity,
   );
 
   Future<void> _save({required bool publish}) async {
@@ -329,6 +333,7 @@ class _ProposalFormState extends ConsumerState<_ProposalForm> {
       _summary.text = 'Build raised beds together for a neighborhood garden.';
       _description.text = 'We will prepare the site, assemble raised beds, and share the work in small teams.';
       _capacity.text = '20';
+      _countOrganizersTowardCapacity = false;
       _timezone.text = 'UTC';
       _country.text = 'IT';
       _locality.text = 'Bologna';
@@ -521,12 +526,24 @@ class _ProposalFormState extends ConsumerState<_ProposalForm> {
                     inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                     maxLength: 6,
                     decoration: InputDecoration(
-                      labelText: l10n.projectPeopleCapacityLabel,
-                      helperText: l10n.projectPeopleCapacityHelp,
+                      labelText: l10n.projectRegistrationCapacityLabel,
+                      helperText: l10n.projectRegistrationCapacityHelp,
                     ),
                     onChanged: (_) => _refreshValidationSummary(),
                     validator: (_) => _validateCapacity(),
                   ),
+                ),
+                SwitchListTile(
+                  key: const Key('proposal-count-organizers-capacity'),
+                  contentPadding: EdgeInsets.zero,
+                  title: Text(l10n.projectCountOrganizersCapacityLabel),
+                  subtitle: Text(l10n.projectCountOrganizersCapacityHelp),
+                  value: _countOrganizersTowardCapacity,
+                  onChanged: busy || !contentEditable
+                      ? null
+                      : (value) => setState(
+                          () => _countOrganizersTowardCapacity = value,
+                        ),
                 ),
                 _field(
                   _timezone,
@@ -751,9 +768,13 @@ class _ProposalFormState extends ConsumerState<_ProposalForm> {
                         ProposalFailureKind.profilePhotoRequired) ...[
                   const SizedBox(height: AppSpacing.medium),
                   Text(
-                    state.failure == ProposalFailureKind.invalidInput
-                        ? l10n.proposalValidationError
-                        : l10n.proposalSafeError,
+                    switch (state.failure) {
+                      ProposalFailureKind.invalidInput =>
+                        l10n.proposalValidationError,
+                      ProposalFailureKind.capacityConflict =>
+                        l10n.projectOrganizerCapacityConflict,
+                      _ => l10n.proposalSafeError,
+                    },
                     key: const Key('proposal-editor-safe-error'),
                     style: TextStyle(
                       color: Theme.of(context).colorScheme.error,
@@ -920,7 +941,7 @@ class _ProposalFormState extends ConsumerState<_ProposalForm> {
       required: true,
     );
     if (_validateCapacity() != null) {
-      issues.add(l10n.projectPeopleCapacityLabel);
+      issues.add(l10n.projectRegistrationCapacityLabel);
     }
     if ((publish && input.eventTimezone.trim().isEmpty) ||
         (input.eventTimezone.trim().isNotEmpty &&
@@ -1007,15 +1028,21 @@ class _ProposalFormState extends ConsumerState<_ProposalForm> {
     final l10n = AppLocalizations.of(context);
     final text = _capacity.text.trim();
     if (text.isEmpty) {
-      return _validatingPublish ? l10n.projectPeopleCapacityRequired : null;
+      return _validatingPublish
+          ? l10n.projectRegistrationCapacityRequired
+          : null;
     }
     final capacity = int.tryParse(text);
     if (capacity == null || capacity < 1 || capacity > 100000) {
-      return l10n.projectPeopleCapacityRange;
+      return l10n.projectRegistrationCapacityRange;
     }
-    final currentPeople = widget.proposal?.capacity.currentPeopleCount ?? 1;
-    if (capacity < currentPeople) {
-      return l10n.projectPeopleCapacityBelowCurrent(currentPeople);
+    final capacityUsed =
+        widget.proposal?.capacity.capacityUsedFor(
+          _countOrganizersTowardCapacity,
+        ) ??
+        (_countOrganizersTowardCapacity ? 1 : 0);
+    if (capacity < capacityUsed) {
+      return l10n.projectRegistrationCapacityBelowCurrent(capacityUsed);
     }
     return null;
   }

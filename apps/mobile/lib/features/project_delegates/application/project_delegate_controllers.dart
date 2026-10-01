@@ -554,6 +554,11 @@ ProjectDelegateFailureKind mapProjectDelegateFailure(Object error) {
             'This profile already has active delegated authority for the Project.') {
       return ProjectDelegateFailureKind.alreadyDelegate;
     }
+    if (error.code == 'PT409' &&
+        (error.message.contains('capacity') ||
+            error.message.contains('counting organizers'))) {
+      return ProjectDelegateFailureKind.capacityConflict;
+    }
     return switch (error.code) {
       '42501' => ProjectDelegateFailureKind.forbidden,
       'PT409' || '55000' => ProjectDelegateFailureKind.conflict,

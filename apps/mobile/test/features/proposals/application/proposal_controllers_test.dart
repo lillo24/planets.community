@@ -456,10 +456,10 @@ void main() {
     addTearDown(session.auth.close);
     final controller = session.container.read(proposalEditorProvider.notifier);
     await controller.load('user-1', null);
-    final input = proposalInputFixture(peopleCapacity: null);
+    final input = proposalInputFixture(registrationCapacity: null);
 
     expect(await controller.saveDraft('user-1', input), 'new-draft');
-    expect(gateway.lastInput?.peopleCapacity, isNull);
+    expect(gateway.lastInput?.registrationCapacity, isNull);
     expect(await controller.publish('user-1', input), isNull);
     expect(gateway.calls, isNot(contains('publish:new-draft')));
     expect(
@@ -526,14 +526,14 @@ void main() {
   });
 
   test(
-    'published save rejects capacity below the current people count',
+    'published save rejects capacity below current registration usage',
     () async {
       final gateway = FakeProposalGateway()
         ..ownItems = [
           ownProposalFixture(
             lifecycle: ProposalLifecycle.published,
             capacity: projectCapacityFixture(
-              peopleCapacity: 5,
+              registrationCapacity: 5,
               currentParticipantCount: 3,
             ),
           ),
@@ -549,7 +549,47 @@ void main() {
       expect(
         await controller.saveChanges(
           'user-1',
-          proposalInputFixture(peopleCapacity: 3),
+          proposalInputFixture(registrationCapacity: 2),
+        ),
+        isNull,
+      );
+      expect(gateway.calls, isNot(contains('update:proposal-1')));
+      expect(
+        session.container.read(proposalEditorProvider).failure,
+        ProposalFailureKind.invalidInput,
+      );
+    },
+  );
+
+  test(
+    'published save rejects enabling organizer counting over capacity',
+    () async {
+      final gateway = FakeProposalGateway()
+        ..ownItems = [
+          ownProposalFixture(
+            lifecycle: ProposalLifecycle.published,
+            capacity: projectCapacityFixture(
+              registrationCapacity: 3,
+              currentParticipantCount: 2,
+              organizerCount: 2,
+            ),
+          ),
+        ];
+      final session = _readyContainer(gateway);
+      addTearDown(session.container.dispose);
+      addTearDown(session.auth.close);
+      final controller = session.container.read(
+        proposalEditorProvider.notifier,
+      );
+      await controller.load('user-1', 'proposal-1');
+
+      expect(
+        await controller.saveChanges(
+          'user-1',
+          proposalInputFixture(
+            registrationCapacity: 3,
+            countOrganizersTowardCapacity: true,
+          ),
         ),
         isNull,
       );
@@ -566,7 +606,7 @@ void main() {
       ..ownItems = [
         ownProposalFixture(
           lifecycle: ProposalLifecycle.published,
-          input: proposalInputFixture(peopleCapacity: null),
+          input: proposalInputFixture(registrationCapacity: null),
         ),
       ];
     final session = _readyContainer(gateway);
@@ -578,7 +618,7 @@ void main() {
     expect(
       await controller.saveChanges(
         'user-1',
-        proposalInputFixture(peopleCapacity: null),
+        proposalInputFixture(registrationCapacity: null),
       ),
       isNull,
     );

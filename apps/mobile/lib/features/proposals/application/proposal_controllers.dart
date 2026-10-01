@@ -563,7 +563,10 @@ class ProposalEditorController extends Notifier<ProposalEditorState> {
       );
     }
     if (!isPublishableProposalInput(input) ||
-        input.peopleCapacity! < existing.capacity.currentPeopleCount ||
+        !existing.capacity.canUseSettings(
+          input.registrationCapacity,
+          input.countOrganizersTowardCapacity,
+        ) ||
         !isKnownProposalTimeZone(input.eventTimezone)) {
       return _reject(
         expectedStructuralActorId,
@@ -851,6 +854,7 @@ ProposalFailureKind mapProposalFailure(Object error) {
   if (error is PostgrestException) {
     return switch (error.code) {
       'PT422' => ProposalFailureKind.profilePhotoRequired,
+      'PT409' => ProposalFailureKind.capacityConflict,
       '22023' => ProposalFailureKind.invalidInput,
       '42501' => ProposalFailureKind.forbidden,
       '55000' => ProposalFailureKind.invalidState,

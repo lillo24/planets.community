@@ -1036,7 +1036,9 @@ async function ensureProposal(context, creator, definition) {
     p_exact_location_visibility: definition.location.exactLocationVisibility,
     p_skill_ids: skillIds,
     p_skill_importances: definition.skillImportances,
-    p_people_capacity: definition.peopleCapacity ?? 20,
+    p_registration_capacity: definition.registrationCapacity ?? 20,
+    p_count_organizers_toward_capacity:
+      definition.countOrganizersTowardCapacity ?? false,
   };
 
   if (!proposalId) {
@@ -1116,7 +1118,9 @@ async function ensureTavolo(context, creator, definition) {
     p_duration_minutes: definition.durationMinutes,
     p_event_timezone: "Europe/Rome",
     p_effective_from: definition.effectiveFrom,
-    p_people_capacity: definition.peopleCapacity ?? 20,
+    p_registration_capacity: definition.registrationCapacity ?? 20,
+    p_count_organizers_toward_capacity:
+      definition.countOrganizersTowardCapacity ?? false,
   };
 
   if (!tavoloId) {

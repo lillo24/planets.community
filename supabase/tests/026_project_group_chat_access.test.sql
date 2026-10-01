@@ -694,7 +694,7 @@ select lives_ok(
 
 reset role;
 update public.projects
-set people_capacity = 100
+set registration_capacity = 100
 where id = 'e7100000-0000-4000-8000-000000000001';
 update public.proposals
 set

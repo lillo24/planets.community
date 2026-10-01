@@ -77,11 +77,15 @@ where proposal.id in (
 );
 
 update public.projects
-set people_capacity = case id
+set registration_capacity = case id
   when 'fa200000-0000-4000-8000-000000000001'::uuid then 1
   when 'fa200000-0000-4000-8000-000000000003'::uuid then 2
   else null
-end
+end,
+count_organizers_toward_capacity = id in (
+  'fa200000-0000-4000-8000-000000000001'::uuid,
+  'fa200000-0000-4000-8000-000000000003'::uuid
+)
 where id in (
   'fa200000-0000-4000-8000-000000000001',
   'fa200000-0000-4000-8000-000000000002',
@@ -90,14 +94,15 @@ where id in (
 
 select results_eq(
   $$
-    select people_capacity, current_participant_count, current_people_count,
-      spots_remaining, is_full
+    select registration_capacity, count_organizers_toward_capacity,
+      current_participant_count, ordinary_participant_count, organizer_count,
+      capacity_used_count, social_people_count, spots_remaining, is_full
     from public.list_public_project_capacity_statuses(
       array['fa200000-0000-4000-8000-000000000001'::uuid]
     )
   $$,
-  $$values (1, 0, 1, 0, true)$$,
-  'public capacity counts the immutable Creator as the first person'
+  $$values (1, true, 0, 0, 1, 1, 1, 0, true)$$,
+  'public capacity separates the Creator, registration usage, and social count'
 );
 
 set local role authenticated;
@@ -283,8 +288,8 @@ select throws_ok(
     )
   $$,
   '22023',
-  'People capacity cannot be lower than the current people count.',
-  'capacity cannot be reduced below Creator plus current memberships'
+  'Registration capacity cannot be lower than current capacity usage.',
+  'capacity cannot be reduced below organizer plus ordinary memberships'
 );
 select throws_ok(
   $$
@@ -299,8 +304,8 @@ select throws_ok(
     )
   $$,
   '22023',
-  'People capacity must be between 1 and 100,000.',
-  'zero people capacity is rejected'
+  'Registration capacity must be between 1 and 100,000.',
+  'zero registration capacity is rejected'
 );
 select throws_ok(
   $$
@@ -316,8 +321,8 @@ select throws_ok(
     )
   $$,
   '22023',
-  'People capacity must be between 1 and 100,000.',
-  'people capacity above 100,000 is rejected'
+  'Registration capacity must be between 1 and 100,000.',
+  'registration capacity above 100,000 is rejected'
 );
 select lives_ok(
   $$
@@ -331,7 +336,7 @@ select lives_ok(
       'Capacity test meeting', 'participants', '{}'::uuid[], '{}'::text[], 2
     )
   $$,
-  'capacity may equal current people count and makes the Project full'
+  'capacity may equal current usage and makes the Project full'
 );
 
 select set_config(
@@ -346,6 +351,36 @@ select set_config(
   ),
   true
 );
+reset role;
+update public.projects
+set registration_capacity = 1,
+    count_organizers_toward_capacity = true
+where id = 'fa200000-0000-4000-8000-000000000002';
+
+set local role authenticated;
+select set_config(
+  'request.jwt.claim.sub',
+  'fa100000-0000-4000-8000-000000000005',
+  true
+);
+select throws_ok(
+  $$
+    select public.accept_project_delegate_invitation(
+      'fa100000-0000-4000-8000-000000000005',
+      current_setting('test.delegate_token')
+    )
+  $$,
+  'PT409',
+  'Project capacity cannot add another organizer.',
+  'an authority invitation cannot add an organizer beyond registration capacity'
+);
+
+reset role;
+update public.projects
+set registration_capacity = 2
+where id = 'fa200000-0000-4000-8000-000000000002';
+
+set local role authenticated;
 select set_config(
   'request.jwt.claim.sub',
   'fa100000-0000-4000-8000-000000000005',
@@ -362,13 +397,15 @@ select lives_ok(
 );
 select results_eq(
   $$
-    select current_participant_count, current_people_count
+    select count_organizers_toward_capacity, current_participant_count,
+      ordinary_participant_count, organizer_count, capacity_used_count,
+      social_people_count, spots_remaining, is_full
     from public.list_public_project_capacity_statuses(
       array['fa200000-0000-4000-8000-000000000002'::uuid]
     )
   $$,
-  $$values (0, 1)$$,
-  'delegated authority alone does not consume a participant spot'
+  $$values (true, 0, 0, 2, 2, 2, 0, true)$$,
+  'delegated authority adds one organizer and one unique social person and consumes one spot when included'
 );
 
 select set_config(
@@ -387,6 +424,18 @@ select set_config(
   'fa100000-0000-4000-8000-000000000001',
   true
 );
+select is(
+  (
+    select requester_is_organizer
+    from public.list_project_join_requests_for_manager(
+      'fa100000-0000-4000-8000-000000000001',
+      'fa200000-0000-4000-8000-000000000002'
+    )
+    where request_id = current_setting('test.delegate_request')::uuid
+  ),
+  true,
+  'manager request reads identify an organizer whose membership adds no usage'
+);
 select lives_ok(
   $$
     select public.accept_project_join_request_as_manager(
@@ -398,13 +447,59 @@ select lives_ok(
 );
 select results_eq(
   $$
-    select current_participant_count, current_people_count
+    select current_participant_count, ordinary_participant_count,
+      organizer_count, capacity_used_count, social_people_count,
+      spots_remaining, is_full
     from public.list_public_project_capacity_statuses(
       array['fa200000-0000-4000-8000-000000000002'::uuid]
     )
   $$,
-  $$values (1, 2)$$,
-  'a delegated actor with a current membership consumes exactly one participant spot'
+  $$values (1, 0, 2, 2, 2, 0, true)$$,
+  'an organizer can independently join a full Project without double-counting capacity or social people'
+);
+
+select lives_ok(
+  $$
+    select public.update_own_proposal(
+      'fa100000-0000-4000-8000-000000000001',
+      'fa200000-0000-4000-8000-000000000002',
+      'Legacy Project', 'Legacy summary', 'Legacy description',
+      statement_timestamp() + interval '2 days',
+      statement_timestamp() + interval '3 days',
+      'Europe/Rome', 'IT', 'Rome', null, 'Central Rome',
+      'Capacity test meeting', 'participants', '{}'::uuid[], '{}'::text[],
+      1, false
+    )
+  $$,
+  'excluding organizers allows capacity to track only ordinary participants'
+);
+select throws_ok(
+  $$
+    select public.update_own_proposal(
+      'fa100000-0000-4000-8000-000000000001',
+      'fa200000-0000-4000-8000-000000000002',
+      'Legacy Project', 'Legacy summary', 'Legacy description',
+      statement_timestamp() + interval '2 days',
+      statement_timestamp() + interval '3 days',
+      'Europe/Rome', 'IT', 'Rome', null, 'Central Rome',
+      'Capacity test meeting', 'participants', '{}'::uuid[], '{}'::text[],
+      1, true
+    )
+  $$,
+  'PT409',
+  'Increase registration capacity before counting organizers toward capacity.',
+  'enabling organizer counting is rejected when the resulting usage exceeds capacity'
+);
+select results_eq(
+  $$
+    select registration_capacity, count_organizers_toward_capacity,
+      capacity_used_count, social_people_count
+    from public.list_public_project_capacity_statuses(
+      array['fa200000-0000-4000-8000-000000000002'::uuid]
+    )
+  $$,
+  $$values (1, false, 0, 2)$$,
+  'a rejected organizer-counting toggle rolls back without changing social headcount'
 );
 
 reset role;
@@ -445,13 +540,13 @@ select throws_ok(
     )
   $$,
   '22023',
-  'People capacity is required before publication.',
-  'a Proposal draft cannot publish without capacity'
+  'Registration capacity is required before publication.',
+  'a Proposal draft cannot publish without registration capacity'
 );
 
 reset role;
 update public.projects
-set people_capacity = 12
+set registration_capacity = 12
 where id = 'fa200000-0000-4000-8000-000000000004';
 
 set local role authenticated;
@@ -513,13 +608,13 @@ select throws_ok(
     )
   $$,
   '22023',
-  'People capacity is required before publication.',
-  'a Tavolo draft cannot publish without capacity'
+  'Registration capacity is required before publication.',
+  'a Tavolo draft cannot publish without registration capacity'
 );
 
 reset role;
 update public.projects
-set people_capacity = 12
+set registration_capacity = 12
 where id = 'fa300000-0000-4000-8000-000000000001';
 
 set local role authenticated;

@@ -47,6 +47,7 @@ enum ProjectDelegateLoadPhase { idle, loading, ready, failure }
 enum ProjectDelegateFailureKind {
   forbidden,
   conflict,
+  capacityConflict,
   unavailable,
   ownerSelfAccept,
   alreadyDelegate,

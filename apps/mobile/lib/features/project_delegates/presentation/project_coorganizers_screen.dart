@@ -122,7 +122,10 @@ class _ProjectTeamScreenState extends ConsumerState<ProjectTeamScreen> {
                     if (state.failure != null) ...[
                       const SizedBox(height: AppSpacing.small),
                       Text(
-                        l10n.projectDelegateSafeError,
+                        state.failure ==
+                                ProjectDelegateFailureKind.capacityConflict
+                            ? l10n.projectDelegateCapacityConflict
+                            : l10n.projectDelegateSafeError,
                         style: TextStyle(
                           color: Theme.of(context).colorScheme.error,
                         ),
@@ -292,14 +295,16 @@ class _ProjectTeamScreenState extends ConsumerState<ProjectTeamScreen> {
 
   Future<void> _createInvitation() async {
     final l10n = AppLocalizations.of(context);
-    if (_inviteRole == ProjectDelegatedAuthorityRole.coCreator) {
-      final confirmed = await _confirm(
-        l10n.projectDelegateHighPrivilegeConfirmTitle,
-        l10n.projectDelegateHighPrivilegeConfirmMessage,
-        l10n.projectDelegateInviteAction,
-      );
-      if (!confirmed || !mounted) return;
-    }
+    final confirmed = await _confirm(
+      _inviteRole == ProjectDelegatedAuthorityRole.coCreator
+          ? l10n.projectDelegateHighPrivilegeConfirmTitle
+          : l10n.projectDelegateInviteAction,
+      _inviteRole == ProjectDelegatedAuthorityRole.coCreator
+          ? l10n.projectDelegateHighPrivilegeConfirmMessage
+          : l10n.projectDelegateCapacityImplication,
+      l10n.projectDelegateInviteAction,
+    );
+    if (!confirmed || !mounted) return;
     final expectedProfileId = ref.read(authSessionProvider).identity?.id;
     if (expectedProfileId == null) return;
     final result = await ref

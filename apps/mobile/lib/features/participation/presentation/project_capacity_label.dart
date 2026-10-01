@@ -17,14 +17,16 @@ class ProjectCapacityLabel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final text = projectCapacityText(AppLocalizations.of(context), capacity);
-    if (!icon) return Text(text, style: style);
+    final l10n = AppLocalizations.of(context);
+    final label =
+        '${projectCapacityText(l10n, capacity)} · '
+        '${l10n.projectSocialPeopleInvolved(capacity.socialPeopleCount)}';
+    if (!icon) return Text(label, style: style);
     return Row(
-      mainAxisSize: MainAxisSize.min,
       children: [
         const Icon(Icons.groups_outlined, size: 18),
         const SizedBox(width: 6),
-        Text(text, style: style),
+        Expanded(child: Text(label, style: style)),
       ],
     );
   }
@@ -34,9 +36,19 @@ String projectCapacityText(
   AppLocalizations l10n,
   ProjectCapacitySnapshot capacity,
 ) {
-  final limit = capacity.peopleCapacity;
-  if (limit == null) return l10n.projectCapacityNotSet;
-  return capacity.isFull
-      ? l10n.projectCapacityFullOccupancy(capacity.currentPeopleCount, limit)
-      : l10n.projectCapacityOccupancy(capacity.currentPeopleCount, limit);
+  final limit = capacity.registrationCapacity;
+  final organizerText = capacity.countOrganizersTowardCapacity
+      ? l10n.projectOrganizerIncludedCount(capacity.organizerCount)
+      : '+${l10n.projectOrganizerCount(capacity.organizerCount)}';
+  if (limit == null) {
+    return '${l10n.projectCapacityNotSet} · $organizerText';
+  }
+  final usage = capacity.countOrganizersTowardCapacity
+      ? l10n.projectCapacityUsage(capacity.capacityUsedCount, limit)
+      : l10n.projectCapacityParticipantUsage(
+          capacity.ordinaryParticipantCount,
+          limit,
+        );
+  final summary = '$usage · $organizerText';
+  return capacity.isFull ? l10n.projectCapacityFullLabel(summary) : summary;
 }

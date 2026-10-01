@@ -791,6 +791,24 @@ render the same capacity snapshot and map a stale full-state race explicitly.
 Size-band filters, normalized popularity, per-occurrence Tavolo limits, and
 Template Workshop/Market ranking remain deferred.
 
+##### 05E1 — Organizer-aware registration capacity and public headcount
+
+**Status:** Implemented in draft PR #121; pending merge to `main`.
+
+Renames the shared field to `registration_capacity` and adds a default-off
+setting controlling whether the Creator and active Co-creators/Co-organizers
+use registration spots. Ordinary participants exclude active organizers;
+public/social headcount is the unique union of organizers and current
+memberships. Authority and membership remain independent, and one person is
+never counted twice.
+
+The existing Project lock serializes participant acceptance, authority
+activation/revocation, capacity edits, and organizer-counting changes. Public
+cards/details show registration usage, organizer breakdown, and unique people
+involved. Editors and Project Team confirmations explain the policy. This
+slice does not add ranking, size bands, waitlists, per-occurrence Tavolo
+limits, or a combined participant/organizer chat model.
+
 #### 05C — One-Time Project Actual Contribution Attribution
 
 **Status:** In progress through stacked 05C2. Neither PR #68 nor its 05C2 mobile dependent is merged.

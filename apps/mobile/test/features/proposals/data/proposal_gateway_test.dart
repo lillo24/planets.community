@@ -67,10 +67,14 @@ void main() {
 const _proposalId = '3ab6fc1a-03e9-4d4a-9a3b-d7ab19670e29';
 const _creatorProfileId = '43036e28-e46c-417f-bbcb-27e04de2d0f1';
 const _capacity = ProjectCapacitySnapshot(
-  peopleCapacity: 20,
+  registrationCapacity: 20,
+  countOrganizersTowardCapacity: false,
   currentParticipantCount: 2,
-  currentPeopleCount: 3,
-  spotsRemaining: 17,
+  ordinaryParticipantCount: 2,
+  organizerCount: 1,
+  capacityUsedCount: 2,
+  socialPeopleCount: 3,
+  spotsRemaining: 18,
   isFull: false,
 );
 

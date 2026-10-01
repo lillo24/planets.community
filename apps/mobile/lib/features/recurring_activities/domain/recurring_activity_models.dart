@@ -271,7 +271,8 @@ class RecurringActivityInput {
     required this.durationMinutes,
     required this.eventTimezone,
     required this.effectiveFrom,
-    required this.peopleCapacity,
+    required this.registrationCapacity,
+    required this.countOrganizersTowardCapacity,
   });
 
   final String title;
@@ -291,7 +292,8 @@ class RecurringActivityInput {
   final int? durationMinutes;
   final String eventTimezone;
   final DateTime? effectiveFrom;
-  final int? peopleCapacity;
+  final int? registrationCapacity;
+  final bool countOrganizersTowardCapacity;
 
   bool get hasAnyScheduleValue =>
       recurrenceType != null ||
@@ -323,7 +325,7 @@ bool isValidRecurringActivityDraft(RecurringActivityInput input) {
     return length == 0 || (length >= min && length <= max);
   }
 
-  if (!isValidProjectPeopleCapacity(input.peopleCapacity) ||
+  if (!isValidProjectRegistrationCapacity(input.registrationCapacity) ||
       !bounded(input.title, 100, min: 2) ||
       !bounded(input.summary, 240) ||
       !bounded(input.description, 5000) ||
@@ -361,7 +363,7 @@ bool isPublishableRecurringActivityInput(RecurringActivityInput input) =>
     input.locality.trim().isNotEmpty &&
     input.publicLocationLabel.trim().isNotEmpty &&
     input.exactMeetingText.trim().isNotEmpty &&
-    input.peopleCapacity != null &&
+    input.registrationCapacity != null &&
     input.hasCompleteSchedule;
 
 bool isValidRecurringScheduleTransition(
@@ -398,6 +400,7 @@ String _minuteTime(String value) {
 
 enum RecurringActivityFailureKind {
   invalidInput,
+  capacityConflict,
   unavailable,
   forbidden,
   invalidState,

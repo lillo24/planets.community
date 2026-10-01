@@ -171,7 +171,10 @@ void main() {
       expect(find.byKey(const Key('browse-requested-badge')), findsOneWidget);
       expect(find.byKey(const Key('tavolo-card-tavolo-1')), findsOneWidget);
       expect(find.byKey(const Key('tavolo-card-tavolo-2')), findsOneWidget);
-      expect(find.text('1 / 20 people'), findsNWidgets(2));
+      expect(
+        find.textContaining('0 / 20 participant spots used'),
+        findsNWidgets(2),
+      );
       expect(
         tester.getTopLeft(find.byKey(const Key('tavolo-card-tavolo-1'))).dy,
         lessThan(
@@ -182,7 +185,10 @@ void main() {
       await tester.tap(find.byKey(const Key('tavolo-card-tavolo-1')));
       await tester.pumpAndSettle();
       expect(find.text('Tavolo details'), findsOneWidget);
-      expect(find.text('1 / 20 people'), findsWidgets);
+      expect(
+        find.textContaining('0 / 20 participant spots used'),
+        findsWidgets,
+      );
       await tester.binding.handlePopRoute();
       await tester.pumpAndSettle();
       expect(
@@ -349,10 +355,28 @@ void main() {
     expect(find.byKey(const Key('tavoli-editor-pause')), findsOneWidget);
     expect(find.byKey(const Key('tavoli-editor-end')), findsOneWidget);
 
+    await _scrollTo(
+      tester,
+      find.byKey(const Key('tavoli-count-organizers-capacity')),
+      -500,
+    );
+    await tester.tap(find.byKey(const Key('tavoli-count-organizers-capacity')));
+    await tester.pumpAndSettle();
+    expect(
+      tester
+          .widget<SwitchListTile>(
+            find.byKey(const Key('tavoli-count-organizers-capacity')),
+          )
+          .value,
+      isTrue,
+    );
+
+    await _scrollTo(tester, find.byKey(const Key('tavoli-save-draft')), 500);
     await tester.tap(find.byKey(const Key('tavoli-save-draft')));
     await tester.pumpAndSettle();
     expect(recurring.calls, contains('update:tavolo-1'));
     expect(recurring.calls, isNot(contains('publish:tavolo-1')));
+    expect(recurring.lastInput?.countOrganizersTowardCapacity, isTrue);
 
     await _center(tester, find.byKey(const Key('tavoli-editor-pause')));
     await tester.tap(find.byKey(const Key('tavoli-editor-pause')));

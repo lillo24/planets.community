@@ -116,6 +116,7 @@ class ManagerProjectJoinRequest {
     required this.id,
     required this.requesterProfileId,
     required this.requesterDisplayName,
+    required this.requesterIsOrganizer,
     required this.status,
     required this.message,
     required this.createdAt,
@@ -126,6 +127,7 @@ class ManagerProjectJoinRequest {
   final String id;
   final String requesterProfileId;
   final String requesterDisplayName;
+  final bool requesterIsOrganizer;
   final JoinRequestStatus status;
   final String? message;
   final DateTime createdAt;

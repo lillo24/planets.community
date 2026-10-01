@@ -271,6 +271,7 @@ class ParticipationPayloadParser {
       id: row['request_id'] as String,
       requesterProfileId: row['requester_profile_id'] as String,
       requesterDisplayName: row['requester_display_name'] as String,
+      requesterIsOrganizer: row['requester_is_organizer'] as bool,
       status: JoinRequestStatus.fromWire(row['status'] as String),
       message: row['request_message'] as String?,
       createdAt: _date(row['created_at']),

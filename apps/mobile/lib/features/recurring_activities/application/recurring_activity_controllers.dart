@@ -507,7 +507,10 @@ class RecurringActivityEditorController
       );
     }
     if (!isPublishableRecurringActivityInput(input) ||
-        input.peopleCapacity! < existing.capacity.currentPeopleCount ||
+        !existing.capacity.canUseSettings(
+          input.registrationCapacity,
+          input.countOrganizersTowardCapacity,
+        ) ||
         !isValidRecurringScheduleTransition(
           existing,
           input,
@@ -824,6 +827,7 @@ RecurringActivityFailureKind mapRecurringActivityFailure(Object error) {
   if (error is PostgrestException) {
     return switch (error.code) {
       'PT422' => RecurringActivityFailureKind.profilePhotoRequired,
+      'PT409' => RecurringActivityFailureKind.capacityConflict,
       '22023' ||
       '23514' ||
       '23502' => RecurringActivityFailureKind.invalidInput,

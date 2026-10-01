@@ -7,15 +7,15 @@ select no_plan();
 select has_column(
   'public',
   'projects',
-  'people_capacity',
-  'the shared Project registry owns canonical people capacity'
+  'registration_capacity',
+  'the shared Project registry owns canonical registration capacity'
 );
 select col_type_is(
   'public',
   'projects',
-  'people_capacity',
+  'registration_capacity',
   'integer',
-  'people capacity uses an integer domain'
+  'registration capacity uses an integer domain'
 );
 select is(
   (
@@ -23,17 +23,43 @@ select is(
     from information_schema.columns
     where table_schema = 'public'
       and table_name = 'projects'
-      and column_name = 'people_capacity'
+      and column_name = 'registration_capacity'
   ),
   null,
   'capacity defaults to the legacy/draft unspecified state'
+);
+select has_column(
+  'public',
+  'projects',
+  'count_organizers_toward_capacity',
+  'the shared Project registry owns the organizer counting policy'
+);
+select col_type_is(
+  'public',
+  'projects',
+  'count_organizers_toward_capacity',
+  'boolean',
+  'the organizer counting policy is boolean'
+);
+select col_default_is(
+  'public',
+  'projects',
+  'count_organizers_toward_capacity',
+  'false',
+  'existing and new Projects exclude organizers by default'
+);
+select col_not_null(
+  'public',
+  'projects',
+  'count_organizers_toward_capacity',
+  'the organizer counting policy cannot be ambiguous'
 );
 select ok(
   exists (
     select 1
     from pg_catalog.pg_constraint as constraint_record
     where constraint_record.conrelid = 'public.projects'::regclass
-      and constraint_record.conname = 'projects_people_capacity_bounds_check'
+      and constraint_record.conname = 'projects_registration_capacity_bounds_check'
       and constraint_record.contype = 'c'
   ),
   'capacity has a database bounds constraint'
@@ -55,6 +81,12 @@ select has_trigger(
   'project_memberships',
   'project_memberships_enforce_capacity',
   'every current-membership insertion enforces fullness'
+);
+select has_trigger(
+  'public',
+  'project_delegates',
+  'project_delegates_enforce_capacity',
+  'delegate activation and revocation preserve registration capacity'
 );
 select has_trigger(
   'public',

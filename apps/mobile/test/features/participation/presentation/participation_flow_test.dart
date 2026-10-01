@@ -252,7 +252,10 @@ void main() {
     final app = await _pump(
       tester,
       participation: FakeParticipationGateway(),
-      proposalCapacity: projectCapacityFixture(peopleCapacity: 1),
+      proposalCapacity: projectCapacityFixture(
+        registrationCapacity: 1,
+        currentParticipantCount: 1,
+      ),
     );
     app.read(appRouterProvider).go('/proposals/proposal-1');
     await tester.pumpAndSettle();
@@ -262,7 +265,10 @@ void main() {
     );
 
     expect(find.text('No spots available.'), findsWidgets);
-    expect(find.text('Full · 1 / 1'), findsWidgets);
+    expect(
+      find.textContaining('Full · 1 / 1 participant spots used'),
+      findsWidgets,
+    );
     expect(
       find.byKey(const Key('participation-join-proposal-1')),
       findsNothing,
@@ -273,9 +279,17 @@ void main() {
     tester,
   ) async {
     final participation = FakeParticipationGateway()
-      ..creatorRequests = [creatorJoinRequestFixture(id: 'pending')]
+      ..creatorRequests = [
+        creatorJoinRequestFixture(id: 'pending'),
+        creatorJoinRequestFixture(
+          id: 'organizer',
+          requesterProfileId: 'delegate-1',
+          requesterDisplayName: 'Delegated organizer',
+          requesterIsOrganizer: true,
+        ),
+      ]
       ..capacity = capacityFixture(
-        peopleCapacity: 2,
+        registrationCapacity: 1,
         currentParticipantCount: 1,
       );
     final app = await _pump(
@@ -292,15 +306,19 @@ void main() {
     final reject = tester.widget<OutlinedButton>(
       find.byKey(const Key('participation-reject-pending')),
     );
+    final organizerAccept = tester.widget<FilledButton>(
+      find.byKey(const Key('participation-accept-organizer')),
+    );
     expect(
       find.byKey(const Key('participation-request-pending')),
       findsOneWidget,
     );
     expect(accept.onPressed, isNull);
+    expect(organizerAccept.onPressed, isNotNull);
     expect(reject.onPressed, isNotNull);
     expect(find.text('No spots available.'), findsOneWidget);
 
-    participation.capacity = capacityFixture(peopleCapacity: 2);
+    participation.capacity = capacityFixture(registrationCapacity: 2);
     await app
         .read(creatorParticipationProvider.notifier)
         .load('user-1', 'proposal-1');
