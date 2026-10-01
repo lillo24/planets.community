@@ -42,12 +42,12 @@ non-owner delivery over the private Supabase Storage and RPC boundary.
 The picker is gallery-only. The app keeps neither the original nor the cropped
 intermediate after the flow, and uploaded objects are fresh WebP encodings.
 Photo changes save immediately; first upload defaults to `interactions`, while
-replacement preserves the canonical audience. The first `interactions` set is
-directional: a Project/Tavolo organizer may see a subject with a pending join
-request or current membership in any Project they create. Former participants,
-rejected/withdrawn requesters, co-participants, and reverse applicant-to-
-organizer reads do not qualify. This is the first relationship set rather than
-the permanent exhaustive meaning of interaction.
+replacement preserves the canonical audience. The Project `interactions` set
+follows current management: the immutable Creator or an active Co-creator/
+Co-organizer may see a pending requester or current participant. A pending
+requester/current participant may see only the immutable Creator through that
+private Project context, not every manager. Revoked delegates, former
+participants, rejected/withdrawn requesters, and co-participants do not qualify.
 
 Scambio-Dona extends `interactions` without changing that Project matrix. A
 listing owner may see a pending requester's photo, while the requester gains no
@@ -78,6 +78,11 @@ downloaded bytes in memory, clears them on login/logout/account switch, and
 persists neither provider URLs nor files. Creator review batch-loads pending
 applicant avatars and invalidates target cache entries after rejection,
 withdrawal, leave, or removal.
+
+Private Messages reuses the same bounded batch/cache boundary for Project
+request and Resource counterparties. Refresh revalidates metadata while
+unchanged immutable object versions reuse bytes; pagination requests only new
+targets, and denial leaves the placeholder without failing chat data.
 
 An exact Resource-listing context RPC likewise resolves the owner server-side
 for an owner or a currently public listing and never broadens generic profile

@@ -59,6 +59,7 @@ class ResourceChatDetailController extends Notifier<ResourceChatDetailState> {
   String? _subscriptionChatId;
   Timer? _reconcileTimer;
   var _revision = 0;
+  var _subscriptionRevision = 0;
   var _signalsEnabled = false;
   var _wasDisconnected = false;
   var _needsMessageReconcile = false;
@@ -423,12 +424,12 @@ class ResourceChatDetailController extends Notifier<ResourceChatDetailState> {
   }
 
   void stopSignals() {
+    _revision++;
     _signalsEnabled = false;
     _reconcileTimer?.cancel();
+    _reconcileTimer = null;
+    _needsMessageReconcile = false;
     _closeSubscription();
-    if (ref.mounted && state.hasConnectionIssue) {
-      _setConnectionIssue(false);
-    }
   }
 
   void handleAppResumed(String expectedProfileId, String chatId) {
@@ -477,9 +478,11 @@ class ResourceChatDetailController extends Notifier<ResourceChatDetailState> {
   void _handleSignal(
     String expectedProfileId,
     String chatId,
+    int subscriptionRevision,
     ResourceChatSignal signal,
   ) {
-    if (!_matchesTarget(expectedProfileId, chatId) || signal.chatId != chatId) {
+    if (!_isAttached(expectedProfileId, chatId, subscriptionRevision) ||
+        signal.chatId != chatId) {
       return;
     }
     ref.read(messageChatsRefreshProvider.notifier).notifyChanged();
@@ -498,11 +501,13 @@ class ResourceChatDetailController extends Notifier<ResourceChatDetailState> {
     String chatId, {
     required bool includeMessages,
   }) {
-    if (!_matchesTarget(expectedProfileId, chatId)) return;
+    if (!_signalsEnabled || !_matchesTarget(expectedProfileId, chatId)) return;
     _needsMessageReconcile = _needsMessageReconcile || includeMessages;
     _reconcileTimer?.cancel();
     _reconcileTimer = Timer(const Duration(milliseconds: 150), () {
-      if (!_matchesTarget(expectedProfileId, chatId)) return;
+      if (!_signalsEnabled || !_matchesTarget(expectedProfileId, chatId)) {
+        return;
+      }
       if (_isReconciling || state.isLoadingOlder || state.isSending) {
         _scheduleReconcile(
           expectedProfileId,
@@ -548,16 +553,25 @@ class ResourceChatDetailController extends Notifier<ResourceChatDetailState> {
     _closeSubscription();
     _subscriptionProfileId = expectedProfileId;
     _subscriptionChatId = summary.chatId;
+    final subscriptionRevision = ++_subscriptionRevision;
     try {
       _subscription = ref
           .read(resourceChatGatewayProvider)
           .subscribeToSignals(
             expectedProfileId: expectedProfileId,
             chatId: summary.chatId,
-            onSignal: (signal) =>
-                _handleSignal(expectedProfileId, summary.chatId, signal),
-            onStatus: (status) =>
-                _handleStatus(expectedProfileId, summary.chatId, status),
+            onSignal: (signal) => _handleSignal(
+              expectedProfileId,
+              summary.chatId,
+              subscriptionRevision,
+              signal,
+            ),
+            onStatus: (status) => _handleStatus(
+              expectedProfileId,
+              summary.chatId,
+              subscriptionRevision,
+              status,
+            ),
           );
     } catch (_) {
       _wasDisconnected = true;
@@ -584,9 +598,10 @@ class ResourceChatDetailController extends Notifier<ResourceChatDetailState> {
   void _handleStatus(
     String expectedProfileId,
     String chatId,
+    int subscriptionRevision,
     ResourceChatConnectionStatus status,
   ) {
-    if (!_matchesTarget(expectedProfileId, chatId)) return;
+    if (!_isAttached(expectedProfileId, chatId, subscriptionRevision)) return;
     if (status == ResourceChatConnectionStatus.disconnected) {
       _wasDisconnected = true;
       _setConnectionIssue(true);
@@ -634,12 +649,24 @@ class ResourceChatDetailController extends Notifier<ResourceChatDetailState> {
 
   void _closeSubscription() {
     final subscription = _subscription;
+    _subscriptionRevision++;
     _subscription = null;
     _subscriptionProfileId = null;
     _subscriptionChatId = null;
     _wasDisconnected = false;
     if (subscription != null) unawaited(subscription.close());
   }
+
+  bool _isAttached(
+    String expectedProfileId,
+    String chatId,
+    int subscriptionRevision,
+  ) =>
+      _signalsEnabled &&
+      subscriptionRevision == _subscriptionRevision &&
+      _subscriptionProfileId == expectedProfileId &&
+      _subscriptionChatId == chatId &&
+      _matchesTarget(expectedProfileId, chatId);
 
   List<ResourceChatMessage> _mergeMessages(
     Iterable<ResourceChatMessage> existing,

@@ -9,6 +9,7 @@ import 'package:planets_mobile/features/messages/application/message_chats_contr
 import 'package:planets_mobile/features/messages/data/message_chats_gateway.dart';
 import 'package:planets_mobile/features/project_chat/data/project_chat_gateway.dart';
 import 'package:planets_mobile/features/project_request_chat/data/project_request_chat_gateway.dart';
+import 'package:planets_mobile/features/profile_photo/data/profile_photo_gateway.dart';
 import 'package:planets_mobile/features/resource_chat/data/resource_chat_gateway.dart';
 import 'package:planets_mobile/features/resource_chat/domain/resource_chat_models.dart';
 
@@ -16,6 +17,7 @@ import '../../../support/fake_auth.dart';
 import '../../../support/fake_message_chats.dart';
 import '../../../support/fake_project_chat.dart';
 import '../../../support/fake_project_request_chat.dart';
+import '../../../support/fake_profile_photo.dart';
 import '../../../support/fake_resource_chat.dart';
 
 void main() {
@@ -187,6 +189,70 @@ void main() {
     expect(list.calls.where((call) => call == 'list'), hasLength(2));
   });
 
+  test('list detach ignores close status and is repeat-safe', () async {
+    final resource = FakeResourceChatGateway()..emitDisconnectedOnClose = true;
+    final list = FakeMessageChatsGateway()
+      ..items = [resourceMessageChatFixture()];
+    final session = _readyContainer(list, resource: resource);
+    addTearDown(session.dispose);
+    final controller = session.container.read(messageChatsProvider.notifier);
+    await controller.load('user-1');
+    controller.startSignals('user-1');
+    final subscription = resource.subscriptions.single;
+
+    controller.stopSignals();
+    controller.stopSignals();
+    subscription.onStatus(ResourceChatConnectionStatus.disconnected);
+    await Future<void>.delayed(Duration.zero);
+
+    expect(subscription.closeCount, 1);
+    expect(
+      session.container.read(messageChatsProvider).hasConnectionIssue,
+      isFalse,
+    );
+  });
+
+  test(
+    'private pagination batches only newly discovered counterparties',
+    () async {
+      final photos = FakeProfilePhotoGateway();
+      final list = FakeMessageChatsGateway()
+        ..items = List.generate(
+          21,
+          (index) => projectRequestMessageChatFixture(
+            chatId:
+                '00000000-0000-4000-8100-${index.toString().padLeft(12, '0')}',
+            requestId:
+                '00000000-0000-4000-8200-${index.toString().padLeft(12, '0')}',
+            counterpartyProfileId:
+                '00000000-0000-4000-8300-${index.toString().padLeft(12, '0')}',
+          ),
+        );
+      final session = _readyContainer(list, photos: photos);
+      addTearDown(session.dispose);
+      final privateController = session.container.read(
+        messageChatsProvider.notifier,
+      );
+      final groupController = session.container.read(
+        groupMessageChatsProvider.notifier,
+      );
+
+      await privateController.load('user-1');
+      await Future<void>.delayed(Duration.zero);
+      expect(photos.visibleBatchLoadIds, hasLength(1));
+      expect(photos.visibleBatchLoadIds.single, hasLength(20));
+
+      await privateController.loadMore('user-1');
+      await Future<void>.delayed(Duration.zero);
+      expect(photos.visibleBatchLoadIds, hasLength(2));
+      expect(photos.visibleBatchLoadIds.last, hasLength(1));
+
+      await groupController.load('user-1');
+      await Future<void>.delayed(Duration.zero);
+      expect(photos.visibleBatchLoadIds, hasLength(2));
+    },
+  );
+
   test(
     'account switch clears rows, closes subscriptions, rejects late read',
     () async {
@@ -232,6 +298,7 @@ _Session _readyContainer(
   FakeProjectChatGateway? project,
   FakeProjectRequestChatGateway? request,
   FakeResourceChatGateway? resource,
+  FakeProfilePhotoGateway? photos,
 }) {
   final auth = FakeAuthGateway(
     snapshot: const AuthSnapshot(identity: AuthIdentity(id: 'user-1')),
@@ -251,6 +318,9 @@ _Session _readyContainer(
       ),
       resourceChatGatewayProvider.overrideWithValue(
         resource ?? FakeResourceChatGateway(),
+      ),
+      profilePhotoGatewayProvider.overrideWithValue(
+        photos ?? FakeProfilePhotoGateway(),
       ),
     ],
   );

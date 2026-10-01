@@ -9,6 +9,7 @@ class FakeProjectChatGateway implements ProjectChatGateway {
   final Map<String, List<ProjectChatFeedItem>> histories = {};
   final List<String> calls = [];
   final List<FakeProjectChatSubscription> subscriptions = [];
+  bool emitDisconnectedOnClose = false;
   Future<void>? listDelay;
   Future<void>? historyDelay;
   Future<void>? sendDelay;
@@ -112,6 +113,7 @@ class FakeProjectChatGateway implements ProjectChatGateway {
       chatId: chatId,
       onSignal: onSignal,
       onStatus: onStatus,
+      emitDisconnectedOnClose: emitDisconnectedOnClose,
     );
     subscriptions.add(subscription);
     return subscription;
@@ -187,17 +189,25 @@ class FakeProjectChatSubscription implements ProjectChatSignalSubscription {
     required this.chatId,
     required this.onSignal,
     required this.onStatus,
+    required this.emitDisconnectedOnClose,
   });
 
   final String expectedProfileId;
   final String chatId;
   final void Function(ProjectChatSignal signal) onSignal;
   final void Function(ProjectChatConnectionStatus status) onStatus;
+  final bool emitDisconnectedOnClose;
   bool isClosed = false;
+  int closeCount = 0;
 
   @override
   Future<void> close() async {
+    if (isClosed) return;
     isClosed = true;
+    closeCount++;
+    if (emitDisconnectedOnClose) {
+      onStatus(ProjectChatConnectionStatus.disconnected);
+    }
   }
 }
 

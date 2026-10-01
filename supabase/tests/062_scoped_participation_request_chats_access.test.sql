@@ -250,14 +250,22 @@ select is(
           item.project_id is not null
           and item.project_kind is not null
           and item.resource_request_id is null
+          and item.resource_counterparty_profile_id is null
+          and item.resource_counterparty_display_name is null
           and item.project_request_id is null
         when 'resource_chat' then
           item.project_id is null
           and item.resource_request_id is not null
+          and item.resource_counterparty_profile_id is not null
+          and item.resource_counterparty_profile_id <>
+            'e1100000-0000-4000-8000-000000000001'::uuid
+          and item.resource_counterparty_display_name is not null
           and item.project_request_id is null
         when 'project_request_chat' then
           item.project_id is null
           and item.resource_request_id is null
+          and item.resource_counterparty_profile_id is null
+          and item.resource_counterparty_display_name is null
           and item.project_request_id is not null
           and item.project_request_project_id is not null
           and item.project_request_counterparty_profile_id is not null
@@ -275,6 +283,60 @@ select is(
   ),
   true,
   'all chat discriminator branches satisfy strict XOR shapes'
+);
+
+select results_eq(
+  $$
+    select
+      resource_counterparty_profile_id,
+      resource_counterparty_display_name
+    from public.list_own_scoped_message_chat_items(
+      'e1100000-0000-4000-8000-000000000001',
+      'private',
+      20,
+      null,
+      null,
+      null
+    )
+    where item_kind = 'resource_chat'
+  $$,
+  $$values (
+    'e1100000-0000-4000-8000-000000000002'::uuid,
+    'Scoped Requester'::text
+  )$$,
+  'the Resource owner receives the canonical requester counterparty'
+);
+
+select set_config(
+  'request.jwt.claim.sub',
+  'e1100000-0000-4000-8000-000000000002',
+  true
+);
+select results_eq(
+  $$
+    select
+      resource_counterparty_profile_id,
+      resource_counterparty_display_name
+    from public.list_own_scoped_message_chat_items(
+      'e1100000-0000-4000-8000-000000000002',
+      'private',
+      20,
+      null,
+      null,
+      null
+    )
+    where item_kind = 'resource_chat'
+  $$,
+  $$values (
+    'e1100000-0000-4000-8000-000000000001'::uuid,
+    'Scoped Creator'::text
+  )$$,
+  'the Resource requester receives the canonical owner counterparty'
+);
+select set_config(
+  'request.jwt.claim.sub',
+  'e1100000-0000-4000-8000-000000000001',
+  true
 );
 
 select results_eq(

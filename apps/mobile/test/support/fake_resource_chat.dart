@@ -18,6 +18,7 @@ class FakeResourceChatGateway implements ResourceChatGateway {
   String? lastSentBody;
   var sendCount = 0;
   void Function()? onSendAttempt;
+  bool emitDisconnectedOnClose = false;
 
   @override
   Future<ResourceChatSummary> getChat({
@@ -95,6 +96,7 @@ class FakeResourceChatGateway implements ResourceChatGateway {
       chatId: chatId,
       onSignal: onSignal,
       onStatus: onStatus,
+      emitDisconnectedOnClose: emitDisconnectedOnClose,
     );
     subscriptions.add(subscription);
     return subscription;
@@ -148,17 +150,25 @@ class FakeResourceChatSubscription implements ResourceChatSignalSubscription {
     required this.chatId,
     required this.onSignal,
     required this.onStatus,
+    required this.emitDisconnectedOnClose,
   });
 
   final String expectedProfileId;
   final String chatId;
   final void Function(ResourceChatSignal signal) onSignal;
   final void Function(ResourceChatConnectionStatus status) onStatus;
+  final bool emitDisconnectedOnClose;
   bool isClosed = false;
+  int closeCount = 0;
 
   @override
   Future<void> close() async {
+    if (isClosed) return;
     isClosed = true;
+    closeCount++;
+    if (emitDisconnectedOnClose) {
+      onStatus(ResourceChatConnectionStatus.disconnected);
+    }
   }
 }
 

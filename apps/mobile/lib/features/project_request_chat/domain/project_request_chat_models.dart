@@ -66,6 +66,11 @@ class ProjectRequestChatSummary {
       viewerRole == ProjectRequestChatViewerRole.requester
       ? creatorDisplayName
       : requesterDisplayName;
+
+  String get counterpartyProfileId =>
+      viewerRole == ProjectRequestChatViewerRole.requester
+      ? creatorProfileId
+      : requesterProfileId;
 }
 
 enum ProjectRequestChatFeedItemKind {

@@ -29,6 +29,11 @@ void main() {
         expect(item.viewerRole, role);
         expect(item.agreementLifecycle, lifecycle);
         expect(item.isReadOnly, lifecycle.isClosed);
+        expect(
+          item.counterpartyProfileId,
+          '00000000-0000-4000-8000-000000000102',
+        );
+        expect(item.counterpartyDisplayName, 'Jordan');
       }
     }
   });
@@ -147,6 +152,8 @@ Map<String, dynamic> _commonRow({String chatId = _chatId}) => {
   'project_request_message': null,
   'project_request_resolved_at': null,
   'accepted_project_group_chat_id': null,
+  'resource_counterparty_profile_id': null,
+  'resource_counterparty_display_name': null,
 };
 
 Map<String, dynamic> _projectRow({String viewerRole = 'current_member'}) => {
@@ -177,6 +184,8 @@ Map<String, dynamic> _resourceRow({
   'resource_request_id': _requestId,
   'resource_agreement_id': '00000000-0000-4000-8000-000000000501',
   'resource_listing_id': '00000000-0000-4000-8000-000000000201',
+  'resource_counterparty_profile_id': '00000000-0000-4000-8000-000000000102',
+  'resource_counterparty_display_name': 'Jordan',
   'agreement_lifecycle': lifecycle.wireValue,
   'coordination_closed_at': lifecycle.isClosed ? '2026-09-20T12:00:00Z' : null,
 };

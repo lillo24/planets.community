@@ -12,6 +12,11 @@ import 'package:planets_mobile/core/widgets/loading_state.dart';
 import 'package:planets_mobile/features/auth/application/auth_session_controller.dart';
 import 'package:planets_mobile/features/auth/data/auth_gateway.dart';
 import 'package:planets_mobile/features/auth/domain/auth_models.dart';
+import 'package:planets_mobile/features/moderation/data/corroboration_gateway.dart';
+import 'package:planets_mobile/features/moderation/data/counterstatement_gateway.dart';
+import 'package:planets_mobile/features/moderation/data/moderation_evidence_gateway.dart';
+import 'package:planets_mobile/features/moderation/data/moderation_gateway.dart';
+import 'package:planets_mobile/features/moderation/presentation/moderation_routes.dart';
 import 'package:planets_mobile/features/profile/data/profile_gateway.dart';
 import 'package:planets_mobile/features/profile/domain/profile_models.dart';
 import 'package:planets_mobile/features/participation/data/participation_gateway.dart';
@@ -21,6 +26,7 @@ import 'package:planets_mobile/features/recurring_activities/data/recurring_acti
 import 'package:planets_mobile/features/resource_listings/data/resource_listing_gateway.dart';
 
 import '../../support/fake_auth.dart';
+import '../../support/fake_moderation.dart';
 import '../../support/fake_profile.dart';
 import '../../support/fake_participation.dart';
 import '../../support/fake_proposal.dart';
@@ -426,6 +432,87 @@ void main() {
     await tester.pumpAndSettle();
     await _tap(tester, 'profile-save-button');
     expect(router.routeInformationProvider.value.uri.path, '/profile');
+  });
+
+  testWidgets('Profile moderation siblings pop directly back to Profile', (
+    tester,
+  ) async {
+    final app = await _pump(tester);
+    final router = app.read(appRouterProvider);
+    router.go('/profile');
+    await tester.pumpAndSettle();
+
+    await _tap(tester, 'profile-own-reports-button');
+    expect(router.routeInformationProvider.value.uri.path, '/profile/reports');
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+    expect(router.routeInformationProvider.value.uri.path, '/profile');
+
+    await _tap(tester, 'profile-moderation-review-requests-button');
+    expect(
+      router.routeInformationProvider.value.uri.path,
+      ModerationRoutes.reviewRequests,
+    );
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+    expect(router.routeInformationProvider.value.uri.path, '/profile');
+  });
+
+  testWidgets('review details and legacy URL keep the canonical back stack', (
+    tester,
+  ) async {
+    const corroborationId = '00000000-0000-4000-8000-000000000911';
+    const counterstatementId = '00000000-0000-4000-8000-000000000921';
+    final app = await _pump(tester);
+    final router = app.read(appRouterProvider);
+
+    router.go(ModerationRoutes.reviewRequests);
+    await tester.pumpAndSettle();
+    router.push(ModerationRoutes.corroborationDetail(corroborationId));
+    await tester.pumpAndSettle();
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+    expect(
+      router.routeInformationProvider.value.uri.path,
+      ModerationRoutes.reviewRequests,
+    );
+
+    router.push(ModerationRoutes.counterstatementDetail(counterstatementId));
+    await tester.pumpAndSettle();
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+    expect(
+      router.routeInformationProvider.value.uri.path,
+      ModerationRoutes.reviewRequests,
+    );
+
+    router.go('/profile/reports/review-requests');
+    await tester.pumpAndSettle();
+    expect(
+      router.routeInformationProvider.value.uri.path,
+      ModerationRoutes.reviewRequests,
+    );
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+    expect(router.routeInformationProvider.value.uri.path, '/profile');
+
+    router.go(
+      '/profile/reports/review-requests/corroboration/$corroborationId',
+    );
+    await tester.pumpAndSettle();
+    expect(
+      router.routeInformationProvider.value.uri.path,
+      ModerationRoutes.corroborationDetail(corroborationId),
+    );
+
+    router.go(
+      '/profile/reports/review-requests/counterstatement/$counterstatementId',
+    );
+    await tester.pumpAndSettle();
+    expect(
+      router.routeInformationProvider.value.uri.path,
+      ModerationRoutes.counterstatementDetail(counterstatementId),
+    );
   });
 
   testWidgets('account switch discards an inactive private join message', (
@@ -839,6 +926,16 @@ Future<ProviderContainer> _pump(
         ),
         projectResourceNeedsGatewayProvider.overrideWithValue(
           projectResourceNeeds ?? FakeProjectResourceNeedsGateway(),
+        ),
+        moderationGatewayProvider.overrideWithValue(FakeModerationGateway()),
+        moderationEvidenceGatewayProvider.overrideWithValue(
+          FakeModerationEvidenceGateway(),
+        ),
+        corroborationGatewayProvider.overrideWithValue(
+          FakeCorroborationGateway(),
+        ),
+        counterstatementGatewayProvider.overrideWithValue(
+          FakeCounterstatementGateway(),
         ),
       ],
       child: const PlanetsApp(),

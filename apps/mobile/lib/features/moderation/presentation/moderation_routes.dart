@@ -6,7 +6,7 @@ import '../domain/moderation_models.dart';
 abstract final class ModerationRoutes {
   static const ownReports = '/profile/reports';
   static const newReport = '/profile/reports/new';
-  static const reviewRequests = '/profile/reports/review-requests';
+  static const reviewRequests = '/profile/review-requests';
 
   static String corroborationDetail(String requestId) =>
       '$reviewRequests/corroboration/$requestId';

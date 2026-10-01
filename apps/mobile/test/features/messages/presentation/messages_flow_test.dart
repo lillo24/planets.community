@@ -17,6 +17,8 @@ import 'package:planets_mobile/features/messages/domain/message_models.dart';
 import 'package:planets_mobile/features/participation/data/participation_gateway.dart';
 import 'package:planets_mobile/features/participation/data/join_acceptance_triage_gateway.dart';
 import 'package:planets_mobile/features/participation/domain/participation_models.dart';
+import 'package:planets_mobile/features/profile_photo/data/profile_photo_gateway.dart';
+import 'package:planets_mobile/features/profile_photo/domain/visible_profile_photo_models.dart';
 import 'package:planets_mobile/features/proposals/data/proposal_gateway.dart';
 import 'package:planets_mobile/features/recurring_activities/data/recurring_activity_gateway.dart';
 import 'package:planets_mobile/features/project_chat/data/project_chat_gateway.dart';
@@ -39,6 +41,7 @@ import '../../../support/fake_messages.dart';
 import '../../../support/fake_message_chats.dart';
 import '../../../support/fake_resource_loan.dart';
 import '../../../support/fake_participation.dart';
+import '../../../support/fake_profile_photo.dart';
 import '../../../support/fake_join_acceptance_triage.dart';
 import '../../../support/fake_proposal.dart';
 import '../../../support/fake_recurring_activity.dart';
@@ -120,6 +123,20 @@ void main() {
       ),
       findsOneWidget,
     );
+    expect(
+      find.byKey(
+        const Key(
+          'project-request-chat-photo-00000000-0000-4000-8000-000000000411',
+        ),
+      ),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(
+        const Key('resource-chat-photo-00000000-0000-4000-8000-000000000401'),
+      ),
+      findsOneWidget,
+    );
     expect(find.textContaining('Terms changed'), findsNothing);
     expect(
       find.byKey(
@@ -140,6 +157,66 @@ void main() {
         const Key('resource-chat-link-00000000-0000-4000-8000-000000000401'),
       ),
       findsNothing,
+    );
+    expect(find.byKey(const Key('project-chat-person-photo')), findsNothing);
+  });
+
+  testWidgets('Private chat photos batch once and fill authorized avatars', (
+    tester,
+  ) async {
+    const projectCounterparty = '00000000-0000-4000-8000-000000000102';
+    const resourceCounterparty = '00000000-0000-4000-8000-000000000103';
+    final photos = FakeProfilePhotoGateway()
+      ..visiblePhotos[projectCounterparty] = _visiblePhoto(
+        projectCounterparty,
+        '00000000-0000-4000-8000-000000000802',
+      )
+      ..visiblePhotos[resourceCounterparty] = _visiblePhoto(
+        resourceCounterparty,
+        '00000000-0000-4000-8000-000000000803',
+      );
+    final chats = FakeMessageChatsGateway()
+      ..items = [
+        projectRequestMessageChatFixture(),
+        resourceMessageChatFixture(
+          counterpartyProfileId: resourceCounterparty,
+          counterpartyDisplayName: 'Taylor',
+        ),
+        projectMessageChatFixture(),
+      ];
+    final app = await _pump(
+      tester,
+      messages: FakeMessagesGateway(),
+      chats: chats,
+      profilePhoto: photos,
+    );
+    app.read(appRouterProvider).go('/messages');
+    await tester.pumpAndSettle();
+
+    expect(photos.visibleBatchLoadIds, hasLength(1));
+    expect(photos.visibleBatchLoadIds.single.toSet(), {
+      projectCounterparty,
+      resourceCounterparty,
+    });
+    expect(
+      find.descendant(
+        of: find.byKey(
+          const Key(
+            'project-request-chat-photo-00000000-0000-4000-8000-000000000411',
+          ),
+        ),
+        matching: find.byType(Image),
+      ),
+      findsOneWidget,
+    );
+    expect(
+      find.descendant(
+        of: find.byKey(
+          const Key('resource-chat-photo-00000000-0000-4000-8000-000000000401'),
+        ),
+        matching: find.byType(Image),
+      ),
+      findsOneWidget,
     );
   });
 
@@ -279,6 +356,64 @@ void main() {
     },
   );
 
+  testWidgets('participation conversation shows the counterparty avatar', (
+    tester,
+  ) async {
+    const requestId = '00000000-0000-4000-8000-000000000311';
+    const requesterId = '00000000-0000-4000-8000-000000000102';
+    final photos = FakeProfilePhotoGateway()
+      ..visiblePhotos[requesterId] = _visiblePhoto(
+        requesterId,
+        '00000000-0000-4000-8000-000000000804',
+      );
+    final requestChats = FakeProjectRequestChatGateway();
+    final app = await _pump(
+      tester,
+      messages: FakeMessagesGateway(),
+      projectRequestChats: requestChats,
+      profilePhoto: photos,
+    );
+    app.read(appRouterProvider).go('/messages/chats/request/$requestId');
+    await tester.pumpAndSettle();
+
+    final avatar = find.byKey(
+      const Key('project-request-chat-counterparty-photo'),
+    );
+    expect(avatar, findsOneWidget);
+    expect(
+      find.descendant(of: avatar, matching: find.byType(Image)),
+      findsOneWidget,
+    );
+    expect(photos.visibleLoadIds, [requesterId]);
+  });
+
+  testWidgets('popping participation chat ignores unsubscribe status', (
+    tester,
+  ) async {
+    const requestId = '00000000-0000-4000-8000-000000000311';
+    final requestChats = FakeProjectRequestChatGateway()
+      ..emitDisconnectedOnClose = true;
+    final app = await _pump(
+      tester,
+      messages: FakeMessagesGateway(),
+      projectRequestChats: requestChats,
+    );
+    app.read(appRouterProvider).go('/messages/chats/request/$requestId');
+    await tester.pumpAndSettle();
+    final subscription = requestChats.subscriptions.single;
+
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+
+    expect(tester.takeException(), isNull);
+    expect(subscription.isClosed, isTrue);
+    expect(subscription.closeCount, 1);
+    expect(
+      app.read(appRouterProvider).routeInformationProvider.value.uri.path,
+      '/messages',
+    );
+  });
+
   testWidgets('creator banner accepts through contribution triage', (
     tester,
   ) async {
@@ -366,6 +501,12 @@ void main() {
     tester,
   ) async {
     const requestId = '00000000-0000-4000-8000-000000000311';
+    const creatorId = '00000000-0000-4000-8000-000000000101';
+    final photos = FakeProfilePhotoGateway()
+      ..visiblePhotos[creatorId] = _visiblePhoto(
+        creatorId,
+        '00000000-0000-4000-8000-000000000805',
+      );
     final requestChats = FakeProjectRequestChatGateway()
       ..summary = projectRequestChatSummaryFixture(
         viewerRole: ProjectRequestChatViewerRole.requester,
@@ -387,12 +528,14 @@ void main() {
       tester,
       messages: messages,
       projectRequestChats: requestChats,
+      profilePhoto: photos,
     );
     app.read(appRouterProvider).go('/messages/chats/request/$requestId');
     await tester.pumpAndSettle();
 
     expect(find.byKey(const Key('project-request-chat-accept')), findsNothing);
     expect(find.byKey(const Key('project-request-chat-reject')), findsNothing);
+    expect(photos.visibleLoadIds, [creatorId]);
     await tester.tap(
       find.byKey(const Key('project-request-chat-status-banner')),
     );
@@ -2111,6 +2254,7 @@ Future<ProviderContainer> _pump(
   FakeResourceExchangeGateway? resourceExchange,
   FakeResourceLoanGateway? resourceLoans,
   FakeProjectRequestChatGateway? projectRequestChats,
+  FakeProfilePhotoGateway? profilePhoto,
 }) async {
   final auth = FakeAuthGateway(
     snapshot: AuthSnapshot(identity: AuthIdentity(id: identityId)),
@@ -2130,6 +2274,9 @@ Future<ProviderContainer> _pump(
         profileAnchorGatewayProvider.overrideWithValue(
           FakeProfileAnchorGateway()
             ..readiness = ProfileAnchorReadiness.complete,
+        ),
+        profilePhotoGatewayProvider.overrideWithValue(
+          profilePhoto ?? FakeProfilePhotoGateway(),
         ),
         messagesGatewayProvider.overrideWithValue(messages),
         messageChatsGatewayProvider.overrideWithValue(
@@ -2175,6 +2322,13 @@ Future<ProviderContainer> _pump(
   await tester.pumpAndSettle();
   return ProviderScope.containerOf(tester.element(find.byType(PlanetsApp)));
 }
+
+VisibleProfilePhoto _visiblePhoto(String profileId, String versionId) =>
+    VisibleProfilePhoto(
+      profileId: profileId,
+      objectPath: '$profileId/$versionId.webp',
+      updatedAt: DateTime.utc(2026, 10, 1),
+    );
 
 Future<void> _expectViewProject(
   WidgetTester tester, {

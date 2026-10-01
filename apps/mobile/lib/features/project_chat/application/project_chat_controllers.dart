@@ -181,18 +181,11 @@ class ProjectChatListController extends Notifier<ProjectChatListState> {
   }
 
   void stopSignals() {
+    _revision++;
     _signalsEnabled = false;
     _refreshTimer?.cancel();
+    _refreshTimer = null;
     _closeAllSubscriptions();
-    if (ref.mounted && state.hasConnectionIssue) {
-      state = ProjectChatListState(
-        phase: state.phase,
-        expectedProfileId: state.expectedProfileId,
-        items: state.items,
-        hasMore: state.hasMore,
-        failure: state.failure,
-      );
-    }
   }
 
   List<ProjectChatSummary> _dedupeSummaries(
@@ -289,11 +282,12 @@ class ProjectChatListController extends Notifier<ProjectChatListState> {
   }
 
   void _closeAllSubscriptions() {
-    for (final subscription in _subscriptions.values) {
-      unawaited(subscription.close());
-    }
+    final subscriptions = _subscriptions.values.toList(growable: false);
     _subscriptions.clear();
     _disconnectedChats.clear();
+    for (final subscription in subscriptions) {
+      unawaited(subscription.close());
+    }
   }
 
   bool _isReadyIdentity(String profileId) {
@@ -355,6 +349,7 @@ class ProjectChatDetailController extends Notifier<ProjectChatDetailState> {
   String? _subscriptionProfileId;
   String? _subscriptionChatId;
   var _revision = 0;
+  var _subscriptionRevision = 0;
   var _isReconciling = false;
   var _reconcilePending = false;
   var _wasDisconnected = false;
@@ -729,15 +724,10 @@ class ProjectChatDetailController extends Notifier<ProjectChatDetailState> {
   }
 
   void stopSignals() {
+    _revision++;
     _signalsEnabled = false;
+    _reconcilePending = false;
     _closeSubscription();
-    if (ref.mounted && state.hasConnectionIssue) {
-      _setConnectionIssue(
-        state.expectedProfileId ?? '',
-        state.chatId ?? '',
-        false,
-      );
-    }
   }
 
   Future<ProjectChatSummary> _findSummary(
@@ -782,16 +772,25 @@ class ProjectChatDetailController extends Notifier<ProjectChatDetailState> {
     _closeSubscription();
     _subscriptionProfileId = expectedProfileId;
     _subscriptionChatId = summary.chatId;
+    final subscriptionRevision = ++_subscriptionRevision;
     try {
       _subscription = ref
           .read(projectChatGatewayProvider)
           .subscribeToProjectChatSignals(
             expectedProfileId: expectedProfileId,
             chatId: summary.chatId,
-            onSignal: (signal) =>
-                _handleSignal(expectedProfileId, summary.chatId, signal),
-            onStatus: (status) =>
-                _handleStatus(expectedProfileId, summary.chatId, status),
+            onSignal: (signal) => _handleSignal(
+              expectedProfileId,
+              summary.chatId,
+              subscriptionRevision,
+              signal,
+            ),
+            onStatus: (status) => _handleStatus(
+              expectedProfileId,
+              summary.chatId,
+              subscriptionRevision,
+              status,
+            ),
           );
     } catch (_) {
       _wasDisconnected = true;
@@ -802,9 +801,11 @@ class ProjectChatDetailController extends Notifier<ProjectChatDetailState> {
   void _handleSignal(
     String expectedProfileId,
     String chatId,
+    int subscriptionRevision,
     ProjectChatSignal signal,
   ) {
-    if (!_matchesTarget(expectedProfileId, chatId) || signal.chatId != chatId) {
+    if (!_isAttached(expectedProfileId, chatId, subscriptionRevision) ||
+        signal.chatId != chatId) {
       return;
     }
     switch (signal) {
@@ -821,9 +822,10 @@ class ProjectChatDetailController extends Notifier<ProjectChatDetailState> {
   void _handleStatus(
     String expectedProfileId,
     String chatId,
+    int subscriptionRevision,
     ProjectChatConnectionStatus status,
   ) {
-    if (!_matchesTarget(expectedProfileId, chatId)) return;
+    if (!_isAttached(expectedProfileId, chatId, subscriptionRevision)) return;
     if (status == ProjectChatConnectionStatus.disconnected) {
       _wasDisconnected = true;
       _setConnectionIssue(expectedProfileId, chatId, true);
@@ -861,7 +863,8 @@ class ProjectChatDetailController extends Notifier<ProjectChatDetailState> {
   }
 
   void _drainPendingReconciliation() {
-    if (!_reconcilePending ||
+    if (!_signalsEnabled ||
+        !_reconcilePending ||
         _isReconciling ||
         state.phase != ProjectChatDetailPhase.ready ||
         state.isLoadingOlder ||
@@ -877,12 +880,24 @@ class ProjectChatDetailController extends Notifier<ProjectChatDetailState> {
 
   void _closeSubscription() {
     final subscription = _subscription;
+    _subscriptionRevision++;
     _subscription = null;
     _subscriptionProfileId = null;
     _subscriptionChatId = null;
     _wasDisconnected = false;
     if (subscription != null) unawaited(subscription.close());
   }
+
+  bool _isAttached(
+    String expectedProfileId,
+    String chatId,
+    int subscriptionRevision,
+  ) =>
+      _signalsEnabled &&
+      subscriptionRevision == _subscriptionRevision &&
+      _subscriptionProfileId == expectedProfileId &&
+      _subscriptionChatId == chatId &&
+      _matchesTarget(expectedProfileId, chatId);
 
   List<ProjectChatFeedItem> _mergeFeedItems(
     Iterable<ProjectChatFeedItem> existing,
