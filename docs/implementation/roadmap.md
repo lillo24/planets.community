@@ -793,7 +793,7 @@ Template Workshop/Market ranking remain deferred.
 
 ##### 05E1 — Organizer-aware registration capacity and public headcount
 
-**Status:** Implemented on the stacked 05E1 draft branch; not merged to `main`.
+**Status:** Implemented in draft PR #121; pending merge to `main`.
 
 Renames the shared field to `registration_capacity` and adds a default-off
 setting controlling whether the Creator and active Co-creators/Co-organizers
