@@ -1,5 +1,7 @@
 import "server-only";
 
+import { cache } from "react";
+
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import {
   encodeModerationCursor,
@@ -58,7 +60,17 @@ export async function requireModerationStaff(
   createClient: ModerationServerClientFactory = createModerationServerClient,
 ): Promise<ModerationStaffAccess | null> {
   const client = await createClient();
-  const { data, error } = await client.auth.getClaims();
+  let claimsResult: Awaited<
+    ReturnType<ModerationServerClient["auth"]["getClaims"]>
+  >;
+  try {
+    claimsResult = await client.auth.getClaims();
+  } catch {
+    // A failed claims read cannot establish staff identity, so the admin
+    // boundary must deny access rather than render a successful error page.
+    return null;
+  }
+  const { data, error } = claimsResult;
   const profileId = data?.claims.sub;
   if (error || typeof profileId !== "string" || profileId.length === 0) {
     return null;
@@ -74,14 +86,20 @@ export async function requireModerationStaff(
   return { profileId, role, client };
 }
 
+export const requireCurrentModerationStaff = cache(() =>
+  requireModerationStaff(),
+);
+
 export async function readModerationQueue(
   filters: Readonly<{
     state?: ModerationState;
     cursor?: ModerationQueueCursor;
   }>,
-  createClient: ModerationServerClientFactory = createModerationServerClient,
+  createClient?: ModerationServerClientFactory,
 ): Promise<ModerationQueueResult> {
-  const access = await requireModerationStaff(createClient);
+  const access = createClient
+    ? await requireModerationStaff(createClient)
+    : await requireCurrentModerationStaff();
   if (!access) return { status: "denied" };
   const result = await access.client.rpc("list_moderation_cases", {
     p_expected_staff_profile_id: access.profileId,
@@ -113,9 +131,11 @@ export async function readModerationQueue(
 
 export async function readModerationCase(
   caseId: string,
-  createClient: ModerationServerClientFactory = createModerationServerClient,
+  createClient?: ModerationServerClientFactory,
 ): Promise<ModerationDetailResult> {
-  const access = await requireModerationStaff(createClient);
+  const access = createClient
+    ? await requireModerationStaff(createClient)
+    : await requireCurrentModerationStaff();
   if (!access) return { status: "denied" };
   const result = await access.client.rpc("get_moderation_case_detail", {
     p_expected_staff_profile_id: access.profileId,

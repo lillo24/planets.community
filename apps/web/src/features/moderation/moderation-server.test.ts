@@ -16,12 +16,21 @@ import {
 vi.mock("server-only", () => ({}));
 
 describe("moderation server authorization", () => {
-  it("denies signed-out and ordinary authenticated callers", async () => {
+  it("denies signed-out, unreadable-claims, and ordinary callers", async () => {
     const signedOut = client({ profileId: null });
     await expect(
       readModerationQueue({}, async () => signedOut),
     ).resolves.toEqual({ status: "denied" });
     expect(signedOut.rpc).not.toHaveBeenCalled();
+
+    const unreadableClaims = client({ profileId: null });
+    vi.mocked(unreadableClaims.auth.getClaims).mockRejectedValue(
+      new Error("Claims unavailable"),
+    );
+    await expect(
+      readModerationQueue({}, async () => unreadableClaims),
+    ).resolves.toEqual({ status: "denied" });
+    expect(unreadableClaims.rpc).not.toHaveBeenCalled();
 
     const ordinary = client({ profileId: profileId, staffRole: null });
     await expect(
