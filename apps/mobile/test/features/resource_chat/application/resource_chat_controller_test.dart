@@ -19,6 +19,35 @@ import '../../../support/fake_profile_photo.dart';
 import '../../../support/fake_resource_chat.dart';
 
 void main() {
+  test(
+    'detach is idempotent and ignores disconnect callbacks from close',
+    () async {
+      final gateway = FakeResourceChatGateway()..emitDisconnectedOnClose = true;
+      final session = _readyContainer(gateway);
+      addTearDown(session.dispose);
+      final controller = session.container.read(
+        resourceChatDetailProvider.notifier,
+      );
+      await controller.load(
+        expectedProfileId: 'user-1',
+        chatId: gateway.summary.chatId,
+      );
+      controller.startSignals('user-1', gateway.summary.chatId);
+      final subscription = gateway.subscriptions.single;
+
+      controller.stopSignals();
+      controller.stopSignals();
+      subscription.onStatus(ResourceChatConnectionStatus.disconnected);
+      await Future<void>.delayed(Duration.zero);
+
+      expect(subscription.closeCount, 1);
+      expect(
+        session.container.read(resourceChatDetailProvider).hasConnectionIssue,
+        isFalse,
+      );
+    },
+  );
+
   test('maps canonical database failures without exposing diagnostics', () {
     expect(
       mapResourceChatFailure(

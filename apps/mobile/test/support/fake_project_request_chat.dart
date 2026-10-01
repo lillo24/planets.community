@@ -16,6 +16,7 @@ class FakeProjectRequestChatGateway implements ProjectRequestChatGateway {
   var sendCount = 0;
   String? lastSentBody;
   void Function()? onSendAttempt;
+  bool emitDisconnectedOnClose = false;
 
   @override
   Future<ProjectRequestChatSummary> getChat({
@@ -93,6 +94,7 @@ class FakeProjectRequestChatGateway implements ProjectRequestChatGateway {
       chatId: chatId,
       onSignal: onSignal,
       onStatus: onStatus,
+      emitDisconnectedOnClose: emitDisconnectedOnClose,
     );
     subscriptions.add(subscription);
     return subscription;
@@ -119,17 +121,25 @@ class FakeProjectRequestChatSubscription
     required this.chatId,
     required this.onSignal,
     required this.onStatus,
+    required this.emitDisconnectedOnClose,
   });
 
   final String expectedProfileId;
   final String chatId;
   final void Function(ProjectRequestChatMessageSentSignal signal) onSignal;
   final void Function(ProjectRequestChatConnectionStatus status) onStatus;
+  final bool emitDisconnectedOnClose;
   bool isClosed = false;
+  int closeCount = 0;
 
   @override
   Future<void> close() async {
+    if (isClosed) return;
     isClosed = true;
+    closeCount++;
+    if (emitDisconnectedOnClose) {
+      onStatus(ProjectRequestChatConnectionStatus.disconnected);
+    }
   }
 }
 

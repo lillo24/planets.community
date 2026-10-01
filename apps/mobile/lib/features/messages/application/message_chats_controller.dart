@@ -11,6 +11,7 @@ import '../../project_chat/domain/project_chat_models.dart';
 import '../../project_request_chat/data/project_request_chat_gateway.dart';
 import '../../project_request_chat/domain/project_request_chat_models.dart'
     as request_chat;
+import '../../profile_photo/application/visible_profile_photo_controller.dart';
 import '../../resource_chat/data/resource_chat_gateway.dart';
 import '../../resource_chat/domain/resource_chat_models.dart';
 import '../data/message_chats_gateway.dart';
@@ -87,6 +88,7 @@ class MessageChatsController extends Notifier<MessageChatsState> {
     if (state.isBusy && !refresh) return false;
     final revision = ++_revision;
     final preserve = state.expectedProfileId == expectedProfileId;
+    final hadItems = preserve && state.items.isNotEmpty;
     state = MessageChatsState(
       phase: MessageChatsPhase.loading,
       expectedProfileId: expectedProfileId,
@@ -112,6 +114,7 @@ class MessageChatsController extends Notifier<MessageChatsState> {
         hasConnectionIssue: state.hasConnectionIssue,
       );
       _syncSubscriptions(expectedProfileId);
+      _syncPrivateCounterpartyPhotos(force: refresh && hadItems);
       return true;
     } catch (error) {
       if (!_isCurrent(revision, expectedProfileId)) return false;
@@ -167,6 +170,7 @@ class MessageChatsController extends Notifier<MessageChatsState> {
         hasConnectionIssue: state.hasConnectionIssue,
       );
       _syncSubscriptions(expectedProfileId);
+      _syncPrivateCounterpartyPhotos();
       return true;
     } catch (error) {
       if (!_isCurrent(revision, expectedProfileId)) return false;
@@ -189,18 +193,11 @@ class MessageChatsController extends Notifier<MessageChatsState> {
   }
 
   void stopSignals() {
+    _revision++;
     _signalsEnabled = false;
     _refreshTimer?.cancel();
+    _refreshTimer = null;
     _closeAllSubscriptions();
-    if (ref.mounted && state.hasConnectionIssue) {
-      state = MessageChatsState(
-        phase: state.phase,
-        expectedProfileId: state.expectedProfileId,
-        items: state.items,
-        hasMore: state.hasMore,
-        failure: state.failure,
-      );
-    }
   }
 
   void handleAppResumed(String expectedProfileId) {
@@ -217,6 +214,27 @@ class MessageChatsController extends Notifier<MessageChatsState> {
       for (final value in values)
         if (seen.add(value.compositeId)) value,
     ];
+  }
+
+  void _syncPrivateCounterpartyPhotos({bool force = false}) {
+    if (scope != MessageChatScope.private) return;
+    final profileIds = <String>{};
+    for (final item in state.items) {
+      switch (item) {
+        case ProjectRequestMessageChatItem item:
+          profileIds.add(item.counterpartyProfileId);
+        case ResourceMessageChatItem item:
+          profileIds.add(item.counterpartyProfileId);
+        case ProjectMessageChatItem():
+          break;
+      }
+    }
+    final targets = profileIds.toList(growable: false);
+    final photos = ref.read(visibleProfilePhotoProvider.notifier);
+    for (var offset = 0; offset < targets.length; offset += 50) {
+      final end = (offset + 50).clamp(0, targets.length);
+      unawaited(photos.loadBatch(targets.sublist(offset, end), force: force));
+    }
   }
 
   void _syncSubscriptions(String expectedProfileId) {
@@ -392,19 +410,23 @@ class MessageChatsController extends Notifier<MessageChatsState> {
   }
 
   void _closeAllSubscriptions() {
-    for (final subscription in _projectSubscriptions.values) {
-      unawaited(subscription.close());
-    }
-    for (final subscription in _resourceSubscriptions.values) {
-      unawaited(subscription.close());
-    }
-    for (final subscription in _projectRequestSubscriptions.values) {
-      unawaited(subscription.close());
-    }
+    final projectSubscriptions = _projectSubscriptions.values.toList();
+    final resourceSubscriptions = _resourceSubscriptions.values.toList();
+    final projectRequestSubscriptions = _projectRequestSubscriptions.values
+        .toList();
     _projectSubscriptions.clear();
     _resourceSubscriptions.clear();
     _projectRequestSubscriptions.clear();
     _disconnectedChats.clear();
+    for (final subscription in projectSubscriptions) {
+      unawaited(subscription.close());
+    }
+    for (final subscription in resourceSubscriptions) {
+      unawaited(subscription.close());
+    }
+    for (final subscription in projectRequestSubscriptions) {
+      unawaited(subscription.close());
+    }
   }
 
   String _key(MessageChatItemKind kind, String chatId) =>

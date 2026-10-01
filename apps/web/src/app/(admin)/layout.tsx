@@ -8,6 +8,5 @@ export default async function AdminLayout({
 }: Readonly<{ children: ReactNode }>) {
   const access = await requireCurrentModerationStaff();
   if (!access) notFound();
-
   return children;
 }

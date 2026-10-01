@@ -30,10 +30,14 @@ projection remains deliberately deferred.
   response is parsed strictly and cross-domain field mixtures fail closed.
 - `data/message_chats_gateway.dart` reads only the canonical scoped unified
   Chats RPC. It strictly validates branch XOR fields, request lifecycle fields,
-  and human-preview completeness.
+  human-preview completeness, and the Resource-only canonical opposite-party
+  identity returned by that projection.
 - `application/message_chats_controller.dart` owns one identity-bound scope's
   paging, composite deduplication, loaded-writable-chat subscriptions, debounced
-  canonical refresh, aggregated connection state, and reconnect catch-up. The
+  canonical refresh, aggregated connection state, reconnect catch-up, and one
+  non-blocking deduplicated photo batch for Private counterparties. Pagination
+  requests metadata only for newly encountered targets; Groups never requests
+  person photos. The
   provider layer creates separate Private and Groups controller instances so
   each scope owns its complete server cursor.
 - `application/messages_controllers.dart` owns keyset paging, detail/action
@@ -43,8 +47,10 @@ projection remains deliberately deferred.
   routes used by navigation and future notification routing.
 - `presentation/messages_screen.dart` owns the two-tab shell, Private/Groups
   toggle, independent loading/refresh/pagination, centrally discriminated chat
-  cards, and role-aware Project/Resource request cards. Chats and Private are
-  deterministic defaults; no unread or agreement activity copy is fabricated.
+  cards, Private Project-request/Resource counterparty avatars, and role-aware
+  Project/Resource request cards. Group rows never receive a person avatar.
+  Chats and Private are deterministic defaults; no unread or agreement activity
+  copy is fabricated.
 - `presentation/participation_request_details.dart` owns the reusable authorized
   Project request details sheet/content, canonical actions, resolved history,
   and Proposal/Tavolo navigation. The old full-screen request route is a thin
@@ -91,6 +97,10 @@ state. Resolved requests remain read-only request history and do not themselves
 imply chat access. Chat availability and current/former behavior always come
 from the 07B2B canonical projections. Successful Accept/leave/remove flows
 issue only a narrow refresh hint so chat controllers re-read those projections.
+
+Counterparty photo metadata and bytes use the adjacent profile-photo feature's
+identity-bound in-memory cache. Missing or denied photos keep placeholders and
+cannot fail the Messages list; no private photo bytes are persisted to disk.
 
 Inbox pagination and deduplication use `(activity_at, item_kind, request_id)`,
 so equal UUIDs in different domains cannot collide. New future structured kinds

@@ -17,6 +17,7 @@ import '../../features/moderation/presentation/counterstatement_screen.dart';
 import '../../features/moderation/presentation/own_reports_screen.dart';
 import '../../features/moderation/presentation/corroboration_screens.dart';
 import '../../features/moderation/presentation/moderation_evidence_requests_screen.dart';
+import '../../features/moderation/presentation/moderation_routes.dart';
 import '../../features/moderation/presentation/report_form_screen.dart';
 import '../../features/notifications/presentation/notification_preferences_screen.dart';
 import '../../features/notifications/presentation/notification_routes.dart';
@@ -91,7 +92,9 @@ RoutingConfig _routingConfig(
       final isRequestRoute = path == '/auth';
       final isVerifyRoute = path == '/auth/verify';
       final isAuthRoute = isRequestRoute || isVerifyRoute;
-      final isModerationRoute = path.startsWith('/profile/reports');
+      final isModerationRoute =
+          path.startsWith('/profile/reports') ||
+          path.startsWith('/profile/review-requests');
       final isProfileEditRoute = path == '/profile/edit';
       final isProposalManagementRoute =
           path == '/proposals/mine' ||
@@ -233,6 +236,22 @@ RoutingConfig _routingConfig(
           token: state.pathParameters['token']!,
         ),
       ),
+      GoRoute(
+        path: '/profile/reports/review-requests/corroboration/:requestId',
+        redirect: (context, state) => ModerationRoutes.corroborationDetail(
+          state.pathParameters['requestId']!,
+        ),
+      ),
+      GoRoute(
+        path: '/profile/reports/review-requests/counterstatement/:requestId',
+        redirect: (context, state) => ModerationRoutes.counterstatementDetail(
+          state.pathParameters['requestId']!,
+        ),
+      ),
+      GoRoute(
+        path: '/profile/reports/review-requests',
+        redirect: (context, state) => ModerationRoutes.reviewRequests,
+      ),
       StatefulShellRoute.indexedStack(
         builder: (context, state, shell) =>
             AppNavigationShell(navigationShell: shell),
@@ -265,27 +284,6 @@ RoutingConfig _routingConfig(
                     builder: (context, state) => const OwnReportsScreen(),
                     routes: [
                       GoRoute(
-                        path: 'review-requests',
-                        builder: (context, state) =>
-                            const ModerationEvidenceRequestsScreen(),
-                        routes: [
-                          GoRoute(
-                            path: 'corroboration/:requestId',
-                            builder: (context, state) =>
-                                CorroborationDetailScreen(
-                                  requestId: state.pathParameters['requestId']!,
-                                ),
-                          ),
-                          GoRoute(
-                            path: 'counterstatement/:requestId',
-                            builder: (context, state) =>
-                                CounterstatementDetailScreen(
-                                  requestId: state.pathParameters['requestId']!,
-                                ),
-                          ),
-                        ],
-                      ),
-                      GoRoute(
                         path: 'new',
                         builder: (context, state) {
                           final target = state.extra;
@@ -294,6 +292,26 @@ RoutingConfig _routingConfig(
                           }
                           return ReportFormScreen(target: target);
                         },
+                      ),
+                    ],
+                  ),
+                  GoRoute(
+                    path: 'review-requests',
+                    builder: (context, state) =>
+                        const ModerationEvidenceRequestsScreen(),
+                    routes: [
+                      GoRoute(
+                        path: 'corroboration/:requestId',
+                        builder: (context, state) => CorroborationDetailScreen(
+                          requestId: state.pathParameters['requestId']!,
+                        ),
+                      ),
+                      GoRoute(
+                        path: 'counterstatement/:requestId',
+                        builder: (context, state) =>
+                            CounterstatementDetailScreen(
+                              requestId: state.pathParameters['requestId']!,
+                            ),
                       ),
                     ],
                   ),

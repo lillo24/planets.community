@@ -68,6 +68,8 @@ class MessageChatsPayloadParser {
     'resource_request_id',
     'resource_agreement_id',
     'resource_listing_id',
+    'resource_counterparty_profile_id',
+    'resource_counterparty_display_name',
     'agreement_lifecycle',
     'coordination_closed_at',
     'project_request_id',
@@ -99,6 +101,8 @@ class MessageChatsPayloadParser {
       'resource_request_id',
       'resource_agreement_id',
       'resource_listing_id',
+      'resource_counterparty_profile_id',
+      'resource_counterparty_display_name',
       'agreement_lifecycle',
       'coordination_closed_at',
       ..._projectRequestKeys,
@@ -162,6 +166,11 @@ class MessageChatsPayloadParser {
       requestId: _uuid(row, 'resource_request_id'),
       agreementId: _uuid(row, 'resource_agreement_id'),
       listingId: _uuid(row, 'resource_listing_id'),
+      counterpartyProfileId: _uuid(row, 'resource_counterparty_profile_id'),
+      counterpartyDisplayName: _string(
+        row,
+        'resource_counterparty_display_name',
+      ),
       agreementLifecycle: lifecycle,
       coordinationClosedAt: closedAt,
     );
@@ -174,6 +183,8 @@ class MessageChatsPayloadParser {
       'resource_request_id',
       'resource_agreement_id',
       'resource_listing_id',
+      'resource_counterparty_profile_id',
+      'resource_counterparty_display_name',
       'agreement_lifecycle',
       'coordination_closed_at',
     });

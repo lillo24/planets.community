@@ -166,7 +166,7 @@ void main() {
     );
     await tester.pumpAndSettle();
     expect(find.text('Jordan'), findsOneWidget);
-    expect(find.text('Co-organizer'), findsWidgets);
+    expect(find.text('Co-organizer'), findsNWidgets(3));
     expect(find.text('Added by Alex'), findsOneWidget);
     expect(find.text('Issued by Alex'), findsOneWidget);
     expect(
@@ -175,14 +175,6 @@ void main() {
     );
 
     await tester.tap(find.byKey(const Key('project-delegate-create')));
-    await tester.pumpAndSettle();
-    expect(find.textContaining('public people count'), findsOneWidget);
-    await tester.tap(
-      find.descendant(
-        of: find.byType(AlertDialog),
-        matching: find.widgetWithText(FilledButton, 'Create invitation'),
-      ),
-    );
     await tester.pumpAndSettle();
     expect(
       find.text('https://planets.community/invite/project/${'A' * 43}'),
@@ -247,13 +239,6 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('project-delegate-create')));
     await tester.pumpAndSettle();
-    await tester.tap(
-      find.descendant(
-        of: find.byType(AlertDialog),
-        matching: find.widgetWithText(FilledButton, 'Create invitation'),
-      ),
-    );
-    await tester.pumpAndSettle();
     expect(find.byKey(const Key('delegate-invite-url')), findsOneWidget);
 
     session.container
@@ -308,6 +293,8 @@ void main() {
   testWidgets('team roles can change while self authority has no actions', (
     tester,
   ) async {
+    await tester.binding.setSurfaceSize(const Size(800, 600));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
     final gateway = FakeProjectDelegateGateway()
       ..role = ProjectManagementRole.coCreator
       ..delegates = [
@@ -357,34 +344,60 @@ void main() {
     expect(find.byKey(const Key('project-delegate-revoke-self')), findsNothing);
 
     final promote = find.byKey(const Key('project-delegate-promote-operator'));
-    await tester.ensureVisible(promote);
+    await tester.scrollUntilVisible(
+      promote,
+      200,
+      scrollable: find.byType(Scrollable).first,
+    );
     await tester.pumpAndSettle();
+    expect(promote, findsOneWidget);
+    expect(promote.hitTestable(), findsOneWidget);
     await tester.tap(promote);
     await tester.pumpAndSettle();
-    await tester.tap(
-      find.widgetWithText(FilledButton, 'Promote to Co-creator'),
+    final promoteConfirmation = find.widgetWithText(
+      FilledButton,
+      'Promote to Co-creator',
     );
+    expect(find.byType(AlertDialog), findsOneWidget);
+    expect(promoteConfirmation, findsOneWidget);
+    await tester.tap(promoteConfirmation);
     await tester.pumpAndSettle();
     expect(gateway.calls, contains('change-role:user-1:operator:co_creator'));
 
     final demote = find.byKey(const Key('project-delegate-demote-operator'));
-    await tester.ensureVisible(demote);
+    await tester.scrollUntilVisible(
+      demote,
+      200,
+      scrollable: find.byType(Scrollable).first,
+    );
     await tester.pumpAndSettle();
+    expect(demote, findsOneWidget);
+    expect(demote.hitTestable(), findsOneWidget);
     await tester.tap(demote);
     await tester.pumpAndSettle();
     expect(
       find.textContaining('Pending authority invitations'),
       findsOneWidget,
     );
-    await tester.tap(
-      find.widgetWithText(FilledButton, 'Change to Co-organizer'),
+    final demoteConfirmation = find.widgetWithText(
+      FilledButton,
+      'Change to Co-organizer',
     );
+    expect(find.byType(AlertDialog), findsOneWidget);
+    expect(demoteConfirmation, findsOneWidget);
+    await tester.tap(demoteConfirmation);
     await tester.pumpAndSettle();
     expect(gateway.calls, contains('change-role:user-1:operator:co_organizer'));
 
     final revoke = find.byKey(const Key('project-delegate-revoke-structural'));
-    await tester.ensureVisible(revoke);
+    await tester.scrollUntilVisible(
+      revoke,
+      200,
+      scrollable: find.byType(Scrollable).first,
+    );
     await tester.pumpAndSettle();
+    expect(revoke, findsOneWidget);
+    expect(revoke.hitTestable(), findsOneWidget);
     await tester.tap(revoke);
     await tester.pumpAndSettle();
     expect(
@@ -392,7 +405,13 @@ void main() {
       findsOneWidget,
     );
     expect(find.textContaining('participation membership'), findsOneWidget);
-    await tester.tap(find.widgetWithText(FilledButton, 'Revoke authority'));
+    final revokeConfirmation = find.widgetWithText(
+      FilledButton,
+      'Revoke authority',
+    );
+    expect(find.byType(AlertDialog), findsOneWidget);
+    expect(revokeConfirmation, findsOneWidget);
+    await tester.tap(revokeConfirmation);
     await tester.pumpAndSettle();
     expect(find.text('Structural teammate'), findsNothing);
   });

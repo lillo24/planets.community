@@ -11,7 +11,14 @@ authorization check. The final delegate invitation and link UX remains 07C2B.
 - `domain/` defines strict summary, feed, cursor, and Realtime signal models.
 - `data/` calls the 07C1A RPCs and subscribes to the private per-profile topic.
 - `application/` owns identity-safe loading, paging, sending, and reconciliation.
-- `presentation/` renders the conversation and its pinned request-state banner.
+- `presentation/` renders the conversation, counterparty avatar/name header,
+  and its pinned request-state banner.
+
+The controller loads the role-specific counterparty through the shared visible
+profile-photo cache, revalidates authorization on refresh, and invalidates the
+target when the request resolves or the opposite party changes. Signal teardown
+is idempotent and ignores synchronous/late close callbacks after the route is
+detached.
 
 Structured request actions and contribution details remain owned by the
 Messages and Participation features and are reused from this chat.

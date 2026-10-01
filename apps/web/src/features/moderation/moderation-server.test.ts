@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 import {
   readModerationCase,
   readModerationQueue,
+  requireModerationStaff,
   type ModerationServerClient,
 } from "./moderation-server";
 import {
@@ -16,27 +17,53 @@ import {
 vi.mock("server-only", () => ({}));
 
 describe("moderation server authorization", () => {
-  it("denies signed-out, unreadable-claims, and ordinary callers", async () => {
+  it("denies a normal signed-out result", async () => {
     const signedOut = client({ profileId: null });
     await expect(
       readModerationQueue({}, async () => signedOut),
     ).resolves.toEqual({ status: "denied" });
     expect(signedOut.rpc).not.toHaveBeenCalled();
+  });
 
-    const unreadableClaims = client({ profileId: null });
-    vi.mocked(unreadableClaims.auth.getClaims).mockRejectedValue(
-      new Error("Claims unavailable"),
-    );
+  it("denies when client creation throws", async () => {
     await expect(
-      readModerationQueue({}, async () => unreadableClaims),
-    ).resolves.toEqual({ status: "denied" });
-    expect(unreadableClaims.rpc).not.toHaveBeenCalled();
+      requireModerationStaff(async () => {
+        throw new Error("client unavailable");
+      }),
+    ).resolves.toBeNull();
+  });
 
-    const ordinary = client({ profileId: profileId, staffRole: null });
+  it("denies when claims lookup throws", async () => {
+    const claimsFailure = client({ profileId, claimsThrows: true });
     await expect(
-      readModerationQueue({}, async () => ordinary),
+      readModerationQueue({}, async () => claimsFailure),
     ).resolves.toEqual({ status: "denied" });
-    expect(ordinary.rpc).toHaveBeenCalledTimes(1);
+    expect(claimsFailure.rpc).not.toHaveBeenCalled();
+  });
+
+  it.each(["error", "throw"] as const)(
+    "denies when the staff-access RPC ends in an %s",
+    async (failure) => {
+      const staffLookupFailure = client({
+        profileId,
+        staffAccessError: failure === "error",
+        staffAccessThrows: failure === "throw",
+      });
+      await expect(
+        readModerationQueue({}, async () => staffLookupFailure),
+      ).resolves.toEqual({ status: "denied" });
+      expect(staffLookupFailure.rpc).toHaveBeenCalledTimes(1);
+    },
+  );
+
+  it("denies ordinary authenticated and malformed-role callers", async () => {
+    for (const staffRole of [null, "owner"] as const) {
+      const ordinary = client({ profileId, staffRole });
+      await expect(
+        readModerationQueue({}, async () => ordinary),
+      ).resolves.toEqual({ status: "denied" });
+      expect(ordinary.rpc).toHaveBeenCalledTimes(1);
+    }
   });
 
   it.each(["moderator", "admin"] as const)(
@@ -110,6 +137,17 @@ describe("moderation server authorization", () => {
       "could not be loaded",
     );
   });
+
+  it("fails loudly when an authorized case RPC fails", async () => {
+    const staff = client({
+      profileId,
+      staffRole: "admin",
+      detailError: true,
+    });
+    await expect(readModerationCase(caseId, async () => staff)).rejects.toThrow(
+      "could not be loaded",
+    );
+  });
 });
 
 const profileId = "00000000-0000-4000-8000-000000000906";
@@ -123,34 +161,50 @@ function client({
   corroboration = [],
   counterstatement = [],
   queueError = false,
+  detailError = false,
+  claimsThrows = false,
+  staffAccessError = false,
+  staffAccessThrows = false,
 }: {
   profileId: string | null;
-  staffRole?: "moderator" | "admin" | null;
+  staffRole?: unknown;
   queue?: unknown[];
   detail?: unknown[];
   corroboration?: unknown[];
   counterstatement?: unknown[];
   queueError?: boolean;
+  detailError?: boolean;
+  claimsThrows?: boolean;
+  staffAccessError?: boolean;
+  staffAccessThrows?: boolean;
 }): ModerationServerClient {
   return {
     auth: {
-      getClaims: vi.fn().mockResolvedValue({
-        data: profileId ? { claims: { sub: profileId } } : null,
-        error: profileId ? null : { code: "signed_out" },
+      getClaims: vi.fn(async () => {
+        if (claimsThrows) throw new Error("claims unavailable");
+        return {
+          data: profileId ? { claims: { sub: profileId } } : null,
+          error: profileId ? null : { code: "signed_out" },
+        };
       }),
     },
     rpc: vi.fn(async (name: string) => {
       if (name === "get_own_moderation_staff_access") {
+        if (staffAccessThrows) throw new Error("staff lookup unavailable");
         return {
           data: staffRole ? [{ staff_role: staffRole }] : [],
-          error: null,
+          error: staffAccessError ? { code: "offline" } : null,
         };
       }
       if (name === "list_moderation_cases") {
         return { data: queue, error: queueError ? { code: "offline" } : null };
       }
-      if (name === "get_moderation_case_detail")
-        return { data: detail, error: null };
+      if (name === "get_moderation_case_detail") {
+        return {
+          data: detail,
+          error: detailError ? { code: "offline" } : null,
+        };
+      }
       if (name === "get_moderation_case_corroboration") {
         return { data: corroboration, error: null };
       }

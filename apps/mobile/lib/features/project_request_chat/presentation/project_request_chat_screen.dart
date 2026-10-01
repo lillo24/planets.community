@@ -15,6 +15,8 @@ import '../../messages/presentation/messages_routes.dart';
 import '../../messages/presentation/participation_request_details.dart';
 import '../../participation/domain/participation_models.dart';
 import '../../participation/presentation/join_acceptance_triage_sheet.dart';
+import '../../profile_photo/application/visible_profile_photo_controller.dart';
+import '../../profile_photo/presentation/visible_profile_photo_avatar.dart';
 import '../../project_chat/application/project_chat_refresh.dart';
 import '../application/project_request_chat_controller.dart';
 import '../domain/project_request_chat_models.dart';
@@ -213,6 +215,10 @@ class _ProjectRequestChatScreenState
         state.requestId == widget.requestId;
     final summary = belongs ? state.summary : null;
     final items = belongs ? state.items : const <ProjectRequestChatFeedItem>[];
+    final visiblePhotos = ref.watch(visibleProfilePhotoProvider);
+    final counterpartyPhoto = summary == null
+        ? null
+        : visiblePhotos.entryFor(summary.counterpartyProfileId);
 
     ref.listen(projectRequestChatProvider, (previous, next) {
       final ready =
@@ -227,11 +233,33 @@ class _ProjectRequestChatScreenState
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(
-          summary?.counterpartyDisplayName ?? l10n.projectRequestChatTitle,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-        ),
+        title: summary == null
+            ? Text(l10n.projectRequestChatTitle)
+            : Row(
+                children: [
+                  VisibleProfilePhotoAvatar(
+                    key: const Key('project-request-chat-counterparty-photo'),
+                    entry: counterpartyPhoto,
+                    imageSemanticsLabel: l10n
+                        .resourceChatCounterpartyPhotoLabel(
+                          summary.counterpartyDisplayName,
+                        ),
+                    placeholderSemanticsLabel: l10n
+                        .resourceChatCounterpartyPhotoLabel(
+                          summary.counterpartyDisplayName,
+                        ),
+                    radius: 18,
+                  ),
+                  const SizedBox(width: AppSpacing.small),
+                  Expanded(
+                    child: Text(
+                      summary.counterpartyDisplayName,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
+              ),
       ),
       body: SafeArea(
         child:

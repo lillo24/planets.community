@@ -9,10 +9,14 @@ import 'package:planets_mobile/features/participation/domain/participation_model
 import 'package:planets_mobile/features/project_request_chat/application/project_request_chat_controller.dart';
 import 'package:planets_mobile/features/project_request_chat/data/project_request_chat_gateway.dart';
 import 'package:planets_mobile/features/project_request_chat/domain/project_request_chat_models.dart';
+import 'package:planets_mobile/features/profile_photo/application/visible_profile_photo_controller.dart';
+import 'package:planets_mobile/features/profile_photo/data/profile_photo_gateway.dart';
+import 'package:planets_mobile/features/profile_photo/domain/visible_profile_photo_models.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../support/fake_auth.dart';
 import '../../../support/fake_project_request_chat.dart';
+import '../../../support/fake_profile_photo.dart';
 
 void main() {
   test('loads structured request, sends, and dedupes signal refresh', () async {
@@ -139,6 +143,91 @@ void main() {
       expect(subscription.isClosed, isTrue);
     },
   );
+
+  test(
+    'detach is idempotent and ignores disconnect callbacks from close',
+    () async {
+      final gateway = FakeProjectRequestChatGateway()
+        ..emitDisconnectedOnClose = true;
+      final session = _readyContainer(gateway);
+      addTearDown(session.dispose);
+      final controller = session.container.read(
+        projectRequestChatProvider.notifier,
+      );
+      await controller.load(
+        expectedProfileId: 'user-1',
+        requestId: gateway.summary.requestId,
+      );
+      controller.startSignals('user-1', gateway.summary.requestId);
+      final subscription = gateway.subscriptions.single;
+
+      expect(() => controller.stopSignals(), returnsNormally);
+      expect(() => controller.stopSignals(), returnsNormally);
+      subscription.onStatus(ProjectRequestChatConnectionStatus.disconnected);
+      await Future<void>.delayed(Duration.zero);
+
+      expect(subscription.closeCount, 1);
+      expect(
+        session.container.read(projectRequestChatProvider).hasConnectionIssue,
+        isFalse,
+      );
+    },
+  );
+
+  test(
+    'resolved request revalidates and clears a denied counterparty photo',
+    () async {
+      const requesterId = '00000000-0000-4000-8000-000000000102';
+      final photos = FakeProfilePhotoGateway()
+        ..visiblePhotos[requesterId] = VisibleProfilePhoto(
+          profileId: requesterId,
+          objectPath: '$requesterId/00000000-0000-4000-8000-000000000811.webp',
+          updatedAt: DateTime.utc(2026, 10, 1),
+        );
+      final gateway = FakeProjectRequestChatGateway();
+      final session = _readyContainer(gateway, photos: photos);
+      addTearDown(session.dispose);
+      final controller = session.container.read(
+        projectRequestChatProvider.notifier,
+      );
+      await controller.load(
+        expectedProfileId: 'user-1',
+        requestId: gateway.summary.requestId,
+      );
+      await Future<void>.delayed(Duration.zero);
+      expect(
+        session.container
+            .read(visibleProfilePhotoProvider)
+            .entryFor(requesterId)
+            ?.imageBytes,
+        isNotNull,
+      );
+
+      gateway.summary = projectRequestChatSummaryFixture(
+        status: JoinRequestStatus.rejected,
+      );
+      photos.visiblePhotos.remove(requesterId);
+      await controller.refresh(
+        expectedProfileId: 'user-1',
+        requestId: gateway.summary.requestId,
+      );
+      await Future<void>.delayed(Duration.zero);
+
+      expect(
+        session.container
+            .read(visibleProfilePhotoProvider)
+            .entryFor(requesterId),
+        isNotNull,
+      );
+      expect(
+        session.container
+            .read(visibleProfilePhotoProvider)
+            .entryFor(requesterId)
+            ?.photo,
+        isNull,
+      );
+    },
+  );
 }
 
 class _Session {
@@ -153,7 +242,10 @@ class _Session {
   }
 }
 
-_Session _readyContainer(FakeProjectRequestChatGateway gateway) {
+_Session _readyContainer(
+  FakeProjectRequestChatGateway gateway, {
+  FakeProfilePhotoGateway? photos,
+}) {
   final auth = FakeAuthGateway(
     snapshot: const AuthSnapshot(identity: AuthIdentity(id: 'user-1')),
   );
@@ -164,6 +256,9 @@ _Session _readyContainer(FakeProjectRequestChatGateway gateway) {
         FakeProfileAnchorGateway(),
       ),
       projectRequestChatGatewayProvider.overrideWithValue(gateway),
+      profilePhotoGatewayProvider.overrideWithValue(
+        photos ?? FakeProfilePhotoGateway(),
+      ),
     ],
   );
   container

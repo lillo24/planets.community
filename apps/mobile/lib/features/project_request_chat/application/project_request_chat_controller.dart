@@ -6,6 +6,8 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../auth/application/auth_session_controller.dart';
 import '../../auth/domain/auth_models.dart';
 import '../../messages/application/message_chats_refresh.dart';
+import '../../participation/domain/participation_models.dart';
+import '../../profile_photo/application/visible_profile_photo_controller.dart';
 import '../../project_chat/application/project_chat_refresh.dart';
 import '../data/project_request_chat_gateway.dart';
 import '../domain/project_request_chat_models.dart';
@@ -55,6 +57,7 @@ class ProjectRequestChatController extends Notifier<ProjectRequestChatState> {
   String? _subscriptionChatId;
   Timer? _reconcileTimer;
   var _revision = 0;
+  var _subscriptionRevision = 0;
   var _signalsEnabled = false;
   var _isReconciling = false;
   var _needsReconcile = false;
@@ -86,6 +89,7 @@ class ProjectRequestChatController extends Notifier<ProjectRequestChatState> {
   }) async {
     final revision = ++_revision;
     final sameTarget = _sameTarget(expectedProfileId, requestId);
+    final previousSummary = sameTarget ? state.summary : null;
     state = ProjectRequestChatState(
       phase: ProjectRequestChatPhase.loading,
       expectedProfileId: expectedProfileId,
@@ -120,6 +124,7 @@ class ProjectRequestChatController extends Notifier<ProjectRequestChatState> {
         hasConnectionIssue: state.hasConnectionIssue,
       );
       _syncSubscription(expectedProfileId, summary);
+      _reconcileCounterpartyPhoto(previousSummary, summary);
       return true;
     } catch (error) {
       if (!_isCurrent(revision, expectedProfileId, requestId)) return false;
@@ -151,6 +156,7 @@ class ProjectRequestChatController extends Notifier<ProjectRequestChatState> {
     }
     _isReconciling = true;
     final revision = _revision;
+    final previousSummary = state.summary;
     try {
       _requireReadyIdentity(expectedProfileId);
       final gateway = ref.read(projectRequestChatGatewayProvider);
@@ -176,6 +182,7 @@ class ProjectRequestChatController extends Notifier<ProjectRequestChatState> {
         hasConnectionIssue: state.hasConnectionIssue,
       );
       _syncSubscription(expectedProfileId, summary);
+      _reconcileCounterpartyPhoto(previousSummary, summary);
       return true;
     } catch (error) {
       if (!_isCurrent(revision, expectedProfileId, requestId)) return false;
@@ -308,12 +315,12 @@ class ProjectRequestChatController extends Notifier<ProjectRequestChatState> {
   }
 
   void stopSignals() {
+    _revision++;
     _signalsEnabled = false;
     _reconcileTimer?.cancel();
+    _reconcileTimer = null;
+    _needsReconcile = false;
     _closeSubscription();
-    if (ref.mounted && state.hasConnectionIssue) {
-      _replace(hasConnectionIssue: false);
-    }
   }
 
   void handleAppResumed(String expectedProfileId, String requestId) {
@@ -328,6 +335,7 @@ class ProjectRequestChatController extends Notifier<ProjectRequestChatState> {
     String requestId,
     int revision,
   ) async {
+    final previousSummary = state.summary;
     try {
       final gateway = ref.read(projectRequestChatGatewayProvider);
       final summary = await gateway.getChat(
@@ -354,6 +362,7 @@ class ProjectRequestChatController extends Notifier<ProjectRequestChatState> {
         hasConnectionIssue: state.hasConnectionIssue,
       );
       _syncSubscription(expectedProfileId, summary);
+      _reconcileCounterpartyPhoto(previousSummary, summary);
     } catch (_) {
       if (_isCurrent(revision, expectedProfileId, requestId)) {
         _setFailure(ProjectRequestChatFailureKind.conflict);
@@ -380,6 +389,7 @@ class ProjectRequestChatController extends Notifier<ProjectRequestChatState> {
     _closeSubscription();
     _subscriptionProfileId = expectedProfileId;
     _subscriptionChatId = summary.chatId;
+    final subscriptionRevision = ++_subscriptionRevision;
     try {
       _subscription = ref
           .read(projectRequestChatGatewayProvider)
@@ -387,14 +397,24 @@ class ProjectRequestChatController extends Notifier<ProjectRequestChatState> {
             expectedProfileId: expectedProfileId,
             chatId: summary.chatId,
             onSignal: (signal) {
-              if (_sameTarget(expectedProfileId, summary.requestId) &&
+              if (_isAttached(
+                    expectedProfileId,
+                    summary.requestId,
+                    summary.chatId,
+                    subscriptionRevision,
+                  ) &&
                   signal.requestId == summary.requestId) {
                 ref.read(messageChatsRefreshProvider.notifier).notifyChanged();
                 _scheduleReconcile(expectedProfileId, summary.requestId);
               }
             },
-            onStatus: (status) =>
-                _handleStatus(expectedProfileId, summary.requestId, status),
+            onStatus: (status) => _handleStatus(
+              expectedProfileId,
+              summary.requestId,
+              summary.chatId,
+              subscriptionRevision,
+              status,
+            ),
           );
     } catch (_) {
       _wasDisconnected = true;
@@ -405,9 +425,18 @@ class ProjectRequestChatController extends Notifier<ProjectRequestChatState> {
   void _handleStatus(
     String expectedProfileId,
     String requestId,
+    String chatId,
+    int subscriptionRevision,
     ProjectRequestChatConnectionStatus status,
   ) {
-    if (!_sameTarget(expectedProfileId, requestId)) return;
+    if (!_isAttached(
+      expectedProfileId,
+      requestId,
+      chatId,
+      subscriptionRevision,
+    )) {
+      return;
+    }
     if (status == ProjectRequestChatConnectionStatus.disconnected) {
       _wasDisconnected = true;
       _replace(hasConnectionIssue: true);
@@ -420,11 +449,13 @@ class ProjectRequestChatController extends Notifier<ProjectRequestChatState> {
   }
 
   void _scheduleReconcile(String expectedProfileId, String requestId) {
-    if (!_sameTarget(expectedProfileId, requestId)) return;
+    if (!_signalsEnabled || !_sameTarget(expectedProfileId, requestId)) return;
     _needsReconcile = true;
     _reconcileTimer?.cancel();
     _reconcileTimer = Timer(const Duration(milliseconds: 150), () {
-      if (!_sameTarget(expectedProfileId, requestId)) return;
+      if (!_signalsEnabled || !_sameTarget(expectedProfileId, requestId)) {
+        return;
+      }
       if (_isReconciling || state.isLoadingOlder || state.isSending) {
         _scheduleReconcile(expectedProfileId, requestId);
         return;
@@ -437,7 +468,29 @@ class ProjectRequestChatController extends Notifier<ProjectRequestChatState> {
   }
 
   void _drainReconcile(String expectedProfileId, String requestId) {
-    if (_needsReconcile) _scheduleReconcile(expectedProfileId, requestId);
+    if (_signalsEnabled && _needsReconcile) {
+      _scheduleReconcile(expectedProfileId, requestId);
+    }
+  }
+
+  void _reconcileCounterpartyPhoto(
+    ProjectRequestChatSummary? previous,
+    ProjectRequestChatSummary current,
+  ) {
+    final photos = ref.read(visibleProfilePhotoProvider.notifier);
+    if (previous != null &&
+        previous.counterpartyProfileId != current.counterpartyProfileId) {
+      photos.invalidate(previous.counterpartyProfileId);
+    }
+    if (current.requestStatus == JoinRequestStatus.rejected ||
+        current.requestStatus == JoinRequestStatus.withdrawn) {
+      photos.invalidate(current.counterpartyProfileId);
+      unawaited(photos.load(current.counterpartyProfileId, force: true));
+      return;
+    }
+    unawaited(
+      photos.load(current.counterpartyProfileId, force: previous != null),
+    );
   }
 
   void _replace({
@@ -468,12 +521,25 @@ class ProjectRequestChatController extends Notifier<ProjectRequestChatState> {
 
   void _closeSubscription() {
     final subscription = _subscription;
+    _subscriptionRevision++;
     _subscription = null;
     _subscriptionProfileId = null;
     _subscriptionChatId = null;
     _wasDisconnected = false;
     if (subscription != null) unawaited(subscription.close());
   }
+
+  bool _isAttached(
+    String expectedProfileId,
+    String requestId,
+    String chatId,
+    int subscriptionRevision,
+  ) =>
+      _signalsEnabled &&
+      subscriptionRevision == _subscriptionRevision &&
+      _subscriptionProfileId == expectedProfileId &&
+      _subscriptionChatId == chatId &&
+      _sameTarget(expectedProfileId, requestId);
 
   List<ProjectRequestChatFeedItem> _mergeItems(
     Iterable<ProjectRequestChatFeedItem> existing,

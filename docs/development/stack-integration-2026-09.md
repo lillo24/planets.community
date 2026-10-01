@@ -53,7 +53,7 @@ No incompatible founder-owned product semantics were found during integration.
 
 ## Database ordering and tests
 
-The final inventory has 54 unique migration timestamps and 102 unique pgTAP
+The final inventory has 55 unique migration timestamps and 104 unique pgTAP
 numeric prefixes. Parallel-branch test collisions were resolved as follows:
 
 - Resource matching and saved-search suites: `058`–`065` to `083`–`090`.
@@ -62,6 +62,7 @@ numeric prefixes. Parallel-branch test collisions were resolved as follows:
 - Workspace suites: `070`–`071` to `100`–`101`.
 - Cover suites: `074`–`075` to `102`–`103`.
 - Manager-blocking convergence coverage was added as `104`–`105`.
+- Founder-QA mobile stabilization coverage was added as `106`–`107`.
 
 Migration replay found and fixed two cumulative production-schema regressions:
 
@@ -121,17 +122,84 @@ by the cumulative schema. Two stale mobile test fixtures were updated for the
 current profile skill picker and the delegate route's required app configuration.
 These are test/fixture repairs and do not add product behavior.
 
+## Founder-QA mobile stabilization
+
+Founder QA exposed three integration-only issues without changing the selected
+architecture. Private chat controllers now detach Realtime signals through an
+idempotent teardown-only path: subscriptions/maps are detached before close,
+synchronous or late close callbacks are ignored, timers are cancelled, and
+Riverpod state is not synchronously mutated during widget disposal. The same
+unsafe pattern was corrected in Project chat, participation-request chat,
+Resource chat, and unified chat-list controllers.
+
+Profile now owns My Reports and Review Requests as sibling routes. Evidence
+details remain nested below Review Requests, and legacy `/profile/reports/
+review-requests...` URLs redirect to the canonical sibling path so Back returns
+to the list and then Profile.
+
+Private Project-request and Resource rows show the opposite party through the
+existing bounded visible-profile-photo batch/cache. Project-request detail adds
+the same compact counterpart identity; Resource detail keeps its existing
+single header. The canonical scoped chat projection now returns Resource-only
+counterparty ID/name fields, while other discriminators remain null and all
+scope/order/activity/keyset behavior is preserved. Photo metadata failures are
+non-blocking, cached bytes remain identity-bound memory only, and no disk cache
+was introduced.
+
+Project interaction-photo authorization now follows current managers: the
+Creator and active Co-creators/Co-organizers can see pending requester/current
+participant photos, while those requesters/participants can see only the
+immutable Creator. Revoked, rejected, withdrawn, left, and removed history
+fails closed. Exact canonical Storage-object authorization uses the same
+predicate.
+
+The later founder report of widespread local request failures followed a lost
+physical-device connection and a relaunch without re-establishing the Android
+reverse tunnel. This remains classified as local ADB connectivity, not a proven
+product retry regression. Getting-started guidance now says to rerun
+`adb reverse tcp:54321 tcp:54321` after reconnecting the device; no global retry,
+error suppression, or Supabase endpoint workaround was added.
+
+## Final hosted-CI stabilization
+
+Hosted Validation run `36835008884` exposed two final integration issues. The
+delegate role-change widget test relied on `ensureVisible`, which could leave its
+keyed action just below the hosted 800x600 hit-test boundary. The test now owns
+and restores that viewport, scrolls each exact promote/demote/revoke control into
+view, pumps after scrolling, asserts that the control is hittable, and verifies
+each confirmation dialog before exercising the real mutations. No production
+mobile UI changed.
+
+The same hosted run also showed that an exception while establishing moderation
+staff identity could be converted by the page-level operational fallback into an
+HTTP 200 unavailable screen. `requireModerationStaff` now collapses client,
+claims, staff-access RPC, and malformed-role failures into the same denied result;
+failures after moderator/admin authorization has been proven still throw into the
+staff-only unavailable UI. Because `admin/loading.tsx` begins streaming before an
+async page can call `notFound()`, the canonical staff check now also runs in the
+parent admin route-group layout. Its request-scoped React cache is reused by the
+queue/detail reads, preserving one authorization decision and a real HTTP 404
+before the loading boundary for both `/admin` and `/admin/cases/<uuid>`.
+
+The unchanged local web-auth flow, strengthened to cover both admin paths for
+signed-out and ordinary authenticated users, passes. The final local candidate
+also passes 1,072 mobile tests, 142 web tests, 53 site tests, all 104 pgTAP files
+and 3,236 assertions, every database verifier, and the standard builds and
+hygiene checks. The single final-head hosted result is recorded on draft PR #120,
+where the generated job status can be updated without changing the validated
+commit.
+
 ## Validation
 
 Completed locally on the final working tree, including the founder-review
-manager-blocking correction:
+manager-blocking correction and founder-QA mobile stabilization:
 
 - Database reset, lint, advisors, type generation/check, domain verifiers, and
   `npm run check:db`: passed.
-- pgTAP: 102 files and 3,213 assertions passed.
+- pgTAP: 104 files and 3,236 assertions passed.
 - Demo sequence `reset -> verify -> seed -> verify`: passed; the second verify
   confirms idempotent cumulative demo behavior.
-- Mobile: localization generation, formatting, static analysis, and 1,062 tests
+- Mobile: localization generation, formatting, static analysis, and 1,072 tests
   passed.
 - Android: debug APK built successfully at
   `apps/mobile/build/app/outputs/flutter-apk/app-debug.apk`.

@@ -59,6 +59,7 @@ ProjectRequestMessageChatItem projectRequestMessageChatFixture({
   String requestId = '00000000-0000-4000-8000-000000000311',
   String projectId = '00000000-0000-4000-8000-000000000711',
   String projectTitle = 'Riverside mural',
+  String counterpartyProfileId = '00000000-0000-4000-8000-000000000102',
   String counterpartyDisplayName = 'Bob',
   ProjectRequestChatViewerRole viewerRole =
       ProjectRequestChatViewerRole.creator,
@@ -88,7 +89,7 @@ ProjectRequestMessageChatItem projectRequestMessageChatFixture({
     projectId: projectId,
     projectKind: ProjectKind.oneTime,
     projectTitle: projectTitle,
-    counterpartyProfileId: '00000000-0000-4000-8000-000000000102',
+    counterpartyProfileId: counterpartyProfileId,
     counterpartyDisplayName: counterpartyDisplayName,
     viewerRole: viewerRole,
     requestStatus: status,
@@ -136,6 +137,8 @@ ResourceMessageChatItem resourceMessageChatFixture({
   String agreementId = '00000000-0000-4000-8000-000000000501',
   String listingId = '00000000-0000-4000-8000-000000000201',
   String title = 'Garden tools',
+  String counterpartyProfileId = '00000000-0000-4000-8000-000000000102',
+  String counterpartyDisplayName = 'Jordan',
   ResourceChatViewerRole viewerRole = ResourceChatViewerRole.owner,
   ResourceExchangeLifecycle lifecycle = ResourceExchangeLifecycle.negotiating,
   bool isReadOnly = false,
@@ -160,6 +163,8 @@ ResourceMessageChatItem resourceMessageChatFixture({
     requestId: requestId,
     agreementId: agreementId,
     listingId: listingId,
+    counterpartyProfileId: counterpartyProfileId,
+    counterpartyDisplayName: counterpartyDisplayName,
     agreementLifecycle: lifecycle,
     coordinationClosedAt: lifecycle.isClosed
         ? DateTime.utc(2026, 9, 20, 12)

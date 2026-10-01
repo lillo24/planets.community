@@ -9,6 +9,9 @@ import '../../../core/widgets/loading_state.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../auth/application/auth_session_controller.dart';
 import '../../participation/domain/participation_models.dart';
+import '../../profile_photo/application/visible_profile_photo_controller.dart';
+import '../../profile_photo/domain/visible_profile_photo_models.dart';
+import '../../profile_photo/presentation/visible_profile_photo_avatar.dart';
 import '../../resource_listings/presentation/resource_listing_widgets.dart';
 import '../../resource_requests/presentation/resource_request_widgets.dart';
 import '../application/message_chats_controller.dart';
@@ -170,6 +173,7 @@ class _ChatsTabState extends ConsumerState<_ChatsTab> {
       MessageChatScope.private => ref.watch(messageChatsProvider),
       MessageChatScope.groups => ref.watch(groupMessageChatsProvider),
     };
+    final visiblePhotos = ref.watch(visibleProfilePhotoProvider);
     final belongs = state.expectedProfileId == widget.expectedProfileId;
     final items = belongs ? state.items : const <MessageChatItem>[];
     final initialLoading =
@@ -311,7 +315,20 @@ class _ChatsTabState extends ConsumerState<_ChatsTab> {
                         padding: const EdgeInsets.only(
                           bottom: AppSpacing.small,
                         ),
-                        child: _ChatCard(item: items[itemIndex]),
+                        child: _ChatCard(
+                          item: items[itemIndex],
+                          photoEntry: switch (items[itemIndex]) {
+                            ProjectRequestMessageChatItem item =>
+                              visiblePhotos.entryFor(
+                                item.counterpartyProfileId,
+                              ),
+                            ResourceMessageChatItem item =>
+                              visiblePhotos.entryFor(
+                                item.counterpartyProfileId,
+                              ),
+                            ProjectMessageChatItem() => null,
+                          },
+                        ),
                       );
                     },
                   ),
@@ -323,22 +340,30 @@ class _ChatsTabState extends ConsumerState<_ChatsTab> {
 }
 
 class _ChatCard extends StatelessWidget {
-  const _ChatCard({required this.item});
+  const _ChatCard({required this.item, required this.photoEntry});
 
   final MessageChatItem item;
+  final VisibleProfilePhotoEntry? photoEntry;
 
   @override
   Widget build(BuildContext context) => switch (item) {
     ProjectMessageChatItem item => _ProjectChatCard(item: item),
-    ResourceMessageChatItem item => _ResourceChatCard(item: item),
-    ProjectRequestMessageChatItem item => _ProjectRequestChatCard(item: item),
+    ResourceMessageChatItem item => _ResourceChatCard(
+      item: item,
+      photoEntry: photoEntry,
+    ),
+    ProjectRequestMessageChatItem item => _ProjectRequestChatCard(
+      item: item,
+      photoEntry: photoEntry,
+    ),
   };
 }
 
 class _ProjectRequestChatCard extends StatelessWidget {
-  const _ProjectRequestChatCard({required this.item});
+  const _ProjectRequestChatCard({required this.item, required this.photoEntry});
 
   final ProjectRequestMessageChatItem item;
+  final VisibleProfilePhotoEntry? photoEntry;
 
   @override
   Widget build(BuildContext context) {
@@ -364,6 +389,19 @@ class _ProjectRequestChatCard extends StatelessWidget {
               children: [
                 Row(
                   children: [
+                    VisibleProfilePhotoAvatar(
+                      key: Key('project-request-chat-photo-${item.chatId}'),
+                      entry: photoEntry,
+                      imageSemanticsLabel: l10n
+                          .resourceChatCounterpartyPhotoLabel(
+                            item.counterpartyDisplayName,
+                          ),
+                      placeholderSemanticsLabel: l10n
+                          .resourceChatCounterpartyPhotoLabel(
+                            item.counterpartyDisplayName,
+                          ),
+                    ),
+                    const SizedBox(width: AppSpacing.small),
                     Expanded(
                       child: Text(
                         item.counterpartyDisplayName,
@@ -483,9 +521,10 @@ class _ProjectChatCard extends StatelessWidget {
 }
 
 class _ResourceChatCard extends StatelessWidget {
-  const _ResourceChatCard({required this.item});
+  const _ResourceChatCard({required this.item, required this.photoEntry});
 
   final ResourceMessageChatItem item;
+  final VisibleProfilePhotoEntry? photoEntry;
 
   @override
   Widget build(BuildContext context) {
@@ -513,6 +552,19 @@ class _ResourceChatCard extends StatelessWidget {
               children: [
                 Row(
                   children: [
+                    VisibleProfilePhotoAvatar(
+                      key: Key('resource-chat-photo-${item.chatId}'),
+                      entry: photoEntry,
+                      imageSemanticsLabel: l10n
+                          .resourceChatCounterpartyPhotoLabel(
+                            item.counterpartyDisplayName,
+                          ),
+                      placeholderSemanticsLabel: l10n
+                          .resourceChatCounterpartyPhotoLabel(
+                            item.counterpartyDisplayName,
+                          ),
+                    ),
+                    const SizedBox(width: AppSpacing.small),
                     Expanded(
                       child: Text(
                         item.displayTitle,

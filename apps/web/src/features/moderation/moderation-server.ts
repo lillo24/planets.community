@@ -59,35 +59,35 @@ export type ModerationDetailResult =
 export async function requireModerationStaff(
   createClient: ModerationServerClientFactory = createModerationServerClient,
 ): Promise<ModerationStaffAccess | null> {
-  const client = await createClient();
-  let claimsResult: Awaited<
-    ReturnType<ModerationServerClient["auth"]["getClaims"]>
-  >;
   try {
-    claimsResult = await client.auth.getClaims();
+    const client = await createClient();
+    const { data, error } = await client.auth.getClaims();
+    const profileId = data?.claims.sub;
+    if (error || typeof profileId !== "string" || profileId.length === 0) {
+      return null;
+    }
+    const access = await client.rpc("get_own_moderation_staff_access", {
+      p_expected_profile_id: profileId,
+    });
+    if (
+      access.error ||
+      !Array.isArray(access.data) ||
+      access.data.length !== 1
+    ) {
+      return null;
+    }
+    const role = (access.data[0] as { staff_role?: unknown }).staff_role;
+    if (role !== "moderator" && role !== "admin") return null;
+    return { profileId, role, client };
   } catch {
-    // A failed claims read cannot establish staff identity, so the admin
-    // boundary must deny access rather than render a successful error page.
+    // Identity and staff-role establishment must fail closed. Operational
+    // moderation reads happen only after this boundary and still throw.
     return null;
   }
-  const { data, error } = claimsResult;
-  const profileId = data?.claims.sub;
-  if (error || typeof profileId !== "string" || profileId.length === 0) {
-    return null;
-  }
-  const access = await client.rpc("get_own_moderation_staff_access", {
-    p_expected_profile_id: profileId,
-  });
-  if (access.error || !Array.isArray(access.data) || access.data.length !== 1) {
-    return null;
-  }
-  const role = (access.data[0] as { staff_role?: unknown }).staff_role;
-  if (role !== "moderator" && role !== "admin") return null;
-  return { profileId, role, client };
 }
 
 export const requireCurrentModerationStaff = cache(() =>
-  requireModerationStaff(),
+  requireModerationStaff(createModerationServerClient),
 );
 
 export async function readModerationQueue(

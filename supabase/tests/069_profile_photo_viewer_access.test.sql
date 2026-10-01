@@ -519,8 +519,8 @@ select is(
       'a3000000-0000-4000-8000-000000000001'
     )
   ),
-  0::bigint,
-  'an applicant does not gain reverse access to the organizer photo'
+  1::bigint,
+  'a current participant can see the immutable Creator photo'
 );
 
 reset role;

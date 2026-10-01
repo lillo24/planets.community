@@ -298,6 +298,12 @@ npm run dev:mobile:clean
 
 Use `flutter devices` to inspect available devices. iOS builds require macOS/Xcode; Android builds require a configured Android SDK.
 
+For a physical Android device using the default local `127.0.0.1:54321`
+backend, establish `adb reverse tcp:54321 tcp:54321` before launch. A USB/device
+reconnect can drop that tunnel, so run the command again before restarting the
+app; widespread local request failures with a lost device connection are not by
+themselves evidence of a product retry regression.
+
 ## Validate and format
 
 Run all ordinary web and mobile validation:

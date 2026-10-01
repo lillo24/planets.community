@@ -20,6 +20,12 @@ not proof of witnessing, and that each identity/choice/explanation is visible
 only to staff. “Later” writes nothing and may prompt again after app restart.
 Responses are immutable evidence, not votes or automatic decisions.
 
+Profile navigation exposes My Reports and Review Requests as siblings. Their
+canonical paths are `/profile/reports` and `/profile/review-requests`; evidence
+details are nested only under Review Requests so Back returns to that list, and
+Back from either sibling returns directly to Profile. Legacy nested Review
+Requests URLs redirect to the canonical destination.
+
 09A2B gives only the canonical reported Resource counterparty the original
 category, explanation, and safe request context. The mobile projection has no
 reporter identity field, staff notes, peer evidence, or other cases. A

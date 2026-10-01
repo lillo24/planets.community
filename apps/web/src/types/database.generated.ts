@@ -3833,6 +3833,8 @@ export type Database = {
           project_request_resolved_at: string
           project_request_status: string
           resource_agreement_id: string
+          resource_counterparty_display_name: string
+          resource_counterparty_profile_id: string
           resource_listing_id: string
           resource_request_id: string
           viewer_role: string

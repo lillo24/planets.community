@@ -116,6 +116,8 @@ final class ResourceMessageChatItem extends MessageChatItem {
     required this.requestId,
     required this.agreementId,
     required this.listingId,
+    required this.counterpartyProfileId,
+    required this.counterpartyDisplayName,
     required this.viewerRole,
     required this.agreementLifecycle,
     required this.coordinationClosedAt,
@@ -124,6 +126,8 @@ final class ResourceMessageChatItem extends MessageChatItem {
   final String requestId;
   final String agreementId;
   final String listingId;
+  final String counterpartyProfileId;
+  final String counterpartyDisplayName;
   final ResourceChatViewerRole viewerRole;
   final ResourceExchangeLifecycle agreementLifecycle;
   final DateTime? coordinationClosedAt;

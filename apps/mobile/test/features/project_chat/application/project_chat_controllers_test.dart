@@ -411,6 +411,7 @@ void main() {
 
   test('screen stop closes the live subscription', () async {
     final gateway = FakeProjectChatGateway()
+      ..emitDisconnectedOnClose = true
       ..summaries = [projectChatSummaryFixture()]
       ..histories['chat-1'] = [];
     final session = _readyContainer(gateway);
@@ -422,9 +423,18 @@ void main() {
     controller.startSignals('user-1', 'chat-1');
 
     controller.stopSignals();
+    controller.stopSignals();
+    gateway.subscriptions.single.onStatus(
+      ProjectChatConnectionStatus.disconnected,
+    );
     await Future<void>.delayed(Duration.zero);
 
     expect(gateway.subscriptions.single.isClosed, isTrue);
+    expect(gateway.subscriptions.single.closeCount, 1);
+    expect(
+      session.container.read(projectChatDetailProvider).hasConnectionIssue,
+      isFalse,
+    );
   });
 
   test('rejoin restores composer entitlement and subscription', () async {
