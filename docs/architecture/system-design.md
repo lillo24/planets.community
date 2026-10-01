@@ -241,17 +241,22 @@ Public profiles, Projects, Scambio-Dona listings, historical content, and
 `public` profile photos remain visible under their ordinary rules.
 
 Either active direction creates one symmetric barrier for starting or accepting
-a new direct Project join or Resource request between the pair. Activating a
-block immediately resolves every pending pair-connected request with existing
-semantics: blocker-as-requester withdraws, while blocker-as-creator/owner
-rejects. Unblock closes only the caller-owned direction and never resurrects
-requests or relationships. Existing accepted Project membership, group-chat
-and meeting entitlement remain membership-derived; existing accepted Resource
-agreement/chat/loan coordination remains usable until its ordinary lifecycle
-ends. Interaction-audience photo delivery is the deliberate exception: generic,
-contextual, and exact Storage authorization deny it while either block direction
-is active, without affecting owner or public-photo access. Reporting, assigned
-corroboration/counterstatement evidence, and staff review ignore user blocks.
+a new direct Resource request between its owner/requester pair. For Project
+participation, the equivalent boundary is requester versus every current
+manager: immutable Creator plus active Co-creators and Co-organizers, excluding
+revoked delegates. A block with any current manager denies request creation and
+all Creator/delegated-manager acceptance paths. Activating a block immediately
+resolves every pending pair-connected request with existing semantics:
+blocker-as-requester withdraws, while blocker-as-current-manager/owner rejects.
+Unblock closes only the caller-owned direction and never resurrects requests or
+relationships. Existing accepted Project membership, group-chat, meeting, and
+shared-workspace entitlement remain membership-derived; existing accepted
+Resource agreement/chat/loan coordination remains usable until its ordinary
+lifecycle ends. Interaction-audience photo delivery is the deliberate
+exception: generic, contextual, and exact Storage authorization deny it while
+either block direction is active, without affecting owner or public-photo
+access. Reporting, assigned corroboration/counterstatement evidence, and staff
+review ignore user blocks.
 
 Mobile exposes confirmed Block/Unblock actions only where a canonical person is
 already visible: Project organizers and participation people, Resource owners
@@ -264,14 +269,15 @@ new-interaction action, while `PT409` with no caller-owned block always uses the
 direction-neutral “interaction isn't available” message.
 
 Block, request creation, and request acceptance first acquire the same
-transaction-scoped advisory lock for the lexically sorted profile pair. They
-then follow the established domain order: concrete Project, shared Project,
-request; or Resource listing, request. A block that serializes first prevents a
-new pending/accepted relationship; acceptance that serializes first may remain
-accepted when the later block activates. When 07C2 co-creators/managers are
-integrated, organizer identities resolved before this pair lock must include
-every active applicant manager; the episode model and pair primitive do not
-change.
+transaction-scoped advisory locks for lexically sorted profile pairs. Project
+request/accept paths snapshot current managers, lock every requester/manager
+pair in deterministic global pair order, lock the Project, and revalidate the
+manager set and block barrier before mutation. Delegate changes serialize on
+that Project lock. The established domain order then remains concrete Project,
+shared Project, request; or Resource listing, request. A block that serializes
+first prevents a new pending/accepted relationship; acceptance that serializes
+first remains accepted when the later block activates. The directional episode
+model and privacy-safe client shape do not change.
 
 ### Unified structured-request Messages
 

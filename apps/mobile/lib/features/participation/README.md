@@ -94,17 +94,26 @@ The mobile client presents, but does not reproduce, the 05A state machine:
   independently be a requester or participant. Manager review keeps a real
   self-membership row visible but omits its manager Remove action.
 
+The database treats the Creator plus every active Co-creator and Co-organizer
+as one Project interaction boundary. A block in either direction between a
+requester and any current manager prevents new request creation and acceptance;
+blocking a pending requester rejects it, while a pending requester blocking a
+manager withdraws it. Revoked delegates no longer affect future eligibility,
+and existing accepted membership/access remain unchanged. Mobile does not
+enumerate managers or infer the private block direction to reproduce this rule.
+
 05E1 separates registration usage from social headcount without changing those
-role relationships. Organizers are the Creator plus active delegated roles;
-ordinary participants are current memberships excluding those organizers.
-The Project setting decides whether organizers use registration spots, while
-the public people-involved count is always the unique organizer/membership
-union. Public detail suppresses an ordinary person's Join action when full,
-but an active organizer may still independently join because that membership
-does not add usage. Manager review keeps pending requests visible and Reject
-available, while the server remains authoritative for organizer-aware Accept
-races. Leaving or removal releases a spot only when it ends an ordinary
-participant membership. No client counter or waitlist exists.
+role relationships. Organizers are the Creator plus active Co-creators and
+Co-organizers; ordinary participants are current memberships excluding those
+organizers. The Project setting decides whether organizers use registration
+spots, while the public people-involved count is always the unique
+organizer/membership union. Public detail suppresses an ordinary person's Join
+action when full, but an active organizer may still independently join because
+that membership does not add usage. Manager review keeps pending requests
+visible and Reject available, while the server remains authoritative for both
+the all-current-manager blocking barrier and organizer-aware Accept races.
+Leaving or removal releases a spot only when it ends an ordinary participant
+membership. No client counter or waitlist exists.
 
 Ownership, delegation, and participation are separate relationships. Leaving
 participation does not revoke delegation, and revoking delegation does not end

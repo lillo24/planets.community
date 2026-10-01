@@ -234,6 +234,127 @@ begin
 end;
 $$;
 
+create function private.current_project_manager_profile_ids(p_project_id uuid)
+returns table (profile_id uuid)
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+  select manager.profile_id
+  from (
+    select project.creator_profile_id as profile_id
+    from public.projects as project
+    where project.id = p_project_id
+
+    union
+
+    select delegate.delegate_profile_id
+    from public.project_delegates as delegate
+    where delegate.project_id = p_project_id
+      and delegate.revoked_at is null
+      and delegate.authority_role in ('co_creator', 'co_organizer')
+  ) as manager
+  order by manager.profile_id::text
+$$;
+
+comment on function private.current_project_manager_profile_ids(uuid) is
+  'Canonical deterministic Project manager set: immutable Creator plus active Co-creators and Co-organizers, with revoked delegates excluded.';
+
+create or replace function private.profile_is_project_manager(
+  p_project_id uuid,
+  p_profile_id uuid
+)
+returns boolean
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+  select p_profile_id is not null and exists (
+    select 1
+    from private.current_project_manager_profile_ids(p_project_id) as manager
+    where manager.profile_id = p_profile_id
+  )
+$$;
+
+create function private.lock_project_manager_interactions(
+  p_project_id uuid,
+  p_requester_profile_id uuid
+)
+returns void
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  manager_profile_ids uuid[];
+  locked_manager_profile_ids uuid[];
+  manager_profile_id uuid;
+begin
+  if p_project_id is null or p_requester_profile_id is null then
+    raise exception using
+      errcode = '22023',
+      message = 'A Project interaction requires Project and requester identifiers.';
+  end if;
+
+  select coalesce(
+    array_agg(manager.profile_id order by manager.profile_id::text),
+    '{}'::uuid[]
+  )
+  into manager_profile_ids
+  from private.current_project_manager_profile_ids(p_project_id) as manager;
+
+  if cardinality(manager_profile_ids) = 0 then
+    raise exception using
+      errcode = 'P0002',
+      message = 'The requested project does not exist.';
+  end if;
+
+  -- Every multi-manager interaction acquires the same canonical pair keys in
+  -- the same global order before touching concrete/shared Project rows.
+  for manager_profile_id in
+    select candidate.profile_id
+    from unnest(manager_profile_ids) as candidate(profile_id)
+    where candidate.profile_id <> p_requester_profile_id
+    order by
+      least(candidate.profile_id::text, p_requester_profile_id::text),
+      greatest(candidate.profile_id::text, p_requester_profile_id::text)
+  loop
+    perform private.lock_user_interaction_pair(
+      p_requester_profile_id,
+      manager_profile_id
+    );
+  end loop;
+
+  perform 1
+  from private.lock_project_for_participation(p_project_id, false);
+
+  select coalesce(
+    array_agg(manager.profile_id order by manager.profile_id::text),
+    '{}'::uuid[]
+  )
+  into locked_manager_profile_ids
+  from private.current_project_manager_profile_ids(p_project_id) as manager;
+
+  if manager_profile_ids is distinct from locked_manager_profile_ids then
+    raise sqlstate 'PT409'
+      using message = 'This interaction is unavailable.';
+  end if;
+
+  foreach manager_profile_id in array locked_manager_profile_ids
+  loop
+    perform private.assert_user_interaction_available(
+      p_requester_profile_id,
+      manager_profile_id
+    );
+  end loop;
+end;
+$$;
+
+comment on function private.lock_project_manager_interactions(uuid, uuid) is
+  'Snapshots current Project managers, locks every canonical requester/manager pair in deterministic order, locks the Project, revalidates the manager set, and applies the direction-safe block barrier.';
+
 create function private.close_pending_direct_requests_for_user_block(
   p_blocker_profile_id uuid,
   p_blocked_profile_id uuid
@@ -261,16 +382,21 @@ begin
   for project_candidate in
     select request.id, request.project_id
     from public.project_join_requests as request
-    join public.projects as project on project.id = request.project_id
     where request.status = 'pending'
       and (
         (
           request.requester_profile_id = p_blocker_profile_id
-          and project.creator_profile_id = p_blocked_profile_id
+          and private.profile_is_project_manager(
+            request.project_id,
+            p_blocked_profile_id
+          )
         )
         or (
-          project.creator_profile_id = p_blocker_profile_id
-          and request.requester_profile_id = p_blocked_profile_id
+          request.requester_profile_id = p_blocked_profile_id
+          and private.profile_is_project_manager(
+            request.project_id,
+            p_blocker_profile_id
+          )
         )
       )
     order by request.project_id, request.id
@@ -288,12 +414,18 @@ begin
 
     if project_request.status = 'pending'
       and project_request.requester_profile_id = p_blocker_profile_id
-      and project_record.creator_profile_id = p_blocked_profile_id then
+      and private.profile_is_project_manager(
+        project_request.project_id,
+        p_blocked_profile_id
+      ) then
       project_status := 'withdrawn';
       project_action := 'project.join_request_withdrawn';
     elsif project_request.status = 'pending'
-      and project_record.creator_profile_id = p_blocker_profile_id
-      and project_request.requester_profile_id = p_blocked_profile_id then
+      and project_request.requester_profile_id = p_blocked_profile_id
+      and private.profile_is_project_manager(
+        project_request.project_id,
+        p_blocker_profile_id
+      ) then
       project_status := 'rejected';
       project_action := 'project.join_request_rejected';
     else
@@ -633,25 +765,10 @@ declare
   current_profile_id uuid := private.require_complete_participation_profile(
     p_expected_requester_profile_id
   );
-  organizer_profile_id uuid;
 begin
-  select project.creator_profile_id into organizer_profile_id
-  from public.projects as project
-  where project.id = p_project_id;
-
-  if organizer_profile_id is null then
-    raise exception using
-      errcode = 'P0002',
-      message = 'The requested project does not exist.';
-  end if;
-
-  perform private.lock_user_interaction_pair(
-    current_profile_id,
-    organizer_profile_id
-  );
-  perform private.assert_user_interaction_available(
-    current_profile_id,
-    organizer_profile_id
+  perform private.lock_project_manager_interactions(
+    p_project_id,
+    current_profile_id
   );
 
   return private.request_to_join_project_without_block(
@@ -705,12 +822,14 @@ declare
     p_expected_creator_profile_id
   );
   requester_profile_id uuid;
+  project_id uuid;
   organizer_profile_id uuid;
 begin
   select
     request.requester_profile_id,
+    request.project_id,
     project.creator_profile_id
-  into requester_profile_id, organizer_profile_id
+  into requester_profile_id, project_id, organizer_profile_id
   from public.project_join_requests as request
   join public.projects as project on project.id = request.project_id
   where request.id = p_request_id;
@@ -727,17 +846,94 @@ begin
       message = 'Only the project creator can accept join requests.';
   end if;
 
-  perform private.lock_user_interaction_pair(
-    organizer_profile_id,
-    requester_profile_id
-  );
-  perform private.assert_user_interaction_available(
-    organizer_profile_id,
+  perform private.lock_project_manager_interactions(
+    project_id,
     requester_profile_id
   );
 
   return private.accept_project_join_request_without_block(
     p_expected_creator_profile_id,
+    p_request_id,
+    p_needed_skill_ids,
+    p_already_found_skill_ids,
+    p_extra_skill_ids,
+    p_needed_resource_need_ids,
+    p_already_found_resource_need_ids,
+    p_extra_resource_need_ids
+  );
+end;
+$$;
+
+alter function public.accept_project_join_request_as_manager(
+  uuid,
+  uuid,
+  uuid[],
+  uuid[],
+  uuid[],
+  uuid[],
+  uuid[],
+  uuid[]
+) set schema private;
+alter function private.accept_project_join_request_as_manager(
+  uuid,
+  uuid,
+  uuid[],
+  uuid[],
+  uuid[],
+  uuid[],
+  uuid[],
+  uuid[]
+) rename to accept_project_join_request_as_manager_without_block;
+
+create function public.accept_project_join_request_as_manager(
+  p_expected_manager_profile_id uuid,
+  p_request_id uuid,
+  p_needed_skill_ids uuid[],
+  p_already_found_skill_ids uuid[],
+  p_extra_skill_ids uuid[],
+  p_needed_resource_need_ids uuid[],
+  p_already_found_resource_need_ids uuid[],
+  p_extra_resource_need_ids uuid[]
+)
+returns uuid
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  current_profile_id uuid := private.require_participation_identity(
+    p_expected_manager_profile_id
+  );
+  requester_profile_id uuid;
+  project_id uuid;
+begin
+  select request.requester_profile_id, request.project_id
+  into requester_profile_id, project_id
+  from public.project_join_requests as request
+  where request.id = p_request_id;
+
+  if requester_profile_id is null then
+    raise exception using
+      errcode = 'P0002',
+      message = 'The join request does not exist.';
+  end if;
+
+  -- Preserve the existing authorization error boundary without relying on this
+  -- unlocked read for mutation safety; the private core revalidates under the
+  -- Project lock acquired by the manager-interaction helper.
+  if not private.profile_is_project_manager(project_id, current_profile_id) then
+    raise exception using
+      errcode = '42501',
+      message = 'Only a current Project manager can accept join requests.';
+  end if;
+
+  perform private.lock_project_manager_interactions(
+    project_id,
+    requester_profile_id
+  );
+
+  return private.accept_project_join_request_as_manager_without_block(
+    p_expected_manager_profile_id,
     p_request_id,
     p_needed_skill_ids,
     p_already_found_skill_ids,
@@ -1037,12 +1233,26 @@ revoke all privileges on function private.has_active_user_block_between(uuid, uu
   from public, anon, authenticated, service_role;
 revoke all privileges on function private.assert_user_interaction_available(uuid, uuid)
   from public, anon, authenticated, service_role;
+revoke all privileges on function private.current_project_manager_profile_ids(uuid)
+  from public, anon, authenticated, service_role;
+revoke all privileges on function private.lock_project_manager_interactions(uuid, uuid)
+  from public, anon, authenticated, service_role;
 revoke all privileges on function private.close_pending_direct_requests_for_user_block(uuid, uuid)
   from public, anon, authenticated, service_role;
 revoke all privileges on function private.request_to_join_project_without_block(
   uuid,
   uuid,
   text,
+  uuid[],
+  uuid[]
+) from public, anon, authenticated, service_role;
+revoke all privileges on function private.accept_project_join_request_as_manager_without_block(
+  uuid,
+  uuid,
+  uuid[],
+  uuid[],
+  uuid[],
+  uuid[],
   uuid[],
   uuid[]
 ) from public, anon, authenticated, service_role;
@@ -1093,6 +1303,16 @@ revoke all privileges on function public.accept_project_join_request(
   uuid[],
   uuid[]
 ) from public, anon, authenticated, service_role;
+revoke all privileges on function public.accept_project_join_request_as_manager(
+  uuid,
+  uuid,
+  uuid[],
+  uuid[],
+  uuid[],
+  uuid[],
+  uuid[],
+  uuid[]
+) from public, anon, authenticated, service_role;
 revoke all privileges on function public.request_resource_listing(uuid, uuid, text)
   from public, anon, authenticated, service_role;
 revoke all privileges on function public.accept_resource_listing_request(uuid, uuid)
@@ -1123,6 +1343,16 @@ grant execute on function public.accept_project_join_request(
   uuid[],
   uuid[]
 ) to authenticated;
+grant execute on function public.accept_project_join_request_as_manager(
+  uuid,
+  uuid,
+  uuid[],
+  uuid[],
+  uuid[],
+  uuid[],
+  uuid[],
+  uuid[]
+) to authenticated;
 grant execute on function public.request_resource_listing(uuid, uuid, text)
   to authenticated;
 grant execute on function public.accept_resource_listing_request(uuid, uuid)
@@ -1135,23 +1365,20 @@ comment on function public.unblock_user(uuid, uuid) is
 comment on function public.list_own_blocked_profiles(uuid, integer, timestamptz, uuid) is
   'Returns a bounded keyset page of only the caller''s active outbound blocks with target ID, display identity, and blocked timestamp; inbound and reciprocal state are never disclosed.';
 comment on function public.request_to_join_project(uuid, uuid, text, uuid[], uuid[]) is
-  'Serializes the requester/creator pair before the canonical Project request implementation and returns a direction-safe unavailable conflict while either user block is active.';
+  'Serializes every requester/current-manager pair before the canonical Project request implementation and returns a direction-safe unavailable conflict while any such user block is active.';
 comment on function public.accept_project_join_request(uuid, uuid, uuid[], uuid[], uuid[], uuid[], uuid[], uuid[]) is
-  'Serializes the creator/requester pair before canonical acceptance and contribution triage so a block that wins first cannot become a new membership.';
+  'Serializes every requester/current-manager pair before Creator-compatible acceptance and contribution triage so a block that wins first cannot become a new membership.';
+comment on function public.accept_project_join_request_as_manager(uuid, uuid, uuid[], uuid[], uuid[], uuid[], uuid[], uuid[]) is
+  'Serializes every requester/current-manager pair before delegated-manager acceptance and contribution triage so no current manager can bypass another manager block.';
 comment on function public.request_resource_listing(uuid, uuid, text) is
   'Serializes the requester/owner pair before the canonical Resource request implementation and returns a direction-safe unavailable conflict while either user block is active.';
 comment on function public.accept_resource_listing_request(uuid, uuid) is
   'Serializes the owner/requester pair before canonical acceptance so a block that wins first cannot open a new agreement/chat episode.';
 comment on function private.close_pending_direct_requests_for_user_block(uuid, uuid) is
-  'With the canonical pair lock held, closes pair-connected pending Project then Resource requests in deterministic UUID order using ordinary identifier-only transition events.';
+  'With the canonical pair lock held, closes pending requests between a requester and any current Project manager, then pair-connected Resource requests, in deterministic UUID order using ordinary identifier-only transition events.';
 comment on function private.can_view_profile_photo(uuid, uuid) is
   'Authorizes the current canonical owner/public photo, or an interaction-audience photo only when a qualifying relationship exists and no active user block exists in either direction.';
 comment on function public.get_project_creator_profile_photo_for_viewer(uuid) is
   'Returns the exact Project organizer photo under existing public-context rules, except a blocked authenticated pair receives only public-audience photos; authorization reason remains private.';
 comment on function public.get_resource_listing_owner_profile_photo_for_viewer(uuid) is
   'Returns the exact Resource owner photo under existing public-context rules, except a blocked authenticated pair receives only public-audience photos; authorization reason remains private.';
-
--- 07C2 convergence: once active co-creators/managers are integrated, the
--- organizer identities resolved before private.lock_user_interaction_pair must
--- include every profile with applicant-management authority. The generic pair
--- lock and block predicate require no redesign.
