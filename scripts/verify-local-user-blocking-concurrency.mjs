@@ -57,7 +57,7 @@ async function verifyUserBlockingConcurrency() {
   const delegatedCapacityRace = await createDelegatedProjectRaceFixture(
     "Delegated final spot",
     true,
-    { includeSecondPendingRequest: true, peopleCapacity: 2 },
+    { includeSecondPendingRequest: true, registrationCapacity: 1 },
   );
 
   await verifyBlockWinsProjectRequest(projectRequestRace);
@@ -182,7 +182,7 @@ async function createResourceRaceFixture(title, includePendingRequest) {
 async function createDelegatedProjectRaceFixture(
   title,
   includePendingRequest,
-  { includeSecondPendingRequest = false, peopleCapacity = 10 } = {},
+  { includeSecondPendingRequest = false, registrationCapacity = 10 } = {},
 ) {
   const ownerId = randomUUID();
   const managerId = randomUUID();
@@ -223,7 +223,7 @@ async function createDelegatedProjectRaceFixture(
   `;
   await sql`
     update public.projects
-    set people_capacity = ${peopleCapacity}
+    set registration_capacity = ${registrationCapacity}
     where id = ${projectId}::uuid
   `;
   await sql`
@@ -794,13 +794,14 @@ async function verifyDelegatedFinalSpotSerialization(fixture) {
   );
   const [state] = await sql`
     select
-      capacity.current_people_count,
+      capacity.capacity_used_count,
+      capacity.social_people_count,
       capacity.is_full,
       count(distinct membership.id)::integer as membership_count,
       max(request.status) filter (
         where request.id = ${fixture.secondRequestId}::uuid
       ) as losing_request_status
-    from private.project_capacity_snapshot(${fixture.projectId}::uuid)
+    from private.project_registration_capacity_snapshot(${fixture.projectId}::uuid)
       as capacity
     left join public.project_memberships as membership
       on membership.project_id = ${fixture.projectId}::uuid
@@ -808,10 +809,14 @@ async function verifyDelegatedFinalSpotSerialization(fixture) {
       and membership.removed_at is null
     left join public.project_join_requests as request
       on request.project_id = ${fixture.projectId}::uuid
-    group by capacity.current_people_count, capacity.is_full
+    group by
+      capacity.capacity_used_count,
+      capacity.social_people_count,
+      capacity.is_full
   `;
   if (
-    state?.current_people_count !== 2 ||
+    state?.capacity_used_count !== 1 ||
+    state.social_people_count !== 3 ||
     !state.is_full ||
     state.membership_count !== 1 ||
     state.losing_request_status !== "pending"
