@@ -79,6 +79,7 @@ describe("public Tavoli presentation", () => {
 
 export const summary: PublicRecurringActivitySummary = {
   recurring_activity_id: "00000000-0000-4000-8000-000000000001",
+  cover_object_path: null,
   title: "Philosophy table",
   summary: "Discuss one philosophical question every week.",
   topic: "Philosophy",
@@ -93,6 +94,7 @@ export const summary: PublicRecurringActivitySummary = {
 
 export const detail: PublicRecurringActivityDetail = {
   recurring_activity_id: summary.recurring_activity_id,
+  cover_object_path: null,
   creator_display_name: "Casey",
   lifecycle_state: "published",
   title: summary.title,

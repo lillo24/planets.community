@@ -4,21 +4,33 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:planets_mobile/app/planets_app.dart';
+import 'package:planets_mobile/app/router/app_navigation_shell.dart';
 import 'package:planets_mobile/app/router/app_router.dart';
 import 'package:planets_mobile/core/config/app_config.dart';
+import 'package:planets_mobile/core/widgets/error_state.dart';
+import 'package:planets_mobile/core/widgets/loading_state.dart';
 import 'package:planets_mobile/features/auth/application/auth_session_controller.dart';
 import 'package:planets_mobile/features/auth/data/auth_gateway.dart';
 import 'package:planets_mobile/features/auth/domain/auth_models.dart';
+import 'package:planets_mobile/features/moderation/data/corroboration_gateway.dart';
+import 'package:planets_mobile/features/moderation/data/counterstatement_gateway.dart';
+import 'package:planets_mobile/features/moderation/data/moderation_evidence_gateway.dart';
+import 'package:planets_mobile/features/moderation/data/moderation_gateway.dart';
+import 'package:planets_mobile/features/moderation/presentation/moderation_routes.dart';
 import 'package:planets_mobile/features/profile/data/profile_gateway.dart';
+import 'package:planets_mobile/features/profile/domain/profile_models.dart';
 import 'package:planets_mobile/features/participation/data/participation_gateway.dart';
+import 'package:planets_mobile/features/project_resource_needs/data/project_resource_needs_gateway.dart';
 import 'package:planets_mobile/features/proposals/data/proposal_gateway.dart';
 import 'package:planets_mobile/features/recurring_activities/data/recurring_activity_gateway.dart';
 import 'package:planets_mobile/features/resource_listings/data/resource_listing_gateway.dart';
 
 import '../../support/fake_auth.dart';
+import '../../support/fake_moderation.dart';
 import '../../support/fake_profile.dart';
 import '../../support/fake_participation.dart';
 import '../../support/fake_proposal.dart';
+import '../../support/fake_project_resource_needs.dart';
 import '../../support/fake_recurring_activity.dart';
 import '../../support/fake_resource_listing.dart';
 
@@ -66,24 +78,38 @@ void main() {
   ) async {
     final app = await _pump(tester);
     final router = app.read(appRouterProvider);
+    expect(AppBranch.values, [
+      AppBranch.profile,
+      AppBranch.home,
+      AppBranch.browse,
+    ]);
+    expect(
+      tester
+          .widget<NavigationBar>(find.byType(NavigationBar))
+          .destinations
+          .map((destination) => destination.key),
+      const [Key('nav-profile'), Key('nav-home'), Key('nav-browse')],
+    );
     for (final entry in {
-      '/': 2,
+      '/': 1,
       '/profile': 0,
       '/profile/edit': 0,
-      '/proposals': 1,
-      '/proposals/mine': 1,
-      '/proposals/create': 1,
-      '/proposals/proposal-1': 1,
-      '/proposals/proposal-1/edit': 1,
-      '/proposals/proposal-1/join': 1,
-      '/proposals/proposal-1/participants': 1,
-      '/tavoli': 1,
-      '/tavoli/mine': 1,
-      '/tavoli/create': 1,
-      '/tavoli/tavolo-1': 1,
-      '/tavoli/tavolo-1/edit': 1,
-      '/tavoli/tavolo-1/join': 1,
-      '/tavoli/tavolo-1/participants': 1,
+      '/proposals': 2,
+      '/proposals/mine': 2,
+      '/proposals/create': 2,
+      '/proposals/proposal-1': 2,
+      '/proposals/proposal-1/edit': 2,
+      '/proposals/proposal-1/resources': 2,
+      '/proposals/proposal-1/join': 2,
+      '/proposals/proposal-1/participants': 2,
+      '/tavoli': 2,
+      '/tavoli/mine': 2,
+      '/tavoli/create': 2,
+      '/tavoli/tavolo-1': 2,
+      '/tavoli/tavolo-1/resources': 2,
+      '/tavoli/tavolo-1/edit': 2,
+      '/tavoli/tavolo-1/join': 2,
+      '/tavoli/tavolo-1/participants': 2,
       '/resources': 2,
       '/resources/$resourceListingId': 2,
       '/resources/mine': 2,
@@ -115,6 +141,11 @@ void main() {
     await tester.binding.handlePopRoute();
     await tester.pumpAndSettle();
     expect(router.routeInformationProvider.value.uri.path, '/tavoli');
+    router.go('/resources/$resourceListingId');
+    await tester.pumpAndSettle();
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+    expect(router.routeInformationProvider.value.uri.path, '/resources');
   });
 
   testWidgets('Browse switches between separate Proposal and Tavoli roots', (
@@ -143,6 +174,74 @@ void main() {
       tester.widget<NavigationBar>(find.byType(NavigationBar)).destinations,
       hasLength(3),
     );
+  });
+
+  testWidgets(
+    'Profile and Browse roots return Home without trapping Home Back',
+    (tester) async {
+      final app = await _pump(tester, signedIn: false);
+      final router = app.read(appRouterProvider);
+
+      await _tap(tester, 'browse-proposals-button');
+      expect(router.routeInformationProvider.value.uri.path, '/proposals');
+      expect(find.text('One-time proposals'), findsOneWidget);
+
+      await tester.binding.handlePopRoute();
+      await tester.pumpAndSettle();
+
+      expect(router.routeInformationProvider.value.uri.path, '/');
+      expect(find.text('Mobile foundation ready'), findsOneWidget);
+      expect(find.byKey(const Key('auth-email-field')), findsNothing);
+
+      for (final root in ['/resources', '/profile']) {
+        router.go(root);
+        await tester.pumpAndSettle();
+        await tester.binding.handlePopRoute();
+        await tester.pumpAndSettle();
+        expect(router.routeInformationProvider.value.uri.path, '/');
+      }
+
+      expect(await tester.binding.handlePopRoute(), isFalse);
+      expect(router.routeInformationProvider.value.uri.path, '/');
+    },
+  );
+
+  testWidgets('Home destinations are canonical while Browse retains state', (
+    tester,
+  ) async {
+    final app = await _pump(tester, signedIn: false);
+    final router = app.read(appRouterProvider);
+
+    await _tap(tester, 'browse-resources-button');
+    expect(router.routeInformationProvider.value.uri.path, '/resources');
+    expect(
+      tester.widget<NavigationBar>(find.byType(NavigationBar)).selectedIndex,
+      AppBranch.browse.index,
+    );
+
+    await _tap(tester, 'nav-home');
+    expect(router.routeInformationProvider.value.uri.path, '/');
+    expect(
+      tester.widget<NavigationBar>(find.byType(NavigationBar)).selectedIndex,
+      AppBranch.home.index,
+    );
+
+    await _tap(tester, 'nav-browse');
+    expect(router.routeInformationProvider.value.uri.path, '/resources');
+
+    await _tap(tester, 'nav-home');
+    await _tap(tester, 'browse-proposals-button');
+    expect(router.routeInformationProvider.value.uri.path, '/proposals');
+    expect(
+      tester.widget<NavigationBar>(find.byType(NavigationBar)).selectedIndex,
+      AppBranch.browse.index,
+    );
+
+    router.go('/tavoli');
+    await tester.pumpAndSettle();
+    await _tap(tester, 'nav-home');
+    await _tap(tester, 'browse-proposals-button');
+    expect(router.routeInformationProvider.value.uri.path, '/proposals');
   });
 
   testWidgets('public Tavoli routes stay available signed out', (tester) async {
@@ -241,6 +340,181 @@ void main() {
     );
   });
 
+  testWidgets('OTP to Profile setup stays loading until Profile is ready', (
+    tester,
+  ) async {
+    final pending = Completer<ProfileEditorData>();
+    final profile = FakeProfileGateway()..loadResult = (_) => pending.future;
+    final app = await _pump(
+      tester,
+      signedIn: false,
+      complete: false,
+      profile: profile,
+    );
+    final router = app.read(appRouterProvider);
+    router.go('/proposals/proposal-1/join');
+    await tester.pumpAndSettle();
+    await tester.enterText(
+      find.byKey(const Key('auth-email-field')),
+      'person@example.com',
+    );
+    await _tap(tester, 'auth-request-button');
+    await tester.enterText(find.byKey(const Key('auth-code-field')), '123456');
+    await tester.tap(find.byKey(const Key('auth-verify-button')));
+    for (var frame = 0; frame < 4; frame++) {
+      await tester.pump();
+    }
+
+    expect(router.routeInformationProvider.value.uri.path, '/profile/edit');
+    expect(find.byType(LoadingState), findsOneWidget);
+    expect(find.byType(ErrorState), findsNothing);
+
+    pending.complete(profileFixture());
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('profile-display-name-field')), findsOneWidget);
+  });
+
+  testWidgets('Proposal setup cancel and system Back return to its detail', (
+    tester,
+  ) async {
+    final app = await _pump(tester, complete: false);
+    final router = app.read(appRouterProvider);
+
+    router.go('/proposals/proposal-1/join');
+    await tester.pumpAndSettle();
+    expect(router.routeInformationProvider.value.uri.path, '/profile/edit');
+    await _tap(tester, 'profile-cancel-button');
+    expect(
+      router.routeInformationProvider.value.uri.path,
+      '/proposals/proposal-1',
+    );
+
+    router.go('/proposals/proposal-1/join');
+    await tester.pumpAndSettle();
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+    expect(
+      router.routeInformationProvider.value.uri.path,
+      '/proposals/proposal-1',
+    );
+  });
+
+  testWidgets('Tavolo setup cancel and system Back return to its detail', (
+    tester,
+  ) async {
+    final app = await _pump(tester, complete: false);
+    final router = app.read(appRouterProvider);
+
+    router.go('/tavoli/tavolo-1/join');
+    await tester.pumpAndSettle();
+    await _tap(tester, 'profile-cancel-button');
+    expect(router.routeInformationProvider.value.uri.path, '/tavoli/tavolo-1');
+
+    router.go('/tavoli/tavolo-1/join');
+    await tester.pumpAndSettle();
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+    expect(router.routeInformationProvider.value.uri.path, '/tavoli/tavolo-1');
+  });
+
+  testWidgets('ordinary Profile edit Back and Save return to Profile', (
+    tester,
+  ) async {
+    final app = await _pump(tester);
+    final router = app.read(appRouterProvider);
+
+    router.go('/profile/edit');
+    await tester.pumpAndSettle();
+    await _tap(tester, 'profile-cancel-button');
+    expect(router.routeInformationProvider.value.uri.path, '/profile');
+
+    router.go('/profile/edit');
+    await tester.pumpAndSettle();
+    await _tap(tester, 'profile-save-button');
+    expect(router.routeInformationProvider.value.uri.path, '/profile');
+  });
+
+  testWidgets('Profile moderation siblings pop directly back to Profile', (
+    tester,
+  ) async {
+    final app = await _pump(tester);
+    final router = app.read(appRouterProvider);
+    router.go('/profile');
+    await tester.pumpAndSettle();
+
+    await _tap(tester, 'profile-own-reports-button');
+    expect(router.routeInformationProvider.value.uri.path, '/profile/reports');
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+    expect(router.routeInformationProvider.value.uri.path, '/profile');
+
+    await _tap(tester, 'profile-moderation-review-requests-button');
+    expect(
+      router.routeInformationProvider.value.uri.path,
+      ModerationRoutes.reviewRequests,
+    );
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+    expect(router.routeInformationProvider.value.uri.path, '/profile');
+  });
+
+  testWidgets('review details and legacy URL keep the canonical back stack', (
+    tester,
+  ) async {
+    const corroborationId = '00000000-0000-4000-8000-000000000911';
+    const counterstatementId = '00000000-0000-4000-8000-000000000921';
+    final app = await _pump(tester);
+    final router = app.read(appRouterProvider);
+
+    router.go(ModerationRoutes.reviewRequests);
+    await tester.pumpAndSettle();
+    router.push(ModerationRoutes.corroborationDetail(corroborationId));
+    await tester.pumpAndSettle();
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+    expect(
+      router.routeInformationProvider.value.uri.path,
+      ModerationRoutes.reviewRequests,
+    );
+
+    router.push(ModerationRoutes.counterstatementDetail(counterstatementId));
+    await tester.pumpAndSettle();
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+    expect(
+      router.routeInformationProvider.value.uri.path,
+      ModerationRoutes.reviewRequests,
+    );
+
+    router.go('/profile/reports/review-requests');
+    await tester.pumpAndSettle();
+    expect(
+      router.routeInformationProvider.value.uri.path,
+      ModerationRoutes.reviewRequests,
+    );
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+    expect(router.routeInformationProvider.value.uri.path, '/profile');
+
+    router.go(
+      '/profile/reports/review-requests/corroboration/$corroborationId',
+    );
+    await tester.pumpAndSettle();
+    expect(
+      router.routeInformationProvider.value.uri.path,
+      ModerationRoutes.corroborationDetail(corroborationId),
+    );
+
+    router.go(
+      '/profile/reports/review-requests/counterstatement/$counterstatementId',
+    );
+    await tester.pumpAndSettle();
+    expect(
+      router.routeInformationProvider.value.uri.path,
+      ModerationRoutes.counterstatementDetail(counterstatementId),
+    );
+  });
+
   testWidgets('account switch discards an inactive private join message', (
     tester,
   ) async {
@@ -255,6 +529,10 @@ void main() {
       find.byKey(const Key('participation-message-field')),
       'Private message from A',
     );
+    await tester.tap(
+      find.byKey(const Key('participation-option-skill-skill-mural')),
+    );
+    await tester.pump();
     await _tap(tester, 'nav-home');
     auth.emit(const AuthSnapshot(identity: AuthIdentity(id: 'user-2')));
     await tester.pumpAndSettle();
@@ -272,6 +550,14 @@ void main() {
           .controller
           ?.text,
       isEmpty,
+    );
+    expect(
+      tester
+          .widget<FilterChip>(
+            find.byKey(const Key('participation-option-skill-skill-mural')),
+          )
+          .selected,
+      isFalse,
     );
   });
 
@@ -321,47 +607,57 @@ void main() {
     expect(find.text('Private Tavolo A', skipOffstage: false), findsNothing);
   });
 
-  testWidgets('tabs and Home CTA restore Browse details, filters and scroll', (
-    tester,
-  ) async {
-    final proposals = FakeProposalGateway()
-      ..publicItems = List.generate(
-        20,
-        (i) => proposalSummaryFixture(id: 'proposal-$i'),
-      )
-      ..publicDetail = proposalDetailFixture();
-    final app = await _pump(tester, proposals: proposals);
-    await _tap(tester, 'browse-proposals-button');
-    await tester.enterText(
-      find.byKey(const Key('proposal-locality-filter')),
-      'Bologna',
-    );
-    await _tap(tester, 'proposal-apply-filters');
-    await _tap(tester, 'skill-filter-trigger');
-    await _tap(tester, 'proposal-filter-skill-mural');
-    await _tap(tester, 'skill-filter-apply');
-    final list = find.byType(ListView);
-    await tester.drag(list, const Offset(0, -600));
-    await tester.pumpAndSettle();
-    final scroll = tester.state<ScrollableState>(
-      find.descendant(of: list, matching: find.byType(Scrollable)).first,
-    );
-    final offset = scroll.position.pixels;
-    await _tap(tester, 'nav-home');
-    await _tap(tester, 'browse-proposals-button');
-    expect(scroll.position.pixels, offset);
-    app.read(appRouterProvider).push('/proposals/proposal-1');
-    await tester.pumpAndSettle();
-    await _tap(tester, 'nav-home');
-    await _tap(tester, 'browse-proposals-button');
-    expect(find.text('Proposal details'), findsOneWidget);
-    await tester.tap(find.byType(BackButton));
-    await tester.pumpAndSettle();
-    expect(scroll.position.pixels, offset);
-    expect(proposals.lastLocality, 'Bologna');
-    expect(proposals.lastSkillIds, {'skill-mural'});
-    expect(proposals.calls.where((call) => call == 'list-public').length, 3);
-  });
+  testWidgets(
+    'Browse restores details and filters while Home CTA opens Proposal root',
+    (tester) async {
+      final proposals = FakeProposalGateway()
+        ..publicItems = List.generate(
+          20,
+          (i) => proposalSummaryFixture(id: 'proposal-$i'),
+        )
+        ..publicDetail = proposalDetailFixture();
+      final app = await _pump(tester, proposals: proposals);
+      await _tap(tester, 'browse-proposals-button');
+      await tester.enterText(
+        find.byKey(const Key('proposal-locality-filter')),
+        'Bologna',
+      );
+      await _tap(tester, 'proposal-apply-filters');
+      await _tap(tester, 'skill-filter-trigger');
+      await _tap(tester, 'skill-filter-option-mural');
+      await _tap(tester, 'skill-filter-apply');
+      final list = find.byType(ListView);
+      await tester.drag(list, const Offset(0, -600));
+      await tester.pumpAndSettle();
+      final scroll = tester.state<ScrollableState>(
+        find.descendant(of: list, matching: find.byType(Scrollable)).first,
+      );
+      final offset = scroll.position.pixels;
+      await _tap(tester, 'nav-home');
+      await _tap(tester, 'nav-browse');
+      expect(scroll.position.pixels, offset);
+      app.read(appRouterProvider).push('/proposals/proposal-1');
+      await tester.pumpAndSettle();
+      await _tap(tester, 'nav-home');
+      await _tap(tester, 'nav-browse');
+      expect(find.text('Proposal details'), findsOneWidget);
+      await tester.tap(find.byType(BackButton));
+      await tester.pumpAndSettle();
+      expect(scroll.position.pixels, offset);
+      app.read(appRouterProvider).push('/proposals/proposal-1');
+      await tester.pumpAndSettle();
+      await _tap(tester, 'nav-home');
+      await _tap(tester, 'browse-proposals-button');
+      expect(
+        app.read(appRouterProvider).routeInformationProvider.value.uri.path,
+        '/proposals',
+      );
+      expect(find.text('Proposal details'), findsNothing);
+      expect(proposals.lastLocality, 'Bologna');
+      expect(proposals.lastSkillIds, {'skill-mural'});
+      expect(proposals.calls.where((call) => call == 'list-public').length, 3);
+    },
+  );
 
   testWidgets(
     'profile and proposal edits survive switching and retapping tabs',
@@ -402,24 +698,25 @@ void main() {
             .text,
         'Unsaved activity',
       );
-      expect(
-        router.routeInformationProvider.value.uri.path,
-        '/proposals/create',
-      );
     },
   );
 
-  testWidgets('Auth is outside shell; protected destination survives sign-in', (
+  testWidgets('public Profile keeps protected edit intent through Auth', (
     tester,
   ) async {
     final app = await _pump(tester, signedIn: false);
     await _tap(tester, 'nav-browse');
     await _tap(tester, 'nav-profile');
     final router = app.read(appRouterProvider);
+    expect(find.byType(NavigationBar), findsOneWidget);
+    expect(find.byKey(const Key('profile-example-label')), findsOneWidget);
+    expect(find.byKey(const Key('auth-email-field')), findsNothing);
+    router.go('/profile/edit');
+    await tester.pumpAndSettle();
     expect(find.byType(NavigationBar), findsNothing);
     expect(
       router.routeInformationProvider.value.uri.queryParameters['returnTo'],
-      '/profile',
+      '/profile/edit',
     );
     await tester.enterText(
       find.byKey(const Key('auth-email-field')),
@@ -429,7 +726,7 @@ void main() {
     expect(find.byType(NavigationBar), findsNothing);
     await tester.enterText(find.byKey(const Key('auth-code-field')), '123456');
     await _tap(tester, 'auth-verify-button');
-    expect(router.routeInformationProvider.value.uri.path, '/profile');
+    expect(router.routeInformationProvider.value.uri.path, '/profile/edit');
     expect(
       tester.widget<NavigationBar>(find.byType(NavigationBar)).selectedIndex,
       0,
@@ -439,7 +736,7 @@ void main() {
   testWidgets(
     'incomplete profile can escape to public tabs but cannot create',
     (tester) async {
-      final app = await _pump(tester, complete: false);
+      await _pump(tester, complete: false);
       await _tap(tester, 'nav-profile');
       expect(
         find.byKey(const Key('profile-display-name-field')),
@@ -449,8 +746,8 @@ void main() {
       await _tap(tester, 'nav-browse');
       await _tap(tester, 'proposal-create-action');
       expect(
-        app.read(appRouterProvider).routeInformationProvider.value.uri.path,
-        '/profile/edit',
+        find.byKey(const Key('profile-display-name-field')),
+        findsOneWidget,
       );
       await _tap(tester, 'nav-home');
       expect(find.text('Mobile foundation ready'), findsOneWidget);
@@ -504,7 +801,8 @@ void main() {
       '/proposals',
     );
     await _tap(tester, 'nav-profile');
-    expect(find.byKey(const Key('auth-email-field')), findsOneWidget);
+    expect(find.byKey(const Key('profile-example-label')), findsOneWidget);
+    expect(find.byKey(const Key('auth-email-field')), findsNothing);
     expect(profile.updateCount, 0);
   });
 
@@ -567,6 +865,7 @@ Future<ProviderContainer> _pump(
   FakeResourceListingGateway? resourceListings,
   String appEnvironment = 'local',
   String enableDemoTools = '',
+  FakeProjectResourceNeedsGateway? projectResourceNeeds,
 }) async {
   final gateway =
       auth ??
@@ -625,6 +924,19 @@ Future<ProviderContainer> _pump(
                 ..publicDetail = publicResourceListingDetailFixture()
                 ..ownItems = [ownResourceListingFixture()]),
         ),
+        projectResourceNeedsGatewayProvider.overrideWithValue(
+          projectResourceNeeds ?? FakeProjectResourceNeedsGateway(),
+        ),
+        moderationGatewayProvider.overrideWithValue(FakeModerationGateway()),
+        moderationEvidenceGatewayProvider.overrideWithValue(
+          FakeModerationEvidenceGateway(),
+        ),
+        corroborationGatewayProvider.overrideWithValue(
+          FakeCorroborationGateway(),
+        ),
+        counterstatementGatewayProvider.overrideWithValue(
+          FakeCounterstatementGateway(),
+        ),
       ],
       child: const PlanetsApp(),
     ),
@@ -634,7 +946,10 @@ Future<ProviderContainer> _pump(
 }
 
 Future<void> _tap(WidgetTester tester, String key) async {
-  await tester.tap(find.byKey(Key(key)));
+  final finder = find.byKey(Key(key));
+  await tester.ensureVisible(finder);
+  await tester.pumpAndSettle();
+  await tester.tap(finder.hitTestable());
   await tester.pumpAndSettle();
 }
 

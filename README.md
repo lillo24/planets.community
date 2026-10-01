@@ -2,7 +2,7 @@
 
 PLANETS is a community platform for creating, discovering, and joining local collaborative activities and projects.
 
-> **Current status:** repository/application foundations, email OTP, basic profiles, one-time Proposals, and Tavoli mobile/public-web discovery are implemented. Material resources and participation remain future work.
+> **Current status:** repository/application foundations, email OTP, profiles, Proposal/Tavolo discovery, shared participation, Project chat/notifications, and standalone Scambio-Dona listing/mobile foundations are implemented. Project resource needs and request-linked contribution selections are being delivered as separate stacked follow-up slices.
 
 ## Repository
 
@@ -39,6 +39,7 @@ See [Getting started](docs/development/getting-started.md) for prerequisites, ex
 - [System design and responsibility boundaries](docs/architecture/system-design.md)
 - [Architecture decision records](docs/architecture/decisions/README.md)
 - [Database development workflow](docs/development/database.md)
+- [Project delegate invite links and native association](docs/development/project-invite-links.md)
 - [Continuous integration](docs/development/ci.md)
 - [Codex tooling policy](docs/development/codex-tooling.md)
 - [Implementation roadmap](docs/implementation/roadmap.md)

@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../../core/backend/cover_media_path.dart';
 import '../../../core/backend/supabase_backend.dart';
 import '../domain/resource_listing_models.dart';
 
@@ -91,6 +92,11 @@ class ResourceListingPayloadParser {
   PublicResourceListingSummary publicSummary(Map<String, dynamic> row) =>
       PublicResourceListingSummary(
         id: _uuid(row, 'listing_id'),
+        coverObjectPath: parseCoverObjectPath(
+          row['cover_object_path'],
+          parentId: _uuid(row, 'listing_id'),
+          parentSegment: 'resources',
+        ),
         mode: ResourceListingMode.fromWire(_string(row, 'listing_mode')),
         title: _string(row, 'title'),
         description: _string(row, 'description'),
@@ -99,6 +105,7 @@ class ResourceListingPayloadParser {
         administrativeArea: _optionalString(row, 'administrative_area'),
         publicLocationLabel: _string(row, 'public_location_label'),
         publishedAt: _date(row, 'published_at'),
+        activeRequestCount: _nonNegativeInteger(row, 'active_request_count'),
       );
 
   PublicResourceListingDetail publicDetail(Map<String, dynamic> row) =>
@@ -130,6 +137,11 @@ class ResourceListingPayloadParser {
     }
     return OwnResourceListing(
       id: _uuid(row, 'listing_id'),
+      coverObjectPath: parseCoverObjectPath(
+        row['cover_object_path'],
+        parentId: _uuid(row, 'listing_id'),
+        parentSegment: 'resources',
+      ),
       ownerProfileId: _uuid(row, 'owner_profile_id'),
       mode: ResourceListingMode.fromWire(_string(row, 'listing_mode')),
       lifecycle: lifecycle,
@@ -184,6 +196,14 @@ class ResourceListingPayloadParser {
 
   DateTime? _optionalDate(Map<String, dynamic> row, String key) =>
       row[key] == null ? null : _date(row, key);
+
+  int _nonNegativeInteger(Map<String, dynamic> row, String key) {
+    final value = row[key];
+    if (value is! int || value < 0) {
+      throw FormatException('Resource listing $key was not non-negative.');
+    }
+    return value;
+  }
 }
 
 class SupabaseResourceListingGateway implements ResourceListingGateway {

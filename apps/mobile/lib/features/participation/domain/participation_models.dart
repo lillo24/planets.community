@@ -1,4 +1,20 @@
 const participationRequestMessageMaxLength = 500;
+const participationSkillSelectionMax = 50;
+const participationResourceNeedSelectionMax = 50;
+
+enum ContributionOptionKind { skill, resource }
+
+class ContributionOption {
+  const ContributionOption({
+    required this.id,
+    required this.kind,
+    required this.label,
+  });
+
+  final String id;
+  final ContributionOptionKind kind;
+  final String label;
+}
 
 enum ProjectKind {
   oneTime('one_time'),
@@ -95,8 +111,8 @@ class OwnProjectMembership {
   bool get isCurrent => status == MembershipStatus.current;
 }
 
-class CreatorProjectJoinRequest {
-  const CreatorProjectJoinRequest({
+class ManagerProjectJoinRequest {
+  const ManagerProjectJoinRequest({
     required this.id,
     required this.requesterProfileId,
     required this.requesterDisplayName,
@@ -119,8 +135,8 @@ class CreatorProjectJoinRequest {
   bool get isPending => status == JoinRequestStatus.pending;
 }
 
-class CreatorProjectMember {
-  const CreatorProjectMember({
+class ManagerProjectMember {
+  const ManagerProjectMember({
     required this.id,
     required this.participantProfileId,
     required this.participantDisplayName,

@@ -10,6 +10,7 @@ import 'package:planets_mobile/features/auth/data/auth_gateway.dart';
 import 'package:planets_mobile/features/auth/domain/auth_models.dart';
 import 'package:planets_mobile/features/auth/presentation/request_code_screen.dart';
 import 'package:planets_mobile/features/messages/data/messages_gateway.dart';
+import 'package:planets_mobile/features/messages/data/message_chats_gateway.dart';
 import 'package:planets_mobile/features/notifications/application/notifications_controllers.dart';
 import 'package:planets_mobile/features/notifications/data/notifications_gateway.dart';
 import 'package:planets_mobile/features/notifications/domain/notification_models.dart';
@@ -20,15 +21,24 @@ import 'package:planets_mobile/features/project_chat/data/project_chat_gateway.d
 import 'package:planets_mobile/features/project_chat/domain/project_chat_models.dart';
 import 'package:planets_mobile/features/proposals/data/proposal_gateway.dart';
 import 'package:planets_mobile/features/recurring_activities/data/recurring_activity_gateway.dart';
+import 'package:planets_mobile/features/resource_chat/data/resource_chat_gateway.dart';
+import 'package:planets_mobile/features/resource_exchange/data/resource_exchange_gateway.dart';
+import 'package:planets_mobile/features/resource_listings/data/resource_listing_gateway.dart';
+import 'package:planets_mobile/features/resource_requests/data/resource_request_gateway.dart';
 
 import '../../../support/fake_auth.dart';
 import '../../../support/fake_messages.dart';
+import '../../../support/fake_message_chats.dart';
 import '../../../support/fake_notifications.dart';
 import '../../../support/fake_participation.dart';
 import '../../../support/fake_profile.dart';
 import '../../../support/fake_project_chat.dart';
 import '../../../support/fake_proposal.dart';
 import '../../../support/fake_recurring_activity.dart';
+import '../../../support/fake_resource_chat.dart';
+import '../../../support/fake_resource_exchange.dart';
+import '../../../support/fake_resource_listing.dart';
+import '../../../support/fake_resource_request.dart';
 
 void main() {
   testWidgets(
@@ -58,14 +68,29 @@ void main() {
   );
 
   testWidgets(
-    'signed-out bell does not fetch and preserves exact Auth returnTo',
+    'signed-out bell explains Auth before preserving exact returnTo',
     (tester) async {
       final notifications = FakeNotificationsGateway();
-      await _pump(tester, notifications: notifications, signedIn: false);
+      final app = await _pump(
+        tester,
+        notifications: notifications,
+        signedIn: false,
+      );
 
       expect(notifications.calls.where((call) => call == 'unread'), isEmpty);
       expect(find.text('0'), findsNothing);
       await tester.tap(find.byKey(const Key('open-notifications-button')));
+      await tester.pumpAndSettle();
+      expect(
+        app.read(appRouterProvider).routeInformationProvider.value.uri.path,
+        '/',
+      );
+      expect(find.text('Sign in to see your notifications.'), findsOneWidget);
+      expect(find.byKey(const Key('auth-email-field')), findsNothing);
+
+      await tester.tap(
+        find.widgetWithText(SnackBarAction, 'Sign in').hitTestable(),
+      );
       await tester.pumpAndSettle();
       expect(find.byKey(const Key('auth-email-field')), findsOneWidget);
       expect(
@@ -76,6 +101,25 @@ void main() {
       );
     },
   );
+
+  testWidgets('Home destination resets a nested Home-owned route', (
+    tester,
+  ) async {
+    final app = await _pump(tester, notifications: FakeNotificationsGateway());
+    final router = app.read(appRouterProvider);
+
+    await tester.tap(find.byKey(const Key('open-notifications-button')));
+    await tester.pumpAndSettle();
+    expect(find.text('Notifications'), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('nav-home')));
+    await tester.pumpAndSettle();
+    expect(router.routeInformationProvider.value.uri.path, '/');
+    expect(
+      tester.widget<NavigationBar>(find.byType(NavigationBar)).selectedIndex,
+      1,
+    );
+  });
 
   testWidgets('ready Home omits the badge at zero', (tester) async {
     await _pump(
@@ -291,6 +335,104 @@ void main() {
     },
   );
 
+  testWidgets('Resource alert tap marks read and opens Resource request', (
+    tester,
+  ) async {
+    const requestId = '00000000-0000-4000-8000-000000000301';
+    final notifications = FakeNotificationsGateway()
+      ..items = [
+        resourceNotificationFixture(
+          resourceListingId: '00000000-0000-4000-8000-000000000201',
+          resourceRequestId: requestId,
+        ),
+      ];
+    final app = await _pump(tester, notifications: notifications);
+    final router = app.read(appRouterProvider)..go('/notifications');
+    await tester.pumpAndSettle();
+
+    expect(find.text('Mario is interested in “Power drill”'), findsOneWidget);
+    expect(
+      find.bySemanticsLabel('Mario is interested in “Power drill”. Unread'),
+      findsOneWidget,
+    );
+    await tester.tap(find.text('Mario is interested in “Power drill”'));
+    await tester.pumpAndSettle();
+
+    expect(
+      notifications.calls,
+      contains('mark:00000000-0000-4000-8000-000000000001'),
+    );
+    expect(
+      router.routeInformationProvider.value.uri.path,
+      '/messages/requests/resource/$requestId',
+    );
+    expect(app.read(notificationsUnreadProvider).count, 0);
+  });
+
+  testWidgets('Resource chat alert still navigates if mark-read fails', (
+    tester,
+  ) async {
+    const chatId = '00000000-0000-4000-8000-000000000401';
+    final notifications = FakeNotificationsGateway()
+      ..items = [
+        resourceNotificationFixture(
+          kind: NotificationKind.resourceChatMessageReceived,
+          destinationKind: NotificationDestinationKind.resourceChat,
+          resourceListingId: '00000000-0000-4000-8000-000000000201',
+          resourceRequestId: '00000000-0000-4000-8000-000000000301',
+          resourceChatId: chatId,
+          resourceChatMessageId: '00000000-0000-4000-8000-000000000402',
+          resourceAgreementId: '00000000-0000-4000-8000-000000000501',
+        ),
+      ]
+      ..mutationError = StateError('private read diagnostic');
+    final app = await _pump(tester, notifications: notifications);
+    final router = app.read(appRouterProvider)..go('/notifications');
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Mario sent a message about “Power drill”'));
+    await tester.pumpAndSettle();
+
+    expect(
+      router.routeInformationProvider.value.uri.path,
+      '/messages/chats/resource/$chatId',
+    );
+    expect(
+      find.textContaining("couldn't update this notification"),
+      findsOneWidget,
+    );
+    expect(find.textContaining('private read diagnostic'), findsNothing);
+  });
+
+  testWidgets('Matching alert remains in the inbox and opens Resource detail', (
+    tester,
+  ) async {
+    const listingId = '00000000-0000-4000-8000-000000000501';
+    final notifications = FakeNotificationsGateway()
+      ..items = [matchingNotificationFixture(resourceListingId: listingId)]
+      ..mutationError = StateError('private read diagnostic');
+    final app = await _pump(tester, notifications: notifications);
+    final router = app.read(appRouterProvider)..go('/notifications');
+    await tester.pumpAndSettle();
+
+    const copy =
+        'New listing matches one of your saved searches: “Power drill”.';
+    expect(find.text(copy), findsOneWidget);
+    await tester.tap(find.text(copy));
+    await tester.pumpAndSettle();
+
+    expect(
+      router.routeInformationProvider.value.uri.path,
+      '/resources/$listingId',
+    );
+    expect(
+      find.textContaining("couldn't update this notification"),
+      findsOneWidget,
+    );
+    expect(find.textContaining('private read diagnostic'), findsNothing);
+    expect(notifications.calls.where((call) => call == 'list'), hasLength(1));
+  });
+
   testWidgets(
     'chat tap navigates despite mark-read failure and resolves former history',
     (tester) async {
@@ -420,6 +562,55 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('long Resource copy remains readable at high text scale', (
+    tester,
+  ) async {
+    tester.platformDispatcher.textScaleFactorTestValue = 2;
+    addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+    await tester.binding.setSurfaceSize(const Size(320, 600));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    final longName = List.filled(8, 'Alexandria').join(' ');
+    final longTitle = List.filled(12, 'Neighborhood').join(' ');
+    final app = await _pump(
+      tester,
+      notifications: FakeNotificationsGateway()
+        ..items = [
+          resourceNotificationFixture(
+            actorDisplayName: longName,
+            resourceListingTitle: longTitle,
+          ),
+        ],
+    );
+    app.read(appRouterProvider).go('/notifications');
+    await tester.pumpAndSettle();
+
+    expect(find.textContaining(longName), findsOneWidget);
+    expect(find.textContaining(longTitle), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('long Matching copy remains readable at high text scale', (
+    tester,
+  ) async {
+    tester.platformDispatcher.textScaleFactorTestValue = 2;
+    addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+    await tester.binding.setSurfaceSize(const Size(320, 600));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    final longTitle = List.filled(12, 'Neighborhood').join(' ');
+    final app = await _pump(
+      tester,
+      notifications: FakeNotificationsGateway()
+        ..items = [
+          matchingNotificationFixture(resourceListingTitle: longTitle),
+        ],
+    );
+    app.read(appRouterProvider).go('/notifications');
+    await tester.pumpAndSettle();
+
+    expect(find.textContaining(longTitle), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('mark all and pull refresh synchronize inbox and unread count', (
     tester,
   ) async {
@@ -445,51 +636,185 @@ void main() {
     );
   });
 
-  testWidgets(
-    'preferences expose Participation and Chat in-app controls without Push',
-    (tester) async {
-      final notifications = FakeNotificationsGateway()
-        ..preferences = [
-          notificationPreferenceFixture(pushEnabled: false),
-          notificationPreferenceFixture(
-            category: NotificationCategory.chat,
-            pushEnabled: true,
-          ),
-        ];
-      final app = await _pump(tester, notifications: notifications);
-      app.read(appRouterProvider).go('/notifications/preferences');
-      await tester.pumpAndSettle();
+  testWidgets('preferences expose four in-app categories without Push', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(900, 1600));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    final notifications = FakeNotificationsGateway()
+      ..preferences = [
+        notificationPreferenceFixture(pushEnabled: false),
+        notificationPreferenceFixture(
+          category: NotificationCategory.chat,
+          pushEnabled: true,
+        ),
+        notificationPreferenceFixture(
+          category: NotificationCategory.resources,
+          pushEnabled: true,
+        ),
+        notificationPreferenceFixture(
+          category: NotificationCategory.matching,
+          pushEnabled: false,
+        ),
+      ];
+    final app = await _pump(tester, notifications: notifications);
+    app.read(appRouterProvider).go('/notifications/preferences');
+    await tester.pumpAndSettle();
 
-      expect(find.text('Participation alerts'), findsOneWidget);
-      expect(find.text('Chat messages'), findsOneWidget);
-      expect(find.text('In-app notifications'), findsNWidgets(2));
-      expect(find.textContaining('Push'), findsNothing);
-      await tester.tap(find.byKey(const Key('chat-in-app-toggle')));
-      await tester.pumpAndSettle();
+    expect(find.text('Participation alerts'), findsOneWidget);
+    expect(find.text('Chat messages'), findsOneWidget);
+    expect(find.text('Resource activity'), findsOneWidget);
+    expect(find.text('Saved search matches'), findsOneWidget);
+    expect(find.bySemanticsLabel('Resource activity'), findsOneWidget);
+    expect(find.bySemanticsLabel('Saved search matches'), findsOneWidget);
+    expect(find.text('In-app notifications'), findsNWidgets(3));
+    expect(find.text('In-app'), findsOneWidget);
+    expect(find.textContaining('Push'), findsNothing);
+    await tester.tap(find.byKey(const Key('chat-in-app-toggle')));
+    await tester.pumpAndSettle();
 
-      expect(notifications.lastCategory, NotificationCategory.chat);
-      expect(notifications.lastInAppEnabled, isFalse);
-      expect(notifications.lastPushEnabled, isTrue);
-      expect(
-        tester
-            .widget<SwitchListTile>(find.byKey(const Key('chat-in-app-toggle')))
-            .value,
-        isFalse,
-      );
-      expect(
-        tester
-            .widget<SwitchListTile>(
-              find.byKey(const Key('participation-in-app-toggle')),
-            )
-            .value,
-        isTrue,
-      );
-      expect(
-        find.textContaining('Project chat and existing notification history'),
-        findsOneWidget,
-      );
-    },
-  );
+    expect(notifications.lastCategory, NotificationCategory.chat);
+    expect(notifications.lastInAppEnabled, isFalse);
+    expect(notifications.lastPushEnabled, isTrue);
+    expect(
+      tester
+          .widget<SwitchListTile>(find.byKey(const Key('chat-in-app-toggle')))
+          .value,
+      isFalse,
+    );
+    expect(
+      tester
+          .widget<SwitchListTile>(
+            find.byKey(const Key('participation-in-app-toggle')),
+          )
+          .value,
+      isTrue,
+    );
+    expect(
+      find.textContaining('Project chat and existing notification history'),
+      findsOneWidget,
+    );
+    await tester.tap(find.byKey(const Key('resources-in-app-toggle')));
+    await tester.pumpAndSettle();
+    expect(notifications.lastCategory, NotificationCategory.resources);
+    expect(notifications.lastInAppEnabled, isFalse);
+    expect(notifications.lastPushEnabled, isTrue);
+    expect(
+      tester
+          .widget<SwitchListTile>(
+            find.byKey(const Key('resources-in-app-toggle')),
+          )
+          .value,
+      isFalse,
+    );
+    expect(
+      find.textContaining('Requests, Resource conversations'),
+      findsOneWidget,
+    );
+    await tester.tap(find.byKey(const Key('matching-in-app-toggle')));
+    await tester.pumpAndSettle();
+    expect(notifications.lastCategory, NotificationCategory.matching);
+    expect(notifications.lastInAppEnabled, isFalse);
+    expect(notifications.lastPushEnabled, isFalse);
+    expect(
+      find.textContaining(
+        'newly published Scambio-Dona listing matches one of your saved searches',
+      ),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('Resources toggle rolls back with safe copy at high text scale', (
+    tester,
+  ) async {
+    tester.platformDispatcher.textScaleFactorTestValue = 2;
+    addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+    await tester.binding.setSurfaceSize(const Size(900, 1800));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    final notifications = FakeNotificationsGateway();
+    final app = await _pump(tester, notifications: notifications);
+    app.read(appRouterProvider).go('/notifications/preferences');
+    await tester.pumpAndSettle();
+    notifications.preferenceError = StateError('private preference diagnostic');
+
+    await tester.tap(
+      find.byKey(const Key('resources-in-app-toggle')).hitTestable(),
+    );
+    await tester.pumpAndSettle();
+    expect(
+      tester
+          .widget<SwitchListTile>(
+            find.byKey(const Key('resources-in-app-toggle')),
+          )
+          .value,
+      isTrue,
+    );
+    expect(app.read(notificationPreferencesProvider).failure, isNotNull);
+    expect(find.textContaining('private preference diagnostic'), findsNothing);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('Matching preference remains usable at high text scale', (
+    tester,
+  ) async {
+    tester.platformDispatcher.textScaleFactorTestValue = 2;
+    addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+    await tester.binding.setSurfaceSize(const Size(320, 600));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    final notifications = FakeNotificationsGateway();
+    final app = await _pump(tester, notifications: notifications);
+    app.read(appRouterProvider).go('/notifications/preferences');
+    await tester.pumpAndSettle();
+
+    await tester.scrollUntilVisible(
+      find.byKey(const Key('matching-in-app-toggle')),
+      300,
+      scrollable: find.byType(Scrollable),
+    );
+    await tester.tap(find.byKey(const Key('matching-in-app-toggle')));
+    await tester.pumpAndSettle();
+
+    expect(notifications.lastCategory, NotificationCategory.matching);
+    expect(
+      find.textContaining(
+        'newly published Scambio-Dona listing matches one of your saved searches',
+      ),
+      findsOneWidget,
+    );
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('Resources preference is disabled while saving', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(900, 1600));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    final notifications = FakeNotificationsGateway();
+    final app = await _pump(tester, notifications: notifications);
+    app.read(appRouterProvider).go('/notifications/preferences');
+    await tester.pumpAndSettle();
+    final pending = Completer<void>();
+    notifications.preferenceDelay = pending.future;
+
+    await tester.tap(find.byKey(const Key('resources-in-app-toggle')));
+    await tester.pump();
+    expect(
+      tester
+          .widget<SwitchListTile>(
+            find.byKey(const Key('resources-in-app-toggle')),
+          )
+          .onChanged,
+      isNull,
+    );
+    pending.complete();
+    await tester.pumpAndSettle();
+    expect(
+      tester
+          .widget<SwitchListTile>(
+            find.byKey(const Key('resources-in-app-toggle')),
+          )
+          .value,
+      isFalse,
+    );
+  });
 
   testWidgets('incomplete profile keeps the preferences return destination', (
     tester,
@@ -572,6 +897,26 @@ Future<ProviderContainer> _pump(
         notificationsGatewayProvider.overrideWithValue(notifications),
         messagesGatewayProvider.overrideWithValue(
           messages ?? FakeMessagesGateway(),
+        ),
+        messageChatsGatewayProvider.overrideWithValue(
+          FakeMessageChatsGateway(),
+        ),
+        resourceRequestGatewayProvider.overrideWithValue(
+          FakeResourceRequestGateway()
+            ..detail = resourceRequestFixture(
+              ownerProfileId: 'user-1',
+              requesterProfileId: 'user-2',
+            ),
+        ),
+        resourceListingGatewayProvider.overrideWithValue(
+          FakeResourceListingGateway()
+            ..publicDetail = publicResourceListingDetailFixture(),
+        ),
+        resourceChatGatewayProvider.overrideWithValue(
+          FakeResourceChatGateway(),
+        ),
+        resourceExchangeGatewayProvider.overrideWithValue(
+          FakeResourceExchangeGateway(),
         ),
         projectChatGatewayProvider.overrideWithValue(
           projectChats ?? FakeProjectChatGateway(),

@@ -6,9 +6,17 @@ import '../../../core/theme/app_tokens.dart';
 import '../../../core/widgets/loading_state.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../auth/application/auth_session_controller.dart';
+import '../../blocking/presentation/blocking_action.dart';
+import '../../profile_photo/application/visible_profile_photo_controller.dart';
+import '../../profile_photo/domain/visible_profile_photo_models.dart';
+import '../../profile_photo/presentation/visible_profile_photo_avatar.dart';
 import '../application/participation_controllers.dart';
 import '../domain/participation_models.dart';
+import 'actual_contribution_sheet.dart';
+import 'join_acceptance_triage_sheet.dart';
+import 'membership_commitment_sheet.dart';
 import 'project_participation_section.dart';
+import 'project_capacity_label.dart';
 
 class CreatorParticipationScreen extends ConsumerStatefulWidget {
   const CreatorParticipationScreen({
@@ -27,36 +35,58 @@ class CreatorParticipationScreen extends ConsumerStatefulWidget {
 
 class _CreatorParticipationScreenState
     extends ConsumerState<CreatorParticipationScreen> {
-  late final String? _expectedCreatorId;
+  late final String? _expectedManagerId;
 
   @override
   void initState() {
     super.initState();
-    _expectedCreatorId = ref.read(authSessionProvider).identity?.id;
+    _expectedManagerId = ref.read(authSessionProvider).identity?.id;
     Future<void>.microtask(_load);
   }
 
   Future<void> _load() async {
-    final expectedCreatorId = _expectedCreatorId;
-    if (expectedCreatorId == null) return;
+    final expectedManagerId = _expectedManagerId;
+    if (expectedManagerId == null) return;
     await ref
         .read(creatorParticipationProvider.notifier)
-        .load(expectedCreatorId, widget.projectId);
+        .load(expectedManagerId, widget.projectId);
+    if (!mounted ||
+        ref.read(authSessionProvider).identity?.id != expectedManagerId) {
+      return;
+    }
+    final state = ref.read(creatorParticipationProvider);
+    if (state.expectedManagerId != expectedManagerId ||
+        state.projectId != widget.projectId) {
+      return;
+    }
+    final profileIds = state.requests
+        .where((request) => request.isPending)
+        .map((request) => request.requesterProfileId)
+        .toSet()
+        .toList(growable: false);
+    for (var offset = 0; offset < profileIds.length; offset += 50) {
+      final end = (offset + 50).clamp(0, profileIds.length);
+      await ref
+          .read(visibleProfilePhotoProvider.notifier)
+          .loadBatch(profileIds.sublist(offset, end));
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final state = ref.watch(creatorParticipationProvider);
+    final visiblePhotos = ref.watch(visibleProfilePhotoProvider);
     final belongsToScreen =
-        state.expectedCreatorId == _expectedCreatorId &&
+        state.expectedManagerId == _expectedManagerId &&
         state.projectId == widget.projectId;
     final requests = belongsToScreen
         ? state.requests
-        : const <CreatorProjectJoinRequest>[];
+        : const <ManagerProjectJoinRequest>[];
     final members = belongsToScreen
         ? state.members
-        : const <CreatorProjectMember>[];
+        : const <ManagerProjectMember>[];
+    final capacity = belongsToScreen ? state.capacity : null;
     final isInitialLoading =
         !belongsToScreen ||
         (state.phase == CreatorParticipationPhase.loading &&
@@ -93,6 +123,40 @@ class _CreatorParticipationScreenState
                       ),
                       const SizedBox(height: AppSpacing.medium),
                     ],
+                    if (capacity != null) ...[
+                      Card(
+                        key: const Key('creator-participation-capacity'),
+                        child: Padding(
+                          padding: const EdgeInsets.all(AppSpacing.medium),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              ProjectCapacityLabel(capacity: capacity),
+                              Text(
+                                capacity.peopleCapacity == null
+                                    ? l10n.projectCapacityNotSet
+                                    : l10n.projectCapacityManagerSummary(
+                                        capacity.currentParticipantCount,
+                                        capacity.currentPeopleCount,
+                                        capacity.peopleCapacity!,
+                                      ),
+                              ),
+                              if (capacity.isFull)
+                                Text(
+                                  l10n.projectNoSpots,
+                                  style: TextStyle(
+                                    color: Theme.of(context).colorScheme.error,
+                                  ),
+                                )
+                              else if (capacity.spotsRemaining
+                                  case final spots?)
+                                Text(l10n.projectCapacityRemaining(spots)),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: AppSpacing.medium),
+                    ],
                     Text(
                       l10n.participationRequests,
                       style: Theme.of(context).textTheme.titleLarge,
@@ -104,12 +168,20 @@ class _CreatorParticipationScreenState
                       for (final request in requests) ...[
                         _RequestCard(
                           request: request,
+                          photoEntry: request.isPending
+                              ? visiblePhotos.entryFor(
+                                  request.requesterProfileId,
+                                )
+                              : null,
                           enabled: !state.isBusy,
+                          acceptEnabled:
+                              !state.isBusy && capacity?.isFull != true,
                           isActing:
                               state.actionTargetId == request.id &&
                               state.isBusy,
-                          onAccept: () => _decide(request, accept: true),
-                          onReject: () => _decide(request, accept: false),
+                          onAccept: () => _accept(request),
+                          onReject: () => _reject(request),
+                          onBlockingChanged: _load,
                         ),
                         const SizedBox(height: AppSpacing.small),
                       ],
@@ -128,7 +200,16 @@ class _CreatorParticipationScreenState
                           enabled: !state.isBusy,
                           isActing:
                               state.actionTargetId == member.id && state.isBusy,
-                          onRemove: () => _confirmRemove(member),
+                          onCommitments: () => _openCommitments(member),
+                          onActualContributions:
+                              widget.projectKind == ProjectKind.oneTime
+                              ? () => _openActualContributions(member)
+                              : null,
+                          onRemove:
+                              member.participantProfileId == _expectedManagerId
+                              ? null
+                              : () => _confirmRemove(member),
+                          onBlockingChanged: _load,
                         ),
                         const SizedBox(height: AppSpacing.small),
                       ],
@@ -139,32 +220,46 @@ class _CreatorParticipationScreenState
     );
   }
 
-  Future<void> _decide(
-    CreatorProjectJoinRequest request, {
-    required bool accept,
-  }) async {
-    final expectedCreatorId = _expectedCreatorId;
-    if (expectedCreatorId == null ||
-        ref.read(authSessionProvider).identity?.id != expectedCreatorId) {
+  Future<void> _accept(ManagerProjectJoinRequest request) async {
+    final expectedManagerId = _expectedManagerId;
+    if (expectedManagerId == null ||
+        ref.read(authSessionProvider).identity?.id != expectedManagerId) {
       return;
     }
-    final controller = ref.read(creatorParticipationProvider.notifier);
-    if (accept) {
-      await controller.accept(
-        expectedCreatorId: expectedCreatorId,
-        projectId: widget.projectId,
-        requestId: request.id,
-      );
-    } else {
-      await controller.reject(
-        expectedCreatorId: expectedCreatorId,
-        projectId: widget.projectId,
-        requestId: request.id,
-      );
+    await showJoinAcceptanceTriageSheet(
+      context,
+      expectedManagerProfileId: expectedManagerId,
+      requestId: request.id,
+      projectId: widget.projectId,
+      projectKind: widget.projectKind,
+      requesterDisplayName: request.requesterDisplayName,
+    );
+    if (!mounted ||
+        ref.read(authSessionProvider).identity?.id != expectedManagerId) {
+      return;
     }
+    await ref
+        .read(creatorParticipationProvider.notifier)
+        .load(expectedManagerId, widget.projectId);
   }
 
-  Future<void> _confirmRemove(CreatorProjectMember member) async {
+  Future<void> _reject(ManagerProjectJoinRequest request) async {
+    final expectedManagerId = _expectedManagerId;
+    if (expectedManagerId == null ||
+        ref.read(authSessionProvider).identity?.id != expectedManagerId) {
+      return;
+    }
+    await ref
+        .read(creatorParticipationProvider.notifier)
+        .reject(
+          expectedManagerId: expectedManagerId,
+          projectId: widget.projectId,
+          requestId: request.id,
+          requesterProfileId: request.requesterProfileId,
+        );
+  }
+
+  Future<void> _confirmRemove(ManagerProjectMember member) async {
     final l10n = AppLocalizations.of(context);
     final confirmed = await showDialog<bool>(
       context: context,
@@ -187,35 +282,72 @@ class _CreatorParticipationScreenState
       ),
     );
     if (confirmed != true || !mounted) return;
-    final expectedCreatorId = _expectedCreatorId;
-    if (expectedCreatorId == null ||
-        ref.read(authSessionProvider).identity?.id != expectedCreatorId) {
+    final expectedManagerId = _expectedManagerId;
+    if (expectedManagerId == null ||
+        ref.read(authSessionProvider).identity?.id != expectedManagerId) {
       return;
     }
     await ref
         .read(creatorParticipationProvider.notifier)
         .remove(
-          expectedCreatorId: expectedCreatorId,
+          expectedManagerId: expectedManagerId,
           projectId: widget.projectId,
           membershipId: member.id,
+          participantProfileId: member.participantProfileId,
         );
+  }
+
+  Future<void> _openCommitments(ManagerProjectMember member) async {
+    final expectedManagerId = _expectedManagerId;
+    if (expectedManagerId == null ||
+        ref.read(authSessionProvider).identity?.id != expectedManagerId) {
+      return;
+    }
+    await showMembershipCommitmentSheet(
+      context,
+      expectedProfileId: expectedManagerId,
+      membershipId: member.id,
+      editable: member.isCurrent,
+      historical: !member.isCurrent,
+    );
+  }
+
+  Future<void> _openActualContributions(ManagerProjectMember member) async {
+    final expectedManagerId = _expectedManagerId;
+    if (expectedManagerId == null ||
+        ref.read(authSessionProvider).identity?.id != expectedManagerId) {
+      return;
+    }
+    await showActualContributionSheet(
+      context,
+      expectedProfileId: expectedManagerId,
+      membershipId: member.id,
+      editable: true,
+      participantDisplayName: member.participantDisplayName,
+    );
   }
 }
 
 class _RequestCard extends StatelessWidget {
   const _RequestCard({
     required this.request,
+    required this.photoEntry,
     required this.enabled,
+    required this.acceptEnabled,
     required this.isActing,
     required this.onAccept,
     required this.onReject,
+    required this.onBlockingChanged,
   });
 
-  final CreatorProjectJoinRequest request;
+  final ManagerProjectJoinRequest request;
+  final VisibleProfilePhotoEntry? photoEntry;
   final bool enabled;
+  final bool acceptEnabled;
   final bool isActing;
   final VoidCallback onAccept;
   final VoidCallback onReject;
+  final Future<void> Function() onBlockingChanged;
 
   @override
   Widget build(BuildContext context) {
@@ -227,9 +359,32 @@ class _RequestCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text(
-              request.requesterDisplayName,
-              style: Theme.of(context).textTheme.titleMedium,
+            Row(
+              children: [
+                VisibleProfilePhotoAvatar(
+                  entry: photoEntry,
+                  imageSemanticsLabel: l10n.profilePhotoApplicantAvatarLabel,
+                  placeholderSemanticsLabel:
+                      l10n.profilePhotoApplicantAvatarLabel,
+                ),
+                const SizedBox(width: AppSpacing.medium),
+                Expanded(
+                  child: Text(
+                    request.requesterDisplayName,
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                ),
+                BlockingActionButton(
+                  targetProfileId: request.requesterProfileId,
+                  targetDisplayName: request.requesterDisplayName,
+                  consequence: request.isPending
+                      ? BlockingContextConsequence.pendingRequest
+                      : BlockingContextConsequence.none,
+                  buttonKey: Key('participation-block-${request.id}'),
+                  compact: true,
+                  onChanged: (_) => onBlockingChanged(),
+                ),
+              ],
             ),
             const SizedBox(height: AppSpacing.xSmall),
             Text(_requestStatusLabel(l10n, request.status)),
@@ -260,7 +415,7 @@ class _RequestCard extends StatelessWidget {
                   Expanded(
                     child: FilledButton(
                       key: Key('participation-accept-${request.id}'),
-                      onPressed: enabled ? onAccept : null,
+                      onPressed: acceptEnabled ? onAccept : null,
                       child: isActing
                           ? const SizedBox.square(
                               dimension: 18,
@@ -284,13 +439,19 @@ class _MemberCard extends StatelessWidget {
     required this.member,
     required this.enabled,
     required this.isActing,
+    required this.onCommitments,
+    required this.onActualContributions,
     required this.onRemove,
+    required this.onBlockingChanged,
   });
 
-  final CreatorProjectMember member;
+  final ManagerProjectMember member;
   final bool enabled;
   final bool isActing;
-  final VoidCallback onRemove;
+  final VoidCallback onCommitments;
+  final VoidCallback? onActualContributions;
+  final VoidCallback? onRemove;
+  final Future<void> Function() onBlockingChanged;
 
   @override
   Widget build(BuildContext context) {
@@ -302,17 +463,69 @@ class _MemberCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text(
-              member.participantDisplayName,
-              style: Theme.of(context).textTheme.titleMedium,
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    member.participantDisplayName,
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                ),
+                BlockingActionButton(
+                  targetProfileId: member.participantProfileId,
+                  targetDisplayName: member.participantDisplayName,
+                  consequence: member.isCurrent
+                      ? BlockingContextConsequence.projectMember
+                      : BlockingContextConsequence.none,
+                  buttonKey: Key('participation-member-block-${member.id}'),
+                  compact: true,
+                  onChanged: (_) => onBlockingChanged(),
+                ),
+              ],
             ),
             const SizedBox(height: AppSpacing.xSmall),
             Text(_membershipStatusLabel(l10n, member.status)),
             Text(
               l10n.participationJoinedAt(_formatDate(context, member.joinedAt)),
             ),
-            if (member.isCurrent) ...[
-              const SizedBox(height: AppSpacing.medium),
+            const SizedBox(height: AppSpacing.medium),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton.icon(
+                    key: Key('participation-commitments-${member.id}'),
+                    onPressed: enabled ? onCommitments : null,
+                    icon: const Icon(Icons.checklist_outlined),
+                    label: Text(
+                      member.isCurrent
+                          ? l10n.participationCommitments
+                          : l10n.participationViewCommitments,
+                      maxLines: 2,
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                ),
+                if (onActualContributions case final action?) ...[
+                  const SizedBox(width: AppSpacing.small),
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      key: Key(
+                        'participation-actual-contributions-${member.id}',
+                      ),
+                      onPressed: enabled ? action : null,
+                      icon: const Icon(Icons.fact_check_outlined),
+                      label: Text(
+                        l10n.actualContributionsAction,
+                        maxLines: 2,
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+            if (member.isCurrent && onRemove != null) ...[
+              const SizedBox(height: AppSpacing.small),
               OutlinedButton.icon(
                 key: Key('participation-remove-${member.id}'),
                 onPressed: enabled ? onRemove : null,

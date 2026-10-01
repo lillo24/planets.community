@@ -4,18 +4,29 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/theme/app_tokens.dart';
+import '../../../core/widgets/async_data_presentation.dart';
 import '../../../core/widgets/error_state.dart';
 import '../../../core/widgets/loading_state.dart';
 import '../../../devtools/demo/demo_widgets.dart';
+import '../../../core/widgets/tag_multi_select.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../auth/application/auth_session_controller.dart';
+import '../../profile_photo/application/profile_photo_controller.dart';
+import '../../profile_photo/presentation/profile_photo_section.dart';
 import '../application/profile_controller.dart';
 import '../domain/profile_models.dart';
 
 class ProfileEditScreen extends ConsumerStatefulWidget {
-  const ProfileEditScreen({this.returnTo = '/profile', super.key});
+  const ProfileEditScreen({
+    this.returnTo = '/profile',
+    this.returnByPop = false,
+    this.cancelTo = '/profile',
+    super.key,
+  });
 
   final String returnTo;
+  final bool returnByPop;
+  final String cancelTo;
 
   @override
   ConsumerState<ProfileEditScreen> createState() => _ProfileEditScreenState();
@@ -34,7 +45,18 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
     final userId = ref.read(authSessionProvider).identity?.id;
     if (userId != null && _requestedUserId != userId) {
       _requestedUserId = userId;
-      await ref.read(profileProvider.notifier).load(userId);
+      await Future.wait([
+        ref.read(profileProvider.notifier).load(userId),
+        ref.read(profilePhotoProvider.notifier).load(userId),
+      ]);
+    }
+  }
+
+  void _cancel() {
+    if (widget.returnByPop && context.canPop()) {
+      context.pop();
+    } else {
+      context.go(widget.cancelTo);
     }
   }
 
@@ -50,31 +72,53 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
     }
     if (identity != null && data != null) {
       return _ProfileEditForm(
-        key: ValueKey('${identity.id}:${widget.returnTo}'),
+        key: ValueKey(
+          '${identity.id}:${widget.returnTo}:${widget.cancelTo}:${widget.returnByPop}',
+        ),
         data: data,
         identityId: identity.id,
         returnTo: widget.returnTo,
+        returnByPop: widget.returnByPop,
+        cancelTo: widget.cancelTo,
       );
     }
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          data?.profile.isComplete == true
-              ? l10n.profileEditTitle
-              : l10n.profileSetupTitle,
+    final presentation = classifyAsyncDataPresentation(
+      hasData: data != null,
+      isPending:
+          state.phase == ProfilePhase.idle ||
+          state.phase == ProfilePhase.loading,
+      hasFailed: state.phase == ProfilePhase.failure,
+    );
+
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) _cancel();
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          leading: BackButton(
+            key: const Key('profile-cancel-button'),
+            onPressed: _cancel,
+          ),
+          title: Text(
+            data?.profile.isComplete == true
+                ? l10n.profileEditTitle
+                : l10n.profileSetupTitle,
+          ),
         ),
-      ),
-      body: SafeArea(
-        child: identity == null
-            ? const SizedBox.shrink()
-            : data == null && state.phase == ProfilePhase.loading
-            ? LoadingState(message: l10n.profileLoading)
-            : ErrorState(
-                message: l10n.profileLoadError,
-                onRetry: () =>
-                    ref.read(profileProvider.notifier).load(identity.id),
-              ),
+        body: SafeArea(
+          child: identity == null
+              ? const SizedBox.shrink()
+              : presentation == AsyncDataPresentation.loading
+              ? LoadingState(message: l10n.profileLoading)
+              : ErrorState(
+                  message: l10n.profileLoadError,
+                  onRetry: () =>
+                      ref.read(profileProvider.notifier).load(identity.id),
+                ),
+        ),
       ),
     );
   }
@@ -85,12 +129,16 @@ class _ProfileEditForm extends ConsumerStatefulWidget {
     required this.data,
     required this.identityId,
     required this.returnTo,
+    required this.returnByPop,
+    required this.cancelTo,
     super.key,
   });
 
   final ProfileEditorData data;
   final String identityId;
   final String returnTo;
+  final bool returnByPop;
+  final String cancelTo;
 
   @override
   ConsumerState<_ProfileEditForm> createState() => _ProfileEditFormState();
@@ -142,7 +190,19 @@ class _ProfileEditFormState extends ConsumerState<_ProfileEditForm> {
           ),
         );
     if (saved && mounted) {
-      context.go(widget.returnTo);
+      if (widget.returnByPop && context.canPop()) {
+        context.pop();
+      } else {
+        context.go(widget.returnTo);
+      }
+    }
+  }
+
+  void _cancel() {
+    if (widget.returnByPop && context.canPop()) {
+      context.pop();
+    } else {
+      context.go(widget.cancelTo);
     }
   }
 
@@ -152,174 +212,182 @@ class _ProfileEditFormState extends ConsumerState<_ProfileEditForm> {
     final state = ref.watch(profileProvider);
     final error = state.failure;
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          widget.data.profile.isComplete
-              ? l10n.profileEditTitle
-              : l10n.profileSetupTitle,
-        ),
-        actions: [
-          TextButton(
-            key: const Key('profile-save-button'),
-            onPressed: state.isBusy ? null : _save,
-            child: state.phase == ProfilePhase.saving
-                ? SizedBox.square(
-                    dimension: 20,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      semanticsLabel: l10n.profileSaveAction,
-                    ),
-                  )
-                : Text(l10n.profileSaveAction),
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) _cancel();
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          leading: BackButton(
+            key: const Key('profile-cancel-button'),
+            onPressed: _cancel,
           ),
-        ],
-      ),
-      body: SafeArea(
-        child: Column(
-          children: [
-            if (error != null && error != ProfileFailureKind.invalidInput)
-              Padding(
-                padding: const EdgeInsets.all(AppSpacing.small),
-                child: Semantics(
-                  liveRegion: true,
-                  child: Text(
-                    l10n.profileSaveError,
-                    key: const Key('profile-safe-error'),
-                    style: TextStyle(
-                      color: Theme.of(context).colorScheme.error,
+          title: Text(
+            widget.data.profile.isComplete
+                ? l10n.profileEditTitle
+                : l10n.profileSetupTitle,
+          ),
+          actions: [
+            TextButton(
+              key: const Key('profile-save-button'),
+              onPressed: state.isBusy ? null : _save,
+              child: state.phase == ProfilePhase.saving
+                  ? SizedBox.square(
+                      dimension: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        semanticsLabel: l10n.profileSaveAction,
+                      ),
+                    )
+                  : Text(l10n.profileSaveAction),
+            ),
+          ],
+        ),
+        body: SafeArea(
+          child: Column(
+            children: [
+              if (error != null && error != ProfileFailureKind.invalidInput)
+                Padding(
+                  padding: const EdgeInsets.all(AppSpacing.small),
+                  child: Semantics(
+                    liveRegion: true,
+                    child: Text(
+                      l10n.profileSaveError,
+                      key: const Key('profile-safe-error'),
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.error,
+                      ),
                     ),
                   ),
                 ),
-              ),
-            Expanded(
-              child: Center(
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.all(AppSpacing.large),
-                  child: ConstrainedBox(
-                    constraints: const BoxConstraints(
-                      maxWidth: AppBreakpoints.compact,
-                    ),
-                    child: Form(
-                      key: _formKey,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          Align(
-                            alignment: Alignment.centerLeft,
-                            child: DemoFillSampleAction(
-                              buttonKey: const Key('profile-fill-sample'),
-                              onPressed: state.isBusy ? null : _fillSample,
-                            ),
-                          ),
-                          Text(
-                            widget.data.profile.isComplete
-                                ? l10n.profileEditDescription
-                                : l10n.profileSetupDescription,
-                          ),
-                          const SizedBox(height: AppSpacing.large),
-                          TextFormField(
-                            key: const Key('profile-display-name-field'),
-                            controller: _displayNameController,
-                            enabled: !state.isBusy,
-                            maxLength: 60,
-                            textInputAction: TextInputAction.next,
-                            decoration: InputDecoration(
-                              labelText: l10n.profileDisplayNameLabel,
-                            ),
-                            validator: (value) =>
-                                isValidDisplayName(value ?? '')
-                                ? null
-                                : l10n.profileDisplayNameError,
-                          ),
-                          const SizedBox(height: AppSpacing.medium),
-                          TextFormField(
-                            key: const Key('profile-bio-field'),
-                            controller: _bioController,
-                            enabled: !state.isBusy,
-                            maxLength: 500,
-                            maxLengthEnforcement: MaxLengthEnforcement.none,
-                            maxLines: 5,
-                            decoration: InputDecoration(
-                              labelText: l10n.profileBioLabel,
-                              hintText: l10n.profileBioHint,
-                              alignLabelWithHint: true,
-                            ),
-                            validator: (value) => isValidBio(value ?? '')
-                                ? null
-                                : l10n.profileBioError,
-                          ),
-                          const SizedBox(height: AppSpacing.large),
-                          Text(
-                            l10n.profileSkillsTitle,
-                            style: Theme.of(context).textTheme.titleLarge,
-                          ),
-                          const SizedBox(height: AppSpacing.xSmall),
-                          Text(l10n.profileSkillsDescription),
-                          const SizedBox(height: AppSpacing.medium),
-                          for (final category in widget.data.categories) ...[
-                            Text(
-                              category.label,
-                              style: Theme.of(context).textTheme.titleMedium,
-                            ),
-                            for (final skill in category.skills)
-                              CheckboxListTile(
-                                key: Key('profile-skill-${skill.slug}'),
-                                contentPadding: EdgeInsets.zero,
-                                controlAffinity:
-                                    ListTileControlAffinity.leading,
-                                title: Text(skill.label),
-                                value: _selectedSkillIds.contains(skill.id),
-                                onChanged: state.isBusy
-                                    ? null
-                                    : (selected) {
-                                        setState(() {
-                                          if (selected ?? false) {
-                                            _selectedSkillIds.add(skill.id);
-                                          } else {
-                                            _selectedSkillIds.remove(skill.id);
-                                          }
-                                        });
-                                      },
+              Expanded(
+                child: Center(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.all(AppSpacing.large),
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(
+                        maxWidth: AppBreakpoints.compact,
+                      ),
+                      child: Form(
+                        key: _formKey,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            Align(
+                              alignment: Alignment.centerLeft,
+                              child: DemoFillSampleAction(
+                                buttonKey: const Key('profile-fill-sample'),
+                                onPressed: state.isBusy ? null : _fillSample,
                               ),
+                            ),
+                            ProfilePhotoSection(profileId: widget.identityId),
+                            const SizedBox(height: AppSpacing.large),
+                            Text(
+                              widget.data.profile.isComplete
+                                  ? l10n.profileEditDescription
+                                  : l10n.profileSetupDescription,
+                            ),
+                            const SizedBox(height: AppSpacing.large),
+                            TextFormField(
+                              key: const Key('profile-display-name-field'),
+                              controller: _displayNameController,
+                              enabled: !state.isBusy,
+                              maxLength: 60,
+                              textInputAction: TextInputAction.next,
+                              decoration: InputDecoration(
+                                labelText: l10n.profileDisplayNameLabel,
+                              ),
+                              validator: (value) =>
+                                  isValidDisplayName(value ?? '')
+                                  ? null
+                                  : l10n.profileDisplayNameError,
+                            ),
                             const SizedBox(height: AppSpacing.medium),
+                            TextFormField(
+                              key: const Key('profile-bio-field'),
+                              controller: _bioController,
+                              enabled: !state.isBusy,
+                              maxLength: 500,
+                              maxLengthEnforcement: MaxLengthEnforcement.none,
+                              maxLines: 5,
+                              decoration: InputDecoration(
+                                labelText: l10n.profileBioLabel,
+                                hintText: l10n.profileBioHint,
+                                alignLabelWithHint: true,
+                              ),
+                              validator: (value) => isValidBio(value ?? '')
+                                  ? null
+                                  : l10n.profileBioError,
+                            ),
+                            const SizedBox(height: AppSpacing.large),
+                            Text(l10n.profileSkillsDescription),
+                            const SizedBox(height: AppSpacing.medium),
+                            TagMultiSelect(
+                              label: l10n.profileSkillsTitle,
+                              emptyLabel: l10n.skillSelectorPlaceholder,
+                              categories: [
+                                for (final category in widget.data.categories)
+                                  TagMultiSelectCategory(
+                                    id: category.slug,
+                                    label: category.label,
+                                    options: [
+                                      for (final skill in category.skills)
+                                        TagMultiSelectOption(
+                                          id: skill.id,
+                                          label: skill.label,
+                                          keyValue: skill.slug,
+                                        ),
+                                    ],
+                                  ),
+                              ],
+                              selectedIds: _selectedSkillIds,
+                              enabled: !state.isBusy,
+                              keyPrefix: 'profile-skills',
+                              onChanged: (selection) => setState(() {
+                                _selectedSkillIds
+                                  ..clear()
+                                  ..addAll(selection);
+                              }),
+                            ),
+                            const SizedBox(height: AppSpacing.large),
+                            Text(
+                              l10n.profileVisibilityTitle,
+                              style: Theme.of(context).textTheme.titleLarge,
+                            ),
+                            const SizedBox(height: AppSpacing.xSmall),
+                            Text(l10n.profileVisibilityDescription),
+                            const SizedBox(height: AppSpacing.medium),
+                            _VisibilityControl(
+                              fieldKey: ProfileFieldKey.displayName,
+                              label: l10n.profileDisplayNameLabel,
+                              value: _visibility[ProfileFieldKey.displayName]!,
+                              enabled: !state.isBusy,
+                              onChanged: _setVisibility,
+                            ),
+                            _VisibilityControl(
+                              fieldKey: ProfileFieldKey.bio,
+                              label: l10n.profileBioLabel,
+                              value: _visibility[ProfileFieldKey.bio]!,
+                              enabled: !state.isBusy,
+                              onChanged: _setVisibility,
+                            ),
+                            _VisibilityControl(
+                              fieldKey: ProfileFieldKey.skills,
+                              label: l10n.profileSkillsTitle,
+                              value: _visibility[ProfileFieldKey.skills]!,
+                              enabled: !state.isBusy,
+                              onChanged: _setVisibility,
+                            ),
                           ],
-                          Text(
-                            l10n.profileVisibilityTitle,
-                            style: Theme.of(context).textTheme.titleLarge,
-                          ),
-                          const SizedBox(height: AppSpacing.xSmall),
-                          Text(l10n.profileVisibilityDescription),
-                          const SizedBox(height: AppSpacing.medium),
-                          _VisibilityControl(
-                            fieldKey: ProfileFieldKey.displayName,
-                            label: l10n.profileDisplayNameLabel,
-                            value: _visibility[ProfileFieldKey.displayName]!,
-                            enabled: !state.isBusy,
-                            onChanged: _setVisibility,
-                          ),
-                          _VisibilityControl(
-                            fieldKey: ProfileFieldKey.bio,
-                            label: l10n.profileBioLabel,
-                            value: _visibility[ProfileFieldKey.bio]!,
-                            enabled: !state.isBusy,
-                            onChanged: _setVisibility,
-                          ),
-                          _VisibilityControl(
-                            fieldKey: ProfileFieldKey.skills,
-                            label: l10n.profileSkillsTitle,
-                            value: _visibility[ProfileFieldKey.skills]!,
-                            enabled: !state.isBusy,
-                            onChanged: _setVisibility,
-                          ),
-                        ],
+                        ),
                       ),
                     ),
                   ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

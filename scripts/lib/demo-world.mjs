@@ -1,59 +1,243 @@
+import { readFile } from "node:fs/promises";
+import path from "node:path";
+
 import postgres from "postgres";
 import { createClient } from "@supabase/supabase-js";
 
 import { signInLocalOtpUser } from "./local-authenticated-user.mjs";
+import { ensureLocalProfilePhoto } from "./local-profile-photo.mjs";
 
 const DEMO_LOCK_ID = 684026240991817n;
-const DEMO_PREFIX = "DEMO · ";
+const COVER_BUCKET = "cover-images";
+const TRENTO_ADMINISTRATIVE_AREA = "Provincia autonoma di Trento";
+const LEGACY_CHAT_BODIES = deepFreeze([
+  "Welcome! I will bring the sketch and washable markers.",
+  "Great — I can photograph the wall and help with the color plan.",
+  "Perfect. We will confirm materials here before the meetup.",
+]);
 
 export const DEMO_PERSONAS = deepFreeze({
   alice: {
     email: "demo-alice@planets.invalid",
-    displayName: "Demo Alice",
-    bio: "Community organizer who turns local ideas into welcoming projects.",
+    displayName: "Giulia",
+    bio: "Mi piace trasformare idee di quartiere in progetti semplici da fare insieme.",
     skillSlugs: ["event-organization", "facilitation", "mural-painting"],
+    profileAsset: "giulia.webp",
+    profileVersion: "d0100000-0000-4000-8000-000000000001",
   },
   bob: {
     email: "demo-bob@planets.invalid",
-    displayName: "Demo Bob",
-    bio: "Practical participant interested in repairs, making, and technology.",
+    displayName: "Marco",
+    bio: "Mi piace aggiustare cose, lavorare con il legno e dare una mano nei progetti pratici.",
     skillSlugs: ["basic-repairs", "programming", "woodworking"],
+    profileAsset: "marco.webp",
+    profileVersion: "d0100000-0000-4000-8000-000000000002",
   },
   carla: {
     email: "demo-carla@planets.invalid",
-    displayName: "Demo Carla",
-    bio: "Creative neighbor who enjoys music, photography, and facilitation.",
+    displayName: "Sara",
+    bio: "Fotografia, musica e attività creative: soprattutto quando diventano occasioni per conoscere persone.",
     skillSlugs: ["facilitation", "musician", "photography"],
+    profileAsset: "sara.webp",
+    profileVersion: "d0100000-0000-4000-8000-000000000003",
   },
 });
 
-export const DEMO_SCENARIO_KEYS = deepFreeze({
+export const DEMO_SCENARIOS = deepFreeze({
   proposals: {
-    mural: `${DEMO_PREFIX}Riverside mural`,
-    repairCafe: `${DEMO_PREFIX}Repair café`,
-    concert: `${DEMO_PREFIX}Courtyard concert`,
+    mural: {
+      key: "mural",
+      ownerKey: "alice",
+      legacyTitle: "DEMO · Riverside mural",
+      title: "Coloriamo insieme il muro del sottopasso",
+      summary:
+        "Un pomeriggio per ridare colore al sottopasso con un murale progettato insieme.",
+      description:
+        "Partiamo da una bozza semplice, prepariamo il muro e poi dipingiamo insieme.\nNon serve essere illustratori: servono anche mani per nastro, colori, pulizia e foto.",
+      location: {
+        countryCode: "IT",
+        locality: "Trento",
+        administrativeArea: TRENTO_ADMINISTRATIVE_AREA,
+        publicLabel: "Trento · Povo",
+        exactMeetingText:
+          "Cortile privato vicino a Povo — dettagli nel gruppo dei partecipanti",
+        exactLocationVisibility: "participants",
+      },
+      coverAsset: "mural.webp",
+      coverVersion: "d0200000-0000-4000-8000-000000000001",
+      skillSlugs: ["mural-painting", "event-organization"],
+      skillImportances: ["required", "useful"],
+    },
+    repairCafe: {
+      key: "repairCafe",
+      ownerKey: "alice",
+      legacyTitle: "DEMO · Repair café",
+      title: "Repair Café: aggiustiamo piccoli oggetti insieme",
+      summary:
+        "Porta un piccolo oggetto da riparare oppure vieni a dare una mano al banco.",
+      description:
+        "Ci concentriamo su lampade, piccoli elettrodomestici e oggetti in legno che si possono controllare in sicurezza. Non è un servizio professionale: proviamo insieme a capire il problema e, quando possibile, a fare una piccola riparazione.",
+      location: {
+        countryCode: "IT",
+        locality: "Trento",
+        administrativeArea: TRENTO_ADMINISTRATIVE_AREA,
+        publicLabel: "Trento · San Martino",
+        exactMeetingText: "Sala laboratorio del centro civico di San Martino",
+        exactLocationVisibility: "public",
+      },
+      coverAsset: "repair-cafe.webp",
+      coverVersion: "d0200000-0000-4000-8000-000000000002",
+      skillSlugs: ["basic-repairs", "woodworking"],
+      skillImportances: ["required", "useful"],
+    },
+    concert: {
+      key: "concert",
+      ownerKey: "alice",
+      legacyTitle: "DEMO · Courtyard concert",
+      title: "Concerto acustico nel cortile",
+      summary:
+        "Un piccolo concerto di quartiere con strumenti acustici e qualche sedia portata da casa.",
+      description:
+        "Prepariamo un set breve con chitarra, percussioni leggere e voci. Chi viene può portare una sedia, aiutare con l'audio o semplicemente fermarsi ad ascoltare.",
+      location: {
+        countryCode: "IT",
+        locality: "Trento",
+        administrativeArea: TRENTO_ADMINISTRATIVE_AREA,
+        publicLabel: "Trento · Le Albere",
+        exactMeetingText: "Cortile pubblico nel quartiere Le Albere",
+        exactLocationVisibility: "public",
+      },
+      coverAsset: "acoustic-concert.webp",
+      coverVersion: "d0200000-0000-4000-8000-000000000003",
+      skillSlugs: ["musician", "audio-sound-setup"],
+      skillImportances: ["required", "useful"],
+    },
   },
   tavoli: {
-    weekly: `${DEMO_PREFIX}Weekly community table`,
-    monthly: `${DEMO_PREFIX}Monthly makers table`,
-    paused: `${DEMO_PREFIX}Paused reading table`,
+    weekly: {
+      key: "weekly",
+      ownerKey: "alice",
+      legacyTitle: "DEMO · Weekly community table",
+      title: "Idee per il quartiere — tavolo del mercoledì",
+      summary:
+        "Un incontro settimanale per trasformare piccole idee locali in cose da fare davvero.",
+      description:
+        "Porta un'idea concreta, ascolta quelle degli altri e scegliamo insieme un piccolo passo da fare prima dell'incontro successivo.",
+      topic: "Progetti di quartiere",
+      location: {
+        countryCode: "IT",
+        locality: "Trento",
+        administrativeArea: TRENTO_ADMINISTRATIVE_AREA,
+        publicLabel: "Trento · Centro",
+        exactMeetingText:
+          "Sala riservata del centro di quartiere — dettagli nel gruppo dei partecipanti",
+        exactLocationVisibility: "participants",
+      },
+      coverAsset: "weekly-community-table.webp",
+      coverVersion: "d0200000-0000-4000-8000-000000000004",
+    },
+    monthly: {
+      key: "monthly",
+      ownerKey: "alice",
+      legacyTitle: "DEMO · Monthly makers table",
+      title: "Laboratorio aperto: legno e piccole riparazioni",
+      summary:
+        "Una mattina al mese per condividere attrezzi, tecniche e lavori lasciati a metà.",
+      description:
+        "Portiamo piccoli lavori in legno e oggetti da sistemare, condividiamo gli attrezzi disponibili e ci aiutiamo senza sostituirci a un servizio professionale.",
+      topic: "Fare e riparare",
+      location: {
+        countryCode: "IT",
+        locality: "Trento",
+        administrativeArea: TRENTO_ADMINISTRATIVE_AREA,
+        publicLabel: "Trento · San Martino",
+        exactMeetingText: "Laboratorio condiviso del quartiere San Martino",
+        exactLocationVisibility: "public",
+      },
+      coverAsset: "makers-table.webp",
+      coverVersion: "d0200000-0000-4000-8000-000000000005",
+    },
+    paused: {
+      key: "paused",
+      ownerKey: "alice",
+      legacyTitle: "DEMO · Paused reading table",
+      title: "Gruppo di lettura del sabato",
+      summary:
+        "Un incontro tranquillo per leggere e discutere insieme, in pausa finché non troviamo un nuovo facilitatore.",
+      description:
+        "Scegliamo un testo breve alla volta e lasciamo spazio a opinioni diverse. Il gruppo resta in pausa finché qualcuno non potrà facilitare con continuità.",
+      topic: "Lettura e discussione",
+      location: {
+        countryCode: "IT",
+        locality: "Trento",
+        administrativeArea: TRENTO_ADMINISTRATIVE_AREA,
+        publicLabel: "Trento · Centro",
+        exactMeetingText: "Sala lettura di quartiere in centro a Trento",
+        exactLocationVisibility: "public",
+      },
+      coverAsset: "reading-group.webp",
+      coverVersion: "d0200000-0000-4000-8000-000000000006",
+    },
   },
   listings: {
-    donate: `${DEMO_PREFIX}Community garden tools`,
-    exchange: `${DEMO_PREFIX}Folding tables for a skill swap`,
-    closed: `${DEMO_PREFIX}Seedling trays (claimed)`,
+    donate: {
+      key: "donate",
+      ownerKey: "alice",
+      legacyTitle: "DEMO · Community garden tools",
+      title: "Regalo attrezzi da giardinaggio",
+      listingMode: "donate",
+      description:
+        "Un rastrello, due palette e due annaffiatoi che non uso più. Preferirei darli a qualcuno che li userà per un orto o un giardino condiviso.",
+      location: {
+        countryCode: "IT",
+        locality: "Trento",
+        administrativeArea: TRENTO_ADMINISTRATIVE_AREA,
+        publicLabel: "Trento · Povo",
+      },
+      coverAsset: "garden-tools.webp",
+      coverVersion: "d0200000-0000-4000-8000-000000000007",
+    },
+    exchange: {
+      key: "exchange",
+      ownerKey: "bob",
+      legacyTitle: "DEMO · Folding tables for a skill swap",
+      title: "Scambio due tavoli pieghevoli per aiuto con una mensola",
+      listingMode: "exchange",
+      description:
+        "Ho due tavoli pieghevoli in buono stato. Li scambio volentieri con una mano per sistemare e fissare una mensola in legno.",
+      location: {
+        countryCode: "IT",
+        locality: "Trento",
+        administrativeArea: TRENTO_ADMINISTRATIVE_AREA,
+        publicLabel: "Trento · San Martino",
+      },
+      coverAsset: "folding-tables.webp",
+      coverVersion: "d0200000-0000-4000-8000-000000000008",
+    },
+    closed: {
+      key: "closed",
+      ownerKey: "carla",
+      legacyTitle: "DEMO · Seedling trays (claimed)",
+      title: "Vassoi per piantine — già assegnati",
+      listingMode: "donate",
+      description:
+        "Vassoi riutilizzabili da semina. Questo annuncio resta nel demo come esempio di inserzione chiusa.",
+      location: {
+        countryCode: "IT",
+        locality: "Trento",
+        administrativeArea: TRENTO_ADMINISTRATIVE_AREA,
+        publicLabel: "Trento · Le Albere",
+      },
+      coverAsset: "seedling-trays.webp",
+      coverVersion: "d0200000-0000-4000-8000-000000000009",
+    },
   },
   chatBodies: [
-    "Welcome! I will bring the sketch and washable markers.",
-    "Great — I can photograph the wall and help with the color plan.",
-    "Perfect. We will confirm materials here before the meetup.",
+    "Ho preparato una bozza del murale e porto nastro e pennarelli per decidere i colori.",
+    "Io posso fare qualche foto del muro prima di iniziare e dare una mano con la composizione.",
+    "Perfetto. Domani confermiamo qui materiali e orario così arriviamo già organizzati.",
   ],
 });
-
-const RESTRICTED_MURAL_MEETING =
-  "Synthetic restricted meeting point beside the demo riverside gate";
-const RESTRICTED_WEEKLY_MEETING =
-  "Synthetic restricted room inside the demo community center";
 
 export function assertSafeLocalDemoTarget({
   environment = "local",
@@ -176,15 +360,22 @@ export async function seedLocalDemoWorld({
       serviceClient,
     });
     const times = buildDemoTimes(now);
+    await migrateLegacyDemoWorld(context);
     const scenario = await bringDemoWorldToDesiredState(context, times);
     await projectNotificationOutbox(serviceClient);
     await verifyDemoWorldState(context, scenario, times);
 
     return Object.freeze({
       personas: Object.values(DEMO_PERSONAS).map((persona) => persona.email),
-      proposals: Object.values(DEMO_SCENARIO_KEYS.proposals),
-      tavoli: Object.values(DEMO_SCENARIO_KEYS.tavoli),
-      listings: Object.values(DEMO_SCENARIO_KEYS.listings),
+      proposals: Object.values(DEMO_SCENARIOS.proposals).map(
+        (scenarioDefinition) => scenarioDefinition.title,
+      ),
+      tavoli: Object.values(DEMO_SCENARIOS.tavoli).map(
+        (scenarioDefinition) => scenarioDefinition.title,
+      ),
+      listings: Object.values(DEMO_SCENARIOS.listings).map(
+        (scenarioDefinition) => scenarioDefinition.title,
+      ),
     });
   } finally {
     if (lockAcquired) {
@@ -282,6 +473,22 @@ async function createAuthenticatedContext({
       ),
     );
     await Promise.all(
+      Object.entries(personas).map(([key, user]) => {
+        const definition = DEMO_PERSONAS[key];
+        return ensureLocalProfilePhoto(user, {
+          audience: "interactions",
+          fixturePath: path.join(
+            repositoryRoot,
+            "scripts",
+            "demo-assets",
+            "profiles",
+            definition.profileAsset,
+          ),
+          fixtureVersion: definition.profileVersion,
+        });
+      }),
+    );
+    await Promise.all(
       Object.values(personas).map((user) =>
         ensureDemoNotificationPreferences(user),
       ),
@@ -355,59 +562,344 @@ async function ensureDemoNotificationPreferences(user) {
   );
 }
 
+async function migrateLegacyDemoWorld(context) {
+  const groups = [
+    ["proposal", Object.values(DEMO_SCENARIOS.proposals)],
+    ["tavolo", Object.values(DEMO_SCENARIOS.tavoli)],
+    ["listing", Object.values(DEMO_SCENARIOS.listings)],
+  ];
+  let muralId = null;
+
+  for (const [kind, definitions] of groups) {
+    for (const definition of definitions) {
+      const owner = context.personas[definition.ownerKey];
+      const candidates = [definition.legacyTitle, definition.title];
+      let rows;
+      if (kind === "proposal") {
+        rows = await context.sql`
+          select proposal.id, proposal.title, proposal.lifecycle_state,
+                 cover.object_path as cover_object_path
+          from public.proposals as proposal
+          left join public.project_covers as cover
+            on cover.project_id = proposal.id
+          where proposal.creator_profile_id = ${owner.id}
+            and proposal.title = any(${candidates}::text[])
+        `;
+      } else if (kind === "tavolo") {
+        rows = await context.sql`
+          select activity.id, activity.title, activity.lifecycle_state,
+                 cover.object_path as cover_object_path
+          from public.recurring_activities as activity
+          left join public.project_covers as cover
+            on cover.project_id = activity.id
+          where activity.creator_profile_id = ${owner.id}
+            and activity.title = any(${candidates}::text[])
+        `;
+      } else {
+        rows = await context.sql`
+          select listing.id, listing.title, listing.lifecycle_state,
+                 cover.object_path as cover_object_path
+          from public.resource_listings as listing
+          left join public.resource_listing_covers as cover
+            on cover.listing_id = listing.id
+          where listing.owner_profile_id = ${owner.id}
+            and listing.title = any(${candidates}::text[])
+        `;
+      }
+
+      assertAtMostOne(rows, `${definition.legacyTitle} / ${definition.title}`);
+      const existing = rows[0];
+      if (!existing) continue;
+
+      if (existing.title === definition.legacyTitle) {
+        if (kind === "proposal") {
+          await context.sql`
+            update public.proposals
+            set title = ${definition.title}
+            where id = ${existing.id}
+              and creator_profile_id = ${owner.id}
+              and title = ${definition.legacyTitle}
+          `;
+        } else if (kind === "tavolo") {
+          await context.sql`
+            update public.recurring_activities
+            set title = ${definition.title}
+            where id = ${existing.id}
+              and creator_profile_id = ${owner.id}
+              and title = ${definition.legacyTitle}
+          `;
+        } else {
+          await context.sql`
+            update public.resource_listings
+            set title = ${definition.title}
+            where id = ${existing.id}
+              and owner_profile_id = ${owner.id}
+              and title = ${definition.legacyTitle}
+          `;
+        }
+      }
+
+      if (kind === "proposal" && definition.key === "mural") {
+        muralId = existing.id;
+      }
+      if (
+        kind === "listing" &&
+        definition.key === "closed" &&
+        existing.lifecycle_state === "closed" &&
+        existing.cover_object_path !==
+          expectedCoverObjectPath(owner.id, existing.id, definition, kind)
+      ) {
+        // A terminal legacy demo listing predates cover media and cannot be
+        // repaired through the owner RPC. Re-open only this exact demo row to
+        // its prior published state, then let normal APIs set its cover and
+        // close it again without changing its canonical ID.
+        await context.sql`
+          update public.resource_listings
+          set lifecycle_state = 'published',
+              closed_at = null
+          where id = ${existing.id}
+            and owner_profile_id = ${owner.id}
+            and lifecycle_state = 'closed'
+        `;
+      }
+    }
+  }
+
+  if (muralId) {
+    const [chat] = await context.sql`
+      select id
+      from public.project_group_chats
+      where project_id = ${muralId}
+    `;
+    if (chat) {
+      for (const [index, legacyBody] of LEGACY_CHAT_BODIES.entries()) {
+        const currentBody = DEMO_SCENARIOS.chatBodies[index];
+        const matchingMessages = await context.sql`
+          select id
+          from public.project_chat_messages
+          where chat_id = ${chat.id}
+            and body = any(${[legacyBody, currentBody]}::text[])
+        `;
+        assertAtMostOne(
+          matchingMessages,
+          `legacy demo chat message ${index + 1}`,
+        );
+      }
+      await context.sql.begin(async (transaction) => {
+        // Chat messages are intentionally immutable in production. Trusted
+        // local migration preserves their IDs (and notification references)
+        // while replacing only the three exact DEMO-B fixture bodies.
+        await transaction`set local session_replication_role = replica`;
+        for (const [index, legacyBody] of LEGACY_CHAT_BODIES.entries()) {
+          await transaction`
+            update public.project_chat_messages
+            set body = ${DEMO_SCENARIOS.chatBodies[index]}
+            where chat_id = ${chat.id}
+              and body = ${legacyBody}
+          `;
+        }
+      });
+    }
+  }
+}
+
+async function ensureProjectCover(context, owner, projectId, definition) {
+  return ensureCanonicalCover({
+    context,
+    owner,
+    parentId: projectId,
+    definition,
+    kind: "project",
+  });
+}
+
+async function ensureResourceCover(context, owner, listingId, definition) {
+  return ensureCanonicalCover({
+    context,
+    owner,
+    parentId: listingId,
+    definition,
+    kind: "listing",
+  });
+}
+
+async function ensureCanonicalCover({
+  context,
+  owner,
+  parentId,
+  definition,
+  kind,
+}) {
+  const isProject = kind === "project";
+  const objectPath = expectedCoverObjectPath(
+    owner.id,
+    parentId,
+    definition,
+    kind,
+  );
+  const readOperation = isProject
+    ? "get_own_project_cover"
+    : "get_own_resource_listing_cover";
+  const readParams = isProject
+    ? {
+        p_expected_creator_profile_id: owner.id,
+        p_project_id: parentId,
+      }
+    : {
+        p_expected_owner_profile_id: owner.id,
+        p_listing_id: parentId,
+      };
+  const { data: existing, error: readError } = await owner.client.rpc(
+    readOperation,
+    readParams,
+  );
+  if (readError || !Array.isArray(existing) || existing.length > 1) {
+    throw safeDatabaseFailure("read a demo canonical cover", readError ?? {});
+  }
+  if (existing[0]?.object_path === objectPath) {
+    await downloadCover(owner.client, objectPath, "verify a demo owner cover");
+    return objectPath;
+  }
+
+  let bytes;
+  try {
+    bytes = await readFile(
+      path.join(
+        context.repositoryRoot,
+        "scripts",
+        "demo-assets",
+        "covers",
+        definition.coverAsset,
+      ),
+    );
+  } catch (error) {
+    throw safeDatabaseFailure("read a vendored demo cover", error);
+  }
+
+  const { error: uploadError } = await owner.client.storage
+    .from(COVER_BUCKET)
+    .upload(objectPath, bytes, {
+      contentType: "image/webp",
+      upsert: false,
+    });
+  const uploadedNewObject = !uploadError;
+  if (uploadError && uploadError.code !== "KeyAlreadyExists") {
+    throw safeDatabaseFailure("upload a vendored demo cover", uploadError);
+  }
+
+  const commitOperation = isProject
+    ? "set_own_project_cover"
+    : "set_own_resource_listing_cover";
+  const commitParams = isProject
+    ? {
+        p_expected_creator_profile_id: owner.id,
+        p_project_id: parentId,
+        p_object_path: objectPath,
+      }
+    : {
+        p_expected_owner_profile_id: owner.id,
+        p_listing_id: parentId,
+        p_object_path: objectPath,
+      };
+  const { data: committed, error: commitError } = await owner.client.rpc(
+    commitOperation,
+    commitParams,
+  );
+  if (commitError || committed?.length !== 1) {
+    if (uploadedNewObject) {
+      await removeStorageObjectsBestEffort(owner.client, [objectPath]);
+    }
+    throw safeDatabaseFailure(
+      "commit a demo canonical cover",
+      commitError ?? {},
+    );
+  }
+  if (committed[0].current_object_path !== objectPath) {
+    throw new Error("Demo cover commit returned an unexpected canonical path.");
+  }
+  const replacedPath = committed[0].previous_object_path;
+  if (replacedPath && replacedPath !== objectPath) {
+    await removeStorageObjectsBestEffort(owner.client, [replacedPath]);
+  }
+  await downloadCover(owner.client, objectPath, "verify a demo owner cover");
+  return objectPath;
+}
+
+async function readExpectedResourceCover(owner, listingId, definition) {
+  const expectedPath = expectedCoverObjectPath(
+    owner.id,
+    listingId,
+    definition,
+    "listing",
+  );
+  const { data, error } = await owner.client.rpc(
+    "get_own_resource_listing_cover",
+    {
+      p_expected_owner_profile_id: owner.id,
+      p_listing_id: listingId,
+    },
+  );
+  if (error || data?.length !== 1 || data[0].object_path !== expectedPath) {
+    throw safeDatabaseFailure("read a closed demo listing cover", error ?? {});
+  }
+  await downloadCover(
+    owner.client,
+    expectedPath,
+    "verify a closed owner cover",
+  );
+  return expectedPath;
+}
+
+function expectedCoverObjectPath(ownerId, parentId, definition, kind) {
+  const folder = kind === "project" ? "projects" : "resources";
+  return `${ownerId}/${folder}/${parentId}/${definition.coverVersion}.webp`;
+}
+
+async function downloadCover(client, objectPath, action) {
+  const { data, error } = await client.storage
+    .from(COVER_BUCKET)
+    .download(objectPath);
+  if (error || !data || data.size < 1) {
+    throw safeDatabaseFailure(action, error ?? {});
+  }
+  return data;
+}
+
+async function removeStorageObjectsBestEffort(client, objectPaths) {
+  try {
+    await client.storage.from(COVER_BUCKET).remove(objectPaths);
+  } catch {
+    // The database commit is authoritative; orphan cleanup is retryable.
+  }
+}
+
 async function bringDemoWorldToDesiredState(context, times) {
   const { personas } = context;
   const mural = await ensureProposal(context, personas.alice, {
-    title: DEMO_SCENARIO_KEYS.proposals.mural,
-    summary: "Paint a bright riverside mural with neighbors.",
-    description:
-      "Plan the composition, prepare the wall, and paint a shared local story.",
+    ...DEMO_SCENARIOS.proposals.mural,
     startsAt: times.muralStartsAt,
     endsAt: times.muralEndsAt,
     initialStartsAt: times.muralStartsAt,
     initialEndsAt: times.muralEndsAt,
-    exactMeetingText: RESTRICTED_MURAL_MEETING,
-    exactLocationVisibility: "participants",
-    skillSlugs: ["mural-painting", "event-organization"],
-    skillImportances: ["required", "useful"],
   });
   const repairCafe = await ensureProposal(context, personas.alice, {
-    title: DEMO_SCENARIO_KEYS.proposals.repairCafe,
-    summary: "Repair household items together instead of throwing them away.",
-    description:
-      "Bring a small repairable object and share practical skills around a workbench.",
+    ...DEMO_SCENARIOS.proposals.repairCafe,
     startsAt: times.repairStartsAt,
     endsAt: times.repairEndsAt,
     initialStartsAt: times.repairStartsAt,
     initialEndsAt: times.repairEndsAt,
-    exactMeetingText: "Demo workshop, Via della Cooperazione 12",
-    exactLocationVisibility: "public",
-    skillSlugs: ["basic-repairs", "woodworking"],
-    skillImportances: ["required", "useful"],
   });
   const concert = await ensureProposal(context, personas.alice, {
-    title: DEMO_SCENARIO_KEYS.proposals.concert,
-    summary: "A recently finished neighborhood courtyard concert.",
-    description:
-      "A small acoustic set organized with local performers and neighbors.",
+    ...DEMO_SCENARIOS.proposals.concert,
     startsAt: times.concertStartsAt,
     endsAt: times.concertEndsAt,
     initialStartsAt: times.safeInitialHistoricalStartsAt,
     initialEndsAt: times.safeInitialHistoricalEndsAt,
-    exactMeetingText: "Demo civic courtyard, Piazza Aperta 4",
-    exactLocationVisibility: "public",
-    skillSlugs: ["musician", "audio-sound-setup"],
-    skillImportances: ["required", "useful"],
+    isHistorical: true,
   });
 
   const weekly = await ensureTavolo(context, personas.alice, {
-    title: DEMO_SCENARIO_KEYS.tavoli.weekly,
-    summary: "A weekly table for turning neighborhood ideas into action.",
-    description:
-      "Bring one practical idea, find collaborators, and agree on a small next step.",
-    topic: "Community projects",
-    exactMeetingText: RESTRICTED_WEEKLY_MEETING,
-    exactLocationVisibility: "participants",
+    ...DEMO_SCENARIOS.tavoli.weekly,
     recurrenceType: "weekly",
     weekday: 3,
     dayOfMonth: null,
@@ -417,13 +909,7 @@ async function bringDemoWorldToDesiredState(context, times) {
     lifecycle: "published",
   });
   const monthly = await ensureTavolo(context, personas.alice, {
-    title: DEMO_SCENARIO_KEYS.tavoli.monthly,
-    summary: "A monthly practical-making exchange.",
-    description:
-      "Share tools, explain a technique, and help someone finish a small project.",
-    topic: "Making and repair",
-    exactMeetingText: "Demo makers room, Via del Laboratorio 8",
-    exactLocationVisibility: "public",
+    ...DEMO_SCENARIOS.tavoli.monthly,
     recurrenceType: "monthly",
     weekday: null,
     dayOfMonth: 15,
@@ -433,13 +919,7 @@ async function bringDemoWorldToDesiredState(context, times) {
     lifecycle: "published",
   });
   const paused = await ensureTavolo(context, personas.alice, {
-    title: DEMO_SCENARIO_KEYS.tavoli.paused,
-    summary: "A reading table retained as a paused owner-history example.",
-    description:
-      "A calm discussion series that is paused until a new facilitator volunteers.",
-    topic: "Reading and discussion",
-    exactMeetingText: "Demo library room, Piazza dei Libri 2",
-    exactLocationVisibility: "public",
+    ...DEMO_SCENARIOS.tavoli.paused,
     recurrenceType: "weekly",
     weekday: 6,
     dayOfMonth: null,
@@ -455,14 +935,14 @@ async function bringDemoWorldToDesiredState(context, times) {
     personas.alice,
     mural.id,
     "pending",
-    "I can help prepare the wall and organize the materials.",
+    "Posso aiutare a preparare il muro e organizzare i materiali.",
   );
   const muralMembershipId = await ensureCurrentMembership(
     context,
     personas.carla,
     personas.alice,
     mural.id,
-    "I can help with photos, colors, and painting.",
+    "Posso occuparmi delle foto e dare una mano con colori e composizione.",
   );
   const repairRejectedRequestId = await ensureRequestState(
     context,
@@ -470,7 +950,7 @@ async function bringDemoWorldToDesiredState(context, times) {
     personas.alice,
     repairCafe.id,
     "rejected",
-    "I would like to lead the electrical repair station.",
+    "Mi piacerebbe occuparmi del banco delle riparazioni elettriche.",
   );
   const weeklyWithdrawnRequestId = await ensureRequestState(
     context,
@@ -478,7 +958,7 @@ async function bringDemoWorldToDesiredState(context, times) {
     personas.alice,
     weekly.id,
     "withdrawn",
-    "I may be able to join the weekly table.",
+    "Forse riesco a partecipare al tavolo del mercoledì.",
   );
   const chat = await ensureChatHistory(
     context,
@@ -488,24 +968,15 @@ async function bringDemoWorldToDesiredState(context, times) {
   );
 
   const donate = await ensureListing(context, personas.alice, {
-    title: DEMO_SCENARIO_KEYS.listings.donate,
-    listingMode: "donate",
-    description:
-      "A rake, hand trowels, and two watering cans ready for another community garden.",
+    ...DEMO_SCENARIOS.listings.donate,
     lifecycle: "published",
   });
   const exchange = await ensureListing(context, personas.bob, {
-    title: DEMO_SCENARIO_KEYS.listings.exchange,
-    listingMode: "exchange",
-    description:
-      "Two folding tables offered in exchange for help repairing a wooden shelf.",
+    ...DEMO_SCENARIOS.listings.exchange,
     lifecycle: "published",
   });
   const closed = await ensureListing(context, personas.carla, {
-    title: DEMO_SCENARIO_KEYS.listings.closed,
-    listingMode: "donate",
-    description:
-      "Reusable seedling trays retained as a closed owner-history example.",
+    ...DEMO_SCENARIOS.listings.closed,
     lifecycle: "closed",
   });
 
@@ -526,7 +997,7 @@ async function bringDemoWorldToDesiredState(context, times) {
 async function ensureProposal(context, creator, definition) {
   const { sql } = context;
   const rows = await sql`
-    select id, lifecycle_state
+    select id, lifecycle_state, starts_at
     from public.proposals
     where creator_profile_id = ${creator.id}
       and title = ${definition.title}
@@ -535,33 +1006,55 @@ async function ensureProposal(context, creator, definition) {
   let proposalId = rows[0]?.id;
   let lifecycleState = rows[0]?.lifecycle_state;
 
+  if (proposalId && definition.isHistorical && lifecycleState === "published") {
+    await sql`
+      update public.proposals
+      set starts_at = ${definition.initialStartsAt},
+          ends_at = ${definition.initialEndsAt}
+      where id = ${proposalId}
+    `;
+  }
+
+  const skillIds = await resolveSkillIds(creator.client, definition.skillSlugs);
+  const params = {
+    p_expected_creator_profile_id: creator.id,
+    p_title: definition.title,
+    p_summary: definition.summary,
+    p_description: definition.description,
+    p_starts_at: definition.isHistorical
+      ? definition.initialStartsAt
+      : definition.startsAt,
+    p_ends_at: definition.isHistorical
+      ? definition.initialEndsAt
+      : definition.endsAt,
+    p_event_timezone: "Europe/Rome",
+    p_country_code: definition.location.countryCode,
+    p_locality: definition.location.locality,
+    p_administrative_area: definition.location.administrativeArea,
+    p_public_location_label: definition.location.publicLabel,
+    p_exact_meeting_text: definition.location.exactMeetingText,
+    p_exact_location_visibility: definition.location.exactLocationVisibility,
+    p_skill_ids: skillIds,
+    p_skill_importances: definition.skillImportances,
+    p_people_capacity: definition.peopleCapacity ?? 20,
+  };
+
   if (!proposalId) {
-    const skillIds = await resolveSkillIds(
-      creator.client,
-      definition.skillSlugs,
+    const { data, error } = await creator.client.rpc(
+      "create_proposal_draft",
+      params,
     );
-    const { data, error } = await creator.client.rpc("create_proposal_draft", {
-      p_expected_creator_profile_id: creator.id,
-      p_title: definition.title,
-      p_summary: definition.summary,
-      p_description: definition.description,
-      p_starts_at: definition.initialStartsAt,
-      p_ends_at: definition.initialEndsAt,
-      p_event_timezone: "Europe/Rome",
-      p_country_code: "IT",
-      p_locality: "Trento",
-      p_administrative_area: "Povo",
-      p_public_location_label: "Trento · Povo",
-      p_exact_meeting_text: definition.exactMeetingText,
-      p_exact_location_visibility: definition.exactLocationVisibility,
-      p_skill_ids: skillIds,
-      p_skill_importances: definition.skillImportances,
-    });
     if (error || typeof data !== "string") {
       throw safeDatabaseFailure("create a demo Proposal", error ?? {});
     }
     proposalId = data;
     lifecycleState = "draft";
+  } else if (lifecycleState === "draft" || lifecycleState === "published") {
+    const { error } = await creator.client.rpc("update_own_proposal", {
+      ...params,
+      p_proposal_id: proposalId,
+    });
+    if (error) throw safeDatabaseFailure("update a demo Proposal", error);
   }
 
   if (lifecycleState === "cancelled") {
@@ -569,6 +1062,12 @@ async function ensureProposal(context, creator, definition) {
       `Demo-owned Proposal "${definition.title}" is cancelled; run \`npm run demo:reset:local\` to rebuild it.`,
     );
   }
+  const coverObjectPath = await ensureProjectCover(
+    context,
+    creator,
+    proposalId,
+    definition,
+  );
   if (lifecycleState === "draft") {
     const { error } = await creator.client.rpc("publish_proposal", {
       p_expected_creator_profile_id: creator.id,
@@ -583,7 +1082,7 @@ async function ensureProposal(context, creator, definition) {
         ends_at = ${definition.endsAt}
     where id = ${proposalId}
   `;
-  return { id: proposalId, title: definition.title };
+  return { id: proposalId, title: definition.title, coverObjectPath };
 }
 
 async function ensureTavolo(context, creator, definition) {
@@ -598,35 +1097,47 @@ async function ensureTavolo(context, creator, definition) {
   let tavoloId = rows[0]?.id;
   let lifecycleState = rows[0]?.lifecycle_state;
 
+  const params = {
+    p_expected_creator_profile_id: creator.id,
+    p_title: definition.title,
+    p_summary: definition.summary,
+    p_description: definition.description,
+    p_topic: definition.topic,
+    p_country_code: definition.location.countryCode,
+    p_locality: definition.location.locality,
+    p_administrative_area: definition.location.administrativeArea,
+    p_public_location_label: definition.location.publicLabel,
+    p_exact_meeting_text: definition.location.exactMeetingText,
+    p_exact_location_visibility: definition.location.exactLocationVisibility,
+    p_recurrence_type: definition.recurrenceType,
+    p_weekday: definition.weekday,
+    p_day_of_month: definition.dayOfMonth,
+    p_local_start_time: definition.localStartTime,
+    p_duration_minutes: definition.durationMinutes,
+    p_event_timezone: "Europe/Rome",
+    p_effective_from: definition.effectiveFrom,
+    p_people_capacity: definition.peopleCapacity ?? 20,
+  };
+
   if (!tavoloId) {
     const { data, error } = await creator.client.rpc(
       "create_recurring_activity_draft",
-      {
-        p_expected_creator_profile_id: creator.id,
-        p_title: definition.title,
-        p_summary: definition.summary,
-        p_description: definition.description,
-        p_topic: definition.topic,
-        p_country_code: "IT",
-        p_locality: "Trento",
-        p_administrative_area: "Povo",
-        p_public_location_label: "Trento · Povo",
-        p_exact_meeting_text: definition.exactMeetingText,
-        p_exact_location_visibility: definition.exactLocationVisibility,
-        p_recurrence_type: definition.recurrenceType,
-        p_weekday: definition.weekday,
-        p_day_of_month: definition.dayOfMonth,
-        p_local_start_time: definition.localStartTime,
-        p_duration_minutes: definition.durationMinutes,
-        p_event_timezone: "Europe/Rome",
-        p_effective_from: definition.effectiveFrom,
-      },
+      params,
     );
     if (error || typeof data !== "string") {
       throw safeDatabaseFailure("create a demo Tavolo", error ?? {});
     }
     tavoloId = data;
     lifecycleState = "draft";
+  } else if (["draft", "published", "paused"].includes(lifecycleState)) {
+    const { error } = await creator.client.rpc(
+      "update_own_recurring_activity",
+      {
+        ...params,
+        p_recurring_activity_id: tavoloId,
+      },
+    );
+    if (error) throw safeDatabaseFailure("update a demo Tavolo", error);
   }
 
   if (lifecycleState === "ended") {
@@ -634,6 +1145,12 @@ async function ensureTavolo(context, creator, definition) {
       `Demo-owned Tavolo "${definition.title}" is ended; run \`npm run demo:reset:local\` to rebuild it.`,
     );
   }
+  const coverObjectPath = await ensureProjectCover(
+    context,
+    creator,
+    tavoloId,
+    definition,
+  );
   if (lifecycleState === "draft") {
     await transitionTavolo(creator, "publish_recurring_activity", tavoloId);
     lifecycleState = "published";
@@ -646,7 +1163,7 @@ async function ensureTavolo(context, creator, definition) {
   ) {
     await transitionTavolo(creator, "resume_recurring_activity", tavoloId);
   }
-  return { id: tavoloId, title: definition.title };
+  return { id: tavoloId, title: definition.title, coverObjectPath };
 }
 
 async function transitionTavolo(user, operation, tavoloId) {
@@ -780,7 +1297,7 @@ async function ensureChatHistory(context, creator, participant, projectId) {
   }
   const chatId = data[0].chat_id;
   const senders = [creator, participant, creator];
-  for (const [index, body] of DEMO_SCENARIO_KEYS.chatBodies.entries()) {
+  for (const [index, body] of DEMO_SCENARIOS.chatBodies.entries()) {
     const existing = await context.sql`
       select id
       from public.project_chat_messages
@@ -824,10 +1341,10 @@ async function ensureListing(context, owner, definition) {
     p_listing_mode: definition.listingMode,
     p_title: definition.title,
     p_description: definition.description,
-    p_country_code: "IT",
-    p_locality: "Trento",
-    p_administrative_area: "Povo",
-    p_public_location_label: "Trento · Povo",
+    p_country_code: definition.location.countryCode,
+    p_locality: definition.location.locality,
+    p_administrative_area: definition.location.administrativeArea,
+    p_public_location_label: definition.location.publicLabel,
   };
   if (!listingId) {
     const { data, error } = await owner.client.rpc(
@@ -839,7 +1356,7 @@ async function ensureListing(context, owner, definition) {
     }
     listingId = data;
     lifecycleState = "draft";
-  } else if (lifecycleState === "draft") {
+  } else if (lifecycleState === "draft" || lifecycleState === "published") {
     const { error } = await owner.client.rpc("update_own_resource_listing", {
       ...params,
       p_listing_id: listingId,
@@ -847,6 +1364,20 @@ async function ensureListing(context, owner, definition) {
     if (error) throw safeDatabaseFailure("update a demo listing", error);
   }
 
+  if (lifecycleState === "closed") {
+    const coverObjectPath = await readExpectedResourceCover(
+      owner,
+      listingId,
+      definition,
+    );
+    return { id: listingId, title: definition.title, coverObjectPath };
+  }
+  const coverObjectPath = await ensureResourceCover(
+    context,
+    owner,
+    listingId,
+    definition,
+  );
   if (lifecycleState === "draft") {
     const { error } = await owner.client.rpc("publish_resource_listing", {
       p_expected_owner_profile_id: owner.id,
@@ -869,7 +1400,7 @@ async function ensureListing(context, owner, definition) {
       `Demo-owned listing "${definition.title}" is closed; run \`npm run demo:reset:local\` to rebuild it.`,
     );
   }
-  return { id: listingId, title: definition.title };
+  return { id: listingId, title: definition.title, coverObjectPath };
 }
 
 async function projectNotificationOutbox(serviceClient) {
@@ -890,28 +1421,70 @@ async function projectNotificationOutbox(serviceClient) {
 }
 
 async function resolveExistingScenario(context) {
-  const findProposal = (owner, title) =>
-    findOneByTitle(context.sql, "proposal", owner.id, title);
-  const findTavolo = (owner, title) =>
-    findOneByTitle(context.sql, "tavolo", owner.id, title);
-  const findListing = (owner, title) =>
-    findOneByTitle(context.sql, "listing", owner.id, title);
+  const findProposal = async (owner, definition) => {
+    const row = await findOneByTitle(
+      context.sql,
+      "proposal",
+      owner.id,
+      definition.title,
+    );
+    return {
+      ...row,
+      coverObjectPath: expectedCoverObjectPath(
+        owner.id,
+        row.id,
+        definition,
+        "project",
+      ),
+    };
+  };
+  const findTavolo = async (owner, definition) => {
+    const row = await findOneByTitle(
+      context.sql,
+      "tavolo",
+      owner.id,
+      definition.title,
+    );
+    return {
+      ...row,
+      coverObjectPath: expectedCoverObjectPath(
+        owner.id,
+        row.id,
+        definition,
+        "project",
+      ),
+    };
+  };
+  const findListing = async (owner, definition) => {
+    const row = await findOneByTitle(
+      context.sql,
+      "listing",
+      owner.id,
+      definition.title,
+    );
+    return {
+      ...row,
+      coverObjectPath: expectedCoverObjectPath(
+        owner.id,
+        row.id,
+        definition,
+        "listing",
+      ),
+    };
+  };
   const { alice, bob, carla } = context.personas;
-  const mural = await findProposal(alice, DEMO_SCENARIO_KEYS.proposals.mural);
+  const mural = await findProposal(alice, DEMO_SCENARIOS.proposals.mural);
   const repairCafe = await findProposal(
     alice,
-    DEMO_SCENARIO_KEYS.proposals.repairCafe,
+    DEMO_SCENARIOS.proposals.repairCafe,
   );
-  const concert = await findProposal(
-    alice,
-    DEMO_SCENARIO_KEYS.proposals.concert,
-  );
-  const weekly = await findTavolo(alice, DEMO_SCENARIO_KEYS.tavoli.weekly);
-  const monthly = await findTavolo(alice, DEMO_SCENARIO_KEYS.tavoli.monthly);
-  const paused = await findTavolo(alice, DEMO_SCENARIO_KEYS.tavoli.paused);
-  const donate = await findListing(alice, DEMO_SCENARIO_KEYS.listings.donate);
-  const exchange = await findListing(bob, DEMO_SCENARIO_KEYS.listings.exchange);
-  const closed = await findListing(carla, DEMO_SCENARIO_KEYS.listings.closed);
+  const concert = await findProposal(alice, DEMO_SCENARIOS.proposals.concert);
+  const weekly = await findTavolo(alice, DEMO_SCENARIOS.tavoli.weekly);
+  const monthly = await findTavolo(alice, DEMO_SCENARIOS.tavoli.monthly);
+  const paused = await findTavolo(alice, DEMO_SCENARIOS.tavoli.paused);
+  const donate = await findListing(alice, DEMO_SCENARIOS.listings.donate);
+  const exchange = await findListing(bob, DEMO_SCENARIOS.listings.exchange);
+  const closed = await findListing(carla, DEMO_SCENARIOS.listings.closed);
   const [chat] = await context.sql`
     select chat.id
     from public.project_group_chats as chat
@@ -929,16 +1502,109 @@ async function resolveExistingScenario(context) {
 async function verifyDemoWorldState(context, scenario, times) {
   const { personas, anonymous, sql } = context;
   const profileIds = [personas.alice.id, personas.bob.id, personas.carla.id];
-  const profileRows = await sql`
-    select id, display_name, bio
-    from public.profiles
-    where id = any(${profileIds}::uuid[])
-  `;
-  if (
-    profileRows.length !== 3 ||
-    profileRows.some((row) => !row.display_name || !row.bio)
-  ) {
+  const [profileRows, profilePhotoRows, scenarioRows, lifecycleRows] =
+    await Promise.all([
+      sql`
+        select id, display_name, bio
+        from public.profiles
+        where id = any(${profileIds}::uuid[])
+      `,
+      sql`
+        select profile_id, object_path, audience
+        from public.profile_photos
+        where profile_id = any(${profileIds}::uuid[])
+      `,
+      sql`
+        select 'proposal' as kind, creator_profile_id as owner_id, id, title
+        from public.proposals
+        where creator_profile_id = any(${profileIds}::uuid[])
+          and title = any(${knownDemoTitles()}::text[])
+        union all
+        select 'tavolo' as kind, creator_profile_id as owner_id, id, title
+        from public.recurring_activities
+        where creator_profile_id = any(${profileIds}::uuid[])
+          and title = any(${knownDemoTitles()}::text[])
+        union all
+        select 'listing' as kind, owner_profile_id as owner_id, id, title
+        from public.resource_listings
+        where owner_profile_id = any(${profileIds}::uuid[])
+          and title = any(${knownDemoTitles()}::text[])
+      `,
+      sql`
+        select 'proposal' as kind, id, lifecycle_state,
+               starts_at > statement_timestamp() as starts_in_future,
+               ends_at < statement_timestamp()
+                 and ends_at > statement_timestamp() - interval '24 hours'
+                 as recently_finished
+        from public.proposals
+        where id = any(${Object.values(scenario.proposals).map((row) => row.id)}::uuid[])
+        union all
+        select 'tavolo' as kind, id, lifecycle_state,
+               false as starts_in_future, false as recently_finished
+        from public.recurring_activities
+        where id = any(${Object.values(scenario.tavoli).map((row) => row.id)}::uuid[])
+        union all
+        select 'listing' as kind, id, lifecycle_state,
+               false as starts_in_future, false as recently_finished
+        from public.resource_listings
+        where id = any(${Object.values(scenario.listings).map((row) => row.id)}::uuid[])
+      `,
+    ]);
+  if (profileRows.length !== 3) {
     throw new Error("Demo personas do not have three complete profiles.");
+  }
+  for (const [key, user] of Object.entries(personas)) {
+    const definition = DEMO_PERSONAS[key];
+    const profile = profileRows.find((row) => row.id === user.id);
+    if (
+      profile?.display_name !== definition.displayName ||
+      profile?.bio !== definition.bio
+    ) {
+      throw new Error(`Demo persona ${key} does not match its canonical copy.`);
+    }
+    const photo = profilePhotoRows.find((row) => row.profile_id === user.id);
+    const expectedPath = `${user.id}/${definition.profileVersion}.webp`;
+    if (
+      photo?.object_path !== expectedPath ||
+      photo?.audience !== "interactions"
+    ) {
+      throw new Error(`Demo persona ${key} lacks its canonical profile photo.`);
+    }
+    const { data, error } = await user.client.storage
+      .from("profile-photos")
+      .download(expectedPath);
+    if (error || !data || data.size < 1) {
+      throw safeDatabaseFailure("download a demo profile photo", error ?? {});
+    }
+  }
+
+  const expectedDefinitions = allScenarioDefinitions();
+  if (
+    scenarioRows.length !== expectedDefinitions.length ||
+    scenarioRows.some((row) => row.title.startsWith("DEMO ·")) ||
+    expectedDefinitions.some(
+      (definition) =>
+        scenarioRows.filter((row) => row.title === definition.title).length !==
+        1,
+    )
+  ) {
+    throw new Error(
+      "Demo scenario reconciliation left a missing, duplicate, or legacy-titled row.",
+    );
+  }
+  const stateById = new Map(lifecycleRows.map((row) => [row.id, row]));
+  if (
+    !stateById.get(scenario.proposals.mural.id)?.starts_in_future ||
+    !stateById.get(scenario.proposals.repairCafe.id)?.starts_in_future ||
+    !stateById.get(scenario.proposals.concert.id)?.recently_finished ||
+    stateById.get(scenario.proposals.concert.id)?.lifecycle_state !==
+      "published" ||
+    stateById.get(scenario.tavoli.paused.id)?.lifecycle_state !== "paused" ||
+    stateById.get(scenario.listings.closed.id)?.lifecycle_state !== "closed"
+  ) {
+    throw new Error(
+      "Demo historical, paused, or closed lifecycle state drifted.",
+    );
   }
 
   const [
@@ -948,6 +1614,10 @@ async function verifyDemoWorldState(context, scenario, times) {
     bobNotifications,
     chatHistory,
     listings,
+    publicMural,
+    publicWeekly,
+    publicDonate,
+    ownerClosed,
   ] = await Promise.all([
     anonymous.rpc("list_public_proposals", {
       p_limit: 20,
@@ -990,6 +1660,21 @@ async function verifyDemoWorldState(context, scenario, times) {
       p_locality: "Trento",
       p_query: null,
     }),
+    anonymous.rpc("get_public_proposal", {
+      p_proposal_id: scenario.proposals.mural.id,
+    }),
+    anonymous.rpc("get_public_recurring_activity", {
+      p_recurring_activity_id: scenario.tavoli.weekly.id,
+      p_occurrence_limit: 3,
+      p_reference_time: times.anchor,
+    }),
+    anonymous.rpc("get_public_resource_listing", {
+      p_listing_id: scenario.listings.donate.id,
+    }),
+    personas.carla.client.rpc("get_own_resource_listing", {
+      p_expected_owner_profile_id: personas.carla.id,
+      p_listing_id: scenario.listings.closed.id,
+    }),
   ]);
   const results = [
     proposalList,
@@ -998,6 +1683,10 @@ async function verifyDemoWorldState(context, scenario, times) {
     bobNotifications,
     chatHistory,
     listings,
+    publicMural,
+    publicWeekly,
+    publicDonate,
+    ownerClosed,
   ];
   if (results.some((result) => result.error || !Array.isArray(result.data))) {
     const failed = results.find((result) => result.error);
@@ -1015,6 +1704,12 @@ async function verifyDemoWorldState(context, scenario, times) {
   ) {
     throw new Error("Expected demo Proposals were missing from discovery.");
   }
+  assertReadModelCovers(
+    proposalList.data,
+    "proposal_id",
+    Object.values(scenario.proposals),
+    "Proposal discovery",
+  );
   const tavoloIds = new Set(
     tavoloList.data.map((row) => row.recurring_activity_id),
   );
@@ -1024,6 +1719,12 @@ async function verifyDemoWorldState(context, scenario, times) {
   ) {
     throw new Error("Expected active demo Tavoli were missing from discovery.");
   }
+  assertReadModelCovers(
+    tavoloList.data,
+    "recurring_activity_id",
+    [scenario.tavoli.weekly, scenario.tavoli.monthly],
+    "Tavolo discovery",
+  );
   const messageStatuses = new Set(bobMessages.data.map((row) => row.status));
   if (
     !messageStatuses.has("pending") ||
@@ -1031,14 +1732,17 @@ async function verifyDemoWorldState(context, scenario, times) {
     !messageStatuses.has("withdrawn")
   ) {
     throw new Error(
-      "Bob's demo Messages do not cover the expected request states.",
+      "Marco's demo Messages do not cover the expected request states.",
     );
   }
   if (bobNotifications.data.length === 0) {
-    throw new Error("Projected demo notifications were missing for Bob.");
+    throw new Error("Projected demo notifications were missing for Marco.");
   }
   const chatBodies = new Set(chatHistory.data.map((row) => row.body));
-  if (DEMO_SCENARIO_KEYS.chatBodies.some((body) => !chatBodies.has(body))) {
+  if (
+    DEMO_SCENARIOS.chatBodies.some((body) => !chatBodies.has(body)) ||
+    LEGACY_CHAT_BODIES.some((body) => chatBodies.has(body))
+  ) {
     throw new Error("The demo Project chat history was incomplete.");
   }
   const listingIds = new Set(listings.data.map((row) => row.listing_id));
@@ -1049,18 +1753,109 @@ async function verifyDemoWorldState(context, scenario, times) {
   ) {
     throw new Error("Demo resource listing discovery was inconsistent.");
   }
+  assertReadModelCovers(
+    listings.data,
+    "listing_id",
+    [scenario.listings.donate, scenario.listings.exchange],
+    "Resource discovery",
+  );
+  if (
+    [...proposalList.data, ...tavoloList.data, ...listings.data].some((row) =>
+      row.title.startsWith("DEMO ·"),
+    )
+  ) {
+    throw new Error("Public demo discovery still exposes a technical title.");
+  }
 
-  const publicMural = await anonymous.rpc("get_public_proposal", {
-    p_proposal_id: scenario.proposals.mural.id,
-  });
   if (
     publicMural.error ||
     publicMural.data?.length !== 1 ||
+    publicMural.data[0].cover_object_path !==
+      scenario.proposals.mural.coverObjectPath ||
     publicMural.data[0].exact_meeting_text !== null ||
-    JSON.stringify(publicMural.data).includes(RESTRICTED_MURAL_MEETING)
+    JSON.stringify(publicMural.data).includes(
+      DEMO_SCENARIOS.proposals.mural.location.exactMeetingText,
+    )
   ) {
     throw new Error("The restricted demo Proposal exposed its exact location.");
   }
+  if (
+    publicWeekly.error ||
+    publicWeekly.data?.length !== 1 ||
+    publicWeekly.data[0].cover_object_path !==
+      scenario.tavoli.weekly.coverObjectPath ||
+    publicDonate.error ||
+    publicDonate.data?.length !== 1 ||
+    publicDonate.data[0].cover_object_path !==
+      scenario.listings.donate.coverObjectPath
+  ) {
+    throw new Error("A public demo detail omitted its canonical cover.");
+  }
+  if (
+    ownerClosed.error ||
+    ownerClosed.data?.length !== 1 ||
+    ownerClosed.data[0].lifecycle_state !== "closed" ||
+    ownerClosed.data[0].cover_object_path !==
+      scenario.listings.closed.coverObjectPath
+  ) {
+    throw new Error("The closed demo listing is missing from owner history.");
+  }
+
+  const projectCoverRows = await sql`
+    select project_id as id, object_path
+    from public.project_covers
+    where project_id = any(${Object.values(scenario.proposals)
+      .concat(Object.values(scenario.tavoli))
+      .map((row) => row.id)}::uuid[])
+  `;
+  const resourceCoverRows = await sql`
+    select listing_id as id, object_path
+    from public.resource_listing_covers
+    where listing_id = any(${Object.values(scenario.listings).map((row) => row.id)}::uuid[])
+  `;
+  const expectedCoverRows = [
+    ...Object.values(scenario.proposals),
+    ...Object.values(scenario.tavoli),
+    ...Object.values(scenario.listings),
+  ];
+  const canonicalCovers = new Map(
+    [...projectCoverRows, ...resourceCoverRows].map((row) => [
+      row.id,
+      row.object_path,
+    ]),
+  );
+  if (
+    canonicalCovers.size !== expectedCoverRows.length ||
+    expectedCoverRows.some(
+      (row) => canonicalCovers.get(row.id) !== row.coverObjectPath,
+    )
+  ) {
+    throw new Error("A demo entity lacks its deterministic canonical cover.");
+  }
+  for (const item of [
+    ...Object.values(scenario.proposals),
+    scenario.tavoli.weekly,
+    scenario.tavoli.monthly,
+    scenario.listings.donate,
+    scenario.listings.exchange,
+  ]) {
+    await downloadCover(
+      anonymous,
+      item.coverObjectPath,
+      "download a public demo cover anonymously",
+    );
+  }
+  const hiddenCover = await anonymous.storage
+    .from(COVER_BUCKET)
+    .download(scenario.listings.closed.coverObjectPath);
+  if (!hiddenCover.error) {
+    throw new Error("The closed demo Resource cover became publicly readable.");
+  }
+  await downloadCover(
+    personas.carla.client,
+    scenario.listings.closed.coverObjectPath,
+    "download the closed demo owner cover",
+  );
 
   const unauthorizedMeeting = await personas.bob.client.rpc(
     "get_project_participant_meeting_details",
@@ -1097,12 +1892,37 @@ async function verifyDemoWorldState(context, scenario, times) {
   );
   if (
     authorizedMeeting.error ||
-    authorizedMeeting.data?.[0]?.exact_meeting_text !== RESTRICTED_MURAL_MEETING
+    authorizedMeeting.data?.[0]?.exact_meeting_text !==
+      DEMO_SCENARIOS.proposals.mural.location.exactMeetingText
   ) {
     throw new Error(
       "The accepted demo participant lacks authorized meeting access.",
     );
   }
+}
+
+function assertReadModelCovers(rows, idField, expected, label) {
+  for (const item of expected) {
+    const row = rows.find((candidate) => candidate[idField] === item.id);
+    if (row?.cover_object_path !== item.coverObjectPath) {
+      throw new Error(`${label} omitted a deterministic canonical cover.`);
+    }
+  }
+}
+
+function allScenarioDefinitions() {
+  return [
+    ...Object.values(DEMO_SCENARIOS.proposals),
+    ...Object.values(DEMO_SCENARIOS.tavoli),
+    ...Object.values(DEMO_SCENARIOS.listings),
+  ];
+}
+
+function knownDemoTitles() {
+  return allScenarioDefinitions().flatMap((definition) => [
+    definition.legacyTitle,
+    definition.title,
+  ]);
 }
 
 async function findOneByTitle(sql, kind, ownerId, title) {

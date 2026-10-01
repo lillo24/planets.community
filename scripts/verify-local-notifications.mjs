@@ -2,6 +2,7 @@ import postgres from "postgres";
 import { createClient } from "@supabase/supabase-js";
 
 import { readLocalSupabaseStatus } from "./lib/local-supabase-status.mjs";
+import { ensureLocalProfilePhoto } from "./lib/local-profile-photo.mjs";
 
 const repositoryRoot = process.cwd();
 const mailpitUrl = (
@@ -42,6 +43,11 @@ async function verifyNotifications() {
     ensureCompleteProfile(requester, "Notification Requester"),
     ensureCompleteProfile(unrelated, "Notification Other"),
   ]);
+  await Promise.all(
+    [creator, requester, unrelated].map((user) =>
+      ensureLocalProfilePhoto(user),
+    ),
+  );
 
   const meetingSecret = "Protected notification integration courtyard";
   const requestSecret = "Private notification integration request";
@@ -394,6 +400,7 @@ async function createProposal(creator, exactMeetingText) {
     p_exact_location_visibility: "participants",
     p_skill_ids: [],
     p_skill_importances: [],
+    p_people_capacity: 20,
   });
   if (error || typeof data !== "string") {
     throw safeDatabaseFailure("create notification proposal", error ?? {});

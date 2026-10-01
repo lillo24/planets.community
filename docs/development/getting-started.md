@@ -83,10 +83,14 @@ With the committed default configuration, the main local endpoints are:
 
 To populate a coherent real-backend world for mobile QA, run
 `npm run demo:reset:local` after the stack starts. It creates three stable
-synthetic personas and connected Proposal, Tavolo, Messages, notification,
-Project-chat, and Scambio-Dona scenarios. See the
+synthetic personas (Giulia, Marco, and Sara) and connected realistic Italian
+Proposal, Tavolo, Messages, notification, Project-chat, and Scambio-Dona
+scenarios. Vendored profile/cover WebP fixtures make the seed fully offline
+after checkout, while authenticated Storage/RPC paths exercise normal media
+authorization. See the
 [local demo-data guide](demo-data.md) for the non-destructive seed command,
-persona emails, Mailpit sign-in, safety boundary, and clean-reset path.
+persona emails, media provenance, Mailpit sign-in, safety boundary, legacy
+title adoption, and clean-reset path.
 
 Local Auth uses a PLANETS numeric-code template at `supabase/templates/magic_link.html`. Despite Supabase's template category name, it includes `{{ .Token }}` and deliberately omits `{{ .ConfirmationURL }}`, so the mobile and web flows do not require a magic-link or deep-link callback. Local codes are six digits and expire after one hour. Restart the local stack after changing Auth configuration or templates.
 
@@ -124,7 +128,7 @@ npm run proposal:verify:local
 
 This creates private drafts, rejects cross-user and stale-identity mutation, publishes restricted and public-location proposals, verifies sanitized list/detail behavior and controlled skills, then confirms cancellation removes a proposal from normal discovery. It does not print credentials, OTPs, session tokens, or restricted meeting values.
 
-After generating web configuration and building the web application, the companion web check obtains its cookie state through `@supabase/ssr`, requests the running Next.js application, and proves the Server Component sees the authenticated session while `/admin` remains 404:
+After generating web configuration and building the web application, the companion web check obtains its cookie state through `@supabase/ssr`, requests the running Next.js application, and proves the Server Component sees the authenticated session while `/admin` remains 404 for the ordinary test user:
 
 ```text
 npm run web:config:local
@@ -140,7 +144,7 @@ interaction.
 
 For a manual mobile check, run the app, choose **Sign in**, enter a non-personal test address, and open the local email viewer at `http://127.0.0.1:54324`. Confirm the newest message shows a six-digit code and no sign-in link, paste the code into the app, and confirm a skeletal account is taken to profile setup. Save a mixed-visibility profile with categorized skills, reopen and edit it, restart the app to check completed-profile restoration, verify `/` remains public after sign-out, and confirm a signed-out `/profile` return resumes safely after sign-in. Then verify signed-out proposal browse/detail, each temporal badge, restricted/public exact-location copy, filtering and pagination; sign in with a complete profile and exercise create/save draft/restore/edit/publish/cancel/my-proposals, including disabled post-start editing and a cross-account stale-form switch. This native interaction is a manual QA step; the integration command verifies the backend behavior only.
 
-For a manual web check, open `/profile` while signed out and confirm the return goes through `/auth`. Request and paste the newest local six-digit code, complete and edit the categorized profile form, exercise public/private choices, refresh `/profile` to confirm persistence, then sign out and confirm `/` remains public. Check `/proposals` and an exact-ID detail signed out, including locality/skill filters, pagination, Just Finished styling, and both exact-location privacy modes. Then check the home links and Proposal/Tavoli switcher, `/tavoli` locality filtering and More Tavoli cursor, active weekly/monthly details, named-zone times, both exact-location modes, paused/ended historical detail, 404 behavior, narrow layout, and rendered source privacy. Refreshing during code entry intentionally returns to email entry because pending email/code state is memory-only. `/admin` must return 404 both before and after sign-in.
+For a manual web check, open `/profile` while signed out and confirm the return goes through `/auth`. Request and paste the newest local six-digit code, complete and edit the categorized profile form, exercise public/private choices, refresh `/profile` to confirm persistence, then sign out and confirm `/` remains public. Check `/proposals` and an exact-ID detail signed out, including locality/skill filters, pagination, Just Finished styling, and both exact-location privacy modes. Then check the home links and Proposal/Tavoli switcher, `/tavoli` locality filtering and More Tavoli cursor, active weekly/monthly details, named-zone times, both exact-location modes, paused/ended historical detail, 404 behavior, narrow layout, and rendered source privacy. Refreshing during code entry intentionally returns to email entry because pending email/code state is memory-only. `/admin` must return 404 while signed out and for an ordinary signed-in user; an active moderation staff member sees the case queue and can open case details, add internal notes, and perform review-state transitions.
 
 Stop the containers when finished:
 
@@ -206,7 +210,7 @@ coherent demo records remain the responsibility of the separate DEMO-B plan.
 
 The mobile Auth feature does not log or report email addresses, OTPs, or session tokens. Its 30-second resend countdown is only a UI convenience; Supabase Auth remains authoritative for request and verification limits.
 
-Flutter localization source is `apps/mobile/lib/l10n/app_en.arb`. Generated Dart files are ignored and must not be edited. `npm run restore:mobile`, `npm run mobile:l10n`, and CI run `flutter gen-l10n` deterministically before analysis/tests.
+Flutter localization uses `apps/mobile/lib/l10n/app_en.arb` as the English template and fallback plus `app_it.arb` for Italian. Device/app locale resolution is automatic; unsupported locales resolve to English. Generated Dart files are ignored and must not be edited. `npm run restore:mobile`, `npm run mobile:l10n`, and CI run `flutter gen-l10n` deterministically before analysis/tests.
 
 ## Web configuration
 
@@ -278,7 +282,7 @@ npm run web:config:local
 npm run dev:web
 ```
 
-Open `http://localhost:3000`. The root stays public and shows minimal session status; `/auth` provides numeric email-OTP sign-in; `/profile` provides authenticated basic profile setup/editing; `/proposals` and `/proposals/[id]` provide signed-out read-only one-time proposal discovery; `/tavoli` and `/tavoli/[id]` provide separate signed-out recurring-activity discovery. Pending email/code values remain only in memory, and server-rendered session state uses cookie-backed Supabase SSR with verified claims. The request Proxy only refreshes and propagates session cookies. `/admin` intentionally returns 404 even for an ordinary authenticated user until a later plan defines admin authorization.
+Open `http://localhost:3000`. The root stays public and shows minimal session status; `/auth` provides numeric email-OTP sign-in; `/profile` provides authenticated basic profile setup/editing; `/proposals` and `/proposals/[id]` provide signed-out read-only one-time proposal discovery; `/tavoli` and `/tavoli/[id]` provide separate signed-out recurring-activity discovery. Pending email/code values remain only in memory, and server-rendered session state uses cookie-backed Supabase SSR with verified claims. The request Proxy only refreshes and propagates session cookies. `/admin` remains hidden with a 404 for signed-out and ordinary authenticated users, while active moderation staff can use the server-rendered case queue and case-detail workflow.
 
 With an Android emulator, iOS Simulator, or physical device available, start Flutter:
 
@@ -293,6 +297,12 @@ npm run dev:mobile:clean
 ```
 
 Use `flutter devices` to inspect available devices. iOS builds require macOS/Xcode; Android builds require a configured Android SDK.
+
+For a physical Android device using the default local `127.0.0.1:54321`
+backend, establish `adb reverse tcp:54321 tcp:54321` before launch. A USB/device
+reconnect can drop that tunnel, so run the command again before restarting the
+app; widespread local request failures with a lost device connection are not by
+themselves evidence of a product retry regression.
 
 ## Validate and format
 

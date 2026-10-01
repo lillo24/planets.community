@@ -7,6 +7,7 @@ import '../../participation/application/participation_controllers.dart';
 import '../../project_chat/application/project_chat_refresh.dart';
 import '../data/messages_gateway.dart';
 import '../domain/message_models.dart';
+import 'message_chats_refresh.dart';
 
 const messagesPageSize = 20;
 
@@ -25,7 +26,7 @@ class MessagesInboxState {
 
   final MessagesInboxPhase phase;
   final String? expectedProfileId;
-  final List<ParticipationRequestMessageItem> items;
+  final List<StructuredRequestMessageItem> items;
   final bool hasMore;
   final MessagesFailureKind? failure;
 
@@ -114,17 +115,18 @@ class MessagesInboxController extends Notifier<MessagesInboxState> {
             limit: messagesPageSize,
             cursor: MessageCursor(
               activityAt: last.activityAt,
+              itemKind: last.kind,
               requestId: last.requestId,
             ),
           );
       if (!_isCurrent(revision, expectedProfileId)) return false;
-      final knownIds = existing.map((item) => item.requestId).toSet();
+      final knownIds = existing.map((item) => item.compositeId).toSet();
       state = MessagesInboxState(
         phase: MessagesInboxPhase.ready,
         expectedProfileId: expectedProfileId,
         items: List.unmodifiable([
           ...existing,
-          ...page.items.where((item) => knownIds.add(item.requestId)),
+          ...page.items.where((item) => knownIds.add(item.compositeId)),
         ]),
         hasMore: page.hasMore,
       );
@@ -161,9 +163,11 @@ final messagesInboxProvider =
       MessagesInboxController.new,
     );
 
-enum MessageAction { accepting, rejecting, withdrawing }
+enum MessageAction { rejecting, withdrawing }
 
 enum MessagesDetailPhase { idle, loading, ready, failure }
+
+enum MessagesSelectionPhase { idle, loading, ready, failure }
 
 class MessagesDetailState {
   const MessagesDetailState({
@@ -171,6 +175,9 @@ class MessagesDetailState {
     this.expectedProfileId,
     this.requestId,
     this.item,
+    this.selectionPhase = MessagesSelectionPhase.idle,
+    this.selections = const [],
+    this.selectionFailure,
     this.action,
     this.failure,
   });
@@ -179,6 +186,9 @@ class MessagesDetailState {
   final String? expectedProfileId;
   final String? requestId;
   final ParticipationRequestMessageItem? item;
+  final MessagesSelectionPhase selectionPhase;
+  final List<RequestContributionSelection> selections;
+  final MessagesFailureKind? selectionFailure;
   final MessageAction? action;
   final MessagesFailureKind? failure;
 
@@ -214,19 +224,64 @@ class MessagesDetailController extends Notifier<MessagesDetailState> {
       expectedProfileId: expectedProfileId,
       requestId: requestId,
       item: preserve ? state.item : null,
+      selectionPhase: preserve
+          ? state.selectionPhase
+          : MessagesSelectionPhase.idle,
+      selections: preserve ? state.selections : const [],
+      selectionFailure: preserve ? state.selectionFailure : null,
     );
     try {
       _requireReadyIdentity(expectedProfileId);
-      final item = await ref
+      final structuredItem = await ref
           .read(messagesGatewayProvider)
-          .getItem(expectedProfileId: expectedProfileId, requestId: requestId);
+          .getItem(
+            expectedProfileId: expectedProfileId,
+            itemKind: StructuredRequestItemKind.participationRequest,
+            requestId: requestId,
+          );
+      if (structuredItem is! ParticipationRequestMessageItem) {
+        throw const FormatException(
+          'Project request route returned another request kind.',
+        );
+      }
+      final item = structuredItem;
       if (!_isCurrent(revision, expectedProfileId, requestId)) return false;
       state = MessagesDetailState(
         phase: MessagesDetailPhase.ready,
         expectedProfileId: expectedProfileId,
         requestId: requestId,
         item: item,
+        selectionPhase: MessagesSelectionPhase.loading,
+        selections: preserve ? state.selections : const [],
       );
+      try {
+        final selections = await ref
+            .read(messagesGatewayProvider)
+            .listContributionSelections(
+              expectedProfileId: expectedProfileId,
+              requestId: requestId,
+            );
+        if (!_isCurrent(revision, expectedProfileId, requestId)) return false;
+        state = MessagesDetailState(
+          phase: MessagesDetailPhase.ready,
+          expectedProfileId: expectedProfileId,
+          requestId: requestId,
+          item: item,
+          selectionPhase: MessagesSelectionPhase.ready,
+          selections: List.unmodifiable(selections),
+        );
+      } catch (error) {
+        if (!_isCurrent(revision, expectedProfileId, requestId)) return false;
+        state = MessagesDetailState(
+          phase: MessagesDetailPhase.ready,
+          expectedProfileId: expectedProfileId,
+          requestId: requestId,
+          item: item,
+          selectionPhase: MessagesSelectionPhase.failure,
+          selections: preserve ? state.selections : const [],
+          selectionFailure: mapMessagesFailure(error),
+        );
+      }
       return true;
     } catch (error) {
       if (!_isCurrent(revision, expectedProfileId, requestId)) return false;
@@ -235,17 +290,65 @@ class MessagesDetailController extends Notifier<MessagesDetailState> {
         expectedProfileId: expectedProfileId,
         requestId: requestId,
         item: state.item,
+        selectionPhase: state.selectionPhase,
+        selections: state.selections,
+        selectionFailure: state.selectionFailure,
         failure: mapMessagesFailure(error),
       );
       return false;
     }
   }
 
-  Future<bool> accept() => _mutate(MessageAction.accepting);
-
   Future<bool> reject() => _mutate(MessageAction.rejecting);
 
   Future<bool> withdraw() => _mutate(MessageAction.withdrawing);
+
+  Future<bool> retryContributionSelections() async {
+    final item = state.item;
+    final profileId = state.expectedProfileId;
+    final requestId = state.requestId;
+    if (item == null || profileId == null || requestId == null) return false;
+    final revision = ++_revision;
+    state = MessagesDetailState(
+      phase: MessagesDetailPhase.ready,
+      expectedProfileId: profileId,
+      requestId: requestId,
+      item: item,
+      selectionPhase: MessagesSelectionPhase.loading,
+      selections: state.selections,
+    );
+    try {
+      _requireReadyIdentity(profileId);
+      final selections = await ref
+          .read(messagesGatewayProvider)
+          .listContributionSelections(
+            expectedProfileId: profileId,
+            requestId: requestId,
+          );
+      if (!_isCurrent(revision, profileId, requestId)) return false;
+      state = MessagesDetailState(
+        phase: MessagesDetailPhase.ready,
+        expectedProfileId: profileId,
+        requestId: requestId,
+        item: item,
+        selectionPhase: MessagesSelectionPhase.ready,
+        selections: List.unmodifiable(selections),
+      );
+      return true;
+    } catch (error) {
+      if (!_isCurrent(revision, profileId, requestId)) return false;
+      state = MessagesDetailState(
+        phase: MessagesDetailPhase.ready,
+        expectedProfileId: profileId,
+        requestId: requestId,
+        item: item,
+        selectionPhase: MessagesSelectionPhase.failure,
+        selections: state.selections,
+        selectionFailure: mapMessagesFailure(error),
+      );
+      return false;
+    }
+  }
 
   Future<bool> _mutate(MessageAction action) async {
     final item = state.item;
@@ -265,20 +368,18 @@ class MessagesDetailController extends Notifier<MessagesDetailState> {
       expectedProfileId: profileId,
       requestId: requestId,
       item: item,
+      selectionPhase: state.selectionPhase,
+      selections: state.selections,
+      selectionFailure: state.selectionFailure,
       action: action,
     );
     try {
       _requireReadyIdentity(profileId);
       final gateway = ref.read(messagesGatewayProvider);
       switch (action) {
-        case MessageAction.accepting:
-          await gateway.accept(
-            expectedCreatorProfileId: profileId,
-            requestId: requestId,
-          );
         case MessageAction.rejecting:
           await gateway.reject(
-            expectedCreatorProfileId: profileId,
+            expectedManagerProfileId: profileId,
             requestId: requestId,
           );
         case MessageAction.withdrawing:
@@ -288,16 +389,26 @@ class MessagesDetailController extends Notifier<MessagesDetailState> {
           );
       }
       if (!_isCurrent(revision, profileId, requestId)) return false;
-      final canonical = await gateway.getItem(
+      final structuredCanonical = await gateway.getItem(
         expectedProfileId: profileId,
+        itemKind: StructuredRequestItemKind.participationRequest,
         requestId: requestId,
       );
+      if (structuredCanonical is! ParticipationRequestMessageItem) {
+        throw const FormatException(
+          'Project request mutation returned another request kind.',
+        );
+      }
+      final canonical = structuredCanonical;
       if (!_isCurrent(revision, profileId, requestId)) return false;
       state = MessagesDetailState(
         phase: MessagesDetailPhase.ready,
         expectedProfileId: profileId,
         requestId: requestId,
         item: canonical,
+        selectionPhase: state.selectionPhase,
+        selections: state.selections,
+        selectionFailure: state.selectionFailure,
       );
       await _synchronize(action, canonical, profileId);
       return _isCurrent(revision, profileId, requestId);
@@ -306,15 +417,28 @@ class MessagesDetailController extends Notifier<MessagesDetailState> {
       final failure = mapMessagesFailure(error);
       if (failure == MessagesFailureKind.conflict) {
         try {
-          final canonical = await ref
+          final structuredCanonical = await ref
               .read(messagesGatewayProvider)
-              .getItem(expectedProfileId: profileId, requestId: requestId);
+              .getItem(
+                expectedProfileId: profileId,
+                itemKind: StructuredRequestItemKind.participationRequest,
+                requestId: requestId,
+              );
+          if (structuredCanonical is! ParticipationRequestMessageItem) {
+            throw const FormatException(
+              'Project request conflict returned another request kind.',
+            );
+          }
+          final canonical = structuredCanonical;
           if (!_isCurrent(revision, profileId, requestId)) return false;
           state = MessagesDetailState(
             phase: MessagesDetailPhase.ready,
             expectedProfileId: profileId,
             requestId: requestId,
             item: canonical,
+            selectionPhase: state.selectionPhase,
+            selections: state.selections,
+            selectionFailure: state.selectionFailure,
             failure: failure,
           );
           await ref
@@ -330,6 +454,9 @@ class MessagesDetailController extends Notifier<MessagesDetailState> {
         expectedProfileId: profileId,
         requestId: requestId,
         item: item,
+        selectionPhase: state.selectionPhase,
+        selections: state.selections,
+        selectionFailure: state.selectionFailure,
         failure: failure,
       );
       return false;
@@ -340,8 +467,8 @@ class MessagesDetailController extends Notifier<MessagesDetailState> {
     ParticipationRequestMessageItem item,
     MessageAction action,
   ) => switch ((item.viewerRole, action)) {
-    (MessageViewerRole.creator, MessageAction.accepting) ||
     (MessageViewerRole.creator, MessageAction.rejecting) ||
+    (MessageViewerRole.delegate, MessageAction.rejecting) ||
     (MessageViewerRole.requester, MessageAction.withdrawing) => true,
     _ => false,
   };
@@ -351,9 +478,8 @@ class MessagesDetailController extends Notifier<MessagesDetailState> {
     ParticipationRequestMessageItem item,
     String profileId,
   ) async {
-    if (action == MessageAction.accepting) {
-      ref.read(projectChatRefreshProvider.notifier).notifyChanged();
-    }
+    ref.read(messageChatsRefreshProvider.notifier).notifyChanged();
+    ref.read(projectChatRefreshProvider.notifier).notifyChanged();
     await ref
         .read(messagesInboxProvider.notifier)
         .load(profileId, refresh: true);
@@ -362,12 +488,49 @@ class MessagesDetailController extends Notifier<MessagesDetailState> {
       return;
     }
     final creatorState = ref.read(creatorParticipationProvider);
-    if (creatorState.expectedCreatorId == profileId &&
+    if (creatorState.expectedManagerId == profileId &&
         creatorState.projectId == item.projectId) {
       await ref
           .read(creatorParticipationProvider.notifier)
           .load(profileId, item.projectId);
     }
+  }
+
+  Future<bool> reloadAfterJoinAcceptanceTriage() async {
+    final profileId = state.expectedProfileId;
+    final requestId = state.requestId;
+    final previousItem = state.item;
+    if (profileId == null || requestId == null || previousItem == null) {
+      return false;
+    }
+    final loaded = await load(
+      expectedProfileId: profileId,
+      requestId: requestId,
+    );
+    if (!loaded ||
+        ref.read(authSessionProvider).identity?.id != profileId ||
+        state.requestId != requestId) {
+      return false;
+    }
+    await ref
+        .read(messagesInboxProvider.notifier)
+        .load(profileId, refresh: true);
+    ref.read(messageChatsRefreshProvider.notifier).notifyChanged();
+    if (ref.read(authSessionProvider).identity?.id != profileId ||
+        state.requestId != requestId) {
+      return false;
+    }
+    final canonical = state.item;
+    final creatorState = ref.read(creatorParticipationProvider);
+    if (canonical != null &&
+        creatorState.expectedManagerId == profileId &&
+        creatorState.projectId == canonical.projectId) {
+      await ref
+          .read(creatorParticipationProvider.notifier)
+          .load(profileId, canonical.projectId);
+    }
+    return ref.read(authSessionProvider).identity?.id == profileId &&
+        state.requestId == requestId;
   }
 
   bool _isCurrent(int revision, String profileId, String requestId) =>

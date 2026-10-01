@@ -191,6 +191,7 @@ describe("public Tavoli routes", () => {
 
 const summary: PublicRecurringActivitySummary = {
   recurring_activity_id: activityId,
+  cover_object_path: null,
   title: "Philosophy table",
   summary: "Discuss one philosophical question every week.",
   topic: "Philosophy",
@@ -205,6 +206,7 @@ const summary: PublicRecurringActivitySummary = {
 
 const detail: PublicRecurringActivityDetail = {
   recurring_activity_id: activityId,
+  cover_object_path: null,
   creator_display_name: "Casey",
   lifecycle_state: "published",
   title: summary.title,

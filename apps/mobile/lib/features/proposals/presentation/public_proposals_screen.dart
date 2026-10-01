@@ -1,15 +1,29 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../app/router/browse_activity_switcher.dart';
 import '../../../core/theme/app_tokens.dart';
+import '../../../core/widgets/async_data_presentation.dart';
 import '../../../core/widgets/empty_state.dart';
 import '../../../core/widgets/error_state.dart';
 import '../../../core/widgets/loading_state.dart';
 import '../../../l10n/generated/app_localizations.dart';
+import '../../auth/application/auth_session_controller.dart';
+import '../../cover_media/presentation/project_cover_image.dart';
+import '../../auth/domain/auth_models.dart';
+import '../../blocking/presentation/blocking_action.dart';
+import '../../moderation/presentation/moderation_routes.dart';
+import '../../participation/application/participation_controllers.dart';
 import '../../participation/domain/participation_models.dart';
 import '../../participation/presentation/project_participation_section.dart';
+import '../../profile_photo/application/project_creator_photo_controller.dart';
+import '../../profile_photo/presentation/visible_profile_photo_avatar.dart';
+import '../../participation/presentation/project_capacity_label.dart';
+import '../../project_resource_needs/presentation/project_resource_need_routes.dart';
+import '../../project_resource_needs/presentation/project_resource_needs_section.dart';
 import '../application/proposal_controllers.dart';
 import '../domain/proposal_models.dart';
 import '../domain/proposal_time.dart';
@@ -25,15 +39,19 @@ class PublicProposalsScreen extends ConsumerStatefulWidget {
 }
 
 class _PublicProposalsScreenState extends ConsumerState<PublicProposalsScreen> {
+  static const _searchDebounce = Duration(milliseconds: 350);
+
+  late final TextEditingController _queryController;
   late final TextEditingController _localityController;
+  Timer? _queryDebounce;
 
   @override
   void initState() {
     super.initState();
-    _localityController = TextEditingController(
-      text: ref.read(publicProposalsProvider).locality,
-    );
-    if (ref.read(publicProposalsProvider).phase == ProposalLoadPhase.idle) {
+    final current = ref.read(publicProposalsProvider);
+    _queryController = TextEditingController(text: current.query);
+    _localityController = TextEditingController(text: current.locality);
+    if (current.phase == ProposalLoadPhase.idle) {
       Future<void>.microtask(
         () => ref.read(publicProposalsProvider.notifier).load(),
       );
@@ -42,6 +60,8 @@ class _PublicProposalsScreenState extends ConsumerState<PublicProposalsScreen> {
 
   @override
   void dispose() {
+    _queryDebounce?.cancel();
+    _queryController.dispose();
     _localityController.dispose();
     super.dispose();
   }
@@ -58,7 +78,7 @@ class _PublicProposalsScreenState extends ConsumerState<PublicProposalsScreen> {
           IconButton(
             key: const Key('my-proposals-action'),
             tooltip: l10n.proposalMyTitle,
-            onPressed: () => context.go('/proposals/mine'),
+            onPressed: () => context.push('/proposals/mine'),
             icon: const Icon(Icons.folder_outlined),
           ),
         ],
@@ -88,20 +108,25 @@ class _PublicProposalsScreenState extends ConsumerState<PublicProposalsScreen> {
                     ),
                     const SizedBox(height: AppSpacing.medium),
                     TextField(
+                      key: const Key('proposal-query-filter'),
+                      controller: _queryController,
+                      maxLength: 120,
+                      textInputAction: TextInputAction.search,
+                      decoration: InputDecoration(
+                        labelText: l10n.proposalSearchLabel,
+                        prefixIcon: const Icon(Icons.search),
+                      ),
+                      onChanged: (_) => _scheduleQuery(),
+                      onSubmitted: (_) => _flushQuery(),
+                    ),
+                    TextField(
                       key: const Key('proposal-locality-filter'),
                       controller: _localityController,
                       decoration: InputDecoration(
                         labelText: l10n.proposalLocalityFilter,
                         suffixIcon: IconButton(
                           key: const Key('proposal-apply-filters'),
-                          onPressed: state.isBusy
-                              ? null
-                              : () => ref
-                                    .read(publicProposalsProvider.notifier)
-                                    .applyFilters(
-                                      locality: _localityController.text,
-                                      skillIds: state.selectedSkillIds,
-                                    ),
+                          onPressed: state.isBusy ? null : _applyFilters,
                           icon: const Icon(Icons.search),
                         ),
                       ),
@@ -112,12 +137,8 @@ class _PublicProposalsScreenState extends ConsumerState<PublicProposalsScreen> {
                         categories: state.categories,
                         selectedIds: state.selectedSkillIds,
                         enabled: !state.isBusy,
-                        onApply: (selection) => ref
-                            .read(publicProposalsProvider.notifier)
-                            .applyFilters(
-                              locality: _localityController.text,
-                              skillIds: selection,
-                            ),
+                        onApply: (selection) =>
+                            _applyFilters(skillIds: selection),
                       ),
                     ],
                     const SizedBox(height: AppSpacing.medium),
@@ -139,7 +160,7 @@ class _PublicProposalsScreenState extends ConsumerState<PublicProposalsScreen> {
                           ProposalCard(
                             proposal: requested.proposal,
                             isRequested: true,
-                            onTap: () => context.go(
+                            onTap: () => context.push(
                               '/proposals/${requested.proposal.id}',
                             ),
                           ),
@@ -158,7 +179,8 @@ class _PublicProposalsScreenState extends ConsumerState<PublicProposalsScreen> {
                       for (final proposal in state.ordinaryItems) ...[
                         ProposalCard(
                           proposal: proposal,
-                          onTap: () => context.go('/proposals/${proposal.id}'),
+                          onTap: () =>
+                              context.push('/proposals/${proposal.id}'),
                         ),
                         const SizedBox(height: AppSpacing.small),
                       ],
@@ -187,10 +209,34 @@ class _PublicProposalsScreenState extends ConsumerState<PublicProposalsScreen> {
       ),
       floatingActionButton: FloatingActionButton.extended(
         key: const Key('proposal-create-action'),
-        onPressed: () => context.go('/proposals/create'),
+        onPressed: () => context.push('/proposals/create'),
         icon: const Icon(Icons.add),
         label: Text(l10n.proposalCreateTitle),
       ),
+    );
+  }
+
+  void _scheduleQuery() {
+    _queryDebounce?.cancel();
+    _queryDebounce = Timer(_searchDebounce, _applyFilters);
+  }
+
+  void _flushQuery() {
+    _queryDebounce?.cancel();
+    _applyFilters();
+  }
+
+  void _applyFilters({Set<String>? skillIds}) {
+    _queryDebounce?.cancel();
+    final state = ref.read(publicProposalsProvider);
+    unawaited(
+      ref
+          .read(publicProposalsProvider.notifier)
+          .applyFilters(
+            query: _queryController.text,
+            locality: _localityController.text,
+            skillIds: skillIds ?? state.selectedSkillIds,
+          ),
     );
   }
 }
@@ -209,9 +255,23 @@ class _ProposalDetailScreenState extends ConsumerState<ProposalDetailScreen> {
   @override
   void initState() {
     super.initState();
-    Future<void>.microtask(
-      () => ref.read(proposalDetailProvider.notifier).load(widget.proposalId),
-    );
+    Future<void>.microtask(_load);
+  }
+
+  Future<void> _load() async {
+    await Future.wait([
+      ref.read(proposalDetailProvider.notifier).load(widget.proposalId),
+      ref
+          .read(projectCreatorPhotoProvider.notifier)
+          .load(widget.proposalId, force: true),
+    ]);
+  }
+
+  @override
+  void didUpdateWidget(covariant ProposalDetailScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.proposalId == widget.proposalId) return;
+    Future<void>.microtask(_load);
   }
 
   @override
@@ -219,21 +279,44 @@ class _ProposalDetailScreenState extends ConsumerState<ProposalDetailScreen> {
     final l10n = AppLocalizations.of(context);
     final state = ref.watch(proposalDetailProvider);
     final detail = state.proposalId == widget.proposalId ? state.detail : null;
+    final organizerPhoto = ref
+        .watch(projectCreatorPhotoProvider)
+        .entryFor(widget.proposalId);
+    final presentation = classifyAsyncDataPresentation(
+      belongsToTarget: state.proposalId == widget.proposalId,
+      hasData: detail != null,
+      isPending:
+          state.phase == ProposalLoadPhase.idle ||
+          state.phase == ProposalLoadPhase.loading,
+      hasFailed: state.phase == ProposalLoadPhase.failure,
+    );
+    final emptyDetail = switch (presentation) {
+      AsyncDataPresentation.loading => LoadingState(
+        message: l10n.proposalLoading,
+      ),
+      AsyncDataPresentation.absent ||
+      AsyncDataPresentation.failure => ErrorState(
+        message: l10n.proposalSafeError,
+        onRetry: () =>
+            ref.read(proposalDetailProvider.notifier).load(widget.proposalId),
+      ),
+      AsyncDataPresentation.content => const SizedBox.shrink(),
+    };
     return Scaffold(
       appBar: AppBar(title: Text(l10n.proposalDetailTitle)),
       body: SafeArea(
-        child: detail == null && state.phase == ProposalLoadPhase.loading
-            ? LoadingState(message: l10n.proposalLoading)
-            : detail == null
-            ? ErrorState(
-                message: l10n.proposalSafeError,
-                onRetry: () => ref
-                    .read(proposalDetailProvider.notifier)
-                    .load(widget.proposalId),
-              )
+        child: detail == null
+            ? emptyDetail
             : ListView(
                 padding: const EdgeInsets.all(AppSpacing.large),
                 children: [
+                  ProjectCoverImage(
+                    key: Key('proposal-detail-cover-${detail.summary.id}'),
+                    title: detail.summary.title,
+                    objectPath: detail.summary.coverObjectPath,
+                    borderRadius: AppRadii.medium,
+                  ),
+                  const SizedBox(height: AppSpacing.large),
                   Row(
                     children: [
                       Expanded(
@@ -252,6 +335,8 @@ class _ProposalDetailScreenState extends ConsumerState<ProposalDetailScreen> {
                   ),
                   const SizedBox(height: AppSpacing.large),
                   Text(detail.description),
+                  const SizedBox(height: AppSpacing.medium),
+                  ProjectCapacityLabel(capacity: detail.summary.capacity),
                   const SizedBox(height: AppSpacing.large),
                   Text(
                     l10n.proposalScheduleTitle,
@@ -274,6 +359,22 @@ class _ProposalDetailScreenState extends ConsumerState<ProposalDetailScreen> {
                     const SizedBox(height: AppSpacing.small),
                     ProposalSkillRequirements(skills: detail.summary.skills),
                   ],
+                  ProjectResourceNeedsSection(projectId: detail.summary.id),
+                  if (ref.watch(authSessionProvider).identity?.id ==
+                      detail.creatorProfileId) ...[
+                    const SizedBox(height: AppSpacing.medium),
+                    OutlinedButton.icon(
+                      key: Key('project-resources-manage-${detail.summary.id}'),
+                      onPressed: () => context.push(
+                        ProjectResourceNeedRoutes.manage(
+                          ProjectKind.oneTime,
+                          detail.summary.id,
+                        ),
+                      ),
+                      icon: const Icon(Icons.inventory_2_outlined),
+                      label: Text(l10n.projectResourcesManage),
+                    ),
+                  ],
                   const SizedBox(height: AppSpacing.large),
                   ProjectParticipationSection(
                     projectId: detail.summary.id,
@@ -285,11 +386,61 @@ class _ProposalDetailScreenState extends ConsumerState<ProposalDetailScreen> {
                     publicLocationLines: [detail.summary.publicLocationLabel],
                     publicExactMeetingText: detail.exactMeetingText,
                     exactLocationRestricted: detail.exactLocationRestricted,
+                    capacity: detail.summary.capacity,
                   ),
-                  if (detail.creatorDisplayName != null) ...[
-                    const SizedBox(height: AppSpacing.large),
-                    Text(
-                      '${l10n.proposalOrganizedBy} ${detail.creatorDisplayName}',
+                  const SizedBox(height: AppSpacing.large),
+                  ListTile(
+                    key: const Key('proposal-organizer-identity'),
+                    contentPadding: EdgeInsets.zero,
+                    leading: VisibleProfilePhotoAvatar(
+                      entry: organizerPhoto,
+                      imageSemanticsLabel:
+                          l10n.profilePhotoOrganizerAvatarLabel,
+                      placeholderSemanticsLabel:
+                          l10n.profilePhotoOrganizerAvatarLabel,
+                    ),
+                    title: Text(
+                      '${l10n.proposalOrganizedBy} '
+                      '${detail.creatorDisplayName ?? l10n.profilePhotoOrganizerFallback}',
+                    ),
+                  ),
+                  if (ref.watch(authSessionProvider).phase ==
+                          AuthSessionPhase.ready &&
+                      ref.watch(authSessionProvider).identity?.id !=
+                          detail.creatorProfileId) ...[
+                    const SizedBox(height: AppSpacing.small),
+                    BlockingActionButton(
+                      targetProfileId: detail.creatorProfileId,
+                      targetDisplayName: detail.creatorDisplayName,
+                      buttonKey: const Key('proposal-blocking-action'),
+                      onChanged: (_) async {
+                        ref
+                            .read(projectCreatorPhotoProvider.notifier)
+                            .invalidate(detail.summary.id);
+                        await Future.wait([
+                          ref
+                              .read(projectCreatorPhotoProvider.notifier)
+                              .load(detail.summary.id, force: true),
+                          if (ref.read(authSessionProvider).identity?.id
+                              case final profileId?)
+                            ref
+                                .read(ownParticipationProvider.notifier)
+                                .load(profileId),
+                        ]);
+                      },
+                    ),
+                    const SizedBox(height: AppSpacing.small),
+                    OutlinedButton.icon(
+                      key: const Key('proposal-report-action'),
+                      onPressed: () => ModerationRoutes.openReport(
+                        context,
+                        projectReportTarget(
+                          detail.summary.id,
+                          detail.summary.title,
+                        ),
+                      ),
+                      icon: const Icon(Icons.flag_outlined),
+                      label: Text(l10n.moderationReportAction),
                     ),
                   ],
                 ],

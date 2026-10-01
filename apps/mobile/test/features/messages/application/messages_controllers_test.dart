@@ -22,17 +22,20 @@ void main() {
     'inbox uses an exact activity/id cursor and appends the next page',
     () async {
       final gateway = FakeMessagesGateway()
-        ..items = List.generate(
-          21,
-          (index) => messageItemFixture(
-            requestId: 'request-$index',
-            createdAt: DateTime.utc(
-              2026,
-              9,
-              9,
-            ).subtract(Duration(minutes: index)),
+        ..items = [
+          ...List.generate(
+            20,
+            (index) => messageItemFixture(
+              requestId: 'request-$index',
+              createdAt: DateTime.utc(
+                2026,
+                9,
+                9,
+              ).subtract(Duration(minutes: index)),
+            ),
           ),
-        );
+          resourceMessageItemFixture(requestId: 'request-0'),
+        ];
       final session = _readyContainer(gateway);
       addTearDown(session.container.dispose);
       addTearDown(session.auth.close);
@@ -47,46 +50,42 @@ void main() {
       expect(await controller.loadMore('user-1'), isTrue);
       expect(gateway.lastCursor?.requestId, 'request-19');
       expect(
+        gateway.lastCursor?.itemKind,
+        StructuredRequestItemKind.participationRequest,
+      );
+      expect(
         session.container.read(messagesInboxProvider).items,
         hasLength(21),
       );
       expect(session.container.read(messagesInboxProvider).hasMore, isFalse);
+      expect(
+        session.container
+            .read(messagesInboxProvider)
+            .items
+            .map((item) => item.compositeId)
+            .where((id) => id.endsWith(':request-0')),
+        hasLength(2),
+      );
     },
   );
 
-  test(
-    'creator acceptance blocks duplicate taps and reloads canonical status',
-    () async {
-      final pending = Completer<void>();
-      final gateway = FakeMessagesGateway()
-        ..items = [messageItemFixture()]
-        ..mutationDelay = pending.future;
-      final session = _readyContainer(gateway);
-      addTearDown(session.container.dispose);
-      addTearDown(session.auth.close);
-      final controller = session.container.read(
-        messagesDetailProvider.notifier,
-      );
-      await controller.load(
-        expectedProfileId: 'user-1',
-        requestId: 'request-1',
-      );
+  test('triaged acceptance reloads canonical detail and inbox', () async {
+    final gateway = FakeMessagesGateway()..items = [messageItemFixture()];
+    final session = _readyContainer(gateway);
+    addTearDown(session.container.dispose);
+    addTearDown(session.auth.close);
+    final controller = session.container.read(messagesDetailProvider.notifier);
+    await controller.load(expectedProfileId: 'user-1', requestId: 'request-1');
 
-      final first = controller.accept();
-      expect(await controller.accept(), isFalse);
-      expect(
-        gateway.calls.where((call) => call == 'accept:request-1'),
-        hasLength(1),
-      );
-      pending.complete();
-      expect(await first, isTrue);
-      expect(
-        session.container.read(messagesDetailProvider).item?.status.name,
-        'accepted',
-      );
-      expect(session.container.read(projectChatRefreshProvider), 1);
-    },
-  );
+    gateway.items = [messageItemFixture(status: JoinRequestStatus.accepted)];
+    expect(await controller.reloadAfterJoinAcceptanceTriage(), isTrue);
+    expect(
+      session.container.read(messagesDetailProvider).item?.status.name,
+      'accepted',
+    );
+    expect(gateway.calls.where((call) => call == 'list'), hasLength(1));
+    expect(session.container.read(projectChatRefreshProvider), 0);
+  });
 
   test('requester cannot invoke creator actions', () async {
     final gateway = FakeMessagesGateway()
@@ -97,9 +96,7 @@ void main() {
     final controller = session.container.read(messagesDetailProvider.notifier);
     await controller.load(expectedProfileId: 'user-1', requestId: 'request-1');
 
-    expect(await controller.accept(), isFalse);
     expect(await controller.reject(), isFalse);
-    expect(gateway.calls.where((call) => call.startsWith('accept:')), isEmpty);
   });
 
   test('creator can reject and reload the canonical resolved item', () async {
@@ -133,7 +130,7 @@ void main() {
     final controller = session.container.read(messagesDetailProvider.notifier);
     await controller.load(expectedProfileId: 'user-1', requestId: 'request-1');
 
-    final action = controller.accept();
+    final action = controller.reject();
     gateway.items = [messageItemFixture(status: JoinRequestStatus.rejected)];
     pending.complete();
 
@@ -154,7 +151,7 @@ void main() {
     final controller = session.container.read(messagesDetailProvider.notifier);
     await controller.load(expectedProfileId: 'user-1', requestId: 'request-1');
 
-    final action = controller.accept();
+    final action = controller.reject();
     session.container
         .read(authSessionProvider.notifier)
         .markProfileReady(const AuthIdentity(id: 'user-2'));
@@ -190,6 +187,109 @@ void main() {
       expect(await detailLoad, isFalse);
       expect(session.container.read(messagesInboxProvider).items, isEmpty);
       expect(session.container.read(messagesDetailProvider).item, isNull);
+    },
+  );
+
+  test('detail preserves canonical contribution ordering', () async {
+    final gateway = FakeMessagesGateway()
+      ..items = [messageItemFixture()]
+      ..selections = const [
+        RequestContributionSelection(
+          kind: RequestContributionSelectionKind.skill,
+          id: 'skill-1',
+          label: 'Carpentry',
+        ),
+        RequestContributionSelection(
+          kind: RequestContributionSelectionKind.resource,
+          id: 'need-1',
+          label: 'Wooden boards',
+        ),
+      ];
+    final session = _readyContainer(gateway);
+    addTearDown(session.container.dispose);
+    addTearDown(session.auth.close);
+
+    expect(
+      await session.container
+          .read(messagesDetailProvider.notifier)
+          .load(expectedProfileId: 'user-1', requestId: 'request-1'),
+      isTrue,
+    );
+    final state = session.container.read(messagesDetailProvider);
+    expect(state.item, isNotNull);
+    expect(state.selectionPhase, MessagesSelectionPhase.ready);
+    expect(state.selections.map((selection) => selection.id), [
+      'skill-1',
+      'need-1',
+    ]);
+  });
+
+  test('selection failure keeps actions usable and supports retry', () async {
+    final gateway = FakeMessagesGateway()
+      ..items = [messageItemFixture()]
+      ..selectionError = StateError('private selection diagnostic');
+    final session = _readyContainer(gateway);
+    addTearDown(session.container.dispose);
+    addTearDown(session.auth.close);
+    final controller = session.container.read(messagesDetailProvider.notifier);
+
+    expect(
+      await controller.load(
+        expectedProfileId: 'user-1',
+        requestId: 'request-1',
+      ),
+      isTrue,
+    );
+    expect(
+      session.container.read(messagesDetailProvider).selectionPhase,
+      MessagesSelectionPhase.failure,
+    );
+    gateway
+      ..selectionError = null
+      ..selections = const [
+        RequestContributionSelection(
+          kind: RequestContributionSelectionKind.resource,
+          id: 'need-1',
+          label: 'Paint',
+        ),
+      ];
+    expect(await controller.retryContributionSelections(), isTrue);
+    expect(
+      session.container.read(messagesDetailProvider).selections.single.id,
+      'need-1',
+    );
+  });
+
+  test(
+    'account switch clears a late contribution-selection response',
+    () async {
+      final pending = Completer<void>();
+      final gateway = FakeMessagesGateway()
+        ..items = [messageItemFixture()]
+        ..selections = const [
+          RequestContributionSelection(
+            kind: RequestContributionSelectionKind.skill,
+            id: 'skill-1',
+            label: 'Carpentry',
+          ),
+        ]
+        ..selectionDelay = pending.future;
+      final session = _readyContainer(gateway);
+      addTearDown(session.container.dispose);
+      addTearDown(session.auth.close);
+      final load = session.container
+          .read(messagesDetailProvider.notifier)
+          .load(expectedProfileId: 'user-1', requestId: 'request-1');
+      await Future<void>.delayed(Duration.zero);
+      session.container
+          .read(authSessionProvider.notifier)
+          .markProfileReady(const AuthIdentity(id: 'user-2'));
+      pending.complete();
+
+      expect(await load, isFalse);
+      final state = session.container.read(messagesDetailProvider);
+      expect(state.item, isNull);
+      expect(state.selections, isEmpty);
     },
   );
 }

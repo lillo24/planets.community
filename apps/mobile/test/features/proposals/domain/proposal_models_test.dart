@@ -18,4 +18,11 @@ void main() {
     expect(state.ordinaryItems.single.id, 'ordinary');
     expect(state.hasMore, isTrue);
   });
+
+  test('capacity may be omitted in a draft but is required to publish', () {
+    final input = proposalInputFixture(peopleCapacity: null);
+
+    expect(isValidProposalDraft(input), isTrue);
+    expect(isPublishableProposalInput(input), isFalse);
+  });
 }

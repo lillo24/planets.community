@@ -51,6 +51,7 @@ void main() {
       durationMinutes: 90,
       eventTimezone: 'Europe/Rome',
       effectiveFrom: DateTime(2026, 9, 5),
+      peopleCapacity: 20,
     );
     expect(isValidRecurringActivityDraft(invalidDay), isFalse);
   });
@@ -58,6 +59,13 @@ void main() {
   test('an entirely absent schedule remains a valid incomplete draft', () {
     final input = recurringInputFixture(type: null);
     expect(input.hasAnyScheduleValue, isFalse);
+    expect(isValidRecurringActivityDraft(input), isTrue);
+    expect(isPublishableRecurringActivityInput(input), isFalse);
+  });
+
+  test('capacity may be omitted in a draft but is required to publish', () {
+    final input = recurringInputFixture(peopleCapacity: null);
+
     expect(isValidRecurringActivityDraft(input), isTrue);
     expect(isPublishableRecurringActivityInput(input), isFalse);
   });

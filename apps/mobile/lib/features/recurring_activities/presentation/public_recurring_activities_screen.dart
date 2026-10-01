@@ -5,12 +5,24 @@ import 'package:go_router/go_router.dart';
 import '../../../app/router/browse_activity_switcher.dart';
 import '../../../core/theme/app_tokens.dart';
 import '../../../core/time/event_time.dart';
+import '../../../core/widgets/async_data_presentation.dart';
 import '../../../core/widgets/empty_state.dart';
 import '../../../core/widgets/error_state.dart';
 import '../../../core/widgets/loading_state.dart';
 import '../../../l10n/generated/app_localizations.dart';
+import '../../auth/application/auth_session_controller.dart';
+import '../../cover_media/presentation/project_cover_image.dart';
+import '../../auth/domain/auth_models.dart';
+import '../../blocking/presentation/blocking_action.dart';
+import '../../moderation/presentation/moderation_routes.dart';
+import '../../participation/application/participation_controllers.dart';
 import '../../participation/domain/participation_models.dart';
 import '../../participation/presentation/project_participation_section.dart';
+import '../../profile_photo/application/project_creator_photo_controller.dart';
+import '../../profile_photo/presentation/visible_profile_photo_avatar.dart';
+import '../../participation/presentation/project_capacity_label.dart';
+import '../../project_resource_needs/presentation/project_resource_need_routes.dart';
+import '../../project_resource_needs/presentation/project_resource_needs_section.dart';
 import '../application/recurring_activity_controllers.dart';
 import '../domain/recurring_activity_models.dart';
 import 'recurring_activity_widgets.dart';
@@ -58,7 +70,7 @@ class _PublicRecurringActivitiesScreenState
           IconButton(
             key: const Key('my-tavoli-action'),
             tooltip: l10n.tavoliMyTitle,
-            onPressed: () => context.go('/tavoli/mine'),
+            onPressed: () => context.push('/tavoli/mine'),
             icon: const Icon(Icons.folder_outlined),
           ),
         ],
@@ -126,8 +138,9 @@ class _PublicRecurringActivitiesScreenState
                           RecurringActivityCard(
                             activity: requested.activity,
                             isRequested: true,
-                            onTap: () =>
-                                context.go('/tavoli/${requested.activity.id}'),
+                            onTap: () => context.push(
+                              '/tavoli/${requested.activity.id}',
+                            ),
                           ),
                           const SizedBox(height: AppSpacing.small),
                         ],
@@ -144,7 +157,7 @@ class _PublicRecurringActivitiesScreenState
                       for (final activity in state.ordinaryItems) ...[
                         RecurringActivityCard(
                           activity: activity,
-                          onTap: () => context.go('/tavoli/${activity.id}'),
+                          onTap: () => context.push('/tavoli/${activity.id}'),
                         ),
                         const SizedBox(height: AppSpacing.small),
                       ],
@@ -177,7 +190,7 @@ class _PublicRecurringActivitiesScreenState
       ),
       floatingActionButton: FloatingActionButton.extended(
         key: const Key('tavoli-create-action'),
-        onPressed: () => context.go('/tavoli/create'),
+        onPressed: () => context.push('/tavoli/create'),
         icon: const Icon(Icons.add),
         label: Text(l10n.tavoliCreateTitle),
       ),
@@ -202,11 +215,27 @@ class _PublicRecurringActivityDetailScreenState
   @override
   void initState() {
     super.initState();
-    Future<void>.microtask(
-      () => ref
+    Future<void>.microtask(_load);
+  }
+
+  Future<void> _load() async {
+    await Future.wait([
+      ref
           .read(publicRecurringActivityDetailProvider.notifier)
           .load(widget.activityId),
-    );
+      ref
+          .read(projectCreatorPhotoProvider.notifier)
+          .load(widget.activityId, force: true),
+    ]);
+  }
+
+  @override
+  void didUpdateWidget(
+    covariant PublicRecurringActivityDetailScreen oldWidget,
+  ) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.activityId == widget.activityId) return;
+    Future<void>.microtask(_load);
   }
 
   @override
@@ -214,23 +243,30 @@ class _PublicRecurringActivityDetailScreenState
     final l10n = AppLocalizations.of(context);
     final state = ref.watch(publicRecurringActivityDetailProvider);
     final detail = state.activityId == widget.activityId ? state.detail : null;
-    if (detail == null && state.phase == RecurringActivityLoadPhase.loading) {
+    final organizerPhoto = ref
+        .watch(projectCreatorPhotoProvider)
+        .entryFor(widget.activityId);
+    final presentation = classifyAsyncDataPresentation(
+      belongsToTarget: state.activityId == widget.activityId,
+      hasData: detail != null,
+      isPending:
+          state.phase == RecurringActivityLoadPhase.idle ||
+          state.phase == RecurringActivityLoadPhase.loading,
+      hasFailed: state.phase == RecurringActivityLoadPhase.failure,
+    );
+    if (presentation == AsyncDataPresentation.loading) {
       return Scaffold(
         appBar: AppBar(title: Text(l10n.tavoliDetailTitle)),
         body: LoadingState(message: l10n.tavoliLoading),
       );
     }
-    if (detail == null) {
+    if (presentation != AsyncDataPresentation.content) {
       return Scaffold(
         appBar: AppBar(title: Text(l10n.tavoliDetailTitle)),
-        body: ErrorState(
-          message: l10n.tavoliSafeError,
-          onRetry: () => ref
-              .read(publicRecurringActivityDetailProvider.notifier)
-              .load(widget.activityId),
-        ),
+        body: ErrorState(message: l10n.tavoliSafeError, onRetry: _load),
       );
     }
+    final resolvedDetail = detail!;
     final locale = Localizations.localeOf(context).toLanguageTag();
     return Scaffold(
       appBar: AppBar(title: Text(l10n.tavoliDetailTitle)),
@@ -238,47 +274,56 @@ class _PublicRecurringActivityDetailScreenState
         child: ListView(
           padding: const EdgeInsets.all(AppSpacing.large),
           children: [
+            ProjectCoverImage(
+              key: Key('tavolo-detail-cover-${detail.id}'),
+              title: detail.title,
+              objectPath: detail.coverObjectPath,
+              borderRadius: AppRadii.medium,
+            ),
+            const SizedBox(height: AppSpacing.large),
             Row(
               children: [
                 Expanded(
                   child: Text(
-                    detail.title,
+                    resolvedDetail.title,
                     style: Theme.of(context).textTheme.headlineSmall,
                   ),
                 ),
-                RecurringLifecycleBadge(lifecycle: detail.lifecycle),
+                RecurringLifecycleBadge(lifecycle: resolvedDetail.lifecycle),
               ],
             ),
             const SizedBox(height: AppSpacing.small),
             Text(
-              detail.summary,
+              resolvedDetail.summary,
               style: Theme.of(context).textTheme.titleMedium,
             ),
-            if (detail.topic case final topic?) ...[
+            if (resolvedDetail.topic case final topic?) ...[
               const SizedBox(height: AppSpacing.small),
               Text(topic, style: Theme.of(context).textTheme.labelLarge),
             ],
             const SizedBox(height: AppSpacing.large),
-            Text(detail.description),
+            Text(resolvedDetail.description),
+            const SizedBox(height: AppSpacing.medium),
+            ProjectCapacityLabel(capacity: resolvedDetail.capacity),
             const SizedBox(height: AppSpacing.large),
             Text(
               l10n.tavoliScheduleTitle,
               style: Theme.of(context).textTheme.titleLarge,
             ),
             const SizedBox(height: AppSpacing.small),
-            Text(formatRecurringSchedule(detail.schedule, context)),
-            Text(l10n.tavoliTimezone(detail.schedule.eventTimezone)),
-            Text(l10n.tavoliDuration(detail.schedule.durationMinutes)),
+            Text(formatRecurringSchedule(resolvedDetail.schedule, context)),
+            Text(l10n.tavoliTimezone(resolvedDetail.schedule.eventTimezone)),
+            Text(l10n.tavoliDuration(resolvedDetail.schedule.durationMinutes)),
             const SizedBox(height: AppSpacing.large),
             Text(
               l10n.tavoliUpcomingMeetings,
               style: Theme.of(context).textTheme.titleLarge,
             ),
             const SizedBox(height: AppSpacing.small),
-            if (detail.nextOccurrences.isEmpty)
+            if (resolvedDetail.nextOccurrences.isEmpty)
               Text(l10n.tavoliNoUpcomingMeetings)
             else
-              for (final occurrence in detail.nextOccurrences)
+              for (final occurrence in resolvedDetail.nextOccurrences)
                 ListTile(
                   contentPadding: EdgeInsets.zero,
                   leading: const Icon(Icons.schedule),
@@ -293,23 +338,90 @@ class _PublicRecurringActivityDetailScreenState
                     '${formatEventDateTime(occurrence.endsAt, occurrence.eventTimezone, locale)} · ${occurrence.eventTimezone}',
                   ),
                 ),
+            ProjectResourceNeedsSection(projectId: resolvedDetail.id),
+            if (ref.watch(authSessionProvider).identity?.id ==
+                resolvedDetail.creatorProfileId) ...[
+              const SizedBox(height: AppSpacing.medium),
+              OutlinedButton.icon(
+                key: Key('project-resources-manage-${resolvedDetail.id}'),
+                onPressed: () => context.push(
+                  ProjectResourceNeedRoutes.manage(
+                    ProjectKind.recurring,
+                    resolvedDetail.id,
+                  ),
+                ),
+                icon: const Icon(Icons.inventory_2_outlined),
+                label: Text(l10n.projectResourcesManage),
+              ),
+            ],
             const SizedBox(height: AppSpacing.large),
             ProjectParticipationSection(
-              projectId: detail.id,
+              projectId: resolvedDetail.id,
               projectKind: ProjectKind.recurring,
-              creatorProfileId: detail.creatorProfileId,
+              creatorProfileId: resolvedDetail.creatorProfileId,
               acceptsNewRequests:
-                  detail.lifecycle == RecurringActivityLifecycle.published,
+                  resolvedDetail.lifecycle ==
+                  RecurringActivityLifecycle.published,
               publicLocationLines: [
-                '${detail.publicLocationLabel} · ${detail.locality}',
-                ?detail.administrativeArea,
+                '${resolvedDetail.publicLocationLabel} · ${resolvedDetail.locality}',
+                ?resolvedDetail.administrativeArea,
               ],
-              publicExactMeetingText: detail.exactMeetingText,
-              exactLocationRestricted: detail.exactLocationRestricted,
+              publicExactMeetingText: resolvedDetail.exactMeetingText,
+              exactLocationRestricted: resolvedDetail.exactLocationRestricted,
+              capacity: resolvedDetail.capacity,
             ),
-            if (detail.creatorDisplayName case final creator?) ...[
-              const SizedBox(height: AppSpacing.large),
-              Text(l10n.tavoliOrganizedBy(creator)),
+            const SizedBox(height: AppSpacing.large),
+            ListTile(
+              key: const Key('tavoli-organizer-identity'),
+              contentPadding: EdgeInsets.zero,
+              leading: VisibleProfilePhotoAvatar(
+                entry: organizerPhoto,
+                imageSemanticsLabel: l10n.profilePhotoOrganizerAvatarLabel,
+                placeholderSemanticsLabel:
+                    l10n.profilePhotoOrganizerAvatarLabel,
+              ),
+              title: Text(
+                l10n.tavoliOrganizedBy(
+                  resolvedDetail.creatorDisplayName ??
+                      l10n.profilePhotoOrganizerFallback,
+                ),
+              ),
+            ),
+            if (ref.watch(authSessionProvider).phase ==
+                    AuthSessionPhase.ready &&
+                ref.watch(authSessionProvider).identity?.id !=
+                    resolvedDetail.creatorProfileId) ...[
+              const SizedBox(height: AppSpacing.small),
+              BlockingActionButton(
+                targetProfileId: resolvedDetail.creatorProfileId,
+                targetDisplayName: resolvedDetail.creatorDisplayName,
+                buttonKey: const Key('tavoli-blocking-action'),
+                onChanged: (_) async {
+                  ref
+                      .read(projectCreatorPhotoProvider.notifier)
+                      .invalidate(resolvedDetail.id);
+                  await Future.wait([
+                    ref
+                        .read(projectCreatorPhotoProvider.notifier)
+                        .load(resolvedDetail.id, force: true),
+                    if (ref.read(authSessionProvider).identity?.id
+                        case final profileId?)
+                      ref
+                          .read(ownParticipationProvider.notifier)
+                          .load(profileId),
+                  ]);
+                },
+              ),
+              const SizedBox(height: AppSpacing.small),
+              OutlinedButton.icon(
+                key: const Key('tavoli-report-action'),
+                onPressed: () => ModerationRoutes.openReport(
+                  context,
+                  projectReportTarget(resolvedDetail.id, resolvedDetail.title),
+                ),
+                icon: const Icon(Icons.flag_outlined),
+                label: Text(l10n.moderationReportAction),
+              ),
             ],
           ],
         ),

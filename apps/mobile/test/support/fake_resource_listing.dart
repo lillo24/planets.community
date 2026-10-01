@@ -17,6 +17,7 @@ typedef OwnResourceListingLoader = Future<List<OwnResourceListing>> Function(
 class FakeResourceListingGateway implements ResourceListingGateway {
   List<PublicResourceListingSummary> publicItems = [];
   PublicResourceListingDetail? publicDetail;
+  Future<PublicResourceListingDetail?>? publicDetailResult;
   List<OwnResourceListing> ownItems = [];
   Object? error;
   Object? publicListError;
@@ -68,7 +69,7 @@ class FakeResourceListingGateway implements ResourceListingGateway {
   ) async {
     _throw(error ?? publicDetailError);
     calls.add('get-public:$listingId');
-    return publicDetail;
+    return publicDetailResult ?? publicDetail;
   }
 
   @override
@@ -134,6 +135,7 @@ class FakeResourceListingGateway implements ResourceListingGateway {
             ownerProfileId: item.ownerProfileId,
             lifecycle: item.lifecycle,
             input: input,
+            coverObjectPath: item.coverObjectPath,
           )
         else
           item,
@@ -145,8 +147,9 @@ class FakeResourceListingGateway implements ResourceListingGateway {
     String expectedOwnerId,
     String listingId,
   ) async {
-    _throw(error ?? publishError);
+    _throw(error);
     calls.add('publish:$listingId');
+    _throw(publishError);
     lastExpectedOwnerId = expectedOwnerId;
     ownItems = [
       for (final item in ownItems)
@@ -217,6 +220,8 @@ PublicResourceListingSummary _publicSummary(OwnResourceListing listing) =>
       administrativeArea: listing.administrativeArea,
       publicLocationLabel: listing.publicLocationLabel!,
       publishedAt: listing.publishedAt!,
+      activeRequestCount: 0,
+      coverObjectPath: listing.coverObjectPath,
     );
 
 const resourceOwnerProfileId = '00000000-0000-4000-8000-000000000101';
@@ -246,24 +251,47 @@ ResourceListingInput resourceListingInputFixture({
 PublicResourceListingSummary publicResourceListingFixture({
   String id = resourceListingId,
   ResourceListingMode mode = ResourceListingMode.donate,
+  String title = 'Garden tools',
+  String description = 'A rake and a shovel ready for a new garden.',
+  String countryCode = 'IT',
+  String locality = 'Bologna',
+  String? administrativeArea = 'Emilia-Romagna',
+  String publicLocationLabel = 'Central Bologna',
   DateTime? publishedAt,
+  int activeRequestCount = 0,
+  String? coverObjectPath,
 }) => PublicResourceListingSummary(
   id: id,
   mode: mode,
-  title: 'Garden tools',
-  description: 'A rake and a shovel ready for a new garden.',
-  countryCode: 'IT',
-  locality: 'Bologna',
-  administrativeArea: 'Emilia-Romagna',
-  publicLocationLabel: 'Central Bologna',
+  title: title,
+  description: description,
+  countryCode: countryCode,
+  locality: locality,
+  administrativeArea: administrativeArea,
+  publicLocationLabel: publicLocationLabel,
   publishedAt: publishedAt ?? DateTime.utc(2026, 9, 14, 12),
+  activeRequestCount: activeRequestCount,
+  coverObjectPath: coverObjectPath,
 );
 
 PublicResourceListingDetail publicResourceListingDetailFixture({
+  String id = resourceListingId,
+  String title = 'Garden tools',
   String ownerId = resourceOwnerProfileId,
   String? ownerDisplayName = 'Casey',
+  int activeRequestCount = 0,
+  String locality = 'Bologna',
+  String? administrativeArea = 'Emilia-Romagna',
+  String publicLocationLabel = 'Central Bologna',
 }) => PublicResourceListingDetail(
-  summary: publicResourceListingFixture(),
+  summary: publicResourceListingFixture(
+    id: id,
+    title: title,
+    activeRequestCount: activeRequestCount,
+    locality: locality,
+    administrativeArea: administrativeArea,
+    publicLocationLabel: publicLocationLabel,
+  ),
   ownerProfileId: ownerId,
   ownerDisplayName: ownerDisplayName,
 );
@@ -273,6 +301,7 @@ OwnResourceListing ownResourceListingFixture({
   String ownerProfileId = resourceOwnerProfileId,
   ResourceListingLifecycle lifecycle = ResourceListingLifecycle.draft,
   ResourceListingInput? input,
+  String? coverObjectPath,
 }) {
   final value = input ?? resourceListingInputFixture();
   final published = lifecycle != ResourceListingLifecycle.draft
@@ -299,6 +328,7 @@ OwnResourceListing ownResourceListingFixture({
     closedAt: lifecycle == ResourceListingLifecycle.closed
         ? DateTime.utc(2026, 9, 15, 12)
         : null,
+    coverObjectPath: coverObjectPath,
   );
 }
 
@@ -307,6 +337,7 @@ OwnResourceListing copyOwnResourceListing(
   required ResourceListingLifecycle lifecycle,
   DateTime? publishedAt,
   DateTime? closedAt,
+  String? coverObjectPath,
 }) => OwnResourceListing(
   id: item.id,
   ownerProfileId: item.ownerProfileId,
@@ -322,4 +353,26 @@ OwnResourceListing copyOwnResourceListing(
   updatedAt: DateTime.utc(2026, 9, 15),
   publishedAt: publishedAt ?? item.publishedAt,
   closedAt: closedAt,
+  coverObjectPath: coverObjectPath ?? item.coverObjectPath,
+);
+
+OwnResourceListing copyOwnResourceListingCover(
+  OwnResourceListing item,
+  String? coverObjectPath,
+) => OwnResourceListing(
+  id: item.id,
+  ownerProfileId: item.ownerProfileId,
+  mode: item.mode,
+  lifecycle: item.lifecycle,
+  title: item.title,
+  description: item.description,
+  countryCode: item.countryCode,
+  locality: item.locality,
+  administrativeArea: item.administrativeArea,
+  publicLocationLabel: item.publicLocationLabel,
+  createdAt: item.createdAt,
+  updatedAt: item.updatedAt,
+  publishedAt: item.publishedAt,
+  closedAt: item.closedAt,
+  coverObjectPath: coverObjectPath,
 );

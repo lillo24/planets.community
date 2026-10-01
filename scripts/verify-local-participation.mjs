@@ -1,6 +1,7 @@
 import { createClient } from "@supabase/supabase-js";
 
 import { readLocalSupabaseStatus } from "./lib/local-supabase-status.mjs";
+import { ensureLocalProfilePhoto } from "./lib/local-profile-photo.mjs";
 
 const repositoryRoot = process.cwd();
 const mailpitUrl = (
@@ -22,6 +23,11 @@ async function verifyParticipation() {
     ensureCompleteProfile(requester, "Participation Requester"),
     ensureCompleteProfile(unrelated, "Participation Unrelated"),
   ]);
+  await Promise.all(
+    [creator, requester, unrelated].map((user) =>
+      ensureLocalProfilePhoto(user),
+    ),
+  );
 
   const anonymous = createClient(apiUrl, publishableKey, {
     auth: { persistSession: false },
@@ -220,6 +226,7 @@ async function createProposal(creator, exactMeetingText) {
     p_exact_location_visibility: "participants",
     p_skill_ids: [],
     p_skill_importances: [],
+    p_people_capacity: 20,
   });
   if (error || typeof data !== "string") {
     throw safeDatabaseFailure("create the participation proposal", error ?? {});
@@ -260,6 +267,7 @@ async function createTavolo(creator, exactMeetingText) {
       p_duration_minutes: 90,
       p_event_timezone: "Europe/Rome",
       p_effective_from: "2098-01-01",
+      p_people_capacity: 20,
     },
   );
   if (error || typeof data !== "string") {

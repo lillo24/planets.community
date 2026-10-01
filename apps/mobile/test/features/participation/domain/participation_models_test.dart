@@ -73,7 +73,7 @@ void main() {
     });
 
     test('parses creator review and protected meeting rows', () {
-      final request = parser.creatorJoinRequest({
+      final request = parser.managerJoinRequest({
         'request_id': 'request-1',
         'requester_profile_id': 'user-2',
         'requester_display_name': 'Jordan',
@@ -83,7 +83,7 @@ void main() {
         'resolved_at': '2026-09-08T11:00:00Z',
         'resolved_by_profile_id': 'user-1',
       });
-      final member = parser.creatorMember({
+      final member = parser.managerMember({
         'membership_id': 'membership-1',
         'participant_profile_id': 'user-2',
         'participant_display_name': 'Jordan',

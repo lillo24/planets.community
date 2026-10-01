@@ -1,0 +1,127 @@
+{
+  "schemaVersion": 1,
+  "retrievedOn": "2026-09-29",
+  "licenseUrl": "https://www.pexels.com/license/",
+  "normalization": "Thoughtfully cropped to 16:9, resized to 1280x720, converted to WebP, and stripped of metadata for PLANETS local demo use.",
+  "covers": [
+    {
+      "file": "covers/mural.webp",
+      "scenario": "Coloriamo insieme il muro del sottopasso",
+      "sourcePageUrl": "https://www.pexels.com/photo/people-having-conversation-while-working-on-the-street-10615943/",
+      "photographer": "Quang Nguyen Vinh",
+      "width": 1280,
+      "height": 720,
+      "bytes": 95122,
+      "sha256": "c335663b9f29e3b8c737ea34bb964731f8e30f8fd18280642039de1c3294ee90"
+    },
+    {
+      "file": "covers/repair-cafe.webp",
+      "scenario": "Repair Café: aggiustiamo piccoli oggetti insieme",
+      "sourcePageUrl": "https://www.pexels.com/photo/tools-in-a-toolbox-9607203/",
+      "photographer": "Anastasia Shuraeva",
+      "width": 1280,
+      "height": 720,
+      "bytes": 80612,
+      "sha256": "260e244504218d842fbc8b54802993c186fa77f10f7322dbdd4f0eeab41ef14f"
+    },
+    {
+      "file": "covers/acoustic-concert.webp",
+      "scenario": "Concerto acustico nel cortile",
+      "sourcePageUrl": "https://www.pexels.com/photo/people-playing-musical-instruments-in-the-field-10434985/",
+      "photographer": "cottonbro studio",
+      "width": 1280,
+      "height": 720,
+      "bytes": 222218,
+      "sha256": "a7ad59eae46663f38bc9296e7350ad9545aaaa7e96ef3a2c8ce3e2a013459cb1"
+    },
+    {
+      "file": "covers/weekly-community-table.webp",
+      "scenario": "Idee per il quartiere — tavolo del mercoledì",
+      "sourcePageUrl": "https://www.pexels.com/photo/a-group-of-people-talking-to-each-other-while-sitting-near-the-table-7495293/",
+      "photographer": "Moe Magners",
+      "width": 1280,
+      "height": 720,
+      "bytes": 80462,
+      "sha256": "d537d4fcc0688682de091d17316b8942ef575a5511c8b479c44f1fceb89ef15f"
+    },
+    {
+      "file": "covers/makers-table.webp",
+      "scenario": "Laboratorio aperto: legno e piccole riparazioni",
+      "sourcePageUrl": "https://www.pexels.com/photo/man-and-woman-working-inside-a-room-6791491/",
+      "photographer": "Tima Miroshnichenko",
+      "width": 1280,
+      "height": 720,
+      "bytes": 94080,
+      "sha256": "2ebedcfdbcaed6203d0cd2d8f1a34b1374b3befa0d6842b42e481ee1d6d2aa12"
+    },
+    {
+      "file": "covers/reading-group.webp",
+      "scenario": "Gruppo di lettura del sabato",
+      "sourcePageUrl": "https://www.pexels.com/photo/people-cooperate-around-book-15017187/",
+      "photographer": "Xhemi Photo",
+      "width": 1280,
+      "height": 720,
+      "bytes": 43650,
+      "sha256": "e2a76b03805b059f1d4d55f94c5aacf2ba4ad8a1da0ed9082c7819c4310c9b26"
+    },
+    {
+      "file": "covers/garden-tools.webp",
+      "scenario": "Regalo attrezzi da giardinaggio",
+      "sourcePageUrl": "https://www.pexels.com/photo/various-gardening-tools-with-plants-and-opened-book-6231722/",
+      "photographer": "Gary Barnes",
+      "width": 1280,
+      "height": 720,
+      "bytes": 139942,
+      "sha256": "0e8a0b1110b731de8aa737d7a4eb4b8545e209325bc79321b46b80e4983ed5c2"
+    },
+    {
+      "file": "covers/folding-tables.webp",
+      "scenario": "Scambio due tavoli pieghevoli per aiuto con una mensola",
+      "sourcePageUrl": "https://www.pexels.com/photo/folding-chairs-by-folding-tables-26832125/",
+      "photographer": "quang vinh",
+      "width": 1280,
+      "height": 720,
+      "bytes": 70620,
+      "sha256": "c3e035e1fae3dffd06e4e885fde1f24d3e4d938ecbc7ab87990648adf33dee88"
+    },
+    {
+      "file": "covers/seedling-trays.webp",
+      "scenario": "Vassoi per piantine — già assegnati",
+      "sourcePageUrl": "https://www.pexels.com/photo/person-flowers-pattern-texture-6508561/",
+      "photographer": "Tima Miroshnichenko",
+      "width": 1280,
+      "height": 720,
+      "bytes": 140958,
+      "sha256": "60edfb131e6c0183619bcb7c9cf502dfde130844f2d61d7f3e9354560a2a8e93"
+    }
+  ],
+  "profiles": [
+    {
+      "file": "profiles/giulia.webp",
+      "persona": "Giulia",
+      "origin": "Locally generated abstract initial avatar; not a stock identity.",
+      "width": 512,
+      "height": 512,
+      "bytes": 8330,
+      "sha256": "e21e1098aa40b510d3688e4e90571459c3e6f24545b08da67beac2654a454648"
+    },
+    {
+      "file": "profiles/marco.webp",
+      "persona": "Marco",
+      "origin": "Locally generated abstract initial avatar; not a stock identity.",
+      "width": 512,
+      "height": 512,
+      "bytes": 7648,
+      "sha256": "b2506cf4db822504490947d2ce5f9f5abcb72faac1d08925013969a465d3b519"
+    },
+    {
+      "file": "profiles/sara.webp",
+      "persona": "Sara",
+      "origin": "Locally generated abstract initial avatar; not a stock identity.",
+      "width": 512,
+      "height": 512,
+      "bytes": 7580,
+      "sha256": "7886017e6ac003aece45822487fe8d5d75045d42c930bbcd5dbbe7796df3d44a"
+    }
+  ]
+}

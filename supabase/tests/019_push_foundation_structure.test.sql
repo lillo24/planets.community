@@ -56,7 +56,13 @@ select columns_are(
     'completed_at',
     'completion_reason',
     'chat_id',
-    'message_id'
+    'message_id',
+    'resource_listing_id',
+    'resource_request_id',
+    'resource_chat_id',
+    'resource_chat_message_id',
+    'resource_agreement_id',
+    'resource_agreement_event_id'
   ],
   'push jobs contain recipient-level semantic identifiers and scheduling only'
 );

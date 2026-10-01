@@ -8,9 +8,17 @@ import '../../features/auth/application/return_destination.dart';
 import '../../features/auth/domain/auth_models.dart';
 import '../../features/auth/presentation/request_code_screen.dart';
 import '../../features/auth/presentation/verify_code_screen.dart';
+import '../../features/blocking/presentation/blocked_users_screen.dart';
 import '../../features/messages/presentation/messages_routes.dart';
 import '../../features/messages/presentation/messages_screen.dart';
 import '../../features/messages/presentation/participation_request_message_screen.dart';
+import '../../features/moderation/domain/moderation_models.dart';
+import '../../features/moderation/presentation/counterstatement_screen.dart';
+import '../../features/moderation/presentation/own_reports_screen.dart';
+import '../../features/moderation/presentation/corroboration_screens.dart';
+import '../../features/moderation/presentation/moderation_evidence_requests_screen.dart';
+import '../../features/moderation/presentation/moderation_routes.dart';
+import '../../features/moderation/presentation/report_form_screen.dart';
 import '../../features/notifications/presentation/notification_preferences_screen.dart';
 import '../../features/notifications/presentation/notification_routes.dart';
 import '../../features/notifications/presentation/notifications_screen.dart';
@@ -18,6 +26,16 @@ import '../../features/profile/presentation/profile_edit_screen.dart';
 import '../../features/profile/presentation/profile_screen.dart';
 import '../../features/project_chat/presentation/project_chat_info_screen.dart';
 import '../../features/project_chat/presentation/project_chat_screen.dart';
+import '../../features/project_delegates/presentation/project_coorganizers_screen.dart';
+import '../../features/project_delegates/presentation/project_delegate_routes.dart';
+import '../../features/project_delegates/presentation/project_invite_screen.dart';
+import '../../features/project_delegates/presentation/project_manage_screen.dart';
+import '../../features/project_request_chat/presentation/project_request_chat_screen.dart';
+import '../../features/project_resource_needs/presentation/project_resource_need_routes.dart';
+import '../../features/project_resource_needs/presentation/project_resource_matches_screen.dart';
+import '../../features/project_resource_needs/presentation/project_resource_needs_screen.dart';
+import '../../features/project_workspace/presentation/project_workspace_routes.dart';
+import '../../features/project_workspace/presentation/project_workspace_screen.dart';
 import '../../features/participation/domain/participation_models.dart';
 import '../../features/participation/presentation/creator_participation_screen.dart';
 import '../../features/participation/presentation/join_request_screen.dart';
@@ -31,6 +49,12 @@ import '../../features/recurring_activities/presentation/recurring_activity_edit
 import '../../features/resource_listings/presentation/own_resource_listings_screen.dart';
 import '../../features/resource_listings/presentation/public_resource_listings_screen.dart';
 import '../../features/resource_listings/presentation/resource_listing_editor_screen.dart';
+import '../../features/resource_loans/presentation/resource_loan_schedule_screen.dart';
+import '../../features/resource_chat/presentation/resource_chat_screen.dart';
+import '../../features/resource_requests/presentation/resource_request_screen.dart';
+import '../../features/resource_saved_searches/presentation/resource_saved_search_routes.dart';
+import '../../features/resource_saved_searches/presentation/resource_saved_searches_screen.dart';
+import '../../features/settings/presentation/settings_screen.dart';
 import '../../l10n/generated/app_localizations.dart';
 import '../foundation_screen.dart';
 import 'app_navigation_shell.dart';
@@ -68,7 +92,10 @@ RoutingConfig _routingConfig(
       final isRequestRoute = path == '/auth';
       final isVerifyRoute = path == '/auth/verify';
       final isAuthRoute = isRequestRoute || isVerifyRoute;
-      final isProfileRoute = path == '/profile' || path == '/profile/edit';
+      final isModerationRoute =
+          path.startsWith('/profile/reports') ||
+          path.startsWith('/profile/review-requests');
+      final isProfileEditRoute = path == '/profile/edit';
       final isProposalManagementRoute =
           path == '/proposals/mine' ||
           path == '/proposals/create' ||
@@ -81,22 +108,32 @@ RoutingConfig _routingConfig(
       final isParticipationRoute = ParticipationRoutes.isParticipationPath(
         path,
       );
+      final isProjectResourceNeedManagementRoute =
+          ProjectResourceNeedRoutes.isManagementPath(path);
+      final isProjectDelegateManagementRoute =
+          ProjectDelegateRoutes.isManagementPath(path);
+      final isProjectWorkspaceManagementRoute =
+          ProjectWorkspaceRoutes.isManagementPath(path);
       final isMessagesRoute = isMessagesPath(path);
       final isNotificationsRoute = isNotificationsPath(path);
       final isActivityManagementRoute =
           isProposalManagementRoute ||
           isTavoliManagementRoute ||
           isResourceManagementRoute ||
+          isProjectResourceNeedManagementRoute ||
+          isProjectDelegateManagementRoute ||
+          isProjectWorkspaceManagementRoute ||
           isParticipationRoute ||
           isMessagesRoute ||
-          isNotificationsRoute;
+          isNotificationsRoute ||
+          isModerationRoute;
 
       if (session.phase == AuthSessionPhase.restoring) {
         return null;
       }
 
       if (session.phase == AuthSessionPhase.signedOut &&
-          (isProfileRoute || isActivityManagementRoute)) {
+          (isProfileEditRoute || isActivityManagementRoute)) {
         return Uri(
           path: '/auth',
           queryParameters: {'returnTo': state.uri.toString()},
@@ -104,7 +141,12 @@ RoutingConfig _routingConfig(
       }
 
       if (session.phase == AuthSessionPhase.profileSetupRequired &&
-          (isParticipationRoute || isMessagesRoute || isNotificationsRoute)) {
+          (isParticipationRoute ||
+              isProjectResourceNeedManagementRoute ||
+              isProjectDelegateManagementRoute ||
+              isProjectWorkspaceManagementRoute ||
+              isMessagesRoute ||
+              isNotificationsRoute)) {
         return Uri(
           path: '/profile/edit',
           queryParameters: {'returnTo': state.uri.toString()},
@@ -141,6 +183,10 @@ RoutingConfig _routingConfig(
             pending?.returnTo ??
             sanitizeReturnDestination(state.uri.queryParameters['returnTo']);
         if (ParticipationRoutes.isParticipationPath(returnTo) ||
+            ProjectResourceNeedRoutes.isManagementPath(returnTo) ||
+            ProjectDelegateRoutes.isManagementPath(returnTo) ||
+            ProjectWorkspaceRoutes.isManagementPath(returnTo) ||
+            ProjectDelegateRoutes.isInvitePath(returnTo) ||
             isMessagesPath(returnTo) ||
             isNotificationsPath(returnTo) ||
             _isResourceManagementPath(returnTo)) {
@@ -183,6 +229,29 @@ RoutingConfig _routingConfig(
         path: '/auth/verify',
         builder: (context, state) => const VerifyCodeScreen(),
       ),
+      GoRoute(
+        path: '/invite/project/:token',
+        builder: (context, state) => ProjectInviteScreen(
+          key: state.pageKey,
+          token: state.pathParameters['token']!,
+        ),
+      ),
+      GoRoute(
+        path: '/profile/reports/review-requests/corroboration/:requestId',
+        redirect: (context, state) => ModerationRoutes.corroborationDetail(
+          state.pathParameters['requestId']!,
+        ),
+      ),
+      GoRoute(
+        path: '/profile/reports/review-requests/counterstatement/:requestId',
+        redirect: (context, state) => ModerationRoutes.counterstatementDetail(
+          state.pathParameters['requestId']!,
+        ),
+      ),
+      GoRoute(
+        path: '/profile/reports/review-requests',
+        redirect: (context, state) => ModerationRoutes.reviewRequests,
+      ),
       StatefulShellRoute.indexedStack(
         builder: (context, state, shell) =>
             AppNavigationShell(navigationShell: shell),
@@ -201,7 +270,131 @@ RoutingConfig _routingConfig(
                           : sanitizeReturnDestination(
                               state.uri.queryParameters['returnTo'],
                             ),
+                      cancelTo: profileEditCancelDestination(
+                        state.uri.queryParameters['returnTo'],
+                      ),
                     ),
+                  ),
+                  GoRoute(
+                    path: 'blocked-users',
+                    builder: (context, state) => const BlockedUsersScreen(),
+                  ),
+                  GoRoute(
+                    path: 'reports',
+                    builder: (context, state) => const OwnReportsScreen(),
+                    routes: [
+                      GoRoute(
+                        path: 'new',
+                        builder: (context, state) {
+                          final target = state.extra;
+                          if (target is! ModerationReportTarget) {
+                            return const _UnknownRouteScreen();
+                          }
+                          return ReportFormScreen(target: target);
+                        },
+                      ),
+                    ],
+                  ),
+                  GoRoute(
+                    path: 'review-requests',
+                    builder: (context, state) =>
+                        const ModerationEvidenceRequestsScreen(),
+                    routes: [
+                      GoRoute(
+                        path: 'corroboration/:requestId',
+                        builder: (context, state) => CorroborationDetailScreen(
+                          requestId: state.pathParameters['requestId']!,
+                        ),
+                      ),
+                      GoRoute(
+                        path: 'counterstatement/:requestId',
+                        builder: (context, state) =>
+                            CounterstatementDetailScreen(
+                              requestId: state.pathParameters['requestId']!,
+                            ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ],
+          ),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/',
+                builder: (context, state) => const FoundationScreen(),
+              ),
+              GoRoute(
+                path: '/settings',
+                builder: (context, state) => const SettingsScreen(),
+                routes: [
+                  GoRoute(
+                    path: 'language',
+                    builder: (context, state) =>
+                        const LanguageSelectionScreen(),
+                  ),
+                ],
+              ),
+              GoRoute(
+                path: '/messages',
+                builder: (context, state) => const MessagesScreen(),
+                routes: [
+                  GoRoute(
+                    path: 'requests/resource/:requestId',
+                    builder: (context, state) => ResourceRequestScreen(
+                      key: state.pageKey,
+                      requestId: state.pathParameters['requestId']!,
+                    ),
+                  ),
+                  GoRoute(
+                    path: 'requests/:requestId',
+                    builder: (context, state) =>
+                        ParticipationRequestMessageScreen(
+                          key: state.pageKey,
+                          requestId: state.pathParameters['requestId']!,
+                        ),
+                  ),
+                  GoRoute(
+                    path: 'chats/resource/:chatId',
+                    builder: (context, state) => ResourceChatScreen(
+                      key: state.pageKey,
+                      chatId: state.pathParameters['chatId']!,
+                    ),
+                  ),
+                  GoRoute(
+                    path: 'chats/request/:requestId',
+                    builder: (context, state) => ProjectRequestChatScreen(
+                      key: state.pageKey,
+                      requestId: state.pathParameters['requestId']!,
+                    ),
+                  ),
+                  GoRoute(
+                    path: 'chats/:chatId',
+                    builder: (context, state) => ProjectChatScreen(
+                      key: state.pageKey,
+                      chatId: state.pathParameters['chatId']!,
+                    ),
+                    routes: [
+                      GoRoute(
+                        path: 'info',
+                        builder: (context, state) => ProjectChatInfoScreen(
+                          key: state.pageKey,
+                          chatId: state.pathParameters['chatId']!,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+              GoRoute(
+                path: '/notifications',
+                builder: (context, state) => const NotificationsScreen(),
+                routes: [
+                  GoRoute(
+                    path: 'preferences',
+                    builder: (context, state) =>
+                        const NotificationPreferencesScreen(),
                   ),
                 ],
               ),
@@ -234,6 +427,24 @@ RoutingConfig _routingConfig(
                         ),
                       ),
                       GoRoute(
+                        path: 'resources',
+                        builder: (context, state) => ProjectResourceNeedsScreen(
+                          projectId: state.pathParameters['id']!,
+                          projectKind: ProjectKind.oneTime,
+                        ),
+                        routes: [
+                          GoRoute(
+                            path: ':resourceNeedId/matches',
+                            builder: (context, state) =>
+                                ProjectResourceMatchesScreen(
+                                  projectId: state.pathParameters['id']!,
+                                  resourceNeedId:
+                                      state.pathParameters['resourceNeedId']!,
+                                ),
+                          ),
+                        ],
+                      ),
+                      GoRoute(
                         path: 'join',
                         builder: (context, state) => JoinRequestScreen(
                           projectId: state.pathParameters['id']!,
@@ -243,6 +454,27 @@ RoutingConfig _routingConfig(
                       GoRoute(
                         path: 'participants',
                         builder: (context, state) => CreatorParticipationScreen(
+                          projectId: state.pathParameters['id']!,
+                          projectKind: ProjectKind.oneTime,
+                        ),
+                      ),
+                      GoRoute(
+                        path: 'manage',
+                        builder: (context, state) => ProjectManageScreen(
+                          projectId: state.pathParameters['id']!,
+                          projectKind: ProjectKind.oneTime,
+                        ),
+                      ),
+                      GoRoute(
+                        path: 'co-organizers',
+                        builder: (context, state) => ProjectTeamScreen(
+                          projectId: state.pathParameters['id']!,
+                          projectKind: ProjectKind.oneTime,
+                        ),
+                      ),
+                      GoRoute(
+                        path: 'workspace',
+                        builder: (context, state) => ProjectWorkspaceScreen(
                           projectId: state.pathParameters['id']!,
                           projectKind: ProjectKind.oneTime,
                         ),
@@ -281,6 +513,24 @@ RoutingConfig _routingConfig(
                             ),
                       ),
                       GoRoute(
+                        path: 'resources',
+                        builder: (context, state) => ProjectResourceNeedsScreen(
+                          projectId: state.pathParameters['id']!,
+                          projectKind: ProjectKind.recurring,
+                        ),
+                        routes: [
+                          GoRoute(
+                            path: ':resourceNeedId/matches',
+                            builder: (context, state) =>
+                                ProjectResourceMatchesScreen(
+                                  projectId: state.pathParameters['id']!,
+                                  resourceNeedId:
+                                      state.pathParameters['resourceNeedId']!,
+                                ),
+                          ),
+                        ],
+                      ),
+                      GoRoute(
                         path: 'join',
                         builder: (context, state) => JoinRequestScreen(
                           projectId: state.pathParameters['id']!,
@@ -294,56 +544,28 @@ RoutingConfig _routingConfig(
                           projectKind: ProjectKind.recurring,
                         ),
                       ),
-                    ],
-                  ),
-                ],
-              ),
-            ],
-          ),
-          StatefulShellBranch(
-            routes: [
-              GoRoute(
-                path: '/',
-                builder: (context, state) => const FoundationScreen(),
-              ),
-              GoRoute(
-                path: '/messages',
-                builder: (context, state) => const MessagesScreen(),
-                routes: [
-                  GoRoute(
-                    path: 'requests/:requestId',
-                    builder: (context, state) =>
-                        ParticipationRequestMessageScreen(
-                          key: state.pageKey,
-                          requestId: state.pathParameters['requestId']!,
-                        ),
-                  ),
-                  GoRoute(
-                    path: 'chats/:chatId',
-                    builder: (context, state) => ProjectChatScreen(
-                      key: state.pageKey,
-                      chatId: state.pathParameters['chatId']!,
-                    ),
-                    routes: [
                       GoRoute(
-                        path: 'info',
-                        builder: (context, state) => ProjectChatInfoScreen(
-                          key: state.pageKey,
-                          chatId: state.pathParameters['chatId']!,
+                        path: 'manage',
+                        builder: (context, state) => ProjectManageScreen(
+                          projectId: state.pathParameters['id']!,
+                          projectKind: ProjectKind.recurring,
+                        ),
+                      ),
+                      GoRoute(
+                        path: 'co-organizers',
+                        builder: (context, state) => ProjectTeamScreen(
+                          projectId: state.pathParameters['id']!,
+                          projectKind: ProjectKind.recurring,
+                        ),
+                      ),
+                      GoRoute(
+                        path: 'workspace',
+                        builder: (context, state) => ProjectWorkspaceScreen(
+                          projectId: state.pathParameters['id']!,
+                          projectKind: ProjectKind.recurring,
                         ),
                       ),
                     ],
-                  ),
-                ],
-              ),
-              GoRoute(
-                path: '/notifications',
-                builder: (context, state) => const NotificationsScreen(),
-                routes: [
-                  GoRoute(
-                    path: 'preferences',
-                    builder: (context, state) =>
-                        const NotificationPreferencesScreen(),
                   ),
                 ],
               ),
@@ -363,6 +585,11 @@ RoutingConfig _routingConfig(
                         const ResourceListingEditorScreen(),
                   ),
                   GoRoute(
+                    path: 'saved-searches',
+                    builder: (context, state) =>
+                        const ResourceSavedSearchesScreen(),
+                  ),
+                  GoRoute(
                     path: ':listingId',
                     builder: (context, state) =>
                         PublicResourceListingDetailScreen(
@@ -375,6 +602,12 @@ RoutingConfig _routingConfig(
                             ResourceListingEditorScreen(
                               listingId: state.pathParameters['listingId'],
                             ),
+                      ),
+                      GoRoute(
+                        path: 'loan-schedule',
+                        builder: (context, state) => ResourceLoanScheduleScreen(
+                          listingId: state.pathParameters['listingId']!,
+                        ),
                       ),
                     ],
                   ),
@@ -391,11 +624,12 @@ RoutingConfig _routingConfig(
 bool _isResourceManagementPath(String destination) {
   final path = Uri.tryParse(destination)?.path;
   if (path == null) return false;
+  if (ResourceSavedSearchRoutes.isManagementPath(path)) return true;
   if (path == '/resources/mine' || path == '/resources/create') return true;
   final segments = Uri(path: path).pathSegments;
   return segments.length == 3 &&
       segments.first == 'resources' &&
-      segments.last == 'edit';
+      (segments.last == 'edit' || segments.last == 'loan-schedule');
 }
 
 final appRouterProvider = Provider<GoRouter>((ref) {

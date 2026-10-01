@@ -58,7 +58,28 @@ class _HomeNotificationButtonState
       child: IconButton(
         key: const Key('open-notifications-button'),
         tooltip: l10n.notificationsOpenTooltip,
-        onPressed: () => context.push('/notifications'),
+        onPressed: () {
+          if (session.phase == AuthSessionPhase.signedOut) {
+            ScaffoldMessenger.of(context)
+              ..hideCurrentSnackBar()
+              ..showSnackBar(
+                SnackBar(
+                  content: Text(l10n.notificationsSignInMessage),
+                  action: SnackBarAction(
+                    label: l10n.authSignInAction,
+                    onPressed: () => context.go(
+                      Uri(
+                        path: '/auth',
+                        queryParameters: const {'returnTo': '/notifications'},
+                      ).toString(),
+                    ),
+                  ),
+                ),
+              );
+            return;
+          }
+          context.push('/notifications');
+        },
         icon: Badge(
           isLabelVisible: count > 0,
           label: Text(count > 99 ? '99+' : '$count'),

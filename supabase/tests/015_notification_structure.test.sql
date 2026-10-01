@@ -65,7 +65,13 @@ select columns_are(
     'created_at',
     'read_at',
     'chat_id',
-    'message_id'
+    'message_id',
+    'resource_listing_id',
+    'resource_request_id',
+    'resource_chat_id',
+    'resource_chat_message_id',
+    'resource_agreement_id',
+    'resource_agreement_event_id'
   ],
   'notification rows persist semantic identifiers and read state only'
 );
@@ -188,7 +194,7 @@ select ok(
     select 1
     from pg_constraint
     where conrelid = 'public.notifications'::regclass
-      and conname = 'notifications_current_participation_project_required'
+      and conname = 'notifications_reference_shape_valid'
       and contype = 'c'
       and pg_get_constraintdef(oid) like '%participation_request_received%'
       and pg_get_constraintdef(oid) like '%participation_request_withdrawn%'
@@ -199,7 +205,7 @@ select ok(
       and pg_get_constraintdef(oid) like '%chat_message_received%'
       and pg_get_constraintdef(oid) like '%project_id IS NOT NULL%'
   ),
-  'all current participation kinds still require project context'
+  'all existing Project notification kinds still require project context'
 );
 select ok(
   pg_get_function_result(

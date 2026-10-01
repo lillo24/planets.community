@@ -1,3 +1,6 @@
+import '../../cover_media/domain/cover_media_models.dart';
+import '../../participation/domain/project_capacity.dart';
+
 enum ProposalLifecycle {
   draft('draft'),
   published('published'),
@@ -137,6 +140,8 @@ class ProposalSummary {
     required this.publicLocationLabel,
     required this.status,
     required this.skills,
+    required this.capacity,
+    this.coverObjectPath,
   });
 
   final String id;
@@ -151,6 +156,8 @@ class ProposalSummary {
   final String publicLocationLabel;
   final ProposalStatus status;
   final List<ProposalSkill> skills;
+  final ProjectCapacitySnapshot capacity;
+  final String? coverObjectPath;
 
   ProposalCursor get cursor => ProposalCursor(startsAt: startsAt, id: id);
 }
@@ -207,6 +214,8 @@ class OwnProposal {
     required this.updatedAt,
     required this.publishedAt,
     required this.cancelledAt,
+    required this.capacity,
+    this.coverObjectPath,
   });
 
   final String id;
@@ -229,15 +238,19 @@ class OwnProposal {
   final DateTime updatedAt;
   final DateTime? publishedAt;
   final DateTime? cancelledAt;
+  final ProjectCapacitySnapshot capacity;
+  final String? coverObjectPath;
 
   bool isEditableAt(DateTime now) =>
       lifecycle == ProposalLifecycle.draft ||
       (lifecycle == ProposalLifecycle.published &&
+          (status == null || status == ProposalStatus.upcoming) &&
           startsAt != null &&
           now.isBefore(startsAt!));
 
   bool canCancelAt(DateTime now) =>
       lifecycle == ProposalLifecycle.published &&
+      status != ProposalStatus.completed &&
       endsAt != null &&
       now.isBefore(endsAt!);
 }
@@ -257,6 +270,7 @@ class ProposalInput {
     required this.exactMeetingText,
     required this.exactLocationVisibility,
     required this.skillImportanceById,
+    required this.peopleCapacity,
   });
 
   final String title;
@@ -272,6 +286,7 @@ class ProposalInput {
   final String exactMeetingText;
   final ExactLocationVisibility exactLocationVisibility;
   final Map<String, ProposalSkillImportance> skillImportanceById;
+  final int? peopleCapacity;
 }
 
 bool isValidProposalDraft(ProposalInput input) {
@@ -294,6 +309,7 @@ bool isValidProposalDraft(ProposalInput input) {
       administrativeAreaLength <= 120 &&
       labelLength <= 180 &&
       exactLength <= 1000 &&
+      isValidProjectPeopleCapacity(input.peopleCapacity) &&
       (input.startsAt == null ||
           input.endsAt == null ||
           input.endsAt!.isAfter(input.startsAt!));
@@ -310,9 +326,16 @@ bool isPublishableProposalInput(ProposalInput input) =>
     input.countryCode.trim().isNotEmpty &&
     input.locality.trim().isNotEmpty &&
     input.publicLocationLabel.trim().isNotEmpty &&
-    input.exactMeetingText.trim().isNotEmpty;
+    input.exactMeetingText.trim().isNotEmpty &&
+    input.peopleCapacity != null;
 
-enum ProposalFailureKind { invalidInput, unavailable, forbidden, invalidState }
+enum ProposalFailureKind {
+  invalidInput,
+  unavailable,
+  forbidden,
+  invalidState,
+  profilePhotoRequired,
+}
 
 enum ProposalLoadPhase { idle, loading, ready, loadingMore, failure }
 
@@ -322,6 +345,7 @@ class PublicProposalsState {
     this.items = const [],
     this.requestedItems = const [],
     this.categories = const [],
+    this.query = '',
     this.locality = '',
     this.selectedSkillIds = const {},
     this.hasMore = true,
@@ -333,6 +357,7 @@ class PublicProposalsState {
   final List<ProposalSummary> items;
   final List<RequestedProposalSummary> requestedItems;
   final List<ProposalSkillCategory> categories;
+  final String query;
   final String locality;
   final Set<String> selectedSkillIds;
   final bool hasMore;
@@ -397,6 +422,8 @@ class ProposalEditorState {
     this.proposal,
     this.categories = const [],
     this.failure,
+    this.coverFailure,
+    this.coverPartialSave,
   });
 
   final ProposalEditorPhase phase;
@@ -404,6 +431,8 @@ class ProposalEditorState {
   final OwnProposal? proposal;
   final List<ProposalSkillCategory> categories;
   final ProposalFailureKind? failure;
+  final CoverPersistenceFailureKind? coverFailure;
+  final CoverPartialSaveKind? coverPartialSave;
 
   bool get isBusy => switch (phase) {
     ProposalEditorPhase.loading ||

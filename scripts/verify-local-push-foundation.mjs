@@ -2,6 +2,7 @@ import postgres from "postgres";
 import { createClient } from "@supabase/supabase-js";
 
 import { readLocalSupabaseStatus } from "./lib/local-supabase-status.mjs";
+import { ensureLocalProfilePhoto } from "./lib/local-profile-photo.mjs";
 
 const repositoryRoot = process.cwd();
 const mailpitUrl = (
@@ -40,6 +41,9 @@ async function verifyPushFoundation() {
     ensureCompleteProfile(requester, "Push Requester"),
     ensureCompleteProfile(other, "Push Other"),
   ]);
+  await Promise.all(
+    [creator, requester, other].map((user) => ensureLocalProfilePhoto(user)),
+  );
 
   const installationId = "91000000-0000-4000-8000-000000000001";
   const firstProviderToken = "synthetic-push-token-one";
@@ -442,6 +446,7 @@ async function createProposal(creator, exactMeetingText) {
     p_exact_location_visibility: "participants",
     p_skill_ids: [],
     p_skill_importances: [],
+    p_people_capacity: 20,
   });
   if (error || typeof data !== "string") {
     throw safeDatabaseFailure(

@@ -2,6 +2,7 @@ import { createClient } from "@supabase/supabase-js";
 import postgres from "postgres";
 
 import { readLocalSupabaseStatus } from "./lib/local-supabase-status.mjs";
+import { ensureLocalProfilePhoto } from "./lib/local-profile-photo.mjs";
 
 const repositoryRoot = process.cwd();
 const mailpitUrl = (
@@ -35,6 +36,9 @@ async function verifyResourceListings() {
     ensureCompleteProfile(userA, "Resource Owner A", "private"),
     ensureCompleteProfile(userB, "Resource Owner B", "public"),
   ]);
+  await Promise.all(
+    [userA, userB].map((user) => ensureLocalProfilePhoto(user)),
+  );
 
   const anonymous = createClient(apiUrl, publishableKey, {
     auth: { persistSession: false },
@@ -105,8 +109,8 @@ async function verifyResourceListings() {
     throw new Error("An incomplete resource listing draft was publishable.");
   }
 
-  const donateDescription =
-    "Solid wood table available for a new home in the neighborhood.";
+  const discoveryPairToken = `resource listing verifier ${draftId}`;
+  const donateDescription = `Solid wood table available for a new home in the neighborhood. ${discoveryPairToken}.`;
   await updateListing(userA, draftId, {
     listingMode: "donate",
     title: "Community table",
@@ -132,7 +136,9 @@ async function verifyResourceListings() {
     );
   }
   assertExactKeys(donateCard, [
+    "active_request_count",
     "administrative_area",
+    "cover_object_path",
     "country_code",
     "description",
     "listing_id",
@@ -143,7 +149,9 @@ async function verifyResourceListings() {
     "title",
   ]);
   assertExactKeys(donateDetail[0], [
+    "active_request_count",
     "administrative_area",
+    "cover_object_path",
     "country_code",
     "description",
     "listing_id",
@@ -159,8 +167,10 @@ async function verifyResourceListings() {
     donateCard.country_code !== "IT" ||
     donateCard.locality !== "Trento" ||
     donateCard.public_location_label !== "Trento · Povo" ||
+    donateCard.active_request_count !== 0 ||
     donateDetail[0].owner_profile_id !== userA.id ||
     donateDetail[0].owner_display_name !== null ||
+    donateDetail[0].active_request_count !== 0 ||
     JSON.stringify(donateDetail[0]).includes(userAEmail)
   ) {
     throw new Error(
@@ -176,8 +186,7 @@ async function verifyResourceListings() {
     );
   }
 
-  const exchangeDescription =
-    "Battery and charger included for a practical exchange arrangement.";
+  const exchangeDescription = `Battery and charger included for a practical exchange arrangement. ${discoveryPairToken}.`;
   const exchangeId = await createDraft(userA, {
     listingMode: "exchange",
     title: "Cordless drill",
@@ -198,11 +207,36 @@ async function verifyResourceListings() {
       listPublic(anonymous, { query: "charger included" }),
       listPublic(anonymous, { query: "absent search phrase" }),
     ]);
-  assertOnlyListing(donateOnly, draftId, "donate mode");
-  assertOnlyListing(exchangeOnly, exchangeId, "exchange mode");
-  assertOnlyListing(trentoOnly, draftId, "locality");
-  assertOnlyListing(titleMatch, exchangeId, "title keyword");
-  assertOnlyListing(bodyMatch, exchangeId, "description keyword");
+  assertOnlyVerifierListing(
+    donateOnly,
+    [draftId, exchangeId],
+    draftId,
+    "donate mode",
+  );
+  assertOnlyVerifierListing(
+    exchangeOnly,
+    [draftId, exchangeId],
+    exchangeId,
+    "exchange mode",
+  );
+  assertOnlyVerifierListing(
+    trentoOnly,
+    [draftId, exchangeId],
+    draftId,
+    "locality",
+  );
+  assertOnlyVerifierListing(
+    titleMatch,
+    [draftId, exchangeId],
+    exchangeId,
+    "title keyword",
+  );
+  assertOnlyVerifierListing(
+    bodyMatch,
+    [draftId, exchangeId],
+    exchangeId,
+    "description keyword",
+  );
   if (noMatch.length !== 0) {
     throw new Error("A nonmatching keyword returned a public listing.");
   }
@@ -215,7 +249,10 @@ async function verifyResourceListings() {
     throw new Error("An invalid public listing mode filter did not fail.");
   }
 
-  const firstPage = await listPublic(anonymous, { limit: 1 });
+  const firstPage = await listPublic(anonymous, {
+    limit: 1,
+    query: discoveryPairToken,
+  });
   if (firstPage.length !== 1 || firstPage[0].listing_id !== exchangeId) {
     throw new Error("Newest-first listing discovery order was unstable.");
   }
@@ -223,6 +260,7 @@ async function verifyResourceListings() {
     limit: 1,
     cursorPublishedAt: firstPage[0].published_at,
     cursorId: firstPage[0].listing_id,
+    query: discoveryPairToken,
   });
   assertOnlyListing(secondPage, draftId, "paired keyset cursor");
 
@@ -480,6 +518,18 @@ function assertOnlyListing(rows, expectedId, filterName) {
       `The ${filterName} listing filter returned unexpected rows.`,
     );
   }
+}
+
+function assertOnlyVerifierListing(
+  rows,
+  verifierListingIds,
+  expectedId,
+  filterName,
+) {
+  const verifierRows = rows.filter((row) =>
+    verifierListingIds.includes(row.listing_id),
+  );
+  assertOnlyListing(verifierRows, expectedId, filterName);
 }
 
 function assertExactKeys(value, expectedKeys) {

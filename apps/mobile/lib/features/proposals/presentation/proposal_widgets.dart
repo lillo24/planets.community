@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import '../../../core/theme/app_tokens.dart';
 import '../../../core/widgets/requested_badge.dart';
 import '../../../l10n/generated/app_localizations.dart';
+import '../../cover_media/presentation/project_cover_image.dart';
+import '../../participation/presentation/project_capacity_label.dart';
 import '../domain/proposal_models.dart';
 import '../domain/proposal_time.dart';
 
@@ -70,51 +72,63 @@ class ProposalCard extends StatelessWidget {
       child: InkWell(
         key: Key('proposal-card-${proposal.id}'),
         onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.all(AppSpacing.medium),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            ProjectCoverImage(
+              key: Key('proposal-cover-${proposal.id}'),
+              title: proposal.title,
+              objectPath: proposal.coverObjectPath,
+            ),
+            Padding(
+              padding: const EdgeInsets.all(AppSpacing.medium),
+              child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Expanded(
-                    child: Text(
-                      proposal.title,
-                      style: Theme.of(context).textTheme.titleLarge,
-                    ),
-                  ),
-                  const SizedBox(width: AppSpacing.small),
-                  Wrap(
-                    spacing: AppSpacing.xSmall,
-                    runSpacing: AppSpacing.xSmall,
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      if (isRequested) const RequestedBadge(),
-                      ProposalStatusBadge(status: proposal.status),
+                      Expanded(
+                        child: Text(
+                          proposal.title,
+                          style: Theme.of(context).textTheme.titleLarge,
+                        ),
+                      ),
+                      const SizedBox(width: AppSpacing.small),
+                      Wrap(
+                        spacing: AppSpacing.xSmall,
+                        runSpacing: AppSpacing.xSmall,
+                        children: [
+                          if (isRequested) const RequestedBadge(),
+                          ProposalStatusBadge(status: proposal.status),
+                        ],
+                      ),
                     ],
                   ),
+                  const SizedBox(height: AppSpacing.small),
+                  Text(proposal.summary),
+                  const SizedBox(height: AppSpacing.medium),
+                  _IconText(
+                    icon: Icons.schedule_outlined,
+                    text:
+                        '${formatProposalDateTime(proposal.startsAt, proposal.eventTimezone, Localizations.localeOf(context).toLanguageTag())} – '
+                        '${formatProposalDateTime(proposal.endsAt, proposal.eventTimezone, Localizations.localeOf(context).toLanguageTag())}',
+                  ),
+                  const SizedBox(height: AppSpacing.small),
+                  _IconText(
+                    icon: Icons.location_on_outlined,
+                    text: proposal.publicLocationLabel,
+                  ),
+                  const SizedBox(height: AppSpacing.small),
+                  ProjectCapacityLabel(capacity: proposal.capacity),
+                  if (proposal.skills.isNotEmpty) ...[
+                    const SizedBox(height: AppSpacing.medium),
+                    ProposalSkillRequirements(skills: proposal.skills),
+                  ],
                 ],
               ),
-              const SizedBox(height: AppSpacing.small),
-              Text(proposal.summary),
-              const SizedBox(height: AppSpacing.medium),
-              _IconText(
-                icon: Icons.schedule_outlined,
-                text:
-                    '${formatProposalDateTime(proposal.startsAt, proposal.eventTimezone, Localizations.localeOf(context).toLanguageTag())} – '
-                    '${formatProposalDateTime(proposal.endsAt, proposal.eventTimezone, Localizations.localeOf(context).toLanguageTag())}',
-              ),
-              const SizedBox(height: AppSpacing.small),
-              _IconText(
-                icon: Icons.location_on_outlined,
-                text: proposal.publicLocationLabel,
-              ),
-              if (proposal.skills.isNotEmpty) ...[
-                const SizedBox(height: AppSpacing.medium),
-                ProposalSkillRequirements(skills: proposal.skills),
-              ],
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );

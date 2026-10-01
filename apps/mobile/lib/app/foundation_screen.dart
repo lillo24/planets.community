@@ -5,7 +5,6 @@ import '../core/theme/app_tokens.dart';
 import '../features/auth/presentation/auth_status.dart';
 import '../features/notifications/presentation/home_notification_button.dart';
 import '../l10n/generated/app_localizations.dart';
-import 'router/app_navigation_shell.dart';
 
 class FoundationScreen extends StatelessWidget {
   const FoundationScreen({super.key});
@@ -24,6 +23,12 @@ class FoundationScreen extends StatelessWidget {
             tooltip: l10n.messagesOpenTooltip,
             onPressed: () => context.push('/messages'),
             icon: const Icon(Icons.mail_outline),
+          ),
+          IconButton(
+            key: const Key('open-settings-button'),
+            tooltip: l10n.settingsOpenTooltip,
+            onPressed: () => context.push('/settings'),
+            icon: const Icon(Icons.settings_outlined),
           ),
         ],
       ),
@@ -61,9 +66,7 @@ class FoundationScreen extends StatelessWidget {
                     icon: Icons.explore_outlined,
                     title: l10n.homeProjectsTitle,
                     message: l10n.homeProjectsMessage,
-                    onTap: () =>
-                        StatefulNavigationShell.of(context)
-                            .goBranch(AppBranch.browse.index),
+                    onTap: () => context.go('/proposals'),
                   ),
                   const SizedBox(height: AppSpacing.small),
                   _HomePillarCard(

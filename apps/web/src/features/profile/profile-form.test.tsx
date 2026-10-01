@@ -13,9 +13,10 @@ import type { WebProfileGateway } from "@/features/profile/profile-gateway";
 import type { ProfileEditorData } from "@/features/profile/profile-models";
 
 const routerRefresh = vi.fn();
+const routerReplace = vi.fn();
 
 vi.mock("next/navigation", () => ({
-  useRouter: () => ({ refresh: routerRefresh }),
+  useRouter: () => ({ refresh: routerRefresh, replace: routerReplace }),
 }));
 
 afterEach(cleanup);
@@ -84,6 +85,26 @@ describe("ProfileForm", () => {
       expect(refresh).toHaveBeenCalledOnce();
     });
     expect(screen.getByText("Profile saved")).toBeVisible();
+  });
+
+  it("returns incomplete setup to a sanitized invite destination after save", async () => {
+    const profileGateway = gateway();
+    render(
+      <ProfileForm
+        initialData={fixture()}
+        returnTo="/invite/project/safe-token"
+        gateway={profileGateway}
+      />,
+    );
+    fireEvent.change(screen.getByRole("textbox", { name: "Display name" }), {
+      target: { value: "Casey" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Save profile" }));
+
+    await waitFor(() => {
+      expect(routerReplace).toHaveBeenCalledWith("/invite/project/safe-token");
+    });
+    expect(routerRefresh).not.toHaveBeenCalled();
   });
 
   it("shows a safe retryable failure without raw backend details", async () => {

@@ -5,6 +5,8 @@ import '../../../core/theme/app_tokens.dart';
 import '../../../core/time/event_time.dart';
 import '../../../core/widgets/requested_badge.dart';
 import '../../../l10n/generated/app_localizations.dart';
+import '../../cover_media/presentation/project_cover_image.dart';
+import '../../participation/presentation/project_capacity_label.dart';
 import '../domain/recurring_activity_models.dart';
 
 class RecurringActivityCard extends StatelessWidget {
@@ -25,6 +27,7 @@ class RecurringActivityCard extends StatelessWidget {
     final locale = Localizations.localeOf(context).toLanguageTag();
     final scheme = Theme.of(context).colorScheme;
     return Card(
+      clipBehavior: Clip.antiAlias,
       shape: isRequested
           ? RoundedRectangleBorder(
               borderRadius: AppRadii.medium,
@@ -35,48 +38,60 @@ class RecurringActivityCard extends StatelessWidget {
         key: Key('tavolo-card-${activity.id}'),
         onTap: onTap,
         borderRadius: AppRadii.medium,
-        child: Padding(
-          padding: const EdgeInsets.all(AppSpacing.medium),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            ProjectCoverImage(
+              key: Key('tavolo-cover-${activity.id}'),
+              title: activity.title,
+              objectPath: activity.coverObjectPath,
+            ),
+            Padding(
+              padding: const EdgeInsets.all(AppSpacing.medium),
+              child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Expanded(
-                    child: Text(
-                      activity.title,
-                      style: Theme.of(context).textTheme.titleLarge,
-                    ),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: Text(
+                          activity.title,
+                          style: Theme.of(context).textTheme.titleLarge,
+                        ),
+                      ),
+                      if (isRequested) ...[
+                        const SizedBox(width: AppSpacing.small),
+                        const RequestedBadge(),
+                      ],
+                    ],
                   ),
-                  if (isRequested) ...[
-                    const SizedBox(width: AppSpacing.small),
-                    const RequestedBadge(),
+                  const SizedBox(height: AppSpacing.xSmall),
+                  Text(activity.summary),
+                  if (activity.topic case final topic?) ...[
+                    const SizedBox(height: AppSpacing.xSmall),
+                    Text(topic, style: Theme.of(context).textTheme.labelLarge),
                   ],
+                  const SizedBox(height: AppSpacing.small),
+                  Text(
+                    '${activity.publicLocationLabel} · ${activity.locality}',
+                    key: Key('tavolo-public-location-${activity.id}'),
+                  ),
+                  const SizedBox(height: AppSpacing.xSmall),
+                  Text(formatRecurringSchedule(activity.schedule, context)),
+                  const SizedBox(height: AppSpacing.xSmall),
+                  ProjectCapacityLabel(capacity: activity.capacity),
+                  const SizedBox(height: AppSpacing.small),
+                  Text(
+                    '${l10n.tavoliNextMeeting}: '
+                    '${formatEventDateTime(activity.nextOccurrence.startsAt, activity.nextOccurrence.eventTimezone, locale)} – '
+                    '${DateFormat.Hm(locale).format(eventUtcToWallTime(activity.nextOccurrence.endsAt, activity.nextOccurrence.eventTimezone))}',
+                    style: Theme.of(context).textTheme.labelLarge,
+                  ),
                 ],
               ),
-              const SizedBox(height: AppSpacing.xSmall),
-              Text(activity.summary),
-              if (activity.topic case final topic?) ...[
-                const SizedBox(height: AppSpacing.xSmall),
-                Text(topic, style: Theme.of(context).textTheme.labelLarge),
-              ],
-              const SizedBox(height: AppSpacing.small),
-              Text(
-                '${activity.publicLocationLabel} · ${activity.locality}',
-                key: Key('tavolo-public-location-${activity.id}'),
-              ),
-              const SizedBox(height: AppSpacing.xSmall),
-              Text(formatRecurringSchedule(activity.schedule, context)),
-              const SizedBox(height: AppSpacing.small),
-              Text(
-                '${l10n.tavoliNextMeeting}: '
-                '${formatEventDateTime(activity.nextOccurrence.startsAt, activity.nextOccurrence.eventTimezone, locale)} – '
-                '${DateFormat.Hm(locale).format(eventUtcToWallTime(activity.nextOccurrence.endsAt, activity.nextOccurrence.eventTimezone))}',
-                style: Theme.of(context).textTheme.labelLarge,
-              ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );

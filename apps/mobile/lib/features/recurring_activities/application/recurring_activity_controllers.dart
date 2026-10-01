@@ -5,7 +5,10 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../auth/application/auth_session_controller.dart';
 import '../../auth/domain/auth_models.dart';
+import '../../cover_media/application/project_cover_reconciler.dart';
+import '../../cover_media/domain/cover_media_models.dart';
 import '../../participation/application/participation_controllers.dart';
+import '../../project_delegates/application/project_delegate_controllers.dart';
 import '../data/recurring_activity_gateway.dart';
 import '../domain/recurring_activity_models.dart';
 
@@ -413,11 +416,16 @@ class RecurringActivityEditorController
       );
     } catch (error) {
       if (_isCurrent(revision)) {
+        final failure = mapRecurringActivityFailure(error);
+        if (failure == RecurringActivityFailureKind.forbidden &&
+            activityId != null) {
+          _invalidateStructuralAuthority();
+        }
         state = RecurringActivityEditorState(
           phase: RecurringActivityEditorPhase.failure,
           expectedCreatorId: expectedCreatorId,
           activity: state.activity,
-          failure: mapRecurringActivityFailure(error),
+          failure: failure,
         );
       }
     }
@@ -425,8 +433,18 @@ class RecurringActivityEditorController
 
   Future<String?> saveDraft(
     String expectedCreatorId,
-    RecurringActivityInput input,
-  ) {
+    RecurringActivityInput input, {
+    CoverChange coverChange = const CoverChange.unchanged(),
+  }) {
+    if (state.isBusy) return Future<String?>.value();
+    final existing = state.activity;
+    if (existing != null &&
+        existing.lifecycle != RecurringActivityLifecycle.draft) {
+      return _reject(
+        expectedCreatorId,
+        RecurringActivityFailureKind.invalidState,
+      );
+    }
     if (!isValidRecurringActivityDraft(input) ||
         !isValidRecurringScheduleTransition(
           state.activity,
@@ -435,13 +453,28 @@ class RecurringActivityEditorController
         )) {
       return _reject(expectedCreatorId);
     }
-    return _save(expectedCreatorId, input, publishAfterSave: false);
+    return _save(
+      expectedCreatorId,
+      input,
+      publishAfterSave: false,
+      coverChange: coverChange,
+    );
   }
 
   Future<String?> publish(
     String expectedCreatorId,
-    RecurringActivityInput input,
-  ) {
+    RecurringActivityInput input, {
+    CoverChange coverChange = const CoverChange.unchanged(),
+  }) {
+    if (state.isBusy) return Future<String?>.value();
+    final existing = state.activity;
+    if (existing != null &&
+        existing.lifecycle != RecurringActivityLifecycle.draft) {
+      return _reject(
+        expectedCreatorId,
+        RecurringActivityFailureKind.invalidState,
+      );
+    }
     if (!isPublishableRecurringActivityInput(input) ||
         !isValidRecurringScheduleTransition(
           state.activity,
@@ -450,15 +483,59 @@ class RecurringActivityEditorController
         )) {
       return _reject(expectedCreatorId);
     }
-    return _save(expectedCreatorId, input, publishAfterSave: true);
+    return _save(
+      expectedCreatorId,
+      input,
+      publishAfterSave: true,
+      coverChange: coverChange,
+    );
   }
 
-  Future<String?> _reject(String expectedCreatorId) async {
+  Future<String?> saveChanges(
+    String expectedStructuralActorId,
+    RecurringActivityInput input, {
+    CoverChange coverChange = const CoverChange.unchanged(),
+  }) {
+    if (state.isBusy) return Future<String?>.value();
+    final existing = state.activity;
+    if (existing == null ||
+        (existing.lifecycle != RecurringActivityLifecycle.published &&
+            existing.lifecycle != RecurringActivityLifecycle.paused)) {
+      return _reject(
+        expectedStructuralActorId,
+        RecurringActivityFailureKind.invalidState,
+      );
+    }
+    if (!isPublishableRecurringActivityInput(input) ||
+        input.peopleCapacity! < existing.capacity.currentPeopleCount ||
+        !isValidRecurringScheduleTransition(
+          existing,
+          input,
+          ref.read(recurringActivityClockProvider)(),
+        )) {
+      return _reject(
+        expectedStructuralActorId,
+        RecurringActivityFailureKind.invalidInput,
+      );
+    }
+    return _save(
+      expectedStructuralActorId,
+      input,
+      publishAfterSave: false,
+      coverChange: coverChange,
+    );
+  }
+
+  Future<String?> _reject(
+    String expectedCreatorId, [
+    RecurringActivityFailureKind failure =
+        RecurringActivityFailureKind.invalidInput,
+  ]) async {
     state = RecurringActivityEditorState(
       phase: RecurringActivityEditorPhase.failure,
       expectedCreatorId: expectedCreatorId,
       activity: state.activity,
-      failure: RecurringActivityFailureKind.invalidInput,
+      failure: failure,
     );
     return null;
   }
@@ -467,10 +544,12 @@ class RecurringActivityEditorController
     String expectedCreatorId,
     RecurringActivityInput input, {
     required bool publishAfterSave,
+    required CoverChange coverChange,
   }) async {
     if (state.isBusy) return null;
     final revision = ++_revision;
     final existing = state.activity;
+    String? persistedActivityId;
     state = RecurringActivityEditorState(
       phase: publishAfterSave
           ? RecurringActivityEditorPhase.publishing
@@ -486,10 +565,43 @@ class RecurringActivityEditorController
           : existing.isEditable
           ? existing.id
           : throw const RecurringActivityInvalidStateException();
+      persistedActivityId = id;
       if (!_isCurrent(revision)) return null;
       _requireReadyIdentity(expectedCreatorId);
       if (existing != null) {
         await gateway.updateOwnActivity(expectedCreatorId, id, input);
+        if (!_isCurrent(revision)) return null;
+        _requireReadyIdentity(expectedCreatorId);
+      }
+      if (coverChange.kind != CoverChangeKind.unchanged) {
+        try {
+          await ref
+              .read(projectCoverReconcilerProvider)
+              .reconcile(
+                ownerProfileId: expectedCreatorId,
+                projectId: id,
+                change: coverChange,
+              );
+        } on CoverPersistenceException catch (error) {
+          if (!_isCurrent(revision)) return null;
+          final canonical = await _refreshAfterPartialSave(
+            gateway,
+            expectedCreatorId,
+            id,
+            fallback: existing,
+          );
+          if (!_isCurrent(revision)) return null;
+          state = RecurringActivityEditorState(
+            phase: RecurringActivityEditorPhase.failure,
+            expectedCreatorId: expectedCreatorId,
+            activity: canonical,
+            coverFailure: error.kind,
+            coverPartialSave: existing == null
+                ? CoverPartialSaveKind.draftCreated
+                : CoverPartialSaveKind.changesSaved,
+          );
+          return null;
+        }
         if (!_isCurrent(revision)) return null;
         _requireReadyIdentity(expectedCreatorId);
       }
@@ -511,17 +623,176 @@ class RecurringActivityEditorController
         expectedCreatorId: expectedCreatorId,
         activity: updated,
       );
+      _refreshRecurringSurfaces(
+        expectedCreatorId,
+        id,
+        refreshPublic:
+            publishAfterSave ||
+            (existing != null &&
+                existing.lifecycle != RecurringActivityLifecycle.draft),
+      );
       return id;
     } catch (error) {
       if (!_isCurrent(revision)) return null;
+      final failure = mapRecurringActivityFailure(error);
+      var canonical = persistedActivityId == null
+          ? existing
+          : await _refreshAfterPartialSave(
+              ref.read(recurringActivityGatewayProvider),
+              expectedCreatorId,
+              persistedActivityId,
+              fallback: existing,
+            );
+      if (failure == RecurringActivityFailureKind.invalidState &&
+          persistedActivityId == null &&
+          existing != null) {
+        canonical = await _refreshAfterPartialSave(
+          ref.read(recurringActivityGatewayProvider),
+          expectedCreatorId,
+          existing.id,
+          fallback: existing,
+        );
+      }
+      if (!_isCurrent(revision)) return null;
+      if (failure == RecurringActivityFailureKind.forbidden) {
+        _invalidateStructuralAuthority();
+      }
       state = RecurringActivityEditorState(
         phase: RecurringActivityEditorPhase.failure,
         expectedCreatorId: expectedCreatorId,
-        activity: existing,
-        failure: mapRecurringActivityFailure(error),
+        activity: canonical,
+        failure: failure,
       );
       return null;
     }
+  }
+
+  Future<OwnRecurringActivity?> _refreshAfterPartialSave(
+    RecurringActivityGateway gateway,
+    String expectedCreatorId,
+    String activityId, {
+    required OwnRecurringActivity? fallback,
+  }) async {
+    try {
+      return await gateway.getOwnActivity(expectedCreatorId, activityId) ??
+          fallback;
+    } catch (_) {
+      return fallback;
+    }
+  }
+
+  Future<bool> pause(String expectedStructuralActorId) => _mutateLifecycle(
+    expectedStructuralActorId,
+    canRun: (activity) => activity.canPause,
+    operation: (gateway, activityId) =>
+        gateway.pause(expectedStructuralActorId, activityId),
+  );
+
+  Future<bool> resume(String expectedStructuralActorId) => _mutateLifecycle(
+    expectedStructuralActorId,
+    canRun: (activity) => activity.canResume,
+    operation: (gateway, activityId) =>
+        gateway.resume(expectedStructuralActorId, activityId),
+  );
+
+  Future<bool> end(String expectedStructuralActorId) => _mutateLifecycle(
+    expectedStructuralActorId,
+    canRun: (activity) => activity.canEnd,
+    operation: (gateway, activityId) =>
+        gateway.end(expectedStructuralActorId, activityId),
+  );
+
+  Future<bool> _mutateLifecycle(
+    String expectedStructuralActorId, {
+    required bool Function(OwnRecurringActivity activity) canRun,
+    required Future<void> Function(
+      RecurringActivityGateway gateway,
+      String activityId,
+    )
+    operation,
+  }) async {
+    final existing = state.activity;
+    if (state.isBusy || existing == null || !canRun(existing)) return false;
+    final revision = ++_revision;
+    state = RecurringActivityEditorState(
+      phase: RecurringActivityEditorPhase.mutatingLifecycle,
+      expectedCreatorId: expectedStructuralActorId,
+      activity: existing,
+    );
+    try {
+      _requireReadyIdentity(expectedStructuralActorId);
+      final gateway = ref.read(recurringActivityGatewayProvider);
+      await operation(gateway, existing.id);
+      if (!_isCurrent(revision)) return false;
+      _requireReadyIdentity(expectedStructuralActorId);
+      final updated = await gateway.getOwnActivity(
+        expectedStructuralActorId,
+        existing.id,
+      );
+      if (!_isCurrent(revision)) return false;
+      if (updated == null) throw const RecurringActivityNotFoundException();
+      state = RecurringActivityEditorState(
+        phase: RecurringActivityEditorPhase.ready,
+        expectedCreatorId: expectedStructuralActorId,
+        activity: updated,
+      );
+      _refreshRecurringSurfaces(
+        expectedStructuralActorId,
+        existing.id,
+        refreshPublic: true,
+      );
+      return true;
+    } catch (error) {
+      if (!_isCurrent(revision)) return false;
+      final failure = mapRecurringActivityFailure(error);
+      var authoritativeActivity = existing;
+      if (failure == RecurringActivityFailureKind.invalidState) {
+        try {
+          authoritativeActivity =
+              await ref
+                  .read(recurringActivityGatewayProvider)
+                  .getOwnActivity(expectedStructuralActorId, existing.id) ??
+              existing;
+        } catch (_) {
+          // Keep the prior record and the safe mapped failure.
+        }
+      }
+      if (!_isCurrent(revision)) return false;
+      if (failure == RecurringActivityFailureKind.forbidden) {
+        _invalidateStructuralAuthority();
+      }
+      state = RecurringActivityEditorState(
+        phase: RecurringActivityEditorPhase.failure,
+        expectedCreatorId: expectedStructuralActorId,
+        activity: authoritativeActivity,
+        failure: failure,
+      );
+      return false;
+    }
+  }
+
+  void _refreshRecurringSurfaces(
+    String expectedProfileId,
+    String activityId, {
+    required bool refreshPublic,
+  }) {
+    ref.invalidate(delegatedProjectsProvider);
+    unawaited(
+      ref.read(ownRecurringActivitiesProvider.notifier).load(expectedProfileId),
+    );
+    if (refreshPublic) {
+      unawaited(ref.read(publicRecurringActivitiesProvider.notifier).load());
+      unawaited(
+        ref
+            .read(publicRecurringActivityDetailProvider.notifier)
+            .load(activityId),
+      );
+    }
+  }
+
+  void _invalidateStructuralAuthority() {
+    ref.invalidate(projectManagementRoleProvider);
+    ref.invalidate(delegatedProjectsProvider);
   }
 
   void _requireReadyIdentity(String expectedCreatorId) {
@@ -552,6 +823,7 @@ RecurringActivityFailureKind mapRecurringActivityFailure(Object error) {
   }
   if (error is PostgrestException) {
     return switch (error.code) {
+      'PT422' => RecurringActivityFailureKind.profilePhotoRequired,
       '22023' ||
       '23514' ||
       '23502' => RecurringActivityFailureKind.invalidInput,

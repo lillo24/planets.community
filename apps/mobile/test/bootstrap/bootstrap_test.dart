@@ -5,6 +5,8 @@ import 'package:planets_mobile/app/planets_app.dart';
 import 'package:planets_mobile/bootstrap/bootstrap.dart';
 import 'package:planets_mobile/core/config/app_config.dart';
 import 'package:planets_mobile/features/auth/data/auth_gateway.dart';
+import 'package:planets_mobile/features/settings/application/language_preference_controller.dart';
+import 'package:planets_mobile/features/settings/domain/language_preference.dart';
 
 import '../support/fake_auth.dart';
 
@@ -21,6 +23,10 @@ void main() {
           events.add('config');
           return config;
         },
+        languagePreferenceLoader: () async {
+          events.add('language');
+          return LanguagePreference.italian;
+        },
         backendInitializer: (receivedConfig) async {
           expect(identical(receivedConfig, config), isTrue);
           events.add('backend');
@@ -36,7 +42,13 @@ void main() {
         },
       );
 
-      expect(events, ['config', 'backend', 'monitoring', 'application']);
+      expect(events, [
+        'config',
+        'language',
+        'backend',
+        'monitoring',
+        'application',
+      ]);
       expect(launchedApplication, isA<ProviderScope>());
 
       final auth = FakeAuthGateway();
@@ -55,6 +67,49 @@ void main() {
       final appContext = tester.element(find.byType(PlanetsApp));
       final container = ProviderScope.containerOf(appContext);
       expect(identical(container.read(appConfigProvider), config), isTrue);
+      expect(
+        container.read(languagePreferenceProvider),
+        LanguagePreference.italian,
+      );
+    },
+  );
+
+  testWidgets(
+    'language preference failure falls back without blocking launch',
+    (tester) async {
+      Widget? launchedApplication;
+
+      await bootstrapApplication(
+        configLoader: _testConfig,
+        languagePreferenceLoader: () async =>
+            throw StateError('platform detail'),
+        backendInitializer: (_) async {},
+        monitoringLauncher: (_, appRunner) async => appRunner(),
+        applicationLauncher: (application) {
+          launchedApplication = application;
+        },
+      );
+
+      final auth = FakeAuthGateway();
+      final profile = FakeProfileAnchorGateway();
+      addTearDown(auth.close);
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            authGatewayProvider.overrideWithValue(auth),
+            profileAnchorGatewayProvider.overrideWithValue(profile),
+          ],
+          child: launchedApplication!,
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final appContext = tester.element(find.byType(PlanetsApp));
+      final container = ProviderScope.containerOf(appContext);
+      expect(
+        container.read(languagePreferenceProvider),
+        LanguagePreference.system,
+      );
     },
   );
 
@@ -67,6 +122,7 @@ void main() {
       await expectLater(
         bootstrapApplication(
           configLoader: _testConfig,
+          languagePreferenceLoader: () async => LanguagePreference.system,
           backendInitializer: (_) async => throw StateError('backend failed'),
           monitoringLauncher: (_, _) async => monitoringCalled = true,
           applicationLauncher: (_) => applicationCalled = true,

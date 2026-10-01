@@ -45,12 +45,14 @@ import {
 
 type ProfileFormProps = Readonly<{
   initialData: ProfileEditorData;
+  returnTo?: string;
   gateway?: WebProfileGateway;
   onRefresh?: () => void;
 }>;
 
 export function ProfileForm({
   initialData,
+  returnTo = "/profile",
   gateway,
   onRefresh,
 }: ProfileFormProps) {
@@ -99,6 +101,8 @@ export function ProfileForm({
       setSaved(true);
       if (onRefresh) {
         onRefresh();
+      } else if (returnTo !== "/profile") {
+        router.replace(returnTo);
       } else {
         router.refresh();
       }

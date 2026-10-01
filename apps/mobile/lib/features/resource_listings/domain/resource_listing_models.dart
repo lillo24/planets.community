@@ -1,3 +1,5 @@
+import '../../cover_media/domain/cover_media_models.dart';
+
 enum ResourceListingMode {
   donate('donate'),
   exchange('exchange');
@@ -48,6 +50,8 @@ class PublicResourceListingSummary {
     required this.administrativeArea,
     required this.publicLocationLabel,
     required this.publishedAt,
+    required this.activeRequestCount,
+    this.coverObjectPath,
   });
 
   final String id;
@@ -59,6 +63,8 @@ class PublicResourceListingSummary {
   final String? administrativeArea;
   final String publicLocationLabel;
   final DateTime publishedAt;
+  final int activeRequestCount;
+  final String? coverObjectPath;
 
   ResourceListingCursor get cursor =>
       ResourceListingCursor(publishedAt: publishedAt, id: id);
@@ -92,6 +98,7 @@ class OwnResourceListing {
     required this.updatedAt,
     required this.publishedAt,
     required this.closedAt,
+    this.coverObjectPath,
   });
 
   final String id;
@@ -108,6 +115,7 @@ class OwnResourceListing {
   final DateTime updatedAt;
   final DateTime? publishedAt;
   final DateTime? closedAt;
+  final String? coverObjectPath;
 
   bool get isEditable => lifecycle != ResourceListingLifecycle.closed;
 }
@@ -158,6 +166,7 @@ bool isPublishableResourceListingInput(ResourceListingInput input) =>
 
 enum ResourceListingFailureKind {
   invalidInput,
+  profilePhotoRequired,
   unavailable,
   forbidden,
   invalidState,
@@ -241,6 +250,8 @@ class ResourceListingEditorState {
     this.listing,
     this.failure,
     this.draftSavedAfterPublishFailure = false,
+    this.coverFailure,
+    this.coverPartialSave,
   });
 
   final ResourceListingEditorPhase phase;
@@ -249,6 +260,8 @@ class ResourceListingEditorState {
   final OwnResourceListing? listing;
   final ResourceListingFailureKind? failure;
   final bool draftSavedAfterPublishFailure;
+  final CoverPersistenceFailureKind? coverFailure;
+  final CoverPartialSaveKind? coverPartialSave;
 
   bool get isBusy => switch (phase) {
     ResourceListingEditorPhase.loading ||

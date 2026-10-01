@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart' show ScrollCacheExtent;
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -11,6 +12,11 @@ import '../../../core/widgets/loading_state.dart';
 import '../../../devtools/demo/demo_widgets.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../auth/application/auth_session_controller.dart';
+import '../../cover_media/domain/cover_media_models.dart';
+import '../../cover_media/presentation/cover_editor_section.dart';
+import '../../profile_photo/presentation/profile_photo_trust_gate.dart';
+import '../../participation/domain/participation_models.dart';
+import '../../project_resource_needs/presentation/project_resource_need_routes.dart';
 import '../application/recurring_activity_controllers.dart';
 import '../domain/recurring_activity_models.dart';
 
@@ -29,6 +35,7 @@ class _RecurringActivityEditorScreenState
   final _title = TextEditingController();
   final _summary = TextEditingController();
   final _description = TextEditingController();
+  final _capacity = TextEditingController();
   final _topic = TextEditingController();
   final _country = TextEditingController();
   final _locality = TextEditingController();
@@ -48,6 +55,7 @@ class _RecurringActivityEditorScreenState
   DateTime? _effectiveFrom;
   RecurringExactLocationVisibility _visibility =
       RecurringExactLocationVisibility.participants;
+  CoverChange _coverChange = const CoverChange.unchanged();
 
   @override
   void initState() {
@@ -71,6 +79,7 @@ class _RecurringActivityEditorScreenState
       _title,
       _summary,
       _description,
+      _capacity,
       _topic,
       _country,
       _locality,
@@ -98,6 +107,8 @@ class _RecurringActivityEditorScreenState
     final existing = belongsToIdentity ? state.activity : null;
     final isLoading = state.phase == RecurringActivityEditorPhase.loading;
     final isFailure = state.phase == RecurringActivityEditorPhase.failure;
+    final structuralAccessDenied =
+        isFailure && state.failure == RecurringActivityFailureKind.forbidden;
     final notFoundFailure =
         isFailure && existing == null && widget.activityId != null;
     final ended = existing?.lifecycle == RecurringActivityLifecycle.ended;
@@ -114,13 +125,16 @@ class _RecurringActivityEditorScreenState
             ? const SizedBox.shrink()
             : isLoading && existing == null
             ? LoadingState(message: l10n.tavoliLoading)
-            : notFoundFailure
+            : structuralAccessDenied || notFoundFailure
             ? ErrorState(message: l10n.tavoliSafeError, onRetry: _load)
             : ended
             ? Center(child: Text(l10n.tavoliEndedReadOnly))
             : Form(
                 key: _formKey,
                 child: ListView(
+                  // The bounded editor keeps validated fields mounted while
+                  // an error summary scrolls between them after submission.
+                  scrollCacheExtent: const ScrollCacheExtent.pixels(1200),
                   padding: const EdgeInsets.all(AppSpacing.large),
                   children: [
                     if (widget.activityId == null && existing == null)
@@ -138,6 +152,14 @@ class _RecurringActivityEditorScreenState
                       min: 2,
                       requiredForPublish: true,
                     ),
+                    CoverEditorSection(
+                      ownerProfileId: identity,
+                      title: existing?.title ?? l10n.tavoliCreateTitle,
+                      canonicalObjectPath: existing?.coverObjectPath,
+                      enabled: !state.isBusy,
+                      onChanged: (change) => _coverChange = change,
+                    ),
+                    const SizedBox(height: AppSpacing.large),
                     _field(
                       controller: _summary,
                       label: l10n.tavoliSummaryLabel,
@@ -150,6 +172,18 @@ class _RecurringActivityEditorScreenState
                       max: 5000,
                       requiredForPublish: true,
                       maxLines: 5,
+                    ),
+                    _field(
+                      controller: _capacity,
+                      label: l10n.projectPeopleCapacityLabel,
+                      max: 6,
+                      keyboardType: TextInputType.number,
+                      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                      validator: (_) => _validateCapacity(existing),
+                    ),
+                    Text(
+                      l10n.projectPeopleCapacityHelp,
+                      style: Theme.of(context).textTheme.bodySmall,
                     ),
                     _field(
                       controller: _topic,
@@ -389,7 +423,26 @@ class _RecurringActivityEditorScreenState
                           ),
                         ),
                       ),
-                    if (isFailure)
+                    if (state.coverPartialSave != null)
+                      Padding(
+                        padding: const EdgeInsets.only(top: AppSpacing.medium),
+                        child: Semantics(
+                          liveRegion: true,
+                          child: Text(
+                            state.coverPartialSave ==
+                                    CoverPartialSaveKind.draftCreated
+                                ? l10n.coverDraftPartialError
+                                : l10n.coverChangesPartialError,
+                            key: const Key('tavoli-cover-save-error'),
+                            style: TextStyle(
+                              color: Theme.of(context).colorScheme.error,
+                            ),
+                          ),
+                        ),
+                      )
+                    else if (isFailure &&
+                        state.failure !=
+                            RecurringActivityFailureKind.profilePhotoRequired)
                       Padding(
                         padding: const EdgeInsets.only(top: AppSpacing.medium),
                         child: Text(
@@ -407,6 +460,20 @@ class _RecurringActivityEditorScreenState
                     Wrap(
                       spacing: AppSpacing.small,
                       children: [
+                        if (existing != null)
+                          OutlinedButton.icon(
+                            key: const Key('tavoli-manage-resources'),
+                            onPressed: state.isBusy
+                                ? null
+                                : () => context.push(
+                                    ProjectResourceNeedRoutes.manage(
+                                      ProjectKind.recurring,
+                                      existing.id,
+                                    ),
+                                  ),
+                            icon: const Icon(Icons.inventory_2_outlined),
+                            label: Text(l10n.projectResourcesManage),
+                          ),
                         FilledButton.tonal(
                           key: const Key('tavoli-save-draft'),
                           onPressed: state.isBusy ? null : () => _submit(false),
@@ -441,8 +508,32 @@ class _RecurringActivityEditorScreenState
                                   )
                                 : Text(l10n.tavoliPublish),
                           ),
+                        if (existing?.canPause == true)
+                          TextButton(
+                            key: const Key('tavoli-editor-pause'),
+                            onPressed: state.isBusy ? null : _confirmPause,
+                            child: Text(l10n.tavoliPause),
+                          ),
+                        if (existing?.canResume == true)
+                          FilledButton.tonal(
+                            key: const Key('tavoli-editor-resume'),
+                            onPressed: state.isBusy
+                                ? null
+                                : () => _runLifecycle(
+                                    (controller, identity) =>
+                                        controller.resume(identity),
+                                  ),
+                            child: Text(l10n.tavoliResume),
+                          ),
+                        if (existing?.canEnd == true)
+                          TextButton(
+                            key: const Key('tavoli-editor-end'),
+                            onPressed: state.isBusy ? null : _confirmEnd,
+                            child: Text(l10n.tavoliEnd),
+                          ),
                       ],
                     ),
+                    const SizedBox(height: AppSpacing.large * 3),
                   ],
                 ),
               ),
@@ -464,6 +555,7 @@ class _RecurringActivityEditorScreenState
     padding: const EdgeInsets.only(top: AppSpacing.small),
     child: TextFormField(
       controller: controller,
+      enabled: !ref.watch(recurringActivityEditorProvider).isBusy,
       maxLines: maxLines,
       keyboardType: keyboardType,
       inputFormatters: inputFormatters,
@@ -521,19 +613,62 @@ class _RecurringActivityEditorScreenState
     durationMinutes: _hasSchedule ? int.tryParse(_duration.text) : null,
     eventTimezone: _hasSchedule ? _timezone.text : '',
     effectiveFrom: _hasSchedule ? _effectiveFrom : null,
+    peopleCapacity: int.tryParse(_capacity.text.trim()),
   );
 
   Future<void> _submit(bool publish) async {
-    setState(() => _attemptPublish = publish);
+    final existing = ref.read(recurringActivityEditorProvider).activity;
+    final existingPublished =
+        existing != null &&
+        existing.lifecycle != RecurringActivityLifecycle.draft;
+    setState(() => _attemptPublish = publish || existingPublished);
     final valid = _formKey.currentState?.validate() ?? false;
-    if (!valid || (publish && !_schedulePublishable)) return;
+    if (!valid || ((publish || existingPublished) && !_schedulePublishable)) {
+      return;
+    }
     final identity = _expectedIdentity;
     if (identity == null) return;
+    if (publish &&
+        !await requireProfilePhotoForTrustAction(
+          context: context,
+          ref: ref,
+          expectedProfileId: identity,
+          reason: ProfilePhotoTrustReason.publishPersonalActivity,
+        )) {
+      return;
+    }
+    if (!mounted) return;
     final controller = ref.read(recurringActivityEditorProvider.notifier);
     final id = publish
-        ? await controller.publish(identity, _input())
-        : await controller.saveDraft(identity, _input());
+        ? await controller.publish(
+            identity,
+            _input(),
+            coverChange: _coverChange,
+          )
+        : existingPublished
+        ? await controller.saveChanges(
+            identity,
+            _input(),
+            coverChange: _coverChange,
+          )
+        : await controller.saveDraft(
+            identity,
+            _input(),
+            coverChange: _coverChange,
+          );
+    if (id == null &&
+        mounted &&
+        publish &&
+        ref.read(recurringActivityEditorProvider).failure ==
+            RecurringActivityFailureKind.profilePhotoRequired) {
+      await showProfilePhotoTrustGate(
+        context: context,
+        reason: ProfilePhotoTrustReason.publishPersonalActivity,
+      );
+      return;
+    }
     if (id == null || !mounted) return;
+    _coverChange = const CoverChange.unchanged();
     ref.invalidate(ownRecurringActivitiesProvider);
     ref.invalidate(publicRecurringActivitiesProvider);
     if (publish) {
@@ -545,6 +680,79 @@ class _RecurringActivityEditorScreenState
         SnackBar(content: Text(AppLocalizations.of(context).tavoliSaveChanges)),
       );
     }
+  }
+
+  Future<void> _runLifecycle(
+    Future<bool> Function(
+      RecurringActivityEditorController controller,
+      String identity,
+    )
+    operation,
+  ) async {
+    final identity = _expectedIdentity;
+    if (identity == null) return;
+    final succeeded = await operation(
+      ref.read(recurringActivityEditorProvider.notifier),
+      identity,
+    );
+    if (!succeeded &&
+        mounted &&
+        ref.read(recurringActivityEditorProvider).failure !=
+            RecurringActivityFailureKind.forbidden) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(AppLocalizations.of(context).tavoliSafeError)),
+      );
+    }
+  }
+
+  Future<void> _confirmPause() async {
+    final l10n = AppLocalizations.of(context);
+    final confirmed = await _confirm(
+      title: l10n.tavoliPauseConfirmTitle,
+      message: l10n.tavoliPauseConfirmMessage,
+      action: l10n.tavoliPause,
+    );
+    if (confirmed && mounted) {
+      await _runLifecycle((controller, identity) => controller.pause(identity));
+    }
+  }
+
+  Future<void> _confirmEnd() async {
+    final l10n = AppLocalizations.of(context);
+    final confirmed = await _confirm(
+      title: l10n.tavoliEndConfirmTitle,
+      message: l10n.tavoliEndConfirmMessage,
+      action: l10n.tavoliEnd,
+    );
+    if (confirmed && mounted) {
+      await _runLifecycle((controller, identity) => controller.end(identity));
+    }
+  }
+
+  Future<bool> _confirm({
+    required String title,
+    required String message,
+    required String action,
+  }) async {
+    final l10n = AppLocalizations.of(context);
+    return await showDialog<bool>(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: Text(title),
+            content: Text(message),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: Text(l10n.tavoliKeep),
+              ),
+              FilledButton(
+                onPressed: () => Navigator.pop(context, true),
+                child: Text(action),
+              ),
+            ],
+          ),
+        ) ??
+        false;
   }
 
   Future<void> _chooseTime() async {
@@ -573,6 +781,7 @@ class _RecurringActivityEditorScreenState
     _title.text = activity.title ?? '';
     _summary.text = activity.summary ?? '';
     _description.text = activity.description ?? '';
+    _capacity.text = activity.capacity.peopleCapacity?.toString() ?? '';
     _topic.text = activity.topic ?? '';
     _country.text = activity.countryCode ?? '';
     _locality.text = activity.locality ?? '';
@@ -607,6 +816,7 @@ class _RecurringActivityEditorScreenState
       _summary.text = 'A recurring conversation about ideas and local life.';
       _description.text =
           'Bring one question and join a welcoming, facilitated discussion.';
+      _capacity.text = '20';
       _topic.text = 'Philosophy and community';
       _country.text = 'IT';
       _locality.text = 'Bologna';
@@ -631,5 +841,22 @@ class _RecurringActivityEditorScreenState
   DateTime _todayInEventZone() {
     final zone = isKnownEventTimeZone(_timezone.text) ? _timezone.text : 'UTC';
     return eventLocalDate(ref.read(recurringActivityClockProvider)(), zone);
+  }
+
+  String? _validateCapacity(OwnRecurringActivity? existing) {
+    final l10n = AppLocalizations.of(context);
+    final text = _capacity.text.trim();
+    if (text.isEmpty) {
+      return _attemptPublish ? l10n.projectPeopleCapacityRequired : null;
+    }
+    final capacity = int.tryParse(text);
+    if (capacity == null || capacity < 1 || capacity > 100000) {
+      return l10n.projectPeopleCapacityRange;
+    }
+    final currentPeople = existing?.capacity.currentPeopleCount ?? 1;
+    if (capacity < currentPeople) {
+      return l10n.projectPeopleCapacityBelowCurrent(currentPeople);
+    }
+    return null;
   }
 }

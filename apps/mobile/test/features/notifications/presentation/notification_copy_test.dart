@@ -7,6 +7,29 @@ import 'package:planets_mobile/l10n/generated/app_localizations.dart';
 import '../../../support/fake_notifications.dart';
 
 void main() {
+  testWidgets('Matching copy uses title or safe generic fallback', (
+    tester,
+  ) async {
+    await _pumpCopy(tester, matchingNotificationFixture());
+    expect(
+      find.text(
+        'New listing matches one of your saved searches: “Power drill”.',
+      ),
+      findsOneWidget,
+    );
+    expect(find.textContaining('available'), findsNothing);
+
+    await _pumpCopy(
+      tester,
+      matchingNotificationFixture(resourceListingTitle: null),
+    );
+    expect(
+      find.text('A new Resource listing matches one of your saved searches.'),
+      findsOneWidget,
+    );
+    expect(find.textContaining('saved_search'), findsNothing);
+  });
+
   testWidgets('chat copy uses safe actor and Project display context', (
     tester,
   ) async {

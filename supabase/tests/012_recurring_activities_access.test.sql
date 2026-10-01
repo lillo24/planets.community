@@ -13,6 +13,16 @@ values
   ('a1000000-0000-4000-8000-000000000001', 'Recurring Owner A'),
   ('a2000000-0000-4000-8000-000000000002', 'Recurring Owner B'),
   ('a3000000-0000-4000-8000-000000000003', null);
+-- Legacy scenarios that exercise publication/participation intentionally satisfy
+-- the 08A4A canonical-photo precondition; dedicated 08A4A tests cover absence.
+insert into public.profile_photos (profile_id, object_path, audience)
+select
+  profile.id,
+  profile.id::text || '/00000000-0000-4000-8000-000000000001.webp',
+  'interactions'
+from public.profiles as profile
+where profile.display_name is not null
+on conflict (profile_id) do nothing;
 
 set local role authenticated;
 select set_config(
@@ -154,7 +164,8 @@ select set_config(
     '19:00'::time,
     90,
     'Europe/Rome',
-    '2026-01-01'::date
+    '2026-01-01'::date,
+    20
   )::text,
   true
 );
@@ -517,7 +528,8 @@ select set_config(
     '18:30'::time,
     120,
     'Europe/Rome',
-    '2026-01-01'::date
+    '2026-01-01'::date,
+    20
   )::text,
   true
 );

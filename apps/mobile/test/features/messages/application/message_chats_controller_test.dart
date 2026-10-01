@@ -1,0 +1,331 @@
+import 'dart:async';
+
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:planets_mobile/features/auth/application/auth_session_controller.dart';
+import 'package:planets_mobile/features/auth/data/auth_gateway.dart';
+import 'package:planets_mobile/features/auth/domain/auth_models.dart';
+import 'package:planets_mobile/features/messages/application/message_chats_controller.dart';
+import 'package:planets_mobile/features/messages/data/message_chats_gateway.dart';
+import 'package:planets_mobile/features/project_chat/data/project_chat_gateway.dart';
+import 'package:planets_mobile/features/project_request_chat/data/project_request_chat_gateway.dart';
+import 'package:planets_mobile/features/profile_photo/data/profile_photo_gateway.dart';
+import 'package:planets_mobile/features/resource_chat/data/resource_chat_gateway.dart';
+import 'package:planets_mobile/features/resource_chat/domain/resource_chat_models.dart';
+
+import '../../../support/fake_auth.dart';
+import '../../../support/fake_message_chats.dart';
+import '../../../support/fake_project_chat.dart';
+import '../../../support/fake_project_request_chat.dart';
+import '../../../support/fake_profile_photo.dart';
+import '../../../support/fake_resource_chat.dart';
+
+void main() {
+  test('Private and Groups keep independent backend pages', () async {
+    final list = FakeMessageChatsGateway()
+      ..items = [
+        ...List.generate(
+          25,
+          (index) => resourceMessageChatFixture(
+            chatId:
+                '00000000-0000-4000-8001-${index.toString().padLeft(12, '0')}',
+          ),
+        ),
+        ...List.generate(
+          25,
+          (index) => projectMessageChatFixture(
+            chatId:
+                '00000000-0000-4000-8002-${index.toString().padLeft(12, '0')}',
+          ),
+        ),
+      ];
+    final session = _readyContainer(list);
+    addTearDown(session.dispose);
+    final privateController = session.container.read(
+      messageChatsProvider.notifier,
+    );
+    final groupController = session.container.read(
+      groupMessageChatsProvider.notifier,
+    );
+
+    await Future.wait([
+      privateController.load('user-1'),
+      groupController.load('user-1'),
+    ]);
+    expect(session.container.read(messageChatsProvider).items, hasLength(20));
+    expect(
+      session.container.read(groupMessageChatsProvider).items,
+      hasLength(20),
+    );
+
+    await privateController.loadMore('user-1');
+    expect(session.container.read(messageChatsProvider).items, hasLength(25));
+    expect(
+      session.container.read(groupMessageChatsProvider).items,
+      hasLength(20),
+    );
+    await groupController.loadMore('user-1');
+    expect(
+      session.container.read(groupMessageChatsProvider).items,
+      hasLength(25),
+    );
+  });
+
+  test('loads mixed pages and dedupes by kind plus chat ID', () async {
+    const shared = '00000000-0000-4000-8000-000000000401';
+    final list = FakeMessageChatsGateway()
+      ..items = [
+        projectRequestMessageChatFixture(chatId: shared),
+        resourceMessageChatFixture(chatId: shared),
+        ...List.generate(
+          19,
+          (index) => resourceMessageChatFixture(
+            chatId:
+                '00000000-0000-4000-8000-${(index + 1000).toString().padLeft(12, '0')}',
+          ),
+        ),
+        resourceMessageChatFixture(chatId: shared),
+      ];
+    final session = _readyContainer(list);
+    addTearDown(session.dispose);
+    final controller = session.container.read(messageChatsProvider.notifier);
+
+    expect(await controller.load('user-1'), isTrue);
+    expect(session.container.read(messageChatsProvider).items, hasLength(20));
+    expect(await controller.loadMore('user-1'), isTrue);
+    expect(list.lastCursor?.itemKind, isNotNull);
+    expect(session.container.read(messageChatsProvider).items, hasLength(21));
+  });
+
+  test('subscribes only loaded writable rows and closes stale rows', () async {
+    final project = FakeProjectChatGateway();
+    final request = FakeProjectRequestChatGateway();
+    final resource = FakeResourceChatGateway();
+    final list = FakeMessageChatsGateway()
+      ..items = [
+        projectRequestMessageChatFixture(),
+        resourceMessageChatFixture(),
+        resourceMessageChatFixture(
+          chatId: '00000000-0000-4000-8000-000000000402',
+          lifecycle: ResourceExchangeLifecycle.completed,
+          isReadOnly: true,
+        ),
+      ];
+    final session = _readyContainer(
+      list,
+      project: project,
+      request: request,
+      resource: resource,
+    );
+    addTearDown(session.dispose);
+    final controller = session.container.read(messageChatsProvider.notifier);
+    await controller.load('user-1');
+    controller.startSignals('user-1');
+
+    expect(project.subscriptions, isEmpty);
+    expect(request.subscriptions, hasLength(1));
+    expect(resource.subscriptions, hasLength(1));
+    final resourceSubscription = resource.subscriptions.single;
+
+    final requestSubscription = request.subscriptions.single;
+    list.items = [projectMessageChatFixture()];
+    await controller.load('user-1', refresh: true);
+    await Future<void>.delayed(Duration.zero);
+
+    expect(resourceSubscription.isClosed, isTrue);
+    expect(requestSubscription.isClosed, isTrue);
+  });
+
+  test('signal bursts debounce one canonical list refresh', () async {
+    final project = FakeProjectChatGateway();
+    final request = FakeProjectRequestChatGateway();
+    final resource = FakeResourceChatGateway();
+    final list = FakeMessageChatsGateway()
+      ..items = [
+        projectRequestMessageChatFixture(),
+        resourceMessageChatFixture(),
+      ];
+    final session = _readyContainer(
+      list,
+      project: project,
+      request: request,
+      resource: resource,
+    );
+    addTearDown(session.dispose);
+    final controller = session.container.read(messageChatsProvider.notifier);
+    await controller.load('user-1');
+    controller.startSignals('user-1');
+
+    request.emitSignal();
+    resource.emitMessage(resource.subscriptions.single.chatId);
+    await Future<void>.delayed(const Duration(milliseconds: 350));
+
+    expect(list.calls.where((call) => call == 'list'), hasLength(2));
+  });
+
+  test('reconnect performs canonical catch-up and clears warning', () async {
+    final resource = FakeResourceChatGateway();
+    final list = FakeMessageChatsGateway()
+      ..items = [resourceMessageChatFixture()];
+    final session = _readyContainer(list, resource: resource);
+    addTearDown(session.dispose);
+    final controller = session.container.read(messageChatsProvider.notifier);
+    await controller.load('user-1');
+    controller.startSignals('user-1');
+    final chatId = resource.subscriptions.single.chatId;
+
+    resource.emitStatus(chatId, ResourceChatConnectionStatus.disconnected);
+    expect(
+      session.container.read(messageChatsProvider).hasConnectionIssue,
+      isTrue,
+    );
+    resource.emitStatus(chatId, ResourceChatConnectionStatus.connected);
+    await Future<void>.delayed(const Duration(milliseconds: 350));
+
+    expect(
+      session.container.read(messageChatsProvider).hasConnectionIssue,
+      isFalse,
+    );
+    expect(list.calls.where((call) => call == 'list'), hasLength(2));
+  });
+
+  test('list detach ignores close status and is repeat-safe', () async {
+    final resource = FakeResourceChatGateway()..emitDisconnectedOnClose = true;
+    final list = FakeMessageChatsGateway()
+      ..items = [resourceMessageChatFixture()];
+    final session = _readyContainer(list, resource: resource);
+    addTearDown(session.dispose);
+    final controller = session.container.read(messageChatsProvider.notifier);
+    await controller.load('user-1');
+    controller.startSignals('user-1');
+    final subscription = resource.subscriptions.single;
+
+    controller.stopSignals();
+    controller.stopSignals();
+    subscription.onStatus(ResourceChatConnectionStatus.disconnected);
+    await Future<void>.delayed(Duration.zero);
+
+    expect(subscription.closeCount, 1);
+    expect(
+      session.container.read(messageChatsProvider).hasConnectionIssue,
+      isFalse,
+    );
+  });
+
+  test(
+    'private pagination batches only newly discovered counterparties',
+    () async {
+      final photos = FakeProfilePhotoGateway();
+      final list = FakeMessageChatsGateway()
+        ..items = List.generate(
+          21,
+          (index) => projectRequestMessageChatFixture(
+            chatId:
+                '00000000-0000-4000-8100-${index.toString().padLeft(12, '0')}',
+            requestId:
+                '00000000-0000-4000-8200-${index.toString().padLeft(12, '0')}',
+            counterpartyProfileId:
+                '00000000-0000-4000-8300-${index.toString().padLeft(12, '0')}',
+          ),
+        );
+      final session = _readyContainer(list, photos: photos);
+      addTearDown(session.dispose);
+      final privateController = session.container.read(
+        messageChatsProvider.notifier,
+      );
+      final groupController = session.container.read(
+        groupMessageChatsProvider.notifier,
+      );
+
+      await privateController.load('user-1');
+      await Future<void>.delayed(Duration.zero);
+      expect(photos.visibleBatchLoadIds, hasLength(1));
+      expect(photos.visibleBatchLoadIds.single, hasLength(20));
+
+      await privateController.loadMore('user-1');
+      await Future<void>.delayed(Duration.zero);
+      expect(photos.visibleBatchLoadIds, hasLength(2));
+      expect(photos.visibleBatchLoadIds.last, hasLength(1));
+
+      await groupController.load('user-1');
+      await Future<void>.delayed(Duration.zero);
+      expect(photos.visibleBatchLoadIds, hasLength(2));
+    },
+  );
+
+  test(
+    'account switch clears rows, closes subscriptions, rejects late read',
+    () async {
+      final delay = Completer<void>();
+      final resource = FakeResourceChatGateway();
+      final list = FakeMessageChatsGateway()
+        ..items = [resourceMessageChatFixture()];
+      final session = _readyContainer(list, resource: resource);
+      addTearDown(session.dispose);
+      final controller = session.container.read(messageChatsProvider.notifier);
+      await controller.load('user-1');
+      controller.startSignals('user-1');
+      final subscription = resource.subscriptions.single;
+      list.delay = delay.future;
+      final refresh = controller.load('user-1', refresh: true);
+
+      session.container
+          .read(authSessionProvider.notifier)
+          .markProfileReady(const AuthIdentity(id: 'user-2'));
+      delay.complete();
+
+      expect(await refresh, isFalse);
+      expect(session.container.read(messageChatsProvider).items, isEmpty);
+      expect(subscription.isClosed, isTrue);
+    },
+  );
+}
+
+class _Session {
+  _Session(this.container, this.auth);
+
+  final ProviderContainer container;
+  final FakeAuthGateway auth;
+
+  void dispose() {
+    container.dispose();
+    auth.close();
+  }
+}
+
+_Session _readyContainer(
+  FakeMessageChatsGateway list, {
+  FakeProjectChatGateway? project,
+  FakeProjectRequestChatGateway? request,
+  FakeResourceChatGateway? resource,
+  FakeProfilePhotoGateway? photos,
+}) {
+  final auth = FakeAuthGateway(
+    snapshot: const AuthSnapshot(identity: AuthIdentity(id: 'user-1')),
+  );
+  final container = ProviderContainer(
+    overrides: [
+      authGatewayProvider.overrideWithValue(auth),
+      profileAnchorGatewayProvider.overrideWithValue(
+        FakeProfileAnchorGateway(),
+      ),
+      messageChatsGatewayProvider.overrideWithValue(list),
+      projectChatGatewayProvider.overrideWithValue(
+        project ?? FakeProjectChatGateway(),
+      ),
+      projectRequestChatGatewayProvider.overrideWithValue(
+        request ?? FakeProjectRequestChatGateway(),
+      ),
+      resourceChatGatewayProvider.overrideWithValue(
+        resource ?? FakeResourceChatGateway(),
+      ),
+      profilePhotoGatewayProvider.overrideWithValue(
+        photos ?? FakeProfilePhotoGateway(),
+      ),
+    ],
+  );
+  container
+      .read(authSessionProvider.notifier)
+      .markProfileReady(const AuthIdentity(id: 'user-1'));
+  return _Session(container, auth);
+}

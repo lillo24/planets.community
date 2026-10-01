@@ -4,6 +4,7 @@ const projectChatMessageMaxLength = 4000;
 
 enum ProjectChatViewerRole {
   creator('creator'),
+  delegate('delegate'),
   currentMember('current_member'),
   formerMember('former_member');
 
@@ -13,9 +14,46 @@ enum ProjectChatViewerRole {
 
   static ProjectChatViewerRole fromWire(String value) => switch (value) {
     'creator' => ProjectChatViewerRole.creator,
+    'delegate' => ProjectChatViewerRole.delegate,
     'current_member' => ProjectChatViewerRole.currentMember,
     'former_member' => ProjectChatViewerRole.formerMember,
     _ => throw const FormatException('Unsupported Project chat viewer role.'),
+  };
+}
+
+enum ProjectRequirementKind {
+  skill('skill'),
+  resource('resource');
+
+  const ProjectRequirementKind(this.wireValue);
+
+  final String wireValue;
+
+  static ProjectRequirementKind fromWire(String value) => switch (value) {
+    'skill' => ProjectRequirementKind.skill,
+    'resource' => ProjectRequirementKind.resource,
+    _ => throw const FormatException('Unsupported Project requirement kind.'),
+  };
+}
+
+enum ProjectChatFeedItemKind {
+  message('message', 1),
+  requirementNeededAgain('system_requirement_needed_again', 0);
+
+  const ProjectChatFeedItemKind(this.wireValue, this.canonicalOrder);
+
+  final String wireValue;
+
+  /// Backend tie order uses message before system in newest-first pages.
+  final int canonicalOrder;
+
+  static ProjectChatFeedItemKind fromWire(String value) => switch (value) {
+    'message' => ProjectChatFeedItemKind.message,
+    'system_requirement_needed_again' =>
+      ProjectChatFeedItemKind.requirementNeededAgain,
+    _ => throw const FormatException(
+      'Unsupported Project chat feed item kind.',
+    ),
   };
 }
 
@@ -53,28 +91,64 @@ class ProjectChatSummary {
   final DateTime activityAt;
 
   bool get isCreator => viewerRole == ProjectChatViewerRole.creator;
+  bool get isManager =>
+      viewerRole == ProjectChatViewerRole.creator ||
+      viewerRole == ProjectChatViewerRole.delegate;
   bool get isReadOnly => !hasCurrentEntitlement;
 }
 
-class ProjectChatMessage {
-  const ProjectChatMessage({
-    required this.messageId,
+sealed class ProjectChatFeedItem {
+  const ProjectChatFeedItem({
+    required this.itemId,
     required this.chatId,
-    required this.senderProfileId,
-    required this.senderDisplayName,
-    required this.body,
     required this.createdAt,
   });
 
-  final String messageId;
+  final String itemId;
   final String chatId;
+  final DateTime createdAt;
+  ProjectChatFeedItemKind get itemKind;
+  String get canonicalKey => '${itemKind.wireValue}:$itemId';
+}
+
+final class ProjectChatHumanMessage extends ProjectChatFeedItem {
+  const ProjectChatHumanMessage({
+    required super.itemId,
+    required super.chatId,
+    required this.senderProfileId,
+    required this.senderDisplayName,
+    required this.body,
+    required super.createdAt,
+  });
+
   final String senderProfileId;
 
   /// Null only for the authenticated sender's immediate send-RPC receipt.
-  /// History RPC rows always contain a strictly parsed display name.
+  /// Mixed-feed rows always contain a strictly parsed display name.
   final String? senderDisplayName;
   final String body;
-  final DateTime createdAt;
+
+  @override
+  ProjectChatFeedItemKind get itemKind => ProjectChatFeedItemKind.message;
+}
+
+final class ProjectChatRequirementNeededAgain extends ProjectChatFeedItem {
+  const ProjectChatRequirementNeededAgain({
+    required super.itemId,
+    required super.chatId,
+    required this.requirementKind,
+    required this.requirementId,
+    required this.requirementLabel,
+    required super.createdAt,
+  });
+
+  final ProjectRequirementKind requirementKind;
+  final String requirementId;
+  final String requirementLabel;
+
+  @override
+  ProjectChatFeedItemKind get itemKind =>
+      ProjectChatFeedItemKind.requirementNeededAgain;
 }
 
 class ProjectChatListCursor {
@@ -84,14 +158,16 @@ class ProjectChatListCursor {
   final String chatId;
 }
 
-class ProjectChatMessageCursor {
-  const ProjectChatMessageCursor({
+class ProjectChatFeedCursor {
+  const ProjectChatFeedCursor({
     required this.createdAt,
-    required this.messageId,
+    required this.itemKind,
+    required this.itemId,
   });
 
   final DateTime createdAt;
-  final String messageId;
+  final ProjectChatFeedItemKind itemKind;
+  final String itemId;
 }
 
 class ProjectChatSummaryPage {
@@ -101,24 +177,68 @@ class ProjectChatSummaryPage {
   final bool hasMore;
 }
 
-class ProjectChatMessagePage {
-  const ProjectChatMessagePage({required this.items, required this.hasMore});
+class ProjectChatFeedPage {
+  const ProjectChatFeedPage({required this.items, required this.hasMore});
 
   /// Canonical backend order: newest first.
-  final List<ProjectChatMessage> items;
+  final List<ProjectChatFeedItem> items;
   final bool hasMore;
 }
 
-class ProjectChatSignal {
-  const ProjectChatSignal({
-    required this.chatId,
-    required this.messageId,
-    required this.createdAt,
-  });
+sealed class ProjectChatSignal {
+  const ProjectChatSignal({required this.chatId, required this.createdAt});
 
   final String chatId;
-  final String messageId;
   final DateTime createdAt;
+}
+
+final class ProjectChatMessageSentSignal extends ProjectChatSignal {
+  const ProjectChatMessageSentSignal({
+    required super.chatId,
+    required super.createdAt,
+    required this.messageId,
+  });
+
+  final String messageId;
+}
+
+sealed class ProjectChatRequirementSignal extends ProjectChatSignal {
+  const ProjectChatRequirementSignal({
+    required super.chatId,
+    required super.createdAt,
+    required this.projectId,
+    required this.requirementKind,
+    required this.requirementId,
+  });
+
+  final String projectId;
+  final ProjectRequirementKind requirementKind;
+  final String requirementId;
+}
+
+final class ProjectChatRequirementNeededAgainSignal
+    extends ProjectChatRequirementSignal {
+  const ProjectChatRequirementNeededAgainSignal({
+    required super.chatId,
+    required super.createdAt,
+    required super.projectId,
+    required super.requirementKind,
+    required super.requirementId,
+    required this.systemEventId,
+  });
+
+  final String systemEventId;
+}
+
+final class ProjectChatRequirementCoveredSignal
+    extends ProjectChatRequirementSignal {
+  const ProjectChatRequirementCoveredSignal({
+    required super.chatId,
+    required super.createdAt,
+    required super.projectId,
+    required super.requirementKind,
+    required super.requirementId,
+  });
 }
 
 enum ProjectChatConnectionStatus { connected, disconnected }

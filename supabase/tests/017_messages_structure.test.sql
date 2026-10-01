@@ -140,12 +140,16 @@ select is(
 select is(
   (
     select count(*)
-    from information_schema.tables
+    from information_schema.columns
     where table_schema = 'public'
-      and table_name like '%request%message%'
+      and column_name = 'request_message'
+      and table_name not in (
+        'project_join_requests',
+        'resource_listing_requests'
+      )
   ),
   0::bigint,
-  'the private request message is not copied into another durable table'
+  'private request notes remain only on their canonical request rows'
 );
 
 select * from finish();
