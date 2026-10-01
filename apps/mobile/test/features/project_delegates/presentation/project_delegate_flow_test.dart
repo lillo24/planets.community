@@ -358,6 +358,7 @@ void main() {
 
     final promote = find.byKey(const Key('project-delegate-promote-operator'));
     await tester.ensureVisible(promote);
+    await tester.pumpAndSettle();
     await tester.tap(promote);
     await tester.pumpAndSettle();
     await tester.tap(
@@ -368,6 +369,7 @@ void main() {
 
     final demote = find.byKey(const Key('project-delegate-demote-operator'));
     await tester.ensureVisible(demote);
+    await tester.pumpAndSettle();
     await tester.tap(demote);
     await tester.pumpAndSettle();
     expect(
@@ -382,6 +384,7 @@ void main() {
 
     final revoke = find.byKey(const Key('project-delegate-revoke-structural'));
     await tester.ensureVisible(revoke);
+    await tester.pumpAndSettle();
     await tester.tap(revoke);
     await tester.pumpAndSettle();
     expect(
