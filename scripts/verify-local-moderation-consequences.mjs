@@ -120,6 +120,31 @@ try {
     fixture.cases.profile,
     "interaction_restriction",
   );
+  const subjectHistory = await rpc(
+    users.requester,
+    "list_own_moderation_consequences",
+    {
+      p_expected_profile_id: users.requester.id,
+    },
+  );
+  assert.ok(
+    subjectHistory.some(
+      (row) => row.consequence_id === notice && !row.is_active,
+    ),
+  );
+  assert.ok(
+    subjectHistory.some(
+      (row) => row.consequence_id === restriction && row.is_active,
+    ),
+  );
+  await denied(
+    users.requester,
+    "list_own_moderation_consequences",
+    {
+      p_expected_profile_id: users.owner.id,
+    },
+    "42501",
+  );
   const [projectState] =
     await sql`select status from public.project_join_requests where id=${pendingProject}::uuid`;
   const [resourceState] =
@@ -312,6 +337,14 @@ try {
     p_expected_owner_profile_id: users.resourceOwner.id,
     p_request_id: hiddenPendingResource,
   });
+  const [memberCase] =
+    await sql`insert into private.moderation_cases(state, subject_profile_id, target_kind, target_profile_id)
+    values('under_review', ${users.member.id}::uuid, 'profile', ${users.member.id}::uuid) returning id`;
+  const memberRestriction = await apply(
+    users.moderator,
+    memberCase.id,
+    "interaction_restriction",
+  );
   const workspace = await rpc(
     users.member,
     "get_own_project_shared_workspace",
@@ -337,6 +370,7 @@ try {
     { p_expected_profile_id: users.member.id, p_chat_id: resourceChat.id },
   );
   assert.equal(agreementChat[0].has_send_entitlement, true);
+  await revoke(users.admin, memberRestriction);
   await revoke(users.admin, projectHide);
   await revoke(users.admin, resourceHide);
   for (const { path } of coverPaths)

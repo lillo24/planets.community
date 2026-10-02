@@ -1,8 +1,9 @@
 # 09C1A moderation consequence review report
 
 Status on 2026-10-02: implementation prepared for draft review; **not complete
-or merge-ready**. Database execution and generated types are blocked by local
-Docker Desktop startup failure. No migration has been applied to a shared or
+or merge-ready**. Local database execution and generated types are blocked by
+Docker Desktop startup failure. Hosted migration replay passed; its initial lint
+failure has a scoped volatility fix awaiting validation. No migration has been applied to a shared or
 production environment. No production deployment or merge is authorized.
 
 ## 1. Summary
@@ -103,7 +104,7 @@ a known path cannot bypass hiding. Bytes are not deleted and owner management
 remains. Hidden content no longer supplies public contextual photo access;
 independent accepted relationships and truly public photos retain the existing
 photo boundary. Candidate/new-listing matching filters hidden listings. Immediate
-match resolution is volatile and takes a listing share lock before revalidation
+match resolution and its dispatch wrapper are volatile; resolution takes a listing share lock before revalidation
 to serialize new delivery with hide; historical match facts/deliveries remain.
 
 ## 14. Existing relationships
@@ -189,9 +190,16 @@ WSL distributions are stopped. No factory reset, Docker data deletion, service
 reconfiguration or remote database fallback was attempted. The founder was
 asked to restart Docker Desktop; this is the actionable local prerequisite.
 
-The draft PR makes one normal hosted attempt. Record its result on the PR;
-known billing/runner refusal is an availability limitation, never a passed gate.
-Do not rerun unchanged runner-allocation failures. CI now invokes both new
+The initial hosted attempt, [36992489535](https://github.com/lillo24/planets.community/actions/runs/36992489535),
+allocated runners successfully: classification, Site, Web and Mobile passed; database
+replay passed, then lint flagged a stable dispatch wrapper calling the now-
+volatile locking matching resolver. The migration now propagates volatility to
+that wrapper without changing event routing. Fixture review also corrected
+exact seven-day invitation timestamps and invitation-matching delegation time.
+These scoped fixes require validation on the revised head; no failing gate is
+waived. Record the revised-head attempt on the PR. A billing/runner refusal,
+if encountered, is an availability limitation, never a passed gate; do not
+rerun unchanged runner-allocation failures. CI now invokes both new
 verifiers inside the existing Database job; no extra recurring workflow exists.
 
 ## 23. Deferred scope

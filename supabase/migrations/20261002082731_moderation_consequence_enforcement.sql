@@ -2,6 +2,10 @@
 -- serialization. Preserve all current signatures, cover fields, capacity policy,
 -- manager convergence, and existing accepted/private relationships.
 
+-- The dispatch wrapper now calls the locking matching resolver below. Propagate
+-- volatility without rewriting its existing event routing or non-matching branch.
+alter function private.resolve_notification_event(uuid) volatile;
+
 create or replace function private.lock_project_manager_interactions(
   p_project_id uuid,
   p_requester_profile_id uuid

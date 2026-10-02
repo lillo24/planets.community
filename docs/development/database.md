@@ -66,7 +66,8 @@ records the staff actor. Existing accepted relationships are never unwound.
 Hidden content remains in its ordinary lifecycle. Public lists/details,
 capacity/Needs, public cover Storage authorization, contextual organizer/owner
 photos, candidate matching and immediate match delivery exclude hidden sources.
-Listing match delivery takes a shared listing lock before revalidation, so
+Listing match delivery and its dispatch wrapper are volatile, allowing a shared
+listing lock and a fresh snapshot before revalidation, so
 hide cannot cross a new delivery commit. Historical match facts remain history.
 Owner/current-manager private access, independent photo relationships and truly
 public profile photos keep their existing rules. Unhide neither republishes

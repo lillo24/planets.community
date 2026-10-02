@@ -31,6 +31,9 @@ select has_index('private', 'moderation_consequences', 'moderation_consequences_
 select has_index('private', 'moderation_consequences', 'moderation_consequences_active_resource_idx');
 select has_trigger('private', 'moderation_consequences', 'moderation_consequences_preserve_history');
 select has_trigger('private', 'moderation_consequence_actions', 'moderation_consequence_actions_append_only');
+select is(provolatile::text, 'v', proname || ' permits serialized matching delivery') from pg_proc
+  where oid in ('private.resolve_notification_event(uuid)'::regprocedure,
+    'private.resolve_saved_search_matching_notification_event(uuid)'::regprocedure);
 select ok(position('lock_profile_new_interactions' in pg_get_functiondef('private.lock_project_manager_interactions(uuid,uuid)'::regprocedure))
   < position('lock_user_interaction_pair' in pg_get_functiondef('private.lock_project_manager_interactions(uuid,uuid)'::regprocedure)), 'Project profile barrier precedes pair locks');
 select ok(position('lock_profile_new_interactions' in pg_get_functiondef('public.request_resource_listing(uuid,uuid,text)'::regprocedure))

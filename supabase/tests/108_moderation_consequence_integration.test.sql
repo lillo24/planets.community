@@ -12,10 +12,10 @@ values('fb200000-0000-4000-8000-000000000001',pg_temp.person(2),'published','Con
 insert into public.proposal_meeting_details(proposal_id,exact_meeting_text,exact_location_visibility)
 values('fb200000-0000-4000-8000-000000000001','Synthetic private meeting','participants');
 update public.projects set registration_capacity=20 where id='fb200000-0000-4000-8000-000000000001';
-insert into public.project_delegate_invitations(id,project_id,owner_profile_id,token_digest,status,expires_at,accepted_at,accepted_by_profile_id,issuer_profile_id,requested_authority_role)
-select pg_temp.person(20+n),'fb200000-0000-4000-8000-000000000001',pg_temp.person(2),extensions.digest(n::text,'sha256'),'accepted',statement_timestamp()+interval '7 days',statement_timestamp(),pg_temp.person(n),pg_temp.person(2),case n when 3 then 'co_creator' else 'co_organizer' end from generate_series(3,4) n;
-insert into public.project_delegates(project_id,owner_profile_id,delegate_profile_id,invitation_id,granted_by_profile_id,initial_authority_role,authority_role)
-select 'fb200000-0000-4000-8000-000000000001',pg_temp.person(2),pg_temp.person(n),pg_temp.person(20+n),pg_temp.person(2),case n when 3 then 'co_creator' else 'co_organizer' end,case n when 3 then 'co_creator' else 'co_organizer' end from generate_series(3,4) n;
+insert into public.project_delegate_invitations(id,project_id,owner_profile_id,token_digest,status,created_at,expires_at,accepted_at,accepted_by_profile_id,issuer_profile_id,requested_authority_role)
+select pg_temp.person(20+n),'fb200000-0000-4000-8000-000000000001',pg_temp.person(2),extensions.digest(n::text,'sha256'),'accepted',statement_timestamp(),statement_timestamp()+interval '7 days',statement_timestamp(),pg_temp.person(n),pg_temp.person(2),case n when 3 then 'co_creator' else 'co_organizer' end from generate_series(3,4) n;
+insert into public.project_delegates(project_id,owner_profile_id,delegate_profile_id,invitation_id,delegated_at,granted_by_profile_id,initial_authority_role,authority_role)
+select 'fb200000-0000-4000-8000-000000000001',pg_temp.person(2),pg_temp.person(n),pg_temp.person(20+n),(select accepted_at from public.project_delegate_invitations where id=pg_temp.person(20+n)),pg_temp.person(2),case n when 3 then 'co_creator' else 'co_organizer' end,case n when 3 then 'co_creator' else 'co_organizer' end from generate_series(3,4) n;
 insert into public.resource_listings(id,owner_profile_id,listing_mode,lifecycle_state,title,description,country_code,locality,public_location_label,published_at)
 values('fb300000-0000-4000-8000-000000000001',pg_temp.person(2),'exchange','published','Consequence visible Resource','Synthetic verification','IT','Trento','Trento',statement_timestamp());
 insert into public.project_resource_needs(id,project_id,title,details)

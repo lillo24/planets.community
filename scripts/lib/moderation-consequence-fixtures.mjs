@@ -47,14 +47,14 @@ export async function createConsequenceFixture(sql, suppliedActors) {
   ]) {
     const invitationId = randomUUID();
     await sql`insert into public.project_delegate_invitations(id, project_id, owner_profile_id,
-      token_digest, status, expires_at, accepted_at, accepted_by_profile_id, issuer_profile_id, requested_authority_role)
+      token_digest, status, created_at, expires_at, accepted_at, accepted_by_profile_id, issuer_profile_id, requested_authority_role)
       values(${invitationId}::uuid, ${projectId}::uuid, ${actors.owner}::uuid,
-        extensions.digest(${randomUUID()}, 'sha256'), 'accepted', statement_timestamp() + interval '7 days',
+        extensions.digest(${randomUUID()}, 'sha256'), 'accepted', statement_timestamp(), statement_timestamp() + interval '7 days',
         statement_timestamp(), ${actors[role]}::uuid, ${actors.owner}::uuid, ${authority})`;
     await sql`insert into public.project_delegates(project_id, owner_profile_id, delegate_profile_id,
-      invitation_id, granted_by_profile_id, initial_authority_role, authority_role)
+      invitation_id, delegated_at, granted_by_profile_id, initial_authority_role, authority_role)
       values(${projectId}::uuid, ${actors.owner}::uuid, ${actors[role]}::uuid,
-        ${invitationId}::uuid, ${actors.owner}::uuid, ${authority}, ${authority})`;
+        ${invitationId}::uuid, (select accepted_at from public.project_delegate_invitations where id=${invitationId}::uuid), ${actors.owner}::uuid, ${authority}, ${authority})`;
   }
   const resourceOwner = actors.resourceOwner ?? actors.owner;
   await sql`insert into public.resource_listings(id, owner_profile_id, listing_mode, lifecycle_state,
