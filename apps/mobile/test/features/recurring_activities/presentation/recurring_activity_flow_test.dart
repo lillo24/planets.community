@@ -35,6 +35,47 @@ import '../../../support/fake_proposal.dart';
 import '../../../support/fake_recurring_activity.dart';
 
 void main() {
+  for (final participants in [1, 4]) {
+    testWidgets(
+      'public Tavolo card/detail share reveal for $participants others',
+      (tester) async {
+        await tester.binding.setSurfaceSize(const Size(800, 1800));
+        addTearDown(() => tester.binding.setSurfaceSize(null));
+        final capacity = recurringCapacityFixture(
+          currentParticipantCount: participants,
+        );
+        final recurring = FakeRecurringActivityGateway()
+          ..publicItems = [publicRecurringSummaryFixture(capacity: capacity)]
+          ..publicDetail = publicRecurringDetailFixture(capacity: capacity);
+        final app = await _pump(tester, recurring: recurring, signedIn: false);
+        app.read(appRouterProvider).go('/tavoli');
+        await tester.pumpAndSettle();
+        final expected = participants == 1
+            ? 'Up to 20 participants · +1 organizers'
+            : '4 / 20 participant spots used · +1 organizers · '
+                  '5 unique people involved';
+        await _scrollTo(tester, find.text(expected), 300);
+        expect(find.text(expected), findsOneWidget);
+        if (participants == 1) {
+          expect(find.textContaining('people involved'), findsNothing);
+          expect(find.textContaining(' / 20'), findsNothing);
+        }
+        await tester.tap(find.byKey(const Key('tavolo-card-tavolo-1')));
+        await tester.pumpAndSettle();
+        await _scrollTo(tester, find.text(expected), 300);
+        expect(find.text(expected), findsOneWidget);
+        if (participants == 1) {
+          expect(find.textContaining('people involved'), findsNothing);
+          expect(find.textContaining(' / 20'), findsNothing);
+        }
+        expect(
+          find.byKey(const Key('participation-join-tavolo-1')),
+          findsOneWidget,
+        );
+      },
+    );
+  }
+
   testWidgets('Tavolo publish without photo opens the creator trust gate', (
     tester,
   ) async {
@@ -171,10 +212,7 @@ void main() {
       expect(find.byKey(const Key('browse-requested-badge')), findsOneWidget);
       expect(find.byKey(const Key('tavolo-card-tavolo-1')), findsOneWidget);
       expect(find.byKey(const Key('tavolo-card-tavolo-2')), findsOneWidget);
-      expect(
-        find.textContaining('0 / 20 participant spots used'),
-        findsNWidgets(2),
-      );
+      expect(find.textContaining('Up to 20 participants'), findsNWidgets(2));
       expect(
         tester.getTopLeft(find.byKey(const Key('tavolo-card-tavolo-1'))).dy,
         lessThan(

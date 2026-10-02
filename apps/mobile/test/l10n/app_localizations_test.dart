@@ -29,6 +29,16 @@ void main() {
     );
     expect(english.projectSocialPeopleInvolved(3), '3 unique people involved');
     expect(
+      english.projectCapacityUpToParticipants(20),
+      'Up to 20 participants',
+    );
+    expect(
+      italian.projectCapacityUpToParticipants(20),
+      'Fino a 20 partecipanti',
+    );
+    expect(english.projectCapacityLimit(20), 'Capacity 20');
+    expect(italian.projectCapacityLimit(20), 'Capienza 20');
+    expect(
       italian.projectSocialPeopleInvolved(3),
       '3 persone uniche coinvolte',
     );

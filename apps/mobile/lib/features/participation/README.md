@@ -50,7 +50,10 @@ their existing features; participation uses only a project ID plus the narrow
 - `presentation/project_participation_section.dart` supplies the shared detail
   location/action area, including Full/no-spots behavior.
 - `presentation/project_capacity_label.dart` renders one localized occupancy,
-  Full, or legacy capacity-not-set label across Project surfaces.
+  Full, or legacy capacity-not-set label across Project surfaces, with explicit
+  public and exact-manager presentation modes.
+- `presentation/project_capacity_presentation.dart` owns the pure public
+  social-proof reveal policy shared by Proposal/Tavolo cards and participation.
 - `presentation/join_request_screen.dart` owns typed multi-select contribution
   chips, stale-option recovery, the optional private 500-character request
   message, the local profile-photo trust preflight, and the single canonical
@@ -114,6 +117,27 @@ visible and Reject available, while the server remains authoritative for both
 the all-current-manager blocking barrier and organizer-aware Accept races.
 Leaving or removal releases a spot only when it ends an ordinary participant
 membership. No client counter or waitlist exists.
+
+05E2 is presentation-only. Public exact occupancy and social involvement appear
+when `isFull` or `max(socialPeopleCount - 1, 0)` reaches the reveal threshold:
+`3` for null capacity, otherwise
+`min(registrationCapacity, max(3, ceil(registrationCapacity * 0.20)))`.
+The immutable Creator does not advance reveal; active Co-creators and
+Co-organizers count socially, and organizer/membership overlap remains unique.
+Before reveal, cards and public participation show intended capacity plus the
+organizer count, without exact usage or people-involved numerators. Null capacity
+keeps the capacity-not-set label. Full always remains visible.
+
+The shared label requires `public` or `managerExact` presentation. Detail screens
+render it once in `ProjectParticipationSection`, which selects exact mode from
+its existing current management-role state. Creator/Co-creator/Co-organizer
+Participation stays exact below threshold; editors and Team management are
+unchanged. No threshold, reveal flag, or copied snapshot is stored. Canonical
+counts, capacity enforcement, join eligibility, and server concurrency are
+unchanged. Future popularity must use exact `socialPeopleCount`; ranking remains
+deferred. Next.js discovery currently shows no capacity/headcount, so any future
+web count presentation must follow this same policy without adding a new count
+feature here.
 
 Ownership, delegation, and participation are separate relationships. Leaving
 participation does not revoke delegation, and revoking delegation does not end

@@ -7,6 +7,7 @@ import '../../../core/widgets/requested_badge.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../cover_media/presentation/project_cover_image.dart';
 import '../../participation/presentation/project_capacity_label.dart';
+import '../../participation/presentation/project_capacity_presentation.dart';
 import '../domain/recurring_activity_models.dart';
 
 class RecurringActivityCard extends StatelessWidget {
@@ -80,7 +81,10 @@ class RecurringActivityCard extends StatelessWidget {
                   const SizedBox(height: AppSpacing.xSmall),
                   Text(formatRecurringSchedule(activity.schedule, context)),
                   const SizedBox(height: AppSpacing.xSmall),
-                  ProjectCapacityLabel(capacity: activity.capacity),
+                  ProjectCapacityLabel(
+                    capacity: activity.capacity,
+                    presentation: ProjectCapacityPresentation.public,
+                  ),
                   const SizedBox(height: AppSpacing.small),
                   Text(
                     '${l10n.tavoliNextMeeting}: '

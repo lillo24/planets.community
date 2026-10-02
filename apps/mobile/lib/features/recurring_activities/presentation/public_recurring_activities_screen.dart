@@ -20,7 +20,6 @@ import '../../participation/domain/participation_models.dart';
 import '../../participation/presentation/project_participation_section.dart';
 import '../../profile_photo/application/project_creator_photo_controller.dart';
 import '../../profile_photo/presentation/visible_profile_photo_avatar.dart';
-import '../../participation/presentation/project_capacity_label.dart';
 import '../../project_resource_needs/presentation/project_resource_need_routes.dart';
 import '../../project_resource_needs/presentation/project_resource_needs_section.dart';
 import '../application/recurring_activity_controllers.dart';
@@ -303,8 +302,6 @@ class _PublicRecurringActivityDetailScreenState
             ],
             const SizedBox(height: AppSpacing.large),
             Text(resolvedDetail.description),
-            const SizedBox(height: AppSpacing.medium),
-            ProjectCapacityLabel(capacity: resolvedDetail.capacity),
             const SizedBox(height: AppSpacing.large),
             Text(
               l10n.tavoliScheduleTitle,

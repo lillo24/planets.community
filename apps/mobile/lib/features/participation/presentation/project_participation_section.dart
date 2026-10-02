@@ -15,6 +15,7 @@ import '../application/participation_controllers.dart';
 import '../domain/participation_models.dart';
 import '../domain/project_capacity.dart';
 import 'project_capacity_label.dart';
+import 'project_capacity_presentation.dart';
 import 'participation_routes.dart';
 
 class ProjectParticipationSection extends ConsumerWidget {
@@ -205,7 +206,12 @@ class ProjectParticipationSection extends ConsumerWidget {
           ],
         ),
         const SizedBox(height: AppSpacing.small),
-        ProjectCapacityLabel(capacity: capacity),
+        ProjectCapacityLabel(
+          capacity: capacity,
+          presentation: isManager
+              ? ProjectCapacityPresentation.managerExact
+              : ProjectCapacityPresentation.public,
+        ),
         if (capacity.isFull) ...[
           const SizedBox(height: AppSpacing.xSmall),
           Text(l10n.projectNoSpots, key: Key('participation-full-$projectId')),

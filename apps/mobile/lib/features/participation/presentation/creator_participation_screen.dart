@@ -17,6 +17,7 @@ import 'join_acceptance_triage_sheet.dart';
 import 'membership_commitment_sheet.dart';
 import 'project_participation_section.dart';
 import 'project_capacity_label.dart';
+import 'project_capacity_presentation.dart';
 
 class CreatorParticipationScreen extends ConsumerStatefulWidget {
   const CreatorParticipationScreen({
@@ -131,7 +132,11 @@ class _CreatorParticipationScreenState
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              ProjectCapacityLabel(capacity: capacity),
+                              ProjectCapacityLabel(
+                                capacity: capacity,
+                                presentation:
+                                    ProjectCapacityPresentation.managerExact,
+                              ),
                               Text(
                                 capacity.registrationCapacity == null
                                     ? l10n.projectCapacityNotSet
