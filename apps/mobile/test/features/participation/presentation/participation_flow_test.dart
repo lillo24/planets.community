@@ -5,14 +5,17 @@ import 'package:planets_mobile/app/planets_app.dart';
 import 'package:planets_mobile/app/router/app_router.dart';
 import 'package:planets_mobile/core/config/app_config.dart';
 import 'package:planets_mobile/features/auth/data/auth_gateway.dart';
+import 'package:planets_mobile/features/auth/application/auth_session_controller.dart';
 import 'package:planets_mobile/features/auth/domain/auth_models.dart';
-import 'package:planets_mobile/features/participation/application/participation_controllers.dart';
+import 'package:planets_mobile/features/participation/application/project_people_controller.dart';
+import 'package:planets_mobile/features/participation/data/project_people_gateway.dart';
 import 'package:planets_mobile/features/participation/data/actual_contribution_gateway.dart';
 import 'package:planets_mobile/features/participation/data/membership_commitment_gateway.dart';
 import 'package:planets_mobile/features/participation/data/participation_gateway.dart';
 import 'package:planets_mobile/features/participation/data/join_acceptance_triage_gateway.dart';
 import 'package:planets_mobile/features/participation/domain/participation_models.dart';
 import 'package:planets_mobile/features/participation/domain/project_capacity.dart';
+import 'package:planets_mobile/features/participation/domain/project_people_models.dart';
 import 'package:planets_mobile/features/profile/data/profile_gateway.dart';
 import 'package:planets_mobile/features/profile/presentation/profile_edit_screen.dart';
 import 'package:planets_mobile/features/profile_photo/data/profile_photo_gateway.dart';
@@ -32,6 +35,7 @@ import '../../../support/fake_auth.dart';
 import '../../../support/fake_actual_contribution.dart';
 import '../../../support/fake_membership_commitment.dart';
 import '../../../support/fake_participation.dart';
+import '../../../support/fake_project_people.dart';
 import '../../../support/fake_join_acceptance_triage.dart';
 import '../../../support/fake_profile.dart';
 import '../../../support/fake_profile_photo.dart';
@@ -41,6 +45,179 @@ import '../../../support/fake_proposal.dart';
 import '../../../support/fake_recurring_activity.dart';
 
 void main() {
+  testWidgets('account switch dismisses a private member action sheet', (
+    tester,
+  ) async {
+    final people = FakeProjectPeopleGateway()
+      ..rows = [
+        const ProjectPerson(
+          profileId: 'user-2',
+          displayName: 'Private group name',
+          isCreator: false,
+          roleRank: 3,
+          membershipId: 'current',
+        ),
+      ];
+    final app = await _pump(
+      tester,
+      identityId: 'user-1',
+      participation: FakeParticipationGateway(),
+      people: people,
+    );
+    app.read(appRouterProvider).go('/proposals/proposal-1/participants');
+    await tester.pumpAndSettle();
+    await _openMemberMenu(tester, 'current');
+    expect(find.text('Private group name'), findsWidgets);
+    // The next account is an outsider: its canonical roster read must be denied.
+    people.error = const PostgrestException(
+      message: 'Current people access required',
+      code: '42501',
+    );
+    app
+        .read(authSessionProvider.notifier)
+        .markProfileReady(const AuthIdentity(id: 'different-account'));
+    await tester.pumpAndSettle();
+    expect(find.text('Private group name'), findsNothing);
+    expect(find.byKey(const Key('people-event-section')), findsNothing);
+    expect(people.calls.where((c) => c.startsWith('offer:')), isEmpty);
+    expect(tester.takeException(), isNull);
+  });
+  testWidgets(
+    'participant receives an in-app offer and must explicitly accept',
+    (tester) async {
+      final people = FakeProjectPeopleGateway()
+        ..rows = [
+          const ProjectPerson(
+            profileId: 'user-2',
+            displayName: 'Jordan',
+            isCreator: false,
+            roleRank: 3,
+            membershipId: 'current',
+          ),
+        ]
+        ..offerRows = [
+          ProjectRoleOffer(
+            id: 'offer',
+            targetProfileId: 'user-2',
+            targetDisplayName: 'Jordan',
+            issuerProfileId: 'user-1',
+            issuerDisplayName: 'Casey',
+            role: ProjectDelegatedAuthorityRole.coCreator,
+            createdAt: DateTime.utc(2026, 10, 2),
+            expiresAt: DateTime.utc(2026, 10, 9),
+            membershipId: 'current',
+          ),
+        ];
+      final app = await _pump(
+        tester,
+        participation: FakeParticipationGateway(),
+        people: people,
+      );
+      app.read(appRouterProvider).go('/proposals/proposal-1/participants');
+      await tester.pumpAndSettle();
+      expect(
+        find.text('Casey invited Jordan to become a Co-creator.'),
+        findsOneWidget,
+      );
+      expect(people.calls.where((c) => c.startsWith('accept:')), isEmpty);
+      await tester.tap(find.byKey(const Key('people-offer-accept-offer')));
+      await tester.pumpAndSettle();
+      expect(
+        find.textContaining('A Co-creator can edit or stop'),
+        findsWidgets,
+      );
+      await tester.tap(find.byKey(const Key('people-confirm')));
+      await tester.pumpAndSettle();
+      expect(people.calls, contains('accept:user-2:offer'));
+      expect(tester.takeException(), isNull);
+    },
+  );
+  testWidgets(
+    'structural participant action sends an offer, not an authority grant',
+    (tester) async {
+      final people = FakeProjectPeopleGateway()
+        ..rows = [
+          const ProjectPerson(
+            profileId: 'user-2',
+            displayName: 'Jordan',
+            isCreator: false,
+            roleRank: 3,
+            membershipId: 'current',
+          ),
+        ];
+      final app = await _pump(
+        tester,
+        identityId: 'user-1',
+        participation: FakeParticipationGateway(),
+        people: people,
+      );
+      app.read(appRouterProvider).go('/proposals/proposal-1/participants');
+      await tester.pumpAndSettle();
+      await _openMemberMenu(tester, 'current');
+      expect(find.byKey(const Key('people-safety-section')), findsOneWidget);
+      expect(find.byKey(const Key('people-event-section')), findsOneWidget);
+      await tester.tap(find.byKey(const Key('people-action-inviteCoCreator')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('people-confirm')));
+      await tester.pumpAndSettle();
+      expect(people.calls, contains('offer:user-1:current:co_creator'));
+      expect(people.rows.single.authorityRole, isNull);
+      expect(people.calls.where((c) => c.startsWith('accept:')), isEmpty);
+    },
+  );
+  testWidgets('self step-down capacity failure preserves the participant row', (
+    tester,
+  ) async {
+    final people = FakeProjectPeopleGateway()
+      ..rows = [
+        const ProjectPerson(
+          profileId: 'user-2',
+          displayName: 'Jordan',
+          isCreator: false,
+          roleRank: 2,
+          authorityRole: ProjectDelegatedAuthorityRole.coOrganizer,
+          delegateId: 'authority',
+          membershipId: 'current',
+        ),
+      ]
+      ..onMutation = () async {
+        throw const PostgrestException(
+          message: 'Project capacity would be exceeded',
+          code: 'PT409',
+        );
+      };
+    final app = await _pump(
+      tester,
+      participation: FakeParticipationGateway(),
+      people: people,
+      managementRole: ProjectManagementRole.coOrganizer,
+    );
+    app.read(appRouterProvider).go('/proposals/proposal-1/participants');
+    await tester.pumpAndSettle();
+    await _openMemberMenu(tester, 'current');
+    expect(find.byKey(const Key('people-safety-section')), findsNothing);
+    expect(
+      find.byKey(const Key('people-action-revokeAuthority')),
+      findsNothing,
+    );
+    expect(find.byKey(const Key('participation-remove-current')), findsNothing);
+    await tester.tap(find.byKey(const Key('people-action-stepDown')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('people-confirm')));
+    await tester.pumpAndSettle();
+    expect(people.calls, contains('step-down:user-2:authority'));
+    expect(
+      find.textContaining(
+        'Increase capacity or explicitly change participation',
+      ),
+      findsOneWidget,
+    );
+    await _scrollTo(
+      tester,
+      find.byKey(const Key('participation-member-current')),
+    );
+    expect(find.text('Co-organizer'), findsOneWidget);
+  });
   for (final participants in [1, 4]) {
     testWidgets(
       'public detail with $participants others keeps join available',
@@ -392,9 +569,7 @@ void main() {
     expect(find.text('No spots available.'), findsOneWidget);
 
     participation.capacity = capacityFixture(registrationCapacity: 2);
-    await app
-        .read(creatorParticipationProvider.notifier)
-        .load('user-1', 'proposal-1');
+    await app.read(projectPeopleProvider.notifier).load('user-1', 'proposal-1');
     await tester.pumpAndSettle();
     expect(
       tester
@@ -426,7 +601,10 @@ void main() {
         ),
       ]
       ..creatorMembers = [
-        creatorMemberFixture(id: 'current'),
+        creatorMemberFixture(
+          id: 'current',
+          participantProfileId: 'existing-person',
+        ),
         creatorMemberFixture(id: 'left', status: MembershipStatus.left),
       ]
       ..meetingDetails = meetingDetailsFixture();
@@ -516,7 +694,7 @@ void main() {
     await tester.tap(find.byKey(const Key('join-acceptance-submit')));
     await tester.pumpAndSettle();
     expect(triage.calls, ['selections:pending', 'accept:pending']);
-    expect(app.read(projectChatRefreshProvider), 1);
+    expect(app.read(projectChatRefreshProvider), 2);
     await _scrollTo(
       tester,
       find.byKey(const Key('participation-member-membership-4')),
@@ -525,17 +703,14 @@ void main() {
       find.byKey(const Key('participation-member-membership-4')),
       findsOneWidget,
     );
-    await _scrollTo(
-      tester,
-      find.byKey(const Key('participation-remove-current')),
-    );
+    await _openMemberMenu(tester, 'current');
     await tester.tap(find.byKey(const Key('participation-remove-current')));
     await tester.pumpAndSettle();
     expect(find.text('Remove Jordan?'), findsOneWidget);
     await tester.tap(find.byKey(const Key('participation-confirm-remove')));
     await tester.pumpAndSettle();
     expect(participation.calls, contains('remove:current'));
-    expect(app.read(visibleProfilePhotoProvider).entryFor('user-2'), isNull);
+    expect(app.read(visibleProfilePhotoProvider).entryFor('user-3'), isNull);
     expect(find.byKey(const Key('participation-remove-left')), findsNothing);
   });
 
@@ -559,10 +734,15 @@ void main() {
       tester,
       identityId: 'user-2',
       participation: participation,
+      managementRole: ProjectManagementRole.coOrganizer,
     );
     app.read(appRouterProvider).go('/proposals/proposal-1/participants');
     await tester.pumpAndSettle();
 
+    await _scrollTo(
+      tester,
+      find.byKey(const Key('participation-member-self-membership')),
+    );
     expect(
       find.byKey(const Key('participation-member-self-membership')),
       findsOneWidget,
@@ -571,15 +751,7 @@ void main() {
       find.byKey(const Key('participation-remove-self-membership')),
       findsNothing,
     );
-    expect(
-      find.byKey(const Key('participation-remove-other-membership')),
-      findsOneWidget,
-    );
-
-    await _scrollTo(
-      tester,
-      find.byKey(const Key('participation-remove-other-membership')),
-    );
+    await _openMemberMenu(tester, 'other-membership');
     await tester.tap(
       find.byKey(const Key('participation-remove-other-membership')),
     );
@@ -611,6 +783,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(commitments.calls, isEmpty);
+      await _openMemberMenu(tester, 'current');
       expect(
         find.byKey(const Key('participation-commitments-current')),
         findsOneWidget,
@@ -628,10 +801,7 @@ void main() {
       await tester.tap(find.byKey(const Key('membership-commitment-close')));
       await tester.pumpAndSettle();
 
-      await _scrollTo(
-        tester,
-        find.byKey(const Key('participation-commitments-left')),
-      );
+      await _openMemberMenu(tester, 'left', historical: true);
       await tester.tap(find.byKey(const Key('participation-commitments-left')));
       await tester.pumpAndSettle();
       expect(commitments.calls, contains('commitments:left'));
@@ -665,6 +835,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(actual.calls, isEmpty);
+      await _openMemberMenu(tester, 'current');
       expect(
         find.byKey(const Key('participation-actual-contributions-current')),
         findsOneWidget,
@@ -682,10 +853,7 @@ void main() {
       await tester.tap(find.byKey(const Key('actual-contribution-close')));
       await tester.pumpAndSettle();
 
-      await _scrollTo(
-        tester,
-        find.byKey(const Key('participation-actual-contributions-left')),
-      );
+      await _openMemberMenu(tester, 'left', historical: true);
       await tester.tap(
         find.byKey(const Key('participation-actual-contributions-left')),
       );
@@ -725,6 +893,7 @@ void main() {
     app.read(appRouterProvider).go('/proposals/proposal-1/participants');
     await tester.pumpAndSettle();
 
+    await _openMemberMenu(tester, 'current');
     await tester.tap(
       find.byKey(const Key('participation-commitments-current')),
     );
@@ -760,6 +929,7 @@ void main() {
     app.read(appRouterProvider).go('/proposals/proposal-1/participants');
     await tester.pumpAndSettle();
 
+    await _openMemberMenu(tester, 'current');
     await tester.tap(
       find.byKey(const Key('participation-commitments-current')),
     );
@@ -852,12 +1022,12 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.textContaining(raw), findsNothing);
       expect(
-        find.byKey(const Key('creator-participation-error')),
-        findsOneWidget,
+        find.text('Project people information is unavailable. Try again.'),
+        findsWidgets,
       );
       expect(
         find.text('There are no participation requests yet.'),
-        findsOneWidget,
+        findsNothing,
       );
     },
   );
@@ -916,6 +1086,7 @@ Future<ProviderContainer> _pump(
   ProjectManagementRole? managementRole,
   bool hasPhoto = true,
   FakeProfilePhotoGateway? photoGateway,
+  FakeProjectPeopleGateway? people,
 }) async {
   final auth = FakeAuthGateway(
     snapshot: AuthSnapshot(identity: AuthIdentity(id: identityId)),
@@ -975,6 +1146,9 @@ Future<ProviderContainer> _pump(
                     : ProjectManagementRole.none),
         ),
         participationGatewayProvider.overrideWithValue(participation),
+        projectPeopleGatewayProvider.overrideWithValue(
+          people ?? FakeProjectPeopleGateway(participation: participation),
+        ),
         joinAcceptanceTriageGatewayProvider.overrideWithValue(
           triage ?? FakeJoinAcceptanceTriageGateway(),
         ),
@@ -1013,5 +1187,18 @@ Future<void> _scrollTo(WidgetTester tester, Finder target) async {
     await tester.pump();
   }
   await tester.ensureVisible(target);
+  await tester.pumpAndSettle();
+}
+
+Future<void> _openMemberMenu(
+  WidgetTester tester,
+  String membershipId, {
+  bool historical = false,
+}) async {
+  final row = find.byKey(Key('participation-member-$membershipId'));
+  await _scrollTo(tester, row);
+  await tester.tap(
+    find.descendant(of: row, matching: find.byType(IconButton)).first,
+  );
   await tester.pumpAndSettle();
 }

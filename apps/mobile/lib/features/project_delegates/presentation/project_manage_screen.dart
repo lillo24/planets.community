@@ -92,7 +92,7 @@ class _ProjectManageScreenState extends ConsumerState<ProjectManageScreen> {
                     child: ListTile(
                       key: const Key('project-manage-participation'),
                       leading: const Icon(Icons.groups_outlined),
-                      title: Text(l10n.projectManageParticipationTitle),
+                      title: Text(l10n.peopleTitle),
                       subtitle: Text(
                         l10n.projectManageParticipationDescription,
                       ),

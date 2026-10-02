@@ -2,6 +2,11 @@
 
 **Status:** Planning baseline  
 
+07C4's revised candidate work is specified in
+[`07c4-unified-project-people.md`](07c4-unified-project-people.md): targeted
+recipient-accepted role offers, one bounded People surface, and explicit
+self-service organizer step-down. It is stacked on 05E2, not merged to `main`.
+
 The repository's `main` branch remains at the validated DEMO-B baseline. The
 `codex/stack-integration-main-candidate` branch combines the accepted open
 product stacks for founder review; none of the candidate-only work below is

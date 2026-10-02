@@ -34,6 +34,10 @@ String notificationCopy(AppLocalizations l10n, AppNotification notification) {
   final actor = notification.actorDisplayName;
   final project = notification.projectTitle;
   return switch (notification.kind) {
+    NotificationKind.projectRoleOffered =>
+      actor != null && project != null
+          ? l10n.notificationRoleOffer(actor, project)
+          : l10n.notificationRoleOfferGeneric,
     NotificationKind.participationRequestReceived =>
       actor != null && project != null
           ? l10n.notificationRequestReceived(actor, project)

@@ -16,6 +16,9 @@ leave required checks pending.
 | `Database` | The existing local Supabase reset, lint, advisors, pgTAP, integration, Next.js-against-Supabase, and generated-type checks | Changes under `supabase`, database/integration scripts, generated database types, shared local Supabase helpers, shared Node dependency/configuration changes, and cross-cutting changes |
 
 The classifier unions these areas when a pull request changes more than one.
+The Database job also runs `project:people:verify:local` for consent/leave and
+capacity races. It adds no unrelated job trigger or duplicate post-merge run;
+root script/workflow edits still follow the conservative four-area policy.
 `apps/web/src/types/database.generated.ts` deliberately runs both Web and
 Database because it is generated from the migrated public schema and consumed
 by the Next.js application.

@@ -8,6 +8,16 @@ their existing features; participation uses only a project ID plus the narrow
 
 ## Source map
 
+- `domain/project_people_models.dart` owns the unique current-person/targeted-offer
+  payloads, independent page state, and the role/membership action matrix.
+- `data/project_people_gateway.dart` owns the bounded (50-row) People, requests,
+  history, and offer RPCs and recipient-bound offer/step-down commands.
+- `application/project_people_controller.dart` independently pages each section,
+  clears all private rows on identity/access loss, and reloads roles/capacity after
+  mutations. It never preloads commitments or attribution per row.
+- `presentation/project_person_tile.dart` is the compact previewable row; ellipsis
+  and long press open the same identity-bound action sheet in
+  `creator_participation_screen.dart` (legacy route/class name).
 - `domain/participation_models.dart` defines strict project kinds, request and
   membership states, private read models, and project-specific state
   derivation.
@@ -247,6 +257,23 @@ resubmit automatically. `55000` becomes localized lifecycle-unavailable copy,
 while identity changes clear state and reject late responses.
 
 ## Routes
+
+The `participants` routes now host **People** for current participants and
+organizers, linked from Group info and Project management. Requests (all statuses)
+and ended membership history remain manager-only, with independent cursors.
+Display names are deliberately visible in this current-group context regardless
+of public-profile name audience; no public/profile/photo access changes.
+
+Structural actors offer a current participant a seven-day, tokenless role offer.
+Only the identified recipient can accept or decline; creation grants no authority.
+Offers bind to the exact membership episode, so leave/rejoin cannot revive them.
+The canonical Participation-category alert opens People; disabling alerts does
+not hide actionable offers. Team retains bearer invitations for non-participants.
+Step down removes only one's own delegated authority. A `PT409` capacity conflict
+preserves authority and membership and requires capacity/participation to change.
+Account-wide Block stays in Safety, not a chat mute control. Commitments and
+one-time attribution reuse their existing lazy editors, including manager+member
+overlap and exact historical episodes.
 
 Participation and Project management stay in the Browse branch:
 

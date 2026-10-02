@@ -16,6 +16,7 @@ void main() {
       'participation_request_rejected':
           NotificationKind.participationRequestRejected,
       'participant_left': NotificationKind.participantLeft,
+      'project_role_offered': NotificationKind.projectRoleOffered,
       'participant_removed': NotificationKind.participantRemoved,
     };
 
@@ -162,7 +163,7 @@ const _messageId = '00000000-0000-4000-8000-000000000006';
 
 Map<String, Object?> _row(String kind) {
   final isRequest = kind.startsWith('participation_request_');
-  final isLeft = kind == 'participant_left';
+  final isLeft = kind == 'participant_left' || kind == 'project_role_offered';
   return {
     'notification_id': _notificationId,
     'category_slug': 'participation',

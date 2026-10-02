@@ -1,5 +1,19 @@
 # Project delegates
 
+07C4's People screen offers Co-organizer/Co-creator roles to identified current
+participants through tokenless, seven-day in-app offers. Creation grants nothing;
+only genuine recipient acceptance activates authority. Co-creators receive the
+existing high-privilege warning. Offers bind to a membership episode and pending
+issuer offers are invalidated on structural-role loss. Team remains the bearer
+invitation and independent authority-management surface; its invitation read
+excludes targeted offers to avoid presenting them as shareable links.
+
+Explicit self-service Step down is distinct from the existing generic self-role
+mutation prohibition. It preserves membership/history and may fail with the
+canonical capacity `PT409`; People explains how to resolve that conflict without
+silently removing participation. Membership removal continues to preserve
+authority. Current roster names do not alter public-profile/photo privacy.
+
 This feature owns mobile delegated-authority role discovery, invitation
 management, native sharing, the public invitation flow, and the small shared
 Manage project hub. It does not own Project authoring or lifecycle actions.

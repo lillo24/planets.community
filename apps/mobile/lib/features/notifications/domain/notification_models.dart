@@ -27,6 +27,7 @@ enum NotificationCategory {
 }
 
 enum NotificationKind {
+  projectRoleOffered,
   participationRequestReceived,
   participationRequestWithdrawn,
   participationRequestAccepted,
@@ -51,6 +52,7 @@ enum NotificationKind {
   unknown;
 
   static NotificationKind fromWire(String value) => switch (value) {
+    'project_role_offered' => NotificationKind.projectRoleOffered,
     'participation_request_received' =>
       NotificationKind.participationRequestReceived,
     'participation_request_withdrawn' =>
