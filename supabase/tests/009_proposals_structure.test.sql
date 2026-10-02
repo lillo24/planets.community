@@ -157,7 +157,8 @@ select is(
   'proposal skills have RLS enabled'
 );
 select is(
-  (select count(*) from pg_policies where schemaname = 'public' and tablename = 'proposals'),
+  -- Keep the creator-policy contract; 112 verifies the global account gate.
+  (select count(*) from pg_policies where schemaname = 'public' and tablename = 'proposals' and policyname <> 'account_active_required'),
   1::bigint,
   'proposals expose only the creator read policy'
 );
@@ -166,6 +167,7 @@ select is(
     select count(*)
     from pg_policies
     where schemaname = 'public' and tablename = 'proposal_meeting_details'
+      and policyname <> 'account_active_required'
   ),
   1::bigint,
   'meeting details expose only the creator read policy'
@@ -175,6 +177,7 @@ select is(
     select count(*)
     from pg_policies
     where schemaname = 'public' and tablename = 'proposal_skills'
+      and policyname <> 'account_active_required'
   ),
   1::bigint,
   'proposal skills expose only the creator read policy'

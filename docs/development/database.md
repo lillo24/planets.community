@@ -1,5 +1,37 @@
 # Database development
 
+## Account suspension validation (09C1B)
+
+`moderation:suspension:verify:local` uses ten real OTP identities for admin-only
+apply/revoke, safe own status, ordinary private RPC/Storage denial, preserved
+Project/delegate/Resource history, co-manager continuity, and staff recovery.
+It deliberately retains cached Project/Resource sockets across suspension,
+asserts no new per-subject publication after the boundary, then checks all three
+private chat topic families deny new joins and permit reauthorization on revoke.
+Queued pre-boundary signals cannot be recalled. Mobile tests separately prove
+cooperative teardown and discarded private state on denial/status failure.
+
+`moderation:suspension:concurrency:verify:local` checks both lock-observed winner
+orders for all six role/acceptance paths, both outbound request kinds, Resource
+acceptance and Project/Resource chat send. Messages and relationships committed
+first remain; suspension first prevents the new transition. Two reciprocal-admin
+winner orders also prove a suspended waiting admin cannot commit the opposite
+suspension. There are 24 lock-observed cases in total.
+
+`moderation:suspension:audit:local` compares 193 public signatures against
+`account-suspension-rpc-inventory.json` (171 deny, 18 public, one own-status
+exception, three service/worker-only). `--inventory` prints the reviewable
+replacement inventory without secrets. The audit is intentionally heuristic,
+not proof that every path executes a guard; signature drift and real-auth tests
+are independent checks. These commands are included in `check:db`.
+They also run inside the existing change-scoped Database CI job, without adding
+another recurring workflow or unrelated-area trigger.
+
+Suspension migration/tests preserve private immutable history and current-role
+authorization. Ordinary push jobs may still deliver; no provider/09C2 delivery
+semantics are added. Public content is not automatically hidden. Appeals,
+minimum-age rules and retention/deletion policy remain separately deferred.
+
 PR #120 merged the cumulative integration schema, and PR #121 added
 organizer-aware capacity. 09C1A is based on approved current `main`
 `11155618e0aa7bf0de62ae178f79d4c0c50ac644`, not the prompt's older candidate.

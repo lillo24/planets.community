@@ -139,15 +139,15 @@ class ProjectNeedsController extends Notifier<ProjectNeedsState> {
 
   @override
   ProjectNeedsState build() {
-    ref.listen(authSessionProvider.select((session) => session.identity?.id), (
-      _,
-      _,
-    ) {
-      _revision++;
-      _refreshing = false;
-      _refreshPending = false;
-      state = const ProjectNeedsState();
-    });
+    ref.listen(
+      authSessionProvider.select((session) => session.accountAccessIdentityId),
+      (_, _) {
+        _revision++;
+        _refreshing = false;
+        _refreshPending = false;
+        state = const ProjectNeedsState();
+      },
+    );
     ref.onDispose(() => _revision++);
     return const ProjectNeedsState();
   }

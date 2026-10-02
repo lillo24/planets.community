@@ -42,14 +42,14 @@ class ProjectCreatorPhotoController extends Notifier<ProjectCreatorPhotoState> {
 
   @override
   ProjectCreatorPhotoState build() {
-    ref.listen(authSessionProvider.select((session) => session.identity?.id), (
-      _,
-      nextViewerProfileId,
-    ) {
-      _identityRevision++;
-      _projectRevisions.clear();
-      state = ProjectCreatorPhotoState(viewerProfileId: nextViewerProfileId);
-    });
+    ref.listen(
+      authSessionProvider.select((session) => session.accountAccessIdentityId),
+      (_, nextViewerProfileId) {
+        _identityRevision++;
+        _projectRevisions.clear();
+        state = ProjectCreatorPhotoState(viewerProfileId: nextViewerProfileId);
+      },
+    );
     ref.onDispose(() {
       _identityRevision++;
       _projectRevisions.clear();

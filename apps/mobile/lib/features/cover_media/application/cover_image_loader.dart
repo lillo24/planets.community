@@ -40,7 +40,9 @@ final publicCoverBytesProvider = FutureProvider.family<Uint8List, String>((
 final ownerCoverBytesProvider = FutureProvider.autoDispose
     .family<Uint8List, OwnerCoverRequest>((ref, request) async {
       final identity = ref.watch(
-        authSessionProvider.select((session) => session.identity?.id),
+        authSessionProvider.select(
+          (session) => session.accountAccessIdentityId,
+        ),
       );
       if (identity != request.ownerProfileId) {
         throw const CoverReadException(CoverReadFailureKind.owner);

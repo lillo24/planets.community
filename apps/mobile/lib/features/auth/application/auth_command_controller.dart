@@ -145,40 +145,15 @@ class AuthCommandController extends Notifier<AuthCommandState> {
       if (!_isCurrent(revision)) {
         return false;
       }
-      ref.read(authSessionProvider.notifier).markCheckingProfile(identity);
       state = AuthCommandState(
         phase: AuthCommandPhase.completingProfile,
         resendAvailableAt: state.resendAvailableAt,
       );
-      try {
-        await ref.read(profileAnchorGatewayProvider).ensureFor(identity.id);
-        if (!_isCurrent(revision)) {
-          return false;
-        }
-        final readiness = await ref
-            .read(profileAnchorGatewayProvider)
-            .readinessFor(identity.id);
-        if (!_isCurrent(revision)) {
-          return false;
-        }
-        if (readiness == ProfileAnchorReadiness.complete) {
-          ref.read(authSessionProvider.notifier).markProfileReady(identity);
-        } else {
-          ref
-              .read(authSessionProvider.notifier)
-              .markProfileSetupRequired(
-                identity,
-                hasProfileAnchor:
-                    readiness == ProfileAnchorReadiness.incomplete,
-              );
-        }
-      } catch (_) {
-        if (!_isCurrent(revision)) {
-          return false;
-        }
-        ref
-            .read(authSessionProvider.notifier)
-            .markProfileSetupRequired(identity, hasProfileAnchor: false);
+      final completed = await ref
+          .read(authSessionProvider.notifier)
+          .bootstrap(identity, ensureProfile: true);
+      if (!_isCurrent(revision)) return false;
+      if (!completed) {
         state = AuthCommandState(
           failure: AuthFailureKind.profileSetup,
           resendAvailableAt: state.resendAvailableAt,
@@ -212,30 +187,19 @@ class AuthCommandController extends Notifier<AuthCommandState> {
       return false;
     }
 
-    ref.read(authSessionProvider.notifier).markCheckingProfile(identity);
+    final revision = ++_flowRevision;
     state = const AuthCommandState(phase: AuthCommandPhase.completingProfile);
-    try {
-      await ref.read(profileAnchorGatewayProvider).ensureFor(identity.id);
-      final readiness = await ref
-          .read(profileAnchorGatewayProvider)
-          .readinessFor(identity.id);
-      if (readiness == ProfileAnchorReadiness.complete) {
-        ref.read(authSessionProvider.notifier).markProfileReady(identity);
-      } else {
-        ref
-            .read(authSessionProvider.notifier)
-            .markProfileSetupRequired(
-              identity,
-              hasProfileAnchor: readiness == ProfileAnchorReadiness.incomplete,
-            );
-      }
+    final completed = await ref
+        .read(authSessionProvider.notifier)
+        .bootstrap(identity, ensureProfile: true);
+    if (!_isCurrent(revision)) {
+      return false;
+    }
+    if (completed) {
       ref.read(pendingEmailOtpProvider.notifier).clear();
       state = const AuthCommandState();
       return true;
-    } catch (_) {
-      ref
-          .read(authSessionProvider.notifier)
-          .markProfileSetupRequired(identity, hasProfileAnchor: false);
+    } else {
       state = const AuthCommandState(failure: AuthFailureKind.profileSetup);
       return false;
     }
@@ -246,6 +210,8 @@ class AuthCommandController extends Notifier<AuthCommandState> {
       return;
     }
     state = const AuthCommandState(phase: AuthCommandPhase.signingOut);
+    // Invalidate an in-flight verification/setup completion before signing out.
+    _flowRevision++;
     try {
       await ref.read(authGatewayProvider).signOut();
       ref.read(pendingEmailOtpProvider.notifier).clear();

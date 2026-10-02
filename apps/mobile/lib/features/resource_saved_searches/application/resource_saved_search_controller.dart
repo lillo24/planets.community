@@ -60,14 +60,14 @@ class ResourceSavedSearchController extends Notifier<ResourceSavedSearchState> {
 
   @override
   ResourceSavedSearchState build() {
-    ref.listen(authSessionProvider.select((session) => session.identity?.id), (
-      _,
-      _,
-    ) {
-      _identityRevision++;
-      _loadRevision++;
-      state = const ResourceSavedSearchState();
-    });
+    ref.listen(
+      authSessionProvider.select((session) => session.accountAccessIdentityId),
+      (_, _) {
+        _identityRevision++;
+        _loadRevision++;
+        state = const ResourceSavedSearchState();
+      },
+    );
     ref.onDispose(() {
       _identityRevision++;
       _loadRevision++;

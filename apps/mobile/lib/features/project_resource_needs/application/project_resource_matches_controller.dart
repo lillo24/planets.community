@@ -78,13 +78,13 @@ class ProjectResourceMatchesController
 
   @override
   ProjectResourceMatchesState build() {
-    ref.listen(authSessionProvider.select((session) => session.identity?.id), (
-      _,
-      _,
-    ) {
-      _revision++;
-      state = _initialState();
-    });
+    ref.listen(
+      authSessionProvider.select((session) => session.accountAccessIdentityId),
+      (_, _) {
+        _revision++;
+        state = _initialState();
+      },
+    );
     ref.onDispose(() => _revision++);
     return _initialState();
   }

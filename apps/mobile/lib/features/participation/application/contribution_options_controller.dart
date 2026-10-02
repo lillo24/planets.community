@@ -36,13 +36,13 @@ class ContributionOptionsController extends Notifier<ContributionOptionsState> {
 
   @override
   ContributionOptionsState build() {
-    ref.listen(authSessionProvider.select((session) => session.identity?.id), (
-      _,
-      _,
-    ) {
-      _revision++;
-      state = const ContributionOptionsState();
-    });
+    ref.listen(
+      authSessionProvider.select((session) => session.accountAccessIdentityId),
+      (_, _) {
+        _revision++;
+        state = const ContributionOptionsState();
+      },
+    );
     ref.onDispose(() => _revision++);
     return const ContributionOptionsState();
   }

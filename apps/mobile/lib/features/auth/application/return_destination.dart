@@ -11,6 +11,7 @@ String sanitizeReturnDestination(String? candidate) {
       uri.hasAuthority ||
       !candidate.startsWith('/') ||
       candidate.startsWith('//') ||
+      uri.path == '/account/suspended' ||
       uri.path == '/auth' ||
       uri.path.startsWith('/auth/')) {
     return defaultReturnDestination;

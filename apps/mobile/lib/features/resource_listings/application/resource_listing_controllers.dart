@@ -193,13 +193,13 @@ class OwnResourceListingsController extends Notifier<OwnResourceListingsState> {
 
   @override
   OwnResourceListingsState build() {
-    ref.listen(authSessionProvider.select((session) => session.identity?.id), (
-      _,
-      _,
-    ) {
-      _revision++;
-      state = const OwnResourceListingsState();
-    });
+    ref.listen(
+      authSessionProvider.select((session) => session.accountAccessIdentityId),
+      (_, _) {
+        _revision++;
+        state = const OwnResourceListingsState();
+      },
+    );
     ref.onDispose(() => _revision++);
     return const OwnResourceListingsState();
   }
@@ -263,13 +263,13 @@ class ResourceListingEditorController
 
   @override
   ResourceListingEditorState build() {
-    ref.listen(authSessionProvider.select((session) => session.identity?.id), (
-      _,
-      _,
-    ) {
-      _revision++;
-      state = const ResourceListingEditorState();
-    });
+    ref.listen(
+      authSessionProvider.select((session) => session.accountAccessIdentityId),
+      (_, _) {
+        _revision++;
+        state = const ResourceListingEditorState();
+      },
+    );
     ref.onDispose(() => _revision++);
     return const ResourceListingEditorState();
   }

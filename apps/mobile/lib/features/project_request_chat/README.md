@@ -22,3 +22,9 @@ detached.
 
 Structured request actions and contribution details remain owned by the
 Messages and Participation features and are reused from this chat.
+
+09C1B denies suspended accounts private chat reads/sends. Confirmed suspension
+or failed account-status checks clear private caches and close channels, while
+the backend suppresses new recipient Broadcast hints despite cached socket
+authorization (already queued hints cannot be recalled). Only pending outbound
+requests are canonically withdrawn; accepted/terminal request history remains.

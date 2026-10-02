@@ -1,5 +1,11 @@
 # Moderation reporting
 
+Account suspension is stronger than an interaction restriction: while suspended,
+ordinary report/corroboration/counterstatement and own history APIs/UI are denied.
+Stored evidence remains unchanged and can become available again after revocation
+if the existing case lifecycle permits. The auth feature owns the minimal safe
+suspension screen; staff controls/notifications and appeals remain 09C2/09C3.
+
 This feature owns the authenticated reporter experience. `domain/` defines the
 bounded report vocabulary and safe reporter projection, `data/` owns the narrow
 Supabase RPC contract, `application/` protects identity changes and duplicate

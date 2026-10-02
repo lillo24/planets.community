@@ -75,3 +75,8 @@ commands/Storage access and 36 database-lock winner-order races across every
 Creator/delegated acceptance overload plus the existing final-spot capacity
 rule. Both also run in local `check:db`. This adds validation only inside the
 already-scoped Database job, without another workflow or hosted rerun trigger.
+
+09C1B adds the ten-identity account-suspension integration (including private
+Storage and cached Realtime sockets), 24 suspension/interaction/admin races,
+and the reviewed RPC/Broadcast inventory audit to that same Database job.
+All three also run in local `check:db`; no new workflow or trigger is added.

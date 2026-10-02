@@ -881,6 +881,60 @@ Security-sensitive defaults should fail closed. A missing policy must not silent
 
 ## Reliability and test priorities
 
+### Manual account suspension (09C1B)
+
+`account_suspension` reuses private append-preserved moderation consequence
+episodes/actions. Only a current, active, non-suspended admin may apply/revoke it
+against a reviewed case's immutable subject; self-suspension is forbidden.
+The dedicated RPCs require a bounded affected-user reason and private staff note.
+Identifier-only audit/outbox sources reserve delivery for 09C2. Suspension never
+deletes memberships, delegates, staff roles, agreements, messages, media, evidence,
+commitments or notifications, never creates a content hide, and never revokes
+other consequences or blocks. It withdraws only pending outbound requests through
+the existing canonical withdrawal helper. Accepted history/occupancy remains.
+Incoming requests and public owner lifecycles are not automatically changed.
+
+The eleven identity-helper families and the invoker profile-edit gate deny
+ordinary authenticated private reads/mutations with reasonless `PT403`.
+Restrictive RLS also gates direct private-table access; private Storage owner and
+contextual-photo branches require an active account. Public/anonymous content
+remains public. `get_own_account_suspension_status(expected_identity)` is the sole
+account-data exception: exactly active flag, stable consequence ID, apply time
+and affected-user apply reason. It requires Auth identity matching, not a profile
+anchor, and exposes no case, staff, note, evidence or other consequence fields.
+The committed RPC inventory and local audit detect signature/grant/call-chain
+drift; real-auth tests complement that deliberately heuristic source audit.
+
+Suspension uses the established case -> sorted actor/subject profile interaction
+barriers -> concrete/shared Project or listing -> request lock order. Apply/revoke
+recheck the admin's account after waiting. New request/acceptance boundaries and
+the three chat sends recheck account activity after their profile barrier. Chat
+messages committed first remain; suspension first prevents the later send.
+Ordinary requests/reads already executing are not retrospectively recalled.
+
+Realtime authorization is cached by Supabase for existing connections. A
+restrictive policy denies new private joins. All canonical private broadcasters
+also omit suspended per-profile recipients (Project messages/coverage, request
+chat messages, Resource messages/agreement hints), preventing ongoing private
+live hints to an intentionally non-cooperative cached socket. No recipient
+profile lock is taken underneath domain locks, which would reverse withdrawal's
+lock order. Signals already queued or in flight before the boundary may arrive
+afterward; downloaded data cannot be recalled. The database is the canonical
+read/send gate, not a claim of instant transport disconnection or remote erasure.
+
+Mobile checks own status before profile readiness and after foreground/resume;
+failed status checks fail closed with retry/sign-out. Suspended sessions can only
+use `/account/suspended`, including invite/Auth/private deep links. Denial/failure
+invalidates identity-scoped private controllers and closes chat subscriptions.
+Revoke restores ordinary bootstrap subject to all other domain rules. The public
+website and signed-out browsing remain accessible. Current web profile reads
+are denied by the same RLS/RPC gates; no competing web authorization or final
+staff suspension UI is introduced. Existing push job/projector eligibility is
+unchanged: ordinary queued pushes may still be delivered. Notification inbox and
+installation/preferences APIs are gated; sign-out has no push unregister
+dependency. Final delivery/controls belong to 09C2, appeals to 09C3, minimum-age
+policy to 09D, and retention/deletion decisions to Plan 10.
+
 The first releases do not need distributed-system complexity, but they do need deterministic correctness.
 
 Priority tests include:

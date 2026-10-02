@@ -286,13 +286,13 @@ class OwnProposalsController extends Notifier<OwnProposalsState> {
 
   @override
   OwnProposalsState build() {
-    ref.listen(authSessionProvider.select((session) => session.identity?.id), (
-      _,
-      _,
-    ) {
-      _revision++;
-      state = const OwnProposalsState();
-    });
+    ref.listen(
+      authSessionProvider.select((session) => session.accountAccessIdentityId),
+      (_, _) {
+        _revision++;
+        state = const OwnProposalsState();
+      },
+    );
     ref.onDispose(() => _revision++);
     return const OwnProposalsState();
   }
@@ -434,13 +434,13 @@ class ProposalEditorController extends Notifier<ProposalEditorState> {
 
   @override
   ProposalEditorState build() {
-    ref.listen(authSessionProvider.select((session) => session.identity?.id), (
-      _,
-      _,
-    ) {
-      _revision++;
-      state = const ProposalEditorState();
-    });
+    ref.listen(
+      authSessionProvider.select((session) => session.accountAccessIdentityId),
+      (_, _) {
+        _revision++;
+        state = const ProposalEditorState();
+      },
+    );
     ref.onDispose(() => _revision++);
     return const ProposalEditorState();
   }

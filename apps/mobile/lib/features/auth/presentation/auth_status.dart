@@ -40,12 +40,24 @@ class AuthStatus extends ConsumerWidget {
                 ? null
                 : authFailureMessage(l10n, command.failure!),
           ),
+          AuthSessionPhase.checkingAccount ||
           AuthSessionPhase.checkingProfile => _StatusBody(
             icon: const SizedBox.square(
               dimension: 20,
               child: CircularProgressIndicator(strokeWidth: 2),
             ),
             message: l10n.authCompletingProfile,
+          ),
+          AuthSessionPhase.suspended ||
+          AuthSessionPhase.accountCheckFailed => _StatusBody(
+            icon: const Icon(Icons.lock_outline),
+            message: session.phase == AuthSessionPhase.suspended
+                ? l10n.accountSuspendedTitle
+                : l10n.accountStatusFailure,
+            action: TextButton(
+              onPressed: () => context.go('/account/suspended'),
+              child: Text(l10n.accountStatusCheckAgain),
+            ),
           ),
           AuthSessionPhase.ready => _StatusBody(
             icon: const Icon(Icons.verified_user_outlined),

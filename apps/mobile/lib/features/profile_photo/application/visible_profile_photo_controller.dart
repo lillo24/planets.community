@@ -12,14 +12,14 @@ class VisibleProfilePhotoController extends Notifier<VisibleProfilePhotoState> {
 
   @override
   VisibleProfilePhotoState build() {
-    ref.listen(authSessionProvider.select((session) => session.identity?.id), (
-      _,
-      nextViewerProfileId,
-    ) {
-      _identityRevision++;
-      _targetRevisions.clear();
-      state = VisibleProfilePhotoState(viewerProfileId: nextViewerProfileId);
-    });
+    ref.listen(
+      authSessionProvider.select((session) => session.accountAccessIdentityId),
+      (_, nextViewerProfileId) {
+        _identityRevision++;
+        _targetRevisions.clear();
+        state = VisibleProfilePhotoState(viewerProfileId: nextViewerProfileId);
+      },
+    );
     ref.onDispose(() {
       _identityRevision++;
       _targetRevisions.clear();

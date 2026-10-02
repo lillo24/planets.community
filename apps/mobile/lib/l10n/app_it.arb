@@ -1,4 +1,11 @@
 {
+  "accountSuspendedTitle": "Account sospeso",
+  "accountSuspendedBody": "L'accesso ordinario non è disponibile mentre il tuo account è sospeso.",
+  "accountSuspendedReasonLabel": "Motivo",
+  "accountStatusTitle": "Accesso all'account",
+  "accountStatusChecking": "Verifica dell'accesso all'account…",
+  "accountStatusCheckAgain": "Verifica di nuovo lo stato",
+  "accountStatusFailure": "Non è stato possibile verificare l'accesso all'account. Riprova o esci.",
   "@@locale": "it",
   "browseRequestedSection": "Richieste inviate",
   "browseOtherProjectsSection": "Altri progetti",
