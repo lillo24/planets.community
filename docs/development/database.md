@@ -85,7 +85,7 @@ privacy checks and `npm run moderation:consequences:concurrency:verify:local`
 for both winner orders across restriction/hide versus Project request,
 Creator/Co-creator/Co-organizer acceptance and Resource request/acceptance, plus
 the final-capacity-spot regression. These run at the end of `check:db`.
-Tests 106–109 own schema/security, command history, integrated relationships,
+Tests 108–111 own schema/security, command history, integrated relationships,
 and hidden public/media/matching projections. No suspension, consequence UI,
 appeals, minimum-age rule or retention policy is implemented here.
 

@@ -1,4 +1,5 @@
 begin;
+-- Main already contains founder-QA tests 106 and 107; this plan follows them.
 select no_plan();
 create function pg_temp.person(n integer) returns uuid language sql immutable as $$
   select format('fb100000-0000-4000-8000-%s',lpad(n::text,12,'0'))::uuid

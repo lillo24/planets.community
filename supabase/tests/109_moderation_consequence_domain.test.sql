@@ -1,4 +1,5 @@
 begin;
+-- Main's founder-QA tests use 106 and 107; consequence tests start at 108.
 select no_plan();
 insert into auth.users(id,email) select format('fc100000-0000-4000-8000-%s', lpad(n::text,12,'0'))::uuid,
   'consequence-' || n || '@planets.invalid' from generate_series(1,5) as n;

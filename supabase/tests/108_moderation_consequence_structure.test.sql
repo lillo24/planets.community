@@ -1,7 +1,7 @@
 begin;
 select no_plan();
-select has_table('private', 'moderation_consequences');
-select has_table('private', 'moderation_consequence_actions');
+select has_table('private', 'moderation_consequences', 'Private consequence episodes exist');
+select has_table('private', 'moderation_consequence_actions', 'Private append-preserved actions exist');
 select ok(relrowsecurity, relname || ' has RLS') from pg_class
   where oid in ('private.moderation_consequences'::regclass, 'private.moderation_consequence_actions'::regclass);
 select ok(not has_table_privilege(role_name, table_name, 'SELECT,INSERT,UPDATE,DELETE'), role_name || ' has no ' || table_name || ' convenience access')
@@ -26,11 +26,11 @@ select ok(not has_function_privilege('authenticated', oid, 'EXECUTE'), proname |
     'project_has_active_content_hide','resource_listing_has_active_content_hide',
     'lock_profile_new_interactions','assert_profile_new_interactions_available',
     'require_consequence_staff','withdraw_pending_outbound_requests_for_restriction','record_moderation_consequence_event');
-select has_index('private', 'moderation_consequences', 'moderation_consequences_active_profile_idx');
-select has_index('private', 'moderation_consequences', 'moderation_consequences_active_project_idx');
-select has_index('private', 'moderation_consequences', 'moderation_consequences_active_resource_idx');
-select has_trigger('private', 'moderation_consequences', 'moderation_consequences_preserve_history');
-select has_trigger('private', 'moderation_consequence_actions', 'moderation_consequence_actions_append_only');
+select has_index('private', 'moderation_consequences', 'moderation_consequences_active_profile_idx', 'Active profile uniqueness index exists');
+select has_index('private', 'moderation_consequences', 'moderation_consequences_active_project_idx', 'Active Project uniqueness index exists');
+select has_index('private', 'moderation_consequences', 'moderation_consequences_active_resource_idx', 'Active Resource uniqueness index exists');
+select has_trigger('private', 'moderation_consequences', 'moderation_consequences_preserve_history', 'Episode history is protected');
+select has_trigger('private', 'moderation_consequence_actions', 'moderation_consequence_actions_append_only', 'Actions are append-preserved');
 select is(provolatile::text, 'v', proname || ' permits serialized matching delivery') from pg_proc
   where oid in ('private.resolve_notification_event(uuid)'::regprocedure,
     'private.resolve_saved_search_matching_notification_event(uuid)'::regprocedure);

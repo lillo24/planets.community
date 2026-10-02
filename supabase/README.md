@@ -16,7 +16,7 @@ freezes acceptance without changing pending status or owner lifecycle. Existing
 accepted relationships remain operational. Public discovery, cover-object access,
 contextual photos and new matching delivery reuse canonical hide predicates.
 The six identifier-only consequence outbox events are intentionally unconsumed
-until 09C2. Tests 106–109 and the two `moderation:consequences:*:local` verifier
+until 09C2. Tests 108–111 and the two `moderation:consequences:*:local` verifier
 commands own this slice; see `docs/development/database.md` for contracts and locks.
 
 09B1 stores append-preserved directional block episodes in the private schema

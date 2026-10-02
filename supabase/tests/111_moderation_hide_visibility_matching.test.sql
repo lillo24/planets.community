@@ -36,6 +36,8 @@ select is_empty($$select * from public.list_public_recurring_activities(statemen
 select is_empty($$select * from public.list_public_recurring_activity_occurrences(current_setting('test.hide.tavolo')::uuid,statement_timestamp(),statement_timestamp()+interval '14 days')$$,'Hidden Tavolo occurrences absent');
 set local role anon;
 select set_config('request.jwt.claim.sub','',true);
+-- Model an exact Storage download, not a forbidden bucket-list operation.
+select set_config('storage.operation','object.get_authenticated',true);
 select is_empty($$select name from storage.objects where bucket_id='cover-images'$$,'Known cover paths cannot bypass Storage policies');
 reset role;
 select set_config('request.jwt.claim.sub','fa100000-0000-4000-8000-000000000001',true);
