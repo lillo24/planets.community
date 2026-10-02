@@ -52,16 +52,16 @@ class ProjectChatListController extends Notifier<ProjectChatListState> {
 
   @override
   ProjectChatListState build() {
-    ref.listen(authSessionProvider.select((session) => session.identity?.id), (
-      _,
-      _,
-    ) {
-      _revision++;
-      _signalsEnabled = false;
-      _refreshTimer?.cancel();
-      _closeAllSubscriptions();
-      state = const ProjectChatListState();
-    });
+    ref.listen(
+      authSessionProvider.select((session) => session.accountAccessIdentityId),
+      (_, _) {
+        _revision++;
+        _signalsEnabled = false;
+        _refreshTimer?.cancel();
+        _closeAllSubscriptions();
+        state = const ProjectChatListState();
+      },
+    );
     ref.listen(projectChatRefreshProvider, (_, _) {
       final profileId = state.expectedProfileId;
       if (profileId != null && _isReadyIdentity(profileId)) {
@@ -357,17 +357,17 @@ class ProjectChatDetailController extends Notifier<ProjectChatDetailState> {
 
   @override
   ProjectChatDetailState build() {
-    ref.listen(authSessionProvider.select((session) => session.identity?.id), (
-      _,
-      _,
-    ) {
-      _revision++;
-      _signalsEnabled = false;
-      _reconcilePending = false;
-      _isReconciling = false;
-      _closeSubscription();
-      state = const ProjectChatDetailState();
-    });
+    ref.listen(
+      authSessionProvider.select((session) => session.accountAccessIdentityId),
+      (_, _) {
+        _revision++;
+        _signalsEnabled = false;
+        _reconcilePending = false;
+        _isReconciling = false;
+        _closeSubscription();
+        state = const ProjectChatDetailState();
+      },
+    );
     ref.listen(projectChatRefreshProvider, (_, _) {
       final profileId = state.expectedProfileId;
       final chatId = state.chatId;

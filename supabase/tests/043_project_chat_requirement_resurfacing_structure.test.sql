@@ -365,7 +365,7 @@ select is(
 
 select ok(
   position(
-    'realtime.send' in pg_get_functiondef(
+    'private.send_account_active_realtime' in pg_get_functiondef(
       'private.record_project_requirement_coverage_event(text,uuid,uuid,text,text,uuid,uuid)'::regprocedure
     )
   ) > 0
@@ -374,7 +374,7 @@ select ok(
         'private.record_project_requirement_coverage_event(text,uuid,uuid,text,text,uuid,uuid)'::regprocedure
       )
     ) > 0,
-  'the canonical D3A transition helper owns synchronous projection and signals'
+  'the canonical D3A helper owns synchronous projection and suspension-filtered signals'
 );
 select ok(
   position(

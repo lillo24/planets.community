@@ -7,6 +7,7 @@ import '../../features/auth/application/auth_session_controller.dart';
 import '../../features/auth/application/return_destination.dart';
 import '../../features/auth/domain/auth_models.dart';
 import '../../features/auth/presentation/request_code_screen.dart';
+import '../../features/auth/presentation/account_suspension_screen.dart';
 import '../../features/auth/presentation/verify_code_screen.dart';
 import '../../features/blocking/presentation/blocked_users_screen.dart';
 import '../../features/messages/presentation/messages_routes.dart';
@@ -128,8 +129,26 @@ RoutingConfig _routingConfig(
           isNotificationsRoute ||
           isModerationRoute;
 
-      if (session.phase == AuthSessionPhase.restoring) {
-        return null;
+      const accountStatusPath = '/account/suspended';
+      if (session.phase == AuthSessionPhase.restoring ||
+          session.phase == AuthSessionPhase.checkingAccount ||
+          session.phase == AuthSessionPhase.accountCheckFailed ||
+          session.phase == AuthSessionPhase.checkingProfile ||
+          session.phase == AuthSessionPhase.suspended) {
+        if (path == accountStatusPath) return null;
+        final returnTo = isAuthRoute
+            ? pending?.returnTo ??
+                  sanitizeReturnDestination(
+                    state.uri.queryParameters['returnTo'],
+                  )
+            : state.uri.toString();
+        return Uri(
+          path: accountStatusPath,
+          queryParameters: {'returnTo': returnTo},
+        ).toString();
+      }
+      if (path == accountStatusPath) {
+        return sanitizeReturnDestination(state.uri.queryParameters['returnTo']);
       }
 
       if (session.phase == AuthSessionPhase.signedOut &&
@@ -217,6 +236,10 @@ RoutingConfig _routingConfig(
       return null;
     },
     routes: [
+      GoRoute(
+        path: '/account/suspended',
+        builder: (context, state) => const AccountSuspensionScreen(),
+      ),
       GoRoute(
         path: '/auth',
         builder: (context, state) => RequestCodeScreen(
@@ -644,7 +667,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
     errorBuilder: (context, state) => const _UnknownRouteScreen(),
   );
   ref.listen(authSessionProvider, (previous, next) {
-    if (previous?.identity?.id != next.identity?.id) {
+    if (previous?.identity?.id != next.identity?.id ||
+        previous?.accountAccessIdentityId != next.accountAccessIdentityId) {
       // New shell/branch keys discard all retained forms and private stacks.
       // Reparse the current URL instead of losing an in-flight OTP returnTo.
       routes.value = configuration();

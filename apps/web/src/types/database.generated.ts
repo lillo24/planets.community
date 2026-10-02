@@ -2415,6 +2415,15 @@ export type Database = {
           note_id: string
         }[]
       }
+      apply_account_suspension: {
+        Args: {
+          p_case_id: string
+          p_expected_staff_profile_id: string
+          p_internal_note: string
+          p_user_reason: string
+        }
+        Returns: string
+      }
       apply_moderation_consequence: {
         Args: {
           p_case_id: string
@@ -2425,6 +2434,7 @@ export type Database = {
         }
         Returns: string
       }
+      assert_own_account_active: { Args: never; Returns: undefined }
       block_user: {
         Args: {
           p_blocked_profile_id: string
@@ -2761,6 +2771,15 @@ export type Database = {
           subject_profile_id: string
           target_kind: string
           target_summary: string
+        }[]
+      }
+      get_own_account_suspension_status: {
+        Args: { p_expected_profile_id: string }
+        Returns: {
+          applied_at: string
+          consequence_id: string
+          is_suspended: boolean
+          user_reason: string
         }[]
       }
       get_own_blocked_profile_status: {
@@ -4462,6 +4481,15 @@ export type Database = {
         Args: {
           p_expected_creator_profile_id: string
           p_recurring_activity_id: string
+        }
+        Returns: string
+      }
+      revoke_account_suspension: {
+        Args: {
+          p_consequence_id: string
+          p_expected_staff_profile_id: string
+          p_internal_note: string
+          p_user_reason: string
         }
         Returns: string
       }

@@ -333,8 +333,8 @@ select ok(
   ) ilike '%project.join_request_chat_message_sent%'
     and pg_get_functiondef(
       'public.send_project_join_request_chat_message(uuid,uuid,text)'::regprocedure
-    ) ilike '%realtime.send%',
-  'send emits the identifier-only durable event and private Realtime hint'
+    ) ilike '%private.send_account_active_realtime%',
+  'send emits the identifier-only durable event and suspension-filtered private Realtime hint'
 );
 select ok(
   pg_get_functiondef(

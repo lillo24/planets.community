@@ -33,13 +33,13 @@ class ResourceRequestHistoryController
 
   @override
   ResourceRequestHistoryState build() {
-    ref.listen(authSessionProvider.select((session) => session.identity?.id), (
-      _,
-      _,
-    ) {
-      _revision++;
-      state = const ResourceRequestHistoryState();
-    });
+    ref.listen(
+      authSessionProvider.select((session) => session.accountAccessIdentityId),
+      (_, _) {
+        _revision++;
+        state = const ResourceRequestHistoryState();
+      },
+    );
     ref.onDispose(() => _revision++);
     return const ResourceRequestHistoryState();
   }
@@ -151,13 +151,13 @@ class ResourceRequestComposerController
 
   @override
   ResourceRequestComposerState build() {
-    ref.listen(authSessionProvider.select((session) => session.identity?.id), (
-      _,
-      _,
-    ) {
-      _revision++;
-      state = ResourceRequestComposerState(listingId: listingId);
-    });
+    ref.listen(
+      authSessionProvider.select((session) => session.accountAccessIdentityId),
+      (_, _) {
+        _revision++;
+        state = ResourceRequestComposerState(listingId: listingId);
+      },
+    );
     ref.onDispose(() => _revision++);
     return ResourceRequestComposerState(listingId: listingId);
   }
@@ -300,13 +300,13 @@ class ResourceRequestDetailController
 
   @override
   ResourceRequestDetailState build() {
-    ref.listen(authSessionProvider.select((session) => session.identity?.id), (
-      _,
-      _,
-    ) {
-      _revision++;
-      state = ResourceRequestDetailState(requestId: requestId);
-    });
+    ref.listen(
+      authSessionProvider.select((session) => session.accountAccessIdentityId),
+      (_, _) {
+        _revision++;
+        state = ResourceRequestDetailState(requestId: requestId);
+      },
+    );
     ref.onDispose(() => _revision++);
     return ResourceRequestDetailState(requestId: requestId);
   }

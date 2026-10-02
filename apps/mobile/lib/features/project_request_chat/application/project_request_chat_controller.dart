@@ -65,16 +65,16 @@ class ProjectRequestChatController extends Notifier<ProjectRequestChatState> {
 
   @override
   ProjectRequestChatState build() {
-    ref.listen(authSessionProvider.select((session) => session.identity?.id), (
-      _,
-      _,
-    ) {
-      _revision++;
-      _signalsEnabled = false;
-      _reconcileTimer?.cancel();
-      _closeSubscription();
-      state = const ProjectRequestChatState();
-    });
+    ref.listen(
+      authSessionProvider.select((session) => session.accountAccessIdentityId),
+      (_, _) {
+        _revision++;
+        _signalsEnabled = false;
+        _reconcileTimer?.cancel();
+        _closeSubscription();
+        state = const ProjectRequestChatState();
+      },
+    );
     ref.onDispose(() {
       _revision++;
       _reconcileTimer?.cancel();

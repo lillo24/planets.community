@@ -4,6 +4,22 @@ This folder owns the mobile email-OTP sign-in flow and the application boundary
 around Supabase Auth. Supabase remains the source of truth for sessions; the
 feature never persists a parallel signed-in flag, email address, or OTP value.
 
+09C1B checks own suspension status before every authenticated bootstrap, OTP
+profile creation and successful profile-completion transition. AuthGateway owns
+that safe bootstrap RPC; the result is not persisted. A status check has a
+15-second timeout and fails closed into `accountCheckFailed`, never readiness or
+profile setup. `checkingAccount`, `suspended` and error states use the dedicated
+account-access screen, with localized plain-text reason, check-again and sign-out.
+No staff/evidence/appeal fields are rendered or logged. The pure body has a widget
+preview independent of Auth/Storage. PlanetsApp refreshes on foreground/resume;
+Auth snapshot revisions reject late completion after sign-out/account switching.
+Private controllers watch `accountAccessIdentityId`: ordinary refresh preserves
+same-account caches, while suspension/status failure clears them and closes chat
+subscriptions. Router guards hide ordinary UI while any bootstrap is pending.
+There is no existing centralized RPC-error interception; individual screens do
+not gain ad-hoc suspension handlers. Backend denial is immediate at subsequent
+authorization boundaries; mobile detects it on resume or explicit status refresh.
+
 - `domain/auth_models.dart` defines app-owned identity, session, pending-flow,
   and safe failure models.
 - `data/auth_gateway.dart` adapts Supabase Auth and the existing `profiles`

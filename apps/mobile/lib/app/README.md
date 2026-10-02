@@ -55,6 +55,17 @@ edit flows conservatively cancel to Profile.
 
 ## Retention and identity
 
+09C1B adds a global account-access guard outside the shell. Auth restoration and
+pending checks display `/account/suspended` as a blocking loading screen;
+suspended sessions and failed status checks remain there with check-again and
+sign-out. Every ordinary route, including Settings, public mobile Browse, Auth
+verification and invite deep links, redirects there while authenticated access is
+denied. Sanitized destinations preserve continuation after successful bootstrap
+or revocation, but cannot target the account-status route itself. Denial/failure
+also replaces retained branch keys and clears private controller scopes. Same
+identity successful foreground/token refresh preserves those scopes. Anonymous
+public browsing remains available after sign-out. No appeal route is created.
+
 Tab retention is in-memory only, scoped to the same authenticated identity. On
 sign-in, sign-out or account change, the routing configuration creates fresh
 shell/branch keys and reparses the current URL through the same guards. This

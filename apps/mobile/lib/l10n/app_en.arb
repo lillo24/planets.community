@@ -1,4 +1,11 @@
 {
+  "accountSuspendedTitle": "Account suspended",
+  "accountSuspendedBody": "Ordinary account access is unavailable while your account is suspended.",
+  "accountSuspendedReasonLabel": "Reason",
+  "accountStatusTitle": "Account access",
+  "accountStatusChecking": "Checking account access…",
+  "accountStatusCheckAgain": "Check status again",
+  "accountStatusFailure": "Account access could not be verified. Try again or sign out.",
   "browseRequestedSection": "Requested",
   "browseOtherProjectsSection": "Other projects",
   "browseRequestedBadge": "Requested",

@@ -17,6 +17,8 @@ abstract interface class AuthGateway {
   });
 
   Future<void> signOut();
+
+  Future<AccountSuspensionStatus> suspensionStatusFor(String expectedProfileId);
 }
 
 abstract interface class ProfileAnchorGateway {
@@ -61,6 +63,22 @@ class SupabaseAuthGateway implements AuthGateway {
 
   @override
   Future<void> signOut() => _client.auth.signOut();
+
+  @override
+  Future<AccountSuspensionStatus> suspensionStatusFor(
+    String expectedProfileId,
+  ) async {
+    final rows = await _client.rpc<List<dynamic>>(
+      'get_own_account_suspension_status',
+      params: {'p_expected_profile_id': expectedProfileId},
+    );
+    if (rows.length != 1 || rows.single is! Map<String, dynamic>) {
+      throw const FormatException('Expected one own account status.');
+    }
+    return AccountSuspensionStatus.fromJson(
+      rows.single as Map<String, dynamic>,
+    );
+  }
 
   static AuthSnapshot _toSnapshot(Session? session) {
     if (session == null) {

@@ -58,13 +58,13 @@ class OwnParticipationController extends Notifier<OwnParticipationState> {
 
   @override
   OwnParticipationState build() {
-    ref.listen(authSessionProvider.select((session) => session.identity?.id), (
-      _,
-      _,
-    ) {
-      _revision++;
-      state = const OwnParticipationState();
-    });
+    ref.listen(
+      authSessionProvider.select((session) => session.accountAccessIdentityId),
+      (_, _) {
+        _revision++;
+        state = const OwnParticipationState();
+      },
+    );
     ref.onDispose(() => _revision++);
     return const OwnParticipationState();
   }
@@ -163,13 +163,13 @@ class ParticipationCommandController
 
   @override
   ParticipationCommandState build() {
-    ref.listen(authSessionProvider.select((session) => session.identity?.id), (
-      _,
-      _,
-    ) {
-      _revision++;
-      state = const ParticipationCommandState();
-    });
+    ref.listen(
+      authSessionProvider.select((session) => session.accountAccessIdentityId),
+      (_, _) {
+        _revision++;
+        state = const ParticipationCommandState();
+      },
+    );
     ref.onDispose(() => _revision++);
     return const ParticipationCommandState();
   }
@@ -376,13 +376,13 @@ class ParticipantMeetingDetailsController
 
   @override
   ParticipantMeetingDetailsState build() {
-    ref.listen(authSessionProvider.select((session) => session.identity?.id), (
-      _,
-      _,
-    ) {
-      _revision++;
-      state = const ParticipantMeetingDetailsState();
-    });
+    ref.listen(
+      authSessionProvider.select((session) => session.accountAccessIdentityId),
+      (_, _) {
+        _revision++;
+        state = const ParticipantMeetingDetailsState();
+      },
+    );
     ref.onDispose(() => _revision++);
     return const ParticipantMeetingDetailsState();
   }
@@ -509,13 +509,13 @@ class CreatorParticipationController
 
   @override
   CreatorParticipationState build() {
-    ref.listen(authSessionProvider.select((session) => session.identity?.id), (
-      _,
-      _,
-    ) {
-      _revision++;
-      state = const CreatorParticipationState();
-    });
+    ref.listen(
+      authSessionProvider.select((session) => session.accountAccessIdentityId),
+      (_, _) {
+        _revision++;
+        state = const CreatorParticipationState();
+      },
+    );
     ref.onDispose(() => _revision++);
     return const CreatorParticipationState();
   }

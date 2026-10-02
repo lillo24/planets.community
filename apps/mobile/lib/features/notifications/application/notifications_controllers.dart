@@ -34,14 +34,14 @@ class NotificationsUnreadController extends Notifier<NotificationsUnreadState> {
 
   @override
   NotificationsUnreadState build() {
-    ref.listen(authSessionProvider.select((session) => session.identity?.id), (
-      _,
-      _,
-    ) {
-      _identityRevision++;
-      _loadRevision++;
-      state = const NotificationsUnreadState();
-    });
+    ref.listen(
+      authSessionProvider.select((session) => session.accountAccessIdentityId),
+      (_, _) {
+        _identityRevision++;
+        _loadRevision++;
+        state = const NotificationsUnreadState();
+      },
+    );
     ref.onDispose(() {
       _identityRevision++;
       _loadRevision++;
@@ -164,15 +164,15 @@ class NotificationsInboxController extends Notifier<NotificationsInboxState> {
 
   @override
   NotificationsInboxState build() {
-    ref.listen(authSessionProvider.select((session) => session.identity?.id), (
-      _,
-      _,
-    ) {
-      _identityRevision++;
-      _loadRevision++;
-      _pendingReadIds.clear();
-      state = const NotificationsInboxState();
-    });
+    ref.listen(
+      authSessionProvider.select((session) => session.accountAccessIdentityId),
+      (_, _) {
+        _identityRevision++;
+        _loadRevision++;
+        _pendingReadIds.clear();
+        state = const NotificationsInboxState();
+      },
+    );
     ref.onDispose(() {
       _identityRevision++;
       _loadRevision++;
@@ -505,14 +505,14 @@ class NotificationPreferencesController
 
   @override
   NotificationPreferencesState build() {
-    ref.listen(authSessionProvider.select((session) => session.identity?.id), (
-      _,
-      _,
-    ) {
-      _identityRevision++;
-      _operationRevision++;
-      state = const NotificationPreferencesState();
-    });
+    ref.listen(
+      authSessionProvider.select((session) => session.accountAccessIdentityId),
+      (_, _) {
+        _identityRevision++;
+        _operationRevision++;
+        state = const NotificationPreferencesState();
+      },
+    );
     ref.onDispose(() {
       _identityRevision++;
       _operationRevision++;

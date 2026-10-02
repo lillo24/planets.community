@@ -128,13 +128,13 @@ class OwnProjectResourceNeedsController
 
   @override
   OwnProjectResourceNeedsState build() {
-    ref.listen(authSessionProvider.select((session) => session.identity?.id), (
-      _,
-      _,
-    ) {
-      _revision++;
-      state = OwnProjectResourceNeedsState(projectId: projectId);
-    });
+    ref.listen(
+      authSessionProvider.select((session) => session.accountAccessIdentityId),
+      (_, _) {
+        _revision++;
+        state = OwnProjectResourceNeedsState(projectId: projectId);
+      },
+    );
     ref.onDispose(() => _revision++);
     return OwnProjectResourceNeedsState(projectId: projectId);
   }

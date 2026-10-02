@@ -220,6 +220,15 @@ jobs:
       - name: Verify moderation consequence races and final-capacity-spot preservation
         run: npm run moderation:consequences:concurrency:verify:local
 
+      - name: Verify account suspension access, media, preservation and Realtime
+        run: npm run moderation:suspension:verify:local
+
+      - name: Verify account suspension concurrency barriers
+        run: npm run moderation:suspension:concurrency:verify:local
+
+      - name: Audit account suspension RPC inventory and Broadcast emitters
+        run: npm run moderation:suspension:audit:local
+
       - name: Generate local web configuration
         run: npm run web:config:local
 

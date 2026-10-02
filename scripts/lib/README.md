@@ -1,5 +1,11 @@
 # Local verifier helpers
 
+`account-suspension-audit.mjs` traces qualified SQL function calls to account gates
+and classifies each public signature. Its unit tests reject missing/cyclic gates;
+the local audit compares against the committed RPC inventory and rejects private
+broadcasters bypassing suspended-recipient filtering. It is deliberately a
+heuristic source audit, complemented by pgTAP and real-auth/race/Realtime tests.
+
 This folder owns reusable Node.js helpers and their unit tests for repository
 tooling.
 

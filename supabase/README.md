@@ -1,5 +1,12 @@
 # Supabase database
 
+09C1B adds admin-only, reversible `account_suspension` in the canonical private
+consequence history. Ordinary private RPCs/direct RLS/Storage access are gated,
+but public content and stored relationships remain. Own expected-identity status
+is the only account-data exception. See the database guide and system design for
+the lock hierarchy, cached-Realtime mitigation and deferred push/appeal scope.
+The suspension real-auth, race and RPC-audit commands are part of `check:db`.
+
 This folder owns the reproducible local PLANETS database and its security validation.
 
 - `config.toml` configures the local stack and fail-closed Data API defaults.

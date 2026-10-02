@@ -455,8 +455,8 @@ select ok(
   ) ilike '%resource.exchange_changed%'
     and pg_get_functiondef(
       'private.record_resource_exchange_agreement_event(text,uuid,uuid,text,uuid,timestamptz)'::regprocedure
-    ) ilike '%realtime.send%',
-  'agreement transitions emit a private identifier-only resource refresh hint'
+    ) ilike '%private.send_account_active_realtime%',
+  'agreement transitions emit a suspension-filtered private identifier-only resource refresh hint'
 );
 select is(
   (
