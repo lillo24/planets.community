@@ -5,7 +5,8 @@
 07C4's revised candidate work is specified in
 [`07c4-unified-project-people.md`](07c4-unified-project-people.md): targeted
 recipient-accepted role offers, one bounded People surface, and explicit
-self-service organizer step-down. It is stacked on 05E2, not merged to `main`.
+self-service organizer step-down. PR #124 now targets `main` after the reviewed
+05E2 merge; it remains draft and unmerged pending founder review.
 
 The repository's `main` branch remains at the validated DEMO-B baseline. The
 `codex/stack-integration-main-candidate` branch combines the accepted open
@@ -816,7 +817,7 @@ limits, or a combined participant/organizer chat model.
 
 ##### 05E2 — Public Social-Proof Count Reveal
 
-**Status:** Implemented on the 05E2 draft branch; pending merge to `main`.
+**Status:** Implemented and merged in PR #122.
 
 Adds one shared mobile presentation policy to Proposal/Tavolo cards and public
 participation. Reveal exact usage and social counts when canonical `isFull` is

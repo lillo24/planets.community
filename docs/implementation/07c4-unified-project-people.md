@@ -1,15 +1,18 @@
 # 07C4 — Unified Project People and Member Actions
 
-Status: implemented and locally validated; draft stacked PR for founder review.
+Status: implemented; PR #124 targets `main`, remains draft and must not be merged.
 This revised plan records the founder's
 2026-10-02 decisions and supersedes the attached draft's immediate-grant,
 Chat/Block grouping, and optional-pagination requirements.
 
 ## Integration gate
 
-Start exactly at `c4c3f1c4e585ca7587f7308865aae35554dd5d2a`.
-Use branch `codex/07c4-unified-project-people` and a draft stacked PR targeting
-`codex/05e2-public-social-proof-threshold`. Merge neither this PR nor #122.
+The original implementation started exactly at
+`c4c3f1c4e585ca7587f7308865aae35554dd5d2a` on
+`codex/07c4-unified-project-people`, stacked on the 05E2 branch.
+The founder subsequently authorized integration on 2026-10-02: merge reviewed
+#122, reconcile #124 onto the resulting `main`, and keep #124 draft and unmerged.
+#122 was merged at `15d875fd77e9d6d6b652778c57540dc4c458207c`.
 
 ## Canonical boundaries
 
@@ -78,7 +81,7 @@ capacity-conflicted step-down/revocation, and bounded cursor reads.
 Cover Flutter payload/controller/session invalidation and role/action matrices,
 both menu triggers, own contribution overlap, and explicit errors. Run repository
 database/mobile/web/format checks, relevant concurrency verifiers, regenerate
-database types, inspect the diff, and open the draft stacked PR. Keep external
+database types, inspect the diff, and retain the draft PR against `main`. Keep external
 deployment, mute, DM, presence, ranking, templates, new contribution semantics,
 Tavolo attendance, ownership transfer, and deletion out of scope.
 
@@ -118,8 +121,59 @@ Local checks passed:
 
 Existing demo bearer-invitation and derived-count assumptions are unchanged;
 no demo role offers or new seed data are introduced. Per-person mute, DM and
-popularity/ranking are still unimplemented. Later work must first satisfy the
-05E2/#122 and 07C4 review/integration gates; no unresolved product decision blocks
-this implementation. Hosted Validation results are reported in the PR/task
-handoff, distinguishing executed jobs from skipped jobs. No merge or deployment
-is authorized by this plan.
+popularity/ranking are still unimplemented. The 05E2/#122 merge gate is satisfied;
+later dependent work still requires the 07C4 review/integration gate. No unresolved
+product decision blocks this implementation. Hosted Validation results are
+reported in the PR/task handoff, distinguishing executed jobs from skipped jobs.
+Neither merging #124 nor deployment is authorized by the current integration request.
+
+## 2026-10-02 integration report
+
+- Reviewed #122 head: `c4c3f1c4e585ca7587f7308865aae35554dd5d2a`.
+  It contained only the reviewed 05E2 presentation, tests and documentation.
+  GitHub reported CLEAN/MERGEABLE; classification and Mobile CI passed, with
+  Web/Site/Database correctly path-skipped. #122 was explicitly marked ready and
+  merged using a merge commit, preserving the dependency commit in `main`.
+- #122 merge/new `main`: `15d875fd77e9d6d6b652778c57540dc4c458207c`.
+- Previous #124 head: `2cc5356061fb2c26ea991eba7bdbda6647b5e113`.
+- Reconciliation: merge the new `origin/main` into the existing #124 branch.
+  There were no conflicts and no source-tree changes: #124 already contained
+  the exact reviewed 05E2 commit. No side was chosen wholesale, no migration was
+  duplicated, and no history was rewritten. Only this integration record and
+  roadmap status required updates.
+- PR #124 is retargeted to `main`, remains draft, and is not authorized to merge.
+  The final commit ID, hosted Validation run/results and GitHub mergeability are
+  recorded in the PR body after publication, avoiding a self-referential commit
+  hash in this tracked report.
+- Cumulative integration validation passed on the reconciled tree:
+  - full `npm run check:db`: clean local reset/replay and deterministic seed,
+    schema lint, security advisors, 106 pgTAP files / 3,313 assertions, every
+    repository integration verifier and regenerated DB type drift check;
+  - capacity, People consent/episode/issuer/step-down races, delegate,
+    participation, blocking, notification/push, request-chat and group-chat
+    verifiers all passed as part of that complete database chain;
+  - `npm run check:mobile`: generated localization, 419 formatted files,
+    clean static analysis and 1,139 tests;
+  - `npm run check:web`: 24 tooling tests, 142 web tests, lint, typecheck and
+    production build. The first concurrent run had a five-second admin-route
+    import timeout followed by a mock assertion failure from that late test;
+    the unchanged full rerun passed. No test or timeout was weakened;
+  - `npm run check:site`: 34 site tests and 19 waitlist tests, lint, typecheck,
+    production build and deploy dry run only; no external deployment;
+  - English/Italian parity: 1,275 message keys each, all ICU argument sets match,
+    including all 32 new 07C4 messages; their template placeholder metadata
+    agrees with the translated arguments;
+  - repository-wide `npm run format:check`, generated DB type drift and
+    `git diff --check` passed.
+- Final diff audit against the new `main`: all runtime code, tests, migrations,
+  CI and generated types are byte-for-byte unchanged from the previous #124
+  head. The public count helper/label, public cards/details and 05E2 regression
+  tests match `main` exactly. The notification projector matches `main` except
+  for the deliberate role-offer whitelist entry; older resolver behavior remains
+  delegated unchanged. Only one new 07C4 migration exists, with no duplicates or
+  rewrites of mainline migrations. No product/domain conflict was found.
+- #122's clean managed checkout was archived recoverably and its merged local
+  and remote branch removed. #124's checkout is retained for review/QA.
+- Hosted Validation for the final published head and current GitHub mergeability
+  are reported in PR #124's body after the run completes. Physical Android/iOS
+  QA and deferred mute/popularity work remain outside this integration.
