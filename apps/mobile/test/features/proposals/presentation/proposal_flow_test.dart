@@ -73,7 +73,7 @@ void main() {
     },
   );
 
-  testWidgets('Proposal cards separate registration and social headcounts', (
+  testWidgets('Proposal cards reveal social headcounts only at threshold', (
     tester,
   ) async {
     await tester.pumpWidget(
@@ -84,7 +84,7 @@ void main() {
               proposal: proposalSummaryFixture(
                 capacity: projectCapacityFixture(
                   registrationCapacity: 4,
-                  currentParticipantCount: 2,
+                  currentParticipantCount: 3,
                 ),
               ),
               onTap: () {},
@@ -103,16 +103,13 @@ void main() {
 
     expect(
       find.text(
-        '2 / 4 participant spots used · +1 organizers · '
-        '3 unique people involved',
+        '3 / 4 participant spots used · +1 organizers · '
+        '4 unique people involved',
       ),
       findsOneWidget,
     );
     await tester.scrollUntilVisible(
-      find.text(
-        'Registration capacity not set · +1 organizers · '
-        '1 unique people involved',
-      ),
+      find.text('Registration capacity not set · +1 organizers'),
       300,
       scrollable: find.byType(Scrollable).first,
     );
@@ -126,8 +123,14 @@ void main() {
     'signed-out public card navigates to detail through public gateway',
     (tester) async {
       final gateway = FakeProposalGateway()
-        ..publicItems = [proposalSummaryFixture()]
-        ..publicDetail = proposalDetailFixture();
+        ..publicItems = [
+          proposalSummaryFixture(
+            capacity: projectCapacityFixture(currentParticipantCount: 1),
+          ),
+        ]
+        ..publicDetail = proposalDetailFixture(
+          capacity: projectCapacityFixture(currentParticipantCount: 1),
+        );
       final router = GoRouter(
         initialLocation: '/proposals',
         routes: [
@@ -157,9 +160,10 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text('Paint the square'), findsOneWidget);
       expect(
-        find.textContaining('0 / 20 participant spots used'),
+        find.text('Up to 20 participants · +1 organizers'),
         findsOneWidget,
       );
+      expect(find.textContaining('people involved'), findsNothing);
       expect(find.byKey(const Key('proposal-requested-section')), findsNothing);
       expect(gateway.calls, isNot(contains('list-requested')));
 
@@ -177,10 +181,16 @@ void main() {
         findsOneWidget,
       );
       expect(find.text('A full proposal description.'), findsOneWidget);
-      expect(
-        find.textContaining('0 / 20 participant spots used'),
-        findsWidgets,
+      await tester.scrollUntilVisible(
+        find.text('Up to 20 participants · +1 organizers'),
+        200,
       );
+      expect(
+        find.text('Up to 20 participants · +1 organizers'),
+        findsOneWidget,
+      );
+      expect(find.textContaining(' / 20'), findsNothing);
+      expect(find.textContaining('people involved'), findsNothing);
       expect(gateway.calls, contains('public-detail:proposal-1'));
     },
   );

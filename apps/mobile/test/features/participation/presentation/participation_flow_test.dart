@@ -41,6 +41,79 @@ import '../../../support/fake_proposal.dart';
 import '../../../support/fake_recurring_activity.dart';
 
 void main() {
+  for (final participants in [1, 4]) {
+    testWidgets(
+      'public detail with $participants others keeps join available',
+      (tester) async {
+        final app = await _pump(
+          tester,
+          participation: FakeParticipationGateway(),
+          proposalCapacity: projectCapacityFixture(
+            currentParticipantCount: participants,
+          ),
+        );
+        app.read(appRouterProvider).go('/proposals/proposal-1');
+        await tester.pumpAndSettle();
+        await _scrollTo(
+          tester,
+          find.byKey(const Key('participation-join-proposal-1')),
+        );
+        final expected = participants == 1
+            ? 'Up to 20 participants · +1 organizers'
+            : '4 / 20 participant spots used · +1 organizers · '
+                  '5 unique people involved';
+        expect(find.text(expected), findsOneWidget);
+        if (participants == 1) {
+          expect(find.textContaining('people involved'), findsNothing);
+          expect(find.textContaining(' / 20'), findsNothing);
+        }
+        expect(
+          tester
+              .widget<FilledButton>(
+                find.byKey(const Key('participation-join-proposal-1')),
+              )
+              .onPressed,
+          isNotNull,
+        );
+      },
+    );
+  }
+
+  for (final role in [
+    ProjectManagementRole.creator,
+    ProjectManagementRole.coCreator,
+    ProjectManagementRole.coOrganizer,
+  ]) {
+    testWidgets('$role sees one exact detail label and exact private counts', (
+      tester,
+    ) async {
+      final capacity = capacityFixture(currentParticipantCount: 1);
+      final app = await _pump(
+        tester,
+        identityId: role == ProjectManagementRole.creator ? 'user-1' : 'user-2',
+        managementRole: role,
+        participation: FakeParticipationGateway()..capacity = capacity,
+        proposalCapacity: capacity,
+      );
+      app.read(appRouterProvider).go('/proposals/proposal-1');
+      await tester.pumpAndSettle();
+      const exact =
+          '1 / 20 participant spots used · +1 organizers · '
+          '2 unique people involved';
+      await _scrollTo(tester, find.text(exact));
+      expect(find.text(exact), findsOneWidget);
+      expect(find.textContaining('Up to 20'), findsNothing);
+
+      app.read(appRouterProvider).go('/proposals/proposal-1/participants');
+      await tester.pumpAndSettle();
+      expect(find.text(exact), findsOneWidget);
+      expect(
+        find.text('1 current memberships · 1 organizers · 1 / 20 spots used'),
+        findsOneWidget,
+      );
+    });
+  }
+
   testWidgets('join without photo opens applicant gate and never auto-sends', (
     tester,
   ) async {
@@ -840,6 +913,7 @@ Future<ProviderContainer> _pump(
   FakeMembershipCommitmentGateway? commitments,
   FakeActualContributionGateway? actualContributions,
   FakeJoinAcceptanceTriageGateway? triage,
+  ProjectManagementRole? managementRole,
   bool hasPhoto = true,
   FakeProfilePhotoGateway? photoGateway,
 }) async {
@@ -894,9 +968,11 @@ Future<ProviderContainer> _pump(
         recurringActivityGatewayProvider.overrideWithValue(recurringGateway),
         projectDelegateGatewayProvider.overrideWithValue(
           FakeProjectDelegateGateway()
-            ..role = identityId == 'user-1'
-                ? ProjectManagementRole.creator
-                : ProjectManagementRole.none,
+            ..role =
+                managementRole ??
+                (identityId == 'user-1'
+                    ? ProjectManagementRole.creator
+                    : ProjectManagementRole.none),
         ),
         participationGatewayProvider.overrideWithValue(participation),
         joinAcceptanceTriageGatewayProvider.overrideWithValue(

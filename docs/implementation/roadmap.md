@@ -793,7 +793,7 @@ Template Workshop/Market ranking remain deferred.
 
 ##### 05E1 — Organizer-aware registration capacity and public headcount
 
-**Status:** Implemented in draft PR #121; pending merge to `main`.
+**Status:** Implemented and merged in PR #121.
 
 Renames the shared field to `registration_capacity` and adds a default-off
 setting controlling whether the Creator and active Co-creators/Co-organizers
@@ -808,6 +808,26 @@ cards/details show registration usage, organizer breakdown, and unique people
 involved. Editors and Project Team confirmations explain the policy. This
 slice does not add ranking, size bands, waitlists, per-occurrence Tavolo
 limits, or a combined participant/organizer chat model.
+
+##### 05E2 — Public Social-Proof Count Reveal
+
+**Status:** Implemented on the 05E2 draft branch; pending merge to `main`.
+
+Adds one shared mobile presentation policy to Proposal/Tavolo cards and public
+participation. Reveal exact usage and social counts when canonical `isFull` is
+true or `max(socialPeopleCount - 1, 0)` reaches `3` for null capacity, otherwise
+`min(registrationCapacity, max(3, ceil(registrationCapacity * 0.20)))`.
+The Creator does not advance reveal; active Co-creators/Co-organizers count
+socially, and overlap stays unique. Before reveal, show intended capacity and
+organizer presence. Full stays visible, null capacity stays unspecified, and
+managers retain exact counts. Details use one role-aware participation label.
+
+The rule is derived and presentation-only: canonical aggregates, registration
+enforcement, join eligibility, and concurrency remain unchanged, with no
+migration or persisted reveal state. Future popularity uses exact
+`socialPeopleCount`; ranking, normalization, size filters, and combined
+people/chat work remain deferred. Future web count UI must follow this policy;
+no web capacity feature is added here.
 
 #### 05C — One-Time Project Actual Contribution Attribution
 
