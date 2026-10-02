@@ -1,10 +1,10 @@
 # 09C1A moderation consequence review report
 
-Status on 2026-10-02: implementation prepared for draft review; **not merge-ready**.
-Docker startup is resolved and generated types are produced. Migration replay,
-lint/advisors, pgTAP and both new consequence verifiers passed locally. The
-complete local database gate is not green because the Docker/WSL clock moves
-backward and violates inherited lifecycle/membership timestamp constraints.
+Status on 2026-10-02: implementation ready for required founder domain/security
+review; **draft and unmerged**. The complete local database gate passed on an
+isolated QA stack, including migration replay, lint/advisors, all pgTAP tests,
+the existing verifier matrix, both new consequence verifiers and type drift.
+Mobile, Web, Site and hosted CI also passed on the code/test head recorded below.
 No migration has been applied to a shared or production environment. No
 production deployment or merge is authorized.
 
@@ -14,8 +14,9 @@ Two additive migrations introduce manual reversible safety notices, outbound
 interaction restrictions and Project/Resource content hides. Four pgTAP files,
 a ten-identity real-auth verifier and a 36-race concurrency verifier cover the
 new boundaries. All 108 pgTAP files / 3,415 assertions and both new verifiers
-have passed locally; the complete database gate was interrupted by local
-clock rollback in inherited membership-end and Tavolo lifecycle checks.
+have passed locally together in a complete `check:db` sequence. Earlier local
+clock rollback and cross-worktree stack replacement are documented in section 22;
+neither was worked around by weakening domain constraints or tests.
 
 ## 2. Git and approved base
 
@@ -25,6 +26,10 @@ The founder explicitly approved using main after inspection of merged PR #120
 and organizer-aware capacity PR #121. This supersedes the archived prompt's
 older `f5958e00e9b1abb02b079f5489b769502fb3c88b` candidate/base-branch clauses.
 Main was refetched and remained at the approved SHA during final local validation.
+Validated code/test head: `4673818d8b56bd2805c21d6230cf9a3053d73139`.
+The final report-only follow-up does not change any runtime, migration, test,
+generated type, dependency or CI configuration; its final SHA and normal hosted
+run are recorded on the PR to avoid a self-referential report commit.
 [Draft PR #123](https://github.com/lillo24/planets.community/pull/123) into main
 is the authoritative head-SHA/link artifact; no direct
 main push, merge, or branch/worktree cleanup has occurred.
@@ -163,22 +168,22 @@ allowing report/evidence payloads into generic outbox state.
 
 ## 20. Validation
 
-| Check                                 | Result                                                                                                                                                               |
-| ------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Mobile `check:mobile`                 | Passed again: 408 files formatted with zero changes, analysis clean, 1,077 tests                                                                                     |
-| Site `check:site`                     | Passed again: 34 client + 19 waitlist tests, lint/types/build/deploy dry-run                                                                                         |
-| Web `check:web` after type generation | Passed: 33 files / 142 app tests, lint/typecheck/production build                                                                                                    |
-| `test:tooling`                        | Passed: 24 tests as part of the final Web gate                                                                                                                       |
-| `db:reset`                            | Passed: full canonical migration replay and seed                                                                                                                     |
-| `db:lint` / `db:advisors`             | Passed: no schema warnings or security findings                                                                                                                      |
-| `db:test`                             | Passed from a clean reset: 108 files / 3,415 assertions; later complete-gate rerun hit inherited Tavolo timestamp constraints during a demonstrated clock rollback   |
-| `check:db`                            | **Failed / environment-limited**, not passed: two attempts interrupted by backward VM time in inherited membership-end and Tavolo checks                             |
-| Existing database verifier matrix     | Every verifier passed across the first gate sequence, isolated coverage rerun, and the remaining verifier chain; this does not imply the single complete gate passed |
-| New authenticated verifier            | Passed twice: ten real OTP identities, staff/own-reason privacy, preserved coordination and HTTP cover denial/restoration                                            |
-| New concurrency verifier              | Passed twice: 36 winner-order races across all acceptance overloads, plus final-capacity-spot regression                                                             |
-| `db:types` / `db:types:check`         | Passed: CLI-generated public types include the four new RPCs; no regeneration drift                                                                                  |
-| New Node verifier syntax              | Passed `node --check` for both entrypoints and shared fixture module                                                                                                 |
-| `format:check` / `git diff --check`   | Passed: Web/Site formatting, 408 Dart files unchanged, clean diff whitespace                                                                                         |
+| Check                                 | Result                                                                                                                                   |
+| ------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| Mobile `check:mobile`                 | Passed again: 408 files formatted with zero changes, analysis clean, 1,077 tests                                                         |
+| Site `check:site`                     | Passed again: 34 client + 19 waitlist tests, lint/types/build/deploy dry-run                                                             |
+| Web `check:web` after type generation | Passed: 33 files / 142 app tests, lint/typecheck/production build                                                                        |
+| `test:tooling`                        | Passed: 24 tests as part of the final Web gate                                                                                           |
+| `db:reset`                            | Passed: full canonical migration replay and seed                                                                                         |
+| `db:lint` / `db:advisors`             | Passed: no schema warnings or security findings                                                                                          |
+| `db:test`                             | Passed from the complete gate's clean reset: 108 files / 3,415 assertions                                                                |
+| `check:db`                            | Passed end-to-end, exit 0, on the isolated local QA stack described in section 22                                                        |
+| Existing database verifier matrix     | All existing verifiers passed together in that complete gate, including inherited lifecycle, membership, blocking and capacity checks    |
+| New authenticated verifier            | Passed in the complete gate: ten real OTP identities, staff/own-reason privacy, preserved coordination and HTTP cover denial/restoration |
+| New concurrency verifier              | Passed in the complete gate: 36 winner-order races across all acceptance overloads, plus final-capacity-spot regression                  |
+| `db:types` / `db:types:check`         | Passed: CLI-generated public types include the four new RPCs; no regeneration drift                                                      |
+| New Node verifier syntax              | Passed `node --check` for both entrypoints and shared fixture module                                                                     |
+| `format:check` / `git diff --check`   | Passed: Web/Site formatting, 408 Dart files unchanged, clean diff whitespace                                                             |
 
 The earlier Web test/worker-start timeouts during concurrent validation were
 resolved by an isolated bounded-worker run. The final standard `check:web`
@@ -193,7 +198,7 @@ new Android APK was built. Web validation passed again after type generation.
 ## 21. Demo
 
 `demo:reset:local` → `demo:verify:local` → `demo:seed:local` →
-`demo:verify:local` passed. The deterministic local world and its media,
+`demo:verify:local` passed again on the isolated QA stack. The deterministic local world and its media,
 Messages, notifications, chats, public discovery, RLS and protected-location
 checks remained valid after reseeding. No demo source/assets/persona definitions,
 production data or shared environment were changed; only the explicitly local
@@ -217,6 +222,43 @@ seconds**. The active Linux clocksource is `tsc`; alternative Hyper-V sources
 exist, but no kernel/host clock configuration was changed. The underlying
 host/VM cause remains undiagnosed. No timestamp constraint or test was weakened.
 
+After the founder authorized a restart, the execution policy rejected the Docker
+Desktop management command before execution; no Docker Desktop/WSL restart was
+performed. A later read-only 10,000-query clock probe observed zero backward
+steps, and a host/database sample differed by 1 ms. These observations justified
+resuming validation but do not establish a permanent clock repair.
+
+The next full gate passed pgTAP and the existing verifier matrix, then received
+`PGRST202` from the new RPC. PostgreSQL inspection confirmed that both new
+migrations and the consequence table/function were absent: while the gate was
+running, the shared `planets-community` database container had been recreated
+with the `07c4-unified-project-people` worktree label and that branch's migration
+history. This was a cross-worktree test-stack collision, not an API-cache or
+consequence-domain failure. No further reset/stop of that shared stack was made.
+
+The successful full gate used an ephemeral project identity
+`planets-community-09c1a-qa` in this isolated worktree's local config, with API
+54331, database 54332, shadow 54330, Studio 54333, Mailpit 54334, analytics 54337,
+pooler 54339 and inspector 8084. Ports were checked free before startup. The
+pinned CLI remained `2.118.0-beta.39`; all migrations, seeds, auth/security
+settings and verifier implementations were unchanged. Following the
+[Supabase CLI configuration reference](https://supabase.com/docs/guides/local-development/cli/config),
+only project identity and port assignments were temporarily overridden.
+
+Startup was `npm run db:start -- --exclude imgproxy,studio,edge-runtime,vector,supavisor`;
+the excluded optional UI/image/Edge services are not used by this database gate.
+Validation was the unmodified `npm run check:db` with
+`MAILPIT_URL=http://127.0.0.1:54334`. Existing helpers discovered API/database
+endpoints from project-scoped CLI status. Docker labels and migration history
+confirmed the isolated target before validation and retained both new migrations
+afterward. The complete sequence exited 0 without skipping any check. The full
+demo reset/verify/seed/verify sequence also passed on this stack. After checking
+the container's project/worktree labels, cleanup used
+`npm run db:stop -- --project-id planets-community-09c1a-qa --no-backup`.
+Only this ephemeral stack and its synthetic-data volumes were removed; they are
+reproducible from the migrations and demo commands. The original config was
+restored, and no temporary identity or port override is part of the PR.
+
 The initial hosted attempt, [36992489535](https://github.com/lillo24/planets.community/actions/runs/36992489535),
 allocated runners successfully: classification, Site, Web and Mobile passed; database
 replay passed, then lint flagged a stable dispatch wrapper calling the now-
@@ -227,10 +269,15 @@ The revised-head run [36993592274](https://github.com/lillo24/planets.community/
 passed classification, Site, Web and Mobile, and applied both new migrations
 during start. Its following reset failed at Docker container bootstrap with
 exit 125 before lint/tests; it was not rerun unchanged. Local replay/lint now
-validate the wrapper fix. The final generated-type/test-fixture head will get
-one normal PR-triggered attempt; its exact SHA/run/outcome is recorded on the
-PR. No hosted gate is waived, and the old billing exception does not apply to
-these runner-allocated attempts. CI now invokes both new
+validate the wrapper fix. The final code/test head
+`4673818d8b56bd2805c21d6230cf9a3053d73139` passed the normal PR-triggered run
+[36996582681](https://github.com/lillo24/planets.community/actions/runs/36996582681):
+classification, Mobile, Web, Site and Database all succeeded. The Database job
+also passed both new verifiers, local-configured web build, web Auth/Tavoli checks
+and generated-type drift. The report-only follow-up gets its normal final-head
+attempt; its exact SHA/run/outcome is recorded on the PR. No hosted gate is
+waived, and the old billing exception does not apply to these runner-allocated
+attempts. CI now invokes both new
 verifiers inside the existing Database job; no extra recurring workflow exists.
 
 ## 23. Deferred scope
@@ -249,9 +296,11 @@ their explicit description overloads, Storage tests need the exact-download
 operation context, and new test numbers must follow main's actual maximum 107.
 These changes correct verification, not product policy or inherited assertions.
 
-The remaining local validation blocker is independently demonstrated backward
-VM time. Stabilize the Docker/WSL clock and rerun the complete `check:db` gate
-before treating it as passed; changing OS/kernel settings or stopping unrelated
-WSL workloads was not assumed to be authorized. Founder domain/security review
-of manual consequence scope, reason privacy, lifecycle independence and locking
-remains required. The PR must remain draft/unmerged; no deployment is in scope.
+There is no remaining repository-owned validation failure on the validated
+code/test head. The earlier clock fault's underlying cause is not claimed fixed;
+the later complete isolated gate passed without any timestamp workaround.
+Future concurrent local QA must use distinct project identities/ports or be
+coordinated to avoid another shared-stack replacement. Founder domain/security
+review of manual consequence scope, reason privacy, lifecycle independence and
+locking remains required. The PR must remain draft/unmerged; no deployment is
+in scope.
