@@ -25,3 +25,9 @@ Submitted status, and the immutable private statement when present. The card
 labels this as evidence rather than a verdict and does not add enforcement or
 resource-state controls. Reporter identity remains part of the staff case
 detail only; recipient-facing projections never expose it.
+
+09C1A adds backend consequence commands/history and enforcement, but does not
+add controls or reason displays to this feature. Staff/affected-user RPCs are
+documented in `docs/development/database.md`; consequence admin/mobile UX and
+the six currently unconsumed identifier-only notification source events belong
+to 09C2. Evidence review remains independent and never applies consequences.
