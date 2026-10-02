@@ -1,9 +1,9 @@
 # Database development
 
-The stack-integration candidate replays the complete cumulative schema from the
-validated `main` baseline plus the included open product stacks. Candidate-only
-migrations, generated types, and verification commands remain unmerged to
-`main`; optional MLS/E2EE work from PR #28 is intentionally absent.
+PR #120 merged the cumulative integration schema, and PR #121 added
+organizer-aware capacity. 09C1A is based on approved current `main`
+`11155618e0aa7bf0de62ae178f79d4c0c50ac644`, not the prompt's older candidate.
+Optional MLS/E2EE work from PR #28 is intentionally absent.
 
 PostgreSQL is the canonical PLANETS product record. This guide owns the local schema-change, security-test, and generated-type workflow. The current schema includes application identity, basic profiles, the private profile-photo and single-cover Storage/domain foundations, a controlled starter skill catalog, field visibility, one-time proposals, the Tavoli recurring-activity domain, standalone Scambio-Dona resource listings, accepted-request agreements and conversations, Project resource needs, join-request contribution selections, immutable acceptance decisions, accepted-membership commitment sets, shared project participation, structured Messages reads, the Project group-chat lifecycle/authorization foundation, the in-app notification domain, the provider-independent push installation/delivery-job foundation, the private reporting/manual-review and blocking foundations, and private audit/outbox primitives.
 
@@ -28,6 +28,67 @@ Later migrations should use lowercase `snake_case`, UUID primary keys for ordina
 There is no universal soft-delete or content-state convention. Deletion, anonymization, historical retention, and moderation state have product and legal consequences and belong to their later plans.
 
 ## Reporting and manual moderation review
+
+### 09C1A manual consequence domain
+
+`private.moderation_consequences` owns immutable target/type/case/affected-user
+episodes; only the one-way active-to-revoked timestamp can change.
+`private.moderation_consequence_actions` owns immutable apply/revoke actors,
+user-facing reasons and links to ordinary append-only case notes. Both tables
+have RLS, restrictive foreign keys, no client/service-role table grants, and
+partial unique indexes preventing duplicate active target/type episodes.
+Reapply after revoke creates a new ID. Repeated active apply/revoke commands
+return safe `PT409` conflicts rather than duplicating history.
+
+Identity-bound `apply_moderation_consequence(expected staff, case, type, reason,
+note)` derives targets from reviewed/completed cases. `revoke_moderation_consequence`
+requires an active episode. Both require trimmed plain-text reasons (1–2000
+characters) and private notes (1–4000), recheck current moderator/admin, and
+atomically append note/action/audit/outbox. A share lock on the active staff
+role serializes deactivation. Neither changes case review state. Reasons,
+notes and evidence never enter audit/outbox metadata or logs.
+
+`list_own_moderation_consequences` returns a bounded keyset history (default 20,
+maximum 50) to only the affected identity, including safe owned-content
+reference/title and user-facing apply/revoke reasons. Project hides belong to
+the immutable Creator, not delegates. `list_moderation_case_consequence_history`
+is staff-only. No public/counterparty notice lookup exists.
+
+The private active predicates are the single owners of notice, restriction,
+Project-hide and listing-hide state. Requests/acceptance acquire the requester
+profile interaction lock before deterministic block pairs and the existing
+Project/listing lock, then revalidate restriction/hide/block/manager state.
+Restriction apply holds that same profile barrier while withdrawing pending
+outbound attempts under their canonical domain locks; request history records
+the requester withdrawal identity, while the separate consequence action
+records the staff actor. Existing accepted relationships are never unwound.
+
+Hidden content remains in its ordinary lifecycle. Public lists/details,
+capacity/Needs, public cover Storage authorization, contextual organizer/owner
+photos, candidate matching and immediate match delivery exclude hidden sources.
+Listing match delivery takes a shared listing lock before revalidation, so
+hide cannot cross a new delivery commit. Historical match facts remain history.
+Owner/current-manager private access, independent photo relationships and truly
+public profile photos keep their existing rules. Unhide neither republishes
+closed/cancelled/ended content nor resurrects withdrawn requests or removes blocks.
+
+The six source events are `moderation.safety_notice_applied`,
+`moderation.safety_notice_revoked`, `moderation.interaction_restriction_applied`,
+`moderation.interaction_restriction_revoked`, `moderation.content_hide_applied`,
+and `moderation.content_hide_revoked`. Payloads contain consequence/action/case,
+affected-profile and optional target identifiers only. They intentionally have
+no notification consumer until 09C2; existing projection workers ignore them.
+
+Run `npm run moderation:consequences:verify:local` for real OTP/PostgREST/Storage
+privacy checks and `npm run moderation:consequences:concurrency:verify:local`
+for both winner orders across restriction/hide versus Project request,
+Creator/Co-creator/Co-organizer acceptance and Resource request/acceptance, plus
+the final-capacity-spot regression. These run at the end of `check:db`.
+Tests 106–109 own schema/security, command history, integrated relationships,
+and hidden public/media/matching projections. No suspension, consequence UI,
+appeals, minimum-age rule or retention policy is implemented here.
+
+### Existing evidence foundation
 
 The private `moderation_cases` table owns one immutable typed target, its
 canonically derived subject, and Project or Scambio-Dona context. The private
@@ -658,6 +719,8 @@ npm run moderation:verify:local
 npm run moderation:corroboration:verify:local
 npm run moderation:counterstatement:verify:local
 npm run blocking:verify:local
+npm run moderation:consequences:verify:local
+npm run moderation:consequences:concurrency:verify:local
 npm run db:types
 npm run db:types:check
 ```

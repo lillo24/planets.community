@@ -1,13 +1,13 @@
 # System Design and Responsibility Boundaries
 
 **Status:** Initial accepted design  
-**Implementation status:** The main branch remains at the validated DEMO-B
-baseline. The stack-integration candidate additionally implements Project
+**Implementation status:** The stack-integration candidate was merged to `main`
+in PR #120, followed by organizer-aware capacity in PR #121. Main implements Project
 resource/contribution flows, the complete Scambio-Dona coordination stack,
 profile/cover media and trust gates, moderation/blocking, Project delegates and
 capacity, shared workspace, Settings, and English/Italian localization. These
-candidate additions are not merged to `main`; optional MLS/E2EE remains deferred
-in excluded PR #28.
+additions are now on `main`; optional MLS/E2EE remains deferred in excluded PR #28.
+09C1A adds the moderation-consequence domain on its isolated review branch.
 
 This document describes how the major parts of PLANETS should interact. Technology choices are recorded separately in [`core-stack.md`](core-stack.md).
 
@@ -802,6 +802,35 @@ pending queue, reopening restores that same request, and an already submitted
 statement remains final. Counterstatements do not change moderation state,
 Resource requests/listings/agreements, notifications, Realtime, or outbox
 state.
+
+09C1A adds only manual, reversible `safety_notice`, `interaction_restriction`,
+and `content_hide` consequences. Current moderator/admin authorization is
+rechecked on every command; evidence never applies a consequence automatically.
+Private append-preserved episodes and actions require a user-facing reason
+(trimmed 1–2000 characters) and a linked staff-only note (1–4000 characters) on
+both apply and revoke. Case review state remains independent.
+
+Safety notices have no public or authorization effect. Interaction restrictions
+block only the subject's new outbound Project/Resource requests and withdraw
+their pending attempts using canonical requester-withdrawal history/events.
+Existing memberships, accepted Resource coordination, manager authority, chat,
+meeting details, commitments, workspace and capacity occupancy remain intact.
+Content hides suppress public discovery/detail, capacity, Needs, contextual
+photos, cover objects and new matching delivery, and freeze new requests and
+pending acceptance. Hiding never rewrites owner lifecycle or resolves pending
+requests; withdrawal, rejection and authorized private management remain valid.
+
+The new-interaction order is requester profile moderation lock, deterministic
+current-manager/owner block pairs, concrete/shared Project or listing lock,
+then revalidation and the existing mutation. Creator and delegated-manager
+acceptance check the requester, not the manager. Capacity stays canonical.
+Only the subject, immutable Project Creator, or Resource owner reads their raw
+user-facing reasons through the identity-bound own-history API; delegates and
+counterparties do not gain those reasons. Staff has a separate case-history API.
+Six identifier-only `moderation.<type>_<applied|revoked>` outbox events are
+intentionally unconsumed until 09C2. Suspension/global enforcement (09C1B),
+consequence UX/notifications (09C2), appeals (09C3), minimum age (09D), and final
+retention/deletion (Plan 10) remain deferred.
 
 The minimum moderation backbone before public user-generated content should include:
 

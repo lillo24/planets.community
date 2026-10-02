@@ -7,6 +7,18 @@ This folder owns the reproducible local PLANETS database and its security valida
 - `tests/` contains native pgTAP invariants and transactional security probes.
 - `seed.sql` runs after migrations during reset and currently contains no data; the system-managed starter skill catalog is migration-owned reference data.
 
+09C1A adds private, manual and reversible moderation-consequence episodes and
+actions: safety notices, outbound interaction restrictions, and Project/Resource
+content hides. Expected-identity staff commands require user-facing reasons plus
+private notes; only affected users and current staff receive their respective
+bounded projections. Restriction withdraws pending outbound attempts, while hide
+freezes acceptance without changing pending status or owner lifecycle. Existing
+accepted relationships remain operational. Public discovery, cover-object access,
+contextual photos and new matching delivery reuse canonical hide predicates.
+The six identifier-only consequence outbox events are intentionally unconsumed
+until 09C2. Tests 106–109 and the two `moderation:consequences:*:local` verifier
+commands own this slice; see `docs/development/database.md` for contracts and locks.
+
 09B1 stores append-preserved directional block episodes in the private schema
 and exposes only expected-identity Block/Unblock plus an outbound-only keyset
 read. 09B2 adds `get_own_blocked_profile_status`, a zero-or-one exact-target

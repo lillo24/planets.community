@@ -69,3 +69,9 @@ the `merge_group` trigger before making these checks queue requirements.
 
 The existing concurrency group is retained, so a newer commit to the same pull
 request cancels its obsolete validation run.
+
+09C1A adds two Database-job integrations for real authenticated consequence
+commands/Storage access and 36 database-lock winner-order races across every
+Creator/delegated acceptance overload plus the existing final-spot capacity
+rule. Both also run in local `check:db`. This adds validation only inside the
+already-scoped Database job, without another workflow or hosted rerun trigger.
