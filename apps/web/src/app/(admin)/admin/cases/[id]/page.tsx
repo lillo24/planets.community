@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { ModerationCaseDetailView } from "@/features/moderation/moderation-components";
+import { ModerationConsequencesSection } from "@/features/moderation/moderation-consequence-components";
 import { isUuid } from "@/features/moderation/moderation-models";
 import { readModerationCase } from "@/features/moderation/moderation-server";
 
@@ -38,6 +39,12 @@ export default async function ModerationCasePage({
         <p className="font-mono text-xs text-muted-foreground">{id}</p>
       </header>
       <ModerationCaseDetailView detail={result.detail} />
+      <ModerationConsequencesSection
+        detail={result.detail}
+        episodes={result.consequences}
+        staffRole={result.staffRole}
+        staffProfileId={result.staffProfileId}
+      />
     </main>
   );
 }

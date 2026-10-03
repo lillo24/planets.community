@@ -935,6 +935,47 @@ installation/preferences APIs are gated; sign-out has no push unregister
 dependency. Final delivery/controls belong to 09C2, appeals to 09C3, minimum-age
 policy to 09D, and retention/deletion decisions to Plan 10.
 
+### Manual staff consequence controls (09C2A)
+
+On the approved 09C1B review head, the existing Next.js `/admin/cases/[id]`
+surface adds manually selected apply/revoke controls for the four canonical
+types. Moderators manage safety notices, interaction restrictions and content
+hides; only admins manage suspension, never their own account. Fresh verified
+session claims and the current database staff role are checked on every submit;
+the dedicated suspension RPCs retain final admin authorization. No service-role
+credential, browser-provided staff/target identity, new database contract or
+client-side enforcement engine is introduced.
+
+History is explicitly case-scoped, not global subject history. It groups the
+existing flat action projection into immutable episodes, preserves revoked
+episodes and independent active types, and links private note references to
+already-authorized case notes. Apply/revoke reasons are escaped plain text;
+timestamps are labelled UTC. Cross-case duplicates remain canonical conflicts
+rather than prompting a broader reputation/history API.
+
+Each action opens an inline confirmation with factual effect copy and two blank,
+independently entered fields: user-facing reason (1–2,000 Unicode characters) and
+private moderation note (1–4,000). Reports/evidence never autofill these fields.
+The browser receives choice metadata, not staff evidence. Received cases must
+explicitly enter review; under-review/completed cases allow compatible actions.
+Content hide is offered only for directly reported Projects/Resource listings,
+not a message/request's parent content. Review state never changes implicitly.
+
+The server rereads case compatibility and binds revocation to its current-case
+episode/type, then invokes canonical commands. Database authorization, target
+derivation, locking, withdrawal and lifecycle rules remain authoritative. No
+optimistic mutation or automatic retry is used: pending controls disable, finite
+role/stale/conflict failures refresh authorized case state, and unconfirmed
+network/malformed responses require reload before retry. Revoke neither restores
+withdrawn requests/ended relationships/removed roles nor clears unrelated blocks
+or consequences. Keyboard labels, associated error/help text, live results and
+focus return on Cancel use the existing shadcn/Base UI components.
+
+09C2A remains draft/in review and does not merge or deploy its dependency stack.
+09C2B owns affected-user/contextual UX and notifications; 09C3 appeals, 09D
+minimum-age and Plan 10 retention/deletion remain deferred/unstarted as recorded
+in the roadmap.
+
 The first releases do not need distributed-system complexity, but they do need deterministic correctness.
 
 Priority tests include:
