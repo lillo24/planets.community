@@ -9,6 +9,23 @@ PostgreSQL is the canonical PLANETS product record. This guide owns the local sc
 
 ## Source of truth and daily workflow
 
+07C4's candidate migration adds targeted role offers to the existing invitation
+domain, not a second authority ledger. Bearer mode has a token digest and no
+target; targeted mode has no token and binds a profile plus membership episode.
+Only genuine recipient acceptance creates a delegate with offered/accepted
+provenance. Project-first locking serializes offer acceptance with leave/removal
+and capacity-sensitive step-down. No membership is silently ended.
+Invitation invalidation timestamps are captured after lock waits so an offer
+committed by a still-authorized Co-creator cannot break a concurrent demotion.
+Current People is a restricted display-name projection; manager requests/history and pending
+offers use separate bounded keyset endpoints. The older unbounded manager reads
+remain compatibility contracts, but the new screen does not call them.
+
+Run `npm run project:people:verify:local` after a clean local reset/pgTAP run to
+exercise both leave/accept lock orders, duplicate acceptance, final-slot step-down,
+and issuer-demotion races. Its synthetic local fixtures persist until the next reset, like
+the capacity verifier. Do not run pgTAP against a verifier-populated database.
+
 Timestamped SQL files under `supabase/migrations/` are the only canonical schema history. PLANETS does not maintain a parallel `supabase/schemas/` declarative representation.
 
 Start the local stack, generate a migration with the project-scoped CLI, edit the generated SQL, and replay the complete history:

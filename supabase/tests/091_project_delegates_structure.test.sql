@@ -30,9 +30,12 @@ select columns_are(
     'revoked_at',
     'revoked_by_profile_id',
     'issuer_profile_id',
-    'requested_authority_role'
+    'requested_authority_role',
+    'target_profile_id',
+    'target_membership_id',
+    'declined_at'
   ],
-  'invites persist only lifecycle metadata and a token digest'
+  'invitations persist lifecycle/provenance plus either a bearer digest or an episode-bound target'
 );
 select columns_are(
   'public',

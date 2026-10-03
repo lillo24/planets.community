@@ -191,6 +191,9 @@ select ok(
 select ok(
   pg_get_functiondef(
     'private.resolve_notification_event(uuid)'::regprocedure
+  ) like '%resolve_notification_event_without_role_offers%'
+  and pg_get_functiondef(
+    'private.resolve_notification_event_without_role_offers(uuid)'::regprocedure
   ) like '%resource_saved_search.matched%resolve_saved_search_matching_notification_event%',
   'the shared provider-neutral resolver routes saved-search match events'
 );

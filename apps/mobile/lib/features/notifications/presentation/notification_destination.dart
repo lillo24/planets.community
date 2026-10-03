@@ -62,7 +62,7 @@ String? notificationDestinationRoute(AppNotification notification) {
         when notification.requestId != null =>
       participationRequestMessageRoute(notification.requestId!),
     (
-      NotificationKind.participantLeft,
+      NotificationKind.participantLeft || NotificationKind.projectRoleOffered,
       NotificationDestinationKind.projectParticipation,
     )
         when notification.projectId != null &&

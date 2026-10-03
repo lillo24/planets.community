@@ -536,6 +536,7 @@ export type Database = {
           accepted_at: string | null
           accepted_by_profile_id: string | null
           created_at: string
+          declined_at: string | null
           expires_at: string
           id: string
           issuer_profile_id: string
@@ -545,12 +546,15 @@ export type Database = {
           revoked_at: string | null
           revoked_by_profile_id: string | null
           status: string
-          token_digest: string
+          target_membership_id: string | null
+          target_profile_id: string | null
+          token_digest: string | null
         }
         Insert: {
           accepted_at?: string | null
           accepted_by_profile_id?: string | null
           created_at?: string
+          declined_at?: string | null
           expires_at: string
           id?: string
           issuer_profile_id: string
@@ -560,12 +564,15 @@ export type Database = {
           revoked_at?: string | null
           revoked_by_profile_id?: string | null
           status?: string
-          token_digest: string
+          target_membership_id?: string | null
+          target_profile_id?: string | null
+          token_digest?: string | null
         }
         Update: {
           accepted_at?: string | null
           accepted_by_profile_id?: string | null
           created_at?: string
+          declined_at?: string | null
           expires_at?: string
           id?: string
           issuer_profile_id?: string
@@ -575,7 +582,9 @@ export type Database = {
           revoked_at?: string | null
           revoked_by_profile_id?: string | null
           status?: string
-          token_digest?: string
+          target_membership_id?: string | null
+          target_profile_id?: string | null
+          token_digest?: string | null
         }
         Relationships: [
           {
@@ -602,6 +611,20 @@ export type Database = {
           {
             foreignKeyName: "project_delegate_invitations_revoked_by_profile_id_fkey"
             columns: ["revoked_by_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_delegate_invitations_target_membership_id_fkey"
+            columns: ["target_membership_id"]
+            isOneToOne: false
+            referencedRelation: "project_memberships"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_delegate_invitations_target_profile_id_fkey"
+            columns: ["target_profile_id"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
@@ -2384,6 +2407,10 @@ export type Database = {
             }
             Returns: string
           }
+      accept_project_role_offer: {
+        Args: { p_expected_profile_id: string; p_offer_id: string }
+        Returns: string
+      }
       accept_resource_exchange_terms: {
         Args: {
           p_agreement_id: string
@@ -2532,6 +2559,15 @@ export type Database = {
           p_expected_creator_profile_id: string
           p_project_id: string
           p_title: string
+        }
+        Returns: string
+      }
+      create_project_role_offer: {
+        Args: {
+          p_authority_role: string
+          p_expected_structural_profile_id: string
+          p_membership_id: string
+          p_project_id: string
         }
         Returns: string
       }
@@ -2692,6 +2728,10 @@ export type Database = {
           p_locality: string
           p_query: string
         }
+        Returns: string
+      }
+      decline_project_role_offer: {
+        Args: { p_expected_profile_id: string; p_offer_id: string }
         Returns: string
       }
       delete_resource_saved_search: {
@@ -3234,6 +3274,25 @@ export type Database = {
           p_membership_id: string
         }
         Returns: string
+      }
+      list_current_project_people: {
+        Args: {
+          p_after_profile_id?: string
+          p_after_role_rank?: number
+          p_expected_profile_id: string
+          p_limit?: number
+          p_project_id: string
+        }
+        Returns: {
+          authority_role: string
+          current_membership_id: string
+          delegate_id: string
+          display_name: string
+          is_creator: boolean
+          joined_at: string
+          profile_id: string
+          role_rank: number
+        }[]
       }
       list_moderation_cases: {
         Args: {
@@ -4061,6 +4120,26 @@ export type Database = {
           title: string
         }[]
       }
+      list_project_role_offers: {
+        Args: {
+          p_after_created_at?: string
+          p_after_id?: string
+          p_expected_profile_id: string
+          p_limit?: number
+          p_project_id: string
+        }
+        Returns: {
+          created_at: string
+          expires_at: string
+          issuer_display_name: string
+          issuer_profile_id: string
+          offer_id: string
+          requested_authority_role: string
+          target_display_name: string
+          target_membership_id: string
+          target_profile_id: string
+        }[]
+      }
       list_public_project_capacity_statuses: {
         Args: { p_project_ids: string[] }
         Returns: {
@@ -4226,6 +4305,47 @@ export type Database = {
       mark_notification_read: {
         Args: { p_expected_profile_id: string; p_notification_id: string }
         Returns: string
+      }
+      page_project_history_for_manager: {
+        Args: {
+          p_after_id?: string
+          p_after_joined_at?: string
+          p_expected_profile_id: string
+          p_limit?: number
+          p_project_id: string
+        }
+        Returns: {
+          joined_at: string
+          left_at: string
+          membership_id: string
+          membership_status: string
+          originating_request_id: string
+          participant_display_name: string
+          participant_profile_id: string
+          removed_at: string
+          removed_by_profile_id: string
+        }[]
+      }
+      page_project_requests_for_manager: {
+        Args: {
+          p_after_created_at?: string
+          p_after_id?: string
+          p_after_pending?: boolean
+          p_expected_profile_id: string
+          p_limit?: number
+          p_project_id: string
+        }
+        Returns: {
+          created_at: string
+          request_id: string
+          request_message: string
+          requester_display_name: string
+          requester_is_organizer: boolean
+          requester_profile_id: string
+          resolved_at: string
+          resolved_by_profile_id: string
+          status: string
+        }[]
       }
       pause_recurring_activity: {
         Args: {
@@ -4553,6 +4673,10 @@ export type Database = {
           updated_at: string
           workspace_url: string
         }[]
+      }
+      step_down_project_authority: {
+        Args: { p_delegate_id: string; p_expected_profile_id: string }
+        Returns: string
       }
       submit_group_corroboration_response: {
         Args: {

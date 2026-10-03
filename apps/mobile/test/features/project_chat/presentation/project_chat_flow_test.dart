@@ -650,72 +650,94 @@ void main() {
     expect(workspace.calls, isEmpty);
   });
 
-  testWidgets('current member info uses current rejoin episode and can edit', (
-    tester,
-  ) async {
-    final chats = FakeProjectChatGateway()
-      ..summaries = [projectChatSummaryFixture()]
-      ..histories['chat-1'] = [];
-    final participation = FakeParticipationGateway()
-      ..ownMemberships = [
-        ownMembershipFixture(
-          id: 'membership-old',
-          status: MembershipStatus.left,
-          joinedAt: DateTime.utc(2026, 9, 1),
-        ),
-        ownMembershipFixture(
-          id: 'membership-current',
-          joinedAt: DateTime.utc(2026, 9, 15),
-        ),
-      ];
-    final commitments = FakeMembershipCommitmentGateway()
-      ..commitments = [
-        membershipCommitmentFixture(id: 'skill-stale', label: 'Old ladder'),
-      ]
-      ..options = [
-        membershipCommitmentOptionFixture(id: 'skill-new', label: 'Painting'),
-      ];
-    final app = await _pump(
-      tester,
-      chats: chats,
-      participation: participation,
-      commitments: commitments,
-    );
-    app.read(appRouterProvider).go('/messages/chats/chat-1/info');
-    await tester.pumpAndSettle();
+  for (final viewerRole in [
+    ProjectChatViewerRole.currentMember,
+    ProjectChatViewerRole.delegate,
+    ProjectChatViewerRole.creator,
+  ]) {
+    testWidgets(
+      '$viewerRole info uses own current rejoin episode and can edit',
+      (tester) async {
+        final chats = FakeProjectChatGateway()
+          ..summaries = [projectChatSummaryFixture(viewerRole: viewerRole)]
+          ..histories['chat-1'] = [];
+        final participation = FakeParticipationGateway()
+          ..ownMemberships = [
+            ownMembershipFixture(
+              id: 'membership-old',
+              status: MembershipStatus.left,
+              joinedAt: DateTime.utc(2026, 9, 1),
+            ),
+            ownMembershipFixture(
+              id: 'membership-current',
+              joinedAt: DateTime.utc(2026, 9, 15),
+            ),
+          ];
+        final commitments = FakeMembershipCommitmentGateway()
+          ..commitments = [
+            membershipCommitmentFixture(id: 'skill-stale', label: 'Old ladder'),
+          ]
+          ..options = [
+            membershipCommitmentOptionFixture(
+              id: 'skill-new',
+              label: 'Painting',
+            ),
+          ];
+        final app = await _pump(
+          tester,
+          chats: chats,
+          participation: participation,
+          commitments: commitments,
+        );
+        app.read(appRouterProvider).go('/messages/chats/chat-1/info');
+        await tester.pumpAndSettle();
 
-    expect(find.text('My commitments'), findsOneWidget);
-    expect(find.text('Old ladder'), findsOneWidget);
-    expect(
-      find.byKey(const Key('project-chat-edit-commitments')),
-      findsOneWidget,
-    );
-    expect(commitments.calls, contains('commitments:membership-current'));
-    expect(commitments.calls, contains('options:membership-current'));
-    expect(commitments.calls, isNot(contains('commitments:membership-old')));
+        expect(find.text('My commitments'), findsOneWidget);
+        expect(find.text('Old ladder'), findsOneWidget);
+        expect(
+          find.byKey(const Key('project-chat-edit-commitments')),
+          findsOneWidget,
+        );
+        expect(commitments.calls, contains('commitments:membership-current'));
+        expect(commitments.calls, contains('options:membership-current'));
+        expect(
+          commitments.calls,
+          isNot(contains('commitments:membership-old')),
+        );
 
-    await tester.tap(find.byKey(const Key('project-chat-edit-commitments')));
-    await tester.pumpAndSettle();
-    expect(find.text('Manage commitments'), findsOneWidget);
-    expect(find.byKey(const Key('membership-commitment-save')), findsOneWidget);
-    expect(find.text('Old ladder · No longer requested'), findsOneWidget);
-    expect(find.text('Painting'), findsOneWidget);
-    expect(
-      tester
-          .widget<FilledButton>(
-            find.byKey(const Key('membership-commitment-save')),
-          )
-          .onPressed,
-      isNull,
+        await tester.ensureVisible(
+          find.byKey(const Key('project-chat-edit-commitments')),
+        );
+        await tester.pumpAndSettle();
+        await tester.tap(
+          find.byKey(const Key('project-chat-edit-commitments')),
+        );
+        await tester.pumpAndSettle();
+        expect(find.text('Manage commitments'), findsOneWidget);
+        expect(
+          find.byKey(const Key('membership-commitment-save')),
+          findsOneWidget,
+        );
+        expect(find.text('Old ladder · No longer requested'), findsOneWidget);
+        expect(find.text('Painting'), findsOneWidget);
+        expect(
+          tester
+              .widget<FilledButton>(
+                find.byKey(const Key('membership-commitment-save')),
+              )
+              .onPressed,
+          isNull,
+        );
+        await tester.tap(find.text('Painting'));
+        await tester.pump();
+        await tester.tap(find.byKey(const Key('membership-commitment-save')));
+        await tester.pumpAndSettle();
+        expect(find.text('Manage commitments'), findsNothing);
+        expect(commitments.lastExpectedSkillIds, {'skill-stale'});
+        expect(commitments.lastSkillIds, {'skill-stale', 'skill-new'});
+      },
     );
-    await tester.tap(find.text('Painting'));
-    await tester.pump();
-    await tester.tap(find.byKey(const Key('membership-commitment-save')));
-    await tester.pumpAndSettle();
-    expect(find.text('Manage commitments'), findsNothing);
-    expect(commitments.lastExpectedSkillIds, {'skill-stale'});
-    expect(commitments.lastSkillIds, {'skill-stale', 'skill-new'});
-  });
+  }
 
   testWidgets(
     'one-time participant actual contributions load only after View and stay read-only',
@@ -1053,7 +1075,7 @@ void main() {
     expect(find.text('Actual contributions'), findsNothing);
     expect(
       find.byKey(const Key('project-chat-manage-participation')),
-      findsNothing,
+      findsOneWidget,
     );
     await tester.tap(find.byKey(const Key('project-chat-open-project')));
     await tester.pumpAndSettle();

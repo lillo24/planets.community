@@ -150,7 +150,7 @@ class _ProjectChatInfoScreenState extends ConsumerState<ProjectChatInfoScreen> {
                     icon: const Icon(Icons.open_in_new),
                     label: Text(l10n.projectChatOpenProject),
                   ),
-                  if (summary.isManager) ...[
+                  if (summary.hasCurrentEntitlement) ...[
                     const SizedBox(height: AppSpacing.small),
                     OutlinedButton.icon(
                       key: const Key('project-chat-manage-participation'),
@@ -161,7 +161,7 @@ class _ProjectChatInfoScreenState extends ConsumerState<ProjectChatInfoScreen> {
                         ),
                       ),
                       icon: const Icon(Icons.group_outlined),
-                      label: Text(l10n.projectChatManageParticipation),
+                      label: Text(l10n.peopleTitle),
                     ),
                   ],
                   if (summary.hasCurrentEntitlement &&
@@ -174,7 +174,7 @@ class _ProjectChatInfoScreenState extends ConsumerState<ProjectChatInfoScreen> {
                       isManager: summary.isManager,
                     ),
                   ],
-                  if (!summary.isManager) ...[
+                  ...[
                     const SizedBox(height: AppSpacing.large),
                     _ParticipantCommitments(
                       expectedProfileId: _expectedProfileId,
@@ -248,7 +248,7 @@ class _ParticipantCommitmentsState
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            widget.summary.viewerRole == ProjectChatViewerRole.currentMember
+            widget.summary.hasCurrentEntitlement
                 ? l10n.participationMyCommitments
                 : l10n.participationLastCommitments,
             style: Theme.of(context).textTheme.titleLarge,
@@ -265,12 +265,12 @@ class _ParticipantCommitmentsState
       widget.summary.projectId,
       widget.summary.projectKind,
     );
-    final current =
-        widget.summary.viewerRole == ProjectChatViewerRole.currentMember;
+    final current = snapshot.currentMembership != null;
     final membership = current
         ? snapshot.currentMembership
         : snapshot.latestMembership;
     if (membership == null) {
+      if (widget.summary.isManager) return const SizedBox.shrink();
       return _CommitmentSectionFailure(onRetry: _load);
     }
     final episodes =

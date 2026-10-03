@@ -400,6 +400,19 @@ class NotificationsPayloadParser {
       );
     }
     switch (item.kind) {
+      case NotificationKind.projectRoleOffered:
+        if (item.destinationKind !=
+                NotificationDestinationKind.projectParticipation ||
+            item.projectId == null ||
+            item.projectKind == null ||
+            item.actorProfileId == null ||
+            item.requestId != null ||
+            item.chatId != null ||
+            item.messageId != null) {
+          throw const FormatException(
+            'Project role offer notification context was invalid.',
+          );
+        }
       case NotificationKind.participationRequestReceived:
       case NotificationKind.participationRequestWithdrawn:
       case NotificationKind.participationRequestAccepted:

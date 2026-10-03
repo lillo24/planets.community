@@ -335,6 +335,7 @@ class ProjectParticipationSection extends ConsumerWidget {
     if (participation.currentMembership case final membership?) {
       return [
         ...delegateActions,
+        Text(l10n.peopleNameVisibility),
         ListTile(
           contentPadding: EdgeInsets.zero,
           leading: const Icon(Icons.check_circle_outline),

@@ -6,6 +6,18 @@ import 'package:planets_mobile/features/participation/domain/participation_model
 import '../../../support/fake_notifications.dart';
 
 void main() {
+  test('targeted role offer alerts open the canonical People route', () {
+    expect(
+      notificationDestinationRoute(
+        notificationFixture(
+          kind: NotificationKind.projectRoleOffered,
+          destinationKind: NotificationDestinationKind.projectParticipation,
+          requestId: null,
+        ),
+      ),
+      '/proposals/00000000-0000-4000-8000-000000000201/participants',
+    );
+  });
   test('Matching alerts open the existing Resource detail route', () {
     expect(
       notificationDestinationRoute(matchingNotificationFixture()),

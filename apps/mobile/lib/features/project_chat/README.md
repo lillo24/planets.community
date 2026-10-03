@@ -1,5 +1,12 @@
 # Project chat
 
+07C4's Group info **People** link uses the existing participation route for every
+current-entitled viewer, including authority-only organizers. Former-member chat
+history alone does not grant roster access. The same People screen is linked from
+Project management. Group info also retains own current/historical contribution
+access for manager+participant overlap. Row ellipsis/long press opens Safety
+(account-wide Block) and Event actions; per-person mute remains deferred.
+
 This feature owns the authenticated mobile group-chat and current organization
 tools experience over the canonical Project backend. It does not own
 participation membership, meeting data, unread state, notification projection,

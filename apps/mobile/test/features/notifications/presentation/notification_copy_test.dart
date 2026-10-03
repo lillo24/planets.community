@@ -7,6 +7,38 @@ import 'package:planets_mobile/l10n/generated/app_localizations.dart';
 import '../../../support/fake_notifications.dart';
 
 void main() {
+  testWidgets(
+    'role offer alert describes an invitation, never an already-granted role',
+    (tester) async {
+      await _pumpCopy(
+        tester,
+        notificationFixture(
+          kind: NotificationKind.projectRoleOffered,
+          destinationKind: NotificationDestinationKind.projectParticipation,
+          requestId: null,
+        ),
+      );
+      expect(
+        find.text(
+          'Mario invited you to an organizer role in Community Garden.',
+        ),
+        findsOneWidget,
+      );
+      await _pumpCopy(
+        tester,
+        notificationFixture(
+          kind: NotificationKind.projectRoleOffered,
+          destinationKind: NotificationDestinationKind.projectParticipation,
+          requestId: null,
+          actorDisplayName: null,
+        ),
+      );
+      expect(
+        find.text('You have a Project organizer role offer.'),
+        findsOneWidget,
+      );
+    },
+  );
   testWidgets('Matching copy uses title or safe generic fallback', (
     tester,
   ) async {

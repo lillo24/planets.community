@@ -166,6 +166,7 @@ class _JoinRequestScreenState extends ConsumerState<JoinRequestScreen> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 Text(l10n.participationJoinDescription),
+                Text(l10n.peopleNameVisibility),
                 const SizedBox(height: AppSpacing.large),
                 Text(
                   l10n.participationContributionTitle,
