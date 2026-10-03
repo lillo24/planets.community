@@ -43,6 +43,34 @@ void main() {
   group('ParticipationPayloadParser', () {
     const parser = ParticipationPayloadParser();
 
+    test('direct invitation episodes have no originating request', () {
+      final own = parser.ownMembership({
+        'membership_id': 'membership-invite',
+        'project_id': 'proposal-1',
+        'project_kind': 'one_time',
+        'originating_request_id': null,
+        'membership_status': 'current',
+        'joined_at': '2026-10-03T10:00:00Z',
+        'left_at': null,
+        'removed_at': null,
+      });
+      final managed = parser.managerMember({
+        'membership_id': 'membership-invite',
+        'participant_profile_id': 'user-2',
+        'participant_display_name': 'Recipient',
+        'originating_request_id': null,
+        'membership_status': 'left',
+        'joined_at': '2026-10-03T10:00:00Z',
+        'left_at': '2026-10-03T12:00:00Z',
+        'removed_at': null,
+        'removed_by_profile_id': null,
+      });
+      expect(own.originatingRequestId, isNull);
+      expect(own.isCurrent, isTrue);
+      expect(managed.originatingRequestId, isNull);
+      expect(managed.status, MembershipStatus.left);
+    });
+
     test('parses nullable messages and timestamps', () {
       final request = parser.ownJoinRequest({
         'request_id': 'request-1',

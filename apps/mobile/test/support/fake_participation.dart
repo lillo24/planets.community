@@ -259,7 +259,7 @@ OwnProjectMembership ownMembershipFixture({
   String id = 'membership-1',
   String projectId = 'proposal-1',
   ProjectKind projectKind = ProjectKind.oneTime,
-  String originatingRequestId = 'request-1',
+  String? originatingRequestId = 'request-1',
   MembershipStatus status = MembershipStatus.current,
   DateTime? joinedAt,
 }) => OwnProjectMembership(
@@ -301,7 +301,7 @@ ManagerProjectMember creatorMemberFixture({
   String id = 'membership-1',
   String participantProfileId = 'user-2',
   String participantDisplayName = 'Jordan',
-  String originatingRequestId = 'request-1',
+  String? originatingRequestId = 'request-1',
   MembershipStatus status = MembershipStatus.current,
   DateTime? joinedAt,
 }) => ManagerProjectMember(

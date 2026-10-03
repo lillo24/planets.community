@@ -2,12 +2,31 @@
 
 **Status:** Accepted product decisions that supersede older tentative wording until the owning implementation plans fold them into canonical domain documentation.
 
+## Ordinary sharing and special participant links
+
+PI01's founder-approved policy distinguishes ordinary public sharing/approved
+requests from reusable special links issued and managed by the current Creator,
+Co-creators and Co-organizers. Explicit special-link acceptance creates participant
+membership with required non-photo profile fields, without organizer reapproval,
+photo prerequisite or contribution commitments. It grants no authority. One
+current link per Project has no fixed expiry; current lifecycle/end time, capacity,
+manager blocking and implemented account restrictions control admission.
+
+Issuer role loss does not rotate Project-level authorization. Managers may retrieve
+the current secret for resharing or explicitly revoke/regenerate it. Both departed
+and removed members may deliberately re-enter with a fresh action through the
+currently valid link. Replaying an old action only recovers its old episode and
+cannot restore membership. Pending requests become reasoned requester withdrawals;
+their offers/message/chat/history are retained and are not inherited as commitments.
+Ordinary requests/publication retain their photo gates. See the canonical
+[PI01 contract](../implementation/pi01-participant-invitations.md).
+
 ## Project group chat
 
 Current product direction:
 
 - A proposal/project group chat is created automatically by the system. There is no user-facing manual **Create chat** action.
-- The **first accepted join request** activates the chat transactionally. The creator plus that first accepted participant is sufficient; there is no fixed three-person threshold.
+- The **first accepted membership**, through request approval or a special participant link, activates the chat transactionally. The creator plus that first accepted participant is sufficient; there is no fixed three-person threshold.
 - There is exactly one canonical chat per Project. Later acceptances and rejoins reuse it.
 - The immutable Project creator has persistent organizer entitlement without a participant-membership row. A current accepted participant has current/send entitlement.
 - Voluntary leave or creator removal ends an ordinary participant's current entitlement immediately but retains each exact accepted membership interval for historical authorization. Rejoin creates another interval, and the gap is not membership time.

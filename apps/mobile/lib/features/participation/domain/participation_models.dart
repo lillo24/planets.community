@@ -102,7 +102,9 @@ class OwnProjectMembership {
   final String id;
   final String projectId;
   final ProjectKind projectKind;
-  final String originatingRequestId;
+
+  /// The approved request ID, or `null` for direct invitation admissions.
+  final String? originatingRequestId;
   final MembershipStatus status;
   final DateTime joinedAt;
   final DateTime? leftAt;
@@ -153,7 +155,9 @@ class ManagerProjectMember {
   final String id;
   final String participantProfileId;
   final String participantDisplayName;
-  final String originatingRequestId;
+
+  /// The approved request ID, or `null` for direct invitation admissions.
+  final String? originatingRequestId;
   final MembershipStatus status;
   final DateTime joinedAt;
   final DateTime? leftAt;

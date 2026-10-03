@@ -5,6 +5,10 @@ This folder owns the reproducible local PLANETS database and its security valida
 - `config.toml` configures the local stack and fail-closed Data API defaults.
 - `migrations/` is the canonical, timestamp-ordered SQL schema history.
 - `tests/` contains native pgTAP invariants and transactional security probes.
+- PI01's private reusable participant-link generations/secrets and admission
+  receipts use the same membership/chat/capacity domain as ordinary approval.
+  The API, scoped photo exception and retry/re-entry protocol are documented in
+  [`pi01-participant-invitations.md`](../docs/implementation/pi01-participant-invitations.md).
 - `seed.sql` runs after migrations during reset and currently contains no data; the system-managed starter skill catalog is migration-owned reference data.
 
 09B1 stores append-preserved directional block episodes in the private schema

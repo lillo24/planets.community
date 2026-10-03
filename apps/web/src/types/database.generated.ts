@@ -1002,9 +1002,11 @@ export type Database = {
           project_id: string
           request_message: string | null
           requester_profile_id: string
+          resolution_reason: string | null
           resolved_at: string | null
           resolved_by_profile_id: string | null
           status: string
+          superseded_by_membership_id: string | null
         }
         Insert: {
           created_at?: string
@@ -1012,9 +1014,11 @@ export type Database = {
           project_id: string
           request_message?: string | null
           requester_profile_id: string
+          resolution_reason?: string | null
           resolved_at?: string | null
           resolved_by_profile_id?: string | null
           status?: string
+          superseded_by_membership_id?: string | null
         }
         Update: {
           created_at?: string
@@ -1022,9 +1026,11 @@ export type Database = {
           project_id?: string
           request_message?: string | null
           requester_profile_id?: string
+          resolution_reason?: string | null
           resolved_at?: string | null
           resolved_by_profile_id?: string | null
           status?: string
+          superseded_by_membership_id?: string | null
         }
         Relationships: [
           {
@@ -1047,6 +1053,17 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_join_requests_superseding_membership_fkey"
+            columns: [
+              "superseded_by_membership_id",
+              "project_id",
+              "requester_profile_id",
+            ]
+            isOneToOne: false
+            referencedRelation: "project_memberships"
+            referencedColumns: ["id", "project_id", "participant_profile_id"]
           },
         ]
       }
@@ -1394,7 +1411,8 @@ export type Database = {
           id: string
           joined_at: string
           left_at: string | null
-          originating_request_id: string
+          originating_participant_invitation_id: string | null
+          originating_request_id: string | null
           participant_profile_id: string
           project_id: string
           removed_at: string | null
@@ -1404,7 +1422,8 @@ export type Database = {
           id?: string
           joined_at: string
           left_at?: string | null
-          originating_request_id: string
+          originating_participant_invitation_id?: string | null
+          originating_request_id?: string | null
           participant_profile_id: string
           project_id: string
           removed_at?: string | null
@@ -1414,7 +1433,8 @@ export type Database = {
           id?: string
           joined_at?: string
           left_at?: string | null
-          originating_request_id?: string
+          originating_participant_invitation_id?: string | null
+          originating_request_id?: string | null
           participant_profile_id?: string
           project_id?: string
           removed_at?: string | null
@@ -2407,6 +2427,20 @@ export type Database = {
             }
             Returns: string
           }
+      accept_project_participant_invitation: {
+        Args: {
+          p_client_action_id: string
+          p_expected_profile_id: string
+          p_token: string
+        }
+        Returns: {
+          membership_id: string | null
+          membership_status: string | null
+          outcome: string
+          project_id: string
+          replayed: boolean
+        }[]
+      }
       accept_project_role_offer: {
         Args: { p_expected_profile_id: string; p_offer_id: string }
         Returns: string
@@ -2553,6 +2587,14 @@ export type Database = {
               invite_token: string
             }[]
           }
+      create_project_participant_invitation: {
+        Args: { p_expected_profile_id: string; p_project_id: string }
+        Returns: {
+          created_at: string
+          invitation_id: string
+          invite_token: string
+        }[]
+      }
       create_project_resource_need: {
         Args: {
           p_details?: string
@@ -2744,6 +2786,14 @@ export type Database = {
           p_recurring_activity_id: string
         }
         Returns: string
+      }
+      get_current_project_participant_invitation: {
+        Args: { p_expected_profile_id: string; p_project_id: string }
+        Returns: {
+          created_at: string
+          invitation_id: string
+          invite_token: string
+        }[]
       }
       get_moderation_case_corroboration: {
         Args: { p_case_id: string; p_expected_staff_profile_id: string }
@@ -3126,6 +3176,22 @@ export type Database = {
           object_path: string
           profile_id: string
           updated_at: string
+        }[]
+      }
+      get_project_join_request_resolution_context: {
+        Args: { p_expected_profile_id: string; p_request_id: string }
+        Returns: {
+          resolution_reason: string | null
+          superseded_by_membership_id: string | null
+        }[]
+      }
+      get_project_participant_invitation_preview: {
+        Args: { p_token: string }
+        Returns: {
+          available: boolean
+          project_id: string | null
+          project_kind: string | null
+          project_title: string | null
         }[]
       }
       get_project_participant_meeting_details: {
@@ -3684,7 +3750,7 @@ export type Database = {
           left_at: string
           membership_id: string
           membership_status: string
-          originating_request_id: string
+          originating_request_id: string | null
           project_id: string
           project_kind: string
           removed_at: string
@@ -4045,7 +4111,7 @@ export type Database = {
           left_at: string
           membership_id: string
           membership_status: string
-          originating_request_id: string
+          originating_request_id: string | null
           participant_display_name: string
           participant_profile_id: string
           removed_at: string
@@ -4059,7 +4125,7 @@ export type Database = {
           left_at: string
           membership_id: string
           membership_status: string
-          originating_request_id: string
+          originating_request_id: string | null
           participant_display_name: string
           participant_profile_id: string
           removed_at: string
@@ -4089,6 +4155,23 @@ export type Database = {
           contribution_id: string
           contribution_kind: string
           label: string
+        }[]
+      }
+      list_project_participant_invitation_history: {
+        Args: {
+          p_before_created_at?: string
+          p_before_invitation_id?: string
+          p_expected_profile_id: string
+          p_limit?: number
+          p_project_id: string
+        }
+        Returns: {
+          created_at: string
+          invitation_id: string
+          issued_by_profile_id: string
+          revocation_reason: string | null
+          revoked_at: string | null
+          revoked_by_profile_id: string | null
         }[]
       }
       list_project_resource_need_listing_matches: {
@@ -4319,7 +4402,7 @@ export type Database = {
           left_at: string
           membership_id: string
           membership_status: string
-          originating_request_id: string
+          originating_request_id: string | null
           participant_display_name: string
           participant_profile_id: string
           removed_at: string
@@ -4433,6 +4516,14 @@ export type Database = {
         }
         Returns: string
       }
+      regenerate_project_participant_invitation: {
+        Args: { p_expected_profile_id: string; p_project_id: string }
+        Returns: {
+          created_at: string
+          invitation_id: string
+          invite_token: string
+        }[]
+      }
       register_own_push_installation: {
         Args: {
           p_expected_profile_id: string
@@ -4543,6 +4634,14 @@ export type Database = {
       }
       revoke_project_delegate_invitation: {
         Args: { p_expected_owner_profile_id: string; p_invitation_id: string }
+        Returns: string
+      }
+      revoke_project_participant_invitation: {
+        Args: {
+          p_expected_profile_id: string
+          p_invitation_id: string
+          p_project_id: string
+        }
         Returns: string
       }
       send_project_chat_message: {

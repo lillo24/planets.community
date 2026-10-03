@@ -17,7 +17,10 @@ leave required checks pending.
 
 The classifier unions these areas when a pull request changes more than one.
 The Database job also runs `project:people:verify:local` for consent/leave and
-capacity races. It adds no unrelated job trigger or duplicate post-merge run;
+capacity races and `project:participant-invites:verify:local` for direct admission,
+rotation/block/lifecycle and stale-retry races in both capacity modes. These run
+sequentially after clean pgTAP validation because their synthetic fixtures persist.
+They add no unrelated job trigger or duplicate post-merge run;
 root script/workflow edits still follow the conservative four-area policy.
 `apps/web/src/types/database.generated.ts` deliberately runs both Web and
 Database because it is generated from the migrated public schema and consumed
