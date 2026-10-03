@@ -9,6 +9,7 @@ import {
 import {
   moderationCounterstatementRow,
   moderationCorroborationRow,
+  moderationConsequenceRow,
   moderationDetailRow,
   moderationQueueRow,
   moderationResourceDetailRow,
@@ -148,6 +149,42 @@ describe("moderation server authorization", () => {
       "could not be loaded",
     );
   });
+
+  it("reads only current-case consequences with the server-derived identity", async () => {
+    const staff = client({
+      profileId,
+      staffRole: "admin",
+      detail: [moderationDetailRow()],
+      consequences: [moderationConsequenceRow()],
+      corroboration: [moderationCorroborationRow()],
+    });
+    const result = await readModerationCase(caseId, async () => staff);
+    expect(result).toMatchObject({
+      status: "ready",
+      staffProfileId: profileId,
+      consequences: [{ type: "safety_notice", revokedAt: null }],
+    });
+    expect(staff.rpc).toHaveBeenCalledWith(
+      "list_moderation_case_consequence_history",
+      { p_expected_staff_profile_id: profileId, p_case_id: caseId },
+    );
+  });
+
+  it.each(["rpc", "malformed"])(
+    "does not turn %s history failure into an empty case history",
+    async (failure) => {
+      const staff = client({
+        profileId,
+        staffRole: "moderator",
+        detail: [moderationDetailRow()],
+        consequences: failure === "malformed" ? [{}] : [],
+        historyError: failure === "rpc",
+      });
+      await expect(
+        readModerationCase(caseId, async () => staff),
+      ).rejects.toThrow(/history could not be loaded|response was malformed/);
+    },
+  );
 });
 
 const profileId = "00000000-0000-4000-8000-000000000906";
@@ -160,6 +197,8 @@ function client({
   detail = [],
   corroboration = [],
   counterstatement = [],
+  consequences = [],
+  historyError = false,
   queueError = false,
   detailError = false,
   claimsThrows = false,
@@ -172,6 +211,8 @@ function client({
   detail?: unknown[];
   corroboration?: unknown[];
   counterstatement?: unknown[];
+  consequences?: unknown[];
+  historyError?: boolean;
   queueError?: boolean;
   detailError?: boolean;
   claimsThrows?: boolean;
@@ -210,6 +251,12 @@ function client({
       }
       if (name === "get_moderation_case_counterstatement") {
         return { data: counterstatement, error: null };
+      }
+      if (name === "list_moderation_case_consequence_history") {
+        return {
+          data: consequences,
+          error: historyError ? { code: "offline" } : null,
+        };
       }
       throw new Error(`Unexpected RPC: ${name}`);
     }),

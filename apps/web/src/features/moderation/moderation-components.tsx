@@ -285,7 +285,11 @@ export function ModerationCaseDetailView({
           ) : (
             <ol className="grid gap-3">
               {detail.notes.map((note) => (
-                <li key={note.noteId} className="rounded-lg border p-3">
+                <li
+                  key={note.noteId}
+                  id={`moderation-note-${note.noteId}`}
+                  className="rounded-lg border p-3"
+                >
                   <p className="whitespace-pre-wrap">{note.body}</p>
                   <p className="mt-2 text-sm text-muted-foreground">
                     {note.authorDisplayName} · {formatDate(note.createdAt)}
