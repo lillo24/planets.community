@@ -1,6 +1,7 @@
 import { spawnSync } from "node:child_process";
 import { writeFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
+import { applyParticipationRpcNullability } from "./lib/participation-rpc-nullability.mjs";
 
 const repositoryRoot = fileURLToPath(new URL("../", import.meta.url));
 const outputPath = fileURLToPath(
@@ -40,6 +41,10 @@ if (result.status !== 0) {
   );
 } else {
   // The pg-meta process and shell redirection can differ by one terminal newline across hosts.
-  // Normalize only the file ending; the generated TypeScript itself remains byte-for-byte output.
-  writeFileSync(outputPath, `${result.stdout.trimEnd()}\n`, "utf8");
+  // pg-meta omits RETURNS TABLE nullability; apply the documented PI01 result
+  // contract, then normalize the terminal newline. Never hand-edit this output.
+  const generatedTypes = applyParticipationRpcNullability(
+    result.stdout.trimEnd(),
+  );
+  writeFileSync(outputPath, `${generatedTypes}\n`, "utf8");
 }

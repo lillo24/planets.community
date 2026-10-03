@@ -2,11 +2,11 @@
 
 **Status:** Planning baseline  
 
-07C4's revised candidate work is specified in
+07C4's revised work is specified in
 [`07c4-unified-project-people.md`](07c4-unified-project-people.md): targeted
 recipient-accepted role offers, one bounded People surface, and explicit
-self-service organizer step-down. PR #124 now targets `main` after the reviewed
-05E2 merge; it remains draft and unmerged pending founder review.
+self-service organizer step-down. PR #124 is merged in `main` at
+`92d93ca5a455ab853df8bc34b66fd8d69f4fb341`, the refreshed PI01 base.
 
 The repository's `main` branch remains at the validated DEMO-B baseline. The
 `codex/stack-integration-main-candidate` branch combines the accepted open
@@ -834,6 +834,26 @@ migration or persisted reveal state. Future popularity uses exact
 `socialPeopleCount`; ranking, normalization, size filters, and combined
 people/chat work remain deferred. Future web count UI must follow this policy;
 no web capacity feature is added here.
+
+#### PI01 — Sharing and direct participant invitation domain
+
+**Status:** Implemented; final validation/integration is
+recorded in the PR/task report. Based on merged #124 at `92d93ca`.
+
+Owns one current reusable Project-level special participant link, narrow current
+manager create/retrieve/revoke/regenerate APIs, private generation/secret history,
+safe preview and atomic expected-account/action-bound admission. Special links
+require a complete non-photo profile and current joinability/capacity/block rules,
+without organizer reapproval or automatic commitments. Fresh explicit actions may
+re-enter after leave/removal; old action replay only recovers the original episode.
+Pending requests become reasoned requester withdrawals without losing offers/chat.
+Ordinary sharing/approval and authority invitations retain their separate contracts.
+See [`pi01-participant-invitations.md`](pi01-participant-invitations.md).
+
+PI02 owns mobile share/acceptance UI, PI03 browser onboarding/handoff, PI04 native
+associations/public-host routing readiness, and PI05 integration/demo scenarios.
+These remain deferred until their prerequisites are merged. No production operation
+is authorized by code completion.
 
 #### 05C — One-Time Project Actual Contribution Attribution
 

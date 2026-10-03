@@ -38,7 +38,9 @@ select columns_are(
     'request_message',
     'created_at',
     'resolved_at',
-    'resolved_by_profile_id'
+    'resolved_by_profile_id',
+    'resolution_reason',
+    'superseded_by_membership_id'
   ],
   'join requests preserve private attempt and resolution history'
 );
@@ -53,7 +55,8 @@ select columns_are(
     'joined_at',
     'left_at',
     'removed_at',
-    'removed_by_profile_id'
+    'removed_by_profile_id',
+    'originating_participant_invitation_id'
   ],
   'memberships preserve acceptance and terminal history without invented roles'
 );

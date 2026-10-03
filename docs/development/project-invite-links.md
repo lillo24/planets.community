@@ -1,5 +1,12 @@
 # Project delegate invite links
 
+This document describes authority invitations. PI01 adds a distinct backend-only
+participant capability, proposed at `/join/project/<token>`; its reusable-token,
+no-photo direct admission and action/re-entry contracts are documented in
+[`pi01-participant-invitations.md`](../implementation/pi01-participant-invitations.md).
+The participant route/UI/associations are deferred; `/invite/project/` stays
+authority-only. Ordinary public Project sharing still uses normal request approval.
+
 PLANETS uses one canonical bearer URL for Project Co-organizer and Co-creator
 invitations:
 
