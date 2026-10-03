@@ -1,0 +1,2 @@
+# Preserve the supplied TW01 prompt's exact bytes, including mixed line endings.
+PLANETS_TW01_source_linked_template_domain.md -text

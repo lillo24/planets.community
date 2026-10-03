@@ -26,6 +26,27 @@ The ordering is intentional: security and canonical data rules are established b
 
 ## Execution model
 
+### Template Workshop track
+
+The agreed sequence is **TW01 → TW02 → TW03 → DRAFT01 → TW04 → SIM01 →
+SIM02 → TW05**. Begin each dependent plan only after its predecessor is merged
+or its branch/commit is explicitly selected as the dependency base. The TW01
+base is verified current `main` at `92d93ca5a455ab853df8bc34b66fd8d69f4fb341`;
+this scoped track does not refresh the unrelated historical status text above.
+
+| Plan | Current status and boundary |
+| --- | --- |
+| TW01 — Source-linked Template Workshop domain | Implemented on its isolated branch, draft and unmerged for founder review of historical public content, reusable allow-list and private Bozza contract. Automatic identity at publication, latest canonical projection, Completed-only RPC catalog/detail, opaque versions, legacy backfill without fabricated drafts, and a private TW02 removal seam. [Contract](../development/template-workshop.md) |
+| TW02 — Template reporting/removal | Not started; consumes the reviewed eligibility/removal seam and owns reporting/forms/staff commands, including reports by the source Creator |
+| TW03 — Template-to-draft creation | Not started; consumes reviewed versions and atomically copies into an independent draft with safe provenance |
+| DRAFT01 | Not started; separate draft-experience plan; no autosave/save-on-exit UI added by TW01 |
+| TW04 — Mobile Workshop | Not started; Workshop discovery/detail/application screens and publication notice remain deferred |
+| SIM01 | Not started; separate agreed successor plan, outside TW01 |
+| SIM02 | Not started; separate agreed successor plan, outside TW01 |
+| TW05 — Demo world | Not started; complete eight-scenario Workshop fixtures remain deferred; TW01 uses small synthetic local/test fixtures only |
+
+### Per-plan workflow
+
 For each implementation plan:
 
 1. inspect the current repository and the reports from prior plans;
@@ -322,7 +343,7 @@ Expected scope:
 - paginated public/authenticated list and detail queries;
 - locality and skill filters;
 - sanitized public list/detail functions and owner management functions;
-- historical retention as future template-source groundwork, without mutable template records;
+- historical retention as template-source groundwork; TW01 separately establishes automatic linked identities and Completed-only reusable projections without independent template authoring;
 - functional Flutter browse/detail/create/edit/my-proposals UI and read-only Next.js discovery;
 - database, repository/controller, widget, and integration tests.
 

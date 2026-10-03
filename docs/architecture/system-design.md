@@ -131,7 +131,7 @@ Raw Auth deletion is deliberately blocked while a profile or actor-linked audit 
 
 ### One-time proposal domain
 
-`proposals` stores a creator-owned one-time activity, content, schedule, IANA event time zone, and rough public location. Its business lifecycle is only `draft`, `published`, or `cancelled`. Upcoming, Happening, Just Finished, and Completed are derived from `starts_at`, `ends_at`, and the current time; Just Finished begins exactly at the end and lasts until, but not including, 24 hours later. Completed proposals remain historical canonical records and may become sources for future explicit Community templates, but are not themselves mutable template records.
+`proposals` stores a creator-owned one-time activity, content, schedule, IANA event time zone, and rough public location. Its business lifecycle is only `draft`, `published`, or `cancelled`. Upcoming, Happening, Just Finished, and Completed are derived from `starts_at`, `ends_at`, and the current time; Just Finished begins exactly at the end and lasts until, but not including, 24 hours later. TW01 establishes one linked template identity automatically at first successful publication; its allow-listed reusable content follows canonical published content, while Workshop use requires canonical Completed and current visibility/removal eligibility. Completed remains elapsed time rather than evidence that an event happened or succeeded. Proposals remain historical source records, separate from template identities.
 
 `proposal_meeting_details` physically separates exact meeting text/coordinates from the rough public location. Public list payloads never include exact meeting data. Exact-ID public detail returns exact meeting text only for `public` visibility; `participants` visibility returns no protected value and an explicit restricted flag. The shared participant boundary returns protected operational meeting information only to the creator or a current accepted participant without weakening this anonymous contract. `proposal_skills` reuses the controlled 03C catalog with `required` or `useful` meaning; no second or free-form taxonomy exists.
 
@@ -471,7 +471,7 @@ Edge Functions and background workers remain valid implementation choices when t
 | Messages                | Authenticated discriminated Project/Resource Requests plus the existing Project-only Chats tab                   | Canonical request domains; complete three-part cursor; Resource chats remain 04C4C3B                           |
 | Project chat            | Structural anchor, immutable message history, authorized list/send APIs, and private Realtime hints              | Creator plus current/former participants under canonical membership-time rules                                 |
 | Notifications           | Controlled categories/preferences, recipient in-app records, private installations, and recipient push jobs      | Recipient, per-consumer source event receipt, optional project/request/membership                              |
-| Templates               | Reusable proposal structure derived from approved past/community content                                         | Source proposal, attribution, moderation/publication state                                                     |
+| Templates               | Automatic source-linked reusable projection from Completed one-time Proposals                                    | Immutable source/Creator identity, content token, live attribution and private removal state                    |
 | Community statistics    | Aggregated views over canonical activity and participation                                                       | Proposal type, location, participation, time                                                                   |
 | Moderation              | Reports, blocks, content status, actions, internal notes, appeals if introduced                                  | Users, proposals, messages, media, administrators                                                              |
 | Audit/operations        | Security-relevant and administrative action history                                                              | Actor, target, action, timestamps, metadata                                                                    |
@@ -492,7 +492,7 @@ Edge Functions and background workers remain valid implementation choices when t
 | Messages                    | Authenticated discriminated Project/Resource Requests plus the existing Project-only Chats tab                   | Canonical request domains; complete three-part cursor; Resource chats remain 04C4C3B                           |
 | Project chat                | Structural anchor, immutable message history, authorized list/send APIs, and private Realtime hints              | Owner/active delegates plus current/former participants under canonical membership-time rules                  |
 | Notifications               | Controlled categories/preferences, recipient in-app records, private installations, and recipient push jobs      | Recipient, per-consumer source event receipt, optional project/request/membership                              |
-| Templates                   | Reusable proposal structure derived from approved past/community content                                         | Source proposal, attribution, moderation/publication state                                                     |
+| Templates                   | Automatic source-linked reusable projection from Completed one-time Proposals                                    | Immutable source/Creator identity, content token, live attribution and private removal state                    |
 | Community statistics        | Aggregated views over canonical activity and participation                                                       | Proposal type, location, participation, time                                                                   |
 | Moderation                  | Reports, blocks, content status, actions, internal notes, appeals if introduced                                  | Users, proposals, messages, media, administrators                                                              |
 | Audit/operations            | Security-relevant and administrative action history                                                              | Actor, target, action, timestamps, metadata                                                                    |
@@ -567,7 +567,7 @@ Regardless of final state names:
 - repeated commands must not duplicate members, chats, notifications, or statistics;
 - membership/history records must preserve enough information for derived stats and moderation;
 - deleting or suspending an account must not corrupt historical proposals;
-- templates must copy approved reusable fields rather than stay invisibly coupled to mutable source content.
+- future Projects created from templates must atomically copy the allowed reusable fields and provenance, remaining independent of later source edits; the linked template itself follows its canonical source.
 
 ### Participation and automatic chat
 
@@ -760,13 +760,28 @@ The database stores canonical media metadata and authorization context. A storag
 
 ## Templates and community data
 
-A template should be an explicit reusable representation, not simply “load the old proposal and mutate it.” This permits:
+TW01 implements the backend foundation on its draft-review branch. First
+successful publication synchronously establishes one private linked identity
+per one-time Proposal and retains a narrow original-Creator-private last saved
+Bozza baseline. Legacy backfill establishes identities without inventing drafts
+or events. There is no explicit submission or approval queue.
 
-- stable attribution to a source proposal;
-- removal of private or event-specific details;
-- moderation before community publication;
-- versioning or deprecation later;
-- analytics on template reuse.
+The template is an allow-listed synchronous projection of latest published
+source text, controlled skills, open need title/details, capacity recommendation,
+duration and source-authorized cover. STABLE RPCs return consistent snapshots
+and an opaque content hash; globally-public author names are sanitized live and
+never stored in copied content. Private meeting/workspace/participation data,
+coverage/contributions and staff evidence are excluded. Free text is not
+automatically anonymized.
+
+Catalog/detail and bounded, version-checked resource-blueprint pages share
+canonical Completed (end + 24 hours), current source visibility and private
+template-removal eligibility. No scheduled completion write is needed.
+TW02 owns reporting/removal workflows; TW03 owns atomic copying into an
+independent Project draft; TW04 owns mobile Workshop. No template participation,
+application, outcome editor, comparison UI or production backfill is implemented.
+The consumable contracts, actor matrix, version semantics and lock ownership
+are recorded in [the Template Workshop guide](../development/template-workshop.md).
 
 Community statistics should be derived from canonical records through SQL views initially. Examples may include counts by category, broad location, time, completion state, and participation. Materialized views or cached aggregates are deferred until measured performance requires them.
 

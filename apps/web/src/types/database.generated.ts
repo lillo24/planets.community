@@ -2949,6 +2949,18 @@ export type Database = {
           updated_at: string
         }[]
       }
+      get_own_proposal_template_baseline: {
+        Args: { p_expected_creator_profile_id: string; p_template_id: string }
+        Returns: {
+          captured_at: string
+          description: string
+          skill_selections: Json
+          source_proposal_id: string
+          summary: string
+          template_id: string
+          title: string
+        }[]
+      }
       get_own_recurring_activity: {
         Args: {
           p_expected_creator_profile_id: string
@@ -3166,6 +3178,24 @@ export type Database = {
           skills: Json
           starts_at: string
           summary: string
+          title: string
+        }[]
+      }
+      get_public_proposal_template: {
+        Args: { p_template_id: string }
+        Returns: {
+          content_version: string
+          cover_object_path: string
+          creator_display_name: string
+          description: string
+          duration_seconds: number
+          original_creator_profile_id: string
+          registration_capacity_recommendation: number
+          resource_blueprint_count: number
+          skills: Json
+          source_proposal_id: string
+          summary: string
+          template_id: string
           title: string
         }[]
       }
@@ -4161,6 +4191,39 @@ export type Database = {
           created_at: string
           details: string
           resource_need_id: string
+          title: string
+        }[]
+      }
+      list_public_proposal_template_resource_blueprints: {
+        Args: {
+          p_content_version: string
+          p_cursor_need_id?: string
+          p_limit?: number
+          p_template_id: string
+        }
+        Returns: {
+          details: string
+          source_need_id: string
+          title: string
+        }[]
+      }
+      list_public_proposal_templates: {
+        Args: {
+          p_cursor_id?: string
+          p_cursor_linked_at?: string
+          p_limit?: number
+          p_query?: string
+          p_skill_ids?: string[]
+        }
+        Returns: {
+          cover_object_path: string
+          creator_display_name: string
+          linked_at: string
+          original_creator_profile_id: string
+          skills: Json
+          source_proposal_id: string
+          summary: string
+          template_id: string
           title: string
         }[]
       }

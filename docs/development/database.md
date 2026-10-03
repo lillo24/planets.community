@@ -1,5 +1,11 @@
 # Database development
 
+The [source-linked Template Workshop guide](template-workshop.md) owns TW01's
+identity/baseline, Completed eligibility, reusable projection/version, public
+RPC grants and bounded blueprint pagination contracts. Its HTTP/concurrency
+verifier is included in `npm run proposal:verify:local`; upgrade-backfill
+rehearsal is an explicit isolated-local procedure.
+
 The stack-integration candidate replays the complete cumulative schema from the
 validated `main` baseline plus the included open product stacks. Candidate-only
 migrations, generated types, and verification commands remain unmerged to

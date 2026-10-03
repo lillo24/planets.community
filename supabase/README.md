@@ -7,6 +7,14 @@ This folder owns the reproducible local PLANETS database and its security valida
 - `tests/` contains native pgTAP invariants and transactional security probes.
 - `seed.sql` runs after migrations during reset and currently contains no data; the system-managed starter skill catalog is migration-owned reference data.
 
+TW01 owns source-linked one-time Proposal templates in private identity/baseline
+tables. Publication captures the original Creator's last saved draft atomically;
+public Workshop RPCs project canonical content only after Completed through a
+shared source-visibility/removal predicate. `110`/`111` test hardening and domain
+behavior. The [Template Workshop guide](../docs/development/template-workshop.md)
+maps the four RPCs, version and bounded blueprint contracts, live attribution,
+Storage boundaries and local backfill/concurrency verifiers for TW02/TW03.
+
 09B1 stores append-preserved directional block episodes in the private schema
 and exposes only expected-identity Block/Unblock plus an outbound-only keyset
 read. 09B2 adds `get_own_blocked_profile_status`, a zero-or-one exact-target
