@@ -82,7 +82,8 @@ class _ProposalEditorScreenState extends ConsumerState<ProposalEditorScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final identity = ref.watch(authSessionProvider).identity;
+    final session = ref.watch(authSessionProvider);
+    final identity = session.identity;
     final state = ref.watch(proposalEditorSessionProvider(_sessionId));
     // A create route keeps its session after binding the first canonical ID.
     final proposalMatches =
@@ -98,6 +99,12 @@ class _ProposalEditorScreenState extends ConsumerState<ProposalEditorScreen> {
         state.failure == ProposalFailureKind.forbidden;
     if (identity != null && _requestedIdentity != identity.id) {
       Future<void>.microtask(_load);
+    } else if (session.phase == AuthSessionPhase.ready &&
+        identity != null &&
+        state.phase == ProposalEditorPhase.idle) {
+      // Access loss clears the session even if the account ID stays the same.
+      // Reload once readiness returns instead of retaining an empty loading state.
+      Future<void>.microtask(() => _load(force: true));
     }
     return Scaffold(
       appBar: AppBar(

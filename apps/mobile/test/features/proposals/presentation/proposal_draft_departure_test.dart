@@ -585,6 +585,41 @@ void main() {
     expect(find.text('Draft saved'), findsNothing);
   });
 
+  testWidgets('same actor access loss clears raw work and reloads when ready', (
+    tester,
+  ) async {
+    final app = await pumpEditor(tester, proposal: ownProposalFixture());
+    await tester.enterText(
+      find.byKey(const Key('proposal-title')),
+      'Unsaved private input',
+    );
+    final auth = app.container.read(authSessionProvider.notifier);
+    auth.markProfileSetupRequired(
+      const AuthIdentity(id: 'user-1'),
+      hasProfileAnchor: true,
+    );
+      await tester.pump();
+      await tester.pump();
+    expect(find.byKey(const Key('proposal-title')), findsNothing);
+    auth.markProfileReady(const AuthIdentity(id: 'user-1'));
+    await tester.pumpAndSettle();
+    expect(
+      tester
+          .widget<TextFormField>(find.byKey(const Key('proposal-title')))
+          .controller!
+          .text,
+      'Paint the square',
+    );
+    await tester.enterText(
+      find.byKey(const Key('proposal-title')),
+      'After readiness',
+    );
+    app.router.go('/destination');
+    await tester.pumpAndSettle();
+    expect(app.gateway.calls, contains('update:proposal-1'));
+    expect(find.text('Draft saved'), findsOneWidget);
+  });
+
   testWidgets('late account response cannot navigate or notify another actor', (
     tester,
   ) async {

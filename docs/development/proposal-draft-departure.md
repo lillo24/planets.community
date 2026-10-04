@@ -109,6 +109,9 @@ uncertain save or publication cannot emit that message. Forced sign-out/access
 loss bypasses saving and drops callbacks/feedback. A same-actor profile recheck
 invalidates pending work but preserves retained bindings and departure owners.
 No private form content enters telemetry, routes, settings or snackbar bodies.
+If the same account loses profile readiness, its private form is discarded;
+returning to readiness reloads the route's authorized record and registers a new
+departure owner, rather than keeping a reset session in a loading loop.
 
 go_router's onEnter parsing yields before its first route match. Auth restoration
 does not regenerate nonexistent retained stacks while the configuration is
