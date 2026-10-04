@@ -11,6 +11,14 @@ action identifiers or manifest secrets. A nonmatching response exits nonzero.
 the normal Web Vitest suite includes it. No runtime/configuration is adopted by
 these checks, and they never start a server or deploy.
 
+`hosting-private-fixture.mjs` owns exact synthetic note/witness/counterstatement
+markers shared by the seed and authenticated verifier. Its regression tests
+reject denial-shaped responses containing any actual marker. The verifier first
+requires every selected marker in authorized HTML **and** Flight, then requires
+their absence for anonymous/ordinary/stale-role requests. Status, content type,
+private/no-store and not-found semantics are asserted together (HTML 404 versus
+Flight 200 with the Next 404 digest). No private response bodies are printed.
+
 `local-hosting-backend.mjs` guards the exact disposable project/API/database
 before its seed or authenticated verifier can write. Its tests cover shared,
 remote and missing endpoints. The Supabase CLI must be on PATH (npm scripts
@@ -26,6 +34,10 @@ same guarded backend plus the case IDs printed by the seed. Tokens, cookies,
 raw errors and private response bodies are never logged. Failure exits nonzero
 with a redacted stage. It adds a synthetic report/case and retains its revoked
 suspension history; it is not a production benchmark or CDN isolation test.
+It also temporarily deactivates/restores only the synthetic moderator's staff
+role via guarded local SQL, checking existing-session reads and an encoded
+safety-notice submit; no submitted private note may persist. This is a fixture
+authority change, not a new staff-management feature or database contract.
 
 `seed-local-hosting-qa.mjs` creates a synthetic 35-report/35-case fixture with
 eight long private notes, reviewed/received states, witness evidence and a
@@ -37,6 +49,10 @@ content and accepted-relationship bootstrap. It never seeds the shared local
 project, creates production roles, or prints sessions. Re-running adds fixtures;
 reset only the named disposable stack before clean database tests. Current
 domain behavior creates one case per report, not aggregated multi-report cases.
+The Resource listing has a real synthetic `cover-images` upload attached through
+the owner's canonical RPC. The printed `coverPath` permits actual Storage
+denial/restoration QA; neither profile-photo bootstrap metadata nor a signed URL
+is proof that an object exists or remains accessible.
 
 From the repository root, after building and starting the matching artifact:
 
@@ -44,7 +60,7 @@ From the repository root, after building and starting the matching artifact:
 node apps/web/scripts/probe-local-hosting.mjs http://127.0.0.1:3117
 # Only after setting up the named disposable stack:
 node apps/web/scripts/seed-local-hosting-qa.mjs --disposable-webhost01
-node apps/web/scripts/verify-local-hosting-auth.mjs http://127.0.0.1:3117 PROFILE_CASE ADMIN_SELF_CASE
+node apps/web/scripts/verify-local-hosting-auth.mjs http://127.0.0.1:3117 PROFILE_CASE ADMIN_SELF_CASE CORROBORATION_CASE COUNTERSTATEMENT_CASE
 ```
 
 The action encoder comes from the installed, pinned Next.js internal test

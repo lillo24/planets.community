@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
 import { readFile } from "node:fs/promises";
 import { createRequire } from "node:module";
+import postgres from "postgres";
 import {
   combineChunks,
   createChunks,
@@ -12,21 +13,41 @@ import {
 } from "@supabase/ssr";
 import { readHostingBackend } from "./local-hosting-backend.mjs";
 import { parseProbeOrigin } from "./probe-local-hosting.mjs";
+import {
+  assertPrivateFixtureResponse,
+  privateFixtureMarkers,
+} from "./hosting-private-fixture.mjs";
 
 assert.equal(
   process.argv.length,
-  5,
-  "Usage: node apps/web/scripts/verify-local-hosting-auth.mjs ORIGIN PROFILE_CASE ADMIN_SELF_CASE",
+  7,
+  "Usage: node apps/web/scripts/verify-local-hosting-auth.mjs ORIGIN PROFILE_CASE ADMIN_SELF_CASE CORROBORATION_CASE COUNTERSTATEMENT_CASE",
 );
 const origin = parseProbeOrigin(process.argv[2]);
-const [profileCase, selfCase] = process.argv.slice(3);
-for (const id of [profileCase, selfCase])
+const [profileCase, selfCase, corroborationCase, counterstatementCase] =
+  process.argv.slice(3);
+for (const id of [
+  profileCase,
+  selfCase,
+  corroborationCase,
+  counterstatementCase,
+])
   assert.match(
     id,
     /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i,
     "Use IDs printed by the disposable seed.",
   );
 const backend = await readHostingBackend();
+const sql = postgres(backend.databaseUrl, { max: 1, onnotice: () => {} });
+const privateCases = [
+  { id: profileCase, markers: privateFixtureMarkers.notes },
+  { id: corroborationCase, markers: [privateFixtureMarkers.witness] },
+  {
+    id: counterstatementCase,
+    markers: [privateFixtureMarkers.counterstatement],
+  },
+];
+const allMarkers = privateCases.flatMap(({ markers }) => [...markers]);
 const mailpit = "http://127.0.0.1:54364";
 let stage = "initialization";
 
@@ -207,30 +228,50 @@ async function main() {
         flight.body.includes(`"Signed in as ","${actor.role}"`),
         "Wrong staff role in Flight response.",
       );
-      const detail = await request(actor, `/admin/cases/${profileCase}`);
-      assert.equal(detail.response.status, 200);
-      assert.ok(
-        detail.body.includes("Synthetic private note"),
-        "Missing authorized fixture evidence.",
-      );
+      for (const { id, markers } of index === 0
+        ? privateCases
+        : privateCases.slice(0, 1)) {
+        for (const format of ["html", "flight"]) {
+          const detail = await request(
+            actor,
+            `/admin/cases/${id}${format === "flight" ? "?_rsc" : ""}`,
+            {
+              headers: format === "flight" ? { RSC: "1" } : {},
+            },
+          );
+          assertPrivateFixtureResponse(detail.response, detail.body, {
+            format,
+            authorized: true,
+            markers,
+          });
+        }
+      }
     }
   }
-  for (const path of ["/admin", `/admin/cases/${profileCase}`]) {
-    const result = await request(ordinary, path);
-    assert.equal(result.response.status, 404);
-    assert.ok(
-      !result.body.includes("Synthetic PRIVATE"),
-      "Private HTML reached ordinary user.",
-    );
-    const flight = await request(ordinary, `${path}?_rsc`, {
-      headers: { RSC: "1" },
-    });
-    assert.ok(flight.body.includes("NEXT_HTTP_ERROR_FALLBACK;404"));
-    assert.ok(
-      !flight.body.includes("Synthetic PRIVATE"),
-      "Private Flight data reached ordinary user.",
-    );
+  // Authorized reads above must establish every marker before these checks run.
+  const anonymous = { role: "anonymous", jar: new Map() };
+  for (const actor of [anonymous, ordinary]) {
+    for (const path of [
+      "/admin",
+      ...privateCases.map(({ id }) => `/admin/cases/${id}`),
+    ]) {
+      for (const format of ["html", "flight"]) {
+        const result = await request(
+          actor,
+          `${path}${format === "flight" ? "?_rsc" : ""}`,
+          {
+            headers: format === "flight" ? { RSC: "1" } : {},
+          },
+        );
+        assertPrivateFixtureResponse(result.response, result.body, {
+          format,
+          authorized: false,
+          markers: allMarkers,
+        });
+      }
+    }
   }
+
   const manifest = JSON.parse(
     await readFile(
       new URL(
@@ -247,6 +288,51 @@ async function main() {
   const { encodeReply } = createRequire(import.meta.url)(
     "next/dist/compiled/react-server-dom-turbopack/client.browser",
   );
+  stage = "temporary disposable moderator role deactivation";
+  const roles =
+    await sql`update private.moderation_staff_roles set is_active = false, deactivated_at = statement_timestamp()
+    where profile_id = ${moderator.id}::uuid and is_active = true returning profile_id`;
+  assert.equal(roles.length, 1, "Missing active synthetic moderator role.");
+  try {
+    for (const format of ["html", "flight"]) {
+      const result = await request(
+        moderator,
+        `/admin/cases/${profileCase}${format === "flight" ? "?_rsc" : ""}`,
+        {
+          headers: format === "flight" ? { RSC: "1" } : {},
+        },
+      );
+      assertPrivateFixtureResponse(result.response, result.body, {
+        format,
+        authorized: false,
+        markers: allMarkers,
+      });
+    }
+    const form = new FormData();
+    for (const [key, value] of Object.entries({
+      mode: "apply",
+      type: "safety_notice",
+      caseId: profileCase,
+      userReason: "Synthetic stale-role probe reason",
+      internalNote: "Synthetic stale-role PRIVATE probe note",
+    }))
+      form.set(key, value);
+    const result = await request(moderator, `/admin/cases/${profileCase}`, {
+      method: "POST",
+      headers: { "Next-Action": action, Origin: origin },
+      body: await encodeReply([{ status: "idle" }, form]),
+    });
+    assert.equal(result.response.status, 200);
+    assert.ok(result.body.includes('"kind":"unauthorized"'));
+    assert.ok(!result.body.includes('"status":"success"'));
+    const [notes] =
+      await sql`select count(*)::integer as count from private.moderation_case_notes
+      where case_id = ${profileCase}::uuid and body = 'Synthetic stale-role PRIVATE probe note'`;
+    assert.equal(notes.count, 0, "Stale role persisted a private note.");
+  } finally {
+    await sql`update private.moderation_staff_roles set is_active = true, deactivated_at = null
+      where profile_id = ${moderator.id}::uuid`;
+  }
   for (const [actor, id, kind] of [
     [ordinary, profileCase, "unauthorized"],
     [moderator, profileCase, "unauthorized"],
@@ -329,14 +415,16 @@ async function main() {
   assert.ok(!(await admin.client.auth.signOut({ scope: "local" })).error);
   assert.ok(!(await ordinary.client.auth.signOut({ scope: "local" })).error);
   console.log(
-    "Real OTP, chunked Proxy refresh, interleaved HTML/Flight session isolation, ordinary-user denial, forged moderator/admin-self suspension denial, suspended-staff reauthorization and independent sign-out passed locally. No cloud CPU/CDN certification.",
+    "Real OTP, chunked Proxy refresh, interleaved HTML/Flight session isolation, actual private note/evidence denial, forged moderator/admin-self suspension denial, stale-role/suspended-staff reauthorization and independent sign-out passed locally. No cloud CPU/CDN certification.",
   );
 }
 
-main().catch(() => {
-  // No raw errors/payloads: Auth/PostgREST error objects can contain private data.
-  console.error(
-    `Authenticated hosting verification FAILED at ${stage}. Check the disposable fixture and expected boundary; never publish tokens, cookie jars or manifests.`,
-  );
-  process.exitCode = 1;
-});
+main()
+  .catch(() => {
+    // No raw errors/payloads: Auth/PostgREST error objects can contain private data.
+    console.error(
+      `Authenticated hosting verification FAILED at ${stage}. Check the disposable fixture and expected boundary; never publish tokens, cookie jars or manifests.`,
+    );
+    process.exitCode = 1;
+  })
+  .finally(() => sql.end({ timeout: 2 }));
