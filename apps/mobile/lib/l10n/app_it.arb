@@ -1277,5 +1277,14 @@
   "projectWorkspaceCancelAction": "Annulla",
   "projectWorkspaceOpenFailure": "Impossibile aprire lo spazio di lavoro esterno.",
   "projectWorkspaceToolsSemantics": "Strumenti di coordinamento dei progetti",
-  "moderationTemplateDisclosure": "Puoi segnalare un template, anche se collegato alla tua Proposta. Lo staff valuta le segnalazioni manualmente. La segnalazione non rimuove automaticamente il template o la Proposta di origine."
+  "moderationTemplateDisclosure": "Puoi segnalare un template, anche se collegato alla tua Proposta. Lo staff valuta le segnalazioni manualmente. La segnalazione non rimuove automaticamente il template o la Proposta di origine.",
+  "proposalDraftSaved": "Bozza salvata",
+  "proposalDraftImageNotSaved": "Contenuto della bozza salvato; modifica immagine non confermata.",
+  "proposalDraftLeaveTitle": "Conserva la tua bozza",
+  "proposalDraftLeaveError": "Impossibile salvare le modifiche. Correggi i campi evidenziati o riprova. Scarta abbandona solo le modifiche non salvate; una bozza già salvata resta in Le mie proposte.",
+  "proposalDraftKeepEditing": "Continua a modificare",
+  "proposalDraftDiscard": "Scarta modifiche non salvate",
+  "proposalDraftLeaveWithoutImage": "Esci senza modifica immagine",
+  "proposalDraftRecover": "Recupera bozza",
+  "proposalDraftRecoveryError": "Recupero della bozza non riuscito. Riprova da Le mie proposte."
 }

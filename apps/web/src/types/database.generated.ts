@@ -2532,6 +2532,29 @@ export type Database = {
         Args: { p_expected_owner_profile_id: string; p_listing_id: string }
         Returns: string
       }
+      create_editor_proposal_draft: {
+        Args: {
+          p_administrative_area: string
+          p_client_request_id: string
+          p_count_organizers_toward_capacity: boolean
+          p_country_code: string
+          p_description: string
+          p_ends_at: string
+          p_event_timezone: string
+          p_exact_location_visibility: string
+          p_exact_meeting_text: string
+          p_expected_creator_profile_id: string
+          p_locality: string
+          p_public_location_label: string
+          p_registration_capacity: number
+          p_skill_ids: string[]
+          p_skill_importances: string[]
+          p_starts_at: string
+          p_summary: string
+          p_title: string
+        }
+        Returns: string
+      }
       create_project_delegate_invitation:
         | {
             Args: { p_expected_owner_profile_id: string; p_project_id: string }
@@ -4561,6 +4584,13 @@ export type Database = {
           p_expected_profile_id: string
           p_expected_terms_id: string
           p_leg_kind: string
+        }
+        Returns: string
+      }
+      recover_editor_proposal_draft: {
+        Args: {
+          p_client_request_id: string
+          p_expected_creator_profile_id: string
         }
         Returns: string
       }

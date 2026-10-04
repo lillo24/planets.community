@@ -29,7 +29,8 @@ revisions keep pagination on the active query and reject late results from an
 older filter set.
 
 Browse owns list, detail, mine and editor routes inside the app's stateful shell.
-Switching tabs preserves the list scroll/filters and an unsaved editor. Identity
+Switching tabs preserves list scroll/filters and saves meaningful dirty unpublished
+Proposal content before switching. Published edits remain deliberate. Identity
 changes discard the shell's retained stacks and clear owner controllers. Revision
 checks after each await reject late loads/mutations and prevent an old draft
 creation from proceeding to publish in a later session. Every owner RPC still
@@ -45,7 +46,7 @@ photo boundary and degrades to a placeholder independently of detail content.
 
 The public client never reads proposal tables directly. Rough location is available on public cards; exact meeting text is rendered only when the sanitized detail RPC returns it. The shared `participation/` feature adds request/member actions and may replace the restricted explanation with participant-authorized operational meeting text without adding that data to Proposal models. The sibling `cover_media/` feature owns optional cover processing, persistence orchestration, and loading; Proposal controllers create/update the parent before cover reconciliation and publish only after it succeeds. Recurring activities and maps remain outside this feature.
 
-Cover add/change/remove choices stay local to the editor until Save or Publish.
+Cover add/change/remove choices stay local to the editor until Save, Publish or guarded draft departure.
 If cover persistence fails after content succeeds, the controller retains the
 same draft and reports whether a draft or later changes were saved. Public and
 owner cards/details consume only the canonical `coverObjectPath`; they do not
@@ -66,7 +67,7 @@ The time helpers explicitly support the existing `UTC` default as an alias for `
 When demo tools are enabled, new-proposal forms expose a **Fill sample data**
 action with synthetic values and a future schedule. The configuration gate is
 hard-off in production, and the preset never persists or sends data until the
-developer chooses Save draft or Publish. Save/publish validation shows a fixed field-name summary
+developer chooses Save draft, Publish or leaves the meaningful draft. Save/publish validation shows a fixed field-name summary
 that remains visible while the form scrolls, inline errors for text, timezone,
 country and schedule controls, and brings the first mounted invalid field into
 view. Drafts keep their intentionally optional fields while still validating
@@ -97,3 +98,11 @@ The editor uses the exact structural management read for both Creator and
 Co-creator access. Co-organizers and stale/demoted/revoked Co-creators fail
 closed. Successful structural mutations refresh the exact record and affected
 owned, delegated, public-list, and public-detail state.
+
+DRAFT01 gives each editor a separate session controller, immutable raw
+acknowledgements (`application/proposal_draft_session.dart`) and a stable
+actor/request first-creation key. `presentation/own_proposals_screen.dart`
+offers explicit recovery for unresolved opaque in-memory creation markers.
+The editor registers with the app router's departure coordinator; invalid
+fields stay editable and partial image failures retain the same draft. See
+[save-before-navigation and recovery](../../../../../docs/development/proposal-draft-departure.md).

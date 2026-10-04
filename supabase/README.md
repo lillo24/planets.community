@@ -147,3 +147,10 @@ Test `113` audits security; `scripts/verify-local-template-application.mjs` prov
 copy/reset, exact recovery, rollback and removal concurrency; its `...-upgrade.mjs`
 companion checks populated TW02 history through actual forward migration.
 The Workshop guide owns complete inputs/receipts/errors and local commands.
+
+DRAFT01 adds forward migration `20261004200147_idempotent_editor_draft_creation.sql`,
+private append-only creation receipts and two actor-bound editor RPCs. Existing
+ordinary create overloads remain available. `114` audits raw grants/RLS and RPC
+hardening; `npm run draft:editor:verify:local` verifies the authenticated contract
+and removed-template draft independence. See the
+[draft departure guide](../docs/development/proposal-draft-departure.md).

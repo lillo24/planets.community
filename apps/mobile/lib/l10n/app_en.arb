@@ -2001,5 +2001,14 @@
   "projectWorkspaceCancelAction": "Cancel",
   "projectWorkspaceOpenFailure": "The external workspace could not be opened.",
   "projectWorkspaceToolsSemantics": "Project coordination tools",
-  "moderationTemplateDisclosure": "You can report a template, including one linked to your own Proposal. Staff review reports manually. Reporting does not automatically remove the template or its source Proposal."
+  "moderationTemplateDisclosure": "You can report a template, including one linked to your own Proposal. Staff review reports manually. Reporting does not automatically remove the template or its source Proposal.",
+  "proposalDraftSaved": "Draft saved",
+  "proposalDraftImageNotSaved": "Draft content saved; image change not confirmed.",
+  "proposalDraftLeaveTitle": "Keep your draft",
+  "proposalDraftLeaveError": "Your changes could not be saved. Correct the highlighted fields or retry. Discard abandons only unsaved changes; any draft already saved remains in My Proposals.",
+  "proposalDraftKeepEditing": "Keep editing",
+  "proposalDraftDiscard": "Discard unsaved changes",
+  "proposalDraftLeaveWithoutImage": "Leave without image change",
+  "proposalDraftRecover": "Recover draft",
+  "proposalDraftRecoveryError": "Draft recovery failed. Retry from My Proposals."
 }

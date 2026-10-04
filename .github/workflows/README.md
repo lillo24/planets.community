@@ -12,3 +12,8 @@ steps. TW02's historical run #37188652377 omitted the moderation command;
 its 93 API checks were local only. Verify coverage from final-head step logs,
 not a passing job name. Trigger boundaries and required-check behavior remain
 unchanged. The full manual database command is `npm run check:db`.
+
+DRAFT01 adds `draft:editor:verify:local` for authenticated ordinary creation,
+private retry/recovery, rollback and TW03 draft reopening after removal. It is
+an explicit Database step after the existing TW02/TW03 verifiers; the scoped
+classifier and complete manual suite remain unchanged.

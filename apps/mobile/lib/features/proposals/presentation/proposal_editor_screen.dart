@@ -1,9 +1,11 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart' show ScrollCacheExtent;
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:uuid/uuid.dart';
+
+import '../../../app/router/draft_departure_coordinator.dart';
 
 import '../../../core/theme/app_tokens.dart';
 import '../../../core/widgets/error_state.dart';
@@ -11,12 +13,14 @@ import '../../../core/widgets/loading_state.dart';
 import '../../../devtools/demo/demo_widgets.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../auth/application/auth_session_controller.dart';
+import '../../auth/domain/auth_models.dart';
 import '../../cover_media/domain/cover_media_models.dart';
 import '../../cover_media/presentation/cover_editor_section.dart';
 import '../../participation/domain/participation_models.dart';
 import '../../profile_photo/presentation/profile_photo_trust_gate.dart';
 import '../../project_resource_needs/presentation/project_resource_need_routes.dart';
 import '../application/proposal_controllers.dart';
+import '../application/proposal_draft_session.dart';
 import '../domain/proposal_models.dart';
 import '../domain/proposal_time.dart';
 
@@ -32,6 +36,8 @@ class ProposalEditorScreen extends ConsumerStatefulWidget {
 
 class _ProposalEditorScreenState extends ConsumerState<ProposalEditorScreen> {
   String? _requestedIdentity;
+  var _sessionId = const Uuid().v4();
+  VoidCallback? _releaseSession;
 
   @override
   void initState() {
@@ -40,21 +46,47 @@ class _ProposalEditorScreenState extends ConsumerState<ProposalEditorScreen> {
   }
 
   Future<void> _load({bool force = false}) async {
-    final identity = ref.read(authSessionProvider).identity;
-    if (identity != null && (force || _requestedIdentity != identity.id)) {
+    if (!mounted) return;
+    final session = ref.read(authSessionProvider);
+    final identity = session.identity;
+    if (session.phase == AuthSessionPhase.ready &&
+        identity != null &&
+        (force || _requestedIdentity != identity.id)) {
       _requestedIdentity = identity.id;
-      await ref
-          .read(proposalEditorProvider.notifier)
-          .load(identity.id, widget.proposalId);
+      final controller = ref.read(
+        proposalEditorSessionProvider(_sessionId).notifier,
+      );
+      _releaseSession = controller.releaseSession;
+      await controller.load(identity.id, widget.proposalId);
     }
+  }
+
+  @override
+  void didUpdateWidget(ProposalEditorScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.proposalId != widget.proposalId) {
+      _releaseSession?.call();
+      _releaseSession = null;
+      _sessionId = const Uuid().v4();
+      _requestedIdentity = null;
+      Future<void>.microtask(_load);
+    }
+  }
+
+  @override
+  void dispose() {
+    _releaseSession?.call();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final identity = ref.watch(authSessionProvider).identity;
-    final state = ref.watch(proposalEditorProvider);
+    final state = ref.watch(proposalEditorSessionProvider(_sessionId));
+    // A create route keeps its session after binding the first canonical ID.
     final proposalMatches =
+        widget.proposalId == null ||
         state.phase == ProposalEditorPhase.failure ||
         state.proposal?.id == widget.proposalId;
     final isCurrent =
@@ -88,7 +120,8 @@ class _ProposalEditorScreenState extends ConsumerState<ProposalEditorScreen> {
                 onRetry: () => _load(force: true),
               )
             : _ProposalForm(
-                key: ValueKey('${identity.id}:${widget.proposalId ?? 'new'}'),
+                key: ValueKey('${identity.id}:$_sessionId'),
+                sessionId: _sessionId,
                 identityId: identity.id,
                 proposal: state.proposal,
                 categories: state.categories,
@@ -101,12 +134,14 @@ class _ProposalEditorScreenState extends ConsumerState<ProposalEditorScreen> {
 class _ProposalForm extends ConsumerStatefulWidget {
   const _ProposalForm({
     required this.identityId,
+    required this.sessionId,
     required this.proposal,
     required this.categories,
     super.key,
   });
 
   final String identityId;
+  final String sessionId;
   final OwnProposal? proposal;
   final List<ProposalSkillCategory> categories;
 
@@ -146,6 +181,14 @@ class _ProposalFormState extends ConsumerState<_ProposalForm> {
   bool _validatingPublish = false;
   List<String> _validationIssues = const [];
   CoverChange _coverChange = const CoverChange.unchanged();
+  int _coverRevision = 0;
+  int _acknowledgedCoverRevision = 0;
+  int _coverResetEpoch = 0;
+  late ProposalDraftSnapshot _acknowledged;
+  late final DraftDepartureOwner _departureOwner;
+  late final DraftDepartureCoordinator _departure;
+  bool _saving = false;
+  ProposalDraftSnapshot? _partialAcknowledged;
 
   @override
   void initState() {
@@ -175,10 +218,31 @@ class _ProposalFormState extends ConsumerState<_ProposalForm> {
       for (final skill in p?.skills ?? const <ProposalSkill>[])
         skill.id: skill.importance,
     };
+    _acknowledged = _snapshot();
+    _departure = ref.read(draftDepartureProvider);
+  }
+
+  bool _registeredDeparture = false;
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_registeredDeparture) return;
+    _registeredDeparture = true;
+    _departureOwner = DraftDepartureOwner(
+      actorId: widget.identityId,
+      pageKey: GoRouterState.of(context).pageKey,
+      isActive: () =>
+          mounted &&
+          TickerMode.valuesOf(context).enabled &&
+          (ModalRoute.of(context)?.isCurrent ?? false),
+      prepare: _prepareDeparture,
+    );
+    _departure.register(_departureOwner);
   }
 
   @override
   void dispose() {
+    _departure.unregister(_departureOwner);
     for (final controller in [
       _title,
       _summary,
@@ -214,13 +278,137 @@ class _ProposalFormState extends ConsumerState<_ProposalForm> {
     countOrganizersTowardCapacity: _countOrganizersTowardCapacity,
   );
 
-  Future<void> _save({required bool publish}) async {
+  ProposalDraftSnapshot _snapshot() => ProposalDraftSnapshot(
+    text: [
+      _title.text,
+      _summary.text,
+      _description.text,
+      _capacity.text,
+      _timezone.text,
+      _country.text,
+      _locality.text,
+      _administrativeArea.text,
+      _publicLocation.text,
+      _exactLocation.text,
+    ],
+    input: _input(),
+    coverRevision: _coverRevision,
+  );
+
+  Future<DraftDepartureOutcome> _prepareDeparture() async {
+    if (widget.proposal?.lifecycle == ProposalLifecycle.published) {
+      return DraftDepartureOutcome.noChange;
+    }
+    if (_saving ||
+        ref.read(proposalEditorSessionProvider(widget.sessionId)).isBusy) {
+      return DraftDepartureOutcome.blocked;
+    }
+    final current = _snapshot();
+    final controller = ref.read(
+      proposalEditorSessionProvider(widget.sessionId).notifier,
+    );
+    if (current.sameAs(_acknowledged) ||
+        (controller.boundProposalId == null && !current.meaningful)) {
+      return DraftDepartureOutcome.noChange;
+    }
+    if (await _save(publish: false, navigate: false)) {
+      return _snapshot().sameAs(_acknowledged)
+          ? DraftDepartureOutcome.saved
+          : DraftDepartureOutcome.blocked;
+    }
+    if (!mounted ||
+        ref.read(authSessionProvider).identity?.id != widget.identityId) {
+      return DraftDepartureOutcome.blocked;
+    }
+    final partial =
+        ref
+            .read(proposalEditorSessionProvider(widget.sessionId))
+            .coverPartialSave !=
+        null;
+    final l10n = AppLocalizations.of(context);
+    final discard = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(l10n.proposalDraftLeaveTitle),
+        content: Text(
+          partial
+              ? l10n.proposalDraftImageNotSaved
+              : l10n.proposalDraftLeaveError,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text(l10n.proposalDraftKeepEditing),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: Text(
+              partial
+                  ? l10n.proposalDraftLeaveWithoutImage
+                  : l10n.proposalDraftDiscard,
+            ),
+          ),
+        ],
+      ),
+    );
+    if (discard != true || !mounted) return DraftDepartureOutcome.blocked;
+    // Discard only unacknowledged changes; preserve a known/ambiguous creation.
+    if (partial && _partialAcknowledged != null) {
+      _acknowledged = _partialAcknowledged!;
+    }
+    _restoreAcknowledged();
+    return partial
+        ? DraftDepartureOutcome.partial
+        : DraftDepartureOutcome.discarded;
+  }
+
+  void _restoreAcknowledged() {
+    final controllers = [
+      _title,
+      _summary,
+      _description,
+      _capacity,
+      _timezone,
+      _country,
+      _locality,
+      _administrativeArea,
+      _publicLocation,
+      _exactLocation,
+    ];
+    final input = _acknowledged.input;
+    setState(() {
+      for (final entry in controllers.indexed) {
+        entry.$2.text = _acknowledged.text[entry.$1];
+      }
+      _startsAt = input.startsAt;
+      _endsAt = input.endsAt;
+      _visibility = input.exactLocationVisibility;
+      _countOrganizersTowardCapacity = input.countOrganizersTowardCapacity;
+      _skills
+        ..clear()
+        ..addAll(input.skillImportanceById);
+      _coverChange = const CoverChange.unchanged();
+      _coverRevision = _acknowledged.coverRevision;
+      _acknowledgedCoverRevision = _coverRevision;
+      // Discard remounts the cover picker even when its saved revision is unchanged.
+      _coverResetEpoch++;
+      _validationIssues = const [];
+    });
+  }
+
+  Future<bool> _save({required bool publish, bool navigate = true}) async {
+    if (_saving ||
+        ref.read(proposalEditorSessionProvider(widget.sessionId)).isBusy) {
+      return false;
+    }
     final publishedEdit =
         widget.proposal?.lifecycle == ProposalLifecycle.published;
     final validateCompleteContent = publish || publishedEdit;
     setState(() => _validatingPublish = validateCompleteContent);
     final valid = _formKey.currentState?.validate() ?? false;
-    final input = _input();
+    final captured = _snapshot();
+    final input = captured.input;
+    final capturedCover = _coverChange;
     final issues = _validationIssueLabels(
       input,
       publish: validateCompleteContent,
@@ -241,13 +429,13 @@ class _ProposalFormState extends ConsumerState<_ProposalForm> {
           );
         }
       }
-      return;
+      return false;
     }
     if (_validationIssues.isNotEmpty) {
       setState(() => _validationIssues = const []);
     }
     final identity = ref.read(authSessionProvider).identity;
-    if (identity?.id != widget.identityId) return;
+    if (identity?.id != widget.identityId) return false;
     if (publish &&
         !await requireProfilePhotoForTrustAction(
           context: context,
@@ -255,43 +443,71 @@ class _ProposalFormState extends ConsumerState<_ProposalForm> {
           expectedProfileId: widget.identityId,
           reason: ProfilePhotoTrustReason.publishPersonalActivity,
         )) {
-      return;
+      return false;
     }
-    if (!mounted) return;
-    final controller = ref.read(proposalEditorProvider.notifier);
+    if (!mounted) return false;
+    setState(() => _saving = true);
+    final controller = ref.read(
+      proposalEditorSessionProvider(widget.sessionId).notifier,
+    );
     final id = publish
         ? await controller.publish(
             widget.identityId,
             input,
-            coverChange: _coverChange,
+            coverChange: capturedCover,
           )
         : publishedEdit
         ? await controller.saveChanges(
             widget.identityId,
             input,
-            coverChange: _coverChange,
+            coverChange: capturedCover,
           )
         : await controller.saveDraft(
             widget.identityId,
             input,
-            coverChange: _coverChange,
+            coverChange: capturedCover,
           );
+    if (!mounted ||
+        ref.read(authSessionProvider).identity?.id != widget.identityId) {
+      return false;
+    }
+    setState(() => _saving = false);
+    if (id == null &&
+        ref
+                .read(proposalEditorSessionProvider(widget.sessionId))
+                .coverPartialSave !=
+            null) {
+      _partialAcknowledged = ProposalDraftSnapshot(
+        text: captured.text,
+        input: captured.input,
+        coverRevision: _acknowledged.coverRevision,
+      );
+    }
     if (id == null &&
         mounted &&
         publish &&
-        ref.read(proposalEditorProvider).failure ==
+        ref.read(proposalEditorSessionProvider(widget.sessionId)).failure ==
             ProposalFailureKind.profilePhotoRequired) {
       await showProfilePhotoTrustGate(
         context: context,
         reason: ProfilePhotoTrustReason.publishPersonalActivity,
       );
-      return;
+      return false;
     }
     if (id != null && mounted) {
+      setState(() {
+        _acknowledged = captured;
+        if (_coverRevision == captured.coverRevision) {
+          _coverChange = const CoverChange.unchanged();
+          _acknowledgedCoverRevision = _coverRevision;
+        }
+      });
       ref.invalidate(ownProposalsProvider);
       ref.invalidate(publicProposalsProvider);
-      context.go('/proposals/mine');
+      if (navigate) context.go('/proposals/mine');
+      return true;
     }
+    return false;
   }
 
   Future<void> _confirmCancel() async {
@@ -315,7 +531,7 @@ class _ProposalFormState extends ConsumerState<_ProposalForm> {
     );
     if (confirmed != true || !mounted) return;
     final cancelled = await ref
-        .read(proposalEditorProvider.notifier)
+        .read(proposalEditorSessionProvider(widget.sessionId).notifier)
         .cancel(widget.identityId);
     if (!cancelled && mounted) {
       ScaffoldMessenger.of(context)
@@ -414,8 +630,8 @@ class _ProposalFormState extends ConsumerState<_ProposalForm> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final state = ref.watch(proposalEditorProvider);
-    final busy = state.isBusy;
+    final state = ref.watch(proposalEditorSessionProvider(widget.sessionId));
+    final busy = state.isBusy || _saving;
     final proposal = widget.proposal;
     final now = ref.read(proposalClockProvider)();
     final contentEditable = proposal == null || proposal.isEditableAt(now);
@@ -456,11 +672,9 @@ class _ProposalFormState extends ConsumerState<_ProposalForm> {
             ),
           Expanded(
             child: ListView(
-              // The bounded editor keeps validated fields mounted while an
-              // error summary scrolls between them after submission.
-              scrollCacheExtent: const ScrollCacheExtent.pixels(1200),
               padding: const EdgeInsets.all(AppSpacing.large),
-              children: [
+              // Retain built fields and pending covers when they scroll offscreen.
+              children: <Widget>[
                 if (readOnlyMessage != null) ...[
                   Card(
                     key: const Key('proposal-editor-read-only'),
@@ -491,11 +705,17 @@ class _ProposalFormState extends ConsumerState<_ProposalForm> {
                   minimumLength: 2,
                 ),
                 CoverEditorSection(
+                  key: ValueKey(
+                    '${widget.sessionId}:$_acknowledgedCoverRevision:$_coverResetEpoch',
+                  ),
                   ownerProfileId: widget.identityId,
                   title: widget.proposal?.title ?? l10n.proposalCreateTitle,
                   canonicalObjectPath: widget.proposal?.coverObjectPath,
                   enabled: !busy,
-                  onChanged: (change) => _coverChange = change,
+                  onChanged: (change) => setState(() {
+                    _coverChange = change;
+                    _coverRevision++;
+                  }),
                 ),
                 const SizedBox(height: AppSpacing.large),
                 _field(
@@ -826,7 +1046,7 @@ class _ProposalFormState extends ConsumerState<_ProposalForm> {
                       ),
                   ],
                 ),
-              ],
+              ].map((child) => _RetainedDraftField(child: child)).toList(),
             ),
           ),
         ],
@@ -851,7 +1071,7 @@ class _ProposalFormState extends ConsumerState<_ProposalForm> {
       key: fieldKey ?? Key('proposal-field-${label.hashCode}'),
       controller: controller,
       enabled:
-          !ref.watch(proposalEditorProvider).isBusy &&
+          !ref.watch(proposalEditorSessionProvider(widget.sessionId)).isBusy &&
           (widget.proposal == null ||
               widget.proposal!.isEditableAt(ref.read(proposalClockProvider)())),
       maxLength: maxLength,
@@ -1045,6 +1265,26 @@ class _ProposalFormState extends ConsumerState<_ProposalForm> {
       return l10n.projectRegistrationCapacityBelowCurrent(capacityUsed);
     }
     return null;
+  }
+}
+
+class _RetainedDraftField extends StatefulWidget {
+  const _RetainedDraftField({required this.child});
+  final Widget child;
+
+  @override
+  State<_RetainedDraftField> createState() => _RetainedDraftFieldState();
+}
+
+class _RetainedDraftFieldState extends State<_RetainedDraftField>
+    with AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true;
+
+  @override
+  Widget build(BuildContext context) {
+    super.build(context);
+    return widget.child;
   }
 }
 

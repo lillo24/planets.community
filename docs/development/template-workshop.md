@@ -529,7 +529,9 @@ Selected base: `b778445550e49c08395e67c8852d649ead333821` (#129); draft target
 private provenance, retries and removal concurrency. Predecessor integration
 and later main/#128 integration remain pending: read then-current canonical
 invite admission/retry/capacity/membership-origin rules and verify no inherited
-source invitations. DRAFT01/TW04/SIM01/SIM02/TW05 and native-device QA are deferred.
+source invitations. DRAFT01 is implemented on this exact draft-review base; see the
+[draft departure contract](proposal-draft-departure.md). TW04/SIM01/SIM02/TW05
+and native-device QA remain deferred.
 No merge/shared migration/reset/deployment occurred. The supplied TW03 prompt
 is archived byte-for-byte in `history-implementations`.
 

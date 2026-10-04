@@ -660,12 +660,13 @@ void main() {
   );
 
   testWidgets(
-    'profile and proposal edits survive switching and retapping tabs',
+    'Profile retains local edits while Proposal tab departure persists one draft',
     (tester) async {
       final auth = FakeAuthGateway(
         snapshot: const AuthSnapshot(identity: AuthIdentity(id: 'user-1')),
       );
-      final app = await _pump(tester, auth: auth);
+      final proposals = FakeProposalGateway();
+      final app = await _pump(tester, auth: auth, proposals: proposals);
       final router = app.read(appRouterProvider);
       router.go('/profile/edit');
       await tester.pumpAndSettle();
@@ -681,6 +682,9 @@ void main() {
         'Unsaved activity',
       );
       await _tap(tester, 'nav-profile');
+      expect(proposals.calls.where((call) => call == 'create'), hasLength(1));
+      expect(proposals.ownItems.single.title, 'Unsaved activity');
+      expect(find.text('Draft saved'), findsOneWidget);
       await _tap(tester, 'nav-profile');
       auth.emit(const AuthSnapshot(identity: AuthIdentity(id: 'user-1')));
       await tester.pumpAndSettle();
@@ -700,6 +704,42 @@ void main() {
       );
     },
   );
+
+  testWidgets('dirty Home reset and rapid tab taps retain one bound draft', (
+    tester,
+  ) async {
+    final pending = Completer<void>();
+    final proposals = FakeProposalGateway()..mutationDelay = pending.future;
+    final app = await _pump(tester, proposals: proposals);
+    app.read(appRouterProvider).go('/proposals/create');
+    await tester.pumpAndSettle();
+    await tester.enterText(
+      find.byKey(const Key('proposal-title')),
+      'Home departure',
+    );
+    await tester.tap(find.byKey(const Key('nav-home')));
+    await tester.pump();
+    await tester.tap(find.byKey(const Key('nav-profile')));
+    await tester.pump();
+    pending.complete();
+    await tester.pumpAndSettle();
+    expect(
+      tester.widget<NavigationBar>(find.byType(NavigationBar)).selectedIndex,
+      AppBranch.home.index,
+    );
+    expect(proposals.calls.where((c) => c == 'create'), hasLength(1));
+    expect(find.text('Draft saved'), findsOneWidget);
+    await _tap(tester, 'nav-browse');
+    expect(_text(tester, 'proposal-title'), 'Home departure');
+    proposals.mutationDelay = null;
+    await tester.enterText(
+      find.byKey(const Key('proposal-title')),
+      'Same bound draft',
+    );
+    await _tap(tester, 'nav-home');
+    expect(proposals.calls.where((c) => c == 'create'), hasLength(1));
+    expect(proposals.calls, contains('update:new-draft'));
+  });
 
   testWidgets('public Profile keeps protected edit intent through Auth', (
     tester,

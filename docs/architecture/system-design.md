@@ -955,3 +955,11 @@ The foundation does not include:
 - sophisticated gamification before canonical participation history exists.
 
 These can be reconsidered through explicit architecture/product decisions when evidence supports them.
+
+DRAFT01 implements unpublished one-time Proposal save-before-navigation on the
+selected TW03 draft base. Identity-bound mobile sessions acknowledge immutable
+raw revisions; a narrow private canonical first-creation receipt prevents duplicate
+drafts after lost responses. Published editing remains deliberate, and TW03
+provenance/needs remain independent of removed sources. The
+[draft departure contract](../development/proposal-draft-departure.md) defines
+invalid/partial outcomes, retained tabs and forced-auth limitations.

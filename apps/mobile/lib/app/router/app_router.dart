@@ -58,6 +58,7 @@ import '../../features/settings/presentation/settings_screen.dart';
 import '../../l10n/generated/app_localizations.dart';
 import '../foundation_screen.dart';
 import 'app_navigation_shell.dart';
+import 'draft_departure_coordinator.dart';
 
 typedef AuthSessionReader = AuthSessionState Function();
 typedef PendingEmailOtpReader = PendingEmailOtp? Function();
@@ -66,12 +67,18 @@ GoRouter createAppRouter({
   String initialLocation = '/',
   AuthSessionReader? readAuthSession,
   PendingEmailOtpReader? readPendingEmailOtp,
+  DraftDepartureCoordinator? draftDeparture,
 }) {
-  final configuration = _routingConfig(readAuthSession, readPendingEmailOtp);
+  final configuration = _routingConfig(
+    readAuthSession,
+    readPendingEmailOtp,
+    draftDeparture,
+  );
   return GoRouter(
     initialLocation: initialLocation,
     routes: configuration.routes,
     redirect: configuration.redirect,
+    onEnter: configuration.onEnter,
     errorBuilder: (context, state) => const _UnknownRouteScreen(),
   );
 }
@@ -79,12 +86,14 @@ GoRouter createAppRouter({
 RoutingConfig _routingConfig(
   AuthSessionReader? readAuthSession,
   PendingEmailOtpReader? readPendingEmailOtp,
+  DraftDepartureCoordinator? draftDeparture,
 ) {
   final sessionReader =
       readAuthSession ?? () => const AuthSessionState.signedOut();
   final pendingReader = readPendingEmailOtp ?? () => null;
 
   return RoutingConfig(
+    onEnter: draftDeparture?.onEnter,
     redirect: (context, state) {
       final session = sessionReader();
       final pending = pendingReader();
@@ -412,7 +421,13 @@ RoutingConfig _routingConfig(
                   ),
                   GoRoute(
                     path: 'create',
-                    builder: (context, state) => const ProposalEditorScreen(),
+                    onExit: draftDeparture?.onExit,
+                    // Explicit Flutter Material pages retain native transitions
+                    // with go_router 18's separate material_ui app detection.
+                    pageBuilder: (context, state) => MaterialPage<void>(
+                      key: state.pageKey,
+                      child: const ProposalEditorScreen(),
+                    ),
                   ),
                   GoRoute(
                     path: ':id',
@@ -422,8 +437,12 @@ RoutingConfig _routingConfig(
                     routes: [
                       GoRoute(
                         path: 'edit',
-                        builder: (context, state) => ProposalEditorScreen(
-                          proposalId: state.pathParameters['id'],
+                        onExit: draftDeparture?.onExit,
+                        pageBuilder: (context, state) => MaterialPage<void>(
+                          key: state.pageKey,
+                          child: ProposalEditorScreen(
+                            proposalId: state.pathParameters['id'],
+                          ),
                         ),
                       ),
                       GoRoute(
@@ -636,6 +655,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
   RoutingConfig configuration() => _routingConfig(
     () => ref.read(authSessionProvider),
     () => ref.read(pendingEmailOtpProvider),
+    ref.read(draftDepartureProvider),
   );
   final routes = ValueNotifier(configuration());
   final router = GoRouter.routingConfig(
@@ -644,7 +664,11 @@ final appRouterProvider = Provider<GoRouter>((ref) {
     errorBuilder: (context, state) => const _UnknownRouteScreen(),
   );
   ref.listen(authSessionProvider, (previous, next) {
-    if (previous?.identity?.id != next.identity?.id) {
+    if (previous?.identity?.id != next.identity?.id &&
+        router.routerDelegate.currentConfiguration.isNotEmpty) {
+      // go_router 18's onEnter parsing yields even for Allow. Before its first
+      // match there is no retained private stack, and reparsing an empty URI
+      // during auth restoration is invalid. Dynamic readers handle that parse.
       // New shell/branch keys discard all retained forms and private stacks.
       // Reparse the current URL instead of losing an in-flight OTP returnTo.
       routes.value = configuration();
