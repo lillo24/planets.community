@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Button } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button";
 import { EmptyState } from "@/components/states/empty-state";
 import { ModerationCaseCard } from "@/features/moderation/moderation-components";
 import {
@@ -67,14 +67,16 @@ export default async function AdminPage({
             ["completed", "Completed"],
           ] as const
         ).map(([value, label]) => (
-          <Button
+          <Link
             key={label}
-            variant={state === value ? "default" : "outline"}
-            render={<Link href={queueUrl({ state: value })} />}
-            nativeButton={false}
+            className={buttonVariants({
+              variant: state === value ? "default" : "outline",
+            })}
+            href={queueUrl({ state: value })}
+            aria-current={state === value ? "page" : undefined}
           >
             {label}
-          </Button>
+          </Link>
         ))}
       </nav>
       {result.page.cases.length === 0 ? (
@@ -93,14 +95,15 @@ export default async function AdminPage({
         </section>
       )}
       {nextHref ? (
-        <Button
-          variant="outline"
-          className="self-start"
-          render={<Link href={nextHref} />}
-          nativeButton={false}
+        <Link
+          className={buttonVariants({
+            variant: "outline",
+            className: "self-start",
+          })}
+          href={nextHref}
         >
           More cases
-        </Button>
+        </Link>
       ) : null}
     </main>
   );

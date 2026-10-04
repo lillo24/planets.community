@@ -313,6 +313,7 @@ describe("explicit consequence confirmation", () => {
       await waitFor(() =>
         expect(screen.getByRole("alert")).toBeInTheDocument(),
       );
+      expect(screen.getByRole("alert")).toHaveFocus();
       expect(screen.getByRole("link", { name: "Reload case" })).toHaveAttribute(
         "href",
         `/admin/cases/${detail.caseId}`,
@@ -363,6 +364,7 @@ describe("explicit consequence confirmation", () => {
     );
     expect(screen.getByRole("status")).toHaveTextContent("Consequence applied");
     expect(screen.queryByRole("textbox")).not.toBeInTheDocument();
+    expect(screen.getByRole("status")).toHaveFocus();
   });
 });
 

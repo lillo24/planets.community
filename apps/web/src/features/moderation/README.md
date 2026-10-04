@@ -41,7 +41,8 @@ independent and never selects/applies a consequence or changes case state.
   explicitly use UTC; historical text remains unmodified plain text.
 - `moderation-consequence-controls.tsx` is the narrow Client Component: explicit
   inline confirmation, blank reason/note fields, pending state, bounded failures,
-  and keyboard focus return on Cancel. It receives compatible choices only, not
+  keyboard focus return on Cancel, and focus on the explicit outcome after a
+  submit (including when RSC refresh removes the form). It receives compatible choices only, not
   report/evidence/note bodies or a browser-supplied staff identity.
 - `moderation-server.ts` reads history alongside independent evidence RPCs after
   current staff authorization. Failed/malformed history is never an empty result.
@@ -78,6 +79,8 @@ revoked again. There is no optimistic status update or idempotency retry. Unknow
 transport/malformed responses are explicitly unconfirmed; reload before retrying.
 Buttons/fields disable while saving. Stale, role and conflict errors revalidate
 server state and expose a bounded Reload case link, never SQL diagnostics.
+The queue filters and pagination are styled native links, not action buttons;
+the current review-state link is marked with `aria-current="page"`.
 
 Effect summaries preserve backend semantics: restrictions/suspension withdraw
 pending outbound requests but preserve accepted history; content hides retain

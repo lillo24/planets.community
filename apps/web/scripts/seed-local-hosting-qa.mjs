@@ -5,6 +5,7 @@ import postgres from "postgres";
 import { signInLocalOtpUser } from "../../../scripts/lib/local-authenticated-user.mjs";
 import { createConsequenceFixture } from "../../../scripts/lib/moderation-consequence-fixtures.mjs";
 import { readHostingBackend } from "./local-hosting-backend.mjs";
+import { privateFixtureMarkers } from "./hosting-private-fixture.mjs";
 
 assert.deepEqual(
   process.argv.slice(2),
@@ -87,6 +88,24 @@ try {
       Object.entries(users).map(([role, user]) => [role, user.id]),
     ),
   );
+  // A real Storage object plus canonical metadata, not a fabricated cover row.
+  const coverPath = `${users.owner.id}/resources/${fixture.listingId}/${randomUUID()}.webp`;
+  const coverUpload = await users.owner.client.storage
+    .from("cover-images")
+    .upload(
+      coverPath,
+      Buffer.from(
+        "UklGRhwAAABXRUJQVlA4IBAAAACwAQCdASoBAAEAAUAmJQBOgCHAAAD+8AAA",
+        "base64",
+      ),
+      { contentType: "image/webp" },
+    );
+  assert.ok(!coverUpload.error, "Synthetic Resource cover upload failed.");
+  await rpc(users.owner, "set_own_resource_listing_cover", {
+    p_expected_owner_profile_id: users.owner.id,
+    p_listing_id: fixture.listingId,
+    p_object_path: coverPath,
+  });
   const cases = {};
   cases.profile = await report(
     users.unrelated,
@@ -131,7 +150,7 @@ try {
     await rpc(users.moderator, "add_moderation_case_note", {
       p_expected_staff_profile_id: users.moderator.id,
       p_case_id: cases.profile,
-      p_body: `Synthetic private note ${index + 1}: ${"Local review context, no real personal data. ".repeat(24)}`,
+      p_body: `${privateFixtureMarkers.notes[index]} ${"Local review context, no real personal data. ".repeat(24)}`,
     });
   }
 
@@ -167,7 +186,7 @@ try {
     p_request_id: witness.request_id,
     p_client_submission_id: randomUUID(),
     p_choice: "unsure",
-    p_explanation: "Synthetic private witness statement for hosting QA.",
+    p_explanation: privateFixtureMarkers.witness,
   });
   await review(cases.corroboration);
 
@@ -210,7 +229,7 @@ try {
     p_expected_recipient_profile_id: users.requester.id,
     p_request_id: counterstatement.request_id,
     p_client_submission_id: randomUUID(),
-    p_statement: "Synthetic private counterparty statement for hosting QA.",
+    p_statement: privateFixtureMarkers.counterstatement,
   });
   await review(cases.counterstatement);
 
@@ -219,6 +238,7 @@ try {
       synthetic: true,
       projectId: fixture.projectId,
       listingId: fixture.listingId,
+      coverPath,
       cases,
       profiles: Object.fromEntries(
         Object.entries(users).map(([role, user]) => [role, user.id]),
