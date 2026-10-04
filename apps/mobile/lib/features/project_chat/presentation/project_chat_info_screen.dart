@@ -8,6 +8,7 @@ import '../../../core/widgets/async_data_presentation.dart';
 import '../../../core/widgets/error_state.dart';
 import '../../../core/widgets/loading_state.dart';
 import '../../../l10n/generated/app_localizations.dart';
+import '../../project_participant_invites/presentation/participant_link_management_screen.dart';
 import '../../auth/application/auth_session_controller.dart';
 import '../../participation/application/membership_commitment_controller.dart';
 import '../../participation/application/participation_controllers.dart';
@@ -187,6 +188,13 @@ class _ProjectChatInfoScreenState extends ConsumerState<ProjectChatInfoScreen> {
                       summary: summary,
                       onLoad: () => _loadMeeting(summary),
                     ),
+                    if (summary.isManager) ...[
+                      const SizedBox(height: AppSpacing.large),
+                      ParticipantLinkManagementButton(
+                        projectId: summary.projectId,
+                        kind: summary.projectKind,
+                      ),
+                    ],
                   ],
                 ],
               ),

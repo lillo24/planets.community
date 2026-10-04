@@ -9,6 +9,7 @@ import '../../../l10n/generated/app_localizations.dart';
 import '../../auth/application/auth_session_controller.dart';
 import '../../participation/domain/participation_models.dart';
 import '../../participation/presentation/participation_routes.dart';
+import '../../project_participant_invites/presentation/participant_link_management_screen.dart';
 import '../../project_workspace/presentation/project_workspace_widgets.dart';
 import '../application/project_delegate_controllers.dart';
 import '../domain/project_delegate_models.dart';
@@ -88,6 +89,10 @@ class _ProjectManageScreenState extends ConsumerState<ProjectManageScreen> {
             : ListView(
                 padding: const EdgeInsets.all(AppSpacing.medium),
                 children: [
+                  ParticipantLinkManagementButton(
+                    projectId: widget.projectId,
+                    kind: widget.projectKind,
+                  ),
                   Card(
                     child: ListTile(
                       key: const Key('project-manage-participation'),

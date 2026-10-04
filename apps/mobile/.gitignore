@@ -40,6 +40,9 @@ app.*.symbols
 # Obfuscation related
 app.*.map.json
 
+# Disposable PI02 HTTP smoke sessions contain synthetic local access tokens.
+config/pi02-smoke.json
+
 # Android Studio will place build artifacts here
 /android/app/debug
 /android/app/profile

@@ -11,6 +11,7 @@ import '../../blocking/presentation/blocking_action.dart';
 import '../../project_delegates/application/project_delegate_controllers.dart';
 import '../../project_delegates/domain/project_delegate_models.dart';
 import '../../project_delegates/presentation/project_delegate_routes.dart';
+import '../../project_participant_invites/presentation/ordinary_share_intent.dart';
 import '../application/participation_controllers.dart';
 import '../domain/participation_models.dart';
 import '../domain/project_capacity.dart';
@@ -28,6 +29,7 @@ class ProjectParticipationSection extends ConsumerWidget {
     required this.publicExactMeetingText,
     required this.exactLocationRestricted,
     required this.capacity,
+    this.actionsOnly = false,
     super.key,
   });
 
@@ -39,6 +41,25 @@ class ProjectParticipationSection extends ConsumerWidget {
   final String? publicExactMeetingText;
   final bool exactLocationRestricted;
   final ProjectCapacitySnapshot capacity;
+  final bool actionsOnly;
+
+  // Mount at the detail page boundary, outside its lazily built scroll content.
+  Widget withRequestIntent(Widget child) => OrdinaryShareIntent(
+    enabled: true,
+    detailDestination: ParticipationRoutes.detail(projectKind, projectId),
+    request: ProjectParticipationSection(
+      projectId: projectId,
+      projectKind: projectKind,
+      creatorProfileId: creatorProfileId,
+      acceptsNewRequests: acceptsNewRequests,
+      publicLocationLines: publicLocationLines,
+      publicExactMeetingText: publicExactMeetingText,
+      exactLocationRestricted: exactLocationRestricted,
+      capacity: capacity,
+      actionsOnly: true,
+    ),
+    child: child,
+  );
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -137,7 +158,24 @@ class ProjectParticipationSection extends ConsumerWidget {
         blockingState.expectedProfileId == profileId &&
         blockingState.exactStatus(creatorProfileId) != null;
 
-    return Column(
+    if (actionsOnly) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: _actions(
+          context,
+          ref,
+          session,
+          profileId,
+          hasCurrentRole ? roleState : null,
+          role,
+          ownState,
+          participation,
+          commandForProject,
+          organizerBlocked,
+        ),
+      );
+    }
+    final content = Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Text(
@@ -239,6 +277,7 @@ class ProjectParticipationSection extends ConsumerWidget {
         ),
       ],
     );
+    return content;
   }
 
   List<Widget> _actions(

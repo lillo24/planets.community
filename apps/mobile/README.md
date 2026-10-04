@@ -26,6 +26,10 @@ This folder owns the Flutter application and its generated Android/iOS platform 
 - `lib/features/project_resource_needs/` owns public open Project needs plus protected Proposal/Tavolo creator add/edit/close history over only the canonical 04C3A RPCs. See its [feature boundary](lib/features/project_resource_needs/README.md).
 - `lib/features/participation/` owns shared Proposal/Tavolo join requests, canonical contribution-option selection, own participation state, creator review, membership actions, and participant-authorized meeting information over the canonical 04C3B1/05A RPCs. See its [feature boundary](lib/features/participation/README.md).
 - `lib/features/project_delegates/` owns current-user manager-role reads, the shared Manage project hub, owner invitation/delegate management, native Copy/Share, invite preview/acceptance, and delegated-Project discovery. See its [feature boundary](lib/features/project_delegates/README.md).
+- `lib/features/project_participant_invites/` owns public ordinary sharing,
+  reusable manager participant links, explicit photo-free admission and
+  account-scoped receipt recovery over PI01. See its
+  [feature boundary](lib/features/project_participant_invites/README.md).
 - `lib/features/messages/` owns the Home-branch Messages inbox, exact structured participation-request detail/history, independent historical contribution-label reads, and role-specific canonical actions over the 04C3B1/07A reads and existing 05A transitions. See its [feature boundary](lib/features/messages/README.md).
 - `lib/features/project_chat/` owns Project-chat summaries, history, send, private Realtime reconciliation, current/former UI, and group information over the canonical 07B2B boundary. See its [feature boundary](lib/features/project_chat/README.md).
 - `lib/l10n/` owns the English template ARB and the complete Italian catalog. English remains the fallback for unsupported locales. `flutter gen-l10n` regenerates ignored Dart output under `lib/l10n/generated/`.
@@ -38,7 +42,7 @@ local language preference with a System-default fallback, initialize the
 canonical Supabase client, configure Sentry only when a DSN exists, then launch
 one Riverpod `ProviderScope`. The app starts the Auth session observer explicitly
 after launch. `/`, `/settings`, `/settings/language`, Proposal browse/detail,
-Tavoli browse/detail, Scambio-Dona browse/detail, and `/invite/project/:token`
+Tavoli browse/detail, Scambio-Dona browse/detail, `/invite/project/:token`, and `/join/project/:token`
 remain public; `/auth`
 requests a code; `/auth/verify` verifies it; `/profile` and `/profile/edit` own
 authenticated profile display/setup. Proposal/Tavolo/Scambio-Dona create/edit/my,

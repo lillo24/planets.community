@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_tokens.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../application/auth_command_controller.dart';
+import '../application/return_destination.dart';
 import 'auth_failure_message.dart';
 
 class RequestCodeScreen extends ConsumerStatefulWidget {
@@ -28,7 +29,7 @@ class _RequestCodeScreenState extends ConsumerState<RequestCodeScreen> {
 
   void _closeAuth() {
     ref.read(authCommandProvider.notifier).cancelFlow();
-    context.go('/');
+    context.go(authCancelDestination(widget.returnTo));
   }
 
   Future<void> _requestCode() async {
