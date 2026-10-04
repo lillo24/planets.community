@@ -53,6 +53,20 @@ Save resumes the exact sanitized Join route, while the visible Back action and
 system Back return to the corresponding public Project detail. Other Profile
 edit flows conservatively cancel to Profile.
 
+PI02 adds public `/join/project/:token` outside the shell, distinct from the
+authority `/invite/project/:token` route. Participant Auth/profile returns and
+cancellation preserve the exact sanitized preview destination; returning never
+admits automatically. Ordinary sharing uses public `/proposals|tavoli/:id` with
+exactly one `intent=join` marker. Its page-level dismissible sheet uses existing
+participation actions and retains detail when closed; continuing enters the
+existing protected `/join` composer. Ordinary-request Auth cancellation returns
+to public detail. The single protected `participant-links` child of either public
+Project family is shared by People, Manage and current manager group info.
+Overlay guards observe GoRouter's active delegate state, including pushed routes,
+rather than the browser URL provider, which can retain an underlying page URL.
+See the [participant feature](../features/project_participant_invites/README.md)
+for process-memory UUID recovery and deliberately separate re-entry.
+
 ## Retention and identity
 
 Tab retention is in-memory only, scoped to the same authenticated identity. On

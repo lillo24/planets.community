@@ -19,6 +19,7 @@ import '../../moderation/presentation/moderation_routes.dart';
 import '../../participation/application/participation_controllers.dart';
 import '../../participation/domain/participation_models.dart';
 import '../../participation/presentation/project_participation_section.dart';
+import '../../project_participant_invites/presentation/project_share_action.dart';
 import '../../profile_photo/application/project_creator_photo_controller.dart';
 import '../../profile_photo/presentation/visible_profile_photo_avatar.dart';
 import '../../project_resource_needs/presentation/project_resource_need_routes.dart';
@@ -241,9 +242,14 @@ class _PublicProposalsScreenState extends ConsumerState<PublicProposalsScreen> {
 }
 
 class ProposalDetailScreen extends ConsumerStatefulWidget {
-  const ProposalDetailScreen({required this.proposalId, super.key});
+  const ProposalDetailScreen({
+    required this.proposalId,
+    this.joinIntent = false,
+    super.key,
+  });
 
   final String proposalId;
+  final bool joinIntent;
 
   @override
   ConsumerState<ProposalDetailScreen> createState() =>
@@ -301,8 +307,31 @@ class _ProposalDetailScreenState extends ConsumerState<ProposalDetailScreen> {
       ),
       AsyncDataPresentation.content => const SizedBox.shrink(),
     };
-    return Scaffold(
-      appBar: AppBar(title: Text(l10n.proposalDetailTitle)),
+    final participation = detail == null
+        ? null
+        : ProjectParticipationSection(
+            projectId: detail.summary.id,
+            projectKind: ProjectKind.oneTime,
+            creatorProfileId: detail.creatorProfileId,
+            acceptsNewRequests:
+                detail.summary.status == ProposalStatus.upcoming ||
+                detail.summary.status == ProposalStatus.happening,
+            publicLocationLines: [detail.summary.publicLocationLabel],
+            publicExactMeetingText: detail.exactMeetingText,
+            exactLocationRestricted: detail.exactLocationRestricted,
+            capacity: detail.summary.capacity,
+          );
+    final screen = Scaffold(
+      appBar: AppBar(
+        title: Text(l10n.proposalDetailTitle),
+        actions: [
+          if (detail != null)
+            ProjectShareAction(
+              projectId: detail.summary.id,
+              kind: ProjectKind.oneTime,
+            ),
+        ],
+      ),
       body: SafeArea(
         child: detail == null
             ? emptyDetail
@@ -373,18 +402,7 @@ class _ProposalDetailScreenState extends ConsumerState<ProposalDetailScreen> {
                     ),
                   ],
                   const SizedBox(height: AppSpacing.large),
-                  ProjectParticipationSection(
-                    projectId: detail.summary.id,
-                    projectKind: ProjectKind.oneTime,
-                    creatorProfileId: detail.creatorProfileId,
-                    acceptsNewRequests:
-                        detail.summary.status == ProposalStatus.upcoming ||
-                        detail.summary.status == ProposalStatus.happening,
-                    publicLocationLines: [detail.summary.publicLocationLabel],
-                    publicExactMeetingText: detail.exactMeetingText,
-                    exactLocationRestricted: detail.exactLocationRestricted,
-                    capacity: detail.summary.capacity,
-                  ),
+                  participation!,
                   const SizedBox(height: AppSpacing.large),
                   ListTile(
                     key: const Key('proposal-organizer-identity'),
@@ -444,5 +462,8 @@ class _ProposalDetailScreenState extends ConsumerState<ProposalDetailScreen> {
               ),
       ),
     );
+    return widget.joinIntent && participation != null
+        ? participation.withRequestIntent(screen)
+        : screen;
   }
 }

@@ -30,6 +30,9 @@ import '../../features/project_delegates/presentation/project_coorganizers_scree
 import '../../features/project_delegates/presentation/project_delegate_routes.dart';
 import '../../features/project_delegates/presentation/project_invite_screen.dart';
 import '../../features/project_delegates/presentation/project_manage_screen.dart';
+import '../../features/project_participant_invites/presentation/participant_invitation_routes.dart';
+import '../../features/project_participant_invites/presentation/participant_invite_screen.dart';
+import '../../features/project_participant_invites/presentation/participant_link_management_screen.dart';
 import '../../features/project_request_chat/presentation/project_request_chat_screen.dart';
 import '../../features/project_resource_needs/presentation/project_resource_need_routes.dart';
 import '../../features/project_resource_needs/presentation/project_resource_matches_screen.dart';
@@ -111,7 +114,8 @@ RoutingConfig _routingConfig(
       final isProjectResourceNeedManagementRoute =
           ProjectResourceNeedRoutes.isManagementPath(path);
       final isProjectDelegateManagementRoute =
-          ProjectDelegateRoutes.isManagementPath(path);
+          ProjectDelegateRoutes.isManagementPath(path) ||
+          ParticipantInvitationRoutes.isManagementPath(path);
       final isProjectWorkspaceManagementRoute =
           ProjectWorkspaceRoutes.isManagementPath(path);
       final isMessagesRoute = isMessagesPath(path);
@@ -187,6 +191,7 @@ RoutingConfig _routingConfig(
             ProjectDelegateRoutes.isManagementPath(returnTo) ||
             ProjectWorkspaceRoutes.isManagementPath(returnTo) ||
             ProjectDelegateRoutes.isInvitePath(returnTo) ||
+            ParticipantInvitationRoutes.isInvitePath(returnTo) ||
             isMessagesPath(returnTo) ||
             isNotificationsPath(returnTo) ||
             _isResourceManagementPath(returnTo)) {
@@ -232,6 +237,13 @@ RoutingConfig _routingConfig(
       GoRoute(
         path: '/invite/project/:token',
         builder: (context, state) => ProjectInviteScreen(
+          key: state.pageKey,
+          token: state.pathParameters['token']!,
+        ),
+      ),
+      GoRoute(
+        path: '/join/project/:token',
+        builder: (context, state) => ParticipantInviteScreen(
           key: state.pageKey,
           token: state.pathParameters['token']!,
         ),
@@ -418,8 +430,19 @@ RoutingConfig _routingConfig(
                     path: ':id',
                     builder: (context, state) => ProposalDetailScreen(
                       proposalId: state.pathParameters['id']!,
+                      joinIntent: ParticipantInvitationRoutes.hasOrdinaryIntent(
+                        state.uri,
+                      ),
                     ),
                     routes: [
+                      GoRoute(
+                        path: 'participant-links',
+                        builder: (context, state) =>
+                            ParticipantLinkManagementScreen(
+                              projectId: state.pathParameters['id']!,
+                              kind: ProjectKind.oneTime,
+                            ),
+                      ),
                       GoRoute(
                         path: 'edit',
                         builder: (context, state) => ProposalEditorScreen(
@@ -503,8 +526,20 @@ RoutingConfig _routingConfig(
                     builder: (context, state) =>
                         PublicRecurringActivityDetailScreen(
                           activityId: state.pathParameters['id']!,
+                          joinIntent:
+                              ParticipantInvitationRoutes.hasOrdinaryIntent(
+                                state.uri,
+                              ),
                         ),
                     routes: [
+                      GoRoute(
+                        path: 'participant-links',
+                        builder: (context, state) =>
+                            ParticipantLinkManagementScreen(
+                              projectId: state.pathParameters['id']!,
+                              kind: ProjectKind.recurring,
+                            ),
+                      ),
                       GoRoute(
                         path: 'edit',
                         builder: (context, state) =>

@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:sentry_flutter/sentry_flutter.dart';
 
 import '../config/app_config.dart';
+import 'invitation_telemetry_filter.dart';
 
 typedef AppRunner = FutureOr<void> Function();
 typedef SentryRunner = Future<void> Function({
@@ -55,5 +56,13 @@ Future<void> _runWithSentry({
       ..captureFailedRequests = false
       ..captureNativeFailedRequests = false
       ..recordHttpBreadcrumbs = false;
+    // Capability URLs can also appear inside encoded auth return destinations.
+    options.beforeBreadcrumb = (breadcrumb, hint) =>
+        containsInvitationSecret(breadcrumb?.toJson()) ? null : breadcrumb;
+    options.beforeSend = (event, hint) =>
+        containsInvitationSecret(event.toJson()) ||
+            containsInvitationSecret(event.throwable?.toString())
+        ? null
+        : event;
   }, appRunner: appRunner);
 }

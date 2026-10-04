@@ -1,3 +1,5 @@
+import '../../project_participant_invites/presentation/participant_invitation_routes.dart';
+
 const defaultReturnDestination = '/';
 
 String sanitizeReturnDestination(String? candidate) {
@@ -21,6 +23,7 @@ String sanitizeReturnDestination(String? candidate) {
 
 String profileEditCancelDestination(String? continueTo) {
   final sanitized = sanitizeReturnDestination(continueTo);
+  if (ParticipantInvitationRoutes.isInvitePath(sanitized)) return sanitized;
   final segments = Uri.parse(sanitized).pathSegments;
   final isJoinIntent =
       segments.length == 3 &&
@@ -30,4 +33,18 @@ String profileEditCancelDestination(String? continueTo) {
     return '/${Uri(pathSegments: segments.take(2)).path}';
   }
   return '/profile';
+}
+
+// Project sharing cancellation retains the public activity or participant preview.
+// Other Auth entry points keep their existing Home cancellation destination.
+String authCancelDestination(String? continueTo) {
+  final sanitized = sanitizeReturnDestination(continueTo);
+  if (ParticipantInvitationRoutes.isInvitePath(sanitized)) return sanitized;
+  final segments = Uri.parse(sanitized).pathSegments;
+  if (segments.length == 3 &&
+      (segments.first == 'proposals' || segments.first == 'tavoli') &&
+      segments.last == 'join') {
+    return '/${Uri(pathSegments: segments.take(2)).path}';
+  }
+  return '/';
 }

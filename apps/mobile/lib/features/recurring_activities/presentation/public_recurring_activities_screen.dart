@@ -18,6 +18,7 @@ import '../../moderation/presentation/moderation_routes.dart';
 import '../../participation/application/participation_controllers.dart';
 import '../../participation/domain/participation_models.dart';
 import '../../participation/presentation/project_participation_section.dart';
+import '../../project_participant_invites/presentation/project_share_action.dart';
 import '../../profile_photo/application/project_creator_photo_controller.dart';
 import '../../profile_photo/presentation/visible_profile_photo_avatar.dart';
 import '../../project_resource_needs/presentation/project_resource_need_routes.dart';
@@ -200,9 +201,11 @@ class _PublicRecurringActivitiesScreenState
 class PublicRecurringActivityDetailScreen extends ConsumerStatefulWidget {
   const PublicRecurringActivityDetailScreen({
     required this.activityId,
+    this.joinIntent = false,
     super.key,
   });
   final String activityId;
+  final bool joinIntent;
 
   @override
   ConsumerState<PublicRecurringActivityDetailScreen> createState() =>
@@ -267,8 +270,31 @@ class _PublicRecurringActivityDetailScreenState
     }
     final resolvedDetail = detail!;
     final locale = Localizations.localeOf(context).toLanguageTag();
-    return Scaffold(
-      appBar: AppBar(title: Text(l10n.tavoliDetailTitle)),
+    final participation = ProjectParticipationSection(
+      projectId: resolvedDetail.id,
+      projectKind: ProjectKind.recurring,
+      creatorProfileId: resolvedDetail.creatorProfileId,
+      acceptsNewRequests:
+          resolvedDetail.lifecycle == RecurringActivityLifecycle.published,
+      publicLocationLines: [
+        '${resolvedDetail.publicLocationLabel} · ${resolvedDetail.locality}',
+        ?resolvedDetail.administrativeArea,
+      ],
+      publicExactMeetingText: resolvedDetail.exactMeetingText,
+      exactLocationRestricted: resolvedDetail.exactLocationRestricted,
+      capacity: resolvedDetail.capacity,
+    );
+    final screen = Scaffold(
+      appBar: AppBar(
+        title: Text(l10n.tavoliDetailTitle),
+        actions: [
+          if (resolvedDetail.lifecycle != RecurringActivityLifecycle.draft)
+            ProjectShareAction(
+              projectId: resolvedDetail.id,
+              kind: ProjectKind.recurring,
+            ),
+        ],
+      ),
       body: SafeArea(
         child: ListView(
           padding: const EdgeInsets.all(AppSpacing.large),
@@ -352,21 +378,7 @@ class _PublicRecurringActivityDetailScreenState
               ),
             ],
             const SizedBox(height: AppSpacing.large),
-            ProjectParticipationSection(
-              projectId: resolvedDetail.id,
-              projectKind: ProjectKind.recurring,
-              creatorProfileId: resolvedDetail.creatorProfileId,
-              acceptsNewRequests:
-                  resolvedDetail.lifecycle ==
-                  RecurringActivityLifecycle.published,
-              publicLocationLines: [
-                '${resolvedDetail.publicLocationLabel} · ${resolvedDetail.locality}',
-                ?resolvedDetail.administrativeArea,
-              ],
-              publicExactMeetingText: resolvedDetail.exactMeetingText,
-              exactLocationRestricted: resolvedDetail.exactLocationRestricted,
-              capacity: resolvedDetail.capacity,
-            ),
+            participation,
             const SizedBox(height: AppSpacing.large),
             ListTile(
               key: const Key('tavoli-organizer-identity'),
@@ -424,5 +436,6 @@ class _PublicRecurringActivityDetailScreenState
         ),
       ),
     );
+    return widget.joinIntent ? participation.withRequestIntent(screen) : screen;
   }
 }

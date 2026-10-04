@@ -12,6 +12,7 @@ import '../../profile_photo/domain/visible_profile_photo_models.dart';
 import '../../profile_photo/presentation/visible_profile_photo_avatar.dart';
 import '../../project_delegates/data/project_delegate_gateway.dart';
 import '../../project_delegates/domain/project_delegate_models.dart';
+import '../../project_participant_invites/presentation/participant_link_management_screen.dart';
 import '../application/project_people_controller.dart';
 import '../data/project_people_gateway.dart';
 import '../data/participation_gateway.dart';
@@ -90,7 +91,16 @@ class _CreatorParticipationScreenState
       );
     }
     return Scaffold(
-      appBar: AppBar(title: Text(l10n.peopleTitle)),
+      appBar: AppBar(
+        title: Text(l10n.peopleTitle),
+        actions: [
+          if (state.role.isManager)
+            ParticipantLinkManagementButton(
+              projectId: widget.projectId,
+              kind: widget.projectKind,
+            ),
+        ],
+      ),
       body: RefreshIndicator(
         onRefresh: _load,
         child: CustomScrollView(

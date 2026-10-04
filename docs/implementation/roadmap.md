@@ -838,7 +838,8 @@ no web capacity feature is added here.
 #### PI01 — Sharing and direct participant invitation domain
 
 **Status:** Implemented; final validation/integration is
-recorded in the PR/task report. Based on merged #124 at `92d93ca`.
+recorded in the PR/task report. Merged in PR #128 at `996f019`, based on
+merged #124 at `92d93ca`.
 
 Owns one current reusable Project-level special participant link, narrow current
 manager create/retrieve/revoke/regenerate APIs, private generation/secret history,
@@ -850,10 +851,23 @@ Pending requests become reasoned requester withdrawals without losing offers/cha
 Ordinary sharing/approval and authority invitations retain their separate contracts.
 See [`pi01-participant-invitations.md`](pi01-participant-invitations.md).
 
-PI02 owns mobile share/acceptance UI, PI03 browser onboarding/handoff, PI04 native
-associations/public-host routing readiness, and PI05 integration/demo scenarios.
-These remain deferred until their prerequisites are merged. No production operation
-is authorized by code completion.
+#### PI02 — Mobile Project sharing and participant invitations
+
+**Status:** Implemented over merged PI01; exact validation and merge state are
+recorded in the PR/task report. See
+[`pi02-mobile-participant-invitations.md`](pi02-mobile-participant-invitations.md).
+
+Owns default ordinary public HTTPS sharing with a dismissible request intent,
+current-manager reusable special sharing and generation/history management,
+public participant preview, exact OTP/profile returns, and explicit photo-free
+admission. Account/token/action-bound process-memory recovery survives navigation
+and unavailable previews; fresh re-entry is a separate explicit action after a
+canonical participation read. Meeting/People/Messages/chat refresh and token
+telemetry filtering preserve backend authorization.
+
+PI03 browser onboarding/handoff, PI04 native associations/public-host routing
+readiness, and PI05 integration/demo scenarios remain deferred until their
+prerequisites are merged. No production operation is authorized by code completion.
 
 #### 05C — One-Time Project Actual Contribution Attribution
 
