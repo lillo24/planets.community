@@ -23,6 +23,24 @@ afterEach(cleanup);
 
 describe("ProfileForm", () => {
   beforeEach(() => vi.clearAllMocks());
+  it("completes non-photo profile and returns to the explicit participant invitation", async () => {
+    const profileGateway = gateway();
+    const returnTo = `/join/project/${"a".repeat(43)}`;
+    render(
+      <ProfileForm
+        initialData={fixture()}
+        gateway={profileGateway}
+        returnTo={returnTo}
+      />,
+    );
+    fireEvent.change(screen.getByRole("textbox", { name: "Display name" }), {
+      target: { value: "Photo-free participant" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Save profile" }));
+    await waitFor(() => expect(routerReplace).toHaveBeenCalledWith(returnTo));
+    expect(profileGateway.updateOwnProfile).toHaveBeenCalledOnce();
+    expect(screen.queryByLabelText(/photo/i)).not.toBeInTheDocument();
+  });
 
   it("renders incomplete setup with categorized controlled skills", () => {
     render(<ProfileForm initialData={fixture()} gateway={gateway()} />);

@@ -14,13 +14,25 @@ import {
   type PublicRecurringActivityDetail,
 } from "@/features/recurring-activities/recurring-activity-models";
 import { getPublicRecurringActivity } from "@/features/recurring-activities/recurring-activity-server";
+import { OrdinaryProjectHandoff } from "@/features/project-app-handoff/ordinary-project-handoff";
+import { readHandoffConfig } from "@/features/project-app-handoff/handoff-config";
+import { hasOrdinaryIntent } from "@/features/project-app-handoff/project-links";
 
 export const dynamic = "force-dynamic";
 
 type Params = Promise<{ id: string }>;
 
-export default async function TavoloDetailPage({ params }: { params: Params }) {
-  const { id } = await params;
+export default async function TavoloDetailPage({
+  params,
+  searchParams,
+}: {
+  params: Params;
+  searchParams?: Promise<{ intent?: string | string[] }>;
+}) {
+  const [{ id }, query] = await Promise.all([
+    params,
+    searchParams ?? Promise.resolve<{ intent?: string | string[] }>({}),
+  ]);
   if (!isRecurringActivityUuid(id)) notFound();
 
   const referenceTime = new Date().toISOString();
@@ -126,6 +138,12 @@ export default async function TavoloDetailPage({ params }: { params: Params }) {
           </p>
         ) : null}
       </article>
+      <OrdinaryProjectHandoff
+        project={{ id, kind: "recurring" }}
+        config={readHandoffConfig()}
+        intent={hasOrdinaryIntent(query.intent)}
+        joinable={activity.lifecycle_state === "published"}
+      />
     </main>
   );
 }

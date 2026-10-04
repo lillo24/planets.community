@@ -1,11 +1,22 @@
 # Project delegate invite links
 
-This document describes authority invitations. PI01 adds a distinct backend-only
-participant capability, proposed at `/join/project/<token>`; its reusable-token,
+This document primarily describes authority invitations. PI01 defines the distinct
+participant capability at `/join/project/<token>`; its reusable-token,
 no-photo direct admission and action/re-entry contracts are documented in
 [`pi01-participant-invitations.md`](../implementation/pi01-participant-invitations.md).
-The participant route/UI/associations are deferred; `/invite/project/` stays
-authority-only. Ordinary public Project sharing still uses normal request approval.
+PI02 implements mobile sharing/onboarding; [PI03](../implementation/pi03-browser-participant-invitations.md)
+implements browser preview, explicit Join, receipt recovery, and token-free
+`/joined/proposals/<id>` / `/joined/tavoli/<id>` confirmation/app handoff.
+`/invite/project/` stays authority-only. Ordinary public sharing uses
+`https://planets.community/proposals/<id>?intent=join` or the corresponding
+`/tavoli/<id>?intent=join` and retains normal app request approval. Browser
+confirmation opens those public paths without intent/token. Optional validated
+Android/iOS downloads use `NEXT_PUBLIC_PLANETS_ANDROID_DOWNLOAD_URL` and
+`NEXT_PUBLIC_PLANETS_IOS_DOWNLOAD_URL`; absent settings advertise no release.
+PI04 must extend verified association and public-host routing to `/join/project/*`,
+`/proposals/*`, and `/tavoli/*` while preserving `/invite/project/*`. Current
+claims below remain authority-only; internal Flutter/browser routes do not prove
+OS delivery. Host access-log/privacy verification is also PI04.
 
 PLANETS uses one canonical bearer URL for Project Co-organizer and Co-creator
 invitations:

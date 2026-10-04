@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 
+import { participantCancelDestination } from "./return-destination";
+
 import { sanitizeReturnDestination } from "@/features/auth/return-destination";
 
 describe("sanitizeReturnDestination", () => {
@@ -29,5 +31,36 @@ describe("sanitizeReturnDestination", () => {
     expect(sanitizeReturnDestination("")).toBe("/");
     expect(sanitizeReturnDestination("proposals")).toBe("/");
     expect(sanitizeReturnDestination("/%E0%A4%A")).toBe("/");
+  });
+  it("rejects multiply encoded external/auth-loop paths while preserving exact special and authority destinations", () => {
+    for (const path of [
+      "/%252Fattacker.example/path",
+      "/%255Cattacker.example",
+      "/%2561uth",
+      "/%252561uth/verify",
+    ])
+      expect(sanitizeReturnDestination(path)).toBe("/");
+    const special = `/join/project/${"a".repeat(43)}`;
+    expect(sanitizeReturnDestination(special)).toBe(special);
+    expect(participantCancelDestination(special)).toBe(special);
+    expect(
+      participantCancelDestination(
+        `/profile?returnTo=${encodeURIComponent(special)}`,
+      ),
+    ).toBe(special);
+    expect(
+      participantCancelDestination(
+        `/profile?returnTo=${encodeURIComponent(special)}&returnTo=/`,
+      ),
+    ).toBe("/");
+    expect(
+      participantCancelDestination(`/invite/project/${"a".repeat(43)}`),
+    ).toBe("/");
+    expect(participantCancelDestination("/profile")).toBe("/");
+    expect(
+      participantCancelDestination(
+        "/joined/tavoli/00000000-0000-4000-8000-000000000001",
+      ),
+    ).toBe("/tavoli/00000000-0000-4000-8000-000000000001");
   });
 });

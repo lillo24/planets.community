@@ -2,7 +2,8 @@ import Link from "next/link";
 
 import type { CurrentAuthState } from "@/features/auth/auth-models";
 import { AuthSessionActions } from "@/features/auth/auth-session-actions";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
+import { participantCancelDestination } from "./return-destination";
 import {
   Card,
   CardContent,
@@ -42,6 +43,12 @@ export function AuthStatusCard({ state, returnTo = "/" }: AuthStatusCardProps) {
   const profileSetupRequired = state.status === "profileSetupRequired";
   const incompleteProfile =
     profileSetupRequired && state.reason === "incomplete";
+  const cancelTo = participantCancelDestination(returnTo);
+  // A signed-out profile visit wraps its destination in /profile?returnTo=… .
+  // Participant setup must return directly to explicit Join after one save.
+  const profileReturnTo = cancelTo.startsWith("/join/project/")
+    ? cancelTo
+    : returnTo;
 
   return (
     <Card className="w-full max-w-md" aria-labelledby="auth-status-title">
@@ -75,9 +82,9 @@ export function AuthStatusCard({ state, returnTo = "/" }: AuthStatusCardProps) {
               render={
                 <Link
                   href={
-                    returnTo === "/"
+                    profileReturnTo === "/"
                       ? "/profile"
-                      : `/profile?returnTo=${encodeURIComponent(returnTo)}`
+                      : `/profile?returnTo=${encodeURIComponent(profileReturnTo)}`
                   }
                 />
               }
@@ -90,6 +97,15 @@ export function AuthStatusCard({ state, returnTo = "/" }: AuthStatusCardProps) {
             profileSetupRequired={profileSetupRequired && !incompleteProfile}
             returnTo={returnTo}
           />
+          {profileSetupRequired && cancelTo !== "/" ? (
+            <Link
+              className={buttonVariants({ variant: "outline" })}
+              href={cancelTo}
+              prefetch={false}
+            >
+              Back to invitation
+            </Link>
+          ) : null}
         </div>
       </CardFooter>
     </Card>

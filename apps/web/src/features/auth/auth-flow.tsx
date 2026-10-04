@@ -21,6 +21,7 @@ import {
   createWebAuthGateway,
   type WebAuthGateway,
 } from "@/features/auth/auth-gateway";
+import { participantCancelDestination } from "./return-destination";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import {
@@ -71,6 +72,7 @@ export function AuthFlow({
   const router = useRouter();
   const [authGateway] = useState(() => gateway ?? createWebAuthGateway());
   const authNavigation = navigation ?? router;
+  const cancelTo = participantCancelDestination(returnTo);
   const lock = useRef(false);
   const [phase, setPhase] = useState<FlowPhase>("request");
   const [email, setEmail] = useState("");
@@ -234,7 +236,7 @@ export function AuthFlow({
       await authGateway.signOut();
       setPendingEmail(null);
       setToken("");
-      authNavigation.replace("/");
+      authNavigation.replace(cancelTo);
       authNavigation.refresh();
     } catch (error) {
       setFailure(mapAuthFailure(error));
@@ -286,6 +288,11 @@ export function AuthFlow({
             {busy === "signOut" ? <Spinner data-icon="inline-start" /> : null}
             Sign out
           </Button>
+          {cancelTo !== "/" ? (
+            <Link href={cancelTo} prefetch={false}>
+              Cancel sign-in
+            </Link>
+          ) : null}
         </CardFooter>
       </Card>
     );
@@ -365,6 +372,11 @@ export function AuthFlow({
           >
             Use another email
           </Button>
+          {cancelTo !== "/" ? (
+            <Link href={cancelTo} prefetch={false}>
+              Cancel sign-in
+            </Link>
+          ) : null}
         </CardFooter>
       </Card>
     );
@@ -407,8 +419,12 @@ export function AuthFlow({
         </form>
       </CardContent>
       <CardFooter className="flex justify-between gap-2">
-        <Button variant="ghost" render={<Link href="/" />} nativeButton={false}>
-          Back to home
+        <Button
+          variant="ghost"
+          render={<Link href={cancelTo} prefetch={false} />}
+          nativeButton={false}
+        >
+          {cancelTo === "/" ? "Back to home" : "Back to invitation"}
         </Button>
         <Button type="submit" form="request-code-form" disabled={busy !== null}>
           {busy === "request" ? <Spinner data-icon="inline-start" /> : null}

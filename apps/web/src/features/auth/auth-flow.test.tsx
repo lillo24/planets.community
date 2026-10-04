@@ -200,6 +200,23 @@ describe("AuthFlow", () => {
 });
 
 describe("AuthSessionActions", () => {
+  it("returns participant cancellation to the preview and preserves authority/Home defaults", async () => {
+    const gateway = createGateway();
+    const navigation = createNavigation();
+    const returnTo = `/join/project/${"a".repeat(43)}`;
+    render(
+      <AuthSessionActions
+        profileSetupRequired
+        returnTo={returnTo}
+        gateway={gateway}
+        navigation={navigation}
+      />,
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Sign out" }));
+    await waitFor(() =>
+      expect(navigation.replace).toHaveBeenCalledWith(returnTo),
+    );
+  });
   it("retries restored profile setup without another OTP", async () => {
     const gateway = createGateway();
     const navigation = createNavigation();
@@ -260,6 +277,39 @@ function createGateway(): WebAuthGateway {
     signOut: vi.fn().mockResolvedValue(undefined),
   };
 }
+
+describe("participant OTP continuity", () => {
+  it.each(["new-user@planets.invalid", "existing-user@planets.invalid"])(
+    "returns %s to explicit invitation after OTP/anchor only",
+    async (email) => {
+      const gateway = createGateway();
+      const navigation = createNavigation();
+      const returnTo = `/join/project/${"a".repeat(43)}`;
+      render(
+        <AuthFlow
+          returnTo={returnTo}
+          gateway={gateway}
+          navigation={navigation}
+        />,
+      );
+      expect(
+        screen.getByRole("button", { name: "Back to invitation" }),
+      ).toHaveAttribute("href", returnTo);
+      await requestCode(email);
+      expect(
+        screen.getByRole("link", { name: "Cancel sign-in" }),
+      ).toHaveAttribute("href", returnTo);
+      fireEvent.change(screen.getByLabelText("Six-digit code"), {
+        target: { value: "123456" },
+      });
+      fireEvent.click(screen.getByRole("button", { name: "Verify code" }));
+      await waitFor(() =>
+        expect(navigation.replace).toHaveBeenCalledWith(returnTo),
+      );
+      expect(gateway.ensureCurrentProfileAnchor).toHaveBeenCalledOnce();
+    },
+  );
+});
 
 function createNavigation(): AuthNavigation {
   return { replace: vi.fn(), refresh: vi.fn() };

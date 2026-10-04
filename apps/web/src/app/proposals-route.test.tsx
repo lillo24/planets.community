@@ -10,7 +10,10 @@ const notFound = vi.fn(() => {
   throw new Error("NEXT_NOT_FOUND");
 });
 
-vi.mock("next/navigation", () => ({ notFound }));
+vi.mock("next/navigation", () => ({
+  notFound,
+  useRouter: () => ({ replace: vi.fn() }),
+}));
 vi.mock("@/features/proposals/proposal-server", () => ({
   publicProposalPageSize: 12,
   listPublicProposals,
