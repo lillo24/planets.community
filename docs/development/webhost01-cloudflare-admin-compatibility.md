@@ -6,6 +6,14 @@ candidate.** Real Worker auth/moderation flows worked, but Sentry module-startup
 errors and experimental Node Proxy support prevent a clean compatibility pass.
 Free-tier suitability is unverified, not established by low staff traffic.
 
+**Dated follow-up:** [DEPSEC-01](depsec01-dependency-security-and-admin-qa.md)
+records later dependency remediation, stronger actual-marker privacy assertions
+and conventional-Node admin QA. This remains the October 3/4 Worker snapshot;
+its dependency counts and missing browser checks are historical, not current
+follow-up results. Worker measurements, Sentry startup and Proxy blockers are
+not reclassified by that work. PR #130's late cleanup comment records the
+subsequent successful advisor check and backed-up stop of its named local stack.
+
 ## Revision and scope
 
 - Branch: `codex/webhost01-cloudflare-admin-compatibility`.
