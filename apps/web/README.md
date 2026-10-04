@@ -26,6 +26,7 @@ This folder owns the dynamic Next.js public-discovery application, ordinary web 
 - `src/proxy.ts` refreshes and propagates Supabase session cookies before rendering. It does not authorize routes or redirect users.
 - `components.json` records the shadcn Base UI/neutral/RSC configuration.
 - `vitest.config.mts` and colocated `*.test.ts(x)` files own the unit/component test harness.
+- `scripts/` owns guarded local hosting-assessment probes and synthetic QA fixtures; see its navigation map.
 
 Pages and layouts are Server Components by default. Add `"use client"` only at an interaction or browser-API boundary. Do not import the browser Supabase factory into server modules or the server factory into client modules.
 
@@ -40,6 +41,22 @@ npm run tavoli:web:verify:local
 ```
 
 The local config command requires the local Supabase stack and writes the ignored `apps/web/.env.local` file without printing its client key. The integration command additionally requires a production build created with that configuration. See the repository [getting-started guide](../../docs/development/getting-started.md#web-configuration) for the exact environment contract.
+
+## Hosting assessment (not deployment configuration)
+
+[WEBHOST-01](../../docs/development/webhost01-cloudflare-admin-compatibility.md)
+records Next.js 16.3.8/OpenNext 1.20.8 local Worker checks. Authenticated flows
+worked, but the Node-runtime Proxy remains experimentally supported and Sentry
+10.73.0 throws module-startup Wasm compilation errors with monitoring both off
+and on. No Cloudflare adapter/configuration is adopted. Conventional Node
+hosting remains the least disruptive fallback pending a reviewed hosting
+decision. A build/dry-run or passing probe does not certify Free-tier CPU,
+CDN isolation, live account quotas or a deployment.
+
+The 16.3.4 to 16.3.8 Next/eslint-config-next patch meets the tested adapter's
+security support floor and fixes the inherited critical ImageResponse advisory;
+it is not a major framework/runtime migration or complete dependency security
+clearance. See the assessment for unresolved transitive advisories.
 
 ## Authentication boundary
 
