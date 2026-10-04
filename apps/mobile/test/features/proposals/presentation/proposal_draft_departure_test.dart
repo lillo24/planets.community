@@ -598,8 +598,8 @@ void main() {
       const AuthIdentity(id: 'user-1'),
       hasProfileAnchor: true,
     );
-      await tester.pump();
-      await tester.pump();
+    await tester.pump();
+    await tester.pump();
     expect(find.byKey(const Key('proposal-title')), findsNothing);
     auth.markProfileReady(const AuthIdentity(id: 'user-1'));
     await tester.pumpAndSettle();
