@@ -1,9 +1,9 @@
-# Source-linked Template Workshop (TW01/TW02)
+# Source-linked Template Workshop (TW01/TW02/TW03)
 
-TW01 and TW02 are implemented on isolated draft branches, pending founder
+TW01, TW02 and TW03 are implemented on isolated draft branches, pending founder
 review. This document owns the source-linked domain, reporting/removal contract
-and future TW03 copying seam. TW02 extends the shared mobile report form and
-existing admin case detail; Workshop screens, copying and production data remain
+and atomic independent-draft creation contract. TW02 extends the shared mobile report form and
+existing admin case detail; Workshop screens and production data remain
 deferred. The supplied plan is retained unchanged in
 [`history-implementations`](../../history-implementations/PLANETS_TW01_source_linked_template_domain.md).
 
@@ -50,7 +50,7 @@ the TW01 base; later approved global restrictions must compose with this gate.
 ## Canonical visibility
 
 `private.is_proposal_template_publicly_usable(template_id, reference_time)` is
-shared by catalog, exact detail and blueprints. Future application must use it
+shared by catalog, exact detail and blueprints. Application uses it
 again within its own transaction. It requires:
 
 - a once-published source whose shared kind is `one_time` and lifecycle is
@@ -98,7 +98,7 @@ change and restoration. It is not chronological or an authorization token.
 Operational logistics, occupancy, organizer-counting policy and live profile
 name privacy do not participate.
 
-TW03 must revalidate eligibility and the requested token and copy the complete
+TW03 revalidates eligibility and the requested token and copies the complete
 allow-list in one database transaction/snapshot using existing source-domain
 locks when a source mutation can overlap. Copied-content provenance is the
 template/source identities and token. Attribution remains a separate live
@@ -328,8 +328,11 @@ The supplied TW02 prompt is archived verbatim in
 `112_template_moderation_structure.test.sql` checks the private schema/grants.
 `node scripts/verify-local-template-moderation.mjs` exercises real authenticated
 API reports/removals, concurrent deliveries/actions, stale content, protected
-review, media boundaries and injected audit rollback. It also runs through
-`npm run moderation:verify:local` in existing hosted Database CI.
+review, media boundaries and injected audit rollback. It runs through
+`npm run moderation:verify:local`. The 93 reported TW02 API checks ran locally
+at #129. Historical hosted run #37188652377 did **not** invoke that command;
+its passing Database job did not cover those API checks. TW03 adds explicit
+Database steps for this command and the new application verifier.
 
 The upgrade rehearsal uses a distinct local stack:
 
@@ -382,3 +385,161 @@ configuration change. Hosted Database/Web/Mobile validation is required at the
 final PR head; the unchanged static Site is outside this change's scope.
 No merge, shared environment migration/reset, deployment or sanctions-stack
 import occurred.
+
+## TW03 atomic template application
+
+`create_proposal_draft_from_template` is authenticated-only. Inputs:
+`p_expected_creator_profile_id uuid`, `p_template_id uuid`, `p_content_version
+text` (exact preview), `p_client_request_id uuid`, `p_prefill_capacity boolean
+DEFAULT true`. Explicit false leaves capacity unset; null is invalid. No content,
+source Creator/need IDs, destination ID or publication input is accepted.
+
+Its one-row receipt contains `request_id`, `proposal_id`, `template_id`,
+`source_proposal_id`, `accepted_content_version`, `prefill_capacity`,
+`capacity_recommendation` (accepted source value even when opted out),
+`duration_seconds`, `accepted_at`, and `outcome` (`created` or `recovered`).
+Duration is finite positive numeric seconds, including fractions (`7200.001`),
+never generated dates. The corrected TW02 staff parser preserves that domain;
+capacity and blueprint counts remain integer-validated.
+
+| Destination state                                                     | Behavior                                                                                        |
+| --------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
+| Title/summary/description                                             | Exact canonical published text through ordinary validation, never Bozza                         |
+| Controlled skills                                                     | IDs and Required/Useful importance; live catalog semantics                                      |
+| Needs                                                                 | All open blueprints, including >50, with fresh IDs and ordinary creation events; closed omitted |
+| Capacity                                                              | Accepted recommendation by default; false or legacy null leaves it unset                        |
+| Organizer counting/headcount                                          | Off; normal Creator social headcount one, registration-slot usage zero                          |
+| Duration                                                              | Accepted recommendation in receipt, no schedule                                                 |
+| Dates/timezone/country/locality/admin/rough/public location           | Unset                                                                                           |
+| Exact meeting text/coordinates                                        | Unset, ordinary `participants` privacy default                                                  |
+| Cover                                                                 | No inherited row/object; preview remains source-authorized                                      |
+| People/memberships/requests/roles/offers/invitations                  | Applicant sole Creator; none inherited                                                          |
+| Chat/workspace/attendance/operational history                         | None inherited                                                                                  |
+| Listings/selections/commitments/coverage/actual contributions         | None inherited                                                                                  |
+| Publication/cancellation/templates/baselines/reports/removal evidence | Fresh unpublished draft; none copied                                                            |
+
+Ordinary `create_proposal_draft` initializes the Project anchor and validates
+text/skills. Each `create_project_resource_need` preserves validation and its
+identifier-only `project.resource_need_created` audit/outbox pair. No publication,
+participant, matching or source-member notification is sent. Any write failure
+rolls back the entire action. The private receipt records acceptance; there is
+no additional application audit duplicating it.
+
+### Private acceptance and retries
+
+`private.proposal_template_applications` is append-only, keyed by applicant plus
+request UUID, with a unique destination Proposal. It retains immutable IDs,
+token, choice, recommendations and time, never source content/names/photos,
+staff reasons or a revision archive. RLS has no policies; all API roles including
+service role lack raw privileges. Restrictive references follow existing
+retention conventions, without cascading source-to-derived deletion.
+
+The canonical expected-identity gate runs before recovery and after waits. This
+exact base has no suspension/private-access restriction beyond that gate; the
+separate moderation stack is excluded. Later integrated restrictions must compose
+before recovery. Blocking does not override this base's public source discovery
+or ordinary draft creation. First creation additionally requires a complete
+profile; exact accepted recovery does not require current completeness/photo or
+source availability.
+
+Same actor/key/template/token/choice returns the same acceptance without writes,
+including after removal/source changes/cancellation or owner edits/publication.
+Different accepted intent under the key is `22023`. Another actor using that UUID
+has a separate scope. A fresh UUID may create another draft. Ambiguous delivery
+must retry exact inputs/key; a stale preview requires refresh and deliberate
+confirmation, not guessed copied content.
+
+`get_own_proposal_template_application(p_expected_creator_profile_id,
+p_client_request_id)` returns zero-or-one receipt (same fields except outcome).
+Unknown keys are a legitimate empty result. Only the applying Creator can read
+it: no source-Creator/staff exception or public graph/count. Existing
+`get_own_proposal` and owner-need reads expose current edited content. This base
+has no client discard/delete command; restrictive receipt FKs prohibit hard
+deletion. The create RPC defensively returns `P0002` if an accepted destination
+is unavailable, never recreating it.
+
+| Error   | Meaning                                                                                             |
+| ------- | --------------------------------------------------------------------------------------------------- |
+| `42501` | Absent/wrong identity, unauthorized read, unknown/currently ineligible template                     |
+| `55000` | Incomplete profile for first creation; ordinary draft gate                                          |
+| `22023` | Missing/invalid bounded inputs, incompatible accepted key reuse, ordinary copied-content validation |
+| `PT409` | Otherwise eligible content differs from preview; refresh and confirm                                |
+| `P0002` | Accepted destination unavailable; no replacement/resurrection                                       |
+
+Photo-free draft creation is allowed. Publication retains ordinary content,
+schedule, capacity and applicant-photo gates. Own first publication creates a
+new template and that Creator's genuine saved Bozza through TW01. Retry never
+reopens or resets published content/lifecycle.
+
+### Locks and one payload
+
+Request advisory namespace `template.apply:<actor>:<request>` is distinct from
+moderation/domain locks. Exact accepted recovery precedes source eligibility.
+First use resolves source server-side, locks **source Proposal → template**,
+matching removal's **source Proposal → template → case**, and holds both through
+commit/rollback. After waiting it rechecks identity/profile and canonical
+availability with `clock_timestamp()`, then captures and hashes one complete
+reusable JSONB payload. Every destination write comes from that captured value,
+not UI pages or later partial projections.
+
+Copy-first commit leaves an independent draft, then removal closes new use.
+Removal-first commit rejects queued first creation without writes. A source
+blocker's changed content produces `PT409`; changed profile/availability is
+rechecked. Token limitations remain TW01's: descriptors, source need IDs and
+cover participate even though copied drafts retain skill IDs/fresh needs and
+omit covers; equal restored content hashes identically. It is neither revision
+chronology nor authorization; capacity choice does not alter its formula.
+
+### Files, upgrade and validation
+
+`20261004145334_template_to_draft_creation.sql` owns the table/two RPCs; no
+historical applications are backfilled. `113_template_application_structure`
+audits grants/RLS/hardening/retention. `scripts/verify-local-template-application.mjs`
+(`npm run template:apply:verify:local`) runs real OTP/API, controlled overlapping
+transactions and need/receipt/outbox failure injection. Barriers observe
+`pg_blocking_pids`; sleeps are only polling intervals. A local nontransactional
+sequence proves two needs existed before the third failed and all rolled back.
+
+Real upgrade rehearsal, only on an isolated disposable loopback stack:
+
+```text
+supabase db reset --local --version 20261003191351
+npm run moderation:verify:local
+node scripts/verify-local-template-application-upgrade.mjs --before
+supabase migration up --local
+node scripts/verify-local-template-application-upgrade.mjs --after
+npm run db:reset
+```
+
+The populated TW02 fixture includes ordinary drafts, baselines, reports and
+attributed removals. Canonical row counts/SHA-256 digests for all **72** existing
+public/private tables survived unchanged, with zero fabricated applications.
+Checkpoints stay in OS temporary storage. Standalone Node commands require
+`node_modules/.bin` on PATH; guards enforce loopback API/database/mailbox URLs
+and synthetic `.invalid` identities.
+
+TW03 adds explicit Database CI steps for `moderation:verify:local` (TW02's 93
+API assertions) and `template:apply:verify:local`. Historical #129 run
+#37188652377 did not execute the former; its 93 API results were local.
+The unchanged classifier runs Web/Mobile/Site too for workflow/root-package
+changes. Final-head hosted execution/counts belong to the TW03 PR logs.
+
+Selected base: `b778445550e49c08395e67c8852d649ead333821` (#129); draft target
+`codex/tw02-template-reporting-removal`. Founder review covers atomic copying,
+private provenance, retries and removal concurrency. Predecessor integration
+and later main/#128 integration remain pending: read then-current canonical
+invite admission/retry/capacity/membership-origin rules and verify no inherited
+source invitations. DRAFT01/TW04/SIM01/SIM02/TW05 and native-device QA are deferred.
+No merge/shared migration/reset/deployment occurred. The supplied TW03 prompt
+is archived byte-for-byte in `history-implementations`.
+
+TW03 local validation record: clean replay/lint/security advisors passed;
+pgTAP passed **110 files / 3,428 assertions**. TW01 Proposal/Workshop, TW02
+moderation (**93**), resource-needs, capacity, cover, corroboration and
+counterstatement verifiers passed. TW03's final assertion count is printed by
+its command and recorded in the PR. `check:web` passed **24 tooling + 162 web
+tests**, lint/types/build; `check:mobile` passed **1,144 tests**, localization,
+format and analysis; `check:site` passed **34 UI + 19 worker tests**, lint/types,
+build and deployment dry run. Generated types, formatting and diff checks are
+required before push. The all-in-one `check:db` wrapper and native device builds
+were not run; individual affected commands and hosted validation are the evidence.

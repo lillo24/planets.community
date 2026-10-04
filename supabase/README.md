@@ -139,3 +139,11 @@ privacy, concurrency and atomicity; the latter is included in
 legacy evidence before/after actual forward migration. The
 [Workshop contract](../docs/development/template-workshop.md) documents the
 source/template/case lock order for TW03 and the unchanged baseline/media rules.
+
+TW03's forward `20261004145334_template_to_draft_creation.sql` owns two
+hardened authenticated RPCs and append-only applicant-private acceptance receipts.
+It composes ordinary draft/need creation from one eligible locked source payload.
+Test `113` audits security; `scripts/verify-local-template-application.mjs` proves
+copy/reset, exact recovery, rollback and removal concurrency; its `...-upgrade.mjs`
+companion checks populated TW02 history through actual forward migration.
+The Workshop guide owns complete inputs/receipts/errors and local commands.

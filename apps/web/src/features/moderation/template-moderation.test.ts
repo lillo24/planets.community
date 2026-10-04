@@ -48,6 +48,35 @@ function client(
   } satisfies ModerationServerClient;
 }
 describe("template moderation contracts", () => {
+  it("preserves fractional duration without weakening integer counts", () => {
+    const row = templateReviewRow();
+    const parsed = parseTemplateReview([
+      { ...row, content: { ...row.content, duration_seconds: 7200.001 } },
+    ]);
+    expect(parsed.durationSeconds).toBe(7200.001);
+    expect(parsed.currentContentVersion).toBe(row.current_content_version);
+    for (const duration of [null, "7200", NaN, Infinity, -Infinity, 0, -1]) {
+      expect(() =>
+        parseTemplateReview([
+          { ...row, content: { ...row.content, duration_seconds: duration } },
+        ]),
+      ).toThrow();
+    }
+    expect(() =>
+      parseTemplateReview([{ ...row, resource_blueprint_count: 1.1 }]),
+    ).toThrow();
+    expect(() =>
+      parseTemplateReview([
+        {
+          ...row,
+          content: {
+            ...row.content,
+            registration_capacity_recommendation: 1.1,
+          },
+        },
+      ]),
+    ).toThrow();
+  });
   it("parses only current published context and protected effective action", () => {
     const parsed = parseTemplateReview([templateReviewRow()]);
     expect(parsed.description).toBe("<script>untrusted</script>");

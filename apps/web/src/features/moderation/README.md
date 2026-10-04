@@ -38,3 +38,6 @@ queue/detail after success. Components show the separate effective removal
 record; review-state transitions retain their existing behavior. There is no
 source hiding, restoration, account sanction or deployment control. See the
 [Workshop contract](../../../../../docs/development/template-workshop.md).
+
+Duration parsing accepts finite positive fractional numeric seconds from the
+canonical schedule difference. Capacity and blueprint counts remain safe integers.

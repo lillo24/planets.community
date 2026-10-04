@@ -4,7 +4,12 @@ The [source-linked Template Workshop guide](template-workshop.md) owns TW01's
 identity/baseline, Completed eligibility, reusable projection/version, public
 RPC grants and bounded blueprint pagination contracts. Its HTTP/concurrency
 verifier is included in `npm run proposal:verify:local`; upgrade-backfill
-rehearsal is an explicit isolated-local procedure.
+rehearsal is an explicit isolated-local procedure. TW02 adds protected template
+reporting/removal; TW03 adds authenticated atomic full-collection copying and
+applicant-private immutable receipts. `moderation:verify:local` and
+`template:apply:verify:local` now run explicitly in Database CI. Historical TW02
+API coverage was local; see the guide for the corrected record and populated
+TW03 upgrade procedure.
 
 The stack-integration candidate replays the complete cumulative schema from the
 validated `main` baseline plus the included open product stacks. Candidate-only

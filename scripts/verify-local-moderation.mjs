@@ -241,5 +241,5 @@ function safeFailure(action, error) {
   return new Error(`Failed to ${action} (code ${code}).`);
 }
 
-// The existing hosted moderation verifier also exercises TW02 authenticated enforcement.
+// The moderation verifier (hosted invocation added by TW03) also exercises TW02 authenticated enforcement.
 await verifyTemplateModeration();

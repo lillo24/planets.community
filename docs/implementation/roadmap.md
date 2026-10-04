@@ -38,7 +38,7 @@ this scoped track does not refresh the unrelated historical status text above.
 | --- | --- |
 | TW01 — Source-linked Template Workshop domain | Implemented on its isolated branch, draft and unmerged for founder review of historical public content, reusable allow-list and private Bozza contract. Automatic identity at publication, latest canonical projection, Completed-only RPC catalog/detail, opaque versions, legacy backfill without fabricated drafts, and a private TW02 removal seam. [Contract](../development/template-workshop.md) |
 | TW02 — Template reporting/removal | Implemented on its isolated draft branch stacked on exact TW01 head; typed reports including original-Creator self-report, narrow staff published review and audited template-only removal. Founder review and predecessor integration pending; no merge/deployment |
-| TW03 — Template-to-draft creation | Not started; consumes reviewed versions and atomically copies into an independent draft with safe provenance |
+| TW03 — Template-to-draft creation | Implemented on its isolated draft branch stacked on exact TW02 head; atomic full-collection independent drafts, applicant-private immutable receipts, exact retries and source/removal serialization. Founder review and later main/#128 integration pending; no merge/deployment |
 | DRAFT01 | Not started; separate draft-experience plan; no autosave/save-on-exit UI added by TW01 |
 | TW04 — Mobile Workshop | Not started; Workshop discovery/detail/application screens and publication notice remain deferred |
 | SIM01 | Not started; separate agreed successor plan, outside TW01 |

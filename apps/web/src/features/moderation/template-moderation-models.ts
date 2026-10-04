@@ -91,7 +91,7 @@ export function parseTemplateReview(data: unknown): TemplateReview {
       };
     }),
     capacity: nullable(c.registration_capacity_recommendation, integer),
-    durationSeconds: integer(c.duration_seconds),
+    durationSeconds: positiveNumber(c.duration_seconds),
     coverObjectPath: nullable(c.cover_object_path, (v) => text(v, 500)),
     resourceBlueprintCount: integer(r.resource_blueprint_count),
     removalAction: a
@@ -161,6 +161,11 @@ function boolean(value: unknown) {
 }
 function integer(value: unknown) {
   if (typeof value !== "number" || !Number.isSafeInteger(value) || value < 0)
+    throw malformed();
+  return value;
+}
+function positiveNumber(value: unknown) {
+  if (typeof value !== "number" || !Number.isFinite(value) || value <= 0)
     throw malformed();
   return value;
 }

@@ -2635,6 +2635,27 @@ export type Database = {
             }
             Returns: string
           }
+      create_proposal_draft_from_template: {
+        Args: {
+          p_client_request_id: string
+          p_content_version: string
+          p_expected_creator_profile_id: string
+          p_prefill_capacity?: boolean
+          p_template_id: string
+        }
+        Returns: {
+          accepted_at: string
+          accepted_content_version: string
+          capacity_recommendation: number
+          duration_seconds: number
+          outcome: string
+          prefill_capacity: boolean
+          proposal_id: string
+          request_id: string
+          source_proposal_id: string
+          template_id: string
+        }[]
+      }
       create_recurring_activity_draft:
         | {
             Args: {
@@ -2963,6 +2984,23 @@ export type Database = {
           summary: string
           title: string
           updated_at: string
+        }[]
+      }
+      get_own_proposal_template_application: {
+        Args: {
+          p_client_request_id: string
+          p_expected_creator_profile_id: string
+        }
+        Returns: {
+          accepted_at: string
+          accepted_content_version: string
+          capacity_recommendation: number
+          duration_seconds: number
+          prefill_capacity: boolean
+          proposal_id: string
+          request_id: string
+          source_proposal_id: string
+          template_id: string
         }[]
       }
       get_own_proposal_template_baseline: {

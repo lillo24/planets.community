@@ -7,7 +7,7 @@ import { signInLocalOtpUser } from "./lib/local-authenticated-user.mjs";
 import { ensureLocalProfilePhoto } from "./lib/local-profile-photo.mjs";
 import { readLocalSupabaseStatus } from "./lib/local-supabase-status.mjs";
 
-// Standalone and moderation:verify:local/hosted Database validation. Synthetic
+// Standalone and moderation:verify:local; hosted invocation added by TW03. Synthetic
 // local fixtures only; no remote credentials, reset, or production command.
 export async function verifyTemplateModeration() {
   const { apiUrl, publishableKey, databaseUrl } = readLocalSupabaseStatus(

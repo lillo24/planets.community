@@ -777,9 +777,11 @@ automatically anonymized.
 Catalog/detail and bounded, version-checked resource-blueprint pages share
 canonical Completed (end + 24 hours), current source visibility and private
 template-removal eligibility. No scheduled completion write is needed.
-TW02 owns reporting/removal workflows; TW03 owns atomic copying into an
-independent Project draft; TW04 owns mobile Workshop. No template participation,
-application, outcome editor, comparison UI or production backfill is implemented.
+TW02 implements reporting/removal; TW03 implements atomic copying into an
+independent ordinary private Proposal draft on its selected draft-review base.
+Applicant-private immutable receipts recover exact accepted actions without
+rewriting edited or published drafts. TW04 owns mobile Workshop. No template
+participation, outcome editor, comparison UI or production backfill is implemented.
 The consumable contracts, actor matrix, version semantics and lock ownership
 are recorded in [the Template Workshop guide](../development/template-workshop.md).
 
@@ -795,8 +797,8 @@ staff-only audited removal of Workshop availability. Source provenance remains
 separate from Project incident context. Staff see only the current published
 reusable allow-list, never private Bozza. Protected reasons/attribution and
 identity-bound receipts are retained; public reads share TW01 eligibility.
-Source Projects and independent copies remain unaffected. TW03 copying and TW04
-Workshop screens remain deferred. See the [Workshop contract](../development/template-workshop.md).
+Source Projects and independent copies remain unaffected. TW03 copying is
+implemented on its selected unmerged base; TW04 Workshop screens remain deferred. See the [Workshop contract](../development/template-workshop.md).
 
 Plan 09A1 implements the first manual-review slice. Private moderation cases
 anchor an immutable typed target and canonical subject/context; append-only
