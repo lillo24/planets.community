@@ -214,6 +214,16 @@ Flutter localization uses `apps/mobile/lib/l10n/app_en.arb` as the English templ
 
 ## Web configuration
 
+PI03 public details and verified participant confirmation also accept optional
+`NEXT_PUBLIC_PLANETS_ANDROID_DOWNLOAD_URL` and
+`NEXT_PUBLIC_PLANETS_IOS_DOWNLOAD_URL`. Supply real HTTPS downloads/listings
+without credentials or fragments at build time; leave missing listings empty.
+Missing settings show honest unavailable copy. Invalid values fail clearly.
+Only explicit local development permits HTTP on loopback hosts. App URLs keep
+PI02's fixed `https://planets.community` origin. See the
+[browser participant record](../implementation/pi03-browser-participant-invitations.md)
+for exact routes, memory-only recovery and disposable/manual checks.
+
 The Next.js application validates these public environment values before initializing Supabase or optional monitoring:
 
 | Key                                    | Purpose                                                                               |

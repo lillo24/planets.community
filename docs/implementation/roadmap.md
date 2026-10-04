@@ -865,9 +865,21 @@ and unavailable previews; fresh re-entry is a separate explicit action after a
 canonical participation read. Meeting/People/Messages/chat refresh and token
 telemetry filtering preserve backend authorization.
 
-PI03 browser onboarding/handoff, PI04 native associations/public-host routing
-readiness, and PI05 integration/demo scenarios remain deferred until their
-prerequisites are merged. No production operation is authorized by code completion.
+#### PI03 — Browser joining and app handoff
+
+**Status:** Implemented over merged PI01/PI02; exact validation and merge state
+are recorded in the PR/task report. See
+[`pi03-browser-participant-invitations.md`](pi03-browser-participant-invitations.md).
+
+Owns ordinary public intent/dismissal and app/download CTAs, minimal special
+preview, exact OTP/non-photo profile returns, explicit account/action-bound
+admission with retained recovery, canonical token-free confirmation, and
+response/telemetry privacy. No browser ordinary-request composer is added.
+
+PI04 native associations/public-host routing readiness and PI05 integration/demo
+scenarios remain deferred until their prerequisites are merged. PI04 must cover
+participant and both public detail paths while preserving authority paths.
+No production operation is authorized by code completion.
 
 #### 05C — One-Time Project Actual Contribution Attribution
 

@@ -1,4 +1,6 @@
 import type { SentryEnv } from "@/lib/config/public-env";
+import type { Breadcrumb, ErrorEvent, EventHint } from "@sentry/nextjs";
+import { containsInvitationSecret } from "./invitation-privacy";
 
 export function createSentryServerOptions(config: SentryEnv) {
   return {
@@ -7,6 +9,13 @@ export function createSentryServerOptions(config: SentryEnv) {
     environment: config.appEnv,
     sendDefaultPii: false,
     tracesSampleRate: 0,
+    beforeSend: (event: ErrorEvent, hint: EventHint) =>
+      containsInvitationSecret(event) ||
+      containsInvitationSecret(hint.originalException)
+        ? null
+        : event,
+    beforeBreadcrumb: (breadcrumb: Breadcrumb) =>
+      containsInvitationSecret(breadcrumb) ? null : breadcrumb,
   } as const;
 }
 

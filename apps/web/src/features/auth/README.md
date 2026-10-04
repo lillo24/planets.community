@@ -4,6 +4,7 @@ This folder owns ordinary-user web authentication and the minimum application-id
 
 - `auth-models.ts` defines UI-safe auth states, casing-preserving input normalization/masking, validation, and stable error categories.
 - `return-destination.ts` accepts only safe internal post-auth destinations and rejects external, protocol-relative, encoded, and auth-loop targets.
+- Participant returns add narrow cancellation to the exact preview or token-free public Project, including nested profile continuation; normal Home and authority-invite defaults stay unchanged. All `/auth` and `/profile` responses receive no-store/no-referrer/noindex headers, protecting encoded token returns.
 - `auth-gateway.ts` is the browser-only Supabase boundary for requesting/verifying numeric email OTPs, ensuring the own-ID profile anchor, and signing out.
 - `auth-flow.tsx` owns the in-memory request, verify, resend, duplicate-submit, retry, and navigation state machine for `/auth`.
 - `auth-session-actions.tsx` provides profile-anchor retry and sign-out for restored authenticated sessions.

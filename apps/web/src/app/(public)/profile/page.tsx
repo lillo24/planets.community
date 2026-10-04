@@ -4,7 +4,10 @@ import { redirect } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { ProfileForm } from "@/features/profile/profile-form";
 import { readProfilePageData } from "@/features/profile/profile-server";
-import { sanitizeReturnDestination } from "@/features/auth/return-destination";
+import {
+  participantCancelDestination,
+  sanitizeReturnDestination,
+} from "@/features/auth/return-destination";
 
 export default async function ProfilePage({
   searchParams,
@@ -32,8 +35,19 @@ export default async function ProfilePage({
   return (
     <main className="mx-auto flex min-h-screen w-full max-w-3xl flex-col gap-6 p-6 md:p-10">
       <div>
-        <Button variant="ghost" render={<Link href="/" />} nativeButton={false}>
-          Back to home
+        <Button
+          variant="ghost"
+          render={
+            <Link
+              href={participantCancelDestination(returnTo)}
+              prefetch={false}
+            />
+          }
+          nativeButton={false}
+        >
+          {participantCancelDestination(returnTo) === "/"
+            ? "Back to home"
+            : "Cancel profile setup"}
         </Button>
       </div>
       <ProfileForm initialData={result.data} returnTo={returnTo} />

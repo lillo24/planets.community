@@ -17,6 +17,7 @@ import type { AuthNavigation } from "@/features/auth/auth-flow";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
+import { participantCancelDestination } from "./return-destination";
 
 type AuthSessionActionsProps = Readonly<{
   profileSetupRequired: boolean;
@@ -68,7 +69,7 @@ export function AuthSessionActions({
     setFailure(null);
     try {
       await authGateway.signOut();
-      authNavigation.replace("/");
+      authNavigation.replace(participantCancelDestination(returnTo));
       authNavigation.refresh();
     } catch (error) {
       setFailure(mapAuthFailure(error));

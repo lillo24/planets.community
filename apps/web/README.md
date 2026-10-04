@@ -16,6 +16,9 @@ This folder owns the dynamic Next.js public-discovery application, ordinary web 
 - `src/features/recurring-activities/` owns sanitized public Tavoli payload validation, fixed-snapshot cursor pagination, server reads, cards, recurrence/lifecycle formatting, and exact-location privacy. It contains no Tavoli authoring or owner reads.
 - `src/features/moderation/` owns verified-claims staff authorization, bounded moderation RPC reads, review-only mutations, strict payload parsing, and the queue/detail components. It contains no sanctions or staff-role assignment.
 - `src/features/project-delegates/` owns the side-effect-free server invite preview and the explicit authenticated browser acceptance boundary.
+- `src/features/project-participant-invites/` owns `/join/project/[token]`, explicit expected-account/action-bound admission and retained retries, and token-free `/joined/proposals/[id]` / `/joined/tavoli/[id]` canonical confirmations.
+- `src/features/project-app-handoff/` owns public ordinary intent/dismissal and reusable token-free app/download links, with validated optional listings and visible browser fallback.
+- `test-support/` owns the explicit disposable PI03 production HTTP/gateway verifier; normal Web CI skips this integration check.
 - `src/features/deep-links/` owns fail-closed Android/iOS website association payloads; see the [Project invite link guide](../../docs/development/project-invite-links.md).
 - `src/components/activity-discovery-switcher.tsx` provides the small route-backed One-time Proposals/Tavoli selector shared by both list pages.
 - `src/lib/config/` owns the typed public environment contract and redacted diagnostics.
@@ -63,8 +66,9 @@ and named-zone times. Restricted exact text is rejected by the parser and is
 represented only by a no-text restricted state. Both routes are explicitly
 dynamic because their results depend on the request-owned time snapshot.
 
-There are no web Tavoli create, edit, owner-management, participation, or chat
-routes. `/admin` is deliberately indistinguishable from a missing route for
+There are no web Tavoli create, edit, owner-management, ordinary request, or chat
+routes. Special participant admission uses the separate narrow PI03 journey.
+`/admin` is deliberately indistinguishable from a missing route for
 signed-out and ordinary authenticated users. Active moderators/admins are
 authorized canonically on every server read/action through their cookie-backed
 Supabase session; the web server does not use a service-role bypass. The 09A1
@@ -78,3 +82,13 @@ Auth and `/profile` preserve the exact sanitized internal return path. The
 token-bearing response is no-store, no-referrer, and noindex. The dynamic
 `/.well-known` association handlers return 404 until final Android package and
 certificate values or Apple Team and bundle identifiers are configured.
+
+PI03 adds participant preview/onboarding/explicit Join with non-photo profile
+requirements, retained process-memory receipt recovery and canonical current
+confirmation. Ordinary public details only hand off to the app's existing
+approval journey. `/auth` and `/profile` preserve safe participant returns and
+support cancellation back to preview; sensitive responses and telemetry are
+protected. Optional `NEXT_PUBLIC_PLANETS_ANDROID_DOWNLOAD_URL` and
+`NEXT_PUBLIC_PLANETS_IOS_DOWNLOAD_URL` must be real validated HTTPS URLs; absent
+settings show unavailable copy. See the [PI03 record](../../docs/implementation/pi03-browser-participant-invitations.md)
+for exact route/config, validation and PI04 association requirements.

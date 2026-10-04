@@ -11,15 +11,23 @@ import {
 } from "@/features/proposals/proposal-components";
 import type { PublicProposalDetail } from "@/features/proposals/proposal-models";
 import { getPublicProposal } from "@/features/proposals/proposal-server";
+import { OrdinaryProjectHandoff } from "@/features/project-app-handoff/ordinary-project-handoff";
+import { readHandoffConfig } from "@/features/project-app-handoff/handoff-config";
+import { hasOrdinaryIntent } from "@/features/project-app-handoff/project-links";
 
 type Params = Promise<{ id: string }>;
 
 export default async function ProposalDetailPage({
   params,
+  searchParams,
 }: {
   params: Params;
+  searchParams?: Promise<{ intent?: string | string[] }>;
 }) {
-  const { id } = await params;
+  const [{ id }, query] = await Promise.all([
+    params,
+    searchParams ?? Promise.resolve<{ intent?: string | string[] }>({}),
+  ]);
   if (!isUuid(id)) notFound();
 
   const result = await loadDetail(id);
@@ -110,6 +118,15 @@ export default async function ProposalDetailPage({
           </p>
         ) : null}
       </article>
+      <OrdinaryProjectHandoff
+        project={{ id, kind: "one_time" }}
+        config={readHandoffConfig()}
+        intent={hasOrdinaryIntent(query.intent)}
+        joinable={
+          proposal.derived_status === "upcoming" ||
+          proposal.derived_status === "happening"
+        }
+      />
     </main>
   );
 }
