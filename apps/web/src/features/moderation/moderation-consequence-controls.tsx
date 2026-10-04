@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useId, useRef, useState } from "react";
+import { useActionState, useEffect, useId, useRef, useState } from "react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import {
@@ -36,6 +36,8 @@ export function ModerationConsequenceControls({
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
   const panelId = useId();
   const trigger = useRef<HTMLButtonElement | null>(null);
+  const successFeedback = useRef<HTMLParagraphElement | null>(null);
+  const errorFeedback = useRef<HTMLDivElement | null>(null);
   const [result, action, pending] = useActionState(
     async (
       previous: ConsequenceActionResult,
@@ -52,15 +54,29 @@ export function ModerationConsequenceControls({
     initialResult,
   );
   const selected = choices.find((choice) => choiceKey(choice) === selectedKey);
+  // Saving disables the focused submit control; refreshed choices can also
+  // remove its form. Restore focus to the persistent, explicit outcome instead
+  // of leaving keyboard users at the document body after either kind of result.
+  useEffect(() => {
+    if (pending) return;
+    if (result.status === "success") successFeedback.current?.focus();
+    if (result.status === "error") errorFeedback.current?.focus();
+  }, [result, pending]);
   return (
     <div className="flex flex-col gap-4">
       {result.status === "success" ? (
-        <p role="status">
+        <p role="status" tabIndex={-1} ref={successFeedback}>
           Consequence {result.kind}. Case data has been refreshed.
         </p>
       ) : null}
       {result.status === "error" ? (
-        <Alert variant="destructive" role="alert" id={`${panelId}-error`}>
+        <Alert
+          variant="destructive"
+          role="alert"
+          id={`${panelId}-error`}
+          tabIndex={-1}
+          ref={errorFeedback}
+        >
           <AlertTitle>Consequence not confirmed</AlertTitle>
           <AlertDescription>
             {consequenceErrors[result.kind]}{" "}

@@ -101,9 +101,15 @@ async function signIn(role, padded = false) {
   if (padded) {
     // Synthetic Auth metadata only, to exercise real cookie chunking/refresh.
     const updated = await client.auth.updateUser({
-      data: { webhost_qa_padding: "x".repeat(4500) },
+      data: { webhost_qa_padding: "x".repeat(2000) },
     });
     assert.ok(!updated.error, "Synthetic cookie-padding update failed.");
+    // Metadata occurs in both the user and a newly issued JWT. Rotate once so
+    // repeat runs use the bounded current fixture instead of an older padded
+    // token; 2,000 characters still exercises chunks below Node's 16 KiB
+    // default request-header limit. The later envelope expiry tests Proxy refresh.
+    const refreshed = await client.auth.refreshSession();
+    assert.ok(!refreshed.error, "Synthetic metadata refresh failed.");
   }
   return { jar, client, id: verified.data.user.id, role };
 }
@@ -130,23 +136,9 @@ async function request(actor, path, init = {}) {
     signal: AbortSignal.timeout(15_000),
   });
   const body = await response.text();
-  assert.match(
-    response.headers.get("cache-control") ?? "",
-    /no-store/,
-    "Private response lost no-store.",
-  );
   const cookies = response.headers.getSetCookie();
-  for (const cookie of cookies) {
-    // Preserve values in memory, never in stdout or an evidence file.
-    const pair = cookie.split(";", 1)[0];
-    const separator = pair.indexOf("=");
-    const name = pair.slice(0, separator);
-    const value = pair.slice(separator + 1);
-    if (value) actor.jar.set(name, value);
-    else actor.jar.delete(name);
-    assert.ok(!/;\s*Domain=/i.test(cookie), "Unexpected broad cookie domain.");
-    assert.match(cookie, /;\s*SameSite=Lax/i, "Unexpected cookie SameSite.");
-  }
+  // Emit only boundary metadata before assertions, so failed redirects/cache
+  // contracts remain diagnosable without printing private bodies or cookies.
   console.log(
     JSON.stringify({
       role: actor.role,
@@ -159,6 +151,22 @@ async function request(actor, path, init = {}) {
       cacheControl: response.headers.get("cache-control"),
     }),
   );
+  assert.match(
+    response.headers.get("cache-control") ?? "",
+    /no-store/,
+    "Private response lost no-store.",
+  );
+  for (const cookie of cookies) {
+    // Preserve values in memory, never in stdout or an evidence file.
+    const pair = cookie.split(";", 1)[0];
+    const separator = pair.indexOf("=");
+    const name = pair.slice(0, separator);
+    const value = pair.slice(separator + 1);
+    if (value) actor.jar.set(name, value);
+    else actor.jar.delete(name);
+    assert.ok(!/;\s*Domain=/i.test(cookie), "Unexpected broad cookie domain.");
+    assert.match(cookie, /;\s*SameSite=Lax/i, "Unexpected cookie SameSite.");
+  }
   return { response, body, cookies };
 }
 

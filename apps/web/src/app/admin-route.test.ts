@@ -74,6 +74,35 @@ describe("staff-only admin route", () => {
     expect(screen.getByText("Queue unavailable")).toBeDefined();
     expect(mocks.notFound).not.toHaveBeenCalled();
   });
+
+  it("exposes state filters and pagination as native navigation links", async () => {
+    mocks.readModerationQueue.mockResolvedValueOnce({
+      status: "ready",
+      staffRole: "moderator",
+      page: { cases: [], nextCursor: "next-page" },
+    });
+    const { default: AdminPage } = await import("@/app/(admin)/admin/page");
+    const view = render(
+      await AdminPage({
+        searchParams: Promise.resolve({ state: "under_review" }),
+      }),
+    );
+    expect(screen.getByRole("link", { name: "Under review" })).toHaveAttribute(
+      "aria-current",
+      "page",
+    );
+    expect(screen.getByRole("link", { name: "Received" })).toHaveAttribute(
+      "href",
+      "/admin?state=received",
+    );
+    expect(screen.getByRole("link", { name: "More cases" })).toHaveAttribute(
+      "href",
+      "/admin?state=under_review&cursor=next-page",
+    );
+    expect(screen.queryByRole("button", { name: "More cases" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Under review" })).toBeNull();
+    view.unmount();
+  });
 });
 
 describe("staff-only moderation case route", () => {

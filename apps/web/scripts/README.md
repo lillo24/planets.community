@@ -34,6 +34,12 @@ same guarded backend plus the case IDs printed by the seed. Tokens, cookies,
 raw errors and private response bodies are never logged. Failure exits nonzero
 with a redacted stage. It adds a synthetic report/case and retains its revoked
 suspension history; it is not a production benchmark or CDN isolation test.
+Padding is 2,000 synthetic characters and a fresh JWT is issued after updating
+it: metadata is present in both JWT and user data, so the former 4,500-character
+fixture could exceed Node's default 16 KiB request-header limit on repeated runs.
+Multiple cookie chunks and a later genuine Proxy refresh are still required;
+the server header limit is not increased. Boundary metadata is printed before
+assertions to distinguish an explicit HTTP failure from a privacy-contract error.
 It also temporarily deactivates/restores only the synthetic moderator's staff
 role via guarded local SQL, checking existing-session reads and an encoded
 safety-notice submit; no submitted private note may persist. This is a fixture
