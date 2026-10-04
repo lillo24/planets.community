@@ -789,6 +789,15 @@ Community statistics should be derived from canonical records through SQL views 
 
 Administrative tools are separate from normal user flows but use the same canonical backend.
 
+TW02, implemented as an unmerged draft on TW01's explicitly selected head, adds
+manual template reporting (including original-Creator self-report) and one
+staff-only audited removal of Workshop availability. Source provenance remains
+separate from Project incident context. Staff see only the current published
+reusable allow-list, never private Bozza. Protected reasons/attribution and
+identity-bound receipts are retained; public reads share TW01 eligibility.
+Source Projects and independent copies remain unaffected. TW03 copying and TW04
+Workshop screens remain deferred. See the [Workshop contract](../development/template-workshop.md).
+
 Plan 09A1 implements the first manual-review slice. Private moderation cases
 anchor an immutable typed target and canonical subject/context; append-only
 reports retain the submitting profile, bounded category/explanation and a

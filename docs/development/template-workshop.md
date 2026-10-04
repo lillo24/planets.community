@@ -1,9 +1,10 @@
-# Source-linked Template Workshop (TW01)
+# Source-linked Template Workshop (TW01/TW02)
 
-Implemented on the TW01 branch, pending founder review of the draft PR. This
-document owns the backend contract for TW02 removal/reporting and TW03 copying.
-The implementation adds no mobile/web Workshop surface, application RPC or
-production data. The supplied plan is retained unchanged in
+TW01 and TW02 are implemented on isolated draft branches, pending founder
+review. This document owns the source-linked domain, reporting/removal contract
+and future TW03 copying seam. TW02 extends the shared mobile report form and
+existing admin case detail; Workshop screens, copying and production data remain
+deferred. The supplied plan is retained unchanged in
 [`history-implementations`](../../history-implementations/PLANETS_TW01_source_linked_template_domain.md).
 
 ## Identity, publication and baseline
@@ -216,3 +217,168 @@ device QA and production checks were not run. Final-head hosted results belong
 to the PR's Validation checks, and skipped jobs must be identified as skipped.
 No shared migration/reset, deployment, production backfill, provider/account
 change or real demo-world regeneration was performed.
+
+## TW02 reporting and private review
+
+`proposal_template` is a dedicated report target, with a restrictive typed
+`moderation_cases.target_proposal_template_id` foreign key. The server derives
+immutable `template_source_proposal_id`, original Creator subject and
+`template_report_content_version` from the eligible target. Source provenance
+is separate from `project_context_id` and every Resource incident context;
+caller-supplied context is rejected. No content excerpt or revision archive is
+retained. The content token does not imply chronological history.
+
+New reports use `private.is_proposal_template_publicly_usable` after taking
+source/template locks. Published one-time + canonical Completed + source
+visibility + no removal remain the single eligibility rule. An unavailable
+or unknown target creates no case, report, evidence request, notification or
+outbox event. Reporting is manual review, with no automatic consequence.
+
+Only template reports permit the reporter to be the original Creator subject.
+Every older self-report restriction remains. Authentication, complete profile,
+category vocabulary and trimmed 10–4000-character explanation validation remain
+canonical. Reporter/submission advisory locks serialize duplicate delivery.
+Exact template retries recover the accepted receipt before checking current
+availability, including after removal. Reusing a template key for a changed
+target, kind, category, normalized explanation or context fails with `22023`.
+Older report kinds retain their existing retry contract. Own-report history
+still contains only that reporter's safe report/status projection; template
+summaries say “Proposal template” without revealing a newly hidden source.
+
+`get_moderation_case_template` requires the current moderator/admin role and
+expected authenticated identity. It intentionally remains available after
+removal or loss of source public availability. It returns template/source/
+original-Creator IDs, report/current tokens and equality comparison, availability,
+removal state, current published title/summary/description/skill descriptors,
+capacity recommendation, duration and source-authorized cover path. It neither
+reads Bozza nor grants staff any baseline, member/chat/logistics/workspace access.
+`list_moderation_case_template_blueprints` separately pages open resource needs
+(1–50, ascending need UUID) against the reviewed token; stale pages fail `PT409`.
+The admin shows 20 needs per page with explicit continuation/version handling.
+
+A cover is delivered only through ordinary source Storage authorization using
+a 60-second signed URL. Hidden or denied source media shows “Source cover
+unavailable”; there is no staff Storage override. Template removal does not
+change lawful cover access through the source Proposal. Public template reads
+return no rows and no cover path after removal, including blueprint calls with
+an old otherwise-valid token.
+
+## TW02 explicit removal and retention
+
+`remove_moderation_case_template` rechecks the expected current staff actor,
+binds case/template server-side and requires a UUID request, exact reviewed
+content token and trimmed 10–4000-character protected reason. Forged pairs and
+non-template cases fail. A changed current token fails `PT409`; staff must refresh
+and review again. Case receipt/note/completion/reopen never enforce removal or
+restoration. There is no Creator withdrawal, restoration or appeals command.
+
+One transaction sets only `proposal_templates.removed_at`, inserts the protected
+append-only `proposal_template_removal_actions` record and writes one generic
+`moderation.template_removed` audit. The protected record owns actor, case,
+template/source IDs, identity-scoped request, reviewed token, reason, effective
+reference and time. The audit contains identifiers only, including the protected
+reason-record reference, never the reason/explanation/published text/Bozza body.
+The staff case view integrates the effective action as a typed separate timeline;
+the existing strict case-event vocabulary is unchanged.
+
+Exact accepted retries return the same receipt without another action/audit.
+Incompatible inputs fail `22023`; current staff authorization is rechecked even
+for retries and after waiting. Concurrent different staff/cases serialize to
+one effective action. Later accepted requests receive `already_removed` and a
+protected receipt referring to the original effective actor/time/action; their
+reasons remain private, and they create no second consequence/audit. A partial
+unique index also enforces one effective removal. Failure at any write rolls
+back removal, reason and action together. An operator-written removal with no
+matching effective record fails loudly if later passed to the staff command.
+
+Template identity, original-Creator baseline and moderation evidence are retained
+with restrictive foreign keys and no raw API-role privileges (including client
+`service_role`). No physical deletion/cascade occurs. Source Proposal, source
+participation/chat/cover, other templates and independent drafts/Projects stay
+independent. Retention here follows existing protected moderation record rules;
+this plan adds no legal retention period or account deletion policy.
+
+## TW03 locking seam
+
+Report/removal lock the source `public.proposals` row, then the
+`private.proposal_templates` row; removal subsequently locks its case. Identity-
+scoped request advisory locks precede those rows and have separate namespaces.
+Existing source text/skill/capacity/need/cover commands already acquire the source
+row before their dependent records. Review reads are stable statement snapshots.
+
+TW03 must acquire source then template, recheck the same eligibility predicate
+and current content token after any wait, and hold both locks through the atomic
+independent-draft copy. Removal that wins first closes new use; a copy that wins
+first creates an independent draft before removal proceeds. Never lock a case
+before the source/template or use a token as authorization. No copy/apply RPC is
+implemented by TW02.
+
+## TW02 validation and integration
+
+Base is exact TW01 head `342af7603f8f34b987d11073147cd5549d4b012c`.
+Branch `codex/tw02-template-reporting-removal` is a draft stacked on
+`codex/tw01-source-linked-template-domain` (#127), without importing the separate
+moderation stack. After TW01 merges, rebase/retarget while preserving a TW02-only
+diff. Founder review covers self-report exception, staff-only published access,
+protected attribution/reason retention and template-only enforcement; TW01's
+historical content/allow-list/private baseline review remains unresolved.
+
+The supplied TW02 prompt is archived verbatim in
+`history-implementations/PLANETS_TW02_template_reporting_and_removal.md`.
+`112_template_moderation_structure.test.sql` checks the private schema/grants.
+`node scripts/verify-local-template-moderation.mjs` exercises real authenticated
+API reports/removals, concurrent deliveries/actions, stale content, protected
+review, media boundaries and injected audit rollback. It also runs through
+`npm run moderation:verify:local` in existing hosted Database CI.
+
+The upgrade rehearsal uses a distinct local stack:
+
+```text
+npx supabase db reset --local --version 20261003125831
+node scripts/verify-local-template-moderation-upgrade.mjs --before
+npx supabase migration up --local
+node scripts/verify-local-template-moderation-upgrade.mjs --after
+npm run db:reset
+```
+
+The verifier checkpoints synthetic legacy report/case/note/event records in the
+OS temporary directory, verifies exact preservation and no fabricated removals,
+then deletes the checkpoint. Both new verifiers reject non-loopback targets.
+Standalone Node invocations require the repository `node_modules/.bin` on PATH;
+set `MAILPIT_URL` for an isolated non-default mailbox port. Port/project overrides
+are local and uncommitted; no shared migrations/resets/deployments are authorized.
+
+### TW02 local validation record
+
+All checks used the isolated `planets-community-tw02` Docker stack with local
+API/database/Mailpit ports 54421/54422/54424. Overrides are excluded from Git.
+
+| Exact command                                                                                                                                                                                                                            | Result                                                                                                                                                                                               |
+| ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `npm run db:reset`                                                                                                                                                                                                                       | Clean forward migration/seed replay passed                                                                                                                                                           |
+| `npm run db:lint`, `npm run db:advisors`                                                                                                                                                                                                 | No schema errors or security findings                                                                                                                                                                |
+| `npm run db:test`                                                                                                                                                                                                                        | 109 files, 3,417 assertions passed                                                                                                                                                                   |
+| `npx supabase db reset --local --version 20261003125831`, `node scripts/verify-local-template-moderation-upgrade.mjs --before`, `npx supabase migration up --local`, `node scripts/verify-local-template-moderation-upgrade.mjs --after` | Actual TW01→TW02 upgrade preserved legacy case/report/note/events and fabricated no removal records                                                                                                  |
+| `npx supabase db reset --local --version 20261002103310`, `node scripts/verify-local-proposal-template-backfill.mjs --before`, `npx supabase migration up --local`, `node scripts/verify-local-proposal-template-backfill.mjs --after`   | TW01 actual backfill and idempotency passed with TW02 applied                                                                                                                                        |
+| `npm run moderation:verify:local`                                                                                                                                                                                                        | Existing moderation verifier and 93 TW02 authenticated API assertions passed, including queued content change/revocation, exact retries, different-case/staff concurrency and audit failure rollback |
+| `npm run moderation:corroboration:verify:local`, `npm run moderation:counterstatement:verify:local`                                                                                                                                      | Existing private evidence workflows passed                                                                                                                                                           |
+| `npm run proposal:verify:local`                                                                                                                                                                                                          | Existing Proposal regressions and embedded TW01 Workshop verifier passed                                                                                                                             |
+| `npm run cover:verify:local`                                                                                                                                                                                                             | Existing canonical Storage/cover regression passed                                                                                                                                                   |
+| `npm run check:web`                                                                                                                                                                                                                      | 24 tooling tests, 35 web files / 160 tests, lint, typecheck and production build passed                                                                                                              |
+| `npm run format:check:web`                                                                                                                                                                                                               | Passed; supplied prompt excluded from formatting                                                                                                                                                     |
+| `npm run check:mobile`                                                                                                                                                                                                                   | Localization generation, format check, Flutter analysis and 1,144 tests passed                                                                                                                       |
+| `npm run db:types`                                                                                                                                                                                                                       | Regenerated the three new RPC contracts; committed type drift is checked before push and by hosted CI                                                                                                |
+
+The first cumulative SQL run hit an existing join-request timestamp constraint
+when Docker's clock moved backwards after restarting. The unchanged affected
+file passed its focused rerun; the subsequent clean cumulative replay passed.
+No existing database test or product timestamp behavior was altered. Initial
+new test fixture/parser/DOM cleanup and React ref-render lint issues were repaired
+before the passing checks above.
+
+No Android/iOS platform build was run: the mobile change is a typed shared
+report target, localized form copy and tests, with no plugin/platform/build
+configuration change. Hosted Database/Web/Mobile validation is required at the
+final PR head; the unchanged static Site is outside this change's scope.
+No merge, shared environment migration/reset, deployment or sanctions-stack
+import occurred.

@@ -2793,6 +2793,22 @@ export type Database = {
           target_summary: string
         }[]
       }
+      get_moderation_case_template: {
+        Args: { p_case_id: string; p_expected_staff_profile_id: string }
+        Returns: {
+          content: Json
+          content_changed: boolean
+          current_content_version: string
+          original_creator_profile_id: string
+          publicly_available: boolean
+          removal_action: Json
+          removed_at: string
+          report_content_version: string
+          resource_blueprint_count: number
+          source_proposal_id: string
+          template_id: string
+        }[]
+      }
       get_own_blocked_profile_status: {
         Args: {
           p_expected_blocker_profile_id: string
@@ -3322,6 +3338,20 @@ export type Database = {
           joined_at: string
           profile_id: string
           role_rank: number
+        }[]
+      }
+      list_moderation_case_template_blueprints: {
+        Args: {
+          p_case_id: string
+          p_content_version: string
+          p_cursor_need_id?: string
+          p_expected_staff_profile_id: string
+          p_limit?: number
+        }
+        Returns: {
+          details: string
+          source_need_id: string
+          title: string
         }[]
       }
       list_moderation_cases: {
@@ -4529,6 +4559,23 @@ export type Database = {
       reject_resource_listing_request: {
         Args: { p_expected_owner_profile_id: string; p_request_id: string }
         Returns: string
+      }
+      remove_moderation_case_template: {
+        Args: {
+          p_case_id: string
+          p_client_request_id: string
+          p_expected_staff_profile_id: string
+          p_reason: string
+          p_reviewed_content_version: string
+          p_template_id: string
+        }
+        Returns: {
+          effective_action_id: string
+          effective_actor_profile_id: string
+          effective_at: string
+          outcome: string
+          request_id: string
+        }[]
       }
       remove_project_member: {
         Args: { p_expected_creator_profile_id: string; p_membership_id: string }

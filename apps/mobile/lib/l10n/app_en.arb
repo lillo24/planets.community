@@ -2000,5 +2000,6 @@
   "projectWorkspaceOpenWorkspaceAction": "Open workspace",
   "projectWorkspaceCancelAction": "Cancel",
   "projectWorkspaceOpenFailure": "The external workspace could not be opened.",
-  "projectWorkspaceToolsSemantics": "Project coordination tools"
+  "projectWorkspaceToolsSemantics": "Project coordination tools",
+  "moderationTemplateDisclosure": "You can report a template, including one linked to your own Proposal. Staff review reports manually. Reporting does not automatically remove the template or its source Proposal."
 }

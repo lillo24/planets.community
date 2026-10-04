@@ -125,3 +125,17 @@ transitions under the same validation rules as the Creator. Draft creation and
 publication remain original-Creator-only. Tests 068 and 069 cover the role
 model, provenance, stale issuer authority, lifecycle access, and participation
 independence.
+
+
+TW02 extends private moderation cases with a typed Proposal-template foreign
+key and separate immutable source/content-token provenance. The forward migration
+adds protected append-only removal receipts/reasons and three staff-only RPCs:
+current published context, bounded resource pages and explicit template removal.
+The template-only self-report exception never activates existing Project or
+Resource evidence invitations. Existing review-state actions remain separate.
+Tests `112` and the authenticated `verify-local-template-moderation.mjs` cover
+privacy, concurrency and atomicity; the latter is included in
+`moderation:verify:local`. `verify-local-template-moderation-upgrade.mjs` checks
+legacy evidence before/after actual forward migration. The
+[Workshop contract](../docs/development/template-workshop.md) documents the
+source/template/case lock order for TW03 and the unchanged baseline/media rules.

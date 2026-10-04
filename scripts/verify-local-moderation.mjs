@@ -1,3 +1,4 @@
+import { verifyTemplateModeration } from "./verify-local-template-moderation.mjs";
 import { randomUUID } from "node:crypto";
 
 import postgres from "postgres";
@@ -239,3 +240,6 @@ function safeFailure(action, error) {
       : "unknown";
   return new Error(`Failed to ${action} (code ${code}).`);
 }
+
+// The existing hosted moderation verifier also exercises TW02 authenticated enforcement.
+await verifyTemplateModeration();

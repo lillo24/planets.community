@@ -1276,5 +1276,6 @@
   "projectWorkspaceOpenWorkspaceAction": "Aprire lo spazio di lavoro",
   "projectWorkspaceCancelAction": "Annulla",
   "projectWorkspaceOpenFailure": "Impossibile aprire lo spazio di lavoro esterno.",
-  "projectWorkspaceToolsSemantics": "Strumenti di coordinamento dei progetti"
+  "projectWorkspaceToolsSemantics": "Strumenti di coordinamento dei progetti",
+  "moderationTemplateDisclosure": "Puoi segnalare un template, anche se collegato alla tua Proposta. Lo staff valuta le segnalazioni manualmente. La segnalazione non rimuove automaticamente il template o la Proposta di origine."
 }

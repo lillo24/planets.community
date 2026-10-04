@@ -25,3 +25,16 @@ Submitted status, and the immutable private statement when present. The card
 labels this as evidence rather than a verdict and does not add enforcement or
 resource-state controls. Reporter identity remains part of the staff case
 detail only; recipient-facing projections never expose it.
+
+TW02 adds only explicit template removal to this case surface.
+`template-moderation-models.ts` owns strict current-published review, bounded
+resource-page and attributable receipt parsing. `moderation-server.ts` loads that
+projection only for `proposal_template` cases, without Project evidence context,
+and requests cover delivery through ordinary source Storage RLS.
+`template-removal-form.tsx` owns deliberate confirmation/reason, one frozen
+request UUID for ambiguous retries, stale-review refresh and role-loss feedback.
+The existing operations/actions recheck staff for every delivery and refresh
+queue/detail after success. Components show the separate effective removal
+record; review-state transitions retain their existing behavior. There is no
+source hiding, restoration, account sanction or deployment control. See the
+[Workshop contract](../../../../../docs/development/template-workshop.md).

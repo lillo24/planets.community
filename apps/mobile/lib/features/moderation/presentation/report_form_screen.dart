@@ -119,7 +119,10 @@ class _ReportFormScreenState extends ConsumerState<ReportFormScreen> {
                     ),
                     const SizedBox(height: AppSpacing.medium),
                     Text(
-                      widget.target.hasProjectContext
+                      widget.target.kind ==
+                              ModerationTargetKind.proposalTemplate
+                          ? l10n.moderationTemplateDisclosure
+                          : widget.target.hasProjectContext
                           ? l10n.moderationGroupDisclosure
                           : l10n.moderationStandardDisclosure,
                       key: Key(
