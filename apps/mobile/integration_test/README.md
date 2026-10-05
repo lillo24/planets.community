@@ -45,3 +45,50 @@ stack **before** restoring its original Supabase configuration.
 Native smoke exercises real navigation and saves. Physical iOS swipe/interactive
 Back behavior, platform accessibility and release/signing remain separate QA;
 widget tests and an Android emulator do not establish those results.
+
+## Automatic suggestions (SIM02)
+
+`similar_proposal_smoke_test.dart` reuses the native wait helpers and real
+app/router/screens with a separate narrow fixture. It checks automatic title-only
+matching without a photo, dismissing without creating a draft, one guarded save
+before ordinary detail and destination feedback, Back to the same draft with
+the first bound ID as exclusion, the normal photo gate, a candidate becoming
+Full/cancelled after lookup, and exact creation recovery after a committed RPC's
+response is deliberately dropped. Home/Browse switching verifies paused hidden
+matching and one current-query refresh on return. It records only exclusion and
+creation-request IDs in test memory;
+queries/tokens are never logged. All actual matching/persistence/detail RPCs are
+real. Identity injection represents the verified local OTP session.
+
+Start/reset a unique disposable stack as above; then, from repository root:
+
+```text
+node --check apps/mobile/integration_test/prepare_similar_proposal_smoke.mjs
+node apps/mobile/integration_test/prepare_similar_proposal_smoke.mjs <OS-temp>/sim02-defines.json
+adb -s <emulator> reverse tcp:<local-api-port> tcp:<local-api-port>
+cd apps/mobile
+flutter test integration_test/similar_proposal_smoke_test.dart -d <emulator> --dart-define-from-file=<OS-temp>/sim02-defines.json
+```
+
+The fixture owns two `.invalid` people and one upcoming synthetic Project. The
+editor is ready without a photo; only the candidate Creator gets a synthetic
+photo. Use a fresh reset of this task's isolated stack before repeating the
+journey, because the test changes/cancels Projects and creates private drafts.
+Never reset another checkout or shared backend. Preserve original config/Gradle
+bytes outside Git, use a distinct `.sim02qa` Android application ID on a shared
+emulator, and restore after verification. Delete temporary token defines and
+token-bearing native build caches, uninstall only that QA package/remove only
+its reverse rule, then stop the isolated stack before restoring config.
+
+Use `flutter clean` in `apps/mobile` to remove compiled build/Dart artifacts.
+Gradle can retain encoded Dart defines in this checkout's
+`android/.gradle/<gradle-version>/executionHistory/executionHistory.bin`; remove
+that specific cache file as well. This run used Gradle 9.3.1 and verified that
+remaining project caches/daemon logs contained no SIM02 credential markers.
+Preserve other projects' caches and shared Gradle processes.
+
+Manual founder QA: try IT/EN with keyboard open, title-only versus selected tags,
+empty/error/Retry, Full/unknown preview, dismiss/reopen across save/Back, invalid
+raw geography, failed save and explicit discard, partial image save, rapid taps
+and competing Back/tab actions. Repeat on supported physical Android/iOS with
+large text and accessibility; inspect modal focus and interactive swipe return.

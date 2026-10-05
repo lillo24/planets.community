@@ -15,6 +15,7 @@ import 'package:planets_mobile/features/moderation/data/moderation_gateway.dart'
 import 'package:planets_mobile/features/moderation/domain/moderation_models.dart';
 import 'package:planets_mobile/features/moderation/presentation/report_form_screen.dart';
 import 'package:planets_mobile/features/proposals/data/proposal_gateway.dart';
+import 'package:planets_mobile/features/proposals/data/similar_proposal_gateway.dart';
 import 'package:planets_mobile/features/proposals/domain/proposal_models.dart';
 import 'package:planets_mobile/features/proposals/presentation/proposal_editor_screen.dart';
 import 'package:planets_mobile/features/proposals/presentation/public_proposals_screen.dart';
@@ -26,6 +27,7 @@ import '../../../support/fake_auth.dart';
 import '../../../support/fake_cover_media.dart';
 import '../../../support/fake_moderation.dart';
 import '../../../support/fake_proposal.dart';
+import '../../../support/fake_similar_proposal.dart';
 import '../../../support/fake_template.dart';
 
 void main() {
@@ -324,6 +326,7 @@ pumpWorkshop(
   Brightness brightness = Brightness.light,
   double scale = 1,
   bool actualRouter = false,
+  FakeSimilarProposalGateway? similar,
 }) async {
   final templates = FakeTemplateGateway();
   final proposals = FakeProposalGateway()..createdId = 'old-draft';
@@ -350,6 +353,9 @@ pumpWorkshop(
       ),
       templateGatewayProvider.overrideWithValue(templates),
       proposalGatewayProvider.overrideWithValue(proposals),
+      similarProposalGatewayProvider.overrideWithValue(
+        similar ?? FakeSimilarProposalGateway(),
+      ),
       moderationGatewayProvider.overrideWithValue(moderation),
       projectCoverReconcilerProvider.overrideWithValue(
         FakeProjectCoverReconciler(),
@@ -410,6 +416,10 @@ pumpWorkshop(
               path: '/profile/reports/new',
               builder: (_, s) =>
                   ReportFormScreen(target: s.extra! as ModerationReportTarget),
+            ),
+            GoRoute(
+              path: '/proposals/$similarId',
+              builder: (_, _) => const Scaffold(body: Text('Candidate detail')),
             ),
           ],
         );

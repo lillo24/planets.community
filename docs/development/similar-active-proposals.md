@@ -224,6 +224,9 @@ classifier; trigger boundaries and required checks are unchanged.
 
 ## SIM02 and later integration
 
+The [SIM02 mobile implementation](automatic-editor-suggestions.md) now consumes
+this exact contract on the approved draft base; it remains unmerged for review.
+
 SIM02 should debounce input, pass the currently bound destination as exclusion,
 capture actor/input generations and ignore old responses after input/route/
 account changes. Empty valid input may be skipped or sent for `[]`; validation

@@ -1353,5 +1353,18 @@
   "workshopProfileRequired": "Completa il profilo prima di creare una nuova bozza. Per usare un modello non serve una foto del profilo.",
   "workshopIncompatible": "Questa richiesta ha dati incompatibili. Non è possibile sostituirla con una bozza presunta.",
   "workshopOpenError": "Impossibile aprire la bozza accettata. Apri o riprova la stessa bozza; non verrà creata un’altra copia.",
-  "workshopPublicationNotice": "Quando questa Proposta pubblicata diventa Conclusa (24 ore dopo la fine), i testi, le competenze e le descrizioni delle risorse aperte idonei diventano automaticamente riutilizzabili nel Laboratorio dei modelli. Non serve una candidatura o approvazione separata. Controlla ciò che includi nei testi liberi."
+  "workshopPublicationNotice": "Quando questa Proposta pubblicata diventa Conclusa (24 ore dopo la fine), i testi, le competenze e le descrizioni delle risorse aperte idonei diventano automaticamente riutilizzabili nel Laboratorio dei modelli. Non serve una candidatura o approvazione separata. Controlla ciò che includi nei testi liberi.",
+  "similarMayExist": "Potrebbe esserci già un’attività simile.",
+  "similarView": "Vedi progetti simili",
+  "similarDismiss": "Nascondi suggerimenti",
+  "similarReopen": "Mostra suggerimenti",
+  "similarLoading": "Ricerca di attività simili…",
+  "similarError": "Non è stato possibile cercare attività simili. Puoi continuare a scrivere.",
+  "similarClose": "Chiudi progetti simili",
+  "similarOpen": "Vedi progetto",
+  "similarFull": "Al completo",
+  "similarCapacityUnknown": "Capienza non impostata",
+  "similarTitleReason": "Argomento simile nel titolo",
+  "similarTagsReason": "Argomento simile nel titolo e tag selezionati in comune",
+  "similarLocalityReason": "Stessa località indicativa"
 }

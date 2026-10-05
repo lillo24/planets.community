@@ -16,3 +16,8 @@ The editor registers its identity-bound preparation callback; navigation does
 not own Proposal fields or persistence. See the
 [draft-departure contract](../../../../../docs/development/proposal-draft-departure.md)
 for raw input, retry/cover outcomes, retained sessions and forced-auth behavior.
+
+SIM02 suggestion selection first removes the modal overlay and restores the
+editor as the active departure owner, then performs one ordinary detail push.
+The existing guard alone prepares the draft; sheet cancellation never prepares
+it. See [automatic suggestion handoff](../../../../../docs/development/automatic-editor-suggestions.md).

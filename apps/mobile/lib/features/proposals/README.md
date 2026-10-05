@@ -3,6 +3,14 @@
 This feature owns one-time proposal discovery and authenticated structural
 management for the immutable Creator and current Co-creators.
 
+SIM02 adds automatic unpublished-editor suggestions through the narrow
+`domain/similar_proposal.dart` DTO/query, `data/similar_proposal_gateway.dart`
+RPC parser, `application/similar_proposal_controller.dart` actor/session debounce
+and `presentation/similar_proposal_suggestions.dart` inline entry/sheet.
+`proposal_editor_screen.dart` observes only matching fields and fully dismisses
+the sheet before ordinary guarded detail navigation. Published editors never
+match. See [inputs, lifecycle and draft handoff](../../../../../docs/development/automatic-editor-suggestions.md).
+
 TW04 adds Browse and unpublished-editor entries to the sibling
 `template_workshop/` feature. The separate **Create from a template** action
 pushes through the existing draft departure guard; it preserves this editor

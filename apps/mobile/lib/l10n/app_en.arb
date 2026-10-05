@@ -2077,5 +2077,18 @@
   "workshopProfileRequired": "Complete your profile before creating a new draft. A profile photo is not required to use a template.",
   "workshopIncompatible": "This request has incompatible inputs. It cannot be replaced with a guessed draft.",
   "workshopOpenError": "The accepted draft could not be opened. Open or retry the same draft; no new copy will be created.",
-  "workshopPublicationNotice": "When this published Proposal reaches Completed (24 hours after its end), its eligible text, skills and open resource descriptions automatically become reusable in Template Workshop. This does not need a separate submission or approval. Check what you include in free text."
+  "workshopPublicationNotice": "When this published Proposal reaches Completed (24 hours after its end), its eligible text, skills and open resource descriptions automatically become reusable in Template Workshop. This does not need a separate submission or approval. Check what you include in free text.",
+  "similarMayExist": "A similar activity may already exist.",
+  "similarView": "View similar Projects",
+  "similarDismiss": "Hide suggestions",
+  "similarReopen": "Show suggestions",
+  "similarLoading": "Checking similar activities…",
+  "similarError": "Similar activities could not be checked. You can keep editing.",
+  "similarClose": "Close similar Projects",
+  "similarOpen": "View Project",
+  "similarFull": "Full",
+  "similarCapacityUnknown": "Registration capacity not set",
+  "similarTitleReason": "Related title topic",
+  "similarTagsReason": "Related title topic and shared selected tags",
+  "similarLocalityReason": "Same rough locality"
 }

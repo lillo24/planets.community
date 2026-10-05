@@ -22,8 +22,11 @@ import '../../profile_photo/presentation/profile_photo_trust_gate.dart';
 import '../../project_resource_needs/presentation/project_resource_need_routes.dart';
 import '../application/proposal_controllers.dart';
 import '../application/proposal_draft_session.dart';
+import '../application/similar_proposal_controller.dart';
 import '../domain/proposal_models.dart';
 import '../domain/proposal_time.dart';
+import '../domain/similar_proposal.dart';
+import 'similar_proposal_suggestions.dart';
 
 class ProposalEditorScreen extends ConsumerStatefulWidget {
   const ProposalEditorScreen({this.proposalId, super.key});
@@ -157,7 +160,8 @@ class _ProposalForm extends ConsumerStatefulWidget {
   ConsumerState<_ProposalForm> createState() => _ProposalFormState();
 }
 
-class _ProposalFormState extends ConsumerState<_ProposalForm> {
+class _ProposalFormState extends ConsumerState<_ProposalForm>
+    with WidgetsBindingObserver {
   final _formKey = GlobalKey<FormState>();
   final _titleAnchor = GlobalKey();
   final _summaryAnchor = GlobalKey();
@@ -197,6 +201,13 @@ class _ProposalFormState extends ConsumerState<_ProposalForm> {
   late final DraftDepartureCoordinator _departure;
   bool _saving = false;
   ProposalDraftSnapshot? _partialAcknowledged;
+  late final SimilarProposalController _similar;
+  bool _appResumed = true;
+  bool _sheetOpen = false;
+  bool _openingCandidate = false;
+  bool _preparingDeparture = false;
+  ModalRoute<String>? _suggestionRoute;
+  String get _similarKey => '${widget.identityId}:${widget.sessionId}';
 
   @override
   void initState() {
@@ -228,12 +239,22 @@ class _ProposalFormState extends ConsumerState<_ProposalForm> {
     };
     _acknowledged = _snapshot();
     _departure = ref.read(draftDepartureProvider);
+    _similar = ref.read(similarProposalProvider(_similarKey).notifier);
+    _similar.acquireSession();
+    _appResumed =
+        WidgetsBinding.instance.lifecycleState == null ||
+        WidgetsBinding.instance.lifecycleState == AppLifecycleState.resumed;
+    WidgetsBinding.instance.addObserver(this);
+    for (final controller in [_title, _country, _locality]) {
+      controller.addListener(_syncMatching);
+    }
   }
 
   bool _registeredDeparture = false;
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    Future<void>.microtask(_syncMatching);
     if (_registeredDeparture) return;
     _registeredDeparture = true;
     _departureOwner = DraftDepartureOwner(
@@ -250,6 +271,8 @@ class _ProposalFormState extends ConsumerState<_ProposalForm> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _similar.releaseSession();
     _departure.unregister(_departureOwner);
     for (final controller in [
       _title,
@@ -266,6 +289,127 @@ class _ProposalFormState extends ConsumerState<_ProposalForm> {
       controller.dispose();
     }
     super.dispose();
+  }
+
+  @override
+  void didUpdateWidget(_ProposalForm oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Binding is lookup invalidation only; accepted router departure still owns
+    // its original choice and performs exactly one DRAFT01 preparation.
+    Future<void>.microtask(_syncMatching);
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    _appResumed = state == AppLifecycleState.resumed;
+    _syncMatching();
+  }
+
+  void _syncMatching() {
+    if (!mounted) return;
+    final session = ref.read(authSessionProvider);
+    final editor = ref.read(proposalEditorSessionProvider(widget.sessionId));
+    final ready =
+        session.phase == AuthSessionPhase.ready &&
+        session.identity?.id == widget.identityId &&
+        editor.expectedCreatorId == widget.identityId;
+    final draft =
+        widget.proposal == null ||
+        widget.proposal?.lifecycle == ProposalLifecycle.draft;
+    final busy =
+        _saving || editor.isBusy || _preparingDeparture || _openingCandidate;
+    final route = ModalRoute.of(context);
+    final visible = TickerMode.valuesOf(context).enabled;
+    final temporarySheet =
+        _sheetOpen &&
+        _appResumed &&
+        ready &&
+        draft &&
+        visible &&
+        !busy &&
+        ((route?.isCurrent ?? false) || (_suggestionRoute?.isCurrent ?? false));
+    _similar.setActive(
+      ready &&
+          draft &&
+          _appResumed &&
+          visible &&
+          (route?.isCurrent ?? false) &&
+          !busy &&
+          !_sheetOpen,
+      sheet: temporarySheet,
+    );
+    try {
+      _similar.setQuery(
+        ready && draft
+            ? SimilarProposalQuery.fromForm(
+                actorId: widget.identityId,
+                title: _title.text,
+                skillIds: _skills.keys,
+                country: _country.text,
+                locality: _locality.text,
+                excludedProposalId: ref
+                    .read(
+                      proposalEditorSessionProvider(widget.sessionId).notifier,
+                    )
+                    .boundProposalId,
+              )
+            : null,
+      );
+    } on FormatException {
+      _similar.invalidInput();
+    }
+  }
+
+  Future<void> _viewSimilar() async {
+    if (_sheetOpen || _openingCandidate || !_departureOwner.isActive()) return;
+    final selection = _similar.selection();
+    if (selection == null) return;
+    final items = ref.read(similarProposalProvider(_similarKey)).items;
+    _sheetOpen = true;
+    _similar.setActive(false, sheet: true);
+    FocusManager.instance.primaryFocus?.unfocus();
+    final selected = await showModalBottomSheet<String>(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      builder: (context) {
+        _suggestionRoute = ModalRoute.of<String>(context);
+        return SimilarProposalSheet(
+          items: items,
+          sessionId: _similarKey,
+          selection: selection,
+        );
+      },
+    );
+    // popped resolves before the exit animation. completed waits for actual
+    // overlay removal; endOfFrame restores editor TickerMode/route ownership.
+    await _suggestionRoute?.completed;
+    await WidgetsBinding.instance.endOfFrame;
+    if (!mounted) return;
+    final valid =
+        selected != null &&
+        _appResumed &&
+        _departureOwner.isActive() &&
+        identical(_departure.activeOwner, _departureOwner) &&
+        _similar.accepts(selection, selected);
+    _sheetOpen = false;
+    _suggestionRoute = null;
+    if (!valid) {
+      _syncMatching();
+      return;
+    }
+    setState(() => _openingCandidate = true);
+    _syncMatching();
+    try {
+      // The ordinary router guard owns saving, retry/discard and destination
+      // feedback. Never manually prepare and then prepare again through push.
+      await context.push('/proposals/$selected');
+    } finally {
+      if (mounted) {
+        setState(() => _openingCandidate = false);
+        _syncMatching();
+      }
+    }
   }
 
   ProposalInput _input() => ProposalInput(
@@ -304,6 +448,17 @@ class _ProposalFormState extends ConsumerState<_ProposalForm> {
   );
 
   Future<DraftDepartureOutcome> _prepareDeparture() async {
+    _preparingDeparture = true;
+    _syncMatching();
+    try {
+      return await _prepareDraftDeparture();
+    } finally {
+      _preparingDeparture = false;
+      _syncMatching();
+    }
+  }
+
+  Future<DraftDepartureOutcome> _prepareDraftDeparture() async {
     if (widget.proposal?.lifecycle == ProposalLifecycle.published) {
       return DraftDepartureOutcome.noChange;
     }
@@ -455,6 +610,7 @@ class _ProposalFormState extends ConsumerState<_ProposalForm> {
     }
     if (!mounted) return false;
     setState(() => _saving = true);
+    _syncMatching();
     final controller = ref.read(
       proposalEditorSessionProvider(widget.sessionId).notifier,
     );
@@ -480,6 +636,7 @@ class _ProposalFormState extends ConsumerState<_ProposalForm> {
       return false;
     }
     setState(() => _saving = false);
+    _syncMatching();
     if (id == null &&
         ref
                 .read(proposalEditorSessionProvider(widget.sessionId))
@@ -577,6 +734,7 @@ class _ProposalFormState extends ConsumerState<_ProposalForm> {
       _validationIssues = const [];
     });
     _formKey.currentState?.validate();
+    _syncMatching();
   }
 
   Future<void> _pickDateTime({required bool start}) async {
@@ -647,6 +805,7 @@ class _ProposalFormState extends ConsumerState<_ProposalForm> {
         proposal == null || proposal.lifecycle == ProposalLifecycle.draft;
     final isPublished = proposal?.lifecycle == ProposalLifecycle.published;
     final canCancel = proposal?.canCancelAt(now) ?? false;
+    Future<void>.microtask(_syncMatching);
     final readOnlyMessage = proposal == null || contentEditable
         ? null
         : proposal.lifecycle == ProposalLifecycle.cancelled
@@ -721,6 +880,12 @@ class _ProposalFormState extends ConsumerState<_ProposalForm> {
                   required: true,
                   minimumLength: 2,
                 ),
+                if (isDraft)
+                  SimilarProposalEntry(
+                    sessionId: _similarKey,
+                    enabled: !busy && !_openingCandidate,
+                    onView: _viewSimilar,
+                  ),
                 CoverEditorSection(
                   key: ValueKey(
                     '${widget.sessionId}:$_acknowledgedCoverRevision:$_coverResetEpoch',
@@ -978,11 +1143,14 @@ class _ProposalFormState extends ConsumerState<_ProposalForm> {
                       skill: skill,
                       value: _skills[skill.id],
                       enabled: !busy && contentEditable,
-                      onChanged: (importance) => setState(() {
-                        importance == null
-                            ? _skills.remove(skill.id)
-                            : _skills[skill.id] = importance;
-                      }),
+                      onChanged: (importance) {
+                        setState(() {
+                          importance == null
+                              ? _skills.remove(skill.id)
+                              : _skills[skill.id] = importance;
+                        });
+                        _syncMatching();
+                      },
                     ),
                 ],
                 if (state.coverPartialSave != null) ...[

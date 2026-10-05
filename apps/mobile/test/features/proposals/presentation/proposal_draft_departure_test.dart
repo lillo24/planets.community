@@ -15,6 +15,7 @@ import 'package:planets_mobile/features/cover_media/presentation/cover_editor_se
 import 'package:planets_mobile/features/proposals/application/proposal_controllers.dart';
 import 'package:planets_mobile/features/proposals/application/proposal_draft_session.dart';
 import 'package:planets_mobile/features/proposals/data/proposal_gateway.dart';
+import 'package:planets_mobile/features/proposals/data/similar_proposal_gateway.dart';
 import 'package:planets_mobile/features/proposals/domain/proposal_models.dart';
 import 'package:planets_mobile/features/proposals/presentation/proposal_editor_screen.dart';
 import 'package:planets_mobile/l10n/generated/app_localizations.dart';
@@ -22,6 +23,7 @@ import 'package:planets_mobile/l10n/generated/app_localizations.dart';
 import '../../../support/fake_auth.dart';
 import '../../../support/fake_cover_media.dart';
 import '../../../support/fake_proposal.dart';
+import '../../../support/fake_similar_proposal.dart';
 
 void main() {
   for (final locale in ['en', 'it']) {
@@ -654,6 +656,8 @@ pumpEditor(
   OwnProposal? proposal,
   FakeProposalGateway? gateway,
   FakeProjectCoverReconciler? covers,
+  FakeSimilarProposalGateway? similar,
+  void Function(DraftDepartureOwner?)? onCandidateEnter,
 }) async {
   gateway ??= FakeProposalGateway();
   if (proposal != null) gateway.ownItems = [proposal];
@@ -672,6 +676,9 @@ pumpEditor(
         FakeProfileAnchorGateway()..readiness = ProfileAnchorReadiness.complete,
       ),
       proposalGatewayProvider.overrideWithValue(gateway),
+      similarProposalGatewayProvider.overrideWithValue(
+        similar ?? FakeSimilarProposalGateway(),
+      ),
       projectCoverReconcilerProvider.overrideWithValue(
         covers ?? FakeProjectCoverReconciler(),
       ),
@@ -684,7 +691,12 @@ pumpEditor(
   final guard = container.read(draftDepartureProvider);
   final router = GoRouter(
     initialLocation: '/origin',
-    onEnter: guard.onEnter,
+    onEnter: (context, current, next, router) {
+      if (next.uri.path == '/proposals/$similarId') {
+        onCandidateEnter?.call(guard.activeOwner);
+      }
+      return guard.onEnter(context, current, next, router);
+    },
     routes: [
       GoRoute(
         path: '/origin',
@@ -723,6 +735,10 @@ pumpEditor(
       GoRoute(
         path: '/destination',
         builder: (_, _) => const Scaffold(body: Text('Chosen destination')),
+      ),
+      GoRoute(
+        path: '/proposals/$similarId',
+        builder: (_, _) => const Scaffold(body: Text('Candidate detail')),
       ),
       GoRoute(
         path: '/proposals/mine',

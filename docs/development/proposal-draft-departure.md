@@ -133,6 +133,8 @@ Back and destination feedback, dirty sparse forms, failure/retry and partial
 cover outcomes. Native device gesture checks and iOS builds require their
 supported environment; a Flutter widget gesture test is not native-device QA.
 
-TW04/SIM01/SIM02/TW05 remain deferred. At later main integration, inspect then-
+TW04/SIM01/SIM02 now have separate unmerged draft implementations; see
+[SIM02's modal handoff](automatic-editor-suggestions.md). TW05 remains deferred.
+At later main integration, inspect then-
 current #128/#131 Project links/auth returns/admission and exercise departure
 with incoming links. Those stacks are not imported into these unmerged branches.
