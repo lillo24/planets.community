@@ -23,3 +23,9 @@ Proposal/TW01 verifier. It covers authenticated bounded matching, canonical
 capacity/blocking/media seams and rollback-only synthetic query plans. It also
 runs in `check:db`. Adding this shared command/workflow selects all four areas
 for this PR under the existing classifier; trigger boundaries stay unchanged.
+
+TW05 adds `demo:workshop:check:local` after ordinary domain mutation verifiers
+and before generated types. It is a bounded no-reset seed/stability/interruption/
+transition check; mobile native and populated upgrade rehearsals stay opt-in.
+Path classification is unchanged. Later PI05 integration must compose its existing
+`demo:check:local` with this one orchestrator/check sequence and avoid duplicate seeding.

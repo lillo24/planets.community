@@ -3,7 +3,8 @@
 SIM01's separate [similar upcoming Proposal contract](similar-active-proposals.md)
 is implemented on the TW04 draft base. It admits future public one-time sources
 by title evidence and returns bounded capacity/location reasons. Completed
-Workshop reuse remains separate; SIM02 and TW05 stay deferred. No predecessor
+Workshop reuse remains separate. [SIM02](automatic-editor-suggestions.md) and
+[TW05](workshop-demo-validation.md) are implemented for draft review. No predecessor
 is thereby merged.
 
 TW01, TW02 and TW03 are implemented on isolated draft branches, pending founder
@@ -558,7 +559,8 @@ TW04 is implemented on exact DRAFT01 head
 `8062035a5cdc38ac016f64d125b7b4407b613063`, branch
 `codex/tw04-mobile-template-workshop`, draft target
 `codex/draft01-save-proposal-drafts-on-exit`. This does not mark predecessors
-merged or the feature production-ready. SIM01/SIM02 and TW05 remain deferred.
+merged or the feature production-ready. This is historical TW03 evidence;
+SIM01/SIM02 and TW05 now have their own draft-review implementation/evidence records.
 
 The dedicated `apps/mobile/lib/features/template_workshop` feature consumes the
 five existing public/application RPCs, with no new migration or private baseline

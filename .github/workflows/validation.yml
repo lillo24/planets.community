@@ -241,6 +241,9 @@ jobs:
       - name: Verify public web Tavoli discovery and privacy
         run: npm run tavoli:web:verify:local
 
+      - name: Verify bounded TW05 Workshop demo stability and transitions
+        run: npm run demo:workshop:check:local
+
       - name: Regenerate public database types
         run: npm run db:types
 

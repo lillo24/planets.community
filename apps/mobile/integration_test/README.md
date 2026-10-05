@@ -14,7 +14,8 @@ This is opt-in native smoke, separate from ordinary `flutter test`/scoped CI.
 accounts on an isolated disposable loopback stack. It uses existing local OTP
 and photo helpers, canonical creation/publication/resource RPCs, and trusted
 local-only SQL to backdate that source and give the synthetic reviewer its
-role. It is not production history or the deferred TW05 demo world.
+role. It is not production history. TW05 now supplies a separate repeatable demo
+world and combined inventory journey below.
 
 Run from the repository root, with Docker, Node dependencies and an Android
 emulator available. First assign a unique local Supabase `project_id` and free
@@ -92,3 +93,34 @@ empty/error/Retry, Full/unknown preview, dismiss/reopen across save/Back, invali
 raw geography, failed save and explicit discard, partial image save, rapid taps
 and competing Back/tab actions. Repeat on supported physical Android/iOS with
 large text and accessibility; inspect modal focus and interactive swipe return.
+
+## Cumulative Workshop demo (TW05)
+
+`prepare_workshop_demo_smoke.mjs` authenticates the already-seeded demo world;
+it verifies rather than repairs it. `workshop_demo_smoke_test.dart` uses that
+inventory for a combined real-app journey: preserve the original form, browse
+the core catalog, self-report, recover one committed copy whose response was
+dropped, dismiss suggestions without saving, handle one failed save, retry into
+ordinary Full detail, return to the same draft, then remove the dedicated
+transition template and recover its accepted independent copy again.
+
+Reset only the selected disposable stack, seed/verify the world, and prepare
+temporary defines outside Git:
+
+```text
+npm run demo:reset:local
+node apps/mobile/integration_test/prepare_workshop_demo_smoke.mjs <OS-temp>/tw05-defines.json
+adb -s <emulator> reverse tcp:<local-api-port> tcp:<local-api-port>
+cd apps/mobile
+flutter test integration_test/workshop_demo_smoke_test.dart -d <emulator> --dart-define-from-file=<OS-temp>/tw05-defines.json
+```
+
+The test uses English and 1.3 text scaling. Optional
+`--dart-define=TW05_CAPTURE_SCREENSHOTS=true` captures the real Workshop in
+English/Italian into the QA application's temporary directory. Use the same
+distinct QA package, credential/cache cleanup and stack isolation described
+above. The journey deliberately removes the additional transition template;
+the eight core entries remain intact, and baseline verification must report
+that drift until an explicit reset. Run the separate TW04 and SIM02 journeys
+on fresh fixtures for their complementary paging/photo/creation-recovery cases.
+See [the cumulative evidence and inventory](../../../docs/development/workshop-demo-validation.md).

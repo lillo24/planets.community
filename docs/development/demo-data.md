@@ -14,7 +14,7 @@ npm run demo:seed:local
 npm run demo:reset:local
 ```
 
-`demo:seed:local` brings only the nine known scenarios owned by the three stable demo identities to their desired state. Repeated runs reuse canonical entity IDs, add only missing transitions/messages, refresh relative Proposal times, and let the notification projector consume pending supported local events. It does not reset unrelated developer rows.
+`demo:seed:local` preserves the original nine scenarios and adds TW05’s finite 18-source Workshop/matching inventory, five synthetic personas and receipt-bound independent drafts. The eight core Completed templates remain publicly usable; dedicated fixtures own removal/cancellation/version QA. Repeated seeds skip unchanged content/history and preserve Completed clocks/tokens. Only the original and active relative-time examples refresh clocks. It does not reset unrelated developer rows. The [TW05 record](workshop-demo-validation.md) owns exact inventory, mutation/recovery boundaries, cumulative evidence and native reproduction.
 
 Older local worlds are adopted in place: an exact legacy `DEMO · ...` title owned by its expected demo identity is renamed to the realistic title before reconciliation. Ambiguous or duplicate matches fail loudly. This narrow trusted local SQL is necessary for already-frozen historical/closed rows and never searches by a broad prefix or changes other accounts' content. The closed legacy Resource example is temporarily restored to its prior published state only when it lacks the expected cover, repaired through the normal owner media API, and closed again without changing its ID.
 
@@ -36,7 +36,7 @@ npm run demo:verify:local
 | `demo-bob@planets.invalid`   | Marco        | Requester: has pending, rejected, and withdrawn Messages plus an exchange listing |
 | `demo-carla@planets.invalid` | Sara         | Participant: accepted into the mural Project and active in its chat               |
 
-All three profiles are complete, synthetic, and use different skills from the controlled catalog. Their canonical profile photos are locally generated abstract initial avatars, not stock faces.
+All five profiles are complete and synthetic. The original three use different skills from the controlled catalog. `demo-planets@planets.invalid` is **PLANETS — demo locale**, owning three explicitly synthetic starter examples. `demo-reviewer@planets.invalid` is **Revisore — demo locale**, the only fixture staff identity. Both have abstract geometric avatars. Their canonical profile photos are locally generated abstract initial avatars, not stock faces.
 
 The realistic Italian scenario set is:
 
@@ -45,6 +45,10 @@ The realistic Italian scenario set is:
 - Scambio-Dona: **Regalo attrezzi da giardinaggio**, **Scambio due tavoli pieghevoli per aiuto con una mensola**, and the closed **Vassoi per piantine — già assegnati**.
 
 The world retains restricted/public location examples, pending/accepted/rejected/withdrawn participation, projected in-app notifications, and a three-message Italian Project chat. Locations are safe synthetic rough/detail text around Trento; no stock-photo subject is described as a demo persona or real PLANETS participant.
+
+## Workshop stability and non-repairing verification
+
+`demo:verify:local` checks already-created identities and canonical state without product repair. `npm run demo:workshop:check:local` is explicitly mutating, bounded, and never resets: it proves committed-copy interruption/recovery, unchanged IDs/tokens/Bozza/needs/receipts/reports/removal/audit/outbox/notifications, and independent version copies. A coordinated advisory lock prevents half-built snapshots. Interactive baseline drift is reported; removed templates and owner-edited copies are never silently restored. Repeat destructive native journeys only with an explicit reset of a known disposable local stack. See the [TW05 record](workshop-demo-validation.md) for exclusions and later PI05 composition.
 
 ## Vendored media and lifecycle ordering
 

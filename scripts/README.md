@@ -21,3 +21,6 @@ domain verification and change-scoped validation tooling.
 SIM01's RPC/input/response/error/ranking and SIM02 caller contract is in
 [similar-active-proposals.md](../docs/development/similar-active-proposals.md).
 No submitted query history or matching worker is created.
+
+- `reset-local-demo-world.mjs` validates project-scoped loopback targets before an explicitly destructive disposable database reset.
+- `verify-local-workshop-demo.mjs` is the bounded mutating TW05 stability/interruption/transition check, after domain tests and before generated-type drift in Database validation. It never resets; `verify-local-demo-world.mjs` is its separate non-repairing reader. [Reproduction and PI05 composition](../docs/development/workshop-demo-validation.md).

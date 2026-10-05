@@ -6,6 +6,7 @@ export async function signInLocalOtpUser({
   mailpitUrl,
   email,
   verifierName,
+  shouldCreateUser = true,
 }) {
   const authClient = createClient(apiUrl, publishableKey, {
     auth: {
@@ -18,7 +19,7 @@ export async function signInLocalOtpUser({
   const requestStartedAt = Date.now();
   const { error: requestError } = await authClient.auth.signInWithOtp({
     email,
-    options: { shouldCreateUser: true },
+    options: { shouldCreateUser },
   });
   if (requestError) {
     throw safeSupabaseFailure(

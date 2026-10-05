@@ -9,6 +9,8 @@ tooling.
   returns a separate data client whose access-token callback is bound to the
   verified session JWT. This prevents immediate REST/RPC calls from falling
   back to the publishable key as their Bearer value.
+  Its optional `shouldCreateUser` defaults to true for fixture setup; read-only
+  demo verification passes false after checking existing identities.
 - `demo-world.mjs` owns the stable synthetic persona/scenario registry, exact
   legacy-title adoption, strict loopback-only target guard, time-relative
   dataset orchestration, canonical profile/cover uploads, and focused
@@ -36,3 +38,5 @@ references without changing production trigger definitions.
 Deterministic media uploads never use upsert; a rerun may reuse only an exact
 already-owned version path left by an interrupted commit, which the canonical
 RPC revalidates before adoption.
+
+- `demo-workshop.mjs` owns TW05’s finite source inventory, stable actor/purpose request identities, canonical source/copy/report/removal phases, read-only assertions, dedicated clock transition and complete product-table snapshot digests. `demo-world.mjs` remains the single orchestrator, supplying auth, media, target safety and the shared coordination lock. The focused tests cover inventory uniqueness, request scope and elapsed-hour/DST margins.

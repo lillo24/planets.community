@@ -72,9 +72,32 @@ test("refuses staging, production, and remote targets", () => {
   );
 });
 
+test("demo target requires all URLs and refuses remote Mailpit before mutation", () => {
+  const values = {
+    apiUrl: "http://127.0.0.1:54821",
+    databaseUrl: "postgresql://postgres:local-only@127.0.0.1:54822/postgres",
+    mailpitUrl: "http://127.0.0.1:54824",
+  };
+  for (const key of ["apiUrl", "databaseUrl", "mailpitUrl"])
+    assert.throws(
+      () => assertSafeLocalDemoTarget({ ...values, [key]: undefined }),
+      /required/,
+    );
+  assert.throws(
+    () =>
+      assertSafeLocalDemoTarget({
+        ...values,
+        mailpitUrl: "https://mailpit.example.test",
+      }),
+    /non-loopback/,
+  );
+});
+
 test("keeps persona and scenario definitions stable and unique", () => {
   assert.deepEqual(
-    Object.values(DEMO_PERSONAS).map((persona) => persona.email),
+    Object.values(DEMO_PERSONAS)
+      .slice(0, 3)
+      .map((persona) => persona.email),
     [
       "demo-alice@planets.invalid",
       "demo-bob@planets.invalid",
@@ -82,7 +105,9 @@ test("keeps persona and scenario definitions stable and unique", () => {
     ],
   );
   assert.deepEqual(
-    Object.values(DEMO_PERSONAS).map((persona) => persona.displayName),
+    Object.values(DEMO_PERSONAS)
+      .slice(0, 3)
+      .map((persona) => persona.displayName),
     ["Giulia", "Marco", "Sara"],
   );
 
