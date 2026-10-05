@@ -3,6 +3,14 @@
 This feature owns one-time proposal discovery and authenticated structural
 management for the immutable Creator and current Co-creators.
 
+TW04 adds Browse and unpublished-editor entries to the sibling
+`template_workshop/` feature. The separate **Create from a template** action
+pushes through the existing draft departure guard; it preserves this editor
+and opens any accepted copy in a different editor by its canonical ID.
+Near publication, IT/EN copy explains automatic eligible reuse at Completed
+(end + 24 elapsed hours), including open resource descriptions and free-text
+responsibility. Ordinary blank creation, My Proposals and Tavoli remain intact.
+
 - `domain/` defines proposal, lifecycle, status, skill and time-zone models.
 - `data/` calls only the canonical Supabase proposal RPCs and reads the existing controlled skill catalog.
 - `application/` coordinates pagination, requester-only Requested enrichment, detail loading and race-safe owner commands. Every owner mutation carries the identity for which the screen was rendered.

@@ -16,6 +16,7 @@ import '../../auth/application/auth_session_controller.dart';
 import '../../auth/domain/auth_models.dart';
 import '../../cover_media/domain/cover_media_models.dart';
 import '../../cover_media/presentation/cover_editor_section.dart';
+import '../../template_workshop/presentation/template_workshop_screens.dart';
 import '../../participation/domain/participation_models.dart';
 import '../../profile_photo/presentation/profile_photo_trust_gate.dart';
 import '../../project_resource_needs/presentation/project_resource_need_routes.dart';
@@ -682,6 +683,15 @@ class _ProposalFormState extends ConsumerState<_ProposalForm> {
               padding: const EdgeInsets.all(AppSpacing.large),
               // Retain built fields and pending covers when they scroll offscreen.
               children: <Widget>[
+                if (isDraft)
+                  OutlinedButton.icon(
+                    key: const Key('proposal-editor-workshop'),
+                    onPressed: busy
+                        ? null
+                        : () => context.push(WorkshopRoutes.catalog),
+                    icon: const Icon(Icons.auto_stories_outlined),
+                    label: Text(l10n.workshopStartFromTemplate),
+                  ),
                 if (readOnlyMessage != null) ...[
                   Card(
                     key: const Key('proposal-editor-read-only'),
@@ -1009,6 +1019,7 @@ class _ProposalFormState extends ConsumerState<_ProposalForm> {
                   ),
                 ],
                 const SizedBox(height: AppSpacing.large),
+                if (isDraft) Text(l10n.workshopPublicationNotice),
                 Wrap(
                   spacing: AppSpacing.small,
                   runSpacing: AppSpacing.small,

@@ -43,6 +43,7 @@ import '../../features/participation/presentation/participation_routes.dart';
 import '../../features/proposals/presentation/own_proposals_screen.dart';
 import '../../features/proposals/presentation/proposal_editor_screen.dart';
 import '../../features/proposals/presentation/public_proposals_screen.dart';
+import '../../features/template_workshop/presentation/template_workshop_screens.dart';
 import '../../features/recurring_activities/presentation/own_recurring_activities_screen.dart';
 import '../../features/recurring_activities/presentation/public_recurring_activities_screen.dart';
 import '../../features/recurring_activities/presentation/recurring_activity_editor_screen.dart';
@@ -106,6 +107,8 @@ RoutingConfig _routingConfig(
           path.startsWith('/profile/review-requests');
       final isProfileEditRoute = path == '/profile/edit';
       final isProposalManagementRoute =
+          path == WorkshopRoutes.catalog ||
+          path.startsWith('${WorkshopRoutes.catalog}/') ||
           path == '/proposals/mine' ||
           path == '/proposals/create' ||
           (path.startsWith('/proposals/') && path.endsWith('/edit'));
@@ -415,6 +418,24 @@ RoutingConfig _routingConfig(
                 path: '/proposals',
                 builder: (context, state) => const PublicProposalsScreen(),
                 routes: [
+                  GoRoute(
+                    path: 'workshop',
+                    pageBuilder: (context, state) => MaterialPage<void>(
+                      key: state.pageKey,
+                      child: const TemplateWorkshopScreen(),
+                    ),
+                    routes: [
+                      GoRoute(
+                        path: ':templateId',
+                        pageBuilder: (context, state) => MaterialPage<void>(
+                          key: state.pageKey,
+                          child: TemplateWorkshopDetailScreen(
+                            templateId: state.pathParameters['templateId']!,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                   GoRoute(
                     path: 'mine',
                     builder: (context, state) => const OwnProposalsScreen(),

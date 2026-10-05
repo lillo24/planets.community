@@ -545,3 +545,73 @@ format and analysis; `check:site` passed **34 UI + 19 worker tests**, lint/types
 build and deployment dry run. Generated types, formatting and diff checks are
 required before push. The all-in-one `check:db` wrapper and native device builds
 were not run; individual affected commands and hosted validation are the evidence.
+
+## TW04 mobile implementation (draft review)
+
+TW04 is implemented on exact DRAFT01 head
+`8062035a5cdc38ac016f64d125b7b4407b613063`, branch
+`codex/tw04-mobile-template-workshop`, draft target
+`codex/draft01-save-proposal-drafts-on-exit`. This does not mark predecessors
+merged or the feature production-ready. SIM01/SIM02 and TW05 remain deferred.
+
+The dedicated `apps/mobile/lib/features/template_workshop` feature consumes the
+five existing public/application RPCs, with no new migration or private baseline
+read. Cards cannot contain detail/owner fields. Detail preserves finite positive
+numeric fractional duration; capacity/counts are integers. Source cover paths
+use the existing authorized cover-images loader, and names use only the current
+globally public projection with a neutral fallback, never contextual avatars.
+
+Catalog requests use 20 rows, a paired immutable publication-link cursor,
+literal trimmed query and controlled OR-skill filters. New filters replace
+pending request generations; append deduplicates IDs without inventing event
+dates or popularity ordering. Resource previews page 50 rows by ascending need
+ID against one detail token, display loaded/authoritative totals and surface
+duplicate/nonadvancing/truncated collections. PT409 clears old pages and
+refreshes detail once; explicit review and pagination start the new preview.
+No automatic stale-page loop or unbounded download is used. TW03 still copies
+the complete canonical collection independently of viewed pages.
+
+Each Use freezes actor/template/token/capacity/request UUID before mutation.
+Thirty-second gateway deadlines produce explicit failures; a mutation timeout
+can still commit. Process-memory recovery stores only that opaque intent and
+accepted destination ID, scoped to its applicant; no copied content, full
+receipt, preferences or telemetry. Empty or failed private receipt reads lead
+to exact replay of the same command. Accepted Open requires no current public
+preview and opens the ordinary owner editor by ID, reading current edited or
+published content. A separate deliberate **Start another independent draft**
+creates a fresh key after acceptance. Definitive stale rejection instead
+refreshes content and asks for review before a new intent. Profile/setup and
+account changes retain the app boundary and invalidate old callbacks.
+
+Browse and unpublished-editor entries push `/proposals/workshop`; static routes
+precede Proposal-ID matching. DRAFT01's outgoing router guard saves a prior
+meaningful form once, blocks invalid/failed departure and delivers its existing
+destination feedback. Accepted copies use separate editor sessions; retained
+prior forms keep their canonical IDs. IT/EN publication copy explains automatic
+eligible reuse at Completed, open resource descriptions and free-text review,
+without an opt-in/submission/approval step or anonymization promise.
+
+Template Report uses `proposalTemplateReportTarget` and the shared authenticated
+form, including original-Creator self-report and manual-review notice. It never
+reports the source Project or claims acceptance removed content. Return/resume/
+refresh revalidate public availability; confirmed unavailability clears cover,
+detail/resources and new Use/Report, whereas network failure remains retryable.
+Accepted destination recovery remains available in either state. No polling or
+immediate cache-revocation claim is made; canonical mutation gates enforce races.
+
+Validation includes focused gateway/controller/widget tests plus the complete
+mobile suite. The isolated local Proposal/TW01, moderation/TW02, application/TW03
+and DRAFT01 verifiers exercise the unchanged integration contracts. The opt-in
+[native smoke procedure](../../apps/mobile/integration_test/README.md) covers
+real screen/RPC navigation, 51 needs, self-report, accepted-response loss,
+removed-template editing/reopening and prior-form preservation. SDK-only
+`integration_test` is a development dependency; no runtime dependency was added.
+Actual run results and final-head scoped hosted CI are recorded in the PR.
+
+Founder review remains required for Workshop entry/detail and past-event
+language, prior forms, Retry/Open versus new copy, self-report and automatic
+inclusion explanation. Later main integration must reconcile #128/#131/#134
+participant links/native auth returns/browser joining with these outgoing guards
+and independent drafts, preserving both flows. Physical iOS/native gesture and
+platform accessibility checks remain separate from widget/emulator evidence.
+No shared database change, merge, deployment or store submission is authorized.
