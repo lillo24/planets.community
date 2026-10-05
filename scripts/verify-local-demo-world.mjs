@@ -11,5 +11,5 @@ await verifyLocalDemoWorld({
 });
 
 console.log(
-  "Confirmed the local demo personas, connected project states, Messages, projected notifications, authorized chat, public listings, RLS denial, and restricted exact-location boundary.",
+  "Confirmed local demo photo states, invitation generations/provenance/episodes, superseded offers, zero commitments, Messages, notifications, authorized chat, discovery and private RLS/location boundaries without repairing domain state.",
 );

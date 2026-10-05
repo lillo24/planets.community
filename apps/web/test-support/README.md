@@ -12,6 +12,15 @@
   synthetic identifiers; they do not verify a device or public host.
 - `pi03-local-smoke.test.ts` owns the earlier gateway/HTTP integration described
   below; ordinary Vitest skips its opt-in backend check.
+- `pi05-browser-fixture.ts` requires `PI05_LOCAL_REHEARSAL=1` and the owned
+  `planets-community-pi05` stack (58920–58929). It retrieves the seeded current
+  Proposal/Tavolo links, runs production Next and disposable Site owners
+  (3175/3176) behind the harness (3174), and supplies private local launch/OTP
+  pages plus safe independent canonical status. Its explicit CLI departure and
+  revocation operations use authenticated APIs. Ignored fixture files are private.
+  `pi04-host-probe.ts` also accepts the exact PI05 origin with a required fixture
+  UUID. The [PI05 record](../../../docs/implementation/pi05-integration-qa-and-demo-data.md)
+  owns commands and case-level evidence; these helpers prove no public deployment.
 
 The [PI04 record](../../../docs/implementation/pi04-native-links-and-public-host-readiness.md#local-reproduction-and-evidence)
 owns exact isolation/configuration, browser/capture/probe commands, cleanup and

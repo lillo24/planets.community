@@ -14,7 +14,7 @@ npm run demo:seed:local
 npm run demo:reset:local
 ```
 
-`demo:seed:local` brings only the nine known scenarios owned by the three stable demo identities to their desired state. Repeated runs reuse canonical entity IDs, add only missing transitions/messages, refresh relative Proposal times, and let the notification projector consume pending supported local events. It does not reset unrelated developer rows.
+`demo:seed:local` brings the thirteen known scenarios owned by five stable demo identities to their desired state. Repeated runs reuse canonical entity IDs, add only missing transitions/messages, refresh relative Proposal times, and let the notification projector consume pending supported local events. It does not reset unrelated developer rows.
 
 Older local worlds are adopted in place: an exact legacy `DEMO · ...` title owned by its expected demo identity is renamed to the realistic title before reconciliation. Ambiguous or duplicate matches fail loudly. This narrow trusted local SQL is necessary for already-frozen historical/closed rows and never searches by a broad prefix or changes other accounts' content. The closed legacy Resource example is temporarily restored to its prior published state only when it lacks the expected cover, repaired through the normal owner media API, and closed again without changing its ID.
 
@@ -30,13 +30,15 @@ npm run demo:verify:local
 
 ## Personas and useful flows
 
-| Login email                  | Display name | Role in the world                                                                 |
-| ---------------------------- | ------------ | --------------------------------------------------------------------------------- |
-| `demo-alice@planets.invalid` | Giulia       | Organizer: owns Proposals, Tavoli, a donation listing, and the mural chat         |
-| `demo-bob@planets.invalid`   | Marco        | Requester: has pending, rejected, and withdrawn Messages plus an exchange listing |
-| `demo-carla@planets.invalid` | Sara         | Participant: accepted into the mural Project and active in its chat               |
+| Login email                  | Display name | Role in the world                                                                  |
+| ---------------------------- | ------------ | ---------------------------------------------------------------------------------- |
+| `demo-alice@planets.invalid` | Giulia       | Organizer: owns Proposals, Tavoli, a donation listing, and the mural chat          |
+| `demo-bob@planets.invalid`   | Marco        | Requester: has pending, rejected, and withdrawn Messages plus an exchange listing  |
+| `demo-carla@planets.invalid` | Sara         | Participant: accepted into the mural Project and active in its chat                |
+| `demo-dario@planets.invalid` | Dario        | Photo-free participant in both invitation Projects; retained leave/removal history |
+| `demo-elena@planets.invalid` | Elena        | Photo-free, otherwise ready, unjoined recipient for explicit interactive Join      |
 
-All three profiles are complete, synthetic, and use different skills from the controlled catalog. Their canonical profile photos are locally generated abstract initial avatars, not stock faces.
+All five have complete synthetic basic profiles. Giulia, Marco and Sara retain their controlled skills and locally generated abstract initial avatars. Dario and Elena explicitly have no canonical profile-photo row; seeding clears an existing row through the owner API and verification asserts absence. Their avatar fallback does not represent uploaded media. Clearing the canonical row does not promise removal of an earlier orphaned Storage object.
 
 The realistic Italian scenario set is:
 
@@ -45,6 +47,39 @@ The realistic Italian scenario set is:
 - Scambio-Dona: **Regalo attrezzi da giardinaggio**, **Scambio due tavoli pieghevoli per aiuto con una mensola**, and the closed **Vassoi per piantine — già assegnati**.
 
 The world retains restricted/public location examples, pending/accepted/rejected/withdrawn participation, projected in-app notifications, and a three-message Italian Project chat. Locations are safe synthetic rough/detail text around Trento; no stock-photo subject is described as a demo persona or real PLANETS participant.
+
+## Participant invitation cases
+
+The original nine examples remain intact. Four additional activities reuse existing licensed covers without adding stock subjects or assets:
+
+| Activity                                                   | Purpose                                                                                                |
+| ---------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| Proposal **Prepariamo insieme le cassette per l'orto**     | Active special admission; organizers excluded from capacity                                            |
+| Proposal **Piccolo banco di riparazione — posti esauriti** | Full with one counted Creator; preview may be available but admission returns the canonical full error |
+| Tavolo **Orto condiviso — idee e lavori del mese**         | Active special admission; organizers included in capacity                                              |
+| Tavolo **Idee per il cortile — Tavolo concluso**           | Ended, unavailable                                                                                     |
+
+Both active cases retain a replaced generation, a revoked generation and one current generation. Marco's pending ordinary request has skill/resource offers and a human request-chat message before direct admission withdraws it with `direct_participant_invitation`; the original request, offers, message and superseding membership relationship remain. Tavoli have no Proposal skill selections. No automatic membership commitments are created. Sara is also admitted; Creator and already-joined receipts consume no new slot. Dario has deliberate joined → left → joined → removed → joined episodes and can read/send Project chat without a photo. Elena stays unjoined and cannot read the private chat or meeting details.
+
+The finished concert and paused reading group also receive links while joinable. Their existing historical/paused purpose stays intact. Resuming the reading group makes the same unrevoked generation usable again. Ordinary public sharing uses the public detail with one `intent=join` marker and never admits by opening it.
+
+Raw links are written only to ignored `.env.demo-participant-links.json`, keyed by generation ID and scoped to the loopback API. Keep that file private; normal command output contains no capabilities. Current links are obtained through the authenticated `get_current_project_participant_invitation` RPC, or the normal mobile organizer sharing sheet. Retrieving/resharing does not rotate. The PI05 loopback browser launch helper below consumes the ignored journal/current manager API without echoing a token. It is distinct from canonical `https://planets.community` URLs and proves no public hosting or OS association.
+
+## Stability, verification and recovery
+
+`demo:verify:local` authenticates only already-created demo identities and reads canonical state; it never creates/completes a profile, admits a member, rotates a link, sends a message or projects events to repair failure. It checks explicit photo state, generations/secret destruction, direct origins, Creator/existing outcomes, retained episodes, superseded offers/chat history, zero commitments, own membership/chat reads and public/RLS boundaries. Authentication creates local session/email state, which is separate from domain repair.
+
+```text
+npm run demo:check:local
+```
+
+This explicit **mutating** integration command seeds → verifies → seeds unchanged → verifies and compares canonical IDs and relationships for generations, receipts, memberships, requests/offers, messages, notifications and commitments. Relative refresh times and authentication sessions are excluded. On a clean stack it intentionally interrupts immediately after a committed admission, proves verify fails without domain repair, then recovers that stable action. It also checks full/ended/paused failures, same-generation resume, ordinary request/publication photo gates, ended receipt replay and fresh restoration. It creates/reuses one complete private Dario-owned publication-check draft; this is not another public demo scenario.
+
+Each seed admission UUID is derived from Project, account, generation and deliberate episode purpose. Interrupted committed actions reuse their original receipts. After interactive leave/removal, an explicit seed creates a fresh action bound to the last ended episode; unchanged subsequent seeds preserve it. Old receipts never restore membership. Seeding and transition checks share an advisory lock and reject concurrent mutation.
+
+Interactive changes are intentional drift: verification fails if Elena joined, a baseline generation was revoked/regenerated, or a required member departed. Seeding restores departed seeded members with retained history, but refuses extra/revoked baseline generations rather than silently erasing them. Use `demo:reset:local` only on a known disposable stack to rebuild deliberate baseline history; it resets the entire selected local database. A journal from another API is rejected and must be moved aside deliberately. Never reset a shared rehearsal stack.
+
+`check:db` and hosted Database CI execute the bounded demo check **after** clean pgTAP and existing mutation verifiers, before generated-type drift validation. The [PI05 record](../implementation/pi05-integration-qa-and-demo-data.md) owns isolated browser/mobile reproduction and separates GUI, HTTP, gateway and native evidence.
 
 ## Vendored media and lifecycle ordering
 
