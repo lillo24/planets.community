@@ -70,6 +70,14 @@ test("refuses staging, production, and remote targets", () => {
       }),
     /non-loopback target/u,
   );
+  assert.throws(
+    () =>
+      assertSafeLocalDemoTarget({
+        ...localValues,
+        mailpitUrl: "https://mail.example.com",
+      }),
+    /non-loopback target/u,
+  );
 });
 
 test("keeps persona and scenario definitions stable and unique", () => {
@@ -79,11 +87,13 @@ test("keeps persona and scenario definitions stable and unique", () => {
       "demo-alice@planets.invalid",
       "demo-bob@planets.invalid",
       "demo-carla@planets.invalid",
+      "demo-dario@planets.invalid",
+      "demo-elena@planets.invalid",
     ],
   );
   assert.deepEqual(
     Object.values(DEMO_PERSONAS).map((persona) => persona.displayName),
-    ["Giulia", "Marco", "Sara"],
+    ["Giulia", "Marco", "Sara", "Dario", "Elena"],
   );
 
   const entries = [
@@ -93,13 +103,16 @@ test("keeps persona and scenario definitions stable and unique", () => {
   ];
   const definitions = entries.map(([, definition]) => definition);
   const titles = definitions.map((definition) => definition.title);
-  const legacyTitles = definitions.map((definition) => definition.legacyTitle);
+  const legacyTitles = definitions
+    .map((definition) => definition.legacyTitle)
+    .filter(Boolean);
   const coverAssets = definitions.map((definition) => definition.coverAsset);
   const coverVersions = definitions.map(
     (definition) => definition.coverVersion,
   );
 
-  assert.equal(entries.length, 9);
+  assert.equal(entries.length, 13);
+  assert.equal(legacyTitles.length, 9);
   assert.ok(entries.every(([key, definition]) => definition.key === key));
   assert.ok(
     definitions.every((definition) => definition.ownerKey in DEMO_PERSONAS),
@@ -108,7 +121,16 @@ test("keeps persona and scenario definitions stable and unique", () => {
   assert.ok(titles.every((title) => !title.startsWith("DEMO ·")));
   assert.equal(new Set(legacyTitles).size, legacyTitles.length);
   assert.ok(legacyTitles.every((title) => title.startsWith("DEMO · ")));
-  assert.equal(new Set(coverAssets).size, coverAssets.length);
+  assert.equal(new Set(coverAssets).size, 9);
+  assert.deepEqual(
+    definitions.filter((d) => !d.legacyTitle).map((d) => d.coverAsset),
+    [
+      "repair-cafe.webp",
+      "repair-cafe.webp",
+      "weekly-community-table.webp",
+      "weekly-community-table.webp",
+    ],
+  );
   assert.equal(new Set(coverVersions).size, coverVersions.length);
   assert.ok(coverVersions.every((version) => uuidPattern.test(version)));
   assert.ok(Object.isFrozen(DEMO_PERSONAS.alice.skillSlugs));
@@ -119,12 +141,22 @@ test("keeps persona and scenario definitions stable and unique", () => {
     ),
   );
 
-  const profileAssets = Object.values(DEMO_PERSONAS).map(
-    (persona) => persona.profileAsset,
+  const photographed = Object.values(DEMO_PERSONAS).filter(
+    (p) => p.photoState === "present",
   );
-  const profileVersions = Object.values(DEMO_PERSONAS).map(
-    (persona) => persona.profileVersion,
+  assert.deepEqual(
+    Object.values(DEMO_PERSONAS)
+      .filter((p) => p.photoState === "absent")
+      .map((p) => p.email),
+    ["demo-dario@planets.invalid", "demo-elena@planets.invalid"],
   );
+  assert.ok(
+    Object.values(DEMO_PERSONAS)
+      .filter((p) => p.photoState === "absent")
+      .every((p) => !p.profileAsset && !p.profileVersion),
+  );
+  const profileAssets = photographed.map((persona) => persona.profileAsset);
+  const profileVersions = photographed.map((persona) => persona.profileVersion);
   assert.equal(new Set(profileAssets).size, profileAssets.length);
   assert.equal(new Set(profileVersions).size, profileVersions.length);
   assert.ok(profileVersions.every((version) => uuidPattern.test(version)));
@@ -143,9 +175,9 @@ test("demo asset manifest matches deterministic local WebP fixtures", async () =
     ].map((definition) => `covers/${definition.coverAsset}`),
   );
   const expectedProfiles = new Set(
-    Object.values(DEMO_PERSONAS).map(
-      (persona) => `profiles/${persona.profileAsset}`,
-    ),
+    Object.values(DEMO_PERSONAS)
+      .filter((p) => p.photoState === "present")
+      .map((persona) => `profiles/${persona.profileAsset}`),
   );
 
   assert.equal(manifest.licenseUrl, "https://www.pexels.com/license/");

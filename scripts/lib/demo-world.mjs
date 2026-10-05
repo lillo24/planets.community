@@ -6,6 +6,12 @@ import { createClient } from "@supabase/supabase-js";
 
 import { signInLocalOtpUser } from "./local-authenticated-user.mjs";
 import { ensureLocalProfilePhoto } from "./local-profile-photo.mjs";
+import {
+  ensureDemoInvitation,
+  exerciseDemoInvitationTransitions,
+  seedDemoParticipantInvitations,
+  verifyDemoParticipantInvitations,
+} from "./demo-participant-invitations.mjs";
 
 const DEMO_LOCK_ID = 684026240991817n;
 const COVER_BUCKET = "cover-images";
@@ -18,6 +24,7 @@ const LEGACY_CHAT_BODIES = deepFreeze([
 
 export const DEMO_PERSONAS = deepFreeze({
   alice: {
+    photoState: "present",
     email: "demo-alice@planets.invalid",
     displayName: "Giulia",
     bio: "Mi piace trasformare idee di quartiere in progetti semplici da fare insieme.",
@@ -26,6 +33,7 @@ export const DEMO_PERSONAS = deepFreeze({
     profileVersion: "d0100000-0000-4000-8000-000000000001",
   },
   bob: {
+    photoState: "present",
     email: "demo-bob@planets.invalid",
     displayName: "Marco",
     bio: "Mi piace aggiustare cose, lavorare con il legno e dare una mano nei progetti pratici.",
@@ -34,12 +42,27 @@ export const DEMO_PERSONAS = deepFreeze({
     profileVersion: "d0100000-0000-4000-8000-000000000002",
   },
   carla: {
+    photoState: "present",
     email: "demo-carla@planets.invalid",
     displayName: "Sara",
     bio: "Fotografia, musica e attività creative: soprattutto quando diventano occasioni per conoscere persone.",
     skillSlugs: ["facilitation", "musician", "photography"],
     profileAsset: "sara.webp",
     profileVersion: "d0100000-0000-4000-8000-000000000003",
+  },
+  dario: {
+    email: "demo-dario@planets.invalid",
+    displayName: "Dario",
+    bio: "Partecipo ai progetti di quartiere tramite un invito, senza una foto di profilo.",
+    skillSlugs: ["basic-repairs"],
+    photoState: "absent",
+  },
+  elena: {
+    email: "demo-elena@planets.invalid",
+    displayName: "Elena",
+    bio: "Vorrei provare un progetto di quartiere: il mio primo Join resta una scelta esplicita.",
+    skillSlugs: [],
+    photoState: "absent",
   },
 });
 
@@ -90,6 +113,49 @@ export const DEMO_SCENARIOS = deepFreeze({
       skillSlugs: ["basic-repairs", "woodworking"],
       skillImportances: ["required", "useful"],
     },
+    participantWorkshop: {
+      key: "participantWorkshop",
+      ownerKey: "alice",
+      title: "Prepariamo insieme le cassette per l'orto",
+      summary:
+        "Un laboratorio con invito diretto per costruire piccole cassette.",
+      description:
+        "Un esempio locale per provare inviti, partecipazione e chat. Le offerte restano nella richiesta originale.",
+      location: {
+        countryCode: "IT",
+        locality: "Trento",
+        administrativeArea: TRENTO_ADMINISTRATIVE_AREA,
+        publicLabel: "Trento · Povo",
+        exactMeetingText: "Laboratorio sintetico riservato ai partecipanti",
+        exactLocationVisibility: "participants",
+      },
+      coverAsset: "repair-cafe.webp",
+      coverVersion: "d0200000-0000-4000-8000-000000000010",
+      skillSlugs: ["basic-repairs"],
+      skillImportances: ["useful"],
+    },
+    participantFull: {
+      key: "participantFull",
+      ownerKey: "alice",
+      title: "Piccolo banco di riparazione — posti esauriti",
+      summary: "Un posto, già occupato dalla Creator che conta nella capienza.",
+      description:
+        "Il link resta valido: il Join deve mostrare la capienza esaurita, senza creare un episodio.",
+      location: {
+        countryCode: "IT",
+        locality: "Trento",
+        administrativeArea: TRENTO_ADMINISTRATIVE_AREA,
+        publicLabel: "Trento · Centro",
+        exactMeetingText: "Banco sintetico",
+        exactLocationVisibility: "public",
+      },
+      coverAsset: "repair-cafe.webp",
+      coverVersion: "d0200000-0000-4000-8000-000000000011",
+      skillSlugs: ["basic-repairs"],
+      skillImportances: ["useful"],
+      registrationCapacity: 1,
+      countOrganizersTowardCapacity: true,
+    },
     concert: {
       key: "concert",
       ownerKey: "alice",
@@ -114,6 +180,47 @@ export const DEMO_SCENARIOS = deepFreeze({
     },
   },
   tavoli: {
+    participantTable: {
+      key: "participantTable",
+      ownerKey: "alice",
+      title: "Orto condiviso — idee e lavori del mese",
+      summary:
+        "Un Tavolo aperto con inviti riutilizzabili e partecipanti anche senza foto.",
+      description:
+        "Condividiamo idee e piccoli lavori. Entrare con un invito non accetta automaticamente offerte di risorse.",
+      topic: "Orto di quartiere",
+      location: {
+        countryCode: "IT",
+        locality: "Trento",
+        administrativeArea: TRENTO_ADMINISTRATIVE_AREA,
+        publicLabel: "Trento · Povo",
+        exactMeetingText: "Sala sintetica riservata ai partecipanti",
+        exactLocationVisibility: "participants",
+      },
+      coverAsset: "weekly-community-table.webp",
+      coverVersion: "d0200000-0000-4000-8000-000000000012",
+      countOrganizersTowardCapacity: true,
+    },
+    participantEnded: {
+      key: "participantEnded",
+      ownerKey: "alice",
+      title: "Idee per il cortile — Tavolo concluso",
+      summary:
+        "Un Tavolo concluso conserva il suo vecchio invito, che non ammette più.",
+      description:
+        "Il link viene creato quando il Tavolo è attivo e poi il ciclo viene concluso attraverso l'API della Creator.",
+      topic: "Cortile di quartiere",
+      location: {
+        countryCode: "IT",
+        locality: "Trento",
+        administrativeArea: TRENTO_ADMINISTRATIVE_AREA,
+        publicLabel: "Trento · Centro",
+        exactMeetingText: "Sala sintetica",
+        exactLocationVisibility: "public",
+      },
+      coverAsset: "weekly-community-table.webp",
+      coverVersion: "d0200000-0000-4000-8000-000000000013",
+    },
     weekly: {
       key: "weekly",
       ownerKey: "alice",
@@ -333,6 +440,8 @@ export async function seedLocalDemoWorld({
   status,
   mailpitUrl = "http://127.0.0.1:54324",
   now = new Date(),
+  onInvitationCheckpoint,
+  sessionPool,
 }) {
   const target = requireTrustedLocalStatus(status, mailpitUrl);
   const sql = postgres(target.databaseUrl, { max: 1, onnotice: () => {} });
@@ -358,12 +467,19 @@ export async function seedLocalDemoWorld({
       mailpitUrl: target.mailpitUrl,
       sql,
       serviceClient,
+      sessionPool,
     });
     const times = buildDemoTimes(now);
     await migrateLegacyDemoWorld(context);
     const scenario = await bringDemoWorldToDesiredState(context, times);
+    await seedDemoParticipantInvitations(
+      context,
+      scenario,
+      onInvitationCheckpoint,
+    );
     await projectNotificationOutbox(serviceClient);
     await verifyDemoWorldState(context, scenario, times);
+    await verifyDemoParticipantInvitations(context, scenario);
 
     return Object.freeze({
       personas: Object.values(DEMO_PERSONAS).map((persona) => persona.email),
@@ -390,6 +506,7 @@ export async function verifyLocalDemoWorld({
   status,
   mailpitUrl = "http://127.0.0.1:54324",
   now = new Date(),
+  sessionPool,
 }) {
   const target = requireTrustedLocalStatus(status, mailpitUrl);
   const sql = postgres(target.databaseUrl, { max: 1, onnotice: () => {} });
@@ -398,6 +515,15 @@ export async function verifyLocalDemoWorld({
   });
 
   try {
+    const existing = await sql`
+      select profile.id from auth.users identity join public.profiles profile on profile.id = identity.id
+      where identity.email = any(${Object.values(DEMO_PERSONAS).map((p) => p.email)}::text[])
+    `;
+    if (existing.length !== Object.keys(DEMO_PERSONAS).length) {
+      throw new Error(
+        "The demo profiles are missing; verification never creates or completes them.",
+      );
+    }
     const context = await createAuthenticatedContext({
       repositoryRoot,
       status,
@@ -405,11 +531,49 @@ export async function verifyLocalDemoWorld({
       sql,
       serviceClient,
       updateProfiles: false,
+      sessionPool,
     });
     const scenario = await resolveExistingScenario(context);
+    await verifyDemoParticipantInvitations(context, scenario);
     await verifyDemoWorldState(context, scenario, buildDemoTimes(now));
     return scenario;
   } finally {
+    await sql.end({ timeout: 5 });
+  }
+}
+
+// Explicit mutating integration checks are separate from non-repairing verify.
+export async function exerciseLocalDemoInvitations({
+  repositoryRoot,
+  status,
+  mailpitUrl = "http://127.0.0.1:54324",
+  sessionPool,
+}) {
+  const target = requireTrustedLocalStatus(status, mailpitUrl);
+  const sql = postgres(target.databaseUrl, { max: 1, onnotice: () => {} });
+  let lockAcquired = false;
+  try {
+    const [lock] =
+      await sql`select pg_try_advisory_lock(${DEMO_LOCK_ID}) as acquired`;
+    lockAcquired = lock?.acquired === true;
+    if (!lockAcquired)
+      throw new Error(
+        "Another demo-world mutation is already running for this local database.",
+      );
+    const context = await createAuthenticatedContext({
+      repositoryRoot,
+      status,
+      mailpitUrl: target.mailpitUrl,
+      sql,
+      updateProfiles: false,
+      sessionPool,
+    });
+    return await exerciseDemoInvitationTransitions(
+      context,
+      await resolveExistingScenario(context),
+    );
+  } finally {
+    if (lockAcquired) await sql`select pg_advisory_unlock(${DEMO_LOCK_ID})`;
     await sql.end({ timeout: 5 });
   }
 }
@@ -435,11 +599,12 @@ async function createAuthenticatedContext({
   sql,
   serviceClient,
   updateProfiles = true,
+  sessionPool,
 }) {
   const personaEntries = await Promise.all(
     Object.entries(DEMO_PERSONAS).map(async ([key, definition]) => [
       key,
-      await signInLocalOtpUser({
+      await signInDemoPersona(sessionPool, {
         apiUrl: status.apiUrl,
         publishableKey: status.publishableKey,
         mailpitUrl,
@@ -475,6 +640,9 @@ async function createAuthenticatedContext({
     await Promise.all(
       Object.entries(personas).map(([key, user]) => {
         const definition = DEMO_PERSONAS[key];
+        if (definition.photoState === "absent") {
+          return clearDemoProfilePhoto(user);
+        }
         return ensureLocalProfilePhoto(user, {
           audience: "interactions",
           fixturePath: path.join(
@@ -506,6 +674,32 @@ async function createAuthenticatedContext({
       auth: { persistSession: false },
     }),
   };
+}
+
+function signInDemoPersona(sessionPool, options) {
+  if (!sessionPool) return signInLocalOtpUser(options);
+  // Bounded checker-owned in-memory sessions avoid repeated OTP email requests
+  // within the local one-second throttle. CLI runs never persist session state.
+  const key = JSON.stringify([
+    options.apiUrl,
+    options.publishableKey,
+    options.email,
+  ]);
+  if (!sessionPool.has(key)) sessionPool.set(key, signInLocalOtpUser(options));
+  return sessionPool.get(key);
+}
+
+async function clearDemoProfilePhoto(user) {
+  const { data, error } = await user.client.rpc("get_own_profile_photo", {
+    p_expected_profile_id: user.id,
+  });
+  if (error) throw safeDatabaseFailure("read a photo-free demo profile", error);
+  if (data.length === 0) return;
+  const cleared = await user.client.rpc("clear_own_profile_photo", {
+    p_expected_profile_id: user.id,
+  });
+  if (cleared.error)
+    throw safeDatabaseFailure("clear a photo-free demo profile", cleared.error);
 }
 
 async function ensureCompleteProfile(user, definition, skillsBySlug) {
@@ -572,6 +766,7 @@ async function migrateLegacyDemoWorld(context) {
 
   for (const [kind, definitions] of groups) {
     for (const definition of definitions) {
+      if (!definition.legacyTitle) continue;
       const owner = context.personas[definition.ownerKey];
       const candidates = [definition.legacyTitle, definition.title];
       let rows;
@@ -889,6 +1084,17 @@ async function bringDemoWorldToDesiredState(context, times) {
     initialStartsAt: times.repairStartsAt,
     initialEndsAt: times.repairEndsAt,
   });
+  const participantWorkshop = await ensureProposal(context, personas.alice, {
+    ...DEMO_SCENARIOS.proposals.participantWorkshop,
+    startsAt: times.repairStartsAt,
+    endsAt: times.repairEndsAt,
+  });
+  const participantFull = await ensureProposal(context, personas.alice, {
+    ...DEMO_SCENARIOS.proposals.participantFull,
+    startsAt: times.repairStartsAt,
+    endsAt: times.repairEndsAt,
+    participantInvitation: true,
+  });
   const concert = await ensureProposal(context, personas.alice, {
     ...DEMO_SCENARIOS.proposals.concert,
     startsAt: times.concertStartsAt,
@@ -896,8 +1102,30 @@ async function bringDemoWorldToDesiredState(context, times) {
     initialStartsAt: times.safeInitialHistoricalStartsAt,
     initialEndsAt: times.safeInitialHistoricalEndsAt,
     isHistorical: true,
+    participantInvitation: true,
   });
 
+  const participantTable = await ensureTavolo(context, personas.alice, {
+    ...DEMO_SCENARIOS.tavoli.participantTable,
+    recurrenceType: "weekly",
+    weekday: 2,
+    dayOfMonth: null,
+    localStartTime: "18:00:00",
+    durationMinutes: 60,
+    effectiveFrom: times.recurringEffectiveFrom,
+    lifecycle: "published",
+  });
+  const participantEnded = await ensureTavolo(context, personas.alice, {
+    ...DEMO_SCENARIOS.tavoli.participantEnded,
+    recurrenceType: "weekly",
+    weekday: 2,
+    dayOfMonth: null,
+    localStartTime: "18:00:00",
+    durationMinutes: 60,
+    effectiveFrom: times.recurringEffectiveFrom,
+    lifecycle: "ended",
+    participantInvitation: true,
+  });
   const weekly = await ensureTavolo(context, personas.alice, {
     ...DEMO_SCENARIOS.tavoli.weekly,
     recurrenceType: "weekly",
@@ -927,6 +1155,7 @@ async function bringDemoWorldToDesiredState(context, times) {
     durationMinutes: 75,
     effectiveFrom: times.recurringEffectiveFrom,
     lifecycle: "paused",
+    participantInvitation: true,
   });
 
   const muralPendingRequestId = await ensureRequestState(
@@ -981,8 +1210,14 @@ async function bringDemoWorldToDesiredState(context, times) {
   });
 
   return {
-    proposals: { mural, repairCafe, concert },
-    tavoli: { weekly, monthly, paused },
+    proposals: {
+      mural,
+      repairCafe,
+      concert,
+      participantWorkshop,
+      participantFull,
+    },
+    tavoli: { weekly, monthly, paused, participantTable, participantEnded },
     participation: {
       muralPendingRequestId,
       muralMembershipId,
@@ -1078,6 +1313,9 @@ async function ensureProposal(context, creator, definition) {
     if (error) throw safeDatabaseFailure("publish a demo Proposal", error);
   }
 
+  if (definition.participantInvitation) {
+    await ensureDemoInvitation(context, proposalId);
+  }
   await sql`
     update public.proposals
     set starts_at = ${definition.startsAt},
@@ -1144,7 +1382,7 @@ async function ensureTavolo(context, creator, definition) {
     if (error) throw safeDatabaseFailure("update a demo Tavolo", error);
   }
 
-  if (lifecycleState === "ended") {
+  if (lifecycleState === "ended" && definition.lifecycle !== "ended") {
     throw new Error(
       `Demo-owned Tavolo "${definition.title}" is ended; run \`npm run demo:reset:local\` to rebuild it.`,
     );
@@ -1159,6 +1397,19 @@ async function ensureTavolo(context, creator, definition) {
     await transitionTavolo(creator, "publish_recurring_activity", tavoloId);
     lifecycleState = "published";
   }
+  if (definition.participantInvitation) {
+    const [current] = await sql`
+      select id from private.project_participant_invitations
+      where project_id = ${tavoloId} and revoked_at is null
+    `;
+    // Lifecycle-sensitive links are issued while active, never fabricated on
+    // frozen fixtures. A resumed interrupted run can retrieve its generation.
+    if (!current && lifecycleState === "paused") {
+      await transitionTavolo(creator, "resume_recurring_activity", tavoloId);
+      lifecycleState = "published";
+    }
+    await ensureDemoInvitation(context, tavoloId);
+  }
   if (definition.lifecycle === "paused" && lifecycleState === "published") {
     await transitionTavolo(creator, "pause_recurring_activity", tavoloId);
   } else if (
@@ -1166,6 +1417,9 @@ async function ensureTavolo(context, creator, definition) {
     lifecycleState === "paused"
   ) {
     await transitionTavolo(creator, "resume_recurring_activity", tavoloId);
+  }
+  if (definition.lifecycle === "ended" && lifecycleState !== "ended") {
+    await transitionTavolo(creator, "end_recurring_activity", tavoloId);
   }
   return { id: tavoloId, title: definition.title, coverObjectPath };
 }
@@ -1483,9 +1737,25 @@ async function resolveExistingScenario(context) {
     DEMO_SCENARIOS.proposals.repairCafe,
   );
   const concert = await findProposal(alice, DEMO_SCENARIOS.proposals.concert);
+  const participantWorkshop = await findProposal(
+    alice,
+    DEMO_SCENARIOS.proposals.participantWorkshop,
+  );
+  const participantFull = await findProposal(
+    alice,
+    DEMO_SCENARIOS.proposals.participantFull,
+  );
   const weekly = await findTavolo(alice, DEMO_SCENARIOS.tavoli.weekly);
   const monthly = await findTavolo(alice, DEMO_SCENARIOS.tavoli.monthly);
   const paused = await findTavolo(alice, DEMO_SCENARIOS.tavoli.paused);
+  const participantTable = await findTavolo(
+    alice,
+    DEMO_SCENARIOS.tavoli.participantTable,
+  );
+  const participantEnded = await findTavolo(
+    alice,
+    DEMO_SCENARIOS.tavoli.participantEnded,
+  );
   const donate = await findListing(alice, DEMO_SCENARIOS.listings.donate);
   const exchange = await findListing(bob, DEMO_SCENARIOS.listings.exchange);
   const closed = await findListing(carla, DEMO_SCENARIOS.listings.closed);
@@ -1496,8 +1766,14 @@ async function resolveExistingScenario(context) {
   `;
   if (!chat) throw new Error("The demo mural chat is missing.");
   return {
-    proposals: { mural, repairCafe, concert },
-    tavoli: { weekly, monthly, paused },
+    proposals: {
+      mural,
+      repairCafe,
+      concert,
+      participantWorkshop,
+      participantFull,
+    },
+    tavoli: { weekly, monthly, paused, participantTable, participantEnded },
     chat: { id: chat.id, projectId: mural.id },
     listings: { donate, exchange, closed },
   };
@@ -1505,7 +1781,7 @@ async function resolveExistingScenario(context) {
 
 async function verifyDemoWorldState(context, scenario, times) {
   const { personas, anonymous, sql } = context;
-  const profileIds = [personas.alice.id, personas.bob.id, personas.carla.id];
+  const profileIds = Object.values(personas).map((p) => p.id);
   const [profileRows, profilePhotoRows, scenarioRows, lifecycleRows] =
     await Promise.all([
       sql`
@@ -1554,8 +1830,8 @@ async function verifyDemoWorldState(context, scenario, times) {
         where id = any(${Object.values(scenario.listings).map((row) => row.id)}::uuid[])
       `,
     ]);
-  if (profileRows.length !== 3) {
-    throw new Error("Demo personas do not have three complete profiles.");
+  if (profileRows.length !== Object.keys(DEMO_PERSONAS).length) {
+    throw new Error("Demo personas do not have all complete profiles.");
   }
   for (const [key, user] of Object.entries(personas)) {
     const definition = DEMO_PERSONAS[key];
@@ -1567,6 +1843,11 @@ async function verifyDemoWorldState(context, scenario, times) {
       throw new Error(`Demo persona ${key} does not match its canonical copy.`);
     }
     const photo = profilePhotoRows.find((row) => row.profile_id === user.id);
+    if (definition.photoState === "absent") {
+      if (photo)
+        throw new Error(`Demo persona ${key} must have no canonical photo.`);
+      continue;
+    }
     const expectedPath = `${user.id}/${definition.profileVersion}.webp`;
     if (
       photo?.object_path !== expectedPath ||
@@ -1604,6 +1885,8 @@ async function verifyDemoWorldState(context, scenario, times) {
     stateById.get(scenario.proposals.concert.id)?.lifecycle_state !==
       "published" ||
     stateById.get(scenario.tavoli.paused.id)?.lifecycle_state !== "paused" ||
+    stateById.get(scenario.tavoli.participantEnded.id)?.lifecycle_state !==
+      "ended" ||
     stateById.get(scenario.listings.closed.id)?.lifecycle_state !== "closed"
   ) {
     throw new Error(
@@ -1923,10 +2206,9 @@ function allScenarioDefinitions() {
 }
 
 function knownDemoTitles() {
-  return allScenarioDefinitions().flatMap((definition) => [
-    definition.legacyTitle,
-    definition.title,
-  ]);
+  return allScenarioDefinitions()
+    .flatMap((definition) => [definition.legacyTitle, definition.title])
+    .filter(Boolean);
 }
 
 async function findOneByTitle(sql, kind, ownerId, title) {

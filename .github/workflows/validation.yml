@@ -72,7 +72,7 @@ jobs:
 
       - name: Check Dart formatting
         working-directory: apps/mobile
-        run: dart format --output=none --set-exit-if-changed lib test
+        run: dart format --output=none --set-exit-if-changed lib test test_support
 
       - name: Analyze Flutter application
         working-directory: apps/mobile
@@ -231,6 +231,10 @@ jobs:
 
       - name: Verify public web Tavoli discovery and privacy
         run: npm run tavoli:web:verify:local
+
+      # Demo state must follow clean pgTAP and every mutation verifier above.
+      - name: Verify demo partial recovery and seed rerun stability
+        run: npm run demo:check:local
 
       - name: Regenerate public database types
         run: npm run db:types

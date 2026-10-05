@@ -1,8 +1,12 @@
 // Production Next HTTP probes on the explicit disposable local public origin.
 // Uses only non-secret malformed links and public fixture identifiers.
 export {};
-const origin = process.env.PI04_PROBE_ORIGIN;
-if (origin !== "http://127.0.0.1:3154")
+const pi05 = process.env.PI05_PROBE_ORIGIN === "http://127.0.0.1:3174";
+const origin = pi05
+  ? process.env.PI05_PROBE_ORIGIN
+  : process.env.PI04_PROBE_ORIGIN;
+if (!origin) throw new Error("A disposable loopback probe origin is required.");
+if (origin !== "http://127.0.0.1:3154" && !pi05)
   throw new Error(
     "PI04 probe requires disposable loopback public origin 3154.",
   );
@@ -59,7 +63,16 @@ for (const path of [
     }
   }
 }
-const id = "fb040000-0000-4000-8000-000000000002";
+const id = pi05
+  ? process.env.PI05_PROBE_PROPOSAL_ID
+  : "fb040000-0000-4000-8000-000000000002";
+verify(
+  typeof id === "string" &&
+    /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/u.test(
+      id,
+    ),
+  "A public synthetic Proposal UUID is required.",
+);
 for (const path of [
   "/join/project/invalid-public-probe",
   "/invite/project/invalid-public-probe",
@@ -88,7 +101,7 @@ const detail = await fetch(`${origin}/proposals/${id}?intent=join`);
 verify(detail.status === 200, "Public fixture detail failed.");
 const html = await detail.text();
 verify(
-  html.includes("PI04 public mural"),
+  html.includes(pi05 ? "Prepariamo insieme le cassette" : "PI04 public mural"),
   "Public fixture detail reached wrong owner.",
 );
 const script =
@@ -128,5 +141,5 @@ verify(
   "Unknown Site path must not become a SPA shell.",
 );
 console.log(
-  `PI04 production HTTP contract passed; associations ${enabled ? "synthetically enabled" : "disabled"}; HTML/assets/RSC/prefetch/POST/privacy/404 preserved.`,
+  `${pi05 ? "PI05" : "PI04"} production HTTP contract passed; associations ${enabled ? "synthetically enabled" : "disabled"}; HTML/assets/RSC/prefetch/POST/privacy/404 preserved.`,
 );

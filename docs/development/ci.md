@@ -22,6 +22,14 @@ rotation/block/lifecycle and stale-retry races in both capacity modes. These run
 sequentially after clean pgTAP validation because their synthetic fixtures persist.
 They add no unrelated job trigger or duplicate post-merge run;
 root script/workflow edits still follow the conservative four-area policy.
+Database CI and `check:db` finish mutation validation with `demo:check:local`:
+clean partial-run recovery, non-repairing verification, unchanged seed stability,
+explicit lifecycle/photo/stale-receipt checks and fresh restoration. Demo seeding
+runs after clean pgTAP and previous verifiers so it cannot contaminate their
+empty-database assumptions. Capabilities and OTPs stay out of output/artifacts.
+Mobile formatting includes `test_support`, whose explicitly opted-in debug driver
+is separate from the production entry point. PI05 browser helpers still select
+Web through their source path; shared script/workflow changes select all areas.
 `apps/web/src/types/database.generated.ts` deliberately runs both Web and
 Database because it is generated from the migrated public schema and consumed
 by the Next.js application.

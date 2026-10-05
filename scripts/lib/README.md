@@ -16,6 +16,12 @@ tooling.
 - `validation-paths.mjs` maps changed repository paths to the Mobile, Web, Site,
   and Database CI areas. Its tests protect the conservative shared-path and
   documentation-only boundaries used by the validation workflow.
+- `demo-participant-invitations.mjs` owns the invitation part of `demo-world`:
+  canonical actor transitions, stable admission identities, ignored local link
+  journal, non-repairing assertions and domain snapshots. The root
+  `verify-local-demo-idempotency.mjs` explicitly invokes its mutating transition
+  rehearsal; ordinary verification invokes only reads. No second seed system
+  or application-start hook exists.
 - The matching `*.test.mjs` files verify parsing and request authentication
   behavior or path classification with non-secret fixtures.
 
