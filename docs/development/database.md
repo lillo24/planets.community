@@ -857,6 +857,33 @@ messages, or meeting details.
 
 `project:membership-commitments:verify:local` uses three real OTP-authenticated identities plus narrow direct-database transactions across Proposals and a Tavolo. It proves atomic acceptance seeding, participant/creator-only current and ended reads, authorized addable-option snapshots including paused Tavoli and stale-option omission, full desired-set replacement and no-op preservation, creator clearing, stale-option retention/removal, independent rejoin episodes, Proposal/Tavolo lifecycle rules, read-event absence, exact identifier-only mutation events without notifications, and both serialization outcomes for replacement versus leave, removal, resource closure, and Proposal-skill removal. It never prints OTPs, tokens, keys, database URLs, request text, commitment labels, emails, or private Project data.
 
+The membership verifier refuses non-loopback API, PostgreSQL and Mailpit URLs;
+the project-scoped CLI status remains the source of backend endpoints. Each
+race runs one pending HTTP loser against a fresh fixture while the authenticated
+SQL winner holds its canonical locks. It releases the winner only after
+`pg_stat_activity` reports one lock waiter whose `pg_blocking_pids` includes that
+exact winner PID. Pending promises, unrelated/ambiguous waits and observer-query
+failures cannot satisfy the assertion. RPC-name matching is intentionally absent:
+wide PostgREST query text can be truncated before the function name. Observation
+has a monotonic 10-second deadline with 20 ms polling; local SQL statements and
+the leave/removal HTTP losers have 15-second timeouts. These are verifier-only
+limits, not domain retries or production configuration.
+
+For a bounded campaign, run
+`npm run project:membership-commitments:verify:local -- --race-iterations=10`.
+No argument means one iteration; only integers 1–20 are accepted. Each iteration
+creates four new accepted memberships for both leave/removal versus replacement
+orders. Other verifier flows still run once. The first failure stops the campaign;
+it never retries the failed operation. Failure-only evidence contains the operation,
+order/stage, synthetic membership/actor IDs, exact membership timestamps, database
+clock samples, observed lock PIDs and identifier-scoped occupancy/coverage/event
+counts. Committed row snapshots are explicitly distinguished from a failed UPDATE
+tuple. Only the known eight-field constraint tuple is parsed from error details;
+unexpected/missing details remain unavailable, never raw payloads. The parser
+compares timestamps at microsecond precision and identifies each violated clause.
+The original DEPSEC-01 `23514` remains unresolved; see
+[DBRACE-01 evidence and limits](dbrace01-membership-end-state-regression.md).
+
 `demo:seed:local` is the explicit trusted local demo-world command. It reuses
 the authenticated-user helper and canonical domain/media RPCs, coordinates
 concurrent runs with one database advisory lock, uploads vendored WebP profile

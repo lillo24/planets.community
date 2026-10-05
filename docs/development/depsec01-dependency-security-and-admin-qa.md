@@ -168,6 +168,14 @@ Only the named disposable backend is stopped with its data backup retained. Temp
 
 ## Required review / next work
 
+2026-10-05 follow-up: [DBRACE-01](dbrace01-membership-end-state-regression.md)
+recovers the original failing creator-removal stage, strengthens observed-lock
+coordination and adds redacted invariant diagnostics. Its bounded campaign did
+not reproduce the original membership 23514; that cause remains unresolved.
+Its clean aggregate also stopped at two separately documented chronology
+constraints. This does not rewrite DEPSEC's original failure as a passed run or
+authorize merging the unmerged stack.
+
 Review the no-fix braces exposure, actual browser findings/results and unrun independent browser profiles, intermittent inherited DB gate, and the **unmerged security stack**. This is not merge authorization. Hosting selection remains separate; no Worker/Sentry v11/adapter migration decision was made.
 
 The next remaining functional plan is **09C2B**: affected-user own-status/contextual consequence UX and notification projection. Founder decisions are still required on user-facing copy and the contextual warning surfaces. Appeals, broader moderation policy, retention and production infrastructure remain deferred.
