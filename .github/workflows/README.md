@@ -24,7 +24,8 @@ capacity/blocking/media seams and rollback-only synthetic query plans. It also
 runs in `check:db`. Adding this shared command/workflow selects all four areas
 for this PR under the existing classifier; trigger boundaries stay unchanged.
 
-TW-STACK01 runs `notification:global:verify:local` after domain producers to
+TW-STACK01 runs the explicit `blocking:verify:local` producer prerequisite,
+then `notification:global:verify:local` after domain producers to
 exercise the unrestricted worker, followed by `demo:stack:check:local` before
 generated types. The latter composes PI05 and TW05 under one lock/session pool;
 both committed-response-loss proofs survive without seeding the complete world
@@ -36,3 +37,10 @@ checkout fetches full history for those immutable inputs. This adds 229.9 second
 locally and remains inside the unchanged 25-minute job limit. Ordinary path
 classification, required-check behavior and main-push triggers are unchanged.
 Native smoke remains opt-in. See the [integration record](../../docs/development/template-stack-integration.md).
+
+The first integrated hosted run exposed the missing blocking prerequisite in
+the hosted sequence (the complete local gate already included it): no delegated
+rejection events existed for the new unrestricted regression. The workflow now
+calls the existing real producer before that check; it does not manufacture
+events or weaken the assertion. Its short concurrency check is necessary to
+reproduce the TW05 defect on CI.

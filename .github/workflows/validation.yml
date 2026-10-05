@@ -246,6 +246,9 @@ jobs:
       - name: Verify public web Tavoli discovery and privacy
         run: npm run tavoli:web:verify:local
 
+      - name: Verify blocking/domain producers and pair serialization
+        run: npm run blocking:verify:local
+
       - name: Verify unrestricted notification projection after domain producers
         run: npm run notification:global:verify:local
 

@@ -167,6 +167,15 @@ Final exact-head all-area hosted results and additional native rehearsal details
 are recorded in the draft PR after execution. Historical TW05/PI05 results stay
 attributable to their original commits and are not counted as integrated passes.
 
+Initial hosted run [37358760931](https://github.com/lillo24/planets.community/actions/runs/37358760931)
+at merge head `f6da1282544397478b8c0b94faee1098de3ad188` passed Mobile/Web/Site,
+but the new global-worker check correctly failed because the hosted sequence
+omitted `blocking:verify:local` and had no delegated rejection producers. The
+complete local gate already ran it successfully. A follow-up workflow-only fix
+adds that existing real prerequisite before the unrestricted regression, keeping
+the assertion and canonical worker intact. Final validation runs on the new
+candidate head; the initial failure is not treated as a backend resolver defect.
+
 ## Reproduction, cleanup and review gates
 
 Preserve config and Gradle bytes outside Git; use a distinct `.twstack01qa`
