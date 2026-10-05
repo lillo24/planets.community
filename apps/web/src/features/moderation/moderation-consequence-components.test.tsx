@@ -310,10 +310,9 @@ describe("explicit consequence confirmation", () => {
         screen.getByRole("button", { name: "Apply safety notice" }),
       );
       await submit();
-      await waitFor(() =>
-        expect(screen.getByRole("alert")).toBeInTheDocument(),
-      );
-      expect(screen.getByRole("alert")).toHaveFocus();
+      // Presence is observable at commit, before the passive outcome-focus
+      // effect. Synchronize with the keyboard contract, not just the markup.
+      await waitFor(() => expect(screen.getByRole("alert")).toHaveFocus());
       expect(screen.getByRole("link", { name: "Reload case" })).toHaveAttribute(
         "href",
         `/admin/cases/${detail.caseId}`,
