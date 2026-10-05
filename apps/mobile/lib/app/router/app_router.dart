@@ -61,6 +61,7 @@ import '../../features/settings/presentation/settings_screen.dart';
 import '../../l10n/generated/app_localizations.dart';
 import '../foundation_screen.dart';
 import 'app_navigation_shell.dart';
+import 'native_project_links.dart';
 
 typedef AuthSessionReader = AuthSessionState Function();
 typedef PendingEmailOtpReader = PendingEmailOtp? Function();
@@ -70,25 +71,54 @@ GoRouter createAppRouter({
   AuthSessionReader? readAuthSession,
   PendingEmailOtpReader? readPendingEmailOtp,
 }) {
-  final configuration = _routingConfig(readAuthSession, readPendingEmailOtp);
-  return GoRouter(
+  final configuration = _NativeRoutingConfig(
+    _routingConfig(readAuthSession, readPendingEmailOtp),
+  );
+  final router = GoRouter.routingConfig(
+    routingConfig: configuration,
     initialLocation: initialLocation,
-    routes: configuration.routes,
-    redirect: configuration.redirect,
     errorBuilder: (context, state) => const _UnknownRouteScreen(),
   );
+  configuration.readIncomingUri = () =>
+      router.routeInformationProvider.value.uri;
+  return router;
 }
 
 RoutingConfig _routingConfig(
   AuthSessionReader? readAuthSession,
-  PendingEmailOtpReader? readPendingEmailOtp,
-) {
+  PendingEmailOtpReader? readPendingEmailOtp, [
+  VoidCallback? cancelExternalAuth,
+]) {
   final sessionReader =
       readAuthSession ?? () => const AuthSessionState.signedOut();
   final pendingReader = readPendingEmailOtp ?? () => null;
 
   return RoutingConfig(
+    onEnter: (context, current, next, router) {
+      final destination = nativeProjectDestination(next.uri);
+      if (destination == null) return const Allow(); // Safe redirect below.
+      final continuation = current.uri.path == '/auth/verify'
+          ? pendingReader()?.returnTo
+          : current.uri.queryParameters['returnTo'];
+      if (current.uri.toString() == destination ||
+          ((current.uri.path == '/auth' ||
+                  current.uri.path == '/auth/verify' ||
+                  current.uri.path == '/profile/edit') &&
+              continuation == destination)) {
+        return const Block.stop(); // Preserve the existing match list/form.
+      }
+      if (cancelExternalAuth != null &&
+          (pendingReader() != null ||
+              current.uri.path == '/auth' ||
+              current.uri.path == '/auth/verify')) {
+        return Allow(then: cancelExternalAuth); // After navigation commits.
+      }
+      return const Allow();
+    },
     redirect: (context, state) {
+      if (state.uri.hasScheme || state.uri.hasAuthority) {
+        return nativeProjectDestination(state.uri) ?? '/link-unavailable';
+      }
       final session = sessionReader();
       final pending = pendingReader();
       final path = state.uri.path;
@@ -222,6 +252,10 @@ RoutingConfig _routingConfig(
       return null;
     },
     routes: [
+      GoRoute(
+        path: '/link-unavailable',
+        builder: (context, state) => const _UnknownRouteScreen(),
+      ),
       GoRoute(
         path: '/auth',
         builder: (context, state) => RequestCodeScreen(
@@ -671,15 +705,20 @@ final appRouterProvider = Provider<GoRouter>((ref) {
   RoutingConfig configuration() => _routingConfig(
     () => ref.read(authSessionProvider),
     () => ref.read(pendingEmailOtpProvider),
+    () => ref.read(authCommandProvider.notifier).cancelFlow(),
   );
-  final routes = ValueNotifier(configuration());
+  final routes = _NativeRoutingConfig(configuration());
   final router = GoRouter.routingConfig(
     routingConfig: routes,
     initialLocation: '/',
     errorBuilder: (context, state) => const _UnknownRouteScreen(),
   );
+  routes.readIncomingUri = () => router.routeInformationProvider.value.uri;
   ref.listen(authSessionProvider, (previous, next) {
-    if (previous?.identity?.id != next.identity?.id) {
+    if (previous?.identity?.id != next.identity?.id &&
+        router.routerDelegate.currentConfiguration.uri.path.isNotEmpty) {
+      // Native entry may still be parsing when restored Auth arrives. There are
+      // no retained stacks yet, and GoRouter cannot reparse its initial empty URI.
       // New shell/branch keys discard all retained forms and private stacks.
       // Reparse the current URL instead of losing an in-flight OTP returnTo.
       routes.value = configuration();
@@ -691,6 +730,30 @@ final appRouterProvider = Provider<GoRouter>((ref) {
   ref.onDispose(routes.dispose);
   return router;
 });
+
+/// Scope GoRouter 18's asynchronous entry guard to external deliveries only.
+/// Its parser reads onEnter for each event; internal navigation keeps the
+/// existing synchronous path, including startup/restored Auth and loading UI.
+/// This reads the existing provider; it registers no second platform listener.
+class _NativeRoutingConfig extends ValueNotifier<RoutingConfig> {
+  _NativeRoutingConfig(super.value);
+
+  Uri Function()? readIncomingUri;
+
+  @override
+  RoutingConfig get value {
+    final configuration = super.value;
+    final incoming = readIncomingUri?.call();
+    if (incoming != null && (incoming.hasScheme || incoming.hasAuthority)) {
+      return configuration;
+    }
+    return RoutingConfig(
+      routes: configuration.routes,
+      redirect: configuration.redirect,
+      redirectLimit: configuration.redirectLimit,
+    );
+  }
+}
 
 class _UnknownRouteScreen extends StatelessWidget {
   const _UnknownRouteScreen();

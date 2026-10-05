@@ -1,5 +1,23 @@
 # Disposable web integration checks
 
+- `public-host-harness.ts` owns the loopback-only Site/Web routing rehearsal;
+  `public-host-harness.test.ts` verifies precedence and streaming transport with
+  stand-in owners. This is not an adopted production proxy or Site Worker.
+- `pi04-browser-fixture.ts` seeds synthetic Projects in the explicitly opted-in
+  `planets-community-pi04` stack (58720–58729), runs production Next and Site
+  stand-in owners (3155/3156) behind the public-origin harness (3154), and captures
+  same-account mobile rediscovery state. Secrets stay in ignored local files.
+- `pi04-host-probe.ts` checks production HTTP association, privacy, Next transport
+  and 404 contracts at that fixed disposable origin. Enabled associations use
+  synthetic identifiers; they do not verify a device or public host.
+- `pi03-local-smoke.test.ts` owns the earlier gateway/HTTP integration described
+  below; ordinary Vitest skips its opt-in backend check.
+
+The [PI04 record](../../../docs/implementation/pi04-native-links-and-public-host-readiness.md#local-reproduction-and-evidence)
+owns exact isolation/configuration, browser/capture/probe commands, cleanup and
+evidence limits. Do not run both fixtures against the same backend or rebuild
+`.next` while its production server is being used for QA.
+
 `pi03-local-smoke.test.ts` is an explicit opt-in verifier using the production
 participant gateway and a built Next.js server. Ordinary Vitest and hosted Web
 CI skip it; it requires a dedicated `planets-community-pi03` Supabase stack on

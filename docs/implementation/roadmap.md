@@ -876,10 +876,20 @@ preview, exact OTP/non-photo profile returns, explicit account/action-bound
 admission with retained recovery, canonical token-free confirmation, and
 response/telemetry privacy. No browser ordinary-request composer is added.
 
-PI04 native associations/public-host routing readiness and PI05 integration/demo
-scenarios remain deferred until their prerequisites are merged. PI04 must cover
-participant and both public detail paths while preserving authority paths.
-No production operation is authorized by code completion.
+#### PI04 — Native links and public-host readiness
+
+**Status:** Repository implementation over merged PI03; exact validation and
+integration state are recorded in the PR/task report. See
+[`pi04-native-links-and-public-host-readiness.md`](pi04-native-links-and-public-host-readiness.md).
+
+Owns bounded Android/Apple path claims, Flutter cold/warm URL validation and
+duplicate/continuation safety, session-independent association responses, and a
+provider-neutral public-host contract with disposable production HTTP/browser
+rehearsal. Browser Proposal Join and same-account mobile membership/chat
+rediscovery were exercised; remaining browser/native dispatch and signed-device
+proof are explicitly recorded. Live ingress, identities/signing and stores still
+require account-owner setup. No production operation is authorized by code
+completion. PI05 integration/demo scenarios remain the next separate phase.
 
 #### 05C — One-Time Project Actual Contribution Attribution
 
