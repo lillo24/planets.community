@@ -22,6 +22,11 @@ tooling.
 - `validation-paths.mjs` maps changed repository paths to the Mobile, Web, Site,
   and Database CI areas. Its tests protect the conservative shared-path and
   documentation-only boundaries used by the validation workflow.
+- `membership-race-evidence.mjs` owns the membership verifier's loopback guards,
+  bounded fresh-fixture campaign arguments, exact-winner lock observation and
+  allowlisted end-state constraint diagnostics. Its tests distinguish real
+  blocking from pending promises, unrelated/ambiguous waits and observer errors,
+  and preserve microsecond timestamp comparisons without logging raw errors.
 - The matching `*.test.mjs` files verify parsing and request authentication
   behavior or path classification with non-secret fixtures.
 

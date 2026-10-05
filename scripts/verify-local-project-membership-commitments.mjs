@@ -3,8 +3,15 @@ import postgres from "postgres";
 import { signInLocalOtpUser } from "./lib/local-authenticated-user.mjs";
 import { readLocalSupabaseStatus } from "./lib/local-supabase-status.mjs";
 import { ensureLocalProfilePhoto } from "./lib/local-profile-photo.mjs";
+import {
+  assertMembershipRaceTargets,
+  membershipConstraintEvidence,
+  observeMembershipRaceLock,
+  readMembershipRaceIterations,
+} from "./lib/membership-race-evidence.mjs";
 
 const repositoryRoot = process.cwd();
+const raceIterations = readMembershipRaceIterations(process.argv.slice(2));
 const mailpitUrl = (
   process.env.MAILPIT_URL ?? "http://127.0.0.1:54324"
 ).replace(/\/$/, "");
@@ -17,7 +24,11 @@ if (!databaseUrl) {
   );
 }
 
-const sql = postgres(databaseUrl, { max: 4 });
+assertMembershipRaceTargets({ apiUrl, databaseUrl, mailpitUrl });
+const sql = postgres(databaseUrl, {
+  max: 4,
+  connection: { statement_timeout: 15_000 },
+});
 const requiredSkillId = "d0000000-0000-4000-8001-000000000001";
 const usefulSkillId = "d0000000-0000-4000-8003-000000000002";
 
@@ -47,8 +58,20 @@ async function verifyProjectMembershipCommitments() {
   await verifyPrimaryFlows(creator, participant, unrelated);
   await verifyOptimisticConcurrency(creator, participant);
   await verifyTavoloFlow(creator, unrelated);
-  await verifyLeaveSerialization(creator, participant);
-  await verifyRemovalSerialization(creator, participant);
+  for (let iteration = 1; iteration <= raceIterations; iteration += 1) {
+    await verifyEndStateSerialization(
+      creator,
+      participant,
+      "leave_project",
+      iteration,
+    );
+    await verifyEndStateSerialization(
+      creator,
+      participant,
+      "remove_project_member",
+      iteration,
+    );
+  }
   await verifyResourceClosureSerialization(creator, participant);
   await verifySkillRemovalSerialization(creator, participant);
 
@@ -431,140 +454,179 @@ async function verifyTavoloFlow(creator, participant) {
   );
 }
 
-async function verifyLeaveSerialization(creator, participant) {
-  const leaveFirst = await createMembershipFixture(
-    creator,
-    participant,
-    "Integration leave-first commitment race",
-  );
-  let blockedReplace;
-  await sql.begin(async (transaction) => {
-    await setAuthenticatedTransaction(transaction, participant.id);
-    await transaction`
-      select public.leave_project(
-        ${participant.id}::uuid,
-        ${leaveFirst.membershipId}::uuid
-      )
-    `;
-    blockedReplace = track(
-      participant.client.rpc("replace_project_membership_commitments", {
-        p_expected_actor_profile_id: participant.id,
-        p_expected_skill_ids: [],
-        p_expected_resource_need_ids: [],
-        p_membership_id: leaveFirst.membershipId,
-        p_skill_ids: [requiredSkillId],
-        p_resource_need_ids: [],
-      }),
+async function verifyEndStateSerialization(
+  creator,
+  participant,
+  operation,
+  iteration,
+) {
+  const actor = operation === "leave_project" ? participant : creator;
+  for (const order of ["end_first", "replacement_first"]) {
+    const fixture = await createMembershipFixture(
+      creator,
+      participant,
+      `Integration ${operation} ${order} race ${iteration}`,
     );
-    await assertBlocked(blockedReplace, "replacement behind leave");
-  });
-  await assertTrackedRpcCode(
-    blockedReplace,
-    "55000",
-    "reject replacement after leave wins",
-  );
-
-  const replaceFirst = await createMembershipFixture(
-    creator,
-    participant,
-    "Integration replace-first leave race",
-  );
-  let blockedLeave;
-  await sql.begin(async (transaction) => {
-    await setAuthenticatedTransaction(transaction, participant.id);
-    await replaceInTransaction(
-      transaction,
-      participant.id,
-      replaceFirst.membershipId,
-      [],
-      [],
-      [requiredSkillId],
-      [],
-    );
-    blockedLeave = track(
-      participant.client.rpc("leave_project", {
-        p_expected_participant_profile_id: participant.id,
-        p_membership_id: replaceFirst.membershipId,
-      }),
-    );
-    await assertBlocked(blockedLeave, "leave behind replacement");
-  });
-  await assertTrackedRpcValue(
-    blockedLeave,
-    replaceFirst.membershipId,
-    "complete leave after replacement wins",
-  );
-  await assertCommitments(participant, replaceFirst.membershipId, [
-    ["skill", requiredSkillId, "Mural painting"],
-  ]);
+    const evidence = {
+      operation,
+      order,
+      iteration,
+      membership_id: fixture.membershipId,
+      actor_profile_id: actor.id,
+      stage: "before_winner",
+      before: await readMembershipRaceState(fixture.membershipId),
+    };
+    let loser;
+    try {
+      await sql.begin(async (transaction) => {
+        const winner = order === "end_first" ? actor : participant;
+        await setAuthenticatedTransaction(transaction, winner.id);
+        evidence.stage = "execute_winner";
+        if (order === "end_first") {
+          const [row] =
+            operation === "leave_project"
+              ? await transaction`select public.leave_project(${actor.id}::uuid, ${fixture.membershipId}::uuid) as id`
+              : await transaction`select public.remove_project_member(${actor.id}::uuid, ${fixture.membershipId}::uuid) as id`;
+          if (row.id !== fixture.membershipId)
+            throw new Error(
+              "The membership end-state winner returned an unexpected ID.",
+            );
+        } else {
+          await replaceInTransaction(
+            transaction,
+            participant.id,
+            fixture.membershipId,
+            [],
+            [],
+            [requiredSkillId],
+            [],
+          );
+        }
+        const loserOperation =
+          order === "end_first"
+            ? "replace_project_membership_commitments"
+            : operation;
+        const pending =
+          order === "end_first"
+            ? participant.client.rpc(loserOperation, {
+                p_expected_actor_profile_id: participant.id,
+                p_expected_skill_ids: [],
+                p_expected_resource_need_ids: [],
+                p_membership_id: fixture.membershipId,
+                p_skill_ids: [requiredSkillId],
+                p_resource_need_ids: [],
+              })
+            : actor.client.rpc(loserOperation, {
+                [operation === "leave_project"
+                  ? "p_expected_participant_profile_id"
+                  : "p_expected_creator_profile_id"]: actor.id,
+                p_membership_id: fixture.membershipId,
+              });
+        loser = track(pending.abortSignal(AbortSignal.timeout(15_000)));
+        evidence.stage = "observe_loser_lock";
+        evidence.lock = await assertBlocked(
+          loser,
+          `${loserOperation} behind ${order}`,
+          transaction,
+          loserOperation,
+        );
+        evidence.before_winner_commit_committed_row =
+          await readMembershipRaceState(fixture.membershipId);
+      });
+      evidence.stage = "await_loser_result";
+      if (order === "end_first") {
+        await assertTrackedRpcCode(
+          loser,
+          "55000",
+          "reject replacement after membership end wins",
+        );
+      } else {
+        await assertTrackedRpcValue(
+          loser,
+          fixture.membershipId,
+          `complete ${operation} after replacement wins`,
+        );
+      }
+      evidence.stage = "assert_final_state";
+      evidence.after = await readMembershipRaceState(fixture.membershipId);
+      const state = evidence.after;
+      const isLeave = operation === "leave_project";
+      if (
+        !state.valid_end_state ||
+        state.current_memberships !== 0 ||
+        state.live_coverages !== 0 ||
+        state.end_audit_events !== 1 ||
+        state.end_outbox_events !== 1 ||
+        state.commitment_events !== (order === "end_first" ? 0 : 1) ||
+        (isLeave
+          ? state.left_at === null ||
+            state.removed_at !== null ||
+            state.removed_by_profile_id !== null
+          : state.left_at !== null ||
+            state.removed_at === null ||
+            state.removed_by_profile_id !== actor.id)
+      ) {
+        throw new Error(
+          "Membership end-state, coverage, capacity occupancy or event postcondition failed.",
+        );
+      }
+      await assertCommitments(
+        actor,
+        fixture.membershipId,
+        order === "end_first"
+          ? []
+          : [["skill", requiredSkillId, "Mural painting"]],
+      );
+      console.log(
+        `Membership race passed: ${operation}, ${order}, iteration ${iteration}; observed ${evidence.lock.wait_event} behind winner; end-state/history/coverage/occupancy/events preserved.`,
+      );
+    } catch (error) {
+      // sql.begin has committed or rolled back before collecting the final row.
+      // A rolled-back row is labelled separately from the failed UPDATE tuple.
+      if (loser) await loser.promise.catch(() => {});
+      try {
+        evidence.after_failure_committed_row = await readMembershipRaceState(
+          fixture.membershipId,
+        );
+      } catch (diagnosticError) {
+        evidence.snapshot_error =
+          membershipConstraintEvidence(diagnosticError).sqlstate;
+      }
+      evidence.failure =
+        error.membershipEvidence ?? membershipConstraintEvidence(error);
+      console.error(
+        `Membership race failure evidence: ${JSON.stringify(evidence)}`,
+      );
+      throw new Error(
+        `Membership race failed at ${evidence.stage} (${operation}, ${order}, code ${evidence.failure.sqlstate}); see redacted evidence.`,
+      );
+    }
+  }
 }
 
-async function verifyRemovalSerialization(creator, participant) {
-  const removeFirst = await createMembershipFixture(
-    creator,
-    participant,
-    "Integration remove-first commitment race",
-  );
-  let blockedReplace;
-  await sql.begin(async (transaction) => {
-    await setAuthenticatedTransaction(transaction, creator.id);
-    await transaction`
-      select public.remove_project_member(
-        ${creator.id}::uuid,
-        ${removeFirst.membershipId}::uuid
-      )
-    `;
-    blockedReplace = track(
-      participant.client.rpc("replace_project_membership_commitments", {
-        p_expected_actor_profile_id: participant.id,
-        p_expected_skill_ids: [],
-        p_expected_resource_need_ids: [],
-        p_membership_id: removeFirst.membershipId,
-        p_skill_ids: [requiredSkillId],
-        p_resource_need_ids: [],
-      }),
-    );
-    await assertBlocked(blockedReplace, "replacement behind removal");
-  });
-  await assertTrackedRpcCode(
-    blockedReplace,
-    "55000",
-    "reject replacement after removal wins",
-  );
-
-  const replaceFirst = await createMembershipFixture(
-    creator,
-    participant,
-    "Integration replace-first removal race",
-  );
-  let blockedRemoval;
-  await sql.begin(async (transaction) => {
-    await setAuthenticatedTransaction(transaction, participant.id);
-    await replaceInTransaction(
-      transaction,
-      participant.id,
-      replaceFirst.membershipId,
-      [],
-      [],
-      [requiredSkillId],
-      [],
-    );
-    blockedRemoval = track(
-      creator.client.rpc("remove_project_member", {
-        p_expected_creator_profile_id: creator.id,
-        p_membership_id: replaceFirst.membershipId,
-      }),
-    );
-    await assertBlocked(blockedRemoval, "removal behind replacement");
-  });
-  await assertTrackedRpcValue(
-    blockedRemoval,
-    replaceFirst.membershipId,
-    "complete removal after replacement wins",
-  );
-  await assertCommitments(creator, replaceFirst.membershipId, [
-    ["skill", requiredSkillId, "Mural painting"],
-  ]);
+async function readMembershipRaceState(membershipId) {
+  const [row] = await sql`
+    select membership.id, membership.project_id, membership.participant_profile_id,
+      membership.originating_request_id, membership.joined_at::text,
+      membership.left_at::text, membership.removed_at::text, membership.removed_by_profile_id,
+      clock_timestamp()::text as database_clock, statement_timestamp()::text as statement_time,
+      transaction_timestamp()::text as transaction_time,
+      (not (membership.left_at is not null and membership.removed_at is not null)
+       and (membership.left_at is null or membership.left_at >= membership.joined_at)
+       and (membership.removed_at is null or membership.removed_at >= membership.joined_at)
+       and ((membership.removed_at is null and membership.removed_by_profile_id is null)
+         or (membership.removed_at is not null and membership.removed_by_profile_id is not null))) as valid_end_state,
+      (select count(*)::int from public.project_memberships m where m.project_id = membership.project_id and m.left_at is null and m.removed_at is null) as current_memberships,
+      ((select count(*)::int from public.project_membership_skill_coverages c where c.membership_id = membership.id)
+       + (select count(*)::int from public.project_membership_resource_coverages c where c.membership_id = membership.id)) as live_coverages,
+      (select count(*)::int from private.audit_events e where e.action in ('project.participant_left', 'project.participant_removed') and e.metadata ->> 'membership_id' = membership.id::text) as end_audit_events,
+      (select count(*)::int from private.outbox_events e where e.event_type in ('project.participant_left', 'project.participant_removed') and e.payload ->> 'membership_id' = membership.id::text) as end_outbox_events,
+      (select count(*)::int from private.outbox_events e where e.event_type = 'project.membership_commitments_updated' and e.payload ->> 'membership_id' = membership.id::text) as commitment_events
+    from public.project_memberships membership where membership.id = ${membershipId}::uuid
+  `;
+  if (!row)
+    throw new Error("The synthetic membership evidence row is missing.");
+  return row;
 }
 
 async function verifyResourceClosureSerialization(creator, participant) {
@@ -597,7 +659,12 @@ async function verifyResourceClosureSerialization(creator, participant) {
         p_resource_need_ids: [closeFirstNeedId],
       }),
     );
-    await assertBlocked(blockedReplace, "resource add behind closure");
+    await assertBlocked(
+      blockedReplace,
+      "resource add behind closure",
+      transaction,
+      "replace_project_membership_commitments",
+    );
   });
   await assertTrackedRpcCode(
     blockedReplace,
@@ -633,7 +700,12 @@ async function verifyResourceClosureSerialization(creator, participant) {
         p_resource_need_id: replaceFirstNeedId,
       }),
     );
-    await assertBlocked(blockedClose, "resource closure behind add");
+    await assertBlocked(
+      blockedClose,
+      "resource closure behind add",
+      transaction,
+      "close_project_resource_need",
+    );
   });
   await assertTrackedRpcValue(
     blockedClose,
@@ -672,7 +744,12 @@ async function verifySkillRemovalSerialization(creator, participant) {
         p_resource_need_ids: [],
       }),
     );
-    await assertBlocked(blockedReplace, "skill add behind requirement removal");
+    await assertBlocked(
+      blockedReplace,
+      "skill add behind requirement removal",
+      transaction,
+      "replace_project_membership_commitments",
+    );
   });
   await assertTrackedRpcCode(
     blockedReplace,
@@ -706,7 +783,12 @@ async function verifySkillRemovalSerialization(creator, participant) {
         "Integration skill-add-first commitment race",
       ),
     );
-    await assertBlocked(blockedUpdate, "requirement removal behind skill add");
+    await assertBlocked(
+      blockedUpdate,
+      "requirement removal behind skill add",
+      transaction,
+      "update_own_proposal",
+    );
   });
   await assertTrackedSuccess(
     blockedUpdate,
@@ -1224,20 +1306,38 @@ function track(pendingResult) {
       throw error;
     },
   );
+  // Observe rejection immediately even while the winner still owns the lock.
+  // The result assertion still awaits this same rejecting promise and fails.
+  void tracked.promise.catch(() => {});
   return tracked;
 }
 
-async function assertBlocked(tracked, action) {
-  await delay(250);
-  if (tracked.settled) {
-    throw new Error(`The ${action} operation did not wait for its lock.`);
-  }
+async function assertBlocked(tracked, action, transaction, operation) {
+  const [{ pid }] = await transaction`select pg_backend_pid() as pid`;
+  const lock = await observeMembershipRaceLock({
+    tracked,
+    action,
+    winnerPid: pid,
+    readWaiters: () => sql`
+      select activity.pid, activity.wait_event_type, activity.wait_event,
+        pg_blocking_pids(activity.pid) as blocking_pids
+      from pg_stat_activity activity
+      where activity.datname = current_database()
+        and activity.usename = 'authenticator'
+        and activity.pid <> ${pid}
+        and ${pid} = any(pg_blocking_pids(activity.pid))
+    `,
+  });
+  return { operation, ...lock };
 }
 
 async function assertTrackedRpcCode(tracked, expectedCode, action) {
   const result = await tracked.promise;
   if (result.data !== null || result.error?.code !== expectedCode) {
-    throw new Error(`Failed to ${action} with the expected database error.`);
+    throw safeDatabaseFailure(
+      `${action} with the expected database error`,
+      result.error ?? {},
+    );
   }
 }
 
@@ -1267,9 +1367,7 @@ function safeDatabaseFailure(action, error) {
     typeof error?.code === "string" && /^[a-z0-9_]+$/iu.test(error.code)
       ? error.code
       : "unknown";
-  return new Error(`Failed to ${action} (code ${code}).`);
-}
-
-function delay(milliseconds) {
-  return new Promise((resolve) => setTimeout(resolve, milliseconds));
+  const failure = new Error(`Failed to ${action} (code ${code}).`);
+  failure.membershipEvidence = membershipConstraintEvidence(error);
+  return failure;
 }
