@@ -112,6 +112,8 @@ void main() {
     final app = await _pump(tester, recurring: recurring, signedIn: false);
 
     app.read(appRouterProvider).go('/tavoli/tavolo-1');
+    // Complete awaitable route entry before asserting the pending data load.
+    await tester.pump();
     await tester.pump();
     expect(find.byType(LoadingState), findsOneWidget);
     expect(find.byType(ErrorState), findsNothing);

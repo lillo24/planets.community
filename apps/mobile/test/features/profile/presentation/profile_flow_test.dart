@@ -34,6 +34,8 @@ void main() {
     final app = await _pumpApp(tester, auth, anchor, profile);
 
     app.read(appRouterProvider).go('/profile');
+    // Complete awaitable route entry before asserting the pending data load.
+    await tester.pump();
     await tester.pump();
     expect(find.byType(LoadingState), findsOneWidget);
     expect(find.byType(ErrorState), findsNothing);
@@ -59,6 +61,8 @@ void main() {
     final app = await _pumpApp(tester, auth, anchor, profile);
 
     app.read(appRouterProvider).go('/profile/edit');
+    // Complete awaitable route entry before asserting the pending data load.
+    await tester.pump();
     await tester.pump();
     expect(find.byType(LoadingState), findsOneWidget);
     expect(find.byType(ErrorState), findsNothing);

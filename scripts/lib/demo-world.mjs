@@ -12,6 +12,13 @@ import {
   seedDemoParticipantInvitations,
   verifyDemoParticipantInvitations,
 } from "./demo-participant-invitations.mjs";
+import {
+  WORKSHOP_PERSONAS,
+  WORKSHOP_SOURCES,
+  seedWorkshop,
+  verifyWorkshop,
+  exerciseWorkshopTransition,
+} from "./demo-workshop.mjs";
 
 const DEMO_LOCK_ID = 684026240991817n;
 const COVER_BUCKET = "cover-images";
@@ -64,6 +71,7 @@ export const DEMO_PERSONAS = deepFreeze({
     skillSlugs: [],
     photoState: "absent",
   },
+  ...WORKSHOP_PERSONAS,
 });
 
 export const DEMO_SCENARIOS = deepFreeze({
@@ -442,9 +450,14 @@ export async function seedLocalDemoWorld({
   now = new Date(),
   onInvitationCheckpoint,
   sessionPool,
+  includeWorkshop = true,
+  onWorkshopCheckpoint,
+  coordinationSql,
 }) {
   const target = requireTrustedLocalStatus(status, mailpitUrl);
-  const sql = postgres(target.databaseUrl, { max: 1, onnotice: () => {} });
+  const sql =
+    coordinationSql ??
+    postgres(target.databaseUrl, { max: 1, onnotice: () => {} });
   const serviceClient = createClient(target.apiUrl, status.serviceRoleKey, {
     auth: { persistSession: false },
   });
@@ -477,9 +490,12 @@ export async function seedLocalDemoWorld({
       scenario,
       onInvitationCheckpoint,
     );
-    await projectNotificationOutbox(serviceClient);
+    if (includeWorkshop)
+      await seedWorkshop(context, { now, onCheckpoint: onWorkshopCheckpoint });
+    await projectDemoNotificationOutbox(context);
     await verifyDemoWorldState(context, scenario, times);
     await verifyDemoParticipantInvitations(context, scenario);
+    if (includeWorkshop) await verifyWorkshop(context);
 
     return Object.freeze({
       personas: Object.values(DEMO_PERSONAS).map((persona) => persona.email),
@@ -497,7 +513,7 @@ export async function seedLocalDemoWorld({
     if (lockAcquired) {
       await sql`select pg_advisory_unlock(${DEMO_LOCK_ID})`;
     }
-    await sql.end({ timeout: 5 });
+    if (!coordinationSql) await sql.end({ timeout: 5 });
   }
 }
 
@@ -507,23 +523,22 @@ export async function verifyLocalDemoWorld({
   mailpitUrl = "http://127.0.0.1:54324",
   now = new Date(),
   sessionPool,
+  coordinationSql,
+  includeWorkshop = true,
 }) {
   const target = requireTrustedLocalStatus(status, mailpitUrl);
-  const sql = postgres(target.databaseUrl, { max: 1, onnotice: () => {} });
+  const sql =
+    coordinationSql ??
+    postgres(target.databaseUrl, { max: 1, onnotice: () => {} });
   const serviceClient = createClient(target.apiUrl, status.serviceRoleKey, {
     auth: { persistSession: false },
   });
 
   try {
-    const existing = await sql`
-      select profile.id from auth.users identity join public.profiles profile on profile.id = identity.id
-      where identity.email = any(${Object.values(DEMO_PERSONAS).map((p) => p.email)}::text[])
-    `;
-    if (existing.length !== Object.keys(DEMO_PERSONAS).length) {
-      throw new Error(
-        "The demo profiles are missing; verification never creates or completes them.",
-      );
-    }
+    const [lock] =
+      await sql`select pg_try_advisory_lock_shared(${DEMO_LOCK_ID}) as acquired`;
+    if (!lock.acquired)
+      throw new Error("Demo verification refused concurrent world mutation.");
     const context = await createAuthenticatedContext({
       repositoryRoot,
       status,
@@ -536,9 +551,11 @@ export async function verifyLocalDemoWorld({
     const scenario = await resolveExistingScenario(context);
     await verifyDemoParticipantInvitations(context, scenario);
     await verifyDemoWorldState(context, scenario, buildDemoTimes(now));
+    if (includeWorkshop) await verifyWorkshop(context);
     return scenario;
   } finally {
-    await sql.end({ timeout: 5 });
+    await sql`select pg_advisory_unlock_shared(${DEMO_LOCK_ID})`;
+    if (!coordinationSql) await sql.end({ timeout: 5 });
   }
 }
 
@@ -548,9 +565,12 @@ export async function exerciseLocalDemoInvitations({
   status,
   mailpitUrl = "http://127.0.0.1:54324",
   sessionPool,
+  coordinationSql,
 }) {
   const target = requireTrustedLocalStatus(status, mailpitUrl);
-  const sql = postgres(target.databaseUrl, { max: 1, onnotice: () => {} });
+  const sql =
+    coordinationSql ??
+    postgres(target.databaseUrl, { max: 1, onnotice: () => {} });
   let lockAcquired = false;
   try {
     const [lock] =
@@ -574,7 +594,7 @@ export async function exerciseLocalDemoInvitations({
     );
   } finally {
     if (lockAcquired) await sql`select pg_advisory_unlock(${DEMO_LOCK_ID})`;
-    await sql.end({ timeout: 5 });
+    if (!coordinationSql) await sql.end({ timeout: 5 });
   }
 }
 
@@ -599,19 +619,33 @@ async function createAuthenticatedContext({
   sql,
   serviceClient,
   updateProfiles = true,
-  sessionPool,
+  sessionPool = new Map(),
 }) {
+  if (!updateProfiles) {
+    const rows =
+      await sql`select email from auth.users where email=any(${Object.values(DEMO_PERSONAS).map((p) => p.email)}::text[])`;
+    if (rows.length !== Object.keys(DEMO_PERSONAS).length)
+      throw new Error(
+        "Demo identities are missing; verification never creates them.",
+      );
+  }
   const personaEntries = await Promise.all(
-    Object.entries(DEMO_PERSONAS).map(async ([key, definition]) => [
-      key,
-      await signInDemoPersona(sessionPool, {
-        apiUrl: status.apiUrl,
-        publishableKey: status.publishableKey,
-        mailpitUrl,
-        email: definition.email,
-        verifierName: `demo ${key}`,
-      }),
-    ]),
+    Object.entries(DEMO_PERSONAS).map(async ([key, definition]) => {
+      const poolKey = `${status.apiUrl}:${definition.email}`;
+      if (!sessionPool.has(poolKey))
+        sessionPool.set(
+          poolKey,
+          await signInLocalOtpUser({
+            apiUrl: status.apiUrl,
+            publishableKey: status.publishableKey,
+            mailpitUrl,
+            email: definition.email,
+            verifierName: `demo ${key}`,
+            shouldCreateUser: updateProfiles,
+          }),
+        );
+      return [key, sessionPool.get(poolKey)];
+    }),
   );
   const personas = Object.fromEntries(personaEntries);
 
@@ -634,7 +668,7 @@ async function createAuthenticatedContext({
     const skillsBySlug = new Map(skills.map((skill) => [skill.slug, skill.id]));
     await Promise.all(
       Object.entries(personas).map(([key, user]) =>
-        ensureCompleteProfile(user, DEMO_PERSONAS[key], skillsBySlug),
+        ensureCompleteProfile(user, DEMO_PERSONAS[key], skillsBySlug, sql),
       ),
     );
     await Promise.all(
@@ -658,7 +692,7 @@ async function createAuthenticatedContext({
     );
     await Promise.all(
       Object.values(personas).map((user) =>
-        ensureDemoNotificationPreferences(user),
+        ensureDemoNotificationPreferences(user, sql),
       ),
     );
   }
@@ -670,23 +704,13 @@ async function createAuthenticatedContext({
     sql,
     serviceClient,
     personas,
+    ensureProjectCover,
+    ensureCurrentMembership,
+    resolveSkillIds,
     anonymous: createClient(status.apiUrl, status.publishableKey, {
       auth: { persistSession: false },
     }),
   };
-}
-
-function signInDemoPersona(sessionPool, options) {
-  if (!sessionPool) return signInLocalOtpUser(options);
-  // Bounded checker-owned in-memory sessions avoid repeated OTP email requests
-  // within the local one-second throttle. CLI runs never persist session state.
-  const key = JSON.stringify([
-    options.apiUrl,
-    options.publishableKey,
-    options.email,
-  ]);
-  if (!sessionPool.has(key)) sessionPool.set(key, signInLocalOtpUser(options));
-  return sessionPool.get(key);
 }
 
 async function clearDemoProfilePhoto(user) {
@@ -702,7 +726,25 @@ async function clearDemoProfilePhoto(user) {
     throw safeDatabaseFailure("clear a photo-free demo profile", cleared.error);
 }
 
-async function ensureCompleteProfile(user, definition, skillsBySlug) {
+async function ensureCompleteProfile(user, definition, skillsBySlug, sql) {
+  const [current] =
+    await sql`select display_name,bio from public.profiles where id=${user.id}`;
+  const selections =
+    await sql`select skill_id from public.profile_skills where profile_id=${user.id} order by skill_id`;
+  const visibility =
+    await sql`select field_key,audience from public.profile_field_visibility where profile_id=${user.id}`;
+  if (
+    current?.display_name === definition.displayName &&
+    current?.bio === definition.bio &&
+    JSON.stringify(selections.map((s) => s.skill_id)) ===
+      JSON.stringify(
+        definition.skillSlugs.map((s) => skillsBySlug.get(s)).sort(),
+      ) &&
+    ["display_name", "bio", "skills"].every((field) =>
+      visibility.some((v) => v.field_key === field && v.audience === "public"),
+    )
+  )
+    return;
   const { data: anchors, error: readError } = await user.client
     .from("profiles")
     .select("id")
@@ -734,9 +776,12 @@ async function ensureCompleteProfile(user, definition, skillsBySlug) {
   }
 }
 
-async function ensureDemoNotificationPreferences(user) {
+async function ensureDemoNotificationPreferences(user, sql) {
   await Promise.all(
     ["participation", "chat"].map(async (categorySlug) => {
+      const [existing] =
+        await sql`select in_app_enabled,push_enabled from public.profile_notification_preferences where profile_id=${user.id} and category_slug=${categorySlug}`;
+      if (existing?.in_app_enabled && existing?.push_enabled) return;
       const { error } = await user.client.rpc(
         "set_own_notification_preference",
         {
@@ -779,6 +824,7 @@ async function migrateLegacyDemoWorld(context) {
             on cover.project_id = proposal.id
           where proposal.creator_profile_id = ${owner.id}
             and proposal.title = any(${candidates}::text[])
+            and not exists(select 1 from private.proposal_template_applications a where a.proposal_id=proposal.id)
         `;
       } else if (kind === "tavolo") {
         rows = await context.sql`
@@ -899,6 +945,7 @@ async function migrateLegacyDemoWorld(context) {
 }
 
 async function ensureProjectCover(context, owner, projectId, definition) {
+  if (!definition.coverAsset) return null; // Honest existing UI placeholder where no suitable licensed scene exists.
   return ensureCanonicalCover({
     context,
     owner,
@@ -1233,21 +1280,30 @@ async function ensureProposal(context, creator, definition) {
   const { sql } = context;
   const rows = await sql`
     select id, lifecycle_state, starts_at
-    from public.proposals
+    from public.proposals p
     where creator_profile_id = ${creator.id}
       and title = ${definition.title}
+      and not exists (select 1 from private.proposal_template_applications a where a.proposal_id=p.id)
   `;
   assertAtMostOne(rows, definition.title);
   let proposalId = rows[0]?.id;
   let lifecycleState = rows[0]?.lifecycle_state;
-
   if (proposalId && definition.isHistorical && lifecycleState === "published") {
-    await sql`
-      update public.proposals
-      set starts_at = ${definition.initialStartsAt},
-          ends_at = ${definition.initialEndsAt}
-      where id = ${proposalId}
-    `;
+    const covers =
+      await sql`select project_id from public.project_covers where project_id=${proposalId}`;
+    const invitations = definition.participantInvitation
+      ? await sql`select id from private.project_participant_invitations where project_id=${proposalId}`
+      : [];
+    if (
+      !covers.length ||
+      (definition.participantInvitation && !invitations.length)
+    ) {
+      // Explicit seed reconciliation for the original concert only: a TW05
+      // upgrade has its historical cover but no PI05 generation. Prepare that
+      // missing link while Upcoming, then restore its Just Finished clock below.
+      // Existing generations and unchanged historical reruns never rewind.
+      await sql`update public.proposals set starts_at=${definition.initialStartsAt},ends_at=${definition.initialEndsAt} where id=${proposalId} and creator_profile_id=${creator.id}`;
+    }
   }
 
   const skillIds = await resolveSkillIds(creator.client, definition.skillSlugs);
@@ -1286,7 +1342,10 @@ async function ensureProposal(context, creator, definition) {
     }
     proposalId = data;
     lifecycleState = "draft";
-  } else if (lifecycleState === "draft" || lifecycleState === "published") {
+  } else if (
+    (lifecycleState === "draft" || lifecycleState === "published") &&
+    (await demoContentChanged(context, "proposal", proposalId, params))
+  ) {
     const { error } = await creator.client.rpc("update_own_proposal", {
       ...params,
       p_proposal_id: proposalId,
@@ -1371,7 +1430,10 @@ async function ensureTavolo(context, creator, definition) {
     }
     tavoloId = data;
     lifecycleState = "draft";
-  } else if (["draft", "published", "paused"].includes(lifecycleState)) {
+  } else if (
+    ["draft", "published", "paused"].includes(lifecycleState) &&
+    (await demoContentChanged(context, "tavolo", tavoloId, params))
+  ) {
     const { error } = await creator.client.rpc(
       "update_own_recurring_activity",
       {
@@ -1614,7 +1676,10 @@ async function ensureListing(context, owner, definition) {
     }
     listingId = data;
     lifecycleState = "draft";
-  } else if (lifecycleState === "draft" || lifecycleState === "published") {
+  } else if (
+    (lifecycleState === "draft" || lifecycleState === "published") &&
+    (await demoContentChanged(context, "listing", listingId, params))
+  ) {
     const { error } = await owner.client.rpc("update_own_resource_listing", {
       ...params,
       p_listing_id: listingId,
@@ -1676,6 +1741,129 @@ async function projectNotificationOutbox(serviceClient) {
   throw new Error(
     "The local notification backlog did not drain within 20 projector batches.",
   );
+}
+
+async function projectDemoNotificationOutbox(context) {
+  const { sql, serviceClient, personas } = context;
+  const owners = Object.values(personas).map((p) => p.id);
+  const projects =
+    await sql`select id from public.projects where creator_profile_id=any(${owners}::uuid[]) and
+    (id in (select p.id from public.proposals p where not exists(select 1 from private.proposal_template_applications a where a.proposal_id=p.id) and title=any(${[
+      ...Object.values(DEMO_SCENARIOS.proposals).map((d) => d.title),
+      ...WORKSHOP_SOURCES.map((d) => d.title),
+    ]}::text[])) or id in (select id from public.recurring_activities where title=any(${Object.values(DEMO_SCENARIOS.tavoli).map((d) => d.title)}::text[])))`;
+  const listings =
+    await sql`select id from public.resource_listings where owner_profile_id=any(${owners}::uuid[]) and title=any(${Object.values(DEMO_SCENARIOS.listings).map((d) => d.title)}::text[])`;
+  // The canonical worker uses SKIP LOCKED. Coordinate it to the finite demo
+  // inventory, leaving other harnesses' queues/receipts byte-equivalent. This
+  // changes no event or authorization rule and still fails on invalid demo events.
+  await sql.begin(async (tx) => {
+    await tx`select id from private.outbox_events where not coalesce(
+      payload->>'project_id'=any(${projects.map((p) => p.id)}::text[]) or
+      payload->>'listing_id'=any(${listings.map((l) => l.id)}::text[]),false) for update`;
+    await projectNotificationOutbox(serviceClient);
+  });
+}
+
+async function demoContentChanged(context, kind, id, params) {
+  const { sql } = context;
+  const table =
+    kind === "proposal"
+      ? "public.proposals"
+      : kind === "tavolo"
+        ? "public.recurring_activities"
+        : "public.resource_listings";
+  const [base] =
+    await sql`select to_jsonb(t) as content from ${sql(table)} t where id=${id}`;
+  const content = base.content;
+  if (kind !== "listing") {
+    const [project] =
+      await sql`select registration_capacity,count_organizers_toward_capacity from public.projects where id=${id}`;
+    const meetingTable =
+      kind === "proposal"
+        ? "public.proposal_meeting_details"
+        : "public.recurring_activity_meeting_details";
+    const idColumn =
+      kind === "proposal" ? "proposal_id" : "recurring_activity_id";
+    const [meeting] =
+      await sql`select exact_meeting_text,exact_location_visibility from ${sql(meetingTable)} where ${sql(idColumn)}=${id}`;
+    Object.assign(content, project, meeting);
+    if (kind === "tavolo") {
+      const schedules =
+        await sql`select to_jsonb(s) as content from public.recurring_activity_schedules s where recurring_activity_id=${id}`;
+      if (schedules.length !== 1)
+        throw new Error("Demo Tavolo schedule inventory drifted.");
+      Object.assign(content, schedules[0].content);
+    }
+  }
+  const ignored = [
+    "expected_creator_profile_id",
+    "expected_owner_profile_id",
+    "starts_at",
+    "ends_at",
+    "effective_from",
+    "skill_ids",
+    "skill_importances",
+  ];
+  for (const [param, value] of Object.entries(params)) {
+    const field = param.slice(2);
+    if (!ignored.includes(field) && content[field] !== value) return true;
+  }
+  if (kind === "proposal") {
+    const skills =
+      await sql`select skill_id,importance from public.proposal_skills where proposal_id=${id}`;
+    const actual = skills.map((s) => `${s.skill_id}:${s.importance}`).sort();
+    const expected = params.p_skill_ids
+      .map((s, i) => `${s}:${params.p_skill_importances[i]}`)
+      .sort();
+    if (JSON.stringify(actual) !== JSON.stringify(expected)) return true;
+  }
+  return false;
+}
+
+export async function exerciseLocalDemoWorkshop({
+  repositoryRoot,
+  status,
+  mailpitUrl = "http://127.0.0.1:54324",
+  sessionPool,
+  coordinationSql,
+}) {
+  const target = requireTrustedLocalStatus(status, mailpitUrl);
+  const sql =
+    coordinationSql ??
+    postgres(target.databaseUrl, { max: 1, onnotice: () => {} });
+  try {
+    const [lock] =
+      await sql`select pg_try_advisory_lock(${DEMO_LOCK_ID}) as acquired`;
+    if (!lock.acquired)
+      throw new Error("Workshop transition refused concurrent world mutation.");
+    const context = await createAuthenticatedContext({
+      repositoryRoot,
+      status,
+      mailpitUrl: target.mailpitUrl,
+      sql,
+      sessionPool,
+      updateProfiles: false,
+    });
+    return await exerciseWorkshopTransition(context);
+  } finally {
+    await sql`select pg_advisory_unlock(${DEMO_LOCK_ID})`;
+    if (!coordinationSql) await sql.end({ timeout: 5 });
+  }
+}
+
+export async function withLocalDemoWorldLock(status, mailpitUrl, operation) {
+  const target = requireTrustedLocalStatus(status, mailpitUrl);
+  const sql = postgres(target.databaseUrl, { max: 1, onnotice: () => {} });
+  try {
+    const [lock] =
+      await sql`select pg_try_advisory_lock(${DEMO_LOCK_ID}) as acquired`;
+    if (!lock.acquired)
+      throw new Error("Demo check refused concurrent world mutation.");
+    return await operation(sql);
+  } finally {
+    await sql.end({ timeout: 5 });
+  }
 }
 
 async function resolveExistingScenario(context) {
@@ -1781,7 +1969,7 @@ async function resolveExistingScenario(context) {
 
 async function verifyDemoWorldState(context, scenario, times) {
   const { personas, anonymous, sql } = context;
-  const profileIds = Object.values(personas).map((p) => p.id);
+  const profileIds = Object.values(personas).map((persona) => persona.id);
   const [profileRows, profilePhotoRows, scenarioRows, lifecycleRows] =
     await Promise.all([
       sql`
@@ -1796,9 +1984,10 @@ async function verifyDemoWorldState(context, scenario, times) {
       `,
       sql`
         select 'proposal' as kind, creator_profile_id as owner_id, id, title
-        from public.proposals
+        from public.proposals p
         where creator_profile_id = any(${profileIds}::uuid[])
           and title = any(${knownDemoTitles()}::text[])
+          and not exists(select 1 from private.proposal_template_applications a where a.proposal_id=p.id)
         union all
         select 'tavolo' as kind, creator_profile_id as owner_id, id, title
         from public.recurring_activities
@@ -1831,7 +2020,7 @@ async function verifyDemoWorldState(context, scenario, times) {
       `,
     ]);
   if (profileRows.length !== Object.keys(DEMO_PERSONAS).length) {
-    throw new Error("Demo personas do not have all complete profiles.");
+    throw new Error("Demo personas do not have complete profiles.");
   }
   for (const [key, user] of Object.entries(personas)) {
     const definition = DEMO_PERSONAS[key];
@@ -2216,8 +2405,9 @@ async function findOneByTitle(sql, kind, ownerId, title) {
   if (kind === "proposal") {
     rows = await sql`
       select id, title
-      from public.proposals
+      from public.proposals p
       where creator_profile_id = ${ownerId} and title = ${title}
+        and not exists (select 1 from private.proposal_template_applications a where a.proposal_id=p.id)
     `;
   } else if (kind === "tavolo") {
     rows = await sql`

@@ -2044,5 +2044,95 @@
   "projectWorkspaceOpenWorkspaceAction": "Open workspace",
   "projectWorkspaceCancelAction": "Cancel",
   "projectWorkspaceOpenFailure": "The external workspace could not be opened.",
-  "projectWorkspaceToolsSemantics": "Project coordination tools"
+  "projectWorkspaceToolsSemantics": "Project coordination tools",
+  "moderationTemplateDisclosure": "You can report a template, including one linked to your own Proposal. Staff review reports manually. Reporting does not automatically remove the template or its source Proposal.",
+  "proposalDraftSaved": "Draft saved",
+  "proposalDraftImageNotSaved": "Draft content saved; image change not confirmed.",
+  "proposalDraftLeaveTitle": "Keep your draft",
+  "proposalDraftLeaveError": "Your changes could not be saved. Correct the highlighted fields or retry. Discard abandons only unsaved changes; any draft already saved remains in My Proposals.",
+  "proposalDraftKeepEditing": "Keep editing",
+  "proposalDraftDiscard": "Discard unsaved changes",
+  "proposalDraftLeaveWithoutImage": "Leave without image change",
+  "proposalDraftRecover": "Recover draft",
+  "proposalDraftRecoveryError": "Draft recovery failed. Retry from My Proposals.",
+  "workshopTitle": "Template Workshop",
+  "workshopStartFromTemplate": "Start from a template",
+  "workshopContext": "Reuse ideas from completed one-time Proposals to start your own independent draft.",
+  "workshopCompleted": "From a completed Proposal",
+  "workshopCreatorFallback": "Community creator",
+  "workshopCreator": "Original creator: {name}",
+  "@workshopCreator": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "workshopEmpty": "No completed Proposal templates are available yet.",
+  "workshopNoMatches": "No templates match these filters.",
+  "workshopReadError": "Templates could not be loaded. Retry to check availability.",
+  "workshopLoadMore": "Load more",
+  "workshopRefresh": "Refresh availability",
+  "workshopUnavailable": "This template is no longer available for new use or reporting.",
+  "workshopDuration": "Duration guidance: {seconds} seconds. Choose new dates and times for your draft.",
+  "@workshopDuration": {
+    "placeholders": {
+      "seconds": {
+        "type": "String"
+      }
+    }
+  },
+  "workshopCapacity": "Use suggested capacity: {capacity}",
+  "@workshopCapacity": {
+    "placeholders": {
+      "capacity": {
+        "type": "int"
+      }
+    }
+  },
+  "workshopCapacityHint": "An editable suggestion for your new draft.",
+  "workshopBlueprints": "Resource descriptions: {loaded} of {total}",
+  "@workshopBlueprints": {
+    "placeholders": {
+      "loaded": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "workshopBlueprintError": "Resource preview could not be completed. Retry or refresh the template.",
+  "workshopChanged": "This preview changed. Review the updated content before starting a new draft.",
+  "workshopReviewed": "I reviewed this preview",
+  "workshopCopyHint": "Start a new private draft with text, skills and all open resource descriptions. Choose new logistics; people and the cover image are not copied. This does not join or publish a Proposal.",
+  "workshopUse": "Use template · Start a new draft",
+  "workshopUseAgain": "Start another independent draft",
+  "workshopReport": "Report template",
+  "workshopViewSource": "View source Proposal",
+  "workshopPending": "Draft creation is awaiting confirmation.",
+  "workshopAccepted": "Your independent draft is ready.",
+  "workshopRecoveryLifetime": "Retry or open this same draft while the app is running. Confirmed drafts are also in My Proposals.",
+  "workshopOpen": "Open draft",
+  "workshopRetry": "Retry",
+  "workshopApplying": "Creating draft…",
+  "workshopApplyUncertain": "Creation could not be confirmed. Retry checks and repeats the same request safely.",
+  "workshopForbidden": "This request is not authorized. Check your account and refresh template availability; retry keeps the same request.",
+  "workshopProfileRequired": "Complete your profile before creating a new draft. A profile photo is not required to use a template.",
+  "workshopIncompatible": "This request has incompatible inputs. It cannot be replaced with a guessed draft.",
+  "workshopOpenError": "The accepted draft could not be opened. Open or retry the same draft; no new copy will be created.",
+  "workshopPublicationNotice": "When this published Proposal reaches Completed (24 hours after its end), its eligible text, skills and open resource descriptions automatically become reusable in Template Workshop. This does not need a separate submission or approval. Check what you include in free text.",
+  "similarMayExist": "A similar activity may already exist.",
+  "similarView": "View similar Projects",
+  "similarDismiss": "Hide suggestions",
+  "similarReopen": "Show suggestions",
+  "similarLoading": "Checking similar activities…",
+  "similarError": "Similar activities could not be checked. You can keep editing.",
+  "similarClose": "Close similar Projects",
+  "similarOpen": "View Project",
+  "similarFull": "Full",
+  "similarCapacityUnknown": "Registration capacity not set",
+  "similarTitleReason": "Related title topic",
+  "similarTagsReason": "Related title topic and shared selected tags",
+  "similarLocalityReason": "Same rough locality"
 }

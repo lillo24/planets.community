@@ -19,16 +19,23 @@ const config = readFileSync(
   new URL("../../../supabase/config.toml", import.meta.url),
   "utf8",
 );
+// The integration rehearsal owns a separate fixed project/port set. Retain
+// PI05's original guard and never accept arbitrary shared/staging targets.
+const integrated = config.includes(
+  'project_id = "planets-community-tw-stack01"',
+);
 if (
   process.env.PI05_LOCAL_REHEARSAL !== "1" ||
-  !config.includes('project_id = "planets-community-pi05"')
+  (!integrated && !config.includes('project_id = "planets-community-pi05"'))
 ) {
   throw new Error(
-    "Explicit PI05_LOCAL_REHEARSAL=1 and owned planets-community-pi05 stack required.",
+    "Explicit PI05_LOCAL_REHEARSAL=1 and owned PI05/TW-STACK01 stack required.",
   );
 }
 const status = readLocalSupabaseStatus(root);
-const mailpitUrl = "http://127.0.0.1:58924";
+const mailpitUrl = integrated
+  ? "http://127.0.0.1:54924"
+  : "http://127.0.0.1:58924";
 if (!status.databaseUrl)
   throw new Error("PI05 local database URL is required.");
 assertSafeLocalDemoTarget({
@@ -39,9 +46,9 @@ assertSafeLocalDemoTarget({
 });
 if (
   new URL(status.apiUrl).hostname !== "127.0.0.1" ||
-  new URL(status.apiUrl).port !== "58921"
+  new URL(status.apiUrl).port !== (integrated ? "54921" : "58921")
 ) {
-  throw new Error("PI05 requires owned disposable ports 58920–58929.");
+  throw new Error("PI05/TW-STACK01 requires its owned disposable port set.");
 }
 const sql = postgres(status.databaseUrl!, {
   max: 2,

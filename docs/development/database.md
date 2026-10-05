@@ -1,5 +1,21 @@
 # Database development
 
+The [SIM01 matching contract](similar-active-proposals.md) owns the narrow
+authenticated upcoming-Proposal idea lookup, lexical admission/ranking and
+query-plan evidence. `proposal:similar:verify:local` is an explicit Database CI
+and full `check:db` step, with `115`/`116` pgTAP grants/access coverage.
+
+The [source-linked Template Workshop guide](template-workshop.md) owns TW01's
+identity/baseline, Completed eligibility, reusable projection/version, public
+RPC grants and bounded blueprint pagination contracts. Its HTTP/concurrency
+verifier is included in `npm run proposal:verify:local`; upgrade-backfill
+rehearsal is an explicit isolated-local procedure. TW02 adds protected template
+reporting/removal; TW03 adds authenticated atomic full-collection copying and
+applicant-private immutable receipts. `moderation:verify:local` and
+`template:apply:verify:local` now run explicitly in Database CI. Historical TW02
+API coverage was local; see the guide for the corrected record and populated
+TW03 upgrade procedure.
+
 The stack-integration candidate replays the complete cumulative schema from the
 validated `main` baseline plus the included open product stacks. Candidate-only
 migrations, generated types, and verification commands remain unmerged to
@@ -828,3 +844,14 @@ activates. It prints no identities, tokens, messages, or database URL.
 `tavoli:web:verify:local` uses synthetic local OTP data and the production Next.js server to prove signed-out Tavoli list/detail rendering, rough-location and next-meeting output, exclusion of paused/ended rows from discovery, retained sanitized historical detail, exact-ID 404 behavior, and detail-only public/restricted exact-location handling. It never prints test addresses, tokens, keys, or protected meeting content.
 
 `npm run check:db` performs reset, lint, advisors, pgTAP, the real fake push-delivery worker protocol, the mobile/backend Auth check, the deterministic immediate-session/RLS check, the two-user profile visibility check, the proposal privacy/lifecycle check, the recurring activity recurrence/privacy/lifecycle check, the multi-user Project participation, delegate, shared-workspace, participation-request chat, and participation-aware Browse checks, notification/push projection, structured Messages integration, Project-chat lifecycle/message/notification integrations, the Scambio-Dona listing, saved-search, request, agreement, chat, and unified Messages/notification integrations, the Project resource-need and matching integrations, contribution-selection, acceptance-triage, membership-commitment, coverage, resurfacing, and actual-contribution integrations, moderation evidence integrations, user-block pair-serialization races, type regeneration, and drift detection as one validation sequence. It assumes `npm run db:start` has already succeeded and leaves stack lifecycle to the caller. CI additionally generates local web configuration, builds Next.js, runs the web-session and public Tavoli integrations, and always stops Supabase.
+
+TW-STACK01 retains all Template/SIM/DRAFT and PI verifiers, adds the unrestricted
+post-producer notification regression and uses one combined demo runner. Its
+separate `npm run template:stack:upgrades:local` archives exact main/TW05 inputs,
+seeds each predecessor, snapshots old columns, and uses pinned CLI
+`supabase migration up --local --include-all` twice without a populated reset.
+This option applies missing interleaved timestamps. No migration/history is
+renamed or rewritten. Nullable added origin/resolution/template-case fields
+remain null on legacy rows; new receipts/baselines/events are not fabricated.
+Only after preservation passes does an explicit combined seed/rerun run.
+See [upgrade and validation evidence](template-stack-integration.md).

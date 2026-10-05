@@ -29,6 +29,7 @@ import '../domain/proposal_models.dart';
 import '../domain/proposal_time.dart';
 import 'proposal_widgets.dart';
 import 'skill_filter.dart';
+import '../../template_workshop/presentation/template_workshop_screens.dart';
 
 class PublicProposalsScreen extends ConsumerStatefulWidget {
   const PublicProposalsScreen({super.key});
@@ -76,6 +77,12 @@ class _PublicProposalsScreenState extends ConsumerState<PublicProposalsScreen> {
         title: Text(l10n.proposalsTitle),
         actions: [
           IconButton(
+            key: const Key('template-workshop-action'),
+            tooltip: l10n.workshopTitle,
+            onPressed: () => context.push(WorkshopRoutes.catalog),
+            icon: const Icon(Icons.auto_stories_outlined),
+          ),
+          IconButton(
             key: const Key('my-proposals-action'),
             tooltip: l10n.proposalMyTitle,
             onPressed: () => context.push('/proposals/mine'),
@@ -107,6 +114,11 @@ class _PublicProposalsScreenState extends ConsumerState<PublicProposalsScreen> {
                       selected: BrowseActivityType.proposals,
                     ),
                     const SizedBox(height: AppSpacing.medium),
+                    OutlinedButton.icon(
+                      onPressed: () => context.push(WorkshopRoutes.catalog),
+                      icon: const Icon(Icons.auto_stories_outlined),
+                      label: Text(l10n.workshopStartFromTemplate),
+                    ),
                     TextField(
                       key: const Key('proposal-query-filter'),
                       controller: _queryController,

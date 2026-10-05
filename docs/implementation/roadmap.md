@@ -26,6 +26,28 @@ The ordering is intentional: security and canonical data rules are established b
 
 ## Execution model
 
+### Template Workshop track
+
+The agreed sequence is **TW01 → TW02 → TW03 → DRAFT01 → TW04 → SIM01 →
+SIM02 → TW05**. Begin each dependent plan only after its predecessor is merged
+or its branch/commit is explicitly selected as the dependency base. The TW01
+base is verified current `main` at `92d93ca5a455ab853df8bc34b66fd8d69f4fb341`;
+this scoped track does not refresh the unrelated historical status text above.
+
+| Plan | Current status and boundary |
+| --- | --- |
+| TW01 — Source-linked Template Workshop domain | Implemented on its isolated branch, draft and unmerged for founder review of historical public content, reusable allow-list and private Bozza contract. Automatic identity at publication, latest canonical projection, Completed-only RPC catalog/detail, opaque versions, legacy backfill without fabricated drafts, and a private TW02 removal seam. [Contract](../development/template-workshop.md) |
+| TW02 — Template reporting/removal | Implemented on its isolated draft branch stacked on exact TW01 head; typed reports including original-Creator self-report, narrow staff published review and audited template-only removal. Founder review and predecessor integration pending; no merge/deployment |
+| TW03 — Template-to-draft creation | Implemented on its isolated draft branch stacked on exact TW02 head; atomic full-collection independent drafts, applicant-private immutable receipts, exact retries and source/removal serialization. Founder review and later main/#128 integration pending; no merge/deployment |
+| DRAFT01 | Implemented on the exact TW03 draft base; meaningful sparse drafts save before departure with session binding, retry-safe creation, invalid-input blocking and truthful partial-cover feedback. Draft founder review and predecessor/main/#128/#131 integration pending. [Contract](../development/proposal-draft-departure.md) |
+| TW04 — Mobile Workshop | Implemented on exact DRAFT01 draft head `8062035a5cdc38ac016f64d125b7b4407b613063`; mobile browse/detail, bounded resource previews, template reporting, independent draft creation/recovery and IT/EN automatic-publication notice. Draft founder review and predecessor/main/#128/#131/#134 integration pending; no merge/deployment. [Contract](../development/template-workshop.md) |
+| SIM01 | Implemented on exact TW04 draft head `2905d8a95227a151edb8c8b712b1fbb424f9f459`; authenticated bounded upcoming Proposal matching, lexical admission, canonical capacity/locality ordering and narrow reasons. Founder review and later predecessor/main/#128/#131/#134/#138 integration pending; no merge/deployment. [Contract](../development/similar-active-proposals.md) |
+| SIM02 | Implemented on exact SIM01 draft head `8effe582704324e2da159392629db95be08a66f3`; mobile automatic bounded suggestions, actor/session debounce, dismiss/reopen and modal-safe ordinary detail navigation through DRAFT01. Draft founder review and later predecessor/main/#128/#131/#134/#138 integration pending; no merge/deployment. [Contract](../development/automatic-editor-suggestions.md) |
+| TW05 — Demo world | Implemented on exact SIM02 head `08b8c4422de92d8a3f0392c920acc0766a02eaca`: eight core Completed sources, active/exclusion inventory, stable receipt-bound copies/reports/removal, non-repairing verification and cumulative local/native/hosted validation. Draft founder review and later main PI05 reconciliation pending; no merge/deployment. [Record](../development/workshop-demo-validation.md) |
+| TW-STACK01 — Main integration | Review candidate combines exact main `cbfbf0ae6de9eb73906361c5980b113ec6bc2046` (merged PI01–PI05) with cumulative TW05 `63bfb83120af76af404055a9999d3298181f3c34`, preserving both histories. Router/draft composition, combined demo recovery, unrestricted projector regression and both populated upgrade paths are validated. Remains draft and unmerged; founder/device/release gates remain open. This candidate does not import other open stacks or refresh their historical status above. [Integration record](../development/template-stack-integration.md) |
+
+### Per-plan workflow
+
 For each implementation plan:
 
 1. inspect the current repository and the reports from prior plans;
@@ -322,7 +344,7 @@ Expected scope:
 - paginated public/authenticated list and detail queries;
 - locality and skill filters;
 - sanitized public list/detail functions and owner management functions;
-- historical retention as future template-source groundwork, without mutable template records;
+- historical retention as template-source groundwork; TW01 separately establishes automatic linked identities and Completed-only reusable projections without independent template authoring;
 - functional Flutter browse/detail/create/edit/my-proposals UI and read-only Next.js discovery;
 - database, repository/controller, widget, and integration tests.
 

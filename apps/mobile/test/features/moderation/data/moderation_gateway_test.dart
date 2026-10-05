@@ -3,6 +3,23 @@ import 'package:planets_mobile/features/moderation/data/moderation_gateway.dart'
 import 'package:planets_mobile/features/moderation/domain/moderation_models.dart';
 
 void main() {
+  test('template target and own receipt remain narrow', () {
+    const parser = ModerationPayloadParser();
+    final report = parser.ownReport({
+      'report_id': '00000000-0000-4000-8000-000000000901',
+      'case_id': '00000000-0000-4000-8000-000000000902',
+      'category': 'other',
+      'explanation': 'Template concern for manual review.',
+      'target_kind': 'proposal_template',
+      'target_summary': 'Proposal template',
+      'context_summary': null,
+      'state': 'received',
+      'created_at': '2026-10-03T12:00:00Z',
+    });
+    expect(report.targetKind, ModerationTargetKind.proposalTemplate);
+    expect(report.contextSummary, isNull);
+  });
+
   const contract = ModerationRpcContract();
   const parser = ModerationPayloadParser();
 

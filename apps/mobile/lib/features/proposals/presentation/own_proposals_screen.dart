@@ -16,6 +16,8 @@ import '../../project_delegates/domain/project_delegate_models.dart';
 import '../../project_delegates/presentation/project_delegate_routes.dart';
 import '../../project_resource_needs/presentation/project_resource_need_routes.dart';
 import '../application/proposal_controllers.dart';
+import '../application/proposal_draft_session.dart';
+import '../data/proposal_gateway.dart';
 import '../domain/proposal_models.dart';
 
 class OwnProposalsScreen extends ConsumerStatefulWidget {
@@ -45,6 +47,34 @@ class _OwnProposalsScreenState extends ConsumerState<OwnProposalsScreen> {
     }
   }
 
+  Future<void> _recover(String actor, String request) async {
+    try {
+      final id = await ref
+          .read(proposalGatewayProvider)
+          .recoverDraftCreation(actor, request);
+      if (!mounted || ref.read(authSessionProvider).identity?.id != actor) {
+        return;
+      }
+      ref.read(draftCreationRecoveryProvider.notifier).resolved(actor, request);
+      if (id != null) {
+        context.push('/proposals/$id/edit');
+      } else {
+        await _load(force: true);
+      }
+    } catch (_) {
+      if (!mounted || ref.read(authSessionProvider).identity?.id != actor) {
+        return;
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            AppLocalizations.of(context).proposalDraftRecoveryError,
+          ),
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
@@ -69,6 +99,15 @@ class _OwnProposalsScreenState extends ConsumerState<OwnProposalsScreen> {
 
     return Scaffold(
       appBar: AppBar(title: Text(l10n.proposalMyTitle)),
+      persistentFooterButtons: [
+        for (final request
+            in ref.watch(draftCreationRecoveryProvider)[identity?.id] ??
+                <String>{})
+          TextButton(
+            onPressed: () => _recover(identity!.id, request),
+            child: Text(l10n.proposalDraftRecover),
+          ),
+      ],
       body: SafeArea(
         child: identity == null
             ? const SizedBox.shrink()

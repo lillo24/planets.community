@@ -1320,5 +1320,95 @@
   "projectWorkspaceOpenWorkspaceAction": "Aprire lo spazio di lavoro",
   "projectWorkspaceCancelAction": "Annulla",
   "projectWorkspaceOpenFailure": "Impossibile aprire lo spazio di lavoro esterno.",
-  "projectWorkspaceToolsSemantics": "Strumenti di coordinamento dei progetti"
+  "projectWorkspaceToolsSemantics": "Strumenti di coordinamento dei progetti",
+  "moderationTemplateDisclosure": "Puoi segnalare un template, anche se collegato alla tua Proposta. Lo staff valuta le segnalazioni manualmente. La segnalazione non rimuove automaticamente il template o la Proposta di origine.",
+  "proposalDraftSaved": "Bozza salvata",
+  "proposalDraftImageNotSaved": "Contenuto della bozza salvato; modifica immagine non confermata.",
+  "proposalDraftLeaveTitle": "Conserva la tua bozza",
+  "proposalDraftLeaveError": "Impossibile salvare le modifiche. Correggi i campi evidenziati o riprova. Scarta abbandona solo le modifiche non salvate; una bozza già salvata resta in Le mie proposte.",
+  "proposalDraftKeepEditing": "Continua a modificare",
+  "proposalDraftDiscard": "Scarta modifiche non salvate",
+  "proposalDraftLeaveWithoutImage": "Esci senza modifica immagine",
+  "proposalDraftRecover": "Recupera bozza",
+  "proposalDraftRecoveryError": "Recupero della bozza non riuscito. Riprova da Le mie proposte.",
+  "workshopTitle": "Laboratorio dei modelli",
+  "workshopStartFromTemplate": "Crea da un modello",
+  "workshopContext": "Riusa idee di Proposte singole concluse per iniziare una tua bozza indipendente.",
+  "workshopCompleted": "Da una Proposta conclusa",
+  "workshopCreatorFallback": "Persona della comunità",
+  "workshopCreator": "Creatore originale: {name}",
+  "@workshopCreator": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "workshopEmpty": "Non ci sono ancora modelli di Proposte concluse disponibili.",
+  "workshopNoMatches": "Nessun modello corrisponde a questi filtri.",
+  "workshopReadError": "Impossibile caricare i modelli. Riprova per verificarne la disponibilità.",
+  "workshopLoadMore": "Carica altri",
+  "workshopRefresh": "Aggiorna disponibilità",
+  "workshopUnavailable": "Questo modello non è più disponibile per nuovi utilizzi o segnalazioni.",
+  "workshopDuration": "Durata indicativa: {seconds} secondi. Scegli nuove date e orari per la tua bozza.",
+  "@workshopDuration": {
+    "placeholders": {
+      "seconds": {
+        "type": "String"
+      }
+    }
+  },
+  "workshopCapacity": "Usa la capienza suggerita: {capacity}",
+  "@workshopCapacity": {
+    "placeholders": {
+      "capacity": {
+        "type": "int"
+      }
+    }
+  },
+  "workshopCapacityHint": "Un suggerimento modificabile per la tua nuova bozza.",
+  "workshopBlueprints": "Descrizioni delle risorse: {loaded} di {total}",
+  "@workshopBlueprints": {
+    "placeholders": {
+      "loaded": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "workshopBlueprintError": "Impossibile completare l’anteprima delle risorse. Riprova o aggiorna il modello.",
+  "workshopChanged": "L’anteprima è cambiata. Controlla il contenuto aggiornato prima di iniziare una nuova bozza.",
+  "workshopReviewed": "Ho controllato l’anteprima",
+  "workshopCopyHint": "Inizia una nuova bozza privata con testi, competenze e tutte le descrizioni delle risorse aperte. Scegli nuovi dettagli organizzativi; persone e immagine di copertina non vengono copiate. Non ti iscrive a una Proposta e non la pubblica.",
+  "workshopUse": "Usa modello · Inizia una nuova bozza",
+  "workshopUseAgain": "Inizia un’altra bozza indipendente",
+  "workshopReport": "Segnala modello",
+  "workshopViewSource": "Vedi la Proposta originale",
+  "workshopPending": "La creazione della bozza attende conferma.",
+  "workshopAccepted": "La tua bozza indipendente è pronta.",
+  "workshopRecoveryLifetime": "Riprova o apri questa stessa bozza mentre l’app è in esecuzione. Le bozze confermate sono anche in Le mie Proposte.",
+  "workshopOpen": "Apri bozza",
+  "workshopRetry": "Riprova",
+  "workshopApplying": "Creazione della bozza…",
+  "workshopApplyUncertain": "Impossibile confermare la creazione. Riprova verifica e ripete la stessa richiesta in modo sicuro.",
+  "workshopForbidden": "La richiesta non è autorizzata. Controlla l’account e aggiorna la disponibilità del modello; Riprova mantiene la stessa richiesta.",
+  "workshopProfileRequired": "Completa il profilo prima di creare una nuova bozza. Per usare un modello non serve una foto del profilo.",
+  "workshopIncompatible": "Questa richiesta ha dati incompatibili. Non è possibile sostituirla con una bozza presunta.",
+  "workshopOpenError": "Impossibile aprire la bozza accettata. Apri o riprova la stessa bozza; non verrà creata un’altra copia.",
+  "workshopPublicationNotice": "Quando questa Proposta pubblicata diventa Conclusa (24 ore dopo la fine), i testi, le competenze e le descrizioni delle risorse aperte idonei diventano automaticamente riutilizzabili nel Laboratorio dei modelli. Non serve una candidatura o approvazione separata. Controlla ciò che includi nei testi liberi.",
+  "similarMayExist": "Potrebbe esserci già un’attività simile.",
+  "similarView": "Vedi progetti simili",
+  "similarDismiss": "Nascondi suggerimenti",
+  "similarReopen": "Mostra suggerimenti",
+  "similarLoading": "Ricerca di attività simili…",
+  "similarError": "Non è stato possibile cercare attività simili. Puoi continuare a scrivere.",
+  "similarClose": "Chiudi progetti simili",
+  "similarOpen": "Vedi progetto",
+  "similarFull": "Al completo",
+  "similarCapacityUnknown": "Capienza non impostata",
+  "similarTitleReason": "Argomento simile nel titolo",
+  "similarTagsReason": "Argomento simile nel titolo e tag selezionati in comune",
+  "similarLocalityReason": "Stessa località indicativa"
 }
