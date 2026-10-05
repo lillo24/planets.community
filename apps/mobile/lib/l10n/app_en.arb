@@ -1969,5 +1969,51 @@
   "projectWorkspaceOpenWorkspaceAction": "Open workspace",
   "projectWorkspaceCancelAction": "Cancel",
   "projectWorkspaceOpenFailure": "The external workspace could not be opened.",
-  "projectWorkspaceToolsSemantics": "Project coordination tools"
+  "projectWorkspaceToolsSemantics": "Project coordination tools",
+  "noticesTitle": "PLANETS notices",
+  "noticesIntroduction": "Private moderation notices and their history, with the reasons intended for you. This is not a public profile badge or a score.",
+  "noticesLoading": "Loading PLANETS notices…",
+  "noticesPageLoading": "Loading older notices…",
+  "noticesRefresh": "Refresh notices",
+  "noticesLoadMore": "Load older notices",
+  "noticesRetry": "Try again",
+  "noticesLoadError": "Notices could not be loaded. This does not mean there are no notices.",
+  "noticesPageError": "Older notices could not be loaded. The notices already loaded are still shown.",
+  "noticesForbidden": "These notices are unavailable for the current account. Check account access or try again.",
+  "noticesEmptyTitle": "No PLANETS notices",
+  "noticesEmptyBody": "No moderation notices were returned for your account.",
+  "noticesEnd": "End of the available history",
+  "noticesTimeZone": "Dates use this device’s time zone.",
+  "noticesActive": "Active",
+  "noticesRemoved": "Removed",
+  "noticesAppliedOn": "Applied on {date}",
+  "noticesRemovedOn": "Removed on {date}",
+  "@noticesAppliedOn": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "@noticesRemovedOn": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "noticesApplyReason": "Reason given to you",
+  "noticesRemoveReason": "Reason for removal",
+  "noticesSafetyTitle": "Safety notice",
+  "noticesSafetyEffect": "PLANETS recorded a moderation notice. This notice by itself does not restrict account actions and is not a public profile badge.",
+  "noticesRestrictionTitle": "Interaction restriction",
+  "noticesRestrictionEffect": "While active, this restricts new outbound Project join requests and Scambio/Dona Resource requests. Pending outbound requests were withdrawn when it was applied. Accepted participation, agreements and ordinary manager permissions remain subject to their existing rules and any other active restrictions.",
+  "noticesHideTitle": "Content hide",
+  "noticesHideEffect": "While active, moderation restricts this content’s visibility and access to new interactions. Hiding is separate from cancellation, closing or deletion.",
+  "noticesSuspensionTitle": "Account suspension",
+  "noticesSuspensionEffect": "Past suspensions appear here when ordinary account access is available. An actively suspended account uses the dedicated account-status screen.",
+  "noticesRemovalEffect": "Removal does not automatically resubmit withdrawn requests, reopen closed content or republish cancelled content. Other restrictions may still apply.",
+  "noticesProject": "Project",
+  "noticesTavolo": "Tavolo",
+  "noticesResource": "Scambio/Dona Resource"
 }

@@ -16,6 +16,7 @@ import '../../features/messages/presentation/participation_request_message_scree
 import '../../features/moderation/domain/moderation_models.dart';
 import '../../features/moderation/presentation/counterstatement_screen.dart';
 import '../../features/moderation/presentation/own_reports_screen.dart';
+import '../../features/moderation/presentation/own_consequences_screen.dart';
 import '../../features/moderation/presentation/corroboration_screens.dart';
 import '../../features/moderation/presentation/moderation_evidence_requests_screen.dart';
 import '../../features/moderation/presentation/moderation_routes.dart';
@@ -94,6 +95,7 @@ RoutingConfig _routingConfig(
       final isVerifyRoute = path == '/auth/verify';
       final isAuthRoute = isRequestRoute || isVerifyRoute;
       final isModerationRoute =
+          path == ModerationRoutes.ownNotices ||
           path.startsWith('/profile/reports') ||
           path.startsWith('/profile/review-requests');
       final isProfileEditRoute = path == '/profile/edit';
@@ -352,6 +354,10 @@ RoutingConfig _routingConfig(
                 path: '/settings',
                 builder: (context, state) => const SettingsScreen(),
                 routes: [
+                  GoRoute(
+                    path: 'notices',
+                    builder: (context, state) => const OwnConsequencesScreen(),
+                  ),
                   GoRoute(
                     path: 'language',
                     builder: (context, state) =>
