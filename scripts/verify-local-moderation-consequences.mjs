@@ -4,7 +4,10 @@ import { createClient } from "@supabase/supabase-js";
 import postgres from "postgres";
 import { signInLocalOtpUser } from "./lib/local-authenticated-user.mjs";
 import { readLocalSupabaseStatus } from "./lib/local-supabase-status.mjs";
-import { createConsequenceFixture } from "./lib/moderation-consequence-fixtures.mjs";
+import {
+  asConsequenceActor,
+  createConsequenceFixture,
+} from "./lib/moderation-consequence-fixtures.mjs";
 
 const { apiUrl, publishableKey, databaseUrl } = readLocalSupabaseStatus(
   process.cwd(),
@@ -145,6 +148,73 @@ try {
     },
     "42501",
   );
+  // Canonical commands in one statement create tied apply times without
+  // rewriting timestamps or relaxing chronology constraints. Each notice is
+  // removed before the next applies, preserving the active-type invariant.
+  const tiedEpisodes = await asConsequenceActor(
+    sql,
+    users.admin.id,
+    (tx) =>
+      tx`select public.revoke_moderation_consequence(
+      ${users.admin.id}::uuid,
+      public.apply_moderation_consequence(${users.admin.id}::uuid,
+        ${fixture.cases.profile}::uuid, 'safety_notice',
+        'Synthetic affected-user reason', 'Synthetic private staff note'),
+      'Synthetic removal reason', 'Synthetic private removal note') as id
+      from generate_series(1, 23)`,
+  );
+  const firstPage = await rpc(
+    users.requester,
+    "list_own_moderation_consequences",
+    {
+      p_expected_profile_id: users.requester.id,
+    },
+  );
+  assert.equal(firstPage.length, 20, "canonical default page is bounded");
+  assert.equal(new Set(firstPage.map((row) => row.applied_at)).size, 1);
+  const cursor = firstPage.at(-1);
+  const secondPage = await rpc(
+    users.requester,
+    "list_own_moderation_consequences",
+    {
+      p_expected_profile_id: users.requester.id,
+      p_before_applied_at: cursor.applied_at,
+      p_before_consequence_id: cursor.consequence_id,
+    },
+  );
+  const pages = [...firstPage, ...secondPage];
+  assert.equal(
+    new Set(pages.map((row) => row.consequence_id)).size,
+    pages.length,
+  );
+  const tiedIds = new Set(tiedEpisodes.map((row) => row.id));
+  const tiedHistory = pages.filter((row) => tiedIds.has(row.consequence_id));
+  assert.equal(tiedHistory.length, 23, "exact raw pair traverses all tied IDs");
+  for (const row of tiedHistory) {
+    assert.deepEqual(
+      Object.keys(row).sort(),
+      [
+        "consequence_id",
+        "consequence_type",
+        "is_active",
+        "applied_at",
+        "apply_reason",
+        "revoked_at",
+        "revoke_reason",
+        "content_kind",
+        "content_id",
+        "content_title",
+      ].sort(),
+    );
+    assert.equal(row.consequence_type, "safety_notice");
+    assert.equal(row.is_active, false);
+    assert.equal(row.apply_reason, "Synthetic affected-user reason");
+    assert.equal(row.revoke_reason, "Synthetic removal reason");
+    assert.equal(typeof row.revoked_at, "string");
+    assert.equal(row.content_kind, null);
+    assert.equal(row.content_id, null);
+    assert.equal(row.content_title, null);
+  }
   const [projectState] =
     await sql`select status from public.project_join_requests where id=${pendingProject}::uuid`;
   const [resourceState] =
@@ -389,7 +459,7 @@ try {
     and (payload::text like '%Synthetic affected-user reason%' or payload::text like '%Synthetic private staff note%')`;
   assert.equal(leak.count, 0);
   console.log(
-    "Authenticated consequence verifier passed: ten real OTP identities, staff apply/revoke, all acceptance overloads, own-reason privacy, pending semantics, accepted coordination, and HTTP cover denial/restoration.",
+    "Authenticated consequence verifier passed: ten real OTP identities, staff apply/revoke, all acceptance overloads, own-reason privacy, 23 tied-time notices over two bounded pages, pending semantics, accepted coordination, and HTTP cover denial/restoration.",
   );
 } finally {
   let cleanupFailure;

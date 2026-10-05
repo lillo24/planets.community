@@ -25,6 +25,12 @@ Settings conditionally links ready signed-in profiles to the existing protected
 notification preferences and profile editor routes; it is never itself an Auth
 destination.
 
+09C2B1 adds protected `/settings/notices` under Settings on Home. Its own-history
+controller discards private reasons on every session revision; all existing
+global suspension/failed-check guards remain authoritative. Direct links retain
+the exact destination through Auth/profile completion, and Back returns to
+Settings. No new navigation destination or hidden-content public route is added.
+
 Static Browse children precede each dynamic activity-ID route. A route-backed
 Proposals/Tavoli switcher changes the public list within Browse without adding a
 fourth bottom destination. Each list's Riverpod state survives switching. Direct entry creates

@@ -14,6 +14,10 @@ preference surfaces. It does not own notification or profile data.
   `/settings/language` selection screen. Account rows link to their existing
   feature routes and appear only for a ready signed-in profile.
 
+The PLANETS notices account row links to moderation's protected
+`/settings/notices` child, preserving Settings as the Back destination. Settings
+does not fetch/cache reasons, infer restrictions or bypass Auth's suspension gate.
+
 The bootstrap layer restores the noncritical preference before `runApp` to avoid
 a normal-start language flash. Read failures fall back to System default. A write
 failure keeps the prior in-memory choice and is reported with localized UI copy.

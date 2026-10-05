@@ -1247,5 +1247,51 @@
   "projectWorkspaceOpenWorkspaceAction": "Aprire lo spazio di lavoro",
   "projectWorkspaceCancelAction": "Annulla",
   "projectWorkspaceOpenFailure": "Impossibile aprire lo spazio di lavoro esterno.",
-  "projectWorkspaceToolsSemantics": "Strumenti di coordinamento dei progetti"
+  "projectWorkspaceToolsSemantics": "Strumenti di coordinamento dei progetti",
+  "noticesTitle": "Avvisi di PLANETS",
+  "noticesIntroduction": "Avvisi privati di moderazione e relativa cronologia, con i motivi destinati a te. Non sono un badge pubblico sul profilo né un punteggio.",
+  "noticesLoading": "Caricamento degli avvisi di PLANETS…",
+  "noticesPageLoading": "Caricamento degli avvisi precedenti…",
+  "noticesRefresh": "Aggiorna gli avvisi",
+  "noticesLoadMore": "Carica gli avvisi precedenti",
+  "noticesRetry": "Riprova",
+  "noticesLoadError": "Impossibile caricare gli avvisi. Questo non significa che non ce ne siano.",
+  "noticesPageError": "Impossibile caricare gli avvisi precedenti. Quelli già caricati restano visibili.",
+  "noticesForbidden": "Questi avvisi non sono disponibili per l’account attuale. Verifica l’accesso all’account o riprova.",
+  "noticesEmptyTitle": "Nessun avviso di PLANETS",
+  "noticesEmptyBody": "Non sono stati restituiti avvisi di moderazione per il tuo account.",
+  "noticesEnd": "Fine della cronologia disponibile",
+  "noticesTimeZone": "Le date usano il fuso orario di questo dispositivo.",
+  "noticesActive": "Attivo",
+  "noticesRemoved": "Rimosso",
+  "noticesAppliedOn": "Applicato il {date}",
+  "noticesRemovedOn": "Rimosso il {date}",
+  "@noticesAppliedOn": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "@noticesRemovedOn": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "noticesApplyReason": "Motivo comunicato a te",
+  "noticesRemoveReason": "Motivo della rimozione",
+  "noticesSafetyTitle": "Avviso di moderazione",
+  "noticesSafetyEffect": "PLANETS ha registrato un avviso di moderazione. Questo avviso, da solo, non limita le azioni dell’account e non è un badge pubblico sul profilo.",
+  "noticesRestrictionTitle": "Limitazione delle interazioni",
+  "noticesRestrictionEffect": "Quando è attiva, limita le nuove richieste in uscita per partecipare ai Progetti e per le Risorse di Scambio/Dona. Le richieste in uscita ancora in attesa sono state ritirate al momento dell’applicazione. Partecipazioni accettate, accordi e normali permessi di gestione restano soggetti alle regole esistenti e ad altre eventuali limitazioni attive.",
+  "noticesHideTitle": "Contenuto nascosto",
+  "noticesHideEffect": "Quando è attivo, il provvedimento limita la visibilità di questo contenuto e l’accesso a nuove interazioni. Nascondere è distinto da annullare, chiudere o eliminare.",
+  "noticesSuspensionTitle": "Sospensione dell’account",
+  "noticesSuspensionEffect": "Le sospensioni passate compaiono qui quando è disponibile l’accesso ordinario all’account. Un account con sospensione attiva usa la schermata dedicata allo stato dell’account.",
+  "noticesRemovalEffect": "La rimozione non reinvia automaticamente le richieste ritirate, non riapre i contenuti chiusi e non ripubblica quelli annullati. Possono restare altre limitazioni.",
+  "noticesProject": "Progetto",
+  "noticesTavolo": "Tavolo",
+  "noticesResource": "Risorsa di Scambio/Dona"
 }

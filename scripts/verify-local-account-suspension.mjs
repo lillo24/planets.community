@@ -287,6 +287,42 @@ try {
     )[0].is_suspended,
     false,
   );
+  const restoredHistory = await rpc(
+    users.requester,
+    "list_own_moderation_consequences",
+    {
+      p_expected_profile_id: users.requester.id,
+    },
+  );
+  const removedSuspension = restoredHistory.find(
+    (row) => row.consequence_id === episode,
+  );
+  assert.ok(
+    removedSuspension,
+    "removed suspension becomes general own history only after restoration",
+  );
+  assert.equal(removedSuspension.consequence_type, "account_suspension");
+  assert.equal(removedSuspension.is_active, false);
+  assert.equal(removedSuspension.apply_reason, "Synthetic suspension reason");
+  assert.equal(removedSuspension.revoke_reason, "Synthetic access restored");
+  assert.equal(typeof removedSuspension.applied_at, "string");
+  assert.equal(typeof removedSuspension.revoked_at, "string");
+  assert.equal(removedSuspension.content_id, null);
+  assert.deepEqual(
+    Object.keys(removedSuspension).sort(),
+    [
+      "consequence_id",
+      "consequence_type",
+      "is_active",
+      "applied_at",
+      "apply_reason",
+      "revoked_at",
+      "revoke_reason",
+      "content_kind",
+      "content_id",
+      "content_title",
+    ].sort(),
+  );
   assert.equal(
     (
       await users.requester.client.storage

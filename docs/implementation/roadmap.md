@@ -9,12 +9,14 @@ based on approved `main` at `11155618e0aa7bf0de62ae178f79d4c0c50ac644`.
 09C1B is implemented in draft review on its explicitly approved 09C1A dependency head
 `010471320779ffb5edaa7546b12cdc8f14809d2d`. 09C2A implements staff consequence
 controls in draft review on approved PR #125 head
-`c0548a25d39ddc77a92bc02514c83a01f731e9ae`; none of these plans is merged or deployed.
+`c0548a25d39ddc77a92bc02514c83a01f731e9ae`. 09C2B1 implements private Mobile
+own-consequence history with draft EN/IT copy on exact PR #139 head
+`9a9476e3b74d9783ad74d4184baae74367020c62`; none of these plans is merged or deployed.
 
 | Repository state | Scope |
 | --- | --- |
 | Implemented on `main` | Earlier application foundations, Project participation/chat/notifications, SITE-00 through SITE-02W; Project resource needs/contribution/coverage/actual-contribution flows; Scambio-Dona requests, agreements, conversations, handoff/return, loan availability, matching, saved searches and notifications; profile photos, trust gates and covers; reporting, corroboration, counterstatements and blocking; participation-request private chats; Project delegates, Co-creator/Co-organizer authority, organizer-aware capacity/fullness and shared workspace; realistic demo covers; Settings and complete English/Italian localization |
-| Implemented in review | 09C1A manual safety notice, interaction restriction and content-hide domain; 09C1B global account-suspension enforcement and mobile status gate; 09C2A manual admin consequence controls; draft review only, no merge/deployment |
+| Implemented in review | 09C1A manual safety notice, interaction restriction and content-hide domain; 09C1B global account-suspension enforcement and mobile status gate; 09C2A manual admin consequence controls; 09C2B1 private Mobile own-history and draft EN/IT copy; draft review only, no merge/deployment |
 | Deferred | Optional MLS/E2EE research in unmerged PR #28; provider/account work and native visual QA assigned to their later plans |
 | Not started | Provider-specific 06C2B; the remaining moderation/admin surface; Plans 10–14; SITE-03 production deployment |
 
@@ -147,14 +149,15 @@ below retain the plan-stage terminology recorded by their focused changes.
 | 08B1        | Cover Image Storage + Domain Foundation                   | Private WebP bucket, parent-bound immutable paths, canonical metadata, lifecycle-aware delivery, and nullable read fields | 08A4B                  | Open dependency PR #106; cover rendering and selection remain 08B2                                                  | In progress                        |
 | 08B2A       | Proposal + Tavolo Cover Mobile UX                         | Mobile normalization, owner management, and presentation for shared Project covers                                        | 08B1                   | Open stacked PR #110; native interaction and crop review remains Plan 12; no multi-image gallery                     | In progress                        |
 | 08B2B       | Scambio-Dona Cover Mobile UX                              | Shared normalization, owner management, and presentation for Resource covers and matching cards                           | 08B2A                  | Current stacked PR; native interaction and crop review remains Plan 12; no multi-image gallery                       | In progress                        |
-| 09          | Safety, moderation and admin                                 | Reporting, blocking, content states, admin roles, moderation queue/actions, audit trail and minimal custom admin UI       | 04–08                  | Community rules, prohibited content, escalation, suspension, appeals, minimum age                                    | In progress through 09C2A          |
+| 09          | Safety, moderation and admin                                 | Reporting, blocking, content states, admin roles, moderation queue/actions, audit trail and minimal custom admin UI       | 04–08                  | Community rules, prohibited content, escalation, suspension, appeals, minimum age                                    | In progress through 09C2B1         |
 | 09B1        | User Blocking Domain + Enforcement                        | Private directional episodes, symmetric new-interaction barrier, pending closure, photo enforcement, and race safety     | 09A2B                  | Founder review of the stacked backend/security boundary                                                              | In focused review                  |
 | 09B2        | Mobile Blocking UX                                        | Contextual Block/Unblock actions, outbound management, confirmations, cache refresh, and safe interaction-failure copy   | 09B1                   | Founder review of the stacked mobile/privacy boundary; localization-stack reconciliation                             | Implemented in focused review      |
 | 09C1A       | Safety Notice, Interaction Restriction + Content Hide Domain | Manual reversible private episodes, outbound request barriers, public hides, own/staff history, identifier-only sources   | 09B2, integrated main  | Draft domain/security review; no consequence UI, suspension, appeals or merge                                        | Implemented in review              |
 | 09C1B       | Account Suspension Domain + Global Enforcement               | Separately approved global account/session/domain enforcement                                                             | 09C1A                  | Draft global-security review; full local validation passed, no merge/deployment                                      | Implemented in review              |
-| 09C2        | Consequence Admin/Mobile UX + Notifications                  | Staff controls, own status, contextual warnings and consequence-source notification projection                            | 09C1A, 09C1B           | Contextual warning surfaces and user-facing copy                                                                     | In progress through 09C2A          |
+| 09C2        | Consequence Admin/Mobile UX + Notifications                  | Staff controls, own status, contextual warnings and consequence-source notification projection                            | 09C1A, 09C1B           | Contextual warning surfaces and user-facing copy                                                                     | In progress through 09C2B1         |
 | 09C2A       | Admin Moderation Consequence Controls                       | Manual case-scoped history, compatible apply/revoke, distinct user reason/private note, current moderator/admin checks      | 09C1B exact review head | Draft staff-control/privacy review; no merge/deployment or ordinary-user UX                                           | Implemented in review              |
-| 09C2B       | Affected-user / Contextual Consequence UX + Notifications    | Own status, contextual warnings and consequence-source notification projection                                            | 09C2A                  | Founder user-facing copy and contextual warning decisions                                                            | Not started                        |
+| 09C2B       | Affected-user / Contextual Consequence UX + Notifications    | Own status, contextual warnings and consequence-source notification projection                                            | 09C2A                  | Founder user-facing copy and contextual warning decisions                                                            | Private-history slice in review; remaining warnings/contextual UI/delivery deferred |
+| 09C2B1      | Private Moderation History in Mobile                        | Identity-bound own-history RPC, 20-row raw-pair pagination, active/removed episodes and draft EN/IT copy                    | PR #139 exact head     | Presentation/copy review, unmerged stack and unresolved historical risks                                              | Implemented in review              |
 | 09C3        | Appeals                                                      | Episode-bound appeal workflow                                                                                             | 09C1A, 09C2            | Founder appeals policy                                                                                               | Deferred                           |
 | 09D         | Minimum Age                                                  | Approved eligibility policy and enforcement                                                                               | 09C                    | Founder minimum-age policy                                                                                           | Not started                        |
 | 10          | Account deletion and privacy operations                   | In-app and web deletion paths, cleanup/anonymization jobs, export groundwork, privacy documentation inputs               | 03–09                  | Legal retention and anonymization policy; legal text remains founder/legal work                                      | Not started                        |
@@ -1181,8 +1184,14 @@ Parent Plan 09 remains in progress. Its next explicit boundaries are:
   existing `/admin` case-only history and manual apply/revoke, current
   moderator/admin checks, separate user-facing reasons/private notes, canonical
   enforcement and bounded conflict refresh; draft only, no merge/deployment;
-- **09C2B — Affected-user/contextual UX + notifications (not started):** own
-  status, narrow contextual warning surfaces and notification projection;
+- **09C2B1 — Private affected-user history (implemented in review):** protected
+  Settings screen using the existing own-history RPC, verbatim apply/remove
+  reasons, exact-pair pagination, account/suspension boundaries and draft EN/IT
+  copy; no merge/deployment. Evidence and unrun validation remain explicit in
+  `docs/development/moderation-private-history-09c2b1-review.md`;
+- **Remaining 09C2B (deferred):** counterparty warnings, contextual UI,
+  restricted-action CTA interception and notification/push/email projection;
+  proposed decisions are not approved policy and no delivery is implemented;
 - **09C3 — Appeals (deferred):** requires founder appeal policy;
 - **09D — Minimum age (not started):** approved eligibility policy and enforcement.
 

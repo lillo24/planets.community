@@ -20,6 +20,12 @@ There is no existing centralized RPC-error interception; individual screens do
 not gain ad-hoc suspension handlers. Backend denial is immediate at subsequent
 authorization boundaries; mobile detects it on resume or explicit status refresh.
 
+09C2B1's private-history controller requests that same Auth-owned status refresh
+when its general history RPC denies with `PT403`. It does not construct a new
+suspension UI/state, retry the denied RPC or widen the status allowlist. Unlike
+ordinary same-account caches, private-history pages/reasons clear on every Auth
+session/bootstrap revision as well as identity changes and disposal.
+
 - `domain/auth_models.dart` defines app-owned identity, session, pending-flow,
   and safe failure models.
 - `data/auth_gateway.dart` adapts Supabase Auth and the existing `profiles`
