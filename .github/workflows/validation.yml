@@ -214,6 +214,11 @@ jobs:
       - name: Verify join-request contribution selections and concurrency
         run: npm run project:contribution-selections:verify:local
 
+      # The bounded default observes all four leave/removal winner orders.
+      # Keep the 40-case diagnostic campaign opt-in, not recurring PR cost.
+      - name: Verify membership commitments and observed end-state races
+        run: npm run project:membership-commitments:verify:local
+
       - name: Verify authenticated moderation consequences and hidden cover access
         run: npm run moderation:consequences:verify:local
 

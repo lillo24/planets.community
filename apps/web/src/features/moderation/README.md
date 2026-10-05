@@ -44,6 +44,10 @@ independent and never selects/applies a consequence or changes case state.
   keyboard focus return on Cancel, and focus on the explicit outcome after a
   submit (including when RSC refresh removes the form). It receives compatible choices only, not
   report/evidence/note bodies or a browser-supplied staff identity.
+- `moderation-consequence-focus.test.tsx` observes alert ref attachment before
+  the passive outcome-focus effect, then verifies the actual keyboard outcome.
+  Error tests await focus, not merely alert presence; neither timeouts nor the
+  product focus behavior are changed.
 - `moderation-server.ts` reads history alongside independent evidence RPCs after
   current staff authorization. Failed/malformed history is never an empty result.
 - `moderation-operations.ts` rechecks verified identity/current staff authority
