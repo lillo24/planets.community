@@ -16,6 +16,8 @@ import 'package:planets_mobile/features/settings/application/language_preference
 import 'package:planets_mobile/features/settings/domain/language_preference.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import 'isolated_pkce_storage.dart';
+
 // Dedicated test entrypoint. No Driver extension or fixture privilege is added
 // to lib/main.dart. Both app and staff use real synthetic OTP sessions, never a
 // service-role key. Configuration comes from the task-owned host preparer.
@@ -52,13 +54,17 @@ void main() {
         'Own-history smoke requires prepared disposable local fixtures and monitoring disabled.',
       );
     }
+    final appPkceStorage = IsolatedPkceStorage();
+    final staffPkceStorage = IsolatedPkceStorage();
     final app = SupabaseClient(
       config.supabaseUrl.toString(),
       config.supabasePublishableKey,
+      authOptions: AuthClientOptions(pkceAsyncStorage: appPkceStorage),
     );
     final staff = SupabaseClient(
       config.supabaseUrl.toString(),
       config.supabasePublishableKey,
+      authOptions: AuthClientOptions(pkceAsyncStorage: staffPkceStorage),
     );
     String? notice;
     String? suspension;
@@ -248,6 +254,8 @@ void main() {
       await tester.pumpWidget(const SizedBox.shrink());
       await app.dispose();
       await staff.dispose();
+      appPkceStorage.clear();
+      staffPkceStorage.clear();
     }
   });
 }

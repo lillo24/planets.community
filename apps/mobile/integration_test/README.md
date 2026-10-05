@@ -15,6 +15,9 @@ tests, production startup, or a replacement for the Database verifiers.
   suspension history. Reasons are synthetic plain text. Monitoring is disabled.
 - `../test_driver/own_history_driver.dart` is the SDK integration driver. No
   Driver extension, staff controls or fixture API is added to `lib/main.dart`.
+- `isolated_pkce_storage.dart` provides the resolved SDK's required PKCE verifier
+  storage for directly constructed real-OTP clients. App and staff have separate
+  memory-only stores, cleared at teardown; production PKCE/Auth is unchanged.
 
 Use a disposable task-owned Supabase project, not the shared local stack or any
 remote environment. Configure project `planets-community-09c2b1-qa` on API 54501,
