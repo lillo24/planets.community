@@ -18,7 +18,7 @@ This folder owns the dynamic Next.js public-discovery application, ordinary web 
 - `src/features/project-delegates/` owns the side-effect-free server invite preview and the explicit authenticated browser acceptance boundary.
 - `src/features/project-participant-invites/` owns `/join/project/[token]`, explicit expected-account/action-bound admission and retained retries, and token-free `/joined/proposals/[id]` / `/joined/tavoli/[id]` canonical confirmations.
 - `src/features/project-app-handoff/` owns public ordinary intent/dismissal and reusable token-free app/download links, with validated optional listings and visible browser fallback.
-- `test-support/` owns the explicit disposable PI03 production HTTP/gateway verifier; normal Web CI skips this integration check.
+- `test-support/` owns explicit disposable PI03 HTTP/gateway and PI04 public-host/browser fixtures; see its map for isolation and opt-in commands.
 - `src/features/deep-links/` owns fail-closed Android/iOS website association payloads; see the [Project invite link guide](../../docs/development/project-invite-links.md).
 - `src/components/activity-discovery-switcher.tsx` provides the small route-backed One-time Proposals/Tavoli selector shared by both list pages.
 - `src/lib/config/` owns the typed public environment contract and redacted diagnostics.
@@ -91,4 +91,10 @@ support cancellation back to preview; sensitive responses and telemetry are
 protected. Optional `NEXT_PUBLIC_PLANETS_ANDROID_DOWNLOAD_URL` and
 `NEXT_PUBLIC_PLANETS_IOS_DOWNLOAD_URL` must be real validated HTTPS URLs; absent
 settings show unavailable copy. See the [PI03 record](../../docs/implementation/pi03-browser-participant-invitations.md)
-for exact route/config, validation and PI04 association requirements.
+for exact route/config and validation. [PI04](../../docs/implementation/pi04-native-links-and-public-host-readiness.md)
+adds bounded native association paths and makes the two exact well-known
+endpoints bypass cookie-backed session Proxy refresh. Missing/bootstrap identity
+still returns no-store JSON 404; configured JSON is publicly cached for five
+minutes. Its loopback routing harness/probe verifies the public-origin contract
+without selecting a production ingress, provider or deployment. Live host and
+signed-device association remain separate release prerequisites.

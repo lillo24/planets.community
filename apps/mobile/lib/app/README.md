@@ -4,6 +4,7 @@ This folder owns application startup presentation and navigation, not backend ru
 
 - `planets_app.dart` composes Riverpod, themes, localization and `MaterialApp.router`.
 - `router/app_router.dart` owns routes, Auth/readiness redirects and the identity-scoped routing configuration.
+- `router/native_project_links.dart` validates absolute public HTTPS deliveries before the router converts them to internal destinations.
 - `router/app_navigation_shell.dart` owns the single Material 3 navigation bar and branch ordering.
 - `foundation_screen.dart` is Home; its Progetti entry uses the shell's Browse
   branch switch, its Scambio-Dona entry opens the Browse-owned resource routes,
@@ -66,6 +67,22 @@ Overlay guards observe GoRouter's active delegate state, including pushed routes
 rather than the browser URL provider, which can retain an underlying page URL.
 See the [participant feature](../features/project_participant_invites/README.md)
 for process-memory UUID recovery and deliberately separate re-entry.
+
+PI04 handles native absolute URLs through this same GoRouter boundary. Only the
+canonical host's exact participant/authority token and public UUID detail paths
+are allowed; unsafe origins/encoded separators/descendants show a generic error.
+Detail queries are preserved. Duplicate platform delivery retains the active
+Project or exact OTP/profile continuation and typed form; a different valid link
+cancels the old OTP attempt after navigation commits. Platform-message tests
+exercise cold default routes and warm delivery without an internal `go` shortcut.
+The routing configuration exposes GoRouter 18's entry guard only while its
+existing provider holds an external URL. Internal navigation keeps the existing
+synchronous parse and loading states; no second platform listener is registered.
+During cold native parsing, restored Auth does not reparse GoRouter's initial
+empty URI. Initial guards read the latest session; there are no retained private
+stacks to discard before the first route exists.
+See the [PI04 record](../../../../docs/implementation/pi04-native-links-and-public-host-readiness.md)
+for OS globs, merged-manifest checks and the limits of native runtime evidence.
 
 ## Retention and identity
 

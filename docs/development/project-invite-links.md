@@ -13,10 +13,11 @@ implements browser preview, explicit Join, receipt recovery, and token-free
 confirmation opens those public paths without intent/token. Optional validated
 Android/iOS downloads use `NEXT_PUBLIC_PLANETS_ANDROID_DOWNLOAD_URL` and
 `NEXT_PUBLIC_PLANETS_IOS_DOWNLOAD_URL`; absent settings advertise no release.
-PI04 must extend verified association and public-host routing to `/join/project/*`,
-`/proposals/*`, and `/tavoli/*` while preserving `/invite/project/*`. Current
-claims below remain authority-only; internal Flutter/browser routes do not prove
-OS delivery. Host access-log/privacy verification is also PI04.
+[PI04](../implementation/pi04-native-links-and-public-host-readiness.md) adds
+bounded participant, authority and public-detail OS claims, strict Flutter URL
+validation and a locally verified public-host routing contract. Live ingress,
+signed-device association and remote log configuration still require verified
+account-owner setup; internal routes and local dispatch do not prove OS delivery.
 
 PLANETS uses one canonical bearer URL for Project Co-organizer and Co-creator
 invitations:
@@ -102,13 +103,20 @@ certificate that can sign an installed production-like build, including the
 store/distribution certificate where applicable. These are public association
 identifiers, not signing material; never commit private keys or credentials.
 
-The mobile project already limits Android handling to HTTPS host
-`planets.community` and path prefix `/invite/project/` with `autoVerify`. iOS
-already declares `applinks:planets.community` in `Runner.entitlements`; a real
-signed provisioning profile must enable Associated Domains. Digital Asset
-Links binds the production Android identity while the Android manifest limits
-the claimed path to `/invite/project/`. The Apple association document binds
-the production iOS identity and limits its paths to `/invite/project/*`.
+Android uses four separate HTTPS `planets.community` autoVerify filters: fixed
+43-character shapes for `/invite/project/` and `/join/project/`, and fixed UUID
+shapes for `/proposals/` and `/tavoli/`. Its minimum-SDK-compatible simple globs
+cannot validate the token alphabet or UUID bytes. Apple uses fixed-length legacy
+path globs with ordered descendant exclusions, supported by the iOS 15 target.
+Flutter validates the exact origin, token/UUID and absence of encoded separators
+before navigating; detail queries remain intact. Auth/profile, confirmation and
+management children are not app destinations. See PI04 for unavoidable OS-glob
+overreach and duplicate/OTP continuation behavior.
+
+iOS declares `applinks:planets.community` in `Runner.entitlements`; a real signed
+provisioning profile must enable Associated Domains. Both well-known responses
+bypass session refresh and must reach their web owner directly at the public
+host. The repository has no adopted production ingress for this routing contract.
 
 `share_plus` 13 requires Flutter 3.41+, Dart 3.11+, iOS 13+, Android Gradle
 Plugin 8.12.1+, and Gradle 8.13+. This repository currently uses Flutter 3.47,
@@ -129,11 +137,15 @@ On an Android device with the production-like signed app installed:
 ```text
 adb shell pm verify-app-links --re-verify <final-package-id>
 adb shell pm get-app-links <final-package-id>
-adb shell am start -a android.intent.action.VIEW -c android.intent.category.BROWSABLE -d "https://planets.community/invite/project/<test-token>"
+adb shell am start -a android.intent.action.VIEW -c android.intent.category.BROWSABLE -d "https://planets.community/proposals/<public-project-uuid>"
 ```
 
-Confirm the domain is verified, the installed app opens the exact invite, and
-the same style of URL falls back to the browser after uninstalling the app.
+Confirm the domain is verified and an untargeted public-detail URL opens the
+installed app. Test disposable invitation links by UI taps, keeping capabilities
+out of shell history and screenshots. Test browser fallback with the app absent.
+The [PI04 release runbook](../implementation/pi04-native-links-and-public-host-readiness.md#external-release-runbook)
+separates component dispatch, verified domains, same-domain Safari and external
+taps, and lists required host/signing/store inputs and log-privacy checks.
 
 For iOS, install a build signed with the final Team/bundle identity and an
 Associated Domains provisioning profile. Open the invite from Messages, Notes,

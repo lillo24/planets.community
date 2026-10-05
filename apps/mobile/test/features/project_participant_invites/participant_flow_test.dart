@@ -1,13 +1,16 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:planets_mobile/l10n/generated/app_localizations.dart';
 import 'package:planets_mobile/app/router/app_router.dart';
+import 'package:planets_mobile/app/planets_app.dart';
 import 'package:planets_mobile/core/config/app_config.dart';
 import 'package:planets_mobile/features/auth/application/auth_session_controller.dart';
+import 'package:planets_mobile/features/auth/application/auth_command_controller.dart';
 import 'package:planets_mobile/features/auth/application/return_destination.dart';
 import 'package:planets_mobile/features/auth/data/auth_gateway.dart';
 import 'package:planets_mobile/features/auth/domain/auth_models.dart';
@@ -42,6 +45,261 @@ import '../../support/fake_recurring_activity.dart';
 
 void main() {
   final token = 'A' * 43;
+  const publicId = 'fb040000-0000-4000-8000-000000000002';
+  final nativeInvite = 'https://planets.community/join/project/$token';
+  testWidgets('native cold start tolerates Auth restoration during entry', (
+    tester,
+  ) async {
+    final h = await _pump(
+      tester,
+      nativeInvite,
+      platformColdStart: true,
+      startAuthInApp: true,
+    );
+    expect(h.router.state.uri.path, '/join/project/$token');
+    expect(find.text('Community mural'), findsOneWidget);
+    expect(h.gateway.admissions, isEmpty);
+    expect(tester.takeException(), isNull);
+  });
+  testWidgets('platform cold start previews; warm duplicates never Join', (
+    tester,
+  ) async {
+    final h = await _pump(
+      tester,
+      nativeInvite,
+      platformColdStart: true,
+      signedOut: true,
+    );
+    expect(h.router.state.uri.toString(), '/join/project/$token');
+    expect(find.text('Community mural'), findsOneWidget);
+    expect(find.textContaining('project-1'), findsNothing);
+    expect(h.gateway.admissions, isEmpty);
+    await _deliver(tester, nativeInvite);
+    expect(h.gateway.admissions, isEmpty);
+    await tester.tap(find.byKey(const Key('participant-invite-sign-in')));
+    await tester.pumpAndSettle();
+    await tester.enterText(
+      find.byKey(const Key('auth-email-field')),
+      'synthetic@planets.invalid',
+    );
+    await _deliver(tester, nativeInvite);
+    expect(h.router.state.uri.path, '/auth');
+    expect(
+      tester
+          .widget<TextFormField>(find.byKey(const Key('auth-email-field')))
+          .controller!
+          .text,
+      'synthetic@planets.invalid',
+    );
+    expect(
+      h.router.state.uri.queryParameters['returnTo'],
+      '/join/project/$token',
+    );
+    await tester.tap(find.byKey(const Key('auth-request-button')));
+    await tester.pumpAndSettle();
+    await _deliver(tester, nativeInvite);
+    expect(h.router.state.uri.path, '/auth/verify');
+    expect(
+      h.container.read(pendingEmailOtpProvider)?.returnTo,
+      '/join/project/$token',
+    );
+    await _deliver(
+      tester,
+      'https://planets.community/join/project/${'B' * 43}',
+    );
+    expect(h.router.state.uri.path, '/join/project/${'B' * 43}');
+    expect(h.container.read(pendingEmailOtpProvider), isNull);
+    expect(h.gateway.admissions, isEmpty);
+  });
+  testWidgets('platform new link cancels an in-flight OTP request', (
+    tester,
+  ) async {
+    final pending = Completer<void>();
+    final h = await _pump(
+      tester,
+      nativeInvite,
+      platformColdStart: true,
+      signedOut: true,
+    );
+    final auth = h.container.read(authGatewayProvider) as FakeAuthGateway;
+    auth.requestDelay = pending.future;
+    await tester.tap(find.byKey(const Key('participant-invite-sign-in')));
+    await tester.pumpAndSettle();
+    await tester.enterText(
+      find.byKey(const Key('auth-email-field')),
+      'synthetic@planets.invalid',
+    );
+    await tester.tap(find.byKey(const Key('auth-request-button')));
+    await tester.pump();
+    await _deliver(
+      tester,
+      'https://planets.community/join/project/${'B' * 43}',
+    );
+    pending.complete();
+    await tester.pumpAndSettle();
+    expect(h.router.state.uri.path, '/join/project/${'B' * 43}');
+    expect(h.container.read(pendingEmailOtpProvider), isNull);
+    expect(h.gateway.admissions, isEmpty);
+  });
+  testWidgets(
+    'platform duplicate keeps profile return; new link cancels old OTP',
+    (tester) async {
+      final h = await _pump(
+        tester,
+        nativeInvite,
+        incomplete: true,
+        platformColdStart: true,
+      );
+      await tester.tap(find.byKey(const Key('participant-invite-profile')));
+      await tester.pumpAndSettle();
+      await _deliver(tester, nativeInvite);
+      expect(h.router.state.uri.path, '/profile/edit');
+      expect(
+        h.router.state.uri.queryParameters['returnTo'],
+        '/join/project/$token',
+      );
+      h.container
+          .read(pendingEmailOtpProvider.notifier)
+          .set(
+            PendingEmailOtp(
+              email: 'synthetic@planets.invalid',
+              returnTo: '/join/project/$token',
+            ),
+          );
+      final other = 'B' * 43;
+      await _deliver(tester, 'https://planets.community/join/project/$other');
+      expect(h.router.state.uri.toString(), '/join/project/$other');
+      expect(h.container.read(pendingEmailOtpProvider), isNull);
+      expect(h.gateway.admissions, isEmpty);
+      expect(h.photo.uploadPaths, isEmpty);
+    },
+  );
+  testWidgets('platform new Project ignores an old pending admission result', (
+    tester,
+  ) async {
+    final pending = Completer<void>();
+    final gateway = FakeParticipantInvitationGateway()
+      ..acceptDelay = pending.future;
+    final h = await _pump(
+      tester,
+      nativeInvite,
+      gateway: gateway,
+      platformColdStart: true,
+    );
+    await tester.tap(find.byKey(const Key('participant-invite-join')));
+    await tester.pump();
+    expect(gateway.admissions, hasLength(1));
+    gateway.previewValue = const ParticipantInvitePreview(
+      available: true,
+      projectId: 'project-2',
+      kind: ProjectKind.recurring,
+      title: 'Another Project',
+    );
+    await _deliver(
+      tester,
+      'https://planets.community/join/project/${'B' * 43}',
+    );
+    pending.complete();
+    await tester.pumpAndSettle();
+    expect(find.text('Another Project'), findsOneWidget);
+    expect(h.router.state.uri.path, '/join/project/${'B' * 43}');
+    expect(gateway.admissions, hasLength(1));
+    h.container
+        .read(authSessionProvider.notifier)
+        .markProfileReady(const AuthIdentity(id: 'user-2'));
+    await tester.pumpAndSettle();
+    await _deliver(
+      tester,
+      'https://planets.community/join/project/${'B' * 43}',
+    );
+    expect(gateway.admissions, hasLength(1));
+  });
+  for (final family in ['proposals', 'tavoli']) {
+    testWidgets(
+      'platform $family ordinary query and token-free delivery stay read-only',
+      (tester) async {
+        final path = '/$family/$publicId';
+        final h = await _pump(
+          tester,
+          'https://planets.community$path?intent=join',
+          platformColdStart: true,
+          signedOut: true,
+          publicProjectId: publicId,
+        );
+        expect(h.router.state.uri.toString(), '$path?intent=join');
+        expect(
+          find.byKey(const Key('ordinary-share-intent-close')),
+          findsOneWidget,
+        );
+        await tester.tap(find.byKey(const Key('ordinary-share-intent-close')));
+        await tester.pumpAndSettle();
+        expect(h.router.state.uri.toString(), path);
+        await _deliver(
+          tester,
+          'https://planets.community$path?intent=join&intent=join',
+        );
+        expect(
+          find.byKey(const Key('ordinary-share-intent-close')),
+          findsNothing,
+        );
+        await _deliver(tester, 'https://planets.community$path');
+        expect(h.router.state.uri.toString(), path);
+        expect(h.gateway.admissions, isEmpty);
+        expect(
+          h.participation.calls.where((s) => s.startsWith('request:')),
+          isEmpty,
+        );
+      },
+    );
+  }
+  testWidgets('platform authority delivery keeps separate explicit flow', (
+    tester,
+  ) async {
+    final delegates = FakeProjectDelegateGateway()
+      ..preview = const ProjectDelegateInvitePreview(
+        isAvailable: true,
+        projectId: 'project-1',
+        projectKind: ProjectKind.oneTime,
+        projectTitle: 'Authority Project',
+        requestedAuthorityRole: ProjectDelegatedAuthorityRole.coOrganizer,
+      );
+    final h = await _pump(
+      tester,
+      'https://planets.community/invite/project/$token',
+      platformColdStart: true,
+      signedOut: true,
+      delegateGateway: delegates,
+    );
+    expect(h.router.state.uri.path, '/invite/project/$token');
+    expect(find.text('Authority Project'), findsOneWidget);
+    expect(find.textContaining('Co-organizer'), findsWidgets);
+    expect(delegates.calls.where((c) => c.startsWith('accept:')), isEmpty);
+    expect(h.gateway.calls, isEmpty);
+    expect(h.gateway.admissions, isEmpty);
+  });
+  testWidgets('platform unsafe origins and descendants show generic failure', (
+    tester,
+  ) async {
+    final h = await _pump(
+      tester,
+      nativeInvite,
+      platformColdStart: true,
+      signedOut: true,
+    );
+    for (final url in [
+      'https://attacker.example/join/project/$token',
+      'https://planets.community/proposals/$publicId/edit',
+      'https://planets.community/join/project/${'A' * 42}%2F',
+      'https://planets.community/auth?returnTo=/join/project/$token',
+    ]) {
+      final before = h.gateway.calls.length;
+      await _deliver(tester, url);
+      expect(h.router.state.uri.path, '/link-unavailable');
+      expect(find.text('This page is not available.'), findsOneWidget);
+      expect(h.gateway.calls.length, before);
+      expect(h.gateway.admissions, isEmpty);
+    }
+  });
   for (final kind in ProjectKind.values) {
     final detail = kind == ProjectKind.oneTime
         ? '/proposals/project-1'
@@ -494,7 +752,15 @@ _pump(
   FakeParticipantInvitationGateway? gateway,
   bool current = true,
   Locale locale = const Locale('en'),
+  bool platformColdStart = false,
+  String publicProjectId = 'project-1',
+  FakeProjectDelegateGateway? delegateGateway,
+  bool startAuthInApp = false,
 }) async {
+  if (platformColdStart) {
+    tester.platformDispatcher.defaultRouteNameTestValue = location;
+    addTearDown(tester.platformDispatcher.clearDefaultRouteNameTestValue);
+  }
   final auth = FakeAuthGateway(
     snapshot: signedOut
         ? const AuthSnapshot()
@@ -532,21 +798,21 @@ _pump(
             ParticipantParticipationRead(loaded: true, current: current),
       ),
       projectDelegateGatewayProvider.overrideWithValue(
-        FakeProjectDelegateGateway()..role = role,
+        delegateGateway ?? (FakeProjectDelegateGateway()..role = role),
       ),
       projectInviteSharingProvider.overrideWithValue(sharing),
       participationGatewayProvider.overrideWithValue(participation),
       proposalGatewayProvider.overrideWithValue(
         FakeProposalGateway()
           ..publicDetail = proposalDetailFixture(
-            id: 'project-1',
+            id: publicProjectId,
             creatorProfileId: 'organizer',
           ),
       ),
       recurringActivityGatewayProvider.overrideWithValue(
         FakeRecurringActivityGateway()
           ..publicDetail = publicRecurringDetailFixture(
-            id: 'project-1',
+            id: publicProjectId,
             creatorProfileId: 'organizer',
           ),
       ),
@@ -555,8 +821,11 @@ _pump(
       ),
     ],
   );
-  await container.read(authSessionProvider.notifier).start();
-  final router = container.read(appRouterProvider)..go(location);
+  if (!startAuthInApp) {
+    await container.read(authSessionProvider.notifier).start();
+  }
+  final router = container.read(appRouterProvider);
+  if (!platformColdStart) router.go(location);
   addTearDown(() {
     container.dispose();
     auth.close();
@@ -564,12 +833,14 @@ _pump(
   await tester.pumpWidget(
     UncontrolledProviderScope(
       container: container,
-      child: MaterialApp.router(
-        locale: locale,
-        localizationsDelegates: AppLocalizations.localizationsDelegates,
-        supportedLocales: AppLocalizations.supportedLocales,
-        routerConfig: router,
-      ),
+      child: startAuthInApp
+          ? const PlanetsApp()
+          : MaterialApp.router(
+              locale: locale,
+              localizationsDelegates: AppLocalizations.localizationsDelegates,
+              supportedLocales: AppLocalizations.supportedLocales,
+              routerConfig: router,
+            ),
     ),
   );
   await tester.pumpAndSettle();
@@ -581,4 +852,15 @@ _pump(
     participation: participation,
     photo: photo,
   );
+}
+
+Future<void> _deliver(WidgetTester tester, String url) async {
+  await tester.binding.defaultBinaryMessenger.handlePlatformMessage(
+    'flutter/navigation',
+    const JSONMethodCodec().encodeMethodCall(
+      MethodCall('pushRouteInformation', {'location': url}),
+    ),
+    (_) {},
+  );
+  await tester.pumpAndSettle();
 }

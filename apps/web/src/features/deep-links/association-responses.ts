@@ -45,7 +45,21 @@ export function appleAppSiteAssociationResponse(
       details: [
         {
           appID: `${teamId}.${bundleId}`,
-          paths: ["/invite/project/*"],
+          // Ordered legacy paths remain supported by the minimum iOS 15 target.
+          // Exclude descendants before fixed-length globs (not UUID validation).
+          // Queries are ignored by AASA matching and preserved for Flutter.
+          paths: [
+            ...[
+              "/invite/project",
+              "/join/project",
+              "/proposals",
+              "/tavoli",
+            ].map((prefix) => `NOT ${prefix}/*/*`),
+            `/invite/project/${"?".repeat(43)}`,
+            `/join/project/${"?".repeat(43)}`,
+            `/proposals/${"????????-????-????-????-????????????"}`,
+            `/tavoli/${"????????-????-????-????-????????????"}`,
+          ],
         },
       ],
     },
