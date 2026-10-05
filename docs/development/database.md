@@ -1,5 +1,10 @@
 # Database development
 
+The [SIM01 matching contract](similar-active-proposals.md) owns the narrow
+authenticated upcoming-Proposal idea lookup, lexical admission/ranking and
+query-plan evidence. `proposal:similar:verify:local` is an explicit Database CI
+and full `check:db` step, with `115`/`116` pgTAP grants/access coverage.
+
 The [source-linked Template Workshop guide](template-workshop.md) owns TW01's
 identity/baseline, Completed eligibility, reusable projection/version, public
 RPC grants and bounded blueprint pagination contracts. Its HTTP/concurrency

@@ -1,5 +1,11 @@
 # Source-linked Template Workshop (TW01/TW02/TW03)
 
+SIM01's separate [similar upcoming Proposal contract](similar-active-proposals.md)
+is implemented on the TW04 draft base. It admits future public one-time sources
+by title evidence and returns bounded capacity/location reasons. Completed
+Workshop reuse remains separate; SIM02 and TW05 stay deferred. No predecessor
+is thereby merged.
+
 TW01, TW02 and TW03 are implemented on isolated draft branches, pending founder
 review. This document owns the source-linked domain, reporting/removal contract
 and atomic independent-draft creation contract. TW02 extends the shared mobile report form and

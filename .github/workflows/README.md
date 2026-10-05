@@ -17,3 +17,9 @@ DRAFT01 adds `draft:editor:verify:local` for authenticated ordinary creation,
 private retry/recovery, rollback and TW03 draft reopening after removal. It is
 an explicit Database step after the existing TW02/TW03 verifiers; the scoped
 classifier and complete manual suite remain unchanged.
+
+SIM01 adds an explicit `proposal:similar:verify:local` Database step after the
+Proposal/TW01 verifier. It covers authenticated bounded matching, canonical
+capacity/blocking/media seams and rollback-only synthetic query plans. It also
+runs in `check:db`. Adding this shared command/workflow selects all four areas
+for this PR under the existing classifier; trigger boundaries stay unchanged.

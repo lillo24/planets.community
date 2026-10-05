@@ -4452,6 +4452,35 @@ export type Database = {
           status: string
         }[]
       }
+      list_similar_active_proposals: {
+        Args: {
+          p_country_code?: string
+          p_excluded_proposal_id?: string
+          p_expected_profile_id: string
+          p_limit?: number
+          p_locality?: string
+          p_skill_ids?: string[]
+          p_title: string
+        }
+        Returns: {
+          administrative_area: string
+          availability: string
+          country_code: string
+          cover_object_path: string
+          derived_status: string
+          ends_at: string
+          event_timezone: string
+          locality: string
+          location_relation: string
+          proposal_id: string
+          public_location_label: string
+          shared_skill_ids: string[]
+          starts_at: string
+          summary: string
+          title: string
+          title_evidence: string
+        }[]
+      }
       mark_all_notifications_read: {
         Args: { p_expected_profile_id: string }
         Returns: number

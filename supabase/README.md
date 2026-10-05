@@ -7,6 +7,14 @@ This folder owns the reproducible local PLANETS database and its security valida
 - `tests/` contains native pgTAP invariants and transactional security probes.
 - `seed.sql` runs after migrations during reset and currently contains no data; the system-managed starter skill catalog is migration-owned reference data.
 
+SIM01 adds authenticated-only `list_similar_active_proposals`, a private
+immutable title normalizer and partial published-title GIN index. `115`/`116`
+cover grants, input bounds, narrow payload, ranking and exact-start eligibility.
+The [matching contract](../docs/development/similar-active-proposals.md) documents
+lexical limits, capacity-versus-join semantics and rollback-only plan evidence.
+`npm run proposal:similar:verify:local` runs the OTP/API seam in Database CI
+and the complete manual gate. It does not change ordinary discovery or Workshop.
+
 TW01 owns source-linked one-time Proposal templates in private identity/baseline
 tables. Publication captures the original Creator's last saved draft atomically;
 public Workshop RPCs project canonical content only after Completed through a

@@ -175,6 +175,9 @@ jobs:
       - name: Verify proposal ownership, lifecycle, and public privacy
         run: npm run proposal:verify:local
 
+      - name: Verify SIM01 authenticated similar upcoming Proposal matching
+        run: npm run proposal:similar:verify:local
+
       - name: Verify moderation and TW02 authenticated reporting/removal
         run: npm run moderation:verify:local
 
