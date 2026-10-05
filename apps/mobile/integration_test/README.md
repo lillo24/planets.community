@@ -43,3 +43,30 @@ the existing `test/` host suite; this device smoke is an explicit local command,
 not a hosted-CI claim. Formatting these entrypoints explicitly uses
 `dart format --output=none --set-exit-if-changed integration_test test_driver`.
 See the review report for actual run status, limits and cleanup evidence.
+
+## AUTHQA01 normal-main OTP smoke
+
+`prepare_authqa_fixtures.mjs` is a separate narrow preparer, refusing any project
+other than `planets-community-authqa01-qa`. Use fresh API/DB/shadow/Studio/Mailpit/
+analytics/pooler ports 54511/54512/54510/54513/54514/54517/54519 and inspector 8103.
+Back up the exact config before changing it; do not reset or stop another stack.
+It creates synthetic complete accounts and reserves a never-created new-account
+email. `otp_home_test.dart` calls normal `lib/main.dart` with no app gateway or
+provider overrides and signs in ONLY through real email/code UI. It checks
+canonical anchors, Home EN/IT, new-profile save, preserved destination, Settings,
+focused own-history isolation and suspension. The separate synthetic staff client
+only arranges/revokes local notices. No staff helper is added to production.
+
+```powershell
+$env:MAILPIT_URL = 'http://127.0.0.1:54514'
+npm exec -- node apps/mobile/integration_test/prepare_authqa_fixtures.mjs
+$env:AUTHQA_SCREENSHOT_DIR = 'C:/absolute/task-owned/evidence'
+cd apps/mobile
+flutter drive --driver=test_driver/otp_home_driver.dart --target=integration_test/otp_home_test.dart -d emulator-5554 --dart-define-from-file=config/local.json
+```
+
+`otp_home_driver.dart` saves only named synthetic Home screenshots to the required
+explicit evidence directory. The smoke restores the prior language preference,
+signs out and revokes its own temporary consequences even on failure. Use a fresh
+preparation for a new-account run; do not claim an already-completed account tests
+initial onboarding. This is an explicit device check, not a hosted-CI assertion.

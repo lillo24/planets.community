@@ -34,7 +34,10 @@ class AuthCommandController extends Notifier<AuthCommandState> {
   int _flowRevision = 0;
 
   @override
-  AuthCommandState build() => const AuthCommandState();
+  AuthCommandState build() {
+    ref.onDispose(() => _flowRevision++);
+    return const AuthCommandState();
+  }
 
   void resetFlow() => cancelFlow();
 
@@ -138,6 +141,8 @@ class AuthCommandController extends Notifier<AuthCommandState> {
       phase: AuthCommandPhase.verifyingCode,
       resendAvailableAt: state.resendAvailableAt,
     );
+    final session = ref.read(authSessionProvider.notifier);
+    final sessionEpoch = session.verificationEpoch;
     try {
       final identity = await ref
           .read(authGatewayProvider)
@@ -145,15 +150,23 @@ class AuthCommandController extends Notifier<AuthCommandState> {
       if (!_isCurrent(revision)) {
         return false;
       }
+      if (!session.acceptsVerification(identity, sessionEpoch)) {
+        cancelFlow();
+        return false;
+      }
       state = AuthCommandState(
         phase: AuthCommandPhase.completingProfile,
         resendAvailableAt: state.resendAvailableAt,
       );
-      final completed = await ref
+      final outcome = await ref
           .read(authSessionProvider.notifier)
-          .bootstrap(identity, ensureProfile: true);
+          .completeProfileSetup(identity);
       if (!_isCurrent(revision)) return false;
-      if (!completed) {
+      if (outcome == AuthBootstrapOutcome.superseded) {
+        cancelFlow();
+        return false;
+      }
+      if (outcome == AuthBootstrapOutcome.failed) {
         state = AuthCommandState(
           failure: AuthFailureKind.profileSetup,
           resendAvailableAt: state.resendAvailableAt,
@@ -168,6 +181,10 @@ class AuthCommandController extends Notifier<AuthCommandState> {
       if (!_isCurrent(revision)) {
         return false;
       }
+      if (session.verificationEpoch != sessionEpoch) {
+        cancelFlow();
+        return false;
+      }
       state = AuthCommandState(
         failure: mapAuthFailure(error),
         resendAvailableAt: state.resendAvailableAt,
@@ -176,7 +193,7 @@ class AuthCommandController extends Notifier<AuthCommandState> {
     }
   }
 
-  bool _isCurrent(int revision) => revision == _flowRevision;
+  bool _isCurrent(int revision) => ref.mounted && revision == _flowRevision;
 
   Future<bool> retryProfileSetup() async {
     if (state.isBusy) {
@@ -189,13 +206,17 @@ class AuthCommandController extends Notifier<AuthCommandState> {
 
     final revision = ++_flowRevision;
     state = const AuthCommandState(phase: AuthCommandPhase.completingProfile);
-    final completed = await ref
+    final outcome = await ref
         .read(authSessionProvider.notifier)
-        .bootstrap(identity, ensureProfile: true);
+        .completeProfileSetup(identity);
     if (!_isCurrent(revision)) {
       return false;
     }
-    if (completed) {
+    if (outcome == AuthBootstrapOutcome.superseded) {
+      cancelFlow();
+      return false;
+    }
+    if (outcome == AuthBootstrapOutcome.completed) {
       ref.read(pendingEmailOtpProvider.notifier).clear();
       state = const AuthCommandState();
       return true;

@@ -48,3 +48,19 @@ does not claim to stop an already-started provider request.
 
 Auth owns readiness, not profile editing. Skeletal anchors continue to the
 Profile feature, while missing anchors retain the focused creation retry.
+
+AUTHQA01 coordinates explicit OTP/profile-retry completion with SDK Auth events
+inside `AuthSessionController`. Every event still starts a fresh account-status
+check. A replacement for the same identity inherits in-flight anchor creation;
+the command follows its typed completed/failed/superseded result rather than
+turning supersession into a setup error. A different identity or sign-out rejects
+the obsolete command; cancellation preserves any newer pending destination.
+A sign-out/switch epoch rejects both success and failure from an older operation
+even after the same account signs in again; an identity-ID match alone cannot
+restore an abandoned flow. Provider disposal also invalidates pending commands.
+`bootstrap` retains its existing boolean contract for ordinary restoration and
+profile confirmation. Home still displays genuine current command failures,
+including failed sign-out; there is no ready-session blanket error suppression.
+The status timeout, database rules and suspension allowlist are unchanged.
+See `docs/development/authqa01-otp-bootstrap-and-home-status.md` for the separate
+disposition of #142's normal-Home observation and native evidence.
