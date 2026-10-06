@@ -647,6 +647,8 @@ Future<void> _uiLogin(WidgetTester tester, String email, String url) async {
   try {
     final before = await mailbox.ids(email);
     await tester.enterText(find.byKey(const Key('auth-email-field')), email);
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.byKey(const Key('auth-request-button')));
     await tester.tap(find.byKey(const Key('auth-request-button')));
     await _wait(
       tester,
@@ -655,6 +657,9 @@ Future<void> _uiLogin(WidgetTester tester, String email, String url) async {
     );
     final code = await mailbox.freshOtp(email, before);
     await tester.enterText(find.byKey(const Key('auth-code-field')), code);
+    // Wait for the native route/IME before tapping the real verification action.
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.byKey(const Key('auth-verify-button')));
     await tester.tap(find.byKey(const Key('auth-verify-button')));
     await tester.pump();
   } finally {

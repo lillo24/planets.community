@@ -805,6 +805,8 @@ Future<void> _uiLogin(WidgetTester tester, String email, String mailpit) async {
   try {
     final ids = await mailbox.ids(email);
     await tester.enterText(find.byKey(const Key('auth-email-field')), email);
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.byKey(const Key('auth-request-button')));
     await tester.tap(find.byKey(const Key('auth-request-button')));
     await _wait(
       tester,
@@ -813,6 +815,9 @@ Future<void> _uiLogin(WidgetTester tester, String email, String mailpit) async {
     );
     final token = await mailbox.freshOtp(email, ids);
     await tester.enterText(find.byKey(const Key('auth-code-field')), token);
+    // Native route/IME animation can otherwise intercept this real UI tap.
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.byKey(const Key('auth-verify-button')));
     await tester.tap(find.byKey(const Key('auth-verify-button')));
     await tester.pump();
   } finally {
