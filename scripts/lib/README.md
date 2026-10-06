@@ -18,7 +18,10 @@ tooling.
 - `demo-world.mjs` owns the stable synthetic persona/scenario registry, exact
   legacy-title adoption, strict loopback-only target guard, time-relative
   dataset orchestration, canonical profile/cover uploads, and focused
-  verification for the explicit local demo-data commands.
+  verification for the explicit local demo-data commands. Public discovery
+  verification traverses canonical cursor pages: unrelated verifier fixtures
+  may share Trento, so demo records need not appear in the first page. Failed,
+  malformed or repeated pages fail explicitly; verification never repairs data.
 - `validation-paths.mjs` maps changed repository paths to the Mobile, Web, Site,
   and Database CI areas. Its tests protect the conservative shared-path and
   documentation-only boundaries used by the validation workflow.
