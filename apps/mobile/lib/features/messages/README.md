@@ -110,7 +110,8 @@ implemented here.
 
 ## Navigation
 
-Messages belongs to the existing Home branch, reached from Home's AppBar:
+Messages belongs to the existing Home branch, reached from Home's AppBar or the
+default bottom-right navigation shortcut:
 
 ```text
 /messages
@@ -124,7 +125,10 @@ Messages belongs to the existing Home branch, reached from Home's AppBar:
 
 Both routes require authentication and a complete profile. Their exact safe
 internal destination survives email OTP and profile completion. The persistent
-bottom navigation remains Profile / Browse / Home; there is no fourth tab. Plan
+bottom navigation is Profile / Home / Messages by default, with Browse available
+as a device-local Settings preference. Direct Messages or Browse entry makes the
+right slot reflect the current destination regardless of that preference; the
+route branches remain stable and there is no fourth tab. Plan
 06B adds a separate Home notification bell/unread badge and resolves request
 alerts into this feature's stable request route. 07B2C owns chat and group-info
 presentation without adding a fourth bottom destination.

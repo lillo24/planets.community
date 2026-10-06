@@ -1320,5 +1320,10 @@
   "projectWorkspaceOpenWorkspaceAction": "Aprire lo spazio di lavoro",
   "projectWorkspaceCancelAction": "Annulla",
   "projectWorkspaceOpenFailure": "Impossibile aprire lo spazio di lavoro esterno.",
-  "projectWorkspaceToolsSemantics": "Strumenti di coordinamento dei progetti"
+  "projectWorkspaceToolsSemantics": "Strumenti di coordinamento dei progetti",
+  "settingsNavigation": "Navigazione",
+  "settingsBottomRightTab": "Scheda in basso a destra",
+  "settingsNavigationHelp": "Scegli la scorciatoia da mostrare su questo dispositivo. Quando apri Messaggi o Esplora, la scheda mostra quella destinazione finché resti lì.",
+  "settingsNavigationSaveError": "Non è stato possibile salvare la preferenza di navigazione. Riprova.",
+  "settingsNavigationRestoreError": "Non è stato possibile ripristinare la preferenza di navigazione. Scegli una scheda per salvarla di nuovo."
 }

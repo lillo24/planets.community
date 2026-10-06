@@ -48,7 +48,7 @@ void main() {
       await _pump(tester, notifications: notifications);
 
       expect(find.byKey(const Key('nav-profile')), findsOneWidget);
-      expect(find.byKey(const Key('nav-browse')), findsOneWidget);
+      expect(find.byKey(const Key('nav-messages')), findsOneWidget);
       expect(find.byKey(const Key('nav-home')), findsOneWidget);
       expect(find.byKey(const Key('open-messages-button')), findsOneWidget);
       expect(

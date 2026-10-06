@@ -2044,5 +2044,10 @@
   "projectWorkspaceOpenWorkspaceAction": "Open workspace",
   "projectWorkspaceCancelAction": "Cancel",
   "projectWorkspaceOpenFailure": "The external workspace could not be opened.",
-  "projectWorkspaceToolsSemantics": "Project coordination tools"
+  "projectWorkspaceToolsSemantics": "Project coordination tools",
+  "settingsNavigation": "Navigation",
+  "settingsBottomRightTab": "Bottom-right tab",
+  "settingsNavigationHelp": "Choose the shortcut shown on this device. When you open Messages or Browse, the tab shows that destination while you are there.",
+  "settingsNavigationSaveError": "We couldn't save the navigation preference. Try again.",
+  "settingsNavigationRestoreError": "We couldn't restore the navigation preference. Choose a tab to save it again."
 }

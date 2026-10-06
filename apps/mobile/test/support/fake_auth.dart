@@ -10,6 +10,8 @@ class FakeAuthGateway implements AuthGateway {
   Object? requestError;
   Object? verifyError;
   Future<void>? requestDelay;
+  Future<void>? signOutDelay;
+  Object? signOutError;
   AuthIdentity verifiedIdentity = const AuthIdentity(id: 'user-1');
   int requestCount = 0;
   int verifyCount = 0;
@@ -63,6 +65,8 @@ class FakeAuthGateway implements AuthGateway {
   @override
   Future<void> signOut() async {
     signOutCount += 1;
+    if (signOutDelay case final delay?) await delay;
+    if (signOutError case final error?) throw error;
     snapshot = const AuthSnapshot();
     emit(snapshot);
   }
