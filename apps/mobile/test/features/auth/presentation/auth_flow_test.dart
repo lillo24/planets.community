@@ -23,6 +23,8 @@ void main() {
 
     await tester.tap(find.text('Sign in'));
     await tester.pumpAndSettle();
+    expect(find.textContaining(RegExp(r'Google|Apple')), findsNothing);
+    expect(find.byKey(const Key('auth-email-field')), findsOneWidget);
     await tester.enterText(
       find.byKey(const Key('auth-email-field')),
       'Person@Example.com',

@@ -85,6 +85,7 @@ enum AuthCommandPhase {
   requestingCode,
   codeSent,
   verifyingCode,
+  signingInWithProvider,
   completingProfile,
   signingOut,
 }
@@ -103,6 +104,7 @@ class AuthCommandState {
   bool get isBusy => switch (phase) {
     AuthCommandPhase.requestingCode ||
     AuthCommandPhase.verifyingCode ||
+    AuthCommandPhase.signingInWithProvider ||
     AuthCommandPhase.completingProfile ||
     AuthCommandPhase.signingOut => true,
     AuthCommandPhase.idle || AuthCommandPhase.codeSent => false,
