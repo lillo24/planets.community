@@ -40,6 +40,9 @@ early suspension gate denies during an uncommitted revoke; an explicit retry
 after commit succeeds. Run these after fresh pgTAP, not before it. Fixtures are
 synthetic and persist until reset; use `MAILPIT_URL` for a non-default local port.
 Both commands are part of `check:db` and the existing Database CI job.
+The separate notification-volatility forward migration preserves 07C4's
+role-offer dispatcher while propagating the inherited locking matching branch's
+`VOLATILE` declaration; canonical recorded resolution actors are unchanged.
 
 Suspension migration/tests preserve private immutable history and current-role
 authorization. Ordinary push jobs may still deliver; no provider/09C2 delivery

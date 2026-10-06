@@ -82,6 +82,15 @@ after replay. pgTAP also covers both proposal and Tavolo preview boundaries.
 
 ## Authorization and serialization audit
 
+The first full Database attempt stopped at lint: main's later 07C4 role-offer
+wrapper redeclared the dispatcher `STABLE` after 09C1A had made its matching
+branch locking/`VOLATILE`. Forward migration
+`20261006125354_notification_matching_moderation_volatility.sql` propagates
+volatility through that wrapper without copying/replacing its routing or main's
+recorded-actor resolver. A focused structure regression preserves both wrapped
+and matching volatility and the existing private grant boundary. Full replay,
+lint and behavioral verification must pass after this repair.
+
 The complete replayed inventory contains **210 public signatures**: 187 deny
 while suspended, 19 deliberately public/anonymous-data functions, one own-status
 exception, and three service/worker-only functions. Compared with the selected
