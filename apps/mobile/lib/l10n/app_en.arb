@@ -1036,7 +1036,7 @@
   "resourceCreateListing": "Create listing",
   "resourceEditListing": "Edit listing",
   "resourceViewListing": "View listing",
-  "resourceInterestCount": "{count, plural, =0{No one interested yet} =1{1 person interested} other{{count} people interested}}",
+  "resourceInterestCount": "{count, plural, =0{0 People Interested} =1{1 person interested} other{{count} people interested}}",
   "@resourceInterestCount": {
     "placeholders": { "count": { "type": "int" } }
   },
