@@ -13,6 +13,7 @@ import 'package:planets_mobile/features/auth/application/auth_command_controller
 import 'package:planets_mobile/features/auth/application/auth_session_controller.dart';
 import 'package:planets_mobile/features/auth/domain/auth_models.dart';
 import 'package:planets_mobile/features/moderation/application/own_consequence_controller.dart';
+import 'package:planets_mobile/features/project_participant_invites/application/participant_admission_controller.dart';
 import 'package:planets_mobile/features/settings/application/language_preference_controller.dart';
 import 'package:planets_mobile/features/settings/application/navigation_preference_controller.dart';
 import 'package:planets_mobile/features/settings/domain/language_preference.dart';
@@ -444,6 +445,32 @@ void main() {
         params: {'p_expected_profile_id': idA},
       );
       expect((status as List).single['is_suspended'], isTrue);
+      // Exercise the existing suspension-screen exit, then a new real OTP
+      // session while the canonical episode is still active.
+      await tester.ensureVisible(
+        find.byKey(const Key('account-status-sign-out')),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('account-status-sign-out')));
+      await _wait(
+        tester,
+        () =>
+            container.read(authSessionProvider).phase ==
+            AuthSessionPhase.signedOut,
+        'suspension-screen canonical sign-out',
+      );
+      router.go('/');
+      await tester.pumpAndSettle();
+      await _uiLogin(tester, emailA, mailpit);
+      await _wait(
+        tester,
+        () =>
+            container.read(authSessionProvider).phase ==
+                AuthSessionPhase.suspended &&
+            !container.read(authCommandProvider).isBusy,
+        'new OTP session remains suspended before revocation',
+      );
+      expect(router.routerDelegate.state.uri.path, '/account/suspended');
       await staff.rpc(
         'revoke_account_suspension',
         params: {
@@ -735,6 +762,36 @@ Future<void> _integrationFlows(
       .toList();
   expect(memberships, hasLength(1));
   expect(memberships.single['originating_request_id'], isNull);
+  await tester.scrollUntilVisible(
+    find.byType(OutlinedButton),
+    200,
+    scrollable: find.byType(Scrollable).first,
+  );
+  await tester.pumpAndSettle();
+  await tester.tap(find.byType(OutlinedButton));
+  await _wait(
+    tester,
+    () =>
+        !container.read(participantAdmissionProvider).loading &&
+        !container.read(participantAdmissionProvider).busy &&
+        find
+            .byKey(const Key('participant-invite-current'))
+            .evaluate()
+            .isNotEmpty,
+    'read-only participant response recovery',
+  );
+  final recoveredMemberships = await app.rpc(
+    'list_own_project_memberships',
+    params: {'p_expected_participant_profile_id': id},
+  ) as List;
+  expect(
+    recoveredMemberships.where((row) => row['project_id'] == project).toList(),
+    memberships,
+  );
+  await tester.ensureVisible(
+    find.byKey(const Key('participant-invite-open-chat')),
+  );
+  await tester.pumpAndSettle();
   await tester.tap(find.byKey(const Key('participant-invite-open-chat')));
   await _wait(
     tester,
