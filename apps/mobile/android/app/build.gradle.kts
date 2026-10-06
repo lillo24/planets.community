@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
@@ -5,7 +7,7 @@ plugins {
 }
 
 val uploadPropertiesFile = rootProject.file("key.properties")
-val uploadProperties = java.util.Properties().apply {
+val uploadProperties = Properties().apply {
     if (uploadPropertiesFile.isFile) {
         uploadPropertiesFile.inputStream().use { load(it) }
     }
