@@ -1,5 +1,5 @@
-// pg-meta cannot infer nullable RETURNS TABLE fields. Keep the bounded PI01
-// contract accurate without changing unrelated generated functions or tables.
+// pg-meta cannot infer nullable RETURNS TABLE fields. Keep participation API
+// and MSG01 typed-feed contracts accurate without changing unrelated records.
 export const participationRpcNullableFields = Object.freeze({
   list_own_project_memberships: ["originating_request_id"],
   list_project_members: ["originating_request_id"],
@@ -20,34 +20,99 @@ export const participationRpcNullableFields = Object.freeze({
     "revoked_at",
     "revoked_by_profile_id",
   ],
+  get_own_participation_conversation: [
+    "request_message",
+    "resolved_at",
+    "accepted_project_group_chat_id",
+  ],
+  get_own_participation_conversation_requests: [
+    "request_message",
+    "resolved_at",
+    "accepted_project_group_chat_id",
+    "message_id",
+    "sender_profile_id",
+    "sender_display_name",
+    "body",
+  ],
+  list_own_participation_conversation_items: [
+    "request_id",
+    "message_id",
+    "project_id",
+    "project_kind",
+    "project_title",
+    "request_status",
+    "request_message",
+    "requester_profile_id",
+    "requester_display_name",
+    "sender_profile_id",
+    "sender_display_name",
+    "body",
+    "resolved_at",
+    "accepted_project_group_chat_id",
+  ],
+  list_own_scoped_conversation_items: [
+    "accepted_project_group_chat_id",
+    "agreement_lifecycle",
+    "coordination_closed_at",
+    "last_visible_message_at",
+    "last_visible_message_body",
+    "last_visible_message_id",
+    "last_visible_sender_display_name",
+    "last_visible_sender_profile_id",
+    "project_id",
+    "project_kind",
+    "project_request_counterparty_display_name",
+    "project_request_counterparty_profile_id",
+    "project_request_id",
+    "project_request_message",
+    "project_request_project_id",
+    "project_request_project_kind",
+    "project_request_project_title",
+    "project_request_resolved_at",
+    "project_request_status",
+    "resource_agreement_id",
+    "resource_counterparty_display_name",
+    "resource_counterparty_profile_id",
+    "resource_listing_id",
+    "resource_request_id",
+  ],
+});
+
+export const participationRpcNullableNumberFields = Object.freeze({
+  list_own_scoped_conversation_items: ["pending_count"],
 });
 
 export function applyParticipationRpcNullability(output) {
-  for (const [name, fields] of Object.entries(participationRpcNullableFields)) {
-    const functionPattern = new RegExp(
-      `^      ${name}: \\{[\\s\\S]*?^      \\}`,
-      "m",
-    );
-    if (!functionPattern.test(output)) {
-      throw new Error(
-        `Generated database types are missing participation RPC ${name}.`,
+  for (const [registry, fieldType] of [
+    [participationRpcNullableFields, "string"],
+    [participationRpcNullableNumberFields, "number"],
+  ]) {
+    for (const [name, fields] of Object.entries(registry)) {
+      const functionPattern = new RegExp(
+        `^      ${name}: \\{[\\s\\S]*?^      \\}`,
+        "m",
       );
-    }
-    output = output.replace(functionPattern, (body) => {
-      for (const field of fields) {
-        const fieldPattern = new RegExp(
-          `^(          ${field}: )string(?: \\| null)?$`,
-          "m",
+      if (!functionPattern.test(output)) {
+        throw new Error(
+          `Generated database types are missing participation RPC ${name}.`,
         );
-        if (!fieldPattern.test(body)) {
-          throw new Error(
-            `Generated ${name} result is missing expected string field ${field}.`,
-          );
-        }
-        body = body.replace(fieldPattern, "$1string | null");
       }
-      return body;
-    });
+      output = output.replace(functionPattern, (body) => {
+        for (const field of fields) {
+          const fieldPattern = new RegExp(
+            `^(          ${field}: )${fieldType}(?: \\| null)?$`,
+            "m",
+          );
+          if (!fieldPattern.test(body)) {
+            throw new Error(
+              `Generated ${name} result is missing expected ${fieldType} field ${field}.`,
+            );
+          }
+          body = body.replace(fieldPattern, `$1${fieldType} | null`);
+        }
+        return body;
+      });
+    }
   }
   return output;
 }

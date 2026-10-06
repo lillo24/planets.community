@@ -812,8 +812,8 @@
   "projectRequestChatLoadOlder": "Load older messages",
   "projectRequestChatMessageHint": "Write a private message",
   "projectRequestChatSend": "Send",
-  "projectRequestChatReadOnly": "This participation conversation is read-only.",
-  "projectRequestChatSendConflict": "The request was resolved before this message could be sent. The conversation is now read-only.",
+  "projectRequestChatReadOnly": "This conversation is read-only. A new eligible participation request will reopen it.",
+  "projectRequestChatSendConflict": "Sending eligibility changed before this message could be saved. Review the updated requests before trying again.",
   "projectRequestChatInvalidMessage": "Enter a message between 1 and 4,000 characters.",
   "projectRequestChatForbidden": "This private participation conversation is not available for the current account.",
   "projectRequestChatNotFound": "This participation conversation is no longer available.",
@@ -2058,5 +2058,23 @@
   "settingsBottomRightTab": "Bottom-right tab",
   "settingsNavigationHelp": "Choose the shortcut shown on this device. When you open Messages or Browse, the tab shows that destination while you are there.",
   "settingsNavigationSaveError": "We couldn't save the navigation preference. Try again.",
-  "settingsNavigationRestoreError": "We couldn't restore the navigation preference. Choose a tab to save it again."
+  "settingsNavigationRestoreError": "We couldn't restore the navigation preference. Choose a tab to save it again.",
+  "pairPendingRequests": "{count, plural, =1{Pending request} other{{count} pending requests}}",
+  "@pairPendingRequests": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "pairRequestAudience": "Organizers can see the request and offers. Personal messages are visible only to the two of you.",
+  "pairLegacyHistory": "Earlier discussion about this request: organizers could also participate.",
+  "pairReferencedRequest": "Referenced request: {title}",
+  "@pairReferencedRequest": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  }
 }

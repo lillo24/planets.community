@@ -253,8 +253,7 @@ class MessageChatsController extends Notifier<MessageChatsState> {
     };
     final desiredProjectRequests = {
       for (final item in state.items)
-        if (item case ProjectRequestMessageChatItem(isReadOnly: false))
-          item.chatId,
+        if (item case ProjectRequestMessageChatItem()) item.chatId,
     };
     _closeStaleProjectSubscriptions(desiredProjects);
     _closeStaleResourceSubscriptions(desiredResources);

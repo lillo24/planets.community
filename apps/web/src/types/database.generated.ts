@@ -201,6 +201,121 @@ export type Database = {
           },
         ]
       }
+      participation_conversation_messages: {
+        Row: {
+          body: string
+          conversation_id: string
+          created_at: string
+          id: string
+          sender_profile_id: string
+        }
+        Insert: {
+          body: string
+          conversation_id: string
+          created_at?: string
+          id?: string
+          sender_profile_id: string
+        }
+        Update: {
+          body?: string
+          conversation_id?: string
+          created_at?: string
+          id?: string
+          sender_profile_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "participation_conversation_messages_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "participation_conversations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "participation_conversation_messages_sender_profile_id_fkey"
+            columns: ["sender_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      participation_conversation_requests: {
+        Row: {
+          conversation_id: string
+          legacy_chat_id: string
+          request_id: string
+        }
+        Insert: {
+          conversation_id: string
+          legacy_chat_id: string
+          request_id: string
+        }
+        Update: {
+          conversation_id?: string
+          legacy_chat_id?: string
+          request_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "participation_conversation_requests_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "participation_conversations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "participation_conversation_requests_legacy_chat_id_fkey"
+            columns: ["legacy_chat_id"]
+            isOneToOne: true
+            referencedRelation: "project_join_request_chats"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "participation_conversation_requests_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: true
+            referencedRelation: "project_join_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      participation_conversations: {
+        Row: {
+          activated_at: string
+          id: string
+          lower_profile_id: string
+          upper_profile_id: string
+        }
+        Insert: {
+          activated_at: string
+          id?: string
+          lower_profile_id: string
+          upper_profile_id: string
+        }
+        Update: {
+          activated_at?: string
+          id?: string
+          lower_profile_id?: string
+          upper_profile_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "participation_conversations_lower_profile_id_fkey"
+            columns: ["lower_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "participation_conversations_upper_profile_id_fkey"
+            columns: ["upper_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profile_field_visibility: {
         Row: {
           audience: string
@@ -2879,6 +2994,58 @@ export type Database = {
           staff_role: string
         }[]
       }
+      get_own_participation_conversation: {
+        Args: { p_expected_profile_id: string; p_request_id: string }
+        Returns: {
+          accepted_project_group_chat_id: string | null
+          activated_at: string
+          chat_id: string
+          creator_display_name: string
+          creator_profile_id: string
+          has_send_entitlement: boolean
+          is_read_only: boolean
+          pending_count: number
+          pending_items: Json
+          project_id: string
+          project_kind: string
+          project_title: string
+          request_created_at: string
+          request_id: string
+          request_message: string | null
+          request_status: string
+          requester_display_name: string
+          requester_profile_id: string
+          resolved_at: string | null
+          viewer_role: string
+        }[]
+      }
+      get_own_participation_conversation_requests: {
+        Args: {
+          p_chat_id: string
+          p_expected_profile_id: string
+          p_request_ids: string[]
+        }
+        Returns: {
+          accepted_project_group_chat_id: string | null
+          body: string | null
+          chat_id: string
+          created_at: string
+          item_id: string
+          item_kind: string
+          message_id: string | null
+          project_id: string
+          project_kind: string
+          project_title: string
+          request_id: string
+          request_message: string | null
+          request_status: string
+          requester_display_name: string
+          requester_profile_id: string
+          resolved_at: string | null
+          sender_display_name: string | null
+          sender_profile_id: string | null
+        }[]
+      }
       get_own_participation_request_message_item: {
         Args: { p_expected_profile_id: string; p_request_id: string }
         Returns: {
@@ -3537,6 +3704,37 @@ export type Database = {
           resource_request_id: string
         }[]
       }
+      list_own_participation_conversation_items: {
+        Args: {
+          p_before_created_at?: string
+          p_before_item_id?: string
+          p_before_item_kind?: string
+          p_chat_id: string
+          p_expected_profile_id: string
+          p_limit: number
+          p_only_pending?: boolean
+        }
+        Returns: {
+          accepted_project_group_chat_id: string | null
+          body: string | null
+          chat_id: string
+          created_at: string
+          item_id: string
+          item_kind: string
+          message_id: string | null
+          project_id: string | null
+          project_kind: string | null
+          project_title: string | null
+          request_id: string | null
+          request_message: string | null
+          request_status: string | null
+          requester_display_name: string | null
+          requester_profile_id: string | null
+          resolved_at: string | null
+          sender_display_name: string | null
+          sender_profile_id: string | null
+        }[]
+      }
       list_own_participation_request_message_items: {
         Args: {
           p_cursor_activity_at?: string
@@ -3921,6 +4119,49 @@ export type Database = {
           query: string
           saved_search_id: string
           updated_at: string
+        }[]
+      }
+      list_own_scoped_conversation_items: {
+        Args: {
+          p_cursor_activity_at?: string
+          p_cursor_chat_id?: string
+          p_cursor_item_kind?: string
+          p_expected_profile_id: string
+          p_limit: number
+          p_scope: string
+        }
+        Returns: {
+          accepted_project_group_chat_id: string | null
+          activity_at: string
+          agreement_lifecycle: string | null
+          chat_id: string
+          coordination_closed_at: string | null
+          display_title: string
+          is_read_only: boolean
+          item_kind: string
+          last_visible_message_at: string | null
+          last_visible_message_body: string | null
+          last_visible_message_id: string | null
+          last_visible_sender_display_name: string | null
+          last_visible_sender_profile_id: string | null
+          pending_count: number | null
+          project_id: string | null
+          project_kind: string | null
+          project_request_counterparty_display_name: string | null
+          project_request_counterparty_profile_id: string | null
+          project_request_id: string | null
+          project_request_message: string | null
+          project_request_project_id: string | null
+          project_request_project_kind: string | null
+          project_request_project_title: string | null
+          project_request_resolved_at: string | null
+          project_request_status: string | null
+          resource_agreement_id: string | null
+          resource_counterparty_display_name: string | null
+          resource_counterparty_profile_id: string | null
+          resource_listing_id: string | null
+          resource_request_id: string | null
+          viewer_role: string
         }[]
       }
       list_own_scoped_message_chat_items: {
@@ -4643,6 +4884,20 @@ export type Database = {
           p_project_id: string
         }
         Returns: string
+      }
+      send_participation_conversation_message: {
+        Args: {
+          p_body: string
+          p_chat_id: string
+          p_expected_profile_id: string
+        }
+        Returns: {
+          body: string
+          chat_id: string
+          created_at: string
+          message_id: string
+          sender_profile_id: string
+        }[]
       }
       send_project_chat_message: {
         Args: {

@@ -148,6 +148,9 @@ jobs:
       - name: Start local Supabase
         run: npm run db:start
 
+      - name: Verify populated participation conversation upgrade and cached delegate privacy
+        run: npm run participation:conversations:upgrade:verify:local
+
       - name: Replay migrations and seed from zero
         run: npm run db:reset
 
@@ -198,6 +201,9 @@ jobs:
 
       - name: Verify structured participation-request Messages and privacy
         run: npm run messages:verify:local
+
+      - name: Verify durable participation pairs, send races and private Realtime
+        run: npm run participation:conversations:verify:local
 
       - name: Verify Project chat lifecycle and authorization foundation
         run: npm run project:chat:verify:local

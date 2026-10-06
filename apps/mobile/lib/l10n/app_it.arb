@@ -599,8 +599,8 @@
   "projectRequestChatLoadOlder": "Carica messaggi più vecchi",
   "projectRequestChatMessageHint": "Scrivi un messaggio privato",
   "projectRequestChatSend": "Invia",
-  "projectRequestChatReadOnly": "Questa conversazione di partecipazione è in sola lettura.",
-  "projectRequestChatSendConflict": "La richiesta è stata risolta prima che questo messaggio potesse essere inviato. La conversazione è ora in sola lettura.",
+  "projectRequestChatReadOnly": "La conversazione è in sola lettura. Una nuova richiesta di partecipazione idonea la riaprirà.",
+  "projectRequestChatSendConflict": "Le condizioni per inviare sono cambiate prima di salvare il messaggio. Controlla le richieste aggiornate prima di riprovare.",
   "projectRequestChatInvalidMessage": "Inserisci un messaggio tra 1 e 4.000 caratteri.",
   "projectRequestChatForbidden": "Questa conversazione di partecipazione privata non è disponibile per l'account corrente.",
   "projectRequestChatNotFound": "Questa conversazione di partecipazione non è più disponibile.",
@@ -1329,5 +1329,23 @@
   "settingsBottomRightTab": "Scheda in basso a destra",
   "settingsNavigationHelp": "Scegli la scorciatoia da mostrare su questo dispositivo. Quando apri Messaggi o Esplora, la scheda mostra quella destinazione finché resti lì.",
   "settingsNavigationSaveError": "Non è stato possibile salvare la preferenza di navigazione. Riprova.",
-  "settingsNavigationRestoreError": "Non è stato possibile ripristinare la preferenza di navigazione. Scegli una scheda per salvarla di nuovo."
+  "settingsNavigationRestoreError": "Non è stato possibile ripristinare la preferenza di navigazione. Scegli una scheda per salvarla di nuovo.",
+  "pairPendingRequests": "{count, plural, =1{Richiesta in attesa} other{{count} richieste in attesa}}",
+  "@pairPendingRequests": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "pairRequestAudience": "La richiesta e le offerte sono visibili agli organizzatori. I messaggi personali sono visibili solo a voi due.",
+  "pairLegacyHistory": "Discussione precedente su questa richiesta: potevano partecipare anche gli organizzatori.",
+  "pairReferencedRequest": "Richiesta di riferimento: {title}",
+  "@pairReferencedRequest": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  }
 }

@@ -89,6 +89,11 @@ select set_config(
   'e7100000-0000-4000-8000-000000000001',
   true
 );
+select set_config('test.delegate_legacy_chat', (
+  select chat_id::text from public.get_own_project_join_request_chat(
+    'e7100000-0000-4000-8000-000000000001', current_setting('test.delegate_request')::uuid
+  )
+), true);
 with created as (
   select *
   from public.create_project_delegate_invitation(
@@ -232,33 +237,16 @@ select is(
   1::bigint,
   'an active delegate sees the Project participation queue'
 );
-select is(
-  (
-    select chat.viewer_role
-    from public.get_own_project_join_request_chat(
-      'e7100000-0000-4000-8000-000000000002',
-      current_setting('test.delegate_request')::uuid
-    ) as chat
-  ),
-  'delegate',
-  'an active delegate resolves the existing private request chat as a delegate'
+select throws_ok(
+  $$select * from public.get_own_project_join_request_chat('e7100000-0000-4000-8000-000000000002',current_setting('test.delegate_request')::uuid)$$,
+  '42501', 'The participation-request chat is unavailable.',
+  'MSG01 active delegate manages the request without personal history access'
 );
-select lives_ok(
-  $$
-    select *
-    from public.send_project_join_request_chat_message(
-      'e7100000-0000-4000-8000-000000000002',
-      (
-        select chat.chat_id
-        from public.get_own_project_join_request_chat(
-          'e7100000-0000-4000-8000-000000000002',
-          current_setting('test.delegate_request')::uuid
-        ) as chat
-      ),
-      'Thanks. We are reviewing your request.'
-    )
-  $$,
-  'an active delegate participates in the requester-organizer conversation'
+select throws_ok(
+  $$select * from public.send_project_join_request_chat_message('e7100000-0000-4000-8000-000000000002',
+    current_setting('test.delegate_legacy_chat')::uuid, 'Forbidden delegate reply')$$,
+  '42501', 'The participation-request chat is unavailable.',
+  'MSG01 legacy send cannot be used as a delegate back door'
 );
 select set_config(
   'test.delegate_membership',

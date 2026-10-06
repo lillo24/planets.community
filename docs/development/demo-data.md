@@ -30,6 +30,20 @@ npm run demo:verify:local
 
 ## Personas and useful flows
 
+MSG01 reuses Marco and Giulia: Marco's mural request and one added pending request
+to Giulia's existing monthly Tavolo yield one Private pair row, two distinct
+request bubbles, a `2 richieste in attesa` banner, and two stable pair follow-ups.
+The rejected repair and withdrawn weekly requests and PI05 superseded histories
+remain intact. Seeding reuses source IDs and adds only missing pair messages;
+verification never repairs. The demo snapshot covers pair anchors, associations,
+authors, text and timestamps alongside the retained invitation/request history.
+
+On a separate clean demo-only stack, use Marco's two requests → Giulia's one
+conversation → resolve one → banner one → resolve the last → read-only → a new
+legitimate request → the same history. Re-seed explicitly to restore the two
+pending fixtures after interactive actions. Keep this presentation stack separate
+from `check:db` mutation-verifier data and the founder's phone-demo services.
+
 | Login email                  | Display name | Role in the world                                                                  |
 | ---------------------------- | ------------ | ---------------------------------------------------------------------------------- |
 | `demo-alice@planets.invalid` | Giulia       | Organizer: owns Proposals, Tavoli, a donation listing, and the mural chat          |
