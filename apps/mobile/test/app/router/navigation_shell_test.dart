@@ -24,6 +24,11 @@ import 'package:planets_mobile/features/profile/domain/profile_models.dart';
 import 'package:planets_mobile/features/participation/data/participation_gateway.dart';
 import 'package:planets_mobile/features/project_resource_needs/data/project_resource_needs_gateway.dart';
 import 'package:planets_mobile/features/proposals/data/proposal_gateway.dart';
+import 'package:planets_mobile/features/proposals/application/proposal_controllers.dart';
+import 'package:planets_mobile/features/proposals/domain/proposal_models.dart';
+import 'package:planets_mobile/features/proposals/presentation/proposal_editor_screen.dart';
+import 'package:planets_mobile/features/proposals/presentation/public_proposals_screen.dart';
+import 'package:planets_mobile/features/profile_photo/data/profile_photo_gateway.dart';
 import 'package:planets_mobile/features/recurring_activities/data/recurring_activity_gateway.dart';
 import 'package:planets_mobile/features/resource_listings/data/resource_listing_gateway.dart';
 import 'package:planets_mobile/features/settings/application/navigation_preference_controller.dart';
@@ -35,6 +40,7 @@ import '../../support/fake_moderation.dart';
 import '../../support/fake_profile.dart';
 import '../../support/fake_participation.dart';
 import '../../support/fake_proposal.dart';
+import '../../support/fake_profile_photo.dart';
 import '../../support/fake_project_resource_needs.dart';
 import '../../support/fake_recurring_activity.dart';
 import '../../support/fake_resource_listing.dart';
@@ -43,6 +49,158 @@ import '../../support/fake_messages.dart';
 import '../../support/fake_message_chats.dart';
 
 void main() {
+  for (final locale in ['en', 'it']) {
+    testWidgets(
+      'Home and Browse use requested $locale copy on a narrow screen',
+      (tester) async {
+        await tester.binding.setSurfaceSize(const Size(360, 720));
+        addTearDown(() => tester.binding.setSurfaceSize(null));
+        tester.binding.platformDispatcher.localesTestValue = [Locale(locale)];
+        addTearDown(tester.binding.platformDispatcher.clearLocalesTestValue);
+        final app = await _pump(tester, signedIn: false, destination: null);
+        final homeTitle = locale == 'en'
+            ? 'Projects and Cultural Tables'
+            : 'Progetti e Tavoli Culturali';
+        final projects = locale == 'en' ? 'Projects' : 'Progetti';
+        final tables = locale == 'en' ? 'Cultural Tables' : 'Tavoli culturali';
+        expect(find.text(homeTitle), findsOneWidget);
+        await _tap(tester, 'browse-proposals-button');
+        expect(find.text(projects), findsNWidgets(2));
+        expect(find.text(tables), findsOneWidget);
+        expect(find.byKey(const Key('proposal-locality-filter')), findsNothing);
+        await tester.tap(find.text(tables));
+        await tester.pumpAndSettle();
+        expect(
+          app.read(appRouterProvider).routeInformationProvider.value.uri.path,
+          '/tavoli',
+        );
+        expect(find.text(tables), findsNWidgets(2));
+        expect(find.byKey(const Key('tavoli-locality-filter')), findsNothing);
+        expect(tester.takeException(), isNull);
+      },
+    );
+  }
+
+  for (final lifecycle in ProposalLifecycle.values) {
+    testWidgets('owner $lifecycle cover opens its existing authorized route', (
+      tester,
+    ) async {
+      final proposals = FakeProposalGateway()
+        ..ownItems = [ownProposalFixture(lifecycle: lifecycle)]
+        ..publicDetail = proposalDetailFixture();
+      final app = await _pump(
+        tester,
+        proposals: proposals,
+        proposalNow: DateTime.utc(2026, 10, 6),
+      );
+      final router = app.read(appRouterProvider);
+      router.go('/proposals/mine');
+      await tester.pumpAndSettle();
+      expect(
+        tester.getSemantics(
+          find.byKey(const Key('own-proposal-open-proposal-1')),
+        ),
+        isSemantics(
+          label: 'Open Paint the square',
+          isButton: true,
+          hasTapAction: true,
+        ),
+      );
+      await _tap(tester, 'own-proposal-open-proposal-1');
+      final published = lifecycle == ProposalLifecycle.published;
+      expect(
+        router.routerDelegate.state.uri.path,
+        published ? '/proposals/proposal-1' : '/proposals/proposal-1/edit',
+      );
+      expect(
+        find.byType(published ? ProposalDetailScreen : ProposalEditorScreen),
+        findsOneWidget,
+      );
+      if (published) {
+        expect(proposals.calls, contains('public-detail:proposal-1'));
+      } else {
+        expect(
+          proposals.calls.where((call) => call.startsWith('public-detail:')),
+          isEmpty,
+        );
+        expect(app.read(proposalEditorProvider).proposal?.id, 'proposal-1');
+        expect(proposals.lastExpectedIdentity, 'user-1');
+      }
+      expect(
+        proposals.calls.where(
+          (call) =>
+              call.startsWith('publish:') ||
+              call.startsWith('cancel:') ||
+              call.startsWith('update:'),
+        ),
+        isEmpty,
+      );
+      await tester.pageBack();
+      await tester.pumpAndSettle();
+      expect(router.routerDelegate.state.uri.path, '/proposals/mine');
+      await _tap(tester, 'own-proposal-open-proposal-1');
+      expect(
+        router.routerDelegate.state.uri.path,
+        published ? '/proposals/proposal-1' : '/proposals/proposal-1/edit',
+      );
+    });
+  }
+
+  testWidgets(
+    'owner cover leaves Resources, Edit, Publish and Cancel independent',
+    (tester) async {
+      final proposals = FakeProposalGateway()
+        ..ownItems = [
+          ownProposalFixture(
+            startsAt: DateTime.utc(2026, 11, 10),
+            endsAt: DateTime.utc(2026, 11, 11),
+          ),
+        ];
+      final app = await _pump(
+        tester,
+        proposals: proposals,
+        proposalNow: DateTime.utc(2026, 10, 6),
+        profilePhoto: FakeProfilePhotoGateway()..photo = profilePhotoFixture(),
+      );
+      final router = app.read(appRouterProvider);
+      router.go('/proposals/mine');
+      await tester.pumpAndSettle();
+      await _tap(tester, 'proposal-resources-proposal-1');
+      expect(
+        router.routerDelegate.state.uri.path,
+        '/proposals/proposal-1/resources',
+      );
+      await tester.pageBack();
+      await tester.pumpAndSettle();
+      await _tap(tester, 'proposal-edit-proposal-1');
+      expect(
+        router.routerDelegate.state.uri.path,
+        '/proposals/proposal-1/edit',
+      );
+      await tester.pageBack();
+      await tester.pumpAndSettle();
+      await _tap(tester, 'proposal-publish-proposal-1');
+      expect(proposals.calls, contains('publish:proposal-1'));
+      expect(router.routerDelegate.state.uri.path, '/proposals/mine');
+      await _tap(tester, 'proposal-cancel-proposal-1');
+      expect(find.text('Cancel this proposal?'), findsOneWidget);
+      expect(proposals.calls, isNot(contains('cancel:proposal-1')));
+      await tester.tap(
+        find.descendant(
+          of: find.byType(AlertDialog),
+          matching: find.byType(FilledButton),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(proposals.calls, contains('cancel:proposal-1'));
+      expect(router.routerDelegate.state.uri.path, '/proposals/mine');
+      expect(
+        proposals.calls.where((call) => call.startsWith('public-detail:')),
+        isEmpty,
+      );
+    },
+  );
+
   testWidgets('fresh device defaults to Messages and Home stays selected', (
     tester,
   ) async {
@@ -428,15 +586,15 @@ void main() {
       ..publicItems = [proposalSummaryFixture()];
     final app = await _pump(tester, proposals: proposals);
     await _tap(tester, 'nav-browse');
-    expect(find.text('One-time proposals'), findsOneWidget);
-    await tester.tap(find.text('Tavoli').last);
+    expect(find.text('Projects'), findsNWidgets(2));
+    await tester.tap(find.text('Cultural Tables').last);
     await tester.pumpAndSettle();
     expect(
       app.read(appRouterProvider).routeInformationProvider.value.uri.path,
       '/tavoli',
     );
     expect(find.text('Neighborhood philosophy table'), findsOneWidget);
-    await tester.tap(find.text('Proposals').last);
+    await tester.tap(find.text('Projects').last);
     await tester.pumpAndSettle();
     expect(
       app.read(appRouterProvider).routeInformationProvider.value.uri.path,
@@ -457,7 +615,7 @@ void main() {
 
       await _tap(tester, 'browse-proposals-button');
       expect(router.routeInformationProvider.value.uri.path, '/proposals');
-      expect(find.text('One-time proposals'), findsOneWidget);
+      expect(find.text('Projects'), findsNWidgets(2));
 
       await tester.binding.handlePopRoute();
       await tester.pumpAndSettle();
@@ -891,6 +1049,7 @@ void main() {
         ..publicDetail = proposalDetailFixture();
       final app = await _pump(tester, proposals: proposals);
       await _tap(tester, 'browse-proposals-button');
+      await _tap(tester, 'proposal-toggle-filters');
       await tester.enterText(
         find.byKey(const Key('proposal-locality-filter')),
         'Bologna',
@@ -1142,6 +1301,8 @@ Future<ProviderContainer> _pump(
   // Existing retention tests exercise the optional Browse shortcut.
   BottomTabDestination? destination = BottomTabDestination.browse,
   FakeNavigationPreferenceStore? navigationStore,
+  DateTime? proposalNow,
+  FakeProfilePhotoGateway? profilePhoto,
 }) async {
   final gateway =
       auth ??
@@ -1154,6 +1315,8 @@ Future<ProviderContainer> _pump(
   await tester.pumpWidget(
     ProviderScope(
       overrides: [
+        if (proposalNow != null)
+          proposalClockProvider.overrideWithValue(() => proposalNow),
         if (destination != null)
           initialNavigationPreferenceProvider.overrideWithValue(
             NavigationPreferenceState(destination: destination),
@@ -1186,6 +1349,8 @@ Future<ProviderContainer> _pump(
           profile ??
               FakeProfileGateway(data: profileFixture(complete: complete)),
         ),
+        if (profilePhoto != null)
+          profilePhotoGatewayProvider.overrideWithValue(profilePhoto),
         participationGatewayProvider.overrideWithValue(
           participation ??
               (FakeParticipationGateway()

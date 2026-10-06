@@ -6,6 +6,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:planets_mobile/app/planets_app.dart';
 import 'package:planets_mobile/app/router/app_router.dart';
 import 'package:planets_mobile/core/config/app_config.dart';
+import 'package:planets_mobile/core/widgets/browse_filter_button.dart';
 import 'package:planets_mobile/core/widgets/error_state.dart';
 import 'package:planets_mobile/core/widgets/loading_state.dart';
 import 'package:planets_mobile/features/auth/data/auth_gateway.dart';
@@ -35,6 +36,66 @@ import '../../../support/fake_proposal.dart';
 import '../../../support/fake_recurring_activity.dart';
 
 void main() {
+  testWidgets(
+    'Tavolo locality disclosure retains pending and applied filters',
+    (tester) async {
+      final recurring = FakeRecurringActivityGateway()
+        ..publicItems = [publicRecurringSummaryFixture()];
+      final app = await _pump(tester, recurring: recurring, signedIn: false);
+      app.read(appRouterProvider).go('/tavoli');
+      await tester.pumpAndSettle();
+      final toggle = find.byKey(const Key('tavoli-toggle-filters'));
+      final locality = find.byKey(const Key('tavoli-locality-filter'));
+      expect(locality, findsNothing);
+      expect(find.byKey(const Key('proposal-query-filter')), findsNothing);
+      expect(find.byKey(const Key('skill-filter-trigger')), findsNothing);
+      await tester.tap(toggle);
+      await tester.pumpAndSettle();
+      await tester.enterText(locality, ' Bologna ');
+      await tester.tap(toggle);
+      await tester.pumpAndSettle();
+      expect(locality, findsNothing);
+      expect(
+        tester.widget<BrowseFilterButton>(toggle).hasActiveFilters,
+        isFalse,
+      );
+      expect(
+        recurring.calls.where((call) => call == 'list-public'),
+        hasLength(1),
+      );
+      await tester.tap(toggle);
+      await tester.pumpAndSettle();
+      expect(tester.widget<TextField>(locality).controller!.text, ' Bologna ');
+      await tester.tap(find.byKey(const Key('tavoli-apply-filter')));
+      await tester.pumpAndSettle();
+      expect(recurring.lastLocality, 'Bologna');
+      final referenceTime = app
+          .read(publicRecurringActivitiesProvider)
+          .referenceTime;
+      await tester.tap(toggle);
+      await tester.pumpAndSettle();
+      expect(
+        tester.widget<BrowseFilterButton>(toggle).hasActiveFilters,
+        isTrue,
+      );
+      expect(find.byTooltip('Show filters · Filters active'), findsOneWidget);
+      expect(locality, findsNothing);
+      await tester.tap(toggle);
+      await tester.pumpAndSettle();
+      expect(tester.widget<TextField>(locality).controller!.text, ' Bologna ');
+      expect(
+        app.read(publicRecurringActivitiesProvider).referenceTime,
+        referenceTime,
+      );
+      expect(
+        recurring.calls.where((call) => call == 'list-public'),
+        hasLength(2),
+      );
+      expect(find.byKey(const Key('proposal-query-filter')), findsNothing);
+      expect(find.byKey(const Key('skill-filter-trigger')), findsNothing);
+    },
+  );
+
   for (final participants in [1, 4]) {
     testWidgets(
       'public Tavolo card/detail share reveal for $participants others',

@@ -6,6 +6,7 @@ import '../../../app/router/browse_activity_switcher.dart';
 import '../../../core/theme/app_tokens.dart';
 import '../../../core/time/event_time.dart';
 import '../../../core/widgets/async_data_presentation.dart';
+import '../../../core/widgets/browse_filter_button.dart';
 import '../../../core/widgets/empty_state.dart';
 import '../../../core/widgets/error_state.dart';
 import '../../../core/widgets/loading_state.dart';
@@ -38,6 +39,7 @@ class PublicRecurringActivitiesScreen extends ConsumerStatefulWidget {
 class _PublicRecurringActivitiesScreenState
     extends ConsumerState<PublicRecurringActivitiesScreen> {
   late final TextEditingController _localityController;
+  bool _filtersExpanded = false;
 
   @override
   void initState() {
@@ -100,25 +102,40 @@ class _PublicRecurringActivitiesScreenState
                       selected: BrowseActivityType.tavoli,
                     ),
                     const SizedBox(height: AppSpacing.medium),
-                    TextField(
-                      key: const Key('tavoli-locality-filter'),
-                      controller: _localityController,
-                      decoration: InputDecoration(
-                        labelText: l10n.tavoliLocalityFilter,
-                        suffixIcon: IconButton(
-                          key: const Key('tavoli-apply-filter'),
-                          onPressed: state.isBusy
-                              ? null
-                              : () => ref
-                                    .read(
-                                      publicRecurringActivitiesProvider
-                                          .notifier,
-                                    )
-                                    .applyLocality(_localityController.text),
-                          icon: const Icon(Icons.search),
-                        ),
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: BrowseFilterButton(
+                        key: const Key('tavoli-toggle-filters'),
+                        expanded: _filtersExpanded,
+                        hasActiveFilters: state.locality.trim().isNotEmpty,
+                        onPressed: () {
+                          FocusScope.of(context).unfocus();
+                          setState(() => _filtersExpanded = !_filtersExpanded);
+                        },
                       ),
                     ),
+                    if (_filtersExpanded) ...[
+                      const SizedBox(height: AppSpacing.small),
+                      TextField(
+                        key: const Key('tavoli-locality-filter'),
+                        controller: _localityController,
+                        decoration: InputDecoration(
+                          labelText: l10n.tavoliLocalityFilter,
+                          suffixIcon: IconButton(
+                            key: const Key('tavoli-apply-filter'),
+                            onPressed: state.isBusy
+                                ? null
+                                : () => ref
+                                      .read(
+                                        publicRecurringActivitiesProvider
+                                            .notifier,
+                                      )
+                                      .applyLocality(_localityController.text),
+                            icon: const Icon(Icons.search),
+                          ),
+                        ),
+                      ),
+                    ],
                     const SizedBox(height: AppSpacing.medium),
                     if (state.items.isEmpty && state.requestedItems.isEmpty)
                       EmptyState(

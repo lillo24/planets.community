@@ -6,8 +6,8 @@ This folder owns application startup presentation and navigation, not backend ru
 - `router/app_router.dart` owns routes, Auth/readiness redirects and the identity-scoped routing configuration.
 - `router/native_project_links.dart` validates absolute public HTTPS deliveries before the router converts them to internal destinations.
 - `router/app_navigation_shell.dart` maps the single Material 3 navigation bar to stable branches and routes.
-- `foundation_screen.dart` is Home; its Progetti entry uses the shell's Browse
-  branch switch, its Scambio-Dona entry opens the Browse-owned resource routes,
+- `foundation_screen.dart` is Home; its Projects and Cultural Tables entry uses
+  the shell's Browse branch switch, its Scambio-Dona entry opens the Browse-owned resource routes,
   and its AppBar opens public Settings.
 - `startup_failure_app.dart` is the safe fallback when bootstrap cannot launch the application.
 
