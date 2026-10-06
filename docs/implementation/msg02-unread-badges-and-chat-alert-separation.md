@@ -5,7 +5,10 @@
 Selected plan: `PLANETS_MSG02_unread_badges_and_chat_alert_separation.md`.
 Isolated branch: `codex/msg02-unread-badges`, based on merged MSG01
 `eb70fe249978585f754fa9175d337d7ef8b99e17` (PR #153). UX-NAV01 remains
-in its existing router owners. This change applies no hosted migration or
+in its existing router owners. Before publication the branch reconciled newer
+main `795c4ef0fa1398357bd19e8d366d2b50f784f964` (Template Workshop PR #146),
+preserving its draft-departure guard, combined demo snapshot/session owner,
+and producer-before-global-notification regression order. This change applies no hosted migration or
 deployment and leaves the denied residual MSG01 directory untouched.
 
 ## Implemented contract
@@ -71,31 +74,42 @@ references are compared before/after; historical exact reads remain independent.
 
 Local validation:
 
-- `check:db` ran through populated predecessor/MSG02 upgrades, fresh replay,
-  lint/advisors, all 110 pgTAP files (3,441 assertions), auth/privacy, capacity,
-  invitation, notification/push, pair and unread, workspace and group gates.
-  It initially stopped on an outdated ordinary-alert assertion. After correcting
-  that assertion, the remaining standard gates ran in order; the Resource test
-  helper was corrected to parse inbox rows. Every remaining Resource, contribution,
-  moderation/blocking, demo and `db:types:check` gate passed. No earlier unchanged
-  suite was rerun merely to hide that recovery.
-- `check:mobile`: localization, full formatting, static analysis with no issues,
-  1,320 passing tests and two existing skips. Nine focused unread tests cover
+- The complete integrated `check:db` sequence passed: populated predecessor/MSG02
+  upgrades, fresh replay, lint/advisors, all 118 pgTAP files (3,617 assertions),
+  authenticated domain/privacy/concurrency checks, notification/push separation,
+  global projection, combined demo and `db:types:check`. The initial run stopped
+  on the second MSG02 session's OTP cooldown. The verifier now observes the
+  repository's configured 1s local minimum before that independent login;
+  continuation from the failed verifier completed every remaining standard gate.
+  Assertions were not weakened, and earlier unchanged suites were not repeated
+  merely to hide recovery. Ordinary-alert assertions changed intentionally with
+  the activity-only specification; unrelated privacy and push checks remain.
+- `check:mobile` after integration: localization, full formatting, static analysis
+  with no issues, 1,468 passing tests and two existing skips. Nine focused unread tests cover
   strict payloads, stale responses, bursts, account changes during read, hidden
   branch/failed-load/background/obscured/older-scroll guards, exact failure retry,
-  zero/capped counts and compact large text.
-- `check:web`: tooling, 263 passing web tests and one existing skip, lint,
-  typecheck and production build. Generated types also passed a final web
-  typecheck. `check:site`: 34 client and 19 waitlist tests, lint/typecheck/build
+  zero/capped counts and compact large text. An additional actual-screen test
+  proves Home/navigation totals, all three row counts, scope selection, no
+  list acknowledgement and an unbadged Browse destination at 320 dp/2× text.
+  It exposed chat-card role/status overflow; headers now wrap without taking
+  width from titles. All 56 Messages flow tests, final analysis and full Dart
+  formatting passed after that fix.
+- `check:web` after integration: 34 tooling tests, 283 passing web tests and one
+  existing skip, lint, typecheck and production build. The initial concurrent
+  run stalled after a route-import timeout; the seven route tests and complete
+  gate passed unchanged on retry. `check:site`: 34 client and 19 waitlist tests, lint/typecheck/build
   and deploy dry run. Web/Dart formatting and complete diff checks passed.
 - The metadata-only summary plan used 27 chats and over 5,000 synthetic human
-  rows, rolled back after EXPLAIN: about 65 ms locally, with authorization once
+  rows, rolled back after EXPLAIN: about 79 ms after integration, with authorization once
   per conversation. This is an observed local measurement, not a service SLA.
 - Demo stability was extended to acknowledge a real own snapshot before rerun
   and compare source identities, incoming receipts and read frontiers. Repeated
-  seed/verify and explicit episode restoration preserved that state.
+  seed/verify and explicit episode restoration preserved that state. The shared
+  PI05/TW05 whole-schema snapshot covered 85 product tables. An already-baselined
+  demo with no incoming receipts uses its Creator's existing group for the own
+  acknowledgement; it never creates incoming backfill to satisfy the fixture.
 
-Android debug APK built successfully with demo tools disabled against the owned
+Before main integration, Android debug APK built successfully with demo tools disabled against the owned
 backend. Task-owned Android 37.1 emulator, port 5562, booted at 720×1280/360 dpi
 (320 dp width); signed-out Home/navigation and the email sign-in screen rendered.
 The initial larger emulator stalled under memory pressure. The smaller retry

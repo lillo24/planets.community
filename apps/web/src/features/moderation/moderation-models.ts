@@ -1,3 +1,7 @@
+import type {
+  TemplateBlueprint,
+  TemplateReview,
+} from "./template-moderation-models";
 export const moderationQueuePageSize = 25;
 
 export type ModerationStaffRole = "moderator" | "admin";
@@ -88,6 +92,11 @@ export type ModerationCaseDetail = Readonly<{
   resourceListingContextId: string | null;
   resourceRequestContextId: string | null;
   resourceChatContextId: string | null;
+  template?: TemplateReview | null;
+  templateBlueprints?: TemplateBlueprint[];
+  templateNextNeedId?: string | null;
+  templatePageStale?: boolean;
+  templateCoverUrl?: string | null;
   notes: ModerationCaseNote[];
   events: ModerationCaseEvent[];
   corroboration?: ModerationCorroborationEvidence | null;

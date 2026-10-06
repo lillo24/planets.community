@@ -574,7 +574,7 @@ async function verifyUpgrade() {
     pairId,
     before.chats.find((x) => x.request_id === earliest.id).id,
   );
-  const history = await feed(requester, pairId);
+  const history = await upgradedFeed(requester, pairId);
   assert.equal(history.length, before.requests.length + before.messages.length);
   assert.equal(new Set(history.map(key)).size, history.length);
   for (const source of before.messages) {
@@ -759,14 +759,39 @@ function send(account, pairId, body) {
   });
 }
 function feed(account, pairId, limit = 50, cursor) {
-  return rpc(account, "list_own_participation_conversation_items", {
+  return rpc(
+    account,
+    "list_own_participation_conversation_items",
+    feedParams(account, pairId, limit, cursor),
+  );
+}
+function feedParams(account, pairId, limit = 50, cursor) {
+  return {
     p_expected_profile_id: account.id,
     p_chat_id: pairId,
     p_limit: limit,
     p_before_created_at: cursor?.created_at ?? null,
     p_before_item_kind: cursor?.item_kind ?? null,
     p_before_item_id: cursor?.item_id ?? null,
-  });
+  };
+}
+async function upgradedFeed(account, pairId) {
+  // CLI migration completion precedes PostgREST's asynchronous schema reload.
+  // Retry only this read and only the missing-cache signature; mutations and
+  // authorization/domain failures retain their ordinary fail-loud behavior.
+  const deadline = Date.now() + 10000;
+  while (true) {
+    const { data, error } = await account.client.rpc(
+      "list_own_participation_conversation_items",
+      feedParams(account, pairId),
+    );
+    if (!error) return data;
+    if (error.code !== "PGRST202" || Date.now() >= deadline)
+      throw new Error(
+        `MSG01 upgraded list_own_participation_conversation_items for pair ${pairId} failed (code ${error.code}).`,
+      );
+    await new Promise((resolve) => setTimeout(resolve, 200));
+  }
 }
 async function rpc(account, name, params) {
   const result = await account.client.rpc(name, params);

@@ -16,7 +16,7 @@
     },
     {
       "file": "covers/repair-cafe.webp",
-      "scenario": "Repair Café: aggiustiamo piccoli oggetti insieme",
+      "scenario": "Repair CafÃ©: aggiustiamo piccoli oggetti insieme",
       "sourcePageUrl": "https://www.pexels.com/photo/tools-in-a-toolbox-9607203/",
       "photographer": "Anastasia Shuraeva",
       "width": 1280,
@@ -36,7 +36,7 @@
     },
     {
       "file": "covers/weekly-community-table.webp",
-      "scenario": "Idee per il quartiere — tavolo del mercoledì",
+      "scenario": "Idee per il quartiere â€” tavolo del mercoledÃ¬",
       "sourcePageUrl": "https://www.pexels.com/photo/a-group-of-people-talking-to-each-other-while-sitting-near-the-table-7495293/",
       "photographer": "Moe Magners",
       "width": 1280,
@@ -86,7 +86,7 @@
     },
     {
       "file": "covers/seedling-trays.webp",
-      "scenario": "Vassoi per piantine — già assegnati",
+      "scenario": "Vassoi per piantine â€” giÃ  assegnati",
       "sourcePageUrl": "https://www.pexels.com/photo/person-flowers-pattern-texture-6508561/",
       "photographer": "Tima Miroshnichenko",
       "width": 1280,
@@ -122,6 +122,24 @@
       "height": 512,
       "bytes": 7580,
       "sha256": "7886017e6ac003aece45822487fe8d5d75045d42c930bbcd5dbbe7796df3d44a"
+    },
+    {
+      "file": "profiles/planets.webp",
+      "persona": "PLANETS — demo locale",
+      "origin": "Locally generated abstract geometric avatar; not a stock identity.",
+      "width": 512,
+      "height": 512,
+      "bytes": 7848,
+      "sha256": "6d4d36a1a25fe4188b43829f9b685c14b8be60f894d8bf42032290977696778a"
+    },
+    {
+      "file": "profiles/reviewer.webp",
+      "persona": "Revisore — demo locale",
+      "origin": "Locally generated abstract geometric avatar; not a stock identity.",
+      "width": 512,
+      "height": 512,
+      "bytes": 6508,
+      "sha256": "eb1ff929826d6be9f956fc69ef8346b1d91c5be4f15ad3646f20066e1b4647b9"
     }
   ]
 }

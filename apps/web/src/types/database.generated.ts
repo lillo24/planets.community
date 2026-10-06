@@ -2690,6 +2690,29 @@ export type Database = {
         Args: { p_expected_owner_profile_id: string; p_listing_id: string }
         Returns: string
       }
+      create_editor_proposal_draft: {
+        Args: {
+          p_administrative_area: string
+          p_client_request_id: string
+          p_count_organizers_toward_capacity: boolean
+          p_country_code: string
+          p_description: string
+          p_ends_at: string
+          p_event_timezone: string
+          p_exact_location_visibility: string
+          p_exact_meeting_text: string
+          p_expected_creator_profile_id: string
+          p_locality: string
+          p_public_location_label: string
+          p_registration_capacity: number
+          p_skill_ids: string[]
+          p_skill_importances: string[]
+          p_starts_at: string
+          p_summary: string
+          p_title: string
+        }
+        Returns: string
+      }
       create_project_delegate_invitation:
         | {
             Args: { p_expected_owner_profile_id: string; p_project_id: string }
@@ -2801,6 +2824,27 @@ export type Database = {
             }
             Returns: string
           }
+      create_proposal_draft_from_template: {
+        Args: {
+          p_client_request_id: string
+          p_content_version: string
+          p_expected_creator_profile_id: string
+          p_prefill_capacity?: boolean
+          p_template_id: string
+        }
+        Returns: {
+          accepted_at: string
+          accepted_content_version: string
+          capacity_recommendation: number
+          duration_seconds: number
+          outcome: string
+          prefill_capacity: boolean
+          proposal_id: string
+          request_id: string
+          source_proposal_id: string
+          template_id: string
+        }[]
+      }
       create_recurring_activity_draft:
         | {
             Args: {
@@ -2965,6 +3009,22 @@ export type Database = {
           subject_profile_id: string
           target_kind: string
           target_summary: string
+        }[]
+      }
+      get_moderation_case_template: {
+        Args: { p_case_id: string; p_expected_staff_profile_id: string }
+        Returns: {
+          content: Json
+          content_changed: boolean
+          current_content_version: string
+          original_creator_profile_id: string
+          publicly_available: boolean
+          removal_action: Json
+          removed_at: string
+          report_content_version: string
+          resource_blueprint_count: number
+          source_proposal_id: string
+          template_id: string
         }[]
       }
       get_own_blocked_profile_status: {
@@ -3190,6 +3250,35 @@ export type Database = {
           summary: string
           title: string
           updated_at: string
+        }[]
+      }
+      get_own_proposal_template_application: {
+        Args: {
+          p_client_request_id: string
+          p_expected_creator_profile_id: string
+        }
+        Returns: {
+          accepted_at: string
+          accepted_content_version: string
+          capacity_recommendation: number
+          duration_seconds: number
+          prefill_capacity: boolean
+          proposal_id: string
+          request_id: string
+          source_proposal_id: string
+          template_id: string
+        }[]
+      }
+      get_own_proposal_template_baseline: {
+        Args: { p_expected_creator_profile_id: string; p_template_id: string }
+        Returns: {
+          captured_at: string
+          description: string
+          skill_selections: Json
+          source_proposal_id: string
+          summary: string
+          template_id: string
+          title: string
         }[]
       }
       get_own_recurring_activity: {
@@ -3428,6 +3517,24 @@ export type Database = {
           title: string
         }[]
       }
+      get_public_proposal_template: {
+        Args: { p_template_id: string }
+        Returns: {
+          content_version: string
+          cover_object_path: string
+          creator_display_name: string
+          description: string
+          duration_seconds: number
+          original_creator_profile_id: string
+          registration_capacity_recommendation: number
+          resource_blueprint_count: number
+          skills: Json
+          source_proposal_id: string
+          summary: string
+          template_id: string
+          title: string
+        }[]
+      }
       get_public_recurring_activity: {
         Args: {
           p_occurrence_limit?: number
@@ -3551,6 +3658,20 @@ export type Database = {
           joined_at: string
           profile_id: string
           role_rank: number
+        }[]
+      }
+      list_moderation_case_template_blueprints: {
+        Args: {
+          p_case_id: string
+          p_content_version: string
+          p_cursor_need_id?: string
+          p_expected_staff_profile_id: string
+          p_limit?: number
+        }
+        Returns: {
+          details: string
+          source_need_id: string
+          title: string
         }[]
       }
       list_moderation_cases: {
@@ -4525,6 +4646,39 @@ export type Database = {
           title: string
         }[]
       }
+      list_public_proposal_template_resource_blueprints: {
+        Args: {
+          p_content_version: string
+          p_cursor_need_id?: string
+          p_limit?: number
+          p_template_id: string
+        }
+        Returns: {
+          details: string
+          source_need_id: string
+          title: string
+        }[]
+      }
+      list_public_proposal_templates: {
+        Args: {
+          p_cursor_id?: string
+          p_cursor_linked_at?: string
+          p_limit?: number
+          p_query?: string
+          p_skill_ids?: string[]
+        }
+        Returns: {
+          cover_object_path: string
+          creator_display_name: string
+          linked_at: string
+          original_creator_profile_id: string
+          skills: Json
+          source_proposal_id: string
+          summary: string
+          template_id: string
+          title: string
+        }[]
+      }
       list_public_proposals: {
         Args: {
           p_cursor_id?: string
@@ -4657,6 +4811,35 @@ export type Database = {
           resolved_at: string
           resolved_by_profile_id: string
           status: string
+        }[]
+      }
+      list_similar_active_proposals: {
+        Args: {
+          p_country_code?: string
+          p_excluded_proposal_id?: string
+          p_expected_profile_id: string
+          p_limit?: number
+          p_locality?: string
+          p_skill_ids?: string[]
+          p_title: string
+        }
+        Returns: {
+          administrative_area: string
+          availability: string
+          country_code: string
+          cover_object_path: string
+          derived_status: string
+          ends_at: string
+          event_timezone: string
+          locality: string
+          location_relation: string
+          proposal_id: string
+          public_location_label: string
+          shared_skill_ids: string[]
+          starts_at: string
+          summary: string
+          title: string
+          title_evidence: string
         }[]
       }
       mark_all_notifications_read: {
@@ -4794,6 +4977,13 @@ export type Database = {
         }
         Returns: string
       }
+      recover_editor_proposal_draft: {
+        Args: {
+          p_client_request_id: string
+          p_expected_creator_profile_id: string
+        }
+        Returns: string
+      }
       regenerate_project_participant_invitation: {
         Args: { p_expected_profile_id: string; p_project_id: string }
         Returns: {
@@ -4835,6 +5025,23 @@ export type Database = {
       reject_resource_listing_request: {
         Args: { p_expected_owner_profile_id: string; p_request_id: string }
         Returns: string
+      }
+      remove_moderation_case_template: {
+        Args: {
+          p_case_id: string
+          p_client_request_id: string
+          p_expected_staff_profile_id: string
+          p_reason: string
+          p_reviewed_content_version: string
+          p_template_id: string
+        }
+        Returns: {
+          effective_action_id: string
+          effective_actor_profile_id: string
+          effective_at: string
+          outcome: string
+          request_id: string
+        }[]
       }
       remove_project_member: {
         Args: { p_expected_creator_profile_id: string; p_membership_id: string }

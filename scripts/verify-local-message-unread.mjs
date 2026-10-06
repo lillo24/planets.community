@@ -54,6 +54,9 @@ async function verify() {
   );
   console.log("MSG02: own account subscriptions");
   const hints = await subscribe(reader);
+  // The repository's local auth.email.max_frequency is 1s. Establish a
+  // genuinely independent OTP session without racing that configured limit.
+  await new Promise((resolve) => setTimeout(resolve, 1100));
   const reader2 = await user("reader");
   assert.equal(reader2.id, reader.id);
   const secondSession = await subscribe(reader2);

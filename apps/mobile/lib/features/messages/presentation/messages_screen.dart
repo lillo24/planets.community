@@ -496,13 +496,17 @@ class _ProjectChatCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
+                // Let long role labels move below the title at large text.
+                Wrap(
+                  spacing: AppSpacing.small,
+                  runSpacing: AppSpacing.xSmall,
+                  crossAxisAlignment: WrapCrossAlignment.center,
                   children: [
-                    Expanded(
-                      child: Text(
-                        item.displayTitle,
-                        style: Theme.of(context).textTheme.titleMedium,
-                      ),
+                    Text(
+                      item.displayTitle,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context).textTheme.titleMedium,
                     ),
                     Chip(
                       key: item.isReadOnly
@@ -602,19 +606,20 @@ class _ResourceChatCard extends StatelessWidget {
                         style: Theme.of(context).textTheme.titleMedium,
                       ),
                     ),
-                    Chip(
-                      key: Key('resource-chat-status-${item.chatId}'),
-                      visualDensity: VisualDensity.compact,
-                      avatar: item.isReadOnly
-                          ? const Icon(Icons.lock_outline, size: 18)
-                          : null,
-                      label: Text(
-                        item.isReadOnly
-                            ? l10n.projectChatReadOnlyLabel
-                            : l10n.resourceChatOpenLabel,
-                      ),
-                    ),
                   ],
+                ),
+                // A status chip must not take width away from the avatar/title.
+                Chip(
+                  key: Key('resource-chat-status-${item.chatId}'),
+                  visualDensity: VisualDensity.compact,
+                  avatar: item.isReadOnly
+                      ? const Icon(Icons.lock_outline, size: 18)
+                      : null,
+                  label: Text(
+                    item.isReadOnly
+                        ? l10n.projectChatReadOnlyLabel
+                        : l10n.resourceChatOpenLabel,
+                  ),
                 ),
                 Text(l10n.resourceChatCardContext),
                 const SizedBox(height: AppSpacing.small),

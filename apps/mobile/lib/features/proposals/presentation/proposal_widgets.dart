@@ -76,10 +76,20 @@ class ProposalCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            ProjectCoverImage(
-              key: Key('proposal-cover-${proposal.id}'),
-              title: proposal.title,
-              objectPath: proposal.coverObjectPath,
+            Stack(
+              children: [
+                ProjectCoverImage(
+                  key: Key('proposal-cover-${proposal.id}'),
+                  title: proposal.title,
+                  objectPath: proposal.coverObjectPath,
+                ),
+                if (isRequested)
+                  const Positioned(
+                    top: AppSpacing.small,
+                    right: AppSpacing.small,
+                    child: RequestedBadge(),
+                  ),
+              ],
             ),
             Padding(
               padding: const EdgeInsets.all(AppSpacing.medium),
@@ -100,7 +110,6 @@ class ProposalCard extends StatelessWidget {
                         spacing: AppSpacing.xSmall,
                         runSpacing: AppSpacing.xSmall,
                         children: [
-                          if (isRequested) const RequestedBadge(),
                           ProposalStatusBadge(status: proposal.status),
                         ],
                       ),

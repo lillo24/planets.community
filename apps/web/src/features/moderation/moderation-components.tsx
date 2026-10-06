@@ -1,3 +1,4 @@
+import { TemplateRemovalForm } from "./template-removal-form";
 import Link from "next/link";
 
 import { Badge } from "@/components/ui/badge";
@@ -136,6 +137,150 @@ export function ModerationCaseDetailView({
           </form>
         </CardContent>
       </Card>
+
+      {detail.template ? (
+        <Card>
+          <CardHeader>
+            <CardTitle>Template review</CardTitle>
+            <CardDescription>
+              Current published reusable content. Source provenance is separate
+              from incident context.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="grid gap-4">
+            <p className="font-mono text-xs">
+              Template {detail.template.templateId}
+              <br />
+              Source Proposal {detail.template.sourceProposalId}
+              <br />
+              Original Creator {detail.template.originalCreatorProfileId}
+            </p>
+            <p>
+              {detail.template.removedAt
+                ? "Removed from Workshop"
+                : detail.template.publiclyAvailable
+                  ? "Available in Workshop"
+                  : "Currently unavailable in Workshop"}
+            </p>
+            <p>
+              {detail.template.contentChanged
+                ? "Reusable content differs from the report-time content."
+                : "Reusable content matches the report-time content."}{" "}
+              These tokens identify content, not chronological revisions.
+            </p>
+            <details>
+              <summary>Content tokens</summary>
+              <p className="break-all font-mono text-xs">
+                Report: {detail.template.reportContentVersion}
+                <br />
+                Current: {detail.template.currentContentVersion}
+              </p>
+            </details>
+            <h3 className="font-semibold">{detail.template.title}</h3>
+            {detail.template.summary ? (
+              <p className="whitespace-pre-wrap">{detail.template.summary}</p>
+            ) : null}
+            {detail.template.description ? (
+              <p className="whitespace-pre-wrap">
+                {detail.template.description}
+              </p>
+            ) : null}
+            <ul>
+              {detail.template.skills.map((skill) => (
+                <li key={skill.id}>
+                  {skill.categoryLabel}: {skill.label} · {skill.importance}
+                </li>
+              ))}
+            </ul>
+            <p>
+              Recommended registration capacity:{" "}
+              {detail.template.capacity ?? "Unspecified"} · Duration:{" "}
+              {detail.template.durationSeconds / 3600} hours
+            </p>
+            {detail.templateCoverUrl ? (
+              <a
+                href={detail.templateCoverUrl}
+                target="_blank"
+                rel="noreferrer"
+              >
+                View authorized source cover
+              </a>
+            ) : (
+              <p className="text-muted-foreground">
+                Source cover unavailable. No staff media override is used.
+              </p>
+            )}
+            <section aria-labelledby="template-needs-heading">
+              <h3 id="template-needs-heading" className="font-semibold">
+                Reusable resource needs (
+                {detail.template.resourceBlueprintCount})
+              </h3>
+              {detail.templatePageStale ? (
+                <p role="alert">
+                  Resource content changed.{" "}
+                  <Link href={`/admin/cases/${detail.caseId}`}>
+                    Reload the first page
+                  </Link>{" "}
+                  before continuing review.
+                </p>
+              ) : (
+                <ul className="grid gap-2">
+                  {detail.templateBlueprints?.map((need) => (
+                    <li key={need.sourceNeedId}>
+                      <strong>{need.title}</strong>
+                      {need.details ? (
+                        <p className="whitespace-pre-wrap">{need.details}</p>
+                      ) : null}
+                    </li>
+                  ))}
+                </ul>
+              )}
+              {detail.templateNextNeedId ? (
+                <Link
+                  href={`/admin/cases/${detail.caseId}?needCursor=${detail.templateNextNeedId}&contentVersion=${detail.template.currentContentVersion}`}
+                >
+                  Next resource page
+                </Link>
+              ) : null}
+            </section>
+            {detail.template.removalAction ? (
+              <section
+                aria-labelledby="template-action-heading"
+                className="grid gap-2 rounded-lg border p-4"
+              >
+                <h3 id="template-action-heading" className="font-semibold">
+                  Effective template removal
+                </h3>
+                <p>
+                  {detail.template.removalAction.actorDisplayName} ·{" "}
+                  {formatDate(detail.template.removalAction.effectiveAt)}
+                </p>
+                <p className="whitespace-pre-wrap">
+                  {detail.template.removalAction.reason}
+                </p>
+                <Link
+                  href={`/admin/cases/${detail.template.removalAction.caseId}`}
+                >
+                  Removal case
+                </Link>
+                <p className="break-all font-mono text-xs">
+                  Action {detail.template.removalAction.actionId}
+                  <br />
+                  Reviewed token{" "}
+                  {detail.template.removalAction.reviewedContentVersion}
+                </p>
+              </section>
+            ) : null}
+            <TemplateRemovalForm
+              caseId={detail.caseId}
+              templateId={detail.template.templateId}
+              contentVersion={detail.template.currentContentVersion}
+              removed={detail.template.removedAt !== null}
+              pageStale={detail.templatePageStale ?? false}
+            />
+          </CardContent>
+        </Card>
+      ) : null}
 
       {detail.corroboration ? (
         <Card>
