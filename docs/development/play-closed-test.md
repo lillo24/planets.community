@@ -1,8 +1,12 @@
 # CT-01: start the Play closed test
 
 This is staging distribution of current `main`, not a production launch.
-CT-01 starts at `67133025b4dc8a90a3d303e70d69df6ee6faf84c`, which already
-includes #147; it does not incorporate the unmerged Template Workshop #146.
+CT-01 initially started at `67133025b4dc8a90a3d303e70d69df6ee6faf84c`, which
+already includes #147. The continuation reconciles current `main` at
+`eb70fe249978585f754fa9175d337d7ef8b99e17` (including #150 through #153).
+The original 59 canonical migrations are unchanged; merged #153 adds
+`20261006101031_participation_pair_conversations.sql`, bringing the deployment
+target to 60. It does not incorporate the unmerged Template Workshop #146.
 Use the permanent Android package `community.planets.app`, Flutter 3.47.2,
 and `0.1.0+1`. Check Play's existing bundle history before uploading; increase
 the version code only if 1 has already been used for this package.
@@ -25,8 +29,8 @@ release is published and at least 12 testers are continuously opted in.
    npx --no-install supabase projects list
    npx --no-install supabase link --project-ref YOUR_TEST_PROJECT_REF
    npx --no-install supabase migration list --linked
-   npx --no-install supabase db push --linked --dry-run
-   npx --no-install supabase db push --linked
+   npx --no-install supabase db push --linked --skip-vault --dry-run
+   npx --no-install supabase db push --linked --skip-vault
    npx --no-install supabase migration list --linked
    npx --no-install supabase db lint --linked --schema public,private --level warning --fail-on warning
    npx --no-install supabase db advisors --linked --type security --level warn --fail-on error
@@ -37,6 +41,16 @@ release is published and at least 12 testers are continuously opted in.
    Do not use `db reset`, `demo:reset:local`, `--include-seed`, or migration-history
    repair against the hosted project. Empty browsing is acceptable. The starter
    skill catalog and media buckets are already migration-owned.
+
+   If the direct endpoint is unreachable on an IPv4-only network, use the
+   project's **Connect > Direct > Session pooler** connection details, as
+   documented by [Supabase](https://supabase.com/docs/guides/database/connecting-to-postgres).
+   Inspect this installed CLI's `db push --help` before using `--db-url`.
+   Percent-encode the password when assembling a URI in process memory; never
+   paste a credential-bearing URI into shell history, output or a report.
+   A connection error before a successful dry run is a deployment blocker, not
+   evidence of an applied migration. Diagnose network bans/restrictions and
+   routing instead of rewriting history or repeatedly retrying the same path.
 
 3. Database > SQL Editor: run these **read-only** checks. Compare migration
    versions with `supabase/migrations`; all must be applied with no extras.
@@ -111,6 +125,36 @@ workers remain separately deferred; they do not block OTP/content testing.
    Subject: `Your PLANETS sign-in code`. Keep the template code-only; do not
    substitute `{{ .ConfirmationURL }}`. Email confirmations can remain enabled
    on hosted Supabase; `verifyOTP(type: email)` confirms the new user's code.
+
+   The repository-scoped CLI also supports a partial hosted configuration
+   update. Use an isolated temporary directory containing
+   `supabase/config.toml` with **only** the following declarations, and copy the
+   repository template into that directory's `supabase/templates/magic_link.html`:
+
+   ```toml
+   project_id = "YOUR_TEST_PROJECT_REF"
+
+   [auth.email]
+   otp_length = 6
+   otp_expiry = 3600
+
+   [auth.email.template.confirmation]
+   subject = "Your PLANETS sign-in code"
+   content_path = "./supabase/templates/magic_link.html"
+
+   [auth.email.template.magic_link]
+   subject = "Your PLANETS sign-in code"
+   content_path = "./supabase/templates/magic_link.html"
+   ```
+
+   Run `supabase config diff --project-ref YOUR_TEST_PROJECT_REF --workdir TEMP_AUTH_DIRECTORY`
+   through `npx --no-install`, review the declared changes, then run `config push`
+   with the same flags. Undeclared remote settings remain unchanged. Do not push
+   the full local development configuration to hosted Auth. Re-read the diff and
+   both saved template bodies afterward; a subject-only diff does not establish
+   that the body matches. Confirm SMTP remains enabled without printing its
+   credentials.
+
 5. Review Auth email rate limits and Resend Free daily/monthly limits in the
    dashboards. Custom SMTP starts with a low Supabase email allowance; set an
    appropriate test allowance within the Free quotas and stagger onboarding.
