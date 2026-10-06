@@ -3,13 +3,14 @@ import test from "node:test";
 import {
   applyParticipationRpcNullability,
   participationRpcNullableFields,
+  participationRpcNullableNumberFields,
 } from "./participation-rpc-nullability.mjs";
 
 const fixture = () =>
   Object.entries(participationRpcNullableFields)
     .map(
       ([name, fields]) =>
-        `      ${name}: {\n        Args: { p_expected_profile_id: string }\n        Returns: {\n${fields.map((field) => `          ${field}: string`).join("\n")}\n          unchanged: string\n        }[]\n      }`,
+        `      ${name}: {\n        Args: { p_expected_profile_id: string }\n        Returns: {\n${fields.map((field) => `          ${field}: string`).join("\n")}\n${(participationRpcNullableNumberFields[name] ?? []).map((field) => `          ${field}: number\n`).join("")}          unchanged: string\n        }[]\n      }`,
     )
     .join("\n");
 
@@ -21,6 +22,7 @@ test("nullable participation results are accurate while unrelated fields stay un
   }
   assert.ok(output.includes("Args: { p_expected_profile_id: string }"));
   assert.ok(output.includes("unchanged: string\n"));
+  assert.ok(output.includes("pending_count: number | null"));
 });
 test("already accurate generated results are unchanged", () => {
   const output = applyParticipationRpcNullability(fixture());

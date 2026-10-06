@@ -30,7 +30,7 @@ class SupabaseMessageChatsGateway implements MessageChatsGateway {
     MessageChatCursor? cursor,
   }) async {
     final response = await _client.rpc<List<dynamic>>(
-      'list_own_scoped_message_chat_items',
+      'list_own_scoped_conversation_items',
       params: {
         'p_expected_profile_id': expectedProfileId,
         'p_scope': scope.wireValue,
@@ -82,6 +82,7 @@ class MessageChatsPayloadParser {
     'project_request_message',
     'project_request_resolved_at',
     'accepted_project_group_chat_id',
+    'pending_count',
   };
 
   MessageChatItem item(Object? value) {
@@ -98,6 +99,7 @@ class MessageChatsPayloadParser {
 
   ProjectMessageChatItem _projectItem(Map<String, dynamic> row) {
     _requireNulls(row, const {
+      'pending_count',
       'resource_request_id',
       'resource_agreement_id',
       'resource_listing_id',
@@ -131,6 +133,7 @@ class MessageChatsPayloadParser {
 
   ResourceMessageChatItem _resourceItem(Map<String, dynamic> row) {
     _requireNulls(row, const {
+      'pending_count',
       'project_id',
       'project_kind',
       ..._projectRequestKeys,
@@ -194,7 +197,14 @@ class MessageChatsPayloadParser {
     final resolvedAt = _optionalDate(row, 'project_request_resolved_at');
     final acceptedChatId = _optionalUuid(row, 'accepted_project_group_chat_id');
     final readOnly = _bool(row, 'is_read_only');
-    if ((status == JoinRequestStatus.pending) != !readOnly ||
+    final pendingCount = row['pending_count'];
+    final viewerRole = ProjectRequestChatViewerRole.fromWire(
+      _string(row, 'viewer_role'),
+    );
+    if (pendingCount is! int ||
+        viewerRole == ProjectRequestChatViewerRole.delegate ||
+        pendingCount < 0 ||
+        (pendingCount == 0 && !readOnly) ||
         (status == JoinRequestStatus.pending) != (resolvedAt == null) ||
         (status != JoinRequestStatus.accepted && acceptedChatId != null)) {
       throw const FormatException(
@@ -205,9 +215,7 @@ class MessageChatsPayloadParser {
       chatId: _uuid(row, 'chat_id'),
       activityAt: _date(row, 'activity_at'),
       displayTitle: _string(row, 'display_title'),
-      viewerRole: ProjectRequestChatViewerRole.fromWire(
-        _string(row, 'viewer_role'),
-      ),
+      viewerRole: viewerRole,
       isReadOnly: readOnly,
       lastVisibleMessageId: _optionalUuid(row, 'last_visible_message_id'),
       lastVisibleMessageBody: _optionalString(row, 'last_visible_message_body'),
@@ -238,6 +246,7 @@ class MessageChatsPayloadParser {
       requestMessage: _optionalString(row, 'project_request_message'),
       resolvedAt: resolvedAt,
       acceptedProjectGroupChatId: acceptedChatId,
+      pendingCount: pendingCount,
     );
   }
 

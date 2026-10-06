@@ -8,6 +8,15 @@ leave required checks pending.
 
 ## Validation areas
 
+MSG01 adds a populated predecessor migration rehearsal before Database's clean
+reset, plus its pair/privacy/race/Realtime verifier after structured Messages.
+Both run only in the existing Database job. The full local `check:db` follows the
+same order. The upgrade rehearsal requires `PLANETS_DISPOSABLE_QA=1` outside CI
+and resets its selected local stack; verify ownership, project ID, ports and
+`MAILPIT_URL` first. Required-check/path classification is unchanged. This PR's
+root scripts/workflow edits use the existing conservative classification; no
+gate is weakened and no unrelated recurring trigger is added.
+
 | Check      | Authoritative validation                                                                                                   | Runs for                                                                                                                                                                                 |
 | ---------- | -------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `Mobile`   | Flutter localization generation, Dart formatting, analysis, and tests                                                      | Non-documentation changes under `apps/mobile`, the mobile local-config generator, shared local Supabase helpers, and cross-cutting changes                                               |

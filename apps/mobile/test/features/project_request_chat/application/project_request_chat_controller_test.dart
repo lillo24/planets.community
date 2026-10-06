@@ -19,6 +19,152 @@ import '../../../support/fake_project_request_chat.dart';
 import '../../../support/fake_profile_photo.dart';
 
 void main() {
+  test('read-only pair keeps one subscription and reactivates on a new request hint', () async {
+    final gateway = FakeProjectRequestChatGateway()
+      ..summary = projectRequestChatSummaryFixture(
+        status: JoinRequestStatus.rejected,
+      );
+    final session = _readyContainer(gateway);
+    addTearDown(session.dispose);
+    final controller = session.container.read(
+      projectRequestChatProvider.notifier,
+    );
+    final requestId = gateway.summary.requestId;
+    await controller.load(expectedProfileId: 'user-1', requestId: requestId);
+    controller.startSignals('user-1', requestId);
+    expect(gateway.subscriptions, hasLength(1));
+    final repeat = projectRequestChatRequestFixture(
+      requestId: '00000000-0000-4000-8000-000000000312',
+    );
+    gateway.items = [repeat, ...gateway.items];
+    gateway.summary = projectRequestChatSummaryFixture(
+      status: JoinRequestStatus.rejected,
+      pendingCount: 1,
+      pendingRequests: [repeat],
+      writable: true,
+    );
+    gateway.emitSignal();
+    await Future<void>.delayed(const Duration(milliseconds: 250));
+    final state = session.container.read(projectRequestChatProvider);
+    expect(state.summary?.hasSendEntitlement, isTrue);
+    expect(
+      state.items.whereType<ProjectRequestChatRequestItem>().map(
+        (item) => item.requestId,
+      ),
+      contains(repeat.requestId),
+    );
+    expect(gateway.subscriptions, hasLength(1));
+  });
+
+  test('reconnect catches up across multiple pages and refreshes old request status in place', () async {
+    final gateway = FakeProjectRequestChatGateway();
+    final session = _readyContainer(gateway);
+    addTearDown(session.dispose);
+    final controller = session.container.read(
+      projectRequestChatProvider.notifier,
+    );
+    final requestId = gateway.summary.requestId;
+    await controller.load(expectedProfileId: 'user-1', requestId: requestId);
+    controller.startSignals('user-1', requestId);
+    final originalCreatedAt = session.container
+        .read(projectRequestChatProvider)
+        .items
+        .single
+        .createdAt;
+    gateway.summary = projectRequestChatSummaryFixture(
+      status: JoinRequestStatus.rejected,
+    );
+    gateway.items = [
+      for (var index = 65; index > 0; index--)
+        projectRequestChatMessageFixture(
+          itemId:
+              '00000000-0000-4000-8000-${index.toString().padLeft(12, '0')}',
+          createdAt: DateTime.utc(2026, 9, 20, 11, index),
+        ),
+      ...gateway.items,
+    ];
+    gateway.subscriptions.single.onStatus(
+      ProjectRequestChatConnectionStatus.disconnected,
+    );
+    gateway.subscriptions.single.onStatus(
+      ProjectRequestChatConnectionStatus.connected,
+    );
+    await Future<void>.delayed(const Duration(milliseconds: 300));
+    final state = session.container.read(projectRequestChatProvider);
+    expect(state.items, hasLength(66));
+    expect(state.items.map((item) => item.canonicalKey).toSet(), hasLength(66));
+    final request = state.items
+        .whereType<ProjectRequestChatRequestItem>()
+        .single;
+    expect(request.createdAt, originalCreatedAt);
+    expect(request.requestStatus, JoinRequestStatus.rejected);
+    expect(
+      gateway.calls.where((call) => call.startsWith('history:')).length,
+      4,
+    );
+  });
+
+  test('conflict recovery catches up every intervening page without resending', () async {
+    final gateway = FakeProjectRequestChatGateway()
+      ..sendError = const PostgrestException(
+        message: 'Resolved',
+        code: 'PT409',
+      );
+    final session = _readyContainer(gateway);
+    addTearDown(session.dispose);
+    final controller = session.container.read(
+      projectRequestChatProvider.notifier,
+    );
+    final requestId = gateway.summary.requestId;
+    await controller.load(expectedProfileId: 'user-1', requestId: requestId);
+    final originalCreatedAt = session.container
+        .read(projectRequestChatProvider)
+        .items
+        .single
+        .createdAt;
+    gateway.onSendAttempt = () {
+      gateway.summary = projectRequestChatSummaryFixture(
+        status: JoinRequestStatus.rejected,
+      );
+      gateway.items = [
+        for (var index = 65; index > 0; index--)
+          projectRequestChatMessageFixture(
+            itemId:
+                '00000000-0000-4000-8000-${index.toString().padLeft(12, '0')}',
+            createdAt: DateTime.utc(2026, 9, 20, 11, index),
+          ),
+        ...gateway.items,
+      ];
+    };
+    expect(
+      await controller.send(
+        expectedProfileId: 'user-1',
+        requestId: requestId,
+        body: 'Draft',
+      ),
+      isFalse,
+    );
+    final state = session.container.read(projectRequestChatProvider);
+    expect(state.items, hasLength(66));
+    expect(state.items.map((item) => item.canonicalKey).toSet(), hasLength(66));
+    expect(
+      state.items.whereType<ProjectRequestChatRequestItem>().single.createdAt,
+      originalCreatedAt,
+    );
+    expect(
+      state.items
+          .whereType<ProjectRequestChatRequestItem>()
+          .single
+          .requestStatus,
+      JoinRequestStatus.rejected,
+    );
+    expect(state.failure, ProjectRequestChatFailureKind.conflict);
+    expect(
+      gateway.calls.where((call) => call.startsWith('send:')),
+      hasLength(1),
+    );
+  });
+
   test('loads structured request, sends, and dedupes signal refresh', () async {
     final gateway = FakeProjectRequestChatGateway()
       ..items = [

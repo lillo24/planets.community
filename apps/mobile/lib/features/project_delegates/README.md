@@ -73,6 +73,12 @@ Project workspace link before or after chat activation. Workspace reads also
 include current participants, but delegated-authority revocation immediately
 removes mutation access unless the profile still has another manager role.
 
+MSG01 keeps all existing scoped participation notes/offers and manager actions,
+but ordinary Co-creators/Co-organizers who are not pair endpoints have no personal
+conversation history, preview, sending or Realtime access. Legacy request-chat
+URLs lead them to authorized Requests details. Project group-chat and workspace
+authority remain governed by their separate existing contracts.
+
 Invitation creation returns plaintext once. The token is held only in the
 immediate controller/result-sheet state, is never included in the pending
 invitation list, and is cleared when that surface is replaced or disposed.
