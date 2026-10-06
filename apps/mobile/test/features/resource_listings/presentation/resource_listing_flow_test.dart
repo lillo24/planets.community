@@ -10,6 +10,8 @@ import 'package:planets_mobile/app/router/app_router.dart';
 import 'package:planets_mobile/core/config/app_config.dart';
 import 'package:planets_mobile/features/auth/data/auth_gateway.dart';
 import 'package:planets_mobile/features/auth/domain/auth_models.dart';
+import 'package:planets_mobile/features/moderation/data/own_interaction_restriction_gateway.dart';
+import 'package:planets_mobile/features/moderation/data/own_consequence_gateway.dart';
 import 'package:planets_mobile/features/cover_media/application/cover_media_processor.dart';
 import 'package:planets_mobile/features/cover_media/application/resource_listing_cover_reconciler.dart';
 import 'package:planets_mobile/features/cover_media/data/cover_media_gateway.dart';
@@ -33,6 +35,8 @@ import 'package:planets_mobile/features/resource_loans/data/resource_loan_gatewa
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../support/fake_auth.dart';
+import '../../../support/fake_own_interaction_restriction.dart';
+import '../../../support/fake_own_consequences.dart';
 import '../../../support/fake_cover_media.dart';
 import '../../../support/fake_profile.dart';
 import '../../../support/fake_profile_photo.dart';
@@ -142,6 +146,186 @@ void main() {
           ),
           findsNWidgets(expected.length),
         );
+      },
+    );
+  }
+
+  testWidgets(
+    'Resource account switch clears modal draft and rejects late own result',
+    (tester) async {
+      final pending = Completer<bool>();
+      final restriction = FakeOwnInteractionRestrictionGateway()
+        ..pending = pending.future;
+      final app = await _pump(
+        tester,
+        gateway: FakeResourceListingGateway()
+          ..publicDetail = publicResourceListingDetailFixture(),
+        identityId: otherProfileId,
+        resourceRequests: FakeResourceRequestGateway()
+          ..createError = const PostgrestException(
+            message: 'private',
+            code: 'PT409',
+          ),
+        profilePhotos: FakeProfilePhotoGateway()
+          ..photo = profilePhotoFixture(profileId: otherProfileId),
+        ownRestriction: restriction,
+      );
+      app.read(appRouterProvider).go('/resources/$resourceListingId');
+      await tester.pumpAndSettle();
+      await _tap(tester, 'resource-request-action');
+      await tester.enterText(
+        find.byKey(const Key('resource-request-message')),
+        'Account A private modal draft',
+      );
+      await _tap(tester, 'resource-request-submit');
+      expect(restriction.identities, [otherProfileId]);
+      (app.read(authGatewayProvider) as FakeAuthGateway).emit(
+        const AuthSnapshot(identity: AuthIdentity(id: 'unrelated-account')),
+      );
+      await tester.pumpAndSettle();
+      pending.complete(true);
+      await tester.pumpAndSettle();
+      expect(find.text('Account A private modal draft'), findsNothing);
+      expect(
+        find.byKey(const Key('own-request-restriction-explanation')),
+        findsNothing,
+      );
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  testWidgets(
+    'own restriction notices/back retains Resource modal and message; retry after removal is explicit',
+    (tester) async {
+      final restriction = FakeOwnInteractionRestrictionGateway()..active = true;
+      final requests = FakeResourceRequestGateway()
+        ..createError = const PostgrestException(
+          message: 'private',
+          code: 'PT409',
+        );
+      final app = await _pump(
+        tester,
+        gateway: FakeResourceListingGateway()
+          ..publicDetail = publicResourceListingDetailFixture(),
+        identityId: otherProfileId,
+        resourceRequests: requests,
+        profilePhotos: FakeProfilePhotoGateway()
+          ..photo = profilePhotoFixture(profileId: otherProfileId),
+        ownRestriction: restriction,
+      );
+      app.read(appRouterProvider).go('/resources/$resourceListingId');
+      await tester.pumpAndSettle();
+      await _tap(tester, 'resource-request-action');
+      await tester.enterText(
+        find.byKey(const Key('resource-request-message')),
+        'Keep my Resource draft',
+      );
+      await _tap(tester, 'resource-request-submit');
+      expect(
+        find.byKey(const Key('resource-request-composer-error')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const Key('own-request-restriction-explanation')),
+        findsOneWidget,
+      );
+      await _tap(tester, 'own-request-restriction-notices');
+      expect(
+        app.read(appRouterProvider).routerDelegate.state.uri.path,
+        '/settings/notices',
+      );
+      // The private-history page must be ABOVE the modal, not hidden behind it.
+      expect(
+        find.byKey(const Key('resource-request-message')).hitTestable(),
+        findsNothing,
+      );
+      await tester.pageBack();
+      await tester.pumpAndSettle();
+      expect(
+        find.byKey(const Key('resource-request-message')).hitTestable(),
+        findsOneWidget,
+      );
+      expect(
+        tester
+            .widget<TextField>(
+              find.byKey(const Key('resource-request-message')),
+            )
+            .controller!
+            .text,
+        'Keep my Resource draft',
+      );
+      expect(
+        requests.calls.where((c) => c.startsWith('create:')),
+        hasLength(1),
+      );
+      restriction.active = false;
+      requests.createError = null;
+      await _tap(tester, 'resource-request-submit');
+      expect(
+        requests.calls.where((c) => c.startsWith('create:')),
+        hasLength(2),
+      );
+      expect(requests.lastMessage, 'Keep my Resource draft');
+      expect(find.byKey(const Key('resource-request-message')), findsNothing);
+    },
+  );
+
+  for (final code in ['PT409', 'active PT409', '22023', 'PT422']) {
+    testWidgets(
+      'Resource $code preserves specific failure and canonical conflict recovery',
+      (tester) async {
+        final restriction = FakeOwnInteractionRestrictionGateway()
+          ..active = false;
+        final requests = FakeResourceRequestGateway();
+        final app = await _pump(
+          tester,
+          gateway: FakeResourceListingGateway()
+            ..publicDetail = publicResourceListingDetailFixture(),
+          identityId: otherProfileId,
+          resourceRequests: requests,
+          profilePhotos: FakeProfilePhotoGateway()
+            ..photo = profilePhotoFixture(profileId: otherProfileId),
+          ownRestriction: restriction,
+        );
+        app.read(appRouterProvider).go('/resources/$resourceListingId');
+        await tester.pumpAndSettle();
+        await _tap(tester, 'resource-request-action');
+        requests.createError = PostgrestException(
+          message: 'private',
+          code: code == 'active PT409' ? 'PT409' : code,
+        );
+        if (code == 'active PT409') {
+          requests.history = [
+            resourceRequestFixture(requesterProfileId: otherProfileId),
+          ];
+        }
+        await _tap(tester, 'resource-request-submit');
+        expect(
+          find.byKey(const Key('own-request-restriction-explanation')),
+          findsNothing,
+        );
+        expect(
+          restriction.identities,
+          code.endsWith('PT409') ? [otherProfileId] : isEmpty,
+        );
+        if (code == 'active PT409') {
+          expect(
+            find.text(
+              'You already have an active request for this listing. The latest request has been loaded.',
+            ),
+            findsOneWidget,
+          );
+        }
+        if (code == 'PT422') {
+          expect(
+            find.byKey(const Key('profile-photo-trust-gate')),
+            findsOneWidget,
+          );
+          await _tap(tester, 'profile-photo-trust-go-back');
+        }
+        expect(find.text('private'), findsNothing);
+        await tester.tap(find.text('Cancel'));
+        await tester.pumpAndSettle();
       },
     );
   }
@@ -304,7 +488,6 @@ void main() {
     await _tap(tester, 'resource-card-$resourceListingId');
     expect(find.text(fullLocation), findsOneWidget);
   });
-
   testWidgets('public card and detail render the canonical shared cover', (
     tester,
   ) async {
@@ -1278,6 +1461,7 @@ Future<ProviderContainer> _pump(
   CoverMediaPicker? coverPicker,
   CoverMediaProcessor? coverProcessor,
   CoverCropPageBuilder? cropBuilder,
+  FakeOwnInteractionRestrictionGateway? ownRestriction,
 }) async {
   await tester.binding.setSurfaceSize(const Size(900, 4200));
   addTearDown(() => tester.binding.setSurfaceSize(null));
@@ -1291,6 +1475,12 @@ Future<ProviderContainer> _pump(
   await tester.pumpWidget(
     ProviderScope(
       overrides: [
+        ownInteractionRestrictionGatewayProvider.overrideWithValue(
+          ownRestriction ?? FakeOwnInteractionRestrictionGateway(),
+        ),
+        ownConsequenceGatewayProvider.overrideWithValue(
+          FakeOwnConsequenceGateway(),
+        ),
         appConfigProvider.overrideWithValue(
           AppConfig.fromValues(
             appEnvironment: 'local',

@@ -15,13 +15,13 @@ class ProfilePhotoController extends Notifier<ProfilePhotoState> {
 
   @override
   ProfilePhotoState build() {
-    ref.listen(authSessionProvider.select((session) => session.identity?.id), (
-      _,
-      _,
-    ) {
-      _revision++;
-      state = const ProfilePhotoState();
-    });
+    ref.listen(
+      authSessionProvider.select((session) => session.accountAccessIdentityId),
+      (_, _) {
+        _revision++;
+        state = const ProfilePhotoState();
+      },
+    );
     ref.onDispose(() => _revision++);
     return const ProfilePhotoState();
   }

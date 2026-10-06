@@ -62,7 +62,9 @@ class _ProjectContextDialogState extends ConsumerState<ProjectContextDialog> {
   @override
   Widget build(BuildContext context) {
     ref.listen(
-      authSessionProvider.select((s) => s.identity?.id),
+      authSessionProvider.select(
+        (s) => (s.identity?.id, s.accountAccessIdentityId),
+      ),
       (_, _) => _invalidate(),
     );
     return _invalid ? const SizedBox.shrink() : widget.child;

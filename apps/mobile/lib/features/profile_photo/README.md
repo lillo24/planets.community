@@ -97,6 +97,11 @@ return a public photo. Unblock never assumes private photo access was restored.
 
 Native/package notes:
 
+The shared trust dialog takes its return URI from the router's current state,
+including when called from the pageless Resource composer modal. It avoids
+page-associated state lookup inside that modal, which can loop in the resolved
+router; editor/Back preserves the existing draft and never auto-submits.
+
 - `image_picker` uses the Android system picker with no storage or camera
   permission. Android remains at Flutter's existing minimum SDK 24.
 - iOS Profile, Release, and Debug builds declare only

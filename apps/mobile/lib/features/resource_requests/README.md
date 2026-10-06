@@ -39,3 +39,12 @@ relationship image.
 refresh after blocking because the backend may withdraw/reject them; accepted
 coordination still exposes its agreement/chat. New-request `PT409` is shown only
 as a generic unavailable interaction and never identifies an inbound block.
+
+09C2B2 adds one fresh own-restriction explanatory read only after new-request
+`PT409`, after canonical refresh. A confirmed active own restriction adds a
+notices action without replacing generic failure or canonical-active-request
+recovery. Notices pushes above the composer modal; Back retains its text and
+never submits. A new attempt clears explanation; account loss clears the draft
+and invalidates late completions. `PT403` requests the existing Auth status flow.
+Accept/reject/withdraw and coordination remain unchanged. The moderation feature
+owns this bounded status contract and draft wording.

@@ -10,13 +10,13 @@ class ProfileController extends Notifier<ProfileState> {
 
   @override
   ProfileState build() {
-    ref.listen(authSessionProvider.select((session) => session.identity?.id), (
-      _,
-      _,
-    ) {
-      _revision++;
-      state = const ProfileState();
-    });
+    ref.listen(
+      authSessionProvider.select((session) => session.accountAccessIdentityId),
+      (_, _) {
+        _revision++;
+        state = const ProfileState();
+      },
+    );
     ref.onDispose(() => _revision++);
     return const ProfileState();
   }
@@ -77,8 +77,10 @@ class ProfileController extends Notifier<ProfileState> {
           .read(profileGatewayProvider)
           .loadOwnProfile(identity.id);
       if (!_isCurrent(revision, identity.id)) return false;
-      ref.read(authSessionProvider.notifier).markProfileReady(identity);
       state = ProfileState(phase: ProfilePhase.ready, data: data);
+      await ref
+          .read(authSessionProvider.notifier)
+          .confirmProfileReady(identity);
       return true;
     } catch (_) {
       if (!_isCurrent(revision, identity.id)) return false;

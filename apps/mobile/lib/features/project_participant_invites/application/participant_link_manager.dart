@@ -50,7 +50,9 @@ class ParticipantLinkManager extends Notifier<ParticipantLinkManagerState> {
   @override
   ParticipantLinkManagerState build() {
     ref.listen(
-      authSessionProvider.select((s) => s.identity?.id),
+      authSessionProvider.select(
+        (s) => (s.identity?.id, s.accountAccessIdentityId),
+      ),
       (_, _) => _clear(),
     );
     ref.listen(projectManagementRoleProvider, (_, role) {
@@ -90,7 +92,7 @@ class ParticipantLinkManager extends Notifier<ParticipantLinkManagerState> {
       ref.mounted &&
       revision == _revision &&
       state.isFor(account, project, kind) &&
-      ref.read(authSessionProvider).identity?.id == account;
+      ref.read(authSessionProvider).accountAccessIdentityId == account;
   Future<ProjectManagementRole> _role(String account, String project) async {
     final session = ref.read(authSessionProvider);
     if (session.identity?.id != account ||

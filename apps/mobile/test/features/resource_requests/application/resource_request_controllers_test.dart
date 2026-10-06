@@ -22,6 +22,65 @@ import '../../../support/fake_resource_listing.dart';
 import '../../../support/fake_resource_request.dart';
 
 void main() {
+  for (final suspended in [false, true]) {
+    test(
+      'new Resource PT403 refreshes Auth and never leaves submission busy: $suspended',
+      () async {
+        final gateway = FakeResourceRequestGateway()
+          ..createError = const PostgrestException(
+            message: 'private',
+            code: 'PT403',
+          );
+        final session = _readyContainer(gateway, requesterProfileId);
+        addTearDown(session.dispose);
+        (session.read(
+              profileAnchorGatewayProvider,
+            ) as FakeProfileAnchorGateway).readiness =
+            ProfileAnchorReadiness.complete;
+        final auth = session.read(authGatewayProvider) as FakeAuthGateway;
+        final check = Completer<void>();
+        auth.suspensionDelay = check.future;
+        if (suspended) {
+          auth.suspension = AccountSuspensionStatus.active(
+            consequenceId: 'synthetic',
+            appliedAt: DateTime.utc(2026),
+            userReason: 'Synthetic',
+          );
+        }
+        final submit = session
+            .read(resourceRequestComposerProvider(resourceListingId).notifier)
+            .submit(
+              expectedRequesterProfileId: requesterProfileId,
+              message: 'Retained draft',
+            );
+        await Future<void>.delayed(Duration.zero);
+        expect(auth.suspensionCheckCount, 1);
+        expect(
+          session
+              .read(resourceRequestComposerProvider(resourceListingId))
+              .isSubmitting,
+          isFalse,
+        );
+        check.complete();
+        expect(await submit, isFalse);
+        expect(
+          session.read(authSessionProvider).phase,
+          suspended ? AuthSessionPhase.suspended : AuthSessionPhase.ready,
+        );
+        expect(
+          session
+              .read(resourceRequestComposerProvider(resourceListingId))
+              .isSubmitting,
+          isFalse,
+        );
+        expect(
+          gateway.calls.where((call) => call.startsWith('create:')),
+          hasLength(1),
+        );
+      },
+    );
+  }
+
   test('maps the authoritative photo gate to a dedicated failure', () {
     expect(
       mapResourceRequestFailure(

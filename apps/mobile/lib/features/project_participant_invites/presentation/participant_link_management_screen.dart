@@ -66,7 +66,7 @@ class _ParticipantLinkManagementScreenState
   bool get _current =>
       mounted &&
       _account != null &&
-      ref.read(authSessionProvider).identity?.id == _account &&
+      ref.read(authSessionProvider).accountAccessIdentityId == _account &&
       GoRouter.of(context).state.uri.path ==
           ParticipantInvitationRoutes.manage(widget.kind, widget.projectId);
   Future<void> _load() async {

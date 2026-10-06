@@ -448,6 +448,44 @@ void main() {
       expect(find.byType(AlertDialog), findsNothing);
     },
   );
+  for (final failedStatus in [false, true]) {
+    testWidgets(
+      'denied account gate closes sharing overlay before late copy: failedStatus=$failedStatus',
+      (tester) async {
+        final h = await _pump(
+          tester,
+          '/proposals/project-1',
+          role: ProjectManagementRole.creator,
+        );
+        await tester.tap(find.byKey(const Key('project-share-action')));
+        await tester.pumpAndSettle();
+        await tester.tap(find.byKey(const Key('project-share-special')));
+        await tester.pumpAndSettle();
+        final release = Completer<void>();
+        h.gateway.readDelay = release.future;
+        await tester.tap(find.byKey(const Key('project-share-copy')));
+        await tester.pump();
+        final auth = h.container.read(authGatewayProvider) as FakeAuthGateway;
+        if (failedStatus) {
+          auth.suspensionError = StateError('synthetic unavailable status');
+        } else {
+          auth.suspension = AccountSuspensionStatus.active(
+            consequenceId: 'synthetic',
+            appliedAt: DateTime.utc(2026),
+            userReason: 'Synthetic',
+          );
+        }
+        await h.container.read(authSessionProvider.notifier).refresh();
+        await tester.pump();
+        release.complete();
+        await tester.pumpAndSettle();
+        expect(h.router.state.uri.path, '/account/suspended');
+        expect(find.byType(AlertDialog), findsNothing);
+        expect(h.sharing.copied, isNull);
+        expect(tester.takeException(), isNull);
+      },
+    );
+  }
   testWidgets(
     'management copy survives canonical read; confirmed revoke uses displayed id',
     (tester) async {

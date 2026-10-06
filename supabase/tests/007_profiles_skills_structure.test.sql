@@ -109,7 +109,8 @@ select is(
   'skills have one read-only policy'
 );
 select is(
-  (select count(*) from pg_policies where schemaname = 'public' and tablename = 'profile_skills'),
+  -- Keep the operation-policy contract; 112 verifies the global account gate.
+  (select count(*) from pg_policies where schemaname = 'public' and tablename = 'profile_skills' and policyname <> 'account_active_required'),
   3::bigint,
   'profile skills have explicit select, insert, and delete policies'
 );
@@ -119,6 +120,7 @@ select is(
     from pg_policies
     where schemaname = 'public'
       and tablename = 'profile_field_visibility'
+      and policyname <> 'account_active_required'
   ),
   3::bigint,
   'profile visibility has explicit select, insert, and update policies'

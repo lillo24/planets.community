@@ -13,6 +13,93 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../support/fake_auth.dart';
 
 void main() {
+  // MODINT01: main's inactive provider seam must obey the inherited canonical
+  // session epoch, even when no explicit command cancellation accompanies it.
+  for (final provider in AuthProvider.values) {
+    for (final result in ['success', 'cancelled', 'failure', 'exception']) {
+      test(
+        '$provider ignores stale $result after A signs out and returns',
+        () async {
+          final release = Completer<void>();
+          final auth = FakeAuthGateway();
+          final profile = FakeProfileAnchorGateway()
+            ..readiness = ProfileAnchorReadiness.complete;
+          final adapter = FakeProviderAuthAdapter()
+            ..signInDelay = release.future;
+          switch (result) {
+            case 'cancelled':
+              adapter.result = const ProviderAuthCancelled();
+            case 'failure':
+              adapter.result = const ProviderAuthFailure(
+                AuthFailureKind.unexpected,
+              );
+            case 'exception':
+              adapter.signInError = StateError('obsolete synthetic failure');
+          }
+          final container = _container(auth, profile, providerAdapter: adapter);
+          addTearDown(container.dispose);
+          addTearDown(auth.close);
+          final session = container.read(authSessionProvider.notifier);
+          await session.start();
+          await session.bootstrap(const AuthIdentity(id: 'user-1'));
+          final commands = container.read(authCommandProvider.notifier);
+          final pending = commands.signInWithProvider(provider);
+          await Future<void>.delayed(Duration.zero);
+          auth.emit(const AuthSnapshot());
+          await Future<void>.delayed(Duration.zero);
+          await session.bootstrap(const AuthIdentity(id: 'user-1'));
+          final checksBeforeRelease = auth.suspensionCheckCount;
+          final anchorsBeforeRelease = profile.ensureCount;
+          release.complete();
+
+          expect(await pending, isFalse);
+          expect(
+            container.read(authSessionProvider).phase,
+            AuthSessionPhase.ready,
+          );
+          expect(container.read(authCommandProvider).failure, isNull);
+          expect(container.read(authCommandProvider).isBusy, isFalse);
+          expect(auth.suspensionCheckCount, checksBeforeRelease);
+          expect(profile.ensureCount, anchorsBeforeRelease);
+        },
+      );
+    }
+
+    test('$provider follows overlapping canonical profile bootstrap', () async {
+      final release = Completer<void>();
+      final auth = FakeAuthGateway();
+      final profile = FakeProfileAnchorGateway()
+        ..ensureDelay = release.future
+        ..readiness = ProfileAnchorReadiness.complete;
+      final container = _container(
+        auth,
+        profile,
+        providerAdapter: FakeProviderAuthAdapter(),
+      );
+      addTearDown(container.dispose);
+      addTearDown(auth.close);
+      final session = container.read(authSessionProvider.notifier);
+      await session.start();
+      final pending = container
+          .read(authCommandProvider.notifier)
+          .signInWithProvider(provider);
+      await Future<void>.delayed(Duration.zero);
+      expect(profile.ensureCount, 1);
+      final replacement = session.bootstrap(const AuthIdentity(id: 'user-1'));
+      await Future<void>.delayed(Duration.zero);
+      release.complete();
+
+      expect(await pending, isTrue);
+      expect(await replacement, isTrue);
+      expect(container.read(authSessionProvider).phase, AuthSessionPhase.ready);
+      // Replacement bootstraps inherit the idempotent ensure obligation; they
+      // need not share one SDK request. Both operations must settle coherently.
+      expect(profile.ensureCount, 2);
+      expect(auth.suspensionCheckCount, 2);
+      expect(container.read(authCommandProvider).failure, isNull);
+    });
+  }
+
   for (final provider in <AuthProvider?>[null, ...AuthProvider.values]) {
     final mechanism = provider?.name ?? 'email OTP';
     group('$mechanism shared completion', () {

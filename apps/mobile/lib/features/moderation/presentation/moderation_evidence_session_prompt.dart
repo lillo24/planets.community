@@ -100,7 +100,7 @@ class _EvidencePromptDialog extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final currentProfileId = ref.watch(
-      authSessionProvider.select((session) => session.identity?.id),
+      authSessionProvider.select((session) => session.accountAccessIdentityId),
     );
     if (currentProfileId != expectedProfileId) {
       Future<void>.microtask(() {

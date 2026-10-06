@@ -14,7 +14,7 @@ This folder owns the dynamic Next.js public-discovery application, ordinary web 
 - `src/features/profile/` owns the server-loaded owner profile form, controlled skills, field visibility, validation, and canonical update boundary.
 - `src/features/proposals/` owns sanitized public proposal payload validation, server reads, cards, status badges, filters, and cursor pagination. It contains no proposal authoring.
 - `src/features/recurring-activities/` owns sanitized public Tavoli payload validation, fixed-snapshot cursor pagination, server reads, cards, recurrence/lifecycle formatting, and exact-location privacy. It contains no Tavoli authoring or owner reads.
-- `src/features/moderation/` owns verified-claims staff authorization, bounded moderation RPC reads, review-only mutations, strict payload parsing, and the queue/detail components. It contains no sanctions or staff-role assignment.
+- `src/features/moderation/` owns verified-claims/current-role staff authorization, bounded moderation RPC reads, review mutations, manual case-scoped consequence apply/revoke controls, strict payload parsing, and queue/detail components. Canonical RPCs own enforcement; suspension is admin-only, and staff-role assignment is not exposed. User-facing reasons and private notes are distinct; ordinary-user/contextual UX and notifications remain 09C2B.
 - `src/features/project-delegates/` owns the side-effect-free server invite preview and the explicit authenticated browser acceptance boundary.
 - `src/features/project-participant-invites/` owns `/join/project/[token]`, explicit expected-account/action-bound admission and retained retries, and token-free `/joined/proposals/[id]` / `/joined/tavoli/[id]` canonical confirmations.
 - `src/features/project-app-handoff/` owns public ordinary intent/dismissal and reusable token-free app/download links, with validated optional listings and visible browser fallback.
@@ -29,6 +29,7 @@ This folder owns the dynamic Next.js public-discovery application, ordinary web 
 - `src/proxy.ts` refreshes and propagates Supabase session cookies before rendering. It does not authorize routes or redirect users.
 - `components.json` records the shadcn Base UI/neutral/RSC configuration.
 - `vitest.config.mts` and colocated `*.test.ts(x)` files own the unit/component test harness.
+- `scripts/` owns guarded local hosting-assessment probes and synthetic QA fixtures; see its navigation map.
 
 Pages and layouts are Server Components by default. Add `"use client"` only at an interaction or browser-API boundary. Do not import the browser Supabase factory into server modules or the server factory into client modules.
 
@@ -43,6 +44,22 @@ npm run tavoli:web:verify:local
 ```
 
 The local config command requires the local Supabase stack and writes the ignored `apps/web/.env.local` file without printing its client key. The integration command additionally requires a production build created with that configuration. See the repository [getting-started guide](../../docs/development/getting-started.md#web-configuration) for the exact environment contract.
+
+## Hosting assessment (not deployment configuration)
+
+[WEBHOST-01](../../docs/development/webhost01-cloudflare-admin-compatibility.md)
+records Next.js 16.3.8/OpenNext 1.20.8 local Worker checks. Authenticated flows
+worked, but the Node-runtime Proxy remains experimentally supported and Sentry
+10.73.0 throws module-startup Wasm compilation errors with monitoring both off
+and on. No Cloudflare adapter/configuration is adopted. Conventional Node
+hosting remains the least disruptive fallback pending a reviewed hosting
+decision. A build/dry-run or passing probe does not certify Free-tier CPU,
+CDN isolation, live account quotas or a deployment.
+
+The 16.3.4 to 16.3.8 Next/eslint-config-next patch meets the tested adapter's
+security support floor and fixes the inherited critical ImageResponse advisory;
+it is not a major framework/runtime migration or complete dependency security
+clearance. See the assessment for unresolved transitive advisories.
 
 ## Authentication boundary
 

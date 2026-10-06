@@ -172,13 +172,13 @@ class ActualContributionController extends Notifier<ActualContributionState> {
 
   @override
   ActualContributionState build() {
-    ref.listen(authSessionProvider.select((session) => session.identity?.id), (
-      _,
-      _,
-    ) {
-      _revision++;
-      state = ActualContributionState(membershipId: membershipId);
-    });
+    ref.listen(
+      authSessionProvider.select((session) => session.accountAccessIdentityId),
+      (_, _) {
+        _revision++;
+        state = ActualContributionState(membershipId: membershipId);
+      },
+    );
     ref.onDispose(() => _revision++);
     return ActualContributionState(membershipId: membershipId);
   }

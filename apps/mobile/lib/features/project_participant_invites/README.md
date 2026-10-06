@@ -59,7 +59,12 @@ Pending attempts live in the root ProviderScope's **process memory**, outside a
 widget lifetime. An explicit Join creates one UUID. The same account/token/action
 tuple survives rebuilds, navigation and lost responses, including a newly
 unavailable preview. Logout/account switch or process/ProviderScope disposal
-destroys it. A new process offers Join, never a misleading Retry for a lost tuple.
+destroys it. MODINT01 also discards private attempts, current sharing secrets and
+in-flight private results when canonical account access becomes suspended or
+its status check fails. An ordinary successful same-account refresh preserves
+uncertain receipt tuples; checking status alone does not discard drafts. Share
+overlays and late chat/copy/share callbacks use that same access boundary.
+A new process offers Join, never a misleading Retry for a lost tuple.
 Confirmed receipts refresh canonical own participation before choosing current
 Project/chat access or ended-episode copy. Fresh re-entry requires a new explicit
 click, a valid current preview and a successful read showing no current membership.

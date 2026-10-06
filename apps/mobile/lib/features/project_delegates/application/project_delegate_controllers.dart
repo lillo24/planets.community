@@ -13,13 +13,13 @@ class ProjectManagementRoleController
 
   @override
   ProjectManagementRoleState build() {
-    ref.listen(authSessionProvider.select((value) => value.identity?.id), (
-      _,
-      _,
-    ) {
-      _revision++;
-      state = const ProjectManagementRoleState();
-    });
+    ref.listen(
+      authSessionProvider.select((value) => value.accountAccessIdentityId),
+      (_, _) {
+        _revision++;
+        state = const ProjectManagementRoleState();
+      },
+    );
     ref.onDispose(() => _revision++);
     return const ProjectManagementRoleState();
   }
@@ -86,13 +86,13 @@ class ProjectTeamController extends Notifier<ProjectTeamState> {
 
   @override
   ProjectTeamState build() {
-    ref.listen(authSessionProvider.select((value) => value.identity?.id), (
-      _,
-      _,
-    ) {
-      _revision++;
-      state = const ProjectTeamState();
-    });
+    ref.listen(
+      authSessionProvider.select((value) => value.accountAccessIdentityId),
+      (_, _) {
+        _revision++;
+        state = const ProjectTeamState();
+      },
+    );
     ref.onDispose(() => _revision++);
     return const ProjectTeamState();
   }
@@ -380,13 +380,13 @@ class ProjectInviteController extends Notifier<ProjectInviteState> {
 
   @override
   ProjectInviteState build() {
-    ref.listen(authSessionProvider.select((value) => value.identity?.id), (
-      _,
-      _,
-    ) {
-      _revision++;
-      state = const ProjectInviteState();
-    });
+    ref.listen(
+      authSessionProvider.select((value) => value.accountAccessIdentityId),
+      (_, _) {
+        _revision++;
+        state = const ProjectInviteState();
+      },
+    );
     ref.onDispose(() => _revision++);
     return const ProjectInviteState();
   }
@@ -484,13 +484,13 @@ class DelegatedProjectsController extends Notifier<DelegatedProjectsState> {
 
   @override
   DelegatedProjectsState build() {
-    ref.listen(authSessionProvider.select((value) => value.identity?.id), (
-      _,
-      _,
-    ) {
-      _revision++;
-      state = const DelegatedProjectsState();
-    });
+    ref.listen(
+      authSessionProvider.select((value) => value.accountAccessIdentityId),
+      (_, _) {
+        _revision++;
+        state = const DelegatedProjectsState();
+      },
+    );
     ref.onDispose(() => _revision++);
     return const DelegatedProjectsState();
   }

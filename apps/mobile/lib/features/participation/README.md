@@ -355,3 +355,11 @@ the canonical projection after backend rejection; blocking a current member
 does not remove them or change shared Project/chat/meeting access. A caller-owned
 organizer block replaces a new Join CTA with an explanation and Unblock path.
 Inbound-only `PT409` remains direction-neutral.
+
+09C2B2 keeps new outbound `PT409` direction-neutral, independently checking the
+ready requester's own current restriction once after denial. Only confirmed
+active state adds the moderation feature's draft explanation and notices action.
+Notices/Back preserves the message and selected offers; explicit retry calls the
+canonical mutation again. Session/attempt revisions reject late completions,
+account loss clears drafts/options, and `PT403` uses existing Auth refresh.
+Photo/option validation, acceptance, leaving and manager actions stay canonical.

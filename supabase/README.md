@@ -1,5 +1,20 @@
 # Supabase database
 
+MODINT01's draft integration reconciles main's participant invitations/People
+with the inherited moderation and global suspension stack. The forward
+participant-visibility migration reuses canonical public visibility, so hidden
+Projects reveal neither title nor ID through bearer preview. It preserves
+authorized private management and narrow own-action receipt recovery. The
+combined RPC inventory and integration commands are documented in
+`docs/development/database.md`; founder copy/policy review remains open.
+
+09C1B adds admin-only, reversible `account_suspension` in the canonical private
+consequence history. Ordinary private RPCs/direct RLS/Storage access are gated,
+but public content and stored relationships remain. Own expected-identity status
+is the only account-data exception. See the database guide and system design for
+the lock hierarchy, cached-Realtime mitigation and deferred push/appeal scope.
+The suspension real-auth, race and RPC-audit commands are part of `check:db`.
+
 This folder owns the reproducible local PLANETS database and its security validation.
 
 - `config.toml` configures the local stack and fail-closed Data API defaults.
@@ -10,6 +25,26 @@ This folder owns the reproducible local PLANETS database and its security valida
   The API, scoped photo exception and retry/re-entry protocol are documented in
   [`pi01-participant-invitations.md`](../docs/implementation/pi01-participant-invitations.md).
 - `seed.sql` runs after migrations during reset and currently contains no data; the system-managed starter skill catalog is migration-owned reference data.
+
+09C1A adds private, manual and reversible moderation-consequence episodes and
+actions: safety notices, outbound interaction restrictions, and Project/Resource
+content hides. Expected-identity staff commands require user-facing reasons plus
+private notes; only affected users and current staff receive their respective
+bounded projections. Restriction withdraws pending outbound attempts, while hide
+freezes acceptance without changing pending status or owner lifecycle. Existing
+accepted relationships remain operational. Public discovery, cover-object access,
+contextual photos and new matching delivery reuse canonical hide predicates.
+The six identifier-only consequence outbox events are intentionally unconsumed
+until 09C2. Tests 108–111 and the two `moderation:consequences:*:local` verifier
+commands own this slice; see `docs/development/database.md` for contracts and locks.
+
+09C2B2 adds only `get_own_interaction_restriction_status(expected_profile_id)`:
+an authenticated, active-account, own-identity boolean using the canonical private
+predicate. It returns no metadata or reasons and is denied while suspended.
+Migration `20261006081004` and test `113` cover grants/identity/current episodes,
+including an active episode beyond the first history page. Existing consequence
+and suspension real-auth verifiers and the signature-level RPC audit cover it;
+no private grants, suspension exception or outbox change is introduced.
 
 09B1 stores append-preserved directional block episodes in the private schema
 and exposes only expected-identity Block/Unblock plus an outbound-only keyset

@@ -61,16 +61,16 @@ class MessageChatsController extends Notifier<MessageChatsState> {
 
   @override
   MessageChatsState build() {
-    ref.listen(authSessionProvider.select((session) => session.identity?.id), (
-      _,
-      _,
-    ) {
-      _revision++;
-      _signalsEnabled = false;
-      _refreshTimer?.cancel();
-      _closeAllSubscriptions();
-      state = const MessageChatsState();
-    });
+    ref.listen(
+      authSessionProvider.select((session) => session.accountAccessIdentityId),
+      (_, _) {
+        _revision++;
+        _signalsEnabled = false;
+        _refreshTimer?.cancel();
+        _closeAllSubscriptions();
+        state = const MessageChatsState();
+      },
+    );
     ref.listen(projectChatRefreshProvider, (_, _) => _scheduleCurrentRefresh());
     ref.listen(
       messageChatsRefreshProvider,

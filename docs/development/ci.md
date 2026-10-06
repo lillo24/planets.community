@@ -83,3 +83,28 @@ the `merge_group` trigger before making these checks queue requirements.
 
 The existing concurrency group is retained, so a newer commit to the same pull
 request cancels its obsolete validation run.
+
+09C1A adds two Database-job integrations for real authenticated consequence
+commands/Storage access and 36 database-lock winner-order races across every
+Creator/delegated acceptance overload plus the existing final-spot capacity
+rule. Both also run in local `check:db`. This adds validation only inside the
+already-scoped Database job, without another workflow or hosted rerun trigger.
+
+09C1B adds the ten-identity account-suspension integration (including private
+Storage and cached Realtime sockets), 24 suspension/interaction/admin races,
+and the reviewed RPC/Broadcast inventory audit to that same Database job.
+All three also run in local `check:db`; no new workflow or trigger is added.
+
+DBRACE-02 adds `project:membership-commitments:verify:local` after contribution
+selection in that same Database job. Project-scoped CLI status supplies API/DB
+endpoints; the standard disposable backend exposes Mailpit on loopback 54324.
+The default one iteration checks all four leave/removal-versus-replacement
+orders with actual PostgreSQL lock observation, plus the verifier's other flows.
+The 40-case diagnostic campaign remains opt-in. Loopback guards, finite deadlines,
+failure propagation and `always()` backend cleanup are unchanged. The existing
+25-minute budget is retained unless measured execution requires otherwise.
+Verifier paths already select Database; shared `scripts/lib` helpers also select
+Web and Mobile. Workflow edits select all four areas, providing a full checkpoint
+without another trigger or duplicate database aggregate.
+Measured runtime and failure dispositions belong to the
+[DBRACE-02 report](dbrace02-controlled-validation-and-failure-disposition.md).

@@ -1,5 +1,11 @@
 # Local verifier helpers
 
+`account-suspension-audit.mjs` traces qualified SQL function calls to account gates
+and classifies each public signature. Its unit tests reject missing/cyclic gates;
+the local audit compares against the committed RPC inventory and rejects private
+broadcasters bypassing suspended-recipient filtering. It is deliberately a
+heuristic source audit, complemented by pgTAP and real-auth/race/Realtime tests.
+
 This folder owns reusable Node.js helpers and their unit tests for repository
 tooling.
 
@@ -22,6 +28,12 @@ tooling.
   `verify-local-demo-idempotency.mjs` explicitly invokes its mutating transition
   rehearsal; ordinary verification invokes only reads. No second seed system
   or application-start hook exists.
+
+- `membership-race-evidence.mjs` owns the membership verifier's loopback guards,
+  bounded fresh-fixture campaign arguments, exact-winner lock observation and
+  allowlisted end-state constraint diagnostics. Its tests distinguish real
+  blocking from pending promises, unrelated/ambiguous waits and observer errors,
+  and preserve microsecond timestamp comparisons without logging raw errors.
 - The matching `*.test.mjs` files verify parsing and request authentication
   behavior or path classification with non-secret fixtures.
 

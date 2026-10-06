@@ -94,6 +94,8 @@ select is(
     from pg_policies
     where schemaname = 'public'
       and tablename = 'profiles'
+      -- 112 independently verifies the added global restrictive account gate.
+      and policyname <> 'account_active_required'
   ),
   3::bigint,
   'profiles has only the three reviewed operation-specific policies'

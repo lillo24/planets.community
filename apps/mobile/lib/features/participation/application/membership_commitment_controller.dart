@@ -158,13 +158,13 @@ class MembershipCommitmentController
 
   @override
   MembershipCommitmentState build() {
-    ref.listen(authSessionProvider.select((session) => session.identity?.id), (
-      _,
-      _,
-    ) {
-      _revision++;
-      state = MembershipCommitmentState(membershipId: membershipId);
-    });
+    ref.listen(
+      authSessionProvider.select((session) => session.accountAccessIdentityId),
+      (_, _) {
+        _revision++;
+        state = MembershipCommitmentState(membershipId: membershipId);
+      },
+    );
     ref.onDispose(() => _revision++);
     return MembershipCommitmentState(membershipId: membershipId);
   }

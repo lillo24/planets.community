@@ -7,7 +7,7 @@ This guide reproduces the PLANETS repository foundation on Windows, macOS, or Li
 Install:
 
 - Git;
-- Node.js 24.20.0 LTS with npm 11.19.0;
+- Node.js 24.21.0 LTS with npm 11.19.0;
 - Flutter 3.47.2 stable, which includes Dart 3.13.2;
 - Docker Desktop or another Docker-compatible runtime supported by the Supabase CLI;
 - Android Studio/Android SDK only when running or building Android;
@@ -15,13 +15,18 @@ Install:
 
 The CI workflow uses these exact Node and Flutter versions. The root `package.json` accepts the Node 24/npm 11 release lines so compatible patch updates can be used locally, but using the recorded versions gives the closest reproduction.
 
+DEPSEC-01 updates the supported Node pin to 24.21.0, including embedded Undici
+7.29.1. Updating npm's Undici packages cannot patch Node's built-in fetch/WebSocket
+implementation. On Windows, verify the executable used by npm as well as `node`:
+a global `npm.cmd`/`npm.ps1` can launch its adjacent older Node despite PATH.
+
 The repository enforces LF line endings through `.gitattributes` so formatting checks behave consistently across operating systems.
 
 The bootstrap was generated and validated with:
 
 | Tool/framework    | Version       |
 | ----------------- | ------------- |
-| Node.js           | 24.20.0 LTS   |
+| Node.js           | 24.21.0 LTS   |
 | npm               | 11.19.0       |
 | Flutter           | 3.47.2 stable |
 | Dart              | 3.13.2        |

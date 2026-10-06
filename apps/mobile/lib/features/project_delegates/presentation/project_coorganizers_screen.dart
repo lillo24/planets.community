@@ -410,14 +410,14 @@ class _InvitationResultSheet extends ConsumerWidget {
     final l10n = AppLocalizations.of(context);
     final role = _roleLabel(l10n, result.requestedAuthorityRole);
     final shareText = l10n.projectDelegateShareRoleText(role, result.url);
-    ref.listen(authSessionProvider.select((value) => value.identity?.id), (
-      _,
-      identityId,
-    ) {
-      if (identityId != expectedProfileId && context.mounted) {
-        Navigator.of(context).pop();
-      }
-    });
+    ref.listen(
+      authSessionProvider.select((value) => value.accountAccessIdentityId),
+      (_, identityId) {
+        if (identityId != expectedProfileId && context.mounted) {
+          Navigator.of(context).pop();
+        }
+      },
+    );
     return SafeArea(
       child: Padding(
         padding: const EdgeInsets.all(AppSpacing.large),

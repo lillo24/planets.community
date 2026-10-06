@@ -142,15 +142,15 @@ class ResourceExchangeController extends Notifier<ResourceExchangeState> {
         _scheduleRefresh();
       }
     });
-    ref.listen(authSessionProvider.select((session) => session.identity?.id), (
-      _,
-      _,
-    ) {
-      _revision++;
-      _refreshTimer?.cancel();
-      _isRefreshing = false;
-      state = const ResourceExchangeState();
-    });
+    ref.listen(
+      authSessionProvider.select((session) => session.accountAccessIdentityId),
+      (_, _) {
+        _revision++;
+        _refreshTimer?.cancel();
+        _isRefreshing = false;
+        state = const ResourceExchangeState();
+      },
+    );
     ref.onDispose(() {
       _revision++;
       _refreshTimer?.cancel();

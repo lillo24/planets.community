@@ -41,16 +41,16 @@ class ResourceListingOwnerPhotoController
 
   @override
   ResourceListingOwnerPhotoState build() {
-    ref.listen(authSessionProvider.select((session) => session.identity?.id), (
-      _,
-      nextViewerProfileId,
-    ) {
-      _identityRevision++;
-      _listingRevisions.clear();
-      state = ResourceListingOwnerPhotoState(
-        viewerProfileId: nextViewerProfileId,
-      );
-    });
+    ref.listen(
+      authSessionProvider.select((session) => session.accountAccessIdentityId),
+      (_, nextViewerProfileId) {
+        _identityRevision++;
+        _listingRevisions.clear();
+        state = ResourceListingOwnerPhotoState(
+          viewerProfileId: nextViewerProfileId,
+        );
+      },
+    );
     ref.onDispose(() {
       _identityRevision++;
       _listingRevisions.clear();
