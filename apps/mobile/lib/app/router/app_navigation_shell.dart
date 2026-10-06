@@ -10,6 +10,7 @@ import '../../devtools/demo/demo_widgets.dart';
 import '../../features/auth/application/auth_session_controller.dart';
 import '../../features/auth/domain/auth_models.dart';
 import '../../features/messages/presentation/messages_routes.dart';
+import '../../features/messages/presentation/message_unread_badge.dart';
 import '../../features/notifications/application/notifications_controllers.dart';
 import '../../features/moderation/presentation/moderation_evidence_session_prompt.dart';
 import '../../features/settings/application/navigation_preference_controller.dart';
@@ -128,16 +129,12 @@ class AppNavigationShell extends ConsumerWidget {
                   ? 'nav-messages'
                   : 'nav-browse',
             ),
-            icon: Icon(
-              rightDestination == BottomTabDestination.messages
-                  ? Icons.forum_outlined
-                  : Icons.explore_outlined,
-            ),
-            selectedIcon: Icon(
-              rightDestination == BottomTabDestination.messages
-                  ? Icons.forum
-                  : Icons.explore,
-            ),
+            icon: rightDestination == BottomTabDestination.messages
+                ? const MessageUnreadBadge(child: Icon(Icons.forum_outlined))
+                : const Icon(Icons.explore_outlined),
+            selectedIcon: rightDestination == BottomTabDestination.messages
+                ? const MessageUnreadBadge(child: Icon(Icons.forum))
+                : const Icon(Icons.explore),
             label: rightDestination == BottomTabDestination.messages
                 ? l10n.messagesTitle
                 : l10n.navigationBrowse,

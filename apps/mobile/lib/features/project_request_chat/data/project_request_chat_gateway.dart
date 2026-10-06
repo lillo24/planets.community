@@ -2,6 +2,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/backend/supabase_backend.dart';
+import '../../messages/domain/message_unread_models.dart';
+import '../../../core/backend/private_broadcast_payload.dart';
 import '../../participation/domain/participation_models.dart';
 import '../domain/project_request_chat_models.dart';
 
@@ -80,11 +82,12 @@ class SupabaseProjectRequestChatGateway implements ProjectRequestChatGateway {
     ProjectRequestChatFeedCursor? cursor,
     bool onlyPending = false,
   }) async {
-    final response = await _client.rpc<List<dynamic>>(
-      'list_own_participation_conversation_items',
+    final envelope = await _client.rpc<Object?>(
+      'get_own_message_feed_page',
       params: {
         'p_expected_profile_id': expectedProfileId,
         'p_chat_id': chatId,
+        'p_kind': 'project_request_chat',
         'p_limit': limit + 1,
         'p_before_created_at': cursor?.createdAt.toUtc().toIso8601String(),
         'p_before_item_kind': cursor?.itemKind.wireValue,
@@ -92,8 +95,14 @@ class SupabaseProjectRequestChatGateway implements ProjectRequestChatGateway {
         'p_only_pending': onlyPending,
       },
     );
+    final snapshot = MessageFeedSnapshot.parse(
+      envelope,
+      newest: cursor == null && !onlyPending,
+    );
+    final response = snapshot.items;
     final parsed = response.map(parser.feedItem).toList(growable: false);
     return ProjectRequestChatFeedPage(
+      readBoundary: snapshot.boundary,
       items: List.unmodifiable(parsed.take(limit)),
       hasMore: parsed.length > limit,
     );
@@ -320,52 +329,9 @@ class ProjectRequestChatPayloadParser {
   }
 
   ProjectRequestChatMessageSentSignal signal(Object? value) {
-    final envelope = _row(value, 'Participation-request Realtime envelope');
-    _exact(
-      envelope,
-      const {
-        'type',
-        'event',
-        'payload',
-        'meta',
-      }.difference(envelope.containsKey('meta') ? {} : {'meta'}),
-      'Participation-request Realtime envelope',
-    );
-    // realtime_client 2.13's binary decoder includes transport metadata.
-    // It carries no application data and cannot change recipient authority.
-    if (envelope.containsKey('meta')) {
-      final metadata = _row(envelope['meta'], 'Realtime transport metadata');
-      _exact(
-        metadata,
-        metadata.containsKey('replayed')
-            ? const {'id', 'replayed'}
-            : const {'id'},
-        'Realtime transport metadata',
-      );
-      final deliveryId = _string(metadata, 'id');
-      if (deliveryId.length > 128 ||
-          (metadata.containsKey('replayed') && metadata['replayed'] is! bool)) {
-        throw const FormatException('Invalid Realtime transport metadata.');
-      }
-    }
-    if (_string(envelope, 'type') != 'broadcast' ||
-        _string(envelope, 'event') != _messageSentEvent) {
-      throw const FormatException(
-        'Unexpected participation-request Realtime event.',
-      );
-    }
-    final payload = _row(
-      envelope['payload'],
-      'Participation-request Realtime payload',
-    );
-    // Local/self-hosted Realtime may append its own delivery UUID. Accept only
-    // that transport identifier in addition to the repository's chat ID.
-    _exact(
-      payload,
-      payload.containsKey('id') ? const {'chat_id', 'id'} : const {'chat_id'},
-      'Participation-request Realtime payload',
-    );
-    if (payload.containsKey('id')) _uuid(payload, 'id');
+    final payload = privateBroadcastPayload(value, _messageSentEvent, const {
+      'chat_id',
+    });
     return ProjectRequestChatMessageSentSignal(
       chatId: _uuid(payload, 'chat_id'),
     );

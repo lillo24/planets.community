@@ -9,6 +9,7 @@ import {
 } from "./lib/demo-world.mjs";
 import { snapshotDemoDomain } from "./lib/demo-participant-invitations.mjs";
 import { readLocalSupabaseStatus } from "./lib/local-supabase-status.mjs";
+import { signInLocalOtpUser } from "./lib/local-authenticated-user.mjs";
 
 const repositoryRoot = process.cwd();
 const status = readLocalSupabaseStatus(repositoryRoot);
@@ -67,6 +68,38 @@ try {
   }
   await seedLocalDemoWorld(options);
   await verifyLocalDemoWorld(options);
+  // Establish a genuine own read before an unchanged seed rerun. Reseeding must
+  // neither reset that frontier nor insert/backfill/duplicate incoming receipts.
+  const [unread] =
+    await sql`select i.profile_id,i.conversation_kind,i.chat_id,u.email
+    from private.message_incoming i join auth.users u on u.id=i.profile_id
+    where u.email=any(${Object.values(DEMO_PERSONAS).map((p) => p.email)}::text[])
+    order by i.profile_id,i.conversation_kind,i.chat_id limit 1`;
+  assert.ok(unread, "Demo contains eligible human-message unread metadata");
+  const actor = await signInLocalOtpUser({
+    apiUrl: status.apiUrl,
+    publishableKey: status.publishableKey,
+    mailpitUrl,
+    email: unread.email,
+    verifierName: "MSG02 demo frontier",
+  });
+  const page = await actor.client.rpc("get_own_message_feed_page", {
+    p_expected_profile_id: actor.id,
+    p_kind: unread.conversation_kind,
+    p_chat_id: unread.chat_id,
+    p_limit: 31,
+  });
+  assert.equal(page.error, null);
+  const acknowledgement = await actor.client.rpc(
+    "acknowledge_own_message_read",
+    {
+      p_expected_profile_id: actor.id,
+      p_kind: unread.conversation_kind,
+      p_chat_id: unread.chat_id,
+      p_boundary: page.data.read_boundary,
+    },
+  );
+  assert.equal(acknowledgement.error, null);
   const first = await snapshot();
   await seedLocalDemoWorld(options);
   await verifyLocalDemoWorld(options);
@@ -76,7 +109,7 @@ try {
     "Unchanged demo seed duplicated or rewrote canonical history.",
   );
   console.log(
-    "Confirmed demo seed → verify → unchanged seed → verify with stable canonical IDs, generations, receipts, episodes, offers, chats, notifications and commitments.",
+    "Confirmed demo seed → verify → unchanged seed → verify with stable canonical IDs, generations, receipts, episodes, offers, chats, notifications, commitments and MSG02 incoming/read frontiers.",
   );
   const departed = await exerciseLocalDemoInvitations(options);
   const afterDeparture = await snapshot();

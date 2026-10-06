@@ -903,7 +903,7 @@
   "notificationsParticipationAlerts": "Participation alerts",
   "notificationsChatMessages": "Chat messages",
   "notificationsResourceActivity": "Resource activity",
-  "notificationsResourcePreferenceExplanation": "Requests, Resource conversations, and exchange updates. This setting affects future in-app alerts; existing history remains available.",
+  "notificationsResourcePreferenceExplanation": "Resource requests and exchange updates. Human messages use Messages badges. This setting affects future activity alerts; existing history remains available.",
   "notificationsMatchingAlerts": "Saved search matches",
   "notificationsMatchingInApp": "In-app",
   "notificationsMatchingPreferenceExplanation": "Show an alert when a newly published Scambio-Dona listing matches one of your saved searches.",
@@ -2074,6 +2074,24 @@
     "placeholders": {
       "title": {
         "type": "String"
+      }
+    }
+  },
+  "messageUnreadConversations": "{count, plural, =1{1 conversation with unread messages} other{{count} conversations with unread messages}}",
+  "messageUnreadMessages": "{count, plural, =1{1 unread message} other{{count} unread messages}}",
+  "messageUnreadUnavailable": "Unread count unavailable or stale. Refresh Messages to retry.",
+  "messageReadRetry": "Messages were not marked read. Tap to retry.",
+  "@messageUnreadConversations": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@messageUnreadMessages": {
+    "placeholders": {
+      "count": {
+        "type": "int"
       }
     }
   }

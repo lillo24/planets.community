@@ -112,7 +112,7 @@ void main() {
     final source = File('lib/features/messages/data/message_chats_gateway.dart')
         .readAsStringSync();
 
-    expect(source, contains("'list_own_scoped_conversation_items'"));
+    expect(source, contains("'list_own_scoped_conversation_items_v3'"));
     expect(source, contains("'p_scope'"));
     expect(source, contains("'p_cursor_activity_at'"));
     expect(source, contains("'p_cursor_item_kind'"));
@@ -134,6 +134,7 @@ const _requestId = '00000000-0000-4000-8000-000000000301';
 
 Map<String, dynamic> _commonRow({String chatId = _chatId}) => {
   'chat_id': chatId,
+  'unread_count': 0,
   'pending_count': null,
   'activity_at': '2026-09-20T12:00:00Z',
   'display_title': 'Shared title',
@@ -194,6 +195,7 @@ Map<String, dynamic> _resourceRow({
 Map<String, dynamic> _projectRequestRow() => {
   ..._commonRow(),
   'item_kind': 'project_request_chat',
+  'unread_count': 0,
   'pending_count': 1,
   'viewer_role': 'creator',
   'project_id': null,

@@ -5,6 +5,15 @@ This folder owns the reproducible local PLANETS database and its security valida
 - `config.toml` configures the local stack and fail-closed Data API defaults.
 - `migrations/` is the canonical, timestamp-ordered SQL schema history.
 - `tests/` contains native pgTAP invariants and transactional security probes.
+- MSG02 stores body-free source identities, send-time incoming eligibility and
+  private read frontiers in `private.message_*`. Complete totals authorize once
+  per conversation and apply the canonical group history cutoff to metadata.
+  Newest feeds issue own snapshot tokens; notification activity and push remain
+  independent. See [ADR 0008](../docs/architecture/decisions/0008-message-unread-and-activity-alerts.md).
+  `npm run messages:unread:upgrade:verify:local` requires an explicitly disposable
+  stack (`CI=true` or `PLANETS_DISPOSABLE_QA=1`), resets to populated MSG01, then
+  proves atomic cutover. `npm run messages:unread:verify:local` covers real
+  authenticated writers, commit races, private warm sockets and bounded summaries.
 - PI01's private reusable participant-link generations/secrets and admission
   receipts use the same membership/chat/capacity domain as ordinary approval.
   The API, scoped photo exception and retry/re-entry protocol are documented in

@@ -242,8 +242,8 @@ select results_eq(
     select processed_count, notifications_created, notifications_suppressed
     from public.process_notification_outbox_batch(100)
   $$,
-  $$values (5, 7, 0)$$,
-  'notifications.v1 fans five messages out to seven send-time recipients'
+  $$values (5, 0, 7)$$,
+  'notifications.v1 consumes five ordinary events and suppresses seven recipients'
 );
 select results_eq(
   $$
@@ -262,15 +262,7 @@ select results_eq(
     where notification.category_slug = 'chat'
     order by notification.message_id, notification.recipient_profile_id
   $$,
-  $$
-    values
-      ('a6100000-0000-4000-8000-000000000001'::uuid, 'b6100000-0000-4000-8000-000000000001'::uuid),
-      ('a6100000-0000-4000-8000-000000000002'::uuid, 'b6200000-0000-4000-8000-000000000002'::uuid),
-      ('a6100000-0000-4000-8000-000000000002'::uuid, 'b6300000-0000-4000-8000-000000000003'::uuid),
-      ('a6100000-0000-4000-8000-000000000003'::uuid, 'b6300000-0000-4000-8000-000000000003'::uuid),
-      ('a6100000-0000-4000-8000-000000000004'::uuid, 'b6100000-0000-4000-8000-000000000001'::uuid),
-      ('a6100000-0000-4000-8000-000000000004'::uuid, 'b6200000-0000-4000-8000-000000000002'::uuid),
-      ('a6100000-0000-4000-8000-000000000005'::uuid, 'b6300000-0000-4000-8000-000000000003'::uuid)
+  $$select null::uuid, null::uuid where false
   $$,
   'late join, leave, rejoin, and second leave follow canonical half-open intervals'
 );
@@ -322,8 +314,8 @@ select is(
       on message.id = notification.message_id
     where notification.created_at = message.created_at
   ),
-  7::bigint,
-  'notification chronology is the canonical message timestamp'
+  0::bigint,
+  'ordinary message alerts are suppressed while canonical source timestamps remain intact'
 );
 
 set local role authenticated;
@@ -344,20 +336,9 @@ select results_eq(
     where notification_kind = 'chat_message_received'
     order by message_id
   $$,
-  $$
-    values
-      (
-        current_setting('test.chat_id')::uuid,
-        'a6100000-0000-4000-8000-000000000002'::uuid,
-        'Chat alert timeline'::text
-      ),
-      (
-        current_setting('test.chat_id')::uuid,
-        'a6100000-0000-4000-8000-000000000004'::uuid,
-        'Chat alert timeline'::text
-      )
+  $$select null::uuid, null::uuid, null::text where false
   $$,
-  'the recipient inbox exposes safe chat/message and Project display context'
+  'the recipient activity inbox excludes ordinary messages before pagination'
 );
 
 reset role;
@@ -394,7 +375,7 @@ select results_eq(
     select processed_count, notifications_created, notifications_suppressed
     from public.process_notification_outbox_batch(100)
   $$,
-  $$values (1, 0, 0)$$,
+  $$values (1, 0, 2)$$,
   'a lost notification response retries a multi-recipient event without duplicates'
 );
 select results_eq(
@@ -420,7 +401,7 @@ select results_eq(
     select processed_count, notifications_created, notifications_suppressed
     from public.process_notification_outbox_batch(100)
   $$,
-  $$values (1, 1, 0)$$,
+  $$values (1, 0, 2)$$,
   'retry restores one missing recipient without duplicating the existing recipient'
 );
 
@@ -431,8 +412,8 @@ select is(
     from public.notifications
     where source_outbox_event_id = '96100000-0000-4000-8000-000000000002'
   ),
-  2::bigint,
-  'the repaired multi-recipient notification fan-out is complete exactly once'
+  0::bigint,
+  'retry preserves ordinary message suppression without recreating rows'
 );
 
 delete from private.outbox_consumer_receipts
@@ -585,7 +566,7 @@ values (
 set local role service_role;
 select results_eq(
   $$select * from public.process_notification_outbox_batch(100)$$,
-  $$values (1, 2, 0)$$,
+  $$values (1, 0, 2)$$,
   'true/true creator and true/false A both receive in-app rows'
 );
 select results_eq(
@@ -639,7 +620,7 @@ values (
 set local role service_role;
 select results_eq(
   $$select * from public.process_notification_outbox_batch(100)$$,
-  $$values (1, 1, 1)$$,
+  $$values (1, 0, 2)$$,
   'false/false A is suppressed while true/true creator remains independent'
 );
 select results_eq(

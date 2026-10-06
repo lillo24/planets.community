@@ -168,14 +168,27 @@ async function verifyResourceMessagesNotifications() {
     "send a Resource chat message",
   );
   await projectBothChannels();
-  await assertInboxKind(requester, "resource_chat_message_received", {
-    listingId,
-    requestId,
-    chatId: chat.chat_id,
-    agreementId: agreement.agreement_id,
-    messageId: message.message_id,
-    destination: "resource_chat",
-  });
+  const activityInbox = await rpcRows(
+    requester,
+    "list_own_notifications",
+    { p_expected_profile_id: requester.id, p_limit: 100 },
+    "read activity inbox",
+  );
+  if (
+    activityInbox.some(
+      (item) => item.notification_kind === "resource_chat_message_received",
+    )
+  )
+    throw new Error("Resource human messages appeared in activity inbox.");
+  const humanProjection = await countProjectedMessage(message.message_id);
+  if (
+    humanProjection.notifications !== 0 ||
+    humanProjection.jobs !== 1 ||
+    humanProjection.receipts !== 2
+  )
+    throw new Error(
+      "Resource human-message suppression changed independent push/receipts.",
+    );
 
   const termsPrivateText = "Verifier private terms note must remain private";
   const termsId = await rpcValue(
