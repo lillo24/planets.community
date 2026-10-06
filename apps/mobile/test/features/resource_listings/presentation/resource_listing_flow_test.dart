@@ -376,6 +376,8 @@ void main() {
         ..publicItems = [publicResourceListingFixture()];
       await _pump(tester, gateway: gateway, signedIn: false);
 
+      await _tap(tester, 'welcome-explore');
+
       expect(find.text('Projects and Cultural Tables'), findsOneWidget);
       expect(find.text('Scambio-Dona'), findsOneWidget);
       expect(

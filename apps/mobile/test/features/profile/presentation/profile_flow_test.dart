@@ -139,7 +139,7 @@ void main() {
     final profile = FakeProfileGateway();
     addTearDown(auth.close);
     await _pumpApp(tester, auth, anchor, profile);
-    await tester.tap(find.text('Complete profile'));
+    await tester.tap(find.byKey(const Key('nav-profile')));
     await tester.pumpAndSettle();
 
     final fill = find.byKey(const Key('profile-fill-sample'));
@@ -183,8 +183,8 @@ void main() {
     addTearDown(auth.close);
     await _pumpApp(tester, auth, anchor, profile);
 
-    expect(find.text('Complete profile'), findsOneWidget);
-    await tester.tap(find.text('Complete profile'));
+    expect(find.byKey(const Key('nav-profile')), findsOneWidget);
+    await tester.tap(find.byKey(const Key('nav-profile')));
     await tester.pumpAndSettle();
 
     expect(find.byType(CheckboxListTile), findsNothing);
@@ -258,7 +258,7 @@ void main() {
     final profile = FakeProfileGateway();
     addTearDown(auth.close);
     await _pumpApp(tester, auth, anchor, profile);
-    await tester.tap(find.text('Complete profile'));
+    await tester.tap(find.byKey(const Key('nav-profile')));
     await tester.pumpAndSettle();
 
     await tester.enterText(
@@ -290,7 +290,7 @@ void main() {
     final profile = FakeProfileGateway()..updateError = StateError(rawFailure);
     addTearDown(auth.close);
     await _pumpApp(tester, auth, anchor, profile);
-    await tester.tap(find.text('Complete profile'));
+    await tester.tap(find.byKey(const Key('nav-profile')));
     await tester.pumpAndSettle();
     await tester.enterText(
       find.byKey(const Key('profile-display-name-field')),
@@ -320,7 +320,7 @@ void main() {
     final profile = FakeProfileGateway(data: profileFixture(complete: true));
     addTearDown(auth.close);
     await _pumpApp(tester, auth, anchor, profile);
-    await tester.tap(find.text('View profile'));
+    await tester.tap(find.byKey(const Key('nav-profile')));
     await tester.pumpAndSettle();
     expect(find.text('Musician'), findsOneWidget);
 
@@ -358,7 +358,7 @@ void main() {
       );
     addTearDown(auth.close);
     await _pumpApp(tester, auth, anchor, profile);
-    await tester.tap(find.text('View profile'));
+    await tester.tap(find.byKey(const Key('nav-profile')));
     await tester.pumpAndSettle();
     expect(find.text('Casey'), findsOneWidget);
 
@@ -401,6 +401,10 @@ Future<ProviderContainer> _pumpApp(
     ),
   );
   await tester.pumpAndSettle();
+  if (find.byKey(const Key('welcome-explore')).evaluate().isNotEmpty) {
+    await tester.tap(find.byKey(const Key('welcome-explore')));
+    await tester.pumpAndSettle();
+  }
   return ProviderScope.containerOf(tester.element(find.byType(PlanetsApp)));
 }
 

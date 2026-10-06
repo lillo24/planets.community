@@ -342,6 +342,10 @@ Future<ProviderContainer> _pump(
     ),
   );
   await tester.pumpAndSettle();
+  if (find.byKey(const Key('welcome-explore')).evaluate().isNotEmpty) {
+    await tester.tap(find.byKey(const Key('welcome-explore')));
+    await tester.pumpAndSettle();
+  }
   return ProviderScope.containerOf(tester.element(find.byType(PlanetsApp)));
 }
 

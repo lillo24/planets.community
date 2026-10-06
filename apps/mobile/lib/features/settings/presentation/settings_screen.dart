@@ -1,8 +1,11 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/theme/app_tokens.dart';
+import '../../../app/startup/startup_flow.dart';
+import '../../messages/presentation/message_unread_badge.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../auth/application/auth_session_controller.dart';
 import '../../auth/domain/auth_models.dart';
@@ -78,6 +81,37 @@ class SettingsScreen extends ConsumerWidget {
                     onTap: () => context.push('/settings/navigation'),
                   ),
                 ),
+                if (navigationPreference.destination ==
+                    BottomTabDestination.browse)
+                  Card(
+                    child: ListTile(
+                      key: const Key('settings-messages-row'),
+                      leading: const MessageUnreadBadge(
+                        child: Icon(Icons.forum_outlined),
+                      ),
+                      title: Text(l10n.messagesTitle),
+                      trailing: const Icon(Icons.chevron_right),
+                      onTap: () => context.go('/messages'),
+                    ),
+                  ),
+                if (kDebugMode)
+                  TextButton(
+                    key: const Key('startup-development-reset'),
+                    onPressed: () async {
+                      final reset = await ref
+                          .read(startupFlowProvider)
+                          .resetForDevelopment();
+                      if (!context.mounted) return;
+                      if (reset) {
+                        context.go('/');
+                      } else {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text(l10n.startupPreferenceError)),
+                        );
+                      }
+                    },
+                    child: Text(l10n.startupDevelopmentReset),
+                  ),
                 if (showAccountSettings) ...[
                   const SizedBox(height: AppSpacing.large),
                   _SectionLabel(l10n.settingsAccountSection),

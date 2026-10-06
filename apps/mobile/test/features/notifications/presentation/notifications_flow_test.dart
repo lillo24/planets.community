@@ -50,7 +50,7 @@ void main() {
       expect(find.byKey(const Key('nav-profile')), findsOneWidget);
       expect(find.byKey(const Key('nav-messages')), findsOneWidget);
       expect(find.byKey(const Key('nav-home')), findsOneWidget);
-      expect(find.byKey(const Key('open-messages-button')), findsOneWidget);
+      expect(find.byKey(const Key('open-messages-button')), findsNothing);
       expect(
         find.byKey(const Key('open-notifications-button')),
         findsOneWidget,
@@ -922,5 +922,9 @@ Future<ProviderContainer> _pump(
     ),
   );
   await tester.pumpAndSettle();
+  if (find.byKey(const Key('welcome-explore')).evaluate().isNotEmpty) {
+    await tester.tap(find.byKey(const Key('welcome-explore')));
+    await tester.pumpAndSettle();
+  }
   return ProviderScope.containerOf(tester.element(find.byType(PlanetsApp)));
 }

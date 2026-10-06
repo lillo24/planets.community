@@ -34,8 +34,13 @@ class SupabaseAuthGateway implements AuthGateway {
   AuthSnapshot get currentSnapshot => _toSnapshot(_client.auth.currentSession);
 
   @override
-  Stream<AuthSnapshot> get authStateChanges => _client.auth.onAuthStateChange
-      .map((authState) => _toSnapshot(authState.session));
+  Stream<AuthSnapshot> get authStateChanges =>
+      _client.auth.onAuthStateChange.map(
+        (authState) => _toSnapshot(
+          authState.session,
+          isTokenRefresh: authState.event == AuthChangeEvent.tokenRefreshed,
+        ),
+      );
 
   @override
   Future<void> requestEmailOtp(String email) {
@@ -62,13 +67,17 @@ class SupabaseAuthGateway implements AuthGateway {
   @override
   Future<void> signOut() => _client.auth.signOut();
 
-  static AuthSnapshot _toSnapshot(Session? session) {
+  static AuthSnapshot _toSnapshot(
+    Session? session, {
+    bool isTokenRefresh = false,
+  }) {
     if (session == null) {
       return const AuthSnapshot();
     }
     return AuthSnapshot(
       identity: AuthIdentity(id: session.user.id),
       isExpired: session.isExpired,
+      isTokenRefresh: isTokenRefresh,
     );
   }
 }

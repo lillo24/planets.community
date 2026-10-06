@@ -1455,5 +1455,13 @@
         "type": "int"
       }
     }
-  }
+  },
+  "welcomeExplore": "Esplora l'app",
+  "welcomeLogin": "Accedi",
+  "messagesSignInContext": "Accedi per partecipare ai progetti, donare o scambiare e gestire le tue conversazioni.",
+  "authRestoreFailure": "Non è stato possibile ripristinare la sessione. Riprova per verificare la sessione salvata.",
+  "startupPreferenceError": "Non è stato possibile salvare o ripristinare la preferenza dell’introduzione. Riprova.",
+  "tutorialNext": "Avanti",
+  "tutorialFinish": "Termina",
+  "startupDevelopmentReset": "Reimposta benvenuto e tutorial (sviluppo)"
 }
