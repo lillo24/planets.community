@@ -75,13 +75,6 @@
   "peopleNameVisibility": "Partecipando, il tuo nome visualizzato è visibile alle persone attuali del progetto; la privacy della foto resta invariata.",
   "notificationRoleOffer": "{actor} ti ha invitato a un ruolo di organizzatore in {project}.",
   "notificationRoleOfferGeneric": "Hai ricevuto un invito a un ruolo di organizzatore in un progetto.",
-  "accountSuspendedTitle": "Account sospeso",
-  "accountSuspendedBody": "L'accesso ordinario non è disponibile mentre il tuo account è sospeso.",
-  "accountSuspendedReasonLabel": "Motivo",
-  "accountStatusTitle": "Accesso all'account",
-  "accountStatusChecking": "Verifica dell'accesso all'account…",
-  "accountStatusCheckAgain": "Verifica di nuovo lo stato",
-  "accountStatusFailure": "Non è stato possibile verificare l'accesso all'account. Riprova o esci.",
   "@@locale": "it",
   "browseRequestedSection": "Richieste inviate",
   "browseOtherProjectsSection": "Altri progetti",
@@ -606,8 +599,8 @@
   "projectRequestChatLoadOlder": "Carica messaggi più vecchi",
   "projectRequestChatMessageHint": "Scrivi un messaggio privato",
   "projectRequestChatSend": "Invia",
-  "projectRequestChatReadOnly": "Questa conversazione di partecipazione è in sola lettura.",
-  "projectRequestChatSendConflict": "La richiesta è stata risolta prima che questo messaggio potesse essere inviato. La conversazione è ora in sola lettura.",
+  "projectRequestChatReadOnly": "La conversazione è in sola lettura. Una nuova richiesta di partecipazione idonea la riaprirà.",
+  "projectRequestChatSendConflict": "Le condizioni per inviare sono cambiate prima di salvare il messaggio. Controlla le richieste aggiornate prima di riprovare.",
   "projectRequestChatInvalidMessage": "Inserisci un messaggio tra 1 e 4.000 caratteri.",
   "projectRequestChatForbidden": "Questa conversazione di partecipazione privata non è disponibile per l'account corrente.",
   "projectRequestChatNotFound": "Questa conversazione di partecipazione non è più disponibile.",
@@ -619,7 +612,7 @@
   "projectRequestChatMessageSemantics": "{sender}, {message}, {time}",
   "notificationsSignInMessage": "Accedi per visualizzare le notifiche.",
   "notificationsResourceActivity": "Attività delle risorse",
-  "notificationsResourcePreferenceExplanation": "Richieste, conversazioni sulle risorse e aggiornamenti sullo scambio. Questa impostazione riguarda i futuri avvisi in-app; la cronologia esistente rimane disponibile.",
+  "notificationsResourcePreferenceExplanation": "Richieste di risorse e aggiornamenti sullo scambio. I messaggi usano i contatori in Messaggi. Questa impostazione riguarda i futuri avvisi di attività; la cronologia esistente rimane disponibile.",
   "notificationsMatchingAlerts": "Corrispondenze di ricerca salvate",
   "notificationsMatchingInApp": "In-app",
   "notificationsMatchingPreferenceExplanation": "Mostra un avviso quando un nuovo annuncio Scambio-Dona corrisponde a una delle tue ricerche salvate.",
@@ -1181,8 +1174,6 @@
   "blockingUpdateError": "Impossibile aggiornare gli utenti bloccati. Riprovare.",
   "blockingTargetUnavailable": "Questo utente non è disponibile in questo momento.",
   "blockingInteractionUnavailable": "Questa interazione non è disponibile in questo momento.",
-  "ownRequestRestrictionExplanation": "Sul tuo account è attiva una limitazione delle nuove richieste. Consulta gli avvisi di PLANETS per i dettagli. Restano valide le altre regole di partecipazione.",
-  "ownRequestRestrictionViewNotices": "Consulta gli avvisi di PLANETS",
   "blockingBlockAction": "Blocca {name}",
   "blockingUnblockAction": "Sblocca {name}",
   "blockingBlockGenericAction": "Blocca questo utente",
@@ -1286,9 +1277,21 @@
   "projectOrganizerCapacityConflict": "Aumenta la capienza iscrizioni prima di conteggiare gli organizzatori.",
   "projectCapacityNotSet": "Capienza iscrizioni non impostata",
   "projectCapacityUpToParticipants": "Fino a {capacity} partecipanti",
-  "@projectCapacityUpToParticipants": { "placeholders": { "capacity": { "type": "int" } } },
+  "@projectCapacityUpToParticipants": {
+    "placeholders": {
+      "capacity": {
+        "type": "int"
+      }
+    }
+  },
   "projectCapacityLimit": "Capienza {capacity}",
-  "@projectCapacityLimit": { "placeholders": { "capacity": { "type": "int" } } },
+  "@projectCapacityLimit": {
+    "placeholders": {
+      "capacity": {
+        "type": "int"
+      }
+    }
+  },
   "projectCapacityUsage": "{used} / {capacity} posti utilizzati",
   "projectCapacityParticipantUsage": "{participants} / {capacity} posti partecipante utilizzati",
   "projectOrganizerIncludedCount": "{count} organizzatori inclusi",
@@ -1334,11 +1337,146 @@
   "projectWorkspaceCancelAction": "Annulla",
   "projectWorkspaceOpenFailure": "Impossibile aprire lo spazio di lavoro esterno.",
   "projectWorkspaceToolsSemantics": "Strumenti di coordinamento dei progetti",
+  "moderationTemplateDisclosure": "Puoi segnalare un template, anche se collegato alla tua Proposta. Lo staff valuta le segnalazioni manualmente. La segnalazione non rimuove automaticamente il template o la Proposta di origine.",
+  "proposalDraftSaved": "Bozza salvata",
+  "proposalDraftImageNotSaved": "Contenuto della bozza salvato; modifica immagine non confermata.",
+  "proposalDraftLeaveTitle": "Conserva la tua bozza",
+  "proposalDraftLeaveError": "Impossibile salvare le modifiche. Correggi i campi evidenziati o riprova. Scarta abbandona solo le modifiche non salvate; una bozza già salvata resta in Le mie proposte.",
+  "proposalDraftKeepEditing": "Continua a modificare",
+  "proposalDraftDiscard": "Scarta modifiche non salvate",
+  "proposalDraftLeaveWithoutImage": "Esci senza modifica immagine",
+  "proposalDraftRecover": "Recupera bozza",
+  "proposalDraftRecoveryError": "Recupero della bozza non riuscito. Riprova da Le mie proposte.",
+  "workshopTitle": "Laboratorio dei modelli",
+  "workshopStartFromTemplate": "Crea da un modello",
+  "workshopContext": "Riusa idee di Proposte singole concluse per iniziare una tua bozza indipendente.",
+  "workshopCompleted": "Da una Proposta conclusa",
+  "workshopCreatorFallback": "Persona della comunità",
+  "workshopCreator": "Creatore originale: {name}",
+  "@workshopCreator": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "workshopEmpty": "Non ci sono ancora modelli di Proposte concluse disponibili.",
+  "workshopNoMatches": "Nessun modello corrisponde a questi filtri.",
+  "workshopReadError": "Impossibile caricare i modelli. Riprova per verificarne la disponibilità.",
+  "workshopLoadMore": "Carica altri",
+  "workshopRefresh": "Aggiorna disponibilità",
+  "workshopUnavailable": "Questo modello non è più disponibile per nuovi utilizzi o segnalazioni.",
+  "workshopDuration": "Durata indicativa: {seconds} secondi. Scegli nuove date e orari per la tua bozza.",
+  "@workshopDuration": {
+    "placeholders": {
+      "seconds": {
+        "type": "String"
+      }
+    }
+  },
+  "workshopCapacity": "Usa la capienza suggerita: {capacity}",
+  "@workshopCapacity": {
+    "placeholders": {
+      "capacity": {
+        "type": "int"
+      }
+    }
+  },
+  "workshopCapacityHint": "Un suggerimento modificabile per la tua nuova bozza.",
+  "workshopBlueprints": "Descrizioni delle risorse: {loaded} di {total}",
+  "@workshopBlueprints": {
+    "placeholders": {
+      "loaded": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "workshopBlueprintError": "Impossibile completare l’anteprima delle risorse. Riprova o aggiorna il modello.",
+  "workshopChanged": "L’anteprima è cambiata. Controlla il contenuto aggiornato prima di iniziare una nuova bozza.",
+  "workshopReviewed": "Ho controllato l’anteprima",
+  "workshopCopyHint": "Inizia una nuova bozza privata con testi, competenze e tutte le descrizioni delle risorse aperte. Scegli nuovi dettagli organizzativi; persone e immagine di copertina non vengono copiate. Non ti iscrive a una Proposta e non la pubblica.",
+  "workshopUse": "Usa modello · Inizia una nuova bozza",
+  "workshopUseAgain": "Inizia un’altra bozza indipendente",
+  "workshopReport": "Segnala modello",
+  "workshopViewSource": "Vedi la Proposta originale",
+  "workshopPending": "La creazione della bozza attende conferma.",
+  "workshopAccepted": "La tua bozza indipendente è pronta.",
+  "workshopRecoveryLifetime": "Riprova o apri questa stessa bozza mentre l’app è in esecuzione. Le bozze confermate sono anche in Le mie Proposte.",
+  "workshopOpen": "Apri bozza",
+  "workshopRetry": "Riprova",
+  "workshopApplying": "Creazione della bozza…",
+  "workshopApplyUncertain": "Impossibile confermare la creazione. Riprova verifica e ripete la stessa richiesta in modo sicuro.",
+  "workshopForbidden": "La richiesta non è autorizzata. Controlla l’account e aggiorna la disponibilità del modello; Riprova mantiene la stessa richiesta.",
+  "workshopProfileRequired": "Completa il profilo prima di creare una nuova bozza. Per usare un modello non serve una foto del profilo.",
+  "workshopIncompatible": "Questa richiesta ha dati incompatibili. Non è possibile sostituirla con una bozza presunta.",
+  "workshopOpenError": "Impossibile aprire la bozza accettata. Apri o riprova la stessa bozza; non verrà creata un’altra copia.",
+  "workshopPublicationNotice": "Quando questa Proposta pubblicata diventa Conclusa (24 ore dopo la fine), i testi, le competenze e le descrizioni delle risorse aperte idonei diventano automaticamente riutilizzabili nel Laboratorio dei modelli. Non serve una candidatura o approvazione separata. Controlla ciò che includi nei testi liberi.",
+  "similarMayExist": "Potrebbe esserci già un’attività simile.",
+  "similarView": "Vedi progetti simili",
+  "similarDismiss": "Nascondi suggerimenti",
+  "similarReopen": "Mostra suggerimenti",
+  "similarLoading": "Ricerca di attività simili…",
+  "similarError": "Non è stato possibile cercare attività simili. Puoi continuare a scrivere.",
+  "similarClose": "Chiudi progetti simili",
+  "similarOpen": "Vedi progetto",
+  "similarFull": "Al completo",
+  "similarCapacityUnknown": "Capienza non impostata",
+  "similarTitleReason": "Argomento simile nel titolo",
+  "similarTagsReason": "Argomento simile nel titolo e tag selezionati in comune",
+  "similarLocalityReason": "Stessa località indicativa",
   "settingsNavigation": "Navigazione",
   "settingsBottomRightTab": "Scheda in basso a destra",
   "settingsNavigationHelp": "Scegli la scorciatoia da mostrare su questo dispositivo. Quando apri Messaggi o Esplora, la scheda mostra quella destinazione finché resti lì.",
   "settingsNavigationSaveError": "Non è stato possibile salvare la preferenza di navigazione. Riprova.",
   "settingsNavigationRestoreError": "Non è stato possibile ripristinare la preferenza di navigazione. Scegli una scheda per salvarla di nuovo.",
+  "pairPendingRequests": "{count, plural, =1{Richiesta in attesa} other{{count} richieste in attesa}}",
+  "@pairPendingRequests": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "pairRequestAudience": "La richiesta e le offerte sono visibili agli organizzatori. I messaggi personali sono visibili solo a voi due.",
+  "pairLegacyHistory": "Discussione precedente su questa richiesta: potevano partecipare anche gli organizzatori.",
+  "pairReferencedRequest": "Richiesta di riferimento: {title}",
+  "@pairReferencedRequest": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "messageUnreadConversations": "{count, plural, =1{1 conversazione con messaggi non letti} other{{count} conversazioni con messaggi non letti}}",
+  "messageUnreadMessages": "{count, plural, =1{1 messaggio non letto} other{{count} messaggi non letti}}",
+  "messageUnreadUnavailable": "Conteggio non disponibile o non aggiornato. Aggiorna Messaggi per riprovare.",
+  "messageReadRetry": "I messaggi non sono stati segnati come letti. Tocca per riprovare.",
+  "@messageUnreadConversations": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@messageUnreadMessages": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "accountSuspendedTitle": "Account sospeso",
+  "accountSuspendedBody": "L'accesso ordinario non è disponibile mentre il tuo account è sospeso.",
+  "accountSuspendedReasonLabel": "Motivo",
+  "accountStatusTitle": "Accesso all'account",
+  "accountStatusChecking": "Verifica dell'accesso all'account…",
+  "accountStatusCheckAgain": "Verifica di nuovo lo stato",
+  "accountStatusFailure": "Non è stato possibile verificare l'accesso all'account. Riprova o esci.",
+  "ownRequestRestrictionExplanation": "Sul tuo account è attiva una limitazione delle nuove richieste. Consulta gli avvisi di PLANETS per i dettagli. Restano valide le altre regole di partecipazione.",
+  "ownRequestRestrictionViewNotices": "Consulta gli avvisi di PLANETS",
   "noticesTitle": "Avvisi di PLANETS",
   "noticesIntroduction": "Avvisi privati di moderazione e relativa cronologia, con i motivi destinati a te. Non sono un badge pubblico sul profilo né un punteggio.",
   "noticesLoading": "Caricamento degli avvisi di PLANETS…",

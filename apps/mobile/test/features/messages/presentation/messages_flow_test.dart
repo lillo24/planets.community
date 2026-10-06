@@ -13,6 +13,9 @@ import 'package:planets_mobile/features/auth/data/auth_gateway.dart';
 import 'package:planets_mobile/features/auth/domain/auth_models.dart';
 import 'package:planets_mobile/features/messages/data/messages_gateway.dart';
 import 'package:planets_mobile/features/messages/data/message_chats_gateway.dart';
+import 'package:planets_mobile/features/messages/data/message_unread_gateway.dart';
+import 'package:planets_mobile/features/messages/domain/message_unread_models.dart';
+import 'package:planets_mobile/features/messages/presentation/message_unread_badge.dart';
 import 'package:planets_mobile/features/messages/domain/message_models.dart';
 import 'package:planets_mobile/features/participation/data/participation_gateway.dart';
 import 'package:planets_mobile/features/participation/data/join_acceptance_triage_gateway.dart';
@@ -52,7 +55,325 @@ import '../../../support/fake_resource_request.dart';
 import '../../../support/fake_resource_chat.dart';
 import '../../../support/fake_resource_exchange.dart';
 
+import 'package:planets_mobile/l10n/generated/app_localizations.dart';
+
 void main() {
+  testWidgets('complete badges and row counts preserve compact navigation', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(320, 640));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    tester.platformDispatcher.textScaleFactorTestValue = 2;
+    addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+    final unread = _UnreadFixture(
+      const MessageUnreadSummary(total: 3, private: 2, groups: 1),
+    );
+    final app = await _pump(
+      tester,
+      messages: FakeMessagesGateway(),
+      unread: unread,
+      chats: FakeMessageChatsGateway()
+        ..items = [
+          projectRequestMessageChatFixture(unreadCount: 3),
+          projectMessageChatFixture(unreadCount: 5),
+          resourceMessageChatFixture(unreadCount: 7, isReadOnly: true),
+        ],
+    );
+    final router = app.read(appRouterProvider);
+    final homeBadge = find.descendant(
+      of: find.byType(AppBar),
+      matching: find.byType(MessageCountBadge),
+    );
+    expect(tester.widget<MessageCountBadge>(homeBadge).count, 3);
+    expect(
+      find.descendant(
+        of: find.byKey(const Key('nav-messages')),
+        matching: find.text('3'),
+      ),
+      findsOneWidget,
+    );
+    router.go('/messages');
+    await tester.pumpAndSettle();
+    expect(find.bySemanticsLabel(RegExp('3 unread messages')), findsOneWidget);
+    await tester.scrollUntilVisible(
+      find.bySemanticsLabel(RegExp('7 unread messages')),
+      200,
+      scrollable: find
+          .descendant(
+            of: find.byKey(const Key('message-chat-list')),
+            matching: find.byType(Scrollable),
+          )
+          .first,
+    );
+    expect(tester.takeException(), isNull);
+    await tester.tap(find.text('Groups'));
+    await tester.pumpAndSettle();
+    expect(find.bySemanticsLabel(RegExp('5 unread messages')), findsOneWidget);
+    expect(tester.takeException(), isNull);
+    expect(unread.acknowledgements, 0, reason: 'Lists never acknowledge chats');
+    router.go('/proposals');
+    await tester.pumpAndSettle();
+    expect(
+      find.descendant(
+        of: find.byKey(const Key('nav-browse')),
+        matching: find.byType(MessageCountBadge),
+      ),
+      findsNothing,
+    );
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets(
+    'legacy personal-chat destination sends a manager to request details',
+    (tester) async {
+      const requestId = '00000000-0000-4000-8000-000000000311';
+      final chats = FakeProjectRequestChatGateway()
+        ..summaryError = const PostgrestException(
+          message: 'Unavailable',
+          code: 'P0002',
+        );
+      final messages = FakeMessagesGateway()
+        ..items = [
+          messageItemFixture(
+            requestId: requestId,
+            viewerRole: MessageViewerRole.delegate,
+          ),
+        ];
+      final app = await _pump(
+        tester,
+        messages: messages,
+        projectRequestChats: chats,
+      );
+      app.read(appRouterProvider).go('/messages/chats/request/$requestId');
+      await tester.pumpAndSettle();
+      expect(
+        find.byKey(const Key('participation-request-details')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const Key('project-request-chat-composer')),
+        findsNothing,
+      );
+      expect(chats.subscriptions, isEmpty);
+    },
+  );
+
+  testWidgets(
+    'expanded multi-request banner keeps the small large-text conversation usable',
+    (tester) async {
+      await tester.binding.setSurfaceSize(const Size(320, 640));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+      tester.platformDispatcher.textScaleFactorTestValue = 2;
+      addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+      final first = projectRequestChatRequestFixture();
+      final second = projectRequestChatRequestFixture(
+        requestId: '00000000-0000-4000-8000-000000000312',
+        projectTitle: 'A second pending community project',
+      );
+      final chats = FakeProjectRequestChatGateway()
+        ..items = [second, first]
+        ..summary = projectRequestChatSummaryFixture(
+          pendingCount: 2,
+          pendingRequests: [second, first],
+        );
+      final app = await _pump(
+        tester,
+        messages: FakeMessagesGateway(),
+        projectRequestChats: chats,
+      );
+      app
+          .read(appRouterProvider)
+          .go('/messages/chats/request/${first.requestId}');
+      await tester.pumpAndSettle();
+      await tester.tap(find.byType(ExpansionTile));
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+      expect(
+        tester
+            .getSize(find.byKey(const Key('project-request-chat-history')))
+            .height,
+        greaterThan(0),
+      );
+      expect(
+        find.byKey(const Key('project-request-chat-composer')),
+        findsOneWidget,
+      );
+    },
+  );
+
+  testWidgets(
+    'pair banner resolves exact requests from two to one to zero through shared triage',
+    (tester) async {
+      const firstId = '00000000-0000-4000-8000-000000000311';
+      const secondId = '00000000-0000-4000-8000-000000000312';
+      final first = projectRequestChatRequestFixture();
+      final second = projectRequestChatRequestFixture(
+        requestId: secondId,
+        projectId: '00000000-0000-4000-8000-000000000712',
+        projectTitle: 'Community garden',
+      );
+      final gateway = FakeProjectRequestChatGateway()
+        ..items = [second, first]
+        ..summary = projectRequestChatSummaryFixture(
+          pendingCount: 2,
+          pendingRequests: [second, first],
+        );
+      final triage = FakeJoinAcceptanceTriageGateway()
+        ..onAccepted = () {
+          gateway.items = [
+            projectRequestChatRequestFixture(
+              requestId: secondId,
+              projectId: second.projectId,
+              projectTitle: second.projectTitle,
+              status: JoinRequestStatus.accepted,
+            ),
+            first,
+          ];
+          gateway.summary = projectRequestChatSummaryFixture(
+            pendingCount: 1,
+            pendingRequests: [first],
+          );
+        };
+      final messages = FakeMessagesGateway()
+        ..items = [messageItemFixture(requestId: firstId)]
+        ..onParticipationResolved = (status) {
+          gateway.summary = projectRequestChatSummaryFixture(
+            status: status,
+            pendingCount: 0,
+            pendingRequests: [],
+          );
+        };
+      final app = await _pump(
+        tester,
+        messages: messages,
+        projectRequestChats: gateway,
+        triage: triage,
+      );
+      app.read(appRouterProvider).go('/messages/chats/request/$firstId');
+      await tester.pumpAndSettle();
+      expect(find.text('2 pending requests'), findsOneWidget);
+      await tester.tap(find.byType(ExpansionTile));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('pair-accept-$secondId')));
+      await tester.pumpAndSettle();
+      expect(triage.lastRequestId, secondId);
+      expect(find.text('Review contribution offers'), findsOneWidget);
+      tester
+          .widget<FilledButton>(find.byKey(const Key('join-acceptance-submit')))
+          .onPressed!();
+      await tester.pumpAndSettle();
+      expect(triage.calls, contains('accept:$secondId'));
+      expect(find.text('Pending request'), findsOneWidget);
+      expect(
+        find.byKey(const Key('project-request-chat-composer')),
+        findsOneWidget,
+      );
+      expect(find.byKey(const Key('pair-accept-$secondId')), findsNothing);
+      await tester.tap(find.byKey(const Key('pair-reject-$firstId')));
+      await tester.pumpAndSettle();
+      expect(messages.calls, contains('reject:$firstId'));
+      expect(
+        find.byKey(const Key('project-request-chat-status-banner')),
+        findsNothing,
+      );
+      expect(
+        find.byKey(const Key('project-request-chat-composer')),
+        findsNothing,
+      );
+      expect(
+        find.byKey(const Key('project-request-chat-read-only')),
+        findsOneWidget,
+      );
+      expect(find.byKey(const Key('pair-request-$firstId')), findsOneWidget);
+      expect(find.byKey(const Key('pair-request-$secondId')), findsOneWidget);
+    },
+  );
+
+  testWidgets(
+    'opposite-direction requests have distinct roles, filled outlined bounded bubbles and actual legacy author',
+    (tester) async {
+      // Keep both tall structured bubbles mounted while measuring their layout.
+      tester.view.physicalSize = const Size(800, 1600);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      const outgoingId = '00000000-0000-4000-8000-000000000312';
+      final incoming = projectRequestChatRequestFixture();
+      final outgoing = projectRequestChatRequestFixture(
+        requestId: outgoingId,
+        requesterProfileId: 'user-1',
+      );
+      final gateway = FakeProjectRequestChatGateway()
+        ..items = [
+          projectRequestChatMessageFixture(
+            isLegacy: true,
+            requestId: incoming.requestId,
+            senderProfileId: '00000000-0000-4000-8000-000000000103',
+            senderDisplayName: 'Historical organizer',
+          ),
+          outgoing,
+          incoming,
+        ]
+        ..summary = projectRequestChatSummaryFixture(
+          pendingCount: 2,
+          pendingRequests: [outgoing, incoming],
+        );
+      final app = await _pump(
+        tester,
+        messages: FakeMessagesGateway(),
+        projectRequestChats: gateway,
+      );
+      app
+          .read(appRouterProvider)
+          .go('/messages/chats/request/${incoming.requestId}');
+      await tester.pumpAndSettle();
+      await tester.tap(find.byType(ExpansionTile));
+      await tester.pumpAndSettle();
+      expect(
+        find.byKey(Key('pair-accept-${incoming.requestId}')),
+        findsOneWidget,
+      );
+      expect(find.byKey(const Key('pair-accept-$outgoingId')), findsNothing);
+      expect(
+        find.byKey(const Key('pair-withdraw-$outgoingId')),
+        findsOneWidget,
+      );
+      final incomingBubble = find.byKey(
+        Key('pair-request-${incoming.requestId}'),
+      );
+      final outgoingBubble = find.byKey(const Key('pair-request-$outgoingId'));
+      for (final bubble in [incomingBubble, outgoingBubble]) {
+        final decoration =
+            tester.widget<Container>(bubble).decoration! as BoxDecoration;
+        expect(decoration.color, isNotNull);
+        expect(
+          (decoration.border! as Border).top.width,
+          greaterThanOrEqualTo(1),
+        );
+        expect(tester.getSize(bubble).width, lessThanOrEqualTo(360));
+      }
+      expect(
+        tester.getCenter(incomingBubble).dx,
+        lessThan(tester.getCenter(outgoingBubble).dx),
+      );
+      expect(find.text('Historical organizer'), findsOneWidget);
+      expect(find.textContaining('Earlier discussion'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  test(
+    'Italian and English pending plurals distinguish one and many',
+    () async {
+      final it = await AppLocalizations.delegate.load(const Locale('it'));
+      final en = await AppLocalizations.delegate.load(const Locale('en'));
+      expect(it.pairPendingRequests(1), 'Richiesta in attesa');
+      expect(it.pairPendingRequests(2), '2 richieste in attesa');
+      expect(en.pairPendingRequests(1), 'Pending request');
+      expect(en.pairPendingRequests(2), '2 pending requests');
+    },
+  );
+
   testWidgets('Resource request detail idle and loading render loading', (
     tester,
   ) async {
@@ -70,6 +391,8 @@ void main() {
     app
         .read(appRouterProvider)
         .go('/messages/requests/resource/$resourceRequestId');
+    // Complete awaitable route entry before asserting the pending data load.
+    await tester.pump();
     await tester.pump();
     expect(find.byType(LoadingState), findsOneWidget);
     expect(find.byType(ErrorState), findsNothing);
@@ -323,16 +646,22 @@ void main() {
         findsOneWidget,
       );
       expect(
-        find.byKey(const Key('project-request-chat-request-item')),
+        find.byKey(
+          const Key('pair-request-00000000-0000-4000-8000-000000000311'),
+        ),
         findsOneWidget,
       );
       expect(find.text('Yes, Sunday works for me.'), findsOneWidget);
       expect(
-        find.byKey(const Key('project-request-chat-accept')),
+        find.byKey(
+          const Key('pair-accept-00000000-0000-4000-8000-000000000311'),
+        ),
         findsOneWidget,
       );
       expect(
-        find.byKey(const Key('project-request-chat-reject')),
+        find.byKey(
+          const Key('pair-reject-00000000-0000-4000-8000-000000000311'),
+        ),
         findsOneWidget,
       );
 
@@ -345,7 +674,11 @@ void main() {
       expect(requestChats.lastSentBody, 'Great, thank you');
 
       await tester.tap(
-        find.byKey(const Key('project-request-chat-status-banner')),
+        find.byKey(
+          const Key(
+            'pair-pending-details-00000000-0000-4000-8000-000000000311',
+          ),
+        ),
       );
       await tester.pumpAndSettle();
       expect(
@@ -435,7 +768,9 @@ void main() {
     app.read(appRouterProvider).go('/messages/chats/request/$requestId');
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byKey(const Key('project-request-chat-accept')));
+    await tester.tap(
+      find.byKey(const Key('pair-accept-00000000-0000-4000-8000-000000000311')),
+    );
     await tester.pump(const Duration(milliseconds: 300));
     await tester.pump();
     expect(find.text('Review contribution offers'), findsOneWidget);
@@ -450,7 +785,7 @@ void main() {
       findsOneWidget,
     );
     expect(
-      find.byKey(const Key('project-request-chat-open-group')),
+      find.byKey(const Key('pair-group-00000000-0000-4000-8000-000000000311')),
       findsOneWidget,
     );
   });
@@ -483,7 +818,9 @@ void main() {
     app.read(appRouterProvider).go('/messages/chats/request/$requestId');
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byKey(const Key('project-request-chat-reject')));
+    await tester.tap(
+      find.byKey(const Key('pair-reject-00000000-0000-4000-8000-000000000311')),
+    );
     await tester.pumpAndSettle();
 
     expect(messages.calls, contains('reject:$requestId'));
@@ -533,11 +870,19 @@ void main() {
     app.read(appRouterProvider).go('/messages/chats/request/$requestId');
     await tester.pumpAndSettle();
 
-    expect(find.byKey(const Key('project-request-chat-accept')), findsNothing);
-    expect(find.byKey(const Key('project-request-chat-reject')), findsNothing);
+    expect(
+      find.byKey(const Key('pair-accept-00000000-0000-4000-8000-000000000311')),
+      findsNothing,
+    );
+    expect(
+      find.byKey(const Key('pair-reject-00000000-0000-4000-8000-000000000311')),
+      findsNothing,
+    );
     expect(photos.visibleLoadIds, [creatorId]);
     await tester.tap(
-      find.byKey(const Key('project-request-chat-status-banner')),
+      find.byKey(
+        const Key('pair-pending-details-00000000-0000-4000-8000-000000000311'),
+      ),
     );
     await tester.pumpAndSettle();
     await tester.scrollUntilVisible(
@@ -579,7 +924,9 @@ void main() {
         findsNothing,
       );
       expect(
-        find.byKey(const Key('project-request-chat-open-group')),
+        find.byKey(
+          const Key('pair-group-00000000-0000-4000-8000-000000000311'),
+        ),
         findsOneWidget,
       );
     },
@@ -633,7 +980,11 @@ void main() {
       );
       expect(tester.takeException(), isNull);
       await tester.tap(
-        find.byKey(const Key('project-request-chat-status-banner')),
+        find.byKey(
+          const Key(
+            'pair-pending-details-00000000-0000-4000-8000-000000000311',
+          ),
+        ),
       );
       await tester.pumpAndSettle();
 
@@ -857,6 +1208,8 @@ void main() {
       ..listDelay = pending.future;
     final app = await _pump(tester, messages: messages);
     app.read(appRouterProvider).go('/messages');
+    // Complete awaitable route entry before asserting the pending data load.
+    await tester.pump();
     await tester.pump();
     await tester.tap(find.text('Requests'));
     await tester.pump(const Duration(seconds: 1));
@@ -2255,6 +2608,7 @@ Future<ProviderContainer> _pump(
   FakeResourceLoanGateway? resourceLoans,
   FakeProjectRequestChatGateway? projectRequestChats,
   FakeProfilePhotoGateway? profilePhoto,
+  MessageUnreadGateway? unread,
 }) async {
   final auth = FakeAuthGateway(
     snapshot: AuthSnapshot(identity: AuthIdentity(id: identityId)),
@@ -2279,6 +2633,12 @@ Future<ProviderContainer> _pump(
           profilePhoto ?? FakeProfilePhotoGateway(),
         ),
         messagesGatewayProvider.overrideWithValue(messages),
+        messageUnreadGatewayProvider.overrideWithValue(
+          unread ??
+              _UnreadFixture(
+                const MessageUnreadSummary(total: 0, private: 0, groups: 0),
+              ),
+        ),
         messageChatsGatewayProvider.overrideWithValue(
           chats ?? FakeMessageChatsGateway(),
         ),
@@ -2321,6 +2681,36 @@ Future<ProviderContainer> _pump(
   );
   await tester.pumpAndSettle();
   return ProviderScope.containerOf(tester.element(find.byType(PlanetsApp)));
+}
+
+class _UnreadFixture implements MessageUnreadGateway {
+  _UnreadFixture(this.value);
+  final MessageUnreadSummary value;
+  int acknowledgements = 0;
+  @override
+  Future<MessageUnreadSummary> summary(String profileId) async => value;
+  @override
+  Future<MessageUnreadSummary> acknowledge(
+    String profileId,
+    String kind,
+    String chatId,
+    String boundary,
+  ) async {
+    acknowledgements++;
+    return value;
+  }
+
+  @override
+  MessageUnreadSubscription subscribe(
+    String profileId,
+    void Function() invalidate,
+    void Function(bool) connection,
+  ) => _UnreadFixtureSubscription();
+}
+
+class _UnreadFixtureSubscription implements MessageUnreadSubscription {
+  @override
+  Future<void> close() async {}
 }
 
 VisibleProfilePhoto _visiblePhoto(String profileId, String versionId) =>

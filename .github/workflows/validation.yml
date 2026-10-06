@@ -135,6 +135,8 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@v7.0.1
+        with:
+          fetch-depth: 0
 
       - name: Install Node.js
         uses: actions/setup-node@v7.0.0
@@ -147,6 +149,12 @@ jobs:
 
       - name: Start local Supabase
         run: npm run db:start
+
+      - name: Verify populated participation conversation upgrade and cached delegate privacy
+        run: npm run participation:conversations:upgrade:verify:local
+
+      - name: Verify populated unread baseline and historical alert compatibility
+        run: npm run messages:unread:upgrade:verify:local
 
       - name: Replay migrations and seed from zero
         run: npm run db:reset
@@ -175,6 +183,18 @@ jobs:
       - name: Verify proposal ownership, lifecycle, and public privacy
         run: npm run proposal:verify:local
 
+      - name: Verify SIM01 authenticated similar upcoming Proposal matching
+        run: npm run proposal:similar:verify:local
+
+      - name: Verify moderation and TW02 authenticated reporting/removal
+        run: npm run moderation:verify:local
+
+      - name: Verify TW03 authenticated template copy, retry and removal races
+        run: npm run template:apply:verify:local
+
+      - name: Verify DRAFT01 authenticated editor creation, recovery and provenance
+        run: npm run draft:editor:verify:local
+
       - name: Verify recurring activity ownership, recurrence, lifecycle, and privacy
         run: npm run recurring:verify:local
 
@@ -198,6 +218,9 @@ jobs:
 
       - name: Verify structured participation-request Messages and privacy
         run: npm run messages:verify:local
+
+      - name: Verify unread boundaries, commit races and private account invalidation
+        run: npm run messages:unread:verify:local
 
       - name: Verify Project chat lifecycle and authorization foundation
         run: npm run project:chat:verify:local
@@ -258,15 +281,33 @@ jobs:
       - name: Verify public web Tavoli discovery and privacy
         run: npm run tavoli:web:verify:local
 
-      # Demo state must follow clean pgTAP and every mutation verifier above.
-      - name: Verify demo partial recovery and seed rerun stability
-        run: npm run demo:check:local
+      - name: Verify blocking/domain producers and pair serialization
+        run: npm run blocking:verify:local
+
+      # Earlier consumer fixtures acknowledge pre-existing events to isolate
+      # their batch totals. Keep this real delegated-rejection producer after
+      # those fixtures so the unrestricted regression exercises actual projection.
+      - name: Verify durable participation pairs, send races and private Realtime
+        run: npm run participation:conversations:verify:local
+
+      - name: Verify unrestricted notification projection after domain producers
+        run: npm run notification:global:verify:local
+
+      # Both demo histories share one lock/session pool and one combined world.
+      - name: Verify combined demo recovery and stability
+        run: npm run demo:stack:check:local
 
       - name: Regenerate public database types
         run: npm run db:types
 
       - name: Check generated database type drift
         run: git diff --exit-code -- apps/web/src/types/database.generated.ts
+
+      # Two populated predecessor histories each need an additional isolated
+      # stack. Keep this release/integration rehearsal in the complete manual gate.
+      - name: Verify both divergent populated upgrades
+        if: ${{ github.event_name == 'workflow_dispatch' }}
+        run: npm run template:stack:upgrades:local
 
       - name: Stop local Supabase
         if: always()

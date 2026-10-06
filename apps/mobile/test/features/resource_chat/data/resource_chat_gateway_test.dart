@@ -132,7 +132,7 @@ void main() {
     ).readAsStringSync();
 
     expect(source, contains("'get_own_resource_request_chat'"));
-    expect(source, contains("'list_own_resource_request_chat_messages'"));
+    expect(source, contains("'get_own_message_feed_page'"));
     expect(source, contains("'send_resource_request_chat_message'"));
     expect(
       source,

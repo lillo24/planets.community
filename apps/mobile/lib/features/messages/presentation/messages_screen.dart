@@ -15,6 +15,7 @@ import '../../profile_photo/presentation/visible_profile_photo_avatar.dart';
 import '../../resource_listings/presentation/resource_listing_widgets.dart';
 import '../../resource_requests/presentation/resource_request_widgets.dart';
 import '../application/message_chats_controller.dart';
+import '../application/message_unread_controller.dart';
 import '../application/messages_controllers.dart';
 import '../domain/message_chat_models.dart';
 import '../domain/message_models.dart';
@@ -22,6 +23,7 @@ import 'message_chats_failure_message.dart';
 import 'messages_formatters.dart';
 import 'messages_failure_message.dart';
 import 'messages_routes.dart';
+import 'message_unread_badge.dart';
 import 'participation_request_details.dart';
 
 class MessagesScreen extends ConsumerStatefulWidget {
@@ -76,6 +78,7 @@ class _MessagesScreenState extends ConsumerState<MessagesScreen>
     final profileId = _expectedProfileId;
     if (profileId == null || !_hasExpectedIdentity) return;
     await Future.wait([
+      ref.read(messageUnreadProvider.notifier).refresh(profileId),
       _privateChatListController.load(profileId, refresh: true),
       _groupChatListController.load(profileId, refresh: true),
     ]);
@@ -201,7 +204,10 @@ class _ChatsTabState extends ConsumerState<_ChatsTab> {
                 ButtonSegment(
                   value: MessageChatScope.groups,
                   label: Text(l10n.messageChatsGroups),
-                  icon: const Icon(Icons.groups_outlined),
+                  icon: const MessageUnreadBadge(
+                    groups: true,
+                    child: Icon(Icons.groups_outlined),
+                  ),
                 ),
               ],
               selected: {_scope},
@@ -346,17 +352,36 @@ class _ChatCard extends StatelessWidget {
   final VisibleProfilePhotoEntry? photoEntry;
 
   @override
-  Widget build(BuildContext context) => switch (item) {
-    ProjectMessageChatItem item => _ProjectChatCard(item: item),
-    ResourceMessageChatItem item => _ResourceChatCard(
-      item: item,
-      photoEntry: photoEntry,
-    ),
-    ProjectRequestMessageChatItem item => _ProjectRequestChatCard(
-      item: item,
-      photoEntry: photoEntry,
-    ),
-  };
+  Widget build(BuildContext context) {
+    final card = switch (item) {
+      ProjectMessageChatItem item => _ProjectChatCard(item: item),
+      ResourceMessageChatItem item => _ResourceChatCard(
+        item: item,
+        photoEntry: photoEntry,
+      ),
+      ProjectRequestMessageChatItem item => _ProjectRequestChatCard(
+        item: item,
+        photoEntry: photoEntry,
+      ),
+    };
+    return Container(
+      decoration: item.unreadCount > 0
+          ? BoxDecoration(
+              border: Border.all(
+                color: Theme.of(context).colorScheme.primary,
+                width: 2,
+              ),
+              borderRadius: BorderRadius.circular(12),
+            )
+          : null,
+      child: MessageCountBadge(
+        count: item.unreadCount,
+        label: AppLocalizations.of(context)
+            .messageUnreadMessages(item.unreadCount),
+        child: card,
+      ),
+    );
+  }
 }
 
 class _ProjectRequestChatCard extends StatelessWidget {
@@ -408,14 +433,18 @@ class _ProjectRequestChatCard extends StatelessWidget {
                         style: Theme.of(context).textTheme.titleMedium,
                       ),
                     ),
-                    Chip(
-                      visualDensity: VisualDensity.compact,
-                      avatar: item.isReadOnly
-                          ? const Icon(Icons.lock_outline, size: 18)
-                          : null,
-                      label: Text(messageStatusLabel(l10n, item.requestStatus)),
-                    ),
                   ],
+                ),
+                Chip(
+                  visualDensity: VisualDensity.compact,
+                  avatar: item.isReadOnly
+                      ? const Icon(Icons.lock_outline, size: 18)
+                      : null,
+                  label: Text(
+                    item.pendingCount > 0
+                        ? l10n.pairPendingRequests(item.pendingCount)
+                        : l10n.projectChatReadOnlyLabel,
+                  ),
                 ),
                 Text(
                   item.projectTitle,
@@ -467,13 +496,17 @@ class _ProjectChatCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
+                // Let long role labels move below the title at large text.
+                Wrap(
+                  spacing: AppSpacing.small,
+                  runSpacing: AppSpacing.xSmall,
+                  crossAxisAlignment: WrapCrossAlignment.center,
                   children: [
-                    Expanded(
-                      child: Text(
-                        item.displayTitle,
-                        style: Theme.of(context).textTheme.titleMedium,
-                      ),
+                    Text(
+                      item.displayTitle,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context).textTheme.titleMedium,
                     ),
                     Chip(
                       key: item.isReadOnly
@@ -573,19 +606,20 @@ class _ResourceChatCard extends StatelessWidget {
                         style: Theme.of(context).textTheme.titleMedium,
                       ),
                     ),
-                    Chip(
-                      key: Key('resource-chat-status-${item.chatId}'),
-                      visualDensity: VisualDensity.compact,
-                      avatar: item.isReadOnly
-                          ? const Icon(Icons.lock_outline, size: 18)
-                          : null,
-                      label: Text(
-                        item.isReadOnly
-                            ? l10n.projectChatReadOnlyLabel
-                            : l10n.resourceChatOpenLabel,
-                      ),
-                    ),
                   ],
+                ),
+                // A status chip must not take width away from the avatar/title.
+                Chip(
+                  key: Key('resource-chat-status-${item.chatId}'),
+                  visualDensity: VisualDensity.compact,
+                  avatar: item.isReadOnly
+                      ? const Icon(Icons.lock_outline, size: 18)
+                      : null,
+                  label: Text(
+                    item.isReadOnly
+                        ? l10n.projectChatReadOnlyLabel
+                        : l10n.resourceChatOpenLabel,
+                  ),
                 ),
                 Text(l10n.resourceChatCardContext),
                 const SizedBox(height: AppSpacing.small),

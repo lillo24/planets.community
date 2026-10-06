@@ -35,7 +35,16 @@ abstract interface class ProposalGateway {
     String proposalId,
   );
 
-  Future<String> createDraft(String expectedCreatorId, ProposalInput input);
+  Future<String> createDraft(
+    String expectedCreatorId,
+    ProposalInput input, {
+    String? clientRequestId,
+  });
+
+  Future<String?> recoverDraftCreation(
+    String expectedCreatorId,
+    String clientRequestId,
+  );
 
   Future<void> updateOwnProposal(
     String expectedCreatorId,
@@ -344,13 +353,31 @@ class SupabaseProposalGateway implements ProposalGateway {
   @override
   Future<String> createDraft(
     String expectedCreatorId,
-    ProposalInput input,
-  ) async {
+    ProposalInput input, {
+    String? clientRequestId,
+  }) async {
     return _client.rpc<String>(
-      'create_proposal_draft',
-      params: _contentParams(expectedCreatorId, input),
+      clientRequestId == null
+          ? 'create_proposal_draft'
+          : 'create_editor_proposal_draft',
+      params: {
+        ..._contentParams(expectedCreatorId, input),
+        'p_client_request_id': ?clientRequestId,
+      },
     );
   }
+
+  @override
+  Future<String?> recoverDraftCreation(
+    String expectedCreatorId,
+    String clientRequestId,
+  ) => _client.rpc<String?>(
+    'recover_editor_proposal_draft',
+    params: {
+      'p_expected_creator_profile_id': expectedCreatorId,
+      'p_client_request_id': clientRequestId,
+    },
+  );
 
   @override
   Future<void> updateOwnProposal(

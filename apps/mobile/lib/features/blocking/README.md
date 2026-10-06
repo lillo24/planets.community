@@ -20,3 +20,9 @@ database checks a requester against the Creator and every active Co-creator or
 Co-organizer, excluding revoked delegates. Pending request closure and all
 symmetric interaction enforcement remain canonical PostgreSQL behavior; the
 client receives only the existing direction-neutral failure shape.
+
+MSG01 pair-chat sending uses that same per-request manager barrier. Blocking can
+close affected requests while a separate eligible request keeps the pair writable;
+it never grants Accept/Reject authority over the affected request. Unblocking
+does not reopen withdrawn requests. Personal history belongs only to immutable
+requester/Creator endpoints; delegate management authority grants no chat access.

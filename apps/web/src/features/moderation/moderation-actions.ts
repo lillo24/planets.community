@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 
 import {
+  removeModerationTemplate,
   addModerationNote,
   performModerationConsequence,
   transitionModerationCase,
@@ -46,5 +47,16 @@ export async function moderationConsequenceAction(
   // failures. Only validated IDs reach a path; never reuse browser staff claims.
   revalidatePath("/admin");
   revalidatePath(`/admin/cases/${command.caseId}`);
+  return result;
+}
+
+export async function removeModerationTemplateAction(
+  input: import("./template-moderation-models").TemplateRemovalInput,
+) {
+  const result = await removeModerationTemplate(input);
+  if (result.status === "removed" || result.status === "already_removed") {
+    revalidatePath("/admin");
+    revalidatePath(`/admin/cases/${input.caseId}`);
+  }
   return result;
 }

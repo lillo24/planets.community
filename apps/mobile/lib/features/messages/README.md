@@ -9,12 +9,14 @@ group chats. Project and Resource detail transport remain in the adjacent
 `project_chat/`, `project_request_chat/`, and `resource_chat/` features; this
 feature owns their shared entry point.
 
-The 07C1A backend also gives every Project participation-request episode a
-private requester/organizer conversation with a structured Request item, immutable
-human follow-ups, pending-only send entitlement, and permanent resolved history.
-07C1B surfaces that conversation as an explicit typed variant in the Private
-scope and routes it to the adjacent feature. Request-chat push/notification
-projection remains deliberately deferred.
+MSG01 gives the requester/immutable Creator pair one durable participation
+conversation across Projects and Tavoli, including repeat episodes and reversed
+roles. Server grouping occurs before paging. The existing typed
+`ProjectRequestMessageChatItem` and wire discriminator `project_request_chat`
+now identify a pair row; its representative request ID is navigation context.
+The canonical pending total and entitlement are independent of that request's
+status. Requests remains the separate request-management view. MSG02 adds
+durable human-message unread state; activity alerts remain in Notifications.
 
 ## Source map
 
@@ -28,12 +30,31 @@ projection remains deliberately deferred.
   exact-item reads use the unified 04C4C2 RPCs; Project-only selection and
   mutation operations keep their existing 04C3B1/05A boundaries. Each narrow
   response is parsed strictly and cross-domain field mixtures fail closed.
-- `data/message_chats_gateway.dart` reads only the canonical scoped unified
-  Chats RPC. It strictly validates branch XOR fields, request lifecycle fields,
+- `data/message_chats_gateway.dart` reads `list_own_scoped_conversation_items_v3`,
+  the canonical scoped unified Chats RPC with pair pending totals. It strictly
+  validates branch XOR fields, request-context lifecycle fields,
   human-preview completeness, and the Resource-only canonical opposite-party
   identity returned by that projection.
+- `domain/message_unread_models.dart` validates complete account/scope counts
+  and server-issued newest-feed snapshot tokens.
+- `data/message_unread_gateway.dart` owns expected-identity summary/read RPCs
+  and one private account invalidation subscription. The shared
+  `core/backend/private_broadcast_payload.dart` separates legitimate Realtime
+  transport metadata from the strict identifier-only application payload.
+- `application/message_unread_controller.dart` owns canonical count refresh,
+  coalescing, foreground/reconnect recovery, stale/error state, and identity
+  revisions. It never adjusts totals arithmetically.
+- `presentation/message_unread_badge.dart` renders zero-hidden counts, visual
+  caps and exact localized accessibility labels. Home and the Messages-labelled
+  navigation slot share the complete conversation total; Groups uses its scope
+  total, and rows use incoming human-message counts.
+- `presentation/message_read_viewport.dart` acknowledges only a successfully
+  rendered newest boundary at the latest scroll position in a foreground,
+  unobscured conversation. All three detail features reuse it. Hidden branches,
+  previews, older scroll, group info and failed loads cannot acknowledge.
+  Failed reads preserve the exact token for explicit retry.
 - `application/message_chats_controller.dart` owns one identity-bound scope's
-  paging, composite deduplication, loaded-writable-chat subscriptions, debounced
+  paging, composite deduplication, loaded-pair subscriptions (also read-only), debounced
   canonical refresh, aggregated connection state, reconnect catch-up, and one
   non-blocking deduplicated photo batch for Private counterparties. Pagination
   requests metadata only for newly encountered targets; Groups never requests
@@ -49,8 +70,8 @@ projection remains deliberately deferred.
   toggle, independent loading/refresh/pagination, centrally discriminated chat
   cards, Private Project-request/Resource counterparty avatars, and role-aware
   Project/Resource request cards. Group rows never receive a person avatar.
-  Chats and Private are deterministic defaults; no unread or agreement activity
-  copy is fabricated.
+  Chats and Private are deterministic defaults. Canonical unread counts are
+  independent of pending requests and agreement activity.
 - `presentation/participation_request_details.dart` owns the reusable authorized
   Project request details sheet/content, canonical actions, resolved history,
   and Proposal/Tavolo navigation. The old full-screen request route is a thin
@@ -66,9 +87,11 @@ projection remains deliberately deferred.
 
 ## Privacy and state
 
-The backend returns an item only when the authenticated profile is its requester,
-a current Project manager, or the Resource owner. Private request messages and
-narrow display identities never come from public discovery reads. Missing and
+Structured request management returns items to the requester, current Project
+manager, or Resource owner. Personal participation pair rows/history are visible
+only to their endpoints; ordinary delegates retain request notes/offers and
+actions through Requests, without personal previews or follow-ups. Private
+messages and narrow display identities never come from public discovery reads. Missing and
 unauthorized exact IDs fail identically. The client displays safe localized
 errors and never renders backend diagnostics.
 
@@ -132,3 +155,25 @@ route branches remain stable and there is no fourth tab. Plan
 06B adds a separate Home notification bell/unread badge and resolves request
 alerts into this feature's stable request route. 07B2C owns chat and group-info
 presentation without adding a fourth bottom destination.
+
+The retained request-chat route resolves endpoints to the pair with exact request
+context and authorized non-endpoint delegates to request details. The UX-NAV01
+shell and post-auth return contract remain in their existing router owners.
+Loaded read-only pair rows keep one subscription per pair so reactivation can
+refresh their summaries. One additional account subscription invalidates unread
+totals and scoped lists even for new/unloaded conversations. Unknown or failed
+counts display an explicit unavailable/stale indicator; refreshing Messages,
+foreground resume or reconnection retries the canonical read. Account changes
+clear counts immediately and dispose old subscriptions.
+
+## Durable unread and rollout
+
+Only incoming human messages create eligible receipts. See
+[ADR 0008](../../../../../docs/architecture/decisions/0008-message-unread-and-activity-alerts.md)
+for commit ordering, one-time rollout baseline and group admission/re-entry.
+The badge counts authorized unread conversations across complete scopes, never
+loaded pages. Resource chats retain request-scoped identity. Read-only history
+retains unread until opened and acknowledged; activity mark-all never reads it.
+Unread is private own-state, independent of notification preferences/projectors.
+Apply the backend migration before releasing this client; old clients gain no
+badges or acknowledgement merely from migration.

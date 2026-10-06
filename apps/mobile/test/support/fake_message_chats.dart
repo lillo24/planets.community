@@ -55,6 +55,7 @@ class FakeMessageChatsGateway implements MessageChatsGateway {
 }
 
 ProjectRequestMessageChatItem projectRequestMessageChatFixture({
+  int unreadCount = 0,
   String chatId = '00000000-0000-4000-8000-000000000411',
   String requestId = '00000000-0000-4000-8000-000000000311',
   String projectId = '00000000-0000-4000-8000-000000000711',
@@ -73,6 +74,7 @@ ProjectRequestMessageChatItem projectRequestMessageChatFixture({
       ? null
       : DateTime.utc(2026, 9, 20, 13);
   return ProjectRequestMessageChatItem(
+    unreadCount: unreadCount,
     chatId: chatId,
     activityAt:
         activityAt ?? resolved ?? messageAt ?? DateTime.utc(2026, 9, 19, 12),
@@ -93,6 +95,7 @@ ProjectRequestMessageChatItem projectRequestMessageChatFixture({
     counterpartyDisplayName: counterpartyDisplayName,
     viewerRole: viewerRole,
     requestStatus: status,
+    pendingCount: status == JoinRequestStatus.pending ? 1 : 0,
     requestMessage: 'I can help Sunday afternoon.',
     resolvedAt: resolved,
     acceptedProjectGroupChatId: status == JoinRequestStatus.accepted
@@ -102,6 +105,7 @@ ProjectRequestMessageChatItem projectRequestMessageChatFixture({
 }
 
 ProjectMessageChatItem projectMessageChatFixture({
+  int unreadCount = 0,
   String chatId = '00000000-0000-4000-8000-000000000601',
   String projectId = '00000000-0000-4000-8000-000000000701',
   String title = 'Paint the square',
@@ -114,6 +118,7 @@ ProjectMessageChatItem projectMessageChatFixture({
 }) {
   final messageAt = messageId == null ? null : DateTime.utc(2026, 9, 20, 10);
   return ProjectMessageChatItem(
+    unreadCount: unreadCount,
     chatId: chatId,
     activityAt: activityAt ?? messageAt ?? DateTime.utc(2026, 9, 19, 10),
     displayTitle: title,
@@ -132,6 +137,7 @@ ProjectMessageChatItem projectMessageChatFixture({
 }
 
 ResourceMessageChatItem resourceMessageChatFixture({
+  int unreadCount = 0,
   String chatId = '00000000-0000-4000-8000-000000000401',
   String requestId = '00000000-0000-4000-8000-000000000301',
   String agreementId = '00000000-0000-4000-8000-000000000501',
@@ -148,6 +154,7 @@ ResourceMessageChatItem resourceMessageChatFixture({
 }) {
   final messageAt = messageId == null ? null : DateTime.utc(2026, 9, 20, 11);
   return ResourceMessageChatItem(
+    unreadCount: unreadCount,
     chatId: chatId,
     activityAt: activityAt ?? messageAt ?? DateTime.utc(2026, 9, 19, 11),
     displayTitle: title,

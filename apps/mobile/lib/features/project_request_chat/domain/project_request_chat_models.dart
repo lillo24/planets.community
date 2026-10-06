@@ -41,6 +41,8 @@ class ProjectRequestChatSummary {
     required this.isReadOnly,
     required this.hasSendEntitlement,
     required this.acceptedProjectGroupChatId,
+    this.pendingCount = 0,
+    this.pendingRequests = const [],
   });
 
   final String chatId;
@@ -60,6 +62,8 @@ class ProjectRequestChatSummary {
   final DateTime activatedAt;
   final bool isReadOnly;
   final bool hasSendEntitlement;
+  final int pendingCount;
+  final List<ProjectRequestChatRequestItem> pendingRequests;
   final String? acceptedProjectGroupChatId;
 
   String get counterpartyDisplayName =>
@@ -75,7 +79,8 @@ class ProjectRequestChatSummary {
 
 enum ProjectRequestChatFeedItemKind {
   request('request', 0),
-  message('message', 1);
+  legacyMessage('legacy_message', 1),
+  message('message', 2);
 
   const ProjectRequestChatFeedItemKind(this.wireValue, this.canonicalOrder);
 
@@ -86,6 +91,7 @@ enum ProjectRequestChatFeedItemKind {
       switch (value) {
         'request' => ProjectRequestChatFeedItemKind.request,
         'message' => ProjectRequestChatFeedItemKind.message,
+        'legacy_message' => ProjectRequestChatFeedItemKind.legacyMessage,
         _ => throw const FormatException(
           'Unsupported participation-request chat feed item kind.',
         ),
@@ -102,7 +108,7 @@ sealed class ProjectRequestChatFeedItem {
 
   final String itemId;
   final String chatId;
-  final String requestId;
+  final String? requestId;
   final DateTime createdAt;
   ProjectRequestChatFeedItemKind get itemKind;
   String get canonicalKey => '${itemKind.wireValue}:$itemId';
@@ -120,6 +126,8 @@ final class ProjectRequestChatRequestItem extends ProjectRequestChatFeedItem {
     required this.requestMessage,
     required this.requesterProfileId,
     required this.requesterDisplayName,
+    this.resolvedAt,
+    this.acceptedProjectGroupChatId,
     required super.createdAt,
   });
 
@@ -130,6 +138,11 @@ final class ProjectRequestChatRequestItem extends ProjectRequestChatFeedItem {
   final String? requestMessage;
   final String requesterProfileId;
   final String requesterDisplayName;
+  final DateTime? resolvedAt;
+  final String? acceptedProjectGroupChatId;
+
+  @override
+  String get requestId => super.requestId!;
 
   @override
   ProjectRequestChatFeedItemKind get itemKind =>
@@ -144,16 +157,19 @@ final class ProjectRequestChatHumanMessage extends ProjectRequestChatFeedItem {
     required this.senderProfileId,
     required this.senderDisplayName,
     required this.body,
+    this.isLegacy = false,
     required super.createdAt,
   });
 
   final String senderProfileId;
   final String? senderDisplayName;
   final String body;
+  final bool isLegacy;
 
   @override
-  ProjectRequestChatFeedItemKind get itemKind =>
-      ProjectRequestChatFeedItemKind.message;
+  ProjectRequestChatFeedItemKind get itemKind => isLegacy
+      ? ProjectRequestChatFeedItemKind.legacyMessage
+      : ProjectRequestChatFeedItemKind.message;
 }
 
 class ProjectRequestChatFeedCursor {
@@ -170,26 +186,28 @@ class ProjectRequestChatFeedCursor {
 
 class ProjectRequestChatFeedPage {
   const ProjectRequestChatFeedPage({
+    this.readBoundary,
     required this.items,
     required this.hasMore,
   });
 
   final List<ProjectRequestChatFeedItem> items;
   final bool hasMore;
+  final String? readBoundary;
 }
 
 class ProjectRequestChatMessageSentSignal {
   const ProjectRequestChatMessageSentSignal({
     required this.chatId,
-    required this.requestId,
-    required this.messageId,
-    required this.createdAt,
+    this.requestId,
+    this.messageId,
+    this.createdAt,
   });
 
   final String chatId;
-  final String requestId;
-  final String messageId;
-  final DateTime createdAt;
+  final String? requestId;
+  final String? messageId;
+  final DateTime? createdAt;
 }
 
 enum ProjectRequestChatConnectionStatus { connected, disconnected }

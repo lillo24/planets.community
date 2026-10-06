@@ -6,6 +6,7 @@ import '../features/auth/application/auth_session_controller.dart';
 import '../features/settings/application/language_preference_controller.dart';
 import '../l10n/generated/app_localizations.dart';
 import 'router/app_router.dart';
+import 'router/draft_departure_coordinator.dart';
 
 class PlanetsApp extends ConsumerStatefulWidget {
   const PlanetsApp({super.key});
@@ -46,6 +47,7 @@ class _PlanetsAppState extends ConsumerState<PlanetsApp>
     final languagePreference = ref.watch(languagePreferenceProvider);
 
     return MaterialApp.router(
+      scaffoldMessengerKey: ref.watch(draftDepartureProvider).messengerKey,
       onGenerateTitle: (context) => AppLocalizations.of(context).appTitle,
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light,

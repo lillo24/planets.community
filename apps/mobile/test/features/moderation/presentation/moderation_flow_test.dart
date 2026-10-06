@@ -1,3 +1,5 @@
+import 'package:go_router/go_router.dart';
+import 'package:planets_mobile/features/moderation/presentation/moderation_routes.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -14,6 +16,95 @@ import 'package:planets_mobile/l10n/generated/app_localizations.dart';
 import '../../../support/fake_moderation.dart';
 
 void main() {
+  for (final locale in ['en', 'it']) {
+    testWidgets(
+      'template self-report uses shared route and manual receipt in $locale',
+      (tester) async {
+        final gateway = FakeModerationGateway();
+        final container = _container(gateway);
+        addTearDown(container.dispose);
+        final target = proposalTemplateReportTarget(
+          '00000000-0000-4000-8000-000000000101',
+          'My completed template',
+        );
+        final router = GoRouter(
+          routes: [
+            GoRoute(
+              path: '/',
+              builder: (context, state) => Scaffold(
+                body: TextButton(
+                  onPressed: () =>
+                      ModerationRoutes.openReport<void>(context, target),
+                  child: const Text('Report template'),
+                ),
+              ),
+            ),
+            GoRoute(
+              path: ModerationRoutes.newReport,
+              builder: (context, state) => ReportFormScreen(
+                target: state.extra! as ModerationReportTarget,
+              ),
+            ),
+          ],
+        );
+        addTearDown(router.dispose);
+        await tester.pumpWidget(
+          UncontrolledProviderScope(
+            container: container,
+            child: MaterialApp.router(
+              routerConfig: router,
+              locale: Locale(locale),
+              localizationsDelegates: const [
+                AppLocalizations.delegate,
+                GlobalMaterialLocalizations.delegate,
+                GlobalWidgetsLocalizations.delegate,
+                GlobalCupertinoLocalizations.delegate,
+              ],
+              supportedLocales: AppLocalizations.supportedLocales,
+            ),
+          ),
+        );
+        await tester.tap(find.text('Report template'));
+        await tester.pumpAndSettle();
+        expect(find.text('My completed template'), findsOneWidget);
+        expect(
+          find.byKey(const Key('moderation-group-disclosure')),
+          findsNothing,
+        );
+        expect(
+          find.textContaining(
+            locale == 'en'
+                ? 'Staff review reports manually'
+                : 'Lo staff valuta',
+          ),
+          findsOneWidget,
+        );
+        await tester.tap(find.byKey(const Key('moderation-category')));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text(locale == 'en' ? 'Other' : 'Altro').last);
+        await tester.enterText(
+          find.byKey(const Key('moderation-explanation')),
+          'A sufficiently clear self-report explanation.',
+        );
+        gateway.submitError = StateError('ambiguous delivery');
+        await tester.tap(find.byKey(const Key('moderation-submit')));
+        await tester.pumpAndSettle();
+        final retryId = gateway.clientSubmissionId;
+        gateway.submitError = null;
+        await tester.tap(find.byKey(const Key('moderation-submit')));
+        await tester.pumpAndSettle();
+        expect(gateway.clientSubmissionId, retryId);
+        expect(gateway.target?.kind, ModerationTargetKind.proposalTemplate);
+        expect(gateway.target?.contextKind, isNull);
+        expect(find.byKey(const Key('moderation-received')), findsOneWidget);
+        expect(
+          find.text(locale == 'en' ? 'Received' : 'Ricevuto'),
+          findsOneWidget,
+        );
+      },
+    );
+  }
+
   testWidgets('validates category and explanation and shows group disclosure', (
     tester,
   ) async {

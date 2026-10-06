@@ -131,7 +131,7 @@ Raw Auth deletion is deliberately blocked while a profile or actor-linked audit 
 
 ### One-time proposal domain
 
-`proposals` stores a creator-owned one-time activity, content, schedule, IANA event time zone, and rough public location. Its business lifecycle is only `draft`, `published`, or `cancelled`. Upcoming, Happening, Just Finished, and Completed are derived from `starts_at`, `ends_at`, and the current time; Just Finished begins exactly at the end and lasts until, but not including, 24 hours later. Completed proposals remain historical canonical records and may become sources for future explicit Community templates, but are not themselves mutable template records.
+`proposals` stores a creator-owned one-time activity, content, schedule, IANA event time zone, and rough public location. Its business lifecycle is only `draft`, `published`, or `cancelled`. Upcoming, Happening, Just Finished, and Completed are derived from `starts_at`, `ends_at`, and the current time; Just Finished begins exactly at the end and lasts until, but not including, 24 hours later. TW01 establishes one linked template identity automatically at first successful publication; its allow-listed reusable content follows canonical published content, while Workshop use requires canonical Completed and current visibility/removal eligibility. Completed remains elapsed time rather than evidence that an event happened or succeeded. Proposals remain historical source records, separate from template identities.
 
 `proposal_meeting_details` physically separates exact meeting text/coordinates from the rough public location. Public list payloads never include exact meeting data. Exact-ID public detail returns exact meeting text only for `public` visibility; `participants` visibility returns no protected value and an explicit restricted flag. The shared participant boundary returns protected operational meeting information only to the creator or a current accepted participant without weakening this anonymous contract. `proposal_skills` reuses the controlled 03C catalog with `required` or `useful` meaning; no second or free-form taxonomy exists.
 
@@ -320,32 +320,41 @@ remain read-only history. `/messages`, `/messages/requests/:requestId`, and
 `/messages/requests/resource/:requestId` belong to Home and require a complete
 authenticated profile. The Chats tab remains Project-only until 04C4C3B.
 
-### Participation-request private conversation domain
+### Participation pair conversation domain
 
-Every `project_join_requests` episode owns one permanent private
-`project_join_request_chats` anchor from request creation, including historical
-rows backfilled at their canonical `created_at`. The optional 500-character
-request note remains the structured Request feed item; it is never copied into
-`project_join_request_chat_messages`. Human follow-ups are immutable,
-canonically trimmed plain text of 1 through 4,000 Unicode characters with a
-server-owned timestamp. Both tables use restrictive foreign keys, RLS without
-client policies, and no direct client or broad service-role privileges.
+[ADR 0007](decisions/0007-participation-pair-conversations.md) records MSG01's
+consolidation and privacy change. One immutable `participation_conversations`
+anchor represents the unordered requester/immutable Project Creator pair across
+Proposal/Project and Tavolo episodes. Only canonical participation requests
+establish it. Immutable associations retain original request and legacy chat IDs;
+existing message tables and references remain intact. New pair follow-ups live
+in `participation_conversation_messages` without invented request provenance.
 
-Only the requester and a current Project manager can resolve the exact
-conversation, page its strict Request/message feed, or receive its private
-`project-request-chat:<chat-id>:profile:<profile-id>` Broadcast hints. Sending is
-available only while the canonical request is pending. It takes the established
-concrete-Project, shared-Project, then request-row locks, so accept, reject, and
-withdraw races deterministically preserve a send serialized first and reject a
-send serialized after resolution. Terminal episodes retain readable history;
-accepted detail also exposes the separately authorized Project group-chat ID.
+The feed projects requests once at creation time with current statuses, legacy
+messages with actual author/context, and new human messages. Histories use
+complete bounded keyset cursors. Conversation summaries group before paging and
+derive truthful activity, counterparty, pending totals and send entitlement.
+Resource conversations and group chats stay independent.
 
-Durable audit/outbox event `project.join_request_chat_message_sent` and Realtime
-hints contain identifiers/timestamps only. Existing notification/push
-projectors deliberately ignore this new event until 07C1B owns its projection.
-The existing unified Requests projection is unchanged, and
-`list_own_message_chat_items` is intentionally unchanged; 07C1B owns the mobile
-conversation UI and unified Chats inclusion.
+Personal history, previews, sending and addressed Realtime belong only to the
+pair endpoints, including legacy RPCs. Ordinary Co-creators/Co-organizers retain
+scoped request notes, offers and canonical actions through Requests/Participation.
+Existing explicit staff evidence authority is unchanged.
+
+Sending requires an eligible pending request under requester-versus-current-
+manager blocking rules. One witness uses the existing ordered interaction-pair
+→ concrete/shared Project → request lock sequence and a final recheck. A witness
+changed by a race fails explicitly; refreshed state may authorize another request.
+The client preserves the draft without automatic resending. Final resolution
+makes the pair read-only; later legitimate requests reactivate the same history.
+Read-only subscriptions remain attached.
+
+The new durable event `participation.conversation_message_sent` contains chat,
+message and sender IDs only. `participation-conversation:<chat-id>:profile:<id>`
+hints contain only the chat ID (Realtime may add its delivery UUID), address only
+immutable endpoints, and never leak to cached delegate subscriptions. Current
+projectors leave the new event unhandled; MSG02 owns unread state and chat-alert
+changes. No new retention/deletion or generic messaging policy is introduced.
 
 ### Project group-chat lifecycle and authorization foundation
 
@@ -474,7 +483,7 @@ Edge Functions and background workers remain valid implementation choices when t
 | Messages                | Authenticated discriminated Project/Resource Requests plus the existing Project-only Chats tab                   | Canonical request domains; complete three-part cursor; Resource chats remain 04C4C3B                           |
 | Project chat            | Structural anchor, immutable message history, authorized list/send APIs, and private Realtime hints              | Creator plus current/former participants under canonical membership-time rules                                 |
 | Notifications           | Controlled categories/preferences, recipient in-app records, private installations, and recipient push jobs      | Recipient, per-consumer source event receipt, optional project/request/membership                              |
-| Templates               | Reusable proposal structure derived from approved past/community content                                         | Source proposal, attribution, moderation/publication state                                                     |
+| Templates               | Automatic source-linked reusable projection from Completed one-time Proposals                                    | Immutable source/Creator identity, content token, live attribution and private removal state                    |
 | Community statistics    | Aggregated views over canonical activity and participation                                                       | Proposal type, location, participation, time                                                                   |
 | Moderation              | Reports, blocks, content status, actions, internal notes, appeals if introduced                                  | Users, proposals, messages, media, administrators                                                              |
 | Audit/operations        | Security-relevant and administrative action history                                                              | Actor, target, action, timestamps, metadata                                                                    |
@@ -490,12 +499,12 @@ Edge Functions and background workers remain valid implementation choices when t
 | Resource request chat       | Accepted-request human history, authorized summaries/send, and private Realtime refresh hints                    | One request/agreement episode; permanent owner/requester read and open-coordination send                       |
 | Participation               | Shared project identity, private requests/decisions, current membership and retained history                     | Profile and concrete one-time/recurring project; source for authorization and later stats                      |
 | Project delegated authority | Structural-actor single-use invitations, Co-creator/Co-organizer roles, and current manager authorization        | Shared Project identity; separate from immutable original-Creator attribution and participation membership     |
-| Project shared workspace    | One private provider-neutral HTTPS link with manager mutation and current-group read authorization              | Shared Project identity; external provider owns files and permissions                                          |
+| Project shared workspace    | One private provider-neutral HTTPS link with manager mutation and current-group read authorization               | Shared Project identity; external provider owns files and permissions                                          |
 | Participation request chat  | Pending-request human history, structured request-note feed, exact authorized state, and private Realtime hints  | One join-request episode; permanent requester/current-manager read and pending-only send                       |
 | Messages                    | Authenticated discriminated Project/Resource Requests plus the existing Project-only Chats tab                   | Canonical request domains; complete three-part cursor; Resource chats remain 04C4C3B                           |
 | Project chat                | Structural anchor, immutable message history, authorized list/send APIs, and private Realtime hints              | Owner/active delegates plus current/former participants under canonical membership-time rules                  |
 | Notifications               | Controlled categories/preferences, recipient in-app records, private installations, and recipient push jobs      | Recipient, per-consumer source event receipt, optional project/request/membership                              |
-| Templates                   | Reusable proposal structure derived from approved past/community content                                         | Source proposal, attribution, moderation/publication state                                                     |
+| Templates                   | Automatic source-linked reusable projection from Completed one-time Proposals                                    | Immutable source/Creator identity, content token, live attribution and private removal state                    |
 | Community statistics        | Aggregated views over canonical activity and participation                                                       | Proposal type, location, participation, time                                                                   |
 | Moderation                  | Reports, blocks, content status, actions, internal notes, appeals if introduced                                  | Users, proposals, messages, media, administrators                                                              |
 | Audit/operations            | Security-relevant and administrative action history                                                              | Actor, target, action, timestamps, metadata                                                                    |
@@ -570,7 +579,7 @@ Regardless of final state names:
 - repeated commands must not duplicate members, chats, notifications, or statistics;
 - membership/history records must preserve enough information for derived stats and moderation;
 - deleting or suspending an account must not corrupt historical proposals;
-- templates must copy approved reusable fields rather than stay invisibly coupled to mutable source content.
+- future Projects created from templates must atomically copy the allowed reusable fields and provenance, remaining independent of later source edits; the linked template itself follows its canonical source.
 
 ### Participation and automatic chat
 
@@ -763,19 +772,45 @@ The database stores canonical media metadata and authorization context. A storag
 
 ## Templates and community data
 
-A template should be an explicit reusable representation, not simply “load the old proposal and mutate it.” This permits:
+TW01 implements the backend foundation on its draft-review branch. First
+successful publication synchronously establishes one private linked identity
+per one-time Proposal and retains a narrow original-Creator-private last saved
+Bozza baseline. Legacy backfill establishes identities without inventing drafts
+or events. There is no explicit submission or approval queue.
 
-- stable attribution to a source proposal;
-- removal of private or event-specific details;
-- moderation before community publication;
-- versioning or deprecation later;
-- analytics on template reuse.
+The template is an allow-listed synchronous projection of latest published
+source text, controlled skills, open need title/details, capacity recommendation,
+duration and source-authorized cover. STABLE RPCs return consistent snapshots
+and an opaque content hash; globally-public author names are sanitized live and
+never stored in copied content. Private meeting/workspace/participation data,
+coverage/contributions and staff evidence are excluded. Free text is not
+automatically anonymized.
+
+Catalog/detail and bounded, version-checked resource-blueprint pages share
+canonical Completed (end + 24 hours), current source visibility and private
+template-removal eligibility. No scheduled completion write is needed.
+TW02 implements reporting/removal; TW03 implements atomic copying into an
+independent ordinary private Proposal draft on its selected draft-review base.
+Applicant-private immutable receipts recover exact accepted actions without
+rewriting edited or published drafts. TW04 owns mobile Workshop. No template
+participation, outcome editor, comparison UI or production backfill is implemented.
+The consumable contracts, actor matrix, version semantics and lock ownership
+are recorded in [the Template Workshop guide](../development/template-workshop.md).
 
 Community statistics should be derived from canonical records through SQL views initially. Examples may include counts by category, broad location, time, completion state, and participation. Materialized views or cached aggregates are deferred until measured performance requires them.
 
 ## Administration and moderation
 
 Administrative tools are separate from normal user flows but use the same canonical backend.
+
+TW02, implemented as an unmerged draft on TW01's explicitly selected head, adds
+manual template reporting (including original-Creator self-report) and one
+staff-only audited removal of Workshop availability. Source provenance remains
+separate from Project incident context. Staff see only the current published
+reusable allow-list, never private Bozza. Protected reasons/attribution and
+identity-bound receipts are retained; public reads share TW01 eligibility.
+Source Projects and independent copies remain unaffected. TW03 copying is
+implemented on its selected unmerged base; TW04 Workshop screens remain deferred. See the [Workshop contract](../development/template-workshop.md).
 
 Plan 09A1 implements the first manual-review slice. Private moderation cases
 anchor an immutable typed target and canonical subject/context; append-only
@@ -1056,3 +1091,11 @@ The foundation does not include:
 - sophisticated gamification before canonical participation history exists.
 
 These can be reconsidered through explicit architecture/product decisions when evidence supports them.
+
+DRAFT01 implements unpublished one-time Proposal save-before-navigation on the
+selected TW03 draft base. Identity-bound mobile sessions acknowledge immutable
+raw revisions; a narrow private canonical first-creation receipt prevents duplicate
+drafts after lost responses. Published editing remains deliberate, and TW03
+provenance/needs remain independent of removed sources. The
+[draft departure contract](../development/proposal-draft-departure.md) defines
+invalid/partial outcomes, retained tabs and forced-auth limitations.

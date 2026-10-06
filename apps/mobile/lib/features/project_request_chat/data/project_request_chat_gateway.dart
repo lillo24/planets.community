@@ -2,10 +2,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/backend/supabase_backend.dart';
+import '../../messages/domain/message_unread_models.dart';
+import '../../../core/backend/private_broadcast_payload.dart';
 import '../../participation/domain/participation_models.dart';
 import '../domain/project_request_chat_models.dart';
 
-const _messageSentEvent = 'project.join_request_chat_message_sent';
+const _messageSentEvent = 'participation.conversation_changed';
 
 abstract interface class ProjectRequestChatSignalSubscription {
   Future<void> close();
@@ -22,6 +24,7 @@ abstract interface class ProjectRequestChatGateway {
     required String chatId,
     required int limit,
     ProjectRequestChatFeedCursor? cursor,
+    bool onlyPending = false,
   });
 
   Future<ProjectRequestChatHumanMessage> sendMessage({
@@ -29,6 +32,12 @@ abstract interface class ProjectRequestChatGateway {
     required String requestId,
     required String chatId,
     required String body,
+  });
+
+  Future<List<ProjectRequestChatRequestItem>> refreshRequests({
+    required String expectedProfileId,
+    required String chatId,
+    required List<String> requestIds,
   });
 
   ProjectRequestChatSignalSubscription subscribeToSignals({
@@ -51,7 +60,7 @@ class SupabaseProjectRequestChatGateway implements ProjectRequestChatGateway {
     required String requestId,
   }) async {
     final response = await _client.rpc<List<dynamic>>(
-      'get_own_project_join_request_chat',
+      'get_own_participation_conversation',
       params: {
         'p_expected_profile_id': expectedProfileId,
         'p_request_id': requestId,
@@ -71,20 +80,29 @@ class SupabaseProjectRequestChatGateway implements ProjectRequestChatGateway {
     required String chatId,
     required int limit,
     ProjectRequestChatFeedCursor? cursor,
+    bool onlyPending = false,
   }) async {
-    final response = await _client.rpc<List<dynamic>>(
-      'list_own_project_join_request_chat_items',
+    final envelope = await _client.rpc<Object?>(
+      'get_own_message_feed_page',
       params: {
         'p_expected_profile_id': expectedProfileId,
         'p_chat_id': chatId,
+        'p_kind': 'project_request_chat',
         'p_limit': limit + 1,
         'p_before_created_at': cursor?.createdAt.toUtc().toIso8601String(),
         'p_before_item_kind': cursor?.itemKind.wireValue,
         'p_before_item_id': cursor?.itemId,
+        'p_only_pending': onlyPending,
       },
     );
+    final snapshot = MessageFeedSnapshot.parse(
+      envelope,
+      newest: cursor == null && !onlyPending,
+    );
+    final response = snapshot.items;
     final parsed = response.map(parser.feedItem).toList(growable: false);
     return ProjectRequestChatFeedPage(
+      readBoundary: snapshot.boundary,
       items: List.unmodifiable(parsed.take(limit)),
       hasMore: parsed.length > limit,
     );
@@ -98,7 +116,7 @@ class SupabaseProjectRequestChatGateway implements ProjectRequestChatGateway {
     required String body,
   }) async {
     final response = await _client.rpc<List<dynamic>>(
-      'send_project_join_request_chat_message',
+      'send_participation_conversation_message',
       params: {
         'p_expected_profile_id': expectedProfileId,
         'p_chat_id': chatId,
@@ -110,7 +128,43 @@ class SupabaseProjectRequestChatGateway implements ProjectRequestChatGateway {
         'Expected one sent participation-request chat message.',
       );
     }
-    return parser.sentMessage(response.single, requestId: requestId);
+    return parser.sentMessage(response.single);
+  }
+
+  @override
+  Future<List<ProjectRequestChatRequestItem>> refreshRequests({
+    required String expectedProfileId,
+    required String chatId,
+    required List<String> requestIds,
+  }) async {
+    final items = <ProjectRequestChatRequestItem>[];
+    for (var start = 0; start < requestIds.length; start += 50) {
+      final response = await _client.rpc<List<dynamic>>(
+        'get_own_participation_conversation_requests',
+        params: {
+          'p_expected_profile_id': expectedProfileId,
+          'p_chat_id': chatId,
+          'p_request_ids': requestIds.sublist(
+            start,
+            (start + 50).clamp(0, requestIds.length),
+          ),
+        },
+      );
+      for (final value in response) {
+        final item = parser.feedItem(value);
+        if (item is! ProjectRequestChatRequestItem ||
+            item.chatId != chatId ||
+            !requestIds.contains(item.requestId)) {
+          throw const FormatException('Mismatched request refresh.');
+        }
+        items.add(item);
+      }
+    }
+    if (items.map((item) => item.requestId).toSet().length !=
+        requestIds.toSet().length) {
+      throw const FormatException('Incomplete request refresh.');
+    }
+    return List.unmodifiable(items);
   }
 
   @override
@@ -121,7 +175,7 @@ class SupabaseProjectRequestChatGateway implements ProjectRequestChatGateway {
     required void Function(ProjectRequestChatConnectionStatus status) onStatus,
   }) {
     final channel = _client.channel(
-      'project-request-chat:$chatId:profile:$expectedProfileId',
+      'participation-conversation:$chatId:profile:$expectedProfileId',
       opts: const RealtimeChannelConfig(private: true),
     );
     void handle(Map<String, dynamic> payload) {
@@ -174,6 +228,8 @@ class ProjectRequestChatPayloadParser {
     'is_read_only',
     'has_send_entitlement',
     'accepted_project_group_chat_id',
+    'pending_count',
+    'pending_items',
   };
   static const _feedKeys = {
     'item_kind',
@@ -192,6 +248,8 @@ class ProjectRequestChatPayloadParser {
     'sender_display_name',
     'body',
     'created_at',
+    'resolved_at',
+    'accepted_project_group_chat_id',
   };
   static const _sentKeys = {
     'message_id',
@@ -209,9 +267,17 @@ class ProjectRequestChatPayloadParser {
     final readOnly = _bool(row, 'is_read_only');
     final sendEntitlement = _bool(row, 'has_send_entitlement');
     final groupChatId = _optionalUuid(row, 'accepted_project_group_chat_id');
+    final viewerRole = ProjectRequestChatViewerRole.fromWire(
+      _string(row, 'viewer_role'),
+    );
+    if (viewerRole == ProjectRequestChatViewerRole.delegate) {
+      throw const FormatException(
+        'A delegate cannot be a personal conversation viewer.',
+      );
+    }
     if ((status == JoinRequestStatus.pending) != (resolvedAt == null) ||
         readOnly == sendEntitlement ||
-        sendEntitlement != (status == JoinRequestStatus.pending) ||
+        (sendEntitlement && _pendingCount(row) == 0) ||
         (status != JoinRequestStatus.accepted && groupChatId != null)) {
       throw const FormatException(
         'Participation-request chat lifecycle shape was inconsistent.',
@@ -223,9 +289,7 @@ class ProjectRequestChatPayloadParser {
       projectId: _uuid(row, 'project_id'),
       projectKind: ProjectKind.fromWire(_string(row, 'project_kind')),
       projectTitle: _string(row, 'project_title'),
-      viewerRole: ProjectRequestChatViewerRole.fromWire(
-        _string(row, 'viewer_role'),
-      ),
+      viewerRole: viewerRole,
       requesterProfileId: _uuid(row, 'requester_profile_id'),
       requesterDisplayName: _string(row, 'requester_display_name'),
       creatorProfileId: _uuid(row, 'creator_profile_id'),
@@ -238,6 +302,8 @@ class ProjectRequestChatPayloadParser {
       isReadOnly: readOnly,
       hasSendEntitlement: sendEntitlement,
       acceptedProjectGroupChatId: groupChatId,
+      pendingCount: _pendingCount(row),
+      pendingRequests: _pendingItems(row),
     );
   }
 
@@ -248,47 +314,26 @@ class ProjectRequestChatPayloadParser {
       _string(row, 'item_kind'),
     )) {
       ProjectRequestChatFeedItemKind.request => _requestItem(row),
-      ProjectRequestChatFeedItemKind.message => _messageItem(row),
+      ProjectRequestChatFeedItemKind.message ||
+      ProjectRequestChatFeedItemKind.legacyMessage => _messageItem(row),
     };
   }
 
   ProjectRequestChatHumanMessage sentMessage(
     Object? value, {
-    required String requestId,
+    String? requestId,
   }) {
     final row = _row(value, 'Sent participation-request chat message');
     _exact(row, _sentKeys, 'Sent participation-request chat message');
-    return _message(row, requestId: requestId, senderDisplayName: null);
+    return _message(row, requestId: null, senderDisplayName: null);
   }
 
   ProjectRequestChatMessageSentSignal signal(Object? value) {
-    final envelope = _row(value, 'Participation-request Realtime envelope');
-    _exact(envelope, const {
-      'type',
-      'event',
-      'payload',
-    }, 'Participation-request Realtime envelope');
-    if (_string(envelope, 'type') != 'broadcast' ||
-        _string(envelope, 'event') != _messageSentEvent) {
-      throw const FormatException(
-        'Unexpected participation-request Realtime event.',
-      );
-    }
-    final payload = _row(
-      envelope['payload'],
-      'Participation-request Realtime payload',
-    );
-    _exact(payload, const {
+    final payload = privateBroadcastPayload(value, _messageSentEvent, const {
       'chat_id',
-      'request_id',
-      'message_id',
-      'created_at',
-    }, 'Participation-request Realtime payload');
+    });
     return ProjectRequestChatMessageSentSignal(
       chatId: _uuid(payload, 'chat_id'),
-      requestId: _uuid(payload, 'request_id'),
-      messageId: _uuid(payload, 'message_id'),
-      createdAt: _date(payload, 'created_at'),
     );
   }
 
@@ -299,6 +344,16 @@ class ProjectRequestChatPayloadParser {
       'sender_display_name',
       'body',
     });
+    final status = JoinRequestStatus.fromWire(_string(row, 'request_status'));
+    final resolvedAt = _optionalDate(row, 'resolved_at');
+    final groupChatId = _optionalUuid(row, 'accepted_project_group_chat_id');
+    if (_uuid(row, 'item_id') != _uuid(row, 'request_id') ||
+        (status == JoinRequestStatus.pending) != (resolvedAt == null) ||
+        (status != JoinRequestStatus.accepted && groupChatId != null)) {
+      throw const FormatException(
+        'Request identity or lifecycle is inconsistent.',
+      );
+    }
     return ProjectRequestChatRequestItem(
       itemId: _uuid(row, 'item_id'),
       chatId: _uuid(row, 'chat_id'),
@@ -306,10 +361,12 @@ class ProjectRequestChatPayloadParser {
       projectId: _uuid(row, 'project_id'),
       projectKind: ProjectKind.fromWire(_string(row, 'project_kind')),
       projectTitle: _string(row, 'project_title'),
-      requestStatus: JoinRequestStatus.fromWire(_string(row, 'request_status')),
+      requestStatus: status,
       requestMessage: _optionalString(row, 'request_message'),
       requesterProfileId: _uuid(row, 'requester_profile_id'),
       requesterDisplayName: _string(row, 'requester_display_name'),
+      resolvedAt: resolvedAt,
+      acceptedProjectGroupChatId: groupChatId,
       createdAt: _date(row, 'created_at'),
     );
   }
@@ -323,23 +380,27 @@ class ProjectRequestChatPayloadParser {
       'request_message',
       'requester_profile_id',
       'requester_display_name',
+      'resolved_at',
+      'accepted_project_group_chat_id',
     });
     final messageId = _uuid(row, 'message_id');
-    if (_uuid(row, 'item_id') != messageId) {
+    final requestId = _optionalUuid(row, 'request_id');
+    if (_uuid(row, 'item_id') != messageId ||
+        (row['item_kind'] == 'legacy_message') != (requestId != null)) {
       throw const FormatException(
         'Participation-request message identity was inconsistent.',
       );
     }
     return _message(
       row,
-      requestId: _uuid(row, 'request_id'),
+      requestId: requestId,
       senderDisplayName: _string(row, 'sender_display_name'),
     );
   }
 
   ProjectRequestChatHumanMessage _message(
     Map<String, dynamic> row, {
-    required String requestId,
+    required String? requestId,
     required String? senderDisplayName,
   }) {
     final body = _string(row, 'body');
@@ -356,7 +417,36 @@ class ProjectRequestChatPayloadParser {
       senderProfileId: _uuid(row, 'sender_profile_id'),
       senderDisplayName: senderDisplayName,
       body: body,
+      isLegacy: row['item_kind'] == 'legacy_message',
       createdAt: _date(row, 'created_at'),
+    );
+  }
+
+  int _pendingCount(Map<String, dynamic> row) {
+    final count = row['pending_count'];
+    if (count is! int || count < 0) {
+      throw const FormatException('Invalid pending total.');
+    }
+    return count;
+  }
+
+  List<ProjectRequestChatRequestItem> _pendingItems(Map<String, dynamic> row) {
+    final values = row['pending_items'];
+    if (values is! List || values.length != _pendingCount(row).clamp(0, 30)) {
+      throw const FormatException('Invalid pending page.');
+    }
+    final identifiers = <String>{};
+    return List.unmodifiable(
+      values.map((value) {
+        final item = feedItem(value);
+        if (item is! ProjectRequestChatRequestItem ||
+            item.requestStatus != JoinRequestStatus.pending ||
+            item.chatId != row['chat_id'] ||
+            !identifiers.add(item.requestId)) {
+          throw const FormatException('Mismatched pending request.');
+        }
+        return item;
+      }),
     );
   }
 

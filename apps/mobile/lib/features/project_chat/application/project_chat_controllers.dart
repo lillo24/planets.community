@@ -315,6 +315,7 @@ enum ProjectChatDetailPhase { idle, loading, ready, failure }
 
 class ProjectChatDetailState {
   const ProjectChatDetailState({
+    this.readBoundary,
     this.phase = ProjectChatDetailPhase.idle,
     this.expectedProfileId,
     this.chatId,
@@ -327,6 +328,7 @@ class ProjectChatDetailState {
     this.hasConnectionIssue = false,
   });
 
+  final String? readBoundary;
   final ProjectChatDetailPhase phase;
   final String? expectedProfileId;
   final String? chatId;
@@ -391,6 +393,7 @@ class ProjectChatDetailController extends Notifier<ProjectChatDetailState> {
         state.expectedProfileId == expectedProfileId && state.chatId == chatId;
     if (!sameTarget) _closeSubscription();
     state = ProjectChatDetailState(
+      readBoundary: state.readBoundary,
       phase: ProjectChatDetailPhase.loading,
       expectedProfileId: expectedProfileId,
       chatId: chatId,
@@ -412,6 +415,7 @@ class ProjectChatDetailController extends Notifier<ProjectChatDetailState> {
       if (!_isCurrent(revision, expectedProfileId, chatId)) return false;
       _validateFeedChat(page.items, chatId);
       state = ProjectChatDetailState(
+        readBoundary: page.readBoundary ?? state.readBoundary,
         phase: ProjectChatDetailPhase.ready,
         expectedProfileId: expectedProfileId,
         chatId: chatId,
@@ -442,6 +446,7 @@ class ProjectChatDetailController extends Notifier<ProjectChatDetailState> {
     } catch (error) {
       if (!_isCurrent(revision, expectedProfileId, chatId)) return false;
       state = ProjectChatDetailState(
+        readBoundary: state.readBoundary,
         phase: ProjectChatDetailPhase.failure,
         expectedProfileId: expectedProfileId,
         chatId: chatId,
@@ -486,6 +491,7 @@ class ProjectChatDetailController extends Notifier<ProjectChatDetailState> {
           state.summary?.hasCurrentEntitlement == true &&
           !summary.hasCurrentEntitlement;
       state = ProjectChatDetailState(
+        readBoundary: page.readBoundary ?? state.readBoundary,
         phase: ProjectChatDetailPhase.ready,
         expectedProfileId: expectedProfileId,
         chatId: chatId,
@@ -524,6 +530,7 @@ class ProjectChatDetailController extends Notifier<ProjectChatDetailState> {
     } catch (error) {
       if (!_isCurrent(revision, expectedProfileId, chatId)) return false;
       state = ProjectChatDetailState(
+        readBoundary: state.readBoundary,
         phase: ProjectChatDetailPhase.ready,
         expectedProfileId: expectedProfileId,
         chatId: chatId,
@@ -556,6 +563,7 @@ class ProjectChatDetailController extends Notifier<ProjectChatDetailState> {
     final existing = state.feedItems;
     final oldest = existing.first;
     state = ProjectChatDetailState(
+      readBoundary: state.readBoundary,
       phase: ProjectChatDetailPhase.ready,
       expectedProfileId: expectedProfileId,
       chatId: chatId,
@@ -583,6 +591,7 @@ class ProjectChatDetailController extends Notifier<ProjectChatDetailState> {
       if (!_isCurrent(revision, expectedProfileId, chatId)) return false;
       _validateFeedChat(page.items, chatId);
       state = ProjectChatDetailState(
+        readBoundary: page.readBoundary ?? state.readBoundary,
         phase: ProjectChatDetailPhase.ready,
         expectedProfileId: expectedProfileId,
         chatId: chatId,
@@ -595,6 +604,7 @@ class ProjectChatDetailController extends Notifier<ProjectChatDetailState> {
     } catch (error) {
       if (!_isCurrent(revision, expectedProfileId, chatId)) return false;
       state = ProjectChatDetailState(
+        readBoundary: state.readBoundary,
         phase: ProjectChatDetailPhase.ready,
         expectedProfileId: expectedProfileId,
         chatId: chatId,
@@ -609,6 +619,7 @@ class ProjectChatDetailController extends Notifier<ProjectChatDetailState> {
       if (_isCurrent(revision, expectedProfileId, chatId) &&
           state.isLoadingOlder) {
         state = ProjectChatDetailState(
+          readBoundary: state.readBoundary,
           phase: state.phase,
           expectedProfileId: state.expectedProfileId,
           chatId: state.chatId,
@@ -640,6 +651,7 @@ class ProjectChatDetailController extends Notifier<ProjectChatDetailState> {
     if (canonicalBody.isEmpty ||
         canonicalBody.length > projectChatMessageMaxLength) {
       state = ProjectChatDetailState(
+        readBoundary: state.readBoundary,
         phase: state.phase,
         expectedProfileId: state.expectedProfileId,
         chatId: state.chatId,
@@ -653,6 +665,7 @@ class ProjectChatDetailController extends Notifier<ProjectChatDetailState> {
     }
     final revision = _revision;
     state = ProjectChatDetailState(
+      readBoundary: state.readBoundary,
       phase: state.phase,
       expectedProfileId: state.expectedProfileId,
       chatId: state.chatId,
@@ -676,6 +689,7 @@ class ProjectChatDetailController extends Notifier<ProjectChatDetailState> {
         throw const FormatException('Sent Project chat message mismatched.');
       }
       state = ProjectChatDetailState(
+        readBoundary: state.readBoundary,
         phase: ProjectChatDetailPhase.ready,
         expectedProfileId: expectedProfileId,
         chatId: chatId,
@@ -690,6 +704,7 @@ class ProjectChatDetailController extends Notifier<ProjectChatDetailState> {
     } catch (error) {
       if (!_isCurrent(revision, expectedProfileId, chatId)) return false;
       state = ProjectChatDetailState(
+        readBoundary: state.readBoundary,
         phase: ProjectChatDetailPhase.ready,
         expectedProfileId: expectedProfileId,
         chatId: chatId,
@@ -849,6 +864,7 @@ class ProjectChatDetailController extends Notifier<ProjectChatDetailState> {
       return;
     }
     state = ProjectChatDetailState(
+      readBoundary: state.readBoundary,
       phase: state.phase,
       expectedProfileId: state.expectedProfileId,
       chatId: state.chatId,

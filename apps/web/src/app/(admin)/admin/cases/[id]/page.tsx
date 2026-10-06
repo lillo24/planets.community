@@ -1,3 +1,4 @@
+import { isTemplateVersion } from "@/features/moderation/template-moderation-models";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
@@ -9,12 +10,21 @@ import { readModerationCase } from "@/features/moderation/moderation-server";
 
 export default async function ModerationCasePage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams?: Promise<{ needCursor?: string; contentVersion?: string }>;
 }) {
   const { id } = await params;
   if (!isUuid(id)) notFound();
-  const result = await readModerationCase(id).catch(() => null);
+  const query = (await searchParams) ?? {};
+  const templatePage =
+    isUuid(query.needCursor) && isTemplateVersion(query.contentVersion)
+      ? { needCursor: query.needCursor, contentVersion: query.contentVersion }
+      : undefined;
+  const result = await readModerationCase(id, undefined, templatePage).catch(
+    () => null,
+  );
   if (result === null) {
     return (
       <main className="mx-auto flex w-full max-w-4xl flex-1 flex-col gap-6 p-6 md:p-10">

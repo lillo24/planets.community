@@ -12,69 +12,85 @@ import '../../../support/fake_moderation.dart';
 
 void main() {
   const profileId = '00000000-0000-4000-8000-000000000001';
-  const target = ModerationReportTarget(
+  const templateTarget = ModerationReportTarget(
+    kind: ModerationTargetKind.proposalTemplate,
+    id: '00000000-0000-4000-8000-000000000102',
+    label: 'Completed template',
+  );
+  const projectTarget = ModerationReportTarget(
     kind: ModerationTargetKind.project,
     id: '00000000-0000-4000-8000-000000000101',
     label: 'Community garden',
   );
 
-  test(
-    'duplicate submit is blocked and one idempotency key is retained',
-    () async {
-      final delay = Completer<void>();
-      final gateway = FakeModerationGateway()..submitDelay = delay.future;
-      final container = _container(gateway);
-      addTearDown(container.dispose);
-      final controller = container.read(moderationSubmissionProvider.notifier);
+  for (final target in [projectTarget, templateTarget]) {
+    group(target.kind.wireValue, () {
+      test(
+        'duplicate submit is blocked and one idempotency key is retained',
+        () async {
+          final delay = Completer<void>();
+          final gateway = FakeModerationGateway()..submitDelay = delay.future;
+          final container = _container(gateway);
+          addTearDown(container.dispose);
+          final controller = container.read(
+            moderationSubmissionProvider.notifier,
+          );
 
-      final first = controller.submit(
-        expectedProfileId: profileId,
-        target: target,
-        category: ModerationCategory.other,
-        explanation: 'A sufficiently clear explanation.',
+          final first = controller.submit(
+            expectedProfileId: profileId,
+            target: target,
+            category: ModerationCategory.other,
+            explanation: 'A sufficiently clear explanation.',
+          );
+          await Future<void>.delayed(Duration.zero);
+          expect(
+            await controller.submit(
+              expectedProfileId: profileId,
+              target: target,
+              category: ModerationCategory.other,
+              explanation: 'A sufficiently clear explanation.',
+            ),
+            isFalse,
+          );
+          delay.complete();
+          expect(await first, isTrue);
+          expect(gateway.submitCount, 1);
+          expect(gateway.clientSubmissionId, 'submission-id');
+        },
       );
-      await Future<void>.delayed(Duration.zero);
-      expect(
-        await controller.submit(
-          expectedProfileId: profileId,
-          target: target,
-          category: ModerationCategory.other,
-          explanation: 'A sufficiently clear explanation.',
-        ),
-        isFalse,
-      );
-      delay.complete();
-      expect(await first, isTrue);
-      expect(gateway.submitCount, 1);
-      expect(gateway.clientSubmissionId, 'submission-id');
-    },
-  );
 
-  test('account switch discards a late private submission result', () async {
-    final delay = Completer<void>();
-    final gateway = FakeModerationGateway()..submitDelay = delay.future;
-    final container = _container(gateway);
-    addTearDown(container.dispose);
-    final controller = container.read(moderationSubmissionProvider.notifier);
-    final pending = controller.submit(
-      expectedProfileId: profileId,
-      target: target,
-      category: ModerationCategory.other,
-      explanation: 'A sufficiently clear explanation.',
-    );
-    await Future<void>.delayed(Duration.zero);
-    container
-        .read(authSessionProvider.notifier)
-        .markProfileReady(
-          const AuthIdentity(id: '00000000-0000-4000-8000-000000000099'),
-        );
-    delay.complete();
-    expect(await pending, isFalse);
-    expect(
-      container.read(moderationSubmissionProvider).phase,
-      ModerationSubmissionPhase.idle,
-    );
-  });
+      test(
+        'account switch discards a late private submission result',
+        () async {
+          final delay = Completer<void>();
+          final gateway = FakeModerationGateway()..submitDelay = delay.future;
+          final container = _container(gateway);
+          addTearDown(container.dispose);
+          final controller = container.read(
+            moderationSubmissionProvider.notifier,
+          );
+          final pending = controller.submit(
+            expectedProfileId: profileId,
+            target: target,
+            category: ModerationCategory.other,
+            explanation: 'A sufficiently clear explanation.',
+          );
+          await Future<void>.delayed(Duration.zero);
+          container
+              .read(authSessionProvider.notifier)
+              .markProfileReady(
+                const AuthIdentity(id: '00000000-0000-4000-8000-000000000099'),
+              );
+          delay.complete();
+          expect(await pending, isFalse);
+          expect(
+            container.read(moderationSubmissionProvider).phase,
+            ModerationSubmissionPhase.idle,
+          );
+        },
+      );
+    });
+  }
 }
 
 ProviderContainer _container(FakeModerationGateway gateway) {

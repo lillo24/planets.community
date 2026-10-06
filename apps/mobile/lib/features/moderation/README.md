@@ -100,3 +100,10 @@ expose reasons/staff/cases, or guarantee eligibility after removal. Canonical
 Resource active-request recovery remains visible. No outbox consumer is added.
 See `docs/development/moderation-own-request-explanations-09c2b2-review.md` for
 exact wording, validation and remaining founder review.
+TW02 extends the shared typed vocabulary with `proposal_template`.
+`proposalTemplateReportTarget` in `moderation_routes.dart` gives TW04 the current
+form route without a Workshop screen/navigation entry. Original Creators use the
+same authenticated manual-review flow and neutral receipt. Italian/English
+copy explains that reporting removes nothing automatically. Template provenance
+never activates Project corroboration or Resource counterstatement disclosures;
+identity-change/retry safeguards and narrow own-report parsing are reused.

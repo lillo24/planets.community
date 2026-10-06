@@ -1,5 +1,12 @@
 # Resource chat
 
+MSG02 history uses `get_own_message_feed_page` to obtain an own newest snapshot
+boundary. The shared Messages viewport acknowledges only successfully rendered,
+foreground, unobscured latest content. Older pages and previews never read chat;
+closed coordination remains unread until acknowledged. Request-scoped identity,
+counterparty authorization and exchange/system activity remain unchanged. See
+the Messages feature and ADR 0008 for eligibility, baseline and activity alerts.
+
 This feature owns the authenticated mobile conversation for one accepted
 Scambio-Dona request episode. It renders permanent counterpart history and
 human messages. The conversation screen embeds the independently loaded

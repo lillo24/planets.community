@@ -27,6 +27,7 @@ enum ResourceChatDetailPhase { idle, loading, ready, failure }
 
 class ResourceChatDetailState {
   const ResourceChatDetailState({
+    this.readBoundary,
     this.phase = ResourceChatDetailPhase.idle,
     this.expectedProfileId,
     this.chatId,
@@ -39,6 +40,7 @@ class ResourceChatDetailState {
     this.hasConnectionIssue = false,
   });
 
+  final String? readBoundary;
   final ResourceChatDetailPhase phase;
   final String? expectedProfileId;
   final String? chatId;
@@ -106,6 +108,7 @@ class ResourceChatDetailController extends Notifier<ResourceChatDetailState> {
     final previousSummary = sameTarget ? state.summary : null;
     if (!sameTarget) _closeSubscription();
     state = ResourceChatDetailState(
+      readBoundary: state.readBoundary,
       phase: ResourceChatDetailPhase.loading,
       expectedProfileId: expectedProfileId,
       chatId: chatId,
@@ -130,6 +133,7 @@ class ResourceChatDetailController extends Notifier<ResourceChatDetailState> {
       if (!_isCurrent(revision, expectedProfileId, chatId)) return false;
       _validateMessages(page.items, chatId);
       state = ResourceChatDetailState(
+        readBoundary: page.readBoundary ?? state.readBoundary,
         phase: ResourceChatDetailPhase.ready,
         expectedProfileId: expectedProfileId,
         chatId: chatId,
@@ -143,6 +147,7 @@ class ResourceChatDetailController extends Notifier<ResourceChatDetailState> {
     } catch (error) {
       if (!_isCurrent(revision, expectedProfileId, chatId)) return false;
       state = ResourceChatDetailState(
+        readBoundary: state.readBoundary,
         phase: ResourceChatDetailPhase.failure,
         expectedProfileId: expectedProfileId,
         chatId: chatId,
@@ -187,6 +192,7 @@ class ResourceChatDetailController extends Notifier<ResourceChatDetailState> {
       if (!_isCurrent(revision, expectedProfileId, chatId)) return false;
       _validateMessages(page.items, chatId);
       state = ResourceChatDetailState(
+        readBoundary: page.readBoundary ?? state.readBoundary,
         phase: ResourceChatDetailPhase.ready,
         expectedProfileId: expectedProfileId,
         chatId: chatId,
@@ -231,6 +237,7 @@ class ResourceChatDetailController extends Notifier<ResourceChatDetailState> {
       if (!_isCurrent(revision, expectedProfileId, chatId)) return false;
       _validateSummary(summary, chatId);
       state = ResourceChatDetailState(
+        readBoundary: state.readBoundary,
         phase: ResourceChatDetailPhase.ready,
         expectedProfileId: expectedProfileId,
         chatId: chatId,
@@ -267,6 +274,7 @@ class ResourceChatDetailController extends Notifier<ResourceChatDetailState> {
     final existing = state.messages;
     final oldest = existing.first;
     state = ResourceChatDetailState(
+      readBoundary: state.readBoundary,
       phase: state.phase,
       expectedProfileId: expectedProfileId,
       chatId: chatId,
@@ -293,6 +301,7 @@ class ResourceChatDetailController extends Notifier<ResourceChatDetailState> {
       if (!_isCurrent(revision, expectedProfileId, chatId)) return false;
       _validateMessages(page.items, chatId);
       state = ResourceChatDetailState(
+        readBoundary: page.readBoundary ?? state.readBoundary,
         phase: ResourceChatDetailPhase.ready,
         expectedProfileId: expectedProfileId,
         chatId: chatId,
@@ -305,6 +314,7 @@ class ResourceChatDetailController extends Notifier<ResourceChatDetailState> {
     } catch (error) {
       if (!_isCurrent(revision, expectedProfileId, chatId)) return false;
       state = ResourceChatDetailState(
+        readBoundary: state.readBoundary,
         phase: ResourceChatDetailPhase.ready,
         expectedProfileId: expectedProfileId,
         chatId: chatId,
@@ -319,6 +329,7 @@ class ResourceChatDetailController extends Notifier<ResourceChatDetailState> {
       if (_isCurrent(revision, expectedProfileId, chatId) &&
           state.isLoadingOlder) {
         state = ResourceChatDetailState(
+          readBoundary: state.readBoundary,
           phase: state.phase,
           expectedProfileId: state.expectedProfileId,
           chatId: state.chatId,
@@ -353,6 +364,7 @@ class ResourceChatDetailController extends Notifier<ResourceChatDetailState> {
     }
     final revision = _revision;
     state = ResourceChatDetailState(
+      readBoundary: state.readBoundary,
       phase: state.phase,
       expectedProfileId: expectedProfileId,
       chatId: chatId,
@@ -376,6 +388,7 @@ class ResourceChatDetailController extends Notifier<ResourceChatDetailState> {
         throw const FormatException('Sent Resource chat message mismatched.');
       }
       state = ResourceChatDetailState(
+        readBoundary: state.readBoundary,
         phase: ResourceChatDetailPhase.ready,
         expectedProfileId: expectedProfileId,
         chatId: chatId,
@@ -402,6 +415,7 @@ class ResourceChatDetailController extends Notifier<ResourceChatDetailState> {
     } finally {
       if (_isCurrent(revision, expectedProfileId, chatId) && state.isSending) {
         state = ResourceChatDetailState(
+          readBoundary: state.readBoundary,
           phase: state.phase,
           expectedProfileId: state.expectedProfileId,
           chatId: state.chatId,
@@ -458,6 +472,7 @@ class ResourceChatDetailController extends Notifier<ResourceChatDetailState> {
     }
     if (!_isCurrent(revision, expectedProfileId, chatId)) return;
     state = ResourceChatDetailState(
+      readBoundary: state.readBoundary,
       phase: ResourceChatDetailPhase.ready,
       expectedProfileId: expectedProfileId,
       chatId: chatId,
@@ -618,6 +633,7 @@ class ResourceChatDetailController extends Notifier<ResourceChatDetailState> {
 
   void _setFailure(ResourceChatFailureKind failure) {
     state = ResourceChatDetailState(
+      readBoundary: state.readBoundary,
       phase: state.phase,
       expectedProfileId: state.expectedProfileId,
       chatId: state.chatId,
@@ -634,6 +650,7 @@ class ResourceChatDetailController extends Notifier<ResourceChatDetailState> {
   void _setConnectionIssue(bool value) {
     if (state.hasConnectionIssue == value) return;
     state = ResourceChatDetailState(
+      readBoundary: state.readBoundary,
       phase: state.phase,
       expectedProfileId: state.expectedProfileId,
       chatId: state.chatId,

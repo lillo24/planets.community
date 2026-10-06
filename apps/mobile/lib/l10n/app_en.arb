@@ -58,7 +58,19 @@
   "peopleInviteCoOrganizer": "Invite as Co-organizer",
   "peopleInviteCoCreator": "Invite as Co-creator",
   "peopleOfferDescription": "{issuer} invited {target} to become a {role}.",
-  "@peopleOfferDescription": {"placeholders":{"issuer":{"type":"String"},"target":{"type":"String"},"role":{"type":"String"}}},
+  "@peopleOfferDescription": {
+    "placeholders": {
+      "issuer": {
+        "type": "String"
+      },
+      "target": {
+        "type": "String"
+      },
+      "role": {
+        "type": "String"
+      }
+    }
+  },
   "peopleOfferConfirm": "Send a role offer?",
   "peopleOfferHelp": "Authority starts only after acceptance. Participation stays unchanged. Organizer counting follows the Project setting.",
   "peopleCoCreatorWarning": "A Co-creator can edit or stop the Project and manage roles and invitations.",
@@ -75,26 +87,34 @@
   "peopleSafetyHelp": "Blocking applies across PLANETS. It does not mute or hide group messages or end existing participation.",
   "peopleNameVisibility": "Your display name is visible to current Project people when you join; photo privacy stays unchanged.",
   "notificationRoleOffer": "{actor} invited you to an organizer role in {project}.",
-  "@notificationRoleOffer": {"placeholders":{"actor":{"type":"String"},"project":{"type":"String"}}},
+  "@notificationRoleOffer": {
+    "placeholders": {
+      "actor": {
+        "type": "String"
+      },
+      "project": {
+        "type": "String"
+      }
+    }
+  },
   "notificationRoleOfferGeneric": "You have a Project organizer role offer.",
-  "accountSuspendedTitle": "Account suspended",
-  "accountSuspendedBody": "Ordinary account access is unavailable while your account is suspended.",
-  "accountSuspendedReasonLabel": "Reason",
-  "accountStatusTitle": "Account access",
-  "accountStatusChecking": "Checking account access…",
-  "accountStatusCheckAgain": "Check status again",
-  "accountStatusFailure": "Account access could not be verified. Try again or sign out.",
   "browseRequestedSection": "Requested",
   "browseOtherProjectsSection": "Other projects",
   "browseRequestedBadge": "Requested",
   "browseRequestedSemantics": "Requested to join",
   "@@locale": "en",
   "demoIndicatorLabel": "DEMO",
-  "@demoIndicatorLabel": { "description": "Compact label shown on the normal app shell when demo presentation helpers are enabled." },
+  "@demoIndicatorLabel": {
+    "description": "Compact label shown on the normal app shell when demo presentation helpers are enabled."
+  },
   "demoIndicatorSemantics": "Demo tools enabled",
-  "@demoIndicatorSemantics": { "description": "Accessible label for the non-interactive demo-mode shell marker." },
+  "@demoIndicatorSemantics": {
+    "description": "Accessible label for the non-interactive demo-mode shell marker."
+  },
   "demoFillSampleAction": "Fill sample data",
-  "@demoFillSampleAction": { "description": "Demo-only action that fills the current supported form with synthetic local values without submitting it." },
+  "@demoFillSampleAction": {
+    "description": "Demo-only action that fills the current supported form with synthetic local values without submitting it."
+  },
   "navigationProfile": "Profile",
   "navigationBrowse": "Browse",
   "navigationHome": "Home",
@@ -106,24 +126,44 @@
   "skillSelectorDone": "Done",
   "skillSelectorSelectionCount": "{count, plural, =0{No skills selected} =1{1 skill selected} other{{count} skills selected}}",
   "@skillSelectorSelectionCount": {
-    "placeholders": { "count": { "type": "int" } }
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
   },
   "skillSelectorSelected": "{skill}, selected",
   "@skillSelectorSelected": {
-    "placeholders": { "skill": { "type": "String" } }
+    "placeholders": {
+      "skill": {
+        "type": "String"
+      }
+    }
   },
   "skillSelectorNotSelected": "{skill}, not selected",
   "@skillSelectorNotSelected": {
-    "placeholders": { "skill": { "type": "String" } }
+    "placeholders": {
+      "skill": {
+        "type": "String"
+      }
+    }
   },
   "skillSelectorRemove": "Remove {skill}",
   "@skillSelectorRemove": {
-    "placeholders": { "skill": { "type": "String" } }
+    "placeholders": {
+      "skill": {
+        "type": "String"
+      }
+    }
   },
   "skillFilterMore": "+{count} more",
   "@skillFilterMore": {
     "description": "Count of additional selected skills beyond the visible badges.",
-    "placeholders": { "count": { "type": "int" } }
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
   },
   "appTitle": "PLANETS",
   "@appTitle": {
@@ -468,7 +508,9 @@
   "proposalOpenCover": "Open {title}",
   "@proposalOpenCover": {
     "placeholders": {
-      "title": { "type": "String" }
+      "title": {
+        "type": "String"
+      }
     }
   },
   "proposalsBrowseAction": "Browse proposals",
@@ -521,32 +563,56 @@
   "proposalSkillUseful": "Useful",
   "proposalRequiredField": "This field is required to publish.",
   "proposalFillSampleAction": "Fill sample data",
-  "@proposalFillSampleAction": { "description": "Debug-build-only action that fills the proposal editor with synthetic sample values." },
+  "@proposalFillSampleAction": {
+    "description": "Debug-build-only action that fills the proposal editor with synthetic sample values."
+  },
   "proposalCheckFields": "Check these fields: {fields}.",
   "@proposalCheckFields": {
     "description": "Summary of fields that prevent saving or publishing.",
-    "placeholders": { "fields": { "type": "String" } }
+    "placeholders": {
+      "fields": {
+        "type": "String"
+      }
+    }
   },
   "proposalMinimumLength": "Enter at least {count} characters.",
   "@proposalMinimumLength": {
     "description": "Inline validation when supplied text is shorter than its minimum.",
-    "placeholders": { "count": { "type": "int" } }
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
   },
   "proposalMaximumLength": "Enter no more than {count} characters.",
   "@proposalMaximumLength": {
     "description": "Inline validation when supplied text exceeds its maximum.",
-    "placeholders": { "count": { "type": "int" } }
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
   },
   "proposalCountryCodeError": "Enter a two-letter country code, for example IT.",
-  "@proposalCountryCodeError": { "description": "Inline validation for the proposal ISO country code." },
+  "@proposalCountryCodeError": {
+    "description": "Inline validation for the proposal ISO country code."
+  },
   "proposalStartRequired": "Choose a start date and time.",
-  "@proposalStartRequired": { "description": "Inline validation for a missing proposal start." },
+  "@proposalStartRequired": {
+    "description": "Inline validation for a missing proposal start."
+  },
   "proposalEndRequired": "Choose an end date and time.",
-  "@proposalEndRequired": { "description": "Inline validation for a missing proposal end." },
+  "@proposalEndRequired": {
+    "description": "Inline validation for a missing proposal end."
+  },
   "proposalEndAfterStart": "End must be after start.",
-  "@proposalEndAfterStart": { "description": "Inline validation when a proposal does not end after it starts." },
+  "@proposalEndAfterStart": {
+    "description": "Inline validation when a proposal does not end after it starts."
+  },
   "proposalTimezoneShortLabel": "Time zone",
-  "@proposalTimezoneShortLabel": { "description": "Short timezone field name used in validation summaries." },
+  "@proposalTimezoneShortLabel": {
+    "description": "Short timezone field name used in validation summaries."
+  },
   "proposalValidationError": "Complete every required field, use a valid schedule and IANA time zone, then try again.",
   "proposalSaveDraftAction": "Save draft",
   "proposalSaveChangesAction": "Save changes",
@@ -582,11 +648,25 @@
   "tavoliNoUpcomingMeetings": "There are no active upcoming meetings.",
   "tavoliWeeklySummary": "Every {weekday} at {time}",
   "@tavoliWeeklySummary": {
-    "placeholders": { "weekday": { "type": "String" }, "time": { "type": "String" } }
+    "placeholders": {
+      "weekday": {
+        "type": "String"
+      },
+      "time": {
+        "type": "String"
+      }
+    }
   },
   "tavoliMonthlySummary": "Monthly on day {day} at {time}",
   "@tavoliMonthlySummary": {
-    "placeholders": { "day": { "type": "int" }, "time": { "type": "String" } }
+    "placeholders": {
+      "day": {
+        "type": "int"
+      },
+      "time": {
+        "type": "String"
+      }
+    }
   },
   "tavoliLifecycleDraft": "Draft",
   "tavoliLifecycleActive": "Active",
@@ -594,11 +674,29 @@
   "tavoliLifecycleEnded": "Ended",
   "tavoliTopicLabel": "Topic (optional)",
   "tavoliDuration": "Duration: {minutes} minutes",
-  "@tavoliDuration": { "placeholders": { "minutes": { "type": "int" } } },
+  "@tavoliDuration": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
   "tavoliTimezone": "Time zone: {timezone}",
-  "@tavoliTimezone": { "placeholders": { "timezone": { "type": "String" } } },
+  "@tavoliTimezone": {
+    "placeholders": {
+      "timezone": {
+        "type": "String"
+      }
+    }
+  },
   "tavoliOrganizedBy": "Organized by {name}",
-  "@tavoliOrganizedBy": { "placeholders": { "name": { "type": "String" } } },
+  "@tavoliOrganizedBy": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
   "tavoliLocationTitle": "Location",
   "tavoliExactLocationRestricted": "Exact location available after joining.",
   "tavoliTitleLabel": "Title",
@@ -639,7 +737,13 @@
   "tavoliEndConfirmMessage": "Ending stops this Tavolo permanently, but does not delete it. Its history and participation are retained as read-only.",
   "tavoliKeep": "Keep Tavolo",
   "tavoliPendingSchedule": "Pending schedule change from {date}",
-  "@tavoliPendingSchedule": { "placeholders": { "date": { "type": "String" } } },
+  "@tavoliPendingSchedule": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
   "tavoliFutureScheduleHelp": "Choose a future apply date. Past meetings keep their previous schedule.",
   "tavoliEndedReadOnly": "This ended Tavolo is read-only.",
   "tavoliValidationError": "Check the highlighted fields. A published Tavolo needs complete content, location, and schedule details.",
@@ -682,17 +786,29 @@
   "participationLeaveConfirmMessage": "You will lose current participant access, including protected meeting information. You can request to join again while the project remains eligible.",
   "participationRemoveConfirmTitle": "Remove {name}?",
   "@participationRemoveConfirmTitle": {
-    "placeholders": { "name": { "type": "String" } }
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
   },
   "participationRemoveConfirmMessage": "This removes the participant's current access, including protected meeting information. It does not permanently prevent a later request.",
   "participationKeep": "Keep participation",
   "participationRequestedAt": "Requested {date}",
   "@participationRequestedAt": {
-    "placeholders": { "date": { "type": "String" } }
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
   },
   "participationJoinedAt": "Joined {date}",
   "@participationJoinedAt": {
-    "placeholders": { "date": { "type": "String" } }
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
   },
   "participationStatusPending": "Pending",
   "participationStatusAccepted": "Accepted",
@@ -712,43 +828,75 @@
   "messagesLoadMore": "Load more",
   "messagesIncomingTitle": "{name} wants to join",
   "@messagesIncomingTitle": {
-    "placeholders": { "name": { "type": "String" } }
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
   },
   "messagesOutgoingTitle": "Your request for {project}",
   "@messagesOutgoingTitle": {
-    "placeholders": { "project": { "type": "String" } }
+    "placeholders": {
+      "project": {
+        "type": "String"
+      }
+    }
   },
   "messagesOutgoingDetailTitle": "Participation request to {name}",
   "@messagesOutgoingDetailTitle": {
-    "placeholders": { "name": { "type": "String" } }
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
   },
   "messagesProposal": "Proposal",
   "messagesTavolo": "Tavolo",
   "messagesUpdatedAt": "Updated {date}",
   "@messagesUpdatedAt": {
-    "placeholders": { "date": { "type": "String" } }
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
   },
   "messagesRequestDetailTitle": "Participation request",
   "messagesProjectLabel": "Project",
   "messagesPeopleLabel": "People",
   "messagesRequesterLabel": "Requester: {name}",
   "@messagesRequesterLabel": {
-    "placeholders": { "name": { "type": "String" } }
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
   },
   "messagesOrganizerLabel": "Organizer: {name}",
   "@messagesOrganizerLabel": {
-    "placeholders": { "name": { "type": "String" } }
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
   },
   "messagesRequestMessageLabel": "Private request message",
   "messagesNoRequestMessage": "No message was included.",
   "messagesTimelineLabel": "Timeline",
   "messagesRequestedAt": "Requested {date}",
   "@messagesRequestedAt": {
-    "placeholders": { "date": { "type": "String" } }
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
   },
   "messagesResolvedAt": "Resolved {date}",
   "@messagesResolvedAt": {
-    "placeholders": { "date": { "type": "String" } }
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
   },
   "messagesViewProject": "View project",
   "messagesResolvedHistoryNote": "This resolved request remains in your history. Project chat is not available yet.",
@@ -758,11 +906,19 @@
   "messagesNotFound": "This participation request is no longer available.",
   "resourceRequestInboxIncomingTitle": "{name} is interested in your listing",
   "@resourceRequestInboxIncomingTitle": {
-    "placeholders": { "name": { "type": "String" } }
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
   },
   "resourceRequestInboxOutgoingTitle": "Your request for {resource}",
   "@resourceRequestInboxOutgoingTitle": {
-    "placeholders": { "resource": { "type": "String" } }
+    "placeholders": {
+      "resource": {
+        "type": "String"
+      }
+    }
   },
   "resourceRequestTypeLabel": "Scambio-Dona request",
   "messageChatsLoading": "Loading chats…",
@@ -775,20 +931,32 @@
   "messageChatsUnavailable": "We couldn't load chats. Check your connection and try again.",
   "messageProjectChatCardSemantics": "Project chat for {title}",
   "@messageProjectChatCardSemantics": {
-    "placeholders": { "title": { "type": "String" } }
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
   },
   "messageResourceChatCardSemantics": "Resource conversation for {title}, {status}",
   "@messageResourceChatCardSemantics": {
     "placeholders": {
-      "title": { "type": "String" },
-      "status": { "type": "String" }
+      "title": {
+        "type": "String"
+      },
+      "status": {
+        "type": "String"
+      }
     }
   },
   "messageProjectRequestChatCardSemantics": "Private conversation with {name} about {project}",
   "@messageProjectRequestChatCardSemantics": {
     "placeholders": {
-      "name": { "type": "String" },
-      "project": { "type": "String" }
+      "name": {
+        "type": "String"
+      },
+      "project": {
+        "type": "String"
+      }
     }
   },
   "projectRequestChatTitle": "Participation conversation",
@@ -798,18 +966,30 @@
   "projectRequestChatPendingCreator": "{name} wants to join {project}",
   "@projectRequestChatPendingCreator": {
     "placeholders": {
-      "name": { "type": "String" },
-      "project": { "type": "String" }
+      "name": {
+        "type": "String"
+      },
+      "project": {
+        "type": "String"
+      }
     }
   },
   "projectRequestChatPendingRequester": "Your request to join {project} is pending",
   "@projectRequestChatPendingRequester": {
-    "placeholders": { "project": { "type": "String" } }
+    "placeholders": {
+      "project": {
+        "type": "String"
+      }
+    }
   },
   "projectRequestChatAcceptedTitle": "Request accepted",
   "projectRequestChatAcceptedBody": "You are now part of {project}.",
   "@projectRequestChatAcceptedBody": {
-    "placeholders": { "project": { "type": "String" } }
+    "placeholders": {
+      "project": {
+        "type": "String"
+      }
+    }
   },
   "projectRequestChatRejectedTitle": "Request declined",
   "projectRequestChatWithdrawnTitle": "Request withdrawn",
@@ -819,8 +999,8 @@
   "projectRequestChatLoadOlder": "Load older messages",
   "projectRequestChatMessageHint": "Write a private message",
   "projectRequestChatSend": "Send",
-  "projectRequestChatReadOnly": "This participation conversation is read-only.",
-  "projectRequestChatSendConflict": "The request was resolved before this message could be sent. The conversation is now read-only.",
+  "projectRequestChatReadOnly": "This conversation is read-only. A new eligible participation request will reopen it.",
+  "projectRequestChatSendConflict": "Sending eligibility changed before this message could be saved. Review the updated requests before trying again.",
   "projectRequestChatInvalidMessage": "Enter a message between 1 and 4,000 characters.",
   "projectRequestChatForbidden": "This private participation conversation is not available for the current account.",
   "projectRequestChatNotFound": "This participation conversation is no longer available.",
@@ -832,9 +1012,15 @@
   "projectRequestChatMessageSemantics": "{sender}, {message}, {time}",
   "@projectRequestChatMessageSemantics": {
     "placeholders": {
-      "sender": { "type": "String" },
-      "message": { "type": "String" },
-      "time": { "type": "String" }
+      "sender": {
+        "type": "String"
+      },
+      "message": {
+        "type": "String"
+      },
+      "time": {
+        "type": "String"
+      }
     }
   },
   "projectChatsLoading": "Loading project chats…",
@@ -854,8 +1040,12 @@
   "projectChatPreview": "{sender}: {message}",
   "@projectChatPreview": {
     "placeholders": {
-      "sender": { "type": "String" },
-      "message": { "type": "String" }
+      "sender": {
+        "type": "String"
+      },
+      "message": {
+        "type": "String"
+      }
     }
   },
   "projectChatConnectionIssue": "Live updates are temporarily unavailable. Refresh to load the latest messages.",
@@ -873,9 +1063,15 @@
   "projectChatMessageSemantics": "{sender}, {message}, {time}",
   "@projectChatMessageSemantics": {
     "placeholders": {
-      "sender": { "type": "String" },
-      "message": { "type": "String" },
-      "time": { "type": "String" }
+      "sender": {
+        "type": "String"
+      },
+      "message": {
+        "type": "String"
+      },
+      "time": {
+        "type": "String"
+      }
     }
   },
   "projectChatInvalidMessage": "Enter a message between 1 and 4,000 characters.",
@@ -890,7 +1086,11 @@
   },
   "notificationsUnreadSemantics": "{count, plural, =1{Notifications, 1 unread} other{Notifications, {count} unread}}",
   "@notificationsUnreadSemantics": {
-    "placeholders": { "count": { "type": "int" } }
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
   },
   "notificationsLoading": "Loading notifications…",
   "notificationsEmptyTitle": "No notifications yet",
@@ -910,7 +1110,7 @@
   "notificationsParticipationAlerts": "Participation alerts",
   "notificationsChatMessages": "Chat messages",
   "notificationsResourceActivity": "Resource activity",
-  "notificationsResourcePreferenceExplanation": "Requests, Resource conversations, and exchange updates. This setting affects future in-app alerts; existing history remains available.",
+  "notificationsResourcePreferenceExplanation": "Resource requests and exchange updates. Human messages use Messages badges. This setting affects future activity alerts; existing history remains available.",
   "notificationsMatchingAlerts": "Saved search matches",
   "notificationsMatchingInApp": "In-app",
   "notificationsMatchingPreferenceExplanation": "Show an alert when a newly published Scambio-Dona listing matches one of your saved searches.",
@@ -921,105 +1121,293 @@
   "notificationMatchingAvailable": "New listing matches one of your saved searches: “{listingTitle}”.",
   "@notificationMatchingAvailable": {
     "placeholders": {
-      "listingTitle": { "type": "String" }
+      "listingTitle": {
+        "type": "String"
+      }
     }
   },
   "notificationMatchingAvailableGeneric": "A new Resource listing matches one of your saved searches.",
   "notificationRequestReceived": "{actor} requested to join “{project}”",
   "@notificationRequestReceived": {
     "placeholders": {
-      "actor": { "type": "String" },
-      "project": { "type": "String" }
+      "actor": {
+        "type": "String"
+      },
+      "project": {
+        "type": "String"
+      }
     }
   },
   "notificationRequestReceivedGeneric": "Someone requested to join one of your projects.",
   "notificationRequestWithdrawn": "{actor} withdrew the request to join “{project}”",
   "@notificationRequestWithdrawn": {
     "placeholders": {
-      "actor": { "type": "String" },
-      "project": { "type": "String" }
+      "actor": {
+        "type": "String"
+      },
+      "project": {
+        "type": "String"
+      }
     }
   },
   "notificationRequestWithdrawnGeneric": "Someone withdrew a participation request.",
   "notificationRequestAccepted": "Your request to join “{project}” was accepted",
   "@notificationRequestAccepted": {
-    "placeholders": { "project": { "type": "String" } }
+    "placeholders": {
+      "project": {
+        "type": "String"
+      }
+    }
   },
   "notificationRequestAcceptedGeneric": "Your participation request was accepted.",
   "notificationRequestRejected": "Your request to join “{project}” was rejected",
   "@notificationRequestRejected": {
-    "placeholders": { "project": { "type": "String" } }
+    "placeholders": {
+      "project": {
+        "type": "String"
+      }
+    }
   },
   "notificationRequestRejectedGeneric": "Your participation request was rejected.",
   "notificationParticipantLeft": "{actor} left “{project}”",
   "@notificationParticipantLeft": {
     "placeholders": {
-      "actor": { "type": "String" },
-      "project": { "type": "String" }
+      "actor": {
+        "type": "String"
+      },
+      "project": {
+        "type": "String"
+      }
     }
   },
   "notificationParticipantLeftGeneric": "A participant left one of your projects.",
   "notificationParticipantRemoved": "You were removed from “{project}”",
   "@notificationParticipantRemoved": {
-    "placeholders": { "project": { "type": "String" } }
+    "placeholders": {
+      "project": {
+        "type": "String"
+      }
+    }
   },
   "notificationParticipantRemovedGeneric": "You were removed from a project.",
   "notificationChatMessage": "{actor} sent a message in “{project}”",
   "@notificationChatMessage": {
     "placeholders": {
-      "actor": { "type": "String" },
-      "project": { "type": "String" }
+      "actor": {
+        "type": "String"
+      },
+      "project": {
+        "type": "String"
+      }
     }
   },
   "notificationChatMessageProject": "New message in “{project}”",
   "@notificationChatMessageProject": {
     "placeholders": {
-      "project": { "type": "String" }
+      "project": {
+        "type": "String"
+      }
     }
   },
   "notificationChatMessageGeneric": "New project chat message",
   "notificationResourceFallbackActor": "Someone",
   "notificationResourceFallbackListing": "a Resource listing",
   "notificationResourceRequestReceived": "{actor} is interested in “{listing}”",
-  "@notificationResourceRequestReceived": {"placeholders":{"actor":{"type":"String"},"listing":{"type":"String"}}},
+  "@notificationResourceRequestReceived": {
+    "placeholders": {
+      "actor": {
+        "type": "String"
+      },
+      "listing": {
+        "type": "String"
+      }
+    }
+  },
   "notificationResourceRequestWithdrawn": "{actor} withdrew their request for “{listing}”",
-  "@notificationResourceRequestWithdrawn": {"placeholders":{"actor":{"type":"String"},"listing":{"type":"String"}}},
+  "@notificationResourceRequestWithdrawn": {
+    "placeholders": {
+      "actor": {
+        "type": "String"
+      },
+      "listing": {
+        "type": "String"
+      }
+    }
+  },
   "notificationResourceRequestAccepted": "Your request for “{listing}” was accepted",
-  "@notificationResourceRequestAccepted": {"placeholders":{"listing":{"type":"String"}}},
+  "@notificationResourceRequestAccepted": {
+    "placeholders": {
+      "listing": {
+        "type": "String"
+      }
+    }
+  },
   "notificationResourceRequestRejected": "Your request for “{listing}” was declined",
-  "@notificationResourceRequestRejected": {"placeholders":{"listing":{"type":"String"}}},
+  "@notificationResourceRequestRejected": {
+    "placeholders": {
+      "listing": {
+        "type": "String"
+      }
+    }
+  },
   "notificationResourceRequestListingClosed": "“{listing}” was closed before your request was accepted",
-  "@notificationResourceRequestListingClosed": {"placeholders":{"listing":{"type":"String"}}},
+  "@notificationResourceRequestListingClosed": {
+    "placeholders": {
+      "listing": {
+        "type": "String"
+      }
+    }
+  },
   "notificationResourceChatMessage": "{actor} sent a message about “{listing}”",
-  "@notificationResourceChatMessage": {"placeholders":{"actor":{"type":"String"},"listing":{"type":"String"}}},
+  "@notificationResourceChatMessage": {
+    "placeholders": {
+      "actor": {
+        "type": "String"
+      },
+      "listing": {
+        "type": "String"
+      }
+    }
+  },
   "notificationResourceTermsProposed": "{actor} proposed exchange terms for “{listing}”",
-  "@notificationResourceTermsProposed": {"placeholders":{"actor":{"type":"String"},"listing":{"type":"String"}}},
+  "@notificationResourceTermsProposed": {
+    "placeholders": {
+      "actor": {
+        "type": "String"
+      },
+      "listing": {
+        "type": "String"
+      }
+    }
+  },
   "notificationResourceTermsAccepted": "{actor} accepted the exchange terms for “{listing}”",
-  "@notificationResourceTermsAccepted": {"placeholders":{"actor":{"type":"String"},"listing":{"type":"String"}}},
+  "@notificationResourceTermsAccepted": {
+    "placeholders": {
+      "actor": {
+        "type": "String"
+      },
+      "listing": {
+        "type": "String"
+      }
+    }
+  },
   "notificationResourceTermsRejected": "{actor} rejected the proposed terms for “{listing}”",
-  "@notificationResourceTermsRejected": {"placeholders":{"actor":{"type":"String"},"listing":{"type":"String"}}},
+  "@notificationResourceTermsRejected": {
+    "placeholders": {
+      "actor": {
+        "type": "String"
+      },
+      "listing": {
+        "type": "String"
+      }
+    }
+  },
   "notificationResourceTermsWithdrawn": "{actor} withdrew their terms proposal for “{listing}”",
-  "@notificationResourceTermsWithdrawn": {"placeholders":{"actor":{"type":"String"},"listing":{"type":"String"}}},
+  "@notificationResourceTermsWithdrawn": {
+    "placeholders": {
+      "actor": {
+        "type": "String"
+      },
+      "listing": {
+        "type": "String"
+      }
+    }
+  },
   "notificationResourceExchangeCancelled": "{actor} cancelled the coordination for “{listing}”",
-  "@notificationResourceExchangeCancelled": {"placeholders":{"actor":{"type":"String"},"listing":{"type":"String"}}},
+  "@notificationResourceExchangeCancelled": {
+    "placeholders": {
+      "actor": {
+        "type": "String"
+      },
+      "listing": {
+        "type": "String"
+      }
+    }
+  },
   "notificationResourceExchangeCompleted": "The exchange for “{listing}” was completed",
-  "@notificationResourceExchangeCompleted": {"placeholders":{"listing":{"type":"String"}}},
+  "@notificationResourceExchangeCompleted": {
+    "placeholders": {
+      "listing": {
+        "type": "String"
+      }
+    }
+  },
   "notificationResourceOwnerProvided": "{actor} marked “{listing}” as handed over",
-  "@notificationResourceOwnerProvided": {"placeholders":{"actor":{"type":"String"},"listing":{"type":"String"}}},
+  "@notificationResourceOwnerProvided": {
+    "placeholders": {
+      "actor": {
+        "type": "String"
+      },
+      "listing": {
+        "type": "String"
+      }
+    }
+  },
   "notificationResourceOwnerReceived": "{actor} confirmed receiving “{listing}”",
-  "@notificationResourceOwnerReceived": {"placeholders":{"actor":{"type":"String"},"listing":{"type":"String"}}},
+  "@notificationResourceOwnerReceived": {
+    "placeholders": {
+      "actor": {
+        "type": "String"
+      },
+      "listing": {
+        "type": "String"
+      }
+    }
+  },
   "notificationResourceOwnerReturned": "{actor} marked “{listing}” as returned",
-  "@notificationResourceOwnerReturned": {"placeholders":{"actor":{"type":"String"},"listing":{"type":"String"}}},
+  "@notificationResourceOwnerReturned": {
+    "placeholders": {
+      "actor": {
+        "type": "String"
+      },
+      "listing": {
+        "type": "String"
+      }
+    }
+  },
   "notificationResourceOwnerReturnReceived": "{actor} confirmed “{listing}” was returned",
-  "@notificationResourceOwnerReturnReceived": {"placeholders":{"actor":{"type":"String"},"listing":{"type":"String"}}},
+  "@notificationResourceOwnerReturnReceived": {
+    "placeholders": {
+      "actor": {
+        "type": "String"
+      },
+      "listing": {
+        "type": "String"
+      }
+    }
+  },
   "notificationResourceRequesterProvided": "{actor} marked their exchange item as handed over",
-  "@notificationResourceRequesterProvided": {"placeholders":{"actor":{"type":"String"}}},
+  "@notificationResourceRequesterProvided": {
+    "placeholders": {
+      "actor": {
+        "type": "String"
+      }
+    }
+  },
   "notificationResourceRequesterReceived": "{actor} confirmed receiving the other exchange item",
-  "@notificationResourceRequesterReceived": {"placeholders":{"actor":{"type":"String"}}},
+  "@notificationResourceRequesterReceived": {
+    "placeholders": {
+      "actor": {
+        "type": "String"
+      }
+    }
+  },
   "notificationResourceRequesterReturned": "{actor} marked their exchange item as returned",
-  "@notificationResourceRequesterReturned": {"placeholders":{"actor":{"type":"String"}}},
+  "@notificationResourceRequesterReturned": {
+    "placeholders": {
+      "actor": {
+        "type": "String"
+      }
+    }
+  },
   "notificationResourceRequesterReturnReceived": "{actor} confirmed the other exchange item was returned",
-  "@notificationResourceRequesterReturnReceived": {"placeholders":{"actor":{"type":"String"}}},
+  "@notificationResourceRequesterReturnReceived": {
+    "placeholders": {
+      "actor": {
+        "type": "String"
+      }
+    }
+  },
   "homeProjectsTitle": "Projects and Cultural Tables",
   "homeProjectsMessage": "Discover projects and Cultural Tables.",
   "homeResourcesMessage": "Discover things offered to donate or exchange.",
@@ -1045,7 +1433,11 @@
   "resourceViewListing": "View listing",
   "resourceInterestCount": "{count, plural, =0{0 People Interested} =1{1 person interested} other{{count} people interested}}",
   "@resourceInterestCount": {
-    "placeholders": { "count": { "type": "int" } }
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
   },
   "resourceRequestStatusPending": "Pending",
   "resourceRequestStatusAccepted": "Accepted",
@@ -1072,22 +1464,38 @@
   "resourceRequestPeopleLabel": "People",
   "resourceRequestRequesterLabel": "Requester: {name}",
   "@resourceRequestRequesterLabel": {
-    "placeholders": { "name": { "type": "String" } }
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
   },
   "resourceRequestRequesterPhotoLabel": "Requester profile photo",
   "resourceRequestOwnerLabel": "Owner: {name}",
   "@resourceRequestOwnerLabel": {
-    "placeholders": { "name": { "type": "String" } }
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
   },
   "resourceRequestMessageLabel": "Private request message",
   "resourceRequestTimelineLabel": "Timeline",
   "resourceRequestRequestedAt": "Requested {date}",
   "@resourceRequestRequestedAt": {
-    "placeholders": { "date": { "type": "String" } }
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
   },
   "resourceRequestResolvedAt": "Resolved {date}",
   "@resourceRequestResolvedAt": {
-    "placeholders": { "date": { "type": "String" } }
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
   },
   "resourceRequestWithdraw": "Withdraw request",
   "resourceRequestReject": "Reject",
@@ -1107,13 +1515,21 @@
   "resourceChatCounterparty": "{role}: {name}",
   "@resourceChatCounterparty": {
     "placeholders": {
-      "role": { "type": "String" },
-      "name": { "type": "String" }
+      "role": {
+        "type": "String"
+      },
+      "name": {
+        "type": "String"
+      }
     }
   },
   "resourceChatCounterpartyPhotoLabel": "Profile photo of {name}",
   "@resourceChatCounterpartyPhotoLabel": {
-    "placeholders": { "name": { "type": "String" } }
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
   },
   "resourceChatNoMessages": "No messages yet.",
   "resourceChatEmptyGuidance": "Use this conversation to coordinate the resource exchange.",
@@ -1133,9 +1549,15 @@
   "resourceChatMessageSemantics": "{sender}, {message}, {time}",
   "@resourceChatMessageSemantics": {
     "placeholders": {
-      "sender": { "type": "String" },
-      "message": { "type": "String" },
-      "time": { "type": "String" }
+      "sender": {
+        "type": "String"
+      },
+      "message": {
+        "type": "String"
+      },
+      "time": {
+        "type": "String"
+      }
     }
   },
   "resourceDetailTitle": "Listing details",
@@ -1177,23 +1599,43 @@
   "resourceSavedSearchDeleteMessage": "This permanently removes the saved filter definition. It does not change any Resource listings.",
   "resourceSavedSearchModeFilter": "Mode: {mode}",
   "@resourceSavedSearchModeFilter": {
-    "placeholders": { "mode": { "type": "String" } }
+    "placeholders": {
+      "mode": {
+        "type": "String"
+      }
+    }
   },
   "resourceSavedSearchQueryFilter": "Keywords: {query}",
   "@resourceSavedSearchQueryFilter": {
-    "placeholders": { "query": { "type": "String" } }
+    "placeholders": {
+      "query": {
+        "type": "String"
+      }
+    }
   },
   "resourceSavedSearchLocalityFilter": "Locality: {locality}",
   "@resourceSavedSearchLocalityFilter": {
-    "placeholders": { "locality": { "type": "String" } }
+    "placeholders": {
+      "locality": {
+        "type": "String"
+      }
+    }
   },
   "resourceSavedSearchUpdatedDate": "Updated {date}",
   "@resourceSavedSearchUpdatedDate": {
-    "placeholders": { "date": { "type": "String" } }
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
   },
   "resourceSavedSearchCardSemantics": "Saved search, {filters}",
   "@resourceSavedSearchCardSemantics": {
-    "placeholders": { "filters": { "type": "String" } }
+    "placeholders": {
+      "filters": {
+        "type": "String"
+      }
+    }
   },
   "resourceEmptyTitle": "Nothing in Scambio-Dona yet",
   "resourceEmptyMessage": "Published listings will appear here.",
@@ -1205,38 +1647,70 @@
   "resourceAgeNow": "now",
   "resourceAgeMinutes": "{count}m ago",
   "@resourceAgeMinutes": {
-    "placeholders": { "count": { "type": "int" } }
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
   },
   "resourceAgeHours": "{count}h ago",
   "@resourceAgeHours": {
-    "placeholders": { "count": { "type": "int" } }
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
   },
   "resourceAgeDays": "{count}d ago",
   "@resourceAgeDays": {
-    "placeholders": { "count": { "type": "int" } }
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
   },
   "resourcePublishedRelative": "Published {age}",
   "@resourcePublishedRelative": {
-    "placeholders": { "age": { "type": "String" } }
+    "placeholders": {
+      "age": {
+        "type": "String"
+      }
+    }
   },
   "resourceDetailMetadata": "{age} · Listed by {owner}",
   "@resourceDetailMetadata": {
     "placeholders": {
-      "age": { "type": "String" },
-      "owner": { "type": "String" }
+      "age": {
+        "type": "String"
+      },
+      "owner": {
+        "type": "String"
+      }
     }
   },
   "resourcePublishedDate": "Published {date}",
   "@resourcePublishedDate": {
-    "placeholders": { "date": { "type": "String" } }
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
   },
   "resourceUpdatedDate": "Updated {date}",
   "@resourceUpdatedDate": {
-    "placeholders": { "date": { "type": "String" } }
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
   },
   "resourceListedBy": "Listed by {owner}",
   "@resourceListedBy": {
-    "placeholders": { "owner": { "type": "String" } }
+    "placeholders": {
+      "owner": {
+        "type": "String"
+      }
+    }
   },
   "resourceListingOwnerPhotoLabel": "Resource listing owner profile photo",
   "resourceMyEmptyTitle": "No listings yet",
@@ -1261,11 +1735,19 @@
   "resourceCountryCodeValidation": "Use a two-letter country code.",
   "resourceMinimumLength": "Use at least {count} characters.",
   "@resourceMinimumLength": {
-    "placeholders": { "count": { "type": "int" } }
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
   },
   "resourceMaximumLength": "Use at most {count} characters.",
   "@resourceMaximumLength": {
-    "placeholders": { "count": { "type": "int" } }
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
   },
   "resourceDraftSavedPublishFailed": "Your draft was saved, but it could not be published. Review it and retry; no second draft will be created.",
   "resourceCloseConfirmTitle": "Close this listing?",
@@ -1289,13 +1771,21 @@
   "projectResourcesInvalidTitle": "Use between {min} and {max} characters.",
   "@projectResourcesInvalidTitle": {
     "placeholders": {
-      "min": { "type": "int" },
-      "max": { "type": "int" }
+      "min": {
+        "type": "int"
+      },
+      "max": {
+        "type": "int"
+      }
     }
   },
   "projectResourcesDetailsTooLong": "Use at most {max} characters.",
   "@projectResourcesDetailsTooLong": {
-    "placeholders": { "max": { "type": "int" } }
+    "placeholders": {
+      "max": {
+        "type": "int"
+      }
+    }
   },
   "projectResourcesSaveAction": "Save",
   "projectResourcesCancelAction": "Cancel",
@@ -1343,7 +1833,11 @@
   "participationContributionSelectionLimit": "Maximum {max} selections.",
   "@participationContributionSelectionLimit": {
     "description": "Guidance shown when a contribution-option group reaches its canonical selection limit.",
-    "placeholders": { "max": { "type": "int" } }
+    "placeholders": {
+      "max": {
+        "type": "int"
+      }
+    }
   },
   "participationRequirementsChanged": "The Project requirements changed. Review your selections and try again.",
   "messagesCanContribute": "Can contribute",
@@ -1366,7 +1860,11 @@
   "participationCommitmentsNoLongerEditable": "These commitments can no longer be changed.",
   "participationCommitmentRetainedLabel": "{label} · No longer requested",
   "@participationCommitmentRetainedLabel": {
-    "placeholders": { "label": { "type": "String" } }
+    "placeholders": {
+      "label": {
+        "type": "String"
+      }
+    }
   },
   "participationClearCommitments": "Clear all",
   "participationSaveCommitments": "Save commitments",
@@ -1377,11 +1875,19 @@
   "participationCommitmentsSaveError": "We couldn't save these commitments. Try again.",
   "participationCommitmentSkillLimit": "You can select up to {max} competences or knowledge items.",
   "@participationCommitmentSkillLimit": {
-    "placeholders": { "max": { "type": "int" } }
+    "placeholders": {
+      "max": {
+        "type": "int"
+      }
+    }
   },
   "participationCommitmentResourceLimit": "You can select up to {max} resources or materials.",
   "@participationCommitmentResourceLimit": {
-    "placeholders": { "max": { "type": "int" } }
+    "placeholders": {
+      "max": {
+        "type": "int"
+      }
+    }
   },
   "actualContributionsTitle": "Actual contributions",
   "actualContributionsAction": "Actual contributions",
@@ -1405,30 +1911,54 @@
   "actualContributionsNotFound": "These actual contributions are no longer available.",
   "actualContributionMaximumSelections": "Maximum {count} selections",
   "@actualContributionMaximumSelections": {
-    "placeholders": { "count": { "type": "int" } }
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
   },
   "actualContributionsSave": "Save contributions",
   "actualContributionsClearAll": "Clear all",
   "actualContributionParticipation": "Participation {number}",
   "@actualContributionParticipation": {
-    "placeholders": { "number": { "type": "int" } }
+    "placeholders": {
+      "number": {
+        "type": "int"
+      }
+    }
   },
   "actualContributionJoinedDate": "Joined {date}",
   "@actualContributionJoinedDate": {
-    "placeholders": { "date": { "type": "String" } }
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
   },
   "actualContributionLeftDate": "Left {date}",
   "@actualContributionLeftDate": {
-    "placeholders": { "date": { "type": "String" } }
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
   },
   "actualContributionRemovedDate": "Removed {date}",
   "@actualContributionRemovedDate": {
-    "placeholders": { "date": { "type": "String" } }
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
   },
   "joinAcceptanceTitle": "Review contribution offers",
   "joinAcceptanceIntroduction": "Before accepting {name}, decide what each offer means.",
   "@joinAcceptanceIntroduction": {
-    "placeholders": { "name": { "type": "String" } }
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
   },
   "joinAcceptanceLoading": "Loading contribution offers…",
   "joinAcceptanceNeeded": "Needed",
@@ -1461,7 +1991,11 @@
   "projectNeedsNeededAgain": "Needed again",
   "projectNeedsSystemEvent": "{name} is needed again.",
   "@projectNeedsSystemEvent": {
-    "placeholders": { "name": { "type": "String" } }
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
   },
   "projectNeedsCoveredElsewhere": "Someone else just covered this need.",
   "projectNeedsChanged": "This need changed. Review the latest list.",
@@ -1472,26 +2006,46 @@
   "projectNeedsNewAttention": "New Project need",
   "projectNeedsCountSemantics": "{count, plural, =0{No current needs} =1{1 current need} other{{count} current needs}}",
   "@projectNeedsCountSemantics": {
-    "placeholders": { "count": { "type": "int" } }
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
   },
   "projectNeedsButtonSemantics": "{countLabel}. Open current Project needs.",
   "@projectNeedsButtonSemantics": {
-    "placeholders": { "countLabel": { "type": "String" } }
+    "placeholders": {
+      "countLabel": {
+        "type": "String"
+      }
+    }
   },
   "projectNeedsButtonAttentionSemantics": "{countLabel}. Needed again. Open current Project needs.",
   "@projectNeedsButtonAttentionSemantics": {
-    "placeholders": { "countLabel": { "type": "String" } }
+    "placeholders": {
+      "countLabel": {
+        "type": "String"
+      }
+    }
   },
   "projectNeedsLoading": "Loading current needs…",
   "projectNeedsActionProgress": "Updating {name}…",
   "@projectNeedsActionProgress": {
-    "placeholders": { "name": { "type": "String" } }
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
   },
   "projectNeedsSystemEventSemantics": "Project update: {name} is needed again at {time}.",
   "@projectNeedsSystemEventSemantics": {
     "placeholders": {
-      "name": { "type": "String" },
-      "time": { "type": "String" }
+      "name": {
+        "type": "String"
+      },
+      "time": {
+        "type": "String"
+      }
     }
   },
   "resourceExchangeAgreementTitle": "Agreement",
@@ -1513,7 +2067,11 @@
   "resourceExchangeProposedByYou": "Proposed by You",
   "resourceExchangeProposedBy": "Proposed by {name}",
   "@resourceExchangeProposedBy": {
-    "placeholders": { "name": { "type": "String" } }
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
   },
   "resourceExchangeOwnerProvides": "Listing owner provides",
   "resourceExchangeRequesterProvides": "Requester provides",
@@ -1528,20 +2086,34 @@
   "resourceExchangeLendWithRange": "Lend · {start} to {end}",
   "@resourceExchangeLendWithRange": {
     "placeholders": {
-      "start": { "type": "String" },
-      "end": { "type": "String" }
+      "start": {
+        "type": "String"
+      },
+      "end": {
+        "type": "String"
+      }
     }
   },
   "resourceExchangeGiveDescription": "Give · {description}",
   "@resourceExchangeGiveDescription": {
-    "placeholders": { "description": { "type": "String" } }
+    "placeholders": {
+      "description": {
+        "type": "String"
+      }
+    }
   },
   "resourceExchangeLendDescription": "Lend · {description} · {start} to {end}",
   "@resourceExchangeLendDescription": {
     "placeholders": {
-      "description": { "type": "String" },
-      "start": { "type": "String" },
-      "end": { "type": "String" }
+      "description": {
+        "type": "String"
+      },
+      "start": {
+        "type": "String"
+      },
+      "end": {
+        "type": "String"
+      }
     }
   },
   "resourceExchangePrivateNote": "Private note",
@@ -1586,7 +2158,11 @@
   "resourceExchangeProposalHistoryTitle": "Proposal history",
   "resourceExchangeTermsVersion": "Version {number}",
   "@resourceExchangeTermsVersion": {
-    "placeholders": { "number": { "type": "int" } }
+    "placeholders": {
+      "number": {
+        "type": "int"
+      }
+    }
   },
   "resourceExchangeViewHistoricalTerms": "View terms",
   "resourceExchangeOutcomePending": "Pending",
@@ -1608,30 +2184,50 @@
   "resourceExchangeConfirmReturn": "Confirm return",
   "resourceExchangeWaitingFor": "Waiting for {name}",
   "@resourceExchangeWaitingFor": {
-    "placeholders": { "name": { "type": "String" } }
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
   },
   "resourceExchangeYourNextStep": "Your next step: {action}",
   "@resourceExchangeYourNextStep": {
-    "placeholders": { "action": { "type": "String" } }
+    "placeholders": {
+      "action": {
+        "type": "String"
+      }
+    }
   },
   "resourceExchangeOwnerResource": "{title} — {transfer}",
   "@resourceExchangeOwnerResource": {
     "placeholders": {
-      "title": { "type": "String" },
-      "transfer": { "type": "String" }
+      "title": {
+        "type": "String"
+      },
+      "transfer": {
+        "type": "String"
+      }
     }
   },
   "resourceExchangeRequesterResource": "{description} — {transfer}",
   "@resourceExchangeRequesterResource": {
     "placeholders": {
-      "description": { "type": "String" },
-      "transfer": { "type": "String" }
+      "description": {
+        "type": "String"
+      },
+      "transfer": {
+        "type": "String"
+      }
     }
   },
   "resourceExchangeReturnOverdue": "Return is overdue",
   "resourceExchangeExpectedReturn": "Expected return: {date}",
   "@resourceExchangeExpectedReturn": {
-    "placeholders": { "date": { "type": "String" } }
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
   },
   "resourceExchangeMilestoneConfirmTitle": "Record this handoff update?",
   "resourceExchangeMilestoneConfirmHandedOver": "Confirm that you handed over this resource?",
@@ -1645,62 +2241,106 @@
   "resourceExchangeTimelineAgreementCreated": "Agreement created",
   "resourceExchangeTimelineTermsProposed": "Terms proposed by {name}",
   "@resourceExchangeTimelineTermsProposed": {
-    "placeholders": { "name": { "type": "String" } }
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
   },
   "resourceExchangeTimelineTermsSuperseded": "Previous proposal superseded by {name}",
   "@resourceExchangeTimelineTermsSuperseded": {
-    "placeholders": { "name": { "type": "String" } }
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
   },
   "resourceExchangeTimelineTermsAccepted": "Terms accepted by {name}",
   "@resourceExchangeTimelineTermsAccepted": {
-    "placeholders": { "name": { "type": "String" } }
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
   },
   "resourceExchangeTimelineTermsRejected": "Proposal rejected by {name}",
   "@resourceExchangeTimelineTermsRejected": {
-    "placeholders": { "name": { "type": "String" } }
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
   },
   "resourceExchangeTimelineTermsWithdrawn": "Proposal withdrawn by {name}",
   "@resourceExchangeTimelineTermsWithdrawn": {
-    "placeholders": { "name": { "type": "String" } }
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
   },
   "resourceExchangeTimelineCancelled": "Coordination cancelled by {name}",
   "@resourceExchangeTimelineCancelled": {
-    "placeholders": { "name": { "type": "String" } }
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
   },
   "resourceExchangeTimelineCompleted": "Exchange completed",
   "resourceExchangeTimelineHandedOver": "{name} marked “{resource}” as handed over.",
   "@resourceExchangeTimelineHandedOver": {
     "placeholders": {
-      "name": { "type": "String" },
-      "resource": { "type": "String" }
+      "name": {
+        "type": "String"
+      },
+      "resource": {
+        "type": "String"
+      }
     }
   },
   "resourceExchangeTimelineReceived": "{name} confirmed receiving “{resource}”.",
   "@resourceExchangeTimelineReceived": {
     "placeholders": {
-      "name": { "type": "String" },
-      "resource": { "type": "String" }
+      "name": {
+        "type": "String"
+      },
+      "resource": {
+        "type": "String"
+      }
     }
   },
   "resourceExchangeTimelineReturned": "{name} marked “{resource}” as returned.",
   "@resourceExchangeTimelineReturned": {
     "placeholders": {
-      "name": { "type": "String" },
-      "resource": { "type": "String" }
+      "name": {
+        "type": "String"
+      },
+      "resource": {
+        "type": "String"
+      }
     }
   },
   "resourceExchangeTimelineReturnReceived": "{name} confirmed “{resource}” was returned.",
   "@resourceExchangeTimelineReturnReceived": {
     "placeholders": {
-      "name": { "type": "String" },
-      "resource": { "type": "String" }
+      "name": {
+        "type": "String"
+      },
+      "resource": {
+        "type": "String"
+      }
     }
   },
   "resourceExchangeEventSemantics": "{description}, {date}",
   "@resourceExchangeEventSemantics": {
     "placeholders": {
-      "description": { "type": "String" },
-      "date": { "type": "String" }
+      "description": {
+        "type": "String"
+      },
+      "date": {
+        "type": "String"
+      }
     }
   },
   "resourceLoanScheduleTitle": "Loan schedule",
@@ -1714,16 +2354,26 @@
   "resourceLoanSchedulePeriod": "{start} → {end}",
   "@resourceLoanSchedulePeriod": {
     "placeholders": {
-      "start": { "type": "String" },
-      "end": { "type": "String" }
+      "start": {
+        "type": "String"
+      },
+      "end": {
+        "type": "String"
+      }
     }
   },
   "resourceLoanScheduleRowSemantics": "Loan to {requester}, {period}, {lifecycle}",
   "@resourceLoanScheduleRowSemantics": {
     "placeholders": {
-      "requester": { "type": "String" },
-      "period": { "type": "String" },
-      "lifecycle": { "type": "String" }
+      "requester": {
+        "type": "String"
+      },
+      "period": {
+        "type": "String"
+      },
+      "lifecycle": {
+        "type": "String"
+      }
     }
   },
   "resourceLoanTermsAgreed": "Terms agreed",
@@ -1736,11 +2386,19 @@
   "resourceLoanOpenRequest": "Open request",
   "resourceLoanStart": "Start: {date}",
   "@resourceLoanStart": {
-    "placeholders": { "date": { "type": "String" } }
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
   },
   "resourceLoanExpectedReturn": "Expected return: {date}",
   "@resourceLoanExpectedReturn": {
-    "placeholders": { "date": { "type": "String" } }
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
   },
   "resourceLoanCheckingDates": "Checking loan dates…",
   "resourceLoanDatesAvailable": "Dates currently available",
@@ -1779,7 +2437,11 @@
   "coverRetry": "Retry",
   "coverImageSemantics": "Cover image for {title}",
   "@coverImageSemantics": {
-    "placeholders": { "title": { "type": "String" } }
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
   },
   "moderationReportTitle": "Report",
   "moderationReportAction": "Report",
@@ -1875,26 +2537,54 @@
   "blockingUpdateError": "Couldn't update blocked users. Try again.",
   "blockingTargetUnavailable": "This user isn't available right now.",
   "blockingInteractionUnavailable": "This interaction isn't available right now.",
-  "ownRequestRestrictionExplanation": "A restriction on new requests is active on your account. View PLANETS notices for details. Other eligibility rules still apply.",
-  "ownRequestRestrictionViewNotices": "View PLANETS notices",
   "blockingBlockAction": "Block {name}",
-  "@blockingBlockAction": { "placeholders": { "name": { "type": "String" } } },
+  "@blockingBlockAction": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
   "blockingUnblockAction": "Unblock {name}",
-  "@blockingUnblockAction": { "placeholders": { "name": { "type": "String" } } },
+  "@blockingUnblockAction": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
   "blockingBlockGenericAction": "Block this user",
   "blockingUnblockGenericAction": "Unblock this user",
   "blockingBlockConfirmTitle": "Block {name}?",
-  "@blockingBlockConfirmTitle": { "placeholders": { "name": { "type": "String" } } },
+  "@blockingBlockConfirmTitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
   "blockingBlockConfirmBody": "You won't be able to start new direct Project or Scambio-Dona interactions with each other while either block remains active.\n\nAny pending direct requests between you may be closed and will not come back if you later unblock.\n\nPublic content can still be visible. If you already share a Project, you may still see each other and each other's group messages. Existing accepted Scambio-Dona coordination remains available so it can be completed.\n\nPLANETS will not notify this person that you blocked them.",
   "blockingUnblockConfirmTitle": "Unblock {name}?",
-  "@blockingUnblockConfirmTitle": { "placeholders": { "name": { "type": "String" } } },
+  "@blockingUnblockConfirmTitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
   "blockingUnblockConfirmBody": "You may be able to start new interactions again if all other PLANETS rules allow it. Previous withdrawn or rejected requests and ended relationships will not be restored.\n\nPLANETS will not notify this person that you unblocked them.",
   "blockingCancelAction": "Cancel",
   "blockingConfirmBlockAction": "Block",
   "blockingConfirmUnblockAction": "Unblock",
   "blockingLoadMore": "Load more",
   "blockingBlockedOn": "Blocked {date}",
-  "@blockingBlockedOn": { "placeholders": { "date": { "type": "String" } } },
+  "@blockingBlockedOn": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
   "blockingOwnBlockInteractionExplanation": "You blocked this user. Unblock them before starting a new interaction.",
   "blockingPendingRequestConsequence": "This pending request will close and won't return if you later unblock.",
   "blockingProjectMemberConsequence": "This person remains a Project member and their group messages stay visible.",
@@ -1929,52 +2619,134 @@
   "projectDelegateDemoteConfirmMessage": "They will lose structural authority. Pending authority invitations they issued will be invalidated. Any separate participation membership stays unchanged.",
   "projectDelegateRemoveConfirmTitle": "Revoke delegated authority?",
   "projectDelegateRemoveRoleConfirmTitle": "Revoke {role} authority?",
-  "@projectDelegateRemoveRoleConfirmTitle": { "placeholders": { "role": { "type": "String" } } },
+  "@projectDelegateRemoveRoleConfirmTitle": {
+    "placeholders": {
+      "role": {
+        "type": "String"
+      }
+    }
+  },
   "projectDelegateRemoveConfirmMessage": "They will immediately lose Project management access. Any separate participation membership stays unchanged and will count as an ordinary participant. Revocation is blocked if that would exceed registration capacity.",
   "projectDelegateRemoveCocreatorConfirmMessage": "They will immediately lose Project management access, and pending authority invitations they issued will be invalidated. Any separate participation membership stays unchanged and will count as an ordinary participant. Revocation is blocked if that would exceed registration capacity.",
   "projectDelegateRevokeConfirmTitle": "Revoke invitation?",
   "projectDelegateRevokeConfirmMessage": "This invitation link will no longer be usable.",
   "projectDelegateSafeError": "Project team information is unavailable. Try again.",
   "projectDelegateAcceptedDate": "Delegated since {date}",
-  "@projectDelegateAcceptedDate": { "placeholders": { "date": { "type": "String" } } },
+  "@projectDelegateAcceptedDate": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
   "projectDelegateAddedBy": "Added by {actor}",
-  "@projectDelegateAddedBy": { "placeholders": { "actor": { "type": "String" } } },
+  "@projectDelegateAddedBy": {
+    "placeholders": {
+      "actor": {
+        "type": "String"
+      }
+    }
+  },
   "projectDelegateCurrentUser": "You",
   "projectDelegateInviteDates": "Created {created}. Expires {expires}.",
   "@projectDelegateInviteDates": {
     "placeholders": {
-      "created": { "type": "String" },
-      "expires": { "type": "String" }
+      "created": {
+        "type": "String"
+      },
+      "expires": {
+        "type": "String"
+      }
     }
   },
   "projectDelegateIssuedBy": "Issued by {actor}",
-  "@projectDelegateIssuedBy": { "placeholders": { "actor": { "type": "String" } } },
+  "@projectDelegateIssuedBy": {
+    "placeholders": {
+      "actor": {
+        "type": "String"
+      }
+    }
+  },
   "projectDelegateLostLinkHelp": "For security, invitation links are shown only when created. Revoke a lost link and create a new one.",
   "projectDelegateCreatedTitle": "Invitation link",
   "projectDelegateCreatedRole": "Invitation role: {role}",
-  "@projectDelegateCreatedRole": { "placeholders": { "role": { "type": "String" } } },
+  "@projectDelegateCreatedRole": {
+    "placeholders": {
+      "role": {
+        "type": "String"
+      }
+    }
+  },
   "projectDelegateCreatedSecurity": "This link can be used once and expires in 7 days. For security, it won't be shown again after you leave this screen.",
   "projectDelegateCopyAction": "Copy link",
   "projectDelegateShareAction": "Share",
   "projectDelegateCopied": "Invitation link copied.",
   "projectDelegateShareText": "Help me co-organize a Project on PLANETS:\n{url}",
-  "@projectDelegateShareText": { "placeholders": { "url": { "type": "String" } } },
+  "@projectDelegateShareText": {
+    "placeholders": {
+      "url": {
+        "type": "String"
+      }
+    }
+  },
   "projectDelegateShareRoleText": "You're invited to become a {role} on a PLANETS Project:\n{url}",
-  "@projectDelegateShareRoleText": { "placeholders": { "role": { "type": "String" }, "url": { "type": "String" } } },
+  "@projectDelegateShareRoleText": {
+    "placeholders": {
+      "role": {
+        "type": "String"
+      },
+      "url": {
+        "type": "String"
+      }
+    }
+  },
   "projectInviteTitle": "Project authority invitation",
   "projectInviteCoCreatorRole": "Co-creator",
   "projectInviteCoOrganizerRole": "Co-organizer",
   "projectInviteRoleTitle": "{role} invitation",
-  "@projectInviteRoleTitle": { "placeholders": { "role": { "type": "String" } } },
+  "@projectInviteRoleTitle": {
+    "placeholders": {
+      "role": {
+        "type": "String"
+      }
+    }
+  },
   "projectInviteFromActor": "{actor} invited you to become a {role}:",
-  "@projectInviteFromActor": { "placeholders": { "actor": { "type": "String" }, "role": { "type": "String" } } },
+  "@projectInviteFromActor": {
+    "placeholders": {
+      "actor": {
+        "type": "String"
+      },
+      "role": {
+        "type": "String"
+      }
+    }
+  },
   "projectInviteFromGenericRole": "You've been invited to become a {role}:",
-  "@projectInviteFromGenericRole": { "placeholders": { "role": { "type": "String" } } },
+  "@projectInviteFromGenericRole": {
+    "placeholders": {
+      "role": {
+        "type": "String"
+      }
+    }
+  },
   "projectInviteFromOwner": "{owner} invited you to help organize:",
-  "@projectInviteFromOwner": { "placeholders": { "owner": { "type": "String" } } },
+  "@projectInviteFromOwner": {
+    "placeholders": {
+      "owner": {
+        "type": "String"
+      }
+    }
+  },
   "projectInviteFromGeneric": "You've been invited to help organize:",
   "projectInviteExpires": "This invitation expires {date}.",
-  "@projectInviteExpires": { "placeholders": { "date": { "type": "String" } } },
+  "@projectInviteExpires": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
   "projectInviteSignIn": "Sign in to accept",
   "projectInviteCompleteProfile": "Complete profile to accept",
   "projectInviteAccept": "Accept invitation",
@@ -1998,33 +2770,114 @@
   "projectRegistrationCapacityRequired": "Set registration capacity before publishing or saving this Project.",
   "projectRegistrationCapacityRange": "Enter a whole number from 1 to 100,000.",
   "projectRegistrationCapacityBelowCurrent": "Capacity cannot be below the current usage of {count} spots.",
-  "@projectRegistrationCapacityBelowCurrent": { "placeholders": { "count": { "type": "int" } } },
+  "@projectRegistrationCapacityBelowCurrent": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "projectCountOrganizersCapacityLabel": "Count organizers toward capacity",
   "projectCountOrganizersCapacityHelp": "The Creator and organizers will use available registration spots. You can change this later in Project settings.",
   "projectOrganizerCapacityConflict": "Increase registration capacity before counting organizers.",
   "projectCapacityNotSet": "Registration capacity not set",
   "projectCapacityUpToParticipants": "Up to {capacity} participants",
-  "@projectCapacityUpToParticipants": { "placeholders": { "capacity": { "type": "int" } } },
+  "@projectCapacityUpToParticipants": {
+    "placeholders": {
+      "capacity": {
+        "type": "int"
+      }
+    }
+  },
   "projectCapacityLimit": "Capacity {capacity}",
-  "@projectCapacityLimit": { "placeholders": { "capacity": { "type": "int" } } },
+  "@projectCapacityLimit": {
+    "placeholders": {
+      "capacity": {
+        "type": "int"
+      }
+    }
+  },
   "projectCapacityUsage": "{used} / {capacity} spots used",
-  "@projectCapacityUsage": { "placeholders": { "used": { "type": "int" }, "capacity": { "type": "int" } } },
+  "@projectCapacityUsage": {
+    "placeholders": {
+      "used": {
+        "type": "int"
+      },
+      "capacity": {
+        "type": "int"
+      }
+    }
+  },
   "projectCapacityParticipantUsage": "{participants} / {capacity} participant spots used",
-  "@projectCapacityParticipantUsage": { "placeholders": { "participants": { "type": "int" }, "capacity": { "type": "int" } } },
+  "@projectCapacityParticipantUsage": {
+    "placeholders": {
+      "participants": {
+        "type": "int"
+      },
+      "capacity": {
+        "type": "int"
+      }
+    }
+  },
   "projectOrganizerIncludedCount": "{count} organizers included",
-  "@projectOrganizerIncludedCount": { "placeholders": { "count": { "type": "int" } } },
+  "@projectOrganizerIncludedCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "projectOrganizerCount": "{count} organizers",
-  "@projectOrganizerCount": { "placeholders": { "count": { "type": "int" } } },
+  "@projectOrganizerCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "projectCapacityFullLabel": "Full · {summary}",
-  "@projectCapacityFullLabel": { "placeholders": { "summary": { "type": "String" } } },
+  "@projectCapacityFullLabel": {
+    "placeholders": {
+      "summary": {
+        "type": "String"
+      }
+    }
+  },
   "projectSocialPeopleInvolved": "{count} unique people involved",
-  "@projectSocialPeopleInvolved": { "placeholders": { "count": { "type": "int" } } },
+  "@projectSocialPeopleInvolved": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "projectCapacityManagerSummary": "{participants} current memberships · {organizers} organizers · {used} / {capacity} spots used",
-  "@projectCapacityManagerSummary": { "placeholders": { "participants": { "type": "int" }, "organizers": { "type": "int" }, "used": { "type": "int" }, "capacity": { "type": "int" } } },
+  "@projectCapacityManagerSummary": {
+    "placeholders": {
+      "participants": {
+        "type": "int"
+      },
+      "organizers": {
+        "type": "int"
+      },
+      "used": {
+        "type": "int"
+      },
+      "capacity": {
+        "type": "int"
+      }
+    }
+  },
   "projectCapacityOrganizersIncluded": "The Creator and organizers use registration spots.",
   "projectCapacityOrganizersExcluded": "The Creator and organizers do not use registration spots.",
   "projectCapacityRemaining": "{count} spots remaining",
-  "@projectCapacityRemaining": { "placeholders": { "count": { "type": "int" } } },
+  "@projectCapacityRemaining": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "projectFull": "Full",
   "projectNoSpots": "No spots available.",
   "projectFullNow": "This Project is full now.",
@@ -2035,7 +2888,13 @@
   "projectWorkspaceManageEmptyDescription": "Add a Google Drive or another shared folder for Project materials.",
   "projectWorkspaceNotConfigured": "No shared workspace link has been added.",
   "projectWorkspaceConfiguredHost": "Connected to {hostname}",
-  "@projectWorkspaceConfiguredHost": { "placeholders": { "hostname": { "type": "String" } } },
+  "@projectWorkspaceConfiguredHost": {
+    "placeholders": {
+      "hostname": {
+        "type": "String"
+      }
+    }
+  },
   "projectWorkspaceExternalNotice": "This opens an external service. Its owner controls access and permissions.",
   "projectWorkspaceUrlLabel": "Workspace HTTPS link",
   "projectWorkspaceUrlHint": "https://example.com/shared-workspace",
@@ -2043,7 +2902,13 @@
   "projectWorkspaceUrlHttpsRequired": "Enter a valid HTTPS link without sign-in details or spaces.",
   "projectWorkspaceUrlInvalid": "Enter a valid workspace link.",
   "projectWorkspaceUrlTooLong": "Use a link no longer than {maxLength} characters.",
-  "@projectWorkspaceUrlTooLong": { "placeholders": { "maxLength": { "type": "int" } } },
+  "@projectWorkspaceUrlTooLong": {
+    "placeholders": {
+      "maxLength": {
+        "type": "int"
+      }
+    }
+  },
   "projectWorkspaceSaveAction": "Save workspace",
   "projectWorkspaceAddWorkspaceAction": "Add workspace",
   "projectWorkspaceEditWorkspaceAction": "Edit workspace",
@@ -2057,17 +2922,158 @@
   "projectWorkspaceForbidden": "You no longer have permission to manage this workspace.",
   "projectWorkspaceOpenTitle": "Open external workspace?",
   "projectWorkspaceOpenMessage": "PLANETS will open {hostname} in another app. The external service controls its content and permissions.",
-  "@projectWorkspaceOpenMessage": { "placeholders": { "hostname": { "type": "String" } } },
+  "@projectWorkspaceOpenMessage": {
+    "placeholders": {
+      "hostname": {
+        "type": "String"
+      }
+    }
+  },
   "projectWorkspaceOpenAction": "Open",
   "projectWorkspaceOpenWorkspaceAction": "Open workspace",
   "projectWorkspaceCancelAction": "Cancel",
   "projectWorkspaceOpenFailure": "The external workspace could not be opened.",
   "projectWorkspaceToolsSemantics": "Project coordination tools",
+  "moderationTemplateDisclosure": "You can report a template, including one linked to your own Proposal. Staff review reports manually. Reporting does not automatically remove the template or its source Proposal.",
+  "proposalDraftSaved": "Draft saved",
+  "proposalDraftImageNotSaved": "Draft content saved; image change not confirmed.",
+  "proposalDraftLeaveTitle": "Keep your draft",
+  "proposalDraftLeaveError": "Your changes could not be saved. Correct the highlighted fields or retry. Discard abandons only unsaved changes; any draft already saved remains in My Proposals.",
+  "proposalDraftKeepEditing": "Keep editing",
+  "proposalDraftDiscard": "Discard unsaved changes",
+  "proposalDraftLeaveWithoutImage": "Leave without image change",
+  "proposalDraftRecover": "Recover draft",
+  "proposalDraftRecoveryError": "Draft recovery failed. Retry from My Proposals.",
+  "workshopTitle": "Template Workshop",
+  "workshopStartFromTemplate": "Start from a template",
+  "workshopContext": "Reuse ideas from completed one-time Proposals to start your own independent draft.",
+  "workshopCompleted": "From a completed Proposal",
+  "workshopCreatorFallback": "Community creator",
+  "workshopCreator": "Original creator: {name}",
+  "@workshopCreator": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "workshopEmpty": "No completed Proposal templates are available yet.",
+  "workshopNoMatches": "No templates match these filters.",
+  "workshopReadError": "Templates could not be loaded. Retry to check availability.",
+  "workshopLoadMore": "Load more",
+  "workshopRefresh": "Refresh availability",
+  "workshopUnavailable": "This template is no longer available for new use or reporting.",
+  "workshopDuration": "Duration guidance: {seconds} seconds. Choose new dates and times for your draft.",
+  "@workshopDuration": {
+    "placeholders": {
+      "seconds": {
+        "type": "String"
+      }
+    }
+  },
+  "workshopCapacity": "Use suggested capacity: {capacity}",
+  "@workshopCapacity": {
+    "placeholders": {
+      "capacity": {
+        "type": "int"
+      }
+    }
+  },
+  "workshopCapacityHint": "An editable suggestion for your new draft.",
+  "workshopBlueprints": "Resource descriptions: {loaded} of {total}",
+  "@workshopBlueprints": {
+    "placeholders": {
+      "loaded": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "workshopBlueprintError": "Resource preview could not be completed. Retry or refresh the template.",
+  "workshopChanged": "This preview changed. Review the updated content before starting a new draft.",
+  "workshopReviewed": "I reviewed this preview",
+  "workshopCopyHint": "Start a new private draft with text, skills and all open resource descriptions. Choose new logistics; people and the cover image are not copied. This does not join or publish a Proposal.",
+  "workshopUse": "Use template · Start a new draft",
+  "workshopUseAgain": "Start another independent draft",
+  "workshopReport": "Report template",
+  "workshopViewSource": "View source Proposal",
+  "workshopPending": "Draft creation is awaiting confirmation.",
+  "workshopAccepted": "Your independent draft is ready.",
+  "workshopRecoveryLifetime": "Retry or open this same draft while the app is running. Confirmed drafts are also in My Proposals.",
+  "workshopOpen": "Open draft",
+  "workshopRetry": "Retry",
+  "workshopApplying": "Creating draft…",
+  "workshopApplyUncertain": "Creation could not be confirmed. Retry checks and repeats the same request safely.",
+  "workshopForbidden": "This request is not authorized. Check your account and refresh template availability; retry keeps the same request.",
+  "workshopProfileRequired": "Complete your profile before creating a new draft. A profile photo is not required to use a template.",
+  "workshopIncompatible": "This request has incompatible inputs. It cannot be replaced with a guessed draft.",
+  "workshopOpenError": "The accepted draft could not be opened. Open or retry the same draft; no new copy will be created.",
+  "workshopPublicationNotice": "When this published Proposal reaches Completed (24 hours after its end), its eligible text, skills and open resource descriptions automatically become reusable in Template Workshop. This does not need a separate submission or approval. Check what you include in free text.",
+  "similarMayExist": "A similar activity may already exist.",
+  "similarView": "View similar Projects",
+  "similarDismiss": "Hide suggestions",
+  "similarReopen": "Show suggestions",
+  "similarLoading": "Checking similar activities…",
+  "similarError": "Similar activities could not be checked. You can keep editing.",
+  "similarClose": "Close similar Projects",
+  "similarOpen": "View Project",
+  "similarFull": "Full",
+  "similarCapacityUnknown": "Registration capacity not set",
+  "similarTitleReason": "Related title topic",
+  "similarTagsReason": "Related title topic and shared selected tags",
+  "similarLocalityReason": "Same rough locality",
   "settingsNavigation": "Navigation",
   "settingsBottomRightTab": "Bottom-right tab",
   "settingsNavigationHelp": "Choose the shortcut shown on this device. When you open Messages or Browse, the tab shows that destination while you are there.",
   "settingsNavigationSaveError": "We couldn't save the navigation preference. Try again.",
   "settingsNavigationRestoreError": "We couldn't restore the navigation preference. Choose a tab to save it again.",
+  "pairPendingRequests": "{count, plural, =1{Pending request} other{{count} pending requests}}",
+  "@pairPendingRequests": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "pairRequestAudience": "Organizers can see the request and offers. Personal messages are visible only to the two of you.",
+  "pairLegacyHistory": "Earlier discussion about this request: organizers could also participate.",
+  "pairReferencedRequest": "Referenced request: {title}",
+  "@pairReferencedRequest": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "messageUnreadConversations": "{count, plural, =1{1 conversation with unread messages} other{{count} conversations with unread messages}}",
+  "messageUnreadMessages": "{count, plural, =1{1 unread message} other{{count} unread messages}}",
+  "messageUnreadUnavailable": "Unread count unavailable or stale. Refresh Messages to retry.",
+  "messageReadRetry": "Messages were not marked read. Tap to retry.",
+  "@messageUnreadConversations": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@messageUnreadMessages": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "accountSuspendedTitle": "Account suspended",
+  "accountSuspendedBody": "Ordinary account access is unavailable while your account is suspended.",
+  "accountSuspendedReasonLabel": "Reason",
+  "accountStatusTitle": "Account access",
+  "accountStatusChecking": "Checking account access…",
+  "accountStatusCheckAgain": "Check status again",
+  "accountStatusFailure": "Account access could not be verified. Try again or sign out.",
+  "ownRequestRestrictionExplanation": "A restriction on new requests is active on your account. View PLANETS notices for details. Other eligibility rules still apply.",
+  "ownRequestRestrictionViewNotices": "View PLANETS notices",
   "noticesTitle": "PLANETS notices",
   "noticesIntroduction": "Private moderation notices and their history, with the reasons intended for you. This is not a public profile badge or a score.",
   "noticesLoading": "Loading PLANETS notices…",

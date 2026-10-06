@@ -1377,6 +1377,8 @@ void main() {
         ..publicDetailResult = pending.future;
       final app = await _pump(tester, gateway: gateway, signedIn: false);
       app.read(appRouterProvider).go('/resources/$resourceListingId');
+      // Complete awaitable route entry before asserting the pending data load.
+      await tester.pump();
       await tester.pump();
 
       expect(find.text('Loading listings…'), findsOneWidget);
@@ -1405,6 +1407,8 @@ void main() {
     final pending = Completer<PublicResourceListingDetail?>();
     gateway.publicDetailResult = pending.future;
     app.read(appRouterProvider).go('/resources/$secondResourceListingId');
+    // Complete awaitable route entry before asserting the pending data load.
+    await tester.pump();
     await tester.pump();
 
     expect(find.text('Loading listings…'), findsOneWidget);

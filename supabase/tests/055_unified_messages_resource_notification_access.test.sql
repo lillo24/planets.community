@@ -538,8 +538,8 @@ select results_eq(
     select processed_count, notifications_created, notifications_suppressed
     from public.process_notification_outbox_batch(100)
   $$,
-  $$values (13, 13, 0)$$,
-  'all thirteen supported Resource events create exactly one in-app alert'
+  $$values (13, 12, 1)$$,
+  'twelve Resource activity events create alerts while the human-message event is suppressed'
 );
 select results_eq(
   $$
@@ -688,8 +688,8 @@ select is(
     where notification.resource_listing_title = 'Unified Resource item'
       and notification.category_slug = 'resources'
   ),
-  8::bigint,
-  'the requester sees only their eight expected Resource alerts with safe title context'
+  7::bigint,
+  'the requester sees seven Resource activity alerts, excluding human messages'
 );
 reset role;
 

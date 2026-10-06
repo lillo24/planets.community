@@ -20,6 +20,15 @@ This folder owns the reproducible local PLANETS database and its security valida
 - `config.toml` configures the local stack and fail-closed Data API defaults.
 - `migrations/` is the canonical, timestamp-ordered SQL schema history.
 - `tests/` contains native pgTAP invariants and transactional security probes.
+- MSG02 stores body-free source identities, send-time incoming eligibility and
+  private read frontiers in `private.message_*`. Complete totals authorize once
+  per conversation and apply the canonical group history cutoff to metadata.
+  Newest feeds issue own snapshot tokens; notification activity and push remain
+  independent. See [ADR 0008](../docs/architecture/decisions/0008-message-unread-and-activity-alerts.md).
+  `npm run messages:unread:upgrade:verify:local` requires an explicitly disposable
+  stack (`CI=true` or `PLANETS_DISPOSABLE_QA=1`), resets to populated MSG01, then
+  proves atomic cutover. `npm run messages:unread:verify:local` covers real
+  authenticated writers, commit races, private warm sockets and bounded summaries.
 - PI01's private reusable participant-link generations/secrets and admission
   receipts use the same membership/chat/capacity domain as ordinary approval.
   The API, scoped photo exception and retry/re-entry protocol are documented in
@@ -45,6 +54,21 @@ Migration `20261006081004` and test `113` cover grants/identity/current episodes
 including an active episode beyond the first history page. Existing consequence
 and suspension real-auth verifiers and the signature-level RPC audit cover it;
 no private grants, suspension exception or outbox change is introduced.
+SIM01 adds authenticated-only `list_similar_active_proposals`, a private
+immutable title normalizer and partial published-title GIN index. `115`/`116`
+cover grants, input bounds, narrow payload, ranking and exact-start eligibility.
+The [matching contract](../docs/development/similar-active-proposals.md) documents
+lexical limits, capacity-versus-join semantics and rollback-only plan evidence.
+`npm run proposal:similar:verify:local` runs the OTP/API seam in Database CI
+and the complete manual gate. It does not change ordinary discovery or Workshop.
+
+TW01 owns source-linked one-time Proposal templates in private identity/baseline
+tables. Publication captures the original Creator's last saved draft atomically;
+public Workshop RPCs project canonical content only after Completed through a
+shared source-visibility/removal predicate. `110`/`111` test hardening and domain
+behavior. The [Template Workshop guide](../docs/development/template-workshop.md)
+maps the four RPCs, version and bounded blueprint contracts, live attribution,
+Storage boundaries and local backfill/concurrency verifiers for TW02/TW03.
 
 09B1 stores append-preserved directional block episodes in the private schema
 and exposes only expected-identity Block/Unblock plus an outbound-only keyset
@@ -165,3 +189,32 @@ transitions under the same validation rules as the Creator. Draft creation and
 publication remain original-Creator-only. Tests 068 and 069 cover the role
 model, provenance, stale issuer authority, lifecycle access, and participation
 independence.
+
+
+TW02 extends private moderation cases with a typed Proposal-template foreign
+key and separate immutable source/content-token provenance. The forward migration
+adds protected append-only removal receipts/reasons and three staff-only RPCs:
+current published context, bounded resource pages and explicit template removal.
+The template-only self-report exception never activates existing Project or
+Resource evidence invitations. Existing review-state actions remain separate.
+Tests `112` and the authenticated `verify-local-template-moderation.mjs` cover
+privacy, concurrency and atomicity; the latter is included in
+`moderation:verify:local`. `verify-local-template-moderation-upgrade.mjs` checks
+legacy evidence before/after actual forward migration. The
+[Workshop contract](../docs/development/template-workshop.md) documents the
+source/template/case lock order for TW03 and the unchanged baseline/media rules.
+
+TW03's forward `20261004145334_template_to_draft_creation.sql` owns two
+hardened authenticated RPCs and append-only applicant-private acceptance receipts.
+It composes ordinary draft/need creation from one eligible locked source payload.
+Test `113` audits security; `scripts/verify-local-template-application.mjs` proves
+copy/reset, exact recovery, rollback and removal concurrency; its `...-upgrade.mjs`
+companion checks populated TW02 history through actual forward migration.
+The Workshop guide owns complete inputs/receipts/errors and local commands.
+
+DRAFT01 adds forward migration `20261004200147_idempotent_editor_draft_creation.sql`,
+private append-only creation receipts and two actor-bound editor RPCs. Existing
+ordinary create overloads remain available. `114` audits raw grants/RLS and RPC
+hardening; `npm run draft:editor:verify:local` verifies the authenticated contract
+and removed-template draft independence. See the
+[draft departure guide](../docs/development/proposal-draft-departure.md).

@@ -10,6 +10,10 @@ import {
   type ConsequenceFailureKind,
 } from "./moderation-consequence-models";
 import {
+  isTemplateVersion,
+  parseTemplateRemovalReceipt,
+} from "./template-moderation-models";
+import {
   requireModerationStaff,
   type ModerationServerClientFactory,
 } from "./moderation-server";
@@ -181,4 +185,48 @@ function mapConsequenceFailure(error: unknown): ConsequenceFailureKind {
     return "stale";
   }
   return "unavailable";
+}
+// This is an explicit enforcement action; ordinary review transitions stay separate.
+export async function removeModerationTemplate(
+  input: import("./template-moderation-models").TemplateRemovalInput,
+  createClient?: ModerationServerClientFactory,
+): Promise<import("./template-moderation-models").TemplateRemovalResult> {
+  const reason = input.reason.trim();
+  if (
+    !isUuid(input.caseId) ||
+    !isUuid(input.templateId) ||
+    !isUuid(input.requestId) ||
+    !isTemplateVersion(input.reviewedContentVersion) ||
+    reason.length < 10 ||
+    reason.length > 4000
+  )
+    return { status: "invalid" };
+  const access = await requireModerationStaff(createClient);
+  if (!access) return { status: "denied" };
+  try {
+    const result = await access.client.rpc("remove_moderation_case_template", {
+      p_expected_staff_profile_id: access.profileId,
+      p_case_id: input.caseId,
+      p_template_id: input.templateId,
+      p_client_request_id: input.requestId,
+      p_reviewed_content_version: input.reviewedContentVersion,
+      p_reason: reason,
+    });
+    if (result.error) {
+      const code =
+        typeof result.error === "object" && "code" in result.error
+          ? result.error.code
+          : null;
+      if (code === "42501" || code === "PT403") return { status: "denied" };
+      if (code === "PT409") return { status: "stale" };
+      if (code === "22023") return { status: "invalid" };
+      return { status: "error" };
+    }
+    const receipt = parseTemplateRemovalReceipt(result.data);
+    return { status: receipt.outcome, receipt };
+  } catch {
+    // A transport/malformed-result failure is ambiguous: UI retains the same
+    // request and frozen inputs for receipt recovery, never reports success.
+    return { status: "error" };
+  }
 }

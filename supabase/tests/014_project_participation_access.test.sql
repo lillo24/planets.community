@@ -807,10 +807,12 @@ select is(
   1::bigint,
   'ending a Tavolo preserves membership history'
 );
+-- TW01's retained source-template FK can reject deletion before the Project
+-- cleanup trigger. Both preserve the same 23503 no-orphaning invariant.
 select throws_ok(
   $$delete from public.proposals where id = 'c1000000-0000-4000-8000-000000000001'$$,
   '23503',
-  'A project with participation history cannot be deleted.',
+  null,
   'a source project with participation history cannot be deleted or orphaned'
 );
 

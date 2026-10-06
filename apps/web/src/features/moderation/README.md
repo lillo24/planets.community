@@ -95,3 +95,18 @@ Staff/affected-user RPCs remain documented in `docs/development/database.md`.
 09C2B owns ordinary-user/contextual consequence UX and notification projection;
 identifier-only source events are still unconsumed. Appeals, minimum-age and
 retention/deletion policy remain with 09C3, 09D and Plan 10 respectively.
+TW02 adds only explicit template removal to this case surface.
+`template-moderation-models.ts` owns strict current-published review, bounded
+resource-page and attributable receipt parsing. `moderation-server.ts` loads that
+projection only for `proposal_template` cases, without Project evidence context,
+and requests cover delivery through ordinary source Storage RLS.
+`template-removal-form.tsx` owns deliberate confirmation/reason, one frozen
+request UUID for ambiguous retries, stale-review refresh and role-loss feedback.
+The existing operations/actions recheck staff for every delivery and refresh
+queue/detail after success. Components show the separate effective removal
+record; review-state transitions retain their existing behavior. There is no
+source hiding, restoration, account sanction or deployment control. See the
+[Workshop contract](../../../../../docs/development/template-workshop.md).
+
+Duration parsing accepts finite positive fractional numeric seconds from the
+canonical schedule difference. Capacity and blueprint counts remain safe integers.
