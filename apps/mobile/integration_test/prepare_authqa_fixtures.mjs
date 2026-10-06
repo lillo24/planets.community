@@ -105,12 +105,50 @@ try {
       throw new Error(
         `Synthetic participant link failed (${error?.code ?? "shape"}).`,
       );
+    const pair = await users.owner.client.rpc("request_to_join_project", {
+      p_expected_requester_profile_id: actors.owner,
+      p_project_id: own.projectId,
+      p_request_message: "Synthetic combined-source pair request",
+      p_skill_ids: [],
+      p_resource_need_ids: [],
+    });
+    if (pair.error || typeof pair.data !== "string")
+      throw new Error(
+        `Synthetic pair request failed (${pair.error?.code ?? "shape"}).`,
+      );
+    const delegate = await users.cocreator.client.rpc(
+      "get_own_participation_conversation",
+      {
+        p_expected_profile_id: actors.cocreator,
+        p_request_id: pair.data,
+      },
+    );
+    if (delegate.error?.code !== "42501")
+      throw new Error(
+        "The synthetic delegate unexpectedly received personal conversation access.",
+      );
+    const templates = await users.requester.client.rpc(
+      "list_public_proposal_templates",
+      {
+        p_limit: 1,
+        p_cursor_linked_at: null,
+        p_cursor_id: null,
+        p_query: null,
+        p_skill_ids: null,
+      },
+    );
+    if (templates.error || templates.data?.length !== 1)
+      throw new Error(
+        "Seeded canonical public template missing; do not fabricate it for the smoke.",
+      );
     integration = {
       MODINT01_SMOKE: "true",
       MODINT_PARTICIPANT_TOKEN: data[0].invite_token,
       MODINT_PROJECT_ID: fixture.projectId,
       MODINT_PROJECT_CASE: fixture.cases.project,
       MODINT_OWN_CONTENT_CASE: own.cases.project,
+      MODINT_PAIR_REQUEST_ID: pair.data,
+      MODINT_TEMPLATE_ID: templates.data[0].template_id,
     };
   }
   const config = {

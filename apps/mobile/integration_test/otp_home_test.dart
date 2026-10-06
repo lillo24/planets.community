@@ -70,6 +70,7 @@ void main() {
     );
     String? notice;
     String? suspension;
+    String? combinedDraftId;
     await normal.main();
     await _wait(
       tester,
@@ -248,6 +249,12 @@ void main() {
           notice,
         );
         notice = null;
+        combinedDraftId = await _combinedMainFlows(
+          tester,
+          binding,
+          router,
+          app,
+        );
       }
       await _signOut(tester, router);
       await _wait(
@@ -413,6 +420,11 @@ void main() {
         '/settings/notices',
         '/messages',
         if (modint)
+          '/messages/chats/request/${const String.fromEnvironment('MODINT_PAIR_REQUEST_ID')}',
+        if (modint)
+          '/proposals/workshop/${const String.fromEnvironment('MODINT_TEMPLATE_ID')}',
+        if (combinedDraftId != null) '/proposals/$combinedDraftId/edit',
+        if (modint)
           '/proposals/${const String.fromEnvironment('MODINT_PROJECT_ID')}/participant-links',
         if (modint)
           '/join/project/${const String.fromEnvironment('MODINT_PARTICIPANT_TOKEN')}',
@@ -508,14 +520,115 @@ Future<void> _signOut(
   router.go(profile ? '/profile' : '/settings');
   await _wait(
     tester,
-    () =>
-        find.byKey(const Key('account-sign-out-button')).evaluate().isNotEmpty,
-    'canonical exit control',
+    () => find
+        .byKey(Key(profile ? 'profile-display-name' : 'settings-language-row'))
+        .evaluate()
+        .isNotEmpty,
+    'canonical exit screen',
+  );
+  // Settings is a lazy ListView: the small phone does not build this lower
+  // control until ordinary scrolling reaches it. Do not wait for an unbuilt
+  // child or replace the actual sign-out action with a direct session mutation.
+  await tester.scrollUntilVisible(
+    find.byKey(const Key('account-sign-out-button')),
+    240,
+    scrollable: find.byType(Scrollable),
+    maxScrolls: 10,
   );
   await tester.ensureVisible(find.byKey(const Key('account-sign-out-button')));
   await tester.pumpAndSettle();
   await tester.tap(find.byKey(const Key('account-sign-out-button')));
   await tester.pump();
+}
+
+Future<String> _combinedMainFlows(
+  WidgetTester tester,
+  IntegrationTestWidgetsFlutterBinding binding,
+  GoRouter router,
+  SupabaseClient app,
+) async {
+  const request = String.fromEnvironment('MODINT_PAIR_REQUEST_ID');
+  const template = String.fromEnvironment('MODINT_TEMPLATE_ID');
+  if (request.isEmpty || template.isEmpty) {
+    throw StateError('Fresh combined-main fixture references are required.');
+  }
+  router.go('/messages/chats/request/$request');
+  await _wait(
+    tester,
+    () => find
+        .byKey(const Key('project-request-chat-composer'))
+        .evaluate()
+        .isNotEmpty,
+    'canonical personal pair composer',
+  );
+  const body = 'Synthetic combined-source pair message';
+  await tester.enterText(
+    find.byKey(const Key('project-request-chat-composer')),
+    body,
+  );
+  await tester.tap(find.byKey(const Key('project-request-chat-send')));
+  await _wait(
+    tester,
+    () => find.text(body).evaluate().isNotEmpty,
+    'canonical pair send',
+  );
+  final summaries = await app.rpc(
+    'get_own_participation_conversation',
+    params: {
+      'p_expected_profile_id': app.auth.currentUser!.id,
+      'p_request_id': request,
+    },
+  ) as List;
+  final feed = await app.rpc(
+    'get_own_message_feed_page',
+    params: {
+      'p_expected_profile_id': app.auth.currentUser!.id,
+      'p_chat_id': summaries.single['chat_id'],
+      'p_kind': 'project_request_chat',
+      'p_limit': 20,
+      'p_before_created_at': null,
+      'p_before_item_kind': null,
+      'p_before_item_id': null,
+      'p_only_pending': false,
+    },
+  ) as Map;
+  expect((feed['items'] as List).any((row) => row['body'] == body), isTrue);
+  await binding.takeScreenshot('modint01-personal-pair-en');
+  router.go('/proposals/workshop/$template');
+  await _wait(
+    tester,
+    () => find.byKey(const Key('template-detail-cover')).evaluate().isNotEmpty,
+    'canonical public Workshop detail',
+  );
+  final use = find.byKey(const Key('template-use'));
+  await tester.scrollUntilVisible(
+    use,
+    300,
+    scrollable: find
+        .descendant(
+          of: find.byType(ListView),
+          matching: find.byType(Scrollable),
+        )
+        .first,
+  );
+  await tester.tap(use);
+  await _wait(
+    tester,
+    () =>
+        RegExp(r'^/proposals/[0-9a-f-]{36}/edit$')
+            .hasMatch(router.routerDelegate.state.uri.path) &&
+        find.byKey(const Key('proposal-title')).evaluate().isNotEmpty,
+    'photo-free canonical private template copy',
+  );
+  final draftId = router.routerDelegate.state.uri.path.split('/')[2];
+  expect(draftId, isNotEmpty);
+  await binding.takeScreenshot('modint01-template-private-copy-en');
+  router.go('/');
+  await tester.pumpAndSettle();
+  debugPrint(
+    'MODINT01 native canonical pair send and photo-free private template copy passed; delegate denial was verified by preparation.',
+  );
+  return draftId;
 }
 
 Future<void> _integrationFlows(

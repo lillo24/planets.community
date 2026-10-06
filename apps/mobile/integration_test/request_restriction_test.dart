@@ -612,6 +612,14 @@ Future<void> _tap(WidgetTester tester, String key) async {
 Future<void> _signOut(WidgetTester tester, GoRouter router) async {
   router.go('/settings');
   await tester.pumpAndSettle();
+  // Reach the real lower action before ensureVisible; lazy Settings children
+  // are not mounted outside the small phone's initial viewport.
+  await tester.scrollUntilVisible(
+    find.byKey(const Key('account-sign-out-button')),
+    240,
+    scrollable: find.byType(Scrollable),
+    maxScrolls: 10,
+  );
   await _tap(tester, 'account-sign-out-button');
 }
 

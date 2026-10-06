@@ -8,9 +8,17 @@ API 54611 and Mailpit 54614; it is not permission to use an arbitrary backend.
 Both emit `MODINT01_SMOKE=true` to ignored `config/local.json`, with public
 configuration/synthetic identifiers only. The normal app still obtains real OTP
 sessions through its UI. Sign-out uses current Settings/Profile controls, not
-the demo-only Home button. The OTP smoke additionally covers navigation choices,
+the demo-only Home button. Both harnesses scroll to the actual lower sign-out
+action in lazy Settings on the small phone; no direct session mutation replaces
+that UI action. The OTP smoke additionally covers navigation choices,
 photo-free participant admission, nullable request origin, chat continuity under
 content hiding, all private notice types and suspension during ordinary access.
+The continuation additionally prepares a real pending request/personal pair and
+verifies delegate denial without a fabricated conversation. The normal app sends
+a pair message and independently reads its canonical feed, uses a seeded public
+template for a photo-free private copy, then denies those pair/template/draft
+shortcuts during suspension. Broader Workshop/pair coverage remains in main's
+domain and widget suites; no production identity gateway is replaced here.
 Synthetic EN/IT screenshots use the existing explicit driver output directories.
 
 The integrated replay uses the task-owned `PLANETS_MODINT01_API35` small-phone
