@@ -242,6 +242,40 @@ try {
   ];
   for (const [user, name, args] of checks)
     await denied(user, name, args, "PT403");
+  // PostgREST resolves each compatibility overload by its complete argument
+  // names. Exercise both shapes; a call-chain inventory is not HTTP evidence.
+  const triage = {
+    p_needed_skill_ids: [],
+    p_already_found_skill_ids: [],
+    p_extra_skill_ids: [],
+    p_needed_resource_need_ids: [],
+    p_already_found_resource_need_ids: [],
+    p_extra_resource_need_ids: [],
+  };
+  for (const [name, expectedKey] of [
+    ["accept_project_join_request", "p_expected_creator_profile_id"],
+    ["accept_project_join_request_as_manager", "p_expected_manager_profile_id"],
+  ]) {
+    const args = { [expectedKey]: owner.id, p_request_id: randomUUID() };
+    await denied(owner, name, args, "PT403");
+    await denied(owner, name, { ...args, ...triage }, "PT403");
+  }
+  const delegateArgs = {
+    p_expected_owner_profile_id: owner.id,
+    p_project_id: f.projectId,
+  };
+  await denied(
+    owner,
+    "create_project_delegate_invitation",
+    delegateArgs,
+    "PT403",
+  );
+  await denied(
+    owner,
+    "create_project_delegate_invitation",
+    { ...delegateArgs, p_requested_authority_role: "co_creator" },
+    "PT403",
+  );
   for (const user of [owner, member]) {
     const [status] = await rpc(user, "get_own_account_suspension_status", {
       p_expected_profile_id: user.id,
@@ -305,7 +339,7 @@ try {
   );
 
   console.log(
-    "MODINT01 authenticated integration passed: hidden anonymous/authenticated preview; fresh restriction/block/hide denial; read-only receipt replay; 15 new private RPC denials on pre-existing suspended sessions; safe own-status/revoke recovery; truthful membership origins.",
+    "MODINT01 authenticated integration passed: hidden anonymous/authenticated preview; fresh restriction/block/hide denial; read-only receipt replay; 15 new private RPC and 6 compatibility overload denials on pre-existing suspended sessions; safe own-status/revoke recovery; truthful membership origins.",
   );
 } finally {
   await sql.end({ timeout: 5 });

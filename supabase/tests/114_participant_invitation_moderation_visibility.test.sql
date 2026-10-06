@@ -27,7 +27,7 @@ insert into modint_links select 'fc020000-0000-4000-8000-000000000002',*
 from public.create_project_participant_invitation('fc010000-0000-4000-8000-000000000001','fc020000-0000-4000-8000-000000000002');
 select results_eq($$select available from modint_links l cross join lateral
   public.get_project_participant_invitation_preview(l.invite_token) p order by l.project_id$$,
-  $$values(true),(true)$$,'both published kinds initially previewable');
+  $$select * from (values(true),(true)) expected(available)$$,'both published kinds initially previewable');
 reset role;
 insert into private.moderation_cases(id,state,subject_profile_id,target_kind,target_project_id,project_context_id)
 select project_id,'under_review','fc010000-0000-4000-8000-000000000001','project',project_id,project_id from modint_links;
@@ -40,14 +40,14 @@ set local role anon;
 select set_config('request.jwt.claim.sub','',true);
 select results_eq($$select available,p.project_id,project_kind,project_title from modint_links l
   cross join lateral public.get_project_participant_invitation_preview(l.invite_token) p order by l.project_id$$,
-  $$values(false,null::uuid,null::text,null::text),(false,null::uuid,null::text,null::text)$$,
+  $$select * from (values(false,null::uuid,null::text,null::text),(false,null::uuid,null::text,null::text)) expected(available,project_id,project_kind,project_title)$$,
   'anonymous hidden proposal/Tavolo previews disclose no title or identifier');
 reset role;
 set local role authenticated;
 select set_config('request.jwt.claim.sub','fc010000-0000-4000-8000-000000000003',true);
 select results_eq($$select available,p.project_id,project_kind,project_title from modint_links l
   cross join lateral public.get_project_participant_invitation_preview(l.invite_token) p order by l.project_id$$,
-  $$values(false,null::uuid,null::text,null::text),(false,null::uuid,null::text,null::text)$$,
+  $$select * from (values(false,null::uuid,null::text,null::text),(false,null::uuid,null::text,null::text)) expected(available,project_id,project_kind,project_title)$$,
   'authenticated hidden previews use the same canonical boundary');
 select throws_ok($$select * from public.accept_project_participant_invitation('fc010000-0000-4000-8000-000000000003',
   (select invite_token from modint_links where project_id='fc020000-0000-4000-8000-000000000001'),gen_random_uuid())$$,
@@ -72,15 +72,16 @@ set local role anon;
 select set_config('request.jwt.claim.sub','',true);
 select results_eq($$select available from modint_links l cross join lateral
   public.get_project_participant_invitation_preview(l.invite_token) p order by l.project_id$$,
-  $$values(true),(true)$$,'unhide restores ordinary published visibility without rotating tokens');
+  $$select * from (values(true),(true)) expected(available)$$,'unhide restores ordinary published visibility without rotating tokens');
 reset role;
-update public.recurring_activities set lifecycle_state='paused' where id='fc020000-0000-4000-8000-000000000002';
+select set_config('request.jwt.claim.sub','fc010000-0000-4000-8000-000000000001',true);
+select public.pause_recurring_activity('fc010000-0000-4000-8000-000000000001','fc020000-0000-4000-8000-000000000002');
 update public.proposals set starts_at=now()-interval '2 days',ends_at=now()-interval '1 day'
 where id='fc020000-0000-4000-8000-000000000001';
 set local role anon;
 select results_eq($$select available,p.project_id,project_kind,project_title from modint_links l
   cross join lateral public.get_project_participant_invitation_preview(l.invite_token) p order by l.project_id$$,
-  $$values(false,null::uuid,null::text,null::text),(false,null::uuid,null::text,null::text)$$,
+  $$select * from (values(false,null::uuid,null::text,null::text),(false,null::uuid,null::text,null::text)) expected(available,project_id,project_kind,project_title)$$,
   'unhide does not reopen expired proposals or paused Tavoli');
 reset role;
 select * from finish();

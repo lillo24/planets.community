@@ -99,7 +99,8 @@ reach canonical account gates; participant preview retains its deliberate public
 contract but must hide hidden content. The heuristic signature/call-chain audit
 passes; it is not presented as proof of runtime authorization by itself.
 
-`moderation:integration:verify:local` verifies all 15 new private signatures over
+`moderation:integration:verify:local` verifies all 15 new private signatures and
+six creator/manager acceptance and delegate-invitation compatibility overloads over
 real HTTP using session JWTs obtained before suspension. Safe own status retains
 only ID/time/reason/status fields. Admin revoke restores access on those same
 clients. Fresh participant admission denies restrictions, blocks with a current
@@ -124,17 +125,19 @@ Runtime: Node 24.21.0, Flutter 3.47.2 / Dart 3.13.2, pinned Supabase CLI
 `planets-community-modint01-qa` is isolated on ports 54610–54619 with inspector
 8123; shared main and other draft stacks are not reset or stopped.
 
-| Check                                                                   | Current result                                  |
-| ----------------------------------------------------------------------- | ----------------------------------------------- |
-| Immutable `npm ci`, Flutter package restore and localization            | Passed                                          |
-| Canonical focused Auth/OTP (77 tests)                                   | Passed after demonstrated Sign out repair       |
-| Auth command tests including 10 new provider regressions (54 tests)     | Passed                                          |
-| Focused combined real-Auth verifier                                     | Passed after demonstrated hidden-preview repair |
-| Focused combined concurrency verifier / 210-RPC audit                   | Passed                                          |
-| Full Mobile, Web/tooling, Site and Database suites                      | In progress / not yet claimed                   |
-| Android compilation, final normal-main emulator flows, admin browser QA | Pending                                         |
-| Hosted final-source CI / published-head tree equivalence                | Pending                                         |
-| Physical Android/iOS, native accessibility, hardware keyboard           | Not run                                         |
+| Check                                                                   | Current result                                          |
+| ----------------------------------------------------------------------- | ------------------------------------------------------- |
+| Immutable `npm ci`, Flutter package restore and localization            | Passed                                                  |
+| Canonical focused Auth/OTP (77 tests)                                   | Passed after demonstrated Sign out repair               |
+| Auth command tests including 10 new provider regressions (54 tests)     | Passed                                                  |
+| Focused combined real-Auth verifier                                     | Passed after demonstrated hidden-preview repair         |
+| Focused combined concurrency verifier / 210-RPC audit                   | Passed                                                  |
+| Full Mobile format/analyze/tests                                        | Passed; 1,439 tests, two gated local smokes skipped     |
+| Full Web/tooling tests, lint, typecheck, build                          | Passed; 428 Web tests, one gated skip; 45 tooling tests |
+| Site and complete Database suites                                       | In progress / not yet claimed                           |
+| Android compilation, final normal-main emulator flows, admin browser QA | Pending                                                 |
+| Hosted final-source CI / published-head tree equivalence                | Pending                                                 |
+| Physical Android/iOS, native accessibility, hardware keyboard           | Not run                                                 |
 
 A type-generation attempt overlapped an in-progress reset and correctly failed
 because participation RPCs were not present yet. It was rerun successfully after
@@ -143,6 +146,14 @@ New test authoring also exposed a misspelled safe-failure enum and an incorrect
 one-request expectation: replacement bootstraps intentionally inherit idempotent
 anchor creation, not a promise of sharing one SDK call. These were corrected in
 the new tests only; inherited assertions/timeouts remain unchanged.
+
+The second Database attempt passed replay/lint/advisors but stopped on new
+pgTAP fixture authoring: expected `results_eq` queries used `VALUES` rather than
+`SELECT` (interpreted as prepared-statement names), then a direct paused-Tavolo
+fixture update violated the lifecycle timestamp constraint. The fixture now uses
+canonical `pause_recurring_activity`; no constraint or assertion was weakened.
+Both new pgTAP files pass their 15 assertions. The complete gate is rerun after
+those concrete corrections, with both earlier failure logs retained locally.
 
 ## Dependency and operational boundaries
 
