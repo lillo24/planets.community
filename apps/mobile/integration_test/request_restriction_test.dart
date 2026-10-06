@@ -639,6 +639,7 @@ Future<void> _wait(
 }
 
 Future<void> _uiLogin(WidgetTester tester, String email, String url) async {
+  await tester.pumpAndSettle();
   if (find.byKey(const Key('auth-email-field')).evaluate().isEmpty) {
     await tester.tap(find.text('Sign in'));
     await tester.pumpAndSettle();

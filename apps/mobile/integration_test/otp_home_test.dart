@@ -797,6 +797,14 @@ Future<void> _language(
 }
 
 Future<void> _uiLogin(WidgetTester tester, String email, String mailpit) async {
+  await tester.pumpAndSettle();
+  await _wait(
+    tester,
+    () =>
+        find.byKey(const Key('auth-email-field')).evaluate().isNotEmpty ||
+        find.text('Sign in').evaluate().isNotEmpty,
+    'normal sign-in destination mounted after account exit',
+  );
   if (find.byKey(const Key('auth-email-field')).evaluate().isEmpty) {
     await tester.tap(find.text('Sign in'));
     await tester.pumpAndSettle();
