@@ -70,3 +70,36 @@ explicit evidence directory. The smoke restores the prior language preference,
 signs out and revokes its own temporary consequences even on failure. Use a fresh
 preparation for a new-account run; do not claim an already-completed account tests
 initial onboarding. This is an explicit device check, not a hosted-CI assertion.
+
+## 09C2B2 normal request-form smoke
+
+`prepare_request_restriction_fixtures.mjs` refuses any project other than
+`planets-community-09c2b2-qa`, API 54521 and Mailpit 54524 on loopback. Configure
+DB/shadow/Studio/analytics/pooler 54522/54520/54523/54527/54529 and inspector 8113,
+backing up exact configuration first. It creates fresh synthetic OTP accounts,
+canonical profile photos and a consequence fixture, exporting only public
+configuration and synthetic identifiers to ignored `config/local.json`.
+
+`request_restriction_test.dart` calls normal main and real OTP UI without app
+overrides. It exercises unrestricted requests, staff restriction, independent own
+status, notices/Back with Project and modal Resource drafts, removal/explicit
+retry with withdrawn episodes retained, blocking/coexistence, unrelated account
+isolation and both forms' suspension routing. Staff and the inbound-blocking owner
+authenticate with separate PKCE stores. Before launching each Resource form,
+the harness explicitly refreshes the existing canonical requester-history cache
+to reconcile external fixture actions; no production polling or test hook is added.
+The driver requires an explicit screenshot directory and saves only four named
+synthetic EN/IT request-form screenshots. No production test hook is introduced.
+
+```powershell
+$env:MAILPIT_URL = 'http://127.0.0.1:54524'
+npm exec -- node apps/mobile/integration_test/prepare_request_restriction_fixtures.mjs
+$env:REQUEST_SCREENSHOT_DIR = 'C:/absolute/task-owned/evidence'
+cd apps/mobile
+flutter drive --driver=test_driver/request_restriction_driver.dart --target=integration_test/request_restriction_test.dart -d emulator-5556 --dart-define-from-file=config/local.json
+```
+
+Run after the clean Database gate, using the task emulator's `10.0.2.2` bridge.
+The smoke revokes its consequences, signs out and restores the prior language in
+teardown. Stop only this owned backend with backup retained, then restore the
+original config. Actual evidence and limits are in the 09C2B2 review report.

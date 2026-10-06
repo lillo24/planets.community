@@ -6,6 +6,9 @@ import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_tokens.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../auth/application/auth_session_controller.dart';
+import '../../auth/domain/auth_models.dart';
+import '../../moderation/application/own_request_restriction_controller.dart';
+import '../../moderation/presentation/own_request_restriction_notice.dart';
 import '../../profile_photo/presentation/profile_photo_trust_gate.dart';
 import '../application/contribution_options_controller.dart';
 import '../application/participation_controllers.dart';
@@ -34,6 +37,17 @@ class _JoinRequestScreenState extends ConsumerState<JoinRequestScreen> {
   final _selectedResourceNeedIds = <String>{};
   late final String? _expectedProfileId;
   bool _requirementsChanged = false;
+  bool _draftInvalidated = false;
+  int _submitRevision = 0;
+  int _sessionRevision = 0;
+
+  // A separately mounted form must not inherit another attempt's confirmation.
+  final _restrictionScope = Object();
+
+  bool get _ownsDraft =>
+      !_draftInvalidated &&
+      ref.read(authSessionProvider).phase == AuthSessionPhase.ready &&
+      ref.read(authSessionProvider).identity?.id == _expectedProfileId;
 
   @override
   void initState() {
@@ -49,6 +63,10 @@ class _JoinRequestScreenState extends ConsumerState<JoinRequestScreen> {
   }
 
   Future<void> _submit() async {
+    if (!_ownsDraft) return;
+    final revision = ++_submitRevision;
+    final sessionRevision = _sessionRevision;
+    ref.read(ownRequestRestrictionProvider(_restrictionScope).notifier).clear();
     if (!(_formKey.currentState?.validate() ?? false)) return;
     final expectedProfileId = _expectedProfileId;
     if (expectedProfileId == null ||
@@ -65,7 +83,7 @@ class _JoinRequestScreenState extends ConsumerState<JoinRequestScreen> {
     )) {
       return;
     }
-    if (!mounted) return;
+    if (!_currentSubmit(revision, sessionRevision)) return;
     if (_requirementsChanged) setState(() => _requirementsChanged = false);
     final succeeded = await ref
         .read(participationCommandProvider.notifier)
@@ -77,6 +95,15 @@ class _JoinRequestScreenState extends ConsumerState<JoinRequestScreen> {
           skillIds: {..._selectedSkillIds},
           resourceNeedIds: {..._selectedResourceNeedIds},
         );
+    if (!_currentSubmit(revision, sessionRevision)) return;
+    if (!succeeded &&
+        ref.read(participationCommandProvider).failure ==
+            ParticipationFailureKind.interactionUnavailable) {
+      await ref
+          .read(ownRequestRestrictionProvider(_restrictionScope).notifier)
+          .checkAfterDenial(expectedProfileId);
+      return;
+    }
     if (!succeeded &&
         mounted &&
         ref.read(participationCommandProvider).failure ==
@@ -110,6 +137,12 @@ class _JoinRequestScreenState extends ConsumerState<JoinRequestScreen> {
     );
   }
 
+  bool _currentSubmit(int revision, int sessionRevision) =>
+      mounted &&
+      revision == _submitRevision &&
+      sessionRevision == _sessionRevision &&
+      _ownsDraft;
+
   Future<void> _loadOptions() async {
     final expectedProfileId = _expectedProfileId;
     if (expectedProfileId == null ||
@@ -141,10 +174,25 @@ class _JoinRequestScreenState extends ConsumerState<JoinRequestScreen> {
 
   @override
   Widget build(BuildContext context) {
+    ref.listen(authSessionProvider, (_, next) {
+      _sessionRevision++;
+      if (next.accountAccessIdentityId != _expectedProfileId) {
+        _submitRevision++;
+        _messageController.clear();
+        setState(() {
+          _draftInvalidated = true;
+          _selectedSkillIds.clear();
+          _selectedResourceNeedIds.clear();
+        });
+      }
+    });
     final l10n = AppLocalizations.of(context);
+    final restriction = ref.watch(
+      ownRequestRestrictionProvider(_restrictionScope),
+    );
     final command = ref.watch(participationCommandProvider);
     final isThisCommand = command.projectId == widget.projectId;
-    final isBusy = isThisCommand && command.isBusy;
+    final isBusy = !_ownsDraft || (isThisCommand && command.isBusy);
     final failure = isThisCommand ? command.failure : null;
     final options = ref.watch(contributionOptionsProvider);
     final optionsBelongToScreen =
@@ -304,6 +352,10 @@ class _JoinRequestScreenState extends ConsumerState<JoinRequestScreen> {
                   ),
                 ],
                 const SizedBox(height: AppSpacing.large),
+                if (failure ==
+                        ParticipationFailureKind.interactionUnavailable &&
+                    restriction == OwnRequestRestrictionState.active)
+                  const OwnRequestRestrictionNotice(),
                 FilledButton(
                   key: const Key('participation-send-request'),
                   onPressed: isBusy || !optionsReady ? null : _submit,

@@ -26,6 +26,14 @@ The six identifier-only consequence outbox events are intentionally unconsumed
 until 09C2. Tests 108–111 and the two `moderation:consequences:*:local` verifier
 commands own this slice; see `docs/development/database.md` for contracts and locks.
 
+09C2B2 adds only `get_own_interaction_restriction_status(expected_profile_id)`:
+an authenticated, active-account, own-identity boolean using the canonical private
+predicate. It returns no metadata or reasons and is denied while suspended.
+Migration `20261006081004` and test `113` cover grants/identity/current episodes,
+including an active episode beyond the first history page. Existing consequence
+and suspension real-auth verifiers and the signature-level RPC audit cover it;
+no private grants, suspension exception or outbox change is introduced.
+
 09B1 stores append-preserved directional block episodes in the private schema
 and exposes only expected-identity Block/Unblock plus an outbound-only keyset
 read. 09B2 adds `get_own_blocked_profile_status`, a zero-or-one exact-target

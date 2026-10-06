@@ -433,6 +433,15 @@
     ]
   },
   {
+    "signature": "get_own_interaction_restriction_status(uuid)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.get_own_interaction_restriction_status",
+      "private.require_moderation_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
     "signature": "get_own_moderation_staff_access(uuid)",
     "classification": "DENY_WHILE_SUSPENDED",
     "gate": [

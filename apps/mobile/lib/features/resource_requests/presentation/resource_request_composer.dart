@@ -3,6 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/theme/app_tokens.dart';
 import '../../../l10n/generated/app_localizations.dart';
+import '../../auth/application/auth_session_controller.dart';
+import '../../auth/domain/auth_models.dart';
+import '../../moderation/application/own_request_restriction_controller.dart';
+import '../../moderation/presentation/own_request_restriction_notice.dart';
 import '../../profile_photo/presentation/profile_photo_trust_gate.dart';
 import '../application/resource_request_controllers.dart';
 import '../domain/resource_request_models.dart';
@@ -41,6 +45,17 @@ class ResourceRequestComposer extends ConsumerStatefulWidget {
 class _ResourceRequestComposerState
     extends ConsumerState<ResourceRequestComposer> {
   late final TextEditingController _messageController;
+  bool _draftInvalidated = false;
+  int _submitRevision = 0;
+  int _sessionRevision = 0;
+
+  final _restrictionScope = Object();
+
+  bool get _ownsDraft =>
+      !_draftInvalidated &&
+      ref.read(authSessionProvider).phase == AuthSessionPhase.ready &&
+      ref.read(authSessionProvider).identity?.id ==
+          widget.expectedRequesterProfileId;
 
   @override
   void initState() {
@@ -61,11 +76,22 @@ class _ResourceRequestComposerState
 
   @override
   Widget build(BuildContext context) {
+    ref.listen(authSessionProvider, (_, next) {
+      _sessionRevision++;
+      if (next.accountAccessIdentityId != widget.expectedRequesterProfileId) {
+        _submitRevision++;
+        _messageController.clear();
+        setState(() => _draftInvalidated = true);
+      }
+    });
     final l10n = AppLocalizations.of(context);
+    final restriction = ref.watch(
+      ownRequestRestrictionProvider(_restrictionScope),
+    );
     final state = ref.watch(resourceRequestComposerProvider(widget.listingId));
     final belongs =
         state.expectedRequesterProfileId == widget.expectedRequesterProfileId;
-    final isSubmitting = belongs && state.isSubmitting;
+    final isSubmitting = !_ownsDraft || (belongs && state.isSubmitting);
     final failure = belongs ? state.failure : null;
     return Padding(
       padding: EdgeInsets.fromLTRB(
@@ -103,11 +129,15 @@ class _ResourceRequestComposerState
               Semantics(
                 liveRegion: true,
                 child: Text(
-                  failure == ResourceRequestFailureKind.interactionUnavailable
-                      ? l10n.blockingInteractionUnavailable
-                      : failure == ResourceRequestFailureKind.conflict &&
-                            state.canonicalActiveRequest != null
+                  state.canonicalActiveRequest != null &&
+                          (failure == ResourceRequestFailureKind.conflict ||
+                              failure ==
+                                  ResourceRequestFailureKind
+                                      .interactionUnavailable)
                       ? l10n.resourceRequestAlreadyActive
+                      : failure ==
+                            ResourceRequestFailureKind.interactionUnavailable
+                      ? l10n.blockingInteractionUnavailable
                       : failure == ResourceRequestFailureKind.invalidInput
                       ? l10n.resourceRequestInvalidInput
                       : l10n.resourceRequestUnableSend,
@@ -117,6 +147,9 @@ class _ResourceRequestComposerState
               ),
             ],
             const SizedBox(height: AppSpacing.medium),
+            if (failure == ResourceRequestFailureKind.interactionUnavailable &&
+                restriction == OwnRequestRestrictionState.active)
+              const OwnRequestRestrictionNotice(),
             Row(
               children: [
                 Expanded(
@@ -149,22 +182,37 @@ class _ResourceRequestComposerState
   }
 
   Future<void> _submit() async {
+    if (!_ownsDraft) return;
+    final revision = ++_submitRevision;
+    final sessionRevision = _sessionRevision;
+    ref.read(ownRequestRestrictionProvider(_restrictionScope).notifier).clear();
     final mayContinue = await requireProfilePhotoForTrustAction(
       context: context,
       ref: ref,
       expectedProfileId: widget.expectedRequesterProfileId,
       reason: ProfilePhotoTrustReason.scambioDona,
     );
-    if (!mayContinue || !mounted) return;
+    if (!mayContinue ||
+        !mounted ||
+        !_currentSubmit(revision, sessionRevision)) {
+      return;
+    }
     final success = await ref
         .read(resourceRequestComposerProvider(widget.listingId).notifier)
         .submit(
           expectedRequesterProfileId: widget.expectedRequesterProfileId,
           message: _messageController.text,
         );
-    if (!mounted) return;
+    if (!mounted || !_currentSubmit(revision, sessionRevision)) return;
     if (success) {
       Navigator.of(context).pop(true);
+      return;
+    }
+    if (ref.read(resourceRequestComposerProvider(widget.listingId)).failure ==
+        ResourceRequestFailureKind.interactionUnavailable) {
+      await ref
+          .read(ownRequestRestrictionProvider(_restrictionScope).notifier)
+          .checkAfterDenial(widget.expectedRequesterProfileId);
       return;
     }
     if (ref.read(resourceRequestComposerProvider(widget.listingId)).failure ==
@@ -175,4 +223,10 @@ class _ResourceRequestComposerState
       );
     }
   }
+
+  bool _currentSubmit(int revision, int sessionRevision) =>
+      mounted &&
+      revision == _submitRevision &&
+      sessionRevision == _sessionRevision &&
+      _ownsDraft;
 }

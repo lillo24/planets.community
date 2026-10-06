@@ -32,7 +32,9 @@ Future<void> showProfilePhotoTrustGate({
   required BuildContext context,
   required ProfilePhotoTrustReason reason,
 }) async {
-  final returnTo = GoRouterState.of(context).uri.toString();
+  // A Resource composer is a pageless modal. Looking up its page-associated
+  // GoRouterState can loop in the navigator; the router owns the current URI.
+  final returnTo = GoRouter.of(context).state.uri.toString();
   final addPhoto = await showDialog<bool>(
     context: context,
     barrierDismissible: false,

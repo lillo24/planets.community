@@ -183,6 +183,7 @@ try {
     "list_own_project_memberships",
     "list_own_moderation_reports",
     "list_own_moderation_consequences",
+    "get_own_interaction_restriction_status",
   ]) {
     const expectedArgument =
       {

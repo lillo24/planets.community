@@ -81,3 +81,22 @@ UI, localization and route boundaries. The dedicated SDK integration entrypoint
 staff apply/revoke on a disposable local backend; it is not part of host widget
 tests or hosted CI and never enables test controls in `lib/main.dart`. See the
 review report for preparation/run commands and actual execution status.
+
+## Own new-request explanation (09C2B2, draft review)
+
+After a canonical new Project/Resource `PT409`, the request form calls
+`data/own_interaction_restriction_gateway.dart` once for a fresh expected-ID
+boolean, with a 15-second timeout and strict parsing. History pagination never
+supplies current eligibility. `application/own_request_restriction_controller.dart`
+owns one auto-disposed form scope, invalidates every session/attempt revision,
+rejects late results and sends `PT403` to the existing Auth refresh. Failed,
+inactive or unknown checks leave the generic canonical error understandable.
+
+`presentation/own_request_restriction_notice.dart` announces factual EN/IT draft
+copy and pushes the existing guarded notices route above the form/modal. Back
+retains the same-session draft; account loss clears private text/options. This
+read cannot authorize or retry a mutation, identify a counterparty restriction,
+expose reasons/staff/cases, or guarantee eligibility after removal. Canonical
+Resource active-request recovery remains visible. No outbox consumer is added.
+See `docs/development/moderation-own-request-explanations-09c2b2-review.md` for
+exact wording, validation and remaining founder review.

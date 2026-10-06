@@ -221,6 +221,16 @@ class ResourceRequestComposerController
     } catch (error) {
       if (!_isCurrent(revision, expectedRequesterProfileId)) return false;
       final failure = mapResourceRequestFailure(error);
+      if (error is PostgrestException && error.code == 'PT403') {
+        state = ResourceRequestComposerState(
+          listingId: listingId,
+          expectedRequesterProfileId: expectedRequesterProfileId,
+          phase: ResourceRequestComposerPhase.failure,
+          failure: ResourceRequestFailureKind.forbidden,
+        );
+        await ref.read(authSessionProvider.notifier).refresh();
+        return false;
+      }
       OwnResourceRequest? canonical;
       if (failure == ResourceRequestFailureKind.conflict ||
           failure == ResourceRequestFailureKind.interactionUnavailable ||

@@ -236,8 +236,15 @@ class ParticipationCommandController
         phase: ParticipationCommandPhase.failure,
         expectedProfileId: expectedProfileId,
         projectId: projectId,
-        failure: mapParticipationFailure(error),
+        // PT409 on new submissions has several canonical causes. Keep it
+        // generic without deriving an own restriction or capacity from text.
+        failure: error is PostgrestException && error.code == 'PT409'
+            ? ParticipationFailureKind.interactionUnavailable
+            : mapParticipationFailure(error),
       );
+      if (error is PostgrestException && error.code == 'PT403') {
+        await ref.read(authSessionProvider.notifier).refresh();
+      }
       return false;
     }
   }
