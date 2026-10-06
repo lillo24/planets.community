@@ -125,19 +125,21 @@ Runtime: Node 24.21.0, Flutter 3.47.2 / Dart 3.13.2, pinned Supabase CLI
 `planets-community-modint01-qa` is isolated on ports 54610–54619 with inspector
 8123; shared main and other draft stacks are not reset or stopped.
 
-| Check                                                                   | Current result                                          |
-| ----------------------------------------------------------------------- | ------------------------------------------------------- |
-| Immutable `npm ci`, Flutter package restore and localization            | Passed                                                  |
-| Canonical focused Auth/OTP (77 tests)                                   | Passed after demonstrated Sign out repair               |
-| Auth command tests including 10 new provider regressions (54 tests)     | Passed                                                  |
-| Focused combined real-Auth verifier                                     | Passed after demonstrated hidden-preview repair         |
-| Focused combined concurrency verifier / 210-RPC audit                   | Passed                                                  |
-| Full Mobile format/analyze/tests                                        | Passed; 1,439 tests, two gated local smokes skipped     |
-| Full Web/tooling tests, lint, typecheck, build                          | Passed; 428 Web tests, one gated skip; 45 tooling tests |
-| Site and complete Database suites                                       | In progress / not yet claimed                           |
-| Android compilation, final normal-main emulator flows, admin browser QA | Pending                                                 |
-| Hosted final-source CI / published-head tree equivalence                | Pending                                                 |
-| Physical Android/iOS, native accessibility, hardware keyboard           | Not run                                                 |
+| Check                                                               | Current result                                                        |
+| ------------------------------------------------------------------- | --------------------------------------------------------------------- |
+| Immutable `npm ci`, Flutter package restore and localization        | Passed                                                                |
+| Canonical focused Auth/OTP (77 tests)                               | Passed after demonstrated Sign out repair                             |
+| Auth command tests including 10 new provider regressions (54 tests) | Passed                                                                |
+| Focused combined real-Auth verifier                                 | Passed after demonstrated hidden-preview repair                       |
+| Focused combined concurrency verifier / 210-RPC audit               | Passed                                                                |
+| Full Mobile format/analyze/tests                                    | Passed; 1,439 tests, two gated local smokes skipped                   |
+| Full Web/tooling tests, lint, typecheck, build                      | Passed; 428 Web tests, one gated skip; 45 tooling tests               |
+| Site tests/lint/typecheck/build/deployment dry-run                  | Passed; 19 tests; no deployment                                       |
+| Complete `npm run check:db`                                         | Passed; 116 pgTAP files / 3,641 assertions, all verifiers, type drift |
+| Normal-main Android debug compilation                               | Passed; inherited Kotlin/native-access warnings                       |
+| Final normal-main emulator flows, admin browser QA                  | In progress                                                           |
+| Hosted final-source CI / published-head tree equivalence            | Pending                                                               |
+| Physical Android/iOS, native accessibility, hardware keyboard       | Not run                                                               |
 
 A type-generation attempt overlapped an in-progress reset and correctly failed
 because participation RPCs were not present yet. It was rerun successfully after
@@ -162,8 +164,14 @@ Current `npm audit` reports **11 findings: 1 moderate, 9 high, 1 critical**;
 not a claim that #133's historical count still holds. The critical `proxy-addr`
 path is Express → MCP SDK → shadcn tooling; production graph inclusion alone
 does not establish that PLANETS exposes that Express server or its trust-proxy
-configuration. `source-map-js` also has a new high advisory. Exact path/exposure
-review remains in progress. No `npm audit fix`, major downgrade, or opportunistic
+configuration. Repo-wide runtime-source searches find no Express/trust-proxy or
+direct `source-map-js` import. `source-map-js` 1.2.1 reaches the graph through
+Tailwind/PostCSS, CSS tooling and Next's PostCSS; the advisory concerns parsing
+attacker-controlled indexed maps. These paths are build/tooling exposure evidence,
+not a proof of unreachability or a security waiver. shadcn remains a declared Web
+dependency and its CSS is imported, so it is not reclassified merely to hide audit
+counts. All advisories remain open for a separately scoped remediation decision.
+No `npm audit fix`, major downgrade, or opportunistic
 upgrade is performed. Primary advisories:
 [proxy-addr](https://github.com/advisories/GHSA-jqcg-44mw-7w3h),
 [braces](https://github.com/advisories/GHSA-vfj7-8cjw-p6xm),
@@ -177,6 +185,20 @@ recommendation is not deployment authorization. No provider activation, public
 host, signing, app-store or production account operation is performed.
 
 ## Founder review still required
+
+The [exact current EN/IT copy extract](modint01-moderation-copy.md) is generated
+from the merged source, with no copy rewrite or founder approval inferred.
+Representative native screenshots and their actual run disposition are recorded
+below after real-device verification; inherited screenshots are not relabelled.
+
+| Topic                                           | What this draft delivers                                                                | Founder review / separate decision                         |
+| ----------------------------------------------- | --------------------------------------------------------------------------------------- | ---------------------------------------------------------- |
+| Own notices, suspension and request explanation | Current copy, verbatim own reasons, active/removed presentation, canonical denial/retry | Review wording and presentation of implemented behavior    |
+| Counterparty warnings or moderation badges      | None                                                                                    | Separate disclosure/privacy policy and implementation plan |
+| Owner contextual moderation UI                  | Existing staff-only controls; no new counterparty inference                             | Decide any ordinary owner context separately               |
+| Notification channels and disclosure            | No moderation event recipient projection or delivery                                    | Separate category/channel/recipient/copy decision          |
+| Appeals and escalation                          | No invented appeal route, deadlines or promise                                          | Separate founder policy before implementation              |
+| Minimum age / identity                          | No age or identity rule introduced                                                      | Separate policy and any legal review                       |
 
 - Review exact current EN/IT moderation wording and synthetic screenshots
   (combined-head native evidence pending), especially notices, own request

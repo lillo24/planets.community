@@ -17,9 +17,13 @@ const configuration = readFileSync(
   new URL("../../../supabase/config.toml", import.meta.url),
   "utf8",
 );
-if (!/^project_id = "planets-community-authqa01-qa"$/m.test(configuration)) {
+const modint = process.argv.includes("--modint01");
+const project = modint
+  ? "planets-community-modint01-qa"
+  : "planets-community-authqa01-qa";
+if (!new RegExp(`^project_id = "${project}"$`, "m").test(configuration)) {
   throw new Error(
-    "Own-history smoke preparation requires task-owned project planets-community-authqa01-qa, never the shared stack.",
+    `Own-history smoke preparation requires selected task-owned project ${project}, never the shared stack.`,
   );
 }
 const status = readLocalSupabaseStatus(root);
@@ -31,11 +35,20 @@ for (const value of [status.apiUrl, status.databaseUrl, mailpit]) {
     );
   }
 }
+if (
+  new URL(status.apiUrl).port !== (modint ? "54611" : "54511") ||
+  new URL(mailpit).port !== (modint ? "54614" : "54514")
+) {
+  throw new Error(
+    "Normal OTP smoke requires the explicitly selected owned ports.",
+  );
+}
 const sql = postgres(status.databaseUrl, { max: 2, onnotice: () => {} });
 try {
   const run = randomUUID();
   const actors = {};
   const emails = {};
+  const users = {};
   for (const role of [
     "moderator",
     "admin",
@@ -73,8 +86,33 @@ try {
       );
     actors[role] = user.id;
     emails[role] = email;
+    users[role] = user;
   }
   const fixture = await createConsequenceFixture(sql, actors);
+  let integration = {};
+  if (modint) {
+    const own = await createConsequenceFixture(sql, {
+      ...actors,
+      owner: actors.requester,
+    });
+    // PI direct admission must remain photo-free, unlike request-based gates.
+    await sql`delete from public.profile_photos where profile_id=${actors.requester}`;
+    const { data, error } = await users.owner.client.rpc(
+      "create_project_participant_invitation",
+      { p_expected_profile_id: actors.owner, p_project_id: fixture.projectId },
+    );
+    if (error || data?.length !== 1)
+      throw new Error(
+        `Synthetic participant link failed (${error?.code ?? "shape"}).`,
+      );
+    integration = {
+      MODINT01_SMOKE: "true",
+      MODINT_PARTICIPANT_TOKEN: data[0].invite_token,
+      MODINT_PROJECT_ID: fixture.projectId,
+      MODINT_PROJECT_CASE: fixture.cases.project,
+      MODINT_OWN_CONTENT_CASE: own.cases.project,
+    };
+  }
   const config = {
     APP_ENV: "local",
     SUPABASE_URL: replaceUrlHost(status.apiUrl, "10.0.2.2"),
@@ -87,6 +125,7 @@ try {
     AUTHQA_NEW_EMAIL: `authqa01-new-${run}@planets.invalid`,
     HISTORY_SMOKE_STAFF_EMAIL: emails.admin,
     HISTORY_SMOKE_CASE_ID: fixture.cases.profile,
+    ...integration,
   };
   writeFileSync(
     new URL("../config/local.json", import.meta.url),

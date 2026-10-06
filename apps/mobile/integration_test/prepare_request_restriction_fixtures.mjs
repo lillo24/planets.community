@@ -15,7 +15,11 @@ const toml = readFileSync(
   new URL("../../../supabase/config.toml", import.meta.url),
   "utf8",
 );
-if (!/^project_id = "planets-community-09c2b2-qa"$/m.test(toml)) {
+const modint = process.argv.includes("--modint01");
+const project = modint
+  ? "planets-community-modint01-qa"
+  : "planets-community-09c2b2-qa";
+if (!new RegExp(`^project_id = "${project}"$`, "m").test(toml)) {
   throw new Error(
     "Request-explanation smoke requires its owned 09C2B2 project.",
   );
@@ -30,8 +34,8 @@ for (const url of [status.apiUrl, status.databaseUrl, mailbox]) {
   }
 }
 if (
-  new URL(status.apiUrl).port !== "54521" ||
-  new URL(mailbox).port !== "54524"
+  new URL(status.apiUrl).port !== (modint ? "54611" : "54521") ||
+  new URL(mailbox).port !== (modint ? "54614" : "54524")
 ) {
   throw new Error("Request-explanation smoke requires its owned ports.");
 }
@@ -85,6 +89,7 @@ try {
         SUPABASE_PUBLISHABLE_KEY: status.publishableKey,
         SENTRY_DSN: "",
         ENABLE_DEMO_TOOLS: "false",
+        MODINT01_SMOKE: String(modint),
         REQUEST_SMOKE_MAILPIT: replaceUrlHost(mailbox, "10.0.2.2"),
         REQUEST_SMOKE_EMAIL: emails.requester,
         REQUEST_SMOKE_UNRELATED_EMAIL: emails.unrelated,

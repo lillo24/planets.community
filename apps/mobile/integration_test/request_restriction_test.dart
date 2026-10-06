@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
+import 'package:go_router/go_router.dart';
 import 'package:planets_mobile/app/planets_app.dart';
 import 'package:planets_mobile/app/router/app_router.dart';
 import 'package:planets_mobile/core/config/app_config.dart';
@@ -27,6 +28,7 @@ void main() {
     '09C2B2 normal OTP, both request forms, own notices, retry and suspension',
     (tester) async {
       final config = AppConfig.fromCompileTime();
+      const modint = bool.fromEnvironment('MODINT01_SMOKE');
       const mailbox = String.fromEnvironment('REQUEST_SMOKE_MAILPIT');
       const email = String.fromEnvironment('REQUEST_SMOKE_EMAIL');
       const unrelatedEmail = String.fromEnvironment(
@@ -40,13 +42,13 @@ void main() {
       const owner = String.fromEnvironment('REQUEST_SMOKE_OWNER');
       if (config.environment != AppEnvironment.local ||
           config.monitoringEnabled ||
-          config.supabaseUrl.port != 54521 ||
+          config.supabaseUrl.port != (modint ? 54611 : 54521) ||
           ![
             '10.0.2.2',
             '127.0.0.1',
             'localhost',
           ].contains(config.supabaseUrl.host) ||
-          Uri.parse(mailbox).port != 54524 ||
+          Uri.parse(mailbox).port != (modint ? 54614 : 54524) ||
           ![
             '10.0.2.2',
             '127.0.0.1',
@@ -135,9 +137,7 @@ void main() {
           if (statusExit.evaluate().isNotEmpty) {
             await tester.tap(statusExit);
           } else {
-            router.go('/');
-            await tester.pumpAndSettle();
-            await tester.tap(find.text('Sign out'));
+            await _signOut(tester, router);
           }
           await _wait(
             tester,
@@ -467,9 +467,7 @@ void main() {
           '09C2B2 native generic block denial and independently verified coexisting own restriction passed.',
         );
 
-        router.go('/');
-        await tester.pumpAndSettle();
-        await tester.tap(find.text('Sign out'));
+        await _signOut(tester, router);
         await _wait(
           tester,
           () =>
@@ -509,9 +507,7 @@ void main() {
           'unrelated private notices',
         );
         expect(find.text('Synthetic local request restriction.'), findsNothing);
-        router.go('/');
-        await tester.pumpAndSettle();
-        await tester.tap(find.text('Sign out'));
+        await _signOut(tester, router);
         await _wait(
           tester,
           () =>
@@ -611,6 +607,12 @@ Future<void> _tap(WidgetTester tester, String key) async {
   await tester.pumpAndSettle();
   await tester.tap(target);
   await tester.pump();
+}
+
+Future<void> _signOut(WidgetTester tester, GoRouter router) async {
+  router.go('/settings');
+  await tester.pumpAndSettle();
+  await _tap(tester, 'account-sign-out-button');
 }
 
 Future<void> _wait(

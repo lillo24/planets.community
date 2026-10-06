@@ -1,5 +1,32 @@
 # Real own-history Android smoke
 
+## MODINT01 integrated-head replay
+
+The existing normal-main OTP and request harnesses also accept the explicit
+`--modint01` preparer switch. It selects only `planets-community-modint01-qa`,
+API 54611 and Mailpit 54614; it is not permission to use an arbitrary backend.
+Both emit `MODINT01_SMOKE=true` to ignored `config/local.json`, with public
+configuration/synthetic identifiers only. The normal app still obtains real OTP
+sessions through its UI. Sign-out uses current Settings/Profile controls, not
+the demo-only Home button. The OTP smoke additionally covers navigation choices,
+photo-free participant admission, nullable request origin, chat continuity under
+content hiding, all private notice types and suspension during ordinary access.
+Synthetic EN/IT screenshots use the existing explicit driver output directories.
+
+Run each preparer immediately before its matching driver after the Database gate:
+
+```powershell
+$env:MAILPIT_URL = 'http://127.0.0.1:54614'
+npm exec -- node apps/mobile/integration_test/prepare_authqa_fixtures.mjs --modint01
+# then otp_home_test.dart with test_driver/otp_home_driver.dart
+npm exec -- node apps/mobile/integration_test/prepare_request_restriction_fixtures.mjs --modint01
+# then request_restriction_test.dart with test_driver/request_restriction_driver.dart
+```
+
+The participant bearer token stays only in ignored local configuration; screenshots
+must never show it. Prior AUTHQA01/09C2B2 results remain historical, not evidence for
+this combined source. Restore generated configuration and stop only owned services.
+
 This folder owns the task-local 09C2B1 real-backend UI smoke, not host widget
 tests, production startup, or a replacement for the Database verifiers.
 

@@ -12,7 +12,11 @@ import 'package:planets_mobile/core/config/app_config.dart';
 import 'package:planets_mobile/features/auth/application/auth_command_controller.dart';
 import 'package:planets_mobile/features/auth/application/auth_session_controller.dart';
 import 'package:planets_mobile/features/auth/domain/auth_models.dart';
+import 'package:planets_mobile/features/moderation/application/own_consequence_controller.dart';
 import 'package:planets_mobile/features/settings/application/language_preference_controller.dart';
+import 'package:planets_mobile/features/settings/application/navigation_preference_controller.dart';
+import 'package:planets_mobile/features/settings/domain/language_preference.dart';
+import 'package:planets_mobile/features/settings/domain/navigation_preference.dart';
 import 'package:planets_mobile/main.dart' as normal;
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -26,6 +30,7 @@ void main() {
     tester,
   ) async {
     final config = AppConfig.fromCompileTime();
+    const modint = bool.fromEnvironment('MODINT01_SMOKE');
     const mailpit = String.fromEnvironment('HISTORY_SMOKE_MAILPIT_URL');
     const emailA = String.fromEnvironment('HISTORY_SMOKE_EMAIL_A');
     const emailB = String.fromEnvironment('HISTORY_SMOKE_EMAIL_B');
@@ -39,12 +44,13 @@ void main() {
           '127.0.0.1',
           'localhost',
         ].contains(config.supabaseUrl.host) ||
-        config.supabaseUrl.port != 54511 ||
+        config.supabaseUrl.port != (modint ? 54611 : 54511) ||
         ![
           '10.0.2.2',
           '127.0.0.1',
           'localhost',
         ].contains(Uri.parse(mailpit).host) ||
+        Uri.parse(mailpit).port != (modint ? 54614 : 54514) ||
         ![
           emailA,
           emailB,
@@ -75,6 +81,9 @@ void main() {
     );
     final router = container.read(appRouterProvider);
     final originalLanguage = container.read(languagePreferenceProvider);
+    final originalNavigation = container
+        .read(navigationPreferenceProvider)
+        .destination;
     final trace = container.listen(authSessionProvider, (_, value) {
       // Safe state tags only: never session/OTP/email/reason dumps.
       debugPrint(
@@ -103,9 +112,7 @@ void main() {
         if (statusSignOut.evaluate().isNotEmpty) {
           await tester.tap(statusSignOut);
         } else {
-          router.go('/');
-          await tester.pump();
-          await tester.tap(find.text('Sign out'));
+          await _signOut(tester, router);
         }
         await _wait(
           tester,
@@ -152,6 +159,30 @@ void main() {
       await binding.takeScreenshot('authqa01-normal-home-it');
       await _language(tester, router, 'english');
 
+      if (modint) {
+        router.go('/');
+        await tester.pumpAndSettle();
+        expect(find.text('Sign out'), findsNothing);
+        for (final destination in BottomTabDestination.values) {
+          router.go('/settings');
+          await tester.pumpAndSettle();
+          await tester.tap(find.byKey(const Key('settings-navigation-row')));
+          await tester.pumpAndSettle();
+          await tester.tap(
+            find.byKey(Key('navigation-${destination.name}-option')),
+          );
+          await _wait(
+            tester,
+            () => router.routerDelegate.state.uri.path == '/settings',
+            'ordinary navigation saved',
+          );
+          expect(
+            container.read(navigationPreferenceProvider).destination,
+            destination,
+          );
+        }
+      }
+
       // Focused own-history smoke, not the earlier full moderation campaign.
       await _staffLogin(staff, staffEmail, mailpit);
       notice = await staff.rpc<String>(
@@ -177,15 +208,38 @@ void main() {
         () => find.text('Synthetic AuthQA notice').evaluate().isNotEmpty,
         'A own history',
       );
+      if (modint) {
+        await binding.takeScreenshot('modint01-safety-active-en');
+        await container
+            .read(languagePreferenceProvider.notifier)
+            .select(LanguagePreference.italian);
+        await tester.pumpAndSettle();
+        await binding.takeScreenshot('modint01-safety-active-it');
+        await container
+            .read(languagePreferenceProvider.notifier)
+            .select(LanguagePreference.english);
+        await tester.pumpAndSettle();
+      }
       await tester.pageBack();
       await _wait(
         tester,
         () => router.routerDelegate.state.uri.path == '/settings',
         'history Back',
       );
-      router.go('/');
-      await tester.pumpAndSettle();
-      await tester.tap(find.text('Sign out'));
+      if (modint) {
+        await _integrationFlows(
+          tester,
+          binding,
+          container,
+          router,
+          app,
+          staff,
+          caseId,
+          notice,
+        );
+        notice = null;
+      }
+      await _signOut(tester, router);
       await _wait(
         tester,
         () =>
@@ -216,7 +270,7 @@ void main() {
       router.go('/');
       await tester.pumpAndSettle();
       expect(find.byKey(const Key('auth-safe-error')), findsNothing);
-      await tester.tap(find.text('Sign out'));
+      await _signOut(tester, router, profile: modint);
       await _wait(
         tester,
         () =>
@@ -279,7 +333,7 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text("You're signed in."), findsOneWidget);
       expect(find.byKey(const Key('auth-safe-error')), findsNothing);
-      await tester.tap(find.text('Sign out'));
+      await _signOut(tester, router);
       await _wait(
         tester,
         () =>
@@ -291,6 +345,16 @@ void main() {
         'AUTHQA native new-C missing-to-incomplete-to-complete canonical profile passed',
       );
 
+      if (modint) {
+        await _uiLogin(tester, emailA, mailpit);
+        await _wait(
+          tester,
+          () =>
+              container.read(authSessionProvider).phase ==
+              AuthSessionPhase.ready,
+          'A ordinary access before suspension',
+        );
+      }
       suspension = await staff.rpc<String>(
         'apply_account_suspension',
         params: {
@@ -300,7 +364,12 @@ void main() {
           'p_internal_note': 'Synthetic local fixture',
         },
       );
-      await _uiLogin(tester, emailA, mailpit);
+      if (modint) {
+        router.go('/settings/notices');
+        await tester.pump();
+      } else {
+        await _uiLogin(tester, emailA, mailpit);
+      }
       await _wait(
         tester,
         () =>
@@ -310,7 +379,34 @@ void main() {
         'suspended A OTP',
       );
       expect(router.routerDelegate.state.uri.path, '/account/suspended');
-      for (final target in ['/settings', '/settings/notices']) {
+      if (modint) {
+        await tester.binding.handlePopRoute();
+        await tester.pumpAndSettle();
+        expect(router.routerDelegate.state.uri.path, '/account/suspended');
+      }
+      if (modint) {
+        await binding.takeScreenshot('modint01-suspension-en');
+        await container
+            .read(languagePreferenceProvider.notifier)
+            .select(LanguagePreference.italian);
+        await tester.pumpAndSettle();
+        await binding.takeScreenshot('modint01-suspension-it');
+        await container
+            .read(languagePreferenceProvider.notifier)
+            .select(LanguagePreference.english);
+        await tester.pumpAndSettle();
+      }
+      for (final target in [
+        '/',
+        '/profile',
+        '/settings',
+        '/settings/notices',
+        '/messages',
+        if (modint)
+          '/proposals/${const String.fromEnvironment('MODINT_PROJECT_ID')}/participant-links',
+        if (modint)
+          '/join/project/${const String.fromEnvironment('MODINT_PARTICIPANT_TOKEN')}',
+      ]) {
         router.go(target);
         await tester.pumpAndSettle();
         expect(router.routerDelegate.state.uri.path, '/account/suspended');
@@ -346,6 +442,20 @@ void main() {
       debugPrint(
         'AUTHQA native suspension fail-closed and fresh restoration passed',
       );
+      if (modint) {
+        router.go('/settings/notices');
+        await _wait(
+          tester,
+          () => find.text('Account suspension').evaluate().isNotEmpty,
+          'removed suspension history',
+        );
+        await binding.takeScreenshot('modint01-suspension-removed-en');
+        await container
+            .read(languagePreferenceProvider.notifier)
+            .select(LanguagePreference.italian);
+        await tester.pumpAndSettle();
+        await binding.takeScreenshot('modint01-suspension-removed-it');
+      }
       expect(tester.takeException(), isNull);
     } finally {
       trace.close();
@@ -370,11 +480,176 @@ void main() {
       await container
           .read(languagePreferenceProvider.notifier)
           .select(originalLanguage);
+      await container
+          .read(navigationPreferenceProvider.notifier)
+          .select(originalNavigation);
       await tester.pumpWidget(const SizedBox.shrink());
       await staff.dispose();
       staffStorage.clear();
     }
   });
+}
+
+Future<void> _signOut(
+  WidgetTester tester,
+  GoRouter router, {
+  bool profile = false,
+}) async {
+  router.go(profile ? '/profile' : '/settings');
+  await _wait(
+    tester,
+    () =>
+        find.byKey(const Key('account-sign-out-button')).evaluate().isNotEmpty,
+    'canonical exit control',
+  );
+  await tester.ensureVisible(find.byKey(const Key('account-sign-out-button')));
+  await tester.pumpAndSettle();
+  await tester.tap(find.byKey(const Key('account-sign-out-button')));
+  await tester.pump();
+}
+
+Future<void> _integrationFlows(
+  WidgetTester tester,
+  IntegrationTestWidgetsFlutterBinding binding,
+  ProviderContainer container,
+  GoRouter router,
+  SupabaseClient app,
+  SupabaseClient staff,
+  String profileCase,
+  String safetyNotice,
+) async {
+  const token = String.fromEnvironment('MODINT_PARTICIPANT_TOKEN');
+  const project = String.fromEnvironment('MODINT_PROJECT_ID');
+  const projectCase = String.fromEnvironment('MODINT_PROJECT_CASE');
+  const ownContentCase = String.fromEnvironment('MODINT_OWN_CONTENT_CASE');
+  if ([token, project, projectCase, ownContentCase].any((v) => v.isEmpty)) {
+    throw StateError('MODINT01 requires fresh participant/content fixtures.');
+  }
+  final staffId = staff.auth.currentUser!.id;
+  Future<void> revoke(String id) async => staff.rpc(
+    'revoke_moderation_consequence',
+    params: {
+      'p_expected_staff_profile_id': staffId,
+      'p_consequence_id': id,
+      'p_user_reason': 'Synthetic MODINT01 removal.',
+      'p_internal_note': 'Synthetic local fixture',
+    },
+  );
+  Future<String> apply(String caseId, String type) => staff.rpc<String>(
+    'apply_moderation_consequence',
+    params: {
+      'p_expected_staff_profile_id': staffId,
+      'p_case_id': caseId,
+      'p_consequence_type': type,
+      'p_user_reason': 'Synthetic MODINT01 $type.',
+      'p_internal_note': 'Synthetic local fixture',
+    },
+  );
+  Future<void> history(String name, String consequence, bool active) async {
+    router.go('/settings/notices');
+    await _wait(
+      tester,
+      () => find.byKey(const Key('notices-refresh')).evaluate().isNotEmpty,
+      'private history screen',
+    );
+    await tester.tap(find.byKey(const Key('notices-refresh')));
+    await _wait(tester, () {
+      final state = container.read(ownConsequenceProvider);
+      return state.phase == OwnHistoryPhase.ready &&
+          state.items.any((n) => n.id == consequence && n.isActive == active);
+    }, 'private notice $name');
+    final card = find.byKey(Key('notice-$consequence'));
+    await tester.scrollUntilVisible(
+      card,
+      200,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.ensureVisible(card);
+    await tester.pumpAndSettle();
+    await binding.takeScreenshot('modint01-$name-en');
+    await container
+        .read(languagePreferenceProvider.notifier)
+        .select(LanguagePreference.italian);
+    await tester.pumpAndSettle();
+    await binding.takeScreenshot('modint01-$name-it');
+    await container
+        .read(languagePreferenceProvider.notifier)
+        .select(LanguagePreference.english);
+    await tester.pumpAndSettle();
+    router.go('/');
+    await tester.pumpAndSettle();
+  }
+
+  router.go('/join/project/$token');
+  await _wait(
+    tester,
+    () =>
+        find.byKey(const Key('participant-invite-join')).evaluate().isNotEmpty,
+    'participant preview',
+  );
+  await tester.tap(find.byKey(const Key('participant-invite-join')));
+  await _wait(
+    tester,
+    () => find
+        .byKey(const Key('participant-invite-current'))
+        .evaluate()
+        .isNotEmpty,
+    'photo-free direct admission',
+  );
+  final id = app.auth.currentUser!.id;
+  final memberships = await app
+      .from('project_memberships')
+      .select('originating_request_id')
+      .eq('project_id', project)
+      .eq('participant_profile_id', id);
+  expect(memberships, hasLength(1));
+  expect(memberships.single['originating_request_id'], isNull);
+  await tester.tap(find.byKey(const Key('participant-invite-open-chat')));
+  await _wait(
+    tester,
+    () => find.byKey(const Key('project-chat-composer')).evaluate().isNotEmpty,
+    'admitted chat',
+  );
+  String? hide;
+  try {
+    hide = await apply(projectCase, 'content_hide');
+    final preview = await app.rpc(
+      'get_project_participant_invitation_preview',
+      params: {'p_token': token},
+    ) as List;
+    expect(preview.single['available'], false);
+    expect(preview.single['project_id'], isNull);
+    expect(preview.single['project_title'], isNull);
+    final chat = await app.rpc(
+      'get_own_project_group_chat',
+      params: {'p_expected_profile_id': id, 'p_project_id': project},
+    ) as List;
+    expect(chat.single['has_current_entitlement'], true);
+    expect(find.byKey(const Key('project-chat-composer')), findsOneWidget);
+  } finally {
+    if (hide != null) await revoke(hide);
+  }
+  await revoke(safetyNotice);
+  await history('safety-removed', safetyNotice, false);
+  for (final item in [
+    ('interaction_restriction', profileCase),
+    ('content_hide', ownContentCase),
+  ]) {
+    String? active;
+    try {
+      active = await apply(item.$2, item.$1);
+      await history('${item.$1}-active', active, true);
+      final removed = active;
+      await revoke(active);
+      active = null;
+      await history('${item.$1}-removed', removed, false);
+    } finally {
+      if (active != null) await revoke(active);
+    }
+  }
+  debugPrint(
+    'MODINT01 native photo-free invitation admission, truthful origin, hidden preview, existing chat and active/removed notice types passed.',
+  );
 }
 
 Future<void> _language(

@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
+import { writeFile } from "node:fs/promises";
 import postgres from "postgres";
 
 import { signInLocalOtpUser } from "../../../scripts/lib/local-authenticated-user.mjs";
@@ -7,12 +8,15 @@ import { createConsequenceFixture } from "../../../scripts/lib/moderation-conseq
 import { readHostingBackend } from "./local-hosting-backend.mjs";
 import { privateFixtureMarkers } from "./hosting-private-fixture.mjs";
 
+const target =
+  process.argv[2] === "--disposable-modint01" ? "modint01" : "webhost01";
 assert.deepEqual(
   process.argv.slice(2),
-  ["--disposable-webhost01"],
+  [`--disposable-${target}`],
   "Explicit disposable WEBHOST-01 scope is required.",
 );
-const { apiUrl, publishableKey, databaseUrl } = await readHostingBackend();
+const { apiUrl, publishableKey, databaseUrl, mailpitUrl, emailPrefix } =
+  await readHostingBackend(target);
 const sql = postgres(databaseUrl, { max: 1, onnotice: () => {} });
 const users = {};
 
@@ -58,12 +62,13 @@ try {
     "coorganizer",
     "requester",
     "unrelated",
+    ...(target === "modint01" ? ["participant"] : []),
   ]) {
     const user = await signInLocalOtpUser({
       apiUrl,
       publishableKey,
-      mailpitUrl: "http://127.0.0.1:54364",
-      email: `webhost01-${role}@planets.invalid`,
+      mailpitUrl,
+      email: `${emailPrefix}-${role}@planets.invalid`,
       verifierName: "synthetic hosting QA",
     });
     const anchor = await user.client.from("profiles").insert({ id: user.id });
@@ -233,6 +238,32 @@ try {
   });
   await review(cases.counterstatement);
 
+  if (target === "modint01") {
+    const [link] = await rpc(
+      users.owner,
+      "create_project_participant_invitation",
+      {
+        p_expected_profile_id: users.owner.id,
+        p_project_id: fixture.projectId,
+      },
+    );
+    await writeFile(
+      new URL(
+        "../../../supabase/.temp/modint01-browser-fixture.json",
+        import.meta.url,
+      ),
+      JSON.stringify({
+        token: link.invite_token,
+        projectId: fixture.projectId,
+        cases,
+        participantId: users.participant.id,
+      }),
+    );
+    console.log(
+      "MODINT01 participant token retained only in ignored supabase/.temp/modint01-browser-fixture.json; never publish it or invitation URLs.",
+    );
+  }
+
   console.log(
     JSON.stringify({
       synthetic: true,
@@ -249,7 +280,7 @@ try {
     }),
   );
   console.log(
-    "Use browser OTP for webhost01-moderator@planets.invalid and webhost01-admin@planets.invalid. No tokens or passwords were recorded. Re-running adds a new disposable fixture set.",
+    `Use browser OTP for ${emailPrefix}-moderator@planets.invalid and ${emailPrefix}-admin@planets.invalid. No tokens or passwords were recorded. Re-running adds a new disposable fixture set.`,
   );
 } catch (error) {
   console.error(

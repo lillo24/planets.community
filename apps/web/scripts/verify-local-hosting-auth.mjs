@@ -18,14 +18,17 @@ import {
   privateFixtureMarkers,
 } from "./hosting-private-fixture.mjs";
 
+const target =
+  process.argv.at(-1) === "--disposable-modint01" ? "modint01" : "webhost01";
+const args = target === "modint01" ? process.argv.slice(0, -1) : process.argv;
 assert.equal(
-  process.argv.length,
+  args.length,
   7,
   "Usage: node apps/web/scripts/verify-local-hosting-auth.mjs ORIGIN PROFILE_CASE ADMIN_SELF_CASE CORROBORATION_CASE COUNTERSTATEMENT_CASE",
 );
-const origin = parseProbeOrigin(process.argv[2]);
+const origin = parseProbeOrigin(args[2]);
 const [profileCase, selfCase, corroborationCase, counterstatementCase] =
-  process.argv.slice(3);
+  args.slice(3);
 for (const id of [
   profileCase,
   selfCase,
@@ -37,7 +40,7 @@ for (const id of [
     /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i,
     "Use IDs printed by the disposable seed.",
   );
-const backend = await readHostingBackend();
+const backend = await readHostingBackend(target);
 const sql = postgres(backend.databaseUrl, { max: 1, onnotice: () => {} });
 const privateCases = [
   { id: profileCase, markers: privateFixtureMarkers.notes },
@@ -48,7 +51,7 @@ const privateCases = [
   },
 ];
 const allMarkers = privateCases.flatMap(({ markers }) => [...markers]);
-const mailpit = "http://127.0.0.1:54364";
+const mailpit = backend.mailpitUrl;
 let stage = "initialization";
 
 async function json(url) {
@@ -59,7 +62,7 @@ async function json(url) {
 
 async function signIn(role, padded = false) {
   stage = `synthetic OTP sign-in: ${role}`;
-  const email = `webhost01-${role}@planets.invalid`;
+  const email = `${backend.emailPrefix}-${role}@planets.invalid`;
   const search = `${mailpit}/api/v1/search?query=${encodeURIComponent(`to:${email}`)}&limit=20`;
   const existing = new Set(
     (await json(search)).messages.map((message) => message.ID),
@@ -428,10 +431,24 @@ async function main() {
 }
 
 main()
-  .catch(() => {
+  .catch((error) => {
     // No raw errors/payloads: Auth/PostgREST error objects can contain private data.
+    const failure =
+      error instanceof assert.AssertionError
+        ? "assertion"
+        : ["AbortError", "TimeoutError", "TypeError"].includes(error?.name)
+          ? error.name
+          : "redacted_error";
+    const safeCode = [
+      "ECONNRESET",
+      "ECONNREFUSED",
+      "ETIMEDOUT",
+      "UND_ERR_CONNECT_TIMEOUT",
+    ].includes(error?.cause?.code)
+      ? ` (${error.cause.code})`
+      : "";
     console.error(
-      `Authenticated hosting verification FAILED at ${stage}. Check the disposable fixture and expected boundary; never publish tokens, cookie jars or manifests.`,
+      `Authenticated hosting verification FAILED at ${stage}: ${failure}${safeCode}. Check the disposable fixture and expected boundary; never publish tokens, cookie jars or manifests.`,
     );
     process.exitCode = 1;
   })

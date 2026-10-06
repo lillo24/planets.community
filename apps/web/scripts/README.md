@@ -1,5 +1,16 @@
 # Web hosting assessment checks
 
+MODINT01 reuses these checks with the explicit seed flag
+`--disposable-modint01` and the same flag appended to the authenticated verifier.
+This selects only `planets-community-modint01-qa` on API/DB/Mailpit
+54611/54612/54614. Omitting the flag retains the original WEBHOST01 scope; neither
+scope accepts shared/remote endpoints or arbitrary project names. Synthetic OTP
+emails use the matching `modint01-` prefix. The MODINT seed additionally prepares
+a photo-free browser applicant and stores the participant bearer token only in
+ignored `supabase/.temp/modint01-browser-fixture.json`. Never publish that file,
+invitation URLs, Auth tokens, cookies or private response bodies. This is local
+combined-source QA, not a hosting selection or production deployment.
+
 `probe-local-hosting.mjs` owns a loopback-only, anonymous HTTP probe for an already
 running production Next.js or disposable OpenNext/workerd build. It measures
 three full-response wall times per route and asserts HTML denial, Flight
