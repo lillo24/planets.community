@@ -59,3 +59,12 @@ This extract covers account suspension/access, private notices and own request
 explanations. Existing reporting/evidence flow copy remains in the source ARBs;
 no wording is rewritten by MODINT01. Staff controls currently remain English-only
 in the Web admin surface, with distinct user reason/private staff-note fields.
+
+Canonical conflict failures remain distinct from the independently checked
+own-status explanation. The actual request-form mappings may show these instead
+of an account-forbidden message; neither identifies another person's restriction:
+
+| Source key                        | English                                                                              | Italian                                                                                          |
+| --------------------------------- | ------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------ |
+| `participationConflict`           | Participation changed while this screen was open. Refresh and try again.             | Lo stato della partecipazione è cambiato mentre questa schermata era aperta. Aggiorna e riprova. |
+| `resourceRequestChangedElsewhere` | This request changed while the screen was open. The latest status has been reloaded. | Questa richiesta è cambiata mentre la schermata era aperta. L'ultimo stato è stato ricaricato.   |
