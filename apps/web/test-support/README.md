@@ -62,3 +62,15 @@ configuration, and stop this project's containers/volumes after verification.
 This checks HTTP and gateway behavior; it does not automate browser OTP entry
 or prove Android/iOS HTTPS delivery. See the [PI03 implementation record](../../../docs/implementation/pi03-browser-participant-invitations.md)
 for manual browser QA and remaining PI04/PI05 work.
+
+## Combined Template/PI05 browser rehearsal
+
+`pi05-browser-fixture.ts` retains its opt-in `PI05_LOCAL_REHEARSAL=1` and narrow
+PI05 guard, and additionally accepts only the owned TW-STACK01 project
+`planets-community-tw-stack01` on API 54921/Mailpit 54924. It uses the same
+production Next/loopback ingress on 3174–3176, synthetic identities, private
+capability journal and log-free OTP helper. This is opt-in QA, not hosting or
+OS association. Use the generated local web config and production build first,
+then launch from the repository root with `node apps/web/test-support/pi05-browser-fixture.ts`.
+Do not reuse journals across reset worlds; prepare new references explicitly.
+See [integrated browser/native evidence and cleanup](../../../docs/development/template-stack-integration.md).

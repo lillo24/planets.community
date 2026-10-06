@@ -15,6 +15,7 @@ import '../../features/moderation/presentation/moderation_evidence_session_promp
 import '../../features/settings/application/navigation_preference_controller.dart';
 import '../../features/settings/domain/navigation_preference.dart';
 import '../../l10n/generated/app_localizations.dart';
+import 'draft_departure_coordinator.dart';
 
 enum AppBranch { profile, home, browse }
 
@@ -81,6 +82,7 @@ class AppNavigationShell extends ConsumerWidget {
       bottomNavigationBar: NavigationBar(
         selectedIndex: selectedIndex,
         onDestinationSelected: (index) {
+          if (ref.read(draftDepartureProvider).preparing) return;
           if (index == AppBranch.home.index) {
             FocusManager.instance.primaryFocus?.unfocus();
             navigationShell.goBranch(index, initialLocation: true);

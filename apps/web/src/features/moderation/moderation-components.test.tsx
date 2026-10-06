@@ -1,7 +1,9 @@
-import { render, screen, within } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { cleanup, render, screen, within } from "@testing-library/react";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { ModerationCaseDetailView } from "./moderation-components";
+import { parseTemplateReview } from "./template-moderation-models";
+import { templateReviewRow } from "./template-moderation-test-fixtures";
 import {
   parseModerationCase,
   parseModerationCorroboration,
@@ -17,9 +19,33 @@ import {
 vi.mock("./moderation-actions", () => ({
   addModerationNoteAction: vi.fn(),
   transitionModerationCaseAction: vi.fn(),
+  removeModerationTemplateAction: vi.fn(),
 }));
+vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: vi.fn() }) }));
 
 describe("moderation case detail", () => {
+  afterEach(cleanup);
+  it("renders valid fractional template duration", () => {
+    const detail = parseModerationCase([moderationDetailRow()]);
+    if (!detail) throw new Error("missing fixture");
+    const row = templateReviewRow();
+    const { container } = render(
+      <ModerationCaseDetailView
+        detail={{
+          ...detail,
+          template: parseTemplateReview([
+            { ...row, content: { ...row.content, duration_seconds: 7200.001 } },
+          ]),
+          templateBlueprints: [],
+        }}
+      />,
+    );
+    expect(
+      within(container).getByText(
+        new RegExp(String(7200.001 / 3600).replace(".", "\\.") + " hours", "u"),
+      ),
+    ).toBeInTheDocument();
+  });
   it("shows private evidence, notes, and review actions without enforcement controls", () => {
     const detail = parseModerationCase([moderationDetailRow()]);
     if (!detail) throw new Error("missing fixture");

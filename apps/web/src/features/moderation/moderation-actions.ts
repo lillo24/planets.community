@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 
 import {
+  removeModerationTemplate,
   addModerationNote,
   transitionModerationCase,
 } from "./moderation-operations";
@@ -28,4 +29,15 @@ export async function transitionModerationCaseAction(formData: FormData) {
   });
   revalidatePath("/admin");
   revalidatePath(`/admin/cases/${caseId}`);
+}
+
+export async function removeModerationTemplateAction(
+  input: import("./template-moderation-models").TemplateRemovalInput,
+) {
+  const result = await removeModerationTemplate(input);
+  if (result.status === "removed" || result.status === "already_removed") {
+    revalidatePath("/admin");
+    revalidatePath(`/admin/cases/${input.caseId}`);
+  }
+  return result;
 }

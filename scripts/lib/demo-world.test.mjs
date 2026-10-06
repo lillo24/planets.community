@@ -80,6 +80,27 @@ test("refuses staging, production, and remote targets", () => {
   );
 });
 
+test("demo target requires all URLs and refuses remote Mailpit before mutation", () => {
+  const values = {
+    apiUrl: "http://127.0.0.1:54821",
+    databaseUrl: "postgresql://postgres:local-only@127.0.0.1:54822/postgres",
+    mailpitUrl: "http://127.0.0.1:54824",
+  };
+  for (const key of ["apiUrl", "databaseUrl", "mailpitUrl"])
+    assert.throws(
+      () => assertSafeLocalDemoTarget({ ...values, [key]: undefined }),
+      /required/,
+    );
+  assert.throws(
+    () =>
+      assertSafeLocalDemoTarget({
+        ...values,
+        mailpitUrl: "https://mailpit.example.test",
+      }),
+    /non-loopback/,
+  );
+});
+
 test("keeps persona and scenario definitions stable and unique", () => {
   assert.deepEqual(
     Object.values(DEMO_PERSONAS).map((persona) => persona.email),
@@ -89,11 +110,21 @@ test("keeps persona and scenario definitions stable and unique", () => {
       "demo-carla@planets.invalid",
       "demo-dario@planets.invalid",
       "demo-elena@planets.invalid",
+      "demo-planets@planets.invalid",
+      "demo-reviewer@planets.invalid",
     ],
   );
   assert.deepEqual(
     Object.values(DEMO_PERSONAS).map((persona) => persona.displayName),
-    ["Giulia", "Marco", "Sara", "Dario", "Elena"],
+    [
+      "Giulia",
+      "Marco",
+      "Sara",
+      "Dario",
+      "Elena",
+      "PLANETS — demo locale",
+      "Revisore — demo locale",
+    ],
   );
 
   const entries = [
@@ -142,7 +173,7 @@ test("keeps persona and scenario definitions stable and unique", () => {
   );
 
   const photographed = Object.values(DEMO_PERSONAS).filter(
-    (p) => p.photoState === "present",
+    (p) => p.photoState !== "absent",
   );
   assert.deepEqual(
     Object.values(DEMO_PERSONAS)
@@ -176,7 +207,7 @@ test("demo asset manifest matches deterministic local WebP fixtures", async () =
   );
   const expectedProfiles = new Set(
     Object.values(DEMO_PERSONAS)
-      .filter((p) => p.photoState === "present")
+      .filter((p) => p.photoState !== "absent")
       .map((persona) => `profiles/${persona.profileAsset}`),
   );
 

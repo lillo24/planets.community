@@ -53,3 +53,13 @@ ModerationReportTarget resourceMessageReportTarget(
   id: messageId,
   label: label,
 );
+
+// TW04 can open the existing authenticated form without introducing a Workshop route.
+ModerationReportTarget proposalTemplateReportTarget(
+  String templateId,
+  String label,
+) => ModerationReportTarget(
+  kind: ModerationTargetKind.proposalTemplate,
+  id: templateId,
+  label: label,
+);

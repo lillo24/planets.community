@@ -46,6 +46,7 @@ import '../../features/participation/presentation/participation_routes.dart';
 import '../../features/proposals/presentation/own_proposals_screen.dart';
 import '../../features/proposals/presentation/proposal_editor_screen.dart';
 import '../../features/proposals/presentation/public_proposals_screen.dart';
+import '../../features/template_workshop/presentation/template_workshop_screens.dart';
 import '../../features/recurring_activities/presentation/own_recurring_activities_screen.dart';
 import '../../features/recurring_activities/presentation/public_recurring_activities_screen.dart';
 import '../../features/recurring_activities/presentation/recurring_activity_editor_screen.dart';
@@ -63,6 +64,7 @@ import '../../l10n/generated/app_localizations.dart';
 import '../foundation_screen.dart';
 import 'app_navigation_shell.dart';
 import 'native_project_links.dart';
+import 'draft_departure_coordinator.dart';
 
 typedef AuthSessionReader = AuthSessionState Function();
 typedef PendingEmailOtpReader = PendingEmailOtp? Function();
@@ -71,9 +73,11 @@ GoRouter createAppRouter({
   String initialLocation = '/',
   AuthSessionReader? readAuthSession,
   PendingEmailOtpReader? readPendingEmailOtp,
+  DraftDepartureCoordinator? draftDeparture,
 }) {
   final configuration = _NativeRoutingConfig(
-    _routingConfig(readAuthSession, readPendingEmailOtp),
+    _routingConfig(readAuthSession, readPendingEmailOtp, draftDeparture),
+    draftDeparture,
   );
   final router = GoRouter.routingConfig(
     routingConfig: configuration,
@@ -87,7 +91,8 @@ GoRouter createAppRouter({
 
 RoutingConfig _routingConfig(
   AuthSessionReader? readAuthSession,
-  PendingEmailOtpReader? readPendingEmailOtp, [
+  PendingEmailOtpReader? readPendingEmailOtp,
+  DraftDepartureCoordinator? draftDeparture, [
   VoidCallback? cancelExternalAuth,
 ]) {
   final sessionReader =
@@ -95,26 +100,40 @@ RoutingConfig _routingConfig(
   final pendingReader = readPendingEmailOtp ?? () => null;
 
   return RoutingConfig(
-    onEnter: (context, current, next, router) {
-      final destination = nativeProjectDestination(next.uri);
-      if (destination == null) return const Allow(); // Safe redirect below.
-      final continuation = current.uri.path == '/auth/verify'
-          ? pendingReader()?.returnTo
-          : current.uri.queryParameters['returnTo'];
-      if (current.uri.toString() == destination ||
-          ((current.uri.path == '/auth' ||
-                  current.uri.path == '/auth/verify' ||
-                  current.uri.path == '/profile/edit') &&
-              continuation == destination)) {
-        return const Block.stop(); // Preserve the existing match list/form.
+    onEnter: (context, current, next, router) async {
+      VoidCallback? committedNativeCancellation;
+      if (next.uri.hasScheme || next.uri.hasAuthority) {
+        final destination = nativeProjectDestination(next.uri);
+        final continuation = current.uri.path == '/auth/verify'
+            ? pendingReader()?.returnTo
+            : current.uri.queryParameters['returnTo'];
+        if (destination != null &&
+            (current.uri.toString() == destination ||
+                ((current.uri.path == '/auth' ||
+                        current.uri.path == '/auth/verify' ||
+                        current.uri.path == '/profile/edit') &&
+                    continuation == destination))) {
+          return const Block.stop(); // Preserve the existing match list/form.
+        }
+        if (cancelExternalAuth != null &&
+            (pendingReader() != null ||
+                current.uri.path == '/auth' ||
+                current.uri.path == '/auth/verify')) {
+          committedNativeCancellation = cancelExternalAuth;
+        }
       }
-      if (cancelExternalAuth != null &&
-          (pendingReader() != null ||
-              current.uri.path == '/auth' ||
-              current.uri.path == '/auth/verify')) {
-        return Allow(then: cancelExternalAuth); // After navigation commits.
+      final decision =
+          await (draftDeparture?.onEnter(context, current, next, router) ??
+              const Allow());
+      if (decision is Block || committedNativeCancellation == null) {
+        return decision;
       }
-      return const Allow();
+      return Allow(
+        then: () async {
+          await decision.then?.call();
+          committedNativeCancellation?.call();
+        },
+      );
     },
     redirect: (context, state) {
       if (state.uri.hasScheme || state.uri.hasAuthority) {
@@ -131,6 +150,8 @@ RoutingConfig _routingConfig(
           path.startsWith('/profile/review-requests');
       final isProfileEditRoute = path == '/profile/edit';
       final isProposalManagementRoute =
+          path == WorkshopRoutes.catalog ||
+          path.startsWith('${WorkshopRoutes.catalog}/') ||
           path == '/proposals/mine' ||
           path == '/proposals/create' ||
           (path.startsWith('/proposals/') && path.endsWith('/edit'));
@@ -459,12 +480,36 @@ RoutingConfig _routingConfig(
                 builder: (context, state) => const PublicProposalsScreen(),
                 routes: [
                   GoRoute(
+                    path: 'workshop',
+                    pageBuilder: (context, state) => MaterialPage<void>(
+                      key: state.pageKey,
+                      child: const TemplateWorkshopScreen(),
+                    ),
+                    routes: [
+                      GoRoute(
+                        path: ':templateId',
+                        pageBuilder: (context, state) => MaterialPage<void>(
+                          key: state.pageKey,
+                          child: TemplateWorkshopDetailScreen(
+                            templateId: state.pathParameters['templateId']!,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  GoRoute(
                     path: 'mine',
                     builder: (context, state) => const OwnProposalsScreen(),
                   ),
                   GoRoute(
                     path: 'create',
-                    builder: (context, state) => const ProposalEditorScreen(),
+                    onExit: draftDeparture?.onExit,
+                    // Explicit Flutter Material pages retain native transitions
+                    // with go_router 18's separate material_ui app detection.
+                    pageBuilder: (context, state) => MaterialPage<void>(
+                      key: state.pageKey,
+                      child: const ProposalEditorScreen(),
+                    ),
                   ),
                   GoRoute(
                     path: ':id',
@@ -485,8 +530,12 @@ RoutingConfig _routingConfig(
                       ),
                       GoRoute(
                         path: 'edit',
-                        builder: (context, state) => ProposalEditorScreen(
-                          proposalId: state.pathParameters['id'],
+                        onExit: draftDeparture?.onExit,
+                        pageBuilder: (context, state) => MaterialPage<void>(
+                          key: state.pageKey,
+                          child: ProposalEditorScreen(
+                            proposalId: state.pathParameters['id'],
+                          ),
                         ),
                       ),
                       GoRoute(
@@ -711,9 +760,13 @@ final appRouterProvider = Provider<GoRouter>((ref) {
   RoutingConfig configuration() => _routingConfig(
     () => ref.read(authSessionProvider),
     () => ref.read(pendingEmailOtpProvider),
+    ref.read(draftDepartureProvider),
     () => ref.read(authCommandProvider.notifier).cancelFlow(),
   );
-  final routes = _NativeRoutingConfig(configuration());
+  final routes = _NativeRoutingConfig(
+    configuration(),
+    ref.read(draftDepartureProvider),
+  );
   final router = GoRouter.routingConfig(
     routingConfig: routes,
     initialLocation: '/',
@@ -737,12 +790,14 @@ final appRouterProvider = Provider<GoRouter>((ref) {
   return router;
 });
 
-/// Scope GoRouter 18's asynchronous entry guard to external deliveries only.
-/// Its parser reads onEnter for each event; internal navigation keeps the
-/// existing synchronous path, including startup/restored Auth and loading UI.
+/// External deliveries compose native validation with draft departure. Ordinary
+/// routes retain the draft hook while an editor owns it; startup without an
+/// editor keeps main's synchronous path for restored Auth/loading UI.
 /// This reads the existing provider; it registers no second platform listener.
 class _NativeRoutingConfig extends ValueNotifier<RoutingConfig> {
-  _NativeRoutingConfig(super.value);
+  _NativeRoutingConfig(super.value, this.draftDeparture);
+
+  final DraftDepartureCoordinator? draftDeparture;
 
   Uri Function()? readIncomingUri;
 
@@ -754,6 +809,9 @@ class _NativeRoutingConfig extends ValueNotifier<RoutingConfig> {
       return configuration;
     }
     return RoutingConfig(
+      onEnter: draftDeparture?.activeOwner == null
+          ? null
+          : draftDeparture?.onEnter,
       routes: configuration.routes,
       redirect: configuration.redirect,
       redirectLimit: configuration.redirectLimit,

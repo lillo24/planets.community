@@ -54,6 +54,8 @@ void main() {
     final app = await _pump(tester, chats: chats);
 
     app.read(appRouterProvider).go('/messages/chats/chat-1');
+    // Complete awaitable route entry before asserting the pending data load.
+    await tester.pump();
     await tester.pump();
     expect(find.byType(LoadingState), findsOneWidget);
     expect(find.byType(ErrorState), findsNothing);
@@ -87,6 +89,8 @@ void main() {
     final app = await _pump(tester, chats: chats);
 
     app.read(appRouterProvider).go('/messages/chats/chat-1/info');
+    // Complete awaitable route entry before asserting the pending data load.
+    await tester.pump();
     await tester.pump();
     expect(find.byType(LoadingState), findsOneWidget);
     expect(find.byType(ErrorState), findsNothing);

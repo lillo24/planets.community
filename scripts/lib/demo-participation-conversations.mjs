@@ -33,6 +33,7 @@ async function pendingRequests(context, scenario) {
 }
 
 export async function seedDemoParticipationConversation(context, scenario) {
+  const messageIds = [];
   const requests = await pendingRequests(context, scenario);
   const [pair] = await rpc(
     context.personas.bob,
@@ -50,13 +51,28 @@ export async function seedDemoParticipationConversation(context, scenario) {
     `;
     if (existing.length > 1)
       throw new Error("Duplicate MSG01 demo follow-up history.");
-    if (!existing.length)
-      await rpc(user, "send_participation_conversation_message", {
-        p_expected_profile_id: user.id,
-        p_chat_id: pair.chat_id,
-        p_body: body,
-      });
+    if (existing.length) {
+      messageIds.push(existing[0].id);
+    } else {
+      const [message] = await rpc(
+        user,
+        "send_participation_conversation_message",
+        {
+          p_expected_profile_id: user.id,
+          p_chat_id: pair.chat_id,
+          p_body: body,
+        },
+      );
+      if (!message?.message_id)
+        throw new Error(
+          "MSG01 demo follow-up did not return its canonical ID.",
+        );
+      messageIds.push(message.message_id);
+    }
   }
+  // The combined demo worker may project only these exact fixture messages;
+  // unrelated messages in the same durable pair remain outside its inventory.
+  return Object.freeze(messageIds);
 }
 
 export async function verifyDemoParticipationConversation(context, scenario) {

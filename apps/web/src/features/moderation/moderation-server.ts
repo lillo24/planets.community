@@ -17,6 +17,12 @@ import {
   type ModerationState,
 } from "./moderation-models";
 
+import {
+  parseTemplateReview,
+  parseTemplateBlueprints,
+  isTemplateVersion,
+} from "./template-moderation-models";
+
 type QueryResult = Readonly<{ data: unknown; error: unknown }>;
 
 export type ModerationServerClient = Readonly<{
@@ -29,6 +35,16 @@ export type ModerationServerClient = Readonly<{
     >;
   }>;
   rpc(name: string, params: Record<string, unknown>): Promise<QueryResult>;
+  storage?: Readonly<{
+    from(bucket: string): Readonly<{
+      createSignedUrl(
+        path: string,
+        seconds: number,
+      ): Promise<
+        Readonly<{ data: { signedUrl: string } | null; error: unknown }>
+      >;
+    }>;
+  }>;
 }>;
 
 export type ModerationServerClientFactory =
@@ -132,6 +148,7 @@ export async function readModerationQueue(
 export async function readModerationCase(
   caseId: string,
   createClient?: ModerationServerClientFactory,
+  templatePage?: Readonly<{ needCursor: string; contentVersion: string }>,
 ): Promise<ModerationDetailResult> {
   const access = createClient
     ? await requireModerationStaff(createClient)
@@ -147,7 +164,7 @@ export async function readModerationCase(
     return { status: "ready", staffRole: access.role, detail };
   }
 
-  const [corroboration, counterstatement] = await Promise.all([
+  const [corroboration, counterstatement, templateResult] = await Promise.all([
     detail.projectContextId
       ? access.client.rpc("get_moderation_case_corroboration", {
           p_expected_staff_profile_id: access.profileId,
@@ -156,6 +173,12 @@ export async function readModerationCase(
       : Promise.resolve(null),
     detail.resourceRequestContextId
       ? access.client.rpc("get_moderation_case_counterstatement", {
+          p_expected_staff_profile_id: access.profileId,
+          p_case_id: caseId,
+        })
+      : Promise.resolve(null),
+    detail.targetKind === "proposal_template"
+      ? access.client.rpc("get_moderation_case_template", {
           p_expected_staff_profile_id: access.profileId,
           p_case_id: caseId,
         })
@@ -169,11 +192,63 @@ export async function readModerationCase(
   if (counterstatement?.error) {
     throw new Error("The moderation counterstatement could not be loaded.");
   }
+  if (templateResult?.error)
+    throw new Error("The template review could not be loaded.");
+  const template = templateResult
+    ? parseTemplateReview(templateResult.data)
+    : null;
+  let templateBlueprints: ReturnType<typeof parseTemplateBlueprints> = [];
+  let templatePageStale = false;
+  let templateNextNeedId: string | null = null;
+  let templateCoverUrl: string | null = null;
+  if (template) {
+    if (templatePage && !isTemplateVersion(templatePage.contentVersion))
+      throw new Error("The template page version is invalid.");
+    const page = await access.client.rpc(
+      "list_moderation_case_template_blueprints",
+      {
+        p_expected_staff_profile_id: access.profileId,
+        p_case_id: caseId,
+        p_content_version:
+          templatePage?.contentVersion ?? template.currentContentVersion,
+        p_limit: 21,
+        p_cursor_need_id: templatePage?.needCursor ?? null,
+      },
+    );
+    if (
+      page.error &&
+      typeof page.error === "object" &&
+      "code" in page.error &&
+      page.error.code === "PT409"
+    ) {
+      templatePageStale = true;
+    } else {
+      if (page.error)
+        throw new Error("The template resource page could not be loaded.");
+      const rows = parseTemplateBlueprints(page.data);
+      templateBlueprints = rows.slice(0, 20);
+      templateNextNeedId =
+        rows.length > 20 ? templateBlueprints.at(-1)!.sourceNeedId : null;
+    }
+    if (template.coverObjectPath && access.client.storage) {
+      // Ordinary source Storage RLS authorizes this short-lived URL. A denied
+      // source cover stays unavailable; no staff bucket/table bypass.
+      const cover = await access.client.storage
+        .from("cover-images")
+        .createSignedUrl(template.coverObjectPath, 60);
+      if (!cover.error) templateCoverUrl = cover.data?.signedUrl ?? null;
+    }
+  }
   return {
     status: "ready",
     staffRole: access.role,
     detail: {
       ...detail,
+      template,
+      templateBlueprints,
+      templateNextNeedId,
+      templatePageStale,
+      templateCoverUrl,
       corroboration: corroboration
         ? parseModerationCorroboration(corroboration.data)
         : null,

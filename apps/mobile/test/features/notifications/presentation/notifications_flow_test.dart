@@ -155,6 +155,8 @@ void main() {
       ..listDelay = pending.future;
     final app = await _pump(tester, notifications: notifications);
     app.read(appRouterProvider).go('/notifications');
+    // Complete awaitable route entry before asserting the pending data load.
+    await tester.pump();
     await tester.pump();
     expect(find.text('Loading notifications…'), findsOneWidget);
     pending.complete();

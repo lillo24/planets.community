@@ -323,6 +323,8 @@ void main() {
     app
         .read(appRouterProvider)
         .go('/messages/requests/resource/$resourceRequestId');
+    // Complete awaitable route entry before asserting the pending data load.
+    await tester.pump();
     await tester.pump();
     expect(find.byType(LoadingState), findsOneWidget);
     expect(find.byType(ErrorState), findsNothing);
@@ -1138,6 +1140,8 @@ void main() {
       ..listDelay = pending.future;
     final app = await _pump(tester, messages: messages);
     app.read(appRouterProvider).go('/messages');
+    // Complete awaitable route entry before asserting the pending data load.
+    await tester.pump();
     await tester.pump();
     await tester.tap(find.text('Requests'));
     await tester.pump(const Duration(seconds: 1));
