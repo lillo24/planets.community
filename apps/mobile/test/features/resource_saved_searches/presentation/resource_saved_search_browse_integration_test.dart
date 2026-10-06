@@ -19,6 +19,90 @@ import '../../../support/fake_resource_listing.dart';
 import '../../../support/fake_resource_saved_search.dart';
 
 void main() {
+  for (final mode in [null, ...ResourceListingMode.values]) {
+    testWidgets('Save and Open round-trip ${mode ?? 'both'} modes', (
+      tester,
+    ) async {
+      final listings = FakeResourceListingGateway();
+      final saved = FakeResourceSavedSearchGateway();
+      final app = await _pump(tester, listings: listings, saved: saved);
+      app.read(appRouterProvider).go('/resources');
+      await tester.pumpAndSettle();
+      if (mode != null) {
+        final deselect = mode == ResourceListingMode.donate
+            ? ResourceListingMode.exchange
+            : ResourceListingMode.donate;
+        await tester.tap(
+          find.byKey(Key('resource-filter-mode-${deselect.wireValue}')),
+        );
+        await tester.pumpAndSettle();
+      }
+      await tester.tap(find.byKey(const Key('resource-toggle-filters')));
+      await tester.pump();
+      await tester.enterText(
+        find.byKey(const Key('resource-query-filter')),
+        '  garden tools  ',
+      );
+      await tester.enterText(
+        find.byKey(const Key('resource-locality-filter')),
+        '  Trento  ',
+      );
+      await tester.pump();
+      final requests = listings.calls.length;
+      await tester.tap(find.byKey(const Key('resource-save-search')));
+      await tester.pumpAndSettle();
+      expect(saved.lastInput?.mode, mode);
+      expect(saved.lastInput?.query, 'garden tools');
+      expect(saved.lastInput?.locality, 'Trento');
+      expect(listings.lastMode, mode);
+      expect(listings.calls.length, requests + 1);
+      await tester.pump(const Duration(milliseconds: 400));
+      expect(listings.calls.length, requests + 1);
+      await tester.tap(find.byKey(const Key('resource-toggle-filters')));
+      await tester.pump();
+
+      await app
+          .read(publicResourceListingsProvider.notifier)
+          .applyFilters(
+            mode: mode == ResourceListingMode.donate
+                ? ResourceListingMode.exchange
+                : ResourceListingMode.donate,
+            locality: '',
+            query: 'different',
+          );
+      app.read(appRouterProvider).go('/resources/saved-searches');
+      await tester.pumpAndSettle();
+      await tester.tap(
+        find.byKey(
+          const Key('saved-search-open-$createdResourceSavedSearchId'),
+        ),
+      );
+      await tester.pumpAndSettle();
+      final expected = mode == null
+          ? ResourceListingMode.values.toSet()
+          : {mode};
+      expect(
+        tester
+            .widget<SegmentedButton<ResourceListingMode>>(
+              find.byKey(const Key('resource-mode-filter')),
+            )
+            .selected,
+        expected,
+      );
+      expect(listings.lastMode, mode);
+      expect(listings.lastQuery, 'garden tools');
+      expect(listings.lastLocality, 'Trento');
+      expect(_text(tester, 'resource-query-filter'), 'garden tools');
+      expect(find.byKey(const Key('resource-locality-filter')), findsNothing);
+      expect(
+        tester
+            .widget<Badge>(find.byKey(const Key('browse-active-filters')))
+            .isLabelVisible,
+        isTrue,
+      );
+    });
+  }
+
   testWidgets('signed-out Browse remains public with no private actions', (
     tester,
   ) async {
@@ -42,7 +126,7 @@ void main() {
       find.byKey(const Key('resource-query-filter')),
       'tools',
     );
-    await tester.tap(find.byKey(const Key('resource-apply-filters')));
+    await tester.testTextInput.receiveAction(TextInputAction.search);
     await tester.pumpAndSettle();
     expect(listings.lastQuery, 'tools');
     expect(saved.calls, isEmpty);
@@ -63,11 +147,13 @@ void main() {
       find.byKey(const Key('resource-query-filter')),
       '  garden tools  ',
     );
+    await tester.tap(find.byKey(const Key('resource-toggle-filters')));
+    await tester.pump();
     await tester.enterText(
       find.byKey(const Key('resource-locality-filter')),
       '  Bologna  ',
     );
-    await tester.tap(find.text('Scambia').first);
+    await tester.tap(find.byKey(const Key('resource-filter-mode-donate')));
     await tester.pump();
     expect(tester.widget<OutlinedButton>(save).onPressed, isNotNull);
     await tester.tap(save);
@@ -143,6 +229,8 @@ void main() {
           );
       await tester.pumpAndSettle();
       expect(_text(tester, 'resource-query-filter'), 'external');
+      await tester.tap(find.byKey(const Key('resource-toggle-filters')));
+      await tester.pump();
       expect(_text(tester, 'resource-locality-filter'), 'Modena');
       expect(
         tester
@@ -159,7 +247,7 @@ void main() {
         find.byKey(const Key('resource-query-filter')),
         'manual',
       );
-      await tester.tap(find.byKey(const Key('resource-apply-filters')));
+      await tester.testTextInput.receiveAction(TextInputAction.search);
       await tester.pumpAndSettle();
       expect(app.read(publicResourceListingsProvider).query, 'manual');
     },

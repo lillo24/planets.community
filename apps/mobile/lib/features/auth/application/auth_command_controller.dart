@@ -4,7 +4,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../data/auth_gateway.dart';
+import '../data/provider_auth_adapter.dart';
 import '../domain/auth_models.dart';
+import '../domain/provider_auth.dart';
 import 'auth_session_controller.dart';
 import 'return_destination.dart';
 
@@ -142,53 +144,7 @@ class AuthCommandController extends Notifier<AuthCommandState> {
       final identity = await ref
           .read(authGatewayProvider)
           .verifyEmailOtp(email: pending.email, token: normalizedToken);
-      if (!_isCurrent(revision)) {
-        return false;
-      }
-      ref.read(authSessionProvider.notifier).markCheckingProfile(identity);
-      state = AuthCommandState(
-        phase: AuthCommandPhase.completingProfile,
-        resendAvailableAt: state.resendAvailableAt,
-      );
-      try {
-        await ref.read(profileAnchorGatewayProvider).ensureFor(identity.id);
-        if (!_isCurrent(revision)) {
-          return false;
-        }
-        final readiness = await ref
-            .read(profileAnchorGatewayProvider)
-            .readinessFor(identity.id);
-        if (!_isCurrent(revision)) {
-          return false;
-        }
-        if (readiness == ProfileAnchorReadiness.complete) {
-          ref.read(authSessionProvider.notifier).markProfileReady(identity);
-        } else {
-          ref
-              .read(authSessionProvider.notifier)
-              .markProfileSetupRequired(
-                identity,
-                hasProfileAnchor:
-                    readiness == ProfileAnchorReadiness.incomplete,
-              );
-        }
-      } catch (_) {
-        if (!_isCurrent(revision)) {
-          return false;
-        }
-        ref
-            .read(authSessionProvider.notifier)
-            .markProfileSetupRequired(identity, hasProfileAnchor: false);
-        state = AuthCommandState(
-          failure: AuthFailureKind.profileSetup,
-          resendAvailableAt: state.resendAvailableAt,
-        );
-        return false;
-      }
-
-      ref.read(pendingEmailOtpProvider.notifier).clear();
-      state = const AuthCommandState();
-      return true;
+      return await _completeSignIn(identity, revision);
     } catch (error) {
       if (!_isCurrent(revision)) {
         return false;
@@ -201,7 +157,60 @@ class AuthCommandController extends Notifier<AuthCommandState> {
     }
   }
 
-  bool _isCurrent(int revision) => revision == _flowRevision;
+  Future<bool> signInWithProvider(AuthProvider provider) async {
+    if (state.isBusy) {
+      return false;
+    }
+    final adapter = ref.read(providerAuthAdapterProvider);
+    if (!adapter.isAvailable(provider)) {
+      state = AuthCommandState(
+        failure: AuthFailureKind.serviceUnavailable,
+        resendAvailableAt: state.resendAvailableAt,
+      );
+      return false;
+    }
+
+    final revision = ++_flowRevision;
+    final previousState = state;
+    state = AuthCommandState(
+      phase: AuthCommandPhase.signingInWithProvider,
+      resendAvailableAt: previousState.resendAvailableAt,
+    );
+    try {
+      final result = await adapter.signIn(provider);
+      if (!_isCurrent(revision)) {
+        return false;
+      }
+      switch (result) {
+        case ProviderAuthSuccess(:final identity):
+          return await _completeSignIn(identity, revision);
+        case ProviderAuthCancelled():
+          // Dismissal leaves the prior OTP flow usable, without an error banner.
+          state = AuthCommandState(
+            phase: previousState.phase,
+            resendAvailableAt: previousState.resendAvailableAt,
+          );
+          return false;
+        case ProviderAuthFailure(:final failure):
+          state = AuthCommandState(
+            failure: failure,
+            resendAvailableAt: previousState.resendAvailableAt,
+          );
+          return false;
+      }
+    } catch (error) {
+      if (!_isCurrent(revision)) {
+        return false;
+      }
+      state = AuthCommandState(
+        failure: mapAuthFailure(error),
+        resendAvailableAt: previousState.resendAvailableAt,
+      );
+      return false;
+    }
+  }
+
+  bool _isCurrent(int revision) => ref.mounted && revision == _flowRevision;
 
   Future<bool> retryProfileSetup() async {
     if (state.isBusy) {
@@ -212,13 +221,30 @@ class AuthCommandController extends Notifier<AuthCommandState> {
       return false;
     }
 
+    return _completeSignIn(identity, ++_flowRevision);
+  }
+
+  /// One completion owner for OTP, future providers, and anchor-creation retry.
+  Future<bool> _completeSignIn(AuthIdentity identity, int revision) async {
+    if (!_isCurrent(revision)) {
+      return false;
+    }
     ref.read(authSessionProvider.notifier).markCheckingProfile(identity);
-    state = const AuthCommandState(phase: AuthCommandPhase.completingProfile);
+    state = AuthCommandState(
+      phase: AuthCommandPhase.completingProfile,
+      resendAvailableAt: state.resendAvailableAt,
+    );
     try {
       await ref.read(profileAnchorGatewayProvider).ensureFor(identity.id);
+      if (!_isCurrent(revision)) {
+        return false;
+      }
       final readiness = await ref
           .read(profileAnchorGatewayProvider)
           .readinessFor(identity.id);
+      if (!_isCurrent(revision)) {
+        return false;
+      }
       if (readiness == ProfileAnchorReadiness.complete) {
         ref.read(authSessionProvider.notifier).markProfileReady(identity);
       } else {
@@ -233,10 +259,16 @@ class AuthCommandController extends Notifier<AuthCommandState> {
       state = const AuthCommandState();
       return true;
     } catch (_) {
+      if (!_isCurrent(revision)) {
+        return false;
+      }
       ref
           .read(authSessionProvider.notifier)
           .markProfileSetupRequired(identity, hasProfileAnchor: false);
-      state = const AuthCommandState(failure: AuthFailureKind.profileSetup);
+      state = AuthCommandState(
+        failure: AuthFailureKind.profileSetup,
+        resendAvailableAt: state.resendAvailableAt,
+      );
       return false;
     }
   }
@@ -245,13 +277,20 @@ class AuthCommandController extends Notifier<AuthCommandState> {
     if (state.isBusy) {
       return;
     }
+    final revision = ++_flowRevision;
     state = const AuthCommandState(phase: AuthCommandPhase.signingOut);
     try {
       await ref.read(authGatewayProvider).signOut();
+      if (!_isCurrent(revision)) {
+        return;
+      }
       ref.read(pendingEmailOtpProvider.notifier).clear();
       ref.read(authSessionProvider.notifier).markSignedOut();
       state = const AuthCommandState();
     } catch (error) {
+      if (!_isCurrent(revision)) {
+        return;
+      }
       state = AuthCommandState(failure: mapAuthFailure(error));
     }
   }

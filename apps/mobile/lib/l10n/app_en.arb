@@ -457,7 +457,13 @@
   "profilePhotoSaveError": "Unable to save the profile photo.",
   "profilePhotoRemoveError": "Unable to remove the profile photo.",
   "profilePhotoRetry": "Try again",
-  "proposalsTitle": "One-time proposals",
+  "proposalsTitle": "Projects",
+  "proposalOpenCover": "Open {title}",
+  "@proposalOpenCover": {
+    "placeholders": {
+      "title": { "type": "String" }
+    }
+  },
   "proposalsBrowseAction": "Browse proposals",
   "proposalDetailTitle": "Proposal details",
   "proposalCreateTitle": "Create proposal",
@@ -546,9 +552,12 @@
   "proposalStartedReadOnly": "This proposal has started, so its content is read-only. You can still cancel it until it ends.",
   "proposalCompletedReadOnly": "This completed proposal is read-only.",
   "proposalCancelledReadOnly": "This cancelled proposal is read-only. Its history has been retained.",
-  "browseProposalsChoice": "Proposals",
-  "browseTavoliChoice": "Tavoli",
-  "tavoliTitle": "Tavoli",
+  "browseProposalsChoice": "Projects",
+  "browseTavoliChoice": "Cultural Tables",
+  "browseShowFilters": "Show filters",
+  "browseHideFilters": "Hide filters",
+  "browseFiltersActive": "Filters active",
+  "tavoliTitle": "Cultural Tables",
   "tavoliDetailTitle": "Tavolo details",
   "tavoliMyTitle": "My Tavoli",
   "tavoliCreateTitle": "Create Tavolo",
@@ -1004,8 +1013,8 @@
   "@notificationResourceRequesterReturned": {"placeholders":{"actor":{"type":"String"}}},
   "notificationResourceRequesterReturnReceived": "{actor} confirmed the other exchange item was returned",
   "@notificationResourceRequesterReturnReceived": {"placeholders":{"actor":{"type":"String"}}},
-  "homeProjectsTitle": "Progetti",
-  "homeProjectsMessage": "Discover one-time projects and Tavoli.",
+  "homeProjectsTitle": "Projects and Cultural Tables",
+  "homeProjectsMessage": "Discover projects and Cultural Tables.",
   "homeResourcesMessage": "Discover things offered to donate or exchange.",
   "settingsTitle": "Settings",
   "settingsOpenTooltip": "Open settings",
@@ -1027,7 +1036,7 @@
   "resourceCreateListing": "Create listing",
   "resourceEditListing": "Edit listing",
   "resourceViewListing": "View listing",
-  "resourceInterestCount": "{count, plural, =0{No one interested yet} =1{1 person interested} other{{count} people interested}}",
+  "resourceInterestCount": "{count, plural, =0{0 People Interested} =1{1 person interested} other{{count} people interested}}",
   "@resourceInterestCount": {
     "placeholders": { "count": { "type": "int" } }
   },

@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/theme/app_tokens.dart';
 import '../../../core/widgets/async_data_presentation.dart';
+import '../../../core/widgets/browse_filter_button.dart';
 import '../../../core/widgets/empty_state.dart';
 import '../../../core/widgets/error_state.dart';
 import '../../../core/widgets/loading_state.dart';
@@ -31,8 +32,6 @@ import '../application/resource_listing_controllers.dart';
 import '../domain/resource_listing_models.dart';
 import 'resource_listing_widgets.dart';
 
-enum _ResourceModeChoice { all, donate, exchange }
-
 typedef _ResourceFilterTuple = ({
   ResourceListingMode? mode,
   String locality,
@@ -53,7 +52,8 @@ class _PublicResourceListingsScreenState
 
   late final TextEditingController _queryController;
   late final TextEditingController _localityController;
-  late _ResourceModeChoice _modeChoice;
+  ResourceListingMode? _modeFilter;
+  bool _filtersExpanded = false;
   Timer? _filterTimer;
 
   @override
@@ -62,11 +62,7 @@ class _PublicResourceListingsScreenState
     final current = ref.read(publicResourceListingsProvider);
     _queryController = TextEditingController(text: current.query);
     _localityController = TextEditingController(text: current.locality);
-    _modeChoice = switch (current.modeFilter) {
-      null => _ResourceModeChoice.all,
-      ResourceListingMode.donate => _ResourceModeChoice.donate,
-      ResourceListingMode.exchange => _ResourceModeChoice.exchange,
-    };
+    _modeFilter = current.modeFilter;
     if (current.phase == ResourceListingLoadPhase.idle) {
       Future<void>.microtask(
         () => ref.read(publicResourceListingsProvider.notifier).load(),
@@ -146,72 +142,100 @@ class _PublicResourceListingsScreenState
                   children: [
                     Semantics(
                       label: l10n.resourceModeFilterLabel,
-                      child: SegmentedButton<_ResourceModeChoice>(
+                      child: SegmentedButton<ResourceListingMode>(
                         key: const Key('resource-mode-filter'),
+                        multiSelectionEnabled: true,
+                        emptySelectionAllowed: true,
+                        selectedIcon: const Icon(Icons.check),
                         segments: [
                           ButtonSegment(
-                            value: _ResourceModeChoice.all,
-                            label: Text(
-                              l10n.resourceModeAll,
-                              key: const Key('resource-filter-mode-all'),
-                            ),
-                          ),
-                          ButtonSegment(
-                            value: _ResourceModeChoice.donate,
+                            value: ResourceListingMode.donate,
                             label: Text(
                               l10n.resourceModeDonate,
                               key: const Key('resource-filter-mode-donate'),
                             ),
                           ),
                           ButtonSegment(
-                            value: _ResourceModeChoice.exchange,
+                            value: ResourceListingMode.exchange,
                             label: Text(
                               l10n.resourceModeExchange,
                               key: const Key('resource-filter-mode-exchange'),
                             ),
                           ),
                         ],
-                        selected: {_modeChoice},
+                        selected: _modeFilter == null
+                            ? ResourceListingMode.values.toSet()
+                            : {_modeFilter!},
                         onSelectionChanged: (selection) {
-                          setState(() => _modeChoice = selection.single);
+                          setState(() {
+                            // Deselecting the last mode switches to the other
+                            // one, so an empty visual/filter state never exists.
+                            _modeFilter = selection.isEmpty
+                                ? (_modeFilter == ResourceListingMode.donate
+                                      ? ResourceListingMode.exchange
+                                      : ResourceListingMode.donate)
+                                : selection.length == 2
+                                ? null
+                                : selection.single;
+                          });
                           _flushFilters();
                         },
                       ),
                     ),
                     const SizedBox(height: AppSpacing.medium),
-                    TextField(
-                      key: const Key('resource-query-filter'),
-                      controller: _queryController,
-                      maxLength: 120,
-                      textInputAction: TextInputAction.search,
-                      decoration: InputDecoration(
-                        labelText: l10n.resourceSearchLabel,
-                      ),
-                      onChanged: (_) => _scheduleFilters(),
-                      onSubmitted: (_) => _flushFilters(),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: TextField(
+                            key: const Key('resource-query-filter'),
+                            controller: _queryController,
+                            maxLength: 120,
+                            textInputAction: TextInputAction.search,
+                            decoration: InputDecoration(
+                              labelText: l10n.resourceSearchLabel,
+                              isDense: true,
+                              contentPadding: const EdgeInsets.symmetric(
+                                horizontal: AppSpacing.medium,
+                                vertical: AppSpacing.small,
+                              ),
+                              counterText: '',
+                            ),
+                            onChanged: (_) => _scheduleFilters(),
+                            onSubmitted: (_) => _flushFilters(),
+                          ),
+                        ),
+                        BrowseFilterButton(
+                          key: const Key('resource-toggle-filters'),
+                          expanded: _filtersExpanded,
+                          hasActiveFilters: state.locality.trim().isNotEmpty,
+                          onPressed: () {
+                            FocusManager.instance.primaryFocus?.unfocus();
+                            setState(
+                              () => _filtersExpanded = !_filtersExpanded,
+                            );
+                          },
+                        ),
+                      ],
                     ),
-                    TextField(
-                      key: const Key('resource-locality-filter'),
-                      controller: _localityController,
-                      maxLength: 120,
-                      textInputAction: TextInputAction.search,
-                      decoration: InputDecoration(
-                        labelText: l10n.resourceLocalityLabel,
+                    if (_filtersExpanded) ...[
+                      const SizedBox(height: AppSpacing.small),
+                      TextField(
+                        key: const Key('resource-locality-filter'),
+                        controller: _localityController,
+                        maxLength: 120,
+                        textInputAction: TextInputAction.search,
+                        decoration: InputDecoration(
+                          labelText: l10n.resourceLocalityLabel,
+                        ),
+                        onChanged: (_) => _scheduleFilters(),
+                        onSubmitted: (_) => _flushFilters(),
                       ),
-                      onChanged: (_) => setState(() {}),
-                      onSubmitted: (_) => _applyFilters(),
-                    ),
+                    ],
                     Wrap(
                       alignment: WrapAlignment.end,
                       spacing: AppSpacing.small,
                       runSpacing: AppSpacing.small,
                       children: [
-                        FilledButton.icon(
-                          key: const Key('resource-apply-filters'),
-                          onPressed: state.isBusy ? null : _applyFilters,
-                          icon: const Icon(Icons.search),
-                          label: Text(l10n.resourceSearchAction),
-                        ),
                         if (expectedProfileId != null)
                           OutlinedButton.icon(
                             key: const Key('resource-save-search'),
@@ -310,51 +334,22 @@ class _PublicResourceListingsScreenState
     _filterTimer = Timer(_filterDebounce, _applyFilters);
   }
 
-  void _flushFilters() {
+  Future<void> _flushFilters() {
     _filterTimer?.cancel();
-    _applyFilters();
+    return _applyFilters();
   }
 
-  void _applyFilters() {
+  Future<void> _applyFilters() async {
     final input = _currentInput();
-    unawaited(
-      ref
-          .read(publicResourceListingsProvider.notifier)
-          .applyFilters(
-            mode: input.mode,
-            locality: input.locality ?? '',
-            query: input.query ?? '',
-          ),
-    );
-  }
-
-  ResourceSavedSearchInput _currentInput() =>
-      ResourceSavedSearchInput.normalized(
-        query: _queryController.text,
-        mode: switch (_modeChoice) {
-          _ResourceModeChoice.all => null,
-          _ResourceModeChoice.donate => ResourceListingMode.donate,
-          _ResourceModeChoice.exchange => ResourceListingMode.exchange,
-        },
-        locality: _localityController.text,
-      );
-
-  void _syncFilterControls(_ResourceFilterTuple filters) {
-    _queryController.text = filters.query;
-    _localityController.text = filters.locality;
-    setState(() {
-      _modeChoice = switch (filters.mode) {
-        null => _ResourceModeChoice.all,
-        ResourceListingMode.donate => _ResourceModeChoice.donate,
-        ResourceListingMode.exchange => _ResourceModeChoice.exchange,
-      };
-    });
-  }
-
-  Future<void> _saveCurrentSearch(String expectedProfileId) async {
-    final l10n = AppLocalizations.of(context);
-    final input = _currentInput();
-    if (!input.isValid) return;
+    final current = ref.read(publicResourceListingsProvider);
+    // Submit/Save may follow a debounce that already applied the same tuple.
+    // A failed request remains retryable; successful/in-flight tuples dedupe.
+    if (current.phase != ResourceListingLoadPhase.failure &&
+        current.modeFilter == input.mode &&
+        current.locality == (input.locality ?? '') &&
+        current.query == (input.query ?? '')) {
+      return;
+    }
     await ref
         .read(publicResourceListingsProvider.notifier)
         .applyFilters(
@@ -362,6 +357,29 @@ class _PublicResourceListingsScreenState
           locality: input.locality ?? '',
           query: input.query ?? '',
         );
+  }
+
+  ResourceSavedSearchInput _currentInput() =>
+      ResourceSavedSearchInput.normalized(
+        query: _queryController.text,
+        mode: _modeFilter,
+        locality: _localityController.text,
+      );
+
+  void _syncFilterControls(_ResourceFilterTuple filters) {
+    _filterTimer?.cancel();
+    _queryController.text = filters.query;
+    _localityController.text = filters.locality;
+    setState(() {
+      _modeFilter = filters.mode;
+    });
+  }
+
+  Future<void> _saveCurrentSearch(String expectedProfileId) async {
+    final l10n = AppLocalizations.of(context);
+    final input = _currentInput();
+    if (!input.isValid) return;
+    await _flushFilters();
     final outcome = await ref
         .read(resourceSavedSearchesProvider.notifier)
         .create(expectedProfileId, input);

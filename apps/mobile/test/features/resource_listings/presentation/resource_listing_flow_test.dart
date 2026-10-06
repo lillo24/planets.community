@@ -41,6 +41,270 @@ import '../../../support/fake_resource_request.dart';
 import '../../../support/fake_resource_loan.dart';
 
 void main() {
+  testWidgets('Scambio starts with both checked modes and compact filters', (
+    tester,
+  ) async {
+    final gateway = FakeResourceListingGateway();
+    final app = await _pump(tester, gateway: gateway, signedIn: false);
+    app.read(appRouterProvider).go('/resources');
+    await tester.pumpAndSettle();
+
+    final selector = find.byKey(const Key('resource-mode-filter'));
+    expect(_selectedModes(tester), ResourceListingMode.values.toSet());
+    expect(
+      find.descendant(of: selector, matching: find.byIcon(Icons.check)),
+      findsNWidgets(2),
+    );
+    expect(find.byKey(const Key('resource-filter-mode-all')), findsNothing);
+    expect(find.byKey(const Key('resource-apply-filters')), findsNothing);
+    expect(find.byKey(const Key('resource-locality-filter')), findsNothing);
+    final query = tester.widget<TextField>(
+      find.byKey(const Key('resource-query-filter')),
+    );
+    expect(query.decoration!.isDense, isTrue);
+    expect(query.decoration!.counterText, '');
+    expect(
+      query.decoration!.contentPadding,
+      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+    );
+    expect(gateway.lastMode, isNull);
+  });
+
+  for (final transition
+      in <
+        ({
+          ResourceListingMode? start,
+          ResourceListingMode tap,
+          ResourceListingMode? result,
+        })
+      >[
+        (
+          start: null,
+          tap: ResourceListingMode.donate,
+          result: ResourceListingMode.exchange,
+        ),
+        (
+          start: null,
+          tap: ResourceListingMode.exchange,
+          result: ResourceListingMode.donate,
+        ),
+        (
+          start: ResourceListingMode.donate,
+          tap: ResourceListingMode.donate,
+          result: ResourceListingMode.exchange,
+        ),
+        (
+          start: ResourceListingMode.exchange,
+          tap: ResourceListingMode.exchange,
+          result: ResourceListingMode.donate,
+        ),
+        (
+          start: ResourceListingMode.donate,
+          tap: ResourceListingMode.exchange,
+          result: null,
+        ),
+        (
+          start: ResourceListingMode.exchange,
+          tap: ResourceListingMode.donate,
+          result: null,
+        ),
+      ]) {
+    testWidgets(
+      'mode ${transition.start} + tap ${transition.tap} => ${transition.result}',
+      (tester) async {
+        final gateway = FakeResourceListingGateway();
+        final app = await _pump(tester, gateway: gateway, signedIn: false);
+        app.read(appRouterProvider).go('/resources');
+        await tester.pumpAndSettle();
+        if (transition.start != null) {
+          await app
+              .read(publicResourceListingsProvider.notifier)
+              .applyFilters(mode: transition.start, locality: '', query: '');
+          await tester.pumpAndSettle();
+        }
+        final before = gateway.calls.length;
+        await _tap(tester, 'resource-filter-mode-${transition.tap.wireValue}');
+        final expected = transition.result == null
+            ? ResourceListingMode.values.toSet()
+            : {transition.result!};
+        expect(_selectedModes(tester), expected);
+        expect(_selectedModes(tester), isNotEmpty);
+        expect(
+          app.read(publicResourceListingsProvider).modeFilter,
+          transition.result,
+        );
+        expect(gateway.lastMode, transition.result);
+        expect(gateway.calls.length, before + 1);
+        expect(
+          find.descendant(
+            of: find.byKey(const Key('resource-mode-filter')),
+            matching: find.byIcon(Icons.check),
+          ),
+          findsNWidgets(expected.length),
+        );
+      },
+    );
+  }
+
+  testWidgets('hidden locality stays applied and badged across disclosure', (
+    tester,
+  ) async {
+    final gateway = FakeResourceListingGateway();
+    final app = await _pump(tester, gateway: gateway, signedIn: false);
+    app.read(appRouterProvider).go('/resources');
+    await tester.pumpAndSettle();
+    await _tap(tester, 'resource-toggle-filters');
+    final locality = find.byKey(const Key('resource-locality-filter'));
+    await tester.enterText(locality, ' Trento ');
+    await tester.pump(const Duration(milliseconds: 349));
+    expect(gateway.lastLocality, isNull);
+    await tester.pump(const Duration(milliseconds: 1));
+    await tester.pumpAndSettle();
+    expect(gateway.lastLocality, 'Trento');
+    final requests = gateway.calls.length;
+    await _tap(tester, 'resource-toggle-filters');
+    expect(locality, findsNothing);
+    expect(
+      tester
+          .widget<Badge>(find.byKey(const Key('browse-active-filters')))
+          .isLabelVisible,
+      isTrue,
+    );
+    expect(find.byTooltip('Show filters · Filters active'), findsOneWidget);
+    await _tap(tester, 'resource-toggle-filters');
+    expect(tester.widget<TextField>(locality).controller!.text, 'Trento');
+    expect(gateway.calls.length, requests);
+
+    await tester.enterText(locality, '');
+    await tester.testTextInput.receiveAction(TextInputAction.search);
+    await tester.pumpAndSettle();
+    expect(gateway.lastLocality, isNull);
+    expect(
+      tester
+          .widget<Badge>(find.byKey(const Key('browse-active-filters')))
+          .isLabelVisible,
+      isFalse,
+    );
+    final clearedRequests = gateway.calls.length;
+    await tester.pump(const Duration(milliseconds: 400));
+    expect(gateway.calls.length, clearedRequests);
+  });
+
+  testWidgets('query submit dedupes an already applied normalized tuple', (
+    tester,
+  ) async {
+    final gateway = FakeResourceListingGateway();
+    final app = await _pump(tester, gateway: gateway, signedIn: false);
+    app.read(appRouterProvider).go('/resources');
+    await tester.pumpAndSettle();
+    final query = find.byKey(const Key('resource-query-filter'));
+    await tester.enterText(query, 'tools');
+    await tester.pump(const Duration(milliseconds: 350));
+    await tester.pumpAndSettle();
+    final requests = gateway.calls.length;
+    await tester.enterText(query, ' tools ');
+    await tester.testTextInput.receiveAction(TextInputAction.search);
+    await tester.pumpAndSettle();
+    await tester.pump(const Duration(milliseconds: 400));
+    expect(gateway.calls.length, requests);
+    expect(gateway.lastQuery, 'tools');
+  });
+
+  testWidgets('automatic locality retains cards and rejects stale responses', (
+    tester,
+  ) async {
+    final first = Completer<List<PublicResourceListingSummary>>();
+    final second = Completer<List<PublicResourceListingSummary>>();
+    final gateway = FakeResourceListingGateway()
+      ..publicItems = [publicResourceListingFixture()];
+    final app = await _pump(tester, gateway: gateway, signedIn: false);
+    app.read(appRouterProvider).go('/resources');
+    await tester.pumpAndSettle();
+    gateway.publicLoader = ({required limit, cursor, mode, locality, query}) =>
+        locality == 'Trento' ? first.future : second.future;
+    await _tap(tester, 'resource-toggle-filters');
+    final locality = find.byKey(const Key('resource-locality-filter'));
+    await tester.enterText(locality, 'Trento');
+    await tester.pump(const Duration(milliseconds: 350));
+    await tester.pump();
+    expect(find.text('Garden tools'), findsOneWidget);
+    expect(find.byKey(const Key('resource-filter-progress')), findsOneWidget);
+    expect(tester.widget<TextField>(locality).enabled, isNot(false));
+    await tester.enterText(locality, 'Modena');
+    await tester.pump(const Duration(milliseconds: 350));
+    await tester.pump();
+    second.complete([publicResourceListingFixture(title: 'Current tools')]);
+    await tester.pumpAndSettle();
+    first.complete([publicResourceListingFixture(title: 'Stale tools')]);
+    await tester.pumpAndSettle();
+    expect(find.text('Current tools'), findsOneWidget);
+    expect(find.text('Stale tools'), findsNothing);
+    expect(app.read(publicResourceListingsProvider).locality, 'Modena');
+    expect(gateway.calls.where((call) => call == 'list-public'), hasLength(3));
+  });
+
+  testWidgets(
+    'submitting the same failed filter retries with safe error copy',
+    (tester) async {
+      final gateway = FakeResourceListingGateway()
+        ..publicItems = [publicResourceListingFixture()];
+      final app = await _pump(tester, gateway: gateway, signedIn: false);
+      app.read(appRouterProvider).go('/resources');
+      await tester.pumpAndSettle();
+      gateway.publicListError = const PostgrestException(
+        message: 'private backend detail',
+        code: 'XX000',
+      );
+      final query = find.byKey(const Key('resource-query-filter'));
+      await tester.enterText(query, 'tools');
+      await tester.pump(const Duration(milliseconds: 350));
+      await tester.pumpAndSettle();
+      expect(
+        app.read(publicResourceListingsProvider).phase,
+        ResourceListingLoadPhase.failure,
+      );
+      expect(find.byKey(const Key('resource-partial-error')), findsOneWidget);
+      expect(find.textContaining('private backend detail'), findsNothing);
+      gateway.publicListError = null;
+      await tester.testTextInput.receiveAction(TextInputAction.search);
+      await tester.pumpAndSettle();
+      expect(
+        app.read(publicResourceListingsProvider).phase,
+        ResourceListingLoadPhase.ready,
+      );
+      expect(find.byKey(const Key('resource-partial-error')), findsNothing);
+      expect(gateway.lastQuery, 'tools');
+      expect(
+        gateway.calls.where((call) => call == 'list-public'),
+        hasLength(2),
+      );
+    },
+  );
+
+  testWidgets('Scambio card uses locality; opened detail keeps full location', (
+    tester,
+  ) async {
+    const fullLocation = 'Community workshop near the northern gate, Trento';
+    final gateway = FakeResourceListingGateway()
+      ..publicItems = [
+        publicResourceListingFixture(
+          locality: 'Trento',
+          publicLocationLabel: fullLocation,
+        ),
+      ]
+      ..publicDetail = publicResourceListingDetailFixture(
+        locality: 'Trento',
+        publicLocationLabel: fullLocation,
+      );
+    final app = await _pump(tester, gateway: gateway, signedIn: false);
+    app.read(appRouterProvider).go('/resources');
+    await tester.pumpAndSettle();
+    expect(find.text('Trento'), findsOneWidget);
+    expect(find.text(fullLocation), findsNothing);
+    await _tap(tester, 'resource-card-$resourceListingId');
+    expect(find.text(fullLocation), findsOneWidget);
+  });
+
   testWidgets('public card and detail render the canonical shared cover', (
     tester,
   ) async {
@@ -100,19 +364,19 @@ void main() {
 
     expect(find.byIcon(Icons.broken_image_outlined), findsOneWidget);
     expect(find.text('Garden tools'), findsOneWidget);
-    expect(find.text('Central Bologna'), findsOneWidget);
+    expect(find.text('Bologna'), findsOneWidget);
     await _tap(tester, 'resource-card-$resourceListingId');
     expect(find.text('Listing details'), findsOneWidget);
   });
 
   testWidgets(
-    'Home exposes Progetti and Scambio-Dona with three destinations',
+    'Home exposes project and resource pillars with three destinations',
     (tester) async {
       final gateway = FakeResourceListingGateway()
         ..publicItems = [publicResourceListingFixture()];
       await _pump(tester, gateway: gateway, signedIn: false);
 
-      expect(find.text('Progetti'), findsOneWidget);
+      expect(find.text('Projects and Cultural Tables'), findsOneWidget);
       expect(find.text('Scambio-Dona'), findsOneWidget);
       expect(
         tester.widget<NavigationBar>(find.byType(NavigationBar)).destinations,
@@ -144,7 +408,8 @@ void main() {
       app.read(appRouterProvider).go('/resources');
       await tester.pumpAndSettle();
 
-      await tester.tap(find.byKey(const Key('resource-filter-mode-exchange')));
+      await tester.tap(find.byKey(const Key('resource-filter-mode-donate')));
+      await _tap(tester, 'resource-toggle-filters');
       await tester.enterText(
         find.byKey(const Key('resource-query-filter')),
         'shovel',
@@ -153,7 +418,7 @@ void main() {
         find.byKey(const Key('resource-locality-filter')),
         'Bologna',
       );
-      expect(find.byKey(const Key('resource-apply-filters')), findsOneWidget);
+      expect(find.byKey(const Key('resource-apply-filters')), findsNothing);
       await tester.pump(const Duration(milliseconds: 349));
       expect(gateway.lastQuery, isNull);
       await tester.pump(const Duration(milliseconds: 1));
@@ -198,6 +463,7 @@ void main() {
     final app = await _pump(tester, gateway: gateway, signedIn: false);
     app.read(appRouterProvider).go('/resources');
     await tester.pumpAndSettle();
+    await _tap(tester, 'resource-toggle-filters');
     final query = find.byKey(const Key('resource-query-filter'));
     final locality = find.byKey(const Key('resource-locality-filter'));
 
@@ -249,7 +515,7 @@ void main() {
     final app = await _pump(tester, gateway: gateway, signedIn: false);
     app.read(appRouterProvider).go('/resources');
     await tester.pumpAndSettle();
-    expect(find.text('No one interested yet'), findsOneWidget);
+    expect(find.text('0 People Interested'), findsOneWidget);
 
     gateway
       ..publicItems = [publicResourceListingFixture(activeRequestCount: 2)]
@@ -992,6 +1258,12 @@ void main() {
     expect(find.textContaining('private failure detail'), findsNothing);
   });
 }
+
+Set<ResourceListingMode> _selectedModes(WidgetTester tester) => tester
+    .widget<SegmentedButton<ResourceListingMode>>(
+      find.byKey(const Key('resource-mode-filter')),
+    )
+    .selected;
 
 Future<ProviderContainer> _pump(
   WidgetTester tester, {

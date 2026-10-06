@@ -1,13 +1,64 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:planets_mobile/features/participation/domain/project_capacity.dart';
 import 'package:planets_mobile/features/participation/presentation/project_capacity_label.dart';
 import 'package:planets_mobile/features/participation/presentation/project_capacity_presentation.dart';
 import 'package:planets_mobile/l10n/generated/app_localizations.dart';
+import 'package:planets_mobile/features/proposals/presentation/proposal_widgets.dart';
 
 import '../../../support/fake_participation.dart';
+import '../../../support/fake_proposal.dart';
 
 void main() {
+  testWidgets('full Project card retains capacity row without a corner ribbon', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        child: MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: Scaffold(
+            body: SingleChildScrollView(
+              child: ProposalCard(
+                proposal: proposalSummaryFixture(
+                  capacity: capacityFixture(
+                    registrationCapacity: 1,
+                    countOrganizersTowardCapacity: true,
+                  ),
+                ),
+                onTap: () {},
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    final card = find.byType(ProposalCard);
+    expect(find.textContaining('Full · 1 / 1 spots used'), findsOneWidget);
+    expect(
+      find.descendant(of: card, matching: find.byType(ProjectCapacityLabel)),
+      findsOneWidget,
+    );
+    expect(find.text('Full'), findsNothing);
+    expect(
+      find.descendant(of: card, matching: find.byType(RotatedBox)),
+      findsNothing,
+    );
+    // Limit decoration assertions to the card: scroll views may translate the
+    // entire card outside this subtree without adding a rotated corner ribbon.
+    expect(
+      find.descendant(of: card, matching: find.byType(Transform)),
+      findsNothing,
+    );
+    expect(
+      find.descendant(of: card, matching: find.byType(Positioned)),
+      findsNothing,
+    );
+  });
+
   testWidgets('low public counts show intended capacity and organizers only', (
     tester,
   ) async {

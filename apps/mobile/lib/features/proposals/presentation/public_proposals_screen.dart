@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 import '../../../app/router/browse_activity_switcher.dart';
 import '../../../core/theme/app_tokens.dart';
 import '../../../core/widgets/async_data_presentation.dart';
+import '../../../core/widgets/browse_filter_button.dart';
 import '../../../core/widgets/empty_state.dart';
 import '../../../core/widgets/error_state.dart';
 import '../../../core/widgets/loading_state.dart';
@@ -44,6 +45,7 @@ class _PublicProposalsScreenState extends ConsumerState<PublicProposalsScreen> {
   late final TextEditingController _queryController;
   late final TextEditingController _localityController;
   Timer? _queryDebounce;
+  bool _filtersExpanded = false;
 
   @override
   void initState() {
@@ -107,39 +109,68 @@ class _PublicProposalsScreenState extends ConsumerState<PublicProposalsScreen> {
                       selected: BrowseActivityType.proposals,
                     ),
                     const SizedBox(height: AppSpacing.medium),
-                    TextField(
-                      key: const Key('proposal-query-filter'),
-                      controller: _queryController,
-                      maxLength: 120,
-                      textInputAction: TextInputAction.search,
-                      decoration: InputDecoration(
-                        labelText: l10n.proposalSearchLabel,
-                        prefixIcon: const Icon(Icons.search),
-                      ),
-                      onChanged: (_) => _scheduleQuery(),
-                      onSubmitted: (_) => _flushQuery(),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: TextField(
+                            key: const Key('proposal-query-filter'),
+                            controller: _queryController,
+                            maxLength: 120,
+                            textInputAction: TextInputAction.search,
+                            decoration: InputDecoration(
+                              labelText: l10n.proposalSearchLabel,
+                              prefixIcon: const Icon(Icons.search),
+                              isDense: true,
+                              contentPadding: const EdgeInsets.symmetric(
+                                horizontal: AppSpacing.medium,
+                                vertical: AppSpacing.small,
+                              ),
+                              counterText: '',
+                            ),
+                            onChanged: (_) => _scheduleQuery(),
+                            onSubmitted: (_) => _flushQuery(),
+                          ),
+                        ),
+                        const SizedBox(width: AppSpacing.small),
+                        BrowseFilterButton(
+                          key: const Key('proposal-toggle-filters'),
+                          expanded: _filtersExpanded,
+                          hasActiveFilters:
+                              state.locality.trim().isNotEmpty ||
+                              state.selectedSkillIds.isNotEmpty,
+                          onPressed: () {
+                            FocusScope.of(context).unfocus();
+                            setState(
+                              () => _filtersExpanded = !_filtersExpanded,
+                            );
+                          },
+                        ),
+                      ],
                     ),
-                    TextField(
-                      key: const Key('proposal-locality-filter'),
-                      controller: _localityController,
-                      decoration: InputDecoration(
-                        labelText: l10n.proposalLocalityFilter,
-                        suffixIcon: IconButton(
-                          key: const Key('proposal-apply-filters'),
-                          onPressed: state.isBusy ? null : _applyFilters,
-                          icon: const Icon(Icons.search),
+                    if (_filtersExpanded) ...[
+                      const SizedBox(height: AppSpacing.medium),
+                      TextField(
+                        key: const Key('proposal-locality-filter'),
+                        controller: _localityController,
+                        decoration: InputDecoration(
+                          labelText: l10n.proposalLocalityFilter,
+                          suffixIcon: IconButton(
+                            key: const Key('proposal-apply-filters'),
+                            onPressed: state.isBusy ? null : _applyFilters,
+                            icon: const Icon(Icons.search),
+                          ),
                         ),
                       ),
-                    ),
-                    if (state.categories.isNotEmpty) ...[
-                      const SizedBox(height: AppSpacing.medium),
-                      SkillFilter(
-                        categories: state.categories,
-                        selectedIds: state.selectedSkillIds,
-                        enabled: !state.isBusy,
-                        onApply: (selection) =>
-                            _applyFilters(skillIds: selection),
-                      ),
+                      if (state.categories.isNotEmpty) ...[
+                        const SizedBox(height: AppSpacing.medium),
+                        SkillFilter(
+                          categories: state.categories,
+                          selectedIds: state.selectedSkillIds,
+                          enabled: !state.isBusy,
+                          onApply: (selection) =>
+                              _applyFilters(skillIds: selection),
+                        ),
+                      ],
                     ],
                     const SizedBox(height: AppSpacing.medium),
                     if (state.items.isEmpty && state.requestedItems.isEmpty)
