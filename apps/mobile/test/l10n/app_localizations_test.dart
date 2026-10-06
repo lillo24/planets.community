@@ -17,6 +17,10 @@ void main() {
     ]);
     expect(english.navigationBrowse, 'Browse');
     expect(italian.navigationBrowse, 'Esplora');
+    expect(english.settingsNavigation, 'Navigation');
+    expect(italian.settingsNavigation, 'Navigazione');
+    expect(english.settingsBottomRightTab, 'Bottom-right tab');
+    expect(italian.settingsBottomRightTab, 'Scheda in basso a destra');
     expect(english.projectRegistrationCapacityLabel, 'Registration capacity');
     expect(italian.projectRegistrationCapacityLabel, 'Capienza iscrizioni');
     expect(

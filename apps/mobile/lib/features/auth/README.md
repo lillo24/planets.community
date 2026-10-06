@@ -15,6 +15,13 @@ feature never persists a parallel signed-in flag, email address, or OTP value.
   resend, profile-retry, and sign-out commands.
 - `application/return_destination.dart` sanitizes optional in-app return paths.
 - `presentation/` contains the request, verification, and root status UI.
+- `presentation/account_sign_out_action.dart` is the shared destructive
+  Profile/Settings action using the existing command busy/error state.
+
+The signed-in Profile ends with Sign out after its ordinary actions. Public
+Settings offers the same exit for all authenticated phases, including profile
+setup. Home's fast Sign out shortcut appears only with the existing demo-tools
+gate; normal account management lives in Profile and Settings.
 
 The resend countdown is a user-interface convenience only. Supabase Auth owns
 the real abuse-prevention and verification limits.

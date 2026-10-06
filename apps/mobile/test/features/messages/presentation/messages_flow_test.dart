@@ -825,7 +825,7 @@ void main() {
     await _pump(tester, messages: messages);
 
     expect(find.byKey(const Key('nav-profile')), findsOneWidget);
-    expect(find.byKey(const Key('nav-browse')), findsOneWidget);
+    expect(find.byKey(const Key('nav-messages')), findsOneWidget);
     expect(find.byKey(const Key('nav-home')), findsOneWidget);
     expect(find.byKey(const Key('open-messages-button')), findsOneWidget);
     await tester.tap(find.byKey(const Key('open-messages-button')));
@@ -833,10 +833,10 @@ void main() {
     await tester.tap(find.text('Requests'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Messages'), findsOneWidget);
+    expect(find.text('Messages'), findsNWidgets(2));
     expect(
       tester.widget<NavigationBar>(find.byType(NavigationBar)).selectedIndex,
-      1,
+      2,
     );
     expect(find.text('Jordan wants to join'), findsOneWidget);
     expect(
@@ -2344,7 +2344,7 @@ Future<void> _expectViewProject(
   await tester.pumpAndSettle();
   expect(
     tester.widget<NavigationBar>(find.byType(NavigationBar)).selectedIndex,
-    1,
+    2,
   );
   await tester.scrollUntilVisible(
     find.byKey(const Key('message-view-project')),

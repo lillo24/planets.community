@@ -9,8 +9,11 @@ import '../../devtools/demo/demo_tools.dart';
 import '../../devtools/demo/demo_widgets.dart';
 import '../../features/auth/application/auth_session_controller.dart';
 import '../../features/auth/domain/auth_models.dart';
+import '../../features/messages/presentation/messages_routes.dart';
 import '../../features/notifications/application/notifications_controllers.dart';
 import '../../features/moderation/presentation/moderation_evidence_session_prompt.dart';
+import '../../features/settings/application/navigation_preference_controller.dart';
+import '../../features/settings/domain/navigation_preference.dart';
 import '../../l10n/generated/app_localizations.dart';
 
 enum AppBranch { profile, home, browse }
@@ -32,7 +35,28 @@ class AppNavigationShell extends ConsumerWidget {
         .navigatorKey
         .currentState
         ?.canPop();
-    final path = GoRouterState.of(context).uri.path;
+    final path = GoRouter.of(context).routerDelegate.state.uri.path;
+    final preference = ref.watch(navigationPreferenceProvider).destination;
+    final isMessages = isMessagesPath(path);
+    // Cross-branch pushes can keep the originating Navigator's branch index.
+    // The active URI identifies the screen actually visible above that stack.
+    final routeRoot = Uri(path: path).pathSegments.firstOrNull;
+    final isBrowse = switch (routeRoot) {
+      'proposals' || 'tavoli' || 'resources' => true,
+      _ => false,
+    };
+    // The visible slot follows direct/pushed routes while active. Elsewhere it
+    // uses the device preference; the shell's three branches never change.
+    final rightDestination = isBrowse
+        ? BottomTabDestination.browse
+        : isMessages
+        ? BottomTabDestination.messages
+        : preference;
+    final selectedIndex = isBrowse || isMessages
+        ? 2
+        : routeRoot == 'profile'
+        ? 0
+        : 1;
     final isSecondaryRoot =
         (navigationShell.currentIndex == AppBranch.profile.index &&
             path == '/profile') ||
@@ -55,7 +79,7 @@ class AppNavigationShell extends ConsumerWidget {
         ],
       ),
       bottomNavigationBar: NavigationBar(
-        selectedIndex: navigationShell.currentIndex,
+        selectedIndex: selectedIndex,
         onDestinationSelected: (index) {
           if (index == AppBranch.home.index) {
             FocusManager.instance.primaryFocus?.unfocus();
@@ -71,7 +95,15 @@ class AppNavigationShell extends ConsumerWidget {
                     .load(profileId, refresh: true),
               );
             }
-          } else if (index != navigationShell.currentIndex) {
+          } else if (index == 2) {
+            if (selectedIndex == 2) return;
+            FocusManager.instance.primaryFocus?.unfocus();
+            if (rightDestination == BottomTabDestination.messages) {
+              context.go('/messages');
+            } else {
+              navigationShell.goBranch(AppBranch.browse.index);
+            }
+          } else if (index != selectedIndex) {
             // Profile and Browse retain their nested state across tab switches.
             FocusManager.instance.primaryFocus?.unfocus();
             navigationShell.goBranch(index);
@@ -91,10 +123,24 @@ class AppNavigationShell extends ConsumerWidget {
             label: l10n.navigationHome,
           ),
           NavigationDestination(
-            key: const Key('nav-browse'),
-            icon: const Icon(Icons.explore_outlined),
-            selectedIcon: const Icon(Icons.explore),
-            label: l10n.navigationBrowse,
+            key: Key(
+              rightDestination == BottomTabDestination.messages
+                  ? 'nav-messages'
+                  : 'nav-browse',
+            ),
+            icon: Icon(
+              rightDestination == BottomTabDestination.messages
+                  ? Icons.forum_outlined
+                  : Icons.explore_outlined,
+            ),
+            selectedIcon: Icon(
+              rightDestination == BottomTabDestination.messages
+                  ? Icons.forum
+                  : Icons.explore,
+            ),
+            label: rightDestination == BottomTabDestination.messages
+                ? l10n.messagesTitle
+                : l10n.navigationBrowse,
           ),
         ],
       ),

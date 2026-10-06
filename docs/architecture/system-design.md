@@ -166,7 +166,10 @@ Agreement anchors, terms, and timelines use RLS with no direct client policies o
 Every accepted request also atomically owns one `resource_request_chats` anchor and one immutable, human-only `resource_request_chat_messages` history. Listing owner and requester keep permanent read entitlement; both may send only while the accepted agreement coordination episode remains open. Completion or cancellation makes the chat read-only without deleting it, and listing closure does not affect an already accepted open chat. A later request episode receives a distinct chat. RPC-only exact/history/list/send boundaries provide honest human previews and activity ordered by activation, latest human message, or latest structured agreement event. Sends lock the same agreement row as completion/cancellation. Private per-profile `resource-chat:<chatId>:profile:<profileId>` Broadcast topics remain readable to the two historical counterparties so the final close refresh arrives, while send authorization remains separate. Human-message and agreement-change hints plus message audit/outbox events contain identifiers only; durable PostgreSQL state is authoritative and structured agreement events never become fake chat messages.
 
 The 04C2 Flutter client keeps Scambio-Dona in the Home pillar beside Progetti,
-without changing the persistent Profile / Browse / Home navigation. Its public
+with stable Profile / Home / Browse route branches. The visible bottom bar is
+Profile / Home / Messages by default, with a device-local Settings preference
+for Browse in the right slot. Active Messages/Browse routes display their actual
+destination regardless of the preference. Its public
 list and detail are signed-out, while My Listings and create/edit routes require
 a complete profile and preserve their Auth/setup return destination. The client
 uses only the canonical listing RPCs; closing remains availability-only. The
