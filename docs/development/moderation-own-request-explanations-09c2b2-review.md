@@ -156,7 +156,23 @@ upgrade or a claim that its inherited audit advisories have been fixed.
   after releasing the owned device/runtime; hosted validation retains normal
   repository commands. Site is outside this change's classified scope.
 
-Hosted source/head evidence will be recorded after the source run completes.
+Tested source: `fd373e3d066791abfe736d7c3fc8a4364f4e14ba`. Hosted
+[run 37444791738](https://github.com/lillo24/planets.community/actions/runs/37444791738)
+passed **Change classification, Mobile, Web and Database**; **Site was skipped**.
+The classifier reported 39 changed paths: `mobile=true`, `web=true`,
+`database=true`, `site=false`. The tested PR merge snapshot was
+`a5b207a12c1cdd3240e651f60005d44fe441a012` against the exact selected base.
+Hosted Database also passed real Web OTP/Tavoli smoke and generated-contract
+drift checks; its logs confirm the same 110 files / 3,486 assertions, 36/24 races
+and 194-signature audit.
+
+Published head: the exact final SHA and source-equivalence check are recorded
+verbatim in [PR #148's final evidence](https://github.com/lillo24/planets.community/pull/148#issuecomment-6013750582).
+Publication changes **only this review report**, already-tested source and all
+four screenshots remain byte-identical. The documentation commit uses `[skip ci]`;
+no unrun final-head job is claimed. The linked evidence records the final commit
+after this report is committed, avoiding a self-referential commit hash.
+
 Earlier concurrent host attempts were stopped with less than 1 GB
 of free memory after Web timeouts; assertions/timeouts were not relaxed.
 
@@ -178,7 +194,7 @@ database/Edge Runtime/Storage backup volumes retained. No task containers remain
 The original shared backend and predecessor checkouts were untouched. Only owned
 emulator 5556 was closed; its AVD registry/userdata were deleted with the supported
 AVD manager after verifying the exact backup-owned path. Original AVDs and the
-physical device were not operated. Normal Flutter-run processes are stopped.
+physical device were not operated. Task Flutter-run processes are stopped.
 
 Temporary configuration was restored byte-for-byte:
 
