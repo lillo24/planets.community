@@ -176,30 +176,31 @@ export async function readModerationCase(
     };
   }
 
-  const [corroboration, counterstatement, consequences, templateResult] = await Promise.all([
-    detail.projectContextId
-      ? access.client.rpc("get_moderation_case_corroboration", {
-          p_expected_staff_profile_id: access.profileId,
-          p_case_id: caseId,
-        })
-      : Promise.resolve(null),
-    detail.resourceRequestContextId
-      ? access.client.rpc("get_moderation_case_counterstatement", {
-          p_expected_staff_profile_id: access.profileId,
-          p_case_id: caseId,
-        })
-      : Promise.resolve(null),
-    access.client.rpc("list_moderation_case_consequence_history", {
-      p_expected_staff_profile_id: access.profileId,
-      p_case_id: caseId,
-    }),
-    detail.targetKind === "proposal_template"
-      ? access.client.rpc("get_moderation_case_template", {
-          p_expected_staff_profile_id: access.profileId,
-          p_case_id: caseId,
-        })
-      : Promise.resolve(null),
-  ]);
+  const [corroboration, counterstatement, consequences, templateResult] =
+    await Promise.all([
+      detail.projectContextId
+        ? access.client.rpc("get_moderation_case_corroboration", {
+            p_expected_staff_profile_id: access.profileId,
+            p_case_id: caseId,
+          })
+        : Promise.resolve(null),
+      detail.resourceRequestContextId
+        ? access.client.rpc("get_moderation_case_counterstatement", {
+            p_expected_staff_profile_id: access.profileId,
+            p_case_id: caseId,
+          })
+        : Promise.resolve(null),
+      access.client.rpc("list_moderation_case_consequence_history", {
+        p_expected_staff_profile_id: access.profileId,
+        p_case_id: caseId,
+      }),
+      detail.targetKind === "proposal_template"
+        ? access.client.rpc("get_moderation_case_template", {
+            p_expected_staff_profile_id: access.profileId,
+            p_case_id: caseId,
+          })
+        : Promise.resolve(null),
+    ]);
   if (consequences.error)
     throw new Error("The moderation consequence history could not be loaded.");
   if (corroboration?.error) {

@@ -18,8 +18,8 @@ first remain; suspension first prevents the new transition. Two reciprocal-admin
 winner orders also prove a suspended waiting admin cannot commit the opposite
 suspension. There are 24 lock-observed cases in total.
 
-`moderation:suspension:audit:local` compares 210 public signatures against
-`account-suspension-rpc-inventory.json` (187 deny, 19 public, one own-status
+`moderation:suspension:audit:local` compares 231 public signatures against
+`account-suspension-rpc-inventory.json` (205 deny, 22 public, one own-status
 exception, three service/worker-only). `--inventory` prints the reviewable
 replacement inventory without secrets. The audit is intentionally heuristic,
 not proof that every path executes a guard; signature drift and real-auth tests
@@ -43,6 +43,18 @@ Both commands are part of `check:db` and the existing Database CI job.
 The separate notification-volatility forward migration preserves 07C4's
 role-offer dispatcher while propagating the inherited locking matching branch's
 `VOLATILE` declaration; canonical recorded resolution actors are unchanged.
+
+The PR #154 continuation includes committed TW/MSG01/MSG02 history. Its real-auth
+integration verifier adds all 18 new private template/draft/pair/unread RPCs,
+expected-ID mismatch, same-session suspension/revocation, and canonical addressed
+pair/unread delivery checks. Three new Workshop reads remain deliberately public.
+Forward migration `20261006184900` routes the new pair/unread and overwritten
+legacy broadcaster through `send_account_active_realtime`; the existing restrictive
+Realtime account policy still denies new joins. Durable unread/history state and
+active-counterparty sending remain unchanged. SQL tests `119` retain strict topic
+validation and prove only that canonical helper calls `realtime.send` directly.
+Addressed-row assertions prove producer filtering, not recall of queued signals
+or a separately observed cached WebSocket; keep those evidence types distinct.
 
 Suspension migration/tests preserve private immutable history and current-role
 authorization. Ordinary push jobs may still deliver; no provider/09C2 delivery

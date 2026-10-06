@@ -357,6 +357,13 @@ Future<void> reveal(WidgetTester tester, Finder finder) async {
 class _SmokeIdentity implements AuthGateway {
   const _SmokeIdentity(this.actor);
   final String actor;
+  // The prepared identity does not bypass canonical account-access checks.
+  @override
+  Future<AccountSuspensionStatus> suspensionStatusFor(
+    String expectedProfileId,
+  ) =>
+      SupabaseAuthGateway(Supabase.instance.client)
+          .suspensionStatusFor(expectedProfileId);
   @override
   AuthSnapshot get currentSnapshot =>
       AuthSnapshot(identity: AuthIdentity(id: actor));

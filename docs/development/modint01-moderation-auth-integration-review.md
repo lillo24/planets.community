@@ -6,6 +6,39 @@ No predecessor PR is closed, retargeted, marked ready, or merged by this task.
 
 ## Exact inputs and provenance
 
+### Committed-main continuation (2026-10-06, validation in progress)
+
+The continuation prompt supersedes the original #146/#153 exclusion below.
+Fetched main was pinned once at `9cd024cc38c02b0333a32f8abe71fdc9681df548`,
+including merged #146, #153 and #155 unread/activity separation. The same branch
+and draft PR are retained. Merge `ebf71346a1fde1ed6ec5bf7648115f5e253a19d7`
+has parents `5f85b39ecf27fdbf9aa24bf91ce554d6becf4857` and that main pin.
+All 15 text conflicts are reconciled; both histories' tests and contracts remain.
+Generated types are replay-generated, not an unverified conflict union.
+
+The retained editor and router departure guard preserve ordinary same-account
+checks but clear authority on suspension/status failure. Three new regression
+tests pass. Template-removal errors recognize canonical PT403; the combined staff
+detail loads both consequence history and template review. Test fixtures now
+explicitly supply both reads rather than treating an added read as unexpected.
+
+The combined inventory is 231 signatures (205 deny suspended, 22 public, one
+safe own-status, three worker-only). The original 210 count below is historical.
+New broadcasters bypassed recipient filtering; forward migration `20261006184900`
+retains their payloads/endpoints and composes the existing suspension boundary.
+Replay and 127 SQL files / 3,880 assertions pass. Real pre-existing JWTs pass 18
+additional private RPC denials/expected-ID mismatches and addressed-row delivery
+filter/revocation checks; those are not cached-socket observation or browser UI.
+The first combined runtime attempt failed because its pending producer belonged
+to the later blocked delegate's Project; the canonical withdrawal was correct.
+A separate synthetic no-delegate Project supplies the unaffected real producer.
+No history was repaired or assertion weakened. Failed logs are retained privately.
+
+Browser inventory and task-local page control have recovered. Remaining live UI,
+full gates, Android build and exact-source hosted results are recorded below
+when complete; the old passes are not new-source evidence. Founder copy remains
+unapproved. The remainder of this section records the original run historically.
+
 - Pinned committed main: `188544f1eacd20a710399721fcede17f64d57aa9`.
 - Selected cumulative #148 head: `24d8f7fd21eeacb41055a16a2f3198b8148c9580`.
 - Merge base: `11155618e0aa7bf0de62ae178f79d4c0c50ac644`.

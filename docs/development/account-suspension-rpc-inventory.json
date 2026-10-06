@@ -85,6 +85,15 @@
     ]
   },
   {
+    "signature": "acknowledge_own_message_read(uuid,text,uuid,uuid)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.acknowledge_own_message_read",
+      "private.require_participation_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
     "signature": "acknowledge_project_requirement_attention(uuid,uuid,uuid)",
     "classification": "DENY_WHILE_SUSPENDED",
     "gate": [
@@ -272,6 +281,15 @@
     ]
   },
   {
+    "signature": "create_editor_proposal_draft(uuid,uuid,text,text,text,timestamp with time zone,timestamp with time zone,text,text,text,text,text,text,text,uuid[],text[],integer,boolean)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.create_editor_proposal_draft",
+      "private.require_expected_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
     "signature": "create_project_delegate_invitation(uuid,uuid,text)",
     "classification": "DENY_WHILE_SUSPENDED",
     "gate": [
@@ -315,6 +333,15 @@
     "gate": [
       "public.create_project_role_offer",
       "private.require_participation_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "create_proposal_draft_from_template(uuid,uuid,text,uuid,boolean)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.create_proposal_draft_from_template",
+      "private.require_expected_identity",
       "private.assert_profile_account_active"
     ]
   },
@@ -469,6 +496,16 @@
     ]
   },
   {
+    "signature": "get_moderation_case_template(uuid,uuid)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.get_moderation_case_template",
+      "private.require_moderation_staff",
+      "private.require_moderation_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
     "signature": "get_own_account_suspension_status(uuid)",
     "classification": "ALLOW_WHILE_SUSPENDED",
     "gate": null
@@ -501,11 +538,47 @@
     ]
   },
   {
+    "signature": "get_own_message_feed_page(uuid,text,uuid,integer,timestamp with time zone,text,uuid,boolean)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.get_own_message_feed_page",
+      "private.require_participation_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "get_own_message_unread_summary(uuid)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.get_own_message_unread_summary",
+      "private.require_participation_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
     "signature": "get_own_moderation_staff_access(uuid)",
     "classification": "DENY_WHILE_SUSPENDED",
     "gate": [
       "public.get_own_moderation_staff_access",
       "private.require_moderation_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "get_own_participation_conversation_requests(uuid,uuid,uuid[])",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.get_own_participation_conversation_requests",
+      "private.require_participation_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "get_own_participation_conversation(uuid,uuid)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.get_own_participation_conversation",
+      "private.require_participation_identity",
       "private.assert_profile_account_active"
     ]
   },
@@ -578,6 +651,24 @@
     "gate": [
       "public.get_own_project_shared_workspace",
       "private.require_participation_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "get_own_proposal_template_application(uuid,uuid)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.get_own_proposal_template_application",
+      "private.require_expected_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "get_own_proposal_template_baseline(uuid,uuid)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.get_own_proposal_template_baseline",
+      "private.require_expected_identity",
       "private.assert_profile_account_active"
     ]
   },
@@ -711,6 +802,11 @@
     "gate": null
   },
   {
+    "signature": "get_public_proposal_template(uuid)",
+    "classification": "PUBLIC/ANONYMOUS_DATA",
+    "gate": null
+  },
+  {
     "signature": "get_public_proposal(uuid)",
     "classification": "PUBLIC/ANONYMOUS_DATA",
     "gate": null
@@ -772,6 +868,16 @@
     "classification": "DENY_WHILE_SUSPENDED",
     "gate": [
       "public.list_moderation_case_consequence_history",
+      "private.require_moderation_staff",
+      "private.require_moderation_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "list_moderation_case_template_blueprints(uuid,uuid,text,integer,uuid)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.list_moderation_case_template_blueprints",
       "private.require_moderation_staff",
       "private.require_moderation_identity",
       "private.assert_profile_account_active"
@@ -865,6 +971,15 @@
     "gate": [
       "public.list_own_notifications",
       "private.require_notification_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "list_own_participation_conversation_items(uuid,uuid,integer,timestamp with time zone,text,uuid,boolean)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.list_own_participation_conversation_items",
+      "private.require_participation_identity",
       "private.assert_profile_account_active"
     ]
   },
@@ -1052,6 +1167,27 @@
     ]
   },
   {
+    "signature": "list_own_scoped_conversation_items_v3(uuid,text,integer,timestamp with time zone,text,uuid)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.list_own_scoped_conversation_items_v3",
+      "public.list_own_scoped_conversation_items",
+      "public.list_own_scoped_message_chat_items",
+      "private.require_participation_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "list_own_scoped_conversation_items(uuid,text,integer,timestamp with time zone,text,uuid)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.list_own_scoped_conversation_items",
+      "public.list_own_scoped_message_chat_items",
+      "private.require_participation_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
     "signature": "list_own_scoped_message_chat_items(uuid,text,integer,timestamp with time zone,text,uuid)",
     "classification": "DENY_WHILE_SUSPENDED",
     "gate": [
@@ -1227,6 +1363,16 @@
     "gate": null
   },
   {
+    "signature": "list_public_proposal_template_resource_blueprints(uuid,text,integer,uuid)",
+    "classification": "PUBLIC/ANONYMOUS_DATA",
+    "gate": null
+  },
+  {
+    "signature": "list_public_proposal_templates(integer,timestamp with time zone,uuid,uuid[],text)",
+    "classification": "PUBLIC/ANONYMOUS_DATA",
+    "gate": null
+  },
+  {
     "signature": "list_public_proposals(integer,timestamp with time zone,uuid,text,uuid[],text)",
     "classification": "PUBLIC/ANONYMOUS_DATA",
     "gate": null
@@ -1270,6 +1416,15 @@
     "gate": [
       "public.list_resource_listing_requests",
       "private.require_resource_listing_request_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "list_similar_active_proposals(uuid,text,uuid[],text,text,uuid,integer)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.list_similar_active_proposals",
+      "private.require_expected_identity",
       "private.assert_profile_account_active"
     ]
   },
@@ -1389,6 +1544,15 @@
     ]
   },
   {
+    "signature": "recover_editor_proposal_draft(uuid,uuid)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.recover_editor_proposal_draft",
+      "private.require_expected_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
     "signature": "regenerate_project_participant_invitation(uuid,uuid)",
     "classification": "DENY_WHILE_SUSPENDED",
     "gate": [
@@ -1440,6 +1604,16 @@
     "gate": [
       "public.reject_resource_listing_request",
       "private.require_resource_listing_request_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "remove_moderation_case_template(uuid,uuid,uuid,uuid,text,text)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.remove_moderation_case_template",
+      "private.require_moderation_staff",
+      "private.require_moderation_identity",
       "private.assert_profile_account_active"
     ]
   },
@@ -1563,6 +1737,15 @@
     "gate": [
       "public.revoke_project_participant_invitation",
       "private.manage_project_participant_invitation",
+      "private.require_participation_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "send_participation_conversation_message(uuid,uuid,text)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.send_participation_conversation_message",
       "private.require_participation_identity",
       "private.assert_profile_account_active"
     ]

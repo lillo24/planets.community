@@ -14,6 +14,7 @@ import '../../../support/fake_auth.dart';
 import '../../../support/fake_proposal.dart';
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
   for (final denied in ['suspension', 'status failure']) {
     test('$denied clears retained editor and departure ownership', () async {
       final auth = FakeAuthGateway(

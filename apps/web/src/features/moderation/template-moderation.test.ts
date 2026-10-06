@@ -125,6 +125,7 @@ describe("template moderation contracts", () => {
   it.each([
     ["PT409", "stale"],
     ["42501", "denied"],
+    ["PT403", "denied"],
     ["22023", "invalid"],
     ["57014", "error"],
   ])("maps %s to explicit %s", async (code, status) => {
@@ -191,6 +192,8 @@ describe("template moderation contracts", () => {
         return { data: [review], error: null };
       if (name === "list_moderation_case_template_blueprints")
         return { data: [], error: null };
+      if (name === "list_moderation_case_consequence_history")
+        return { data: [], error: null };
       throw new Error("unexpected evidence read: " + name);
     });
     const sign = vi.fn(async () => ({ data: null, error: { code: "403" } }));
@@ -228,6 +231,8 @@ describe("template moderation contracts", () => {
         };
       if (name === "get_moderation_case_template")
         return { data: [templateReviewRow()], error: null };
+      if (name === "list_moderation_case_consequence_history")
+        return { data: [], error: null };
       return { data: null, error: { code: errorCode } };
     });
     expect(

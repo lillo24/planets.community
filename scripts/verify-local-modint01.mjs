@@ -49,6 +49,44 @@ try {
       Object.entries(users).map(([role, user]) => [role, user.id]),
     ),
   );
+  // A real pending inbound request anchors the new pair. The owner is later
+  // suspended, but the active requester still has the existing send entitlement.
+  // Use a distinct synthetic Project without the later blocked Co-creator:
+  // that block correctly withdraws its own Project's pending requests.
+  const pairProject = randomUUID();
+  await sql`insert into public.proposals(id,creator_profile_id,lifecycle_state,title,summary,description,
+    starts_at,ends_at,event_timezone,country_code,locality,public_location_label,published_at)
+    select ${pairProject},creator_profile_id,lifecycle_state,'Synthetic combined pair Project',summary,description,
+      starts_at,ends_at,event_timezone,country_code,locality,public_location_label,published_at
+    from public.proposals where id=${f.projectId}`;
+  await sql`update public.projects set registration_capacity=10 where id=${pairProject}`;
+  const pairRequest = await rpc(users.unrelated, "request_to_join_project", {
+    p_expected_requester_profile_id: users.unrelated.id,
+    p_project_id: pairProject,
+    p_request_message: "Synthetic combined-stack request",
+    p_skill_ids: [],
+    p_resource_need_ids: [],
+  });
+  const [pair] = await rpc(users.owner, "get_own_participation_conversation", {
+    p_expected_profile_id: users.owner.id,
+    p_request_id: pairRequest,
+  });
+  const pairChecks = combinedPrivateRpcChecks(
+    users.owner,
+    pair.chat_id,
+    pairRequest,
+  );
+  for (const [name, args] of pairChecks) {
+    const expectedKey = Object.keys(args).find((key) =>
+      key.startsWith("p_expected_"),
+    );
+    await denied(
+      users.owner,
+      name,
+      { ...args, [expectedKey]: users.unrelated.id },
+      "42501",
+    );
+  }
   const [link] = await rpc(
     users.owner,
     "create_project_participant_invitation",
@@ -174,6 +212,31 @@ try {
     values(${ownerCase},'under_review',${f.owner},'profile',${f.owner})`;
   const ownerSuspension = await suspend(users.admin, ownerCase);
   const memberSuspension = await suspend(users.admin, f.cases.profile);
+  const pairSignalsBefore = await addressedPairSignals(users.owner.id);
+  await rpc(users.unrelated, "send_participation_conversation_message", {
+    p_expected_profile_id: users.unrelated.id,
+    p_chat_id: pair.chat_id,
+    p_body: "Synthetic active endpoint message after suspension",
+  });
+  assert.deepEqual(
+    await addressedPairSignals(users.owner.id),
+    pairSignalsBefore,
+    "New pair/unread signals must omit the suspended recipient, including cached sockets.",
+  );
+  const activeSignals = await addressedPairSignals(users.unrelated.id);
+  assert.ok(
+    activeSignals.pair > 0,
+    "Active endpoint still receives addressed pair signals",
+  );
+  const draftCountBefore =
+    await sql`select count(*)::int as count from public.proposals where creator_profile_id=${users.owner.id}`;
+  for (const [name, args] of pairChecks)
+    await denied(users.owner, name, args, "PT403");
+  assert.deepEqual(
+    await sql`select count(*)::int as count from public.proposals where creator_profile_id=${users.owner.id}`,
+    draftCountBefore,
+    "Denied template/editor commands never create a draft",
+  );
   // Every new authenticated signature from main has a real HTTP denial using
   // the session obtained before suspension. No token refresh/sign-in workaround.
   const owner = users.owner;
@@ -296,6 +359,28 @@ try {
       p_internal_note: "Synthetic private revocation note",
     });
   }
+  assert.equal(
+    (
+      await rpc(owner, "get_own_participation_conversation", {
+        p_expected_profile_id: owner.id,
+        p_request_id: pairRequest,
+      })
+    )[0].chat_id,
+    pair.chat_id,
+    "Revocation restores reads on the same pre-existing session/pair",
+  );
+  const restoredSignals = await addressedPairSignals(owner.id);
+  await rpc(users.unrelated, "send_participation_conversation_message", {
+    p_expected_profile_id: users.unrelated.id,
+    p_chat_id: pair.chat_id,
+    p_body: "Synthetic message after access restoration",
+  });
+  const afterRestore = await addressedPairSignals(owner.id);
+  assert.ok(
+    afterRestore.pair > restoredSignals.pair &&
+      afterRestore.unread > restoredSignals.unread,
+    "Revocation restores both pair and unread delivery without rewriting history",
+  );
   assert.ok(
     (
       await rpc(owner, "list_current_project_people", {
@@ -339,7 +424,7 @@ try {
   );
 
   console.log(
-    "MODINT01 authenticated integration passed: hidden anonymous/authenticated preview; fresh restriction/block/hide denial; read-only receipt replay; 15 new private RPC and 6 compatibility overload denials on pre-existing suspended sessions; safe own-status/revoke recovery; truthful membership origins.",
+    "MODINT01 authenticated integration passed: hidden preview; restriction/block/hide; read-only receipt replay; 15 invitation/People RPCs, 18 combined template/draft/pair/unread RPCs and 6 compatibility overloads denied on pre-existing suspended sessions; combined expected-ID mismatch; pair/unread addressed-delivery filtering and restoration; safe own-status/revoke recovery; truthful membership origins.",
   );
 } finally {
   await sql.end({ timeout: 5 });
@@ -347,6 +432,124 @@ try {
 
 function projectArgs(user, f) {
   return { p_expected_profile_id: user.id, p_project_id: f.projectId };
+}
+function combinedPrivateRpcChecks(user, chatId, requestId) {
+  const expected = { p_expected_profile_id: user.id };
+  const creator = { p_expected_creator_profile_id: user.id };
+  const staff = { p_expected_staff_profile_id: user.id };
+  const id = randomUUID(),
+    version = "tw01:" + "a".repeat(64);
+  return [
+    [
+      "acknowledge_own_message_read",
+      {
+        ...expected,
+        p_kind: "project_request_chat",
+        p_chat_id: chatId,
+        p_boundary: id,
+      },
+    ],
+    [
+      "get_own_message_feed_page",
+      {
+        ...expected,
+        p_kind: "project_request_chat",
+        p_chat_id: chatId,
+        p_limit: 20,
+      },
+    ],
+    ["get_own_message_unread_summary", expected],
+    [
+      "get_own_participation_conversation",
+      { ...expected, p_request_id: requestId },
+    ],
+    [
+      "get_own_participation_conversation_requests",
+      { ...expected, p_chat_id: chatId, p_request_ids: [requestId] },
+    ],
+    [
+      "list_own_participation_conversation_items",
+      { ...expected, p_chat_id: chatId, p_limit: 20 },
+    ],
+    [
+      "list_own_scoped_conversation_items",
+      { ...expected, p_scope: "private", p_limit: 20 },
+    ],
+    [
+      "list_own_scoped_conversation_items_v3",
+      { ...expected, p_scope: "private", p_limit: 20 },
+    ],
+    [
+      "send_participation_conversation_message",
+      { ...expected, p_chat_id: chatId, p_body: "Synthetic denied command" },
+    ],
+    [
+      "list_similar_active_proposals",
+      { ...expected, p_title: "Synthetic idea" },
+    ],
+    ["get_own_proposal_template_baseline", { ...creator, p_template_id: id }],
+    [
+      "get_own_proposal_template_application",
+      { ...creator, p_client_request_id: id },
+    ],
+    [
+      "create_proposal_draft_from_template",
+      {
+        ...creator,
+        p_template_id: id,
+        p_client_request_id: id,
+        p_content_version: version,
+      },
+    ],
+    ["recover_editor_proposal_draft", { ...creator, p_client_request_id: id }],
+    [
+      "create_editor_proposal_draft",
+      {
+        ...creator,
+        p_client_request_id: id,
+        p_title: "Synthetic denied draft",
+        p_summary: "",
+        p_description: "",
+        p_starts_at: null,
+        p_ends_at: null,
+        p_event_timezone: "UTC",
+        p_country_code: null,
+        p_locality: null,
+        p_administrative_area: null,
+        p_public_location_label: null,
+        p_exact_meeting_text: null,
+        p_exact_location_visibility: "participants",
+        p_skill_ids: [],
+        p_skill_importances: [],
+        p_registration_capacity: null,
+        p_count_organizers_toward_capacity: false,
+      },
+    ],
+    ["get_moderation_case_template", { ...staff, p_case_id: id }],
+    [
+      "list_moderation_case_template_blueprints",
+      { ...staff, p_case_id: id, p_content_version: version },
+    ],
+    [
+      "remove_moderation_case_template",
+      {
+        ...staff,
+        p_case_id: id,
+        p_template_id: id,
+        p_client_request_id: id,
+        p_reviewed_content_version: version,
+        p_reason: "Synthetic explicit removal reason",
+      },
+    ],
+  ];
+}
+async function addressedPairSignals(profile) {
+  const [row] = await sql`select
+    count(*) filter(where event='participation.conversation_changed')::int as pair,
+    count(*) filter(where event='messages.unread_changed')::int as unread
+    from realtime.messages where topic like ${`%:profile:${profile}`}
+      and event in ('participation.conversation_changed','messages.unread_changed')`;
+  return row;
 }
 async function rpc(user, name, args) {
   const { data, error } = await user.client.rpc(name, args);

@@ -3031,15 +3031,6 @@ export type Database = {
           target_summary: string
         }[]
       }
-      get_own_account_suspension_status: {
-        Args: { p_expected_profile_id: string }
-        Returns: {
-          applied_at: string
-          consequence_id: string
-          is_suspended: boolean
-          user_reason: string
-        }[]
-      }
       get_moderation_case_template: {
         Args: { p_case_id: string; p_expected_staff_profile_id: string }
         Returns: {
@@ -3054,6 +3045,15 @@ export type Database = {
           resource_blueprint_count: number
           source_proposal_id: string
           template_id: string
+        }[]
+      }
+      get_own_account_suspension_status: {
+        Args: { p_expected_profile_id: string }
+        Returns: {
+          applied_at: string
+          consequence_id: string
+          is_suspended: boolean
+          user_reason: string
         }[]
       }
       get_own_blocked_profile_status: {

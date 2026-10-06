@@ -69,7 +69,10 @@ void main() {
       } else if (loss == 'readiness') {
         app.container
             .read(authSessionProvider.notifier)
-            .markCheckingProfile(const AuthIdentity(id: 'user-1'));
+            .markProfileSetupRequired(
+              const AuthIdentity(id: 'user-1'),
+              hasProfileAnchor: true,
+            );
       } else {
         await tester.pumpWidget(const SizedBox.shrink());
       }

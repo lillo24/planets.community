@@ -54,6 +54,13 @@ Migration `20261006081004` and test `113` cover grants/identity/current episodes
 including an active episode beyond the first history page. Existing consequence
 and suspension real-auth verifiers and the signature-level RPC audit cover it;
 no private grants, suspension exception or outbox change is introduced.
+
+MODINT01's committed-main continuation composes the new participation-pair and
+message-unread broadcasters with the existing suspended-recipient filter through
+forward migration `20261006184900`. No history, unread receipt or active-peer chat
+entitlement is changed. The RPC inventory is now 231 signatures; SQL `119` and
+the expanded real-auth integration verifier cover the combined boundary. See
+the current continuation evidence in the MODINT01 review packet.
 SIM01 adds authenticated-only `list_similar_active_proposals`, a private
 immutable title normalizer and partial published-title GIN index. `115`/`116`
 cover grants, input bounds, narrow payload, ranking and exact-start eligibility.
@@ -189,7 +196,6 @@ transitions under the same validation rules as the Creator. Draft creation and
 publication remain original-Creator-only. Tests 068 and 069 cover the role
 model, provenance, stale issuer authority, lifecycle access, and participation
 independence.
-
 
 TW02 extends private moderation cases with a typed Proposal-template foreign
 key and separate immutable source/content-token provenance. The forward migration
