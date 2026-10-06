@@ -12,6 +12,7 @@ import {
 } from "./lib/demo-world.mjs";
 import { snapshotDemoDomain } from "./lib/demo-workshop.mjs";
 import { readLocalSupabaseStatus } from "./lib/local-supabase-status.mjs";
+import { signInLocalOtpUser } from "./lib/local-authenticated-user.mjs";
 
 export async function verifyDemoInvitations(options) {
   const { status } = options;
@@ -58,6 +59,46 @@ export async function verifyDemoInvitations(options) {
     }
     await seedLocalDemoWorld(options);
     await verifyLocalDemoWorld(options);
+    // Establish a genuine own read before an unchanged seed rerun. The shared
+    // whole-schema snapshot includes sources, incoming receipts and frontiers.
+    const [unread] =
+      await sql`select profile_id,conversation_kind,chat_id,email from (
+      select distinct i.profile_id,i.conversation_kind,i.chat_id,u.email,0 priority
+      from private.message_incoming i join auth.users u on u.id=i.profile_id
+      where u.email=any(${Object.values(DEMO_PERSONAS).map((p) => p.email)}::text[])
+        and private.can_read_message_conversation(i.conversation_kind,i.chat_id,i.profile_id)
+      union all
+      select u.id,'project_chat',c.id,u.email,1 from auth.users u
+      join public.projects p on p.creator_profile_id=u.id join public.project_group_chats c on c.project_id=p.id
+      where u.email=any(${Object.values(DEMO_PERSONAS).map((p) => p.email)}::text[])
+      ) readable order by priority,profile_id,conversation_kind,chat_id limit 1`;
+    // An already-baselined demo can legitimately have no incoming receipts.
+    // Its Creator's existing group still supplies an own read without backfill.
+    assert.ok(unread, "Demo contains a canonically readable conversation");
+    const actor = await signInLocalOtpUser({
+      apiUrl: status.apiUrl,
+      publishableKey: status.publishableKey,
+      mailpitUrl: options.mailpitUrl,
+      email: unread.email,
+      verifierName: "MSG02 demo frontier",
+    });
+    const page = await actor.client.rpc("get_own_message_feed_page", {
+      p_expected_profile_id: actor.id,
+      p_kind: unread.conversation_kind,
+      p_chat_id: unread.chat_id,
+      p_limit: 31,
+    });
+    assert.equal(page.error, null);
+    const acknowledgement = await actor.client.rpc(
+      "acknowledge_own_message_read",
+      {
+        p_expected_profile_id: actor.id,
+        p_kind: unread.conversation_kind,
+        p_chat_id: unread.chat_id,
+        p_boundary: page.data.read_boundary,
+      },
+    );
+    assert.equal(acknowledgement.error, null);
     const first = await snapshot();
     await seedLocalDemoWorld(options);
     await verifyLocalDemoWorld(options);
@@ -67,7 +108,7 @@ export async function verifyDemoInvitations(options) {
       "Unchanged demo seed duplicated or rewrote canonical history.",
     );
     console.log(
-      "Confirmed demo seed → verify → unchanged seed → verify with stable canonical IDs, generations, receipts, episodes, offers, chats, notifications and commitments.",
+      "Confirmed demo seed → verify → unchanged seed → verify with stable canonical IDs, generations, receipts, episodes, offers, chats, notifications, commitments and MSG02 incoming/read frontiers.",
     );
     const departed = await exerciseLocalDemoInvitations(options);
     const afterDeparture = await snapshot();

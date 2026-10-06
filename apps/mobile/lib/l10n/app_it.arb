@@ -612,7 +612,7 @@
   "projectRequestChatMessageSemantics": "{sender}, {message}, {time}",
   "notificationsSignInMessage": "Accedi per visualizzare le notifiche.",
   "notificationsResourceActivity": "Attività delle risorse",
-  "notificationsResourcePreferenceExplanation": "Richieste, conversazioni sulle risorse e aggiornamenti sullo scambio. Questa impostazione riguarda i futuri avvisi in-app; la cronologia esistente rimane disponibile.",
+  "notificationsResourcePreferenceExplanation": "Richieste di risorse e aggiornamenti sullo scambio. I messaggi usano i contatori in Messaggi. Questa impostazione riguarda i futuri avvisi di attività; la cronologia esistente rimane disponibile.",
   "notificationsMatchingAlerts": "Corrispondenze di ricerca salvate",
   "notificationsMatchingInApp": "In-app",
   "notificationsMatchingPreferenceExplanation": "Mostra un avviso quando un nuovo annuncio Scambio-Dona corrisponde a una delle tue ricerche salvate.",
@@ -1435,6 +1435,24 @@
     "placeholders": {
       "title": {
         "type": "String"
+      }
+    }
+  },
+  "messageUnreadConversations": "{count, plural, =1{1 conversazione con messaggi non letti} other{{count} conversazioni con messaggi non letti}}",
+  "messageUnreadMessages": "{count, plural, =1{1 messaggio non letto} other{{count} messaggi non letti}}",
+  "messageUnreadUnavailable": "Conteggio non disponibile o non aggiornato. Aggiorna Messaggi per riprovare.",
+  "messageReadRetry": "I messaggi non sono stati segnati come letti. Tocca per riprovare.",
+  "@messageUnreadConversations": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@messageUnreadMessages": {
+    "placeholders": {
+      "count": {
+        "type": "int"
       }
     }
   }

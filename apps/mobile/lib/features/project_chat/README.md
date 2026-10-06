@@ -47,7 +47,8 @@ or project content.
 ## Canonical data and Realtime
 
 The client reads chat state only through `list_own_project_group_chats` and
-`list_own_project_chat_feed`, and sends only through
+the MSG02 `get_own_message_feed_page` wrapper of `list_own_project_chat_feed`,
+and sends only through
 `send_project_chat_message`. Mixed pages arrive newest-first and are transformed
 to oldest-first UI order; older pages use the exact
 `(created_at, item_kind, item_id)` cursor and preserve the backend's equal-time

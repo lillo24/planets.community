@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+
+import '../features/messages/presentation/message_unread_badge.dart';
+
 import 'package:go_router/go_router.dart';
 
 import '../core/theme/app_tokens.dart';
@@ -22,7 +25,7 @@ class FoundationScreen extends StatelessWidget {
             key: const Key('open-messages-button'),
             tooltip: l10n.messagesOpenTooltip,
             onPressed: () => context.push('/messages'),
-            icon: const Icon(Icons.mail_outline),
+            icon: const MessageUnreadBadge(child: Icon(Icons.mail_outline)),
           ),
           IconButton(
             key: const Key('open-settings-button'),

@@ -13,6 +13,15 @@ its 93 API checks were local only. Verify coverage from final-head step logs,
 not a passing job name. Trigger boundaries and required-check behavior remain
 unchanged. The full manual database command is `npm run check:db`.
 
+MSG02 adds `messages:unread:upgrade:verify:local` after the populated pair
+upgrade and before fresh replay, plus `messages:unread:verify:local` after
+structured Messages. These bounded checks prove baseline preservation,
+commit-order/read races, private invalidation and ordinary-alert suppression
+while retaining supported push. They run in `check:db` too. Keep them before
+the final pair producer/global-worker sequence; consumer fixtures isolate
+their own batches by acknowledging pre-existing events. The combined demo
+snapshot now includes a genuine own read and all unread metadata.
+
 DRAFT01 adds `draft:editor:verify:local` for authenticated ordinary creation,
 private retry/recovery, rollback and TW03 draft reopening after removal. It is
 an explicit Database step after the existing TW02/TW03 verifiers; the scoped

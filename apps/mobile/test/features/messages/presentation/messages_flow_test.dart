@@ -13,6 +13,9 @@ import 'package:planets_mobile/features/auth/data/auth_gateway.dart';
 import 'package:planets_mobile/features/auth/domain/auth_models.dart';
 import 'package:planets_mobile/features/messages/data/messages_gateway.dart';
 import 'package:planets_mobile/features/messages/data/message_chats_gateway.dart';
+import 'package:planets_mobile/features/messages/data/message_unread_gateway.dart';
+import 'package:planets_mobile/features/messages/domain/message_unread_models.dart';
+import 'package:planets_mobile/features/messages/presentation/message_unread_badge.dart';
 import 'package:planets_mobile/features/messages/domain/message_models.dart';
 import 'package:planets_mobile/features/participation/data/participation_gateway.dart';
 import 'package:planets_mobile/features/participation/data/join_acceptance_triage_gateway.dart';
@@ -55,6 +58,71 @@ import '../../../support/fake_resource_exchange.dart';
 import 'package:planets_mobile/l10n/generated/app_localizations.dart';
 
 void main() {
+  testWidgets('complete badges and row counts preserve compact navigation', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(320, 640));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    tester.platformDispatcher.textScaleFactorTestValue = 2;
+    addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+    final unread = _UnreadFixture(
+      const MessageUnreadSummary(total: 3, private: 2, groups: 1),
+    );
+    final app = await _pump(
+      tester,
+      messages: FakeMessagesGateway(),
+      unread: unread,
+      chats: FakeMessageChatsGateway()
+        ..items = [
+          projectRequestMessageChatFixture(unreadCount: 3),
+          projectMessageChatFixture(unreadCount: 5),
+          resourceMessageChatFixture(unreadCount: 7, isReadOnly: true),
+        ],
+    );
+    final router = app.read(appRouterProvider);
+    final homeBadge = find.descendant(
+      of: find.byType(AppBar),
+      matching: find.byType(MessageCountBadge),
+    );
+    expect(tester.widget<MessageCountBadge>(homeBadge).count, 3);
+    expect(
+      find.descendant(
+        of: find.byKey(const Key('nav-messages')),
+        matching: find.text('3'),
+      ),
+      findsOneWidget,
+    );
+    router.go('/messages');
+    await tester.pumpAndSettle();
+    expect(find.bySemanticsLabel(RegExp('3 unread messages')), findsOneWidget);
+    await tester.scrollUntilVisible(
+      find.bySemanticsLabel(RegExp('7 unread messages')),
+      200,
+      scrollable: find
+          .descendant(
+            of: find.byKey(const Key('message-chat-list')),
+            matching: find.byType(Scrollable),
+          )
+          .first,
+    );
+    expect(tester.takeException(), isNull);
+    await tester.tap(find.text('Groups'));
+    await tester.pumpAndSettle();
+    expect(find.bySemanticsLabel(RegExp('5 unread messages')), findsOneWidget);
+    expect(tester.takeException(), isNull);
+    expect(unread.acknowledgements, 0, reason: 'Lists never acknowledge chats');
+    router.go('/proposals');
+    await tester.pumpAndSettle();
+    expect(
+      find.descendant(
+        of: find.byKey(const Key('nav-browse')),
+        matching: find.byType(MessageCountBadge),
+      ),
+      findsNothing,
+    );
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets(
     'legacy personal-chat destination sends a manager to request details',
     (tester) async {
@@ -2540,6 +2608,7 @@ Future<ProviderContainer> _pump(
   FakeResourceLoanGateway? resourceLoans,
   FakeProjectRequestChatGateway? projectRequestChats,
   FakeProfilePhotoGateway? profilePhoto,
+  MessageUnreadGateway? unread,
 }) async {
   final auth = FakeAuthGateway(
     snapshot: AuthSnapshot(identity: AuthIdentity(id: identityId)),
@@ -2564,6 +2633,12 @@ Future<ProviderContainer> _pump(
           profilePhoto ?? FakeProfilePhotoGateway(),
         ),
         messagesGatewayProvider.overrideWithValue(messages),
+        messageUnreadGatewayProvider.overrideWithValue(
+          unread ??
+              _UnreadFixture(
+                const MessageUnreadSummary(total: 0, private: 0, groups: 0),
+              ),
+        ),
         messageChatsGatewayProvider.overrideWithValue(
           chats ?? FakeMessageChatsGateway(),
         ),
@@ -2606,6 +2681,36 @@ Future<ProviderContainer> _pump(
   );
   await tester.pumpAndSettle();
   return ProviderScope.containerOf(tester.element(find.byType(PlanetsApp)));
+}
+
+class _UnreadFixture implements MessageUnreadGateway {
+  _UnreadFixture(this.value);
+  final MessageUnreadSummary value;
+  int acknowledgements = 0;
+  @override
+  Future<MessageUnreadSummary> summary(String profileId) async => value;
+  @override
+  Future<MessageUnreadSummary> acknowledge(
+    String profileId,
+    String kind,
+    String chatId,
+    String boundary,
+  ) async {
+    acknowledgements++;
+    return value;
+  }
+
+  @override
+  MessageUnreadSubscription subscribe(
+    String profileId,
+    void Function() invalidate,
+    void Function(bool) connection,
+  ) => _UnreadFixtureSubscription();
+}
+
+class _UnreadFixtureSubscription implements MessageUnreadSubscription {
+  @override
+  Future<void> close() async {}
 }
 
 VisibleProfilePhoto _visiblePhoto(String profileId, String versionId) =>

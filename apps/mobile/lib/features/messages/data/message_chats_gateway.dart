@@ -6,6 +6,7 @@ import '../../participation/domain/participation_models.dart';
 import '../../project_chat/domain/project_chat_models.dart';
 import '../../resource_chat/domain/resource_chat_models.dart';
 import '../domain/message_chat_models.dart';
+import '../domain/message_unread_models.dart';
 
 abstract interface class MessageChatsGateway {
   Future<MessageChatPage> listItems({
@@ -30,7 +31,7 @@ class SupabaseMessageChatsGateway implements MessageChatsGateway {
     MessageChatCursor? cursor,
   }) async {
     final response = await _client.rpc<List<dynamic>>(
-      'list_own_scoped_conversation_items',
+      'list_own_scoped_conversation_items_v3',
       params: {
         'p_expected_profile_id': expectedProfileId,
         'p_scope': scope.wireValue,
@@ -83,6 +84,7 @@ class MessageChatsPayloadParser {
     'project_request_resolved_at',
     'accepted_project_group_chat_id',
     'pending_count',
+    'unread_count',
   };
 
   MessageChatItem item(Object? value) {
@@ -110,6 +112,7 @@ class MessageChatsPayloadParser {
       ..._projectRequestKeys,
     });
     return ProjectMessageChatItem(
+      unreadCount: messageUnreadCount(row['unread_count']),
       chatId: _uuid(row, 'chat_id'),
       activityAt: _date(row, 'activity_at'),
       displayTitle: _string(row, 'display_title'),
@@ -150,6 +153,7 @@ class MessageChatsPayloadParser {
       );
     }
     return ResourceMessageChatItem(
+      unreadCount: messageUnreadCount(row['unread_count']),
       chatId: _uuid(row, 'chat_id'),
       activityAt: _date(row, 'activity_at'),
       displayTitle: _string(row, 'display_title'),
@@ -212,6 +216,7 @@ class MessageChatsPayloadParser {
       );
     }
     return ProjectRequestMessageChatItem(
+      unreadCount: messageUnreadCount(row['unread_count']),
       chatId: _uuid(row, 'chat_id'),
       activityAt: _date(row, 'activity_at'),
       displayTitle: _string(row, 'display_title'),

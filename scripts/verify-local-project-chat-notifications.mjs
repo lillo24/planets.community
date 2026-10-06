@@ -92,7 +92,7 @@ async function verifyProjectChatNotifications() {
   const proposalMessages = [message1, message2, message3, message4, message5];
   assertNotificationBatchTotals(
     await Promise.all([processNotificationBatch(), processNotificationBatch()]),
-    { processed: 5, created: 7, suppressed: 0 },
+    { processed: 5, created: 0, suppressed: 7 },
   );
   assertPushBatchTotals(
     await Promise.all([processPushBatch(), processPushBatch()]),
@@ -118,19 +118,17 @@ async function verifyProjectChatNotifications() {
   );
   assertNotificationBatchTotals([await processNotificationBatch()], {
     processed: 1,
-    created: 1,
-    suppressed: 1,
+    created: 0,
+    suppressed: 2,
   });
   assertPushBatchTotals([await processPushBatch()], {
     processed: 1,
     created: 1,
     suppressed: 1,
   });
-  await assertChannelRecipients(
-    splitPreferenceMessage.message_id,
-    [participantA.id],
-    [participantB.id],
-  );
+  await assertChannelRecipients(splitPreferenceMessage.message_id, [
+    participantB.id,
+  ]);
 
   await setChatPreference(participantA, false, false);
   const disabledMessage = await sendMessage(
@@ -140,19 +138,15 @@ async function verifyProjectChatNotifications() {
   );
   assertNotificationBatchTotals([await processNotificationBatch()], {
     processed: 1,
-    created: 1,
-    suppressed: 1,
+    created: 0,
+    suppressed: 2,
   });
   assertPushBatchTotals([await processPushBatch()], {
     processed: 1,
     created: 1,
     suppressed: 1,
   });
-  await assertChannelRecipients(
-    disabledMessage.message_id,
-    [creator.id],
-    [creator.id],
-  );
+  await assertChannelRecipients(disabledMessage.message_id, [creator.id]);
 
   const tavoloId = await createTavolo(creator);
   await setChatPreference(participantA, true, true);
@@ -166,8 +160,8 @@ async function verifyProjectChatNotifications() {
   );
   assertNotificationBatchTotals([await processNotificationBatch()], {
     processed: 1,
-    created: 1,
-    suppressed: 0,
+    created: 0,
+    suppressed: 1,
   });
   assertPushBatchTotals([await processPushBatch()], {
     processed: 1,
@@ -200,7 +194,7 @@ async function verifyProjectChatNotifications() {
   }
 
   console.log(
-    "Confirmed Proposal/Tavolo chat-alert fan-out at message time, sender exclusion, late-join/leave/rejoin semantics, independent in-app/push preferences, concurrent idempotent projection, safe inbox context, and body-free alert state.",
+    "Confirmed Proposal/Tavolo human-message inbox suppression, preserved push fan-out/preferences, sender exclusion, late-join/leave/rejoin semantics, concurrent idempotent projection and body-free alert state.",
   );
 }
 
@@ -309,35 +303,22 @@ function assertTotals(label, actual, expected) {
 }
 
 async function assertRecipients(message, expected, projectKind = "one_time") {
-  await assertChannelRecipients(message.message_id, expected, expected);
+  await assertChannelRecipients(message.message_id, expected);
   const [context] = await sql`
-    select
-      count(*)::integer as notification_count,
-      min(project.project_kind) as notification_project_kind,
-      min(job.project_kind) as job_project_kind,
-      min(notification.chat_id::text) as notification_chat_id,
-      min(job.chat_id::text) as job_chat_id
-    from public.notifications as notification
-    join public.projects as project on project.id = notification.project_id
-    join private.push_delivery_jobs as job
-      on job.source_outbox_event_id = notification.source_outbox_event_id
-      and job.recipient_profile_id = notification.recipient_profile_id
-    where notification.message_id = ${message.message_id}
+    select count(*)::integer as job_count, min(project_kind) as project_kind,
+      min(chat_id::text) as chat_id from private.push_delivery_jobs
+    where message_id = ${message.message_id}
   `;
   if (
-    context.notification_count !== expected.length ||
-    context.notification_project_kind !== projectKind ||
-    context.job_project_kind !== projectKind ||
-    context.notification_chat_id !== message.chat_id ||
-    context.job_chat_id !== message.chat_id
+    context.job_count !== expected.length ||
+    context.project_kind !== projectKind ||
+    context.chat_id !== message.chat_id
   ) {
-    throw new Error(
-      "Chat-alert semantic context was incomplete or mismatched.",
-    );
+    throw new Error("Chat push semantic context was incomplete or mismatched.");
   }
 }
 
-async function assertChannelRecipients(messageId, notificationIds, pushIds) {
+async function assertChannelRecipients(messageId, pushIds) {
   const notificationRows = await sql`
     select recipient_profile_id::text as recipient_profile_id
     from public.notifications
@@ -353,7 +334,7 @@ async function assertChannelRecipients(messageId, notificationIds, pushIds) {
   assertIds(
     "notification",
     notificationRows.map((row) => row.recipient_profile_id),
-    notificationIds,
+    [],
   );
   assertIds(
     "push job",
@@ -402,21 +383,14 @@ async function assertInboxContext(user, messages) {
   if (error || !Array.isArray(data)) {
     throw safeDatabaseFailure("list chat-alert inbox", error ?? {});
   }
-  for (const message of messages) {
-    const item = data.find(
-      (candidate) => candidate.message_id === message.message_id,
-    );
-    if (
-      !item ||
-      item.notification_kind !== "chat_message_received" ||
-      item.destination_kind !== "project_chat" ||
-      item.chat_id !== message.chat_id ||
-      Object.hasOwn(item, "body")
-    ) {
-      throw new Error(
-        "The inbox omitted safe chat/message destination context.",
-      );
-    }
+  if (
+    data.some(
+      (item) =>
+        item.notification_kind === "chat_message_received" ||
+        messages.some((message) => item.message_id === message.message_id),
+    )
+  ) {
+    throw new Error("Ordinary human messages appeared in the activity inbox.");
   }
   if (JSON.stringify(data).includes("integration message")) {
     throw new Error("A message body leaked through the notification inbox.");

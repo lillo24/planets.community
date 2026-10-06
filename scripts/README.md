@@ -14,6 +14,10 @@ domain verification and change-scoped validation tooling.
   capacity/blocking/media/privacy and read-only assertions. Its rollback-only
   `fixtures/sim01-query-plan.sql` supplies reproducible EXPLAIN work.
 - `process-local-*.mjs` exercise local projections/workers.
+- `verify-local-message-unread.mjs` owns MSG02 authenticated count/read,
+  delayed-commit, private invalidation and activity/push separation proofs.
+  Its `--upgrade` mode resets only an explicitly disposable local stack to
+  populated MSG01, then verifies atomic cutover and retained historical rows.
 - `classify-validation-paths.mjs` selects affected hosted validation areas.
 - `lib/` owns shared local-session/status/photo helpers, deterministic demo
   validation and classifier logic with focused tests.

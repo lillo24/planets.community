@@ -674,7 +674,6 @@ class NotificationPreferencesController
     final known = <NotificationCategory, NotificationPreference>{};
     for (final category in const [
       NotificationCategory.participation,
-      NotificationCategory.chat,
       NotificationCategory.resources,
       NotificationCategory.matching,
     ]) {
@@ -685,6 +684,17 @@ class NotificationPreferencesController
         );
       }
       known[category] = matches.single;
+    }
+    // Older stored Chat flags remain compatible and preserve hidden push
+    // choices, but Chat is no longer required by the activity settings UI.
+    final legacyChat = preferences.where(
+      (item) => item.category == NotificationCategory.chat,
+    );
+    if (legacyChat.length > 1) {
+      throw const FormatException('Duplicate legacy Chat preference.');
+    }
+    if (legacyChat.length == 1) {
+      known[NotificationCategory.chat] = legacyChat.single;
     }
     return Map.unmodifiable(known);
   }

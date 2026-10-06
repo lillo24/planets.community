@@ -178,11 +178,16 @@ class ProjectChatSummaryPage {
 }
 
 class ProjectChatFeedPage {
-  const ProjectChatFeedPage({required this.items, required this.hasMore});
+  const ProjectChatFeedPage({
+    required this.items,
+    required this.hasMore,
+    this.readBoundary,
+  });
 
   /// Canonical backend order: newest first.
   final List<ProjectChatFeedItem> items;
   final bool hasMore;
+  final String? readBoundary;
 }
 
 sealed class ProjectChatSignal {

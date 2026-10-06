@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 import '../../../core/theme/app_tokens.dart';
+import '../../messages/presentation/message_read_viewport.dart';
 import '../../../core/widgets/empty_state.dart';
 import '../../../core/widgets/error_state.dart';
 import '../../../core/widgets/loading_state.dart';
@@ -199,196 +200,215 @@ class _ProjectChatScreenState extends ConsumerState<ProjectChatScreen>
       }
     });
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(summary?.projectTitle ?? l10n.projectChatTitle),
-        actions: [
-          IconButton(
-            key: const Key('project-chat-info'),
-            tooltip: l10n.projectChatGroupInfo,
-            onPressed: summary == null
-                ? null
-                : () => context.push(projectChatInfoRoute(widget.chatId)),
-            icon: const Icon(Icons.info_outline),
-          ),
-        ],
-      ),
-      body: SafeArea(
-        child:
-            !belongs ||
-                (state.phase == ProjectChatDetailPhase.loading &&
-                    feedItems.isEmpty)
-            ? LoadingState(message: l10n.projectChatLoading)
-            : state.phase == ProjectChatDetailPhase.failure && feedItems.isEmpty
-            ? ErrorState(
-                message: projectChatFailureMessage(l10n, state.failure!),
-                onRetry: _load,
-              )
-            : Column(
-                children: [
-                  if (state.hasConnectionIssue)
-                    MaterialBanner(
-                      content: Text(l10n.projectChatConnectionIssue),
-                      actions: [
-                        TextButton(
-                          onPressed: _refresh,
-                          child: Text(l10n.retryAction),
-                        ),
-                      ],
-                    ),
-                  if (state.failure != null)
-                    Semantics(
-                      liveRegion: true,
-                      child: Padding(
-                        padding: const EdgeInsets.all(AppSpacing.small),
-                        child: Text(
-                          projectChatFailureMessage(l10n, state.failure!),
-                          key: const Key('project-chat-inline-error'),
-                          style: TextStyle(
-                            color: Theme.of(context).colorScheme.error,
+    return MessageReadViewport(
+      profileId: _expectedProfileId,
+      kind: 'project_chat',
+      chatId: summary?.chatId,
+      boundary:
+          belongs &&
+              state.phase == ProjectChatDetailPhase.ready &&
+              state.failure == null
+          ? state.readBoundary
+          : null,
+      scrollController: _scrollController,
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text(summary?.projectTitle ?? l10n.projectChatTitle),
+          actions: [
+            IconButton(
+              key: const Key('project-chat-info'),
+              tooltip: l10n.projectChatGroupInfo,
+              onPressed: summary == null
+                  ? null
+                  : () => context.push(projectChatInfoRoute(widget.chatId)),
+              icon: const Icon(Icons.info_outline),
+            ),
+          ],
+        ),
+        body: SafeArea(
+          child:
+              !belongs ||
+                  (state.phase == ProjectChatDetailPhase.loading &&
+                      feedItems.isEmpty)
+              ? LoadingState(message: l10n.projectChatLoading)
+              : state.phase == ProjectChatDetailPhase.failure &&
+                    feedItems.isEmpty
+              ? ErrorState(
+                  message: projectChatFailureMessage(l10n, state.failure!),
+                  onRetry: _load,
+                )
+              : Column(
+                  children: [
+                    if (state.hasConnectionIssue)
+                      MaterialBanner(
+                        content: Text(l10n.projectChatConnectionIssue),
+                        actions: [
+                          TextButton(
+                            onPressed: _refresh,
+                            child: Text(l10n.retryAction),
+                          ),
+                        ],
+                      ),
+                    if (state.failure != null)
+                      Semantics(
+                        liveRegion: true,
+                        child: Padding(
+                          padding: const EdgeInsets.all(AppSpacing.small),
+                          child: Text(
+                            projectChatFailureMessage(l10n, state.failure!),
+                            key: const Key('project-chat-inline-error'),
+                            style: TextStyle(
+                              color: Theme.of(context).colorScheme.error,
+                            ),
                           ),
                         ),
                       ),
-                    ),
-                  if (summary?.hasCurrentEntitlement == true &&
-                      _expectedProfileId != null)
-                    Semantics(
-                      label: l10n.projectWorkspaceToolsSemantics,
-                      container: true,
-                      child: SingleChildScrollView(
-                        key: const Key('project-chat-tools-strip'),
-                        scrollDirection: Axis.horizontal,
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: AppSpacing.small,
-                          vertical: AppSpacing.xSmall,
-                        ),
-                        child: Row(
-                          children: [
-                            _NeedsControl(
-                              uncoveredCount: needsBelong
-                                  ? needsState.uncoveredCount
-                                  : 0,
-                              hasAttention:
-                                  needsBelong && needsState.hasUnseenAttention,
-                              pulseRevision: needsBelong
-                                  ? needsState.attentionPulseRevision
-                                  : 0,
-                              onPressed: _openNeeds,
-                            ),
-                            if (workspaceBelongs &&
-                                (workspaceState.phase ==
-                                        ProjectWorkspacePhase.loading ||
-                                    (workspaceState.phase ==
-                                            ProjectWorkspacePhase.ready &&
-                                        (workspaceState.workspace != null ||
-                                            summary!.isManager)))) ...[
-                              const SizedBox(width: AppSpacing.small),
-                              ProjectWorkspaceChatControl(
-                                expectedProfileId: _expectedProfileId,
-                                projectId: summary!.projectId,
-                                projectKind: summary.projectKind,
-                                isManager: summary.isManager,
+                    if (summary?.hasCurrentEntitlement == true &&
+                        _expectedProfileId != null)
+                      Semantics(
+                        label: l10n.projectWorkspaceToolsSemantics,
+                        container: true,
+                        child: SingleChildScrollView(
+                          key: const Key('project-chat-tools-strip'),
+                          scrollDirection: Axis.horizontal,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: AppSpacing.small,
+                            vertical: AppSpacing.xSmall,
+                          ),
+                          child: Row(
+                            children: [
+                              _NeedsControl(
+                                uncoveredCount: needsBelong
+                                    ? needsState.uncoveredCount
+                                    : 0,
+                                hasAttention:
+                                    needsBelong &&
+                                    needsState.hasUnseenAttention,
+                                pulseRevision: needsBelong
+                                    ? needsState.attentionPulseRevision
+                                    : 0,
+                                onPressed: _openNeeds,
                               ),
+                              if (workspaceBelongs &&
+                                  (workspaceState.phase ==
+                                          ProjectWorkspacePhase.loading ||
+                                      (workspaceState.phase ==
+                                              ProjectWorkspacePhase.ready &&
+                                          (workspaceState.workspace != null ||
+                                              summary!.isManager)))) ...[
+                                const SizedBox(width: AppSpacing.small),
+                                ProjectWorkspaceChatControl(
+                                  expectedProfileId: _expectedProfileId,
+                                  projectId: summary!.projectId,
+                                  projectKind: summary.projectKind,
+                                  isManager: summary.isManager,
+                                ),
+                              ],
                             ],
-                          ],
+                          ),
                         ),
                       ),
-                    ),
-                  Expanded(
-                    child: RefreshIndicator(
-                      onRefresh: _refresh,
-                      child: feedItems.isEmpty
-                          ? LayoutBuilder(
-                              builder: (context, constraints) =>
-                                  SingleChildScrollView(
-                                    physics:
-                                        const AlwaysScrollableScrollPhysics(),
-                                    child: SizedBox(
-                                      height: constraints.maxHeight,
-                                      child: EmptyState(
-                                        title: l10n.projectChatEmptyTitle,
-                                        message: l10n.projectChatEmptyMessage,
-                                        icon: Icons.forum_outlined,
+                    Expanded(
+                      child: RefreshIndicator(
+                        onRefresh: _refresh,
+                        child: feedItems.isEmpty
+                            ? LayoutBuilder(
+                                builder: (context, constraints) =>
+                                    SingleChildScrollView(
+                                      physics:
+                                          const AlwaysScrollableScrollPhysics(),
+                                      child: SizedBox(
+                                        height: constraints.maxHeight,
+                                        child: EmptyState(
+                                          title: l10n.projectChatEmptyTitle,
+                                          message: l10n.projectChatEmptyMessage,
+                                          icon: Icons.forum_outlined,
+                                        ),
                                       ),
                                     ),
-                                  ),
-                            )
-                          : ListView.builder(
-                              key: const Key('project-chat-history'),
-                              controller: _scrollController,
-                              padding: const EdgeInsets.all(AppSpacing.medium),
-                              itemCount:
-                                  feedItems.length +
-                                  (state.hasMoreOlder ? 1 : 0),
-                              itemBuilder: (context, index) {
-                                if (state.hasMoreOlder && index == 0) {
-                                  return Center(
-                                    child: TextButton(
-                                      key: const Key('project-chat-load-older'),
-                                      onPressed: state.isLoadingOlder
-                                          ? null
-                                          : _loadOlder,
-                                      child: state.isLoadingOlder
-                                          ? const SizedBox.square(
-                                              dimension: 20,
-                                              child: CircularProgressIndicator(
-                                                strokeWidth: 2,
+                              )
+                            : ListView.builder(
+                                key: const Key('project-chat-history'),
+                                controller: _scrollController,
+                                padding: const EdgeInsets.all(
+                                  AppSpacing.medium,
+                                ),
+                                itemCount:
+                                    feedItems.length +
+                                    (state.hasMoreOlder ? 1 : 0),
+                                itemBuilder: (context, index) {
+                                  if (state.hasMoreOlder && index == 0) {
+                                    return Center(
+                                      child: TextButton(
+                                        key: const Key(
+                                          'project-chat-load-older',
+                                        ),
+                                        onPressed: state.isLoadingOlder
+                                            ? null
+                                            : _loadOlder,
+                                        child: state.isLoadingOlder
+                                            ? const SizedBox.square(
+                                                dimension: 20,
+                                                child:
+                                                    CircularProgressIndicator(
+                                                      strokeWidth: 2,
+                                                    ),
+                                              )
+                                            : Text(l10n.projectChatLoadOlder),
+                                      ),
+                                    );
+                                  }
+                                  final itemIndex =
+                                      index - (state.hasMoreOlder ? 1 : 0);
+                                  final item = feedItems[itemIndex];
+                                  return switch (item) {
+                                    ProjectChatHumanMessage message =>
+                                      _MessageBubble(
+                                        message: message,
+                                        isMine:
+                                            message.senderProfileId ==
+                                            _expectedProfileId,
+                                        onReport:
+                                            message.senderProfileId ==
+                                                _expectedProfileId
+                                            ? null
+                                            : () => ModerationRoutes.openReport(
+                                                context,
+                                                projectMessageReportTarget(
+                                                  message.itemId,
+                                                  l10n.moderationProjectMessageTarget,
+                                                ),
                                               ),
-                                            )
-                                          : Text(l10n.projectChatLoadOlder),
-                                    ),
-                                  );
-                                }
-                                final itemIndex =
-                                    index - (state.hasMoreOlder ? 1 : 0);
-                                final item = feedItems[itemIndex];
-                                return switch (item) {
-                                  ProjectChatHumanMessage message =>
-                                    _MessageBubble(
-                                      message: message,
-                                      isMine:
-                                          message.senderProfileId ==
-                                          _expectedProfileId,
-                                      onReport:
-                                          message.senderProfileId ==
-                                              _expectedProfileId
-                                          ? null
-                                          : () => ModerationRoutes.openReport(
-                                              context,
-                                              projectMessageReportTarget(
-                                                message.itemId,
-                                                l10n.moderationProjectMessageTarget,
-                                              ),
-                                            ),
-                                    ),
-                                  ProjectChatRequirementNeededAgain event =>
-                                    _RequirementNeededAgainCard(event: event),
-                                };
-                              },
-                            ),
-                    ),
-                  ),
-                  if (summary?.hasCurrentEntitlement == true)
-                    _Composer(
-                      controller: _composer,
-                      isSending: state.isSending,
-                      onSend: _send,
-                    )
-                  else if (summary != null)
-                    Semantics(
-                      liveRegion: true,
-                      child: Container(
-                        key: const Key('project-chat-read-only'),
-                        width: double.infinity,
-                        padding: const EdgeInsets.all(AppSpacing.medium),
-                        color: Theme.of(context)
-                            .colorScheme
-                            .surfaceContainerHighest,
-                        child: Text(l10n.projectChatReadOnlyNotice),
+                                      ),
+                                    ProjectChatRequirementNeededAgain event =>
+                                      _RequirementNeededAgainCard(event: event),
+                                  };
+                                },
+                              ),
                       ),
                     ),
-                ],
-              ),
+                    if (summary?.hasCurrentEntitlement == true)
+                      _Composer(
+                        controller: _composer,
+                        isSending: state.isSending,
+                        onSend: _send,
+                      )
+                    else if (summary != null)
+                      Semantics(
+                        liveRegion: true,
+                        child: Container(
+                          key: const Key('project-chat-read-only'),
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(AppSpacing.medium),
+                          color: Theme.of(context)
+                              .colorScheme
+                              .surfaceContainerHighest,
+                          child: Text(l10n.projectChatReadOnlyNotice),
+                        ),
+                      ),
+                  ],
+                ),
+        ),
       ),
     );
   }

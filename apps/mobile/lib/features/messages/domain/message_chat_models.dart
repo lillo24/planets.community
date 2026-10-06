@@ -49,6 +49,7 @@ enum ProjectRequestChatViewerRole {
 
 sealed class MessageChatItem {
   const MessageChatItem({
+    this.unreadCount = 0,
     required this.kind,
     required this.chatId,
     required this.activityAt,
@@ -61,6 +62,7 @@ sealed class MessageChatItem {
     required this.lastVisibleSenderDisplayName,
   });
 
+  final int unreadCount;
   final MessageChatItemKind kind;
   final String chatId;
   final DateTime activityAt;
@@ -77,6 +79,7 @@ sealed class MessageChatItem {
 
 final class ProjectMessageChatItem extends MessageChatItem {
   const ProjectMessageChatItem({
+    super.unreadCount,
     required super.chatId,
     required super.activityAt,
     required super.displayTitle,
@@ -104,6 +107,7 @@ final class ProjectMessageChatItem extends MessageChatItem {
 
 final class ResourceMessageChatItem extends MessageChatItem {
   const ResourceMessageChatItem({
+    super.unreadCount,
     required super.chatId,
     required super.activityAt,
     required super.displayTitle,
@@ -135,6 +139,7 @@ final class ResourceMessageChatItem extends MessageChatItem {
 
 final class ProjectRequestMessageChatItem extends MessageChatItem {
   const ProjectRequestMessageChatItem({
+    super.unreadCount,
     required super.chatId,
     required super.activityAt,
     required super.displayTitle,

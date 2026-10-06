@@ -27,6 +27,7 @@ enum ProjectRequestChatPhase { idle, loading, ready, failure }
 
 class ProjectRequestChatState {
   const ProjectRequestChatState({
+    this.readBoundary,
     this.phase = ProjectRequestChatPhase.idle,
     this.expectedProfileId,
     this.requestId,
@@ -39,6 +40,7 @@ class ProjectRequestChatState {
     this.hasConnectionIssue = false,
   });
 
+  final String? readBoundary;
   final ProjectRequestChatPhase phase;
   final String? expectedProfileId;
   final String? requestId;
@@ -91,6 +93,7 @@ class ProjectRequestChatController extends Notifier<ProjectRequestChatState> {
     final sameTarget = _sameTarget(expectedProfileId, requestId);
     final previousSummary = sameTarget ? state.summary : null;
     state = ProjectRequestChatState(
+      readBoundary: state.readBoundary,
       phase: ProjectRequestChatPhase.loading,
       expectedProfileId: expectedProfileId,
       requestId: requestId,
@@ -115,6 +118,7 @@ class ProjectRequestChatController extends Notifier<ProjectRequestChatState> {
       if (!_isCurrent(revision, expectedProfileId, requestId)) return false;
       _validateItems(page.items, summary);
       state = ProjectRequestChatState(
+        readBoundary: page.readBoundary ?? state.readBoundary,
         phase: ProjectRequestChatPhase.ready,
         expectedProfileId: expectedProfileId,
         requestId: requestId,
@@ -129,6 +133,7 @@ class ProjectRequestChatController extends Notifier<ProjectRequestChatState> {
     } catch (error) {
       if (!_isCurrent(revision, expectedProfileId, requestId)) return false;
       state = ProjectRequestChatState(
+        readBoundary: state.readBoundary,
         phase: ProjectRequestChatPhase.failure,
         expectedProfileId: expectedProfileId,
         requestId: requestId,
@@ -182,6 +187,7 @@ class ProjectRequestChatController extends Notifier<ProjectRequestChatState> {
       if (!_isCurrent(revision, expectedProfileId, requestId)) return false;
       _validateItems(catchUp, summary);
       state = ProjectRequestChatState(
+        readBoundary: page.readBoundary ?? state.readBoundary,
         phase: ProjectRequestChatPhase.ready,
         expectedProfileId: expectedProfileId,
         requestId: requestId,
@@ -237,6 +243,7 @@ class ProjectRequestChatController extends Notifier<ProjectRequestChatState> {
       if (!_isCurrent(revision, expectedProfileId, requestId)) return false;
       _validateItems(page.items, summary);
       state = ProjectRequestChatState(
+        readBoundary: page.readBoundary ?? state.readBoundary,
         phase: ProjectRequestChatPhase.ready,
         expectedProfileId: expectedProfileId,
         requestId: requestId,
@@ -419,6 +426,7 @@ class ProjectRequestChatController extends Notifier<ProjectRequestChatState> {
       _validateSummary(summary, requestId);
       _validateItems(page.items, summary);
       state = ProjectRequestChatState(
+        readBoundary: page.readBoundary ?? state.readBoundary,
         phase: ProjectRequestChatPhase.ready,
         expectedProfileId: expectedProfileId,
         requestId: requestId,
@@ -570,6 +578,7 @@ class ProjectRequestChatController extends Notifier<ProjectRequestChatState> {
     bool? hasConnectionIssue,
   }) {
     state = ProjectRequestChatState(
+      readBoundary: state.readBoundary,
       phase: state.phase,
       expectedProfileId: state.expectedProfileId,
       requestId: state.requestId,

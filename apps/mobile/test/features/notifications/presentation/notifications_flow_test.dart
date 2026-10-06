@@ -638,93 +638,77 @@ void main() {
     );
   });
 
-  testWidgets('preferences expose four in-app categories without Push', (
-    tester,
-  ) async {
-    await tester.binding.setSurfaceSize(const Size(900, 1600));
-    addTearDown(() => tester.binding.setSurfaceSize(null));
-    final notifications = FakeNotificationsGateway()
-      ..preferences = [
-        notificationPreferenceFixture(pushEnabled: false),
-        notificationPreferenceFixture(
-          category: NotificationCategory.chat,
-          pushEnabled: true,
-        ),
-        notificationPreferenceFixture(
-          category: NotificationCategory.resources,
-          pushEnabled: true,
-        ),
-        notificationPreferenceFixture(
-          category: NotificationCategory.matching,
-          pushEnabled: false,
-        ),
-      ];
-    final app = await _pump(tester, notifications: notifications);
-    app.read(appRouterProvider).go('/notifications/preferences');
-    await tester.pumpAndSettle();
+  testWidgets(
+    'preferences expose three activity categories and preserve hidden push choices',
+    (tester) async {
+      await tester.binding.setSurfaceSize(const Size(900, 1600));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+      final notifications = FakeNotificationsGateway()
+        ..preferences = [
+          notificationPreferenceFixture(pushEnabled: false),
+          notificationPreferenceFixture(
+            category: NotificationCategory.chat,
+            pushEnabled: true,
+          ),
+          notificationPreferenceFixture(
+            category: NotificationCategory.resources,
+            pushEnabled: true,
+          ),
+          notificationPreferenceFixture(
+            category: NotificationCategory.matching,
+            pushEnabled: false,
+          ),
+        ];
+      final app = await _pump(tester, notifications: notifications);
+      app.read(appRouterProvider).go('/notifications/preferences');
+      await tester.pumpAndSettle();
 
-    expect(find.text('Participation alerts'), findsOneWidget);
-    expect(find.text('Chat messages'), findsOneWidget);
-    expect(find.text('Resource activity'), findsOneWidget);
-    expect(find.text('Saved search matches'), findsOneWidget);
-    expect(find.bySemanticsLabel('Resource activity'), findsOneWidget);
-    expect(find.bySemanticsLabel('Saved search matches'), findsOneWidget);
-    expect(find.text('In-app notifications'), findsNWidgets(3));
-    expect(find.text('In-app'), findsOneWidget);
-    expect(find.textContaining('Push'), findsNothing);
-    await tester.tap(find.byKey(const Key('chat-in-app-toggle')));
-    await tester.pumpAndSettle();
-
-    expect(notifications.lastCategory, NotificationCategory.chat);
-    expect(notifications.lastInAppEnabled, isFalse);
-    expect(notifications.lastPushEnabled, isTrue);
-    expect(
-      tester
-          .widget<SwitchListTile>(find.byKey(const Key('chat-in-app-toggle')))
-          .value,
-      isFalse,
-    );
-    expect(
-      tester
-          .widget<SwitchListTile>(
-            find.byKey(const Key('participation-in-app-toggle')),
-          )
-          .value,
-      isTrue,
-    );
-    expect(
-      find.textContaining('Project chat and existing notification history'),
-      findsOneWidget,
-    );
-    await tester.tap(find.byKey(const Key('resources-in-app-toggle')));
-    await tester.pumpAndSettle();
-    expect(notifications.lastCategory, NotificationCategory.resources);
-    expect(notifications.lastInAppEnabled, isFalse);
-    expect(notifications.lastPushEnabled, isTrue);
-    expect(
-      tester
-          .widget<SwitchListTile>(
-            find.byKey(const Key('resources-in-app-toggle')),
-          )
-          .value,
-      isFalse,
-    );
-    expect(
-      find.textContaining('Requests, Resource conversations'),
-      findsOneWidget,
-    );
-    await tester.tap(find.byKey(const Key('matching-in-app-toggle')));
-    await tester.pumpAndSettle();
-    expect(notifications.lastCategory, NotificationCategory.matching);
-    expect(notifications.lastInAppEnabled, isFalse);
-    expect(notifications.lastPushEnabled, isFalse);
-    expect(
-      find.textContaining(
-        'newly published Scambio-Dona listing matches one of your saved searches',
-      ),
-      findsOneWidget,
-    );
-  });
+      expect(find.text('Participation alerts'), findsOneWidget);
+      expect(find.text('Chat messages'), findsNothing);
+      expect(find.byKey(const Key('chat-in-app-toggle')), findsNothing);
+      expect(find.text('Resource activity'), findsOneWidget);
+      expect(find.text('Saved search matches'), findsOneWidget);
+      expect(find.bySemanticsLabel('Resource activity'), findsOneWidget);
+      expect(find.bySemanticsLabel('Saved search matches'), findsOneWidget);
+      expect(find.text('In-app notifications'), findsNWidgets(2));
+      expect(find.text('In-app'), findsOneWidget);
+      expect(find.textContaining('Push'), findsNothing);
+      expect(
+        notifications.preferences
+            .singleWhere((item) => item.category == NotificationCategory.chat)
+            .pushEnabled,
+        isTrue,
+      );
+      await tester.tap(find.byKey(const Key('resources-in-app-toggle')));
+      await tester.pumpAndSettle();
+      expect(notifications.lastCategory, NotificationCategory.resources);
+      expect(notifications.lastInAppEnabled, isFalse);
+      expect(notifications.lastPushEnabled, isTrue);
+      expect(
+        tester
+            .widget<SwitchListTile>(
+              find.byKey(const Key('resources-in-app-toggle')),
+            )
+            .value,
+        isFalse,
+      );
+      expect(
+        find.textContaining('Resource requests and exchange updates'),
+        findsOneWidget,
+      );
+      await tester.tap(find.byKey(const Key('matching-in-app-toggle')));
+      await tester.pumpAndSettle();
+      expect(notifications.lastCategory, NotificationCategory.matching);
+      expect(notifications.lastInAppEnabled, isFalse);
+      expect(notifications.lastPushEnabled, isFalse);
+      expect(
+        find.textContaining(
+          'newly published Scambio-Dona listing matches one of your saved searches',
+        ),
+        findsOneWidget,
+      );
+    },
+  );
 
   testWidgets('Resources toggle rolls back with safe copy at high text scale', (
     tester,

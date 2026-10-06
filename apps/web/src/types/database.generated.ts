@@ -2572,6 +2572,15 @@ export type Database = {
         Args: { p_expected_owner_profile_id: string; p_request_id: string }
         Returns: string
       }
+      acknowledge_own_message_read: {
+        Args: {
+          p_boundary: string
+          p_chat_id: string
+          p_expected_profile_id: string
+          p_kind: string
+        }
+        Returns: Json
+      }
       acknowledge_project_requirement_attention: {
         Args: {
           p_expected_profile_id: string
@@ -3047,6 +3056,23 @@ export type Database = {
           target_kind: string
           target_summary: string
         }[]
+      }
+      get_own_message_feed_page: {
+        Args: {
+          p_before_created_at?: string
+          p_before_item_id?: string
+          p_before_item_kind?: string
+          p_chat_id: string
+          p_expected_profile_id: string
+          p_kind: string
+          p_limit: number
+          p_only_pending?: boolean
+        }
+        Returns: Json
+      }
+      get_own_message_unread_summary: {
+        Args: { p_expected_profile_id: string }
+        Returns: Json
       }
       get_own_moderation_staff_access: {
         Args: { p_expected_profile_id: string }
@@ -4284,6 +4310,17 @@ export type Database = {
           resource_request_id: string | null
           viewer_role: string
         }[]
+      }
+      list_own_scoped_conversation_items_v3: {
+        Args: {
+          p_cursor_activity_at?: string
+          p_cursor_chat_id?: string
+          p_cursor_item_kind?: string
+          p_expected_profile_id: string
+          p_limit: number
+          p_scope: string
+        }
+        Returns: Json
       }
       list_own_scoped_message_chat_items: {
         Args: {
