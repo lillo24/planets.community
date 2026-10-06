@@ -640,7 +640,7 @@
   "notificationResourceRequesterReceived": "{actor} ha confermato di aver ricevuto l'altro oggetto di scambio",
   "notificationResourceRequesterReturned": "{actor} ha contrassegnato il proprio oggetto di scambio come restituito",
   "notificationResourceRequesterReturnReceived": "{actor} ha confermato che l'altro oggetto di scambio è stato restituito",
-  "resourceInterestCount": "{count, plural, =0{Nessuna persona interessata} =1{1 persona interessata} other{{count} persone interessate}}",
+  "resourceInterestCount": "{count, plural, =0{0 Persone Interessate} =1{1 persona interessata} other{{count} persone interessate}}",
   "resourceRequestStatusPending": "In attesa",
   "resourceRequestStatusAccepted": "Accettato",
   "resourceRequestStatusRejected": "Respinto",

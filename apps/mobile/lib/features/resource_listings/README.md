@@ -38,9 +38,25 @@ controller retains current cards with a subtle progress indicator while a
 replacement page loads. Revision checks ignore late responses from an older
 filter set; no speculative local filtering is applied.
 
+Browse keeps the thin keyword field and Dona/Scambia selector visible. Locality
+is collapsed behind the shared `BrowseFilterButton` by default; its badge
+indicates an applied locality even while hidden. Disclosure preserves the
+controls and never applies or clears filters. There is no separate Search
+button. Both text fields share the debounce; keyboard submit applies
+immediately. Identical successful/in-flight tuples do not issue another request
+from submit or Save, while failed tuples remain retryable.
+
+The two checked mode segments allow Donate only (`donate`), Exchange only
+(`exchange`), or both (the existing unrestricted `null`). Tapping the only
+selected mode switches to the other, so neither UI nor backend sees an empty
+mode selection. Saved-search create/restore uses the same nullable mode tuple.
+
 Cards place relative publication age at top-right, keep mode as secondary
-metadata, and render interest and one canonical rough-location line at the
-bottom. The same localized age formatter is used on detail. Detail groups the
+metadata, and wrap intrinsic icon/text groups for interest and location at the
+bottom without equal-width columns. Cards prefer the trimmed structured locality
+and fall back to the canonical public location only when locality is empty.
+Detail retains the full canonical public label. The same localized age formatter
+is used on detail. Detail groups the
 description and deduplicated location into restrained sections, keeps the
 existing signed-in request lifecycle and owner shortcuts, and gives signed-out
 visitors a Request CTA routed through `/auth` with the exact listing return
