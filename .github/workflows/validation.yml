@@ -216,9 +216,6 @@ jobs:
       - name: Verify structured participation-request Messages and privacy
         run: npm run messages:verify:local
 
-      - name: Verify durable participation pairs, send races and private Realtime
-        run: npm run participation:conversations:verify:local
-
       - name: Verify Project chat lifecycle and authorization foundation
         run: npm run project:chat:verify:local
 
@@ -254,6 +251,12 @@ jobs:
 
       - name: Verify blocking/domain producers and pair serialization
         run: npm run blocking:verify:local
+
+      # Earlier consumer fixtures acknowledge pre-existing events to isolate
+      # their batch totals. Keep this real delegated-rejection producer after
+      # those fixtures so the unrestricted regression exercises actual projection.
+      - name: Verify durable participation pairs, send races and private Realtime
+        run: npm run participation:conversations:verify:local
 
       - name: Verify unrestricted notification projection after domain producers
         run: npm run notification:global:verify:local

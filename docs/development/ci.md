@@ -9,7 +9,11 @@ leave required checks pending.
 ## Validation areas
 
 MSG01 adds a populated predecessor migration rehearsal before Database's clean
-reset, plus its pair/privacy/race/Realtime verifier after structured Messages.
+reset, plus its pair/privacy/race/Realtime verifier after the notification
+consumer fixtures and blocking producer, immediately before the unrestricted
+notification regression. Consumer fixtures acknowledge older events to isolate
+batch totals; this order preserves MSG01's real delegated rejection for actual
+canonical projection and attribution checks.
 Both run only in the existing Database job. The full local `check:db` follows the
 same order. The upgrade rehearsal requires `PLANETS_DISPOSABLE_QA=1` outside CI
 and resets its selected local stack; verify ownership, project ID, ports and

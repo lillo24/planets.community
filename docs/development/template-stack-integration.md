@@ -22,8 +22,15 @@ Five conflicts are resolved at their owners: Workshop entry plus the compact
 search/filter row; both EN/IT additions; both package command sets; and one demo
 orchestrator retaining invitation, Workshop and pair-conversation fixtures.
 The guarded explicit demo reset remains intact. The complete database gate
-runs MSG01's populated upgrade before clean reset and pair verification after
-Messages. Both hosted MSG01 steps and the prior Template gates survive.
+runs MSG01's populated upgrade before clean reset. Pair verification follows
+the earlier notification consumer fixtures and blocking producer, immediately
+before the unrestricted worker regression. Those consumer fixtures acknowledge
+pre-existing events to isolate their batch totals; running MSG01 earlier would
+leave its real delegated rejection with a receipt but no notification. The
+corrected order lets the unchanged canonical worker project all three real
+delegated rejections. No event, receipt, resolver or assertion is modified to
+mask this integration failure. Both hosted MSG01 steps and the prior Template
+gates survive.
 The router retains draft/native composition and main's Settings route; the
 navigation shell retains stable branches and visible Messages/Browse preference.
 

@@ -917,7 +917,12 @@ activates. It prints no identities, tokens, messages, or database URL.
 `npm run check:db` performs reset, lint, advisors, pgTAP, the real fake push-delivery worker protocol, the mobile/backend Auth check, the deterministic immediate-session/RLS check, the two-user profile visibility check, the proposal privacy/lifecycle check, the recurring activity recurrence/privacy/lifecycle check, the multi-user Project participation, delegate, shared-workspace, participation-request chat, and participation-aware Browse checks, notification/push projection, structured Messages integration, Project-chat lifecycle/message/notification integrations, the Scambio-Dona listing, saved-search, request, agreement, chat, and unified Messages/notification integrations, the Project resource-need and matching integrations, contribution-selection, acceptance-triage, membership-commitment, coverage, resurfacing, and actual-contribution integrations, moderation evidence integrations, user-block pair-serialization races, type regeneration, and drift detection as one validation sequence. It assumes `npm run db:start` has already succeeded and leaves stack lifecycle to the caller. CI additionally generates local web configuration, builds Next.js, runs the web-session and public Tavoli integrations, and always stops Supabase.
 
 TW-STACK01 retains all Template/SIM/DRAFT and PI verifiers, adds the unrestricted
-post-producer notification regression and uses one combined demo runner. Its
+post-producer notification regression and uses one combined demo runner. MSG01's
+ordinary pair verifier runs after consumer fixtures and blocking, immediately
+before that regression: some earlier consumer fixtures acknowledge pre-existing
+events to isolate their own batch totals. Keep MSG01's real delegated rejection
+available for canonical projection rather than acknowledging it in those fixtures.
+Its populated upgrade still runs before the clean reset. The
 separate `npm run template:stack:upgrades:local` archives exact main/TW05 inputs,
 seeds each predecessor, snapshots old columns, and uses pinned CLI
 `supabase migration up --local --include-all` twice without a populated reset.
