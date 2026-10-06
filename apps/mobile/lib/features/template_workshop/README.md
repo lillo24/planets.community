@@ -40,5 +40,7 @@ storage-cache revocation promise. Creator names use the current globally public
 projection only; the exposed Creator ID never authorizes contextual photo reads.
 
 See [the shared contract](../../../../../docs/development/template-workshop.md)
-and [local native smoke](../../../integration_test/README.md). Founder review
-and predecessor/main integration remain pending; SIM01/SIM02/TW05 are deferred.
+and [local native smoke](../../../integration_test/README.md). Workshop,
+SIM01/SIM02/TW05 and participation-pair/unread history are now committed main
+inputs to MODINT01. Founder review and this candidate's final live QA remain
+separate from inherited feature validation.

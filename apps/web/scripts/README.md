@@ -11,6 +11,18 @@ ignored `supabase/.temp/modint01-browser-fixture.json`. Never publish that file,
 invitation URLs, Auth tokens, cookies or private response bodies. This is local
 combined-source QA, not a hosting selection or production deployment.
 
+After the clean combined Database gate and matching Web build, seed with
+`node apps/web/scripts/seed-local-hosting-qa.mjs --disposable-modint01`, then set
+`MODINT01_LOCAL_REHEARSAL=1` and run
+`node apps/web/test-support/modint01-browser-fixture.ts` from the repository root.
+The guarded launcher binds only loopback 3118 and starts production Next on 3119.
+Open its root page for normal browser sign-in/case/participant actions without
+printing the ignored bearer journal. It injects no session and performs no
+admission; Ctrl+C stops only its child server. Neither the normal handoff nor
+this rehearsal invents missing app-store URLs. Use a fresh `.invalid` email for
+first-time browser profile completion; the seed's applicant has a basic profile
+and deliberately no photo metadata.
+
 `probe-local-hosting.mjs` owns a loopback-only, anonymous HTTP probe for an already
 running production Next.js or disposable OpenNext/workerd build. It measures
 three full-response wall times per route and asserts HTML denial, Flight

@@ -1,5 +1,14 @@
 # Repository scripts
 
+`prepare-local-modint01-qa.ps1` is the guarded resumption utility for draft PR
+#154. It accepts the exact retained canonical `config.toml` backup, requires the
+existing MODINT01 branch, and refuses unrelated config changes. `Prepare`
+recreates only that project's fixed local ports; it never starts/resets services.
+`Restore` refuses a running MODINT01 stack and copies the original bytes back,
+checking their hash. Both support `-WhatIf`. Keep backup/startup logs outside Git;
+CLI status/start output can contain local credentials. See the MODINT01 review
+packet for the owned backend, AVD and exact remaining QA commands.
+
 This folder owns reproducible configuration generation, local authenticated
 domain verification and change-scoped validation tooling.
 

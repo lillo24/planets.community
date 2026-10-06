@@ -81,10 +81,10 @@ applicant-private immutable receipts. `moderation:verify:local` and
 API coverage was local; see the guide for the corrected record and populated
 TW03 upgrade procedure.
 
-The stack-integration candidate replays the complete cumulative schema from the
-validated `main` baseline plus the included open product stacks. Candidate-only
-migrations, generated types, and verification commands remain unmerged to
-`main`; optional MLS/E2EE work from PR #28 is intentionally absent.
+The MODINT01 candidate replays committed `main`, including Workshop and pair/unread
+history, plus the explicitly selected moderation stack. Candidate-only moderation
+migrations, generated types and verification changes remain unmerged to `main`;
+optional MLS/E2EE work from PR #28 is intentionally absent.
 
 PostgreSQL is the canonical PLANETS product record. This guide owns the local schema-change, security-test, and generated-type workflow. The current schema includes application identity, basic profiles, the private profile-photo and single-cover Storage/domain foundations, a controlled starter skill catalog, field visibility, one-time proposals, the Tavoli recurring-activity domain, standalone Scambio-Dona resource listings, accepted-request agreements and conversations, Project resource needs, join-request contribution selections, immutable acceptance decisions, accepted-membership commitment sets, shared project participation, structured Messages reads, the Project group-chat lifecycle/authorization foundation, the in-app notification domain, the provider-independent push installation/delivery-job foundation, the private reporting/manual-review and blocking foundations, and private audit/outbox primitives.
 

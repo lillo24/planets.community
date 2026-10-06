@@ -90,7 +90,11 @@ try {
   const fixture = await createConsequenceFixture(
     sql,
     Object.fromEntries(
-      Object.entries(users).map(([role, user]) => [role, user.id]),
+      // The browser applicant must remain photo-free. The moderation helper
+      // bootstraps photo metadata for its relationship actors, not this applicant.
+      Object.entries(users)
+        .filter(([role]) => role !== "participant")
+        .map(([role, user]) => [role, user.id]),
     ),
   );
   // A real Storage object plus canonical metadata, not a fabricated cover row.
