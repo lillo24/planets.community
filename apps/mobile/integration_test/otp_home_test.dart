@@ -299,6 +299,10 @@ void main() {
         'AUTHQA native A-to-B switch destination=/settings/notices history isolated',
       );
 
+      // Profile deliberately becomes the signed-out example, not an Auth page.
+      // Navigate normally to Home's sign-in entry before the next account.
+      router.go('/');
+      await tester.pumpAndSettle();
       await _uiLogin(tester, emailNew, mailpit);
       await _wait(
         tester,
