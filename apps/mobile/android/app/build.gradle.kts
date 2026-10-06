@@ -4,8 +4,17 @@ plugins {
     id("dev.flutter.flutter-gradle-plugin")
 }
 
+val uploadPropertiesFile = rootProject.file("key.properties")
+val uploadProperties = java.util.Properties().apply {
+    if (uploadPropertiesFile.isFile) {
+        uploadPropertiesFile.inputStream().use { load(it) }
+    }
+}
+val uploadStoreFile = uploadProperties.getProperty("storeFile")
+    ?.takeIf { it.isNotBlank() }?.let { rootProject.file(it) }
+
 android {
-    namespace = "community.planets.bootstrap.planets_mobile"
+    namespace = "community.planets.app"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
@@ -15,8 +24,7 @@ android {
     }
 
     defaultConfig {
-        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
-        applicationId = "community.planets.bootstrap.planets_mobile"
+        applicationId = "community.planets.app"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion
@@ -29,11 +37,41 @@ android {
         versionName = flutter.versionName
     }
 
+    signingConfigs {
+        create("release") {
+            keyAlias = uploadProperties.getProperty("keyAlias")
+            keyPassword = uploadProperties.getProperty("keyPassword")
+            storeFile = uploadStoreFile
+            storePassword = uploadProperties.getProperty("storePassword")
+        }
+    }
+
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
-            signingConfig = signingConfigs.getByName("debug")
+            signingConfig = signingConfigs.getByName("release")
+        }
+    }
+}
+
+// Keep debug builds usable without secrets, but gate every release entry point
+// (including aggregate Gradle builds). Never produce an unsigned/debug release.
+tasks.configureEach {
+    if (name == "preReleaseBuild" || name == "validateSigningRelease") {
+        doFirst {
+            val required = listOf("storeFile", "storePassword", "keyAlias", "keyPassword")
+            val missing = required.filter { uploadProperties.getProperty(it).isNullOrBlank() }
+            check(uploadPropertiesFile.isFile && missing.isEmpty()) {
+                "PLANETS release signing requires android/key.properties with " +
+                    "storeFile, storePassword, keyAlias and keyPassword. " +
+                    "See docs/development/play-closed-test.md. Missing fields: ${missing.joinToString()}"
+            }
+            check(uploadStoreFile?.isFile == true) {
+                "PLANETS upload keystore does not exist; check storeFile in android/key.properties."
+            }
+            check(uploadProperties.getProperty("keyAlias") != "androiddebugkey" &&
+                uploadStoreFile?.name != "debug.keystore") {
+                "PLANETS release builds require an upload key, not the Android debug key."
+            }
         }
     }
 }

@@ -35,7 +35,8 @@ This folder owns the Flutter application and its generated Android/iOS platform 
 - `lib/l10n/` owns the English template ARB and the complete Italian catalog. English remains the fallback for unsupported locales. `flutter gen-l10n` regenerates ignored Dart output under `lib/l10n/generated/`.
 - `config/` contains committed configuration examples; runtime files without `.example` are ignored.
 - `test/` mirrors the application responsibility boundaries.
-- `android/` and `ios/` contain conventional Flutter platform configuration. Local HTTP exceptions are debug-only; shared iOS plist changes must be mirrored in `Info.plist` and `Info-Debug.plist`.
+- `android/` and `ios/` contain conventional Flutter platform configuration. Android uses the permanent `community.planets.app` identity and requires an ignored upload-key configuration for release signing. Local HTTP exceptions are debug-only; shared iOS plist changes must be mirrored in `Info.plist` and `Info-Debug.plist`.
+- `tool/` owns the managed staging bundle preflight; see the [closed-test runbook](../../docs/development/play-closed-test.md).
 
 Startup follows one order: parse and validate config, restore the noncritical
 local language preference with a System-default fallback, initialize the
