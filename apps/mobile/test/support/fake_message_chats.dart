@@ -93,6 +93,7 @@ ProjectRequestMessageChatItem projectRequestMessageChatFixture({
     counterpartyDisplayName: counterpartyDisplayName,
     viewerRole: viewerRole,
     requestStatus: status,
+    pendingCount: status == JoinRequestStatus.pending ? 1 : 0,
     requestMessage: 'I can help Sunday afternoon.',
     resolvedAt: resolved,
     acceptedProjectGroupChatId: status == JoinRequestStatus.accepted

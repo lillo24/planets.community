@@ -320,32 +320,41 @@ remain read-only history. `/messages`, `/messages/requests/:requestId`, and
 `/messages/requests/resource/:requestId` belong to Home and require a complete
 authenticated profile. The Chats tab remains Project-only until 04C4C3B.
 
-### Participation-request private conversation domain
+### Participation pair conversation domain
 
-Every `project_join_requests` episode owns one permanent private
-`project_join_request_chats` anchor from request creation, including historical
-rows backfilled at their canonical `created_at`. The optional 500-character
-request note remains the structured Request feed item; it is never copied into
-`project_join_request_chat_messages`. Human follow-ups are immutable,
-canonically trimmed plain text of 1 through 4,000 Unicode characters with a
-server-owned timestamp. Both tables use restrictive foreign keys, RLS without
-client policies, and no direct client or broad service-role privileges.
+[ADR 0007](decisions/0007-participation-pair-conversations.md) records MSG01's
+consolidation and privacy change. One immutable `participation_conversations`
+anchor represents the unordered requester/immutable Project Creator pair across
+Proposal/Project and Tavolo episodes. Only canonical participation requests
+establish it. Immutable associations retain original request and legacy chat IDs;
+existing message tables and references remain intact. New pair follow-ups live
+in `participation_conversation_messages` without invented request provenance.
 
-Only the requester and a current Project manager can resolve the exact
-conversation, page its strict Request/message feed, or receive its private
-`project-request-chat:<chat-id>:profile:<profile-id>` Broadcast hints. Sending is
-available only while the canonical request is pending. It takes the established
-concrete-Project, shared-Project, then request-row locks, so accept, reject, and
-withdraw races deterministically preserve a send serialized first and reject a
-send serialized after resolution. Terminal episodes retain readable history;
-accepted detail also exposes the separately authorized Project group-chat ID.
+The feed projects requests once at creation time with current statuses, legacy
+messages with actual author/context, and new human messages. Histories use
+complete bounded keyset cursors. Conversation summaries group before paging and
+derive truthful activity, counterparty, pending totals and send entitlement.
+Resource conversations and group chats stay independent.
 
-Durable audit/outbox event `project.join_request_chat_message_sent` and Realtime
-hints contain identifiers/timestamps only. Existing notification/push
-projectors deliberately ignore this new event until 07C1B owns its projection.
-The existing unified Requests projection is unchanged, and
-`list_own_message_chat_items` is intentionally unchanged; 07C1B owns the mobile
-conversation UI and unified Chats inclusion.
+Personal history, previews, sending and addressed Realtime belong only to the
+pair endpoints, including legacy RPCs. Ordinary Co-creators/Co-organizers retain
+scoped request notes, offers and canonical actions through Requests/Participation.
+Existing explicit staff evidence authority is unchanged.
+
+Sending requires an eligible pending request under requester-versus-current-
+manager blocking rules. One witness uses the existing ordered interaction-pair
+→ concrete/shared Project → request lock sequence and a final recheck. A witness
+changed by a race fails explicitly; refreshed state may authorize another request.
+The client preserves the draft without automatic resending. Final resolution
+makes the pair read-only; later legitimate requests reactivate the same history.
+Read-only subscriptions remain attached.
+
+The new durable event `participation.conversation_message_sent` contains chat,
+message and sender IDs only. `participation-conversation:<chat-id>:profile:<id>`
+hints contain only the chat ID (Realtime may add its delivery UUID), address only
+immutable endpoints, and never leak to cached delegate subscriptions. Current
+projectors leave the new event unhandled; MSG02 owns unread state and chat-alert
+changes. No new retention/deletion or generic messaging policy is introduced.
 
 ### Project group-chat lifecycle and authorization foundation
 
@@ -490,7 +499,7 @@ Edge Functions and background workers remain valid implementation choices when t
 | Resource request chat       | Accepted-request human history, authorized summaries/send, and private Realtime refresh hints                    | One request/agreement episode; permanent owner/requester read and open-coordination send                       |
 | Participation               | Shared project identity, private requests/decisions, current membership and retained history                     | Profile and concrete one-time/recurring project; source for authorization and later stats                      |
 | Project delegated authority | Structural-actor single-use invitations, Co-creator/Co-organizer roles, and current manager authorization        | Shared Project identity; separate from immutable original-Creator attribution and participation membership     |
-| Project shared workspace    | One private provider-neutral HTTPS link with manager mutation and current-group read authorization              | Shared Project identity; external provider owns files and permissions                                          |
+| Project shared workspace    | One private provider-neutral HTTPS link with manager mutation and current-group read authorization               | Shared Project identity; external provider owns files and permissions                                          |
 | Participation request chat  | Pending-request human history, structured request-note feed, exact authorized state, and private Realtime hints  | One join-request episode; permanent requester/current-manager read and pending-only send                       |
 | Messages                    | Authenticated discriminated Project/Resource Requests plus the existing Project-only Chats tab                   | Canonical request domains; complete three-part cursor; Resource chats remain 04C4C3B                           |
 | Project chat                | Structural anchor, immutable message history, authorized list/send APIs, and private Realtime hints              | Owner/active delegates plus current/former participants under canonical membership-time rules                  |

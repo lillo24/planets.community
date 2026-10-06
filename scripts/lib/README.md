@@ -22,6 +22,13 @@ tooling.
   `verify-local-demo-idempotency.mjs` explicitly invokes its mutating transition
   rehearsal; ordinary verification invokes only reads. No second seed system
   or application-start hook exists.
+- `demo-participation-conversations.mjs` adds two Marco/Giulia pending requests
+  and stable pair follow-ups to that same demo world. Its reads verify one pair
+  row, exact request bubbles, resolved history, and no invented message context;
+  it never repairs during verification.
+- `participation-rpc-nullability.mjs` corrects pg-meta's missing table-result
+  nullability for participation APIs and MSG01's typed mixed feed. Its tests
+  fail on schema/type drift rather than writing partial generated types.
 - The matching `*.test.mjs` files verify parsing and request authentication
   behavior or path classification with non-secret fixtures.
 

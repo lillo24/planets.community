@@ -408,14 +408,18 @@ class _ProjectRequestChatCard extends StatelessWidget {
                         style: Theme.of(context).textTheme.titleMedium,
                       ),
                     ),
-                    Chip(
-                      visualDensity: VisualDensity.compact,
-                      avatar: item.isReadOnly
-                          ? const Icon(Icons.lock_outline, size: 18)
-                          : null,
-                      label: Text(messageStatusLabel(l10n, item.requestStatus)),
-                    ),
                   ],
+                ),
+                Chip(
+                  visualDensity: VisualDensity.compact,
+                  avatar: item.isReadOnly
+                      ? const Icon(Icons.lock_outline, size: 18)
+                      : null,
+                  label: Text(
+                    item.pendingCount > 0
+                        ? l10n.pairPendingRequests(item.pendingCount)
+                        : l10n.projectChatReadOnlyLabel,
+                  ),
                 ),
                 Text(
                   item.projectTitle,

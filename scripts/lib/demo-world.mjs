@@ -7,6 +7,10 @@ import { createClient } from "@supabase/supabase-js";
 import { signInLocalOtpUser } from "./local-authenticated-user.mjs";
 import { ensureLocalProfilePhoto } from "./local-profile-photo.mjs";
 import {
+  seedDemoParticipationConversation,
+  verifyDemoParticipationConversation,
+} from "./demo-participation-conversations.mjs";
+import {
   ensureDemoInvitation,
   exerciseDemoInvitationTransitions,
   seedDemoParticipantInvitations,
@@ -477,9 +481,11 @@ export async function seedLocalDemoWorld({
       scenario,
       onInvitationCheckpoint,
     );
+    await seedDemoParticipationConversation(context, scenario);
     await projectNotificationOutbox(serviceClient);
     await verifyDemoWorldState(context, scenario, times);
     await verifyDemoParticipantInvitations(context, scenario);
+    await verifyDemoParticipationConversation(context, scenario);
 
     return Object.freeze({
       personas: Object.values(DEMO_PERSONAS).map((persona) => persona.email),
@@ -535,6 +541,7 @@ export async function verifyLocalDemoWorld({
     });
     const scenario = await resolveExistingScenario(context);
     await verifyDemoParticipantInvitations(context, scenario);
+    await verifyDemoParticipationConversation(context, scenario);
     await verifyDemoWorldState(context, scenario, buildDemoTimes(now));
     return scenario;
   } finally {
@@ -1189,6 +1196,14 @@ async function bringDemoWorldToDesiredState(context, times) {
     "withdrawn",
     "Forse riesco a partecipare al tavolo del mercoledì.",
   );
+  const monthlyPendingRequestId = await ensureRequestState(
+    context,
+    personas.bob,
+    personas.alice,
+    monthly.id,
+    "pending",
+    "Vorrei partecipare anche al Tavolo mensile per organizzare le prossime iniziative.",
+  );
   const chat = await ensureChatHistory(
     context,
     personas.alice,
@@ -1223,6 +1238,7 @@ async function bringDemoWorldToDesiredState(context, times) {
       muralMembershipId,
       repairRejectedRequestId,
       weeklyWithdrawnRequestId,
+      monthlyPendingRequestId,
     },
     chat,
     listings: { donate, exchange, closed },

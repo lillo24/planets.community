@@ -26,6 +26,30 @@ class FakeProjectRequestChatGateway implements ProjectRequestChatGateway {
     calls.add('summary:$requestId');
     if (summaryDelay case final delay?) await delay;
     if (summaryError case final error?) throw error;
+    items = items.map((item) {
+      if (item is! ProjectRequestChatRequestItem ||
+          item.requestId != summary.requestId) {
+        return item;
+      }
+      return ProjectRequestChatRequestItem(
+        itemId: item.itemId,
+        chatId: item.chatId,
+        requestId: item.requestId,
+        projectId: item.projectId,
+        projectKind: item.projectKind,
+        projectTitle: item.projectTitle,
+        requestStatus: summary.requestStatus,
+        requestMessage: item.requestMessage,
+        requesterProfileId:
+            summary.viewerRole == ProjectRequestChatViewerRole.requester
+            ? expectedProfileId
+            : item.requesterProfileId,
+        requesterDisplayName: item.requesterDisplayName,
+        createdAt: item.createdAt,
+        resolvedAt: summary.resolvedAt,
+        acceptedProjectGroupChatId: summary.acceptedProjectGroupChatId,
+      );
+    }).toList();
     return summary;
   }
 
@@ -35,23 +59,30 @@ class FakeProjectRequestChatGateway implements ProjectRequestChatGateway {
     required String chatId,
     required int limit,
     ProjectRequestChatFeedCursor? cursor,
+    bool onlyPending = false,
   }) async {
     calls.add('history:$chatId');
     if (historyDelay case final delay?) await delay;
     if (historyError case final error?) throw error;
+    final source = onlyPending
+        ? items
+              .whereType<ProjectRequestChatRequestItem>()
+              .where((item) => item.requestStatus == JoinRequestStatus.pending)
+              .toList()
+        : items;
     final start = cursor == null
         ? 0
-        : items.indexWhere(
+        : source.indexWhere(
                 (item) =>
                     item.canonicalKey ==
                     '${cursor.itemKind.wireValue}:${cursor.itemId}',
               ) +
               1;
     final safeStart = start < 0 ? 0 : start;
-    final page = items.skip(safeStart).take(limit).toList(growable: false);
+    final page = source.skip(safeStart).take(limit).toList(growable: false);
     return ProjectRequestChatFeedPage(
       items: page,
-      hasMore: safeStart + page.length < items.length,
+      hasMore: safeStart + page.length < source.length,
     );
   }
 
@@ -72,7 +103,7 @@ class FakeProjectRequestChatGateway implements ProjectRequestChatGateway {
       itemId:
           '00000000-0000-4000-8000-${sendCount.toString().padLeft(12, '0')}',
       chatId: chatId,
-      requestId: requestId,
+      requestId: null,
       senderProfileId: expectedProfileId,
       senderDisplayName: null,
       body: body,
@@ -81,6 +112,16 @@ class FakeProjectRequestChatGateway implements ProjectRequestChatGateway {
     items = [sent, ...items];
     return sent;
   }
+
+  @override
+  Future<List<ProjectRequestChatRequestItem>> refreshRequests({
+    required String expectedProfileId,
+    required String chatId,
+    required List<String> requestIds,
+  }) async => items
+      .whereType<ProjectRequestChatRequestItem>()
+      .where((item) => requestIds.contains(item.requestId))
+      .toList();
 
   @override
   ProjectRequestChatSignalSubscription subscribeToSignals({
@@ -103,12 +144,7 @@ class FakeProjectRequestChatGateway implements ProjectRequestChatGateway {
   void emitSignal() {
     for (final subscription in subscriptions.where((item) => !item.isClosed)) {
       subscription.onSignal(
-        ProjectRequestChatMessageSentSignal(
-          chatId: subscription.chatId,
-          requestId: summary.requestId,
-          messageId: '00000000-0000-4000-8000-000000000999',
-          createdAt: DateTime.utc(2026, 9, 20, 13),
-        ),
+        ProjectRequestChatMessageSentSignal(chatId: subscription.chatId),
       );
     }
   }
@@ -150,6 +186,9 @@ ProjectRequestChatSummary projectRequestChatSummaryFixture({
       ProjectRequestChatViewerRole.creator,
   JoinRequestStatus status = JoinRequestStatus.pending,
   String? acceptedProjectGroupChatId,
+  int? pendingCount,
+  List<ProjectRequestChatRequestItem>? pendingRequests,
+  bool? writable,
 }) => ProjectRequestChatSummary(
   chatId: chatId,
   requestId: requestId,
@@ -168,32 +207,57 @@ ProjectRequestChatSummary projectRequestChatSummaryFixture({
       ? null
       : DateTime.utc(2026, 9, 20, 13),
   activatedAt: DateTime.utc(2026, 9, 20, 10),
-  isReadOnly: status != JoinRequestStatus.pending,
-  hasSendEntitlement: status == JoinRequestStatus.pending,
+  isReadOnly: !(writable ?? (status == JoinRequestStatus.pending)),
+  hasSendEntitlement: writable ?? (status == JoinRequestStatus.pending),
   acceptedProjectGroupChatId: acceptedProjectGroupChatId,
+  pendingCount: pendingCount ?? (status == JoinRequestStatus.pending ? 1 : 0),
+  pendingRequests:
+      pendingRequests ??
+      (status == JoinRequestStatus.pending
+          ? [
+              projectRequestChatRequestFixture(
+                chatId: chatId,
+                requestId: requestId,
+                requesterProfileId:
+                    viewerRole == ProjectRequestChatViewerRole.requester
+                    ? 'user-1'
+                    : '00000000-0000-4000-8000-000000000102',
+              ),
+            ]
+          : const []),
 );
 
 ProjectRequestChatRequestItem projectRequestChatRequestFixture({
   String chatId = '00000000-0000-4000-8000-000000000411',
   String requestId = '00000000-0000-4000-8000-000000000311',
+  String projectId = '00000000-0000-4000-8000-000000000711',
+  String projectTitle = 'Riverside mural',
+  String requesterProfileId = '00000000-0000-4000-8000-000000000102',
+  JoinRequestStatus status = JoinRequestStatus.pending,
+  String? acceptedProjectGroupChatId,
 }) => ProjectRequestChatRequestItem(
   itemId: requestId,
   chatId: chatId,
   requestId: requestId,
-  projectId: '00000000-0000-4000-8000-000000000711',
+  projectId: projectId,
   projectKind: ProjectKind.oneTime,
-  projectTitle: 'Riverside mural',
-  requestStatus: JoinRequestStatus.pending,
+  projectTitle: projectTitle,
+  requestStatus: status,
   requestMessage: 'I can help Sunday afternoon.',
-  requesterProfileId: '00000000-0000-4000-8000-000000000102',
+  requesterProfileId: requesterProfileId,
   requesterDisplayName: 'Bob',
   createdAt: DateTime.utc(2026, 9, 20, 10),
+  resolvedAt: status == JoinRequestStatus.pending
+      ? null
+      : DateTime.utc(2026, 9, 20, 13),
+  acceptedProjectGroupChatId: acceptedProjectGroupChatId,
 );
 
 ProjectRequestChatHumanMessage projectRequestChatMessageFixture({
   String itemId = '00000000-0000-4000-8000-000000000911',
   String chatId = '00000000-0000-4000-8000-000000000411',
-  String requestId = '00000000-0000-4000-8000-000000000311',
+  String? requestId,
+  bool isLegacy = false,
   String senderProfileId = '00000000-0000-4000-8000-000000000102',
   String? senderDisplayName = 'Bob',
   String body = 'Yes, Sunday works for me.',
@@ -205,5 +269,6 @@ ProjectRequestChatHumanMessage projectRequestChatMessageFixture({
   senderProfileId: senderProfileId,
   senderDisplayName: senderDisplayName,
   body: body,
+  isLegacy: isLegacy,
   createdAt: createdAt ?? DateTime.utc(2026, 9, 20, 11),
 );

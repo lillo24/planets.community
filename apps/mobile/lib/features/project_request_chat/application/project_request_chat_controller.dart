@@ -170,14 +170,23 @@ class ProjectRequestChatController extends Notifier<ProjectRequestChatState> {
         chatId: summary.chatId,
         limit: projectRequestChatHistoryPageSize,
       );
+      final catchUp = await _readCatchUp(
+        gateway,
+        summary,
+        page,
+        expectedProfileId,
+        requestId,
+        revision,
+      );
+      if (catchUp == null) return false;
       if (!_isCurrent(revision, expectedProfileId, requestId)) return false;
-      _validateItems(page.items, summary);
+      _validateItems(catchUp, summary);
       state = ProjectRequestChatState(
         phase: ProjectRequestChatPhase.ready,
         expectedProfileId: expectedProfileId,
         requestId: requestId,
         summary: summary,
-        items: List.unmodifiable(_mergeItems(state.items, page.items)),
+        items: List.unmodifiable(_mergeItems(state.items, catchUp)),
         hasMoreOlder: state.hasMoreOlder,
         hasConnectionIssue: state.hasConnectionIssue,
       );
@@ -330,6 +339,54 @@ class ProjectRequestChatController extends Notifier<ProjectRequestChatState> {
     }
   }
 
+  Future<List<ProjectRequestChatFeedItem>?> _readCatchUp(
+    ProjectRequestChatGateway gateway,
+    ProjectRequestChatSummary summary,
+    ProjectRequestChatFeedPage page,
+    String expectedProfileId,
+    String requestId,
+    int revision,
+  ) async {
+    final catchUp = <ProjectRequestChatFeedItem>[...page.items];
+    var continuation = page;
+    final newestKnown = state.items.isEmpty ? null : state.items.last;
+    while (newestKnown != null &&
+        continuation.hasMore &&
+        continuation.items.isNotEmpty &&
+        _compareItems(continuation.items.last, newestKnown) > 0) {
+      if (!_isCurrent(revision, expectedProfileId, requestId)) return null;
+      final boundary = continuation.items.last;
+      continuation = await gateway.listItems(
+        expectedProfileId: expectedProfileId,
+        chatId: summary.chatId,
+        limit: projectRequestChatHistoryPageSize,
+        cursor: ProjectRequestChatFeedCursor(
+          createdAt: boundary.createdAt,
+          itemKind: boundary.itemKind,
+          itemId: boundary.itemId,
+        ),
+      );
+      if (continuation.items.isEmpty ||
+          _compareItems(continuation.items.first, boundary) >= 0) {
+        throw const FormatException('Conversation catch-up did not advance.');
+      }
+      catchUp.addAll(continuation.items);
+    }
+    final requestUpdates = await gateway.refreshRequests(
+      expectedProfileId: expectedProfileId,
+      chatId: summary.chatId,
+      requestIds: state.items
+          .whereType<ProjectRequestChatRequestItem>()
+          .map((item) => item.requestId)
+          .toList(),
+    );
+
+    if (!_isCurrent(revision, expectedProfileId, requestId)) return null;
+    _validateItems(catchUp, summary);
+    _validateItems(requestUpdates, summary);
+    return [...catchUp, ...requestUpdates];
+  }
+
   Future<void> _recoverConflict(
     String expectedProfileId,
     String requestId,
@@ -347,7 +404,18 @@ class ProjectRequestChatController extends Notifier<ProjectRequestChatState> {
         chatId: summary.chatId,
         limit: projectRequestChatHistoryPageSize,
       );
-      if (!_isCurrent(revision, expectedProfileId, requestId)) return;
+      final catchUp = await _readCatchUp(
+        gateway,
+        summary,
+        page,
+        expectedProfileId,
+        requestId,
+        revision,
+      );
+      if (catchUp == null ||
+          !_isCurrent(revision, expectedProfileId, requestId)) {
+        return;
+      }
       _validateSummary(summary, requestId);
       _validateItems(page.items, summary);
       state = ProjectRequestChatState(
@@ -355,7 +423,7 @@ class ProjectRequestChatController extends Notifier<ProjectRequestChatState> {
         expectedProfileId: expectedProfileId,
         requestId: requestId,
         summary: summary,
-        items: List.unmodifiable(_mergeItems(state.items, page.items)),
+        items: List.unmodifiable(_mergeItems(state.items, catchUp)),
         hasMoreOlder: state.hasMoreOlder,
         isSending: true,
         failure: ProjectRequestChatFailureKind.conflict,
@@ -376,7 +444,7 @@ class ProjectRequestChatController extends Notifier<ProjectRequestChatState> {
     String expectedProfileId,
     ProjectRequestChatSummary summary,
   ) {
-    final shouldSubscribe = _signalsEnabled && summary.hasSendEntitlement;
+    final shouldSubscribe = _signalsEnabled;
     final matches =
         _subscription != null &&
         _subscriptionProfileId == expectedProfileId &&
@@ -403,7 +471,7 @@ class ProjectRequestChatController extends Notifier<ProjectRequestChatState> {
                     summary.chatId,
                     subscriptionRevision,
                   ) &&
-                  signal.requestId == summary.requestId) {
+                  signal.chatId == summary.chatId) {
                 ref.read(messageChatsRefreshProvider.notifier).notifyChanged();
                 _scheduleReconcile(expectedProfileId, summary.requestId);
               }
@@ -550,15 +618,20 @@ class ProjectRequestChatController extends Notifier<ProjectRequestChatState> {
       for (final item in incoming) item.canonicalKey: item,
     };
     final values = byKey.values.toList();
-    values.sort((left, right) {
-      final time = left.createdAt.compareTo(right.createdAt);
-      if (time != 0) return time;
-      final kind = left.itemKind.canonicalOrder.compareTo(
-        right.itemKind.canonicalOrder,
-      );
-      return kind != 0 ? kind : left.itemId.compareTo(right.itemId);
-    });
+    values.sort(_compareItems);
     return values;
+  }
+
+  int _compareItems(
+    ProjectRequestChatFeedItem left,
+    ProjectRequestChatFeedItem right,
+  ) {
+    final time = left.createdAt.compareTo(right.createdAt);
+    if (time != 0) return time;
+    final kind = left.itemKind.canonicalOrder.compareTo(
+      right.itemKind.canonicalOrder,
+    );
+    return kind != 0 ? kind : left.itemId.compareTo(right.itemId);
   }
 
   void _validateSummary(ProjectRequestChatSummary summary, String requestId) {
@@ -573,10 +646,7 @@ class ProjectRequestChatController extends Notifier<ProjectRequestChatState> {
     Iterable<ProjectRequestChatFeedItem> items,
     ProjectRequestChatSummary summary,
   ) {
-    if (items.any(
-      (item) =>
-          item.chatId != summary.chatId || item.requestId != summary.requestId,
-    )) {
+    if (items.any((item) => item.chatId != summary.chatId)) {
       throw const FormatException(
         'Participation-request chat history mismatched.',
       );
