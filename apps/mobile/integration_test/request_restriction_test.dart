@@ -475,6 +475,9 @@ void main() {
               AuthSessionPhase.signedOut,
           'requester sign-out',
         );
+        // Settings stays available signed out; Home owns the normal sign-in entry.
+        router.go('/');
+        await tester.pumpAndSettle();
         await _uiLogin(tester, unrelatedEmail, mailbox);
         await _wait(
           tester,
@@ -515,6 +518,8 @@ void main() {
               AuthSessionPhase.signedOut,
           'unrelated sign-out',
         );
+        router.go('/');
+        await tester.pumpAndSettle();
         await _uiLogin(tester, email, mailbox);
         await _wait(
           tester,
