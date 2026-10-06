@@ -29,6 +29,11 @@ notifications, resources, or occurrence-level editing. The sibling
 
 ## Discovery and routes
 
+Cultural Tables Browse starts with locality collapsed behind a compact filter
+button. A badge marks an applied locality while collapsed. Opening or closing
+retains pending text and applied filters without refreshing results or changing
+the paging snapshot. This list has no free-text, skill, or map filter.
+
 Tavoli share the existing Browse bottom-navigation branch with Proposals, but
 the `/proposals` and `/tavoli` lists stay separate and use a route-backed
 switcher. Tavoli own `/tavoli`, `/tavoli/:id`, `/tavoli/mine`,

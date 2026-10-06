@@ -106,13 +106,13 @@ void main() {
   });
 
   testWidgets(
-    'Home exposes Progetti and Scambio-Dona with three destinations',
+    'Home exposes project and resource pillars with three destinations',
     (tester) async {
       final gateway = FakeResourceListingGateway()
         ..publicItems = [publicResourceListingFixture()];
       await _pump(tester, gateway: gateway, signedIn: false);
 
-      expect(find.text('Progetti'), findsOneWidget);
+      expect(find.text('Projects and Cultural Tables'), findsOneWidget);
       expect(find.text('Scambio-Dona'), findsOneWidget);
       expect(
         tester.widget<NavigationBar>(find.byType(NavigationBar)).destinations,
