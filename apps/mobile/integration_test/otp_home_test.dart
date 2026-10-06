@@ -163,7 +163,17 @@ void main() {
         router.go('/');
         await tester.pumpAndSettle();
         expect(find.text('Sign out'), findsNothing);
-        for (final destination in BottomTabDestination.values) {
+        final savedDestination = container
+            .read(navigationPreferenceProvider)
+            .destination;
+        // An already-selected RadioGroup option intentionally does not fire
+        // onChanged. Exercise both real changes, then restore the saved choice.
+        for (final destination in [
+          BottomTabDestination.values.firstWhere(
+            (value) => value != savedDestination,
+          ),
+          savedDestination,
+        ]) {
           router.go('/settings');
           await tester.pumpAndSettle();
           await tester.tap(find.byKey(const Key('settings-navigation-row')));
@@ -597,11 +607,15 @@ Future<void> _integrationFlows(
     'photo-free direct admission',
   );
   final id = app.auth.currentUser!.id;
-  final memberships = await app
-      .from('project_memberships')
-      .select('originating_request_id')
-      .eq('project_id', project)
-      .eq('participant_profile_id', id);
+  // Membership tables are deliberately not directly readable by clients.
+  // The existing own-only RPC exposes truthful request-origin nullability.
+  final ownMemberships = await app.rpc(
+    'list_own_project_memberships',
+    params: {'p_expected_participant_profile_id': id},
+  ) as List;
+  final memberships = ownMemberships
+      .where((row) => row['project_id'] == project)
+      .toList();
   expect(memberships, hasLength(1));
   expect(memberships.single['originating_request_id'], isNull);
   await tester.tap(find.byKey(const Key('participant-invite-open-chat')));

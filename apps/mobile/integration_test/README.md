@@ -13,6 +13,19 @@ photo-free participant admission, nullable request origin, chat continuity under
 content hiding, all private notice types and suspension during ordinary access.
 Synthetic EN/IT screenshots use the existing explicit driver output directories.
 
+The integrated replay uses the task-owned `PLANETS_MODINT01_API35` small-phone
+AVD (official Google APIs x86_64 API 35, revision 9/extension 13), 720×1280 at
+320 dpi, 1536 MB RAM and owned port 5560. The installed API 37.1 image enforces
+a 4 GB minimum despite smaller `-memory` values. No user AVD or SDK/tool version
+is changed. Compile before execution and use `--use-application-binary` to avoid
+overlapping a build with the device smoke. A command-local
+`GRADLE_OPTS=-Dorg.gradle.jvmargs=-Xmx2g` caps that build daemon's heap without
+editing repository/global Gradle configuration; restore any prior value after
+the build. A resource or compile failure remains a failure, not a passed smoke.
+After any run that committed admission, prepare fresh actors/Projects and rebuild
+the matching compile-time fixture config; do not erase membership history or
+reuse an already-joined Project as proof of fresh admission.
+
 Run each preparer immediately before its matching driver after the Database gate:
 
 ```powershell
