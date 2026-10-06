@@ -368,6 +368,8 @@ void main() {
       );
 
       if (modint) {
+        router.go('/');
+        await tester.pumpAndSettle();
         await _uiLogin(tester, emailA, mailpit);
         await _wait(
           tester,
