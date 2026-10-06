@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:planets_mobile/core/widgets/browse_filter_button.dart';
 import 'package:planets_mobile/features/proposals/data/proposal_gateway.dart';
 import 'package:planets_mobile/features/proposals/domain/proposal_models.dart';
 import 'package:planets_mobile/features/proposals/presentation/public_proposals_screen.dart';
@@ -17,6 +18,7 @@ void main() {
       addTearDown(() => tester.binding.setSurfaceSize(null));
       final gateway = FakeProposalGateway()..categories = _catalog();
       await _pump(tester, gateway);
+      await _tap(tester, 'proposal-toggle-filters');
       await _tap(tester, 'skill-filter-trigger');
       expect(tester.testTextInput.isVisible, isFalse);
       await tester.tap(find.byKey(const Key('skill-filter-search')));
@@ -40,6 +42,7 @@ void main() {
   ) async {
     final gateway = FakeProposalGateway()..categories = _catalog();
     await _pump(tester, gateway);
+    await _tap(tester, 'proposal-toggle-filters');
     expect(find.byType(FilterChip), findsNothing);
     expect(find.byType(CheckboxListTile), findsNothing);
     expect(find.byType(Chip), findsNothing);
@@ -151,6 +154,13 @@ void main() {
     final gateway = FakeProposalGateway();
     await _pump(tester, gateway);
     final query = find.byKey(const Key('proposal-query-filter'));
+    final field = tester.widget<TextField>(query);
+    expect(field.maxLength, 120);
+    expect(field.textInputAction, TextInputAction.search);
+    expect(field.decoration!.counterText, '');
+    expect(field.decoration!.isDense, isTrue);
+    expect(tester.getSize(query).height, lessThanOrEqualTo(56));
+    expect(find.byKey(const Key('proposal-locality-filter')), findsNothing);
 
     await tester.enterText(query, 'paint');
     await tester.pump(const Duration(milliseconds: 100));
@@ -173,6 +183,62 @@ void main() {
     await tester.testTextInput.receiveAction(TextInputAction.search);
     await tester.pumpAndSettle();
     expect(gateway.lastQuery, 'repair');
+
+    await tester.enterText(query, 'x' * 130);
+    expect(tester.widget<TextField>(query).controller!.text, 'x' * 120);
+    await tester.pump(const Duration(milliseconds: 350));
+    await tester.pumpAndSettle();
+    expect(gateway.lastQuery, 'x' * 120);
+  });
+
+  testWidgets('disclosure retains pending input and applied locality/skills', (
+    tester,
+  ) async {
+    final gateway = FakeProposalGateway()..categories = _catalog();
+    await _pump(tester, gateway);
+    final toggle = find.byKey(const Key('proposal-toggle-filters'));
+    final locality = find.byKey(const Key('proposal-locality-filter'));
+    final skillTrigger = find.byKey(const Key('skill-filter-trigger'));
+    expect(locality, findsNothing);
+    expect(skillTrigger, findsNothing);
+    expect(
+      tester.getSemantics(toggle),
+      isSemantics(hasExpandedState: true, isExpanded: false),
+    );
+    await _tap(tester, 'proposal-toggle-filters');
+    expect(locality, findsOneWidget);
+    expect(skillTrigger, findsOneWidget);
+    expect(tester.widget<BrowseFilterButton>(toggle).expanded, isTrue);
+    expect(
+      tester.getSemantics(toggle),
+      isSemantics(hasExpandedState: true, isExpanded: true),
+    );
+    await tester.enterText(locality, ' Bologna ');
+    await _tap(tester, 'proposal-toggle-filters');
+    expect(gateway.calls.where((call) => call == 'list-public'), hasLength(1));
+    expect(tester.widget<BrowseFilterButton>(toggle).hasActiveFilters, isFalse);
+    await _tap(tester, 'proposal-toggle-filters');
+    expect(tester.widget<TextField>(locality).controller!.text, ' Bologna ');
+    await _tap(tester, 'skill-filter-trigger');
+    await _tap(tester, 'skill-filter-option-painting');
+    await _tap(tester, 'skill-filter-apply');
+    expect(gateway.lastLocality, 'Bologna');
+    expect(gateway.lastSkillIds, {'painting'});
+    await _tap(tester, 'proposal-toggle-filters');
+    expect(locality, findsNothing);
+    expect(skillTrigger, findsNothing);
+    expect(tester.widget<BrowseFilterButton>(toggle).hasActiveFilters, isTrue);
+    expect(
+      tester
+          .widget<Badge>(find.byKey(const Key('browse-active-filters')))
+          .isLabelVisible,
+      isTrue,
+    );
+    expect(find.byTooltip('Show filters · Filters active'), findsOneWidget);
+    await _tap(tester, 'proposal-toggle-filters');
+    expect(tester.widget<TextField>(locality).controller!.text, ' Bologna ');
+    expect(find.byKey(const Key('skill-filter-summary')), findsOneWidget);
+    expect(gateway.calls.where((call) => call == 'list-public'), hasLength(2));
   });
 
   testWidgets('disposing Proposal search cancels its pending debounce', (
@@ -194,6 +260,7 @@ void main() {
     (tester) async {
       final gateway = FakeProposalGateway()..categories = _catalog();
       await _pump(tester, gateway);
+      await _tap(tester, 'proposal-toggle-filters');
       await tester.enterText(
         find.byKey(const Key('proposal-locality-filter')),
         'Bologna',

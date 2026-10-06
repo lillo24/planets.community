@@ -155,6 +155,7 @@ final class ProjectRequestMessageChatItem extends MessageChatItem {
     required this.requestMessage,
     required this.resolvedAt,
     required this.acceptedProjectGroupChatId,
+    this.pendingCount = 0,
   }) : super(kind: MessageChatItemKind.projectRequestChat);
 
   final String requestId;
@@ -168,6 +169,9 @@ final class ProjectRequestMessageChatItem extends MessageChatItem {
   final String? requestMessage;
   final DateTime? resolvedAt;
   final String? acceptedProjectGroupChatId;
+
+  /// Canonical total across the pair; request fields above are route context.
+  final int pendingCount;
 
   String? get previewBody => lastVisibleMessageBody ?? requestMessage;
 }

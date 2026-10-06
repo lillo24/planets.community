@@ -12,6 +12,8 @@ import 'package:planets_mobile/core/widgets/loading_state.dart';
 import 'package:planets_mobile/features/auth/application/auth_session_controller.dart';
 import 'package:planets_mobile/features/auth/data/auth_gateway.dart';
 import 'package:planets_mobile/features/auth/domain/auth_models.dart';
+import 'package:planets_mobile/features/messages/data/messages_gateway.dart';
+import 'package:planets_mobile/features/messages/data/message_chats_gateway.dart';
 import 'package:planets_mobile/features/moderation/data/corroboration_gateway.dart';
 import 'package:planets_mobile/features/moderation/data/counterstatement_gateway.dart';
 import 'package:planets_mobile/features/moderation/data/moderation_evidence_gateway.dart';
@@ -22,19 +24,475 @@ import 'package:planets_mobile/features/profile/domain/profile_models.dart';
 import 'package:planets_mobile/features/participation/data/participation_gateway.dart';
 import 'package:planets_mobile/features/project_resource_needs/data/project_resource_needs_gateway.dart';
 import 'package:planets_mobile/features/proposals/data/proposal_gateway.dart';
+import 'package:planets_mobile/features/proposals/application/proposal_controllers.dart';
+import 'package:planets_mobile/features/proposals/domain/proposal_models.dart';
+import 'package:planets_mobile/features/proposals/presentation/proposal_editor_screen.dart';
+import 'package:planets_mobile/features/proposals/presentation/public_proposals_screen.dart';
+import 'package:planets_mobile/features/profile_photo/data/profile_photo_gateway.dart';
 import 'package:planets_mobile/features/recurring_activities/data/recurring_activity_gateway.dart';
 import 'package:planets_mobile/features/resource_listings/data/resource_listing_gateway.dart';
+import 'package:planets_mobile/features/settings/application/navigation_preference_controller.dart';
+import 'package:planets_mobile/features/settings/data/navigation_preference_store.dart';
+import 'package:planets_mobile/features/settings/domain/navigation_preference.dart';
 
 import '../../support/fake_auth.dart';
 import '../../support/fake_moderation.dart';
 import '../../support/fake_profile.dart';
 import '../../support/fake_participation.dart';
 import '../../support/fake_proposal.dart';
+import '../../support/fake_profile_photo.dart';
 import '../../support/fake_project_resource_needs.dart';
 import '../../support/fake_recurring_activity.dart';
 import '../../support/fake_resource_listing.dart';
+import '../../support/fake_settings.dart';
+import '../../support/fake_messages.dart';
+import '../../support/fake_message_chats.dart';
 
 void main() {
+  for (final locale in ['en', 'it']) {
+    testWidgets(
+      'Home and Browse use requested $locale copy on a narrow screen',
+      (tester) async {
+        await tester.binding.setSurfaceSize(const Size(360, 720));
+        addTearDown(() => tester.binding.setSurfaceSize(null));
+        tester.binding.platformDispatcher.localesTestValue = [Locale(locale)];
+        addTearDown(tester.binding.platformDispatcher.clearLocalesTestValue);
+        final app = await _pump(tester, signedIn: false, destination: null);
+        final homeTitle = locale == 'en'
+            ? 'Projects and Cultural Tables'
+            : 'Progetti e Tavoli Culturali';
+        final projects = locale == 'en' ? 'Projects' : 'Progetti';
+        final tables = locale == 'en' ? 'Cultural Tables' : 'Tavoli culturali';
+        expect(find.text(homeTitle), findsOneWidget);
+        await _tap(tester, 'browse-proposals-button');
+        expect(find.text(projects), findsNWidgets(2));
+        expect(find.text(tables), findsOneWidget);
+        expect(find.byKey(const Key('proposal-locality-filter')), findsNothing);
+        await tester.tap(find.text(tables));
+        await tester.pumpAndSettle();
+        expect(
+          app.read(appRouterProvider).routeInformationProvider.value.uri.path,
+          '/tavoli',
+        );
+        expect(find.text(tables), findsNWidgets(2));
+        expect(find.byKey(const Key('tavoli-locality-filter')), findsNothing);
+        expect(tester.takeException(), isNull);
+      },
+    );
+  }
+
+  for (final lifecycle in ProposalLifecycle.values) {
+    testWidgets('owner $lifecycle cover opens its existing authorized route', (
+      tester,
+    ) async {
+      final proposals = FakeProposalGateway()
+        ..ownItems = [ownProposalFixture(lifecycle: lifecycle)]
+        ..publicDetail = proposalDetailFixture();
+      final app = await _pump(
+        tester,
+        proposals: proposals,
+        proposalNow: DateTime.utc(2026, 10, 6),
+      );
+      final router = app.read(appRouterProvider);
+      router.go('/proposals/mine');
+      await tester.pumpAndSettle();
+      expect(
+        tester.getSemantics(
+          find.byKey(const Key('own-proposal-open-proposal-1')),
+        ),
+        isSemantics(
+          label: 'Open Paint the square',
+          isButton: true,
+          hasTapAction: true,
+        ),
+      );
+      await _tap(tester, 'own-proposal-open-proposal-1');
+      final published = lifecycle == ProposalLifecycle.published;
+      expect(
+        router.routerDelegate.state.uri.path,
+        published ? '/proposals/proposal-1' : '/proposals/proposal-1/edit',
+      );
+      expect(
+        find.byType(published ? ProposalDetailScreen : ProposalEditorScreen),
+        findsOneWidget,
+      );
+      if (published) {
+        expect(proposals.calls, contains('public-detail:proposal-1'));
+      } else {
+        expect(
+          proposals.calls.where((call) => call.startsWith('public-detail:')),
+          isEmpty,
+        );
+        expect(
+          tester
+              .widget<ProposalEditorScreen>(find.byType(ProposalEditorScreen))
+              .proposalId,
+          'proposal-1',
+        );
+        expect(
+          tester
+              .widget<TextFormField>(
+                find.widgetWithText(TextFormField, 'Title'),
+              )
+              .controller!
+              .text,
+          'Paint the square',
+        );
+        expect(proposals.lastExpectedIdentity, 'user-1');
+      }
+      expect(
+        proposals.calls.where(
+          (call) =>
+              call.startsWith('publish:') ||
+              call.startsWith('cancel:') ||
+              call.startsWith('update:'),
+        ),
+        isEmpty,
+      );
+      await tester.pageBack();
+      await tester.pumpAndSettle();
+      expect(router.routerDelegate.state.uri.path, '/proposals/mine');
+      await _tap(tester, 'own-proposal-open-proposal-1');
+      expect(
+        router.routerDelegate.state.uri.path,
+        published ? '/proposals/proposal-1' : '/proposals/proposal-1/edit',
+      );
+    });
+  }
+
+  testWidgets(
+    'owner cover leaves Resources, Edit, Publish and Cancel independent',
+    (tester) async {
+      final proposals = FakeProposalGateway()
+        ..ownItems = [
+          ownProposalFixture(
+            startsAt: DateTime.utc(2026, 11, 10),
+            endsAt: DateTime.utc(2026, 11, 11),
+          ),
+        ];
+      final app = await _pump(
+        tester,
+        proposals: proposals,
+        proposalNow: DateTime.utc(2026, 10, 6),
+        profilePhoto: FakeProfilePhotoGateway()..photo = profilePhotoFixture(),
+      );
+      final router = app.read(appRouterProvider);
+      router.go('/proposals/mine');
+      await tester.pumpAndSettle();
+      await _tap(tester, 'proposal-resources-proposal-1');
+      expect(
+        router.routerDelegate.state.uri.path,
+        '/proposals/proposal-1/resources',
+      );
+      await tester.pageBack();
+      await tester.pumpAndSettle();
+      await _tap(tester, 'proposal-edit-proposal-1');
+      expect(
+        router.routerDelegate.state.uri.path,
+        '/proposals/proposal-1/edit',
+      );
+      await tester.pageBack();
+      await tester.pumpAndSettle();
+      await _tap(tester, 'proposal-publish-proposal-1');
+      expect(proposals.calls, contains('publish:proposal-1'));
+      expect(router.routerDelegate.state.uri.path, '/proposals/mine');
+      await _tap(tester, 'proposal-cancel-proposal-1');
+      expect(find.text('Cancel this proposal?'), findsOneWidget);
+      expect(proposals.calls, isNot(contains('cancel:proposal-1')));
+      await tester.tap(
+        find.descendant(
+          of: find.byType(AlertDialog),
+          matching: find.byType(FilledButton),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(proposals.calls, contains('cancel:proposal-1'));
+      expect(router.routerDelegate.state.uri.path, '/proposals/mine');
+      expect(
+        proposals.calls.where((call) => call.startsWith('public-detail:')),
+        isEmpty,
+      );
+    },
+  );
+
+  testWidgets('fresh device defaults to Messages and Home stays selected', (
+    tester,
+  ) async {
+    final app = await _pump(tester, destination: null, signedIn: false);
+    expect(
+      app.read(navigationPreferenceProvider).destination,
+      BottomTabDestination.messages,
+    );
+    final bar = tester.widget<NavigationBar>(find.byType(NavigationBar));
+    expect(bar.destinations.map((destination) => destination.key), const [
+      Key('nav-profile'),
+      Key('nav-home'),
+      Key('nav-messages'),
+    ]);
+    expect(bar.selectedIndex, 1);
+  });
+
+  testWidgets('Settings saves Browse and updates the same stable router', (
+    tester,
+  ) async {
+    final store = FakeNavigationPreferenceStore();
+    final app = await _pump(
+      tester,
+      destination: null,
+      navigationStore: store,
+      signedIn: false,
+    );
+    final router = app.read(appRouterProvider);
+    router.go('/settings');
+    await tester.pumpAndSettle();
+    await _tap(tester, 'settings-navigation-row');
+    await _tap(tester, 'navigation-browse-option');
+    expect(identical(app.read(appRouterProvider), router), isTrue);
+    expect(router.routerDelegate.state.uri.path, '/settings');
+    expect(store.value, 'browse');
+    expect(find.byKey(const Key('nav-browse')), findsOneWidget);
+    await _tap(tester, 'nav-browse');
+    expect(router.routerDelegate.state.uri.path, '/proposals');
+    await _tap(tester, 'nav-home');
+    router.go('/settings/navigation');
+    await tester.pumpAndSettle();
+    await _tap(tester, 'navigation-messages-option');
+    expect(store.value, 'messages');
+    expect(find.byKey(const Key('nav-messages')), findsOneWidget);
+  });
+
+  for (final preference in BottomTabDestination.values) {
+    testWidgets(
+      'direct and pushed destinations stay truthful with ${preference.name}',
+      (tester) async {
+        final app = await _pump(tester, destination: preference);
+        final router = app.read(appRouterProvider);
+        for (final path in [
+          '/messages',
+          '/proposals',
+          '/tavoli',
+          '/resources',
+        ]) {
+          router.go(path);
+          await tester.pumpAndSettle();
+          final isMessages = path == '/messages';
+          final bar = tester.widget<NavigationBar>(find.byType(NavigationBar));
+          expect(bar.selectedIndex, 2);
+          expect(
+            bar.destinations.last.key,
+            Key(isMessages ? 'nav-messages' : 'nav-browse'),
+          );
+          expect(
+            (bar.destinations.last as NavigationDestination).label,
+            isMessages ? 'Messages' : 'Browse',
+          );
+          await _tap(tester, isMessages ? 'nav-messages' : 'nav-browse');
+          expect(router.routerDelegate.state.uri.path, path);
+        }
+        router.go('/');
+        await tester.pumpAndSettle();
+        router.push('/messages');
+        await tester.pumpAndSettle();
+        expect(
+          tester
+              .widget<NavigationBar>(find.byType(NavigationBar))
+              .selectedIndex,
+          2,
+        );
+        expect(find.byKey(const Key('nav-messages')), findsOneWidget);
+        await tester.binding.handlePopRoute();
+        await tester.pumpAndSettle();
+        expect(router.routerDelegate.state.uri.path, '/');
+        expect(find.byKey(Key('nav-${preference.name}')), findsOneWidget);
+      },
+    );
+  }
+
+  testWidgets('signed-out Messages tab preserves safe OTP and setup return', (
+    tester,
+  ) async {
+    final app = await _pump(
+      tester,
+      destination: null,
+      signedIn: false,
+      complete: false,
+    );
+    final router = app.read(appRouterProvider);
+    await _tap(tester, 'nav-messages');
+    expect(router.routerDelegate.state.uri.path, '/auth');
+    expect(
+      router.routerDelegate.state.uri.queryParameters['returnTo'],
+      '/messages',
+    );
+    await tester.enterText(
+      find.byKey(const Key('auth-email-field')),
+      'person@example.com',
+    );
+    await _tap(tester, 'auth-request-button');
+    await tester.enterText(find.byKey(const Key('auth-code-field')), '123456');
+    await _tap(tester, 'auth-verify-button');
+    expect(router.routerDelegate.state.uri.path, '/profile/edit');
+    expect(
+      router.routerDelegate.state.uri.queryParameters['returnTo'],
+      '/messages',
+    );
+    await tester.enterText(
+      find.byKey(const Key('profile-display-name-field')),
+      'Casey',
+    );
+    await _tap(tester, 'profile-save-button');
+    expect(router.routerDelegate.state.uri.path, '/messages');
+    expect(
+      tester.widget<NavigationBar>(find.byType(NavigationBar)).selectedIndex,
+      2,
+    );
+  });
+
+  testWidgets('changing the shortcut never relabels an active Browse route', (
+    tester,
+  ) async {
+    final app = await _pump(tester);
+    final router = app.read(appRouterProvider);
+    router.go('/resources');
+    await tester.pumpAndSettle();
+    await app
+        .read(navigationPreferenceProvider.notifier)
+        .select(BottomTabDestination.messages);
+    await tester.pumpAndSettle();
+    expect(identical(app.read(appRouterProvider), router), isTrue);
+    expect(router.routerDelegate.state.uri.path, '/resources');
+    expect(find.byKey(const Key('nav-browse')), findsOneWidget);
+    expect(
+      tester.widget<NavigationBar>(find.byType(NavigationBar)).selectedIndex,
+      2,
+    );
+    await _tap(tester, 'nav-home');
+    expect(find.byKey(const Key('nav-messages')), findsOneWidget);
+  });
+
+  testWidgets(
+    'cross-branch pushed screens and Back keep truthful right slots',
+    (tester) async {
+      final app = await _pump(tester, destination: null);
+      final router = app.read(appRouterProvider);
+      router.go('/resources');
+      await tester.pumpAndSettle();
+      router.push('/messages/requests/request-1');
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('nav-messages')), findsOneWidget);
+      expect(
+        tester.widget<NavigationBar>(find.byType(NavigationBar)).selectedIndex,
+        2,
+      );
+      await tester.binding.handlePopRoute();
+      await tester.pumpAndSettle();
+      expect(router.routerDelegate.state.uri.path, '/resources');
+      expect(find.byKey(const Key('nav-browse')), findsOneWidget);
+      router.go('/messages');
+      await tester.pumpAndSettle();
+      router.push('/proposals/proposal-1');
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('nav-browse')), findsOneWidget);
+      expect(
+        tester.widget<NavigationBar>(find.byType(NavigationBar)).selectedIndex,
+        2,
+      );
+      await tester.binding.handlePopRoute();
+      await tester.pumpAndSettle();
+      expect(router.routerDelegate.state.uri.path, '/messages');
+      expect(find.byKey(const Key('nav-messages')), findsOneWidget);
+    },
+  );
+
+  testWidgets(
+    'Messages re-tap preserves nested route and Home returns to root',
+    (tester) async {
+      final app = await _pump(tester, destination: null);
+      final router = app.read(appRouterProvider);
+      router.go('/messages/requests/request-1');
+      await tester.pumpAndSettle();
+      await _tap(tester, 'nav-messages');
+      expect(
+        router.routerDelegate.state.uri.path,
+        '/messages/requests/request-1',
+      );
+      await tester.binding.handlePopRoute();
+      await tester.pumpAndSettle();
+      expect(router.routerDelegate.state.uri.path, '/messages');
+      await _tap(tester, 'nav-profile');
+      await _tap(tester, 'nav-messages');
+      expect(router.routerDelegate.state.uri.path, '/messages');
+      await _tap(tester, 'nav-home');
+      expect(router.routerDelegate.state.uri.path, '/');
+    },
+  );
+
+  testWidgets('Profile bottom sign out clears inactive private branch state', (
+    tester,
+  ) async {
+    final auth = FakeAuthGateway(
+      snapshot: const AuthSnapshot(identity: AuthIdentity(id: 'user-1')),
+    );
+    final app = await _pump(tester, auth: auth, destination: null);
+    final router = app.read(appRouterProvider);
+    router.go('/proposals/create');
+    await tester.pumpAndSettle();
+    await tester.enterText(
+      find.widgetWithText(TextFormField, 'Title'),
+      'Private draft',
+    );
+    await _tap(tester, 'nav-profile');
+    expect(find.text('Draft saved'), findsOneWidget);
+    // The successful draft guard shows feedback above Profile's bottom action.
+    // Advance its actual duration before exercising the sign-out tap.
+    await tester.pump(tester.widget<SnackBar>(find.byType(SnackBar)).duration);
+    await tester.pumpAndSettle();
+    expect(
+      find.byType(ProposalEditorScreen, skipOffstage: false),
+      findsOneWidget,
+    );
+    final action = find.byKey(const Key('account-sign-out-button'));
+    await tester.ensureVisible(action);
+    final button = tester.widget<FilledButton>(action);
+    final colors = Theme.of(tester.element(action)).colorScheme;
+    expect(button.style!.backgroundColor!.resolve({}), colors.error);
+    expect(button.style!.foregroundColor!.resolve({}), colors.onError);
+    final lastAction = find.byKey(
+      const Key('profile-moderation-review-requests-button'),
+    );
+    expect(
+      tester.getTopLeft(action).dy,
+      greaterThan(tester.getTopLeft(lastAction).dy),
+    );
+    await _tap(tester, 'account-sign-out-button');
+    expect(auth.signOutCount, 1);
+    expect(app.read(authSessionProvider).isAuthenticated, isFalse);
+    expect(find.byKey(const Key('profile-example-label')), findsOneWidget);
+    expect(find.byKey(const Key('account-sign-out-button')), findsNothing);
+    expect(find.text('Private draft', skipOffstage: false), findsNothing);
+    expect(
+      find.byType(ProposalEditorScreen, skipOffstage: false),
+      findsNothing,
+    );
+    expect(
+      app.read(navigationPreferenceProvider).destination,
+      BottomTabDestination.messages,
+    );
+  });
+
+  for (final complete in [true, false]) {
+    testWidgets('Home sign out follows demo gate for complete=$complete', (
+      tester,
+    ) async {
+      await _pump(tester, complete: complete, enableDemoTools: 'false');
+      expect(find.widgetWithText(TextButton, 'Sign out'), findsNothing);
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pumpAndSettle();
+      await _pump(tester, complete: complete, enableDemoTools: 'true');
+      expect(find.widgetWithText(TextButton, 'Sign out'), findsOneWidget);
+    });
+  }
+
   testWidgets('demo marker survives shell routes and production removes it', (
     tester,
   ) async {
@@ -155,15 +613,15 @@ void main() {
       ..publicItems = [proposalSummaryFixture()];
     final app = await _pump(tester, proposals: proposals);
     await _tap(tester, 'nav-browse');
-    expect(find.text('One-time proposals'), findsOneWidget);
-    await tester.tap(find.text('Tavoli').last);
+    expect(find.text('Projects'), findsNWidgets(2));
+    await tester.tap(find.text('Cultural Tables').last);
     await tester.pumpAndSettle();
     expect(
       app.read(appRouterProvider).routeInformationProvider.value.uri.path,
       '/tavoli',
     );
     expect(find.text('Neighborhood philosophy table'), findsOneWidget);
-    await tester.tap(find.text('Proposals').last);
+    await tester.tap(find.text('Projects').last);
     await tester.pumpAndSettle();
     expect(
       app.read(appRouterProvider).routeInformationProvider.value.uri.path,
@@ -184,7 +642,7 @@ void main() {
 
       await _tap(tester, 'browse-proposals-button');
       expect(router.routeInformationProvider.value.uri.path, '/proposals');
-      expect(find.text('One-time proposals'), findsOneWidget);
+      expect(find.text('Projects'), findsNWidgets(2));
 
       await tester.binding.handlePopRoute();
       await tester.pumpAndSettle();
@@ -618,6 +1076,7 @@ void main() {
         ..publicDetail = proposalDetailFixture();
       final app = await _pump(tester, proposals: proposals);
       await _tap(tester, 'browse-proposals-button');
+      await _tap(tester, 'proposal-toggle-filters');
       await tester.enterText(
         find.byKey(const Key('proposal-locality-filter')),
         'Bologna',
@@ -906,6 +1365,11 @@ Future<ProviderContainer> _pump(
   String appEnvironment = 'local',
   String enableDemoTools = '',
   FakeProjectResourceNeedsGateway? projectResourceNeeds,
+  // Existing retention tests exercise the optional Browse shortcut.
+  BottomTabDestination? destination = BottomTabDestination.browse,
+  FakeNavigationPreferenceStore? navigationStore,
+  DateTime? proposalNow,
+  FakeProfilePhotoGateway? profilePhoto,
 }) async {
   final gateway =
       auth ??
@@ -918,6 +1382,19 @@ Future<ProviderContainer> _pump(
   await tester.pumpWidget(
     ProviderScope(
       overrides: [
+        if (proposalNow != null)
+          proposalClockProvider.overrideWithValue(() => proposalNow),
+        if (destination != null)
+          initialNavigationPreferenceProvider.overrideWithValue(
+            NavigationPreferenceState(destination: destination),
+          ),
+        navigationPreferenceStoreProvider.overrideWithValue(
+          navigationStore ?? FakeNavigationPreferenceStore(),
+        ),
+        messagesGatewayProvider.overrideWithValue(FakeMessagesGateway()),
+        messageChatsGatewayProvider.overrideWithValue(
+          FakeMessageChatsGateway(),
+        ),
         appConfigProvider.overrideWithValue(
           AppConfig.fromValues(
             appEnvironment: appEnvironment,
@@ -939,6 +1416,8 @@ Future<ProviderContainer> _pump(
           profile ??
               FakeProfileGateway(data: profileFixture(complete: complete)),
         ),
+        if (profilePhoto != null)
+          profilePhotoGatewayProvider.overrideWithValue(profilePhoto),
         participationGatewayProvider.overrideWithValue(
           participation ??
               (FakeParticipationGateway()

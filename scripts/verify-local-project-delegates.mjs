@@ -160,30 +160,45 @@ async function verifyProjectDelegates() {
   }
 
   const requestChat = singleRow(
-    await rpc(winner, "get_own_project_join_request_chat", {
-      p_expected_profile_id: winner.id,
+    await rpc(requester, "get_own_project_join_request_chat", {
+      p_expected_profile_id: requester.id,
       p_request_id: requestId,
     }),
-    "delegate request chat",
+    "requester legacy chat",
   );
-  if (requestChat.viewer_role !== "delegate") {
-    throw new Error(
-      "The request chat did not identify the active delegate role.",
-    );
+  for (const operation of [
+    "get_own_project_join_request_chat",
+    "send_project_join_request_chat_message",
+    "list_own_project_join_request_chat_items",
+  ]) {
+    const params =
+      operation === "get_own_project_join_request_chat"
+        ? { p_expected_profile_id: winner.id, p_request_id: requestId }
+        : operation === "send_project_join_request_chat_message"
+          ? {
+              p_expected_profile_id: winner.id,
+              p_chat_id: requestChat.chat_id,
+              p_body: "Forbidden delegate reply",
+            }
+          : {
+              p_expected_profile_id: winner.id,
+              p_chat_id: requestChat.chat_id,
+              p_limit: 10,
+            };
+    const denied = await winner.client.rpc(operation, params);
+    if (denied.error?.code !== "42501" || denied.data !== null)
+      throw new Error("MSG01 delegate retained legacy personal-chat access.");
   }
-  await rpc(winner, "send_project_join_request_chat_message", {
-    p_expected_profile_id: winner.id,
-    p_chat_id: requestChat.chat_id,
-    p_body: "Delegate organizer reply",
-  });
   if (
-    !(await canReceiveTopic(
+    await canReceiveTopic(
       winner.id,
       "private.profile_can_receive_project_join_request_chat_topic",
       `project-request-chat:${requestChat.chat_id}:profile:${winner.id}`,
-    ))
+    )
   ) {
-    throw new Error("The active delegate failed private-chat Realtime auth.");
+    throw new Error(
+      "MSG01 delegate retained legacy personal-chat subscription authority.",
+    );
   }
 
   await rpc(winner, "accept_project_join_request_as_manager", {

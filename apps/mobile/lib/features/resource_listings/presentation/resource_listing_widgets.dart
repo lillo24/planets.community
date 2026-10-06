@@ -155,12 +155,17 @@ class PublicResourceListingCard extends StatelessWidget {
       listing.publishedAt,
       now: now,
     );
-    final location = canonicalResourceListingLocation(
-      publicLocationLabel: listing.publicLocationLabel,
-      locality: listing.locality,
-      administrativeArea: listing.administrativeArea,
-      countryCode: listing.countryCode,
-    );
+    // Cards favor structured locality; detail retains the canonical public
+    // label. No geographic parsing or truncation of arbitrary labels is used.
+    final locality = listing.locality.trim();
+    final location = locality.isNotEmpty
+        ? locality
+        : canonicalResourceListingLocation(
+            publicLocationLabel: listing.publicLocationLabel,
+            locality: listing.locality,
+            administrativeArea: listing.administrativeArea,
+            countryCode: listing.countryCode,
+          );
     return Semantics(
       button: true,
       label: [
@@ -222,24 +227,20 @@ class PublicResourceListingCard extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                     ),
                     const SizedBox(height: AppSpacing.medium),
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                    Wrap(
+                      key: Key('resource-metadata-${listing.id}'),
+                      spacing: AppSpacing.medium,
+                      runSpacing: AppSpacing.small,
                       children: [
-                        Expanded(
-                          child: _IconText(
-                            icon: Icons.people_outline,
-                            text: interest,
-                            key: Key('resource-interest-count-${listing.id}'),
-                          ),
+                        _IconText(
+                          icon: Icons.people_outline,
+                          text: interest,
+                          key: Key('resource-interest-count-${listing.id}'),
                         ),
-                        const SizedBox(width: AppSpacing.small),
-                        Expanded(
-                          child: _IconText(
-                            icon: Icons.location_on_outlined,
-                            text: location,
-                            textAlign: TextAlign.end,
-                            key: Key('resource-location-${listing.id}'),
-                          ),
+                        _IconText(
+                          icon: Icons.location_on_outlined,
+                          text: location,
+                          key: Key('resource-location-${listing.id}'),
                         ),
                       ],
                     ),
@@ -295,24 +296,19 @@ class ResourceListingLocation extends StatelessWidget {
 }
 
 class _IconText extends StatelessWidget {
-  const _IconText({
-    required this.icon,
-    required this.text,
-    this.textAlign = TextAlign.start,
-    super.key,
-  });
+  const _IconText({required this.icon, required this.text, super.key});
 
   final IconData icon;
   final String text;
-  final TextAlign textAlign;
 
   @override
   Widget build(BuildContext context) => Row(
+    mainAxisSize: MainAxisSize.min,
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
       Icon(icon, size: 20),
       const SizedBox(width: AppSpacing.small),
-      Expanded(child: Text(text, textAlign: textAlign)),
+      Flexible(child: Text(text)),
     ],
   );
 }

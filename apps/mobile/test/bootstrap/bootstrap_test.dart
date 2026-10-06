@@ -7,6 +7,8 @@ import 'package:planets_mobile/core/config/app_config.dart';
 import 'package:planets_mobile/features/auth/data/auth_gateway.dart';
 import 'package:planets_mobile/features/settings/application/language_preference_controller.dart';
 import 'package:planets_mobile/features/settings/domain/language_preference.dart';
+import 'package:planets_mobile/features/settings/application/navigation_preference_controller.dart';
+import 'package:planets_mobile/features/settings/domain/navigation_preference.dart';
 
 import '../support/fake_auth.dart';
 
@@ -27,6 +29,12 @@ void main() {
           events.add('language');
           return LanguagePreference.italian;
         },
+        navigationPreferenceLoader: () async {
+          events.add('navigation');
+          return const NavigationPreferenceState(
+            destination: BottomTabDestination.browse,
+          );
+        },
         backendInitializer: (receivedConfig) async {
           expect(identical(receivedConfig, config), isTrue);
           events.add('backend');
@@ -45,6 +53,7 @@ void main() {
       expect(events, [
         'config',
         'language',
+        'navigation',
         'backend',
         'monitoring',
         'application',
@@ -71,6 +80,12 @@ void main() {
         container.read(languagePreferenceProvider),
         LanguagePreference.italian,
       );
+      expect(
+        container.read(navigationPreferenceProvider).destination,
+        BottomTabDestination.browse,
+      );
+      expect(find.byKey(const Key('nav-browse')), findsOneWidget);
+      expect(find.byKey(const Key('nav-messages')), findsNothing);
     },
   );
 
@@ -83,6 +98,8 @@ void main() {
         configLoader: _testConfig,
         languagePreferenceLoader: () async =>
             throw StateError('platform detail'),
+        navigationPreferenceLoader: () async =>
+            throw StateError('navigation platform detail'),
         backendInitializer: (_) async {},
         monitoringLauncher: (_, appRunner) async => appRunner(),
         applicationLauncher: (application) {
@@ -109,6 +126,10 @@ void main() {
       expect(
         container.read(languagePreferenceProvider),
         LanguagePreference.system,
+      );
+      expect(
+        container.read(navigationPreferenceProvider).restoreFailed,
+        isTrue,
       );
     },
   );

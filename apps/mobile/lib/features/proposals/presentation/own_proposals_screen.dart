@@ -278,11 +278,37 @@ class _OwnProposalCard extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          ProjectCoverImage(
-            key: Key('own-proposal-cover-${proposal.id}'),
-            title: proposal.title ?? l10n.proposalUntitled,
-            objectPath: proposal.coverObjectPath,
-            ownerProfileId: identityId,
+          Stack(
+            children: [
+              ProjectCoverImage(
+                key: Key('own-proposal-cover-${proposal.id}'),
+                title: proposal.title ?? l10n.proposalUntitled,
+                objectPath: proposal.coverObjectPath,
+                ownerProfileId: identityId,
+              ),
+              Positioned.fill(
+                child: Material(
+                  type: MaterialType.transparency,
+                  child: Semantics(
+                    container: true,
+                    button: true,
+                    label: l10n.proposalOpenCover(
+                      proposal.title ?? l10n.proposalUntitled,
+                    ),
+                    child: InkWell(
+                      key: Key('own-proposal-open-${proposal.id}'),
+                      // Only published proposals have a public detail. The
+                      // owner editor also handles cancelled read-only records.
+                      onTap: () => context.push(
+                        proposal.lifecycle == ProposalLifecycle.published
+                            ? '/proposals/${proposal.id}'
+                            : '/proposals/${proposal.id}/edit',
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
           Padding(
             padding: const EdgeInsets.all(AppSpacing.medium),

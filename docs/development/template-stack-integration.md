@@ -1,8 +1,58 @@
 # Template stack integration candidate (TW-STACK01)
 
-This is a draft review candidate, not a main merge or deployment. Founder
-review remains unapproved. The eight predecessor PRs and their checkouts remain
-intact; the separate open moderation/admin/dependency stacks were not imported.
+The 5 October draft candidate below preserved both selected histories. On
+6 October the founder approved Workshop behavior/content/copy, similar-Proposal
+flow and draft navigation, with one requested-card badge correction, and
+authorized main integration through PR #146. The
+[approved merge plan](../../history-implementations/PLANETS_TW_STACK01_merge_PR146_badge_polish.md)
+records that authority. The eight predecessor PRs are closed as superseded and
+are not separate merge vehicles. Release-only QA remains separate from approval;
+this work does not authorize deployment or shared database migration.
+
+## Founder-approved reconciliation and requested badge (6 October)
+
+The follow-up merges latest selected main
+`eb70fe249978585f754fa9175d337d7ef8b99e17` into original #146 head
+`e0d71724537c83b328a85b21437c51a12aac21c1`, preserving account exits/navigation
+preferences (#147), compact browse/open covers (#150), provider-ready Auth
+infrastructure (#151), Scambio polish (#152) and durable pair conversations
+(#153). No provider is activated and no migration is rewritten.
+
+Five conflicts are resolved at their owners: Workshop entry plus the compact
+search/filter row; both EN/IT additions; both package command sets; and one demo
+orchestrator retaining invitation, Workshop and pair-conversation fixtures.
+The guarded explicit demo reset remains intact. The complete database gate
+runs MSG01's populated upgrade before clean reset and pair verification after
+Messages. Both hosted MSG01 steps and the prior Template gates survive.
+The router retains draft/native composition and main's Settings route; the
+navigation shell retains stable branches and visible Messages/Browse preference.
+
+Main's cover-navigation tests now inspect the rendered identity-bound editor
+instead of its retired global controller. Its sign-out test verifies the
+successful draft guard feedback, advances the snackbar's actual duration before
+tapping the bottom Profile action, and proves the retained private editor branch
+is removed on sign-out. The product guard is unchanged. The populated conversation verifier waits up to ten seconds
+only for its first read's `PGRST202` schema-cache registration after migration;
+all other errors and all mutations still fail immediately. The observed function
+was present in PostgreSQL and later denied anonymous access with `42501`, proving
+that the temporary failure was API cache readiness, not a permission workaround.
+
+Only the requested Proposal badge moves to a cover Stack's top-right. Status
+stays in the title row, and the border, taps and requested semantics remain.
+Existing EN `Requested` and IT `Richiesta inviata` strings are unchanged.
+The four locale/image/placeholder regression cases use a 320-pixel surface and
+a long title; they compare title width and cover geometry with the ordinary
+card, check status remains in content, and exercise badge/card taps and semantics.
+Types are regenerated from the combined disposable database using the canonical
+generator and main's expanded participation nullability correction.
+
+Local rehearsal owns `planets-tw146-polish`, API/database/Mailpit ports
+55321/55322/55324 and inspector 8114. `MAILPIT_URL=http://127.0.0.1:55324` and
+`PLANETS_DISPOSABLE_QA=1` explicitly designate that local-only target for the
+new populated upgrade; original configuration bytes are retained outside Git.
+Final local results, exact hosted head/run and merge ancestry are recorded in
+the #146 handoff after execution. The historical results below retain their
+original source heads and founder-review status.
 
 ## Immutable inputs and integration owners
 
@@ -187,10 +237,13 @@ this checkout's specific Gradle execution-history file; uninstall only the QA
 package, preserve other packages/reverse rules/shared Gradle processes, and stop
 only a task-created emulator. Retain the clean integration checkout for review.
 
-Founder review remains open for historical public/reusable content, private
-Bozza, self-report/staff-only removal, independent copy/retry, wording/presentation,
-Full/unknown and lexical/locality limits, dismiss/reopen, save/discard/partial-image
-navigation and synthetic PLANETS attribution. iOS compilation, physical-device
-Back/swipe, TalkBack/VoiceOver/hardware keyboard and real public-host/signed-device
-association remain separate gates. No hosting, signing, provider billing, shared
-database migration, main/predecessor merge or store deployment is authorized here.
+On 5 October founder review was open for historical public/reusable content,
+private Bozza, self-report/staff-only removal, independent copy/retry,
+wording/presentation, Full/unknown and lexical/locality limits, dismiss/reopen,
+save/discard/partial-image navigation and synthetic PLANETS attribution. The
+6 October approval and merge authorization supersede that review boundary as
+recorded above. iOS compilation, comprehensive physical-device gesture and
+TalkBack/VoiceOver/hardware-keyboard coverage, and real public-host/signed-device
+association retain their release gates; this follow-up does not claim those
+checks. Hosting, signing, provider activation/billing, shared database migration
+and store deployment remain outside this task.

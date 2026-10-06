@@ -7,6 +7,10 @@ import { createClient } from "@supabase/supabase-js";
 import { signInLocalOtpUser } from "./local-authenticated-user.mjs";
 import { ensureLocalProfilePhoto } from "./local-profile-photo.mjs";
 import {
+  seedDemoParticipationConversation,
+  verifyDemoParticipationConversation,
+} from "./demo-participation-conversations.mjs";
+import {
   ensureDemoInvitation,
   exerciseDemoInvitationTransitions,
   seedDemoParticipantInvitations,
@@ -490,11 +494,16 @@ export async function seedLocalDemoWorld({
       scenario,
       onInvitationCheckpoint,
     );
+    const pairMessageIds = await seedDemoParticipationConversation(
+      context,
+      scenario,
+    );
     if (includeWorkshop)
       await seedWorkshop(context, { now, onCheckpoint: onWorkshopCheckpoint });
-    await projectDemoNotificationOutbox(context);
+    await projectDemoNotificationOutbox(context, pairMessageIds);
     await verifyDemoWorldState(context, scenario, times);
     await verifyDemoParticipantInvitations(context, scenario);
+    await verifyDemoParticipationConversation(context, scenario);
     if (includeWorkshop) await verifyWorkshop(context);
 
     return Object.freeze({
@@ -550,6 +559,7 @@ export async function verifyLocalDemoWorld({
     });
     const scenario = await resolveExistingScenario(context);
     await verifyDemoParticipantInvitations(context, scenario);
+    await verifyDemoParticipationConversation(context, scenario);
     await verifyDemoWorldState(context, scenario, buildDemoTimes(now));
     if (includeWorkshop) await verifyWorkshop(context);
     return scenario;
@@ -1236,6 +1246,14 @@ async function bringDemoWorldToDesiredState(context, times) {
     "withdrawn",
     "Forse riesco a partecipare al tavolo del mercoledì.",
   );
+  const monthlyPendingRequestId = await ensureRequestState(
+    context,
+    personas.bob,
+    personas.alice,
+    monthly.id,
+    "pending",
+    "Vorrei partecipare anche al Tavolo mensile per organizzare le prossime iniziative.",
+  );
   const chat = await ensureChatHistory(
     context,
     personas.alice,
@@ -1270,6 +1288,7 @@ async function bringDemoWorldToDesiredState(context, times) {
       muralMembershipId,
       repairRejectedRequestId,
       weeklyWithdrawnRequestId,
+      monthlyPendingRequestId,
     },
     chat,
     listings: { donate, exchange, closed },
@@ -1743,7 +1762,7 @@ async function projectNotificationOutbox(serviceClient) {
   );
 }
 
-async function projectDemoNotificationOutbox(context) {
+async function projectDemoNotificationOutbox(context, pairMessageIds) {
   const { sql, serviceClient, personas } = context;
   const owners = Object.values(personas).map((p) => p.id);
   const projects =
@@ -1760,7 +1779,9 @@ async function projectDemoNotificationOutbox(context) {
   await sql.begin(async (tx) => {
     await tx`select id from private.outbox_events where not coalesce(
       payload->>'project_id'=any(${projects.map((p) => p.id)}::text[]) or
-      payload->>'listing_id'=any(${listings.map((l) => l.id)}::text[]),false) for update`;
+      payload->>'listing_id'=any(${listings.map((l) => l.id)}::text[]) or
+      (event_type='participation.conversation_message_sent' and
+       payload->>'message_id'=any(${pairMessageIds}::text[])),false) for update`;
     await projectNotificationOutbox(serviceClient);
   });
 }

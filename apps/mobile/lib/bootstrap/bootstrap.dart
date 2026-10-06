@@ -10,6 +10,9 @@ import '../core/monitoring/app_monitoring.dart';
 import '../features/settings/application/language_preference_controller.dart';
 import '../features/settings/data/language_preference_store.dart';
 import '../features/settings/domain/language_preference.dart';
+import '../features/settings/application/navigation_preference_controller.dart';
+import '../features/settings/data/navigation_preference_store.dart';
+import '../features/settings/domain/navigation_preference.dart';
 
 typedef AppConfigLoader = AppConfig Function();
 typedef BackendInitializer = Future<void> Function(AppConfig config);
@@ -19,9 +22,14 @@ typedef MonitoringLauncher = Future<void> Function(
 );
 typedef ApplicationLauncher = void Function(Widget application);
 typedef LanguagePreferenceLoader = Future<LanguagePreference> Function();
+typedef NavigationPreferenceLoader =
+    Future<NavigationPreferenceState> Function();
 
 Future<LanguagePreference> loadLanguagePreference() =>
     restoreLanguagePreference(SharedPreferencesLanguagePreferenceStore());
+
+Future<NavigationPreferenceState> loadNavigationPreference() =>
+    restoreNavigationPreference(SharedPreferencesNavigationPreferenceStore());
 
 Future<void> bootstrapApplication({
   AppConfigLoader configLoader = AppConfig.fromCompileTime,
@@ -29,6 +37,8 @@ Future<void> bootstrapApplication({
   MonitoringLauncher monitoringLauncher = runWithOptionalMonitoring,
   ApplicationLauncher applicationLauncher = runApp,
   LanguagePreferenceLoader languagePreferenceLoader = loadLanguagePreference,
+  NavigationPreferenceLoader navigationPreferenceLoader =
+      loadNavigationPreference,
 }) async {
   final config = configLoader();
   LanguagePreference languagePreference;
@@ -36,6 +46,12 @@ Future<void> bootstrapApplication({
     languagePreference = await languagePreferenceLoader();
   } catch (_) {
     languagePreference = LanguagePreference.system;
+  }
+  NavigationPreferenceState navigationPreference;
+  try {
+    navigationPreference = await navigationPreferenceLoader();
+  } catch (_) {
+    navigationPreference = const NavigationPreferenceState(restoreFailed: true);
   }
   await backendInitializer(config);
   await monitoringLauncher(
@@ -46,6 +62,9 @@ Future<void> bootstrapApplication({
           appConfigProvider.overrideWithValue(config),
           initialLanguagePreferenceProvider.overrideWithValue(
             languagePreference,
+          ),
+          initialNavigationPreferenceProvider.overrideWithValue(
+            navigationPreference,
           ),
         ],
         child: const PlanetsApp(),

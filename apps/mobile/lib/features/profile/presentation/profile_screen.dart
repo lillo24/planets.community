@@ -10,6 +10,7 @@ import '../../../core/widgets/error_state.dart';
 import '../../../core/widgets/loading_state.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../auth/application/auth_session_controller.dart';
+import '../../auth/presentation/account_sign_out_action.dart';
 import '../../blocking/presentation/blocking_routes.dart';
 import '../../moderation/presentation/moderation_routes.dart';
 import '../../profile_photo/application/profile_photo_controller.dart';
@@ -308,6 +309,10 @@ class _ProfileBody extends StatelessWidget {
                 icon: const Icon(Icons.fact_check_outlined),
                 label: Text(l10n.moderationReviewRequestsAction),
               ),
+              const SizedBox(height: AppSpacing.large),
+              const Divider(),
+              const SizedBox(height: AppSpacing.medium),
+              const AccountSignOutAction(),
             ],
           ),
         ),

@@ -335,7 +335,7 @@ npm run format:check
 npm run db:status
 ```
 
-With the local Supabase stack running, validate a clean migration replay, schema lint, pgTAP security tests, and generated database types:
+With an owned disposable local Supabase stack running, validate the populated MSG01 upgrade, clean migration replay, schema lint, pgTAP security tests, and generated database types. Verify its project ID and endpoints first; this command resets its selected database and must never target a retained phone-demo stack. Outside CI explicitly set `PLANETS_DISPOSABLE_QA=1` (PowerShell: `$env:PLANETS_DISPOSABLE_QA='1'`) before running:
 
 ```text
 npm run check:db

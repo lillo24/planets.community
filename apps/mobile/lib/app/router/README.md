@@ -16,7 +16,10 @@
   explicit Flutter Material pages. Workshop pushes share the existing outgoing
   guard, with no manual double preparation or new navigation branch. Accepted
   destinations push ordinary `/proposals/:id/edit`; URLs contain opaque IDs only.
-- `app_navigation_shell.dart` owns Profile/Home/Browse tab selection and root Back.
+- `app_navigation_shell.dart` owns the stable Profile/Home/Browse branches and
+  root Back. Its visible right tab follows main's device-local Messages/Browse
+  preference and the actual active destination; editor departures still use
+  the single draft coordinator.
 - `draft_departure_coordinator.dart` prepares the active Proposal editor before
   router transitions/pops and delivers confirmed destination feedback through
   the application's ScaffoldMessenger.

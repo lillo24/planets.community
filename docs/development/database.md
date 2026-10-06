@@ -267,7 +267,7 @@ Expected-identity RPCs are the only request boundary. Creation requires a comple
 
 Resource-chat summaries expose the canonical request/agreement/listing and counterpart display context, current send entitlement, an honest latest-human-message preview, and activity derived from activation, the latest human message, or latest structured agreement event. History uses `(created_at, message_id)` and chat lists use `(activity_at, chat_id)` descending keysets. Per-profile private Broadcast topics use `resource-chat:<chatId>:profile:<profileId>` and authorize only the exact owner/requester even after coordination closes. `resource.chat_message_sent` and `resource.exchange_changed` are identifier-only reload hints; message bodies and agreement content stay in durable authorized reads. `resource_chat.message_sent` audit/outbox payloads contain enough IDs for later notification projection but no private text. Run `npm run resource:chat:verify:local` for real-OTP, private Realtime, privacy, lifecycle, and lock-order coverage.
 
-`list_own_structured_request_message_items` and `get_own_structured_request_message_item` provide a strict `participation_request`/`resource_request` discriminator over the existing request domains. The unified list uses the complete descending `(activity_at, item_kind_order, request_id)` cursor; Resource request activity changes only for its request decision or later coordination close, never ordinary negotiation/chat activity. `list_own_message_chat_items` similarly combines Project and Resource summaries with `(activity_at, item_kind_order, chat_id)`. The mobile scoped wrapper `list_own_scoped_message_chat_items` preserves the same activity/order/keyset semantics while separating Private from Groups and returns canonical opposite-party ID/name only for Resource rows; all other discriminators return null for those Resource-only fields. It preserves Project creator/current/former history frontiers and system-event activity, Resource permanent counterparty history and agreement-event activity, and human-only preview fields. Existing domain-specific RPCs remain unchanged for current clients.
+`list_own_structured_request_message_items` and `get_own_structured_request_message_item` provide a strict `participation_request`/`resource_request` discriminator over the existing request domains. The unified list uses the complete descending `(activity_at, item_kind_order, request_id)` cursor; Resource request activity changes only for its request decision or later coordination close, never ordinary negotiation/chat activity. `list_own_message_chat_items` similarly combines Project and Resource summaries with `(activity_at, item_kind_order, chat_id)`. The mobile scoped wrapper `list_own_scoped_message_chat_items` preserves the same activity/order/keyset semantics while separating Private from Groups and returns canonical opposite-party ID/name only for Resource rows; all other discriminators return null for those Resource-only fields. It preserves Project creator/current/former history frontiers and system-event activity, Resource permanent counterparty history and agreement-event activity, and human-only preview fields. Resource and group RPC contracts retain their existing behavior. MSG01 narrows retained participation-chat access to pair endpoints and introduces the pair APIs described below; old participation clients remain request-scoped.
 
 Generic `interactions` profile-photo authorization follows current Project relationships. The immutable Creator and active Co-creators/Co-organizers can view pending requesters and current participants; those requesters/participants can view only the immutable Creator, not every manager. Revocation, rejection, withdrawal, leave, and removal fail closed unless another current Project/Resource relationship qualifies. The same predicate protects exact canonical Storage objects, so retaining a chat or guessing an old path never creates photo access.
 
@@ -386,7 +386,72 @@ fixed-search-path security definers granted only to `authenticated`. They add no
 table grants, generic message/thread table, or durable copy. Request mutations
 remain the 05A operations.
 
-## Participation-request private chat
+## Participation pair conversations (MSG01)
+
+`20261006101031_participation_pair_conversations.sql` adds three immutable,
+RLS-enabled, RPC-only tables: `participation_conversations`,
+`participation_conversation_requests`, and `participation_conversation_messages`.
+There are no direct client or broad service-role table grants. The unique ordered
+profile-pair constraint rejects self pairs and arbitrates concurrent/opposite
+creation. Canonical request/legacy-anchor creation associates the pair in the
+same transaction; failure leaves no orphan pair or association.
+
+The forward backfill picks the earliest request creation and original chat UUID
+as the deterministic anchor. It maps all statuses and repeat/directly superseded
+episodes without copying messages or changing original IDs, authors, bodies,
+timestamps, membership/admission or audit/evidence references. A missing required
+legacy anchor fails migration explicitly. Legacy delegate replies retain actual
+authors and request context in the endpoint-visible feed.
+
+`get_own_participation_conversation(expectedProfileId, requestId)` resolves exact
+old context and returns pair entitlement, canonical pending total and at most 30
+pending items. `list_own_participation_conversation_items` returns 1–50 typed rows
+with the complete descending `(created_at, kind_order, item_id)` cursor
+(`request=0`, `legacy_message=1`, `message=2`). `p_only_pending` independently pages
+the banner; `get_own_participation_conversation_requests` refreshes 1–50 exact
+request IDs without intervening history. New messages have null `request_id`.
+
+`list_own_scoped_conversation_items` adds nullable `pending_count` to the retained
+scoped shape. Pair grouping precedes limits; Resource/group fields and cursor
+order remain intact. `project_request_chat` remains the typed wire discriminator
+for a pair; representative request fields are context, not global roles or state.
+Regenerate types through the `participation-rpc-nullability.mjs` registry that
+corrects pg-meta's nullable result fields rather than hand-editing generated code.
+
+Only immutable endpoints read/list/send/subscribe to personal histories. Managers
+retain request notes/offers/actions through Requests. A new send validates
+identity and trimmed 1–4,000 Unicode-character content, locks one eligible witness
+in canonical requester/manager interaction → concrete/shared Project → request
+order, and rechecks manager/block and request state. It takes no pair-row or
+multi-Project send locks. A changed witness fails `PT409`; refresh may still find
+another eligible request. The client retains draft text and never silently retries.
+The new audit/outbox event contains only chat/message/sender identifiers.
+
+Strict pair/profile receive-only Realtime topics use a narrow authenticated
+execute grant for their authorization predicate. Chat-ID-only hints may include
+Realtime's delivery UUID and address endpoints only. New requests, resolutions,
+new/legacy messages and delegate eligibility changes refresh open/loaded pairs.
+Read-only subscriptions persist. No global live-inbox, unread state or new
+chat-notification mapping is added.
+
+Both new verifiers run in `check:db` and Database CI. The populated predecessor
+rehearsal resets the selected local stack to `20261005111132`, seeds canonical
+histories and actual delegate replies, retains a delegate socket, then applies
+the migration. It runs before the standard clean reset. Use an owned disposable
+stack only: outside CI set `PLANETS_DISPOSABLE_QA=1`, and configure its project ID,
+ports and `MAILPIT_URL` first. Ordinary verification never resets:
+
+After applying MSG01, the upgrade verifier polls its first read-only
+`list_own_participation_conversation_items` call for up to ten seconds only
+when PostgREST returns `PGRST202` while registering the new RPC in its schema
+cache. Other failures are immediate; mutations are never retried.
+
+```text
+npm run participation:conversations:upgrade:verify:local
+npm run participation:conversations:verify:local
+```
+
+## Retained request-scoped chat compatibility
 
 `public.project_join_request_chats` stores one opaque chat ID, unique restrictive
 request foreign key, and `activated_at` equal to the canonical request
@@ -410,11 +475,16 @@ Project group-chat ID only after acceptance. Missing and unauthorized requests
 fail identically. `list_own_project_join_request_chat_items` returns exactly one
 structured `request` row plus zero or more `message` rows under a strict field
 XOR and descending `(created_at, item_kind_order, item_id)` cursor. The existing
-structured Requests and unified Chats RPCs remain unchanged for 07C1B.
+structured Requests RPCs keep their management contract. The scoped Chats list
+now groups pairs; the legacy exact/feed adapter remains limited to its explicitly
+addressed request's source history. It returns no unrelated requests or new pair
+messages; old clients need an upgrade for the complete transcript.
 
 `send_project_join_request_chat_message` authorizes only the requester or
-Project creator and only while the request is pending. It follows the canonical
-concrete-Project → shared Project → request-row lock order used by participation
+immutable Project Creator and only while the addressed request is pending.
+Ordinary delegates are denied by the endpoint guard for reads, sends and topic
+authorization. It follows the canonical requester/manager interaction → concrete-
+Project → shared Project → request-row lock order used by participation
 resolution, assigning `clock_timestamp()` afterward. A send serialized before
 accept/reject/withdraw commits; a waiting send observes the terminal status and
 fails with `PT409`. Resolved counterparties retain exact/feed read access.
@@ -425,7 +495,8 @@ chat/request/message IDs and creation time for both exact counterparties. A
 receive-only policy authorizes private
 `project-request-chat:<chat-id>:profile:<profile-id>` topics against
 `auth.uid()`. Existing notification/push processors have no mapping for this
-event and safely leave it for 07C1B. Run
+event unchanged. MSG01 removes delegate signal recipients, including cached
+legacy sockets. Run
 `npm run project:request:chat:verify:local` for real-OTP, private Realtime,
 privacy, strict feed, accepted group-chat continuation, and send/accept race
 coverage.

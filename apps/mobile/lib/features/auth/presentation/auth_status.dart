@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/theme/app_tokens.dart';
+import '../../../devtools/demo/demo_tools.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../application/auth_command_controller.dart';
 import '../application/auth_session_controller.dart';
@@ -17,6 +18,7 @@ class AuthStatus extends ConsumerWidget {
     final l10n = AppLocalizations.of(context);
     final session = ref.watch(authSessionProvider);
     final command = ref.watch(authCommandProvider);
+    final demoToolsEnabled = ref.watch(demoToolsEnabledProvider);
 
     return Card(
       child: Padding(
@@ -54,12 +56,15 @@ class AuthStatus extends ConsumerWidget {
               onPressed: () => context.go('/profile'),
               child: Text(l10n.profileViewAction),
             ),
-            secondaryAction: TextButton(
-              onPressed: command.isBusy
-                  ? null
-                  : () => ref.read(authCommandProvider.notifier).signOut(),
-              child: Text(l10n.authSignOutAction),
-            ),
+            secondaryAction: demoToolsEnabled
+                ? TextButton(
+                    onPressed: command.isBusy
+                        ? null
+                        : () =>
+                              ref.read(authCommandProvider.notifier).signOut(),
+                    child: Text(l10n.authSignOutAction),
+                  )
+                : null,
             error: command.failure == null
                 ? null
                 : authFailureMessage(l10n, command.failure!),
@@ -87,12 +92,15 @@ class AuthStatus extends ConsumerWidget {
                     : l10n.retryAction,
               ),
             ),
-            secondaryAction: TextButton(
-              onPressed: command.isBusy
-                  ? null
-                  : () => ref.read(authCommandProvider.notifier).signOut(),
-              child: Text(l10n.authSignOutAction),
-            ),
+            secondaryAction: demoToolsEnabled
+                ? TextButton(
+                    onPressed: command.isBusy
+                        ? null
+                        : () =>
+                              ref.read(authCommandProvider.notifier).signOut(),
+                    child: Text(l10n.authSignOutAction),
+                  )
+                : null,
           ),
         },
       ),

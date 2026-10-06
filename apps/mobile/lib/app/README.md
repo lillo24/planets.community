@@ -5,15 +5,15 @@ This folder owns application startup presentation and navigation, not backend ru
 - `planets_app.dart` composes Riverpod, themes, localization and `MaterialApp.router`.
 - `router/app_router.dart` owns routes, Auth/readiness redirects and the identity-scoped routing configuration.
 - `router/native_project_links.dart` validates absolute public HTTPS deliveries before the router converts them to internal destinations.
-- `router/app_navigation_shell.dart` owns the single Material 3 navigation bar and branch ordering.
-- `foundation_screen.dart` is Home; its Progetti entry uses the shell's Browse
-  branch switch, its Scambio-Dona entry opens the Browse-owned resource routes,
+- `router/app_navigation_shell.dart` maps the single Material 3 navigation bar to stable branches and routes.
+- `foundation_screen.dart` is Home; its Projects and Cultural Tables entry uses
+  the shell's Browse branch switch, its Scambio-Dona entry opens the Browse-owned resource routes,
   and its AppBar opens public Settings.
 - `startup_failure_app.dart` is the safe fallback when bootstrap cannot launch the application.
 
 ## Navigation contract
 
-`StatefulShellRoute.indexedStack` (go_router 18) gives each destination its own Navigator:
+`StatefulShellRoute.indexedStack` (go_router 18) keeps three stable branch Navigators:
 
 | Index / destination | Routes |
 | --- | --- |
@@ -21,15 +21,27 @@ This folder owns application startup presentation and navigation, not backend ru
 | 1 / Home | `/`; Messages request/chat/group-info, Notifications/preferences, and their protected detail routes |
 | 2 / Browse | `/proposals`, `/tavoli`, and `/resources`; public detail plus protected owner/editor, saved-search, loan-schedule, Project resources/matches, participation, delegate, invite, and management routes |
 
-The Home branch also owns public `/settings` and nested `/settings/language`.
+The Home branch also owns public `/settings`, `/settings/language`, and
+`/settings/navigation`.
 Settings conditionally links ready signed-in profiles to the existing protected
 notification preferences and profile editor routes; it is never itself an Auth
 destination.
 
+The visible bar is Profile / Home / Messages by default. Settings can replace
+the bottom-right shortcut with Browse through a device-local preference.
+While a Messages route or any Browse branch route is active, that right slot
+shows and selects the actual destination even when the saved shortcut differs.
+On Profile, Home, Settings, and Notifications, it shows the saved choice.
+Messages remains on the Home branch; changing the preference does not rebuild
+or reorder the route tree. An inactive Messages shortcut opens canonical
+`/messages` through the existing Auth/profile guards. Re-tapping active
+Messages or Browse preserves its nested route. Browse's shortcut restores its
+retained branch state; public discovery also remains reachable from Home.
+
 Static Browse children precede each dynamic activity-ID route. A route-backed
 Proposals/Tavoli switcher changes the public list within Browse without adding a
 fourth bottom destination. Each list's Riverpod state survives switching. Direct entry creates
-the matching nested stack and selects its owning destination. Drill-down actions
+the matching nested stack and selects its corresponding visible slot. Drill-down actions
 use `push`, so nested AppBar and system Back return to the previous screen.
 Branch switches use `goBranch`, restoring Profile/Browse route, scroll, and
 unsaved form state. Home always resets to `/`, including when re-tapped from a
@@ -106,7 +118,7 @@ current membership changes. It is never added to public activity models.
 
 Messages request and Project-chat state are independent identity-bound
 boundaries. Home exposes their shared two-tab entry point through an AppBar
-action without changing the three-destination navigation bar. The
+action as well as the configurable bottom-right shortcut. The
 request-specific route is the client resolution target for 06A's semantic
 `participation_request` notification target. Chat and group-info routes are
 protected by the same Auth/profile guards and are reconstructed on identity

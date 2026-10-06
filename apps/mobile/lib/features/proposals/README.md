@@ -24,6 +24,11 @@ responsibility. Ordinary blank creation, My Proposals and Tavoli remain intact.
 - `application/` coordinates pagination, requester-only Requested enrichment, detail loading and race-safe owner commands. Every owner mutation carries the identity for which the screen was rendered.
 - `presentation/` contains public list/detail screens and complete-profile create/edit/my-proposals screens.
 
+`presentation/proposal_widgets.dart` places only the requested-participation
+badge at the top-right of the public card cover (including its placeholder).
+The lifecycle badge stays beside the title; requested borders, text, semantics
+and card navigation retain their existing behavior.
+
 `presentation/skill_filter.dart` adapts the shared compact tag selector for a
 staged discovery filter. The bounded bottom sheet uses searchable category
 headings and chip/button toggles, Apply sends the entire ID set once, and Clear
@@ -43,6 +48,12 @@ database applies a case-insensitive literal substring match across title,
 summary, and description, so `%` and `_` have no wildcard meaning. Controller
 revisions keep pagination on the active query and reject late results from an
 older filter set.
+
+Projects Browse keeps its compact query visible without a character counter.
+Locality and the staged skill selector start collapsed behind one filter
+button. A badge marks applied locality/skills even while collapsed. Toggling
+only changes visibility: text controllers retain pending input and provider
+state retains applied filters, results, and pagination.
 
 Browse owns list, detail, mine and editor routes inside the app's stateful shell.
 Switching tabs preserves list scroll/filters and saves meaningful dirty unpublished
@@ -67,6 +78,12 @@ If cover persistence fails after content succeeds, the controller retains the
 same draft and reports whether a draft or later changes were saved. Public and
 owner cards/details consume only the canonical `coverObjectPath`; they do not
 issue per-card metadata RPCs.
+
+In My Proposals, only the cover opens a proposal: published records use the
+public detail route; drafts and cancelled records use the guarded owner editor
+(cancelled records stay read-only). The cover keeps owner-authorized image
+loading, with a Material tap target over both images and placeholders. Resources,
+Edit, Publish, and Cancel remain separate controls below it.
 
 For a ready authenticated identity, Browse loads the raw public first page and
 the filtered own-pending projection in parallel. Requested cards render first

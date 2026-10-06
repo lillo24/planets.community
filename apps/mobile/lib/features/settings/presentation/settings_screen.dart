@@ -6,8 +6,11 @@ import '../../../core/theme/app_tokens.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../auth/application/auth_session_controller.dart';
 import '../../auth/domain/auth_models.dart';
+import '../../auth/presentation/account_sign_out_action.dart';
 import '../application/language_preference_controller.dart';
+import '../application/navigation_preference_controller.dart';
 import '../domain/language_preference.dart';
+import '../domain/navigation_preference.dart';
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
@@ -16,6 +19,7 @@ class SettingsScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
     final preference = ref.watch(languagePreferenceProvider);
+    final navigationPreference = ref.watch(navigationPreferenceProvider);
     final session = ref.watch(authSessionProvider);
     final showAccountSettings = session.phase == AuthSessionPhase.ready;
 
@@ -45,6 +49,33 @@ class SettingsScreen extends ConsumerWidget {
                       ],
                     ),
                     onTap: () => context.push('/settings/language'),
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.large),
+                _SectionLabel(l10n.settingsNavigation),
+                Card(
+                  clipBehavior: Clip.antiAlias,
+                  child: ListTile(
+                    key: const Key('settings-navigation-row'),
+                    leading: const Icon(Icons.navigation_outlined),
+                    title: Text(l10n.settingsBottomRightTab),
+                    subtitle: navigationPreference.restoreFailed
+                        ? Text(l10n.settingsNavigationRestoreError)
+                        : null,
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          navigationPreference.destination ==
+                                  BottomTabDestination.messages
+                              ? l10n.messagesTitle
+                              : l10n.navigationBrowse,
+                        ),
+                        const SizedBox(width: AppSpacing.small),
+                        const Icon(Icons.chevron_right),
+                      ],
+                    ),
+                    onTap: () => context.push('/settings/navigation'),
                   ),
                 ),
                 if (showAccountSettings) ...[
@@ -78,6 +109,12 @@ class SettingsScreen extends ConsumerWidget {
                       ],
                     ),
                   ),
+                ],
+                if (session.isAuthenticated) ...[
+                  const SizedBox(height: AppSpacing.large),
+                  const Divider(),
+                  const SizedBox(height: AppSpacing.medium),
+                  const AccountSignOutAction(),
                 ],
               ],
             ),

@@ -1,5 +1,3 @@
-import 'dart:io';
-
 import 'package:flutter_test/flutter_test.dart';
 import 'package:planets_mobile/features/participation/domain/participation_models.dart';
 import 'package:planets_mobile/features/project_request_chat/data/project_request_chat_gateway.dart';
@@ -42,28 +40,85 @@ void main() {
   test('strictly parses identifier-only Realtime signal', () {
     final signal = parser.signal({
       'type': 'broadcast',
-      'event': 'project.join_request_chat_message_sent',
-      'payload': {
-        'chat_id': _chatId,
-        'request_id': _requestId,
-        'message_id': _messageId,
-        'created_at': '2026-09-20T12:00:00Z',
-      },
+      'event': 'participation.conversation_changed',
+      'payload': {'chat_id': _chatId},
     });
     expect(signal.chatId, _chatId);
-    expect(signal.messageId, _messageId);
+    expect(signal.messageId, isNull);
   });
 
-  test('gateway binds the exact private topic and RPC names', () {
-    final source = File(
-      'lib/features/project_request_chat/data/project_request_chat_gateway.dart',
-    ).readAsStringSync();
-    expect(source, contains("'get_own_project_join_request_chat'"));
-    expect(source, contains("'list_own_project_join_request_chat_items'"));
-    expect(source, contains("'send_project_join_request_chat_message'"));
+  test('pair summary permits a resolved route context with another pending request', () {
+    final summary = parser.summary({
+      ..._summaryRow(),
+      'request_status': 'rejected',
+      'resolved_at': '2026-09-20T12:00:00Z',
+    });
+    expect(summary.pendingCount, 1);
+    expect(summary.isReadOnly, isFalse);
     expect(
-      source,
-      contains("'project-request-chat:\$chatId:profile:\$expectedProfileId'"),
+      () => parser.summary({..._summaryRow(), 'viewer_role': 'delegate'}),
+      throwsFormatException,
+    );
+    expect(
+      () => parser.summary({..._summaryRow(), 'pending_count': 2}),
+      throwsFormatException,
+    );
+  });
+
+  test(
+    'new follow-ups have no request provenance; legacy replies retain it',
+    () {
+      final legacy = parser.feedItem({
+        ..._messageRow(),
+        'item_kind': 'legacy_message',
+        'request_id': _requestId,
+      }) as ProjectRequestChatHumanMessage;
+      expect(legacy.isLegacy, isTrue);
+      expect(legacy.requestId, _requestId);
+      expect(
+        () => parser.feedItem({..._messageRow(), 'request_id': _requestId}),
+        throwsFormatException,
+      );
+      expect(
+        () =>
+            parser.feedItem({..._messageRow(), 'item_kind': 'legacy_message'}),
+        throwsFormatException,
+      );
+      expect(
+        () => parser.feedItem({..._requestRow(), 'item_id': _messageId}),
+        throwsFormatException,
+      );
+    },
+  );
+
+  test('transport metadata is accepted without allowing application data', () {
+    final envelope = {
+      'type': 'broadcast',
+      'event': 'participation.conversation_changed',
+      'payload': {'chat_id': _chatId, 'id': _messageId},
+      'meta': {'id': _messageId, 'replayed': false},
+    };
+    expect(parser.signal(envelope).chatId, _chatId);
+    expect(
+      () => parser.signal({
+        ...envelope,
+        'meta': {'id': _messageId, 'body': 'Private text'},
+      }),
+      throwsFormatException,
+    );
+    expect(
+      () => parser.signal({
+        ...envelope,
+        'meta': {'id': _messageId, 'replayed': 'false'},
+      }),
+      throwsFormatException,
+    );
+    expect(
+      () => parser.signal({
+        ...envelope,
+        'payload': {'chat_id': _chatId, 'body': 'Private text'},
+      }),
+      throwsFormatException,
     );
   });
 }
@@ -94,6 +149,8 @@ Map<String, dynamic> _summaryRow() => {
   'is_read_only': false,
   'has_send_entitlement': true,
   'accepted_project_group_chat_id': null,
+  'pending_count': 1,
+  'pending_items': [_requestRow()],
 };
 
 Map<String, dynamic> _requestRow() => {
@@ -113,13 +170,15 @@ Map<String, dynamic> _requestRow() => {
   'sender_display_name': null,
   'body': null,
   'created_at': '2026-09-20T10:00:00Z',
+  'resolved_at': null,
+  'accepted_project_group_chat_id': null,
 };
 
 Map<String, dynamic> _messageRow() => {
   'item_kind': 'message',
   'item_id': _messageId,
   'chat_id': _chatId,
-  'request_id': _requestId,
+  'request_id': null,
   'message_id': _messageId,
   'project_id': null,
   'project_kind': null,
@@ -132,4 +191,6 @@ Map<String, dynamic> _messageRow() => {
   'sender_display_name': 'Bob',
   'body': 'Hello',
   'created_at': '2026-09-20T11:00:00Z',
+  'resolved_at': null,
+  'accepted_project_group_chat_id': null,
 };

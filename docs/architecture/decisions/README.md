@@ -19,3 +19,4 @@ This folder records material technical decisions whose rationale should survive 
 - [0004 — Separate static informational site](0004-separate-static-informational-site.md)
 - [0005 — Cloudflare one-time launch waitlist boundary](0005-cloudflare-one-time-launch-waitlist.md)
 - [0006 — Workers Static Assets runtime for the informational site](0006-workers-static-assets-site-runtime.md)
+- [0007 — Durable participation pair conversations](0007-participation-pair-conversations.md)

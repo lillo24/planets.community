@@ -30,6 +30,20 @@ npm run demo:verify:local
 
 ## Personas and useful flows
 
+MSG01 reuses Marco and Giulia: Marco's mural request and one added pending request
+to Giulia's existing monthly Tavolo yield one Private pair row, two distinct
+request bubbles, a `2 richieste in attesa` banner, and two stable pair follow-ups.
+The rejected repair and withdrawn weekly requests and PI05 superseded histories
+remain intact. Seeding reuses source IDs and adds only missing pair messages;
+verification never repairs. The demo snapshot covers pair anchors, associations,
+authors, text and timestamps alongside the retained invitation/request history.
+
+On a separate clean demo-only stack, use Marco's two requests → Giulia's one
+conversation → resolve one → banner one → resolve the last → read-only → a new
+legitimate request → the same history. Re-seed explicitly to restore the two
+pending fixtures after interactive actions. Keep this presentation stack separate
+from `check:db` mutation-verifier data and the founder's phone-demo services.
+
 | Login email                  | Display name | Role in the world                                                                  |
 | ---------------------------- | ------------ | ---------------------------------------------------------------------------------- |
 | `demo-alice@planets.invalid` | Giulia       | Organizer: owns Proposals, Tavoli, a donation listing, and the mural chat          |
@@ -79,7 +93,14 @@ Each seed admission UUID is derived from Project, account, generation and delibe
 
 Interactive changes are intentional drift: verification fails if Elena joined, a baseline generation was revoked/regenerated, or a required member departed. Seeding restores departed seeded members with retained history, but refuses extra/revoked baseline generations rather than silently erasing them. Use `demo:reset:local` only on a known disposable stack to rebuild deliberate baseline history; it resets the entire selected local database. A journal from another API is rejected and must be moved aside deliberately. Never reset a shared rehearsal stack.
 
-`check:db` and hosted Database CI execute `demo:stack:check:local` **after** clean pgTAP, existing mutation verifiers and the unrestricted notification regression, before generated-type drift. It shares the lock/session pool across PI05's admission phase and TW05's Workshop phase; each standalone command remains usable. Dynamic public/private base-table digests currently cover 77 product tables, including every new invitation table. Only starts/ends/updated clocks for exact original relative-time Proposals, the two PI05 relative-time Proposals and active Workshop fixtures are excluded; application destinations and Completed sources/copies retain full timestamps. The [PI05 record](../implementation/pi05-integration-qa-and-demo-data.md) and [integrated evidence](template-stack-integration.md) distinguish GUI, HTTP, gateway and native checks.
+`check:db` and hosted Database CI execute `demo:stack:check:local` **after** clean pgTAP, existing mutation verifiers and the unrestricted notification regression, before generated-type drift. It shares the lock/session pool across PI05's admission phase and TW05's Workshop phase; each standalone command remains usable. Dynamic public/private base-table digests include every current invitation and participation-pair table; the initial 5 October candidate covered 77 tables. Only starts/ends/updated clocks for exact original relative-time Proposals, the two PI05 relative-time Proposals and active Workshop fixtures are excluded; application destinations and Completed sources/copies retain full timestamps. The [PI05 record](../implementation/pi05-integration-qa-and-demo-data.md) and [integrated evidence](template-stack-integration.md) distinguish GUI, HTTP, gateway and native checks.
+
+The combined world also retains MSG01's two distinct pending mural/monthly-Tavolo
+requests, one writable Marco/Giulia pair and its two canonical human follow-ups.
+Explicit seeding returns only those two exact message IDs to the scoped demo
+worker; unrelated messages, even in that same pair, stay outside its inventory.
+MSG01 events retain the canonical worker's unhandled behavior until MSG02; the
+demo adds no chat alerts. Read-only verification never creates or sends messages.
 
 ## Workshop stability and non-repairing verification
 
