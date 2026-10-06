@@ -118,6 +118,15 @@ try {
     "PT409",
   );
   await revoke(users.admin, notice);
+  assert.equal(await ownRestriction(users.requester), false);
+  assert.ok(
+    (
+      await publicClient.rpc("get_own_interaction_restriction_status", {
+        p_expected_profile_id: users.requester.id,
+      })
+    ).error,
+    "Anonymous status access denied",
+  );
   const restriction = await apply(
     users.admin,
     fixture.cases.profile,
@@ -129,6 +138,16 @@ try {
     {
       p_expected_profile_id: users.requester.id,
     },
+  );
+  assert.equal(await ownRestriction(users.requester), true);
+  assert.equal(await ownRestriction(users.unrelated), false);
+  await denied(
+    users.unrelated,
+    "get_own_interaction_restriction_status",
+    {
+      p_expected_profile_id: users.requester.id,
+    },
+    "42501",
   );
   assert.ok(
     subjectHistory.some(
@@ -171,6 +190,11 @@ try {
     },
   );
   assert.equal(firstPage.length, 20, "canonical default page is bounded");
+  assert.ok(
+    !firstPage.some((row) => row.consequence_id === restriction),
+    "Active restriction is older than the full first page",
+  );
+  assert.equal(await ownRestriction(users.requester), true);
   assert.equal(new Set(firstPage.map((row) => row.applied_at)).size, 1);
   const cursor = firstPage.at(-1);
   const secondPage = await rpc(
@@ -274,6 +298,7 @@ try {
     }
   }
   await revoke(users.moderator, restriction);
+  assert.equal(await ownRestriction(users.requester), false);
   const hiddenPendingProject = await projectRequest(
     users.unrelated,
     fixture.projectId,
@@ -487,6 +512,13 @@ function projectRequest(user, projectId) {
     p_expected_requester_profile_id: user.id,
     p_project_id: projectId,
   });
+}
+async function ownRestriction(user) {
+  const value = await rpc(user, "get_own_interaction_restriction_status", {
+    p_expected_profile_id: user.id,
+  });
+  assert.equal(typeof value, "boolean", "Own state exposes only a boolean");
+  return value;
 }
 function resourceRequest(user, listingId) {
   return rpc(user, "request_resource_listing", {

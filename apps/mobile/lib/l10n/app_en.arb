@@ -1788,6 +1788,8 @@
   "blockingUpdateError": "Couldn't update blocked users. Try again.",
   "blockingTargetUnavailable": "This user isn't available right now.",
   "blockingInteractionUnavailable": "This interaction isn't available right now.",
+  "ownRequestRestrictionExplanation": "A restriction on new requests is active on your account. View PLANETS notices for details. Other eligibility rules still apply.",
+  "ownRequestRestrictionViewNotices": "View PLANETS notices",
   "blockingBlockAction": "Block {name}",
   "@blockingBlockAction": { "placeholders": { "name": { "type": "String" } } },
   "blockingUnblockAction": "Unblock {name}",

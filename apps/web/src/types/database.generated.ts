@@ -2812,6 +2812,10 @@ export type Database = {
           target_summary: string
         }[]
       }
+      get_own_interaction_restriction_status: {
+        Args: { p_expected_profile_id: string }
+        Returns: boolean
+      }
       get_own_moderation_staff_access: {
         Args: { p_expected_profile_id: string }
         Returns: {

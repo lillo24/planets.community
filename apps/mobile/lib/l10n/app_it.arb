@@ -1101,6 +1101,8 @@
   "blockingUpdateError": "Impossibile aggiornare gli utenti bloccati. Riprovare.",
   "blockingTargetUnavailable": "Questo utente non è disponibile in questo momento.",
   "blockingInteractionUnavailable": "Questa interazione non è disponibile in questo momento.",
+  "ownRequestRestrictionExplanation": "Sul tuo account è attiva una limitazione delle nuove richieste. Consulta gli avvisi di PLANETS per i dettagli. Restano valide le altre regole di partecipazione.",
+  "ownRequestRestrictionViewNotices": "Consulta gli avvisi di PLANETS",
   "blockingBlockAction": "Blocca {name}",
   "blockingUnblockAction": "Sblocca {name}",
   "blockingBlockGenericAction": "Blocca questo utente",
