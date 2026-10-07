@@ -207,7 +207,7 @@ class _PublicProposalsScreenState extends ConsumerState<PublicProposalsScreen> {
                               '/proposals/${requested.proposal.id}',
                             ),
                           ),
-                          const SizedBox(height: AppSpacing.small),
+                          const SizedBox(height: AppSpacing.medium),
                         ],
                       ],
                       if (state.requestedItems.isNotEmpty &&
@@ -225,7 +225,7 @@ class _PublicProposalsScreenState extends ConsumerState<PublicProposalsScreen> {
                           onTap: () =>
                               context.push('/proposals/${proposal.id}'),
                         ),
-                        const SizedBox(height: AppSpacing.small),
+                        const SizedBox(height: AppSpacing.medium),
                       ],
                     ],
                     if (state.phase == ProposalLoadPhase.failure &&
