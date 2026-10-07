@@ -136,13 +136,7 @@ class _ProjectNeedsSheetState extends ConsumerState<ProjectNeedsSheet> {
                         ),
                       ),
                     ),
-                  _NeededNowSection(state: state),
-                  if ((state.viewerRole == ProjectChatViewerRole.creator ||
-                          state.viewerRole == ProjectChatViewerRole.delegate) &&
-                      state.manuallyCoveredRequirements.isNotEmpty) ...[
-                    const SizedBox(height: AppSpacing.large),
-                    _ManualCoverageSection(state: state),
-                  ],
+                  _NeedsChecklist(state: state),
                 ],
               ],
             ),
@@ -153,49 +147,38 @@ class _ProjectNeedsSheetState extends ConsumerState<ProjectNeedsSheet> {
   }
 }
 
-class _NeededNowSection extends ConsumerWidget {
-  const _NeededNowSection({required this.state});
+class _NeedsChecklist extends StatelessWidget {
+  const _NeedsChecklist({required this.state});
 
   final ProjectNeedsState state;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final uncovered = state.uncoveredRequirements;
-    final skills = uncovered
-        .where((item) => item.kind == ProjectRequirementKind.skill)
-        .toList(growable: false);
-    final resources = uncovered
-        .where((item) => item.kind == ProjectRequirementKind.resource)
-        .toList(growable: false);
+    // Canonical coverage includes both participant and outside-app coverage.
+    // Keep every completed item before any active item, including across kinds.
+    final covered = state.requirements.where((item) => item.isCovered).toList();
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Semantics(
-          header: true,
-          child: Text(
-            l10n.projectNeedsNeededNow,
-            key: const Key('project-needs-needed-now'),
-            style: Theme.of(context).textTheme.titleLarge,
-          ),
-        ),
-        const SizedBox(height: AppSpacing.small),
+        for (final items in [covered, uncovered])
+          for (final kind in ProjectRequirementKind.values)
+            if (items.any((item) => item.kind == kind))
+              _RequirementGroup(
+                title: kind == ProjectRequirementKind.skill
+                    ? l10n.projectNeedsCompetencesGroup
+                    : l10n.projectNeedsResourcesGroup,
+                requirements: items.where((item) => item.kind == kind).toList(),
+                state: state,
+              ),
         if (uncovered.isEmpty)
-          Text(
-            l10n.projectNeedsAllCovered,
-            key: const Key('project-needs-all-covered'),
-          ),
-        if (skills.isNotEmpty)
-          _RequirementGroup(
-            title: l10n.projectNeedsCompetencesGroup,
-            requirements: skills,
-            state: state,
-          ),
-        if (resources.isNotEmpty)
-          _RequirementGroup(
-            title: l10n.projectNeedsResourcesGroup,
-            requirements: resources,
-            state: state,
+          Padding(
+            padding: const EdgeInsets.only(top: AppSpacing.medium),
+            child: Text(
+              l10n.projectNeedsAllCovered,
+              key: const Key('project-needs-all-covered'),
+            ),
           ),
       ],
     );
@@ -239,116 +222,126 @@ class _RequirementTile extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
+    final theme = Theme.of(context);
     final actionTarget = state.actionTarget;
     final isBusy = actionTarget?.canonicalKey == requirement.canonicalKey;
+    final canManage =
+        state.viewerRole == ProjectChatViewerRole.creator ||
+        state.viewerRole == ProjectChatViewerRole.delegate;
+    final actionsEnabled =
+        actionTarget == null && state.coveragePhase == ProjectNeedsPhase.ready;
     final importance = switch (requirement.importance) {
       ProjectRequirementImportance.required => l10n.projectNeedsRequired,
       ProjectRequirementImportance.useful => l10n.projectNeedsUseful,
       null => null,
     };
-    final actionLabel =
-        (state.viewerRole == ProjectChatViewerRole.creator ||
-            state.viewerRole == ProjectChatViewerRole.delegate)
+    final actionLabel = canManage
         ? l10n.projectNeedsFoundOutsideAction
         : requirement.kind == ProjectRequirementKind.skill
         ? l10n.projectNeedsCanHelp
         : l10n.projectNeedsCanBring;
-    return Card(
-      key: Key('project-need-${requirement.canonicalKey}'),
-      child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.small),
-        child: Row(
-          children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(requirement.label),
-                  if (importance != null)
-                    Text(
-                      importance,
-                      style: Theme.of(context).textTheme.bodySmall,
-                    ),
-                ],
-              ),
-            ),
-            const SizedBox(width: AppSpacing.small),
-            Semantics(
-              label: isBusy
-                  ? l10n.projectNeedsActionProgress(requirement.label)
-                  : '$actionLabel: ${requirement.label}',
-              child: FilledButton.tonal(
-                onPressed:
-                    state.actionTarget != null ||
-                        state.coveragePhase != ProjectNeedsPhase.ready
-                    ? null
-                    : () =>
-                          (state.viewerRole == ProjectChatViewerRole.creator ||
-                              state.viewerRole ==
-                                  ProjectChatViewerRole.delegate)
-                          ? ref
-                                .read(projectNeedsProvider.notifier)
-                                .setManualCoverage(requirement, true)
-                          : ref
-                                .read(projectNeedsProvider.notifier)
-                                .claim(requirement),
-                child: isBusy
-                    ? const SizedBox.square(
-                        dimension: 18,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : Text(actionLabel),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _ManualCoverageSection extends ConsumerWidget {
-  const _ManualCoverageSection({required this.state});
-
-  final ProjectNeedsState state;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final l10n = AppLocalizations.of(context);
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
+    final details = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Semantics(
-          header: true,
-          child: Text(
-            l10n.projectNeedsFoundOutsideSection,
-            key: const Key('project-needs-manual-section'),
-            style: Theme.of(context).textTheme.titleMedium,
-          ),
-        ),
-        for (final requirement in state.manuallyCoveredRequirements)
-          ListTile(
-            key: Key('project-need-manual-${requirement.canonicalKey}'),
-            contentPadding: EdgeInsets.zero,
-            title: Text(requirement.label),
-            trailing: TextButton(
-              onPressed:
-                  state.actionTarget != null ||
-                      state.coveragePhase != ProjectNeedsPhase.ready
-                  ? null
-                  : () => ref
-                        .read(projectNeedsProvider.notifier)
-                        .setManualCoverage(requirement, false),
-              child:
-                  state.actionTarget?.canonicalKey == requirement.canonicalKey
-                  ? const SizedBox.square(
-                      dimension: 18,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : Text(l10n.projectNeedsNeededAgain),
+        Text(requirement.label),
+        if (importance != null)
+          Text(
+            importance,
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: requirement.isCovered
+                  ? theme.colorScheme.onSurfaceVariant
+                  : null,
             ),
+          ),
+        if (requirement.isCovered)
+          Row(
+            children: [
+              const ExcludeSemantics(
+                child: Icon(Icons.check_circle_outline, size: 18),
+              ),
+              const SizedBox(width: AppSpacing.xSmall),
+              Flexible(child: Text(l10n.projectNeedsCovered)),
+            ],
           ),
       ],
+    );
+    final progress = const SizedBox.square(
+      dimension: 18,
+      child: CircularProgressIndicator(strokeWidth: 2),
+    );
+    final action = Semantics(
+      label: isBusy
+          ? l10n.projectNeedsActionProgress(requirement.label)
+          : '$actionLabel: ${requirement.label}',
+      child: FilledButton.tonal(
+        onPressed: !actionsEnabled
+            ? null
+            : () => canManage
+                  ? ref
+                        .read(projectNeedsProvider.notifier)
+                        .setManualCoverage(requirement, true)
+                  : ref.read(projectNeedsProvider.notifier).claim(requirement),
+        child: isBusy ? progress : Text(actionLabel),
+      ),
+    );
+    return Card(
+      key: Key('project-need-${requirement.canonicalKey}'),
+      color: requirement.isCovered
+          ? theme.colorScheme.surfaceContainerLow
+          : null,
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.small),
+        child: requirement.isCovered
+            ? DefaultTextStyle.merge(
+                style: TextStyle(color: theme.colorScheme.onSurfaceVariant),
+                child: IconTheme.merge(
+                  data: IconThemeData(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                  child: Row(
+                    children: [
+                      Expanded(child: details),
+                      if (canManage && requirement.isManuallyCovered)
+                        IconButton(
+                          key: Key(
+                            'project-need-reopen-${requirement.canonicalKey}',
+                          ),
+                          tooltip: l10n.projectNeedsMarkAsNeeded,
+                          onPressed: !actionsEnabled
+                              ? null
+                              : () => ref
+                                    .read(projectNeedsProvider.notifier)
+                                    .setManualCoverage(requirement, false),
+                          icon: isBusy ? progress : const Icon(Icons.undo),
+                        ),
+                    ],
+                  ),
+                ),
+              )
+            : LayoutBuilder(
+                builder: (context, constraints) {
+                  final stack =
+                      constraints.maxWidth < 360 ||
+                      MediaQuery.textScalerOf(context).scale(1) > 1.4;
+                  return stack
+                      ? Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            details,
+                            const SizedBox(height: AppSpacing.small),
+                            action,
+                          ],
+                        )
+                      : Row(
+                          children: [
+                            Expanded(child: details),
+                            const SizedBox(width: AppSpacing.small),
+                            action,
+                          ],
+                        );
+                },
+              ),
+      ),
     );
   }
 }

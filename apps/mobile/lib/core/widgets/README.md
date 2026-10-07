@@ -30,4 +30,5 @@ This folder owns small presentation primitives reused across feature boundaries.
 - `tag_multi_select.dart` provides the controlled compact tag summary and
   bounded searchable category sheet used by Profile and Proposal filters. The
   caller owns committed selection state; staged mode applies changes only when
-  requested by discovery filters.
+  requested by discovery filters. Clear/Apply or Done actions stack with a small
+  gap when their labels cannot fit horizontally, including enlarged text.

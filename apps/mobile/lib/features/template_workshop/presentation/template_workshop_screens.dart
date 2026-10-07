@@ -169,12 +169,14 @@ class _TemplateWorkshopScreenState extends ConsumerState<TemplateWorkshopScreen>
                 },
                 onSubmitted: (_) => _filter(),
               ),
-              if (state.categories.isNotEmpty)
+              if (state.categories.isNotEmpty) ...[
+                const SizedBox(height: AppSpacing.medium),
                 SkillFilter(
                   categories: state.categories,
                   selectedIds: state.skills,
                   onApply: (ids) => _filter(skills: ids),
                 ),
+              ],
               const SizedBox(height: AppSpacing.medium),
               Text(l.workshopContext),
               for (final attempt in attempts)

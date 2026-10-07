@@ -15,6 +15,10 @@ database owns eligibility, copying, permissions and receipts.
   skills, authorized source covers, shared template-only Report and ordinary
   editor navigation. No new bottom-navigation branch.
 
+The catalog separates the search input and competence selector with
+`AppSpacing.medium`, matching public Project discovery. See the focused
+[search/input spacing audit](../../../../../docs/development/needs-workshop-polish.md).
+
 Catalog requests use 20 rows and the raw last-row `(linked_at, template_id)`
 cursor. Filters reset pagination even during pending requests; appended cards
 deduplicate by template identity. Link time is publication time, not an event

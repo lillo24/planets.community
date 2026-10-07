@@ -330,14 +330,17 @@ class _TagMultiSelectSheetState extends State<_TagMultiSelectSheet> {
               ),
             ),
             const SizedBox(height: AppSpacing.small),
-            Row(
+            OverflowBar(
+              alignment: MainAxisAlignment.spaceBetween,
+              overflowAlignment: OverflowBarAlignment.end,
+              spacing: AppSpacing.small,
+              overflowSpacing: AppSpacing.small,
               children: [
                 TextButton(
                   key: Key('${widget.keyPrefix}-clear'),
                   onPressed: _selection.isEmpty ? null : _clear,
                   child: Text(l10n.skillFilterClear),
                 ),
-                const Spacer(),
                 FilledButton(
                   key: Key('${widget.keyPrefix}-apply'),
                   onPressed: () =>

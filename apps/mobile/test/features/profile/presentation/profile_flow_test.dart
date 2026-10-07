@@ -24,6 +24,39 @@ import '../../../support/fake_profile_photo.dart';
 
 void main() {
   testWidgets(
+    'Profile edit input and competence picker stay separated at 360px and 2x text',
+    (tester) async {
+      tester.view.physicalSize = const Size(360, 900);
+      tester.view.devicePixelRatio = 1;
+      tester.platformDispatcher.textScaleFactorTestValue = 2;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+      final auth = FakeAuthGateway(
+        snapshot: const AuthSnapshot(identity: AuthIdentity(id: 'user-1')),
+      );
+      addTearDown(auth.close);
+      final app = await _pumpApp(
+        tester,
+        auth,
+        FakeProfileAnchorGateway()..readiness = ProfileAnchorReadiness.complete,
+        FakeProfileGateway(),
+      );
+      app.read(appRouterProvider).go('/profile/edit');
+      await tester.pumpAndSettle();
+      final picker = find.byKey(const Key('profile-skills-trigger'));
+      await tester.ensureVisible(picker);
+      await tester.pumpAndSettle();
+      final bio = tester.getRect(find.byKey(const Key('profile-bio-field')));
+      expect(
+        tester.getRect(picker).top - bio.bottom,
+        greaterThanOrEqualTo(AppSpacing.large),
+      );
+      expect(tester.getRect(picker).right, lessThanOrEqualTo(360));
+      expect(tester.takeException(), isNull);
+    },
+  );
+  testWidgets(
     'visibility stays in Edit Profile and the Settings privacy entry',
     (tester) async {
       final auth = FakeAuthGateway(
