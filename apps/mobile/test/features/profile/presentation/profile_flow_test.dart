@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:ui' show SemanticsAction;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -14,12 +15,126 @@ import 'package:planets_mobile/features/auth/presentation/request_code_screen.da
 import 'package:planets_mobile/features/profile/data/profile_gateway.dart';
 import 'package:planets_mobile/features/profile/domain/profile_models.dart';
 import 'package:planets_mobile/features/profile_photo/data/profile_photo_gateway.dart';
+import 'package:planets_mobile/l10n/generated/app_localizations.dart';
 
 import '../../../support/fake_auth.dart';
 import '../../../support/fake_profile.dart';
 import '../../../support/fake_profile_photo.dart';
 
 void main() {
+  for (final scale in [1.0, 2.4]) {
+    testWidgets(
+      'read-only competences are flat, ordered and inert at 320px/$scale',
+      (tester) async {
+        await tester.binding.setSurfaceSize(const Size(320, 1400));
+        addTearDown(() => tester.binding.setSurfaceSize(null));
+        tester.platformDispatcher.textScaleFactorTestValue = scale;
+        addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+        final auth = FakeAuthGateway(
+          snapshot: const AuthSnapshot(identity: AuthIdentity(id: 'user-1')),
+        );
+        addTearDown(auth.close);
+        final anchor = FakeProfileAnchorGateway()
+          ..readiness = ProfileAnchorReadiness.complete;
+        final profile = FakeProfileGateway(data: _competenceLabelFixture());
+        final app = await _pumpApp(tester, auth, anchor, profile);
+        app.read(appRouterProvider).go('/profile');
+        await tester.pumpAndSettle();
+        final semantics = tester.ensureSemantics();
+        try {
+          final collection = find.byKey(const Key('profile-competence-labels'));
+          expect(collection, findsOneWidget);
+          final labels = tester
+              .widgetList<Chip>(
+                find.descendant(of: collection, matching: find.byType(Chip)),
+              )
+              .toList();
+          expect(labels.map((chip) => (chip.label as Text).data).toList(), [
+            'Mural painting',
+            'Photography',
+            'Musician',
+          ]);
+          for (final category in profile.data.categories) {
+            expect(find.text(category.label), findsNothing);
+          }
+          expect(find.text('Unselected competence'), findsNothing);
+          expect(
+            find.descendant(
+              of: collection,
+              matching: find.byIcon(Icons.cancel),
+            ),
+            findsNothing,
+          );
+          expect(
+            find.descendant(of: collection, matching: find.byIcon(Icons.close)),
+            findsNothing,
+          );
+          final before = Set<String>.of(profile.data.profile.selectedSkillIds);
+          for (final chip in labels) {
+            final label = (chip.label as Text).data!;
+            expect(find.text(label), findsOneWidget);
+            expect(chip.onDeleted, isNull);
+            expect(chip.deleteIcon, isNull);
+            expect(chip.visualDensity, VisualDensity.compact);
+            final finder = find.byKey(chip.key!);
+            await tester.ensureVisible(finder);
+            await tester.pumpAndSettle();
+            final bounds = tester.getRect(finder);
+            final wrapBounds = tester.getRect(collection);
+            expect(bounds.left, greaterThanOrEqualTo(wrapBounds.left));
+            expect(bounds.right, lessThanOrEqualTo(wrapBounds.right));
+            final data = tester.getSemantics(finder).getSemanticsData();
+            expect(data.flagsCollection.isButton, isFalse);
+            expect(data.hasAction(SemanticsAction.tap), isFalse);
+            await tester.tap(finder);
+            await tester.pumpAndSettle();
+            expect(find.byType(BottomSheet), findsNothing);
+            expect(
+              app
+                  .read(appRouterProvider)
+                  .routeInformationProvider
+                  .value
+                  .uri
+                  .path,
+              '/profile',
+            );
+          }
+          expect(profile.updateCount, 0);
+          expect(profile.data.profile.selectedSkillIds, before);
+          expect(tester.takeException(), isNull);
+        } finally {
+          semantics.dispose();
+        }
+      },
+    );
+  }
+
+  testWidgets(
+    'read-only empty competences retain localized copy without an empty Wrap',
+    (tester) async {
+      final auth = FakeAuthGateway(
+        snapshot: const AuthSnapshot(identity: AuthIdentity(id: 'user-1')),
+      );
+      addTearDown(auth.close);
+      final anchor = FakeProfileAnchorGateway()
+        ..readiness = ProfileAnchorReadiness.complete;
+      final profile = FakeProfileGateway(
+        data: _competenceLabelFixture(selected: {}),
+      );
+      final app = await _pumpApp(tester, auth, anchor, profile);
+      app.read(appRouterProvider).go('/profile');
+      await tester.pumpAndSettle();
+      final l10n = AppLocalizations.of(
+        tester.element(find.byKey(const Key('profile-display-name'))),
+      );
+      expect(find.text(l10n.profileNoSkills), findsOneWidget);
+      expect(find.byKey(const Key('profile-competence-labels')), findsNothing);
+      expect(find.text('Music'), findsNothing);
+      expect(find.text('Art & Creativity'), findsNothing);
+      expect(profile.updateCount, 0);
+    },
+  );
+
   testWidgets('Profile idle and loading render loading without a fake error', (
     tester,
   ) async {
@@ -369,6 +484,48 @@ void main() {
     expect(find.text('Casey'), findsNothing);
     expect(profile.loadCount, 2);
   });
+}
+
+ProfileEditorData _competenceLabelFixture({Set<String>? selected}) {
+  final base = profileFixture(complete: true);
+  return ProfileEditorData(
+    profile: OwnProfile(
+      id: base.profile.id,
+      displayName: base.profile.displayName,
+      bio: base.profile.bio,
+      updatedAt: base.profile.updatedAt,
+      // Selection insertion order deliberately differs from catalog order.
+      selectedSkillIds:
+          selected ?? {'skill-musician', 'skill-photo', 'skill-mural'},
+      visibility: base.profile.visibility,
+    ),
+    categories: [
+      ProfileSkillCategory(
+        id: 'category-art',
+        slug: 'art-creativity',
+        label: 'Art & Creativity',
+        sortOrder: 1,
+        skills: [
+          base.categories.first.skills.first,
+          const ProfileSkill(
+            id: 'skill-photo',
+            categoryId: 'category-art',
+            slug: 'photography',
+            label: 'Photography',
+            sortOrder: 2,
+          ),
+          const ProfileSkill(
+            id: 'skill-other',
+            categoryId: 'category-art',
+            slug: 'other',
+            label: 'Unselected competence',
+            sortOrder: 3,
+          ),
+        ],
+      ),
+      base.categories.last,
+    ],
+  );
 }
 
 Future<ProviderContainer> _pumpApp(

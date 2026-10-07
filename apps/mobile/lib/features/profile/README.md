@@ -25,6 +25,11 @@ bounded bottom sheet groups the canonical catalog, searches labels, reports a
 selection count, and updates only local form state. Save remains the sole
 network boundary and submits the exact complete selected-ID set atomically.
 
+The read-only owner Profile flattens selected competences into one compact
+wrapping label collection in catalog category order, then skill order. Category
+headings and removal/selector actions belong only to Edit Profile. With no
+selected competences, Profile keeps the localized `profileNoSkills` message.
+
 Setup and edit share one canonical Save handler. Its AppBar action remains
 visible while scrolling, disables during requests and shows save progress.
 Safe save failures appear above the scrollable fields as a live-region message;
