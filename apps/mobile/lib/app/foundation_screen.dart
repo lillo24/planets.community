@@ -1,11 +1,8 @@
 import 'package:flutter/material.dart';
 
-import '../features/messages/presentation/message_unread_badge.dart';
-
 import 'package:go_router/go_router.dart';
 
 import '../core/theme/app_tokens.dart';
-import '../features/auth/presentation/auth_status.dart';
 import '../features/notifications/presentation/home_notification_button.dart';
 import '../l10n/generated/app_localizations.dart';
 
@@ -21,12 +18,6 @@ class FoundationScreen extends StatelessWidget {
         title: Text(l10n.appTitle),
         actions: [
           const HomeNotificationButton(),
-          IconButton(
-            key: const Key('open-messages-button'),
-            tooltip: l10n.messagesOpenTooltip,
-            onPressed: () => context.push('/messages'),
-            icon: const MessageUnreadBadge(child: Icon(Icons.mail_outline)),
-          ),
           IconButton(
             key: const Key('open-settings-button'),
             tooltip: l10n.settingsOpenTooltip,
@@ -62,8 +53,6 @@ class FoundationScreen extends StatelessWidget {
                     style: Theme.of(context).textTheme.bodyLarge,
                   ),
                   const SizedBox(height: AppSpacing.large),
-                  const AuthStatus(),
-                  const SizedBox(height: AppSpacing.medium),
                   _HomePillarCard(
                     key: const Key('browse-proposals-button'),
                     icon: Icons.explore_outlined,

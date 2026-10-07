@@ -319,6 +319,8 @@ void main() {
     );
     final router = app.read(appRouterProvider);
     await _tap(tester, 'nav-messages');
+    expect(router.routerDelegate.state.uri.path, '/messages');
+    await _tap(tester, 'messages-context-action');
     expect(router.routerDelegate.state.uri.path, '/auth');
     expect(
       router.routerDelegate.state.uri.queryParameters['returnTo'],
@@ -331,6 +333,8 @@ void main() {
     await _tap(tester, 'auth-request-button');
     await tester.enterText(find.byKey(const Key('auth-code-field')), '123456');
     await _tap(tester, 'auth-verify-button');
+    expect(router.routerDelegate.state.uri.path, '/messages');
+    await _tap(tester, 'messages-context-action');
     expect(router.routerDelegate.state.uri.path, '/profile/edit');
     expect(
       router.routerDelegate.state.uri.queryParameters['returnTo'],
@@ -481,7 +485,7 @@ void main() {
   });
 
   for (final complete in [true, false]) {
-    testWidgets('Home sign out follows demo gate for complete=$complete', (
+    testWidgets('Home omits account testing controls for complete=$complete', (
       tester,
     ) async {
       await _pump(tester, complete: complete, enableDemoTools: 'false');
@@ -489,7 +493,7 @@ void main() {
       await tester.pumpWidget(const SizedBox.shrink());
       await tester.pumpAndSettle();
       await _pump(tester, complete: complete, enableDemoTools: 'true');
-      expect(find.widgetWithText(TextButton, 'Sign out'), findsOneWidget);
+      expect(find.widgetWithText(TextButton, 'Sign out'), findsNothing);
     });
   }
 
@@ -1461,6 +1465,10 @@ Future<ProviderContainer> _pump(
     ),
   );
   await tester.pumpAndSettle();
+  if (find.byKey(const Key('welcome-explore')).evaluate().isNotEmpty) {
+    await tester.tap(find.byKey(const Key('welcome-explore')));
+    await tester.pumpAndSettle();
+  }
   return ProviderScope.containerOf(tester.element(find.byType(PlanetsApp)));
 }
 

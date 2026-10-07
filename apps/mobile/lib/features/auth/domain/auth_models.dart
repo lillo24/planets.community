@@ -1,5 +1,6 @@
 enum AuthSessionPhase {
   restoring,
+  restorationFailed,
   signedOut,
   checkingProfile,
   ready,
@@ -13,10 +14,17 @@ class AuthIdentity {
 }
 
 class AuthSnapshot {
-  const AuthSnapshot({this.identity, this.isExpired = false});
+  const AuthSnapshot({
+    this.identity,
+    this.isExpired = false,
+    this.isTokenRefresh = false,
+  });
 
   final AuthIdentity? identity;
   final bool isExpired;
+
+  /// A warm token refresh keeps established readiness and navigation intact.
+  final bool isTokenRefresh;
 }
 
 enum ProfileAnchorReadiness { missing, incomplete, complete }
@@ -33,6 +41,9 @@ class AuthSessionState {
 
   const AuthSessionState.signedOut()
     : this._(phase: AuthSessionPhase.signedOut);
+
+  const AuthSessionState.restorationFailed()
+    : this._(phase: AuthSessionPhase.restorationFailed);
 
   const AuthSessionState.checkingProfile(AuthIdentity identity)
     : this._(phase: AuthSessionPhase.checkingProfile, identity: identity);
@@ -57,7 +68,9 @@ class AuthSessionState {
     AuthSessionPhase.checkingProfile ||
     AuthSessionPhase.ready ||
     AuthSessionPhase.profileSetupRequired => true,
-    AuthSessionPhase.restoring || AuthSessionPhase.signedOut => false,
+    AuthSessionPhase.restoring ||
+    AuthSessionPhase.restorationFailed ||
+    AuthSessionPhase.signedOut => false,
   };
 }
 

@@ -282,7 +282,7 @@ class PhotoFlowHarness {
   }
 
   Future<void> openProfile(WidgetTester tester) async {
-    await _tapVisible(tester, find.text('View profile'));
+    await tester.tap(find.byKey(const Key('nav-profile')));
     await tester.pumpAndSettle();
   }
 

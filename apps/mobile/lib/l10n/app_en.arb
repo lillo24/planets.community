@@ -2205,5 +2205,13 @@
   "messageRequestAcceptedPreview": "Request accepted",
   "messageRequestRejectedPreview": "Request rejected",
   "messageRequestWithdrawnPreview": "Request withdrawn",
-  "pairChatReadOnlyReactivation": "You can send messages again when there is a new pending request."
+  "pairChatReadOnlyReactivation": "You can send messages again when there is a new pending request.",
+  "welcomeExplore": "Explore App",
+  "welcomeLogin": "Log in",
+  "messagesSignInContext": "Log in to join projects, donate or exchange, and manage your conversations.",
+  "authRestoreFailure": "Your session could not be restored. Retry to check your saved session.",
+  "startupPreferenceError": "Your introduction preference could not be saved or restored. Please retry.",
+  "tutorialNext": "Next",
+  "tutorialFinish": "Finish",
+  "startupDevelopmentReset": "Reset welcome and tutorial (development)"
 }

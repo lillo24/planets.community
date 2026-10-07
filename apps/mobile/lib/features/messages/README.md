@@ -195,3 +195,9 @@ retains unread until opened and acknowledged; activity mark-all never reads it.
 Unread is private own-state, independent of notification preferences/projectors.
 Apply the backend migration before releasing this client; old clients gain no
 badges or acknowledgement merely from migration.
+
+`presentation/messages_landing_screen.dart` gates only the public `/messages`
+root. Signed-out users get contextual Log in with `/messages` as the Auth return;
+incomplete profiles get completion/retry with a safe root cancellation. Restoring
+and failed sessions expose the shared recovery state. Private loaders mount only
+for a ready identity, keyed by actor; every descendant keeps router protection.

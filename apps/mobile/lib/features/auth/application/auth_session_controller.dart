@@ -24,16 +24,45 @@ class AuthSessionController extends Notifier<AuthSessionState> {
     }
     _started = true;
 
-    final gateway = ref.read(authGatewayProvider);
-    _subscription = gateway.authStateChanges.listen(
-      (snapshot) => unawaited(_applySnapshot(snapshot)),
-      onError: (Object _, StackTrace _) {
-        if (state.phase == AuthSessionPhase.restoring) {
-          state = const AuthSessionState.signedOut();
-        }
-      },
-    );
-    await _applySnapshot(gateway.currentSnapshot);
+    try {
+      final gateway = ref.read(authGatewayProvider);
+      _subscription = gateway.authStateChanges.listen(
+        (snapshot) => unawaited(_applySnapshot(snapshot)),
+        onError: (Object _, StackTrace _) {
+          if (state.phase == AuthSessionPhase.restoring) {
+            _revision += 1;
+            state = const AuthSessionState.restorationFailed();
+          }
+        },
+      );
+    } catch (_) {
+      // Subscription setup is part of restoration, not a signed-out result.
+      _revision += 1;
+      state = const AuthSessionState.restorationFailed();
+      return;
+    }
+    await _restoreSnapshot();
+  }
+
+  Future<void> retryRestoration() async {
+    if (state.phase != AuthSessionPhase.restorationFailed) return;
+    state = const AuthSessionState.restoring();
+    if (_subscription == null) {
+      _started = false;
+      await start();
+      return;
+    }
+    await _restoreSnapshot();
+  }
+
+  Future<void> _restoreSnapshot() async {
+    try {
+      await _applySnapshot(ref.read(authGatewayProvider).currentSnapshot);
+    } catch (_) {
+      // Gateway snapshot failures must not impersonate an absent session.
+      _revision += 1;
+      state = const AuthSessionState.restorationFailed();
+    }
   }
 
   Future<void> _applySnapshot(AuthSnapshot snapshot) async {
@@ -44,6 +73,11 @@ class AuthSessionController extends Notifier<AuthSessionState> {
       return;
     }
 
+    if (snapshot.isTokenRefresh &&
+        state.phase == AuthSessionPhase.ready &&
+        state.identity?.id == identity.id) {
+      return;
+    }
     state = AuthSessionState.checkingProfile(identity);
     try {
       final readiness = await ref

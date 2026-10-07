@@ -3,8 +3,12 @@
 Implemented from `PLANETS_UI-MSG03_messages_list_and_badge_polish.md` in the
 isolated `codex/ui-msg03-messages-polish` worktree. Initial base:
 `9cd024cc38c02b0333a32f8abe71fdc9681df548`. Reconciled PR #157's Explore
-spacing through main `7054abc2af46770b33b39719588ab337e343bc7d`. PR #156 remains
-independent; its branch/worktree is not copied or modified.
+spacing through main `7054abc2af46770b33b39719588ab337e343bc7d`. PR #156 then
+merged while the initial PR CI ran. Integrated its main merge
+`37fa469ded1415d66058b144fe1ff4d4ed269d5f` normally, preserving startup/Auth,
+the ready-identity Messages root, protected descendants and navigation behavior.
+Only the appended EN/IT localization keys conflicted; both sets are retained.
+Its branch/worktree is not copied or modified.
 
 ## Presentation
 
@@ -86,17 +90,19 @@ actual forward migration; v4 was strictly additive. The selected stack used
 configuration is restored before commit. This resets only designated disposable
 local history and performs no hosted migration.
 
-Completed local validation on reconciled main `7054abc`:
+Completed local validation:
 
-- `npm run check:mobile`: localization, format and analysis passed;
-  1,482 tests passed and two existing tests skipped. After the final legacy
-  sender-attribution refinement, 58 Messages tests and a fresh full
-  `flutter analyze` passed; the PR Mobile job runs the complete final suite.
+- Final `npm run check:mobile` after PR #156 reconciliation at main `37fa469`:
+  localization, format and analysis passed; 1,510 tests passed and two existing
+  tests skipped. This includes the final legacy sender-attribution refinement
+  and the merged startup/navigation regressions. Final focused Messages suite:
+  58 tests passed before reconciliation.
 - Final focused photo controller/avatar suite: 17 tests passed.
 - `npm run check:db`: both established populated upgrades, fresh migration
   replay, schema lint, advisors, 119 pgTAP files / 3,637 assertions, authenticated
   integration verifiers, combined demo recovery and generated type drift passed.
-  Final deterministic test 119 rerun: 18 assertions passed.
+  Final deterministic test 119 rerun: 18 assertions passed. This ran on main
+  `7054abc`; PR #156 changes only mobile code and leaves all DB/Web source intact.
 - `npm run check:web`: 34 tooling tests and 283 web tests passed, one existing
   web test skipped; lint, type checking and production build passed.
 - `npm run format:check:web` and `git diff --check` passed.

@@ -21,7 +21,7 @@ void main() {
     addTearDown(auth.close);
     await _pumpApp(tester, auth, profile);
 
-    await tester.tap(find.text('Sign in'));
+    await _openAuth(tester);
     await tester.pumpAndSettle();
     expect(find.textContaining(RegExp(r'Google|Apple')), findsNothing);
     expect(find.byKey(const Key('auth-email-field')), findsOneWidget);
@@ -48,7 +48,7 @@ void main() {
     final profile = FakeProfileAnchorGateway();
     addTearDown(auth.close);
     await _pumpApp(tester, auth, profile);
-    await tester.tap(find.text('Sign in'));
+    await _openAuth(tester);
     await tester.pumpAndSettle();
     await tester.enterText(
       find.byKey(const Key('auth-email-field')),
@@ -88,7 +88,7 @@ void main() {
     final profile = FakeProfileAnchorGateway();
     addTearDown(auth.close);
     await _pumpApp(tester, auth, profile);
-    await tester.tap(find.text('Sign in'));
+    await _openAuth(tester);
     await tester.pumpAndSettle();
     await tester.enterText(
       find.byKey(const Key('auth-email-field')),
@@ -113,7 +113,7 @@ void main() {
     final app = await _pumpApp(tester, auth, profile);
     final router = app.read(appRouterProvider);
 
-    await tester.tap(find.text('Sign in'));
+    await _openAuth(tester);
     await tester.pumpAndSettle();
     expect(router.routerDelegate.currentConfiguration.uri.path, '/auth');
     await tester.tap(find.byKey(const Key('auth-close-button')));
@@ -121,7 +121,7 @@ void main() {
     expect(router.routeInformationProvider.value.uri.path, '/');
     expect(find.text('Mobile foundation ready'), findsOneWidget);
 
-    await tester.tap(find.text('Sign in'));
+    await _openAuth(tester);
     await tester.pumpAndSettle();
     await tester.binding.handlePopRoute();
     await tester.pumpAndSettle();
@@ -197,7 +197,7 @@ void main() {
       );
       final router = app.read(appRouterProvider);
 
-      await tester.tap(find.text('Sign in'));
+      await _openAuth(tester);
       await tester.pumpAndSettle();
       await tester.enterText(
         find.byKey(const Key('auth-email-field')),
@@ -243,7 +243,7 @@ void main() {
     final app = await _pumpApp(tester, auth, profile);
     final router = app.read(appRouterProvider);
 
-    await tester.tap(find.text('Sign in'));
+    await _openAuth(tester);
     await tester.pumpAndSettle();
     await tester.enterText(
       find.byKey(const Key('auth-email-field')),
@@ -289,4 +289,21 @@ Future<ProviderContainer> _pumpApp(
   );
   await tester.pumpAndSettle();
   return ProviderScope.containerOf(tester.element(find.byType(PlanetsApp)));
+}
+
+Future<void> _openAuth(WidgetTester tester) async {
+  final welcome = find.byKey(const Key('welcome-login'));
+  if (welcome.evaluate().isNotEmpty) {
+    await tester.tap(welcome);
+  } else {
+    final app = ProviderScope.containerOf(
+      tester.element(find.byType(PlanetsApp)),
+    );
+    app.read(appRouterProvider).go('/profile');
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(
+      find.byKey(const Key('profile-example-sign-in-button')),
+    );
+    await tester.tap(find.byKey(const Key('profile-example-sign-in-button')));
+  }
 }
