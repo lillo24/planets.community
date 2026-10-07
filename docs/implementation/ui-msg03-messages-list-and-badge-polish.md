@@ -16,6 +16,17 @@ draft-exit routing, actor-owned collections and stable loading behavior.
 Against this main, the shell change remains only the selected Messages badge
 variant; its router and Drafts feature code are unchanged.
 
+PR #159 then merged. Integrated main
+`c89ffb72e9fb0b389b40f1d283545245c52dd52b` without conflicts, preserving its
+creation/editor controls and template timezone correction. Its source remains
+intact; the UI-MSG03 forward migration is independent of that correction.
+
+CI exposed the existing unread-upgrade verifier calling its new feed RPC before
+PostgREST finished schema-cache reload (`PGRST202`). Following the existing
+MSG01 verifier pattern, its first upgraded feed read now polls only that code
+for up to 10 seconds at 200ms intervals. Mutations and all other errors retain
+their immediate failure behavior; assertions and domain rules are unchanged.
+
 ## Presentation
 
 All conversation rows use shared identity/preview content and a right-hand
@@ -98,11 +109,11 @@ local history and performs no hosted migration.
 
 Completed local validation:
 
-- Final `npm run check:mobile` after PR #158 reconciliation at main `2164a2d`:
-  localization, format and analysis passed; 1,529 tests passed and two existing
+- Final `npm run check:mobile` after PR #159 reconciliation at main `c89ffb7`:
+  localization, format and analysis passed; 1,538 tests passed and two existing
   tests skipped. This includes the final legacy sender-attribution refinement
-  and merged startup/navigation/draft regressions. The preceding PR #156
-  reconciliation passed 1,510 tests. Focused Messages suite: 58 tests passed
+  and merged startup/navigation/draft/editor regressions. The preceding PR #158
+  reconciliation passed 1,529 tests. Focused Messages suite: 58 tests passed
   before reconciliation.
 - Final focused photo controller/avatar suite: 17 tests passed.
 - `npm run check:db`: both established populated upgrades, fresh migration
@@ -110,6 +121,10 @@ Completed local validation:
   integration verifiers, combined demo recovery and generated type drift passed.
   Final deterministic test 119 rerun: 18 assertions passed. This ran on main
   `7054abc`; PR #156 changes only mobile code and leaves all DB/Web source intact.
+- After PR #159 and the cache-readiness correction: populated unread-upgrade
+  verifier passed; focused pgTAP 044/119 passed 57 assertions across two files;
+  generated database type check passed. Final hosted Database CI validates the
+  complete integrated migrations and shared QA scripts on the final head.
 - `npm run check:web`: 40 tooling tests and 283 web tests passed, one existing
   web test skipped; lint, type checking and production build passed.
 - `npm run format:check:web` and `git diff --check` passed.

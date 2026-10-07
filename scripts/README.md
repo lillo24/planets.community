@@ -18,6 +18,9 @@ domain verification and change-scoped validation tooling.
   delayed-commit, private invalidation and activity/push separation proofs.
   Its `--upgrade` mode resets only an explicitly disposable local stack to
   populated MSG01, then verifies atomic cutover and retained historical rows.
+  Its first upgraded feed read polls PostgREST's `PGRST202` missing-cache response
+  for up to 10 seconds, every 200ms, because CLI completion precedes schema-cache
+  readiness. Other errors and all mutations fail immediately without retries.
 - `classify-validation-paths.mjs` selects affected hosted validation areas.
 - `verify-local-message-list-preview-upgrade.mjs` resets an explicitly disposable
   local stack to MSG02, populates canonical pair/legacy/group fixtures, applies

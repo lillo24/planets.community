@@ -47,6 +47,7 @@ import '../../features/participation/presentation/join_request_screen.dart';
 import '../../features/participation/presentation/participation_routes.dart';
 import '../../features/proposals/presentation/own_proposals_screen.dart';
 import '../../features/proposals/presentation/proposal_editor_screen.dart';
+import '../../features/proposals/presentation/proposal_creation_choice.dart';
 import '../../features/proposals/presentation/public_proposals_screen.dart';
 import '../../features/template_workshop/presentation/template_workshop_screens.dart';
 import '../../features/recurring_activities/presentation/own_recurring_activities_screen.dart';
@@ -199,6 +200,7 @@ RoutingConfig _routingConfig(
           path.startsWith('${WorkshopRoutes.catalog}/') ||
           path == '/proposals/mine' ||
           path == '/proposals/create' ||
+          path == '/proposals/create/scratch' ||
           (path.startsWith('/proposals/') && path.endsWith('/edit'));
       final isTavoliManagementRoute =
           path == '/tavoli/mine' ||
@@ -604,13 +606,20 @@ RoutingConfig _routingConfig(
                   ),
                   GoRoute(
                     path: 'create',
-                    onExit: draftDeparture?.onExit,
-                    // Explicit Flutter Material pages retain native transitions
-                    // with go_router 18's separate material_ui app detection.
                     pageBuilder: (context, state) => MaterialPage<void>(
                       key: state.pageKey,
-                      child: const ProposalEditorScreen(),
+                      child: const ProposalCreationChoice(),
                     ),
+                    routes: [
+                      GoRoute(
+                        path: 'scratch',
+                        onExit: draftDeparture?.onExit,
+                        pageBuilder: (context, state) => MaterialPage<void>(
+                          key: state.pageKey,
+                          child: const ProposalEditorScreen(),
+                        ),
+                      ),
+                    ],
                   ),
                   GoRoute(
                     path: ':id',
@@ -636,6 +645,7 @@ RoutingConfig _routingConfig(
                           key: state.pageKey,
                           child: ProposalEditorScreen(
                             proposalId: state.pathParameters['id'],
+                            returnToHub: state.extra == DraftEditorOrigin.hub,
                           ),
                         ),
                       ),

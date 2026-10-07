@@ -263,10 +263,11 @@ void main() {
       await draft.pumpEditor(tester, similar: similar);
       await tester.enterText(find.byKey(const Key('proposal-title')), 'Aiuola');
       await settleLookup(tester);
+      await draft.selectMural(tester);
       final skill = find.byKey(const Key('proposal-skill-mural'));
       await reveal(tester, skill);
       void select(ProposalSkillImportance value) => tester
-          .widget<DropdownButton<ProposalSkillImportance?>>(skill)
+          .widget<DropdownButton<ProposalSkillImportance>>(skill)
           .onChanged!(value);
       select(ProposalSkillImportance.useful);
       await settleLookup(tester);

@@ -93,7 +93,10 @@ sessions never call the personalized RPC. Account, filter, pull-refresh, and
 own-participation revisions refresh or clear the projection without turning a
 private-read failure into a public-feed error.
 
-Public details are self-contained: they show the localized start/end schedule in the event's named timezone and the same Required/Useful skill labels as cards. The editor stores UTC instants, initializes both pickers from event-zone wall time, and keeps those instants unchanged while timezone text is invalid. Invalid timezone input displays a validation message and cannot open a picker; correcting the timezone refreshes the schedule without silently changing the instants.
+Public details show the localized schedule in the named event zone and the same
+Required/Useful skills as cards. The editor stores UTC instants and initializes
+pickers from event-zone wall time. An unknown stored zone fails validation safely
+and cannot open a picker; the editor never guesses a replacement zone.
 
 The time helpers explicitly support the existing `UTC` default as an alias for `Etc/UTC`, because the bundled timezone dataset excludes that legacy alias.
 
@@ -148,3 +151,30 @@ rows. Owner/delegated loads settle independently, never refetch a completed peer
 because its sibling is pending, and clear private caches on readiness changes.
 The folder action opens `/drafts?types=project`; the hub's management menu retains
 this feature's published/history/co-organizer screen and DRAFT01 recovery.
+
+## UI-NEXT-03 creation and controls
+
+`presentation/proposal_creation_choice.dart` owns the mutation-free
+`/proposals/create` chooser. Scratch uses `/proposals/create/scratch`; templates
+use the existing Workshop and independent canonical application. Direct edits
+and recovery bypass the chooser. Blank scratch forms have no Workshop shortcut;
+meaningful edited drafts retain guarded save-before-Workshop navigation.
+
+`presentation/proposal_editor_controls.dart` owns capacity stepping/direct raw
+entry, localized dates, adaptive equal-width control pairs, and the shared
+compact skill selector. The form still owns validation, acknowledgements,
+matching, cover reconciliation and mutations. New selected skills default to
+Useful; existing/template importance is preserved. Chip removal removes its
+importance too. Capacity stays unset until intentionally entered or incremented.
+Malformed raw edits remain available for correction.
+
+Genuine scratch creation and new canonical template applications default to the
+named `Europe/Rome` zone. Existing records and recovered receipts retain their
+zone and UTC instants; non-Rome records show a compact zone hint. There is no
+editable timezone box. Date controls and Save draft/Publish have equal widths
+when space permits and stack on narrow screens or large text. Resources and
+cancellation remain separate. Sample fill stays centrally gated, appears after
+real actions, confirms overwriting meaningful input and never submits itself.
+Only the informational publication-notice copy was removed; policy is unchanged.
+Typed hub entry returns to its filters on a successful save; ordinary entry
+retains My Proposals as the save destination. Location fields remain manual.

@@ -1499,5 +1499,15 @@
       }
     }
   },
-  "browsePreviousResults": "Risultati precedenti: non corrispondono ai filtri attuali."
+  "browsePreviousResults": "Risultati precedenti: non corrispondono ai filtri attuali.",
+  "proposalStartChoice": "Come vuoi iniziare?",
+  "proposalFromTemplate": "Da un modello",
+  "proposalFromScratch": "Da zero",
+  "proposalCapacityDecrease": "Riduci la capienza iscrizioni",
+  "proposalCapacityIncrease": "Aumenta la capienza iscrizioni",
+  "proposalChooseDateTime": "Scegli data e ora",
+  "proposalScheduleZone": "Orari mostrati in {zone}",
+  "proposalDemoReplaceTitle": "Sostituire i dati inseriti?",
+  "proposalDemoReplaceMessage": "I dati di esempio sostituiranno i valori inseriti. Nulla viene salvato finché non scegli di salvare o pubblicare.",
+  "@proposalScheduleZone": {"placeholders": {"zone": {"type": "String"}}}
 }

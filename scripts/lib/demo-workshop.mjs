@@ -934,13 +934,18 @@ export async function verifyWorkshop(context) {
     for (const field of [
       "starts_at",
       "ends_at",
-      "event_timezone",
       "country_code",
       "locality",
       "administrative_area",
       "public_location_label",
     ])
       equal(draft[field], null, `${purpose} reset ${field}.`);
+    // Existing accepted demo copies may predate UI-NEXT-03; never rewrite them.
+    equal(
+      [null, "Europe/Rome"].includes(draft.event_timezone),
+      true,
+      `${purpose} retained legacy or new Italy zone.`,
+    );
     const copied =
       await sql`select id,title,details,state from public.project_resource_needs where project_id=${draft.id} order by title`;
     const original =
