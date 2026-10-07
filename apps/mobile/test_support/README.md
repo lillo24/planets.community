@@ -1,5 +1,10 @@
 # Disposable mobile GUI rehearsal
 
+`ui_next04_native_smoke.dart` exercises the disabled map/manual-entry foundation
+on the explicitly opted-in UI02 fake-gateway harness built from the UI04 checkout.
+Pass the verified owned emulator VM URI and capture directory. It makes no live
+provider call and is not autocomplete/map-provider readiness evidence.
+
 `pi05_driver.dart` enables the Flutter SDK driver extension before using the
 normal `bootstrapApplication` boundary. It requires a debug build, explicit
 `PI05_LOCAL_REHEARSAL=true`, `APP_ENV=local` and the PI05 backend at port 58921

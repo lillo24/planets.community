@@ -1,5 +1,11 @@
 # Proposals feature
 
+UI-NEXT-04 keeps every manual location field and canonical meeting read intact.
+The editor uses `locations/presentation/location_fallbacks.dart` for unavailable
+search feedback and the detail for an inert map fallback. The transient search
+controller remains unwired; see `../locations/README.md` and provider readiness
+before any activation. No provider-derived field or location migration is added.
+
 This feature owns one-time proposal discovery and authenticated structural
 management for the immutable Creator and current Co-creators.
 
