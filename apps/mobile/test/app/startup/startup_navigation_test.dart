@@ -11,6 +11,7 @@ import 'package:planets_mobile/app/startup/startup_flow.dart';
 import 'package:planets_mobile/app/startup/welcome_screen.dart';
 import 'package:planets_mobile/core/config/app_config.dart';
 import 'package:planets_mobile/features/auth/application/auth_session_controller.dart';
+import 'package:planets_mobile/features/auth/application/auth_command_controller.dart';
 import 'package:planets_mobile/features/auth/data/auth_gateway.dart';
 import 'package:planets_mobile/features/auth/domain/auth_models.dart';
 import 'package:planets_mobile/features/messages/data/messages_gateway.dart';
@@ -28,6 +29,59 @@ import '../../support/fake_notifications.dart';
 import '../../support/fake_profile.dart';
 
 void main() {
+  for (final origin in ['/', '/settings', '/profile']) {
+    testWidgets('explicit logout from $origin returns to Welcome once', (
+      tester,
+    ) async {
+      final app = await _pump(
+        tester,
+        auth: FakeAuthGateway(
+          snapshot: const AuthSnapshot(identity: AuthIdentity(id: 'user-1')),
+        ),
+      );
+      final router = app.read(appRouterProvider);
+      router.go(origin);
+      await tester.pumpAndSettle();
+      expect(app.read(startupFlowProvider).hasEntered, isTrue);
+      await app.read(authCommandProvider.notifier).signOut();
+      await tester.pumpAndSettle();
+      expect(router.routerDelegate.state.uri.path, '/welcome');
+      expect(app.read(startupFlowProvider).hasEntered, isFalse);
+      expect(find.text('Explore App'), findsOneWidget);
+      expect(find.text('Log in'), findsOneWidget);
+      await _tap(tester, 'welcome-explore');
+      router.go('/settings');
+      await tester.pumpAndSettle();
+      router.go('/');
+      await tester.pumpAndSettle();
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+      await tester.pumpAndSettle();
+      expect(router.routerDelegate.state.uri.path, '/');
+      expect(find.byKey(const Key('welcome-screen')), findsNothing);
+    });
+  }
+
+  testWidgets('failed logout and passive session loss do not reopen Welcome', (
+    tester,
+  ) async {
+    final auth = FakeAuthGateway(
+      snapshot: const AuthSnapshot(identity: AuthIdentity(id: 'user-1')),
+    )..signOutError = StateError('offline');
+    final app = await _pump(tester, auth: auth);
+    final router = app.read(appRouterProvider);
+    await app.read(authCommandProvider.notifier).signOut();
+    await tester.pumpAndSettle();
+    expect(app.read(authSessionProvider).isAuthenticated, isTrue);
+    expect(app.read(startupFlowProvider).hasEntered, isTrue);
+    expect(router.routerDelegate.state.uri.path, '/');
+    auth.emit(const AuthSnapshot());
+    await tester.pumpAndSettle();
+    expect(app.read(authSessionProvider).phase, AuthSessionPhase.signedOut);
+    expect(router.routerDelegate.state.uri.path, '/');
+    expect(app.read(startupFlowProvider).hasEntered, isTrue);
+  });
+
   testWidgets(
     'duplicate native continuation retains OTP and defers configured tutorial',
     (tester) async {

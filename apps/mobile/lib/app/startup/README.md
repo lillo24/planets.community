@@ -6,8 +6,8 @@ It does not own Auth, profile readiness, native-link delivery or product actions
 - `startup_flow.dart` owns the explicit tutorial version, approved page registry,
   installation preference store, run-only entry/defer flags and sanitized resume
   destinations. Bootstrap restores its preference before launching the app.
-- `welcome_screen.dart` draws separate Flutter orbits/stars around the unchanged
-  founder logo from `apps/site/public/brand/planets-logo.png`. Its finite motion
+- `welcome_screen.dart` uses the shared `core/widgets/planets_hero.dart` native
+  orbits/stars around the unchanged bundled founder logo. Its finite motion
   stops when hidden/backgrounded; reduced motion settles immediately. Actions
   are available throughout, and a failed asset load keeps them available.
 - `tutorial_screen.dart` composes approved page builders and writes completion
@@ -27,6 +27,12 @@ run; restoring a session never completes a tutorial. Explicit destinations and
 external journeys bypass Welcome and defer a tutorial. Ordinary successful Auth
 or profile completion can insert a configured tutorial before their original
 sanitized destination. There is no second native-link listener or navigator.
+
+Successful explicit logout reports `AuthCommandState.didSignOut`; the existing
+router resets only `hasEntered` and opens Welcome after Auth clears private
+stacks. Failure, expired sessions and abandoned late commands do not reopen it.
+Explore then suppresses Welcome again, including across background/resume.
+Tutorial completion and the current-run tutorial deferral are untouched.
 
 Debug builds expose **Reset welcome and tutorial (development)** in Settings.
 It removes only this key and the current-run flags; Auth, language/navigation

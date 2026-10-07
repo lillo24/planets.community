@@ -9,6 +9,9 @@ This folder owns application startup presentation and navigation, not backend ru
 - `foundation_screen.dart` is Home; its Projects and Cultural Tables entry uses
   the shell's Browse branch switch, its Scambio-Dona entry opens the Browse-owned resource routes,
   and its AppBar opens public Settings.
+  Its shared PLANETS hero sits behind opaque functional cards; decorative height
+  shrinks for short screens/large text, while cards retain natural height and
+  remain scrollable. Home never replays Welcome's entrance.
 - `startup_failure_app.dart` is the safe fallback when bootstrap cannot launch the application.
 
 ## Navigation contract

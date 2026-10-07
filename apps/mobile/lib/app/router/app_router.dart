@@ -901,6 +901,14 @@ final appRouterProvider = Provider<GoRouter>((ref) {
     router.refresh();
   });
   ref.listen(pendingEmailOtpProvider, (_, _) => router.refresh());
+  ref.listen(authCommandProvider, (previous, next) {
+    if (next.didSignOut &&
+        previous?.didSignOut != true &&
+        ref.read(authSessionProvider).phase == AuthSessionPhase.signedOut) {
+      startup.returnToWelcomeAfterSignOut();
+      router.go('/welcome');
+    }
+  });
   startup.addListener(router.refresh);
   ref.onDispose(() => startup.removeListener(router.refresh));
   ref.onDispose(router.dispose);
