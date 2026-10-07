@@ -28,35 +28,31 @@ void main() {
       await tester.pumpWidget(_app(home: home));
       await tester.pumpAndSettle();
       _expectOrbits(tester, 0, home: home);
-      _expectFloat(tester, 0, -.3);
+      _expectFloat(tester, 0);
       await tester.pump(const Duration(seconds: 30));
       _expectOrbits(tester, 0, home: home);
       expect(tester.binding.transientCallbackCount, 0);
     });
   }
 
-  testWidgets('logo matches the website eight-second ease-in-out float', (
+  testWidgets('logo has a calm vertical-only eight-second ease-in-out float', (
     tester,
   ) async {
     _motion(tester, true);
     await tester.pumpWidget(_app());
     await tester.pump();
-    _expectFloat(tester, 0, -.3);
+    _expectFloat(tester, 0);
     for (var cycle = 0; cycle < 2; cycle++) {
       await tester.pump(const Duration(seconds: 1));
-      _expectFloat(
-        tester,
-        -8.8 * Curves.easeInOut.transform(.25),
-        -.3 + .6 * Curves.easeInOut.transform(.25),
-      );
+      _expectFloat(tester, -6 * Curves.easeInOut.transform(.25));
       await tester.pump(const Duration(seconds: 1));
-      _expectFloat(tester, -4.4, 0);
+      _expectFloat(tester, -3);
       await tester.pump(const Duration(seconds: 2));
-      _expectFloat(tester, -8.8, .3);
+      _expectFloat(tester, -6);
       await tester.pump(const Duration(seconds: 2));
-      _expectFloat(tester, -4.4, 0);
+      _expectFloat(tester, -3);
       await tester.pump(const Duration(seconds: 2));
-      _expectFloat(tester, 0, -.3);
+      _expectFloat(tester, 0);
     }
   });
 
@@ -158,7 +154,7 @@ void main() {
       _motion(tester, false);
       await tester.pump();
       _expectOrbits(tester, 0);
-      _expectFloat(tester, 0, -.3);
+      _expectFloat(tester, 0);
       expect(tester.binding.transientCallbackCount, 0);
       _motion(tester, true);
       await tester.pump();
@@ -189,17 +185,15 @@ Widget _app({bool home = true, bool enabled = true}) => MaterialApp(
   ),
 );
 
-void _expectFloat(WidgetTester tester, double y, double degrees) {
+void _expectFloat(WidgetTester tester, double y) {
   final translate = tester.widget<Transform>(
     find.byKey(const Key('planets-floating-logo')),
   );
   expect(translate.transform.storage[13], closeTo(y, .001));
-  final rotate = translate.child! as Transform;
-  final angle = math.atan2(
-    rotate.transform.storage[1],
-    rotate.transform.storage[0],
-  );
-  expect(angle, closeTo(degrees * math.pi / 180, .00001));
+  final expected = Matrix4.translationValues(0, y, 0);
+  for (var i = 0; i < 16; i++) {
+    expect(translate.transform.storage[i], closeTo(expected.storage[i], .001));
+  }
 }
 
 void _expectOrbits(WidgetTester tester, double seconds, {bool home = true}) {
@@ -219,7 +213,10 @@ void _expectOrbits(WidgetTester tester, double seconds, {bool home = true}) {
   final planets = circles.where((args) => args[1] == 5.2).toList();
   expect(rings, hasLength(3));
   expect(planets, hasLength(3));
-  final center = Offset(160, home ? 140 : 150);
+  final center = Offset(160, home ? 124 : 135);
+  // These 320px fixtures have limited headroom: preserve the far planet halo
+  // while moving the whole composition higher than its old 140/150px centers.
+  final diameter = home ? 162.857142857 : 178.571428571;
   var index = 0;
   // Fixed website values: far clockwise, outer counterclockwise, inner clockwise.
   for (final orbit in [
@@ -245,7 +242,8 @@ void _expectOrbits(WidgetTester tester, double seconds, {bool home = true}) {
       color: const Color(0xffefb953),
     ),
   ]) {
-    final radius = 320 * .68 * orbit.ratio / 2;
+    final radius = diameter * orbit.ratio / 2;
+    expect(center.dy - radius - 9.2, greaterThanOrEqualTo(0));
     final angle =
         (orbit.start + orbit.direction * 360 * seconds / orbit.period) *
         math.pi /

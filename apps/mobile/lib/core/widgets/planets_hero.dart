@@ -78,11 +78,8 @@ class PlanetsHero extends StatelessWidget {
                           height: geometry.logoExtent,
                           child: Transform.translate(
                             key: const Key('planets-floating-logo'),
-                            offset: Offset(0, -8.8 * floatAmount),
-                            child: Transform.rotate(
-                              angle: (-.3 + .6 * floatAmount) * math.pi / 180,
-                              child: child,
-                            ),
+                            offset: Offset(0, -6 * floatAmount),
+                            child: child,
                           ),
                         ),
                       ],
@@ -223,12 +220,25 @@ class _HeroGeometry {
         size.width / 2,
         logoAreaHeight == null
             ? (screenHeight ?? size.height) *
-                  (.5 - .2 * Curves.easeOut.transform(entrance))
-            : logoAreaHeight * .7,
+                  (.5 - .23 * Curves.easeOut.transform(entrance))
+            : logoAreaHeight * .62,
       ),
-      baseDiameter = logoAreaHeight == null
-          ? math.min(size.width * .68, 300)
-          : math.min(size.width * .68, math.min(logoAreaHeight * 1.1, 300)),
+      // Fit the far ring and its planet halo above the settled center, so
+      // raising the composition doesn't clip circular artwork on short screens.
+      baseDiameter = math.min(
+        size.width * .68,
+        math.min(
+          300,
+          math.max(
+            0,
+            ((logoAreaHeight == null
+                        ? (screenHeight ?? size.height) * .27
+                        : logoAreaHeight * .62) -
+                    10) /
+                .7,
+          ),
+        ),
+      ),
       logoExtent = logoAreaHeight == null
           ? math.min(size.width * .57, 270)
           : math.min(160, math.min(size.width * .45, logoAreaHeight * .9));

@@ -7,7 +7,13 @@ This folder owns small presentation primitives reused across feature boundaries.
   informative site's `apps/site/src/styles.css` / `App.tsx`: pink far orbit
   12 seconds clockwise, cyan outer orbit 16 seconds counterclockwise, gold inner
   orbit 18 seconds clockwise, all linear; the logo floats every 8 seconds using
-  CSS ease-in-out. One repeating 144-second clock keeps these phases continuous.
+  CSS ease-in-out with a calm 6px vertical float and no logo rotation. One
+  repeating 144-second clock keeps these phases continuous. The settled hero
+  sits slightly higher on both surfaces (27% of Welcome's available screen
+  height, 62% of Home's decorative area, with Home's artwork lifted by another
+  6% of that area into the existing scroll padding); rings scale to retain
+  top-edge room for their planets on shorter layouts, leaving more breathing
+  room below the logo without moving functional actions.
   Both surfaces pause without advancing hidden time when backgrounded, covered
   by another route, disabled by TickerMode, or scrolled outside the viewport.
   Reduced motion renders the initial orbit phases and settled entrance without
