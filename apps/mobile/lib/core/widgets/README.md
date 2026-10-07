@@ -2,11 +2,19 @@
 
 This folder owns small presentation primitives reused across feature boundaries.
 
-- `planets_hero.dart` shares the bundled PLANETS logo and native orbit/star
-  painter between Welcome and Home. Welcome has a finite entrance that respects
-  reduced motion, lifecycle and TickerMode; Home is a settled smaller composition
-  with no animation controller. Artwork ignores touches; Home places opaque,
-  naturally sized cards above it and reduces decoration on short/scaled screens.
+- `planets_hero.dart` shares the bundled PLANETS logo, stars and circular native
+  orbit painter between Welcome and Home. `PlanetsOrbitMotion` matches the
+  informative site's `apps/site/src/styles.css` / `App.tsx`: pink far orbit
+  12 seconds clockwise, cyan outer orbit 16 seconds counterclockwise, gold inner
+  orbit 18 seconds clockwise, all linear; the logo floats every 8 seconds using
+  CSS ease-in-out. One repeating 144-second clock keeps these phases continuous.
+  Both surfaces pause without advancing hidden time when backgrounded, covered
+  by another route, disabled by TickerMode, or scrolled outside the viewport.
+  Reduced motion renders the initial orbit phases and settled entrance without
+  ticking. Welcome adds its finite upward entrance; Home uses a smaller settled
+  composition without replaying that entrance. Artwork ignores touches; Home
+  places opaque, naturally sized cards above it and reduces decoration on
+  short/scaled screens.
 
 - `empty_state.dart`, `error_state.dart`, and `loading_state.dart` provide the
   standard asynchronous screen states.

@@ -11,7 +11,9 @@ This folder owns application startup presentation and navigation, not backend ru
   and its AppBar opens public Settings.
   Its shared PLANETS hero sits behind opaque functional cards; decorative height
   shrinks for short screens/large text, while cards retain natural height and
-  remain scrollable. Home never replays Welcome's entrance.
+  remain scrollable. Home never replays Welcome's entrance; its shared circular
+  planet rotations and logo float continue at the informative website's speeds
+  while visible, pausing offscreen/backgrounded and respecting reduced motion.
 - `startup_failure_app.dart` is the safe fallback when bootstrap cannot launch the application.
 
 ## Navigation contract
