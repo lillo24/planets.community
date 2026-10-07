@@ -7,7 +7,8 @@ requirement: implement separate slices on predecessor history, then merge in ord
 This branch starts at UI-NEXT-01 PR #156 head
 `2770ec78702b320632684c996464257ad6f690ad`; its main ancestor is
 `9cd024cc38c02b0333a32f8abe71fdc9681df548`. UI-NEXT-01 is preserved unchanged.
-Source-head and PR references are recorded below after the implementation commit.
+Validated implementation commit: `eca0a709d24b0a1c9eb986727ca07b8ec1e72925`.
+The PR evidence comment records its final documentation head and merge reference.
 
 ## Behavior
 
