@@ -6,7 +6,7 @@ No predecessor PR is closed, retargeted, marked ready, or merged by this task.
 
 ## Exact inputs and provenance
 
-### Committed-main continuation (2026-10-06, validation in progress)
+### Committed-main continuation (2026-10-06–07, native replay blocked)
 
 The continuation prompt supersedes the original #146/#153 exclusion below.
 Fetched main was pinned once at `9cd024cc38c02b0333a32f8abe71fdc9681df548`,
@@ -34,10 +34,277 @@ to the later blocked delegate's Project; the canonical withdrawal was correct.
 A separate synthetic no-delegate Project supplies the unaffected real producer.
 No history was repaired or assertion weakened. Failed logs are retained privately.
 
-Browser inventory and task-local page control have recovered. Remaining live UI,
-full gates, Android build and exact-source hosted results are recorded below
-when complete; the old passes are not new-source evidence. Founder copy remains
-unapproved. The remainder of this section records the original run historically.
+Browser control recovered and the normal-browser campaign completed on the
+combined runtime. The exact EN/IT copy extract was regenerated and verified
+against the current ARBs (46 keys; no wording rewrite). Founder approval remains
+pending. All evidence below uses synthetic, task-owned data.
+
+#### Combined-source validation
+
+| Area                            | Actual continuation evidence                                                                                                                                                                                                                                                                                          |
+| ------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Mobile                          | Full l10n/format/analysis gate; 1,610 passing tests, two pre-existing skips. Final native harness formatting/analysis also passes.                                                                                                                                                                                    |
+| Web/tooling                     | 57 tooling tests and 455 Web tests pass / one pre-existing Web skip; lint, types and production Next 16.3.8 build pass. Launcher lint/types pass.                                                                                                                                                                     |
+| Site                            | 34 client tests and 19 worker tests; lint/types/build and Cloudflare deployment dry run pass. No deployment.                                                                                                                                                                                                          |
+| Database                        | Full `npm run check:db`: replay, lint/advisors, 127 pgTAP files / 3,880 assertions, generated-type drift, domain/media/chat/notification/demo verifiers, complete 231-signature suspension audit and real-auth/concurrency gates pass.                                                                                |
+| Concurrency                     | Suspension: 24 observed-lock winner-order races. MODINT: six observed-lock apply/admission races and two revoke/recovery races pass. Producer-before-global-worker ordering retained.                                                                                                                                 |
+| Web Auth / Tavoli               | Configured owned Mailpit 54614 real-auth checks pass. The first omitted-Mailpit command failed and is retained separately.                                                                                                                                                                                            |
+| Hosting HTTP/SSR                | Fresh 35-case campaign passes anonymous and authenticated contracts: chunked refresh, interleaved HTML/Flight/private cache isolation, notes/evidence denial, forged moderator/self suspension denial, stale/suspended staff reauthorization and independent sign-out. This is not provider/CDN/free-tier validation. |
+| Android compilation / native UI | Matching APKs compile. Final complete native results are recorded below; compilation alone is not a flow pass.                                                                                                                                                                                                        |
+
+The full gates used combined production trees at `94fac4b` / `b928e77`;
+later native changes are fixture/test synchronization only. Runtime-source
+equivalence and the final hosted source are recorded separately in PR evidence,
+not silently inferred from an old run.
+
+#### Actual normal-browser campaign
+
+- Normal moderator OTP, safety-notice apply/revoke through actual controls, distinct
+  affected-user reason/private note, persisted Active/Revoked history, and no
+  suspension affordance pass.
+- Normal admin OTP, suspension apply and canonical unsuspend through actual
+  controls pass. Suspended ordinary OTP is valid but Web's canonical setup is
+  denied: it shows Finish session setup / Sign-in needs attention, supports
+  sign-out, and does not grant a private staff route. No Mobile-specific Web
+  suspension screen is claimed. After revocation, ordinary setup converges
+  to ready Home; its staff case remains Page unavailable.
+- A fresh photo-free participant uses invitation → normal OTP → first-time
+  basic profile save → Join Project → token-free confirmation. Explicit Refresh
+  participation and the public browser fallback pass. Canonical readback proves
+  exactly one membership, one admission receipt, zero photos and a truthful
+  invitation origin (null request origin).
+- The Open PLANETS link contains only the public Project ID. Store-download
+  URLs remain unconfigured and the UI says downloads are unavailable. The local
+  public fallback was clicked; installed-app/OS association or actual store
+  downloads were not tested.
+- Staff hides the Project through actual controls. After sign-out, the bearer
+  preview is generic; the rendered DOM contains neither its hidden title nor ID.
+  Unknown, revoked and elapsed-Project links have no Join button. There is no
+  invitation TTL in this domain: “expired” here means the existing one-time
+  Project end-time boundary, not a new expiry feature. Only that named disposable
+  fixture's times were temporarily shifted then restored; hide/invitation
+  revocation uses real-OTP canonical RPCs. Membership and receipt history remain.
+
+#### Native attempts and disposition
+
+The owned API 35 AVD booted in 36.9 seconds with authorized ADB transport and a
+working VM-service connection. Its 1536 MB guest / two cores and precompiled APKs
+avoid heavyweight local suites during smoke. Shared devices/ADB were untouched.
+
+Five controlled failed attempts are retained privately. The first passed
+real OTP/Home, navigation, photo-free admission, hidden-preview/chat continuity
+and EN/IT active/removed notices, then waited for an unbuilt lower Settings exit.
+The harness now scrolls the real lazy list to the canonical sign-out action.
+The second also passed personal pair send/feed and private template copy, then
+a native route/IME animation intercepted its Verify tap. The helper now settles
+the route and ensures the real control is visible before tapping. The third
+passed A→B OTP and isolated history, then tried to find Sign in on the signed-out
+example Profile. The fourth bounded mounted-control wait confirmed this was
+the wrong destination, not a transient delay. The harness now navigates to
+Home's normal sign-in entry; production Profile/Settings exits do not promise
+an automatic Auth redirect. Both helpers settle native OTP route/IME transitions.
+The next run passed fresh missing→incomplete→complete profile setup and explicit
+admission recovery, then confirmed the same wrong-entry assumption at C's
+Settings exit. Every subsequent account entry now uses Home except the deliberate
+protected-notices continuation. APK builds numbered 5 were superseded by the
+additional suspension-exit/recovery coverage; they were not failed device runs.
+No Auth injection, timeout increase, discarded history or softened assertion
+was used. Every admission-bearing replay prepares fresh actors/Projects and
+rebuilds its matching APK. Earlier partial screenshots are backed up separately
+and are not represented as complete smoke results.
+
+Final complete native replay: **blocked, not passed**. On October 7 the user
+opened Docker Desktop; the owned API health endpoint returned 200. A fresh
+fixture preparation (`otp-defines-8.json`) succeeded. Only the MODINT01 backend
+was paused with normal backups retained while compiling. The matching corrected
+`c4f5c6ad7bc10d946dfad0a108f63574f5a48f47` APK compiled in 126.7 seconds using a
+command-local 1 GB Gradle heap cap. Its SHA-256 is
+`316829ba2015bede3436b8561deb7f61b1ac86c86eba41e7931819541a2f3577`.
+This fresh fixture/APK has **not** been driven and has not committed admission.
+The previous build numbered 7 was interrupted before an APK/result existed;
+the first October 7 resume failed before preparation/build while Docker was closed.
+Those incomplete/failed logs remain separate from the successful build numbered 8.
+
+The execution tool then rejected the owned backend restart and build-daemon
+cleanup commands as blocked by policy. Neither command executed, and no alternate
+process kill, shared-service restart or policy bypass was attempted. The emulator
+was not booted on October 7. Host memory recovered later (8.2 GB available,
+51% commit in the final sample); memory pressure is therefore **not** claimed as
+the cause of this last block. The remaining required Android work is explicit:
+
+| Required flow                                                | Current evidence / remaining action                                                                                                                                                                                                                                                                               |
+| ------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Normal OTP/Home, navigation and account exits                | Partial native runs pass A→B isolation and C's real missing→incomplete→complete profile setup. Run the full corrected OTP target on fresh fixture 8.                                                                                                                                                              |
+| Photo-free invitation and combined-main pair/template sanity | Partial run 6 passes fresh admission, read-only recovery without a duplicate membership, hidden-preview/chat continuity, canonical pair send/feed and private template copy. Complete the corrected target's later access transitions. Delegate denial is independently verified by preparation and domain gates. |
+| Private notice types EN/IT                                   | Real active/removed safety, interaction-restriction and content-hide screenshots exist from partial run 6. They do not prove a full suite pass.                                                                                                                                                                   |
+| Suspension during ordinary access                            | Full corrected sequence, Back/shortcut/deep-link denial, suspension-screen sign-out, fresh suspended OTP and post-revoke refresh still need execution. EN/IT suspension and removed-suspension captures are missing.                                                                                              |
+| Project and Resource request forms                           | The matching compiled request target/config has never been driven. Run both canonical denials, independent own status, notices/Back with retained draft/modal, revoke and deliberate retry, block/account isolation and both PT403 routes. All four EN/IT explanation captures are missing.                       |
+| Physical/OS/accessibility checks                             | Physical Android/iOS, TalkBack/VoiceOver, hardware keyboard and public HTTPS association/store downloads remain unrun, not emulator or browser results.                                                                                                                                                           |
+
+The [continuation screenshot index](screenshots/modint01-continuation/README.md)
+records source/run provenance and safe representative framing. Seven browser
+captures and 16 partial native captures are published. Three staff captures were
+withheld in the private backup because their framing included private-note text,
+even though synthetic. Actual browser control results remain recorded above;
+those withheld images are not public evidence. The partial personal-pair image
+shows a live-updates-unavailable banner: canonical send/feed passed, but healthy
+socket delivery and the historical Realtime cause are **not** asserted resolved.
+
+#### Hosted source and reproducible rehearsal
+
+Hosted [run 37519603639](https://github.com/lillo24/planets.community/actions/runs/37519603639)
+passes Mobile, Web, Site and Database on branch head `b928e77f02e74109a2fd7ceaeb5ded54c5ff942c`.
+Actual PR checkout is `17ce5b4609dbf4d298bf1f6a6afeac9f3de0b4b6`, merging
+that head into the included main pin. Classification selects all four areas
+(253 changed paths), and each job runs successfully. The checkout's relevant
+trees are identical to the branch source. Later native test corrections have
+their own green hosted result:
+[run 37525346794](https://github.com/lillo24/planets.community/actions/runs/37525346794)
+on `c4f5c6ad7bc10d946dfad0a108f63574f5a48f47`. Actual checkout in classification
+and every area is `935d7e90d81a539d36e3cd5ee9e76f333841f958`, that source merged
+into `9cd024cc38c02b0333a32f8abe71fdc9681df548`. All four areas are classified
+true (253 paths), run and pass; no required area is skipped. Fetched checkout
+and relevant-tree equivalence are verified, not inferred from run metadata.
+Main remains the same pin and #154 is cleanly mergeable but deliberately
+draft/unmerged. No CI waiver is invoked. The continuation publication changes
+only documentation/screenshots; its exact SHA and relevant-tree equivalence to
+tested source `c4f5c6a` are recorded in the PR evidence comment. No unrun
+publication-head hosted CI result is claimed. A documentation-only `[skip ci]`
+commit avoids repeating the same full integration campaign while this PR remains
+draft; it does not waive any future ready/merge requirement.
+
+After cleanup, restart from this worktree with the retained canonical backup;
+never run a preparer against the restored shared-project config:
+
+```powershell
+Set-Location C:/Users/leona/Documents/GitHub/planets-modint01
+$qaBackup = 'C:/Users/leona/AppData/Local/Temp/planets-modint01-backup-15b02459aa944e078ca7164a00d61a3f/continuation-4a8d143592974b4385e5e770279f2990'
+$qaNode = 'C:/Users/leona/AppData/Local/Temp/planets-authqa01-runtime-ee9648e26eb64e35b6e65049a08a4dbe/node-v24.21.0-win-x64'
+$env:PATH = "$qaNode;C:/Users/leona/Documents/GitHub/planets-modint01/node_modules/.bin;C:/src/flutter/bin;" + $env:PATH
+./scripts/prepare-local-modint01-qa.ps1 -Action Prepare -BackupDirectory $qaBackup
+npm run db:start -- --exclude studio,postgres-meta,edge-runtime,logflare,vector > "$qaBackup/rehearsal-start.log" 2>&1
+$env:MAILPIT_URL = 'http://127.0.0.1:54614'
+```
+
+The start command resumes retained task volumes, not a reset. Confirm the
+owned API 54611 / DB 54612 before fixtures. New full database gates reset the
+disposable world, so complete them before preparing UI actors. For native
+rehearsal use the [harness map](../../apps/mobile/integration_test/README.md),
+each fresh `--modint01` preparer and matching compile-time config/APK:
+
+```powershell
+node apps/mobile/integration_test/prepare_authqa_fixtures.mjs --modint01
+Push-Location apps/mobile
+$env:AUTHQA_SCREENSHOT_DIR = 'C:/Users/leona/Documents/GitHub/planets-modint01/docs/development/screenshots/modint01-continuation/native'
+$qaPreviousGradleOpts = $env:GRADLE_OPTS
+try {
+  $env:GRADLE_OPTS = '-Dorg.gradle.jvmargs=-Xmx1g'
+  flutter build apk --debug --target=integration_test/otp_home_test.dart --dart-define-from-file=config/local.json
+} finally {
+  $env:GRADLE_OPTS = $qaPreviousGradleOpts
+}
+# Copy this APK outside build/ before compiling any other target.
+flutter drive --driver=test_driver/otp_home_driver.dart --target=integration_test/otp_home_test.dart -d emulator-5560 --dart-define-from-file=config/local.json --use-application-binary=build/app/outputs/flutter-apk/app-debug.apk
+Pop-Location
+node apps/mobile/integration_test/prepare_request_restriction_fixtures.mjs --modint01
+# Repeat with request_restriction_test.dart / request_restriction_driver.dart
+# and REQUEST_SCREENSHOT_DIR. Never reuse OTP target's APK/config for this target.
+```
+
+The already compiled, unused October 7 OTP pair can instead be replayed without
+another build or fixture preparation after resuming the retained backend:
+
+```powershell
+Push-Location apps/mobile
+$env:AUTHQA_SCREENSHOT_DIR = 'C:/Users/leona/Documents/GitHub/planets-modint01/docs/development/screenshots/modint01-continuation/native'
+flutter drive --driver=test_driver/otp_home_driver.dart --target=integration_test/otp_home_test.dart -d emulator-5560 --dart-define-from-file="$qaBackup/otp-defines-8.json" --use-application-binary="$qaBackup/otp-smoke-8.apk"
+$env:REQUEST_SCREENSHOT_DIR = $env:AUTHQA_SCREENSHOT_DIR
+flutter drive --driver=test_driver/request_restriction_driver.dart --target=integration_test/request_restriction_test.dart -d emulator-5560 --dart-define-from-file="$qaBackup/request-defines.json" --use-application-binary="$qaBackup/request-smoke-5.apk"
+Pop-Location
+```
+
+Request APK 5 was compiled at `b51098e6489a531a595d0c6274c3432c29d3c1c3`;
+its request harness/driver and production Mobile trees are byte-identical at
+`c4f5c6a` (verified with Git). Its unused fixture is still retained. If a Project's
+ordinary time boundary has elapsed, the world was reset, or a run commits
+admission/request changes, prepare fresh matching fixtures and compile again;
+never erase history or reuse a completed admission as a new one. Build before
+booting the emulator, optionally pausing only this owned backend with backups.
+Use the documented command-local heap cap and restore its previous value.
+
+Before the drive, register only the retained owned AVD if its `.ini` is absent
+(retain/inspect an existing conflicting registration); its backup is the parent
+directory's `restored-checkout-generated/PLANETS_MODINT01_API35.ini`. Use
+`Start-Process -WindowStyle Hidden` with the official emulator executable and
+`-avd PLANETS_MODINT01_API35 -port 5560 -no-window -no-audio -no-boot-anim
+-no-snapshot-load -no-snapshot-save -gpu swiftshader_indirect -memory 1536 -cores 2`.
+Require boot-completed `1`, authorized `device` transport and sufficient host
+headroom. Do not run heavyweight checks/builds during native smoke, restart
+shared ADB or stop another task's processes.
+
+Concrete owned-emulator startup, only after compilation and backend readiness:
+
+```powershell
+$qaAvdRegistration = 'C:/Users/leona/.android/avd/PLANETS_MODINT01_API35.ini'
+$qaAvdBackup = 'C:/Users/leona/AppData/Local/Temp/planets-modint01-backup-15b02459aa944e078ca7164a00d61a3f/restored-checkout-generated/PLANETS_MODINT01_API35.ini'
+if (Test-Path -LiteralPath $qaAvdRegistration) {
+  if ((Get-FileHash -LiteralPath $qaAvdRegistration).Hash -ne (Get-FileHash -LiteralPath $qaAvdBackup).Hash) {
+    throw 'Owned registration differs; preserve it and inspect before launching.'
+  }
+} else {
+  Copy-Item -LiteralPath $qaAvdBackup -Destination $qaAvdRegistration
+}
+Start-Process -WindowStyle Hidden -FilePath 'C:/Users/leona/AppData/Local/Android/sdk/emulator/emulator.exe' -ArgumentList @('-avd','PLANETS_MODINT01_API35','-port','5560','-no-window','-no-audio','-no-boot-anim','-no-snapshot-load','-no-snapshot-save','-gpu','swiftshader_indirect','-memory','1536','-cores','2')
+# Use bounded reads for these conditions before starting a driver; never kill-server.
+& 'C:/Users/leona/AppData/Local/Android/sdk/platform-tools/adb.exe' -s emulator-5560 get-state
+& 'C:/Users/leona/AppData/Local/Android/sdk/platform-tools/adb.exe' -s emulator-5560 shell getprop sys.boot_completed
+```
+
+The October 7 tool block requires a user-run owned backend startup, not another
+Docker-account/engine change: from the prepared task worktree, run the `db:start`
+command above. Do not start from the restored canonical project configuration.
+After user startup is confirmed, the remaining native drivers can be resumed;
+do not mark them passed merely because services are running.
+
+For browser rehearsal, generate owned Web configuration, build Web, seed
+`node apps/web/scripts/seed-local-hosting-qa.mjs --disposable-modint01`, set
+`MODINT01_LOCAL_REHEARSAL=1`, and run
+`node apps/web/test-support/modint01-browser-fixture.ts` from the root. Open
+`http://127.0.0.1:3118/`; sign in normally using synthetic moderator/admin emails
+from the seed's redacted summary and local Mailpit 54614. The ignored journal
+contains bearer capabilities: never paste it, codes or private notes into PRs.
+Downloads/app association remain explicitly unconfigured or unverified.
+
+#### Current operational and review boundaries
+
+The refreshed dependency audit has **16 findings: one moderate, 14 high and one
+critical**, not the historical count below. Advisories remain open; no dependency
+upgrade or security waiver is included. Historical database/Realtime causes,
+Cloudflare hosting/free-tier suitability and provider activation remain unresolved
+or outside scope. No physical-device/iOS/TalkBack/VoiceOver/hardware-keyboard
+result is claimed.
+
+Founder review remains required for the actual EN/IT wording, notice severity,
+active/removed reasons, suspension and both request-form explanations. Policy
+for appeals, warnings/disclosure, age/identity, retention and notification delivery
+is unchanged and separately owned.
+
+Cleanup completed on October 7: owned Supabase stopped with normal data backup
+retained, canonical TOML restored byte-for-byte, and the actual guarded
+Restore→Prepare→Restore round-trip passed. No owned emulator or browser server
+is running. Generated Mobile/Web config, the private Supabase journal, Android
+local properties, Gradle execution history and the owned AVD registration were
+moved to `cleanup-oct7/` inside the retained private backup. `flutter clean`
+removed disposable build/Dart artifacts; matching APKs, defines, logs and AVD data
+remain in that backup. The tool-blocked build-daemon cleanup is not represented
+as completed. The draft branch/worktree is retained for remaining QA/founder
+review; no predecessor, user AVD, other checkout or shared backend was cleaned.
+
+### Historical original-run evidence (superseded where stated above)
+
+The following records the original once-pinned run, not current continuation
+results. Its old exclusions, counts, incomplete checks, mergeability and cleanup
+state must not be interpreted as current.
 
 - Pinned committed main: `188544f1eacd20a710399721fcede17f64d57aa9`.
 - Selected cumulative #148 head: `24d8f7fd21eeacb41055a16a2f3198b8148c9580`.
@@ -343,10 +610,10 @@ admission observations do not discharge these remaining checks.
 This screenshot contains synthetic user-facing reasons only; no private note
 body, bearer token, OTP, session cookie or privileged credential is published.
 
-## Dependency and operational boundaries
+## Dependency and operational boundaries (historical original run)
 
-Current `npm audit` reports **11 findings: 1 moderate, 9 high, 1 critical**;
-`--omit=dev` reports 9 (1 moderate, 7 high, 1 critical). These are current findings,
+At the original run, `npm audit` reported **11 findings: 1 moderate, 9 high, 1 critical**;
+`--omit=dev` reported 9 (1 moderate, 7 high, 1 critical). These were that run's findings,
 not a claim that #133's historical count still holds. The critical `proxy-addr`
 path is Express → MCP SDK → shadcn tooling; production graph inclusion alone
 does not establish that PLANETS exposes that Express server or its trust-proxy
@@ -374,9 +641,10 @@ host, signing, app-store or production account operation is performed.
 
 The [exact current EN/IT copy extract](modint01-moderation-copy.md) is generated
 from the merged source, with no copy rewrite or founder approval inferred.
-The synthetic browser screenshot above is actual combined-source evidence.
-Required representative native moderation screenshots remain missing; neither
-earlier Home captures nor inherited screenshots are relabelled as those results.
+The original-run browser screenshot above remains historical. Current continuation
+captures and provenance are indexed above. Native type/history captures are now
+available from a partial run; required suspension and request-form captures and
+complete driver passes remain missing. No earlier capture is relabelled as a pass.
 
 | Topic                                           | What this draft delivers                                                                | Founder review / separate decision                         |
 | ----------------------------------------------- | --------------------------------------------------------------------------------------- | ---------------------------------------------------------- |
@@ -388,7 +656,7 @@ earlier Home captures nor inherited screenshots are relabelled as those results.
 | Minimum age / identity                          | No age or identity rule introduced                                                      | Separate policy and any legal review                       |
 
 - Review exact current EN/IT moderation wording and synthetic screenshots
-  (combined-head native evidence pending), especially notices, own request
+  (full combined-head native evidence pending), especially notices, own request
   explanations, suspension and private-history apply/revoke labels.
 - Approve reason presentation and distinctions between current/ended consequences
   without inferring staff identity, counterparty restrictions or evidence.
@@ -397,10 +665,10 @@ earlier Home captures nor inherited screenshots are relabelled as those results.
 - Remaining 09C2B notification UX, provider activation, hosting and the final
   consolidated UI/UX/accessibility/device review remain separate plans.
 
-## Cleanup, publication and resuming live QA
+## Historical original-run cleanup and publication
 
-The owned Next server, drivers, emulator and verified idle build daemon are
-stopped. `npm run db:stop` reported the exact task project with `backup=true`;
+At the original publication the owned Next server, drivers, emulator and verified
+idle build daemon were stopped. `npm run db:stop` reported the exact task project with `backup=true`;
 its database/Storage/Edge volumes remain retained, and no task containers run.
 Temporary `supabase/config.toml` is restored byte-for-byte to its original backup.
 Generated Mobile config, Web env, Android local properties, Supabase CLI/fixture
@@ -416,14 +684,8 @@ The final exact tested/published SHAs and source-tree equivalence are also recor
 in the PR evidence comment, since a commit cannot contain its own resulting SHA.
 There is no unrun published-head CI claim and no CI availability waiver.
 
-To resume, use this same isolated branch and backend/project/ports, with enough
-host capacity and a working browser-control connection. Recreate temporary
-task-scoped configuration from the retained backup; preserve the committed config.
-Start only this backend with its retained volumes, restore/register only the owned
-AVD, and prepare **fresh** actors/Projects using each `--modint01` preparer.
-Recompile each matching driver target/config before reusing an APK. See the
-[native harness map](../../apps/mobile/integration_test/README.md) for commands.
-Finish the remaining live-QA list above before claiming plan acceptance. Neither
-green hosted CI nor founder copy review waives the missing real-flow/screenshots.
-Reconciliation with later main also requires explicit follow-up and new combined
-validation; no merge/readiness or deployment is authorized here.
+For the current continuation use the explicit configuration preparation/startup,
+compiled-pair provenance and native handoff near the top of this packet instead
+of inferring readiness from this old cleanup. Browser continuation has completed.
+Neither green hosted CI nor founder review waives the remaining real Android
+flows/screenshots. No merge/readiness or deployment is authorized here.

@@ -1,5 +1,13 @@
 # Disposable web integration checks
 
+- `modint01-browser-fixture.ts` requires `MODINT01_LOCAL_REHEARSAL=1`, the
+  owned MODINT01 backend/ports and its ignored fixture journal. It starts the
+  production Next server on 3119 and a log-free local launcher on 3118. Normal
+  browser OTP/profile/join is required: it injects no session or admission.
+  Prepare with `node apps/web/scripts/seed-local-hosting-qa.mjs --disposable-modint01`
+  after the database gate, then run the launcher from the repository root.
+  Generated Web configuration and a production build are required. Never publish
+  the journal, OTP mailbox, private case note bodies or bearer URLs.
 - `public-host-harness.ts` owns the loopback-only Site/Web routing rehearsal;
   `public-host-harness.test.ts` verifies precedence and streaming transport with
   stand-in owners. This is not an adopted production proxy or Site Worker.

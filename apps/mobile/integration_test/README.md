@@ -10,7 +10,10 @@ configuration/synthetic identifiers only. The normal app still obtains real OTP
 sessions through its UI. Sign-out uses current Settings/Profile controls, not
 the demo-only Home button. Both harnesses scroll to the actual lower sign-out
 action in lazy Settings on the small phone; no direct session mutation replaces
-that UI action. The OTP smoke additionally covers navigation choices,
+that UI action. Both helpers settle route/IME animation before real OTP taps.
+After a Profile or Settings exit, account switching uses Home's existing sign-in entry; those
+signed-out screens need not redirect automatically to Auth.
+The OTP smoke additionally covers navigation choices,
 photo-free participant admission, nullable request origin, chat continuity under
 content hiding, all private notice types and suspension during ordinary access.
 The continuation additionally prepares a real pending request/personal pair and
@@ -27,9 +30,11 @@ AVD (official Google APIs x86_64 API 35, revision 9/extension 13), 720×1280 at
 a 4 GB minimum despite smaller `-memory` values. No user AVD or SDK/tool version
 is changed. Compile before execution and use `--use-application-binary` to avoid
 overlapping a build with the device smoke. A command-local
-`GRADLE_OPTS=-Dorg.gradle.jvmargs=-Xmx2g` caps that build daemon's heap without
+`GRADLE_OPTS=-Dorg.gradle.jvmargs=-Xmx1g` caps that build daemon's heap without
 editing repository/global Gradle configuration; restore any prior value after
-the build. A resource or compile failure remains a failure, not a passed smoke.
+the build. Pause only the owned backend with backups retained if compilation
+needs its memory; resume it before execution. A resource or compile failure
+remains a failure, not a passed smoke.
 After any run that committed admission, prepare fresh actors/Projects and rebuild
 the matching compile-time fixture config; do not erase membership history or
 reuse an already-joined Project as proof of fresh admission.
