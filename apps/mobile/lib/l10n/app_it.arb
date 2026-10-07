@@ -1455,5 +1455,26 @@
         "type": "int"
       }
     }
-  }
+  },
+  "messagePrivateChatSemantics": "Conversazione con {name}",
+  "@messagePrivateChatSemantics": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "messageOwnPreview": "Tu: {body}",
+  "@messageOwnPreview": {
+    "placeholders": {
+      "body": {
+        "type": "String"
+      }
+    }
+  },
+  "messageRequestPendingPreview": "Richiesta in attesa",
+  "messageRequestAcceptedPreview": "Richiesta accettata",
+  "messageRequestRejectedPreview": "Richiesta rifiutata",
+  "messageRequestWithdrawnPreview": "Richiesta ritirata",
+  "pairChatReadOnlyReactivation": "Potrai inviare messaggi quando ci sarà una nuova richiesta in attesa."
 }

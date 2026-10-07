@@ -11,6 +11,7 @@ import 'package:planets_mobile/features/messages/data/message_unread_gateway.dar
 import 'package:planets_mobile/features/messages/domain/message_unread_models.dart';
 import 'package:planets_mobile/features/messages/presentation/message_read_viewport.dart';
 import 'package:planets_mobile/features/messages/presentation/message_unread_badge.dart';
+import 'package:planets_mobile/features/messages/domain/message_chat_models.dart';
 import 'package:planets_mobile/l10n/generated/app_localizations.dart';
 
 const boundary = 'a0000000-0000-4000-8000-000000000001';
@@ -88,6 +89,94 @@ class Gateway implements MessageUnreadGateway {
 }
 
 void main() {
+  testWidgets(
+    'scope unavailable state is explicit and canonical zero is hidden',
+    (tester) async {
+      final gateway = Gateway()..failed = true;
+      final container = ProviderContainer(
+        overrides: [
+          authSessionProvider.overrideWith(Session.new),
+          messageUnreadGatewayProvider.overrideWithValue(gateway),
+        ],
+      );
+      addTearDown(container.dispose);
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: MaterialApp(
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
+            home: const Row(
+              children: [
+                MessageScopeLabel(
+                  scope: MessageChatScope.private,
+                  label: 'Private',
+                ),
+                MessageScopeLabel(
+                  scope: MessageChatScope.groups,
+                  label: 'Groups',
+                ),
+                MessageUnreadBadge(selected: true, child: Icon(Icons.forum)),
+              ],
+            ),
+          ),
+        ),
+      );
+      await tester.pump(const Duration(milliseconds: 250));
+      expect(find.text('?'), findsNWidgets(3));
+      final badge = tester.widget<Badge>(find.byType(Badge));
+      expect(
+        badge.backgroundColor,
+        Theme.of(tester.element(find.byType(Badge))).colorScheme.inverseSurface,
+      );
+      expect(find.byType(MessageInlineCount), findsNothing);
+      gateway.failed = false;
+      gateway.value = const MessageUnreadSummary(
+        total: 0,
+        private: 0,
+        groups: 0,
+      );
+      await container.read(messageUnreadProvider.notifier).refresh('reader');
+      await tester.pump();
+      expect(find.text('?'), findsNothing);
+      expect(find.text('0'), findsNothing);
+      expect(find.byType(MessageInlineCount), findsNothing);
+      await tester.pumpWidget(const SizedBox());
+    },
+  );
+  for (final brightness in Brightness.values) {
+    testWidgets(
+      'selected badge contrasts with navigation indicator in $brightness',
+      (tester) async {
+        final colors = ColorScheme.fromSeed(
+          seedColor: Colors.teal,
+          brightness: brightness,
+        );
+        await tester.pumpWidget(
+          MaterialApp(
+            theme: ThemeData(colorScheme: colors),
+            home: const MessageCountBadge(
+              selected: true,
+              count: 2,
+              label: '2 unread conversations',
+              child: Icon(Icons.forum),
+            ),
+          ),
+        );
+        final badge = tester.widget<Badge>(find.byType(Badge));
+        expect(badge.backgroundColor, colors.inverseSurface);
+        expect(badge.textColor, colors.onInverseSurface);
+        final lighter = badge.backgroundColor!.computeLuminance();
+        final darker = badge.textColor!.computeLuminance();
+        final ratio = lighter > darker
+            ? (lighter + .05) / (darker + .05)
+            : (darker + .05) / (lighter + .05);
+        expect(ratio, greaterThan(4.5));
+        expect(badge.backgroundColor, isNot(colors.secondaryContainer));
+      },
+    );
+  }
+
   TestWidgetsFlutterBinding.ensureInitialized();
   test('strict counts reject unknown, negative and inconsistent scopes', () {
     expect(

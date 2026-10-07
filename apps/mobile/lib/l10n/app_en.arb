@@ -2184,5 +2184,26 @@
         "type": "int"
       }
     }
-  }
+  },
+  "messagePrivateChatSemantics": "Conversation with {name}",
+  "@messagePrivateChatSemantics": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "messageOwnPreview": "You: {body}",
+  "@messageOwnPreview": {
+    "placeholders": {
+      "body": {
+        "type": "String"
+      }
+    }
+  },
+  "messageRequestPendingPreview": "Pending request",
+  "messageRequestAcceptedPreview": "Request accepted",
+  "messageRequestRejectedPreview": "Request rejected",
+  "messageRequestWithdrawnPreview": "Request withdrawn",
+  "pairChatReadOnlyReactivation": "You can send messages again when there is a new pending request."
 }

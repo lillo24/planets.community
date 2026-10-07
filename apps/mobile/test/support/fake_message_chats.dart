@@ -55,6 +55,9 @@ class FakeMessageChatsGateway implements MessageChatsGateway {
 }
 
 ProjectRequestMessageChatItem projectRequestMessageChatFixture({
+  String senderProfileId = '00000000-0000-4000-8000-000000000102',
+  String senderDisplayName = 'Bob',
+  JoinRequestStatus? latestRequestActivityStatus,
   int unreadCount = 0,
   String chatId = '00000000-0000-4000-8000-000000000411',
   String requestId = '00000000-0000-4000-8000-000000000311',
@@ -74,6 +77,9 @@ ProjectRequestMessageChatItem projectRequestMessageChatFixture({
       ? null
       : DateTime.utc(2026, 9, 20, 13);
   return ProjectRequestMessageChatItem(
+    latestRequestActivityStatus:
+        latestRequestActivityStatus ??
+        (messageId == null || resolved != null ? status : null),
     unreadCount: unreadCount,
     chatId: chatId,
     activityAt:
@@ -83,10 +89,8 @@ ProjectRequestMessageChatItem projectRequestMessageChatFixture({
     lastVisibleMessageId: messageId,
     lastVisibleMessageBody: messageId == null ? null : messageBody,
     lastVisibleMessageAt: messageAt,
-    lastVisibleSenderProfileId: messageId == null
-        ? null
-        : '00000000-0000-4000-8000-000000000102',
-    lastVisibleSenderDisplayName: messageId == null ? null : 'Bob',
+    lastVisibleSenderProfileId: messageId == null ? null : senderProfileId,
+    lastVisibleSenderDisplayName: messageId == null ? null : senderDisplayName,
     requestId: requestId,
     projectId: projectId,
     projectKind: ProjectKind.oneTime,
@@ -105,6 +109,7 @@ ProjectRequestMessageChatItem projectRequestMessageChatFixture({
 }
 
 ProjectMessageChatItem projectMessageChatFixture({
+  String? latestSystemEventLabel,
   int unreadCount = 0,
   String chatId = '00000000-0000-4000-8000-000000000601',
   String projectId = '00000000-0000-4000-8000-000000000701',
@@ -118,6 +123,7 @@ ProjectMessageChatItem projectMessageChatFixture({
 }) {
   final messageAt = messageId == null ? null : DateTime.utc(2026, 9, 20, 10);
   return ProjectMessageChatItem(
+    latestSystemEventLabel: latestSystemEventLabel,
     unreadCount: unreadCount,
     chatId: chatId,
     activityAt: activityAt ?? messageAt ?? DateTime.utc(2026, 9, 19, 10),

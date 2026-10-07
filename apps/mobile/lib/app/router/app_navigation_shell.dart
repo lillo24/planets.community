@@ -135,7 +135,10 @@ class AppNavigationShell extends ConsumerWidget {
                 ? const MessageUnreadBadge(child: Icon(Icons.forum_outlined))
                 : const Icon(Icons.explore_outlined),
             selectedIcon: rightDestination == BottomTabDestination.messages
-                ? const MessageUnreadBadge(child: Icon(Icons.forum))
+                ? const MessageUnreadBadge(
+                    selected: true,
+                    child: Icon(Icons.forum),
+                  )
                 : const Icon(Icons.explore),
             label: rightDestination == BottomTabDestination.messages
                 ? l10n.messagesTitle

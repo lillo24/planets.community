@@ -12,6 +12,103 @@ import 'package:planets_mobile/features/profile_photo/domain/visible_profile_pho
 import '../../../support/fake_profile_photo.dart';
 
 void main() {
+  test(
+    'account switch during cached refresh rejects the previous viewer bytes',
+    () async {
+      final harness = VisiblePhotoHarness(viewerProfileId: _viewerA);
+      addTearDown(harness.dispose);
+      harness.gateway.visiblePhotos[_targetA] = visiblePhotoFixture(_targetA);
+      await harness.controller.load(_targetA);
+      final pending = Completer<VisibleProfilePhoto?>();
+      harness.gateway.visibleLoadResult = (_) => pending.future;
+      final loading = harness.controller.load(_targetA, force: true);
+      expect(harness.state.entryFor(_targetA)?.hasVisiblePhoto, isTrue);
+      harness.session.markProfileReady(const AuthIdentity(id: _viewerB));
+      expect(harness.state.entries, isEmpty);
+      pending.complete(visiblePhotoFixture(_targetA));
+      await loading;
+      expect(harness.state.viewerProfileId, _viewerB);
+      expect(harness.state.entries, isEmpty);
+    },
+  );
+
+  test(
+    'failed cached revalidation clears bytes with explicit failure',
+    () async {
+      final harness = VisiblePhotoHarness(viewerProfileId: _viewerA);
+      addTearDown(harness.dispose);
+      harness.gateway.visiblePhotos[_targetA] = visiblePhotoFixture(_targetA);
+      await harness.controller.load(_targetA);
+      harness.gateway.visibleLoadError = StateError('Metadata unavailable');
+      await harness.controller.loadBatch([_targetA], force: true);
+      expect(
+        harness.state.entryFor(_targetA)?.phase,
+        VisibleProfilePhotoPhase.failure,
+      );
+      expect(harness.state.entryFor(_targetA)?.imageBytes, isNull);
+    },
+  );
+  for (final batch in [false, true]) {
+    test(
+      'same viewer ${batch ? "batch" : "single"} refresh keeps bytes until canonical replacement',
+      () async {
+        final harness = VisiblePhotoHarness(viewerProfileId: _viewerA);
+        addTearDown(harness.dispose);
+        harness.gateway.visiblePhotos[_targetA] = visiblePhotoFixture(_targetA);
+        await harness.controller.load(_targetA);
+        final before = harness.state.entryFor(_targetA)!.imageBytes;
+        final metadata = Completer<VisibleProfilePhoto?>();
+        final download = Completer<Uint8List>();
+        harness.gateway.visibleLoadResult = (_) => metadata.future;
+        harness.gateway.visibleBatchLoadResult = (_) async => [
+          ?await metadata.future,
+        ];
+        harness.gateway.visibleDownloadResult = (_) => download.future;
+        final loading = batch
+            ? harness.controller.loadBatch([_targetA], force: true)
+            : harness.controller.load(_targetA, force: true);
+        expect(
+          harness.state.entryFor(_targetA)?.phase,
+          VisibleProfilePhotoPhase.loading,
+        );
+        expect(harness.state.entryFor(_targetA)?.imageBytes, same(before));
+        metadata.complete(visiblePhotoFixture(_targetA, version: _versionB));
+        await Future<void>.delayed(Duration.zero);
+        expect(harness.state.entryFor(_targetA)?.imageBytes, same(before));
+        final replacement = Uint8List.fromList([9, 9]);
+        download.complete(replacement);
+        await loading;
+        expect(harness.state.entryFor(_targetA)?.imageBytes, same(replacement));
+        harness.gateway.visibleLoadResult = (_) async => null;
+        harness.gateway.visibleBatchLoadResult = (_) async => [];
+        if (batch) {
+          await harness.controller.loadBatch([_targetA], force: true);
+        } else {
+          await harness.controller.load(_targetA, force: true);
+        }
+        expect(harness.state.entryFor(_targetA)?.imageBytes, isNull);
+      },
+    );
+  }
+
+  test(
+    'explicit invalidation during refresh rejects late cached bytes',
+    () async {
+      final harness = VisiblePhotoHarness(viewerProfileId: _viewerA);
+      addTearDown(harness.dispose);
+      harness.gateway.visiblePhotos[_targetA] = visiblePhotoFixture(_targetA);
+      await harness.controller.load(_targetA);
+      final pending = Completer<VisibleProfilePhoto?>();
+      harness.gateway.visibleLoadResult = (_) => pending.future;
+      final loading = harness.controller.load(_targetA, force: true);
+      harness.controller.invalidate(_targetA);
+      expect(harness.state.entryFor(_targetA), isNull);
+      pending.complete(visiblePhotoFixture(_targetA));
+      await loading;
+      expect(harness.state.entryFor(_targetA), isNull);
+    },
+  );
+
   test('anonymous viewer loads an authorized public photo', () async {
     final harness = VisiblePhotoHarness();
     addTearDown(harness.dispose);

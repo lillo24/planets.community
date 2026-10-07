@@ -43,6 +43,9 @@ class VisibleProfilePhotoController extends Notifier<VisibleProfilePhotoState> {
       VisibleProfilePhotoEntry(
         targetProfileId: targetProfileId,
         phase: VisibleProfilePhotoPhase.loading,
+        // Same-viewer revalidation retains authorized bytes until completion.
+        photo: existing?.photo,
+        imageBytes: existing?.imageBytes,
       ),
     );
 
@@ -125,6 +128,8 @@ class VisibleProfilePhotoController extends Notifier<VisibleProfilePhotoState> {
         VisibleProfilePhotoEntry(
           targetProfileId: target,
           phase: VisibleProfilePhotoPhase.loading,
+          photo: previousEntries[target]?.photo,
+          imageBytes: previousEntries[target]?.imageBytes,
         ),
       );
     }

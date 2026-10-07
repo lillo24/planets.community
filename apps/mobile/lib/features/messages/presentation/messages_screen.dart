@@ -195,18 +195,20 @@ class _ChatsTabState extends ConsumerState<_ChatsTab> {
             width: double.infinity,
             child: SegmentedButton<MessageChatScope>(
               key: const Key('message-chat-scope-toggle'),
+              showSelectedIcon: false,
               segments: [
                 ButtonSegment(
                   value: MessageChatScope.private,
-                  label: Text(l10n.messageChatsPrivate),
-                  icon: const Icon(Icons.lock_outline),
+                  label: MessageScopeLabel(
+                    scope: MessageChatScope.private,
+                    label: l10n.messageChatsPrivate,
+                  ),
                 ),
                 ButtonSegment(
                   value: MessageChatScope.groups,
-                  label: Text(l10n.messageChatsGroups),
-                  icon: const MessageUnreadBadge(
-                    groups: true,
-                    child: Icon(Icons.groups_outlined),
+                  label: MessageScopeLabel(
+                    scope: MessageChatScope.groups,
+                    label: l10n.messageChatsGroups,
                   ),
                 ),
               ],
@@ -345,299 +347,149 @@ class _ChatsTabState extends ConsumerState<_ChatsTab> {
   }
 }
 
-class _ChatCard extends StatelessWidget {
+class _ChatCard extends ConsumerWidget {
   const _ChatCard({required this.item, required this.photoEntry});
-
   final MessageChatItem item;
   final VisibleProfilePhotoEntry? photoEntry;
 
   @override
-  Widget build(BuildContext context) {
-    final card = switch (item) {
-      ProjectMessageChatItem item => _ProjectChatCard(item: item),
-      ResourceMessageChatItem item => _ResourceChatCard(
-        item: item,
-        photoEntry: photoEntry,
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
+    final viewerId = ref.watch(authSessionProvider).identity?.id;
+    final colors = Theme.of(context).colorScheme;
+    final title = switch (item) {
+      ProjectMessageChatItem i => i.displayTitle,
+      ResourceMessageChatItem i => i.counterpartyDisplayName,
+      ProjectRequestMessageChatItem i => i.counterpartyDisplayName,
+    };
+    final counterpartyId = switch (item) {
+      ProjectMessageChatItem() => null,
+      ResourceMessageChatItem i => i.counterpartyProfileId,
+      ProjectRequestMessageChatItem i => i.counterpartyProfileId,
+    };
+    final preview = switch (item) {
+      ProjectRequestMessageChatItem i
+          when i.latestRequestActivityStatus != null =>
+        messageRequestActivityLabel(l10n, i.latestRequestActivityStatus!),
+      ProjectMessageChatItem i when i.latestSystemEventLabel != null =>
+        l10n.projectNeedsSystemEvent(i.latestSystemEventLabel!),
+      _ =>
+        item.lastVisibleMessageBody == null
+            ? item is ResourceMessageChatItem
+                  ? l10n.resourceChatNoMessages
+                  : l10n.projectChatNoMessages
+            : item.lastVisibleSenderProfileId == viewerId
+            ? l10n.messageOwnPreview(item.lastVisibleMessageBody!)
+            : item.lastVisibleSenderProfileId != counterpartyId &&
+                  item.lastVisibleSenderDisplayName != null
+            ? l10n.projectChatPreview(
+                item.lastVisibleSenderDisplayName!,
+                item.lastVisibleMessageBody!,
+              )
+            : item.lastVisibleMessageBody!,
+    };
+    final (key, linkKey, route) = switch (item) {
+      ProjectMessageChatItem i => (
+        'project-chat-item-${i.chatId}',
+        'project-chat-link-${i.chatId}',
+        projectChatRoute(i.chatId),
       ),
-      ProjectRequestMessageChatItem item => _ProjectRequestChatCard(
-        item: item,
-        photoEntry: photoEntry,
+      ResourceMessageChatItem i => (
+        'resource-chat-item-${i.chatId}',
+        'resource-chat-link-${i.chatId}',
+        resourceChatRoute(i.chatId),
+      ),
+      ProjectRequestMessageChatItem i => (
+        'project-request-chat-item-${i.chatId}',
+        'project-request-chat-link-${i.requestId}',
+        projectRequestChatRoute(i.requestId),
       ),
     };
-    return Container(
-      decoration: item.unreadCount > 0
-          ? BoxDecoration(
-              border: Border.all(
-                color: Theme.of(context).colorScheme.primary,
-                width: 2,
+    return Semantics(
+      button: true,
+      label: item is ProjectMessageChatItem
+          ? l10n.messageProjectChatCardSemantics(title)
+          : l10n.messagePrivateChatSemantics(title),
+      child: Card(
+        key: Key(key),
+        clipBehavior: Clip.antiAlias,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+          side: item.unreadCount > 0
+              ? BorderSide(color: colors.primary, width: 2)
+              : BorderSide.none,
+        ),
+        child: InkWell(
+          key: Key(linkKey),
+          onTap: () => context.push(route),
+          child: Padding(
+            padding: const EdgeInsets.all(AppSpacing.small),
+            child: LayoutBuilder(
+              builder: (context, constraints) => Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (item is! ProjectMessageChatItem) ...[
+                    VisibleProfilePhotoAvatar(
+                      key: Key(
+                        '${item.kind == MessageChatItemKind.resourceChat ? 'resource' : 'project-request'}-chat-photo-${item.chatId}',
+                      ),
+                      entry: photoEntry,
+                      imageSemanticsLabel: l10n
+                          .resourceChatCounterpartyPhotoLabel(title),
+                      placeholderSemanticsLabel: l10n
+                          .resourceChatCounterpartyPhotoLabel(title),
+                      radius: 20,
+                    ),
+                    const SizedBox(width: AppSpacing.small),
+                  ],
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          title,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: Theme.of(context).textTheme.titleMedium,
+                        ),
+                        const SizedBox(height: AppSpacing.xSmall),
+                        Text(
+                          preview,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: Theme.of(context).textTheme.bodyMedium,
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.small),
+                  ConstrainedBox(
+                    constraints: BoxConstraints(
+                      maxWidth: constraints.maxWidth * .29,
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          messageActivityDate(context, item.activityAt),
+                          key: Key('chat-time-${item.compositeId}'),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: Theme.of(context).textTheme.bodySmall,
+                        ),
+                        if (item.unreadCount > 0) ...[
+                          const SizedBox(height: AppSpacing.xSmall),
+                          MessageInlineCount(
+                            count: item.unreadCount,
+                            label: l10n.messageUnreadMessages(item.unreadCount),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                ],
               ),
-              borderRadius: BorderRadius.circular(12),
-            )
-          : null,
-      child: MessageCountBadge(
-        count: item.unreadCount,
-        label: AppLocalizations.of(context)
-            .messageUnreadMessages(item.unreadCount),
-        child: card,
-      ),
-    );
-  }
-}
-
-class _ProjectRequestChatCard extends StatelessWidget {
-  const _ProjectRequestChatCard({required this.item, required this.photoEntry});
-
-  final ProjectRequestMessageChatItem item;
-  final VisibleProfilePhotoEntry? photoEntry;
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
-    final sender = item.lastVisibleSenderDisplayName;
-    final preview = item.previewBody ?? l10n.messagesNoRequestMessage;
-    return Semantics(
-      button: true,
-      label: l10n.messageProjectRequestChatCardSemantics(
-        item.counterpartyDisplayName,
-        item.projectTitle,
-      ),
-      child: Card(
-        key: Key('project-request-chat-item-${item.chatId}'),
-        clipBehavior: Clip.antiAlias,
-        child: InkWell(
-          key: Key('project-request-chat-link-${item.requestId}'),
-          onTap: () => context.push(projectRequestChatRoute(item.requestId)),
-          child: Padding(
-            padding: const EdgeInsets.all(AppSpacing.medium),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    VisibleProfilePhotoAvatar(
-                      key: Key('project-request-chat-photo-${item.chatId}'),
-                      entry: photoEntry,
-                      imageSemanticsLabel: l10n
-                          .resourceChatCounterpartyPhotoLabel(
-                            item.counterpartyDisplayName,
-                          ),
-                      placeholderSemanticsLabel: l10n
-                          .resourceChatCounterpartyPhotoLabel(
-                            item.counterpartyDisplayName,
-                          ),
-                    ),
-                    const SizedBox(width: AppSpacing.small),
-                    Expanded(
-                      child: Text(
-                        item.counterpartyDisplayName,
-                        style: Theme.of(context).textTheme.titleMedium,
-                      ),
-                    ),
-                  ],
-                ),
-                Chip(
-                  visualDensity: VisualDensity.compact,
-                  avatar: item.isReadOnly
-                      ? const Icon(Icons.lock_outline, size: 18)
-                      : null,
-                  label: Text(
-                    item.pendingCount > 0
-                        ? l10n.pairPendingRequests(item.pendingCount)
-                        : l10n.projectChatReadOnlyLabel,
-                  ),
-                ),
-                Text(
-                  item.projectTitle,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const SizedBox(height: AppSpacing.small),
-                Text(
-                  item.lastVisibleMessageBody == null || sender == null
-                      ? preview
-                      : l10n.projectChatPreview(sender, preview),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const SizedBox(height: AppSpacing.small),
-                Text(
-                  l10n.messagesUpdatedAt(messageDate(context, item.activityAt)),
-                  style: Theme.of(context).textTheme.bodySmall,
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _ProjectChatCard extends StatelessWidget {
-  const _ProjectChatCard({required this.item});
-
-  final ProjectMessageChatItem item;
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
-    final sender = item.lastVisibleSenderDisplayName;
-    final preview = item.lastVisibleMessageBody;
-    return Semantics(
-      button: true,
-      label: l10n.messageProjectChatCardSemantics(item.displayTitle),
-      child: Card(
-        key: Key('project-chat-item-${item.chatId}'),
-        clipBehavior: Clip.antiAlias,
-        child: InkWell(
-          onTap: () => context.push(projectChatRoute(item.chatId)),
-          child: Padding(
-            padding: const EdgeInsets.all(AppSpacing.medium),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Let long role labels move below the title at large text.
-                Wrap(
-                  spacing: AppSpacing.small,
-                  runSpacing: AppSpacing.xSmall,
-                  crossAxisAlignment: WrapCrossAlignment.center,
-                  children: [
-                    Text(
-                      item.displayTitle,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: Theme.of(context).textTheme.titleMedium,
-                    ),
-                    Chip(
-                      key: item.isReadOnly
-                          ? const Key('project-chat-former-chip')
-                          : Key('project-chat-role-${item.chatId}'),
-                      visualDensity: VisualDensity.compact,
-                      avatar: item.isReadOnly
-                          ? const Icon(Icons.lock_outline, size: 18)
-                          : null,
-                      label: Text(
-                        item.isReadOnly
-                            ? l10n.projectChatReadOnlyLabel
-                            : item.isManager
-                            ? item.isDelegate
-                                  ? l10n.projectChatRoleDelegate
-                                  : l10n.projectChatRoleCreator
-                            : l10n.projectChatRoleCurrent,
-                      ),
-                    ),
-                  ],
-                ),
-                Text(messageProjectKindLabel(l10n, item.projectKind)),
-                const SizedBox(height: AppSpacing.small),
-                Text(
-                  preview == null
-                      ? l10n.projectChatNoMessages
-                      : sender == null
-                      ? preview
-                      : l10n.projectChatPreview(sender, preview),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const SizedBox(height: AppSpacing.small),
-                Text(
-                  l10n.messagesUpdatedAt(messageDate(context, item.activityAt)),
-                  style: Theme.of(context).textTheme.bodySmall,
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _ResourceChatCard extends StatelessWidget {
-  const _ResourceChatCard({required this.item, required this.photoEntry});
-
-  final ResourceMessageChatItem item;
-  final VisibleProfilePhotoEntry? photoEntry;
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
-    final sender = item.lastVisibleSenderDisplayName;
-    final preview = item.lastVisibleMessageBody;
-    return Semantics(
-      button: true,
-      label: l10n.messageResourceChatCardSemantics(
-        item.displayTitle,
-        item.isReadOnly
-            ? l10n.projectChatReadOnlyLabel
-            : l10n.resourceChatOpenLabel,
-      ),
-      child: Card(
-        key: Key('resource-chat-item-${item.chatId}'),
-        clipBehavior: Clip.antiAlias,
-        child: InkWell(
-          key: Key('resource-chat-link-${item.chatId}'),
-          onTap: () => context.push(resourceChatRoute(item.chatId)),
-          child: Padding(
-            padding: const EdgeInsets.all(AppSpacing.medium),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    VisibleProfilePhotoAvatar(
-                      key: Key('resource-chat-photo-${item.chatId}'),
-                      entry: photoEntry,
-                      imageSemanticsLabel: l10n
-                          .resourceChatCounterpartyPhotoLabel(
-                            item.counterpartyDisplayName,
-                          ),
-                      placeholderSemanticsLabel: l10n
-                          .resourceChatCounterpartyPhotoLabel(
-                            item.counterpartyDisplayName,
-                          ),
-                    ),
-                    const SizedBox(width: AppSpacing.small),
-                    Expanded(
-                      child: Text(
-                        item.displayTitle,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: Theme.of(context).textTheme.titleMedium,
-                      ),
-                    ),
-                  ],
-                ),
-                // A status chip must not take width away from the avatar/title.
-                Chip(
-                  key: Key('resource-chat-status-${item.chatId}'),
-                  visualDensity: VisualDensity.compact,
-                  avatar: item.isReadOnly
-                      ? const Icon(Icons.lock_outline, size: 18)
-                      : null,
-                  label: Text(
-                    item.isReadOnly
-                        ? l10n.projectChatReadOnlyLabel
-                        : l10n.resourceChatOpenLabel,
-                  ),
-                ),
-                Text(l10n.resourceChatCardContext),
-                const SizedBox(height: AppSpacing.small),
-                Text(
-                  preview == null
-                      ? l10n.resourceChatNoMessages
-                      : sender == null
-                      ? preview
-                      : l10n.projectChatPreview(sender, preview),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const SizedBox(height: AppSpacing.small),
-                Text(
-                  l10n.messagesUpdatedAt(messageDate(context, item.activityAt)),
-                  style: Theme.of(context).textTheme.bodySmall,
-                ),
-              ],
             ),
           ),
         ),
