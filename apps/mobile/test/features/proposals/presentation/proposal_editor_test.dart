@@ -21,10 +21,45 @@ import '../../../support/fake_profile_photo.dart';
 
 void main() {
   testWidgets(
+    'legacy undated draft preserves an unset zone while saving text',
+    (tester) async {
+      final proposal = ownProposalFixture(
+        unsetTimezone: true,
+        input: const ProposalInput(
+          title: 'Legacy draft',
+          summary: '',
+          description: '',
+          startsAt: null,
+          endsAt: null,
+          eventTimezone: '',
+          countryCode: '',
+          locality: '',
+          administrativeArea: '',
+          publicLocationLabel: '',
+          exactMeetingText: '',
+          exactLocationVisibility: ExactLocationVisibility.participants,
+          skillImportanceById: {},
+          registrationCapacity: null,
+          countOrganizersTowardCapacity: false,
+        ),
+      );
+      final gateway = await _pumpEditor(tester, null, proposal: proposal);
+      await tester.enterText(
+        find.byKey(const Key('proposal-title')),
+        'Legacy text changed',
+      );
+      await _tap(tester, find.byKey(const Key('proposal-save-draft')));
+      expect(gateway.lastInput!.eventTimezone, '');
+      expect(gateway.lastInput!.startsAt, isNull);
+      expect(gateway.lastInput!.endsAt, isNull);
+    },
+  );
+
+  testWidgets(
     'publish without photo opens trust gate and preserves the draft on return',
     (tester) async {
       final gateway = await _pumpEditor(tester, null, hasPhoto: false);
-      await tester.tap(find.byKey(const Key('proposal-fill-sample')));
+      await _tap(tester, find.byKey(const Key('proposal-fill-sample')));
       await tester.pumpAndSettle();
 
       await _tap(tester, find.byKey(const Key('proposal-publish')));
@@ -94,48 +129,19 @@ void main() {
     expect(gateway.lastInput?.countOrganizersTowardCapacity, isTrue);
   });
 
-  testWidgets(
-    'invalid timezone survives rebuilds without changing stored dates',
-    (tester) async {
-      final input = proposalInputFixture();
-      final gateway = await _pumpEditor(tester, input);
-      final timezone = find.byKey(const Key('proposal-timezone'));
-      await _reveal(tester, timezone);
-      await tester.enterText(timezone, 'Not/A_Zone');
-      await tester.pumpAndSettle();
-      expect(tester.takeException(), isNull);
-
-      await _tap(tester, find.byKey(const Key('proposal-pick-start')));
-      expect(find.byType(DatePickerDialog), findsNothing);
-      expect(find.textContaining('valid IANA time zone'), findsWidgets);
-      expect(tester.takeException(), isNull);
-      await tester.pump(const Duration(seconds: 5));
-      await tester.pumpAndSettle();
-
-      // Saving invalid input reports the exact field and never reaches the gateway.
-      await _tap(tester, find.byKey(const Key('proposal-save-draft')));
-      expect(
-        find.byKey(const Key('proposal-validation-summary')),
-        findsOneWidget,
-      );
-      expect(find.textContaining('Time zone'), findsWidgets);
-      expect(gateway.calls, isNot(contains('update:proposal-1')));
-      expect(tester.takeException(), isNull);
-
-      await _reveal(tester, timezone, delta: -250);
-      await tester.enterText(timezone, 'UTC');
-      await tester.pumpAndSettle();
-      expect(tester.widget<TextFormField>(timezone).controller!.text, 'UTC');
-      await _reveal(tester, find.byKey(const Key('proposal-pick-start')));
-      expect(find.text('Starts: 2026-09-10 10:00'), findsOneWidget);
-      expect(find.text('Ends: 2026-09-10 12:00'), findsOneWidget);
-      await _tap(tester, find.byKey(const Key('proposal-save-draft')));
-      expect(gateway.lastInput?.startsAt, input.startsAt);
-      expect(gateway.lastInput?.endsAt, input.endsAt);
-      expect(gateway.lastInput?.eventTimezone, 'UTC');
-      expect(tester.takeException(), isNull);
-    },
-  );
+  testWidgets('legacy timezone hint preserves stored instants on save', (
+    tester,
+  ) async {
+    final input = proposalInputFixture(eventTimezone: 'UTC');
+    final gateway = await _pumpEditor(tester, input);
+    expect(find.byKey(const Key('proposal-timezone')), findsNothing);
+    await _seek(tester, find.byKey(const Key('proposal-legacy-zone')));
+    expect(find.text('Times shown in UTC'), findsOneWidget);
+    await _tap(tester, find.byKey(const Key('proposal-save-draft')));
+    expect(gateway.lastInput?.eventTimezone, 'UTC');
+    expect(gateway.lastInput?.startsAt, input.startsAt);
+    expect(gateway.lastInput?.endsAt, input.endsAt);
+  });
 
   testWidgets('stored draft with an unknown timezone renders safely', (
     tester,
@@ -154,11 +160,13 @@ void main() {
   ) async {
     final gateway = await _pumpEditor(tester, null);
     final fill = find.byKey(const Key('proposal-fill-sample'));
+    await _seek(tester, fill);
     expect(fill, findsOneWidget);
     await tester.tap(fill);
     await tester.pumpAndSettle();
     expect(gateway.calls, isNot(contains('create')));
 
+    await _seek(tester, find.byKey(const Key('proposal-title')));
     expect(
       tester
           .widget<TextFormField>(find.byKey(const Key('proposal-title')))
@@ -167,12 +175,12 @@ void main() {
       'Community garden build day',
     );
     await _reveal(tester, find.byKey(const Key('proposal-pick-start')));
-    expect(find.text('Starts: 2026-09-10 00:00'), findsOneWidget);
-    expect(find.text('Ends: 2026-09-10 03:00'), findsOneWidget);
+    expect(find.textContaining('2:00'), findsOneWidget);
+    expect(find.textContaining('5:00'), findsOneWidget);
     await _reveal(tester, find.byKey(const Key('proposal-skill-mural')));
     expect(
       tester
-          .widget<DropdownButton<ProposalSkillImportance?>>(
+          .widget<DropdownButton<ProposalSkillImportance>>(
             find.byKey(const Key('proposal-skill-mural')),
           )
           .value,

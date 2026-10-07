@@ -56,3 +56,9 @@ test_support/ui_next02_native_smoke.dart <owned-vm-uri> <capture-directory>`.
 The smoke validates its fixture handler before any UI action, repeats family
 switches, opens contextual and unrestricted drafts, then observes a genuinely
 empty inventory. Captures are presentation evidence, not canonical backend QA.
+
+UI-NEXT-03 reuses the opted-in UI02 fake-gateway harness built from its own
+checkout. `dart run test_support/ui_next03_native_smoke.dart <owned-vm-uri>
+<capture-directory>` exercises chooser, scratch capacity/skills, footer,
+overwrite cancellation and explicit draft save. This driver confirms the bounded
+fixture handler before UI actions and never targets the founder's phone.

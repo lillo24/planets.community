@@ -37,5 +37,14 @@ select is((select count(*) from private.project_participant_invitations where pr
 select is((select count(*) from private.project_participant_admissions where project_id in (select proposal_id from stack_copy)),0::bigint,'copy inherits no admission receipts');
 select is((select count(*) from public.project_join_requests where project_id in (select proposal_id from stack_copy)),0::bigint,'copy fabricates no request');
 select is((select count(*) from private.proposal_template_applications where proposal_id in (select proposal_id from stack_copy)),1::bigint,'copy has only its own accepted template provenance');
+select is((select event_timezone from public.proposals where id in (select proposal_id from stack_copy)), 'Europe/Rome', 'new template creation adopts the named Italy zone');
+-- Model a previously stored non-Rome draft. Recovery must not rewrite it.
+update public.proposals set event_timezone='UTC',starts_at=now()+interval '3 days',ends_at=now()+interval '4 days' where id in (select proposal_id from stack_copy);
+set local role authenticated;
+select set_config('request.jwt.claim.sub','fa710000-0000-4000-8000-000000000003',true);
+select is((select outcome from public.create_proposal_draft_from_template('fa710000-0000-4000-8000-000000000003',current_setting('test.stack_template')::uuid,current_setting('test.stack_version'),'fa730000-0000-4000-8000-000000000002',false)), 'recovered', 'existing receipt bypasses new creation defaults');
+reset role;
+select is((select event_timezone from public.proposals where id in (select proposal_id from stack_copy)), 'UTC', 'recovery retains the existing legacy zone');
+select is((select starts_at from public.proposals where id in (select proposal_id from stack_copy)), now()+interval '3 days', 'recovery retains existing UTC instant');
 select * from finish();
 rollback;

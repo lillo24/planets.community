@@ -399,6 +399,7 @@ ProposalInput proposalInputFixture({
 OwnProposal ownProposalFixture({
   String id = 'proposal-1',
   ProposalInput? input,
+  bool unsetTimezone = false,
   String? coverObjectPath,
   ProposalLifecycle lifecycle = ProposalLifecycle.draft,
   ProposalStatus? status,
@@ -415,7 +416,7 @@ OwnProposal ownProposalFixture({
     description: value.description,
     startsAt: startsAt ?? value.startsAt,
     endsAt: endsAt ?? value.endsAt,
-    eventTimezone: value.eventTimezone,
+    eventTimezone: unsetTimezone ? null : value.eventTimezone,
     countryCode: value.countryCode,
     locality: value.locality,
     administrativeArea: value.administrativeArea,
