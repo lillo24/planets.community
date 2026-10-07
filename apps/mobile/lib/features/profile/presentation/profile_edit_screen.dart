@@ -10,11 +10,26 @@ import '../../../core/widgets/loading_state.dart';
 import '../../../devtools/demo/demo_widgets.dart';
 import '../../../core/widgets/tag_multi_select.dart';
 import '../../../l10n/generated/app_localizations.dart';
+import '../../../app/startup/startup_flow.dart';
 import '../../auth/application/auth_session_controller.dart';
 import '../../profile_photo/application/profile_photo_controller.dart';
 import '../../profile_photo/presentation/profile_photo_section.dart';
 import '../application/profile_controller.dart';
 import '../domain/profile_models.dart';
+
+/// Enable native pop/edge gestures only when the actual previous route is the
+/// safe cancel destination. Canonical setup has an incomplete Profile below it,
+/// so that stack uses the same explicit fallback for toolbar/platform Back.
+bool canPopToProfileCancel(BuildContext context, String cancelTo) {
+  final router = GoRouter.of(context);
+  final matches = router.routerDelegate.currentConfiguration;
+  if (matches.isEmpty) return false;
+  final previous = matches.remove(matches.last);
+  if (previous.isEmpty) return false;
+  final last = previous.last;
+  final uri = last is ImperativeRouteMatch ? last.matches.uri : previous.uri;
+  return uri.toString() == cancelTo;
+}
 
 class ProfileEditScreen extends ConsumerStatefulWidget {
   const ProfileEditScreen({
@@ -92,7 +107,7 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
     );
 
     return PopScope(
-      canPop: false,
+      canPop: widget.returnByPop,
       onPopInvokedWithResult: (didPop, _) {
         if (!didPop) _cancel();
       },
@@ -190,11 +205,8 @@ class _ProfileEditFormState extends ConsumerState<_ProfileEditForm> {
           ),
         );
     if (saved && mounted) {
-      if (widget.returnByPop && context.canPop()) {
-        context.pop();
-      } else {
-        context.go(widget.returnTo);
-      }
+      // Save resumes the authorized action; pop belongs exclusively to Cancel.
+      context.go(ref.read(startupFlowProvider).continueTo(widget.returnTo));
     }
   }
 
@@ -213,7 +225,7 @@ class _ProfileEditFormState extends ConsumerState<_ProfileEditForm> {
     final error = state.failure;
 
     return PopScope(
-      canPop: false,
+      canPop: widget.returnByPop,
       onPopInvokedWithResult: (didPop, _) {
         if (!didPop) _cancel();
       },

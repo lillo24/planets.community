@@ -15,3 +15,27 @@ The [PI05 record](../../../docs/implementation/pi05-integration-qa-and-demo-data
 owns setup, actual GUI observations and the manual journey procedure. Driver
 actions against an internally opened route do not prove HTTPS OS dispatch or
 signed-domain association.
+
+## UI-NEXT-01 native presentation rehearsal
+
+`ui_next01_rehearsal.dart` runs the actual PlanetsApp/widgets with deterministic
+Auth, Profile, Messages, Notifications and Proposal/participation gateways.
+It rejects profile/release or a missing `UI_NEXT01_REHEARSAL=true` opt-in. Its
+reserved `.invalid` URL has no live backend; numeric OTP `123456` and profile
+Save are fixture operations. It proves native presentation/keyboard/Back/hot
+reload behavior, not live email delivery, authorization or database writes.
+Production continues to use `lib/main.dart` and the normal repositories.
+
+Use only an explicitly selected disposable emulator: this harness uses the
+normal debug application identifier. For example, from `apps/mobile`:
+
+```text
+flutter run -d emulator-5580 -t test_support/ui_next01_rehearsal.dart --dart-define=UI_NEXT01_REHEARSAL=true
+```
+
+A read-only temporary emulator session (`-read-only -no-snapshot
+-no-snapshot-save`) preserves the saved AVD. Never replace an app on the founder's
+phone or an owned active device for this rehearsal. Explore stays public; Log in
+can be cancelled with the toolbar or Android Back. Messages login leads to its
+incomplete-profile context; setup Back returns there, while fixture Save completes
+readiness and returns to Messages. Native iOS needs an iOS-capable host/device.

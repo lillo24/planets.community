@@ -10,6 +10,8 @@ import '../../../core/widgets/error_state.dart';
 import '../../../core/widgets/loading_state.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../auth/application/auth_session_controller.dart';
+import '../../auth/domain/auth_models.dart';
+import '../../auth/presentation/auth_status.dart';
 import '../../auth/presentation/account_sign_out_action.dart';
 import '../../blocking/presentation/blocking_routes.dart';
 import '../../moderation/presentation/moderation_routes.dart';
@@ -48,6 +50,14 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
+    final session = ref.watch(authSessionProvider);
+    if (session.phase == AuthSessionPhase.restoring ||
+        session.phase == AuthSessionPhase.restorationFailed) {
+      return Scaffold(
+        appBar: AppBar(title: Text(l10n.profileTitle)),
+        body: const SafeArea(child: Center(child: AuthStatus())),
+      );
+    }
     final state = ref.watch(profileProvider);
     final userId = ref.watch(authSessionProvider).identity?.id;
     final data = state.data?.profile.id == userId ? state.data : null;
