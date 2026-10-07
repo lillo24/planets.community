@@ -20,6 +20,19 @@ void main() {
     expect(await flow.finishTutorial(), isFalse);
     expect(store.writes, 0);
   });
+  test('explicit logout resets only the run entry flag', () {
+    final store = FakeStartupStore();
+    const preference = StartupPreference(completedVersion: 'approved-test');
+    final flow = StartupFlow(store, configured, preference);
+    addTearDown(flow.dispose);
+    flow.deferForExternalJourney();
+    flow.returnToWelcomeAfterSignOut();
+    expect(flow.hasEntered, isFalse);
+    expect(flow.tutorialDeferred, isTrue);
+    expect(flow.preference, same(preference));
+    expect(store.writes, 0);
+    expect(store.resets, 0);
+  });
   test(
     'completion persists across restart and Auth-independent journeys',
     () async {

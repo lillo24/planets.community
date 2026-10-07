@@ -108,11 +108,15 @@ class AuthCommandState {
     this.phase = AuthCommandPhase.idle,
     this.failure,
     this.resendAvailableAt,
+    this.didSignOut = false,
   });
 
   final AuthCommandPhase phase;
   final AuthFailureKind? failure;
   final DateTime? resendAvailableAt;
+
+  /// A successful explicit command, distinct from expiry or a session event.
+  final bool didSignOut;
 
   bool get isBusy => switch (phase) {
     AuthCommandPhase.requestingCode ||

@@ -66,6 +66,9 @@ Flow revisions and disposal checks ignore late command completions after the
 flow is abandoned or replaced, including profile retry and sign-out. They do
 not cancel native/provider/network operations or roll back a canonical session
 already established externally. Sign-out still uses only `AuthGateway.signOut`.
+Only a current successful explicit sign-out sets `AuthCommandState.didSignOut`.
+Application routing consumes this completion to reopen Welcome; passive session
+loss, failed sign-out and abandoned late completions cannot produce it.
 
 Permanent Android/iOS identifiers, external provider configuration, real
 adapters, account-linking validation, and device QA remain deferred. See the

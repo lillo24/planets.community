@@ -80,6 +80,9 @@ class StartupFlow extends ChangeNotifier {
   // rebuild routing configuration or discard an OTP/editor stack.
   void enter() => hasEntered = true;
 
+  /// Explicit logout reopens Welcome without changing installation/tutorial state.
+  void returnToWelcomeAfterSignOut() => hasEntered = false;
+
   void deferForExternalJourney() {
     enter();
     tutorialDeferred = true;

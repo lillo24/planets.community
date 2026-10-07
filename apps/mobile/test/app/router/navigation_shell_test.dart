@@ -618,7 +618,7 @@ void main() {
     await _tap(tester, 'account-sign-out-button');
     expect(auth.signOutCount, 1);
     expect(app.read(authSessionProvider).isAuthenticated, isFalse);
-    expect(find.byKey(const Key('profile-example-label')), findsOneWidget);
+    expect(find.byKey(const Key('welcome-screen')), findsOneWidget);
     expect(find.byKey(const Key('account-sign-out-button')), findsNothing);
     expect(find.text('Private draft', skipOffstage: false), findsNothing);
     expect(
@@ -799,7 +799,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(router.routeInformationProvider.value.uri.path, '/');
-      expect(find.text('Mobile foundation ready'), findsOneWidget);
+      expect(find.byKey(const Key('home-planets-hero')), findsOneWidget);
       expect(find.byKey(const Key('auth-email-field')), findsNothing);
 
       for (final root in ['/resources', '/profile']) {
@@ -1412,7 +1412,7 @@ void main() {
         findsOneWidget,
       );
       await _tap(tester, 'nav-home');
-      expect(find.text('Mobile foundation ready'), findsOneWidget);
+      expect(find.byKey(const Key('home-planets-hero')), findsOneWidget);
     },
   );
 
