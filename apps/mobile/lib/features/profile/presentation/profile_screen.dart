@@ -202,17 +202,12 @@ class _ProfileBody extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final profile = data.profile;
-    final selectedByCategory = data.categories
-        .map(
-          (category) => MapEntry(
-            category,
-            category.skills
-                .where((skill) => profile.selectedSkillIds.contains(skill.id))
-                .toList(growable: false),
-          ),
-        )
-        .where((entry) => entry.value.isNotEmpty)
-        .toList(growable: false);
+    // Retain catalog category/skill order without displaying category headings.
+    final selectedSkills = [
+      for (final category in data.categories)
+        for (final skill in category.skills)
+          if (profile.selectedSkillIds.contains(skill.id)) skill,
+    ];
 
     return Center(
       child: SingleChildScrollView(
@@ -250,25 +245,22 @@ class _ProfileBody extends StatelessWidget {
                 style: Theme.of(context).textTheme.titleLarge,
               ),
               const SizedBox(height: AppSpacing.small),
-              if (selectedByCategory.isEmpty)
+              if (selectedSkills.isEmpty)
                 Text(l10n.profileNoSkills)
               else
-                for (final entry in selectedByCategory) ...[
-                  Text(
-                    entry.key.label,
-                    style: Theme.of(context).textTheme.titleMedium,
-                  ),
-                  const SizedBox(height: AppSpacing.xSmall),
-                  Wrap(
-                    spacing: AppSpacing.small,
-                    runSpacing: AppSpacing.small,
-                    children: [
-                      for (final skill in entry.value)
-                        Chip(label: Text(skill.label)),
-                    ],
-                  ),
-                  const SizedBox(height: AppSpacing.medium),
-                ],
+                Wrap(
+                  key: const Key('profile-competence-labels'),
+                  spacing: AppSpacing.small,
+                  runSpacing: AppSpacing.xSmall,
+                  children: [
+                    for (final skill in selectedSkills)
+                      Chip(
+                        key: Key('profile-competence-${skill.id}'),
+                        label: Text(skill.label),
+                        visualDensity: VisualDensity.compact,
+                      ),
+                  ],
+                ),
               const SizedBox(height: AppSpacing.small),
               Text(
                 l10n.profileVisibilityTitle,
