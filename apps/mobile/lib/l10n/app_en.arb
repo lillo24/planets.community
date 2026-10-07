@@ -571,6 +571,12 @@
   "tavoliLocalityFilter": "Filter by locality",
   "tavoliLoadMore": "Load more",
   "tavoliNextMeeting": "Next meeting",
+  "tavoliOccurrenceToday": "Today",
+  "tavoliOccurrenceTomorrow": "Tomorrow",
+  "tavoliOccurrenceInDays": "In {days} days",
+  "@tavoliOccurrenceInDays": {
+    "placeholders": { "days": { "type": "int" } }
+  },
   "tavoliUpcomingMeetings": "Upcoming meetings",
   "tavoliNoUpcomingMeetings": "There are no active upcoming meetings.",
   "tavoliWeeklySummary": "Every {weekday} at {time}",

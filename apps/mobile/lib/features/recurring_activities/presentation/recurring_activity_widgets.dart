@@ -2,19 +2,20 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 import '../../../core/theme/app_tokens.dart';
-import '../../../core/time/event_time.dart';
 import '../../../core/widgets/requested_badge.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../cover_media/presentation/project_cover_image.dart';
 import '../../participation/presentation/project_capacity_label.dart';
 import '../../participation/presentation/project_capacity_presentation.dart';
 import '../domain/recurring_activity_models.dart';
+import 'recurring_occurrence_urgency.dart';
 
 class RecurringActivityCard extends StatelessWidget {
   const RecurringActivityCard({
     required this.activity,
     required this.onTap,
     this.isRequested = false,
+    this.now,
     super.key,
   });
 
@@ -22,11 +23,18 @@ class RecurringActivityCard extends StatelessWidget {
   final VoidCallback onTap;
   final bool isRequested;
 
+  /// Optional reference instant; otherwise urgency is sampled on each build.
+  final DateTime? now;
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final locale = Localizations.localeOf(context).toLanguageTag();
     final scheme = Theme.of(context).colorScheme;
+    final urgency = formatRecurringOccurrenceUrgency(
+      activity.nextOccurrence,
+      l10n,
+      now: now ?? DateTime.now(),
+    );
     return Card(
       clipBehavior: Clip.antiAlias,
       shape: isRequested
@@ -42,55 +50,62 @@ class RecurringActivityCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            ProjectCoverImage(
-              key: Key('tavolo-cover-${activity.id}'),
-              title: activity.title,
-              objectPath: activity.coverObjectPath,
+            Stack(
+              children: [
+                ProjectCoverImage(
+                  key: Key('tavolo-cover-${activity.id}'),
+                  title: activity.title,
+                  objectPath: activity.coverObjectPath,
+                ),
+                if (urgency != null || isRequested)
+                  Positioned.fill(
+                    child: Padding(
+                      padding: const EdgeInsets.all(AppSpacing.small),
+                      child: CustomMultiChildLayout(
+                        delegate: _CoverBadgeLayout(),
+                        children: [
+                          if (urgency != null)
+                            LayoutId(
+                              id: _CoverBadge.urgency,
+                              child: _OccurrenceUrgencyBadge(label: urgency),
+                            ),
+                          if (isRequested)
+                            LayoutId(
+                              id: _CoverBadge.requested,
+                              child: const RequestedBadge(),
+                            ),
+                        ],
+                      ),
+                    ),
+                  ),
+              ],
             ),
             Padding(
               padding: const EdgeInsets.all(AppSpacing.medium),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Expanded(
-                        child: Text(
-                          activity.title,
-                          style: Theme.of(context).textTheme.titleLarge,
-                        ),
-                      ),
-                      if (isRequested) ...[
-                        const SizedBox(width: AppSpacing.small),
-                        const RequestedBadge(),
-                      ],
-                    ],
+                  Text(
+                    activity.title,
+                    style: Theme.of(context).textTheme.titleLarge,
                   ),
                   const SizedBox(height: AppSpacing.xSmall),
                   Text(activity.summary),
-                  if (activity.topic case final topic?) ...[
-                    const SizedBox(height: AppSpacing.xSmall),
-                    Text(topic, style: Theme.of(context).textTheme.labelLarge),
-                  ],
-                  const SizedBox(height: AppSpacing.small),
-                  Text(
-                    '${activity.publicLocationLabel} · ${activity.locality}',
-                    key: Key('tavolo-public-location-${activity.id}'),
+                  const SizedBox(height: AppSpacing.medium),
+                  _MetadataRow(
+                    icon: Icons.event_repeat_outlined,
+                    text: formatRecurringSchedule(activity.schedule, context),
                   ),
-                  const SizedBox(height: AppSpacing.xSmall),
-                  Text(formatRecurringSchedule(activity.schedule, context)),
-                  const SizedBox(height: AppSpacing.xSmall),
+                  const SizedBox(height: AppSpacing.small),
+                  _MetadataRow(
+                    icon: Icons.location_on_outlined,
+                    text: activity.publicLocationLabel,
+                    textKey: Key('tavolo-public-location-${activity.id}'),
+                  ),
+                  const SizedBox(height: AppSpacing.small),
                   ProjectCapacityLabel(
                     capacity: activity.capacity,
                     presentation: ProjectCapacityPresentation.public,
-                  ),
-                  const SizedBox(height: AppSpacing.small),
-                  Text(
-                    '${l10n.tavoliNextMeeting}: '
-                    '${formatEventDateTime(activity.nextOccurrence.startsAt, activity.nextOccurrence.eventTimezone, locale)} – '
-                    '${DateFormat.Hm(locale).format(eventUtcToWallTime(activity.nextOccurrence.endsAt, activity.nextOccurrence.eventTimezone))}',
-                    style: Theme.of(context).textTheme.labelLarge,
                   ),
                 ],
               ),
@@ -100,6 +115,88 @@ class RecurringActivityCard extends StatelessWidget {
       ),
     );
   }
+}
+
+class _MetadataRow extends StatelessWidget {
+  const _MetadataRow({required this.icon, required this.text, this.textKey});
+
+  final IconData icon;
+  final String text;
+  final Key? textKey;
+
+  @override
+  Widget build(BuildContext context) => Row(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Icon(icon, size: 20),
+      const SizedBox(width: AppSpacing.small),
+      Expanded(child: Text(text, key: textKey)),
+    ],
+  );
+}
+
+class _OccurrenceUrgencyBadge extends StatelessWidget {
+  const _OccurrenceUrgencyBadge({required this.label});
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Semantics(
+      key: const Key('tavolo-urgency-badge'),
+      label: '${AppLocalizations.of(context).tavoliNextMeeting}: $label',
+      child: ExcludeSemantics(
+        child: Chip(
+          label: Text(label),
+          avatar: Icon(
+            Icons.timer_outlined,
+            size: 16,
+            color: scheme.onErrorContainer,
+          ),
+          backgroundColor: scheme.errorContainer,
+          labelStyle: TextStyle(
+            color: scheme.onErrorContainer,
+            fontWeight: FontWeight.w600,
+          ),
+          side: BorderSide.none,
+          visualDensity: VisualDensity.compact,
+        ),
+      ),
+    );
+  }
+}
+
+enum _CoverBadge { urgency, requested }
+
+/// Measures actual badge widths. At large text sizes the right badge moves
+/// below the left badge instead of colliding, retaining both cover-edge anchors.
+class _CoverBadgeLayout extends MultiChildLayoutDelegate {
+  @override
+  void performLayout(Size size) {
+    final constraints = BoxConstraints.loose(size);
+    Size? urgencySize;
+    if (hasChild(_CoverBadge.urgency)) {
+      urgencySize = layoutChild(_CoverBadge.urgency, constraints);
+      positionChild(_CoverBadge.urgency, Offset.zero);
+    }
+    if (hasChild(_CoverBadge.requested)) {
+      final requestedSize = layoutChild(_CoverBadge.requested, constraints);
+      final wrapped =
+          urgencySize != null &&
+          urgencySize.width + AppSpacing.small + requestedSize.width >
+              size.width;
+      positionChild(
+        _CoverBadge.requested,
+        Offset(
+          size.width - requestedSize.width,
+          wrapped ? urgencySize.height + AppSpacing.xSmall : 0,
+        ),
+      );
+    }
+  }
+
+  @override
+  bool shouldRelayout(_CoverBadgeLayout oldDelegate) => false;
 }
 
 String formatRecurringSchedule(
