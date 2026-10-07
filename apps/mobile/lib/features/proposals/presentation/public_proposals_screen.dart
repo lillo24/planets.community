@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../locations/presentation/location_fallbacks.dart';
+
 import '../../../app/router/browse_activity_switcher.dart';
 import '../../../core/theme/app_tokens.dart';
 import '../../../core/widgets/async_data_presentation.dart';
@@ -449,6 +451,7 @@ class _ProposalDetailScreenState extends ConsumerState<ProposalDetailScreen> {
                   ],
                   const SizedBox(height: AppSpacing.large),
                   participation!,
+                  const UnavailableLocationMap(),
                   const SizedBox(height: AppSpacing.large),
                   ListTile(
                     key: const Key('proposal-organizer-identity'),
