@@ -49,6 +49,75 @@ import '../../support/fake_messages.dart';
 import '../../support/fake_message_chats.dart';
 
 void main() {
+  testWidgets(
+    'draft hub keeps Browse selected and retains contextual filters across Home',
+    (tester) async {
+      final app = await _pump(
+        tester,
+        destination: BottomTabDestination.messages,
+      );
+      final router = app.read(appRouterProvider);
+      router.go('/proposals');
+      await tester.pumpAndSettle();
+      await _tap(tester, 'my-proposals-action');
+      expect(router.routerDelegate.state.uri.path, '/drafts');
+      expect(
+        tester.widget<NavigationBar>(find.byType(NavigationBar)).selectedIndex,
+        2,
+      );
+      expect(find.byKey(const Key('nav-browse')), findsOneWidget);
+      await tester.tap(find.byKey(const Key('draft-type-donate')));
+      await tester.pump();
+      await _tap(tester, 'nav-home');
+      expect(router.routerDelegate.state.uri.path, '/');
+      // Home uses the saved Messages preference; explicit hub re-entry is also safe.
+      router.go('/drafts?types=table');
+      await tester.pumpAndSettle();
+      expect(
+        tester.widget<NavigationBar>(find.byType(NavigationBar)).selectedIndex,
+        2,
+      );
+      expect(
+        tester
+            .widget<FilterChip>(find.byKey(const Key('draft-type-table')))
+            .selected,
+        isTrue,
+      );
+      await tester.binding.handlePopRoute();
+      await tester.pumpAndSettle();
+      expect(router.routerDelegate.state.uri.path, '/');
+    },
+  );
+  testWidgets('draft contextual intent survives protected sign-in return', (
+    tester,
+  ) async {
+    final projects = FakeProposalGateway();
+    final app = await _pump(tester, signedIn: false, proposals: projects);
+    final router = app.read(appRouterProvider);
+    router.go('/proposals');
+    await tester.pumpAndSettle();
+    await _tap(tester, 'my-proposals-action');
+    expect(router.routerDelegate.state.uri.path, '/auth');
+    expect(
+      router.routerDelegate.state.uri.queryParameters['returnTo'],
+      '/drafts?types=project',
+    );
+    expect(projects.calls, isNot(contains('list-own')));
+    await tester.enterText(
+      find.byKey(const Key('auth-email-field')),
+      'person@example.com',
+    );
+    await _tap(tester, 'auth-request-button');
+    await tester.enterText(find.byKey(const Key('auth-code-field')), '123456');
+    await _tap(tester, 'auth-verify-button');
+    expect(router.routerDelegate.state.uri.path, '/drafts');
+    expect(
+      tester
+          .widget<FilterChip>(find.byKey(const Key('draft-type-project')))
+          .selected,
+      isTrue,
+    );
+  });
   for (final locale in ['en', 'it']) {
     testWidgets(
       'Home and Browse use requested $locale copy on a narrow screen',

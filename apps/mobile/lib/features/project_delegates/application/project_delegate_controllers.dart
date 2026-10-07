@@ -484,13 +484,13 @@ class DelegatedProjectsController extends Notifier<DelegatedProjectsState> {
 
   @override
   DelegatedProjectsState build() {
-    ref.listen(authSessionProvider.select((value) => value.identity?.id), (
-      _,
-      _,
-    ) {
-      _revision++;
-      state = const DelegatedProjectsState();
-    });
+    ref.listen(
+      authSessionProvider.select((value) => (value.phase, value.identity?.id)),
+      (_, _) {
+        _revision++;
+        state = const DelegatedProjectsState();
+      },
+    );
     ref.onDispose(() => _revision++);
     return const DelegatedProjectsState();
   }

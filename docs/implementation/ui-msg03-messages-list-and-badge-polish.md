@@ -10,6 +10,12 @@ the ready-identity Messages root, protected descendants and navigation behavior.
 Only the appended EN/IT localization keys conflicted; both sets are retained.
 Its branch/worktree is not copied or modified.
 
+PR #158 subsequently merged during CI. Integrated main
+`2164a2df5505cd687df1ccad567b04d8b31dc017` without conflicts, preserving its
+draft-exit routing, actor-owned collections and stable loading behavior.
+Against this main, the shell change remains only the selected Messages badge
+variant; its router and Drafts feature code are unchanged.
+
 ## Presentation
 
 All conversation rows use shared identity/preview content and a right-hand
@@ -92,18 +98,19 @@ local history and performs no hosted migration.
 
 Completed local validation:
 
-- Final `npm run check:mobile` after PR #156 reconciliation at main `37fa469`:
-  localization, format and analysis passed; 1,510 tests passed and two existing
+- Final `npm run check:mobile` after PR #158 reconciliation at main `2164a2d`:
+  localization, format and analysis passed; 1,529 tests passed and two existing
   tests skipped. This includes the final legacy sender-attribution refinement
-  and the merged startup/navigation regressions. Final focused Messages suite:
-  58 tests passed before reconciliation.
+  and merged startup/navigation/draft regressions. The preceding PR #156
+  reconciliation passed 1,510 tests. Focused Messages suite: 58 tests passed
+  before reconciliation.
 - Final focused photo controller/avatar suite: 17 tests passed.
 - `npm run check:db`: both established populated upgrades, fresh migration
   replay, schema lint, advisors, 119 pgTAP files / 3,637 assertions, authenticated
   integration verifiers, combined demo recovery and generated type drift passed.
   Final deterministic test 119 rerun: 18 assertions passed. This ran on main
   `7054abc`; PR #156 changes only mobile code and leaves all DB/Web source intact.
-- `npm run check:web`: 34 tooling tests and 283 web tests passed, one existing
+- `npm run check:web`: 40 tooling tests and 283 web tests passed, one existing
   web test skipped; lint, type checking and production build passed.
 - `npm run format:check:web` and `git diff --check` passed.
 

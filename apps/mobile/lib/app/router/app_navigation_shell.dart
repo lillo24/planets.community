@@ -29,22 +29,22 @@ class AppNavigationShell extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
     final demoToolsEnabled = ref.watch(demoToolsEnabledProvider);
-    // Imperative push history belongs to the branch Navigator even when the
-    // shell route URI still names that branch's public root.
-    final branchCanPop = navigationShell
-        .route
-        .branches[navigationShell.currentIndex]
-        .navigatorKey
-        .currentState
-        ?.canPop();
-    final path = GoRouter.of(context).routerDelegate.state.uri.path;
+    final router = GoRouter.of(context);
+    // Canonical matches include imperative pushes. A replaced branch Navigator
+    // may still report its departing page during a Material transition.
+    final activeMatch =
+        router.routerDelegate.currentConfiguration.matches.lastOrNull;
+    final branchCanPop = activeMatch is ShellRouteMatch
+        ? activeMatch.matches.length > 1
+        : router.canPop();
+    final path = router.routerDelegate.state.uri.path;
     final preference = ref.watch(navigationPreferenceProvider).destination;
     final isMessages = isMessagesPath(path);
     // Cross-branch pushes can keep the originating Navigator's branch index.
     // The active URI identifies the screen actually visible above that stack.
     final routeRoot = Uri(path: path).pathSegments.firstOrNull;
     final isBrowse = switch (routeRoot) {
-      'proposals' || 'tavoli' || 'resources' => true,
+      'proposals' || 'tavoli' || 'resources' || 'drafts' => true,
       _ => false,
     };
     // The visible slot follows direct/pushed routes while active. Elsewhere it
@@ -65,7 +65,8 @@ class AppNavigationShell extends ConsumerWidget {
         (navigationShell.currentIndex == AppBranch.browse.index &&
             (path == '/proposals' ||
                 path == '/tavoli' ||
-                path == '/resources'));
+                path == '/resources' ||
+                path == '/drafts'));
     final returnsHomeOnBack = branchCanPop != true && isSecondaryRoot;
     final scaffold = Scaffold(
       body: Stack(

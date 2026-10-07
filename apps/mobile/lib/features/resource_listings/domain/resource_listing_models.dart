@@ -185,8 +185,11 @@ class PublicResourceListingsState {
     this.cursor,
     this.hasMore = true,
     this.failure,
+    this.resultsMatchFilters = true,
   });
 
+  /// Retained rows from an older tuple are labelled and cannot open a detail.
+  final bool resultsMatchFilters;
   final ResourceListingLoadPhase phase;
   final List<PublicResourceListingSummary> items;
   final ResourceListingMode? modeFilter;

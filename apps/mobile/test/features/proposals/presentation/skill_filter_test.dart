@@ -272,6 +272,9 @@ void main() {
       expect(find.textContaining('secret diagnostics'), findsNothing);
       expect(find.textContaining("We couldn't complete"), findsOneWidget);
       gateway.error = null;
+      // Filters now stay above result failures, so retry can be below the fold.
+      await tester.ensureVisible(find.text('Try again'));
+      await tester.pumpAndSettle();
       await tester.tap(find.text('Try again'));
       await tester.pumpAndSettle();
       expect(gateway.lastSkillIds, {'painting'});

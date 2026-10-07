@@ -6,6 +6,8 @@ import '../../features/auth/application/auth_command_controller.dart';
 import '../../features/auth/application/auth_session_controller.dart';
 import '../../features/auth/application/return_destination.dart';
 import '../../features/auth/domain/auth_models.dart';
+import '../../features/drafts/domain/draft_entry.dart';
+import '../../features/drafts/presentation/drafts_screen.dart';
 import '../../features/auth/presentation/request_code_screen.dart';
 import '../../features/auth/presentation/verify_code_screen.dart';
 import '../../features/blocking/presentation/blocked_users_screen.dart';
@@ -192,6 +194,7 @@ RoutingConfig _routingConfig(
           path.startsWith('/profile/review-requests');
       final isProfileEditRoute = path == '/profile/edit';
       final isProposalManagementRoute =
+          path == DraftRoutes.path ||
           path == WorkshopRoutes.catalog ||
           path.startsWith('${WorkshopRoutes.catalog}/') ||
           path == '/proposals/mine' ||
@@ -555,10 +558,27 @@ RoutingConfig _routingConfig(
             ],
           ),
           StatefulShellBranch(
+            initialLocation: '/proposals',
             routes: [
               GoRoute(
+                path: DraftRoutes.path,
+                pageBuilder: (context, state) => MaterialPage<void>(
+                  key: state.pageKey,
+                  child: DraftsScreen(
+                    initialTypes: DraftRoutes.parse(
+                      state.uri.queryParameters['types'],
+                    ),
+                  ),
+                ),
+              ),
+              GoRoute(
                 path: '/proposals',
-                builder: (context, state) => const PublicProposalsScreen(),
+                // Family roots switch without a slide/fade. Detail/editor pages retain
+                // native transitions and the existing departure guard.
+                pageBuilder: (context, state) => NoTransitionPage<void>(
+                  key: state.pageKey,
+                  child: const PublicProposalsScreen(),
+                ),
                 routes: [
                   GoRoute(
                     path: 'workshop',
@@ -678,8 +698,10 @@ RoutingConfig _routingConfig(
               ),
               GoRoute(
                 path: '/tavoli',
-                builder: (context, state) =>
-                    const PublicRecurringActivitiesScreen(),
+                pageBuilder: (context, state) => NoTransitionPage<void>(
+                  key: state.pageKey,
+                  child: const PublicRecurringActivitiesScreen(),
+                ),
                 routes: [
                   GoRoute(
                     path: 'mine',

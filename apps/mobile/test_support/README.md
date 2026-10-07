@@ -39,3 +39,20 @@ phone or an owned active device for this rehearsal. Explore stays public; Log in
 can be cancelled with the toolbar or Android Back. Messages login leads to its
 incomplete-profile context; setup Back returns there, while fixture Save completes
 readiness and returns to Messages. Native iOS needs an iOS-capable host/device.
+
+## UI-NEXT-02 native presentation rehearsal
+
+`ui_next02_rehearsal.dart` uses a ready synthetic identity and deterministic
+Project/Tavolo/Resource inventories. Opt in only with a debug build and
+`UI_NEXT02_REHEARSAL=true`, targeting an explicitly selected temporary emulator.
+The driver extension is absent from the production entry point. Its bounded
+`populated`/`empty` handler changes only fake gateway records and reloads the
+normal owner controllers; no backend write or real session is available.
+
+From `apps/mobile`, launch `flutter run -d emulator-5580 -t
+test_support/ui_next02_rehearsal.dart --dart-define=UI_NEXT02_REHEARSAL=true`.
+Use the VM URI printed by that owned run, then `dart run
+test_support/ui_next02_native_smoke.dart <owned-vm-uri> <capture-directory>`.
+The smoke validates its fixture handler before any UI action, repeats family
+switches, opens contextual and unrestricted drafts, then observes a genuinely
+empty inventory. Captures are presentation evidence, not canonical backend QA.
