@@ -261,24 +261,6 @@ class _ProfileBody extends StatelessWidget {
                       ),
                   ],
                 ),
-              const SizedBox(height: AppSpacing.small),
-              Text(
-                l10n.profileVisibilityTitle,
-                style: Theme.of(context).textTheme.titleLarge,
-              ),
-              const SizedBox(height: AppSpacing.small),
-              _VisibilitySummary(
-                label: l10n.profileDisplayNameLabel,
-                audience: profile.visibility[ProfileFieldKey.displayName]!,
-              ),
-              _VisibilitySummary(
-                label: l10n.profileBioLabel,
-                audience: profile.visibility[ProfileFieldKey.bio]!,
-              ),
-              _VisibilitySummary(
-                label: l10n.profileSkillsTitle,
-                audience: profile.visibility[ProfileFieldKey.skills]!,
-              ),
               const SizedBox(height: AppSpacing.large),
               FilledButton.icon(
                 key: const Key('profile-edit-button'),
@@ -318,27 +300,6 @@ class _ProfileBody extends StatelessWidget {
             ],
           ),
         ),
-      ),
-    );
-  }
-}
-
-class _VisibilitySummary extends StatelessWidget {
-  const _VisibilitySummary({required this.label, required this.audience});
-
-  final String label;
-  final ProfileAudience audience;
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
-    return ListTile(
-      contentPadding: EdgeInsets.zero,
-      title: Text(label),
-      trailing: Text(
-        audience == ProfileAudience.public
-            ? l10n.profileAudiencePublic
-            : l10n.profileAudiencePrivate,
       ),
     );
   }
