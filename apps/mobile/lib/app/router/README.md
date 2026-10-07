@@ -44,3 +44,8 @@ Detail/editor Material pages and the single native/draft guard are retained.
 The hub belongs to the visible Browse slot. Root Back uses canonical route
 matches (including imperative pushes), since a departing Material page may leave
 the branch Navigator's `canPop` stale during a replacement.
+
+UI-NEXT-03 separates the protected creation chooser (`/proposals/create`) from
+the guarded scratch editor (`/proposals/create/scratch`). Owner edits/recovery
+remain direct. A typed in-memory `DraftEditorOrigin.hub` allows successful Project
+saves to pop to the retained hub; no external return URL is accepted.

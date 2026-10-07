@@ -42,3 +42,9 @@ projection only; the exposed Creator ID never authorizes contextual photo reads.
 See [the shared contract](../../../../../docs/development/template-workshop.md)
 and [local native smoke](../../../integration_test/README.md). Founder review
 and predecessor/main integration remain pending; SIM01/SIM02/TW05 are deferred.
+
+UI-NEXT-03 places compact keyword and controlled searchable skill filters before
+the context text. Active query/skills expose one reset action; debounce, combined
+queries, cursors and stale-generation rejection remain unchanged. New canonical
+applications default only the destination timezone to `Europe/Rome`; schedule and
+location remain unset. Receipt recovery never rewrites existing drafts.

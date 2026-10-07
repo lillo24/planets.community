@@ -1,3 +1,6 @@
+/// Typed in-memory navigation origin; never accepts a user-supplied return URL.
+enum DraftEditorOrigin { hub }
+
 enum DraftKind { project, table, donate, exchange }
 
 /// Presentation identity keeps IDs from different canonical domains distinct.

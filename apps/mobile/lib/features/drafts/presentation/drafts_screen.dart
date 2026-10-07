@@ -79,7 +79,7 @@ class _DraftsScreenState extends ConsumerState<DraftsScreen> {
     if (_opening || _actor != actor) return;
     setState(() => _opening = true);
     try {
-      await context.push(entry.editPath);
+      await context.push(entry.editPath, extra: DraftEditorOrigin.hub);
       if (mounted && _actor == actor) await _reload(entry.kind, actor);
     } finally {
       if (mounted) setState(() => _opening = false);
@@ -96,7 +96,7 @@ class _DraftsScreenState extends ConsumerState<DraftsScreen> {
       if (!mounted || _actor != actor) return;
       ref.read(draftCreationRecoveryProvider.notifier).resolved(actor, request);
       if (id != null) {
-        await context.push('/proposals/$id/edit');
+        await context.push('/proposals/$id/edit', extra: DraftEditorOrigin.hub);
       }
       if (mounted && _actor == actor) await _reload(DraftKind.project, actor);
     } catch (_) {

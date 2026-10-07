@@ -623,3 +623,9 @@ participant links/native auth returns/browser joining with these outgoing guards
 and independent drafts, preserving both flows. Physical iOS/native gesture and
 platform accessibility checks remain separate from widget/emulator evidence.
 No shared database change, merge, deployment or store submission is authorized.
+
+UI-NEXT-03 adds an additive function replacement: only newly accepted template
+drafts start with `Europe/Rome`. Schedule and location are still reset; recovered
+receipts retain their current destination timezone/UTC instants. No table, RLS,
+grants, receipt identity or public RPC signature changes. Existing demo copies
+may retain null timezone; their receipts are never replaced or rewritten.
