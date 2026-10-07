@@ -7,6 +7,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:planets_mobile/app/planets_app.dart';
 import 'package:planets_mobile/app/router/app_router.dart';
 import 'package:planets_mobile/core/config/app_config.dart';
+import 'package:planets_mobile/core/theme/app_tokens.dart';
 import 'package:planets_mobile/core/widgets/error_state.dart';
 import 'package:planets_mobile/core/widgets/loading_state.dart';
 import 'package:planets_mobile/features/auth/data/auth_gateway.dart';
@@ -22,6 +23,71 @@ import '../../../support/fake_profile.dart';
 import '../../../support/fake_profile_photo.dart';
 
 void main() {
+  testWidgets(
+    'visibility stays in Edit Profile and the Settings privacy entry',
+    (tester) async {
+      final auth = FakeAuthGateway(
+        snapshot: const AuthSnapshot(identity: AuthIdentity(id: 'user-1')),
+      );
+      addTearDown(auth.close);
+      final anchor = FakeProfileAnchorGateway()
+        ..readiness = ProfileAnchorReadiness.complete;
+      final profile = FakeProfileGateway(data: _competenceLabelFixture());
+      final app = await _pumpApp(tester, auth, anchor, profile);
+      final router = app.read(appRouterProvider);
+      router.go('/profile');
+      await tester.pumpAndSettle();
+      final l10n = AppLocalizations.of(
+        tester.element(find.byKey(const Key('profile-display-name'))),
+      );
+      expect(find.text(l10n.profileVisibilityTitle), findsNothing);
+      expect(find.text(l10n.profileAudiencePublic), findsNothing);
+      expect(find.text(l10n.profileAudiencePrivate), findsNothing);
+      final collection = find.byKey(const Key('profile-competence-labels'));
+      final edit = find.byKey(const Key('profile-edit-button'));
+      expect(
+        tester.getTopLeft(edit).dy - tester.getBottomLeft(collection).dy,
+        greaterThanOrEqualTo(AppSpacing.large),
+      );
+      await _tapVisible(tester, edit);
+      expect(find.text(l10n.profileVisibilityTitle), findsOneWidget);
+      for (final field in ProfileFieldKey.values) {
+        expect(
+          find.byKey(Key('profile-visibility-${field.wireValue}')),
+          findsOneWidget,
+        );
+      }
+      router.go('/settings');
+      await tester.pumpAndSettle();
+      final privacy = find.byKey(const Key('settings-profile-privacy-row'));
+      await tester.scrollUntilVisible(
+        privacy,
+        250,
+        scrollable: find.byType(Scrollable).hitTestable().first,
+      );
+      await tester.tap(privacy);
+      await tester.pumpAndSettle();
+      expect(router.routeInformationProvider.value.uri.path, '/profile/edit');
+      expect(
+        router.routeInformationProvider.value.uri.queryParameters['returnTo'],
+        '/settings',
+      );
+      expect(find.text(l10n.profileVisibilityTitle), findsOneWidget);
+      for (final field in ProfileFieldKey.values) {
+        expect(
+          tester
+              .widget<SegmentedButton<ProfileAudience>>(
+                find.byKey(Key('profile-visibility-${field.wireValue}')),
+              )
+              .selected,
+          {profile.data.profile.visibility[field]},
+        );
+      }
+      expect(profile.updateCount, 0);
+      expect(tester.takeException(), isNull);
+    },
+  );
+
   for (final scale in [1.0, 2.4]) {
     testWidgets(
       'read-only competences are flat, ordered and inert at 320px/$scale',
