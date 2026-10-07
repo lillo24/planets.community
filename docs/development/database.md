@@ -656,6 +656,16 @@ Authenticated users use expected-identity-bound functions for keyset-paginated i
 
 `private.push_delivery_jobs` stores one recipient-level semantic job per source event, recipient, and kind, with strict mutually exclusive Project, Resource coordination, or listing-only matching reference shapes. It intentionally stores no provider token, raw outbox payload, saved-search identifier/filter, request/message body, agreement terms, exact meeting data, or per-device attempt. `process_push_outbox_batch` is service-only, selects available supported Project, Resource, and saved-search-match events with `FOR UPDATE SKIP LOCKED`, reuses the shared resolver, applies only each recipient's effective `push_enabled` value, and records `push.v1` success after complete fan-out. Matching jobs are immediately available and deduplicated by recipient/listing across overlapping saved searches. The projector does not query installations or depend on `public.notifications`; in-app and push preference combinations remain independent. Migration-time `push.v1` receipts cover already-existing supported events so provider delivery cannot unexpectedly replay historical activity. Delivery results never rewrite those projection receipts. Provider delivery, push-preview policy, and mobile matching copy/routes remain separate work.
 
+The push projector rechecks its receipt after locking each event, before resolving
+recipients or incrementing counters. Its cursor's earlier snapshot can still show
+a receipt as absent when another worker commits before the unchanged event row is
+locked. The fresh check closes that gap under the worker's default READ COMMITTED
+isolation; unique recipient jobs alone do not prevent duplicate processing counts
+or suppression. Keep this function VOLATILE so its internal queries get fresh
+statement snapshots. See PostgreSQL 17's
+[snapshot rules](https://www.postgresql.org/docs/17/transaction-iso.html#XACT-READ-COMMITTED)
+and [function volatility](https://www.postgresql.org/docs/17/xfunc-volatility.html).
+
 `private.prepare_push_delivery_jobs` locks available, unprepared jobs with `FOR UPDATE SKIP LOCKED` and snapshots their recipient's active installations exactly once. Each snapshot becomes one `private.push_delivery_targets` row containing only installation identity, platform/provider, schedule, status, attempt count, and lease state. The token remains solely on the installation. Registrations after `fanout_at` do not receive historical work. A job without active installations completes immediately with `no_targets`; otherwise it completes with `delivered_or_terminal` only after every target reaches `delivered`, `invalid_token`, `permanent_failure`, or `no_longer_registered`.
 
 `private.claim_push_delivery_targets` validates bounded worker/batch/lease inputs, first retires stale ownership snapshots, then uses `FOR UPDATE SKIP LOCKED` to assign distinct pending targets. Claim increments the target attempt number, creates one unfinished `private.push_delivery_attempts` row atomically, and returns a fresh UUID lease plus semantic job context—including nullable chat/message IDs—and the installation's current raw token/version. It never returns a chat body. The raw token exists only in this private routine response; jobs, targets, attempts, public APIs, ordinary generated types, and logs do not contain it. The service role has `USAGE` on the unexposed `private` schema and `EXECUTE` on the three worker entry points, but no table privileges. A trusted worker must therefore use a direct PostgreSQL connection; `private` is intentionally absent from the Data API exposed-schema list.
@@ -809,6 +819,12 @@ must not be embedded in or called by Flutter; the 06B feature README documents
 the deterministic local profiles and device-QA sequence.
 
 `push:verify:local` uses three complete authenticated identities, synthetic provider tokens, the two service-only projectors, and narrow local-database assertions. It proves idempotent registration, rotation, account transfer, owner-only unregister, independent in-app/push preferences, concurrent push projection, semantic job privacy, retry idempotency, suppression receipts, consumer coexistence, and unsupported-event preservation. It prints no tokens, keys, request messages, or meeting values.
+
+It also runs 100 lost-receipt retry rounds with four concurrent workers, deleting
+only its own synthetic event's push receipt between rounds. Every round requires
+exactly one processed event, no additional job or suppression, and exactly one job
+and receipt afterward. This stress regression exercises cursor/commit timing; it
+does not replace the strict initial projection or retry assertions.
 
 `push:project:local` is a trusted local helper that derives the service credential only from current local Supabase status, invokes the service-only push projector, and prints aggregate processed/created/suppressed counts. It must never be embedded in or called by Flutter.
 
