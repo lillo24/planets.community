@@ -2238,5 +2238,9 @@
   "proposalScheduleZone": "Times shown in {zone}",
   "proposalDemoReplaceTitle": "Replace your entries?",
   "proposalDemoReplaceMessage": "Sample data will replace the values you have entered. Nothing is saved until you choose to save or publish.",
-  "@proposalScheduleZone": {"placeholders": {"zone": {"type": "String"}}}
+  "@proposalScheduleZone": {"placeholders": {"zone": {"type": "String"}}},
+  "locationManualEntryNotice": "Place search is unavailable. Enter the location below.",
+  "locationMapUnavailable": "Map preview unavailable. Use the location information above.",
+  "locationRestrictedPreview": "Everyone sees the public rough location. Exact meeting instructions are available only to authorized organizers and current participants.",
+  "locationPublicPreview": "Everyone sees the public rough location and exact meeting instructions."
 }

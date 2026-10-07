@@ -15,6 +15,7 @@ import '../../../devtools/demo/demo_tools.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../auth/application/auth_session_controller.dart';
 import '../../auth/domain/auth_models.dart';
+import '../../locations/presentation/location_fallbacks.dart';
 import '../../cover_media/domain/cover_media_models.dart';
 import '../../cover_media/presentation/cover_editor_section.dart';
 import '../../template_workshop/presentation/template_workshop_screens.dart';
@@ -1053,6 +1054,7 @@ class _ProposalFormState extends ConsumerState<_ProposalForm>
                   ),
                 ),
                 const SizedBox(height: AppSpacing.large),
+                const ManualLocationNotice(),
                 _field(
                   _country,
                   l10n.proposalCountryLabel,
@@ -1116,6 +1118,13 @@ class _ProposalFormState extends ConsumerState<_ProposalForm>
                       ? null
                       : (selection) =>
                             setState(() => _visibility = selection.single),
+                ),
+                const SizedBox(height: AppSpacing.small),
+                Text(
+                  _visibility == ExactLocationVisibility.participants
+                      ? l10n.locationRestrictedPreview
+                      : l10n.locationPublicPreview,
+                  key: const Key('location-visibility-preview'),
                 ),
                 const SizedBox(height: AppSpacing.large),
                 Text(

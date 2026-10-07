@@ -23,6 +23,10 @@ intact; the UI-MSG03 forward migration is independent of that correction.
 PR #162's push receipt projector correction subsequently merged as main
 `c2f07155521cec9e16d2aafa74d0e75de8247472`; integrated it without conflicts.
 It changes only database/QA code, so the tested mobile/Web source is identical.
+PR #161's location foundation subsequently merged as main
+`f1f85773beef7e140544947bf713960b308a7543`; integrated it without conflicts,
+retaining both sets of localization keys and its location fallback/editor code.
+Database/Web source is unchanged by that merge.
 The unmerged migration was moved to CLI-generated version `20261007103322`
 after latest main's `20261007103000`, with identical SQL, so upgrades from latest
 main do not require out-of-order migration application. No shared history is
@@ -117,11 +121,11 @@ local history and performs no hosted migration.
 
 Completed local validation:
 
-- Final `npm run check:mobile` after PR #159 reconciliation at main `c89ffb7`:
-  localization, format and analysis passed; 1,538 tests passed and two existing
+- Final `npm run check:mobile` after PR #161 reconciliation at main `f1f8577`:
+  localization, format and analysis passed; 1,557 tests passed and two existing
   tests skipped. This includes the final legacy sender-attribution refinement
-  and merged startup/navigation/draft/editor regressions. The preceding PR #158
-  reconciliation passed 1,529 tests. Focused Messages suite: 58 tests passed
+  and merged startup/navigation/draft/editor/location regressions. The preceding
+  PR #159 reconciliation passed 1,538 tests. Focused Messages suite: 58 tests passed
   before reconciliation.
 - Final focused photo controller/avatar suite: 17 tests passed.
 - `npm run check:db`: both established populated upgrades, fresh migration
