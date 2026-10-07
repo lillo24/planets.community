@@ -32,7 +32,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('PLANETS'), findsOneWidget);
-    expect(find.text('Mobile foundation ready'), findsOneWidget);
+    expect(find.byKey(const Key('home-planets-hero')), findsOneWidget);
     expect(find.text('Sign in'), findsNothing);
     expect(find.byType(MaterialApp), findsOneWidget);
   });

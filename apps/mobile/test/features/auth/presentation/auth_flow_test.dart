@@ -119,7 +119,7 @@ void main() {
     await tester.tap(find.byKey(const Key('auth-close-button')));
     await tester.pumpAndSettle();
     expect(router.routeInformationProvider.value.uri.path, '/');
-    expect(find.text('Mobile foundation ready'), findsOneWidget);
+    expect(find.byKey(const Key('home-planets-hero')), findsOneWidget);
 
     await _openAuth(tester);
     await tester.pumpAndSettle();
@@ -147,7 +147,7 @@ void main() {
     await tester.binding.handlePopRoute();
     await tester.pumpAndSettle();
     expect(router.routeInformationProvider.value.uri.path, '/');
-    expect(find.text('Mobile foundation ready'), findsOneWidget);
+    expect(find.byKey(const Key('home-planets-hero')), findsOneWidget);
     expect(find.byKey(const Key('auth-email-field')), findsNothing);
   });
 
