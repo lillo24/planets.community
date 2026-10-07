@@ -251,6 +251,37 @@ async function verifyPushFoundation() {
     throw new Error("A push retry duplicated its recipient-level job.");
   }
 
+  // Reuse only this verifier's event. Repeated concurrent lost-receipt retries
+  // expose a stale cursor snapshot that can outlive another worker's commit.
+  // A unique job alone is insufficient: every round must count the event once.
+  for (let round = 0; round < 100; round += 1) {
+    await sql`
+      delete from private.outbox_consumer_receipts
+      where outbox_event_id = ${projectedEvent.id}
+        and consumer_key = 'push.v1'
+    `;
+    assertPushBatchTotals(
+      await Promise.all(Array.from({ length: 4 }, () => processPushBatch())),
+      { processed: 1, created: 0, suppressed: 0 },
+    );
+    const [concurrentRetryState] = await sql`
+      select
+        (select count(*)::integer from private.push_delivery_jobs
+          where source_outbox_event_id = ${projectedEvent.id}) as job_count,
+        (select count(*)::integer from private.outbox_consumer_receipts
+          where outbox_event_id = ${projectedEvent.id}
+            and consumer_key = 'push.v1') as receipt_count
+    `;
+    if (
+      concurrentRetryState.job_count !== 1 ||
+      concurrentRetryState.receipt_count !== 1
+    ) {
+      throw new Error(
+        "Concurrent push retries changed the job or receipt count.",
+      );
+    }
+  }
+
   await setParticipationPreference(creator, false, false);
   await withdrawRequest(requester, requestId);
   const disabledPushResult = await processPushBatch();
@@ -303,7 +334,7 @@ async function verifyPushFoundation() {
   }
 
   console.log(
-    "Confirmed private installation registration, rotation, account transfer, unregister, independent push projection, safe recipient-level jobs, idempotent retry, preference suppression, and multi-consumer receipts.",
+    "Confirmed private installation registration, rotation, account transfer, unregister, independent push projection, safe recipient-level jobs, idempotent retry including 100 concurrent rounds, preference suppression, and multi-consumer receipts.",
   );
 }
 

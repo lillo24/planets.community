@@ -20,8 +20,11 @@ PR #159 then merged. Integrated main
 `c89ffb72e9fb0b389b40f1d283545245c52dd52b` without conflicts, preserving its
 creation/editor controls and template timezone correction. Its source remains
 intact; the UI-MSG03 forward migration is independent of that correction.
-The unmerged migration was moved to CLI-generated version `20261007102140`
-after PR #159's `20261007090000`, with identical SQL, so upgrades from latest
+PR #162's push receipt projector correction subsequently merged as main
+`c2f07155521cec9e16d2aafa74d0e75de8247472`; integrated it without conflicts.
+It changes only database/QA code, so the tested mobile/Web source is identical.
+The unmerged migration was moved to CLI-generated version `20261007103322`
+after latest main's `20261007103000`, with identical SQL, so upgrades from latest
 main do not require out-of-order migration application. No shared history is
 rewritten; the earlier task version ran only in disposable local QA.
 
@@ -76,7 +79,7 @@ activity includes resolutions of every associated request. An older request
 can resolve after a newer request and human message. V3 therefore cannot
 identify the correct latest status from its context fields alone.
 
-Forward migration `20261007102140_messages_list_activity_preview.sql` adds only
+Forward migration `20261007103322_messages_list_activity_preview.sql` adds only
 `list_own_scoped_conversation_items_v4`, delegating paging, authorization, route
 context, bodies and unread to unchanged v3 and adding two nullable fields:
 
@@ -105,7 +108,7 @@ preview using the latest authorized event without pair context.
 
 `PLANETS_DISPOSABLE_QA=1 node scripts/verify-local-message-list-preview-upgrade.mjs`
 passed on a separate loopback QA stack: five populated actors, ten scope pages;
-the final rehearsal upgrades current main's `20261007090000` predecessor;
+the final rehearsal upgrades current main's `20261007103000` predecessor;
 v3 function definition, payload fields, order and unread stayed identical across
 actual forward migration; v4 was strictly additive. The selected stack used
 `MAILPIT_URL=http://127.0.0.1:64524` and temporary project/port isolation; repository
@@ -130,6 +133,9 @@ Completed local validation:
   verifier passed; focused pgTAP 044/119 passed 57 assertions across two files;
   generated database type check passed. Final hosted Database CI validates the
   complete integrated migrations and shared QA scripts on the final head.
+- After PR #162, the populated current-main-to-v4 rehearsal passed again
+  (five actors / ten scope pages), as did focused 044/119 (57 assertions),
+  generated types and Web formatting. The projection SQL hash is unchanged.
 - `npm run check:web`: 40 tooling tests and 283 web tests passed, one existing
   web test skipped; lint, type checking and production build passed.
 - `npm run format:check:web` and `git diff --check` passed.
