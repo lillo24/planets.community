@@ -597,7 +597,7 @@ async function upgrade() {
     reader,
     pair,
     concurrentChat,
-    (await page(reader, pair, concurrentChat)).read_boundary,
+    (await upgradedPage(reader, pair, concurrentChat)).read_boundary,
   );
   assert.deepEqual(
     await summary(reader),
@@ -732,6 +732,29 @@ function page(account, kind, chat, extra = {}) {
     p_limit: 31,
     ...extra,
   });
+}
+async function upgradedPage(account, kind, chat) {
+  // CLI completion precedes PostgREST's asynchronous schema reload. Poll only
+  // this post-upgrade read and only its missing-cache signature; mutations and
+  // authorization/domain failures retain their ordinary fail-loud behavior.
+  const deadline = Date.now() + 10000;
+  while (true) {
+    const { data, error } = await account.client.rpc(
+      "get_own_message_feed_page",
+      {
+        p_expected_profile_id: account.id,
+        p_kind: kind,
+        p_chat_id: chat,
+        p_limit: 31,
+      },
+    );
+    if (!error) return data;
+    if (error.code !== "PGRST202" || Date.now() >= deadline)
+      throw new Error(
+        `MSG02 upgraded get_own_message_feed_page for ${kind}/${chat} failed (${error.code}): ${error.message}`,
+      );
+    await new Promise((resolve) => setTimeout(resolve, 200));
+  }
 }
 function ack(account, kind, chat, boundary) {
   return rpc(account, "acknowledge_own_message_read", {

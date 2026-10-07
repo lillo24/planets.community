@@ -1116,6 +1116,11 @@ select throws_ok(
 );
 reset role;
 
+set local role authenticated;
+select set_config('request.jwt.claim.sub','b1100000-0000-4000-8000-000000000002',true);
+select is((select row->>'latest_group_system_event_label' from jsonb_array_elements(public.list_own_scoped_conversation_items_v4('b1100000-0000-4000-8000-000000000002','groups',50)) row where row->>'chat_id'=current_setting('test.attention_chat_id')),'Attention project-end need','UI-MSG03 system-only group preview uses the latest visible domain event');
+select is((select row->>'latest_request_activity_status' from jsonb_array_elements(public.list_own_scoped_conversation_items_v4('b1100000-0000-4000-8000-000000000002','groups',50)) row where row->>'chat_id'=current_setting('test.attention_chat_id')),null,'group preview exposes no pair request context');
+reset role;
 select * from finish();
 
 rollback;

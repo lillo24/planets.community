@@ -129,7 +129,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Jordan: Bring a small brush.'), findsOneWidget);
     expect(find.text('No messages yet'), findsOneWidget);
-    expect(find.text('Read-only'), findsOneWidget);
+    expect(find.text('Read-only'), findsNothing);
     expect(find.textContaining('unread'), findsNothing);
     expect(chats.subscriptions, hasLength(1));
     expect(chats.subscriptions.single.chatId, 'chat-1');

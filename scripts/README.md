@@ -18,7 +18,18 @@ domain verification and change-scoped validation tooling.
   delayed-commit, private invalidation and activity/push separation proofs.
   Its `--upgrade` mode resets only an explicitly disposable local stack to
   populated MSG01, then verifies atomic cutover and retained historical rows.
+  Its first upgraded feed read polls PostgREST's `PGRST202` missing-cache response
+  for up to 10 seconds, every 200ms, because CLI completion precedes schema-cache
+  readiness. Other errors and all mutations fail immediately without retries.
 - `classify-validation-paths.mjs` selects affected hosted validation areas.
+- `verify-local-message-list-preview-upgrade.mjs` resets an explicitly disposable
+  local stack to main's `20261007103000` predecessor (including MSG02), populates
+  canonical pair/legacy/group fixtures, applies
+  UI-MSG03 and proves v3 definitions/payloads remain identical across every
+  fixture actor and scope while v4 adds only its two preview fields. Run
+  `npm exec --call "node scripts/verify-local-message-list-preview-upgrade.mjs"` with
+  `PLANETS_DISPOSABLE_QA=1` and the selected stack's `MAILPIT_URL`; it never
+  targets a hosted database.
 - `lib/` owns shared local-session/status/photo helpers, deterministic demo
   validation and classifier logic with focused tests.
 

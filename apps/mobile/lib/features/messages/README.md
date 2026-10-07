@@ -30,11 +30,15 @@ durable human-message unread state; activity alerts remain in Notifications.
   exact-item reads use the unified 04C4C2 RPCs; Project-only selection and
   mutation operations keep their existing 04C3B1/05A boundaries. Each narrow
   response is parsed strictly and cross-domain field mixtures fail closed.
-- `data/message_chats_gateway.dart` reads `list_own_scoped_conversation_items_v3`,
+- `data/message_chats_gateway.dart` reads `list_own_scoped_conversation_items_v4`,
   the canonical scoped unified Chats RPC with pair pending totals. It strictly
   validates branch XOR fields, request-context lifecycle fields,
   human-preview completeness, and the Resource-only canonical opposite-party
   identity returned by that projection.
+  Two nullable preview fields distinguish the latest pair request status and
+  latest visible group system-event label from an older human preview. Pair
+  route context remains independent; human activity wins exact timestamp ties.
+  The released v3 shape and function remain unchanged.
 - `domain/message_unread_models.dart` validates complete account/scope counts
   and server-issued newest-feed snapshot tokens.
 - `data/message_unread_gateway.dart` owns expected-identity summary/read RPCs
@@ -72,6 +76,15 @@ durable human-message unread state; activity alerts remain in Notifications.
   Project/Resource request cards. Group rows never receive a person avatar.
   Chats and Private are deterministic defaults. Canonical unread counts are
   independent of pending requests and agreement activity.
+  Conversation rows share identity/preview content with trailing local time
+  above incoming human-message count. Private rows use counterparty names;
+  role/kind/read-only/context metadata stays in detail experiences. Scope
+  labels contain canonical conversation counts to the right, zero hidden;
+  unknown/stale counts remain explicit. Selected navigation badges use theme
+  inverse colors, including the unavailable variant.
+  Private counterparty previews omit the redundant name; historical replies
+  by a different legacy author retain that author's name, and own replies use
+  localized You/Tu.
 - `presentation/participation_request_details.dart` owns the reusable authorized
   Project request details sheet/content, canonical actions, resolved history,
   and Proposal/Tavolo navigation. The old full-screen request route is a thin
@@ -79,6 +92,11 @@ durable human-message unread state; activity alerts remain in Notifications.
   detail-only so the inbox never performs per-row selection fan-out.
 - `presentation/messages_formatters.dart` owns the shared safe relative-time and
   status formatting used by Messages and request-chat presentation.
+  Conversation timestamps use local calendar days: today `HH:mm`, earlier
+  within six days an abbreviated localized weekday, otherwise localized
+  compact date including year. Existing request/detail date formatting stays
+  separate. Pair read-only footer explains reactivation through a new eligible
+  pending request; it does not change canonical send entitlement.
 - The adjacent `project_request_chat/` feature owns request-chat transport,
   identity-bound state, private identifier-only Realtime signals, structured
   request history, pinned lifecycle actions, and the pending-only composer.

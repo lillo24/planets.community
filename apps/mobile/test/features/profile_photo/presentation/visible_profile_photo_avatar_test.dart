@@ -8,6 +8,35 @@ import 'package:planets_mobile/features/profile_photo/presentation/visible_profi
 import '../../../support/fake_profile_photo.dart';
 
 void main() {
+  testWidgets('same authorized bytes stay rendered during revalidation', (
+    tester,
+  ) async {
+    final bytes = avatarPngBytes();
+    for (final phase in [
+      VisibleProfilePhotoPhase.ready,
+      VisibleProfilePhotoPhase.loading,
+    ]) {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: VisibleProfilePhotoAvatar(
+            entry: VisibleProfilePhotoEntry(
+              targetProfileId: _target,
+              phase: phase,
+              imageBytes: bytes,
+            ),
+            imageSemanticsLabel: 'Requester photo',
+            placeholderSemanticsLabel: 'No requester photo',
+          ),
+        ),
+      );
+      expect(find.byType(Image), findsOneWidget);
+      expect(find.byIcon(Icons.person_outline), findsNothing);
+      expect(
+        (tester.widget<Image>(find.byType(Image)).image as MemoryImage).bytes,
+        same(bytes),
+      );
+    }
+  });
   testWidgets('authorized bytes render and absent/failure use a placeholder', (
     tester,
   ) async {
