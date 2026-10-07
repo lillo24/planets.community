@@ -20,6 +20,10 @@ PR #159 then merged. Integrated main
 `c89ffb72e9fb0b389b40f1d283545245c52dd52b` without conflicts, preserving its
 creation/editor controls and template timezone correction. Its source remains
 intact; the UI-MSG03 forward migration is independent of that correction.
+The unmerged migration was moved to CLI-generated version `20261007102140`
+after PR #159's `20261007090000`, with identical SQL, so upgrades from latest
+main do not require out-of-order migration application. No shared history is
+rewritten; the earlier task version ran only in disposable local QA.
 
 CI exposed the existing unread-upgrade verifier calling its new feed RPC before
 PostgREST finished schema-cache reload (`PGRST202`). Following the existing
@@ -72,7 +76,7 @@ activity includes resolutions of every associated request. An older request
 can resolve after a newer request and human message. V3 therefore cannot
 identify the correct latest status from its context fields alone.
 
-Forward migration `20261007085751_messages_list_activity_preview.sql` adds only
+Forward migration `20261007102140_messages_list_activity_preview.sql` adds only
 `list_own_scoped_conversation_items_v4`, delegating paging, authorization, route
 context, bodies and unread to unchanged v3 and adding two nullable fields:
 
@@ -101,6 +105,7 @@ preview using the latest authorized event without pair context.
 
 `PLANETS_DISPOSABLE_QA=1 node scripts/verify-local-message-list-preview-upgrade.mjs`
 passed on a separate loopback QA stack: five populated actors, ten scope pages;
+the final rehearsal upgrades current main's `20261007090000` predecessor;
 v3 function definition, payload fields, order and unread stayed identical across
 actual forward migration; v4 was strictly additive. The selected stack used
 `MAILPIT_URL=http://127.0.0.1:64524` and temporary project/port isolation; repository

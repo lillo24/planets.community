@@ -10,7 +10,8 @@ assert.ok(
 );
 const status = readLocalSupabaseStatus(process.cwd());
 assert.ok(["localhost", "127.0.0.1"].includes(new URL(status.apiUrl).hostname));
-cli("supabase", ["db", "reset", "--local", "--version", "20261006131533"]);
+// Current main predecessor includes MSG02 and the independent UI-NEXT-03 fix.
+cli("supabase", ["db", "reset", "--local", "--version", "20261007090000"]);
 cli(process.execPath, ["scripts/verify-local-participation-conversations.mjs"]);
 const sql = postgres(status.databaseUrl, { max: 1, onnotice: () => {} });
 try {

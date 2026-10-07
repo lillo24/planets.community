@@ -23,7 +23,8 @@ domain verification and change-scoped validation tooling.
   readiness. Other errors and all mutations fail immediately without retries.
 - `classify-validation-paths.mjs` selects affected hosted validation areas.
 - `verify-local-message-list-preview-upgrade.mjs` resets an explicitly disposable
-  local stack to MSG02, populates canonical pair/legacy/group fixtures, applies
+  local stack to main's `20261007090000` predecessor (including MSG02), populates
+  canonical pair/legacy/group fixtures, applies
   UI-MSG03 and proves v3 definitions/payloads remain identical across every
   fixture actor and scope while v4 adds only its two preview fields. Run
   `npm exec --call "node scripts/verify-local-message-list-preview-upgrade.mjs"` with
