@@ -200,8 +200,9 @@ void main() {
                 expect(urgency.bottom, lessThanOrEqualTo(cover.bottom));
                 expect(requested.bottom, lessThanOrEqualTo(cover.bottom));
                 expect(requested.top, greaterThanOrEqualTo(cover.top + 8));
-                if (requested.top > urgency.top)
+                if (requested.top > urgency.top) {
                   expect(requested.top, greaterThanOrEqualTo(urgency.bottom));
+                }
                 final label = language == 'it' ? 'Tra 2 giorni' : 'In 2 days';
                 expect(
                   MediaQuery.textScalerOf(tester.element(find.text(_longTitle)))
