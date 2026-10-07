@@ -108,6 +108,7 @@ void main() {
         find.byKey(const Key('proposal-title')),
         'Prior sparse draft',
       );
+      await tester.pump();
       await tester.tap(find.byKey(const Key('proposal-editor-workshop')));
       await tester.pumpAndSettle();
       expect(app.proposals.calls.where((c) => c == 'create'), hasLength(1));
@@ -159,6 +160,7 @@ void main() {
     (tester) async {
       final app = await pumpWorkshop(tester, initial: '/proposals/create');
       await tester.enterText(find.byKey(const Key('proposal-title')), 'x');
+      await tester.pump();
       await tester.tap(find.byKey(const Key('proposal-editor-workshop')));
       await tester.pumpAndSettle();
       expect(find.byType(TemplateWorkshopScreen), findsNothing);
@@ -297,15 +299,15 @@ void main() {
       expect(find.byType(ProposalDetailScreen), findsNothing);
       app.router.go('/proposals/create');
       await tester.pumpAndSettle();
+      expect(find.text('How would you like to start?'), findsOneWidget);
+      await tester.tap(find.byKey(const Key('proposal-start-scratch')));
+      await tester.pumpAndSettle();
       expect(find.byType(ProposalEditorScreen), findsOneWidget);
-      await reveal(
-        tester,
-        find.textContaining('automatically become reusable'),
-      );
       expect(
         find.textContaining('automatically become reusable'),
-        findsOneWidget,
+        findsNothing,
       );
+      expect(find.byKey(const Key('proposal-editor-workshop')), findsNothing);
     },
   );
 }

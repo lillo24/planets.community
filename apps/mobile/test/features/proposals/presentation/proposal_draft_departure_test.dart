@@ -32,12 +32,7 @@ void main() {
     ) async {
       final app = await pumpEditor(tester, locale: locale);
       await tester.enterText(find.byKey(const Key('proposal-title')), 'Garden');
-      final skill = find.byKey(const Key('proposal-skill-mural'));
-      await reveal(tester, skill);
-      tester.widget<DropdownButton<ProposalSkillImportance?>>(skill).onChanged!(
-        ProposalSkillImportance.useful,
-      );
-      await tester.pump();
+      await selectMural(tester);
       await tester.tap(find.byType(BackButton));
       await tester.pumpAndSettle();
       expect(find.text('Original destination'), findsOneWidget);
@@ -315,12 +310,7 @@ void main() {
     tester,
   ) async {
     final app = await pumpEditor(tester);
-    final skill = find.byKey(const Key('proposal-skill-mural'));
-    await reveal(tester, skill);
-    tester.widget<DropdownButton<ProposalSkillImportance?>>(skill).onChanged!(
-      ProposalSkillImportance.useful,
-    );
-    await tester.pump();
+    await selectMural(tester);
     app.router.go('/destination');
     await tester.pumpAndSettle();
     expect(app.gateway.lastInput!.title, '');
@@ -431,7 +421,6 @@ void main() {
     'proposal-title': 'x',
     'proposal-people-capacity': 'abc',
     'proposal-country': 'I',
-    'proposal-timezone': 'Unknown/Zone',
   }.entries) {
     testWidgets(
       'invalid raw ${field.key} blocks departure and remains editable',
@@ -779,5 +768,16 @@ Future<void> reveal(WidgetTester tester, Finder finder) async {
         )
         .first,
   );
+  await tester.pumpAndSettle();
+}
+
+Future<void> selectMural(WidgetTester tester) async {
+  final trigger = find.byKey(const Key('proposal-skills-trigger'));
+  await reveal(tester, trigger);
+  await tester.tap(trigger);
+  await tester.pumpAndSettle();
+  await tester.tap(find.byKey(const Key('proposal-skills-option-mural')));
+  await tester.pump();
+  await tester.tap(find.byKey(const Key('proposal-skills-apply')));
   await tester.pumpAndSettle();
 }

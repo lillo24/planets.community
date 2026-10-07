@@ -2207,5 +2207,15 @@
       }
     }
   },
-  "browsePreviousResults": "Previous results — these do not match the current filters."
+  "browsePreviousResults": "Previous results — these do not match the current filters.",
+  "proposalStartChoice": "How would you like to start?",
+  "proposalFromTemplate": "From a template",
+  "proposalFromScratch": "From scratch",
+  "proposalCapacityDecrease": "Decrease registration capacity",
+  "proposalCapacityIncrease": "Increase registration capacity",
+  "proposalChooseDateTime": "Choose date and time",
+  "proposalScheduleZone": "Times shown in {zone}",
+  "proposalDemoReplaceTitle": "Replace your entries?",
+  "proposalDemoReplaceMessage": "Sample data will replace the values you have entered. Nothing is saved until you choose to save or publish.",
+  "@proposalScheduleZone": {"placeholders": {"zone": {"type": "String"}}}
 }

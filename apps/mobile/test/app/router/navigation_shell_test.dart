@@ -50,6 +50,84 @@ import '../../support/fake_message_chats.dart';
 
 void main() {
   testWidgets(
+    'protected creation return opens the chooser before scratch and never creates on sign-in',
+    (tester) async {
+      final proposals = FakeProposalGateway();
+      final app = await _pump(tester, signedIn: false, proposals: proposals);
+      final router = app.read(appRouterProvider);
+      router.go('/proposals/create');
+      await tester.pumpAndSettle();
+      expect(
+        router.routerDelegate.state.uri.queryParameters['returnTo'],
+        '/proposals/create',
+      );
+      await tester.enterText(
+        find.byKey(const Key('auth-email-field')),
+        'person@example.com',
+      );
+      await _tap(tester, 'auth-request-button');
+      await tester.enterText(
+        find.byKey(const Key('auth-code-field')),
+        '123456',
+      );
+      await _tap(tester, 'auth-verify-button');
+      expect(find.text('How would you like to start?'), findsOneWidget);
+      expect(proposals.calls, isNot(contains('create')));
+      await _tap(tester, 'proposal-start-scratch');
+      expect(find.byKey(const Key('proposal-title')), findsOneWidget);
+      expect(proposals.calls, isNot(contains('create')));
+    },
+  );
+
+  testWidgets(
+    'saving a typed hub Project returns to its filters and refreshes its own rows',
+    (tester) async {
+      final gateway = FakeProposalGateway()..ownItems = [ownProposalFixture()];
+      final app = await _pump(
+        tester,
+        proposals: gateway,
+        proposalNow: DateTime.utc(2026, 9, 3),
+      );
+      final router = app.read(appRouterProvider);
+      router.go('/drafts?types=project');
+      await tester.pumpAndSettle();
+      await _tap(tester, 'draft-project-proposal-1');
+      expect(find.byKey(const Key('proposal-start-scratch')), findsNothing);
+      await tester.enterText(
+        find.byKey(const Key('proposal-title')),
+        'Saved from the hub',
+      );
+      final save = find.byKey(const Key('proposal-save-draft'));
+      await tester.scrollUntilVisible(
+        save,
+        300,
+        scrollable: find
+            .descendant(
+              of: find.byType(ListView),
+              matching: find.byType(Scrollable),
+            )
+            .first,
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(save);
+      await tester.pumpAndSettle();
+      expect(router.routerDelegate.state.uri.path, '/drafts');
+      expect(
+        tester
+            .widget<FilterChip>(find.byKey(const Key('draft-type-project')))
+            .selected,
+        isTrue,
+      );
+      expect(find.text('Saved from the hub'), findsOneWidget);
+      expect(gateway.calls.where((call) => call == 'create'), isEmpty);
+      expect(
+        gateway.calls.where((call) => call == 'update:proposal-1'),
+        hasLength(1),
+      );
+    },
+  );
+
+  testWidgets(
     'draft hub keeps Browse selected and retains contextual filters across Home',
     (tester) async {
       final app = await _pump(
@@ -508,7 +586,7 @@ void main() {
     );
     final app = await _pump(tester, auth: auth, destination: null);
     final router = app.read(appRouterProvider);
-    router.go('/proposals/create');
+    router.go('/proposals/create/scratch');
     await tester.pumpAndSettle();
     await tester.enterText(
       find.widgetWithText(TextFormField, 'Title'),
@@ -594,7 +672,7 @@ void main() {
 
     for (final entry in {
       '/profile/edit': 'profile-fill-sample',
-      '/proposals/create': 'proposal-fill-sample',
+      '/proposals/create/scratch': 'proposal-fill-sample',
       '/tavoli/create': 'tavoli-fill-sample',
       '/resources/create': 'resource-fill-sample',
     }.entries) {
@@ -1209,6 +1287,12 @@ void main() {
       await _tap(tester, 'nav-home');
       await _tap(tester, 'nav-browse');
       await _tap(tester, 'proposal-create-action');
+      if (find
+          .byKey(const Key('proposal-start-scratch'))
+          .evaluate()
+          .isNotEmpty) {
+        await _tap(tester, 'proposal-start-scratch');
+      }
       await tester.enterText(
         find.widgetWithText(TextFormField, 'Title'),
         'Unsaved activity',
@@ -1243,7 +1327,7 @@ void main() {
     final pending = Completer<void>();
     final proposals = FakeProposalGateway()..mutationDelay = pending.future;
     final app = await _pump(tester, proposals: proposals);
-    app.read(appRouterProvider).go('/proposals/create');
+    app.read(appRouterProvider).go('/proposals/create/scratch');
     await tester.pumpAndSettle();
     await tester.enterText(
       find.byKey(const Key('proposal-title')),
@@ -1317,6 +1401,12 @@ void main() {
       await _tap(tester, 'nav-home');
       await _tap(tester, 'nav-browse');
       await _tap(tester, 'proposal-create-action');
+      if (find
+          .byKey(const Key('proposal-start-scratch'))
+          .evaluate()
+          .isNotEmpty) {
+        await _tap(tester, 'proposal-start-scratch');
+      }
       expect(
         find.byKey(const Key('profile-display-name-field')),
         findsOneWidget,
@@ -1347,6 +1437,9 @@ void main() {
     );
     await _tap(tester, 'nav-browse');
     await _tap(tester, 'proposal-create-action');
+    if (find.byKey(const Key('proposal-start-scratch')).evaluate().isNotEmpty) {
+      await _tap(tester, 'proposal-start-scratch');
+    }
     await tester.enterText(
       find.widgetWithText(TextFormField, 'Title'),
       'Private draft A',
@@ -1364,6 +1457,9 @@ void main() {
     );
     expect(find.text('Private draft A', skipOffstage: false), findsNothing);
     await _tap(tester, 'proposal-create-action');
+    if (find.byKey(const Key('proposal-start-scratch')).evaluate().isNotEmpty) {
+      await _tap(tester, 'proposal-start-scratch');
+    }
     await _tap(tester, 'nav-home');
     auth.emit(const AuthSnapshot());
     await tester.pumpAndSettle();

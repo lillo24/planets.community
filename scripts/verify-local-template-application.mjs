@@ -334,7 +334,6 @@ try {
   for (const key of [
     "starts_at",
     "ends_at",
-    "event_timezone",
     "country_code",
     "locality",
     "administrative_area",
@@ -344,6 +343,11 @@ try {
     "cancelled_at",
   ])
     equal(draft.proposal[key], null, "reset " + key);
+  equal(
+    draft.proposal.event_timezone,
+    "Europe/Rome",
+    "new template Italy default",
+  );
   equal(draft.proposal.lifecycle_state, "draft", "private unpublished draft");
   equal(draft.meeting.exact_meeting_text, null, "no source meeting text");
   equal(

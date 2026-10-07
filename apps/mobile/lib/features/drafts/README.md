@@ -23,3 +23,7 @@ recovery uses its original actor-bound request and existing editor route.
 Cards use canonical owner cover metadata without placeholders. The local demo
 world has four ordinary Giulia-owned drafts; see
 [demo data](../../../../../docs/development/demo-data.md).
+
+Project edits and first-creation recovery pass typed `DraftEditorOrigin.hub`.
+Their successful save pops back, preserving filters and refreshing the source.
+Ordinary Project editor entry retains its canonical owner-management destination.
