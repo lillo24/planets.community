@@ -159,7 +159,7 @@ class _PublicRecurringActivitiesScreenState
                               '/tavoli/${requested.activity.id}',
                             ),
                           ),
-                          const SizedBox(height: AppSpacing.small),
+                          const SizedBox(height: AppSpacing.medium),
                         ],
                       ],
                       if (state.requestedItems.isNotEmpty &&
@@ -176,7 +176,7 @@ class _PublicRecurringActivitiesScreenState
                           activity: activity,
                           onTap: () => context.push('/tavoli/${activity.id}'),
                         ),
-                        const SizedBox(height: AppSpacing.small),
+                        const SizedBox(height: AppSpacing.medium),
                       ],
                     ],
                     if (state.phase == RecurringActivityLoadPhase.failure &&

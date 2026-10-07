@@ -155,6 +155,7 @@ class _TemplateWorkshopScreenState extends ConsumerState<TemplateWorkshopScreen>
                 ),
               for (final attempt in attempts)
                 Card(
+                  margin: const EdgeInsets.only(bottom: AppSpacing.medium),
                   child: ListTile(
                     title: Text(
                       attempt.destinationId == null
@@ -191,6 +192,7 @@ class _TemplateWorkshopScreenState extends ConsumerState<TemplateWorkshopScreen>
                 ),
               for (final item in state.items)
                 Card(
+                  margin: const EdgeInsets.only(bottom: AppSpacing.medium),
                   clipBehavior: Clip.antiAlias,
                   child: InkWell(
                     key: Key('template-card-${item.id}'),
