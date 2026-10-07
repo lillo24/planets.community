@@ -8,6 +8,7 @@ import '../../../core/widgets/error_state.dart';
 import '../../../core/widgets/loading_state.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../auth/application/auth_session_controller.dart';
+import '../../auth/domain/auth_models.dart';
 import '../../cover_media/presentation/cover_image.dart';
 import '../application/resource_listing_controllers.dart';
 import '../domain/resource_listing_models.dart';
@@ -32,7 +33,11 @@ class _OwnResourceListingsScreenState
   }
 
   Future<void> _load() async {
-    final identity = ref.read(authSessionProvider).identity;
+    if (!mounted) return;
+    final session = ref.read(authSessionProvider);
+    final identity = session.phase == AuthSessionPhase.ready
+        ? session.identity
+        : null;
     if (identity != null) {
       _requestedIdentity = identity.id;
       await ref.read(ownResourceListingsProvider.notifier).load(identity.id);
@@ -42,12 +47,17 @@ class _OwnResourceListingsScreenState
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final identity = ref.watch(authSessionProvider).identity;
+    final session = ref.watch(authSessionProvider);
+    final identity = session.phase == AuthSessionPhase.ready
+        ? session.identity
+        : null;
     final state = ref.watch(ownResourceListingsProvider);
     final items = state.expectedOwnerId == identity?.id
         ? state.items
         : const <OwnResourceListing>[];
-    if (identity != null && _requestedIdentity != identity.id) {
+    if (identity != null &&
+        (_requestedIdentity != identity.id ||
+            state.phase == ResourceListingLoadPhase.idle)) {
       Future<void>.microtask(_load);
     }
 
@@ -56,7 +66,9 @@ class _OwnResourceListingsScreenState
       body: SafeArea(
         child: identity == null
             ? const SizedBox.shrink()
-            : state.phase == ResourceListingLoadPhase.loading && items.isEmpty
+            : (state.phase == ResourceListingLoadPhase.idle ||
+                      state.phase == ResourceListingLoadPhase.loading) &&
+                  items.isEmpty
             ? LoadingState(message: l10n.resourceLoading)
             : state.phase == ResourceListingLoadPhase.failure && items.isEmpty
             ? ErrorState(
@@ -71,14 +83,30 @@ class _OwnResourceListingsScreenState
               )
             : RefreshIndicator(
                 onRefresh: _load,
-                child: ListView.separated(
-                  physics: const AlwaysScrollableScrollPhysics(),
-                  padding: const EdgeInsets.all(AppSpacing.medium),
-                  itemCount: items.length,
-                  separatorBuilder: (_, _) =>
-                      const SizedBox(height: AppSpacing.small),
-                  itemBuilder: (context, index) =>
-                      _OwnResourceListingCard(listing: items[index]),
+                child: Column(
+                  children: [
+                    if (state.phase == ResourceListingLoadPhase.loading)
+                      const LinearProgressIndicator(),
+                    if (state.phase == ResourceListingLoadPhase.failure)
+                      ErrorState(
+                        message: resourceListingFailureMessage(
+                          l10n,
+                          state.failure,
+                        ),
+                        onRetry: _load,
+                      ),
+                    Expanded(
+                      child: ListView.separated(
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        padding: const EdgeInsets.all(AppSpacing.medium),
+                        itemCount: items.length,
+                        separatorBuilder: (_, _) =>
+                            const SizedBox(height: AppSpacing.small),
+                        itemBuilder: (context, index) =>
+                            _OwnResourceListingCard(listing: items[index]),
+                      ),
+                    ),
+                  ],
                 ),
               ),
       ),

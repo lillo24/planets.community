@@ -15,6 +15,7 @@ import '../../../l10n/generated/app_localizations.dart';
 import '../../auth/application/auth_session_controller.dart';
 import '../../cover_media/presentation/project_cover_image.dart';
 import '../../auth/domain/auth_models.dart';
+import '../../drafts/domain/draft_entry.dart';
 import '../../blocking/presentation/blocking_action.dart';
 import '../../moderation/presentation/moderation_routes.dart';
 import '../../participation/application/participation_controllers.dart';
@@ -86,169 +87,171 @@ class _PublicProposalsScreenState extends ConsumerState<PublicProposalsScreen> {
           ),
           IconButton(
             key: const Key('my-proposals-action'),
-            tooltip: l10n.proposalMyTitle,
-            onPressed: () => context.push('/proposals/mine'),
+            tooltip: l10n.draftsTitle,
+            onPressed: () =>
+                context.push(DraftRoutes.contextual({DraftKind.project})),
             icon: const Icon(Icons.folder_outlined),
           ),
         ],
       ),
       body: SafeArea(
-        child:
-            state.phase == ProposalLoadPhase.loading &&
-                state.items.isEmpty &&
-                state.requestedItems.isEmpty
-            ? LoadingState(message: l10n.proposalLoading)
-            : state.phase == ProposalLoadPhase.failure &&
-                  state.items.isEmpty &&
-                  state.requestedItems.isEmpty
-            ? ErrorState(
-                message: l10n.proposalSafeError,
-                onRetry: () =>
-                    ref.read(publicProposalsProvider.notifier).load(),
-              )
-            : RefreshIndicator(
-                onRefresh: () =>
-                    ref.read(publicProposalsProvider.notifier).load(),
-                child: ListView(
-                  padding: const EdgeInsets.all(AppSpacing.medium),
-                  children: [
-                    const BrowseActivitySwitcher(
-                      selected: BrowseActivityType.proposals,
-                    ),
-                    const SizedBox(height: AppSpacing.medium),
-                    OutlinedButton.icon(
-                      onPressed: () => context.push(WorkshopRoutes.catalog),
-                      icon: const Icon(Icons.auto_stories_outlined),
-                      label: Text(l10n.workshopStartFromTemplate),
-                    ),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: TextField(
-                            key: const Key('proposal-query-filter'),
-                            controller: _queryController,
-                            maxLength: 120,
-                            textInputAction: TextInputAction.search,
-                            decoration: InputDecoration(
-                              labelText: l10n.proposalSearchLabel,
-                              prefixIcon: const Icon(Icons.search),
-                              isDense: true,
-                              contentPadding: const EdgeInsets.symmetric(
-                                horizontal: AppSpacing.medium,
-                                vertical: AppSpacing.small,
-                              ),
-                              counterText: '',
-                            ),
-                            onChanged: (_) => _scheduleQuery(),
-                            onSubmitted: (_) => _flushQuery(),
-                          ),
-                        ),
-                        const SizedBox(width: AppSpacing.small),
-                        BrowseFilterButton(
-                          key: const Key('proposal-toggle-filters'),
-                          expanded: _filtersExpanded,
-                          hasActiveFilters:
-                              state.locality.trim().isNotEmpty ||
-                              state.selectedSkillIds.isNotEmpty,
-                          onPressed: () {
-                            FocusScope.of(context).unfocus();
-                            setState(
-                              () => _filtersExpanded = !_filtersExpanded,
-                            );
-                          },
-                        ),
-                      ],
-                    ),
-                    if (_filtersExpanded) ...[
-                      const SizedBox(height: AppSpacing.medium),
-                      TextField(
-                        key: const Key('proposal-locality-filter'),
-                        controller: _localityController,
-                        decoration: InputDecoration(
-                          labelText: l10n.proposalLocalityFilter,
-                          suffixIcon: IconButton(
-                            key: const Key('proposal-apply-filters'),
-                            onPressed: state.isBusy ? null : _applyFilters,
-                            icon: const Icon(Icons.search),
-                          ),
-                        ),
-                      ),
-                      if (state.categories.isNotEmpty) ...[
-                        const SizedBox(height: AppSpacing.medium),
-                        SkillFilter(
-                          categories: state.categories,
-                          selectedIds: state.selectedSkillIds,
-                          enabled: !state.isBusy,
-                          onApply: (selection) =>
-                              _applyFilters(skillIds: selection),
-                        ),
-                      ],
-                    ],
-                    const SizedBox(height: AppSpacing.medium),
-                    if (state.items.isEmpty && state.requestedItems.isEmpty)
-                      EmptyState(
-                        title: l10n.proposalEmptyTitle,
-                        message: l10n.proposalEmptyMessage,
-                        icon: Icons.event_available_outlined,
-                      )
-                    else ...[
-                      if (state.requestedItems.isNotEmpty) ...[
-                        Text(
-                          l10n.browseRequestedSection,
-                          key: const Key('proposal-requested-section'),
-                          style: Theme.of(context).textTheme.titleLarge,
-                        ),
-                        const SizedBox(height: AppSpacing.small),
-                        for (final requested in state.requestedItems) ...[
-                          ProposalCard(
-                            proposal: requested.proposal,
-                            isRequested: true,
-                            onTap: () => context.push(
-                              '/proposals/${requested.proposal.id}',
-                            ),
-                          ),
-                          const SizedBox(height: AppSpacing.small),
-                        ],
-                      ],
-                      if (state.requestedItems.isNotEmpty &&
-                          state.ordinaryItems.isNotEmpty) ...[
-                        Text(
-                          l10n.browseOtherProjectsSection,
-                          key: const Key('proposal-other-section'),
-                          style: Theme.of(context).textTheme.titleLarge,
-                        ),
-                        const SizedBox(height: AppSpacing.small),
-                      ],
-                      for (final proposal in state.ordinaryItems) ...[
-                        ProposalCard(
-                          proposal: proposal,
-                          onTap: () =>
-                              context.push('/proposals/${proposal.id}'),
-                        ),
-                        const SizedBox(height: AppSpacing.small),
-                      ],
-                    ],
-                    if (state.phase == ProposalLoadPhase.failure &&
-                        state.items.isNotEmpty)
-                      Text(
-                        l10n.proposalSafeError,
-                        key: const Key('proposal-safe-error'),
-                      ),
-                    if (state.items.isNotEmpty && state.hasMore)
-                      OutlinedButton(
-                        key: const Key('proposal-load-more'),
-                        onPressed: state.isBusy
-                            ? null
-                            : () => ref
-                                  .read(publicProposalsProvider.notifier)
-                                  .load(reset: false),
-                        child: state.phase == ProposalLoadPhase.loadingMore
-                            ? const CircularProgressIndicator()
-                            : Text(l10n.proposalLoadMore),
-                      ),
-                  ],
-                ),
+        child: RefreshIndicator(
+          onRefresh: () => ref.read(publicProposalsProvider.notifier).load(),
+          child: ListView(
+            key: const PageStorageKey('public-proposals-list'),
+            physics: const AlwaysScrollableScrollPhysics(),
+            padding: const EdgeInsets.all(AppSpacing.medium),
+            children: [
+              const BrowseActivitySwitcher(
+                selected: BrowseActivityType.proposals,
               ),
+              const SizedBox(height: AppSpacing.medium),
+              OutlinedButton.icon(
+                onPressed: () => context.push(WorkshopRoutes.catalog),
+                icon: const Icon(Icons.auto_stories_outlined),
+                label: Text(l10n.workshopStartFromTemplate),
+              ),
+              Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      key: const Key('proposal-query-filter'),
+                      controller: _queryController,
+                      maxLength: 120,
+                      textInputAction: TextInputAction.search,
+                      decoration: InputDecoration(
+                        labelText: l10n.proposalSearchLabel,
+                        prefixIcon: const Icon(Icons.search),
+                        isDense: true,
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: AppSpacing.medium,
+                          vertical: AppSpacing.small,
+                        ),
+                        counterText: '',
+                      ),
+                      onChanged: (_) => _scheduleQuery(),
+                      onSubmitted: (_) => _flushQuery(),
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.small),
+                  BrowseFilterButton(
+                    key: const Key('proposal-toggle-filters'),
+                    expanded: _filtersExpanded,
+                    hasActiveFilters:
+                        state.locality.trim().isNotEmpty ||
+                        state.selectedSkillIds.isNotEmpty,
+                    onPressed: () {
+                      FocusScope.of(context).unfocus();
+                      setState(() => _filtersExpanded = !_filtersExpanded);
+                    },
+                  ),
+                ],
+              ),
+              if (_filtersExpanded) ...[
+                const SizedBox(height: AppSpacing.medium),
+                TextField(
+                  key: const Key('proposal-locality-filter'),
+                  controller: _localityController,
+                  decoration: InputDecoration(
+                    labelText: l10n.proposalLocalityFilter,
+                    suffixIcon: IconButton(
+                      key: const Key('proposal-apply-filters'),
+                      onPressed: state.isBusy ? null : _applyFilters,
+                      icon: const Icon(Icons.search),
+                    ),
+                  ),
+                ),
+                if (state.categories.isNotEmpty) ...[
+                  const SizedBox(height: AppSpacing.medium),
+                  SkillFilter(
+                    categories: state.categories,
+                    selectedIds: state.selectedSkillIds,
+                    enabled: !state.isBusy,
+                    onApply: (selection) => _applyFilters(skillIds: selection),
+                  ),
+                ],
+              ],
+              if (state.phase == ProposalLoadPhase.loading &&
+                  !(state.items.isEmpty && state.requestedItems.isEmpty))
+                LinearProgressIndicator(semanticsLabel: l10n.proposalLoading),
+              const SizedBox(height: AppSpacing.medium),
+              if ((state.phase == ProposalLoadPhase.idle ||
+                      state.phase == ProposalLoadPhase.loading) &&
+                  state.items.isEmpty &&
+                  state.requestedItems.isEmpty)
+                LoadingState(message: l10n.proposalLoading)
+              else if (state.phase == ProposalLoadPhase.failure &&
+                  state.items.isEmpty &&
+                  state.requestedItems.isEmpty)
+                ErrorState(
+                  message: l10n.proposalSafeError,
+                  onRetry: () =>
+                      ref.read(publicProposalsProvider.notifier).load(),
+                )
+              else if (state.items.isEmpty && state.requestedItems.isEmpty)
+                EmptyState(
+                  title: l10n.proposalEmptyTitle,
+                  message: l10n.proposalEmptyMessage,
+                  icon: Icons.event_available_outlined,
+                )
+              else ...[
+                if (state.requestedItems.isNotEmpty) ...[
+                  Text(
+                    l10n.browseRequestedSection,
+                    key: const Key('proposal-requested-section'),
+                    style: Theme.of(context).textTheme.titleLarge,
+                  ),
+                  const SizedBox(height: AppSpacing.small),
+                  for (final requested in state.requestedItems) ...[
+                    ProposalCard(
+                      proposal: requested.proposal,
+                      isRequested: true,
+                      onTap: () =>
+                          context.push('/proposals/${requested.proposal.id}'),
+                    ),
+                    const SizedBox(height: AppSpacing.small),
+                  ],
+                ],
+                if (state.requestedItems.isNotEmpty &&
+                    state.ordinaryItems.isNotEmpty) ...[
+                  Text(
+                    l10n.browseOtherProjectsSection,
+                    key: const Key('proposal-other-section'),
+                    style: Theme.of(context).textTheme.titleLarge,
+                  ),
+                  const SizedBox(height: AppSpacing.small),
+                ],
+                for (final proposal in state.ordinaryItems) ...[
+                  ProposalCard(
+                    proposal: proposal,
+                    onTap: () => context.push('/proposals/${proposal.id}'),
+                  ),
+                  const SizedBox(height: AppSpacing.small),
+                ],
+              ],
+              if (state.phase == ProposalLoadPhase.failure &&
+                  state.items.isNotEmpty)
+                ErrorState(
+                  key: const Key('proposal-safe-error'),
+                  message: l10n.proposalSafeError,
+                  onRetry: () =>
+                      ref.read(publicProposalsProvider.notifier).load(),
+                ),
+              if (state.items.isNotEmpty && state.hasMore)
+                OutlinedButton(
+                  key: const Key('proposal-load-more'),
+                  onPressed: state.isBusy
+                      ? null
+                      : () => ref
+                            .read(publicProposalsProvider.notifier)
+                            .load(reset: false),
+                  child: state.phase == ProposalLoadPhase.loadingMore
+                      ? const CircularProgressIndicator()
+                      : Text(l10n.proposalLoadMore),
+                ),
+            ],
+          ),
+        ),
       ),
       floatingActionButton: FloatingActionButton.extended(
         key: const Key('proposal-create-action'),

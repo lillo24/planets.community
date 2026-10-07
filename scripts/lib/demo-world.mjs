@@ -4,6 +4,7 @@ import path from "node:path";
 import postgres from "postgres";
 import { createClient } from "@supabase/supabase-js";
 
+import { seedDemoDrafts, verifyDemoDrafts } from "./demo-drafts.mjs";
 import { signInLocalOtpUser } from "./local-authenticated-user.mjs";
 import { ensureLocalProfilePhoto } from "./local-profile-photo.mjs";
 import {
@@ -500,11 +501,13 @@ export async function seedLocalDemoWorld({
     );
     if (includeWorkshop)
       await seedWorkshop(context, { now, onCheckpoint: onWorkshopCheckpoint });
+    await seedDemoDrafts(context);
     await projectDemoNotificationOutbox(context, pairMessageIds);
     await verifyDemoWorldState(context, scenario, times);
     await verifyDemoParticipantInvitations(context, scenario);
     await verifyDemoParticipationConversation(context, scenario);
     if (includeWorkshop) await verifyWorkshop(context);
+    await verifyDemoDrafts(context);
 
     return Object.freeze({
       personas: Object.values(DEMO_PERSONAS).map((persona) => persona.email),
@@ -562,6 +565,7 @@ export async function verifyLocalDemoWorld({
     await verifyDemoParticipationConversation(context, scenario);
     await verifyDemoWorldState(context, scenario, buildDemoTimes(now));
     if (includeWorkshop) await verifyWorkshop(context);
+    await verifyDemoDrafts(context);
     return scenario;
   } finally {
     await sql`select pg_advisory_unlock_shared(${DEMO_LOCK_ID})`;

@@ -14,6 +14,7 @@ import '../../../l10n/generated/app_localizations.dart';
 import '../../auth/application/auth_session_controller.dart';
 import '../../cover_media/presentation/project_cover_image.dart';
 import '../../auth/domain/auth_models.dart';
+import '../../drafts/domain/draft_entry.dart';
 import '../../blocking/presentation/blocking_action.dart';
 import '../../moderation/presentation/moderation_routes.dart';
 import '../../participation/application/participation_controllers.dart';
@@ -71,139 +72,140 @@ class _PublicRecurringActivitiesScreenState
         actions: [
           IconButton(
             key: const Key('my-tavoli-action'),
-            tooltip: l10n.tavoliMyTitle,
-            onPressed: () => context.push('/tavoli/mine'),
+            tooltip: l10n.draftsTitle,
+            onPressed: () =>
+                context.push(DraftRoutes.contextual({DraftKind.table})),
             icon: const Icon(Icons.folder_outlined),
           ),
         ],
       ),
       body: SafeArea(
-        child:
-            state.phase == RecurringActivityLoadPhase.loading &&
-                state.items.isEmpty &&
-                state.requestedItems.isEmpty
-            ? LoadingState(message: l10n.tavoliLoading)
-            : state.phase == RecurringActivityLoadPhase.failure &&
-                  state.items.isEmpty &&
-                  state.requestedItems.isEmpty
-            ? ErrorState(
-                message: l10n.tavoliSafeError,
-                onRetry: () =>
-                    ref.read(publicRecurringActivitiesProvider.notifier).load(),
-              )
-            : RefreshIndicator(
-                onRefresh: () =>
-                    ref.read(publicRecurringActivitiesProvider.notifier).load(),
-                child: ListView(
-                  key: const PageStorageKey('public-tavoli-list'),
-                  padding: const EdgeInsets.all(AppSpacing.medium),
-                  children: [
-                    const BrowseActivitySwitcher(
-                      selected: BrowseActivityType.tavoli,
-                    ),
-                    const SizedBox(height: AppSpacing.medium),
-                    Align(
-                      alignment: Alignment.centerRight,
-                      child: BrowseFilterButton(
-                        key: const Key('tavoli-toggle-filters'),
-                        expanded: _filtersExpanded,
-                        hasActiveFilters: state.locality.trim().isNotEmpty,
-                        onPressed: () {
-                          FocusScope.of(context).unfocus();
-                          setState(() => _filtersExpanded = !_filtersExpanded);
-                        },
-                      ),
-                    ),
-                    if (_filtersExpanded) ...[
-                      const SizedBox(height: AppSpacing.small),
-                      TextField(
-                        key: const Key('tavoli-locality-filter'),
-                        controller: _localityController,
-                        decoration: InputDecoration(
-                          labelText: l10n.tavoliLocalityFilter,
-                          suffixIcon: IconButton(
-                            key: const Key('tavoli-apply-filter'),
-                            onPressed: state.isBusy
-                                ? null
-                                : () => ref
-                                      .read(
-                                        publicRecurringActivitiesProvider
-                                            .notifier,
-                                      )
-                                      .applyLocality(_localityController.text),
-                            icon: const Icon(Icons.search),
-                          ),
-                        ),
-                      ),
-                    ],
-                    const SizedBox(height: AppSpacing.medium),
-                    if (state.items.isEmpty && state.requestedItems.isEmpty)
-                      EmptyState(
-                        title: l10n.tavoliEmptyTitle,
-                        message: l10n.tavoliEmptyMessage,
-                        icon: Icons.autorenew,
-                      )
-                    else ...[
-                      if (state.requestedItems.isNotEmpty) ...[
-                        Text(
-                          l10n.browseRequestedSection,
-                          key: const Key('tavolo-requested-section'),
-                          style: Theme.of(context).textTheme.titleLarge,
-                        ),
-                        const SizedBox(height: AppSpacing.small),
-                        for (final requested in state.requestedItems) ...[
-                          RecurringActivityCard(
-                            activity: requested.activity,
-                            isRequested: true,
-                            onTap: () => context.push(
-                              '/tavoli/${requested.activity.id}',
-                            ),
-                          ),
-                          const SizedBox(height: AppSpacing.small),
-                        ],
-                      ],
-                      if (state.requestedItems.isNotEmpty &&
-                          state.ordinaryItems.isNotEmpty) ...[
-                        Text(
-                          l10n.browseOtherProjectsSection,
-                          key: const Key('tavolo-other-section'),
-                          style: Theme.of(context).textTheme.titleLarge,
-                        ),
-                        const SizedBox(height: AppSpacing.small),
-                      ],
-                      for (final activity in state.ordinaryItems) ...[
-                        RecurringActivityCard(
-                          activity: activity,
-                          onTap: () => context.push('/tavoli/${activity.id}'),
-                        ),
-                        const SizedBox(height: AppSpacing.small),
-                      ],
-                    ],
-                    if (state.phase == RecurringActivityLoadPhase.failure &&
-                        state.items.isNotEmpty)
-                      Text(
-                        l10n.tavoliSafeError,
-                        key: const Key('tavoli-safe-error'),
-                      ),
-                    if (state.items.isNotEmpty && state.hasMore)
-                      OutlinedButton(
-                        key: const Key('tavoli-load-more'),
-                        onPressed: state.isBusy
-                            ? null
-                            : () => ref
-                                  .read(
-                                    publicRecurringActivitiesProvider.notifier,
-                                  )
-                                  .load(reset: false),
-                        child:
-                            state.phase ==
-                                RecurringActivityLoadPhase.loadingMore
-                            ? const CircularProgressIndicator()
-                            : Text(l10n.tavoliLoadMore),
-                      ),
-                  ],
+        child: RefreshIndicator(
+          onRefresh: () =>
+              ref.read(publicRecurringActivitiesProvider.notifier).load(),
+          child: ListView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            key: const PageStorageKey('public-tavoli-list'),
+            padding: const EdgeInsets.all(AppSpacing.medium),
+            children: [
+              const BrowseActivitySwitcher(selected: BrowseActivityType.tavoli),
+              const SizedBox(height: AppSpacing.medium),
+              Align(
+                alignment: Alignment.centerRight,
+                child: BrowseFilterButton(
+                  key: const Key('tavoli-toggle-filters'),
+                  expanded: _filtersExpanded,
+                  hasActiveFilters: state.locality.trim().isNotEmpty,
+                  onPressed: () {
+                    FocusScope.of(context).unfocus();
+                    setState(() => _filtersExpanded = !_filtersExpanded);
+                  },
                 ),
               ),
+              if (_filtersExpanded) ...[
+                const SizedBox(height: AppSpacing.small),
+                TextField(
+                  key: const Key('tavoli-locality-filter'),
+                  controller: _localityController,
+                  decoration: InputDecoration(
+                    labelText: l10n.tavoliLocalityFilter,
+                    suffixIcon: IconButton(
+                      key: const Key('tavoli-apply-filter'),
+                      onPressed: state.isBusy
+                          ? null
+                          : () => ref
+                                .read(
+                                  publicRecurringActivitiesProvider.notifier,
+                                )
+                                .applyLocality(_localityController.text),
+                      icon: const Icon(Icons.search),
+                    ),
+                  ),
+                ),
+              ],
+              if (state.phase == RecurringActivityLoadPhase.loading &&
+                  !(state.items.isEmpty && state.requestedItems.isEmpty))
+                LinearProgressIndicator(semanticsLabel: l10n.tavoliLoading),
+              const SizedBox(height: AppSpacing.medium),
+              if ((state.phase == RecurringActivityLoadPhase.idle ||
+                      state.phase == RecurringActivityLoadPhase.loading) &&
+                  state.items.isEmpty &&
+                  state.requestedItems.isEmpty)
+                LoadingState(message: l10n.tavoliLoading)
+              else if (state.phase == RecurringActivityLoadPhase.failure &&
+                  state.items.isEmpty &&
+                  state.requestedItems.isEmpty)
+                ErrorState(
+                  message: l10n.tavoliSafeError,
+                  onRetry: () => ref
+                      .read(publicRecurringActivitiesProvider.notifier)
+                      .load(),
+                )
+              else if (state.items.isEmpty && state.requestedItems.isEmpty)
+                EmptyState(
+                  title: l10n.tavoliEmptyTitle,
+                  message: l10n.tavoliEmptyMessage,
+                  icon: Icons.autorenew,
+                )
+              else ...[
+                if (state.requestedItems.isNotEmpty) ...[
+                  Text(
+                    l10n.browseRequestedSection,
+                    key: const Key('tavolo-requested-section'),
+                    style: Theme.of(context).textTheme.titleLarge,
+                  ),
+                  const SizedBox(height: AppSpacing.small),
+                  for (final requested in state.requestedItems) ...[
+                    RecurringActivityCard(
+                      activity: requested.activity,
+                      isRequested: true,
+                      onTap: () =>
+                          context.push('/tavoli/${requested.activity.id}'),
+                    ),
+                    const SizedBox(height: AppSpacing.small),
+                  ],
+                ],
+                if (state.requestedItems.isNotEmpty &&
+                    state.ordinaryItems.isNotEmpty) ...[
+                  Text(
+                    l10n.browseOtherProjectsSection,
+                    key: const Key('tavolo-other-section'),
+                    style: Theme.of(context).textTheme.titleLarge,
+                  ),
+                  const SizedBox(height: AppSpacing.small),
+                ],
+                for (final activity in state.ordinaryItems) ...[
+                  RecurringActivityCard(
+                    activity: activity,
+                    onTap: () => context.push('/tavoli/${activity.id}'),
+                  ),
+                  const SizedBox(height: AppSpacing.small),
+                ],
+              ],
+              if (state.phase == RecurringActivityLoadPhase.failure &&
+                  state.items.isNotEmpty)
+                ErrorState(
+                  key: const Key('tavoli-safe-error'),
+                  message: l10n.tavoliSafeError,
+                  onRetry: () => ref
+                      .read(publicRecurringActivitiesProvider.notifier)
+                      .load(),
+                ),
+              if (state.items.isNotEmpty && state.hasMore)
+                OutlinedButton(
+                  key: const Key('tavoli-load-more'),
+                  onPressed: state.isBusy
+                      ? null
+                      : () => ref
+                            .read(publicRecurringActivitiesProvider.notifier)
+                            .load(reset: false),
+                  child: state.phase == RecurringActivityLoadPhase.loadingMore
+                      ? const CircularProgressIndicator()
+                      : Text(l10n.tavoliLoadMore),
+                ),
+            ],
+          ),
+        ),
       ),
       floatingActionButton: FloatingActionButton.extended(
         key: const Key('tavoli-create-action'),

@@ -2192,5 +2192,20 @@
   "startupPreferenceError": "Your introduction preference could not be saved or restored. Please retry.",
   "tutorialNext": "Next",
   "tutorialFinish": "Finish",
-  "startupDevelopmentReset": "Reset welcome and tutorial (development)"
+  "startupDevelopmentReset": "Reset welcome and tutorial (development)",
+  "draftsTitle": "My drafts",
+  "draftsManagement": "Published projects and history",
+  "draftsAllTypes": "All types",
+  "draftsLoading": "Loading drafts…",
+  "draftsEmptyTitle": "No saved drafts",
+  "draftsEmptyMessage": "Saved, unpublished drafts of the selected types appear here.",
+  "draftsSourceError": "Could not refresh {source} drafts. Retry to get the complete list.",
+  "@draftsSourceError": {
+    "placeholders": {
+      "source": {
+        "type": "String"
+      }
+    }
+  },
+  "browsePreviousResults": "Previous results — these do not match the current filters."
 }

@@ -60,3 +60,12 @@ profile/content/preferences are reconciled only when changed during explicit
 seed. Snapshots discover every current public/private base table, including new
 invitation history, and exclude relative clocks only for exact named fixtures.
 See [combined stability and upgrades](../../docs/development/template-stack-integration.md).
+
+## UI-NEXT-02 demo drafts
+
+`demo-drafts.mjs` adds/verifies four ordinary private drafts through canonical
+owner RPCs. A host-local opaque receipt journal recovers interrupted creation
+without overwriting owner edits or fabricating idempotency for Tavolo/Resource
+RPCs. `demo-drafts.test.mjs` exercises unchanged reruns, lost receipts and committed
+unknown-outcome recovery. `demo-world.mjs` composes this inventory under its
+existing advisory lock; read-only verification never repairs destinations.

@@ -33,3 +33,14 @@ SIM02 suggestion selection first removes the modal overlay and restores the
 editor as the active departure owner, then performs one ordinary detail push.
 The existing guard alone prepares the draft; sheet cancellation never prepares
 it. See [automatic suggestion handoff](../../../../../docs/development/automatic-editor-suggestions.md).
+
+## UI-NEXT-02 drafts and discovery roots
+
+Browse explicitly starts at `/proposals`. Its authenticated `/drafts` sibling
+accepts contextual OR types through `?types=project,table,donate,exchange`;
+empty selection means all types. Public Project/Tavolo family roots use
+NoTransitionPage so controls survive a family switch without a slide/fade.
+Detail/editor Material pages and the single native/draft guard are retained.
+The hub belongs to the visible Browse slot. Root Back uses canonical route
+matches (including imperative pushes), since a departing Material page may leave
+the branch Navigator's `canPop` stale during a replacement.

@@ -3,6 +3,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/backend/cover_media_path.dart';
 import '../../../core/backend/supabase_backend.dart';
+import '../../../core/backend/owner_collection.dart';
 import '../../participation/domain/project_capacity.dart';
 import '../domain/recurring_activity_models.dart';
 
@@ -191,9 +192,11 @@ class SupabaseRecurringActivityGateway implements RecurringActivityGateway {
   Future<List<OwnRecurringActivity>> listOwnActivities(
     String expectedCreatorId,
   ) async {
-    final response = await _client.rpc<List<dynamic>>(
+    final response = await readOwnerCollection(
+      _client,
       'list_own_recurring_activities',
       params: {'p_expected_creator_profile_id': expectedCreatorId},
+      idColumn: 'recurring_activity_id',
     );
     final rows = response.cast<Map<String, dynamic>>();
     final capacities = await _structuralCapacities(
@@ -426,10 +429,23 @@ class SupabaseRecurringActivityGateway implements RecurringActivityGateway {
   Future<Map<String, ProjectCapacitySnapshot>> _structuralCapacities(
     String expectedProfileId,
     Iterable<String> projectIds,
-  ) => _capacityMap('list_project_capacity_statuses_for_structural_actor', {
-    'p_expected_profile_id': expectedProfileId,
-    'p_project_ids': projectIds.toList(growable: false),
-  });
+  ) async {
+    // The canonical capacity RPC permits at most 100 IDs per request.
+    final ids = projectIds.toList(growable: false);
+    final result = <String, ProjectCapacitySnapshot>{};
+    for (var start = 0; start < ids.length; start += 100) {
+      result.addAll(
+        await _capacityMap(
+          'list_project_capacity_statuses_for_structural_actor',
+          {
+            'p_expected_profile_id': expectedProfileId,
+            'p_project_ids': ids.skip(start).take(100).toList(growable: false),
+          },
+        ),
+      );
+    }
+    return result;
+  }
 
   Future<Map<String, ProjectCapacitySnapshot>> _capacityMap(
     String functionName,

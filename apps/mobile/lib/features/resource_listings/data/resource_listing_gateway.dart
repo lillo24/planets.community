@@ -3,6 +3,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/backend/cover_media_path.dart';
 import '../../../core/backend/supabase_backend.dart';
+import '../../../core/backend/owner_collection.dart';
 import '../domain/resource_listing_models.dart';
 
 const resourceListingPageSize = 20;
@@ -257,9 +258,12 @@ class SupabaseResourceListingGateway implements ResourceListingGateway {
   Future<List<OwnResourceListing>> listOwnResourceListings(
     String expectedOwnerId,
   ) async {
-    final response = await _client.rpc<List<dynamic>>(
+    final response = await readOwnerCollection(
+      _client,
       'list_own_resource_listings',
       params: {'p_expected_owner_profile_id': expectedOwnerId},
+      idColumn: 'listing_id',
+      descendingIdTie: true,
     );
     return response
         .cast<Map<String, dynamic>>()
