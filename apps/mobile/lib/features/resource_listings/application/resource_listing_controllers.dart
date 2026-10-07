@@ -37,6 +37,7 @@ class PublicResourceListingsController
           ? ResourceListingLoadPhase.loading
           : ResourceListingLoadPhase.loadingMore,
       items: previousItems,
+      resultsMatchFilters: state.resultsMatchFilters,
       modeFilter: mode,
       locality: locality,
       query: query,
@@ -76,6 +77,7 @@ class PublicResourceListingsController
         state = PublicResourceListingsState(
           phase: ResourceListingLoadPhase.failure,
           items: previousItems,
+          resultsMatchFilters: state.resultsMatchFilters,
           modeFilter: mode,
           locality: locality,
           query: query,
@@ -95,10 +97,10 @@ class PublicResourceListingsController
     _revision++;
     state = PublicResourceListingsState(
       items: state.items,
+      resultsMatchFilters: false,
       modeFilter: mode,
       locality: locality.trim(),
       query: query.trim(),
-      hasMore: state.hasMore,
     );
     await load();
   }
@@ -193,13 +195,15 @@ class OwnResourceListingsController extends Notifier<OwnResourceListingsState> {
 
   @override
   OwnResourceListingsState build() {
-    ref.listen(authSessionProvider.select((session) => session.identity?.id), (
-      _,
-      _,
-    ) {
-      _revision++;
-      state = const OwnResourceListingsState();
-    });
+    ref.listen(
+      authSessionProvider.select(
+        (session) => (session.phase, session.identity?.id),
+      ),
+      (_, _) {
+        _revision++;
+        state = const OwnResourceListingsState();
+      },
+    );
     ref.onDispose(() => _revision++);
     return const OwnResourceListingsState();
   }

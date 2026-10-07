@@ -130,3 +130,12 @@ authority. Successful mutations refresh owned, delegated, and affected public
 state. A backend authority denial invalidates cached management/delegated state
 and removes the editor controls; account revisions continue to discard late
 responses.
+
+## UI-NEXT-02 discovery and drafts
+
+Family/search controls remain mounted during idle/loading/error/empty results.
+Same-query refresh retains rows; failure retains their pagination reference-time
+snapshot. Changed filters clear previous rows. Owner/delegated sources settle
+independently and clear private caches on readiness changes.
+The folder action opens `/drafts?types=table`; management/history remains reachable
+from the hub's menu.

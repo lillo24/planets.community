@@ -139,3 +139,12 @@ offers explicit recovery for unresolved opaque in-memory creation markers.
 The editor registers with the app router's departure coordinator; invalid
 fields stay editable and partial image failures retain the same draft. See
 [save-before-navigation and recovery](../../../../../docs/development/proposal-draft-departure.md).
+
+## UI-NEXT-02 discovery and drafts
+
+Public controls remain mounted during idle/loading/error/empty results. Same-query
+refresh retains rows and reports progress/failure; changed filters clear previous
+rows. Owner/delegated loads settle independently, never refetch a completed peer
+because its sibling is pending, and clear private caches on readiness changes.
+The folder action opens `/drafts?types=project`; the hub's management menu retains
+this feature's published/history/co-organizer screen and DRAFT01 recovery.

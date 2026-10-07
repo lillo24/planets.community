@@ -1463,5 +1463,20 @@
   "startupPreferenceError": "Non è stato possibile salvare o ripristinare la preferenza dell’introduzione. Riprova.",
   "tutorialNext": "Avanti",
   "tutorialFinish": "Termina",
-  "startupDevelopmentReset": "Reimposta benvenuto e tutorial (sviluppo)"
+  "startupDevelopmentReset": "Reimposta benvenuto e tutorial (sviluppo)",
+  "draftsTitle": "Le mie bozze",
+  "draftsManagement": "Progetti pubblicati e cronologia",
+  "draftsAllTypes": "Tutti i tipi",
+  "draftsLoading": "Caricamento bozze…",
+  "draftsEmptyTitle": "Nessuna bozza salvata",
+  "draftsEmptyMessage": "Qui trovi le bozze salvate e non pubblicate dei tipi selezionati.",
+  "draftsSourceError": "Impossibile aggiornare le bozze di {source}. Riprova per ottenere l’elenco completo.",
+  "@draftsSourceError": {
+    "placeholders": {
+      "source": {
+        "type": "String"
+      }
+    }
+  },
+  "browsePreviousResults": "Risultati precedenti: non corrispondono ai filtri attuali."
 }
