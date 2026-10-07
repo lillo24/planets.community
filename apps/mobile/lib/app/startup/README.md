@@ -7,8 +7,10 @@ It does not own Auth, profile readiness, native-link delivery or product actions
   installation preference store, run-only entry/defer flags and sanitized resume
   destinations. Bootstrap restores its preference before launching the app.
 - `welcome_screen.dart` uses the shared `core/widgets/planets_hero.dart` native
-  orbits/stars around the unchanged bundled founder logo. Its finite motion
-  stops when hidden/backgrounded; reduced motion settles immediately. Actions
+  circular orbits/stars around the unchanged bundled founder logo. After the
+  finite upward entrance, the shared website-speed planet rotations and logo
+  float continue while visible. Both clocks pause when hidden/backgrounded;
+  reduced motion settles immediately without ticking. Actions
   are available throughout, and a failed asset load keeps them available.
 - `tutorial_screen.dart` composes approved page builders and writes completion
   only after Finish on the final page. Cancel/Back defers for the current run;

@@ -136,6 +136,8 @@ void main() {
   testWidgets(
     'Welcome pauses native motion in the background and while hidden',
     (tester) async {
+      tester.platformDispatcher.accessibilityFeaturesTestValue =
+          const FakeAccessibilityFeatures(disableAnimations: false);
       await tester.pumpWidget(
         const MaterialApp(
           home: TickerMode(

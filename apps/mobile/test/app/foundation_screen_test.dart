@@ -15,6 +15,16 @@ void main() {
       testWidgets(
         'Home cards stay readable and clickable dark=$dark compact=$compact',
         (tester) async {
+          Future<void> settle() async {
+            if (compact) {
+              await tester.pumpAndSettle();
+            } else {
+              // Normal-motion Home intentionally never settles.
+              await tester.pump();
+              await tester.pump(const Duration(milliseconds: 500));
+            }
+          }
+
           await tester.binding.setSurfaceSize(
             compact ? const Size(320, 480) : const Size(390, 844),
           );
@@ -51,7 +61,7 @@ void main() {
               ),
             ),
           );
-          await tester.pumpAndSettle();
+          await settle();
           expect(find.text("Base dell'app mobile pronta"), findsNothing);
           expect(find.byIcon(Icons.groups_outlined), findsNothing);
           expect(find.byKey(const Key('open-messages-button')), findsNothing);
@@ -66,15 +76,19 @@ void main() {
             compact ? lessThan(100) : greaterThan(200),
           );
           expect(find.byType(PlanetsEntranceMotion), findsNothing);
+          expect(find.byType(PlanetsOrbitMotion), findsOneWidget);
           await tester.pump(const Duration(seconds: 3));
-          expect(tester.binding.transientCallbackCount, 0);
+          expect(
+            tester.binding.transientCallbackCount,
+            compact ? 0 : greaterThan(0),
+          );
           for (final entry in {
             'browse-proposals-button': '/proposals',
             'browse-resources-button': '/resources',
           }.entries) {
             final card = find.byKey(Key(entry.key));
             await tester.ensureVisible(card);
-            await tester.pumpAndSettle();
+            await settle();
             final surface = tester.widget<Card>(
               find.descendant(of: card, matching: find.byType(Card)),
             );
@@ -86,13 +100,13 @@ void main() {
                 .intersect(tester.getRect(find.byType(SingleChildScrollView)));
             expect(visible.height, greaterThan(48));
             await tester.tapAt(visible.center);
-            await tester.pumpAndSettle();
+            await settle();
             expect(router.routerDelegate.state.uri.path, entry.value);
             router.go('/');
-            await tester.pumpAndSettle();
+            await settle();
           }
           await tester.tap(find.byKey(const Key('open-settings-button')));
-          await tester.pumpAndSettle();
+          await settle();
           expect(router.routerDelegate.state.uri.path, '/settings');
           expect(tester.takeException(), isNull);
         },
