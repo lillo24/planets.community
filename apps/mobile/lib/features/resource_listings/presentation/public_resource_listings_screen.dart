@@ -293,7 +293,7 @@ class _PublicResourceListingsScreenState
                       onTap: () => context.push('/resources/${listing.id}'),
                     ),
                   ),
-                  const SizedBox(height: AppSpacing.small),
+                  const SizedBox(height: AppSpacing.medium),
                 ],
               if (state.phase == ResourceListingLoadPhase.failure &&
                   state.items.isNotEmpty)
