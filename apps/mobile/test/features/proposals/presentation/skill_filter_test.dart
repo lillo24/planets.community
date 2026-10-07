@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:planets_mobile/core/theme/app_tokens.dart';
 import 'package:planets_mobile/core/widgets/browse_filter_button.dart';
 import 'package:planets_mobile/features/proposals/data/proposal_gateway.dart';
 import 'package:planets_mobile/features/proposals/domain/proposal_models.dart';
@@ -11,6 +12,45 @@ import 'package:planets_mobile/l10n/generated/app_localizations.dart';
 import '../../../support/fake_proposal.dart';
 
 void main() {
+  for (final locale in ['en', 'it']) {
+    testWidgets(
+      'Projects input/filter separation at 320px and 2x text $locale',
+      (tester) async {
+        tester.view.physicalSize = const Size(320, 900);
+        tester.view.devicePixelRatio = 1;
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
+        final gateway = FakeProposalGateway()..categories = _catalog();
+        await _pump(tester, gateway, locale: locale, scale: 2);
+        expect(
+          find.text(
+            locale == 'it' ? 'Crea da un modello' : 'Start from a template',
+          ),
+          findsNothing,
+        );
+        await _tap(tester, 'proposal-toggle-filters');
+        final query = tester.getRect(
+          find.byKey(const Key('proposal-query-filter')),
+        );
+        final locality = tester.getRect(
+          find.byKey(const Key('proposal-locality-filter')),
+        );
+        final filter = tester.getRect(
+          find.byKey(const Key('skill-filter-trigger')),
+        );
+        expect(
+          locality.top - query.bottom,
+          greaterThanOrEqualTo(AppSpacing.medium),
+        );
+        expect(
+          filter.top - locality.bottom,
+          greaterThanOrEqualTo(AppSpacing.medium),
+        );
+        expect(filter.right, lessThanOrEqualTo(320));
+        expect(tester.takeException(), isNull);
+      },
+    );
+  }
   testWidgets(
     'filter remains usable in a narrow viewport with a keyboard inset',
     (tester) async {
@@ -284,14 +324,25 @@ void main() {
   );
 }
 
-Future<void> _pump(WidgetTester tester, FakeProposalGateway gateway) async {
+Future<void> _pump(
+  WidgetTester tester,
+  FakeProposalGateway gateway, {
+  String locale = 'en',
+  double scale = 1,
+}) async {
   await tester.pumpWidget(
     ProviderScope(
       overrides: [proposalGatewayProvider.overrideWithValue(gateway)],
-      child: const MaterialApp(
+      child: MaterialApp(
+        locale: Locale(locale),
+        builder: (context, child) => MediaQuery(
+          data: MediaQuery.of(context)
+              .copyWith(textScaler: TextScaler.linear(scale)),
+          child: child!,
+        ),
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
-        home: PublicProposalsScreen(),
+        home: const PublicProposalsScreen(),
       ),
     ),
   );

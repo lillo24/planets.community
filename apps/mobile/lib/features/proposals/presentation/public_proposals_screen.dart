@@ -108,11 +108,6 @@ class _PublicProposalsScreenState extends ConsumerState<PublicProposalsScreen> {
                 selected: BrowseActivityType.proposals,
               ),
               const SizedBox(height: AppSpacing.medium),
-              OutlinedButton.icon(
-                onPressed: () => context.push(WorkshopRoutes.catalog),
-                icon: const Icon(Icons.auto_stories_outlined),
-                label: Text(l10n.workshopStartFromTemplate),
-              ),
               Row(
                 children: [
                   Expanded(

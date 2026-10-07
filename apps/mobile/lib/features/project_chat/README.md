@@ -36,7 +36,13 @@ or project content.
   entry point.
 - `presentation/project_needs_sheet.dart` renders the scroll-controlled current
   Needs drawer and acknowledges attention only after refreshed canonical
-  content has completed a frame.
+  content has completed a frame. Covered requirements (participant or manual)
+  stay visible first as muted, checked items; uncovered requirements follow with
+  their existing actions. Only creators/delegates can undo manual coverage via
+  **Mark as needed**. The refreshed canonical result determines placement even
+  when another participant still covers an item. Narrow/large-text active rows
+  stack the action below the label. Attention callouts/feed cards retain their
+  existing copy and behavior outside this checklist.
 - `presentation/project_chat_info_screen.dart` renders canonical summary
   context, Project/Tavolo and manager Participation navigation, the
   current-entitled Shared workspace section, and lazy access to the existing
@@ -128,7 +134,7 @@ pass. On Android and iOS, verify:
 9. the persistent `Needed again` callout and subtle one-shot reduced-motion
    pulse, including TalkBack/VoiceOver count and attention semantics;
 10. participant claim races on two devices and canonical `PT409` recovery;
-11. owner/delegate `Found outside app` and `Needed again` manual-coverage flows,
+11. owner/delegate `Found outside app` and `Mark as needed` manual-coverage flows,
     including participant-plus-manual coverage;
 12. closed-drawer and open-drawer Realtime resurfacing, ensuring attention is
     acknowledged only after refreshed current Needs are visible;

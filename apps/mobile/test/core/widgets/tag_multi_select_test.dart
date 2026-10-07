@@ -1,10 +1,62 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:planets_mobile/core/theme/app_tokens.dart';
 import 'package:planets_mobile/core/widgets/tag_multi_select.dart';
 import 'package:planets_mobile/l10n/generated/app_localizations.dart';
 
 void main() {
+  for (final locale in ['en', 'it']) {
+    for (final staged in [false, true]) {
+      testWidgets(
+        'selector search and footer fit 320px/2x text $locale staged=$staged',
+        (tester) async {
+          tester.view.physicalSize = const Size(320, 900);
+          tester.view.devicePixelRatio = 1;
+          addTearDown(tester.view.resetPhysicalSize);
+          addTearDown(tester.view.resetDevicePixelRatio);
+          await tester.pumpWidget(
+            _App(
+              locale: locale,
+              textScaler: const TextScaler.linear(2),
+              child: _SelectorHarness(staged: staged),
+            ),
+          );
+          await tester.tap(find.byKey(const Key('test-selector-trigger')));
+          await tester.pumpAndSettle();
+          final search = tester.getRect(
+            find.byKey(const Key('test-selector-search')),
+          );
+          final count = tester.getRect(
+            find.byKey(const Key('test-selector-selection-count')),
+          );
+          expect(
+            count.top - search.bottom,
+            greaterThanOrEqualTo(AppSpacing.small),
+          );
+          final clear = tester.getRect(
+            find.byKey(const Key('test-selector-clear')),
+          );
+          final apply = tester.getRect(
+            find.byKey(const Key('test-selector-apply')),
+          );
+          expect(clear.overlaps(apply), isFalse);
+          expect(clear.left, greaterThanOrEqualTo(0));
+          expect(apply.right, lessThanOrEqualTo(320));
+          expect(
+            apply.top - clear.bottom,
+            greaterThanOrEqualTo(AppSpacing.small),
+          );
+          expect(tester.takeException(), isNull);
+          await tester.tap(find.byKey(const Key('test-selector-clear')));
+          await tester.pump();
+          await tester.tap(find.byKey(const Key('test-selector-apply')));
+          await tester.pumpAndSettle();
+          expect(find.byKey(const Key('test-selector-summary')), findsNothing);
+        },
+      );
+    }
+  }
   testWidgets('empty selector uses one prompt and restores it after removal', (
     tester,
   ) async {
@@ -139,13 +191,15 @@ void main() {
 }
 
 class _App extends StatelessWidget {
-  const _App({required this.child, this.textScaler});
+  const _App({required this.child, this.textScaler, this.locale = 'en'});
 
   final Widget child;
   final TextScaler? textScaler;
+  final String locale;
 
   @override
   Widget build(BuildContext context) => MaterialApp(
+    locale: Locale(locale),
     localizationsDelegates: AppLocalizations.localizationsDelegates,
     supportedLocales: AppLocalizations.supportedLocales,
     builder: textScaler == null
@@ -163,10 +217,12 @@ class _App extends StatelessWidget {
 class _SelectorHarness extends StatefulWidget {
   const _SelectorHarness({
     this.enabled = true,
+    this.staged = false,
     this.initialSelection = const {'garden', 'photo'},
   });
 
   final bool enabled;
+  final bool staged;
   final Set<String> initialSelection;
 
   @override
@@ -213,5 +269,6 @@ class _SelectorHarnessState extends State<_SelectorHarness> {
     onChanged: (value) => setState(() => selection = value),
     keyPrefix: 'test-selector',
     enabled: widget.enabled,
+    staged: widget.staged,
   );
 }
