@@ -41,8 +41,12 @@ class FoundationScreen extends StatelessWidget {
                 return SingleChildScrollView(
                   padding: const EdgeInsets.all(AppSpacing.large),
                   child: Stack(
+                    // Let decoration use the scroll view's top padding while
+                    // the viewport still clips it away from the app bar.
+                    clipBehavior: Clip.none,
                     children: [
                       Positioned.fill(
+                        top: -heroHeight * .06,
                         child: RepaintBoundary(
                           child: PlanetsHero.home(logoAreaHeight: heroHeight),
                         ),

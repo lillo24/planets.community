@@ -78,6 +78,15 @@ void main() {
           expect(find.byType(PlanetsEntranceMotion), findsNothing);
           expect(find.byType(PlanetsOrbitMotion), findsOneWidget);
           await tester.pump(const Duration(seconds: 3));
+          if (!compact) {
+            final logo = tester.getRect(
+              find.byKey(const Key('planets-floating-logo')),
+            );
+            final card = tester.getRect(
+              find.byKey(const Key('browse-proposals-button')),
+            );
+            expect(logo.bottom, lessThan(card.top - 12));
+          }
           expect(
             tester.binding.transientCallbackCount,
             compact ? 0 : greaterThan(0),
