@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:planets_mobile/core/theme/app_tokens.dart';
 import 'package:planets_mobile/core/widgets/tag_multi_select.dart';
 import 'package:planets_mobile/features/proposals/domain/proposal_models.dart';
 import 'package:planets_mobile/features/proposals/presentation/proposal_editor_screen.dart';
@@ -12,6 +13,38 @@ import '../../template_workshop/presentation/template_workshop_test.dart'
 import 'proposal_draft_departure_test.dart' as draft;
 
 void main() {
+  testWidgets(
+    'Project editor input and competence picker keep spacing at 320px and 2x text',
+    (tester) async {
+      tester.view.physicalSize = const Size(320, 900);
+      tester.view.devicePixelRatio = 1;
+      tester.platformDispatcher.textScaleFactorTestValue = 2;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+      await draft.pumpEditor(tester);
+      final picker = find.byKey(const Key('proposal-skills-trigger'));
+      await draft.reveal(tester, picker);
+      final preview = tester.getRect(
+        find.byKey(const Key('location-visibility-preview')),
+      );
+      expect(
+        tester.getRect(picker).top - preview.bottom,
+        greaterThanOrEqualTo(AppSpacing.large),
+      );
+      expect(tester.getRect(picker).right, lessThanOrEqualTo(320));
+      await tester.tap(picker);
+      await tester.pumpAndSettle();
+      final search = tester.getRect(
+        find.byKey(const Key('proposal-skills-search')),
+      );
+      final count = tester.getRect(
+        find.byKey(const Key('proposal-skills-selection-count')),
+      );
+      expect(count.top - search.bottom, greaterThanOrEqualTo(AppSpacing.small));
+      expect(tester.takeException(), isNull);
+    },
+  );
   testWidgets(
     'demo overwrite requires confirmation and actions remain reachable with narrow large text and keyboard',
     (tester) async {

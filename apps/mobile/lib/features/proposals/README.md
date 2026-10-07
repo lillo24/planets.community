@@ -18,7 +18,10 @@ the sheet before ordinary guarded detail navigation. Published editors never
 match. See [inputs, lifecycle and draft handoff](../../../../../docs/development/automatic-editor-suggestions.md).
 
 TW04 adds Browse and unpublished-editor entries to the sibling
-`template_workshop/` feature. The separate **Create from a template** action
+`template_workshop/` feature. Public browse keeps the AppBar Workshop action and
+floating Create Project action; template/scratch choice belongs to the creation
+chooser, without a second inline CTA above discovery filters.
+The unpublished editor's **Create from a template** action
 pushes through the existing draft departure guard; it preserves this editor
 and opens any accepted copy in a different editor by its canonical ID.
 Near publication, IT/EN copy explains automatic eligible reuse at Completed

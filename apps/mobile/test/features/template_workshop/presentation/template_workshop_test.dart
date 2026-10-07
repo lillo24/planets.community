@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 import 'package:planets_mobile/app/router/app_router.dart';
 import 'package:planets_mobile/app/router/draft_departure_coordinator.dart';
 import 'package:planets_mobile/core/config/app_config.dart';
+import 'package:planets_mobile/core/theme/app_tokens.dart';
 import 'package:planets_mobile/features/auth/application/auth_session_controller.dart';
 import 'package:planets_mobile/features/auth/data/auth_gateway.dart';
 import 'package:planets_mobile/features/auth/domain/auth_models.dart';
@@ -56,7 +57,7 @@ void main() {
       testWidgets(
         'catalog/detail accessible at narrow width, large text $locale $brightness',
         (tester) async {
-          tester.view.physicalSize = const Size(360, 760);
+          tester.view.physicalSize = const Size(320, 900);
           tester.view.devicePixelRatio = 1;
           addTearDown(tester.view.resetPhysicalSize);
           addTearDown(tester.view.resetDevicePixelRatio);
@@ -64,9 +65,23 @@ void main() {
             tester,
             locale: locale,
             brightness: brightness,
-            scale: 1.6,
+            scale: 2,
+            categories: _categories(),
           );
           expect(find.byKey(const Key('template-query')), findsOneWidget);
+          final queryRect = tester.getRect(
+            find.byKey(const Key('template-query')),
+          );
+          final filterRect = tester.getRect(
+            find.byKey(const Key('skill-filter-trigger')),
+          );
+          expect(
+            filterRect.top - queryRect.bottom,
+            greaterThanOrEqualTo(AppSpacing.medium),
+          );
+          expect(filterRect.left, greaterThanOrEqualTo(0));
+          expect(filterRect.right, lessThanOrEqualTo(320));
+          expect(tester.takeException(), isNull);
           expect(find.byKey(Key('template-card-$templateId')), findsOneWidget);
           await reveal(tester, find.byKey(Key('template-card-$templateId')));
           await tester.tap(find.byKey(Key('template-card-$templateId')));
@@ -284,6 +299,31 @@ void main() {
     },
   );
   testWidgets(
+    'Projects discovery keeps Workshop in AppBar and the creation chooser',
+    (tester) async {
+      final app = await pumpWorkshop(
+        tester,
+        actualRouter: true,
+        initial: '/proposals',
+      );
+      expect(find.byType(PublicProposalsScreen), findsOneWidget);
+      expect(find.text('Start from a template'), findsNothing);
+      expect(find.byKey(const Key('proposal-create-action')), findsOneWidget);
+      await tester.tap(find.byKey(const Key('template-workshop-action')));
+      await tester.pumpAndSettle();
+      expect(find.byType(TemplateWorkshopScreen), findsOneWidget);
+      app.router.pop();
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('proposal-create-action')));
+      await tester.pumpAndSettle();
+      expect(find.text('How would you like to start?'), findsOneWidget);
+      expect(find.byKey(const Key('proposal-start-scratch')), findsOneWidget);
+      await tester.tap(find.byKey(const Key('proposal-start-template')));
+      await tester.pumpAndSettle();
+      expect(find.byType(TemplateWorkshopScreen), findsOneWidget);
+    },
+  );
+  testWidgets(
     'actual static Workshop routes match before proposal IDs; preserve ordinary routes',
     (tester) async {
       final app = await pumpWorkshop(tester, actualRouter: true);
@@ -328,10 +368,13 @@ pumpWorkshop(
   Brightness brightness = Brightness.light,
   double scale = 1,
   bool actualRouter = false,
+  List<ProposalSkillCategory> categories = const [],
   FakeSimilarProposalGateway? similar,
 }) async {
   final templates = FakeTemplateGateway();
-  final proposals = FakeProposalGateway()..createdId = 'old-draft';
+  final proposals = FakeProposalGateway()
+    ..createdId = 'old-draft'
+    ..categories = categories;
   proposals.ownItems = [
     ownProposalFixture(
       id: templateDestination,
@@ -459,6 +502,24 @@ pumpWorkshop(
     moderation: moderation,
   );
 }
+
+List<ProposalSkillCategory> _categories() => [
+  const ProposalSkillCategory(
+    id: 'art',
+    slug: 'art',
+    label: 'Art',
+    sortOrder: 1,
+    skills: [
+      ProposalCatalogSkill(
+        id: 'painting',
+        categoryId: 'art',
+        slug: 'painting',
+        label: 'Painting',
+        sortOrder: 1,
+      ),
+    ],
+  ),
+];
 
 Future<void> reveal(WidgetTester tester, Finder finder) async {
   await tester.scrollUntilVisible(
