@@ -211,6 +211,39 @@ void main() {
       await t.pumpWidget(const SizedBox());
     },
   );
+  for (final denied in [false, true]) {
+    testWidgets(
+      'image failure keeps authorized precision unless denied=$denied',
+      (t) async {
+        final g = FakePreviewGateway()
+          ..protected = true
+          ..exact = true;
+        final r = FakeStaticPreviewGateway()
+          ..pending = () => Future.error(PreviewUnavailable(denied));
+        final m = FakePreviewMapsLauncher();
+        final c = setup(g, r, m);
+        addTearDown(c.dispose);
+        c
+            .read(authSessionProvider.notifier)
+            .markProfileReady(const AuthIdentity(id: 'Alice'));
+        await t.pumpWidget(app(c, ListView(children: [panel(detail: true)])));
+        await settled(t);
+        expect(find.byType(RawImage), findsNothing);
+        expect(find.text('Map preview unavailable'), findsOneWidget);
+        expect(
+          find.text('SECRET synthetic venue'),
+          denied ? findsNothing : findsOneWidget,
+        );
+        if (!denied) {
+          await t.tap(find.byKey(const Key('location-preview-item')));
+          await settled(t);
+          expect(m.urls.single.path, '/maps/search/');
+          expect(m.urls.single.queryParameters['query'], '44.0,10.0');
+        }
+        await t.pumpWidget(const SizedBox());
+      },
+    );
+  }
   testWidgets('fresh denied tap launches nothing and reports failure', (
     t,
   ) async {

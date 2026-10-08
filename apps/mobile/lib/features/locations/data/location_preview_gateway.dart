@@ -142,14 +142,26 @@ class ServerStaticPreviewGateway implements StaticPreviewGateway {
             abortSignal: cancellation,
           )
           .timeout(const Duration(seconds: 7));
-      if (response.data is! Uint8List) throw const PreviewUnavailable();
+      if (response.data is! Uint8List) {
+        final result = response.data;
+        throw PreviewUnavailable(
+          result is Map && ['unauthorized', 'stale'].contains(result['status']),
+        );
+      }
       final bytes = response.data as Uint8List;
-      if (!validPreviewPng(bytes) ||
-          (preview.isProtected && client.auth.currentUser?.id != actor)) {
+      if (!validPreviewPng(bytes)) {
         bytes.fillRange(0, bytes.length, 0);
         throw const PreviewUnavailable();
       }
+      if (preview.isProtected && client.auth.currentUser?.id != actor) {
+        bytes.fillRange(0, bytes.length, 0);
+        throw const PreviewUnavailable(true);
+      }
       return bytes;
+    } on PreviewUnavailable {
+      rethrow;
+    } on FunctionException catch (error) {
+      throw PreviewUnavailable([403, 409].contains(error.status));
     } catch (_) {
       throw const PreviewUnavailable();
     }

@@ -75,6 +75,10 @@ A separate service credential invokes only credit/cache RPCs. Canonical
 authorization/revision is reread after provider/cache I/O before returning bytes.
 No permanent public image URL or protected shared cache exists.
 
+An optional image/quota/decoding failure keeps a successfully authorized place
+label and reports unavailable imagery. Image transport denial or stale
+authorization erases the projection; it cannot masquerade as a quota fallback.
+
 Fixed upstream: https://maps.geoapify.com/v1/staticmap; osm-carto; 512x256 PNG;
 scaleFactor 1; pitch/bearing 0; default embedded attribution. Area zoom 10 has
 no marker. Exact zoom 16 has one circle marker without an icon lookup.

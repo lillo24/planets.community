@@ -222,6 +222,46 @@ void main() {
     expect(calls, 1);
     await client.dispose();
   });
+  for (final result in [
+    ('budget_exhausted', 200, false),
+    ('invalid_image', 200, false),
+    ('unauthorized', 200, true),
+    ('unauthorized', 403, true),
+    ('stale', 200, true),
+    ('stale', 409, true),
+  ]) {
+    test('image transport classifies ${result.$1}/${result.$2}', () async {
+      final client = SupabaseClient(
+        'https://map03.invalid',
+        'synthetic-key',
+        httpClient: MockClient(
+          (_) async => http.Response(
+            jsonEncode({'status': result.$1}),
+            result.$2,
+            headers: {'content-type': 'application/json'},
+          ),
+        ),
+      );
+      try {
+        await expectLater(
+          ServerStaticPreviewGateway(client, enabled: true).image(
+            previewFixture(item),
+            view: 'card',
+            cancellation: Completer<void>().future,
+          ),
+          throwsA(
+            isA<PreviewUnavailable>().having(
+              (error) => error.denied,
+              'denied',
+              result.$3,
+            ),
+          ),
+        );
+      } finally {
+        await client.dispose();
+      }
+    });
+  }
   test(
     'clear rejects an in-flight public image instead of refilling cache',
     () async {

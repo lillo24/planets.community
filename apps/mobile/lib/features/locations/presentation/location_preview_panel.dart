@@ -211,29 +211,40 @@ class _LocationPreviewPanelState extends ConsumerState<LocationPreviewPanel>
       }
       final renderer = ref.read(staticPreviewGatewayProvider);
       if (renderer.enabled && value.place != null && _bytes == null) {
-        final batch = ref.read(publicPreviewBatchProvider);
-        final bytes = await batch.loadImage(
-          value,
-          () => renderer.image(
+        try {
+          final batch = ref.read(publicPreviewBatchProvider);
+          final bytes = await batch.loadImage(
             value,
-            view: widget.detail
-                ? value.isProtected
-                      ? 'protected_detail'
-                      : 'public_detail'
-                : 'card',
-            actor: actor,
-            cancellation: abort.future,
-          ),
-        );
-        if (!_current(epoch, actor)) {
-          if (value.isProtected) bytes.fillRange(0, bytes.length, 0);
-          return;
+            () => renderer.image(
+              value,
+              view: widget.detail
+                  ? value.isProtected
+                        ? 'protected_detail'
+                        : 'public_detail'
+                  : 'card',
+              actor: actor,
+              cancellation: abort.future,
+            ),
+          );
+          if (!_current(epoch, actor)) {
+            if (value.isProtected) bytes.fillRange(0, bytes.length, 0);
+            return;
+          }
+          if (!validPreviewPng(bytes)) throw const PreviewUnavailable();
+          _bytes = bytes;
+          _imageKey = value.imageKey;
+          _imageRevision = value.revision;
+          _imageProtected = value.isProtected;
+        } on PreviewUnavailable catch (error) {
+          // Optional imagery failure preserves the authorized place. A known
+          // denial/stale authorization must instead erase the whole projection.
+          if (error.denied) {
+            rethrow;
+          }
+          if (!_current(epoch, actor)) return;
+          _eraseImage();
+          _failed = true;
         }
-        if (!validPreviewPng(bytes)) throw const PreviewUnavailable();
-        _bytes = bytes;
-        _imageKey = value.imageKey;
-        _imageRevision = value.revision;
-        _imageProtected = value.isProtected;
       }
     } catch (_) {
       if (!_current(epoch, actor)) return;
