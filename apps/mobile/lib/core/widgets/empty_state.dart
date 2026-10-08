@@ -17,7 +17,10 @@ class EmptyState extends StatelessWidget {
     return Center(
       child: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: AppBreakpoints.compact),
-        child: Padding(
+        // Native OTP/profile transitions can retain the keyboard briefly. Keep
+        // the usual centered state, but allow all text to remain reachable when
+        // its allocated viewport is short or text is enlarged.
+        child: SingleChildScrollView(
           padding: const EdgeInsets.all(AppSpacing.large),
           child: Column(
             mainAxisSize: MainAxisSize.min,

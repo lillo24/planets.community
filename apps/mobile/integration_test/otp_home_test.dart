@@ -99,6 +99,16 @@ void main() {
       );
     });
     final app = Supabase.instance.client;
+    final previousErrorHandler = FlutterError.onError;
+    FlutterError.onError = (details) {
+      // Keep the original binding's failure capture. A deferred takeException
+      // otherwise loses the overflow's source/constraints in the final report.
+      // Full diagnostics stay in the private local driver log, never the PR.
+      if (details.exceptionAsString().startsWith('A RenderFlex overflowed')) {
+        debugPrint(details.toString());
+      }
+      previousErrorHandler?.call(details);
+    };
     try {
       await _wait(
         tester,
@@ -522,6 +532,7 @@ void main() {
       }
       expect(tester.takeException(), isNull);
     } finally {
+      FlutterError.onError = previousErrorHandler;
       trace.close();
       commandTrace.close();
       for (final entry in [

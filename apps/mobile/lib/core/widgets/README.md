@@ -24,6 +24,9 @@ This folder owns small presentation primitives reused across feature boundaries.
 
 - `empty_state.dart`, `error_state.dart`, and `loading_state.dart` provide the
   standard asynchronous screen states.
+  Empty state keeps its centered compact presentation and scrolls when a short
+  allocated viewport (including native keyboard transitions) or enlarged text
+  cannot contain its icon/copy. It does not dismiss the keyboard or alter Auth.
 - `async_data_presentation.dart` keeps nullable async screens consistent:
   not-yet-started/loading and different-target states render loading, only
   explicit same-target failures render errors, retained same-target data stays

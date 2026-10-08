@@ -76,7 +76,7 @@ void main() {
         router.go('/messages');
         await settleNativeUi(tester);
         expect(router.routerDelegate.state.uri.path, '/account/suspended');
-        expect(find.byKey(const Key('messages-inbox')), findsNothing);
+        expect(find.byKey(const Key('account-status-check')), findsOneWidget);
         await tester.ensureVisible(
           find.byKey(const Key('account-status-sign-out')),
         );
