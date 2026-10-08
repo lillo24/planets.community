@@ -12,23 +12,47 @@ It does not own Auth, profile readiness, native-link delivery or product actions
   float continue while visible. Both clocks pause when hidden/backgrounded;
   reduced motion settles immediately without ticking. Actions
   are available throughout, and a failed asset load keeps them available.
-- `tutorial_screen.dart` composes approved page builders and writes completion
-  only after Finish on the final page. Cancel/Back defers for the current run;
-  read/write failures remain explicit and retryable.
+- `tutorial_screen.dart` owns the interactive /intro playback, current public
+  screen widgets, painted target lookup using stable keys, short interruptible
+  scrolling, timer/lifecycle guards, and a barrier against all underlying taps.
+- `tutorial_presentation.dart` owns localized step copy, the spotlight painter,
+  and clearly labelled illustrations. Examples are widgets only, never records
+  injected into canonical public providers or Supabase.
+- `tutorial_routes.dart` owns the typed in-memory replay capability and safe
+  Back/Skip return. `tutorial_pages.dart` keeps the registry's synthetic page
+  harness for existing startup policy tests; production uses guided steps.
 
-The production `TutorialRegistry(version: '1', pages: [])` is intentionally
-dormant: there are no approved pages, no placeholder and no completion write.
-Future approved content belongs in this registry; bump its explicit version
-only when that content should be offered again. Synthetic pages belong in tests
-or an explicitly opted-in debug harness, never in the production registry.
+Production activates `interactive-1` with fourteen four-second explanations and
+an explicit final **Start exploring** action. Timing starts only after the target
+is painted and scrolling/loading finishes. Public content waits are bounded:
+empty, offline, full, unavailable or actionless Projects/Resources use a labelled
+illustration. Next interrupts scrolling, taps are debounced, and reduced motion
+uses immediate focus. Header controls and explanations wrap/scroll at large text.
+Messages mounts its existing frame and scope selector with `controlsOnly: true`:
+guest states remain truthful; ready conversations, inboxes and subscriptions are
+never mounted. Underlying controls are excluded from semantics and gestures;
+only the tutorial's accessible explanation, Next, Back and Skip remain actionable.
 
-`planets.startup.completedTutorialVersion` is the only persisted startup key.
-It is device-local, independent of login/account changes, with no backend or
-account/cross-device synchronization. Explore suppresses Welcome for the current
-run; restoring a session never completes a tutorial. Explicit destinations and
-external journeys bypass Welcome and defer a tutorial. Ordinary successful Auth
-or profile completion can insert a configured tutorial before their original
-sanitized destination. There is no second native-link listener or navigator.
+`planets.startup.completedTutorialVersion` remains the only persisted startup key.
+A bare version records completed; `dismissed:<version>` records deliberate Skip.
+Legacy bare versions remain readable. Only version/status is persisted, never
+identity, selected Project IDs, return destinations or invitation/OTP data.
+Finish and Skip navigate only after the local write succeeds. Errors remain
+visible/retryable. Back, background interruption, account replacement and external
+navigation do not write a status. First Explore and successful ordinary initial
+Login offer an unseen version; restored sessions and explicit native/Auth journeys
+retain the existing deferral policy. Completion/dismissal is installation-wide.
+
+HELP01 can call the same audited route after either completion or dismissal:
+
+```dart
+await TutorialRoutes.replay(context, returnTo: '/help');
+```
+
+Replay uses a typed `extra`, not a query flag, keeps the caller on the router stack,
+and pops back on Finish, Skip or Back. Its sanitized safe return is a fallback if
+there is no caller to pop to. It does not erase or write installation status and
+does not bypass any Auth guard. No second navigator or native-link listener exists.
 
 Successful explicit logout reports `AuthCommandState.didSignOut`; the existing
 router resets only `hasEntered` and opens Welcome after Auth clears private

@@ -1,6 +1,6 @@
 # Messages
 
-This feature owns the authenticated mobile Messages information architecture.
+This feature owns the public mobile Messages frame and authenticated content.
 It keeps canonical structured Project and Resource requests in `Requests` and a
 mixed chronological conversation projection in `Chats`. The Chats tab exposes
 independently paged `Private` and `Groups` scopes: Private contains Resource and
@@ -70,11 +70,16 @@ durable human-message unread state; activity alerts remain in Notifications.
   canonical post-triage synchronization with participation and the inbox.
 - `presentation/messages_routes.dart` owns stable request, chat, and group-info
   routes used by navigation and future notification routing.
-- `presentation/messages_screen.dart` owns the two-tab shell, Private/Groups
-  toggle, independent loading/refresh/pagination, centrally discriminated chat
+- `presentation/messages_navigation.dart` owns the data-free Chat/Requests
+  frame and Private/Groups selector shared by guests, incomplete profiles and
+  ready users. Its in-memory presentation provider remembers tab and scope
+  independently across Auth/profile completion and cancellation. It holds no
+  identity, content, unread counts or device-persisted state.
+- `presentation/messages_screen.dart` owns authenticated
+  independent loading/refresh/pagination, centrally discriminated chat
   cards, Private Project-request/Resource counterparty avatars, and role-aware
   Project/Resource request cards. Group rows never receive a person avatar.
-  Chats and Private are deterministic defaults. Canonical unread counts are
+  Chat and Private are initial defaults. Canonical unread counts are
   independent of pending requests and agreement activity.
   Conversation rows share identity/preview content with trailing local time
   above incoming human-message count. Private rows use counterparty names;
@@ -164,8 +169,9 @@ default bottom-right navigation shortcut:
 /messages/chats/resource/:chatId
 ```
 
-Both routes require authentication and a complete profile. Their exact safe
-internal destination survives email OTP and profile completion. The persistent
+Only `/messages` is public. Every descendant requires authentication and a
+complete profile. Its exact safe internal destination survives email OTP and
+profile completion. The persistent
 bottom navigation is Profile / Home / Messages by default, with Browse available
 as a device-local Settings preference. Direct Messages or Browse entry makes the
 right slot reflect the current destination regardless of that preference; the
@@ -197,7 +203,22 @@ Apply the backend migration before releasing this client; old clients gain no
 badges or acknowledgement merely from migration.
 
 `presentation/messages_landing_screen.dart` gates only the public `/messages`
-root. Signed-out users get contextual Log in with `/messages` as the Auth return;
-incomplete profiles get completion/retry with a safe root cancellation. Restoring
-and failed sessions expose the shared recovery state. Private loaders mount only
-for a ready identity, keyed by actor; every descendant keeps router protection.
+root. Signed-out users can select Chat/Requests and Private/Groups, each with a
+localized empty explanation and Log in returning to `/messages`. Guest scope
+labels are plain presentation: no private list/request/photo controllers or
+count labels mount. Incomplete profiles share this frame with completion/retry
+and safe root cancellation. Restoring, checking-profile and failed sessions
+expose the shared truthful recovery state. Private loaders mount only for a ready
+identity, keyed by actor; every descendant keeps router protection.
+
+### Tutorial targets (TUT01 handoff)
+
+The shared frame provides stable keys `messages-tab-chat`,
+`messages-tab-requests`, `message-chat-scope-private` and
+`message-chat-scope-groups`; the containing selector retains
+`message-chat-scope-toggle`. TabBar and SegmentedButton supply localized labels
+and selected semantics. A guide can highlight the keyed Tab/segment label bounds;
+select Chat before targeting either scope because Requests hides that selector.
+Use the same keys for guest/setup and ready views. The guide must not mount a
+private screen or read a Messages controller to locate these controls. TUT02 can
+use the actual TUT01 commit as a stacked dependency if its PR is still open.

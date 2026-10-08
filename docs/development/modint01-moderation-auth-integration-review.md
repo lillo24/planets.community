@@ -6,7 +6,71 @@ No predecessor PR is closed, retargeted, marked ready, or merged by this task.
 
 ## Exact inputs and provenance
 
-### October 8 committed-main reconciliation and current evidence
+### Final restriction-copy correction on PR #154 (October 8)
+
+The required MODINT01 Android/browser behavioral QA below is **complete**, with
+its existing exact-source boundaries retained. This follow-up corrects a private
+notice's wording, not moderation behavior or policy approval. Founder
+wording/presentation approval remains the next review decision; no new full live
+QA loop is required for this sentence.
+
+Starting published/tested sources were `70c0454bde671f3ea4a9841b92b9c80990f8102d`
+and `cf5469ab32912299b4e382e8ef582e99cbf99b51`. On fetch, main had advanced from
+the prior `e7971d6` pin to **`55219709cef1a533ee39b787949ae05838d3171a`**:
+committed contact-site polish, public guest Messages navigation and the first-run
+tutorial. A merge-tree inspection found one Resource widget-fixture conflict.
+Main is reconciled on the same branch, retaining both consequence/restriction
+fake gateways and main's completed-onboarding fixture; neither history is dropped.
+Incoming guest Messages tests are aligned with MODINT01's established central
+account-status precedence and read-only recovery, preserving their no-private-read
+assertions. No production Auth/navigation/suspension logic was hand-edited for
+this correction. Incoming tutorial/guest behavior is covered by affected widget
+checks and normal CI, not relabelled as a new native campaign.
+
+Only `noticesRestrictionEffect` changes in the canonical EN and IT catalogs.
+Both values use the prompt's wording **exactly**, with no grammatical refinement:
+new Project join requests, new participant-link admissions and new Scambio/Dona
+requests are blocked while active; pending requests were withdrawn at application;
+existing memberships, agreements and organizer roles remain preserved under
+normal rules and any other restrictions. Existing receipt confirmation remains
+read-only, chat is not blanket-restricted, and revocation does not resubmit.
+
+This already-implemented boundary is demonstrated by the unchanged
+`scripts/verify-local-modint01.mjs`: a fresh `accept_project_participant_invitation`
+action is denied with PT409 and unchanged membership/receipt/event counts, while
+the original receipt action replays without writes. No backend rule, migration,
+API/error mapping, delivery/disclosure/appeal policy or other moderation copy changed.
+
+The [verbatim EN/IT packet](modint01-moderation-copy.md) was regenerated and
+compared across all 46 current key pairs; only that key differs from the prior
+packet. The [two new widget-harness previews](screenshots/modint01-copy-correction/README.md)
+render the actual notice body with synthetic data, current localization and app
+theme at 360×900 using SDK Roboto fonts. They are explicitly **not** native-device,
+real-OTP or backend QA. Earlier actual captures remain untouched; their older
+wording is not relabelled as a corrected-copy capture.
+
+Local localization generation, final Mobile formatting and static analysis passed.
+**167 focused widget checks** pass across own-consequence/scroll/large-text,
+reduced-height Home and incoming Resource/startup/tutorial/router/guest
+Messages/Settings coverage. The original four incoming Messages expectation
+failures are retained separately; aligning them with the existing global account
+guard fixed the tests without changing production behavior.
+The EN/IT preview render passed and both sentences were inspected in full without
+clipping. Normally classified hosted CI will run once for the corrective source;
+actual checkout/classification/executed/skipped jobs and exact tested/published
+SHAs will be recorded in the PR evidence and this section before handoff.
+
+No local backend was restarted/reset, no APK/all-application rebuild or full
+OTP/request/browser/Database campaign was run for the copy. The founder's request
+to leave existing emulator/build processes running remains in force. Open
+dependency/Realtime/device/accessibility/hosting/policy dispositions below are
+unchanged. PR #154 remains draft/unmerged, without deployment or predecessor closure.
+
+### Completed October 8 integration QA (before final-copy correction)
+
+This section records the completed behavioral campaigns and source/tree boundaries
+before the later sentence correction and committed-main reconciliation above.
+These are preserved results, not new final-copy or tutorial native-device runs.
 
 After the founder started only the owned backend, its health check passed.
 Fetched committed main advanced to `e7971d6611a1bd750c0c51b797234f5cf19c9dec`

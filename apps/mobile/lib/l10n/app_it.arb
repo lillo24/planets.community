@@ -1517,7 +1517,7 @@
   "noticesSafetyTitle": "Avviso di moderazione",
   "noticesSafetyEffect": "PLANETS ha registrato un avviso di moderazione. Questo avviso, da solo, non limita le azioni dell’account e non è un badge pubblico sul profilo.",
   "noticesRestrictionTitle": "Limitazione delle interazioni",
-  "noticesRestrictionEffect": "Quando è attiva, limita le nuove richieste in uscita per partecipare ai Progetti e per le Risorse di Scambio/Dona. Le richieste in uscita ancora in attesa sono state ritirate al momento dell’applicazione. Partecipazioni accettate, accordi e normali permessi di gestione restano soggetti alle regole esistenti e ad altre eventuali limitazioni attive.",
+  "noticesRestrictionEffect": "Finché la limitazione è attiva, non puoi inviare nuove richieste di partecipazione ai Progetti o nuove richieste in Scambio/Dona, né aderire ai Progetti tramite link di invito. Le richieste in attesa sono state ritirate quando è stata applicata. Partecipazioni, accordi e ruoli esistenti sono conservati e restano soggetti alle regole abituali e ad altre eventuali limitazioni.",
   "noticesHideTitle": "Contenuto nascosto",
   "noticesHideEffect": "Quando è attivo, il provvedimento limita la visibilità di questo contenuto e l’accesso a nuove interazioni. Nascondere è distinto da annullare, chiudere o eliminare.",
   "noticesSuspensionTitle": "Sospensione dell’account",
@@ -1583,5 +1583,44 @@
   "locationManualEntryNotice": "La ricerca dei luoghi non è disponibile. Inserisci il luogo qui sotto.",
   "locationMapUnavailable": "Anteprima della mappa non disponibile. Usa le informazioni sul luogo qui sopra.",
   "locationRestrictedPreview": "Tutti vedono la zona indicativa pubblica. Le istruzioni precise sono disponibili solo agli organizzatori autorizzati e ai partecipanti attuali.",
-  "locationPublicPreview": "Tutti vedono la zona indicativa pubblica e le istruzioni precise per l'incontro."
+  "locationPublicPreview": "Tutti vedono la zona indicativa pubblica e le istruzioni precise per l'incontro.",
+  "messagesGuestChatsTitle": "Nessuna conversazione",
+  "messagesGuestRequestsTitle": "Nessuna richiesta",
+  "messagesGuestPrivateMessage": "Accedi per partecipare ai progetti, donare o scambiare e gestire le tue conversazioni private.",
+  "messagesGuestGroupsMessage": "Accedi per vedere le conversazioni di gruppo dei progetti a cui partecipi.",
+  "messagesGuestRequestsMessage": "Accedi per vedere e gestire le richieste di partecipazione e di Scambio-Dona.",
+  "tutorialSkip": "Salta tutorial",
+  "tutorialSlogan": "Un'idea. Le persone giuste. Qualcosa di concreto.",
+  "tutorialIntroduction": "Realizza progetti insieme e dai nuova vita alle cose.",
+  "tutorialHome": "Scopri cosa stanno organizzando le persone vicino a te.",
+  "tutorialProjectCard": "Ogni progetto nasce da un'idea. Aprilo per scoprire come partecipare.",
+  "tutorialProjectPurpose": "Qui puoi scoprire l'idea e il suo obiettivo.",
+  "tutorialProjectNeeds": "Scopri quali competenze e risorse servono al progetto.",
+  "tutorialProjectParticipation": "Ti interessa? Puoi chiedere di partecipare. Il tutorial non invia richieste.",
+  "tutorialProjectCreate": "Puoi creare un progetto anche tu.",
+  "tutorialDrafts": "Salva un'idea in bozza e riprendila più tardi.",
+  "tutorialResourceModes": "Dona ciò che non usi o scambia ciò che ti serve.",
+  "tutorialResourceCard": "Scopri cose che possono trovare una nuova casa.",
+  "tutorialResourceCreate": "Crea un annuncio per donare o scambiare qualcosa.",
+  "tutorialMessagesTabs": "Qui trovi le conversazioni e le richieste di partecipazione.",
+  "tutorialMessagesScopes": "Le conversazioni private e i gruppi dei progetti hanno i loro spazi.",
+  "tutorialMessagesPreview": "Tutorial: le tue conversazioni restano private.",
+  "tutorialFarewell": "Buon divertimento!",
+  "tutorialStartExploring": "Inizia a esplorare",
+  "tutorialIllustration": "Esempio del tutorial — non è un annuncio reale",
+  "tutorialExampleProject": "Un giardino per tutti",
+  "tutorialExamplePurpose": "Crea un piccolo giardino condiviso con i tuoi vicini.",
+  "tutorialExampleNeeds": "Competenze di giardinaggio, attrezzi e qualche piantina.",
+  "tutorialExampleResource": "Un annaffiatoio da donare",
+  "tutorialStepProgress": "Passaggio {current} di {total}",
+  "@tutorialStepProgress": {
+    "placeholders": {
+      "current": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  }
 }

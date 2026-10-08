@@ -1,2 +1,6 @@
-// Populate only after the founder explicitly approves an address for public use.
-export const PUBLIC_CONTACT_EMAIL: string | null = null;
+// Founder-approved contact details for public use on the informational site.
+export const PUBLIC_CONTACT_EMAIL = "developer.planets.community@gmail.com";
+export const PUBLIC_CONTACT_PHONE = {
+  label: "+39 3703263412",
+  href: "tel:+393703263412",
+} as const;

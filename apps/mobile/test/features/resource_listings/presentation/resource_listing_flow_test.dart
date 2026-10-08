@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:image/image.dart' as image;
 import 'package:planets_mobile/app/planets_app.dart';
+import 'package:planets_mobile/app/startup/startup_flow.dart';
 import 'package:planets_mobile/app/router/app_router.dart';
 import 'package:planets_mobile/core/config/app_config.dart';
 import 'package:planets_mobile/features/auth/data/auth_gateway.dart';
@@ -1486,6 +1487,10 @@ Future<ProviderContainer> _pump(
         ),
         ownConsequenceGatewayProvider.overrideWithValue(
           FakeOwnConsequenceGateway(),
+        ),
+        // Feature fixtures begin after onboarding; startup tests own first-run.
+        initialStartupPreferenceProvider.overrideWithValue(
+          StartupPreference(completedVersion: productionTutorial.version),
         ),
         appConfigProvider.overrideWithValue(
           AppConfig.fromValues(

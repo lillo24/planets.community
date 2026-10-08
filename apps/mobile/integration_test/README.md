@@ -344,3 +344,14 @@ journal/preparation, because it completes the identity, admits two members and
 creates a draft. Use the distinct QA package and exact configuration/build/cache
 cleanup above. The [integration record](../../../docs/development/template-stack-integration.md)
 and final draft PR own results and outstanding physical-device/founder gates.
+
+
+## Interactive tutorial smoke
+
+`flutter test integration_test/tutorial_smoke_test.dart -d <dedicated-emulator>`
+exercises the complete production guest tour with fake public gateways and an
+in-memory installation store. It needs no backend, credentials or fixture reset;
+use a separate task emulator rather than the retained founder demo device/stack.
+The widget suite supplies deterministic timer, replay, session and layout checks.
+Native iOS gestures/motion require a separate device run and are not inferred from
+this Android smoke.

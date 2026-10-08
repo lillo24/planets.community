@@ -9,6 +9,11 @@ proof of completed controls.
 
 ## Current October 8 evidence
 
+The later [final-copy widget review](../modint01-copy-correction/README.md)
+corrects the EN/IT restriction sentence separately. The 28 actual captures below
+retain their original sources and pre-correction wording; none is relabelled as a
+new corrected-copy native/browser run. Required behavioral QA remains complete.
+
 The final runtime/test source is `cf5469ab32912299b4e382e8ef582e99cbf99b51`,
 reconciled with committed main `e7971d6611a1bd750c0c51b797234f5cf19c9dec`.
 All captures use ordinary app entry and real OTP/canonical backend authorization.

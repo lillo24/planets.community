@@ -1,7 +1,10 @@
 import { type PointerEvent, useRef, useState } from "react";
 
-import { PUBLIC_CONTACT_EMAIL } from "./site-content";
+import { PUBLIC_CONTACT_EMAIL, PUBLIC_CONTACT_PHONE } from "./site-content";
 import { WaitlistForm } from "./WaitlistForm";
+
+const [contactEmailMailbox, contactEmailDomain] =
+  PUBLIC_CONTACT_EMAIL.split("@");
 
 const activityExamples = [
   ["Creare", "Dare forma a un'idea condivisa."],
@@ -212,18 +215,28 @@ export function App() {
           <article className="detail-card">
             <h2 id="contact-title">Contatti</h2>
             <p>Per informazioni o domande su PLANETS.</p>
-            {PUBLIC_CONTACT_EMAIL ? (
-              <a
-                className="contact-link"
-                href={`mailto:${PUBLIC_CONTACT_EMAIL}`}
-              >
-                {PUBLIC_CONTACT_EMAIL}
-              </a>
-            ) : (
-              <p className="content-pending">
-                Il contatto pubblico sarà aggiunto qui prima della messa online.
-              </p>
-            )}
+            <dl className="contact-details">
+              <div>
+                <dt>Email</dt>
+                <dd>
+                  <a
+                    className="contact-link"
+                    href={`mailto:${PUBLIC_CONTACT_EMAIL}`}
+                  >
+                    {contactEmailMailbox}
+                    <wbr />@{contactEmailDomain}
+                  </a>
+                </dd>
+              </div>
+              <div>
+                <dt>Telefono</dt>
+                <dd>
+                  <a className="contact-link" href={PUBLIC_CONTACT_PHONE.href}>
+                    {PUBLIC_CONTACT_PHONE.label}
+                  </a>
+                </dd>
+              </div>
+            </dl>
           </article>
         </section>
 

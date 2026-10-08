@@ -3117,7 +3117,7 @@
   "noticesSafetyTitle": "Safety notice",
   "noticesSafetyEffect": "PLANETS recorded a moderation notice. This notice by itself does not restrict account actions and is not a public profile badge.",
   "noticesRestrictionTitle": "Interaction restriction",
-  "noticesRestrictionEffect": "While active, this restricts new outbound Project join requests and Scambio/Dona Resource requests. Pending outbound requests were withdrawn when it was applied. Accepted participation, agreements and ordinary manager permissions remain subject to their existing rules and any other active restrictions.",
+  "noticesRestrictionEffect": "While active, this blocks new Project join requests, new admissions through participant links, and new Scambio/Dona requests. Pending outbound requests were withdrawn when it was applied. Existing memberships, agreements and organizer roles are preserved; their usual rules and other active restrictions still apply.",
   "noticesHideTitle": "Content hide",
   "noticesHideEffect": "While active, moderation restricts this content’s visibility and access to new interactions. Hiding is separate from cancellation, closing or deletion.",
   "noticesSuspensionTitle": "Account suspension",
@@ -3183,5 +3183,44 @@
   "locationManualEntryNotice": "Place search is unavailable. Enter the location below.",
   "locationMapUnavailable": "Map preview unavailable. Use the location information above.",
   "locationRestrictedPreview": "Everyone sees the public rough location. Exact meeting instructions are available only to authorized organizers and current participants.",
-  "locationPublicPreview": "Everyone sees the public rough location and exact meeting instructions."
+  "locationPublicPreview": "Everyone sees the public rough location and exact meeting instructions.",
+  "messagesGuestChatsTitle": "No conversations",
+  "messagesGuestRequestsTitle": "No requests",
+  "messagesGuestPrivateMessage": "Log in to join projects, donate or exchange, and manage your private conversations.",
+  "messagesGuestGroupsMessage": "Log in to view group conversations for the projects you participate in.",
+  "messagesGuestRequestsMessage": "Log in to view and manage participation and Scambio-Dona requests.",
+  "tutorialSkip": "Skip tutorial",
+  "tutorialSlogan": "One idea. The right people. Something real.",
+  "tutorialIntroduction": "Build projects together and give things a new life.",
+  "tutorialHome": "Discover what people near you are organizing.",
+  "tutorialProjectCard": "Every project starts with an idea. Open it to discover how to take part.",
+  "tutorialProjectPurpose": "Here you can discover the idea and its purpose.",
+  "tutorialProjectNeeds": "Discover which skills and resources the project needs.",
+  "tutorialProjectParticipation": "Interested? You can request to take part. This tour sends no requests.",
+  "tutorialProjectCreate": "You can create a project of your own.",
+  "tutorialDrafts": "Save an idea as a draft and return to it later.",
+  "tutorialResourceModes": "Donate what you no longer use or exchange what you need.",
+  "tutorialResourceCard": "Discover things that can find a new home.",
+  "tutorialResourceCreate": "Create a listing to donate or exchange something.",
+  "tutorialMessagesTabs": "Here you find conversations and participation requests.",
+  "tutorialMessagesScopes": "Private conversations and project groups have their own spaces.",
+  "tutorialMessagesPreview": "Tutorial: your conversations stay private.",
+  "tutorialFarewell": "Have fun!",
+  "tutorialStartExploring": "Start exploring",
+  "tutorialIllustration": "Tutorial example — not a live listing",
+  "tutorialExampleProject": "A garden for everyone",
+  "tutorialExamplePurpose": "Create a small shared garden with your neighbors.",
+  "tutorialExampleNeeds": "Gardening skills, tools and a few seedlings.",
+  "tutorialExampleResource": "A watering can to donate",
+  "tutorialStepProgress": "Step {current} of {total}",
+  "@tutorialStepProgress": {
+    "placeholders": {
+      "current": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  }
 }
