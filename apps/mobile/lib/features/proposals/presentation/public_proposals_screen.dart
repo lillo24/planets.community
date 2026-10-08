@@ -36,7 +36,11 @@ import 'skill_filter.dart';
 import '../../template_workshop/presentation/template_workshop_screens.dart';
 
 class PublicProposalsScreen extends ConsumerStatefulWidget {
-  const PublicProposalsScreen({super.key});
+  const PublicProposalsScreen({this.tutorialPlaceholder, super.key});
+
+  /// Labelled, read-only illustration used only by the tutorial after its
+  /// bounded public read fails. It is never inserted into public state.
+  final Widget? tutorialPlaceholder;
 
   @override
   ConsumerState<PublicProposalsScreen> createState() =>
@@ -172,7 +176,9 @@ class _PublicProposalsScreenState extends ConsumerState<PublicProposalsScreen> {
                   !(state.items.isEmpty && state.requestedItems.isEmpty))
                 LinearProgressIndicator(semanticsLabel: l10n.proposalLoading),
               const SizedBox(height: AppSpacing.medium),
-              if ((state.phase == ProposalLoadPhase.idle ||
+              if (widget.tutorialPlaceholder != null)
+                widget.tutorialPlaceholder!
+              else if ((state.phase == ProposalLoadPhase.idle ||
                       state.phase == ProposalLoadPhase.loading) &&
                   state.items.isEmpty &&
                   state.requestedItems.isEmpty)

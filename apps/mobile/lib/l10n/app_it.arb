@@ -1540,11 +1540,11 @@
   "tutorialMessagesPreview": "Tutorial: le tue conversazioni restano private.",
   "tutorialFarewell": "Buon divertimento!",
   "tutorialStartExploring": "Inizia a esplorare",
-  "tutorialIllustration": "Esempio del tutorial — non è un annuncio reale",
+  "tutorialIllustration": "Esempio — non è un annuncio reale",
   "tutorialExampleProject": "Un giardino per tutti",
   "tutorialExamplePurpose": "Crea un piccolo giardino condiviso con i tuoi vicini.",
   "tutorialExampleNeeds": "Competenze di giardinaggio, attrezzi e qualche piantina.",
-  "tutorialExampleResource": "Un annaffiatoio da donare",
+  "tutorialExampleResource": "Attrezzi da giardinaggio da regalare",
   "tutorialStepProgress": "Passaggio {current} di {total}",
   "@tutorialStepProgress": {
     "placeholders": {
@@ -1646,5 +1646,10 @@
         "type": "String"
       }
     }
-  }
+  },
+  "tutorialProjectDetail": "Leggi il progetto mentre scorriamo fino alla partecipazione. Puoi chiedere di unirti quando disponibile; i progetti pieni o con restrizioni mostrano il loro stato. Il tutorial non invia nulla.",
+  "tutorialHomeResources": "Di nuovo sulla Home: dai una nuova vita agli oggetti con Scambio–Dona.",
+  "tutorialResources": "Scopri un annuncio, creane uno tuo o torna ai tuoi annunci e alle bozze.",
+  "tutorialExampleResourceSummary": "Dai una nuova casa a qualche attrezzo utile.",
+  "tutorialExampleAction": "Azione di esempio — questa dimostrazione non invia richieste."
 }

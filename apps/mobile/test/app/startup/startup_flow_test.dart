@@ -5,6 +5,21 @@ import 'package:planets_mobile/app/startup/startup_flow.dart';
 import '../../support/fake_startup.dart';
 
 void main() {
+  for (final previous in ['interactive-1', 'dismissed:interactive-1']) {
+    test('corrected tutorial is offered after $previous', () async {
+      final store = FakeStartupStore()..version = previous;
+      final flow = StartupFlow(
+        store,
+        productionTutorial,
+        await restoreStartupPreference(store),
+      );
+      addTearDown(flow.dispose);
+      expect(productionTutorial.version, 'interactive-2');
+      expect(flow.needsTutorial, isTrue);
+      expect(Uri.parse(flow.continueTo('/')).path, '/intro');
+      expect(store.writes, 0);
+    });
+  }
   const empty = TutorialRegistry();
   final configured = TutorialRegistry(
     version: 'approved-test',

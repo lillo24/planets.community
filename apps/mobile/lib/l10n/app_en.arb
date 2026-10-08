@@ -2272,11 +2272,11 @@
   "tutorialMessagesPreview": "Tutorial: your conversations stay private.",
   "tutorialFarewell": "Have fun!",
   "tutorialStartExploring": "Start exploring",
-  "tutorialIllustration": "Tutorial example — not a live listing",
+  "tutorialIllustration": "Example — not a live listing",
   "tutorialExampleProject": "A garden for everyone",
   "tutorialExamplePurpose": "Create a small shared garden with your neighbors.",
   "tutorialExampleNeeds": "Gardening skills, tools and a few seedlings.",
-  "tutorialExampleResource": "A watering can to donate",
+  "tutorialExampleResource": "Garden tools to give away",
   "tutorialStepProgress": "Step {current} of {total}",
   "@tutorialStepProgress": {
     "placeholders": {
@@ -2378,5 +2378,10 @@
         "type": "String"
       }
     }
-  }
+  },
+  "tutorialProjectDetail": "Read about the project as we scroll to participation. You can request to join when available; full or restricted projects explain their status. Nothing is sent in this tour.",
+  "tutorialHomeResources": "Back on Home: give things a new life with Exchange–Donate.",
+  "tutorialResources": "Discover a listing, create your own, or return to your listings and drafts.",
+  "tutorialExampleResourceSummary": "Give a few useful tools a new home.",
+  "tutorialExampleAction": "Example action — this demonstration sends no request."
 }

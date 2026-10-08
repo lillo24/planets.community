@@ -223,6 +223,7 @@ class ProjectParticipationSection extends ConsumerWidget {
         ],
         const SizedBox(height: AppSpacing.large),
         Row(
+          key: Key('participation-title-$projectId'),
           children: [
             Expanded(
               child: Text(

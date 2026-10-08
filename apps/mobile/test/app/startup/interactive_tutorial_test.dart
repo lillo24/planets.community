@@ -30,6 +30,8 @@ import '../../support/fake_message_chats.dart';
 import '../../support/fake_notifications.dart';
 import '../../support/fake_profile.dart';
 
+import 'package:planets_mobile/features/proposals/application/proposal_controllers.dart';
+import 'package:planets_mobile/features/resource_listings/application/resource_listing_controllers.dart';
 import 'package:planets_mobile/app/startup/tutorial_presentation.dart';
 import 'package:planets_mobile/app/startup/tutorial_routes.dart';
 import 'package:planets_mobile/features/proposals/data/proposal_gateway.dart';
@@ -71,89 +73,47 @@ void main() {
       expect(tester.takeException(), isNull);
     },
   );
+
   testWidgets(
-    'real resource example and Create are highlighted without opening an editor',
-    (tester) async {
-      final resources = FakeResourceListingGateway()
-        ..publicItems = [publicResourceListingFixture()];
-      final app = await _pump(tester, resources: resources);
-      await tap(tester, 'welcome-explore');
-      for (var i = 0; i < 9; i++) {
-        await tap(tester, 'tutorial-next');
-      }
-      await ready(tester);
-      expect(
-        find.byKey(const Key('tutorial-illustration-label')),
-        findsNothing,
-      );
-      expect(find.text('Garden tools'), findsOneWidget);
-      await tap(tester, 'tutorial-next');
-      await ready(tester);
-      final target =
-          tester
-                  .widget<CustomPaint>(
-                    find.byKey(const Key('tutorial-spotlight')),
-                  )
-                  .painter!
-              as TutorialScrim;
-      await tester.tapAt(
-        tester.getTopLeft(find.byKey(const Key('tutorial-overlay'))) +
-            target.target!.center,
-      );
-      await frames(tester, 6);
-      expect(
-        find.byKey(const Key('tutorial-copy-resourceDrafts')),
-        findsOneWidget,
-      );
-      expect(
-        app.read(appRouterProvider).routerDelegate.state.uri.path,
-        '/intro',
-      );
-      expect(resources.createCount, 0);
-    },
-  );
-  testWidgets(
-    'automatic production playback reaches farewell without saving until CTA',
-    (tester) async {
-      final store = FakeStartupStore();
-      await _pump(tester, store: store);
-      await tap(tester, 'welcome-explore');
-      for (final step in TutorialStep.values) {
-        expect(find.byKey(Key('tutorial-copy-${step.name}')), findsOneWidget);
-        await ready(tester);
-        if (step == TutorialStep.farewell) break;
-        await tester.pump(const Duration(seconds: 4));
-        await tester.pump();
-      }
-      expect(store.writes, 0);
-      await frames(tester, 5);
-      await tap(tester, 'tutorial-next');
-      expect(store.version, 'interactive-1');
-    },
-  );
-  testWidgets(
-    'production first Explore shows tour, Skip stores dismissal and prevents replay',
+    'manual pacing, rapid taps and Previous/system Back change one step',
     (tester) async {
       final store = FakeStartupStore();
       final app = await _pump(tester, store: store);
       await tap(tester, 'welcome-explore');
+      expect(scrim(tester).targets, isEmpty);
+      await tester.pump(const Duration(seconds: 16));
       expect(
         find.byKey(const Key('tutorial-copy-introduction')),
         findsOneWidget,
       );
-      expect(store.writes, 0);
-      await tap(tester, 'tutorial-skip');
-      expect(store.version, 'dismissed:interactive-1');
-      expect(
-        app.read(startupFlowProvider).preference.dismissedVersion,
-        'interactive-1',
+      await tester.tap(find.byKey(const Key('tutorial-next')));
+      await tester.pump();
+      await tester.tapAt(
+        tester.getCenter(find.byKey(const Key('tutorial-overlay'))),
       );
-      expect(app.read(startupFlowProvider).needsTutorial, isFalse);
-      expect(find.byKey(const Key('browse-proposals-button')), findsOneWidget);
+      await tester.pump();
+      expect(find.byKey(const Key('tutorial-copy-home')), findsOneWidget);
+      await ready(tester);
+      await tester.pump(const Duration(seconds: 16));
+      expect(find.byKey(const Key('tutorial-copy-home')), findsOneWidget);
+      await tap(tester, 'tutorial-next');
+      await ready(tester);
+      await app.read(appRouterProvider).routerDelegate.popRoute();
+      await frames(tester, 6);
+      expect(find.byKey(const Key('tutorial-copy-home')), findsOneWidget);
+      await tap(tester, 'tutorial-previous');
+      expect(
+        find.byKey(const Key('tutorial-copy-introduction')),
+        findsOneWidget,
+      );
+      await tap(tester, 'tutorial-previous');
+      expect(app.read(appRouterProvider).routerDelegate.state.uri.path, '/');
+      expect(store.writes, 0);
     },
   );
+
   testWidgets(
-    'whole empty/offline guest tour has visible spotlights and no product mutations',
+    'exact empty guest sequence uses covered examples and three disjoint resource holes',
     (tester) async {
       final store = FakeStartupStore();
       final projects = FakeProposalGateway();
@@ -170,33 +130,63 @@ void main() {
       );
       await tap(tester, 'welcome-explore');
       for (final step in TutorialStep.values) {
-        expect(find.byKey(Key('tutorial-copy-${step.name}')), findsOneWidget);
         await ready(tester);
-        final painter =
-            tester
-                    .widget<CustomPaint>(
-                      find.byKey(const Key('tutorial-spotlight')),
-                    )
-                    .painter!
-                as TutorialScrim;
-        expect(painter.target, isNotNull, reason: step.name);
-        if (const {
+        expect(find.byKey(Key('tutorial-copy-${step.name}')), findsOneWidget);
+        final count =
+            step == TutorialStep.introduction || step == TutorialStep.farewell
+            ? 0
+            : step == TutorialStep.resources
+            ? 3
+            : 1;
+        expect(scrim(tester).targets, hasLength(count), reason: step.name);
+        if ({
           TutorialStep.projectCard,
-          TutorialStep.projectPurpose,
-          TutorialStep.projectNeeds,
-          TutorialStep.projectParticipation,
-          TutorialStep.resourceCard,
+          TutorialStep.projectDetail,
+          TutorialStep.resources,
         }.contains(step)) {
           expect(
             find.byKey(const Key('tutorial-illustration-label')),
             findsOneWidget,
           );
+          expect(
+            find.byKey(const Key('tutorial-example-cover')),
+            findsOneWidget,
+          );
+          final image = tester.widget<Image>(
+            find.byKey(const Key('tutorial-example-cover')),
+          );
+          expect(image.image, isA<AssetImage>());
+        }
+        if (step == TutorialStep.resources) {
+          expectDisjointResources(tester);
+        }
+        if (step == TutorialStep.homeResources) {
+          expect(
+            find.byKey(const Key('browse-resources-button')),
+            findsOneWidget,
+          );
+          expect(
+            find.byKey(const Key('planets-floating-logo')),
+            findsOneWidget,
+          );
+        }
+        if (step.index > 0) {
+          await tap(tester, 'tutorial-previous');
+          await ready(tester);
+          expect(
+            find.byKey(
+              Key('tutorial-copy-${TutorialStep.values[step.index - 1].name}'),
+            ),
+            findsOneWidget,
+          );
+          await tap(tester, 'tutorial-next');
+          await ready(tester);
+          expect(find.byKey(Key('tutorial-copy-${step.name}')), findsOneWidget);
         }
         expect(store.writes, 0);
         await tap(tester, 'tutorial-next');
       }
-      expect(store.version, 'interactive-1');
-      expect(find.byKey(const Key('tutorial-screen')), findsNothing);
+      expect(store.version, productionTutorial.version);
       expect(
         projects.calls.every(
           (c) => c.startsWith('list-public') || c.startsWith('public-detail'),
@@ -208,56 +198,175 @@ void main() {
       expect(messages.calls, isEmpty);
     },
   );
+
   testWidgets(
-    'real eligible card and detail scroll use canonical public data without Join tap-through',
+    'first Full Project is frozen, detail scrolls slowly and Full stays truthful',
     (tester) async {
+      tester.platformDispatcher.accessibilityFeaturesTestValue =
+          const FakeAccessibilityFeatures(disableAnimations: false);
+      addTearDown(tester.platformDispatcher.clearAllTestValues);
+      final full = projectCapacityFixture(
+        registrationCapacity: 1,
+        currentParticipantCount: 1,
+      );
+      final first = proposalSummaryFixture(id: 'first-full', capacity: full);
+      final second = proposalSummaryFixture(id: 'second-joinable');
+      final base = proposalDetailFixture(id: first.id, capacity: full);
       final projects = FakeProposalGateway()
-        ..publicItems = [
-          proposalSummaryFixture(
-            id: 'closed',
-            status: ProposalStatus.completed,
-          ),
-          proposalSummaryFixture(),
-        ]
-        ..publicDetail = proposalDetailFixture();
-      final needs = FakeProjectResourceNeedsGateway()
-        ..publicItems = [publicProjectResourceNeedFixture()];
-      final app = await _pump(tester, proposals: projects, needs: needs);
+        ..publicItems = [first, second]
+        ..publicDetail = ProposalDetail(
+          summary: base.summary,
+          creatorProfileId: base.creatorProfileId,
+          creatorDisplayName: base.creatorDisplayName,
+          description: List.filled(
+            8,
+            'Read how neighbors will build and share a mural together.',
+          ).join('\n\n'),
+          exactMeetingText: base.exactMeetingText,
+          exactLocationRestricted: base.exactLocationRestricted,
+        );
+      final app = await _pump(tester, proposals: projects);
       await tap(tester, 'welcome-explore');
       await tap(tester, 'tutorial-next');
-      await tap(tester, 'tutorial-next');
-      await ready(tester);
-      expect(
-        find.byKey(const Key('proposal-card-title-proposal-1')),
-        findsOneWidget,
-      );
       await tap(tester, 'tutorial-next');
       await ready(tester);
       expect(
         find.byKey(const Key('tutorial-illustration-label')),
         findsNothing,
       );
-      expect(find.byKey(const Key('tutorial-project-purpose')), findsOneWidget);
-      await tap(tester, 'tutorial-next');
+      expectFocus(tester, 'proposal-card-first-full');
+      projects.publicItems = [second, first];
+      await app.read(publicProposalsProvider.notifier).load();
       await ready(tester);
-      expect(find.byKey(const Key('tutorial-project-needs')), findsOneWidget);
+      expectFocus(tester, 'proposal-card-first-full');
       await tap(tester, 'tutorial-next');
+      expect(projects.calls, contains('public-detail:first-full'));
+      expect(projects.calls, isNot(contains('public-detail:second-joinable')));
+      final list = find.byKey(
+        const PageStorageKey('proposal-detail-first-full'),
+      );
+      final position = tester
+          .state<ScrollableState>(
+            find.descendant(of: list, matching: find.byType(Scrollable)).first,
+          )
+          .position;
+      expect(position.pixels, 0);
+      expect(scrim(tester).targets, isEmpty);
+      await frames(tester, 25);
+      expect(position.pixels, greaterThan(0));
+      expect(position.pixels, lessThan(position.maxScrollExtent));
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
+      final paused = position.pixels;
+      await tester.pump(const Duration(seconds: 16));
+      expect(position.pixels, paused);
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
       await ready(tester);
+      expectFocus(tester, 'participation-full-first-full');
       expect(
-        find.byKey(const Key('participation-join-proposal-1')),
+        find.byKey(const Key('participation-join-first-full')),
+        findsNothing,
+      );
+      expect(
+        find.byKey(const Key('tutorial-illustration-label')),
+        findsNothing,
+      );
+      await tester.tapAt(
+        tester.getTopLeft(find.byKey(const Key('tutorial-overlay'))) +
+            scrim(tester).targets.single.center,
+      );
+      await frames(tester, 6);
+      expect(find.byKey(const Key('proposal-create-action')), findsOneWidget);
+      expect(
+        find.byKey(const Key('tutorial-copy-projectCreate')),
         findsOneWidget,
       );
-      final target =
-          tester
-                  .widget<CustomPaint>(
-                    find.byKey(const Key('tutorial-spotlight')),
-                  )
-                  .painter!
-              as TutorialScrim;
-      final surface = tester.getTopLeft(
-        find.byKey(const Key('tutorial-overlay')),
+      await tap(tester, 'tutorial-previous');
+      await ready(tester);
+      expectFocus(tester, 'participation-full-first-full');
+      expect(
+        projects.calls.where((c) => c == 'create' || c == 'publish'),
+        isEmpty,
       );
-      await tester.tapAt(surface + target.target!.center);
+    },
+  );
+
+  testWidgets('late Needs layout keeps the spotlight on the real Join action', (
+    tester,
+  ) async {
+    final pending = Completer<void>();
+    final needs = FakeProjectResourceNeedsGateway()
+      ..publicDelay = pending.future
+      ..publicItems = [
+        for (var i = 0; i < 6; i++)
+          publicProjectResourceNeedFixture(
+            id: 'late-$i',
+            title: 'Material $i',
+            details:
+                'A real resource description that changes the layout. ' * 5,
+          ),
+      ];
+    final projects = FakeProposalGateway()
+      ..publicItems = [proposalSummaryFixture()]
+      ..publicDetail = proposalDetailFixture();
+    await _pump(tester, proposals: projects, needs: needs);
+    await tap(tester, 'welcome-explore');
+    for (var i = 0; i < TutorialStep.projectDetail.index; i++) {
+      await tap(tester, 'tutorial-next');
+    }
+    await ready(tester);
+    expectFocus(tester, 'participation-join-proposal-1');
+    await frames(tester, 30);
+    pending.complete();
+    await frames(tester, 30);
+    await ready(tester);
+    expectFocus(tester, 'participation-join-proposal-1');
+    expect(
+      find.byKey(const Key('tutorial-copy-projectDetail')),
+      findsOneWidget,
+    );
+    expect(find.byKey(const Key('tutorial-illustration-label')), findsNothing);
+  });
+
+  testWidgets('Previous interrupts detail scroll and restores the same card', (
+    tester,
+  ) async {
+    tester.platformDispatcher.accessibilityFeaturesTestValue =
+        const FakeAccessibilityFeatures(disableAnimations: false);
+    addTearDown(tester.platformDispatcher.clearAllTestValues);
+    final projects = FakeProposalGateway()
+      ..publicItems = [proposalSummaryFixture()]
+      ..publicDetail = proposalDetailFixture();
+    await _pump(tester, proposals: projects);
+    await tap(tester, 'welcome-explore');
+    for (var i = 0; i < 3; i++) {
+      await tap(tester, 'tutorial-next');
+    }
+    await frames(tester, 18);
+    await tap(tester, 'tutorial-previous');
+    await ready(tester);
+    expectFocus(tester, 'proposal-card-proposal-1');
+    await tester.pump(const Duration(seconds: 16));
+    expect(find.byKey(const Key('tutorial-copy-projectCard')), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets(
+    'real guest Join is spotlighted but overlay tap cannot open Auth or send a request',
+    (tester) async {
+      final projects = FakeProposalGateway()
+        ..publicItems = [proposalSummaryFixture()]
+        ..publicDetail = proposalDetailFixture();
+      final app = await _pump(tester, proposals: projects);
+      await tap(tester, 'welcome-explore');
+      for (var i = 0; i < TutorialStep.projectDetail.index; i++) {
+        await tap(tester, 'tutorial-next');
+      }
+      await ready(tester);
+      expectFocus(tester, 'participation-join-proposal-1');
+      await tester.tapAt(
+        tester.getTopLeft(find.byKey(const Key('tutorial-overlay'))) +
+            scrim(tester).targets.single.center,
+      );
       await frames(tester, 6);
       expect(
         find.byKey(const Key('tutorial-copy-projectCreate')),
@@ -267,35 +376,53 @@ void main() {
         app.read(appRouterProvider).routerDelegate.state.uri.path,
         '/intro',
       );
+      expect(app.read(authSessionProvider).phase, AuthSessionPhase.signedOut);
       expect(
-        projects.calls.where((c) => c == 'create' || c == 'publish'),
-        isEmpty,
+        projects.calls.every(
+          (c) => c.startsWith('list-public') || c.startsWith('public-detail'),
+        ),
+        isTrue,
       );
-      expect(needs.calls.every((c) => c.startsWith('list-public')), isTrue);
     },
   );
+
   testWidgets(
-    'double taps advance once and automatic playback advances once after ready',
+    'real Scambio card, Create and Drafts share one explanation without writes or filters',
     (tester) async {
-      await _pump(tester);
+      final resources = FakeResourceListingGateway()
+        ..publicItems = [publicResourceListingFixture()];
+      final app = await _pump(tester, resources: resources);
       await tap(tester, 'welcome-explore');
+      for (var i = 0; i < TutorialStep.resources.index; i++) {
+        await tap(tester, 'tutorial-next');
+      }
       await ready(tester);
-      await tester.tap(find.byKey(const Key('tutorial-next')));
-      await tester.pump();
-      await tester.tap(find.byKey(const Key('tutorial-next')));
-      await tester.pump();
-      expect(find.byKey(const Key('tutorial-copy-home')), findsOneWidget);
-      await ready(tester);
-      await tester.pump(const Duration(seconds: 4));
-      await tester.pump();
       expect(
-        find.byKey(const Key('tutorial-copy-projectCard')),
-        findsOneWidget,
+        find.byKey(const Key('tutorial-illustration-label')),
+        findsNothing,
+      );
+      expectDisjointResources(tester);
+      expectFocus(tester, 'resource-card-$resourceListingId', index: 0);
+      final filter = app.read(publicResourceListingsProvider).modeFilter;
+      await tester.pump(const Duration(seconds: 16));
+      expect(find.byKey(const Key('tutorial-copy-resources')), findsOneWidget);
+      await tap(tester, 'tutorial-previous');
+      await ready(tester);
+      expectFocus(tester, 'browse-resources-button');
+      await tap(tester, 'tutorial-next');
+      await ready(tester);
+      expectDisjointResources(tester);
+      expect(app.read(publicResourceListingsProvider).modeFilter, filter);
+      expect(resources.createCount, 0);
+      expect(
+        app.read(appRouterProvider).routerDelegate.state.uri.path,
+        '/intro',
       );
     },
   );
+
   testWidgets(
-    'pending content does not consume explanation timer and late data cannot replace fallback',
+    'bounded unavailable feed uses a stable covered fallback even after late data',
     (tester) async {
       final pending = Completer<List<ProposalSummary>>();
       final projects = FakeProposalGateway()
@@ -312,33 +439,102 @@ void main() {
       await tap(tester, 'tutorial-next');
       await tester.pump(const Duration(seconds: 1));
       await tester.pump();
-      expect(
-        find.byKey(const Key('tutorial-copy-projectCard')),
-        findsOneWidget,
-      );
-      expect(
-        (tester
-                    .widget<CustomPaint>(
-                      find.byKey(const Key('tutorial-spotlight')),
-                    )
-                    .painter!
-                as TutorialScrim)
-            .target,
-        isNull,
-      );
+      expect(scrim(tester).targets, isEmpty);
       await ready(tester);
-      expect(
-        find.byKey(const Key('tutorial-illustration-label')),
-        findsOneWidget,
-      );
+      expect(find.byKey(const Key('tutorial-example-cover')), findsOneWidget);
       pending.complete([proposalSummaryFixture()]);
       await frames(tester, 3);
+      expect(find.byKey(const Key('tutorial-example-cover')), findsOneWidget);
+      await tap(tester, 'tutorial-next');
+      await ready(tester);
       expect(
-        find.byKey(const Key('tutorial-illustration-label')),
+        find.byKey(const Key('tutorial-example-participation')),
         findsOneWidget,
+      );
+      expect(
+        projects.calls.where((c) => c.startsWith('public-detail')),
+        isEmpty,
       );
     },
   );
+
+  testWidgets(
+    'Next during feed loading still opens the first real Project when it arrives',
+    (tester) async {
+      final pending = Completer<List<ProposalSummary>>();
+      final projects = FakeProposalGateway()
+        ..publicDetail = proposalDetailFixture(id: 'late-real')
+        ..publicLoader = ({
+          required limit,
+          cursor,
+          query,
+          locality,
+          skillIds,
+        }) => pending.future;
+      await _pump(tester, proposals: projects);
+      await tap(tester, 'welcome-explore');
+      for (var i = 0; i < TutorialStep.projectDetail.index; i++) {
+        await tap(tester, 'tutorial-next');
+      }
+      expect(
+        find.byKey(const Key('tutorial-copy-projectDetail')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const Key('tutorial-illustration-label')),
+        findsNothing,
+      );
+      pending.complete([
+        proposalSummaryFixture(id: 'late-real'),
+        proposalSummaryFixture(),
+      ]);
+      await ready(tester);
+      expect(projects.calls, contains('public-detail:late-real'));
+      expect(projects.calls, isNot(contains('public-detail:proposal-1')));
+      expectFocus(tester, 'participation-join-late-real');
+      expect(
+        find.byKey(const Key('tutorial-illustration-label')),
+        findsNothing,
+      );
+    },
+  );
+
+  testWidgets(
+    'disappearing selected detail is a labelled cover-bearing fallback, never another Project',
+    (tester) async {
+      final projects = FakeProposalGateway()
+        ..publicItems = [
+          proposalSummaryFixture(),
+          proposalSummaryFixture(id: 'other'),
+        ];
+      await _pump(tester, proposals: projects);
+      await tap(tester, 'welcome-explore');
+      for (var i = 0; i < 3; i++) {
+        await tap(tester, 'tutorial-next');
+      }
+      await ready(tester);
+      expect(projects.calls, contains('public-detail:proposal-1'));
+      expect(projects.calls, isNot(contains('public-detail:other')));
+      expect(find.byKey(const Key('tutorial-example-cover')), findsOneWidget);
+    },
+  );
+
+  testWidgets(
+    'Skip persists dismissal of the corrected version and suppresses first run',
+    (tester) async {
+      final store = FakeStartupStore();
+      final app = await _pump(tester, store: store);
+      await tap(tester, 'welcome-explore');
+      await tap(tester, 'tutorial-skip');
+      expect(store.version, 'dismissed:${productionTutorial.version}');
+      expect(
+        app.read(startupFlowProvider).preference.dismissedVersion,
+        productionTutorial.version,
+      );
+      expect(app.read(startupFlowProvider).needsTutorial, isFalse);
+    },
+  );
+
   testWidgets(
     'background interruption pauses clock without recording status; Back is safe',
     (tester) async {
@@ -476,6 +672,42 @@ void main() {
       expect(app.read(startupFlowProvider).needsTutorial, isTrue);
     },
   );
+  testWidgets(
+    'rapid replay Finish pops a stacked caller only once and never writes status',
+    (tester) async {
+      final store = FakeStartupStore();
+      final app = await _pump(
+        tester,
+        store: store,
+        auth: FakeAuthGateway(
+          snapshot: const AuthSnapshot(identity: AuthIdentity(id: 'user-1')),
+        ),
+      );
+      final router = app.read(appRouterProvider);
+      unawaited(router.push<void>('/settings'));
+      await frames(tester, 6);
+      TutorialRoutes.replay(
+        tester.element(find.byKey(const Key('settings-language-row'))),
+        returnTo: '/settings',
+      );
+      await frames(tester, 6);
+      for (final step in TutorialStep.values) {
+        await ready(tester);
+        if (step == TutorialStep.farewell) break;
+        await tap(tester, 'tutorial-next');
+      }
+      final finish = tester
+          .widget<FilledButton>(find.byKey(const Key('tutorial-next')))
+          .onPressed!;
+      finish();
+      finish();
+      await frames(tester, 6);
+      expect(router.routerDelegate.state.uri.path, '/settings');
+      expect(store.writes, 0);
+      expect(app.read(startupFlowProvider).tutorialDeferred, isFalse);
+    },
+  );
+
   testWidgets('successful initial Login opens production tutorial', (
     tester,
   ) async {
@@ -546,7 +778,14 @@ Future<void> tap(WidgetTester tester, String key) async {
 }
 
 Future<void> ready(WidgetTester tester) async {
-  for (var i = 0; i < 65; i++) {
+  if (find
+          .byKey(const Key('tutorial-copy-introduction'))
+          .evaluate()
+          .isNotEmpty ||
+      find.byKey(const Key('tutorial-copy-farewell')).evaluate().isNotEmpty) {
+    return;
+  }
+  for (var i = 0; i < 500; i++) {
     await tester.pump(const Duration(milliseconds: 80));
     final paint =
         tester
@@ -555,7 +794,11 @@ Future<void> ready(WidgetTester tester) async {
                 )
                 .painter!
             as TutorialScrim;
-    if (paint.target != null) return;
+    if (paint.targets.isNotEmpty &&
+        (find.byKey(const Key('tutorial-copy-resources')).evaluate().isEmpty ||
+            paint.targets.length == 3)) {
+      return;
+    }
   }
   fail(
     'spotlight never became ready: ${tester.widgetList<Text>(find.byType(Text)).map((text) => text.data).join(' | ')}',
@@ -642,4 +885,39 @@ Future<ProviderContainer> _pump(
 Future<ProviderContainer> pumpTutorialSmoke(
   WidgetTester tester, {
   FakeStartupStore? store,
-}) => _pump(tester, store: store);
+  FakeProposalGateway? proposals,
+  FakeResourceListingGateway? resources,
+}) => _pump(tester, store: store, proposals: proposals, resources: resources);
+TutorialScrim scrim(WidgetTester tester) =>
+    tester
+            .widget<CustomPaint>(find.byKey(const Key('tutorial-spotlight')))
+            .painter!
+        as TutorialScrim;
+
+void expectFocus(WidgetTester tester, String key, {int index = 0}) {
+  final surface = tester.getTopLeft(find.byKey(const Key('tutorial-overlay')));
+  final bounds = tester.getRect(find.byKey(Key(key))).shift(-surface);
+  final target = scrim(tester).targets[index];
+  expect(bounds.inflate(1).contains(target.center), isTrue, reason: key);
+  final visible =
+      (Offset.zero & tester.getSize(find.byKey(const Key('tutorial-overlay'))))
+          .deflate(8);
+  expect(
+    target.width,
+    closeTo(bounds.intersect(visible).width, 1),
+    reason: key,
+  );
+  if (key.contains('card-')) expect(target.height, greaterThan(50));
+}
+
+void expectDisjointResources(WidgetTester tester) {
+  final targets = scrim(tester).targets;
+  expect(targets, hasLength(3));
+  expectFocus(tester, 'resource-create-action', index: 1);
+  expectFocus(tester, 'resource-my-listings-action', index: 2);
+  for (var i = 0; i < targets.length; i++) {
+    for (var j = i + 1; j < targets.length; j++) {
+      expect(targets[i].inflate(6).overlaps(targets[j].inflate(6)), isFalse);
+    }
+  }
+}

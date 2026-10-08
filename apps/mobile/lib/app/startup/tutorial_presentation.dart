@@ -1,122 +1,136 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import '../../l10n/generated/app_localizations.dart';
 import 'startup_flow.dart';
 
-/// Illustrations live only inside /intro, never in public providers or records.
-class TutorialIllustration extends StatelessWidget {
-  const TutorialIllustration({required this.step, super.key});
-  final TutorialStep step;
+/// A bundled, labelled illustration, never a provider item or backend record.
+class TutorialExampleCard extends StatelessWidget {
+  const TutorialExampleCard({
+    this.resource = false,
+    this.detail = false,
+    super.key,
+  });
+  final bool resource;
+  final bool detail;
 
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
-    final resource = step == TutorialStep.resourceCard;
-    final detail = const {
-      TutorialStep.projectPurpose,
-      TutorialStep.projectNeeds,
-      TutorialStep.projectParticipation,
-    }.contains(step);
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(resource ? l.resourceTitle : l.proposalDetailTitle),
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Text(
-              l.tutorialIllustration,
-              key: const Key('tutorial-illustration-label'),
-              style: Theme.of(context).textTheme.labelLarge,
-            ),
-            const SizedBox(height: 12),
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Icon(
-                      resource
-                          ? Icons.water_drop_outlined
-                          : Icons.yard_outlined,
-                      size: 40,
-                    ),
-                    const SizedBox(height: 12),
-                    Text(
-                      resource
-                          ? l.tutorialExampleResource
-                          : l.tutorialExampleProject,
-                      key: const Key('tutorial-example-card'),
-                      style: Theme.of(context).textTheme.titleLarge,
-                    ),
-                    if (detail) ...[
-                      const SizedBox(height: 16),
-                      Text(
-                        l.tutorialExamplePurpose,
-                        key: const Key('tutorial-example-purpose'),
-                      ),
-                      const SizedBox(height: 16),
-                      Text(
-                        l.tutorialExampleNeeds,
-                        key: const Key('tutorial-example-needs'),
-                      ),
-                      const SizedBox(height: 16),
-                      FilledButton.icon(
-                        key: const Key('tutorial-example-participation'),
-                        onPressed: () {},
-                        icon: const Icon(Icons.person_add_alt_1_outlined),
-                        label: Text(l.participationRequestToJoin),
-                      ),
-                    ],
-                  ],
+    return Card(
+      key: const Key('tutorial-example-card'),
+      clipBehavior: Clip.antiAlias,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Image.asset(
+            'assets/tutorial/garden-tools.webp',
+            key: const Key('tutorial-example-cover'),
+            fit: BoxFit.cover,
+            height: 150,
+            excludeFromSemantics: true,
+          ),
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text(
+                  l.tutorialIllustration,
+                  key: const Key('tutorial-illustration-label'),
+                  style: Theme.of(context).textTheme.labelMedium,
                 ),
-              ),
+                const SizedBox(height: 8),
+                Text(
+                  resource
+                      ? l.tutorialExampleResource
+                      : l.tutorialExampleProject,
+                  style: Theme.of(context).textTheme.titleLarge,
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  resource
+                      ? l.tutorialExampleResourceSummary
+                      : l.tutorialExamplePurpose,
+                ),
+                if (detail) ...[
+                  const SizedBox(height: 24),
+                  Text(l.tutorialExampleNeeds),
+                  const SizedBox(height: 24),
+                  Text(l.tutorialExampleAction),
+                  const SizedBox(height: 8),
+                  // Even without the barrier, this labelled demonstration
+                  // cannot issue a participation request.
+                  FilledButton.icon(
+                    key: const Key('tutorial-example-participation'),
+                    onPressed: null,
+                    icon: const Icon(Icons.person_add_alt_1_outlined),
+                    label: Text(l.participationRequestToJoin),
+                  ),
+                ],
+              ],
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
+}
+
+class TutorialIllustration extends StatelessWidget {
+  const TutorialIllustration({super.key});
+  @override
+  Widget build(BuildContext context) => Scaffold(
+    appBar: AppBar(
+      title: Text(AppLocalizations.of(context).proposalDetailTitle),
+    ),
+    body: ListView(
+      key: const PageStorageKey('tutorial-example-detail'),
+      padding: const EdgeInsets.all(16),
+      children: const [TutorialExampleCard(detail: true)],
+    ),
+  );
 }
 
 String tutorialCopy(AppLocalizations l, TutorialStep step) => switch (step) {
   TutorialStep.introduction => l.tutorialIntroduction,
   TutorialStep.home => l.tutorialHome,
   TutorialStep.projectCard => l.tutorialProjectCard,
-  TutorialStep.projectPurpose => l.tutorialProjectPurpose,
-  TutorialStep.projectNeeds => l.tutorialProjectNeeds,
-  TutorialStep.projectParticipation => l.tutorialProjectParticipation,
+  TutorialStep.projectDetail => l.tutorialProjectDetail,
   TutorialStep.projectCreate => l.tutorialProjectCreate,
-  TutorialStep.projectDrafts || TutorialStep.resourceDrafts => l.tutorialDrafts,
-  TutorialStep.resourceModes => l.tutorialResourceModes,
-  TutorialStep.resourceCard => l.tutorialResourceCard,
-  TutorialStep.resourceCreate => l.tutorialResourceCreate,
+  TutorialStep.projectDrafts => l.tutorialDrafts,
+  TutorialStep.homeResources => l.tutorialHomeResources,
+  TutorialStep.resources => l.tutorialResources,
   TutorialStep.messagesTabs => l.tutorialMessagesTabs,
   TutorialStep.messagesScopes => l.tutorialMessagesScopes,
   TutorialStep.farewell => l.tutorialFarewell,
 };
 
-/// Paint a hole around the actual widget. Gestures are intercepted separately.
+/// Separate holes preserve the relationship between disjoint real controls.
+/// Gestures and accessible tutorial controls live outside this painter.
 class TutorialScrim extends CustomPainter {
-  TutorialScrim(this.target, this.color);
-  final Rect? target;
+  TutorialScrim(this.targets, this.color);
+  final List<Rect> targets;
   final Color color;
+
   @override
   void paint(Canvas canvas, Size size) {
-    final path = Path()..addRect(Offset.zero & size);
-    if (target != null) {
-      path.addRRect(
-        RRect.fromRectAndRadius(target!.inflate(6), const Radius.circular(12)),
+    var path = Path()..addRect(Offset.zero & size);
+    final holes = targets.map(
+      (rect) =>
+          RRect.fromRectAndRadius(rect.inflate(6), const Radius.circular(12)),
+    );
+    for (final hole in holes) {
+      path = Path.combine(
+        PathOperation.difference,
+        path,
+        Path()..addRRect(hole),
       );
-      path.fillType = PathFillType.evenOdd;
     }
     canvas.drawPath(path, Paint()..color = color);
-    if (target != null) {
+    for (final hole in holes) {
       canvas.drawRRect(
-        RRect.fromRectAndRadius(target!.inflate(6), const Radius.circular(12)),
+        hole,
         Paint()
           ..color = Colors.white
           ..style = PaintingStyle.stroke
@@ -127,5 +141,5 @@ class TutorialScrim extends CustomPainter {
 
   @override
   bool shouldRepaint(TutorialScrim oldDelegate) =>
-      target != oldDelegate.target || color != oldDelegate.color;
+      !listEquals(targets, oldDelegate.targets) || color != oldDelegate.color;
 }
