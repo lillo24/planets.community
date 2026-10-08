@@ -70,6 +70,9 @@ Browse owns list, detail, mine and editor routes inside the app's stateful shell
 Switching tabs preserves list scroll/filters and saves meaningful dirty unpublished
 Proposal content before switching. Published edits remain deliberate. Identity
 changes discard the shell's retained stacks and clear owner controllers. Revision
+checks also discard retained editor/departure authority on suspension or a failed
+account-status check. Routine same-account checks preserve the frozen draft
+creation intent but invalidate in-flight work until readiness returns. Revision
 checks after each await reject late loads/mutations and prevent an old draft
 creation from proceeding to publish in a later session. Every owner RPC still
 receives the form's expected identity, and publication remains

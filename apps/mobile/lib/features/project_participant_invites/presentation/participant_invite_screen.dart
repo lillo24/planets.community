@@ -77,7 +77,7 @@ class _ParticipantInviteScreenState
         mounted &&
         revision == _chatRevision &&
         widget.token == token &&
-        ref.read(authSessionProvider).identity?.id == account;
+        ref.read(authSessionProvider).accountAccessIdentityId == account;
     try {
       final chat = await ref
           .read(participantInvitationGatewayProvider)
@@ -109,15 +109,20 @@ class _ParticipantInviteScreenState
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final session = ref.watch(authSessionProvider);
-    ref.listen(authSessionProvider.select((s) => s.identity?.id), (_, _) {
-      _chatRevision++;
-      if (mounted) {
-        setState(() {
-          _chatLoading = false;
-          _chatFailure = null;
-        });
-      }
-    });
+    ref.listen(
+      authSessionProvider.select(
+        (s) => (s.identity?.id, s.accountAccessIdentityId),
+      ),
+      (_, _) {
+        _chatRevision++;
+        if (mounted) {
+          setState(() {
+            _chatLoading = false;
+            _chatFailure = null;
+          });
+        }
+      },
+    );
     final state = ref.watch(participantAdmissionProvider);
     final current = state.isFor(widget.token, session.identity?.id);
     if (!current) {

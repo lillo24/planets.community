@@ -66,11 +66,16 @@ class ParticipantAdmissionController
   var _revision = 0;
   @override
   ParticipantAdmissionState build() {
-    ref.listen(authSessionProvider.select((s) => s.identity?.id), (_, _) {
-      _revision++;
-      _attempts.clear();
-      state = const ParticipantAdmissionState();
-    });
+    ref.listen(
+      authSessionProvider.select(
+        (s) => (s.identity?.id, s.accountAccessIdentityId),
+      ),
+      (_, _) {
+        _revision++;
+        _attempts.clear();
+        state = const ParticipantAdmissionState();
+      },
+    );
     ref.onDispose(() {
       _revision++;
       _attempts.clear();
@@ -82,7 +87,7 @@ class ParticipantAdmissionController
       ref.mounted &&
       revision == _revision &&
       state.isFor(token, account) &&
-      ref.read(authSessionProvider).identity?.id == account;
+      ref.read(authSessionProvider).accountAccessIdentityId == account;
   void _publish({
     ParticipantInvitePreview? preview,
     bool loading = false,
@@ -193,7 +198,8 @@ class ParticipantAdmissionController
       activeAttempt.busy = false;
       if (ref.mounted &&
           state.isFor(token, expectedAccount) &&
-          ref.read(authSessionProvider).identity?.id == expectedAccount) {
+          ref.read(authSessionProvider).accountAccessIdentityId ==
+              expectedAccount) {
         _publish(loading: state.loading, failure: state.failure);
       }
     }

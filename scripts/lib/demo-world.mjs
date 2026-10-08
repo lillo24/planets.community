@@ -2120,20 +2120,33 @@ async function verifyDemoWorldState(context, scenario, times) {
     publicDonate,
     ownerClosed,
   ] = await Promise.all([
-    anonymous.rpc("list_public_proposals", {
-      p_limit: 20,
-      p_cursor_starts_at: null,
-      p_cursor_id: null,
-      p_locality: "Trento",
-      p_skill_ids: null,
-    }),
-    anonymous.rpc("list_public_recurring_activities", {
-      p_reference_time: times.anchor,
-      p_limit: 20,
-      p_cursor_next_starts_at: null,
-      p_cursor_id: null,
-      p_locality: "Trento",
-    }),
+    readDemoDiscoveryPages(
+      anonymous,
+      "list_public_proposals",
+      {
+        p_limit: 20,
+        p_cursor_starts_at: null,
+        p_cursor_id: null,
+        p_locality: "Trento",
+        p_skill_ids: null,
+      },
+      { p_cursor_starts_at: "starts_at", p_cursor_id: "proposal_id" },
+    ),
+    readDemoDiscoveryPages(
+      anonymous,
+      "list_public_recurring_activities",
+      {
+        p_reference_time: times.anchor,
+        p_limit: 20,
+        p_cursor_next_starts_at: null,
+        p_cursor_id: null,
+        p_locality: "Trento",
+      },
+      {
+        p_cursor_next_starts_at: "next_starts_at",
+        p_cursor_id: "recurring_activity_id",
+      },
+    ),
     personas.bob.client.rpc("list_own_participation_request_message_items", {
       p_expected_profile_id: personas.bob.id,
       p_limit: 20,
@@ -2153,14 +2166,19 @@ async function verifyDemoWorldState(context, scenario, times) {
       p_before_created_at: null,
       p_before_message_id: null,
     }),
-    anonymous.rpc("list_public_resource_listings", {
-      p_limit: 20,
-      p_cursor_published_at: null,
-      p_cursor_id: null,
-      p_listing_mode: null,
-      p_locality: "Trento",
-      p_query: null,
-    }),
+    readDemoDiscoveryPages(
+      anonymous,
+      "list_public_resource_listings",
+      {
+        p_limit: 20,
+        p_cursor_published_at: null,
+        p_cursor_id: null,
+        p_listing_mode: null,
+        p_locality: "Trento",
+        p_query: null,
+      },
+      { p_cursor_published_at: "published_at", p_cursor_id: "listing_id" },
+    ),
     anonymous.rpc("get_public_proposal", {
       p_proposal_id: scenario.proposals.mural.id,
     }),
@@ -2399,6 +2417,47 @@ async function verifyDemoWorldState(context, scenario, times) {
     throw new Error(
       "The accepted demo participant lacks authorized meeting access.",
     );
+  }
+}
+
+// Other verifier fixtures share the demo locality. Read every canonical page
+// rather than assuming demo-owned records are in the first twenty results.
+export async function readDemoDiscoveryPages(
+  client,
+  rpcName,
+  args,
+  cursorFields,
+) {
+  const rows = [];
+  const ids = new Set();
+  let pageArgs = { ...args };
+  for (;;) {
+    const result = await client.rpc(rpcName, pageArgs);
+    if (result.error) {
+      throw safeDatabaseFailure(`read demo discovery ${rpcName}`, result.error);
+    }
+    if (!Array.isArray(result.data)) {
+      throw new Error(`Demo discovery ${rpcName} returned a non-array page.`);
+    }
+    for (const row of result.data) {
+      const id = row?.[cursorFields.p_cursor_id];
+      if (typeof id !== "string" || !id || ids.has(id)) {
+        throw new Error(
+          `Demo discovery ${rpcName} returned an invalid/repeated ID.`,
+        );
+      }
+      ids.add(id);
+      rows.push(row);
+    }
+    if (result.data.length < args.p_limit) return { data: rows, error: null };
+    const last = result.data.at(-1);
+    pageArgs = { ...args };
+    for (const [parameter, field] of Object.entries(cursorFields)) {
+      if (typeof last[field] !== "string" || !last[field]) {
+        throw new Error(`Demo discovery ${rpcName} has no ${field} cursor.`);
+      }
+      pageArgs[parameter] = last[field];
+    }
   }
 }
 

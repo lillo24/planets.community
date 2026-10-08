@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:planets_mobile/app/router/draft_departure_coordinator.dart';
 import 'package:planets_mobile/features/auth/application/auth_session_controller.dart';
+import 'package:planets_mobile/features/auth/data/auth_gateway.dart';
 import 'package:planets_mobile/features/auth/domain/auth_models.dart';
 import 'package:planets_mobile/features/cover_media/domain/cover_media_models.dart';
 import 'package:planets_mobile/features/cover_media/presentation/cover_editor_section.dart';
@@ -12,6 +13,7 @@ import 'package:planets_mobile/features/proposals/domain/similar_proposal.dart';
 import 'package:planets_mobile/features/proposals/presentation/proposal_editor_screen.dart';
 
 import '../../../support/fake_cover_media.dart';
+import '../../../support/fake_auth.dart';
 import '../../../support/fake_proposal.dart';
 import '../../../support/fake_similar_proposal.dart';
 import '../../../support/fake_template.dart';
@@ -64,16 +66,26 @@ void main() {
       final old = tester
           .widget<TextButton>(find.byKey(const Key('similar-open-$similarId')))
           .onPressed!;
+      Completer<void>? statusGate;
+      Future<void>? readinessCheck;
       if (loss == 'input') {
         title.text = 'murale';
       } else if (loss == 'readiness') {
-        app.container
+        statusGate = Completer<void>();
+        (app.container.read(
+          authGatewayProvider,
+        ) as FakeAuthGateway).suspensionDelay = statusGate.future;
+        readinessCheck = app.container
             .read(authSessionProvider.notifier)
-            .markCheckingProfile(const AuthIdentity(id: 'user-1'));
+            .refresh();
       } else {
         await tester.pumpWidget(const SizedBox.shrink());
       }
       old();
+      // Deliver the stale callback while canonical readiness is still pending,
+      // then finish the actual refresh before settling the loading animation.
+      statusGate?.complete();
+      if (readinessCheck != null) await readinessCheck;
       await tester.pumpAndSettle();
       expect(find.byKey(const Key('similar-sheet')), findsNothing);
       expect(find.text('Candidate detail'), findsNothing);

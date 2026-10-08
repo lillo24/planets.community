@@ -7,7 +7,10 @@ import {
   normalizeQuery,
   normalizeResults,
 } from "../../supabase/functions/location-search/provider.mjs";
-import { createHandler } from "../../supabase/functions/location-search/handler.mjs";
+import {
+  createHandler,
+  locationRpcFailure,
+} from "../../supabase/functions/location-search/handler.mjs";
 
 const row = (changes = {}) => ({
   country_code: "it",
@@ -45,6 +48,49 @@ const request = (body) =>
   });
 const fails = (status) => (error) =>
   error instanceof LocationFailure && error.status === status;
+
+test("canonical service suspension denies reserve/resolve/issue without diagnostics or new upstream work", async () => {
+  for (const deniedStep of ["reserve", "resolve", "issue"]) {
+    let upstream = 0;
+    const calls = [];
+    const metrics = [];
+    const handler = createHandler({
+      enabled: true,
+      key: "fake",
+      authenticate: async () => actor,
+      metric: (status) => metrics.push(status),
+      fetcher: async () => {
+        upstream++;
+        return Response.json({ results: [row()] });
+      },
+      rpc: async (name, args) => {
+        calls.push({ name, args });
+        if (name.startsWith(deniedStep)) throw locationRpcFailure("PT403");
+        return { status: "ok", cached: false, batch_id: session };
+      },
+    });
+    const body =
+      deniedStep === "resolve"
+        ? input({
+            operation: "resolve",
+            query: undefined,
+            language: undefined,
+            receipt_id: receipt,
+          })
+        : input();
+    const response = await handler(request(body));
+    assert.equal(response.status, 403);
+    assert.deepEqual(await response.json(), { status: "unauthorized" });
+    assert.equal(upstream, deniedStep === "issue" ? 1 : 0);
+    assert.equal(calls.at(-1).name.startsWith(deniedStep), true);
+    assert.deepEqual(metrics, ["unauthorized"]);
+  }
+  assert.equal(locationRpcFailure("42501").status, "unauthorized");
+  assert.equal(
+    locationRpcFailure("unknown PRIVATE diagnostic").status,
+    "metering_unavailable",
+  );
+});
 
 test("normalization bounds, NFC, controls and input encoding", () => {
   assert.equal(normalizeQuery("  Povo,   Trento  "), "Povo, Trento");

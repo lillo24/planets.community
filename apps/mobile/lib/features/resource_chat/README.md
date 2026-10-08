@@ -50,3 +50,10 @@ relationship-authorized avatar.
 09B2 adds confirmed Block/Unblock beside the canonical counterparty. The action
 invalidates that person's cached photo but never makes accepted/open chat
 read-only; ordinary agreement lifecycle still owns send availability.
+
+09C1B account suspension takes precedence over this relationship entitlement:
+private reads/sends are denied without terminating the accepted request,
+agreement, or history. Confirmed suspension or a failed account-status check
+clears cached private state and closes channels. The backend suppresses new
+recipient Broadcast hints even on a socket with cached authorization; already
+queued hints cannot be recalled. Revocation restores the unchanged relationship.

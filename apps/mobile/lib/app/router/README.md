@@ -5,6 +5,8 @@
 - `/help` and its contact/bug/person children are public root routes, with no
   readiness gate or new navigation branch. Help reuses the typed `/intro` replay
   API; it does not modify Auth, native invitation or editor-departure guards.
+  Public means signed-out access, not a suspended-account exception. The existing
+  global status redirect precedes Help/tutorial entry, Back, Welcome and late replay.
 - Its `_NativeRoutingConfig` composes native validation/deduplication with the
   single draft coordinator. Ordinary routes retain `onEnter` while an editor
   owns departure; startup without an owner keeps synchronous Auth restoration.

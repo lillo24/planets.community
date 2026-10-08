@@ -222,40 +222,60 @@ void main() {
     const AuthSessionState.checkingProfile(AuthIdentity(id: 'user-1')),
     const AuthSessionState.restorationFailed(),
   ]) {
-    testWidgets('${phase.phase.name} remains truthful without private reads', (
-      tester,
-    ) async {
-      final fixture = _Fixture();
-      await fixture.pump(tester, session: phase, settle: false);
-      final l10n = AppLocalizations.of(
-        tester.element(find.byType(Scaffold).last),
-      );
-      expect(
-        find.text(switch (phase.phase) {
-          AuthSessionPhase.restoring => l10n.authRestoringSession,
-          AuthSessionPhase.checkingProfile => l10n.authCompletingProfile,
-          _ => l10n.authRestoreFailure,
-        }),
-        findsOneWidget,
-      );
-      expect(find.byType(TabBar), findsNothing);
-      expect(find.text('No conversations'), findsNothing);
-      expect(find.byKey(const Key('messages-context-action')), findsNothing);
-      fixture.expectNoPrivateCalls();
-      expect(tester.takeException(), isNull);
-    });
+    testWidgets(
+      '${phase.phase.name} stays behind the account gate without private reads',
+      (tester) async {
+        final fixture = _Fixture();
+        final app = await fixture.pump(tester, session: phase, settle: false);
+        final l10n = AppLocalizations.of(
+          tester.element(find.byType(Scaffold).last),
+        );
+        expect(
+          // MODINT01's canonical account gate preempts Messages-local Auth UI.
+          // Preserve the guest-frame coverage once account access is resolved.
+          find.text(
+            phase.phase == AuthSessionPhase.restorationFailed
+                ? l10n.accountStatusFailure
+                : l10n.accountStatusChecking,
+          ),
+          findsOneWidget,
+        );
+        expect(
+          app.read(appRouterProvider).routerDelegate.state.uri.path,
+          '/account/suspended',
+        );
+        expect(find.byKey(const Key('account-status-check')), findsOneWidget);
+        expect(
+          find.byKey(const Key('account-status-sign-out')),
+          findsOneWidget,
+        );
+        expect(find.byType(TabBar), findsNothing);
+        expect(find.text('No conversations'), findsNothing);
+        expect(find.byKey(const Key('messages-context-action')), findsNothing);
+        fixture.expectNoPrivateCalls();
+        expect(tester.takeException(), isNull);
+      },
+    );
   }
 
-  testWidgets('restoration failure retries to the public guest frame', (
+  testWidgets('central restoration retry returns to the public guest frame', (
     tester,
   ) async {
     final fixture = _Fixture()
       ..auth.snapshotError = StateError('private failure');
-    await fixture.pump(tester);
+    final app = await fixture.pump(tester);
+    expect(
+      app.read(appRouterProvider).routerDelegate.state.uri.path,
+      '/account/suspended',
+    );
     expect(find.textContaining('private failure'), findsNothing);
     fixture.auth.snapshotError = null;
-    await tester.tap(find.text('Try again'));
+    await tester.tap(find.byKey(const Key('account-status-check')));
     await tester.pumpAndSettle();
+    expect(
+      app.read(appRouterProvider).routerDelegate.state.uri.path,
+      '/messages',
+    );
     expect(find.byType(TabBar), findsOneWidget);
     fixture.expectNoPrivateCalls();
   });

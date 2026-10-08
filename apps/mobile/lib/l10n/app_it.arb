@@ -1280,9 +1280,21 @@
   "projectOrganizerCapacityConflict": "Aumenta la capienza iscrizioni prima di conteggiare gli organizzatori.",
   "projectCapacityNotSet": "Capienza iscrizioni non impostata",
   "projectCapacityUpToParticipants": "Fino a {capacity} partecipanti",
-  "@projectCapacityUpToParticipants": { "placeholders": { "capacity": { "type": "int" } } },
+  "@projectCapacityUpToParticipants": {
+    "placeholders": {
+      "capacity": {
+        "type": "int"
+      }
+    }
+  },
   "projectCapacityLimit": "Capienza {capacity}",
-  "@projectCapacityLimit": { "placeholders": { "capacity": { "type": "int" } } },
+  "@projectCapacityLimit": {
+    "placeholders": {
+      "capacity": {
+        "type": "int"
+      }
+    }
+  },
   "projectCapacityUsage": "{used} / {capacity} posti utilizzati",
   "projectCapacityParticipantUsage": "{participants} / {capacity} posti partecipante utilizzati",
   "projectOrganizerIncludedCount": "{count} organizzatori inclusi",
@@ -1459,6 +1471,61 @@
       }
     }
   },
+  "accountSuspendedTitle": "Account sospeso",
+  "accountSuspendedBody": "L'accesso ordinario non è disponibile mentre il tuo account è sospeso.",
+  "accountSuspendedReasonLabel": "Motivo",
+  "accountStatusTitle": "Accesso all'account",
+  "accountStatusChecking": "Verifica dell'accesso all'account…",
+  "accountStatusCheckAgain": "Verifica di nuovo lo stato",
+  "accountStatusFailure": "Non è stato possibile verificare l'accesso all'account. Riprova o esci.",
+  "ownRequestRestrictionExplanation": "Sul tuo account è attiva una limitazione delle nuove richieste. Consulta gli avvisi di PLANETS per i dettagli. Restano valide le altre regole di partecipazione.",
+  "ownRequestRestrictionViewNotices": "Consulta gli avvisi di PLANETS",
+  "noticesTitle": "Avvisi di PLANETS",
+  "noticesIntroduction": "Avvisi privati di moderazione e relativa cronologia, con i motivi destinati a te. Non sono un badge pubblico sul profilo né un punteggio.",
+  "noticesLoading": "Caricamento degli avvisi di PLANETS…",
+  "noticesPageLoading": "Caricamento degli avvisi precedenti…",
+  "noticesRefresh": "Aggiorna gli avvisi",
+  "noticesLoadMore": "Carica gli avvisi precedenti",
+  "noticesRetry": "Riprova",
+  "noticesLoadError": "Impossibile caricare gli avvisi. Questo non significa che non ce ne siano.",
+  "noticesPageError": "Impossibile caricare gli avvisi precedenti. Quelli già caricati restano visibili.",
+  "noticesForbidden": "Questi avvisi non sono disponibili per l’account attuale. Verifica l’accesso all’account o riprova.",
+  "noticesEmptyTitle": "Nessun avviso di PLANETS",
+  "noticesEmptyBody": "Non sono stati restituiti avvisi di moderazione per il tuo account.",
+  "noticesEnd": "Fine della cronologia disponibile",
+  "noticesTimeZone": "Le date usano il fuso orario di questo dispositivo.",
+  "noticesActive": "Attivo",
+  "noticesRemoved": "Rimosso",
+  "noticesAppliedOn": "Applicato il {date}",
+  "noticesRemovedOn": "Rimosso il {date}",
+  "@noticesAppliedOn": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "@noticesRemovedOn": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "noticesApplyReason": "Motivo comunicato a te",
+  "noticesRemoveReason": "Motivo della rimozione",
+  "noticesSafetyTitle": "Avviso di moderazione",
+  "noticesSafetyEffect": "PLANETS ha registrato un avviso di moderazione. Questo avviso, da solo, non limita le azioni dell’account e non è un badge pubblico sul profilo.",
+  "noticesRestrictionTitle": "Limitazione delle interazioni",
+  "noticesRestrictionEffect": "Finché la limitazione è attiva, non puoi inviare nuove richieste di partecipazione ai Progetti o nuove richieste in Scambio/Dona, né aderire ai Progetti tramite link di invito. Le richieste in attesa sono state ritirate quando è stata applicata. Partecipazioni, accordi e ruoli esistenti sono conservati e restano soggetti alle regole abituali e ad altre eventuali limitazioni.",
+  "noticesHideTitle": "Contenuto nascosto",
+  "noticesHideEffect": "Quando è attivo, il provvedimento limita la visibilità di questo contenuto e l’accesso a nuove interazioni. Nascondere è distinto da annullare, chiudere o eliminare.",
+  "noticesSuspensionTitle": "Sospensione dell’account",
+  "noticesSuspensionEffect": "Le sospensioni passate compaiono qui quando è disponibile l’accesso ordinario all’account. Un account con sospensione attiva usa la schermata dedicata allo stato dell’account.",
+  "noticesRemovalEffect": "La rimozione non reinvia automaticamente le richieste ritirate, non riapre i contenuti chiusi e non ripubblica quelli annullati. Possono restare altre limitazioni.",
+  "noticesProject": "Progetto",
+  "noticesTavolo": "Tavolo",
+  "noticesResource": "Risorsa di Scambio/Dona",
   "messagePrivateChatSemantics": "Conversazione con {name}",
   "@messagePrivateChatSemantics": {
     "placeholders": {

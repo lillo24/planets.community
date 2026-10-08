@@ -15,15 +15,30 @@ class PlanetsApp extends ConsumerStatefulWidget {
   ConsumerState<PlanetsApp> createState() => _PlanetsAppState();
 }
 
-class _PlanetsAppState extends ConsumerState<PlanetsApp> {
+class _PlanetsAppState extends ConsumerState<PlanetsApp>
+    with WidgetsBindingObserver {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     Future<void>.microtask(() async {
       if (mounted) {
         await ref.read(authSessionProvider.notifier).start();
       }
     });
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      ref.read(authSessionProvider.notifier).refresh();
+    }
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
   }
 
   @override

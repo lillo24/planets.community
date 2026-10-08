@@ -95,7 +95,7 @@ jobs:
       - name: Install Node.js
         uses: actions/setup-node@v7.0.0
         with:
-          node-version: 24.20.0
+          node-version: 24.21.0
           cache: npm
 
       - name: Restore Node packages
@@ -117,7 +117,7 @@ jobs:
       - name: Install Node.js
         uses: actions/setup-node@v7.0.0
         with:
-          node-version: 24.20.0
+          node-version: 24.21.0
           cache: npm
 
       - name: Restore Node packages
@@ -141,7 +141,7 @@ jobs:
       - name: Install Node.js
         uses: actions/setup-node@v7.0.0
         with:
-          node-version: 24.20.0
+          node-version: 24.21.0
           cache: npm
 
       - name: Restore Node packages
@@ -247,6 +247,32 @@ jobs:
 
       - name: Verify join-request contribution selections and concurrency
         run: npm run project:contribution-selections:verify:local
+
+      # The bounded default observes all four leave/removal winner orders.
+      # Keep the 40-case diagnostic campaign opt-in, not recurring PR cost.
+      - name: Verify membership commitments and observed end-state races
+        run: npm run project:membership-commitments:verify:local
+
+      - name: Verify authenticated moderation consequences and hidden cover access
+        run: npm run moderation:consequences:verify:local
+
+      - name: Verify moderation consequence races and final-capacity-spot preservation
+        run: npm run moderation:consequences:concurrency:verify:local
+
+      - name: Verify account suspension access, media, preservation and Realtime
+        run: npm run moderation:suspension:verify:local
+
+      - name: Verify account suspension concurrency barriers
+        run: npm run moderation:suspension:concurrency:verify:local
+
+      - name: Audit account suspension RPC inventory and Broadcast emitters
+        run: npm run moderation:suspension:audit:local
+
+      - name: Verify integrated participant invitations and moderation on pre-existing sessions
+        run: npm run moderation:integration:verify:local
+
+      - name: Verify integrated invitation admission and moderation serialization
+        run: npm run moderation:integration:concurrency:verify:local
 
       - name: Generate local web configuration
         run: npm run web:config:local

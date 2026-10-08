@@ -15,6 +15,20 @@ const reply = (status, data = {}, code = 200) =>
     },
   });
 
+// Shared with the actual REST adapter: inspect only a finite SQLSTATE, never
+// transport diagnostics, moderation reasons or staff-note fields.
+export function locationRpcFailure(code) {
+  return new LocationFailure(
+    code === "PT403" || code === "42501"
+      ? "unauthorized"
+      : code === "55000"
+        ? "immutable_item"
+        : code === "22023"
+          ? "invalid_request"
+          : "metering_unavailable",
+  );
+}
+
 // Dependencies keep credentials, auth, metering and HTTP fakeable independently.
 export function createHandler({
   enabled = false,
@@ -141,7 +155,15 @@ export function createHandler({
         error instanceof LocationFailure
           ? error.status
           : "metering_unavailable";
-      return reply(status, {}, status === "invalid_request" ? 400 : 200);
+      return reply(
+        status,
+        {},
+        status === "invalid_request"
+          ? 400
+          : status === "unauthorized"
+            ? 403
+            : 200,
+      );
     } finally {
       // Counts/status only. Never log request objects, URLs, errors, labels,
       // receipts, actors, JWTs, coordinates or provider payloads.

@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:planets_mobile/app/planets_app.dart';
@@ -9,6 +12,8 @@ import 'package:planets_mobile/features/auth/application/auth_session_controller
 import 'package:planets_mobile/features/auth/domain/auth_models.dart';
 import 'package:planets_mobile/features/participation/application/project_people_controller.dart';
 import 'package:planets_mobile/features/participation/data/project_people_gateway.dart';
+import 'package:planets_mobile/features/moderation/data/own_interaction_restriction_gateway.dart';
+import 'package:planets_mobile/features/moderation/data/own_consequence_gateway.dart';
 import 'package:planets_mobile/features/participation/data/actual_contribution_gateway.dart';
 import 'package:planets_mobile/features/participation/data/membership_commitment_gateway.dart';
 import 'package:planets_mobile/features/participation/data/participation_gateway.dart';
@@ -32,6 +37,8 @@ import 'package:planets_mobile/features/recurring_activities/domain/recurring_ac
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../support/fake_auth.dart';
+import '../../../support/fake_own_interaction_restriction.dart';
+import '../../../support/fake_own_consequences.dart';
 import '../../../support/fake_actual_contribution.dart';
 import '../../../support/fake_membership_commitment.dart';
 import '../../../support/fake_participation.dart';
@@ -256,6 +263,224 @@ void main() {
     );
   }
 
+  testWidgets(
+    'a new form for the same Project cannot inherit confirmed own state',
+    (tester) async {
+      final restriction = FakeOwnInteractionRestrictionGateway()..active = true;
+      final app = await _pump(
+        tester,
+        ownRestriction: restriction,
+        participation: FakeParticipationGateway()
+          ..error = const PostgrestException(message: 'private', code: 'PT409'),
+      );
+      final router = app.read(appRouterProvider);
+      router.go('/proposals/proposal-1/join');
+      await tester.pumpAndSettle();
+      await _scrollTo(
+        tester,
+        find.byKey(const Key('participation-send-request')),
+      );
+      await tester.tap(find.byKey(const Key('participation-send-request')));
+      await tester.pumpAndSettle();
+      expect(
+        find.byKey(const Key('own-request-restriction-explanation')),
+        findsOneWidget,
+      );
+      final newForm = router.push<void>('/proposals/proposal-1/join');
+      await tester.pumpAndSettle();
+      expect(
+        find.byKey(const Key('own-request-restriction-explanation')),
+        findsNothing,
+      );
+      expect(restriction.identities, ['user-2']);
+      await tester.pageBack();
+      await newForm;
+      await tester.pumpAndSettle();
+      expect(
+        find.byKey(const Key('own-request-restriction-explanation')),
+        findsOneWidget,
+      );
+      expect(restriction.identities, ['user-2']);
+    },
+  );
+
+  testWidgets(
+    'Project account switch clears private draft and rejects late own result',
+    (tester) async {
+      final pending = Completer<bool>();
+      final restriction = FakeOwnInteractionRestrictionGateway()
+        ..pending = pending.future;
+      final app = await _pump(
+        tester,
+        ownRestriction: restriction,
+        participation: FakeParticipationGateway()
+          ..error = const PostgrestException(message: 'private', code: 'PT409'),
+      );
+      app.read(appRouterProvider).go('/proposals/proposal-1/join');
+      await tester.pumpAndSettle();
+      await tester.enterText(
+        find.byKey(const Key('participation-message-field')),
+        'Account A private draft',
+      );
+      await _scrollTo(
+        tester,
+        find.byKey(const Key('participation-send-request')),
+      );
+      await tester.tap(find.byKey(const Key('participation-send-request')));
+      await tester.pumpAndSettle();
+      expect(restriction.identities, ['user-2']);
+      (app.read(authGatewayProvider) as FakeAuthGateway).emit(
+        const AuthSnapshot(identity: AuthIdentity(id: 'user-3')),
+      );
+      await tester.pumpAndSettle();
+      pending.complete(true);
+      await tester.pumpAndSettle();
+      expect(find.text('Account A private draft'), findsNothing);
+      expect(
+        find.byKey(const Key('own-request-restriction-explanation')),
+        findsNothing,
+      );
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  testWidgets(
+    'own restriction notices/back preserves message and selected offers, explicit retry calls canonical submit',
+    (tester) async {
+      final restriction = FakeOwnInteractionRestrictionGateway()..active = true;
+      final participation = FakeParticipationGateway()
+        ..error = const PostgrestException(
+          message: 'hidden target or own restriction',
+          code: 'PT409',
+        );
+      final app = await _pump(
+        tester,
+        participation: participation,
+        ownRestriction: restriction,
+        projectResourceNeeds: FakeProjectResourceNeedsGateway()
+          ..publicItems = [
+            publicProjectResourceNeedFixture(
+              id: 'boards',
+              title: 'Wooden boards',
+            ),
+          ],
+      );
+      app.read(appRouterProvider).go('/proposals/proposal-1/join');
+      await tester.pumpAndSettle();
+      await tester.tap(
+        find.byKey(const Key('participation-option-resource-boards')),
+      );
+      await tester.enterText(
+        find.byKey(const Key('participation-message-field')),
+        'Keep my private draft',
+      );
+      await _scrollTo(
+        tester,
+        find.byKey(const Key('participation-send-request')),
+      );
+      await tester.tap(find.byKey(const Key('participation-send-request')));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('participation-join-error')), findsOneWidget);
+      expect(
+        find.byKey(const Key('own-request-restriction-explanation')),
+        findsOneWidget,
+      );
+      expect(restriction.identities, ['user-2']);
+      await _scrollTo(
+        tester,
+        find.byKey(const Key('own-request-restriction-notices')),
+      );
+      await tester.tap(
+        find.byKey(const Key('own-request-restriction-notices')),
+      );
+      await tester.pumpAndSettle();
+      expect(
+        app.read(appRouterProvider).routerDelegate.state.uri.path,
+        '/settings/notices',
+      );
+      await tester.pageBack();
+      await tester.pumpAndSettle();
+      expect(
+        tester
+            .widget<TextFormField>(
+              find.byKey(const Key('participation-message-field')),
+            )
+            .controller!
+            .text,
+        'Keep my private draft',
+      );
+      expect(
+        tester
+            .widget<FilterChip>(
+              find.byKey(const Key('participation-option-resource-boards')),
+            )
+            .selected,
+        isTrue,
+      );
+      expect(
+        participation.calls.where((c) => c == 'request:proposal-1'),
+        hasLength(1),
+      );
+      restriction.active = false;
+      participation.error = null;
+      await _scrollTo(
+        tester,
+        find.byKey(const Key('participation-send-request')),
+      );
+      await tester.tap(find.byKey(const Key('participation-send-request')));
+      await tester.pumpAndSettle();
+      expect(
+        participation.calls.where((c) => c == 'request:proposal-1'),
+        hasLength(2),
+      );
+      expect(participation.lastResourceNeedIds, {'boards'});
+      expect(
+        restriction.identities,
+        hasLength(1),
+      ); // No eligibility preflight on success.
+      expect(
+        find.byKey(const Key('own-request-restriction-explanation')),
+        findsNothing,
+      );
+    },
+  );
+
+  for (final ownActive in [false, true]) {
+    testWidgets(
+      'generic Tavolo denial explains only independently confirmed own state: $ownActive',
+      (tester) async {
+        final restriction = FakeOwnInteractionRestrictionGateway()
+          ..active = ownActive;
+        final app = await _pump(
+          tester,
+          ownRestriction: restriction,
+          participation: FakeParticipationGateway()
+            ..error = const PostgrestException(
+              message: 'private block relationship',
+              code: 'PT409',
+            ),
+        );
+        app.read(appRouterProvider).go('/tavoli/tavolo-1/join');
+        await tester.pumpAndSettle();
+        await _scrollTo(
+          tester,
+          find.byKey(const Key('participation-send-request')),
+        );
+        await tester.tap(find.byKey(const Key('participation-send-request')));
+        await tester.pumpAndSettle();
+        expect(
+          find.byKey(const Key('participation-join-error')),
+          findsOneWidget,
+        );
+        expect(find.textContaining('private block relationship'), findsNothing);
+        expect(
+          find.byKey(const Key('own-request-restriction-explanation')),
+          ownActive ? findsOneWidget : findsNothing,
+        );
+      },
+    );
+  }
+
   for (final role in [
     ProjectManagementRole.creator,
     ProjectManagementRole.coCreator,
@@ -290,6 +515,42 @@ void main() {
       );
     });
   }
+  testWidgets(
+    'generic denial remains visible during failed optional check and newer attempt clears old explanation',
+    (tester) async {
+      final pending = Completer<bool>();
+      final restriction = FakeOwnInteractionRestrictionGateway()
+        ..pending = pending.future;
+      final app = await _pump(
+        tester,
+        ownRestriction: restriction,
+        participation: FakeParticipationGateway()
+          ..error = const PostgrestException(message: 'private', code: 'PT409'),
+      );
+      app.read(appRouterProvider).go('/proposals/proposal-1/join');
+      await tester.pumpAndSettle();
+      await _scrollTo(
+        tester,
+        find.byKey(const Key('participation-send-request')),
+      );
+      await tester.tap(find.byKey(const Key('participation-send-request')));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('participation-join-error')), findsOneWidget);
+      expect(
+        find.byKey(const Key('own-request-restriction-explanation')),
+        findsNothing,
+      );
+      pending.completeError(
+        const FormatException('Synthetic malformed response'),
+      );
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('participation-join-error')), findsOneWidget);
+      expect(
+        find.byKey(const Key('own-request-restriction-explanation')),
+        findsNothing,
+      );
+    },
+  );
 
   testWidgets('join without photo opens applicant gate and never auto-sends', (
     tester,
@@ -1087,6 +1348,7 @@ Future<ProviderContainer> _pump(
   bool hasPhoto = true,
   FakeProfilePhotoGateway? photoGateway,
   FakeProjectPeopleGateway? people,
+  FakeOwnInteractionRestrictionGateway? ownRestriction,
 }) async {
   final auth = FakeAuthGateway(
     snapshot: AuthSnapshot(identity: AuthIdentity(id: identityId)),
@@ -1107,6 +1369,12 @@ Future<ProviderContainer> _pump(
   await tester.pumpWidget(
     ProviderScope(
       overrides: [
+        ownInteractionRestrictionGatewayProvider.overrideWithValue(
+          ownRestriction ?? FakeOwnInteractionRestrictionGateway(),
+        ),
+        ownConsequenceGatewayProvider.overrideWithValue(
+          FakeOwnConsequenceGateway(),
+        ),
         appConfigProvider.overrideWithValue(
           AppConfig.fromValues(
             appEnvironment: 'local',

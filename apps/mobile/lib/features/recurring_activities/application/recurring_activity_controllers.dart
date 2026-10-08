@@ -256,13 +256,13 @@ class OwnRecurringActivitiesController
 
   @override
   OwnRecurringActivitiesState build() {
-    ref.listen(authSessionProvider.select((value) => value.identity?.id), (
-      _,
-      _,
-    ) {
-      _revision++;
-      state = const OwnRecurringActivitiesState();
-    });
+    ref.listen(
+      authSessionProvider.select((value) => value.accountAccessIdentityId),
+      (_, _) {
+        _revision++;
+        state = const OwnRecurringActivitiesState();
+      },
+    );
     ref.onDispose(() => _revision++);
     return const OwnRecurringActivitiesState();
   }
@@ -376,13 +376,13 @@ class RecurringActivityEditorController
 
   @override
   RecurringActivityEditorState build() {
-    ref.listen(authSessionProvider.select((value) => value.identity?.id), (
-      _,
-      _,
-    ) {
-      _revision++;
-      state = const RecurringActivityEditorState();
-    });
+    ref.listen(
+      authSessionProvider.select((value) => value.accountAccessIdentityId),
+      (_, _) {
+        _revision++;
+        state = const RecurringActivityEditorState();
+      },
+    );
     ref.onDispose(() => _revision++);
     return const RecurringActivityEditorState();
   }

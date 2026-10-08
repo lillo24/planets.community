@@ -1,5 +1,5 @@
-import { createHandler } from "./handler.mjs";
-import { boundedJson, LocationFailure } from "./provider.mjs";
+import { createHandler, locationRpcFailure } from "./handler.mjs";
+import { boundedJson } from "./provider.mjs";
 
 const enabled = Deno.env.get("LOCATION_SEARCH_ENABLED") === "true";
 const key = Deno.env.get("GEOAPIFY_API_KEY") ?? "";
@@ -36,15 +36,7 @@ Deno.serve(
       });
       const result = await boundedJson(response, 32768);
       if (!response.ok) {
-        throw new LocationFailure(
-          result.code === "42501"
-            ? "unauthorized"
-            : result.code === "55000"
-              ? "immutable_item"
-              : result.code === "22023"
-                ? "invalid_request"
-                : "metering_unavailable",
-        );
+        throw locationRpcFailure(result.code);
       }
       return result;
     },

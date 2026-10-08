@@ -62,7 +62,7 @@ class _ProjectShareDialogState extends ConsumerState<ProjectShareDialog> {
 
   bool get _current =>
       mounted &&
-      ref.read(authSessionProvider).identity?.id == _account &&
+      ref.read(authSessionProvider).accountAccessIdentityId == _account &&
       GoRouter.of(context).state.uri.path ==
           ProjectDelegateRoutes.detail(widget.kind, widget.projectId);
   Future<void> _readRole() async {

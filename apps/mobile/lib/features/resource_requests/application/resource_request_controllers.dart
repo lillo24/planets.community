@@ -33,13 +33,13 @@ class ResourceRequestHistoryController
 
   @override
   ResourceRequestHistoryState build() {
-    ref.listen(authSessionProvider.select((session) => session.identity?.id), (
-      _,
-      _,
-    ) {
-      _revision++;
-      state = const ResourceRequestHistoryState();
-    });
+    ref.listen(
+      authSessionProvider.select((session) => session.accountAccessIdentityId),
+      (_, _) {
+        _revision++;
+        state = const ResourceRequestHistoryState();
+      },
+    );
     ref.onDispose(() => _revision++);
     return const ResourceRequestHistoryState();
   }
@@ -151,13 +151,13 @@ class ResourceRequestComposerController
 
   @override
   ResourceRequestComposerState build() {
-    ref.listen(authSessionProvider.select((session) => session.identity?.id), (
-      _,
-      _,
-    ) {
-      _revision++;
-      state = ResourceRequestComposerState(listingId: listingId);
-    });
+    ref.listen(
+      authSessionProvider.select((session) => session.accountAccessIdentityId),
+      (_, _) {
+        _revision++;
+        state = ResourceRequestComposerState(listingId: listingId);
+      },
+    );
     ref.onDispose(() => _revision++);
     return ResourceRequestComposerState(listingId: listingId);
   }
@@ -221,6 +221,16 @@ class ResourceRequestComposerController
     } catch (error) {
       if (!_isCurrent(revision, expectedRequesterProfileId)) return false;
       final failure = mapResourceRequestFailure(error);
+      if (error is PostgrestException && error.code == 'PT403') {
+        state = ResourceRequestComposerState(
+          listingId: listingId,
+          expectedRequesterProfileId: expectedRequesterProfileId,
+          phase: ResourceRequestComposerPhase.failure,
+          failure: ResourceRequestFailureKind.forbidden,
+        );
+        await ref.read(authSessionProvider.notifier).refresh();
+        return false;
+      }
       OwnResourceRequest? canonical;
       if (failure == ResourceRequestFailureKind.conflict ||
           failure == ResourceRequestFailureKind.interactionUnavailable ||
@@ -300,13 +310,13 @@ class ResourceRequestDetailController
 
   @override
   ResourceRequestDetailState build() {
-    ref.listen(authSessionProvider.select((session) => session.identity?.id), (
-      _,
-      _,
-    ) {
-      _revision++;
-      state = ResourceRequestDetailState(requestId: requestId);
-    });
+    ref.listen(
+      authSessionProvider.select((session) => session.accountAccessIdentityId),
+      (_, _) {
+        _revision++;
+        state = ResourceRequestDetailState(requestId: requestId);
+      },
+    );
     ref.onDispose(() => _revision++);
     return ResourceRequestDetailState(requestId: requestId);
   }

@@ -47,7 +47,8 @@ class _ShareLinkButtonsState extends ConsumerState<ShareLinkButtons> {
     bool current() =>
         mounted &&
         revision == _revision &&
-        ref.read(authSessionProvider).identity?.id == account;
+        ref.read(authSessionProvider).identity?.id == account &&
+        ref.read(authSessionProvider).accountAccessIdentityId == account;
     try {
       final value = await widget.prepare();
       if (!mounted ||
@@ -93,15 +94,20 @@ class _ShareLinkButtonsState extends ConsumerState<ShareLinkButtons> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    ref.listen(authSessionProvider.select((s) => s.identity?.id), (_, _) {
-      _revision++;
-      if (mounted) {
-        setState(() {
-          _busy = false;
-          _message = null;
-        });
-      }
-    });
+    ref.listen(
+      authSessionProvider.select(
+        (s) => (s.identity?.id, s.accountAccessIdentityId),
+      ),
+      (_, _) {
+        _revision++;
+        if (mounted) {
+          setState(() {
+            _busy = false;
+            _message = null;
+          });
+        }
+      },
+    );
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [

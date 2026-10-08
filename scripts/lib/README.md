@@ -1,5 +1,11 @@
 # Local verifier helpers
 
+`account-suspension-audit.mjs` traces qualified SQL function calls to account gates
+and classifies each public signature. Its unit tests reject missing/cyclic gates;
+the local audit compares against the committed RPC inventory and rejects private
+broadcasters bypassing suspended-recipient filtering. It is deliberately a
+heuristic source audit, complemented by pgTAP and real-auth/race/Realtime tests.
+
 This folder owns reusable Node.js helpers and their unit tests for repository
 tooling.
 
@@ -14,7 +20,10 @@ tooling.
 - `demo-world.mjs` owns the stable synthetic persona/scenario registry, exact
   legacy-title adoption, strict loopback-only target guard, time-relative
   dataset orchestration, canonical profile/cover uploads, and focused
-  verification for the explicit local demo-data commands.
+  verification for the explicit local demo-data commands. Public discovery
+  verification traverses canonical cursor pages: unrelated verifier fixtures
+  may share Trento, so demo records need not appear in the first page. Failed,
+  malformed or repeated pages fail explicitly; verification never repairs data.
 - `validation-paths.mjs` maps changed repository paths to the Mobile, Web, Site,
   and Database CI areas. Its tests protect the conservative shared-path and
   documentation-only boundaries used by the validation workflow.
@@ -24,6 +33,12 @@ tooling.
   `verify-local-demo-idempotency.mjs` explicitly invokes its mutating transition
   rehearsal; ordinary verification invokes only reads. No second seed system
   or application-start hook exists.
+
+- `membership-race-evidence.mjs` owns the membership verifier's loopback guards,
+  bounded fresh-fixture campaign arguments, exact-winner lock observation and
+  allowlisted end-state constraint diagnostics. Its tests distinguish real
+  blocking from pending promises, unrelated/ambiguous waits and observer errors,
+  and preserve microsecond timestamp comparisons without logging raw errors.
 - `demo-participation-conversations.mjs` adds two Marco/Giulia pending requests
   and stable pair follow-ups to that same demo world. Its reads verify one pair
   row, exact request bubbles, resolved history, and no invented message context;

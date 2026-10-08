@@ -34,14 +34,14 @@ class ModerationEvidenceRequestsController
 
   @override
   ModerationEvidenceRequestsState build() {
-    ref.listen(authSessionProvider.select((session) => session.identity?.id), (
-      previous,
-      next,
-    ) {
-      if (previous == next) return;
-      _revision++;
-      state = const ModerationEvidenceRequestsState();
-    });
+    ref.listen(
+      authSessionProvider.select((session) => session.accountAccessIdentityId),
+      (previous, next) {
+        if (previous == next) return;
+        _revision++;
+        state = const ModerationEvidenceRequestsState();
+      },
+    );
     return const ModerationEvidenceRequestsState();
   }
 

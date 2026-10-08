@@ -31,7 +31,7 @@ typedef ParticipantAdmissionRefresh =
 final participantAdmissionRefreshProvider =
     Provider<ParticipantAdmissionRefresh>(
       (ref) => (account, project, kind) async {
-        if (ref.read(authSessionProvider).identity?.id != account) {
+        if (ref.read(authSessionProvider).accountAccessIdentityId != account) {
           return const ParticipantParticipationRead(loaded: false);
         }
         ref
@@ -43,7 +43,7 @@ final participantAdmissionRefreshProvider =
             .read(ownParticipationProvider.notifier)
             .load(account);
         if (!ref.mounted ||
-            ref.read(authSessionProvider).identity?.id != account) {
+            ref.read(authSessionProvider).accountAccessIdentityId != account) {
           return const ParticipantParticipationRead(loaded: false);
         }
         final current =
@@ -109,6 +109,10 @@ final participantAdmissionRefreshProvider =
           );
         }
         await Future.wait(work);
+        if (!ref.mounted ||
+            ref.read(authSessionProvider).accountAccessIdentityId != account) {
+          return const ParticipantParticipationRead(loaded: false);
+        }
         return ParticipantParticipationRead(loaded: loaded, current: current);
       },
     );

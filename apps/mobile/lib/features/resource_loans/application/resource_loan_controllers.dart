@@ -47,13 +47,13 @@ class ResourceLoanScheduleController
 
   @override
   ResourceLoanScheduleState build() {
-    ref.listen(authSessionProvider.select((session) => session.identity?.id), (
-      _,
-      _,
-    ) {
-      _revision++;
-      state = const ResourceLoanScheduleState();
-    });
+    ref.listen(
+      authSessionProvider.select((session) => session.accountAccessIdentityId),
+      (_, _) {
+        _revision++;
+        state = const ResourceLoanScheduleState();
+      },
+    );
     ref.onDispose(() => _revision++);
     return const ResourceLoanScheduleState();
   }
@@ -182,14 +182,14 @@ class PendingLoanAvailabilityController
 
   @override
   PendingLoanAvailabilityState build() {
-    ref.listen(authSessionProvider.select((session) => session.identity?.id), (
-      _,
-      _,
-    ) {
-      _revision++;
-      _staleKey = null;
-      state = const PendingLoanAvailabilityState();
-    });
+    ref.listen(
+      authSessionProvider.select((session) => session.accountAccessIdentityId),
+      (_, _) {
+        _revision++;
+        _staleKey = null;
+        state = const PendingLoanAvailabilityState();
+      },
+    );
     ref.listen(resourceExchangeProvider, (previous, next) {
       _sync(previous, next);
     });

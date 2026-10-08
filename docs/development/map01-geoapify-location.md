@@ -129,6 +129,21 @@ the JWT against Supabase Auth; service-only actor parameters must never be
 exposed as client RPCs. All new private tables have RLS and zero client grants;
 all privileged functions have empty search paths and explicit execute grants.
 
+MODINT01 adds forward migration `20261008145225`, without rewriting MAP01 history.
+`private.lock_location_item` first takes the verified/stored actor's canonical
+moderation profile barrier and checks `private.assert_profile_account_active(actor)`,
+before any Project/Resource lock. Token validity or profile/ownership existence
+alone is not account authorization. Issuance checks the batch's stored actor;
+reserve (including cached reuse) and resolve check the verified actor each time.
+Batches created while active cannot release new receipts/results after suspension
+wins; suspended calls allocate no new budget/batch/receipt. Already-started upstream
+work cannot be recalled and is not refunded; final issuance still fails closed.
+The Edge REST adapter maps `PT403`/identity denial to reasonless
+`403 {"status":"unauthorized"}`, with no reason, staff note or raw diagnostic.
+Flutter already rejects that envelope/SDK denial and rechecks captured actor identity
+after search/resolve. Production remains disabled; MAP02 still owns form/actor-
+generation cancellation, including ABA and same-actor entitlement loss.
+
 `apply_item_location_v1(expected actor, kind, item, expected revision, request UUID,
 public action/receipt, exact action/receipt)` atomically supports `unchanged`,
 `replace` and `clear`. Only replacement takes a receipt. The backend rechecks
@@ -252,3 +267,12 @@ an explicit loopback `MAILPIT_URL` (MAP01: `http://127.0.0.1:55424`). It is incl
 in the full database command and Database CI. The workflow addition therefore
 selects every validation area under the existing classification policy, without
 changing required status checks or weakening unrelated coverage.
+
+The command now runs `verify-local-location-foundation.mjs` then
+`verify-local-location-suspension.mjs`: pre-existing Auth sessions, Creator/
+Co-creator/Resource-owner scopes, service grants, identity mismatches, all three
+existing-batch boundaries and 18 exact `pg_blocking_pids` winner edges. Each race
+asserts persisted budget/batch/receipt accounting, not just pending promises.
+SQL `121_modint_location_account_boundary.test.sql` proves public content-hide
+suppression for Proposal/Tavolo/Resource location, retaining owner/member private
+reads and owner lifecycle. Only explicitly disposable local QA is targeted.

@@ -61,3 +61,8 @@ verifier after pgTAP. It injects synthetic provider-shaped geocoding data and
 makes no Geoapify requests. Tooling/Web validation exercises the same Edge
 adapter's pure modules with fake HTTP/Auth/metering dependencies. The workflow
 addition preserves required status aggregation and existing path boundaries.
+
+MODINT01 expands that existing command to run the canonical service-actor
+suspension verifier after MAP01, including exact-blocker races. Both histories'
+moderation/integration verifiers and the suspension inventory audit are retained;
+this continuation adds no workflow trigger or duplicate validation campaign.

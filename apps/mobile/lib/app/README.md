@@ -51,6 +51,12 @@ needed. Its private descendants retain their guards. Re-tapping active
 Messages or Browse preserves its nested route. Browse's shortcut restores its
 retained branch state; public discovery also remains reachable from Home.
 
+09C2B1 adds protected `/settings/notices` under Settings on Home. Its own-history
+controller discards private reasons on every session revision; all existing
+global suspension/failed-check guards remain authoritative. Direct links retain
+the exact destination through Auth/profile completion, and Back returns to
+Settings. No new navigation destination or hidden-content public route is added.
+
 Static Browse children precede each dynamic activity-ID route. A route-backed
 Proposals/Tavoli switcher changes the public list within Browse without adding a
 fourth bottom destination. Each list's Riverpod state survives switching. Direct entry creates
@@ -111,6 +117,17 @@ See the [PI04 record](../../../../docs/implementation/pi04-native-links-and-publ
 for OS globs, merged-manifest checks and the limits of native runtime evidence.
 
 ## Retention and identity
+
+09C1B adds a global account-access guard outside the shell. Auth restoration and
+pending checks display `/account/suspended` as a blocking loading screen;
+suspended sessions and failed status checks remain there with check-again and
+sign-out. Every ordinary route, including Settings, public mobile Browse, Auth
+verification and invite deep links, redirects there while authenticated access is
+denied. Sanitized destinations preserve continuation after successful bootstrap
+or revocation, but cannot target the account-status route itself. Denial/failure
+also replaces retained branch keys and clears private controller scopes. Same
+identity successful foreground/token refresh preserves those scopes. Anonymous
+public browsing remains available after sign-out. No appeal route is created.
 
 Tab retention is in-memory only, scoped to the same authenticated identity. On
 sign-in, sign-out or account change, the routing configuration creates fresh

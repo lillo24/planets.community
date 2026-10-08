@@ -23,6 +23,44 @@ void main() {
     );
   });
 
+  for (final (width, height, scale) in [
+    (360.0, 180.5, 1.0),
+    (320.0, 160.0, 2.0),
+  ]) {
+    testWidgets(
+      'empty state remains scrollable in a short viewport at ${scale}x',
+      (tester) async {
+        await tester.pumpWidget(
+          _LocalizedTestApp(
+            child: Center(
+              child: SizedBox(
+                width: width,
+                height: height,
+                child: MediaQuery(
+                  data: MediaQueryData(textScaler: TextScaler.linear(scale)),
+                  child: const EmptyState(),
+                ),
+              ),
+            ),
+          ),
+        );
+        expect(tester.takeException(), isNull);
+        final scroll = find.byType(SingleChildScrollView);
+        expect(scroll, findsOneWidget);
+        await tester.drag(scroll, const Offset(0, -1000));
+        await tester.pumpAndSettle();
+        final message = find.text(
+          'New information will appear here when it is available.',
+        );
+        expect(
+          tester.getRect(message).bottom,
+          lessThanOrEqualTo(tester.getRect(scroll).bottom),
+        );
+        expect(tester.takeException(), isNull);
+      },
+    );
+  }
+
   testWidgets('error state hides exception details and retries', (
     tester,
   ) async {

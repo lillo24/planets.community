@@ -1,5 +1,20 @@
 # Supabase database
 
+MODINT01's draft integration reconciles main's participant invitations/People
+with the inherited moderation and global suspension stack. The forward
+participant-visibility migration reuses canonical public visibility, so hidden
+Projects reveal neither title nor ID through bearer preview. It preserves
+authorized private management and narrow own-action receipt recovery. The
+combined RPC inventory and integration commands are documented in
+`docs/development/database.md`; founder copy/policy review remains open.
+
+09C1B adds admin-only, reversible `account_suspension` in the canonical private
+consequence history. Ordinary private RPCs/direct RLS/Storage access are gated,
+but public content and stored relationships remain. Own expected-identity status
+is the only account-data exception. See the database guide and system design for
+the lock hierarchy, cached-Realtime mitigation and deferred push/appeal scope.
+The suspension real-auth, race and RPC-audit commands are part of `check:db`.
+
 This folder owns the reproducible local PLANETS database and its security validation.
 
 - `config.toml` configures the local stack and fail-closed Data API defaults.
@@ -24,6 +39,37 @@ This folder owns the reproducible local PLANETS database and its security valida
   [`pi01-participant-invitations.md`](../docs/implementation/pi01-participant-invitations.md).
 - `seed.sql` runs after migrations during reset and currently contains no data; the system-managed starter skill catalog is migration-owned reference data.
 
+09C1A adds private, manual and reversible moderation-consequence episodes and
+actions: safety notices, outbound interaction restrictions, and Project/Resource
+content hides. Expected-identity staff commands require user-facing reasons plus
+private notes; only affected users and current staff receive their respective
+bounded projections. Restriction withdraws pending outbound attempts, while hide
+freezes acceptance without changing pending status or owner lifecycle. Existing
+accepted relationships remain operational. Public discovery, cover-object access,
+contextual photos and new matching delivery reuse canonical hide predicates.
+The six identifier-only consequence outbox events are intentionally unconsumed
+until 09C2. Tests 108–111 and the two `moderation:consequences:*:local` verifier
+commands own this slice; see `docs/development/database.md` for contracts and locks.
+
+09C2B2 adds only `get_own_interaction_restriction_status(expected_profile_id)`:
+an authenticated, active-account, own-identity boolean using the canonical private
+predicate. It returns no metadata or reasons and is denied while suspended.
+Migration `20261006081004` and test `113` cover grants/identity/current episodes,
+including an active episode beyond the first history page. Existing consequence
+and suspension real-auth verifiers and the signature-level RPC audit cover it;
+no private grants, suspension exception or outbox change is introduced.
+
+MODINT01's committed-main continuation composes the new participation-pair and
+message-unread broadcasters with the existing suspended-recipient filter through
+forward migration `20261006184900`. No history, unread receipt or active-peer chat
+entitlement is changed. The inventory is now 238 signatures after MAP01; SQL `119` and
+the expanded real-auth integration verifier cover the combined boundary. See
+the current continuation evidence in the MODINT01 review packet.
+
+MODINT01 forward migration `20261008145225` closes the MAP01 service-role actor
+suspension gap under the canonical profile-before-item barrier. SQL `121` and
+`verify-local-location-suspension.mjs` cover current actor access, existing
+batches, public hide/private entitlement and persisted concurrent outcomes.
 SIM01 adds authenticated-only `list_similar_active_proposals`, a private
 immutable title normalizer and partial published-title GIN index. `115`/`116`
 cover grants, input bounds, narrow payload, ranking and exact-start eligibility.
@@ -159,7 +205,6 @@ transitions under the same validation rules as the Creator. Draft creation and
 publication remain original-Creator-only. Tests 068 and 069 cover the role
 model, provenance, stale issuer authority, lifecycle access, and participation
 independence.
-
 
 TW02 extends private moderation cases with a typed Proposal-template foreign
 key and separate immutable source/content-token provenance. The forward migration

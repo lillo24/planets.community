@@ -78,18 +78,18 @@ class ResourceChatDetailController extends Notifier<ResourceChatDetailState> {
         _scheduleReconcile(profileId, chatId, includeMessages: false);
       }
     });
-    ref.listen(authSessionProvider.select((session) => session.identity?.id), (
-      _,
-      _,
-    ) {
-      _revision++;
-      _signalsEnabled = false;
-      _reconcileTimer?.cancel();
-      _needsMessageReconcile = false;
-      _isReconciling = false;
-      _closeSubscription();
-      state = const ResourceChatDetailState();
-    });
+    ref.listen(
+      authSessionProvider.select((session) => session.accountAccessIdentityId),
+      (_, _) {
+        _revision++;
+        _signalsEnabled = false;
+        _reconcileTimer?.cancel();
+        _needsMessageReconcile = false;
+        _isReconciling = false;
+        _closeSubscription();
+        state = const ResourceChatDetailState();
+      },
+    );
     ref.onDispose(() {
       _revision++;
       _reconcileTimer?.cancel();

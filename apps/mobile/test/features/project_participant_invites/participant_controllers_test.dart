@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:planets_mobile/features/auth/application/auth_session_controller.dart';
+import 'package:planets_mobile/features/auth/data/auth_gateway.dart';
 import 'package:planets_mobile/features/auth/domain/auth_models.dart';
 import 'package:planets_mobile/features/participation/domain/participation_models.dart';
 import 'package:planets_mobile/features/project_delegates/application/project_delegate_controllers.dart';
@@ -17,11 +18,14 @@ import 'package:planets_mobile/features/project_participant_invites/domain/parti
 
 import '../../support/fake_participant_invitation.dart';
 import '../../support/fake_project_delegates.dart';
+import '../../support/fake_auth.dart';
 
 void main() {
   late FakeParticipantInvitationGateway gateway;
   late FakeProjectDelegateGateway delegates;
   late ProviderContainer container;
+  late FakeAuthGateway auth;
+  late FakeProfileAnchorGateway profile;
   var ids = 0;
   var refreshes = 0;
   var read = const ParticipantParticipationRead(loaded: true, current: true);
@@ -33,10 +37,15 @@ void main() {
     refreshError = null;
     read = const ParticipantParticipationRead(loaded: true, current: true);
     gateway = FakeParticipantInvitationGateway();
+    auth = FakeAuthGateway();
+    profile = FakeProfileAnchorGateway()
+      ..readiness = ProfileAnchorReadiness.complete;
     delegates = FakeProjectDelegateGateway()
       ..role = ProjectManagementRole.creator;
     container = ProviderContainer(
       overrides: [
+        authGatewayProvider.overrideWithValue(auth),
+        profileAnchorGatewayProvider.overrideWithValue(profile),
         participantInvitationGatewayProvider.overrideWithValue(gateway),
         projectDelegateGatewayProvider.overrideWithValue(delegates),
         participantActionIdProvider.overrideWithValue(() => 'action-${++ids}'),
@@ -57,7 +66,10 @@ void main() {
         .read(authSessionProvider.notifier)
         .markProfileReady(const AuthIdentity(id: 'user-1'));
   });
-  tearDown(() => container.dispose());
+  tearDown(() async {
+    container.dispose();
+    await auth.close();
+  });
   ParticipantAdmissionController admission() =>
       container.read(participantAdmissionProvider.notifier);
   ParticipantLinkManager manager() =>
@@ -70,14 +82,81 @@ void main() {
     () async {
       await admission().load(token);
       await admission().load(token);
-      container
+      final release = Completer<void>();
+      profile.readinessDelay = release.future;
+      final bootstrap = container
           .read(authSessionProvider.notifier)
-          .markCheckingProfile(const AuthIdentity(id: 'user-1'));
+          .bootstrap(const AuthIdentity(id: 'user-1'));
+      await Future<void>.delayed(Duration.zero);
+      expect(
+        container.read(authSessionProvider).phase,
+        AuthSessionPhase.checkingProfile,
+      );
       await admission().join('user-1');
       expect(ids, 0);
       expect(gateway.admissions, isEmpty);
+      release.complete();
+      expect(await bootstrap, isTrue);
     },
   );
+  for (final statusFailure in [false, true]) {
+    test(
+      'denied account access clears secrets/receipts and late admission: statusFailure=$statusFailure',
+      () async {
+        await manager().load('user-1', 'project-1', ProjectKind.oneTime);
+        expect(container.read(participantLinkManagerProvider).link, isNotNull);
+        await admission().load(token);
+        final release = Completer<void>();
+        gateway.acceptDelay = release.future;
+        final pending = admission().join('user-1');
+        expect(state().hasAttempt, isTrue);
+        if (statusFailure) {
+          auth.suspensionError = StateError('synthetic status unavailable');
+        } else {
+          auth.suspension = AccountSuspensionStatus.active(
+            consequenceId: 'synthetic',
+            appliedAt: DateTime.utc(2026),
+            userReason: 'Synthetic',
+          );
+        }
+        await container
+            .read(authSessionProvider.notifier)
+            .bootstrap(const AuthIdentity(id: 'user-1'));
+        expect(
+          container.read(authSessionProvider).accountAccessIdentityId,
+          isNull,
+        );
+        expect(container.read(participantLinkManagerProvider).link, isNull);
+        expect(state().hasAttempt, isFalse);
+        expect(state().account, isNull);
+        release.complete();
+        await pending;
+        expect(state().result, isNull);
+        expect(refreshes, 0);
+        auth.suspensionError = null;
+        auth.suspension = const AccountSuspensionStatus.inactive();
+        await container
+            .read(authSessionProvider.notifier)
+            .bootstrap(const AuthIdentity(id: 'user-1'));
+        await admission().load(token);
+        expect(state().hasAttempt, isFalse);
+        expect(state().result, isNull);
+      },
+    );
+  }
+  test('routine successful status refresh preserves uncertain receipt and current link', () async {
+    await manager().load('user-1', 'project-1', ProjectKind.oneTime);
+    final link = container.read(participantLinkManagerProvider).link;
+    await admission().load(token);
+    gateway.acceptError = StateError('synthetic lost response');
+    await admission().join('user-1');
+    expect(state().hasAttempt, isTrue);
+    await container
+        .read(authSessionProvider.notifier)
+        .bootstrap(const AuthIdentity(id: 'user-1'));
+    expect(state().hasAttempt, isTrue);
+    expect(container.read(participantLinkManagerProvider).link, same(link));
+  });
   test(
     'explicit click creates one action, double click is suppressed',
     () async {

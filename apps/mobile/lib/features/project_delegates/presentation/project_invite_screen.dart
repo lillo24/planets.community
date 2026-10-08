@@ -170,8 +170,13 @@ class _ProjectInviteScreenState extends ConsumerState<ProjectInviteScreen> {
     final l10n = AppLocalizations.of(context);
     final returnTo = ProjectDelegateRoutes.invite(widget.token);
     return switch (session.phase) {
-      AuthSessionPhase.restoring || AuthSessionPhase.checkingProfile =>
-        const Center(child: CircularProgressIndicator()),
+      AuthSessionPhase.restoring ||
+      AuthSessionPhase.checkingProfile ||
+      AuthSessionPhase.checkingAccount ||
+      AuthSessionPhase.accountCheckFailed ||
+      AuthSessionPhase.suspended => const Center(
+        child: CircularProgressIndicator(),
+      ),
       AuthSessionPhase.restorationFailed => FilledButton(
         onPressed: () =>
             ref.read(authSessionProvider.notifier).retryRestoration(),

@@ -96,6 +96,14 @@ Account changes clear state and reject late responses. Accept, leave, and
 remove transitions trigger canonical refreshes rather than predicting chat,
 coverage, or attention state in the client.
 
+09C1B scopes private caches/channels to account access, not just the Auth ID.
+Confirmed suspension or failed suspension-status checks clear private state and
+close channels; successful routine status refreshes preserve it. Suspension
+preserves membership/history but denies its private reads and sends until
+revoked. The backend suppresses new per-recipient Broadcast hints for suspended
+profiles because existing Realtime authorization may remain cached until JWT
+refresh/expiry. Previously authorized/queued hints cannot be recalled.
+
 ## Navigation
 
 The feature remains inside the existing Home branch:

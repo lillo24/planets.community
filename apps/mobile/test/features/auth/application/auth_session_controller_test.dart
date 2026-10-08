@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:planets_mobile/features/auth/application/auth_session_controller.dart';
@@ -50,6 +52,7 @@ void main() {
       await Future<void>.delayed(Duration.zero);
       expect(identical(container.read(authSessionProvider), ready), isTrue);
       expect(profile.existsCount, 1);
+      expect(auth.suspensionCheckCount, 2);
       auth.emit(
         const AuthSnapshot(
           identity: AuthIdentity(id: 'user-2'),
@@ -61,6 +64,82 @@ void main() {
       expect(profile.existsCount, 2);
     },
   );
+  for (final fails in [false, true]) {
+    test(
+      'warm refresh still closes access on ${fails ? 'failure' : 'suspension'}',
+      () async {
+        final auth = FakeAuthGateway(
+          snapshot: const AuthSnapshot(identity: AuthIdentity(id: 'user-1')),
+        );
+        final profile = FakeProfileAnchorGateway()..exists = true;
+        final container = _container(auth, profile);
+        addTearDown(container.dispose);
+        addTearDown(auth.close);
+        await container.read(authSessionProvider.notifier).start();
+        final ready = container.read(authSessionProvider);
+        final check = Completer<void>();
+        auth.suspensionDelay = check.future;
+        if (fails) {
+          auth.suspensionError = StateError('status unavailable');
+        } else {
+          auth.suspension = AccountSuspensionStatus.active(
+            consequenceId: 'synthetic-suspension',
+            appliedAt: DateTime.utc(2026, 10, 8),
+            userReason: 'Synthetic reason.',
+          );
+        }
+        auth.emit(
+          const AuthSnapshot(
+            identity: AuthIdentity(id: 'user-1'),
+            isTokenRefresh: true,
+          ),
+        );
+        await Future<void>.delayed(Duration.zero);
+        expect(identical(container.read(authSessionProvider), ready), isTrue);
+        expect(auth.suspensionCheckCount, 2);
+        check.complete();
+        await Future<void>.delayed(Duration.zero);
+        final denied = container.read(authSessionProvider);
+        expect(
+          denied.phase,
+          fails
+              ? AuthSessionPhase.accountCheckFailed
+              : AuthSessionPhase.suspended,
+        );
+        expect(denied.accountAccessIdentityId, isNull);
+        expect(profile.existsCount, 1);
+      },
+    );
+  }
+  test('late warm status failure cannot replace a newer ready actor', () async {
+    final auth = FakeAuthGateway(
+      snapshot: const AuthSnapshot(identity: AuthIdentity(id: 'user-1')),
+    );
+    final profile = FakeProfileAnchorGateway()..exists = true;
+    final container = _container(auth, profile);
+    addTearDown(container.dispose);
+    addTearDown(auth.close);
+    await container.read(authSessionProvider.notifier).start();
+    final oldCheck = Completer<void>();
+    auth.suspensionDelay = oldCheck.future;
+    auth.emit(
+      const AuthSnapshot(
+        identity: AuthIdentity(id: 'user-1'),
+        isTokenRefresh: true,
+      ),
+    );
+    await Future<void>.delayed(Duration.zero);
+    auth.suspensionDelay = null;
+    auth.emit(const AuthSnapshot(identity: AuthIdentity(id: 'user-2')));
+    await Future<void>.delayed(Duration.zero);
+    final newer = container.read(authSessionProvider);
+    expect(newer.phase, AuthSessionPhase.ready);
+    expect(newer.identity?.id, 'user-2');
+    auth.suspensionError = StateError('old status failure');
+    oldCheck.complete();
+    await Future<void>.delayed(Duration.zero);
+    expect(identical(container.read(authSessionProvider), newer), isTrue);
+  });
   test(
     'snapshot restore failure stays distinct from signed out and retries',
     () async {

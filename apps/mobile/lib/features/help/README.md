@@ -1,6 +1,8 @@
 # Public Help
 
-Home's question-mark opens `/help` for guests and every account readiness state.
+Home's question-mark opens `/help` for guests and verified active accounts,
+including incomplete profiles. Help, replay, Welcome and Back do not bypass the
+existing global suspension/status-failure gate or create an appeal exception.
 The routes live in the central app router; direct entry has a safe Home/Help Back.
 
 - `presentation/help_screen.dart` owns the four choices, creator contact and honest
@@ -24,3 +26,9 @@ The routes live in the central app router; direct entry has a safe Home/Help Bac
 Tutorial replay uses `TutorialRoutes.replay(context, returnTo: HelpRoutes.path)`.
 Finish/Skip/Back return to Help without altering first-run completion/dismissal.
 The existing contextual moderation forms and eligibility remain their own feature.
+
+Combined MODINT01 widgets verify same-actor suspension/status failure erases a
+reviewed bug draft and rejects late launcher/clipboard results; recovery starts
+empty. Tutorial timers/Back cannot revive obsolete Help/private destinations.
+QA uses injected launchers only and sends no email. Same-owner verified token
+refresh still preserves the current draft.

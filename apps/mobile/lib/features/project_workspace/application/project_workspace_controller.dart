@@ -14,13 +14,13 @@ class ProjectWorkspaceController extends Notifier<ProjectWorkspaceState> {
 
   @override
   ProjectWorkspaceState build() {
-    ref.listen(authSessionProvider.select((value) => value.identity?.id), (
-      _,
-      _,
-    ) {
-      _revision++;
-      state = const ProjectWorkspaceState();
-    });
+    ref.listen(
+      authSessionProvider.select((value) => value.accountAccessIdentityId),
+      (_, _) {
+        _revision++;
+        state = const ProjectWorkspaceState();
+      },
+    );
     ref.onDispose(() => _revision++);
     return const ProjectWorkspaceState();
   }
@@ -180,7 +180,8 @@ class ProjectWorkspaceController extends Notifier<ProjectWorkspaceState> {
   bool _isCurrent(int revision) => ref.mounted && revision == _revision;
 
   void _requireIdentity(String expectedProfileId) {
-    if (ref.read(authSessionProvider).identity?.id != expectedProfileId) {
+    if (ref.read(authSessionProvider).accountAccessIdentityId !=
+        expectedProfileId) {
       throw const ProjectWorkspaceIdentityChangedException();
     }
   }

@@ -290,9 +290,7 @@ class OwnProposalsController extends Notifier<OwnProposalsState> {
   @override
   OwnProposalsState build() {
     ref.listen(
-      authSessionProvider.select(
-        (session) => (session.phase, session.identity?.id),
-      ),
+      authSessionProvider.select((session) => session.accountAccessIdentityId),
       (_, _) {
         _revision++;
         state = const OwnProposalsState();
@@ -459,14 +457,16 @@ class ProposalEditorController extends Notifier<ProposalEditorState> {
     }
     ref.listen(
       authSessionProvider.select(
-        (session) => (session.phase, session.identity?.id),
+        (session) => (session.phase, session.accountAccessIdentityId),
       ),
       (previous, next) {
         if (previous?.$2 == next.$2 &&
             next.$2 != null &&
-            (next.$1 == AuthSessionPhase.checkingProfile ||
+            (next.$1 == AuthSessionPhase.checkingAccount ||
+                next.$1 == AuthSessionPhase.checkingProfile ||
                 next.$1 == AuthSessionPhase.ready)) {
-          if (next.$1 == AuthSessionPhase.checkingProfile) {
+          if (next.$1 == AuthSessionPhase.checkingAccount ||
+              next.$1 == AuthSessionPhase.checkingProfile) {
             _revision++;
             if (state.isBusy) {
               state = ProposalEditorState(

@@ -54,16 +54,16 @@ class ModerationSubmissionController
 
   @override
   ModerationSubmissionState build() {
-    ref.listen(authSessionProvider.select((session) => session.identity?.id), (
-      previous,
-      next,
-    ) {
-      if (previous == next) return;
-      _identityRevision++;
-      _submissionId = null;
-      _submissionTargetScope = null;
-      state = const ModerationSubmissionState();
-    });
+    ref.listen(
+      authSessionProvider.select((session) => session.accountAccessIdentityId),
+      (previous, next) {
+        if (previous == next) return;
+        _identityRevision++;
+        _submissionId = null;
+        _submissionTargetScope = null;
+        state = const ModerationSubmissionState();
+      },
+    );
     return const ModerationSubmissionState();
   }
 
@@ -145,14 +145,14 @@ class OwnModerationReportsController
 
   @override
   OwnModerationReportsState build() {
-    ref.listen(authSessionProvider.select((session) => session.identity?.id), (
-      previous,
-      next,
-    ) {
-      if (previous == next) return;
-      _revision++;
-      state = const OwnModerationReportsState();
-    });
+    ref.listen(
+      authSessionProvider.select((session) => session.accountAccessIdentityId),
+      (previous, next) {
+        if (previous == next) return;
+        _revision++;
+        state = const OwnModerationReportsState();
+      },
+    );
     return const OwnModerationReportsState();
   }
 

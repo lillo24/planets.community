@@ -6,6 +6,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:planets_mobile/app/router/app_router.dart';
 import 'package:planets_mobile/app/startup/startup_flow.dart';
 import 'package:planets_mobile/features/auth/domain/auth_models.dart';
+import 'package:planets_mobile/features/auth/application/auth_session_controller.dart';
 import 'package:planets_mobile/features/help/application/support_mail.dart';
 import 'package:planets_mobile/features/settings/domain/language_preference.dart';
 
@@ -17,8 +18,139 @@ import '../../support/fake_proposal.dart';
 import '../../support/fake_resource_listing.dart';
 import '../../support/fake_startup.dart';
 import '../../support/help_test_harness.dart';
+import '../auth/application/account_suspension_test.dart' show activeStatus;
 
 void main() {
+  for (final statusFailure in [false, true]) {
+    for (final clipboard in [false, true]) {
+      testWidgets(
+        'same-actor account gate erases Help draft and late ${clipboard ? 'clipboard' : 'mail'} completion, failure=$statusFailure',
+        (tester) async {
+          final auth = FakeAuthGateway(
+            snapshot: const AuthSnapshot(identity: AuthIdentity(id: 'alice')),
+          );
+          final completion = Completer<bool>();
+          final launcher = FakeSupportMailLauncher()..delay = completion.future;
+          final chats = FakeMessageChatsGateway();
+          final messages = FakeMessagesGateway();
+          if (clipboard) {
+            tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+              SystemChannels.platform,
+              (call) async {
+                if (call.method == 'Clipboard.setData') await completion.future;
+                return null;
+              },
+            );
+            addTearDown(
+              () => tester.binding.defaultBinaryMessenger
+                  .setMockMethodCallHandler(SystemChannels.platform, null),
+            );
+          }
+          final app = await pumpHelp(
+            tester,
+            auth: auth,
+            launcher: launcher,
+            chats: chats,
+            messages: messages,
+          );
+          await openBug(tester, app);
+          await reviewBug(
+            tester,
+            description: 'Obsolete private support draft',
+          );
+          await helpTap(tester, clipboard ? 'help-bug-copy' : 'help-mail-open');
+          if (statusFailure) {
+            auth.suspensionError = StateError('PRIVATE status diagnostic');
+          } else {
+            auth.suspension = activeStatus();
+          }
+          await app.read(authSessionProvider.notifier).refresh();
+          await tester.pumpAndSettle();
+          final router = app.read(appRouterProvider);
+          for (final path in [
+            '/help',
+            '/help/contact',
+            '/help/bug',
+            '/help/person',
+            '/intro',
+            '/intro?returnTo=/profile',
+            '/welcome',
+            '/profile',
+          ]) {
+            router.go(path);
+            await tester.pumpAndSettle();
+            expect(router.routerDelegate.state.uri.path, '/account/suspended');
+            expect(find.byKey(const Key('help-bug-draft')), findsNothing);
+          }
+          await tester.binding.handlePopRoute();
+          await tester.pumpAndSettle();
+          expect(router.routerDelegate.state.uri.path, '/account/suspended');
+          completion.complete(true);
+          await tester.pumpAndSettle();
+          expect(find.byKey(const Key('help-mail-status')), findsNothing);
+          expect(find.text('Draft copied.'), findsNothing);
+          expect(
+            find.textContaining('Obsolete private support draft'),
+            findsNothing,
+          );
+          expect(
+            find.textContaining('PRIVATE status diagnostic'),
+            findsNothing,
+          );
+          expect(chats.calls, isEmpty);
+          expect(messages.calls, isEmpty);
+          auth.suspensionError = null;
+          auth.suspension = const AccountSuspensionStatus.inactive();
+          await app.read(authSessionProvider.notifier).refresh();
+          await tester.pumpAndSettle();
+          await openBug(tester, app);
+          expect(
+            tester
+                .widget<TextFormField>(
+                  find.byKey(const Key('help-bug-description')),
+                )
+                .controller!
+                .text,
+            isEmpty,
+          );
+          expect(tester.takeException(), isNull);
+        },
+      );
+    }
+    testWidgets(
+      'tutorial replay cannot retain a Help/private return across same-actor gate failure=$statusFailure',
+      (tester) async {
+        final auth = FakeAuthGateway(
+          snapshot: const AuthSnapshot(identity: AuthIdentity(id: 'alice')),
+        );
+        final app = await pumpHelp(tester, auth: auth);
+        await helpTap(tester, 'open-help-button');
+        await tester.tap(find.byKey(const Key('help-tutorial-action')));
+        await tour.frames(tester, 6);
+        expect(find.byKey(const Key('tutorial-screen')), findsOneWidget);
+        if (statusFailure) {
+          auth.suspensionError = StateError('PRIVATE diagnostic');
+        } else {
+          auth.suspension = activeStatus();
+        }
+        await app.read(authSessionProvider.notifier).refresh();
+        await tester.pumpAndSettle();
+        expect(
+          app.read(appRouterProvider).routerDelegate.state.uri.path,
+          '/account/suspended',
+        );
+        expect(find.byKey(const Key('tutorial-screen')), findsNothing);
+        await tester.binding.handlePopRoute();
+        await tour.frames(tester, 70);
+        expect(
+          app.read(appRouterProvider).routerDelegate.state.uri.path,
+          '/account/suspended',
+        );
+        expect(find.byKey(const Key('help-screen')), findsNothing);
+        expect(tester.takeException(), isNull);
+      },
+    );
+  }
   test(
     'mail URI round-trips unicode and delimiters without adding private fields',
     () {

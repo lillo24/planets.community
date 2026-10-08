@@ -2627,6 +2627,15 @@ export type Database = {
           note_id: string
         }[]
       }
+      apply_account_suspension: {
+        Args: {
+          p_case_id: string
+          p_expected_staff_profile_id: string
+          p_internal_note: string
+          p_user_reason: string
+        }
+        Returns: string
+      }
       apply_item_location_v1: {
         Args: {
           p_exact_action: string
@@ -2641,6 +2650,17 @@ export type Database = {
         }
         Returns: number
       }
+      apply_moderation_consequence: {
+        Args: {
+          p_case_id: string
+          p_consequence_type: string
+          p_expected_staff_profile_id: string
+          p_internal_note: string
+          p_user_reason: string
+        }
+        Returns: string
+      }
+      assert_own_account_active: { Args: never; Returns: undefined }
       block_user: {
         Args: {
           p_blocked_profile_id: string
@@ -3072,6 +3092,15 @@ export type Database = {
           template_id: string
         }[]
       }
+      get_own_account_suspension_status: {
+        Args: { p_expected_profile_id: string }
+        Returns: {
+          applied_at: string
+          consequence_id: string
+          is_suspended: boolean
+          user_reason: string
+        }[]
+      }
       get_own_blocked_profile_status: {
         Args: {
           p_expected_blocker_profile_id: string
@@ -3101,6 +3130,10 @@ export type Database = {
           target_kind: string
           target_summary: string
         }[]
+      }
+      get_own_interaction_restriction_status: {
+        Args: { p_expected_profile_id: string }
+        Returns: boolean
       }
       get_own_message_feed_page: {
         Args: {
@@ -3713,6 +3746,24 @@ export type Database = {
           role_rank: number
         }[]
       }
+      list_moderation_case_consequence_history: {
+        Args: { p_case_id: string; p_expected_staff_profile_id: string }
+        Returns: {
+          action_at: string
+          action_id: string
+          action_kind: string
+          actor_profile_id: string
+          affected_profile_id: string
+          applied_at: string
+          consequence_id: string
+          consequence_type: string
+          note_id: string
+          project_id: string
+          resource_listing_id: string
+          revoked_at: string
+          user_reason: string
+        }[]
+      }
       list_moderation_case_template_blueprints: {
         Args: {
           p_case_id: string
@@ -3821,6 +3872,26 @@ export type Database = {
           resource_listing_id: string
           resource_request_id: string
           viewer_role: string
+        }[]
+      }
+      list_own_moderation_consequences: {
+        Args: {
+          p_before_applied_at?: string
+          p_before_consequence_id?: string
+          p_expected_profile_id: string
+          p_limit?: number
+        }
+        Returns: {
+          applied_at: string
+          apply_reason: string
+          consequence_id: string
+          consequence_type: string
+          content_id: string
+          content_kind: string
+          content_title: string
+          is_active: boolean
+          revoke_reason: string
+          revoked_at: string
         }[]
       }
       list_own_moderation_evidence_requests: {
@@ -5198,6 +5269,24 @@ export type Database = {
         Args: {
           p_expected_creator_profile_id: string
           p_recurring_activity_id: string
+        }
+        Returns: string
+      }
+      revoke_account_suspension: {
+        Args: {
+          p_consequence_id: string
+          p_expected_staff_profile_id: string
+          p_internal_note: string
+          p_user_reason: string
+        }
+        Returns: string
+      }
+      revoke_moderation_consequence: {
+        Args: {
+          p_consequence_id: string
+          p_expected_staff_profile_id: string
+          p_internal_note: string
+          p_user_reason: string
         }
         Returns: string
       }

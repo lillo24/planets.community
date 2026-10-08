@@ -39,15 +39,15 @@ class CounterstatementDetailController
 
   @override
   CounterstatementDetailState build() {
-    ref.listen(authSessionProvider.select((session) => session.identity?.id), (
-      previous,
-      next,
-    ) {
-      if (previous == next) return;
-      _revision++;
-      _submissionId = null;
-      state = CounterstatementDetailState(requestId: requestId);
-    });
+    ref.listen(
+      authSessionProvider.select((session) => session.accountAccessIdentityId),
+      (previous, next) {
+        if (previous == next) return;
+        _revision++;
+        _submissionId = null;
+        state = CounterstatementDetailState(requestId: requestId);
+      },
+    );
     return CounterstatementDetailState(requestId: requestId);
   }
 

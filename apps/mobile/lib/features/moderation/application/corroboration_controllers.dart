@@ -35,14 +35,14 @@ class CorroborationRequestsController
 
   @override
   CorroborationRequestsState build() {
-    ref.listen(authSessionProvider.select((session) => session.identity?.id), (
-      previous,
-      next,
-    ) {
-      if (previous == next) return;
-      _revision++;
-      state = const CorroborationRequestsState();
-    });
+    ref.listen(
+      authSessionProvider.select((session) => session.accountAccessIdentityId),
+      (previous, next) {
+        if (previous == next) return;
+        _revision++;
+        state = const CorroborationRequestsState();
+      },
+    );
     return const CorroborationRequestsState();
   }
 
@@ -123,15 +123,15 @@ class CorroborationDetailController extends Notifier<CorroborationDetailState> {
 
   @override
   CorroborationDetailState build() {
-    ref.listen(authSessionProvider.select((session) => session.identity?.id), (
-      previous,
-      next,
-    ) {
-      if (previous == next) return;
-      _revision++;
-      _submissionId = null;
-      state = CorroborationDetailState(requestId: requestId);
-    });
+    ref.listen(
+      authSessionProvider.select((session) => session.accountAccessIdentityId),
+      (previous, next) {
+        if (previous == next) return;
+        _revision++;
+        _submissionId = null;
+        state = CorroborationDetailState(requestId: requestId);
+      },
+    );
     return CorroborationDetailState(requestId: requestId);
   }
 

@@ -168,6 +168,7 @@ try {
     select count(*)::integer as count
     from private.outbox_events
     where event_type like 'moderation.%'
+      and payload ->> 'case_id' = ${receipt.case_id}
   `;
   if (leakedAudit.count !== 0 || moderationOutbox.count !== 0) {
     throw new Error(

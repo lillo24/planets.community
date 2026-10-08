@@ -21,6 +21,10 @@ class FakeAuthGateway implements AuthGateway {
   int requestCount = 0;
   int verifyCount = 0;
   int signOutCount = 0;
+  int suspensionCheckCount = 0;
+  AccountSuspensionStatus suspension = const AccountSuspensionStatus.inactive();
+  Object? suspensionError;
+  Future<void>? suspensionDelay;
   String? requestedEmail;
   String? verifiedEmail;
   String? verifiedToken;
@@ -81,6 +85,16 @@ class FakeAuthGateway implements AuthGateway {
     if (signOutError case final error?) throw error;
     snapshot = const AuthSnapshot();
     emit(snapshot);
+  }
+
+  @override
+  Future<AccountSuspensionStatus> suspensionStatusFor(
+    String expectedProfileId,
+  ) async {
+    suspensionCheckCount++;
+    if (suspensionDelay case final delay?) await delay;
+    if (suspensionError case final error?) throw error;
+    return suspension;
   }
 }
 

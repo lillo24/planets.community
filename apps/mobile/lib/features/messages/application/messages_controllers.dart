@@ -40,13 +40,13 @@ class MessagesInboxController extends Notifier<MessagesInboxState> {
 
   @override
   MessagesInboxState build() {
-    ref.listen(authSessionProvider.select((session) => session.identity?.id), (
-      _,
-      _,
-    ) {
-      _revision++;
-      state = const MessagesInboxState();
-    });
+    ref.listen(
+      authSessionProvider.select((session) => session.accountAccessIdentityId),
+      (_, _) {
+        _revision++;
+        state = const MessagesInboxState();
+      },
+    );
     ref.onDispose(() => _revision++);
     return const MessagesInboxState();
   }
@@ -200,13 +200,13 @@ class MessagesDetailController extends Notifier<MessagesDetailState> {
 
   @override
   MessagesDetailState build() {
-    ref.listen(authSessionProvider.select((session) => session.identity?.id), (
-      _,
-      _,
-    ) {
-      _revision++;
-      state = const MessagesDetailState();
-    });
+    ref.listen(
+      authSessionProvider.select((session) => session.accountAccessIdentityId),
+      (_, _) {
+        _revision++;
+        state = const MessagesDetailState();
+      },
+    );
     ref.onDispose(() => _revision++);
     return const MessagesDetailState();
   }

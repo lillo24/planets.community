@@ -209,6 +209,8 @@ select is(
     select count(*)
     from pg_policies
     where schemaname = 'public' and tablename = 'recurring_activities'
+      -- 112 independently verifies the added global restrictive account gate.
+      and policyname <> 'account_active_required'
   ),
   1::bigint,
   'recurring activities expose only the creator read policy'
@@ -218,6 +220,7 @@ select is(
     select count(*)
     from pg_policies
     where schemaname = 'public' and tablename = 'recurring_activity_schedules'
+      and policyname <> 'account_active_required'
   ),
   1::bigint,
   'recurring schedules expose only the creator read policy'
@@ -228,6 +231,7 @@ select is(
     from pg_policies
     where schemaname = 'public'
       and tablename = 'recurring_activity_meeting_details'
+      and policyname <> 'account_active_required'
   ),
   1::bigint,
   'recurring meeting details expose only the creator read policy'

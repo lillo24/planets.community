@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../domain/moderation_models.dart';
 
 abstract final class ModerationRoutes {
+  static const ownNotices = '/settings/notices';
   static const ownReports = '/profile/reports';
   static const newReport = '/profile/reports/new';
   static const reviewRequests = '/profile/review-requests';

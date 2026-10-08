@@ -13,6 +13,24 @@ export function moderationQueueRow() {
   };
 }
 
+export function moderationConsequenceRow() {
+  return {
+    consequence_id: "00000000-0000-4000-8000-000000000931",
+    consequence_type: "safety_notice",
+    affected_profile_id: "00000000-0000-4000-8000-000000000902",
+    project_id: null,
+    resource_listing_id: null,
+    applied_at: "2026-09-28T10:10:00Z",
+    revoked_at: null,
+    action_id: "00000000-0000-4000-8000-000000000932",
+    action_kind: "applied",
+    user_reason: "A reason the affected user may read.",
+    note_id: "00000000-0000-4000-8000-000000000905",
+    actor_profile_id: "00000000-0000-4000-8000-000000000906",
+    action_at: "2026-09-28T10:10:00Z",
+  };
+}
+
 export function moderationDetailRow() {
   return {
     ...moderationQueueRow(),

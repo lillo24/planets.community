@@ -4,6 +4,10 @@ import { cache } from "react";
 
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import {
+  parseConsequenceHistory,
+  type ConsequenceEpisode,
+} from "./moderation-consequence-models";
+import {
   encodeModerationCursor,
   moderationQueuePageSize,
   parseModerationCase,
@@ -70,6 +74,8 @@ export type ModerationDetailResult =
       status: "ready";
       staffRole: ModerationStaffRole;
       detail: ModerationCaseDetail | null;
+      staffProfileId: string;
+      consequences: ConsequenceEpisode[];
     }>;
 
 export async function requireModerationStaff(
@@ -161,29 +167,42 @@ export async function readModerationCase(
   if (result.error) throw new Error("The moderation case could not be loaded.");
   const detail = parseModerationCase(result.data);
   if (!detail) {
-    return { status: "ready", staffRole: access.role, detail };
+    return {
+      status: "ready",
+      staffRole: access.role,
+      staffProfileId: access.profileId,
+      detail,
+      consequences: [],
+    };
   }
 
-  const [corroboration, counterstatement, templateResult] = await Promise.all([
-    detail.projectContextId
-      ? access.client.rpc("get_moderation_case_corroboration", {
-          p_expected_staff_profile_id: access.profileId,
-          p_case_id: caseId,
-        })
-      : Promise.resolve(null),
-    detail.resourceRequestContextId
-      ? access.client.rpc("get_moderation_case_counterstatement", {
-          p_expected_staff_profile_id: access.profileId,
-          p_case_id: caseId,
-        })
-      : Promise.resolve(null),
-    detail.targetKind === "proposal_template"
-      ? access.client.rpc("get_moderation_case_template", {
-          p_expected_staff_profile_id: access.profileId,
-          p_case_id: caseId,
-        })
-      : Promise.resolve(null),
-  ]);
+  const [corroboration, counterstatement, consequences, templateResult] =
+    await Promise.all([
+      detail.projectContextId
+        ? access.client.rpc("get_moderation_case_corroboration", {
+            p_expected_staff_profile_id: access.profileId,
+            p_case_id: caseId,
+          })
+        : Promise.resolve(null),
+      detail.resourceRequestContextId
+        ? access.client.rpc("get_moderation_case_counterstatement", {
+            p_expected_staff_profile_id: access.profileId,
+            p_case_id: caseId,
+          })
+        : Promise.resolve(null),
+      access.client.rpc("list_moderation_case_consequence_history", {
+        p_expected_staff_profile_id: access.profileId,
+        p_case_id: caseId,
+      }),
+      detail.targetKind === "proposal_template"
+        ? access.client.rpc("get_moderation_case_template", {
+            p_expected_staff_profile_id: access.profileId,
+            p_case_id: caseId,
+          })
+        : Promise.resolve(null),
+    ]);
+  if (consequences.error)
+    throw new Error("The moderation consequence history could not be loaded.");
   if (corroboration?.error) {
     throw new Error(
       "The moderation corroboration evidence could not be loaded.",
@@ -242,6 +261,8 @@ export async function readModerationCase(
   return {
     status: "ready",
     staffRole: access.role,
+    staffProfileId: access.profileId,
+    consequences: parseConsequenceHistory(consequences.data),
     detail: {
       ...detail,
       template,

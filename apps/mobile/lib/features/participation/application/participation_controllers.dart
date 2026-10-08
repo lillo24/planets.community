@@ -58,13 +58,13 @@ class OwnParticipationController extends Notifier<OwnParticipationState> {
 
   @override
   OwnParticipationState build() {
-    ref.listen(authSessionProvider.select((session) => session.identity?.id), (
-      _,
-      _,
-    ) {
-      _revision++;
-      state = const OwnParticipationState();
-    });
+    ref.listen(
+      authSessionProvider.select((session) => session.accountAccessIdentityId),
+      (_, _) {
+        _revision++;
+        state = const OwnParticipationState();
+      },
+    );
     ref.onDispose(() => _revision++);
     return const OwnParticipationState();
   }
@@ -163,13 +163,13 @@ class ParticipationCommandController
 
   @override
   ParticipationCommandState build() {
-    ref.listen(authSessionProvider.select((session) => session.identity?.id), (
-      _,
-      _,
-    ) {
-      _revision++;
-      state = const ParticipationCommandState();
-    });
+    ref.listen(
+      authSessionProvider.select((session) => session.accountAccessIdentityId),
+      (_, _) {
+        _revision++;
+        state = const ParticipationCommandState();
+      },
+    );
     ref.onDispose(() => _revision++);
     return const ParticipationCommandState();
   }
@@ -236,8 +236,15 @@ class ParticipationCommandController
         phase: ParticipationCommandPhase.failure,
         expectedProfileId: expectedProfileId,
         projectId: projectId,
-        failure: mapParticipationFailure(error),
+        // PT409 on new submissions has several canonical causes. Keep it
+        // generic without deriving an own restriction or capacity from text.
+        failure: error is PostgrestException && error.code == 'PT409'
+            ? ParticipationFailureKind.interactionUnavailable
+            : mapParticipationFailure(error),
       );
+      if (error is PostgrestException && error.code == 'PT403') {
+        await ref.read(authSessionProvider.notifier).refresh();
+      }
       return false;
     }
   }
@@ -376,13 +383,13 @@ class ParticipantMeetingDetailsController
 
   @override
   ParticipantMeetingDetailsState build() {
-    ref.listen(authSessionProvider.select((session) => session.identity?.id), (
-      _,
-      _,
-    ) {
-      _revision++;
-      state = const ParticipantMeetingDetailsState();
-    });
+    ref.listen(
+      authSessionProvider.select((session) => session.accountAccessIdentityId),
+      (_, _) {
+        _revision++;
+        state = const ParticipantMeetingDetailsState();
+      },
+    );
     ref.onDispose(() => _revision++);
     return const ParticipantMeetingDetailsState();
   }
@@ -509,13 +516,13 @@ class CreatorParticipationController
 
   @override
   CreatorParticipationState build() {
-    ref.listen(authSessionProvider.select((session) => session.identity?.id), (
-      _,
-      _,
-    ) {
-      _revision++;
-      state = const CreatorParticipationState();
-    });
+    ref.listen(
+      authSessionProvider.select((session) => session.accountAccessIdentityId),
+      (_, _) {
+        _revision++;
+        state = const CreatorParticipationState();
+      },
+    );
     ref.onDispose(() => _revision++);
     return const CreatorParticipationState();
   }

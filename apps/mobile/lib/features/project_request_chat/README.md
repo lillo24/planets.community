@@ -35,6 +35,14 @@ rules; `pendingCount` counts all pending requests, not just eligible ones or the
 timeline page. A changed send witness returns an explicit conflict, refreshes
 canonical state, and can remain writable through another request.
 
+Structured request actions and contribution details remain owned by the
+Messages and Participation features and are reused from this chat.
+
+09C1B denies suspended accounts private chat reads/sends. Confirmed suspension
+or failed account-status checks clear private caches and close channels, while
+the backend suppresses new recipient Broadcast hints despite cached socket
+authorization (already queued hints cannot be recalled). Only pending outbound
+requests are canonically withdrawn; accepted/terminal request history remains.
 Counterparty photos use the shared account-bound visible-photo cache and current
 authorization. A persistent conversation grants no permanent photo entitlement.
 Delayed actions, loads, sends, pagination, and scroll callbacks verify identity.

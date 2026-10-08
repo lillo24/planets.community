@@ -1,0 +1,2092 @@
+[
+  {
+    "signature": "accept_project_delegate_invitation(uuid,text)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.accept_project_delegate_invitation",
+      "private.require_complete_participation_profile",
+      "private.require_participation_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "accept_project_join_request_as_manager(uuid,uuid,uuid[],uuid[],uuid[],uuid[],uuid[],uuid[])",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.accept_project_join_request_as_manager",
+      "private.require_participation_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "accept_project_join_request_as_manager(uuid,uuid)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.accept_project_join_request_as_manager",
+      "public.accept_project_join_request_as_manager",
+      "private.require_participation_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "accept_project_join_request(uuid,uuid,uuid[],uuid[],uuid[],uuid[],uuid[],uuid[])",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.accept_project_join_request",
+      "private.require_participation_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "accept_project_join_request(uuid,uuid)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.accept_project_join_request",
+      "public.accept_project_join_request",
+      "private.require_participation_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "accept_project_participant_invitation(uuid,text,uuid)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.accept_project_participant_invitation",
+      "private.require_participation_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "accept_project_role_offer(uuid,uuid)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.accept_project_role_offer",
+      "private.require_complete_participation_profile",
+      "private.require_participation_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "accept_resource_exchange_terms(uuid,uuid,uuid)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.accept_resource_exchange_terms",
+      "private.require_resource_listing_request_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "accept_resource_listing_request(uuid,uuid)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.accept_resource_listing_request",
+      "private.require_resource_listing_request_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "acknowledge_own_message_read(uuid,text,uuid,uuid)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.acknowledge_own_message_read",
+      "private.require_participation_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "acknowledge_project_requirement_attention(uuid,uuid,uuid)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.acknowledge_project_requirement_attention",
+      "private.require_participation_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "add_moderation_case_note(uuid,uuid,text)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.add_moderation_case_note",
+      "private.require_moderation_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "apply_account_suspension(uuid,uuid,text,text)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.apply_account_suspension",
+      "private.require_consequence_staff",
+      "private.require_moderation_staff",
+      "private.require_moderation_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "apply_item_location_v1(uuid,text,uuid,bigint,uuid,text,uuid,text,uuid)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.apply_item_location_v1",
+      "private.require_resource_listing_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "apply_moderation_consequence(uuid,uuid,text,text,text)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.apply_moderation_consequence",
+      "private.require_consequence_staff",
+      "private.require_moderation_staff",
+      "private.require_moderation_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "assert_own_account_active()",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": ["public.assert_own_account_active"]
+  },
+  {
+    "signature": "block_user(uuid,uuid)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.block_user",
+      "private.require_complete_blocking_profile",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "can_manage_cover_image_object(text)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.can_manage_cover_image_object",
+      "private.current_account_is_active"
+    ]
+  },
+  {
+    "signature": "can_read_public_cover_image_object(text)",
+    "classification": "PUBLIC/ANONYMOUS_DATA",
+    "gate": null
+  },
+  {
+    "signature": "can_read_public_project_creator_photo_object(text)",
+    "classification": "PUBLIC/ANONYMOUS_DATA",
+    "gate": null
+  },
+  {
+    "signature": "can_read_public_resource_listing_owner_photo_object(text)",
+    "classification": "PUBLIC/ANONYMOUS_DATA",
+    "gate": null
+  },
+  {
+    "signature": "can_upload_cover_image_object(text)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.can_upload_cover_image_object",
+      "public.can_manage_cover_image_object",
+      "private.current_account_is_active"
+    ]
+  },
+  {
+    "signature": "cancel_proposal(uuid,uuid)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.cancel_proposal",
+      "private.require_expected_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "cancel_resource_exchange_agreement(uuid,uuid)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.cancel_resource_exchange_agreement",
+      "private.require_resource_listing_request_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "change_project_delegate_role(uuid,uuid,text)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.change_project_delegate_role",
+      "private.require_participation_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "check_resource_exchange_pending_loan_availability(uuid,uuid,uuid)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.check_resource_exchange_pending_loan_availability",
+      "private.require_resource_listing_request_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "claim_project_requirement(uuid,uuid,text,uuid)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.claim_project_requirement",
+      "private.require_participation_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "clear_own_profile_photo(uuid)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.clear_own_profile_photo",
+      "private.require_profile_photo_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "clear_own_project_cover(uuid,uuid)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.clear_own_project_cover",
+      "private.require_cover_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "clear_own_resource_listing_cover(uuid,uuid)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.clear_own_resource_listing_cover",
+      "private.require_cover_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "clear_project_shared_workspace(uuid,uuid)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.clear_project_shared_workspace",
+      "private.require_participation_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "close_project_resource_need(uuid,uuid)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.close_project_resource_need",
+      "private.require_participation_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "close_resource_listing(uuid,uuid)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.close_resource_listing",
+      "private.require_resource_listing_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "create_editor_proposal_draft(uuid,uuid,text,text,text,timestamp with time zone,timestamp with time zone,text,text,text,text,text,text,text,uuid[],text[],integer,boolean)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.create_editor_proposal_draft",
+      "private.require_expected_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "create_project_delegate_invitation(uuid,uuid,text)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.create_project_delegate_invitation",
+      "private.require_participation_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "create_project_delegate_invitation(uuid,uuid)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.create_project_delegate_invitation",
+      "public.create_project_delegate_invitation",
+      "private.require_participation_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "create_project_participant_invitation(uuid,uuid)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.create_project_participant_invitation",
+      "private.manage_project_participant_invitation",
+      "private.require_participation_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "create_project_resource_need(uuid,uuid,text,text)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.create_project_resource_need",
+      "private.require_participation_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "create_project_role_offer(uuid,uuid,uuid,text)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.create_project_role_offer",
+      "private.require_participation_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "create_proposal_draft_from_template(uuid,uuid,text,uuid,boolean)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.create_proposal_draft_from_template",
+      "private.require_expected_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "create_proposal_draft(uuid,text,text,text,timestamp with time zone,timestamp with time zone,text,text,text,text,text,text,text,uuid[],text[],integer,boolean)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.create_proposal_draft",
+      "public.create_proposal_draft",
+      "private.require_complete_profile",
+      "private.require_expected_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "create_proposal_draft(uuid,text,text,text,timestamp with time zone,timestamp with time zone,text,text,text,text,text,text,text,uuid[],text[],integer)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.create_proposal_draft",
+      "public.create_proposal_draft",
+      "private.require_complete_profile",
+      "private.require_expected_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "create_proposal_draft(uuid,text,text,text,timestamp with time zone,timestamp with time zone,text,text,text,text,text,text,text,uuid[],text[])",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.create_proposal_draft",
+      "private.require_complete_profile",
+      "private.require_expected_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "create_recurring_activity_draft(uuid,text,text,text,text,text,text,text,text,text,text,text,integer,integer,time without time zone,integer,text,date,integer,boolean)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.create_recurring_activity_draft",
+      "public.create_recurring_activity_draft",
+      "private.require_complete_recurring_activity_profile",
+      "private.require_expected_recurring_activity_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "create_recurring_activity_draft(uuid,text,text,text,text,text,text,text,text,text,text,text,integer,integer,time without time zone,integer,text,date,integer)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.create_recurring_activity_draft",
+      "public.create_recurring_activity_draft",
+      "private.require_complete_recurring_activity_profile",
+      "private.require_expected_recurring_activity_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "create_recurring_activity_draft(uuid,text,text,text,text,text,text,text,text,text,text,text,integer,integer,time without time zone,integer,text,date)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.create_recurring_activity_draft",
+      "private.require_complete_recurring_activity_profile",
+      "private.require_expected_recurring_activity_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "create_resource_listing_draft(uuid,text,text,text,text,text,text,text)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.create_resource_listing_draft",
+      "private.require_complete_resource_listing_identity",
+      "private.require_resource_listing_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "create_resource_saved_search(uuid,text,text,text)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.create_resource_saved_search",
+      "private.require_resource_listing_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "decline_project_role_offer(uuid,uuid)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.decline_project_role_offer",
+      "private.require_participation_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "delete_resource_saved_search(uuid,uuid)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.delete_resource_saved_search",
+      "private.require_resource_listing_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "end_recurring_activity(uuid,uuid)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.end_recurring_activity",
+      "private.require_expected_recurring_activity_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "get_authorized_item_location_v1(uuid,text,uuid)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.get_authorized_item_location_v1",
+      "private.require_resource_listing_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "get_current_project_participant_invitation(uuid,uuid)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.get_current_project_participant_invitation",
+      "private.manage_project_participant_invitation",
+      "private.require_participation_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "get_moderation_case_corroboration(uuid,uuid)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.get_moderation_case_corroboration",
+      "private.require_moderation_staff",
+      "private.require_moderation_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "get_moderation_case_counterstatement(uuid,uuid)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.get_moderation_case_counterstatement",
+      "private.require_moderation_staff",
+      "private.require_moderation_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "get_moderation_case_detail(uuid,uuid)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.get_moderation_case_detail",
+      "private.require_moderation_staff",
+      "private.require_moderation_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "get_moderation_case_template(uuid,uuid)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.get_moderation_case_template",
+      "private.require_moderation_staff",
+      "private.require_moderation_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "get_own_account_suspension_status(uuid)",
+    "classification": "ALLOW_WHILE_SUSPENDED",
+    "gate": null
+  },
+  {
+    "signature": "get_own_blocked_profile_status(uuid,uuid)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.get_own_blocked_profile_status",
+      "private.require_complete_blocking_profile",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "get_own_group_corroboration_request(uuid,uuid)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.get_own_group_corroboration_request",
+      "private.require_moderation_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "get_own_interaction_restriction_status(uuid)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.get_own_interaction_restriction_status",
+      "private.require_moderation_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "get_own_message_feed_page(uuid,text,uuid,integer,timestamp with time zone,text,uuid,boolean)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.get_own_message_feed_page",
+      "private.require_participation_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "get_own_message_unread_summary(uuid)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.get_own_message_unread_summary",
+      "private.require_participation_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "get_own_moderation_staff_access(uuid)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.get_own_moderation_staff_access",
+      "private.require_moderation_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "get_own_participation_conversation_requests(uuid,uuid,uuid[])",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.get_own_participation_conversation_requests",
+      "private.require_participation_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "get_own_participation_conversation(uuid,uuid)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.get_own_participation_conversation",
+      "private.require_participation_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "get_own_participation_request_message_item(uuid,uuid)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.get_own_participation_request_message_item",
+      "private.require_participation_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "get_own_profile_photo(uuid)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.get_own_profile_photo",
+      "private.require_profile_photo_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "get_own_project_cover(uuid,uuid)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.get_own_project_cover",
+      "private.require_cover_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "get_own_project_group_chat(uuid,uuid)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.get_own_project_group_chat",
+      "private.require_participation_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "get_own_project_join_request_chat(uuid,uuid)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.get_own_project_join_request_chat",
+      "private.require_participation_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "get_own_project_management_role(uuid,uuid)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.get_own_project_management_role",
+      "private.require_participation_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "get_own_project_requirement_attention(uuid,uuid)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.get_own_project_requirement_attention",
+      "private.require_participation_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "get_own_project_shared_workspace(uuid,uuid)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.get_own_project_shared_workspace",
+      "private.require_participation_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "get_own_proposal_template_application(uuid,uuid)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.get_own_proposal_template_application",
+      "private.require_expected_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "get_own_proposal_template_baseline(uuid,uuid)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.get_own_proposal_template_baseline",
+      "private.require_expected_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "get_own_proposal(uuid,uuid)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.get_own_proposal",
+      "private.require_expected_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "get_own_recurring_activity(uuid,uuid)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.get_own_recurring_activity",
+      "private.require_expected_recurring_activity_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "get_own_resource_counterstatement_request(uuid,uuid)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.get_own_resource_counterstatement_request",
+      "private.require_moderation_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "get_own_resource_listing_cover(uuid,uuid)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.get_own_resource_listing_cover",
+      "private.require_cover_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "get_own_resource_listing(uuid,uuid)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.get_own_resource_listing",
+      "public.list_own_resource_listings",
+      "private.require_resource_listing_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "get_own_resource_request_chat(uuid,uuid)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.get_own_resource_request_chat",
+      "private.require_resource_listing_request_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "get_own_resource_saved_search(uuid,uuid)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.get_own_resource_saved_search",
+      "private.require_resource_listing_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "get_own_structured_request_message_item(uuid,text,uuid)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.get_own_structured_request_message_item",
+      "private.require_participation_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "get_own_unread_notification_count(uuid)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.get_own_unread_notification_count",
+      "private.require_notification_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "get_profile_photo_for_viewer(uuid)",
+    "classification": "PUBLIC/ANONYMOUS_DATA",
+    "gate": null
+  },
+  {
+    "signature": "get_project_capacity_for_manager(uuid,uuid)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.get_project_capacity_for_manager",
+      "private.require_participation_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "get_project_creator_profile_photo_for_viewer(uuid)",
+    "classification": "PUBLIC/ANONYMOUS_DATA",
+    "gate": null
+  },
+  {
+    "signature": "get_project_join_request_resolution_context(uuid,uuid)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.get_project_join_request_resolution_context",
+      "private.require_participation_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "get_project_participant_invitation_preview(text)",
+    "classification": "PUBLIC/ANONYMOUS_DATA",
+    "gate": null
+  },
+  {
+    "signature": "get_project_participant_meeting_details(uuid,uuid)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.get_project_participant_meeting_details",
+      "private.require_participation_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "get_public_item_location_v1(text,uuid)",
+    "classification": "PUBLIC/ANONYMOUS_DATA",
+    "gate": null
+  },
+  {
+    "signature": "get_public_profile(uuid)",
+    "classification": "PUBLIC/ANONYMOUS_DATA",
+    "gate": null
+  },
+  {
+    "signature": "get_public_proposal_template(uuid)",
+    "classification": "PUBLIC/ANONYMOUS_DATA",
+    "gate": null
+  },
+  {
+    "signature": "get_public_proposal(uuid)",
+    "classification": "PUBLIC/ANONYMOUS_DATA",
+    "gate": null
+  },
+  {
+    "signature": "get_public_recurring_activity(uuid,integer,timestamp with time zone)",
+    "classification": "PUBLIC/ANONYMOUS_DATA",
+    "gate": null
+  },
+  {
+    "signature": "get_public_resource_listing(uuid)",
+    "classification": "PUBLIC/ANONYMOUS_DATA",
+    "gate": null
+  },
+  {
+    "signature": "get_resource_exchange_agreement(uuid,uuid)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.get_resource_exchange_agreement",
+      "private.require_resource_listing_request_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "get_resource_listing_owner_profile_photo_for_viewer(uuid)",
+    "classification": "PUBLIC/ANONYMOUS_DATA",
+    "gate": null
+  },
+  {
+    "signature": "get_resource_listing_request(uuid,uuid)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.get_resource_listing_request",
+      "private.require_resource_listing_request_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "issue_location_selections_v1(uuid,jsonb)",
+    "classification": "SERVICE/WORKER_ONLY",
+    "gate": [
+      "public.issue_location_selections_v1",
+      "private.lock_location_item",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "leave_project(uuid,uuid)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.leave_project",
+      "private.require_participation_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "list_current_project_people(uuid,uuid,integer,integer,uuid)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.list_current_project_people",
+      "private.require_project_people_viewer",
+      "private.require_participation_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "list_moderation_case_consequence_history(uuid,uuid)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.list_moderation_case_consequence_history",
+      "private.require_moderation_staff",
+      "private.require_moderation_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "list_moderation_case_template_blueprints(uuid,uuid,text,integer,uuid)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.list_moderation_case_template_blueprints",
+      "private.require_moderation_staff",
+      "private.require_moderation_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "list_moderation_cases(uuid,text,integer,timestamp with time zone,uuid)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.list_moderation_cases",
+      "private.require_moderation_staff",
+      "private.require_moderation_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "list_own_blocked_profiles(uuid,integer,timestamp with time zone,uuid)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.list_own_blocked_profiles",
+      "private.require_complete_blocking_profile",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "list_own_delegated_projects(uuid)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.list_own_delegated_projects",
+      "private.require_participation_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "list_own_group_corroboration_requests(uuid,boolean,integer,timestamp with time zone,uuid)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.list_own_group_corroboration_requests",
+      "private.require_moderation_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "list_own_message_chat_items(uuid,integer,timestamp with time zone,text,uuid)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.list_own_message_chat_items",
+      "private.require_participation_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "list_own_moderation_consequences(uuid,integer,timestamp with time zone,uuid)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.list_own_moderation_consequences",
+      "private.require_moderation_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "list_own_moderation_evidence_requests(uuid,boolean,integer)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.list_own_moderation_evidence_requests",
+      "private.require_moderation_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "list_own_moderation_reports(uuid,integer,timestamp with time zone,uuid)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.list_own_moderation_reports",
+      "private.require_moderation_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "list_own_notification_preferences(uuid)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.list_own_notification_preferences",
+      "private.require_notification_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "list_own_notifications(uuid,integer,timestamp with time zone,uuid)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.list_own_notifications",
+      "private.require_notification_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "list_own_participation_conversation_items(uuid,uuid,integer,timestamp with time zone,text,uuid,boolean)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.list_own_participation_conversation_items",
+      "private.require_participation_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "list_own_participation_request_message_items(uuid,integer,timestamp with time zone,uuid)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.list_own_participation_request_message_items",
+      "private.require_participation_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "list_own_pending_requested_proposals(uuid,text,uuid[],text)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.list_own_pending_requested_proposals",
+      "private.require_complete_participation_profile",
+      "private.require_participation_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "list_own_pending_requested_recurring_activities(uuid,timestamp with time zone,text)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.list_own_pending_requested_recurring_activities",
+      "private.require_complete_participation_profile",
+      "private.require_participation_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "list_own_project_chat_feed(uuid,uuid,integer,timestamp with time zone,text,uuid)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.list_own_project_chat_feed",
+      "private.require_participation_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "list_own_project_chat_messages(uuid,uuid,integer,timestamp with time zone,uuid)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.list_own_project_chat_messages",
+      "private.require_participation_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "list_own_project_group_chats(uuid,integer,timestamp with time zone,uuid)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.list_own_project_group_chats",
+      "private.require_participation_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "list_own_project_join_request_chat_items(uuid,uuid,integer,timestamp with time zone,text,uuid)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.list_own_project_join_request_chat_items",
+      "private.require_participation_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "list_own_project_join_request_contribution_selections(uuid,uuid)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.list_own_project_join_request_contribution_selections",
+      "private.require_participation_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "list_own_project_join_requests(uuid)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.list_own_project_join_requests",
+      "private.require_participation_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "list_own_project_membership_commitment_options(uuid,uuid)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.list_own_project_membership_commitment_options",
+      "private.require_participation_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "list_own_project_membership_commitments(uuid,uuid)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.list_own_project_membership_commitments",
+      "private.require_participation_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "list_own_project_memberships(uuid)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.list_own_project_memberships",
+      "private.require_participation_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "list_own_project_resource_needs(uuid,uuid)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.list_own_project_resource_needs",
+      "private.require_project_creator",
+      "private.require_participation_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "list_own_proposals(uuid)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.list_own_proposals",
+      "private.require_expected_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "list_own_recurring_activities(uuid)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.list_own_recurring_activities",
+      "private.require_expected_recurring_activity_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "list_own_resource_listing_requests(uuid)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.list_own_resource_listing_requests",
+      "private.require_resource_listing_request_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "list_own_resource_listings(uuid)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.list_own_resource_listings",
+      "private.require_resource_listing_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "list_own_resource_request_chat_messages(uuid,uuid,integer,timestamp with time zone,uuid)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.list_own_resource_request_chat_messages",
+      "private.require_resource_listing_request_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "list_own_resource_request_chats(uuid,integer,timestamp with time zone,uuid)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.list_own_resource_request_chats",
+      "private.require_resource_listing_request_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "list_own_resource_saved_searches(uuid,integer,timestamp with time zone,uuid)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.list_own_resource_saved_searches",
+      "private.require_resource_listing_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "list_own_scoped_conversation_items_v3(uuid,text,integer,timestamp with time zone,text,uuid)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.list_own_scoped_conversation_items_v3",
+      "public.list_own_scoped_conversation_items",
+      "public.list_own_scoped_message_chat_items",
+      "private.require_participation_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "list_own_scoped_conversation_items_v4(uuid,text,integer,timestamp with time zone,text,uuid)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.list_own_scoped_conversation_items_v4",
+      "private.require_participation_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "list_own_scoped_conversation_items(uuid,text,integer,timestamp with time zone,text,uuid)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.list_own_scoped_conversation_items",
+      "public.list_own_scoped_message_chat_items",
+      "private.require_participation_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "list_own_scoped_message_chat_items(uuid,text,integer,timestamp with time zone,text,uuid)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.list_own_scoped_message_chat_items",
+      "private.require_participation_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "list_own_structured_request_message_items(uuid,integer,timestamp with time zone,text,uuid)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.list_own_structured_request_message_items",
+      "private.require_participation_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "list_owned_resource_listing_loan_schedule(uuid,uuid)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.list_owned_resource_listing_loan_schedule",
+      "private.require_resource_listing_request_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "list_profile_photos_for_viewer(uuid[])",
+    "classification": "PUBLIC/ANONYMOUS_DATA",
+    "gate": null
+  },
+  {
+    "signature": "list_project_capacity_statuses_for_structural_actor(uuid,uuid[])",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.list_project_capacity_statuses_for_structural_actor",
+      "private.require_expected_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "list_project_delegate_invitations_for_owner(uuid,uuid)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.list_project_delegate_invitations_for_owner",
+      "private.require_project_structural_authority",
+      "private.require_participation_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "list_project_delegates_for_owner(uuid,uuid)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.list_project_delegates_for_owner",
+      "private.require_project_structural_authority",
+      "private.require_participation_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "list_project_join_requests_for_manager(uuid,uuid)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.list_project_join_requests_for_manager",
+      "private.require_project_manager",
+      "private.require_participation_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "list_project_join_requests(uuid,uuid)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.list_project_join_requests",
+      "private.require_project_creator",
+      "private.require_participation_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "list_project_live_requirement_coverage(uuid,uuid)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.list_project_live_requirement_coverage",
+      "private.require_participation_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "list_project_members_for_manager(uuid,uuid)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.list_project_members_for_manager",
+      "private.require_project_manager",
+      "private.require_participation_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "list_project_members(uuid,uuid)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.list_project_members",
+      "private.require_project_creator",
+      "private.require_participation_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "list_project_membership_actual_contribution_options_for_manager(uuid,uuid)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.list_project_membership_actual_contribution_options_for_manager",
+      "private.require_participation_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "list_project_membership_actual_contribution_options(uuid,uuid)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.list_project_membership_actual_contribution_options",
+      "private.require_participation_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "list_project_membership_actual_contributions(uuid,uuid)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.list_project_membership_actual_contributions",
+      "private.require_participation_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "list_project_participant_invitation_history(uuid,uuid,integer,timestamp with time zone,uuid)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.list_project_participant_invitation_history",
+      "private.require_participation_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "list_project_resource_need_listing_matches(uuid,uuid,text,integer,text,text,text,timestamp with time zone,uuid)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.list_project_resource_need_listing_matches",
+      "private.require_participation_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "list_project_role_offers(uuid,uuid,integer,timestamp with time zone,uuid)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.list_project_role_offers",
+      "private.require_project_people_viewer",
+      "private.require_participation_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "list_public_project_capacity_statuses(uuid[])",
+    "classification": "PUBLIC/ANONYMOUS_DATA",
+    "gate": null
+  },
+  {
+    "signature": "list_public_project_resource_needs(uuid)",
+    "classification": "PUBLIC/ANONYMOUS_DATA",
+    "gate": null
+  },
+  {
+    "signature": "list_public_proposal_template_resource_blueprints(uuid,text,integer,uuid)",
+    "classification": "PUBLIC/ANONYMOUS_DATA",
+    "gate": null
+  },
+  {
+    "signature": "list_public_proposal_templates(integer,timestamp with time zone,uuid,uuid[],text)",
+    "classification": "PUBLIC/ANONYMOUS_DATA",
+    "gate": null
+  },
+  {
+    "signature": "list_public_proposals(integer,timestamp with time zone,uuid,text,uuid[],text)",
+    "classification": "PUBLIC/ANONYMOUS_DATA",
+    "gate": null
+  },
+  {
+    "signature": "list_public_recurring_activities(timestamp with time zone,integer,timestamp with time zone,uuid,text)",
+    "classification": "PUBLIC/ANONYMOUS_DATA",
+    "gate": null
+  },
+  {
+    "signature": "list_public_recurring_activity_occurrences(uuid,timestamp with time zone,timestamp with time zone,integer)",
+    "classification": "PUBLIC/ANONYMOUS_DATA",
+    "gate": null
+  },
+  {
+    "signature": "list_public_resource_listings(integer,timestamp with time zone,uuid,text,text,text)",
+    "classification": "PUBLIC/ANONYMOUS_DATA",
+    "gate": null
+  },
+  {
+    "signature": "list_resource_exchange_agreement_events(uuid,uuid)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.list_resource_exchange_agreement_events",
+      "private.require_resource_listing_request_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "list_resource_exchange_agreement_terms(uuid,uuid)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.list_resource_exchange_agreement_terms",
+      "private.require_resource_listing_request_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "list_resource_listing_requests(uuid,uuid)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.list_resource_listing_requests",
+      "private.require_resource_listing_request_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "list_similar_active_proposals(uuid,text,uuid[],text,text,uuid,integer)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.list_similar_active_proposals",
+      "private.require_expected_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "mark_all_notifications_read(uuid)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.mark_all_notifications_read",
+      "private.require_notification_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "mark_notification_read(uuid,uuid)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.mark_notification_read",
+      "private.require_notification_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "page_project_history_for_manager(uuid,uuid,integer,timestamp with time zone,uuid)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.page_project_history_for_manager",
+      "private.require_project_manager",
+      "private.require_participation_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "page_project_requests_for_manager(uuid,uuid,integer,boolean,timestamp with time zone,uuid)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.page_project_requests_for_manager",
+      "private.require_project_manager",
+      "private.require_participation_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "pause_recurring_activity(uuid,uuid)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.pause_recurring_activity",
+      "private.require_expected_recurring_activity_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "preview_project_delegate_invitation(text)",
+    "classification": "PUBLIC/ANONYMOUS_DATA",
+    "gate": null
+  },
+  {
+    "signature": "process_notification_outbox_batch(integer)",
+    "classification": "SERVICE/WORKER_ONLY",
+    "gate": null
+  },
+  {
+    "signature": "process_push_outbox_batch(integer)",
+    "classification": "SERVICE/WORKER_ONLY",
+    "gate": null
+  },
+  {
+    "signature": "process_resource_saved_search_matching_outbox_batch(integer)",
+    "classification": "SERVICE/WORKER_ONLY",
+    "gate": null
+  },
+  {
+    "signature": "propose_resource_exchange_terms(uuid,uuid,uuid,uuid,text,timestamp with time zone,timestamp with time zone,text,text,timestamp with time zone,timestamp with time zone,text)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.propose_resource_exchange_terms",
+      "private.require_resource_listing_request_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "publish_proposal(uuid,uuid)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.publish_proposal",
+      "private.require_complete_profile",
+      "private.require_expected_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "publish_recurring_activity(uuid,uuid)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.publish_recurring_activity",
+      "private.require_complete_recurring_activity_profile",
+      "private.require_expected_recurring_activity_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "publish_resource_listing(uuid,uuid)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.publish_resource_listing",
+      "private.require_complete_resource_listing_identity",
+      "private.require_resource_listing_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "record_resource_exchange_milestone(uuid,uuid,uuid,text,text)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.record_resource_exchange_milestone",
+      "private.require_resource_listing_request_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "recover_editor_proposal_draft(uuid,uuid)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.recover_editor_proposal_draft",
+      "private.require_expected_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "regenerate_project_participant_invitation(uuid,uuid)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.regenerate_project_participant_invitation",
+      "private.manage_project_participant_invitation",
+      "private.require_participation_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "register_own_push_installation(uuid,uuid,text,text)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.register_own_push_installation",
+      "private.require_push_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "reject_project_join_request_as_manager(uuid,uuid)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.reject_project_join_request_as_manager",
+      "private.require_participation_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "reject_project_join_request(uuid,uuid)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.reject_project_join_request",
+      "private.require_participation_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "reject_resource_exchange_terms(uuid,uuid,uuid)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.reject_resource_exchange_terms",
+      "private.require_resource_listing_request_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "reject_resource_listing_request(uuid,uuid)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.reject_resource_listing_request",
+      "private.require_resource_listing_request_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "remove_moderation_case_template(uuid,uuid,uuid,uuid,text,text)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.remove_moderation_case_template",
+      "private.require_moderation_staff",
+      "private.require_moderation_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "remove_project_member_as_manager(uuid,uuid)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.remove_project_member_as_manager",
+      "private.require_participation_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "remove_project_member(uuid,uuid)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.remove_project_member",
+      "private.require_participation_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "replace_project_membership_actual_contributions_as_manager(uuid,uuid,uuid[],uuid[],boolean,uuid[],uuid[],boolean)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.replace_project_membership_actual_contributions_as_manager",
+      "private.require_participation_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "replace_project_membership_actual_contributions(uuid,uuid,uuid[],uuid[],boolean,uuid[],uuid[],boolean)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.replace_project_membership_actual_contributions",
+      "private.require_participation_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "replace_project_membership_commitments(uuid,uuid,uuid[],uuid[],uuid[],uuid[])",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.replace_project_membership_commitments",
+      "private.require_participation_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "request_resource_listing(uuid,uuid,text)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.request_resource_listing",
+      "private.require_resource_listing_request_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "request_to_join_project(uuid,uuid,text,uuid[],uuid[])",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.request_to_join_project",
+      "private.require_complete_participation_profile",
+      "private.require_participation_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "reserve_location_search_v1(uuid,text,uuid,bigint,text,uuid,text)",
+    "classification": "SERVICE/WORKER_ONLY",
+    "gate": [
+      "public.reserve_location_search_v1",
+      "private.lock_location_item",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "resolve_location_selection_v1(uuid,text,uuid,bigint,text,uuid,uuid)",
+    "classification": "SERVICE/WORKER_ONLY",
+    "gate": [
+      "public.resolve_location_selection_v1",
+      "private.lock_location_item",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "resume_recurring_activity(uuid,uuid)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.resume_recurring_activity",
+      "private.require_complete_recurring_activity_profile",
+      "private.require_expected_recurring_activity_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "revoke_account_suspension(uuid,uuid,text,text)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.revoke_account_suspension",
+      "private.require_consequence_staff",
+      "private.require_moderation_staff",
+      "private.require_moderation_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "revoke_moderation_consequence(uuid,uuid,text,text)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.revoke_moderation_consequence",
+      "private.require_consequence_staff",
+      "private.require_moderation_staff",
+      "private.require_moderation_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "revoke_project_delegate_invitation(uuid,uuid)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.revoke_project_delegate_invitation",
+      "private.require_participation_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "revoke_project_delegate(uuid,uuid)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.revoke_project_delegate",
+      "private.require_participation_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "revoke_project_participant_invitation(uuid,uuid,uuid)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.revoke_project_participant_invitation",
+      "private.manage_project_participant_invitation",
+      "private.require_participation_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "send_participation_conversation_message(uuid,uuid,text)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.send_participation_conversation_message",
+      "private.require_participation_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "send_project_chat_message(uuid,uuid,text)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.send_project_chat_message",
+      "private.require_complete_project_chat_profile",
+      "private.require_participation_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "send_project_join_request_chat_message(uuid,uuid,text)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.send_project_join_request_chat_message",
+      "private.require_participation_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "send_resource_request_chat_message(uuid,uuid,text)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.send_resource_request_chat_message",
+      "private.require_resource_listing_request_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "set_own_notification_preference(uuid,text,boolean,boolean)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.set_own_notification_preference",
+      "private.require_notification_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "set_own_profile_photo_audience(uuid,text)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.set_own_profile_photo_audience",
+      "private.require_profile_photo_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "set_own_profile_photo(uuid,text,text)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.set_own_profile_photo",
+      "private.require_profile_photo_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "set_own_project_cover(uuid,uuid,text)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.set_own_project_cover",
+      "private.require_cover_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "set_own_resource_listing_cover(uuid,uuid,text)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.set_own_resource_listing_cover",
+      "private.require_cover_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "set_project_requirement_manual_coverage_as_manager(uuid,uuid,text,uuid,boolean)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.set_project_requirement_manual_coverage_as_manager",
+      "private.require_participation_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "set_project_requirement_manual_coverage(uuid,uuid,text,uuid,boolean)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.set_project_requirement_manual_coverage",
+      "private.require_participation_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "set_project_shared_workspace(uuid,uuid,text)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.set_project_shared_workspace",
+      "private.require_participation_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "step_down_project_authority(uuid,uuid)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.step_down_project_authority",
+      "private.require_participation_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "submit_group_corroboration_response(uuid,uuid,uuid,text,text)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.submit_group_corroboration_response",
+      "private.require_moderation_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "submit_moderation_report(uuid,uuid,text,text,text,uuid,text,uuid)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.submit_moderation_report",
+      "private.require_moderation_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "submit_resource_counterstatement(uuid,uuid,uuid,text)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.submit_resource_counterstatement",
+      "private.require_moderation_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "transition_moderation_case(uuid,uuid,bigint,text)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.transition_moderation_case",
+      "private.require_moderation_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "unblock_user(uuid,uuid)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.unblock_user",
+      "private.require_complete_blocking_profile",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "unregister_own_push_installation(uuid,uuid)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.unregister_own_push_installation",
+      "private.require_push_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "update_own_profile(uuid,text,text,uuid[],text,text,text)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": ["public.update_own_profile", "public.assert_own_account_active"]
+  },
+  {
+    "signature": "update_own_proposal(uuid,uuid,text,text,text,timestamp with time zone,timestamp with time zone,text,text,text,text,text,text,text,uuid[],text[],integer,boolean)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.update_own_proposal",
+      "private.set_project_registration_capacity_for_structural_edit",
+      "private.require_expected_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "update_own_proposal(uuid,uuid,text,text,text,timestamp with time zone,timestamp with time zone,text,text,text,text,text,text,text,uuid[],text[],integer)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.update_own_proposal",
+      "private.set_project_people_capacity_for_structural_edit",
+      "private.set_project_registration_capacity_for_structural_edit",
+      "private.require_expected_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "update_own_proposal(uuid,uuid,text,text,text,timestamp with time zone,timestamp with time zone,text,text,text,text,text,text,text,uuid[],text[])",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.update_own_proposal",
+      "private.require_expected_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "update_own_recurring_activity(uuid,uuid,text,text,text,text,text,text,text,text,text,text,text,integer,integer,time without time zone,integer,text,date,integer,boolean)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.update_own_recurring_activity",
+      "private.set_project_registration_capacity_for_structural_edit",
+      "private.require_expected_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "update_own_recurring_activity(uuid,uuid,text,text,text,text,text,text,text,text,text,text,text,integer,integer,time without time zone,integer,text,date,integer)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.update_own_recurring_activity",
+      "private.set_project_people_capacity_for_structural_edit",
+      "private.set_project_registration_capacity_for_structural_edit",
+      "private.require_expected_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "update_own_recurring_activity(uuid,uuid,text,text,text,text,text,text,text,text,text,text,text,integer,integer,time without time zone,integer,text,date)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.update_own_recurring_activity",
+      "private.require_expected_recurring_activity_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "update_own_resource_listing(uuid,uuid,text,text,text,text,text,text,text)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.update_own_resource_listing",
+      "private.require_resource_listing_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "update_project_resource_need(uuid,uuid,text,text)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.update_project_resource_need",
+      "private.require_participation_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "update_resource_saved_search(uuid,uuid,text,text,text)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.update_resource_saved_search",
+      "private.require_resource_listing_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "withdraw_project_join_request(uuid,uuid)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.withdraw_project_join_request",
+      "private.require_participation_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "withdraw_resource_exchange_terms(uuid,uuid,uuid)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.withdraw_resource_exchange_terms",
+      "private.require_resource_listing_request_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "withdraw_resource_listing_request(uuid,uuid)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.withdraw_resource_listing_request",
+      "private.require_resource_listing_request_identity",
+      "private.assert_profile_account_active"
+    ]
+  }
+]

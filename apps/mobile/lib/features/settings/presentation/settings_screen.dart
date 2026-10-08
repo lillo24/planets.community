@@ -10,6 +10,7 @@ import '../../../l10n/generated/app_localizations.dart';
 import '../../auth/application/auth_session_controller.dart';
 import '../../auth/domain/auth_models.dart';
 import '../../auth/presentation/account_sign_out_action.dart';
+import '../../moderation/presentation/moderation_routes.dart';
 import '../application/language_preference_controller.dart';
 import '../application/navigation_preference_controller.dart';
 import '../domain/language_preference.dart';
@@ -119,6 +120,15 @@ class SettingsScreen extends ConsumerWidget {
                     clipBehavior: Clip.antiAlias,
                     child: Column(
                       children: [
+                        ListTile(
+                          key: const Key('settings-notices-row'),
+                          leading: const Icon(Icons.info_outline),
+                          title: Text(l10n.noticesTitle),
+                          trailing: const Icon(Icons.chevron_right),
+                          onTap: () =>
+                              context.push(ModerationRoutes.ownNotices),
+                        ),
+                        const Divider(height: 1),
                         ListTile(
                           key: const Key('settings-notifications-row'),
                           leading: const Icon(Icons.notifications_outlined),

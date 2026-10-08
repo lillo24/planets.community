@@ -36,7 +36,10 @@ class AuthCommandController extends Notifier<AuthCommandState> {
   int _flowRevision = 0;
 
   @override
-  AuthCommandState build() => const AuthCommandState();
+  AuthCommandState build() {
+    ref.onDispose(() => _flowRevision++);
+    return const AuthCommandState();
+  }
 
   void resetFlow() => cancelFlow();
 
@@ -140,13 +143,19 @@ class AuthCommandController extends Notifier<AuthCommandState> {
       phase: AuthCommandPhase.verifyingCode,
       resendAvailableAt: state.resendAvailableAt,
     );
+    final session = ref.read(authSessionProvider.notifier);
+    final sessionEpoch = session.verificationEpoch;
     try {
       final identity = await ref
           .read(authGatewayProvider)
           .verifyEmailOtp(email: pending.email, token: normalizedToken);
-      return await _completeSignIn(identity, revision);
+      return await _completeSignIn(identity, revision, sessionEpoch);
     } catch (error) {
       if (!_isCurrent(revision)) {
+        return false;
+      }
+      if (session.verificationEpoch != sessionEpoch) {
+        cancelFlow();
         return false;
       }
       state = AuthCommandState(
@@ -172,6 +181,8 @@ class AuthCommandController extends Notifier<AuthCommandState> {
 
     final revision = ++_flowRevision;
     final previousState = state;
+    final session = ref.read(authSessionProvider.notifier);
+    final sessionEpoch = session.verificationEpoch;
     state = AuthCommandState(
       phase: AuthCommandPhase.signingInWithProvider,
       resendAvailableAt: previousState.resendAvailableAt,
@@ -181,9 +192,13 @@ class AuthCommandController extends Notifier<AuthCommandState> {
       if (!_isCurrent(revision)) {
         return false;
       }
+      if (session.verificationEpoch != sessionEpoch) {
+        cancelFlow();
+        return false;
+      }
       switch (result) {
         case ProviderAuthSuccess(:final identity):
-          return await _completeSignIn(identity, revision);
+          return await _completeSignIn(identity, revision, sessionEpoch);
         case ProviderAuthCancelled():
           // Dismissal leaves the prior OTP flow usable, without an error banner.
           state = AuthCommandState(
@@ -200,6 +215,10 @@ class AuthCommandController extends Notifier<AuthCommandState> {
       }
     } catch (error) {
       if (!_isCurrent(revision)) {
+        return false;
+      }
+      if (session.verificationEpoch != sessionEpoch) {
+        cancelFlow();
         return false;
       }
       state = AuthCommandState(
@@ -221,56 +240,45 @@ class AuthCommandController extends Notifier<AuthCommandState> {
       return false;
     }
 
-    return _completeSignIn(identity, ++_flowRevision);
+    return _completeSignIn(
+      identity,
+      ++_flowRevision,
+      ref.read(authSessionProvider.notifier).verificationEpoch,
+    );
   }
 
   /// One completion owner for OTP, future providers, and anchor-creation retry.
-  Future<bool> _completeSignIn(AuthIdentity identity, int revision) async {
-    if (!_isCurrent(revision)) {
+  Future<bool> _completeSignIn(
+    AuthIdentity identity,
+    int revision,
+    int sessionEpoch,
+  ) async {
+    if (!_isCurrent(revision)) return false;
+    final session = ref.read(authSessionProvider.notifier);
+    if (!session.acceptsVerification(identity, sessionEpoch)) {
+      cancelFlow();
       return false;
     }
-    ref.read(authSessionProvider.notifier).markCheckingProfile(identity);
     state = AuthCommandState(
       phase: AuthCommandPhase.completingProfile,
       resendAvailableAt: state.resendAvailableAt,
     );
-    try {
-      await ref.read(profileAnchorGatewayProvider).ensureFor(identity.id);
-      if (!_isCurrent(revision)) {
-        return false;
-      }
-      final readiness = await ref
-          .read(profileAnchorGatewayProvider)
-          .readinessFor(identity.id);
-      if (!_isCurrent(revision)) {
-        return false;
-      }
-      if (readiness == ProfileAnchorReadiness.complete) {
-        ref.read(authSessionProvider.notifier).markProfileReady(identity);
-      } else {
-        ref
-            .read(authSessionProvider.notifier)
-            .markProfileSetupRequired(
-              identity,
-              hasProfileAnchor: readiness == ProfileAnchorReadiness.incomplete,
-            );
-      }
-      ref.read(pendingEmailOtpProvider.notifier).clear();
-      state = const AuthCommandState();
-      return true;
-    } catch (_) {
-      if (!_isCurrent(revision)) {
-        return false;
-      }
-      ref
-          .read(authSessionProvider.notifier)
-          .markProfileSetupRequired(identity, hasProfileAnchor: false);
+    final outcome = await session.completeProfileSetup(identity);
+    if (!_isCurrent(revision)) return false;
+    if (outcome == AuthBootstrapOutcome.superseded) {
+      cancelFlow();
+      return false;
+    }
+    if (outcome == AuthBootstrapOutcome.failed) {
       state = AuthCommandState(
         failure: AuthFailureKind.profileSetup,
         resendAvailableAt: state.resendAvailableAt,
       );
       return false;
     }
+    ref.read(pendingEmailOtpProvider.notifier).clear();
+    state = const AuthCommandState();
+    return true;
   }
 
   Future<void> signOut() async {
@@ -279,6 +287,7 @@ class AuthCommandController extends Notifier<AuthCommandState> {
     }
     final revision = ++_flowRevision;
     state = const AuthCommandState(phase: AuthCommandPhase.signingOut);
+    // This revision invalidates earlier work and also owns sign-out completion.
     try {
       await ref.read(authGatewayProvider).signOut();
       if (!_isCurrent(revision)) {

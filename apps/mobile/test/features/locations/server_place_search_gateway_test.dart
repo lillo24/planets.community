@@ -146,6 +146,7 @@ void main() {
     'invalid_credentials': PlaceSearchProblem.credentials,
     'expired_selection': PlaceSearchProblem.expired,
     'stale_selection': PlaceSearchProblem.stale,
+    'unauthorized': PlaceSearchProblem.unauthorized,
     'unsupported_place': PlaceSearchProblem.unsupported,
   }.entries) {
     test('${entry.key} has an explicit status', () async {
@@ -167,6 +168,40 @@ void main() {
       );
     });
   }
+
+  test(
+    'late resolve cannot expose a selected place after actor replacement',
+    () async {
+      String? currentActor = actorId;
+      final pending = Completer<dynamic>();
+      final gateway = ServerPlaceSearchGateway.withEndpoint(
+        scope: scope,
+        actor: () => currentActor,
+        enabled: true,
+        invoke: (body) async => body['operation'] == 'search'
+            ? {
+                'status': 'ok',
+                'suggestions': [selection()],
+              }
+            : pending.future,
+      );
+      final suggestion = (await gateway.search(request())).single;
+      final resolving = gateway.resolve(suggestion, sessionId);
+      currentActor = itemId;
+      pending.complete({'status': 'ok', 'selection': selection()});
+      await expectLater(
+        resolving,
+        throwsA(
+          isA<PlaceSearchFailure>().having(
+            (error) => error.problem,
+            'problem',
+            PlaceSearchProblem.unauthorized,
+          ),
+        ),
+      );
+      expect(gateway.available, isFalse);
+    },
+  );
 
   test('missing provenance and duplicate receipts fail visibly', () async {
     for (final rows in [
@@ -190,6 +225,7 @@ void main() {
 
   for (final entry in {
     401: PlaceSearchProblem.unauthorized,
+    403: PlaceSearchProblem.unauthorized,
     0: PlaceSearchProblem.offline,
   }.entries) {
     test(

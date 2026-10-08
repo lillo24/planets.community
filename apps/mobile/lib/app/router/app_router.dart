@@ -9,6 +9,7 @@ import '../../features/auth/domain/auth_models.dart';
 import '../../features/drafts/domain/draft_entry.dart';
 import '../../features/drafts/presentation/drafts_screen.dart';
 import '../../features/auth/presentation/request_code_screen.dart';
+import '../../features/auth/presentation/account_suspension_screen.dart';
 import '../../features/auth/presentation/verify_code_screen.dart';
 import '../../features/blocking/presentation/blocked_users_screen.dart';
 import '../../features/help/presentation/bug_report_screen.dart';
@@ -20,6 +21,7 @@ import '../../features/messages/presentation/participation_request_message_scree
 import '../../features/moderation/domain/moderation_models.dart';
 import '../../features/moderation/presentation/counterstatement_screen.dart';
 import '../../features/moderation/presentation/own_reports_screen.dart';
+import '../../features/moderation/presentation/own_consequences_screen.dart';
 import '../../features/moderation/presentation/corroboration_screens.dart';
 import '../../features/moderation/presentation/moderation_evidence_requests_screen.dart';
 import '../../features/moderation/presentation/moderation_routes.dart';
@@ -197,6 +199,7 @@ RoutingConfig _routingConfig(
       final isVerifyRoute = path == '/auth/verify';
       final isAuthRoute = isRequestRoute || isVerifyRoute;
       final isModerationRoute =
+          path == ModerationRoutes.ownNotices ||
           path.startsWith('/profile/reports') ||
           path.startsWith('/profile/review-requests');
       final isProfileEditRoute = path == '/profile/edit';
@@ -237,9 +240,34 @@ RoutingConfig _routingConfig(
           isNotificationsRoute ||
           isModerationRoute;
 
-      if (session.phase == AuthSessionPhase.restoring ||
-          session.phase == AuthSessionPhase.restorationFailed) {
+      const accountStatusPath = '/account/suspended';
+      // Welcome owns unresolved signed-out restoration and its retry UI. Once
+      // an identity is known, all routes obey the canonical account gate.
+      if (path == '/welcome' &&
+          (session.phase == AuthSessionPhase.restoring ||
+              session.phase == AuthSessionPhase.restorationFailed)) {
         return null;
+      }
+      if (session.phase == AuthSessionPhase.restoring ||
+          session.phase == AuthSessionPhase.restorationFailed ||
+          session.phase == AuthSessionPhase.checkingAccount ||
+          session.phase == AuthSessionPhase.accountCheckFailed ||
+          session.phase == AuthSessionPhase.checkingProfile ||
+          session.phase == AuthSessionPhase.suspended) {
+        if (path == accountStatusPath) return null;
+        final returnTo = isAuthRoute
+            ? pending?.returnTo ??
+                  sanitizeReturnDestination(
+                    state.uri.queryParameters['returnTo'],
+                  )
+            : state.uri.toString();
+        return Uri(
+          path: accountStatusPath,
+          queryParameters: {'returnTo': returnTo},
+        ).toString();
+      }
+      if (path == accountStatusPath) {
+        return sanitizeReturnDestination(state.uri.queryParameters['returnTo']);
       }
 
       if (session.phase == AuthSessionPhase.signedOut &&
@@ -372,6 +400,10 @@ RoutingConfig _routingConfig(
       GoRoute(
         path: '/link-unavailable',
         builder: (context, state) => const _UnknownRouteScreen(),
+      ),
+      GoRoute(
+        path: '/account/suspended',
+        builder: (context, state) => const AccountSuspensionScreen(),
       ),
       GoRoute(
         path: '/auth',
@@ -508,6 +540,10 @@ RoutingConfig _routingConfig(
                 path: '/settings',
                 builder: (context, state) => const SettingsScreen(),
                 routes: [
+                  GoRoute(
+                    path: 'notices',
+                    builder: (context, state) => const OwnConsequencesScreen(),
+                  ),
                   GoRoute(
                     path: 'language',
                     builder: (context, state) =>
@@ -915,7 +951,9 @@ final appRouterProvider = Provider<GoRouter>((ref) {
   routes.readIncomingUri = () => router.routeInformationProvider.value.uri;
   ref.listen(authSessionProvider, (previous, next) {
     if (next.identity != null) startup.enter();
-    if (previous?.identity?.id != next.identity?.id &&
+    if ((previous?.identity?.id != next.identity?.id ||
+            previous?.accountAccessIdentityId !=
+                next.accountAccessIdentityId) &&
         router.routerDelegate.currentConfiguration.uri.path.isNotEmpty) {
       // Native entry may still be parsing when restored Auth arrives. There are
       // no retained stacks yet, and GoRouter cannot reparse its initial empty URI.

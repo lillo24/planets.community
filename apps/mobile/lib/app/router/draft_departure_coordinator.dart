@@ -199,17 +199,18 @@ final draftDepartureProvider = Provider<DraftDepartureCoordinator>((ref) {
   final coordinator = DraftDepartureCoordinator(
     () => ref.read(authSessionProvider),
   );
-  ref.listen(authSessionProvider.select((s) => (s.phase, s.identity?.id)), (
-    previous,
-    next,
-  ) {
-    if (previous?.$2 != next.$2 ||
-        next.$1 == AuthSessionPhase.signedOut ||
-        next.$1 == AuthSessionPhase.profileSetupRequired) {
-      coordinator.invalidate();
-    } else if (next.$1 == AuthSessionPhase.checkingProfile) {
-      coordinator.invalidate(clearOwners: false);
-    }
-  });
+  ref.listen(
+    authSessionProvider.select((s) => (s.phase, s.accountAccessIdentityId)),
+    (previous, next) {
+      if (previous?.$2 != next.$2 ||
+          next.$1 == AuthSessionPhase.signedOut ||
+          next.$1 == AuthSessionPhase.profileSetupRequired) {
+        coordinator.invalidate();
+      } else if (next.$1 == AuthSessionPhase.checkingAccount ||
+          next.$1 == AuthSessionPhase.checkingProfile) {
+        coordinator.invalidate(clearOwners: false);
+      }
+    },
+  );
   return coordinator;
 });

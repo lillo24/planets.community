@@ -92,21 +92,21 @@ class JoinAcceptanceTriageController
 
   @override
   JoinAcceptanceTriageState build() {
-    ref.listen(authSessionProvider.select((session) => session.identity?.id), (
-      _,
-      _,
-    ) {
-      _revision++;
-      final previousIdentity = state.expectedManagerProfileId;
-      state = previousIdentity == null
-          ? JoinAcceptanceTriageState(requestId: requestId)
-          : JoinAcceptanceTriageState(
-              requestId: requestId,
-              expectedManagerProfileId: previousIdentity,
-              loadPhase: JoinAcceptanceTriageLoadPhase.failure,
-              failure: JoinAcceptanceTriageFailureKind.forbidden,
-            );
-    });
+    ref.listen(
+      authSessionProvider.select((session) => session.accountAccessIdentityId),
+      (_, _) {
+        _revision++;
+        final previousIdentity = state.expectedManagerProfileId;
+        state = previousIdentity == null
+            ? JoinAcceptanceTriageState(requestId: requestId)
+            : JoinAcceptanceTriageState(
+                requestId: requestId,
+                expectedManagerProfileId: previousIdentity,
+                loadPhase: JoinAcceptanceTriageLoadPhase.failure,
+                failure: JoinAcceptanceTriageFailureKind.forbidden,
+              );
+      },
+    );
     ref.onDispose(() => _revision++);
     return JoinAcceptanceTriageState(requestId: requestId);
   }

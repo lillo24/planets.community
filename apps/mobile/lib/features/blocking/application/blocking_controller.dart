@@ -83,15 +83,15 @@ class BlockingController extends Notifier<BlockingState> {
 
   @override
   BlockingState build() {
-    ref.listen(authSessionProvider.select((session) => session.identity?.id), (
-      _,
-      nextProfileId,
-    ) {
-      _identityRevision++;
-      _listRevision++;
-      _targetRevisions.clear();
-      state = BlockingState(expectedProfileId: nextProfileId);
-    });
+    ref.listen(
+      authSessionProvider.select((session) => session.accountAccessIdentityId),
+      (_, nextProfileId) {
+        _identityRevision++;
+        _listRevision++;
+        _targetRevisions.clear();
+        state = BlockingState(expectedProfileId: nextProfileId);
+      },
+    );
     ref.onDispose(() {
       _identityRevision++;
       _listRevision++;

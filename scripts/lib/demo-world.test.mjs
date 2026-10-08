@@ -12,6 +12,7 @@ import {
   buildDemoTimes,
   classifyDemoScenarioCounts,
   demoReadyMessage,
+  readDemoDiscoveryPages,
   safeDatabaseFailure,
 } from "./demo-world.mjs";
 
@@ -281,4 +282,129 @@ test("safe output never echoes secret-bearing failure content or OTP labels", ()
     /\b(?:otp|password|access[_ -]?token|refresh[_ -]?token|authorization|bearer)\b/iu,
   );
   assert.doesNotMatch(output, /\b\d{6}\b/u);
+});
+
+for (const [rpcName, timeField, timeParameter, idField] of [
+  ["list_public_proposals", "starts_at", "p_cursor_starts_at", "proposal_id"],
+  [
+    "list_public_recurring_activities",
+    "next_starts_at",
+    "p_cursor_next_starts_at",
+    "recurring_activity_id",
+  ],
+  [
+    "list_public_resource_listings",
+    "published_at",
+    "p_cursor_published_at",
+    "listing_id",
+  ],
+]) {
+  test(`demo discovery traverses all ${rpcName} pages without changing filters`, async () => {
+    const calls = [];
+    const expected = Array.from({ length: 45 }, (_, index) => ({
+      [idField]: `synthetic-${index}`,
+      [timeField]: `time-${index}`,
+    }));
+    const client = {
+      async rpc(name, args) {
+        assert.equal(name, rpcName);
+        calls.push(args);
+        const offset =
+          args.p_cursor_id === null
+            ? 0
+            : Number(args.p_cursor_id.split("-")[1]) + 1;
+        return { data: expected.slice(offset, offset + 20), error: null };
+      },
+    };
+    const args = {
+      p_limit: 20,
+      p_locality: "Trento",
+      p_cursor_id: null,
+      [timeParameter]: null,
+    };
+    const result = await readDemoDiscoveryPages(client, rpcName, args, {
+      p_cursor_id: idField,
+      [timeParameter]: timeField,
+    });
+    assert.deepEqual(result, { data: expected, error: null });
+    assert.deepEqual(
+      calls.map((call) => call.p_cursor_id),
+      [null, "synthetic-19", "synthetic-39"],
+    );
+    assert.deepEqual(
+      calls.map((call) => call[timeParameter]),
+      [null, "time-19", "time-39"],
+    );
+    assert.ok(
+      calls.every(
+        (call) => call.p_limit === 20 && call.p_locality === "Trento",
+      ),
+    );
+    assert.equal(args.p_cursor_id, null);
+  });
+}
+
+test("demo discovery accepts a legitimate empty page", async () => {
+  assert.deepEqual(
+    await readDemoDiscoveryPages(
+      { rpc: async () => ({ data: [], error: null }) },
+      "public_read",
+      { p_limit: 20 },
+      { p_cursor_id: "id" },
+    ),
+    { data: [], error: null },
+  );
+});
+
+test("demo discovery fails explicitly on backend errors without private payloads", async () => {
+  await assert.rejects(
+    readDemoDiscoveryPages(
+      {
+        rpc: async () => ({
+          data: null,
+          error: { code: "42501", message: "access_token=private" },
+        }),
+      },
+      "public_read",
+      { p_limit: 20 },
+      { p_cursor_id: "id" },
+    ),
+    { message: "Failed to read demo discovery public_read (code 42501)." },
+  );
+});
+
+test("demo discovery rejects non-array pages", async () => {
+  await assert.rejects(
+    readDemoDiscoveryPages(
+      { rpc: async () => ({ data: null, error: null }) },
+      "public_read",
+      { p_limit: 20 },
+      { p_cursor_id: "id" },
+    ),
+    /non-array page/u,
+  );
+});
+
+test("demo discovery rejects a full page missing a cursor", async () => {
+  await assert.rejects(
+    readDemoDiscoveryPages(
+      { rpc: async () => ({ data: [{ id: "one" }], error: null }) },
+      "public_read",
+      { p_limit: 1 },
+      { p_cursor_id: "id", p_cursor_time: "time" },
+    ),
+    /has no time cursor/u,
+  );
+});
+
+test("demo discovery rejects repeated pages instead of looping or concealing duplicates", async () => {
+  await assert.rejects(
+    readDemoDiscoveryPages(
+      { rpc: async () => ({ data: [{ id: "one" }], error: null }) },
+      "public_read",
+      { p_limit: 1 },
+      { p_cursor_id: "id" },
+    ),
+    /invalid\/repeated ID/u,
+  );
 });

@@ -1,13 +1,13 @@
 # System Design and Responsibility Boundaries
 
 **Status:** Initial accepted design  
-**Implementation status:** The main branch remains at the validated DEMO-B
-baseline. The stack-integration candidate additionally implements Project
+**Implementation status:** The stack-integration candidate was merged to `main`
+in PR #120, followed by organizer-aware capacity in PR #121. Main implements Project
 resource/contribution flows, the complete Scambio-Dona coordination stack,
 profile/cover media and trust gates, moderation/blocking, Project delegates and
 capacity, shared workspace, Settings, and English/Italian localization. These
-candidate additions are not merged to `main`; optional MLS/E2EE remains deferred
-in excluded PR #28.
+additions are now on `main`; optional MLS/E2EE remains deferred in excluded PR #28.
+09C1A adds the moderation-consequence domain on its isolated review branch.
 
 This document describes how the major parts of PLANETS should interact. Technology choices are recorded separately in [`core-stack.md`](core-stack.md).
 
@@ -865,6 +865,35 @@ statement remains final. Counterstatements do not change moderation state,
 Resource requests/listings/agreements, notifications, Realtime, or outbox
 state.
 
+09C1A adds only manual, reversible `safety_notice`, `interaction_restriction`,
+and `content_hide` consequences. Current moderator/admin authorization is
+rechecked on every command; evidence never applies a consequence automatically.
+Private append-preserved episodes and actions require a user-facing reason
+(trimmed 1–2000 characters) and a linked staff-only note (1–4000 characters) on
+both apply and revoke. Case review state remains independent.
+
+Safety notices have no public or authorization effect. Interaction restrictions
+block only the subject's new outbound Project/Resource requests and withdraw
+their pending attempts using canonical requester-withdrawal history/events.
+Existing memberships, accepted Resource coordination, manager authority, chat,
+meeting details, commitments, workspace and capacity occupancy remain intact.
+Content hides suppress public discovery/detail, capacity, Needs, contextual
+photos, cover objects and new matching delivery, and freeze new requests and
+pending acceptance. Hiding never rewrites owner lifecycle or resolves pending
+requests; withdrawal, rejection and authorized private management remain valid.
+
+The new-interaction order is requester profile moderation lock, deterministic
+current-manager/owner block pairs, concrete/shared Project or listing lock,
+then revalidation and the existing mutation. Creator and delegated-manager
+acceptance check the requester, not the manager. Capacity stays canonical.
+Only the subject, immutable Project Creator, or Resource owner reads their raw
+user-facing reasons through the identity-bound own-history API; delegates and
+counterparties do not gain those reasons. Staff has a separate case-history API.
+Six identifier-only `moderation.<type>_<applied|revoked>` outbox events are
+intentionally unconsumed until 09C2. Suspension/global enforcement (09C1B),
+consequence UX/notifications (09C2), appeals (09C3), minimum age (09D), and final
+retention/deletion (Plan 10) remain deferred.
+
 The minimum moderation backbone before public user-generated content should include:
 
 - reporting of users, proposals, messages, and supported media;
@@ -913,6 +942,101 @@ Production clients must connect through explicit environment configuration. Befo
 Security-sensitive defaults should fail closed. A missing policy must not silently make data public.
 
 ## Reliability and test priorities
+
+### Manual account suspension (09C1B)
+
+`account_suspension` reuses private append-preserved moderation consequence
+episodes/actions. Only a current, active, non-suspended admin may apply/revoke it
+against a reviewed case's immutable subject; self-suspension is forbidden.
+The dedicated RPCs require a bounded affected-user reason and private staff note.
+Identifier-only audit/outbox sources reserve delivery for 09C2. Suspension never
+deletes memberships, delegates, staff roles, agreements, messages, media, evidence,
+commitments or notifications, never creates a content hide, and never revokes
+other consequences or blocks. It withdraws only pending outbound requests through
+the existing canonical withdrawal helper. Accepted history/occupancy remains.
+Incoming requests and public owner lifecycles are not automatically changed.
+
+The eleven identity-helper families and the invoker profile-edit gate deny
+ordinary authenticated private reads/mutations with reasonless `PT403`.
+Restrictive RLS also gates direct private-table access; private Storage owner and
+contextual-photo branches require an active account. Public/anonymous content
+remains public. `get_own_account_suspension_status(expected_identity)` is the sole
+account-data exception: exactly active flag, stable consequence ID, apply time
+and affected-user apply reason. It requires Auth identity matching, not a profile
+anchor, and exposes no case, staff, note, evidence or other consequence fields.
+The committed RPC inventory and local audit detect signature/grant/call-chain
+drift; real-auth tests complement that deliberately heuristic source audit.
+
+Suspension uses the established case -> sorted actor/subject profile interaction
+barriers -> concrete/shared Project or listing -> request lock order. Apply/revoke
+recheck the admin's account after waiting. New request/acceptance boundaries and
+the three chat sends recheck account activity after their profile barrier. Chat
+messages committed first remain; suspension first prevents the later send.
+Ordinary requests/reads already executing are not retrospectively recalled.
+
+Realtime authorization is cached by Supabase for existing connections. A
+restrictive policy denies new private joins. All canonical private broadcasters
+also omit suspended per-profile recipients (Project messages/coverage, request
+chat messages, Resource messages/agreement hints), preventing ongoing private
+live hints to an intentionally non-cooperative cached socket. No recipient
+profile lock is taken underneath domain locks, which would reverse withdrawal's
+lock order. Signals already queued or in flight before the boundary may arrive
+afterward; downloaded data cannot be recalled. The database is the canonical
+read/send gate, not a claim of instant transport disconnection or remote erasure.
+
+Mobile checks own status before profile readiness and after foreground/resume;
+failed status checks fail closed with retry/sign-out. Suspended sessions can only
+use `/account/suspended`, including invite/Auth/private deep links. Denial/failure
+invalidates identity-scoped private controllers and closes chat subscriptions.
+Revoke restores ordinary bootstrap subject to all other domain rules. The public
+website and signed-out browsing remain accessible. Current web profile reads
+are denied by the same RLS/RPC gates; no competing web authorization or final
+staff suspension UI is introduced. Existing push job/projector eligibility is
+unchanged: ordinary queued pushes may still be delivered. Notification inbox and
+installation/preferences APIs are gated; sign-out has no push unregister
+dependency. Final delivery/controls belong to 09C2, appeals to 09C3, minimum-age
+policy to 09D, and retention/deletion decisions to Plan 10.
+
+### Manual staff consequence controls (09C2A)
+
+On the approved 09C1B review head, the existing Next.js `/admin/cases/[id]`
+surface adds manually selected apply/revoke controls for the four canonical
+types. Moderators manage safety notices, interaction restrictions and content
+hides; only admins manage suspension, never their own account. Fresh verified
+session claims and the current database staff role are checked on every submit;
+the dedicated suspension RPCs retain final admin authorization. No service-role
+credential, browser-provided staff/target identity, new database contract or
+client-side enforcement engine is introduced.
+
+History is explicitly case-scoped, not global subject history. It groups the
+existing flat action projection into immutable episodes, preserves revoked
+episodes and independent active types, and links private note references to
+already-authorized case notes. Apply/revoke reasons are escaped plain text;
+timestamps are labelled UTC. Cross-case duplicates remain canonical conflicts
+rather than prompting a broader reputation/history API.
+
+Each action opens an inline confirmation with factual effect copy and two blank,
+independently entered fields: user-facing reason (1–2,000 Unicode characters) and
+private moderation note (1–4,000). Reports/evidence never autofill these fields.
+The browser receives choice metadata, not staff evidence. Received cases must
+explicitly enter review; under-review/completed cases allow compatible actions.
+Content hide is offered only for directly reported Projects/Resource listings,
+not a message/request's parent content. Review state never changes implicitly.
+
+The server rereads case compatibility and binds revocation to its current-case
+episode/type, then invokes canonical commands. Database authorization, target
+derivation, locking, withdrawal and lifecycle rules remain authoritative. No
+optimistic mutation or automatic retry is used: pending controls disable, finite
+role/stale/conflict failures refresh authorized case state, and unconfirmed
+network/malformed responses require reload before retry. Revoke neither restores
+withdrawn requests/ended relationships/removed roles nor clears unrelated blocks
+or consequences. Keyboard labels, associated error/help text, live results and
+focus return on Cancel use the existing shadcn/Base UI components.
+
+09C2A remains draft/in review and does not merge or deploy its dependency stack.
+09C2B owns affected-user/contextual UX and notifications; 09C3 appeals, 09D
+minimum-age and Plan 10 retention/deletion remain deferred/unstarted as recorded
+in the roadmap.
 
 The first releases do not need distributed-system complexity, but they do need deterministic correctness.
 

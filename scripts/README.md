@@ -1,5 +1,14 @@
 # Repository scripts
 
+`prepare-local-modint01-qa.ps1` is the guarded resumption utility for draft PR
+#154. It accepts the exact retained canonical `config.toml` backup, requires the
+existing MODINT01 branch, and refuses unrelated config changes. `Prepare`
+recreates only that project's fixed local ports; it never starts/resets services.
+`Restore` refuses a running MODINT01 stack and copies the original bytes back,
+checking their hash. Both support `-WhatIf`. Keep backup/startup logs outside Git;
+CLI status/start output can contain local credentials. See the MODINT01 review
+packet for the owned backend, AVD and exact remaining QA commands.
+
 This folder owns reproducible configuration generation, local authenticated
 domain verification and change-scoped validation tooling.
 
@@ -13,6 +22,11 @@ domain verification and change-scoped validation tooling.
 - `verify-local-similar-active-proposals.mjs` owns SIM01 OTP/API, ranking,
   capacity/blocking/media/privacy and read-only assertions. Its rollback-only
   `fixtures/sim01-query-plan.sql` supplies reproducible EXPLAIN work.
+- `verify-local-location-suspension.mjs` composes MAP01 service receipts with
+  MODINT01 canonical actor status. It checks real pre-existing sessions, all item
+  scopes, service grants, identity mismatch and 18 observed winner-order races
+  with persisted accounting. `location:verify:local` runs MAP01 first, then this
+  verifier, after pgTAP in full local/Database CI. Fake provider data only.
 - `process-local-*.mjs` exercise local projections/workers.
 - `verify-local-message-unread.mjs` owns MSG02 authenticated count/read,
   delayed-commit, private invalidation and activity/push separation proofs.

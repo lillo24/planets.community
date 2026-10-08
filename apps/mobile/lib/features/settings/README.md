@@ -35,6 +35,10 @@ Settings ends with the Auth feature's shared destructive Sign out action for
 every authenticated phase, including incomplete profiles. It remains public,
 and signed-out users see no Sign out action.
 
+The PLANETS notices account row links to moderation's protected
+`/settings/notices` child, preserving Settings as the Back destination. Settings
+does not fetch/cache reasons, infer restrictions or bypass Auth's suspension gate.
+
 When Browse replaces the Messages shortcut, the public Navigation section also
 contains a labelled Messages row (including the existing ready-user unread badge).
 It goes to `/messages` and preserves the shell's three branches. Debug builds
