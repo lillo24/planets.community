@@ -12,6 +12,7 @@ import 'package:planets_mobile/core/config/app_config.dart';
 import 'package:planets_mobile/features/auth/application/auth_command_controller.dart';
 import 'package:planets_mobile/features/auth/application/auth_session_controller.dart';
 import 'package:planets_mobile/features/auth/domain/auth_models.dart';
+import 'package:planets_mobile/features/resource_listings/presentation/public_resource_listings_screen.dart';
 import 'package:planets_mobile/features/resource_requests/application/resource_request_controllers.dart';
 import 'package:planets_mobile/features/settings/application/language_preference_controller.dart';
 import 'package:planets_mobile/features/settings/domain/language_preference.dart';
@@ -201,10 +202,24 @@ void main() {
           await _wait(
             tester,
             () => find
-                .byKey(const Key('resource-request-action'))
+                .byKey(const Key('resource-detail-cover'))
                 .evaluate()
                 .isNotEmpty,
             'Resource detail',
+          );
+          // The native phone's cover/metadata precede this lazily built action.
+          // Wait for the real detail, then scroll its own list to mount the
+          // unchanged canonical request control rather than waiting offscreen.
+          await tester.scrollUntilVisible(
+            find.byKey(const Key('resource-request-action')),
+            240,
+            scrollable: find
+                .descendant(
+                  of: find.byType(PublicResourceListingDetailScreen),
+                  matching: find.byType(Scrollable),
+                )
+                .first,
+            maxScrolls: 20,
           );
           await _tap(tester, 'resource-request-action');
           await tester.enterText(

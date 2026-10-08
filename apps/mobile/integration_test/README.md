@@ -32,6 +32,11 @@ normal cold bootstrap from the real persisted suspended session after an actual
 Back exit. Use the same prior defines, without clearing app data or replaying
 admission, with `test_driver/otp_home_driver.dart` and a matching precompiled APK.
 It captures EN/IT denial and uses the real suspension-screen Sign out action.
+The Resource helper waits for the actual detail cover, then scrolls only that
+detail's lazy list to its request control with a bounded 20-scroll limit. A
+published listing's control can be below the cover/metadata on the small phone;
+waiting for an unmounted action alone cannot make it appear. Authorization,
+request assertions and async deadlines are unchanged.
 The OTP smoke additionally covers navigation choices,
 photo-free participant admission, nullable request origin, chat continuity under
 content hiding, all private notice types and suspension during ordinary access.
