@@ -1,0 +1,296 @@
+{
+  "schemaVersion": 1,
+  "locale": "it-IT",
+  "status": "draft-complete",
+  "createdOn": "2026-10-08",
+  "sourceCommit": "6650d995c4a393ef43e13f16d51933645be72db9",
+  "missingCaptures": [],
+  "releaseCompatibility": {
+    "status": "requires-rebuild-or-recapture-before-upload",
+    "existingReleasePr": "https://github.com/lillo24/planets.community/pull/149",
+    "existingReleaseBranchHead": "d790054a3c1a4ac0315364967f9686d78c2d68f1",
+    "existingAabSha256": "d671efb4f390b1aad1ced2c1728a5fa13555f42867cbf62056ced71201af0932",
+    "existingAabBuildCommit": "Not individually recorded in the inspected bundle-verification file; the reconciled release branch differs from current main.",
+    "instruction": "Rebuild the distributed AAB from the captured source or recapture from its actual source before upload; these draft assets do not attest release readiness."
+  },
+  "artworkSources": [
+    {
+      "file": "apps/mobile/assets/brand/planets-logo.png",
+      "sha256": "89e7f0ab4f98988fea99559f059665bf3ecf59d8f3e03d9879dea4702eebd367"
+    },
+    {
+      "file": "scripts/demo-assets/covers/mural.webp",
+      "sha256": "c335663b9f29e3b8c737ea34bb964731f8e30f8fd18280642039de1c3294ee90"
+    },
+    {
+      "file": "scripts/demo-assets/covers/garden-tools.webp",
+      "sha256": "0e8a0b1110b731de8aa737d7a4eb4b8545e209325bc79321b46b80e4983ed5c2"
+    },
+    {
+      "file": "scripts/demo-assets/assets.json",
+      "sha256": "a4e158f9c17d4d3fa647a28833f56cabffc8e762f904cdebd6ab2b7c1f53dff6"
+    }
+  ],
+  "assets": [
+    {
+      "file": "app-icon.png",
+      "width": 512,
+      "height": 512,
+      "bytes": 81517,
+      "format": "PNG",
+      "mode": "RGBA",
+      "bitDepth": 8,
+      "pngColorType": 6,
+      "colorSpace": "sRGB",
+      "alphaChannel": true,
+      "aspectRatio": "512:512",
+      "sha256": "d34d4b2d2a9a9227c313f2579b44304bd516800248c686518413b0af1ea9312e",
+      "altTextIt": "Logo originale PLANETS su fondo chiaro, con la cornice multicolore e i simboli di cura e collaborazione.",
+      "provenance": {
+        "artwork": "../artwork/app-icon.svg",
+        "sourceCommit": "6650d995c4a393ef43e13f16d51933645be72db9",
+        "method": "Editable SVG rendered with installed Segoe UI and existing repository images"
+      }
+    },
+    {
+      "file": "feature-graphic.png",
+      "width": 1024,
+      "height": 500,
+      "bytes": 382022,
+      "format": "PNG",
+      "mode": "RGB",
+      "bitDepth": 8,
+      "pngColorType": 2,
+      "colorSpace": "sRGB",
+      "alphaChannel": false,
+      "aspectRatio": "1024:500",
+      "sha256": "530f4f9bdd78cf673d6dd64a021af7a92c45bc658cb5becb00f56dca83b7d86f",
+      "altTextIt": "Iniziative, eventi e scambi nella tua città: persone al lavoro insieme e oggetti da scambiare o donare.",
+      "provenance": {
+        "artwork": "../artwork/feature-graphic.svg",
+        "sourceCommit": "6650d995c4a393ef43e13f16d51933645be72db9",
+        "method": "Editable SVG rendered with installed Segoe UI and existing repository images"
+      }
+    },
+    {
+      "file": "phone/01-iniziative.png",
+      "width": 1080,
+      "height": 1920,
+      "bytes": 723461,
+      "format": "PNG",
+      "mode": "RGB",
+      "bitDepth": 8,
+      "pngColorType": 2,
+      "colorSpace": "sRGB",
+      "alphaChannel": false,
+      "aspectRatio": "1080:1920",
+      "sha256": "d0f8cc4183315edce876fcdc42c5c822b67da531aea82d1f436ddd7240f0504e",
+      "altTextIt": "Esplora le iniziative di Trento, con copertine, date e attività da realizzare insieme.",
+      "provenance": {
+        "sourceCommit": "6650d995c4a393ef43e13f16d51933645be72db9",
+        "capturedAtUtc": "2026-10-08T16:58:31.706548+00:00",
+        "sha256": "200c5bc0e0a5b85c9e4df697959c7b435c3ed002b0941a1c5c4b0c80a336e6e8",
+        "method": "ADB screencap -p from the real running Flutter Android app; original pixels retained",
+        "device": {
+          "avd": "PLANETS_PLAY_ASSETS01",
+          "serial": "emulator-5562",
+          "platform": "Android 15 / API 35",
+          "abi": "x86_64",
+          "viewport": [
+            1080,
+            1920
+          ],
+          "densityDpi": 320,
+          "theme": "light",
+          "fontScale": 1,
+          "demoTools": false,
+          "logicalViewportDp": [
+            540,
+            960
+          ],
+          "locale": "it-IT (selected through Settings > Language)",
+          "statusBar": "Android SystemUI demo clock 09:41; system and notification icons hidden through cmd statusbar send-disable-flag"
+        },
+        "buildApkSha256": "e4ca0316ecf62c285964ca03f07871ada39579a987feeec347c5d044628a1a08",
+        "syntheticData": true,
+        "exportTransform": "RGB conversion and sRGB metadata only; no resizing, cropping or retouching"
+      }
+    },
+    {
+      "file": "phone/02-dettagli-attivita.png",
+      "width": 1080,
+      "height": 1920,
+      "bytes": 238561,
+      "format": "PNG",
+      "mode": "RGB",
+      "bitDepth": 8,
+      "pngColorType": 2,
+      "colorSpace": "sRGB",
+      "alphaChannel": false,
+      "aspectRatio": "1080:1920",
+      "sha256": "05d54112a6deef0ff8b6369e1f5bebf92b1c6436c5c33ff3f793c90ce71c92b9",
+      "altTextIt": "Dettaglio di un'attività: obiettivo, luogo pubblico e normale percorso di partecipazione.",
+      "provenance": {
+        "sourceCommit": "6650d995c4a393ef43e13f16d51933645be72db9",
+        "capturedAtUtc": "2026-10-08T17:09:31.912431+00:00",
+        "sha256": "95047bcc4a9c3bc5b2fd9ef84e26eb72bbcbc12ccaab741b56280a94d8bc48de",
+        "method": "ADB screencap -p from the real running Flutter Android app; original pixels retained",
+        "device": {
+          "avd": "PLANETS_PLAY_ASSETS01",
+          "serial": "emulator-5562",
+          "platform": "Android 15 / API 35",
+          "abi": "x86_64",
+          "viewport": [
+            1080,
+            1920
+          ],
+          "densityDpi": 320,
+          "theme": "light",
+          "fontScale": 1,
+          "demoTools": false,
+          "logicalViewportDp": [
+            540,
+            960
+          ],
+          "locale": "it-IT (selected through Settings > Language)",
+          "statusBar": "Android SystemUI demo clock 09:41; system and notification icons hidden through cmd statusbar send-disable-flag"
+        },
+        "buildApkSha256": "e4ca0316ecf62c285964ca03f07871ada39579a987feeec347c5d044628a1a08",
+        "syntheticData": true,
+        "exportTransform": "RGB conversion and sRGB metadata only; no resizing, cropping or retouching"
+      }
+    },
+    {
+      "file": "phone/03-scambio-dona.png",
+      "width": 1080,
+      "height": 1920,
+      "bytes": 936053,
+      "format": "PNG",
+      "mode": "RGB",
+      "bitDepth": 8,
+      "pngColorType": 2,
+      "colorSpace": "sRGB",
+      "alphaChannel": false,
+      "aspectRatio": "1080:1920",
+      "sha256": "20df95560bb914beb9834b55c69a29def435098e89d9780200e47504cad91536",
+      "altTextIt": "Scambio e Dona: due tavoli pieghevoli da scambiare con un aiuto per sistemare una mensola, a Trento.",
+      "provenance": {
+        "sourceCommit": "6650d995c4a393ef43e13f16d51933645be72db9",
+        "capturedAtUtc": "2026-10-08T17:06:59.034647+00:00",
+        "sha256": "58235fe7867db0f10941f303016483efa6d878e42cc4976efa9e1736d1228c3d",
+        "method": "ADB screencap -p from the real running Flutter Android app; original pixels retained",
+        "device": {
+          "avd": "PLANETS_PLAY_ASSETS01",
+          "serial": "emulator-5562",
+          "platform": "Android 15 / API 35",
+          "abi": "x86_64",
+          "viewport": [
+            1080,
+            1920
+          ],
+          "densityDpi": 320,
+          "theme": "light",
+          "fontScale": 1,
+          "demoTools": false,
+          "logicalViewportDp": [
+            540,
+            960
+          ],
+          "locale": "it-IT (selected through Settings > Language)",
+          "statusBar": "Android SystemUI demo clock 09:41; system and notification icons hidden through cmd statusbar send-disable-flag"
+        },
+        "buildApkSha256": "e4ca0316ecf62c285964ca03f07871ada39579a987feeec347c5d044628a1a08",
+        "syntheticData": true,
+        "exportTransform": "RGB conversion and sRGB metadata only; no resizing, cropping or retouching"
+      }
+    },
+    {
+      "file": "phone/04-chat.png",
+      "width": 1080,
+      "height": 1920,
+      "bytes": 113419,
+      "format": "PNG",
+      "mode": "RGB",
+      "bitDepth": 8,
+      "pngColorType": 2,
+      "colorSpace": "sRGB",
+      "alphaChannel": false,
+      "aspectRatio": "1080:1920",
+      "sha256": "2a9dc1241d85021b29abca27811e9b860b00c40aa53d1c51324cf544d564e19e",
+      "altTextIt": "Chat di progetto: Giulia e Sara si organizzano per materiali e incontro, con messaggi sintetici in italiano.",
+      "provenance": {
+        "sourceCommit": "6650d995c4a393ef43e13f16d51933645be72db9",
+        "capturedAtUtc": "2026-10-08T17:05:35.812118+00:00",
+        "sha256": "df875926403c28b7dcc0250a632ab98146d9e8f239b35de6980ac0a75347ea8d",
+        "method": "ADB screencap -p from the real running Flutter Android app; original pixels retained",
+        "device": {
+          "avd": "PLANETS_PLAY_ASSETS01",
+          "serial": "emulator-5562",
+          "platform": "Android 15 / API 35",
+          "abi": "x86_64",
+          "viewport": [
+            1080,
+            1920
+          ],
+          "densityDpi": 320,
+          "theme": "light",
+          "fontScale": 1,
+          "demoTools": false,
+          "logicalViewportDp": [
+            540,
+            960
+          ],
+          "locale": "it-IT (selected through Settings > Language)",
+          "statusBar": "Android SystemUI demo clock 09:41; system and notification icons hidden through cmd statusbar send-disable-flag"
+        },
+        "buildApkSha256": "e4ca0316ecf62c285964ca03f07871ada39579a987feeec347c5d044628a1a08",
+        "syntheticData": true,
+        "exportTransform": "RGB conversion and sRGB metadata only; no resizing, cropping or retouching"
+      }
+    },
+    {
+      "file": "phone/05-dona.png",
+      "width": 1080,
+      "height": 1920,
+      "bytes": 969651,
+      "format": "PNG",
+      "mode": "RGB",
+      "bitDepth": 8,
+      "pngColorType": 2,
+      "colorSpace": "sRGB",
+      "alphaChannel": false,
+      "aspectRatio": "1080:1920",
+      "sha256": "d3d8b393c55406ab07ed31501d5e8a3794e4af49382f221dc9e5d26da4412552",
+      "altTextIt": "Un annuncio di dono: attrezzi da giardinaggio in buono stato, disponibili a Trento.",
+      "provenance": {
+        "sourceCommit": "6650d995c4a393ef43e13f16d51933645be72db9",
+        "capturedAtUtc": "2026-10-08T17:08:11.622783+00:00",
+        "sha256": "0f31bed187bb3514c8a33d2e94f3e5afd6c0c4839ca302737175544b22a52bb8",
+        "method": "ADB screencap -p from the real running Flutter Android app; original pixels retained",
+        "device": {
+          "avd": "PLANETS_PLAY_ASSETS01",
+          "serial": "emulator-5562",
+          "platform": "Android 15 / API 35",
+          "abi": "x86_64",
+          "viewport": [
+            1080,
+            1920
+          ],
+          "densityDpi": 320,
+          "theme": "light",
+          "fontScale": 1,
+          "demoTools": false,
+          "logicalViewportDp": [
+            540,
+            960
+          ],
+          "locale": "it-IT (selected through Settings > Language)",
+          "statusBar": "Android SystemUI demo clock 09:41; system and notification icons hidden through cmd statusbar send-disable-flag"
+        },
+        "buildApkSha256": "e4ca0316ecf62c285964ca03f07871ada39579a987feeec347c5d044628a1a08",
+        "syntheticData": true,
+        "exportTransform": "RGB conversion and sRGB metadata only; no resizing, cropping or retouching"
+      }
+    }
+  ]
+}

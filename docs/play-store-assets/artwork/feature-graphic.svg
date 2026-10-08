@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="500" viewBox="0 0 1024 500">
+  <title>Iniziative, eventi e scambi nella tua città</title>
+  <defs>
+    <radialGradient id="warm"><stop stop-color="#efb953" stop-opacity=".15"/><stop offset="1" stop-color="#fbfaf6" stop-opacity="0"/></radialGradient>
+    <radialGradient id="pink"><stop stop-color="#d85c91" stop-opacity=".09"/><stop offset="1" stop-color="#fbfaf6" stop-opacity="0"/></radialGradient>
+    <clipPath id="activity"><rect x="606" y="76" width="336" height="190" rx="16"/></clipPath>
+    <clipPath id="objects"><rect x="650" y="288" width="292" height="150" rx="16"/></clipPath>
+  </defs>
+  <rect width="1024" height="500" fill="#fbfaf6"/>
+  <ellipse cx="850" cy="190" rx="430" ry="380" fill="url(#warm)"/>
+  <ellipse cx="40" cy="20" rx="420" ry="290" fill="url(#pink)"/>
+  <g fill="none" stroke-width="1.5">
+    <ellipse cx="796" cy="250" rx="228" ry="217" stroke="#dc765c" opacity=".30" transform="rotate(-22 796 250)"/>
+    <ellipse cx="796" cy="250" rx="260" ry="156" stroke="#27abc5" opacity=".25" transform="rotate(34 796 250)"/>
+  </g>
+  <circle cx="570" cy="185" r="7" fill="#d85c91"/>
+  <circle cx="971" cy="332" r="6" fill="#27abc5"/>
+  <circle cx="612" cy="393" r="9" fill="#efb953"/>
+  <image href="../../../apps/mobile/assets/brand/planets-logo.png" x="70" y="62" width="44" height="47" preserveAspectRatio="xMidYMid meet"/>
+  <g font-family="Segoe UI, sans-serif" fill="#18302e">
+    <text x="128" y="93" font-size="24" font-weight="700" letter-spacing="4">PLANETS</text>
+    <text x="72" y="192" font-size="49" font-weight="700" letter-spacing="-1.4">Iniziative, eventi</text>
+    <text x="72" y="255" font-size="49" font-weight="700" letter-spacing="-1.4">e scambi nella</text>
+    <text x="72" y="318" font-size="49" font-weight="700" letter-spacing="-1.4">tua città.</text>
+    <text x="74" y="390" font-size="21" fill="#536563">Con le persone della tua città</text>
+  </g>
+  <image href="../../../scripts/demo-assets/covers/mural.webp" x="606" y="76" width="336" height="190" preserveAspectRatio="xMidYMid slice" clip-path="url(#activity)"/>
+  <rect x="620" y="224" width="158" height="28" rx="14" fill="#fbfaf6"/>
+  <text x="633" y="243" font-family="Segoe UI, sans-serif" font-size="12" font-weight="700" letter-spacing="1" fill="#18302e">FARE INSIEME</text>
+  <image href="../../../scripts/demo-assets/covers/garden-tools.webp" x="650" y="288" width="292" height="150" preserveAspectRatio="xMidYMid slice" clip-path="url(#objects)"/>
+  <rect x="664" y="398" width="153" height="27" rx="13.5" fill="#fbfaf6"/>
+  <text x="677" y="416" font-family="Segoe UI, sans-serif" font-size="12" font-weight="700" letter-spacing=".7" fill="#18302e">SCAMBIO E DONA</text>
+</svg>

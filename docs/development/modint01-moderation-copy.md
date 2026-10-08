@@ -3,7 +3,11 @@
 MAP01/HELP01 reconciliation preserves every EN/IT value in this 46-pair packet,
 including the exact participant-link restriction correction below. New location
 service suspension enforcement changes no moderation sentence or policy. Current
-combined-source tested/published provenance is in the PR #154 review/evidence;
+combined-source validation is from `ebe500a98308f914be1636e529e073bc25e04a8f`,
+with all four hosted areas passing on actual checkout
+`14766638e606638c4031ee24e48025abcb144882` (including documentation-only main
+`4f158f323ebdfacbc9e86b66072ac91c80118ddd`). Final publication/source equivalence
+is in the PR #154 review/evidence;
 the corrective-copy SHA below remains the source of these unchanged strings and
 their two explicitly labelled widget previews, not a new native campaign.
 

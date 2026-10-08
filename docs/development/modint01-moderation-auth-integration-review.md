@@ -1,6 +1,6 @@
 # MODINT01 moderation/Auth integration review
 
-Status: **draft integration; prior behavioral QA complete; MAP01/HELP01 reconciliation locally validated; final-source CI pending; not merged or deployed**. Founder
+Status: **draft integration; prior behavioral QA complete; MAP01/HELP01 reconciliation local checks and source CI passed; conflict-free; not merged or deployed**. Founder
 moderation copy/presentation and unresolved policy review remain mandatory.
 No predecessor PR is closed, retargeted, marked ready, or merged by this task.
 
@@ -64,9 +64,9 @@ remain intact. No support email is handed off or sent; verifier OTP mail is conf
 to the owned local Mailpit. The exact corrected `noticesRestrictionEffect`
 strings are unchanged, and the existing 46-pair copy packet remains verbatim.
 
-Local complete Mobile/Web/Site/Database and final-source hosted CI results,
-tested/published source-equivalence and target-main disposition are recorded on
-completion below and in the PR evidence. The first Web attempt hit an admin-route
+Complete Mobile/Web/Site/Database results, hosted checkout provenance,
+publication equivalence and target-main disposition are recorded below and in
+the PR evidence. The first Web attempt hit an admin-route
 import timeout and consequent late mock count; its failure is retained. The second
 attempt passed 452 tests but failed to start the return-destination worker, so it
 is not a pass either. The repository already uses one worker; neither retry
@@ -94,10 +94,46 @@ Before publication, main advanced to **`4f158f323ebdfacbc9e86b66072ac91c80118ddd
 (Play Store assets #175). All 24 changed paths are confined to
 `docs/play-store-assets/` and its archived plan. There is no diff in `apps/`,
 `scripts/`, `supabase/`, `.github/`, or root package manifests/lockfile. The
-final documentation-only publication will include this ancestor; the actual CI
-checkout and unchanged validation-source trees will be checked rather than
+final documentation-only publication includes this ancestor; the actual CI
+checkout and unchanged validation-source trees are checked rather than
 assuming the first pin is still target main. No asset export/demo script is run
 and no Play upload is performed by this continuation.
+
+#### Hosted source and final publication equivalence
+
+Local-tested / pushed validation source:
+**`ebe500a98308f914be1636e529e073bc25e04a8f`**; its two parents are
+prior publication `db29c344` and the initial main pin `70f8ed3`.
+[Normally classified run 37819707978](https://github.com/lillo24/planets.community/actions/runs/37819707978)
+ran **once**, with no rerun/manual dispatch. Classification selected **355 paths,
+all four area flags true**. Classification, Mobile, Web, Site and Database
+**all passed; no area job was skipped**. Hosted Mobile confirms 1,879 passes /
+two existing opt-in skips; Web confirms 456 passes / one existing opt-in skip
+and 78 tooling passes; Site confirms 34 UI + 19 waitlist passes. Database confirms
+130 SQL files / 4,017 assertions, 162 location checks / 18 observed races,
+238 audited signatures, combined moderation/invitation verifiers, demo and type
+drift. The manual-dispatch-only `Verify both divergent populated upgrades` step
+was **skipped as configured**, not claimed run.
+
+All five actual checkout logs show
+**`14766638e606638c4031ee24e48025abcb144882`**, with parents current main
+`4f158f323ebdfacbc9e86b66072ac91c80118ddd` and validation source `ebe500a`.
+Its full tree is **`bb763079cea02a4e68a585a9fbd746f79f3ce05f`**. Relative to
+local-tested `ebe500a`, it adds only the 24 assessed Play documentation/asset
+paths; `apps/`, `scripts/`, `supabase/`, `.github/`, root package manifests
+and lockfile are exactly identical. The prepared local merge of `4f158f3`
+produced that full CI tree exactly before the final evidence-document edits.
+
+Final publication retains both `ebe500a` and `4f158f3` as parents and uses
+`[skip ci]` to avoid duplicating the passed run. Relative to the **actual CI
+checkout**, its only differences are this review packet and the copy packet
+(two Markdown files); every validation-source tree, inventory, workflow,
+configuration, manifest, test and screenshot is unchanged. Exact published SHA
+and these comparisons are recorded in the PR evidence comment. This is **not**
+an unrun published-head CI pass or a waiver for a later merge. Main still matches
+the assessed `4f158f3` at final publication verification; #154 is conflict-free
+and remains draft. Founder wording/presentation approval is next, not another
+unrequested full native/browser QA loop.
 
 The completed Android/browser campaigns below keep their tested-source boundaries.
 Location production wiring is still disabled, and Help changed behavior is
