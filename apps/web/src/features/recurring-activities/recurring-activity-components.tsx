@@ -1,3 +1,4 @@
+import { LocationAttribution } from "@/features/locations/location-attribution";
 import Link from "next/link";
 import {
   CalendarDaysIcon,
@@ -85,6 +86,7 @@ export function RecurringActivityCard({
           <MapPinIcon aria-hidden="true" className="size-4 shrink-0" />
           {activity.public_location_label}
         </p>
+        <LocationAttribution />
       </CardContent>
     </Card>
   );

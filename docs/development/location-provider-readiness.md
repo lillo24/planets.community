@@ -18,6 +18,12 @@ registration and both backend switches remain off; manual fields still work.
 See [MAP02](map02-location-selector.md) for scoped activation wiring, draft/receipt
 ordering and the MAP03 attribution gate.
 
+MAP03 adds public card/detail panels and freshly authorized Google Maps links.
+Static rendering remains disabled at client/runtime/database boundaries. The
+[MAP03 runbook](map03-location-previews.md) owns current budgets, attribution,
+transport and owner activation. Historical detail-only guidance below does not
+describe current card panels.
+
 ## Historical UI-NEXT-04 assessment
 
 The following assessment records the former disabled-only delivery. Its

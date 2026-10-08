@@ -9,3 +9,9 @@ The per-function `.env.example` is disabled and contains no key.
 Pure module fixtures run through `scripts/lib/location-search.test.mjs` in the
 normal tooling/Web gate, without external traffic. PostgreSQL owns receipts,
 durable writes, permissions and hard budgets. See the [contract and runbook](../../docs/development/map01-geoapify-location.md).
+
+location-preview/ owns MAP03's disabled static-image endpoint. provider.mjs fixes
+upstream options and bounds PNGs; handler.mjs validates identifiers/view, reads
+current public/user authorization, reserves credits and rechecks before delivery;
+index.ts supplies separate anonymous/user/service transports and server secrets.
+See [MAP03](../../docs/development/map03-location-previews.md).

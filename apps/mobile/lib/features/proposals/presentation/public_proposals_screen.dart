@@ -4,10 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../locations/presentation/location_fallbacks.dart';
-
 import '../../../app/router/browse_activity_switcher.dart';
 import '../../../core/theme/app_tokens.dart';
+import '../../locations/domain/location_preview.dart';
 import '../../../core/widgets/async_data_presentation.dart';
 import '../../../core/widgets/browse_filter_button.dart';
 import '../../../core/widgets/empty_state.dart';
@@ -366,6 +365,10 @@ class _ProposalDetailScreenState extends ConsumerState<ProposalDetailScreen> {
                 detail.summary.status == ProposalStatus.upcoming ||
                 detail.summary.status == ProposalStatus.happening,
             publicLocationLines: [detail.summary.publicLocationLabel],
+            previewArea: LegacyPreviewArea(
+              detail.summary.locality,
+              detail.summary.countryCode,
+            ),
             publicExactMeetingText: detail.exactMeetingText,
             exactLocationRestricted: detail.exactLocationRestricted,
             capacity: detail.summary.capacity,
@@ -458,7 +461,6 @@ class _ProposalDetailScreenState extends ConsumerState<ProposalDetailScreen> {
                   ],
                   const SizedBox(height: AppSpacing.large),
                   participation!,
-                  const UnavailableLocationMap(),
                   const SizedBox(height: AppSpacing.large),
                   ListTile(
                     key: const Key('proposal-organizer-identity'),

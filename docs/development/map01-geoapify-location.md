@@ -260,3 +260,7 @@ an explicit loopback `MAILPIT_URL` (MAP01: `http://127.0.0.1:55424`). It is incl
 in the full database command and Database CI. The workflow addition therefore
 selects every validation area under the existing classification policy, without
 changing required status checks or weakening unrelated coverage.
+
+[MAP03](map03-location-previews.md) now owns read-only previews, public batching,
+static transport, public attribution and the shared rendering/autocomplete
+credit ceiling. Provider defaults remain disabled.

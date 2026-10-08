@@ -17,6 +17,9 @@ describe("proposal presentation", () => {
   it("renders a linked public card with rough location and skills only", () => {
     render(<ProposalCard proposal={summary} />);
     expect(
+      screen.getByRole("link", { name: "Powered by Geoapify" }),
+    ).toHaveAttribute("href", "https://www.geoapify.com/");
+    expect(
       screen.getByRole("link", { name: "Community mural" }),
     ).toHaveAttribute(
       "href",

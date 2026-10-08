@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 import '../../../core/theme/app_tokens.dart';
 import '../../../l10n/generated/app_localizations.dart';
@@ -15,6 +14,8 @@ import '../data/item_location_gateway.dart';
 import '../domain/item_location.dart';
 import '../domain/place_search.dart';
 import 'location_fallbacks.dart';
+import 'location_attribution.dart';
+export 'location_attribution.dart' show LocationAttribution;
 
 /// An ordinary Save/Publish revokes any earlier location mutation intent. The
 /// section suppresses this hook only for its own save-before-search operation.
@@ -528,31 +529,6 @@ class _PlaceSearchDialogState extends State<_PlaceSearchDialog> {
     _query.dispose();
     super.dispose();
   }
-}
-
-class LocationAttribution extends StatelessWidget {
-  const LocationAttribution({super.key});
-  @override
-  Widget build(BuildContext context) => Wrap(
-    key: const Key('location-attribution'),
-    spacing: AppSpacing.small,
-    children: [
-      TextButton(
-        onPressed: () => launchUrl(
-          Uri.parse('https://www.geoapify.com/'),
-          mode: LaunchMode.externalApplication,
-        ),
-        child: const Text('Powered by Geoapify'),
-      ),
-      TextButton(
-        onPressed: () => launchUrl(
-          Uri.parse('https://www.openstreetmap.org/copyright'),
-          mode: LaunchMode.externalApplication,
-        ),
-        child: const Text('© OpenStreetMap contributors'),
-      ),
-    ],
-  );
 }
 
 String placeKindLabel(AppLocalizations l10n, PlaceKind kind) => switch (kind) {

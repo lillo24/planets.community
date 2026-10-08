@@ -1,3 +1,4 @@
+import { LocationAttribution } from "@/features/locations/location-attribution";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { CalendarDaysIcon, MapPinIcon } from "lucide-react";
@@ -79,6 +80,7 @@ export default async function ProposalDetailPage({
               <MapPinIcon aria-hidden="true" className="size-5 shrink-0" />
               {proposal.public_location_label}
             </p>
+            <LocationAttribution />
             {proposal.exact_location_restricted ? (
               <p data-testid="restricted-location">
                 Exact location available after joining.

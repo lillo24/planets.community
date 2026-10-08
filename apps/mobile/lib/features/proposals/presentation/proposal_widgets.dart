@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/theme/app_tokens.dart';
+import '../../locations/domain/location_preview.dart';
+import '../../locations/presentation/location_preview_panel.dart';
+import '../../locations/presentation/location_attribution.dart';
+
 import '../../../core/widgets/requested_badge.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../cover_media/presentation/project_cover_image.dart';
@@ -126,11 +130,14 @@ class ProposalCard extends StatelessWidget {
                         '${formatProposalDateTime(proposal.endsAt, proposal.eventTimezone, Localizations.localeOf(context).toLanguageTag())}',
                   ),
                   const SizedBox(height: AppSpacing.small),
-                  _IconText(
-                    icon: Icons.location_on_outlined,
-                    text: proposal.publicLocationLabel,
+                  LocationPreviewPanel(
+                    item: PreviewItem('one_time', proposal.id),
+                    legacy: LegacyPreviewArea(
+                      proposal.locality,
+                      proposal.countryCode,
+                    ),
+                    publicLabel: proposal.publicLocationLabel,
                   ),
-                  const SizedBox(height: AppSpacing.small),
                   ProjectCapacityLabel(
                     capacity: proposal.capacity,
                     presentation: ProjectCapacityPresentation.public,
@@ -184,6 +191,7 @@ class ProposalLocation extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        const LocationAttribution(),
         Text(
           l10n.proposalLocationTitle,
           style: Theme.of(context).textTheme.titleLarge,

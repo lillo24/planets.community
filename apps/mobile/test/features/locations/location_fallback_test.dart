@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:planets_mobile/features/locations/presentation/location_fallbacks.dart';
+import 'package:planets_mobile/features/locations/presentation/location_preview_panel.dart';
 import 'package:planets_mobile/features/proposals/data/proposal_gateway.dart';
 import 'package:planets_mobile/features/proposals/domain/proposal_models.dart';
 import 'package:planets_mobile/features/proposals/presentation/public_proposals_screen.dart';
@@ -105,7 +106,7 @@ void main() {
   );
 
   testWidgets(
-    'public detail fallback contains no restricted address, ID, pin or action',
+    'public detail panel offers only coarse text without a protected bitmap',
     (tester) async {
       final gateway = FakeProposalGateway()
         ..publicDetail = proposalDetailFixture();
@@ -121,25 +122,16 @@ void main() {
       );
       await tester.pumpAndSettle();
       await tester.scrollUntilVisible(
-        find.byKey(const Key('location-map-unavailable')),
+        find.byKey(const Key('location-preview-proposal-1')),
         250,
       );
       expect(
-        find.text(
-          'Map preview unavailable. Use the location information above.',
-        ),
+        find.text('Area information · map image unavailable'),
         findsOneWidget,
       );
       expect(find.textContaining('fountain'), findsNothing);
-      final fallback = find.byType(UnavailableLocationMap);
-      expect(
-        find.descendant(of: fallback, matching: find.byType(InkWell)),
-        findsNothing,
-      );
-      expect(
-        find.descendant(of: fallback, matching: find.byType(TextButton)),
-        findsNothing,
-      );
+      expect(find.byType(LocationPreviewPanel), findsOneWidget);
+      expect(find.byType(RawImage), findsNothing);
       expect(tester.takeException(), isNull);
     },
   );

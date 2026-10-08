@@ -1651,5 +1651,12 @@
   "tutorialHomeResources": "Di nuovo sulla Home: dai una nuova vita agli oggetti con Scambio–Dona.",
   "tutorialResources": "Scopri un annuncio, creane uno tuo o torna ai tuoi annunci e alle bozze.",
   "tutorialExampleResourceSummary": "Dai una nuova casa a qualche attrezzo utile.",
-  "tutorialExampleAction": "Azione di esempio — questa dimostrazione non invia richieste."
+  "tutorialExampleAction": "Azione di esempio — questa dimostrazione non invia richieste.",
+  "locationPreviewUnavailable": "Posizione non disponibile",
+  "locationPreviewTextOnly": "Informazioni sulla zona · immagine della mappa non disponibile",
+  "locationPreviewApproximate": "Posizione indicativa · nessun punto di ritrovo",
+  "locationPreviewVerified": "Luogo selezionato verificato",
+  "locationPreviewImageFailed": "Anteprima della mappa non disponibile",
+  "locationOpenGoogleMaps": "Apri in Google Maps",
+  "locationMapsLaunchFailed": "Impossibile aprire Google Maps. Riprova."
 }

@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../app/router/browse_activity_switcher.dart';
 import '../../../core/theme/app_tokens.dart';
+import '../../locations/domain/location_preview.dart';
 import '../../../core/time/event_time.dart';
 import '../../../core/widgets/async_data_presentation.dart';
 import '../../../core/widgets/browse_filter_button.dart';
@@ -299,6 +300,10 @@ class _PublicRecurringActivityDetailScreenState
         '${resolvedDetail.publicLocationLabel} · ${resolvedDetail.locality}',
         ?resolvedDetail.administrativeArea,
       ],
+      previewArea: LegacyPreviewArea(
+        resolvedDetail.locality,
+        resolvedDetail.countryCode,
+      ),
       publicExactMeetingText: resolvedDetail.exactMeetingText,
       exactLocationRestricted: resolvedDetail.exactLocationRestricted,
       capacity: resolvedDetail.capacity,

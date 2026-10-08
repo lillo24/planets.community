@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:planets_mobile/features/resource_listings/domain/resource_listing_models.dart';
 import 'package:planets_mobile/features/resource_listings/presentation/resource_listing_widgets.dart';
@@ -95,14 +96,16 @@ void main() {
   });
 }
 
-Widget _app(Widget home, {TextScaler? textScaler}) => MaterialApp(
-  localizationsDelegates: AppLocalizations.localizationsDelegates,
-  supportedLocales: AppLocalizations.supportedLocales,
-  builder: textScaler == null
-      ? null
-      : (context, child) => MediaQuery(
-          data: MediaQuery.of(context).copyWith(textScaler: textScaler),
-          child: child!,
-        ),
-  home: home,
+Widget _app(Widget home, {TextScaler? textScaler}) => ProviderScope(
+  child: MaterialApp(
+    localizationsDelegates: AppLocalizations.localizationsDelegates,
+    supportedLocales: AppLocalizations.supportedLocales,
+    builder: textScaler == null
+        ? null
+        : (context, child) => MediaQuery(
+            data: MediaQuery.of(context).copyWith(textScaler: textScaler),
+            child: child!,
+          ),
+    home: home,
+  ),
 );

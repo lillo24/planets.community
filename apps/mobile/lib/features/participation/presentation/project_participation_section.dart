@@ -3,6 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/theme/app_tokens.dart';
+import '../../locations/domain/location_preview.dart';
+import '../../locations/presentation/location_preview_panel.dart';
+
 import '../../../l10n/generated/app_localizations.dart';
 import '../../auth/application/auth_session_controller.dart';
 import '../../auth/domain/auth_models.dart';
@@ -30,6 +33,7 @@ class ProjectParticipationSection extends ConsumerWidget {
     required this.exactLocationRestricted,
     required this.capacity,
     this.actionsOnly = false,
+    this.previewArea,
     super.key,
   });
 
@@ -42,6 +46,7 @@ class ProjectParticipationSection extends ConsumerWidget {
   final bool exactLocationRestricted;
   final ProjectCapacitySnapshot capacity;
   final bool actionsOnly;
+  final LegacyPreviewArea? previewArea;
 
   // Mount at the detail page boundary, outside its lazily built scroll content.
   Widget withRequestIntent(Widget child) => OrdinaryShareIntent(
@@ -57,6 +62,7 @@ class ProjectParticipationSection extends ConsumerWidget {
       exactLocationRestricted: exactLocationRestricted,
       capacity: capacity,
       actionsOnly: true,
+      previewArea: previewArea,
     ),
     child: child,
   );
@@ -221,6 +227,21 @@ class ProjectParticipationSection extends ConsumerWidget {
             ),
           ),
         ],
+        if (previewArea case final area?)
+          LocationPreviewPanel(
+            item: PreviewItem(
+              projectKind == ProjectKind.oneTime ? 'one_time' : 'recurring',
+              projectId,
+            ),
+            legacy: area,
+            publicLabel: publicLocationLines.join(' · '),
+            detail: true,
+            contentVersion: (
+              exactLocationRestricted,
+              publicExactMeetingText,
+              acceptsNewRequests,
+            ),
+          ),
         const SizedBox(height: AppSpacing.large),
         Row(
           key: Key('participation-title-$projectId'),

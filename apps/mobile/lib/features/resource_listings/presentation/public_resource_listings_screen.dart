@@ -587,6 +587,7 @@ class _PublicResourceListingDetailScreenState
                   const SizedBox(height: AppSpacing.medium),
                   _ResourceDetailSection(
                     child: ResourceListingLocation(
+                      listingId: detail.summary.id,
                       publicLocationLabel: detail.summary.publicLocationLabel,
                       locality: detail.summary.locality,
                       administrativeArea: detail.summary.administrativeArea,

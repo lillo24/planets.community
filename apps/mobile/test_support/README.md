@@ -76,3 +76,11 @@ checkout. `dart run test_support/ui_next03_native_smoke.dart <owned-vm-uri>
 <capture-directory>` exercises chooser, scratch capacity/skills, footer,
 overwrite cancellation and explicit draft save. This driver confirms the bounded
 fixture handler before UI actions and never targets the founder's phone.
+
+## MAP03 native rehearsal
+
+map03_rehearsal.dart requires an opted-in debug build and uses real cards/shared
+panels with deterministic preview/image/Maps gateways. map03_native_smoke.dart
+takes an owned VM URI and capture directory and checks distinct card taps,
+three details, EN/IT and zero disabled image calls. Production uses lib/main.dart.
+See [MAP03](../../../docs/development/map03-location-previews.md).

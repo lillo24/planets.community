@@ -1,3 +1,4 @@
+import { LocationAttribution } from "@/features/locations/location-attribution";
 import Link from "next/link";
 import { CalendarDaysIcon, MapPinIcon } from "lucide-react";
 
@@ -54,6 +55,7 @@ export function ProposalCard({
           <MapPinIcon aria-hidden="true" className="size-4 shrink-0" />
           {proposal.public_location_label}
         </p>
+        <LocationAttribution />
         <div className="flex flex-wrap gap-2">
           {proposal.skills.map((skill) => (
             <Badge key={`${skill.id}:${skill.importance}`} variant="outline">

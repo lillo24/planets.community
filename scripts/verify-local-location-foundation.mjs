@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { verifyLocationPreviews } from "./lib/verify-location-previews.mjs";
 import { randomUUID } from "node:crypto";
 import { createClient } from "@supabase/supabase-js";
 import postgres from "postgres";
@@ -473,8 +474,22 @@ try {
       kind + " clear changes only the requested slot",
     );
   }
+  await db.unsafe(
+    "update private.location_search_config set enabled=true,actor_minute=20 where singleton",
+  );
+  await verifyLocationPreviews({
+    db,
+    owner,
+    peer,
+    server,
+    anonymous,
+    rpc,
+    denied,
+    check,
+    selected: authorized.exact_place,
+  });
   console.log(
-    `MAP01/MAP02 ${checks} authenticated REST/concurrency checks passed; fake provider only, no Geoapify traffic.`,
+    `MAP01/MAP02/MAP03 ${checks} authenticated REST/concurrency checks passed; fake provider only, no Geoapify traffic.`,
   );
 } finally {
   await db`update private.location_search_config set enabled=${original.enabled},global_daily=${original.global_daily},actor_daily=${original.actor_daily},actor_minute=${original.actor_minute} where singleton`;

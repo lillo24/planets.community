@@ -2383,5 +2383,12 @@
   "tutorialHomeResources": "Back on Home: give things a new life with Exchange–Donate.",
   "tutorialResources": "Discover a listing, create your own, or return to your listings and drafts.",
   "tutorialExampleResourceSummary": "Give a few useful tools a new home.",
-  "tutorialExampleAction": "Example action — this demonstration sends no request."
+  "tutorialExampleAction": "Example action — this demonstration sends no request.",
+  "locationPreviewUnavailable": "Location unavailable",
+  "locationPreviewTextOnly": "Area information · map image unavailable",
+  "locationPreviewApproximate": "Approximate area · no meeting pin",
+  "locationPreviewVerified": "Verified selected place",
+  "locationPreviewImageFailed": "Map preview unavailable",
+  "locationOpenGoogleMaps": "Open in Google Maps",
+  "locationMapsLaunchFailed": "Could not open Google Maps. Please try again."
 }
