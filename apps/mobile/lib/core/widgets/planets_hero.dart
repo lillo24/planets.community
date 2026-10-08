@@ -2,6 +2,8 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
+import 'planets_starfield.dart';
+
 /// Shared native counterpart of apps/site/src/styles.css's hero animation.
 /// Welcome adds its finite flight; both surfaces keep the same circular orbits.
 class PlanetsHero extends StatelessWidget {
@@ -221,19 +223,21 @@ class _HeroGeometry {
         logoAreaHeight == null
             ? (screenHeight ?? size.height) *
                   (.5 - .23 * Curves.easeOut.transform(entrance))
-            : logoAreaHeight * .62,
+            : logoAreaHeight / 2,
       ),
       // Fit the far ring and its planet halo above the settled center, so
       // raising the composition doesn't clip circular artwork on short screens.
       baseDiameter = math.min(
-        size.width * .68,
+        logoAreaHeight == null
+            ? size.width * .68
+            : math.max(0, (size.width / 2 - 10) / .7),
         math.min(
           300,
           math.max(
             0,
             ((logoAreaHeight == null
                         ? (screenHeight ?? size.height) * .27
-                        : logoAreaHeight * .62) -
+                        : logoAreaHeight / 2) -
                     10) /
                 .7,
           ),
@@ -241,7 +245,12 @@ class _HeroGeometry {
       ),
       logoExtent = logoAreaHeight == null
           ? math.min(size.width * .57, 270)
-          : math.min(160, math.min(size.width * .45, logoAreaHeight * .9));
+          : math.min(
+              160,
+              // Retain 14px either side on short/large-text reservations;
+              // the upward-only 6px float also stays clear of the top edge.
+              math.min(size.width * .45, math.max(0, logoAreaHeight - 28)),
+            );
 
   final Offset center;
   final double baseDiameter;
@@ -286,11 +295,13 @@ class _OrbitPainter extends CustomPainter {
       screenHeight,
       logoAreaHeight,
     );
-    final stars = Paint()..color = starColor;
-    for (var i = 0; i < 18; i++) {
-      final x = ((i * 73 + 19) % 281) / 281 * size.width;
-      final y = (((i * 43) / 181 + entrance * .35) % 1) * size.height;
-      canvas.drawCircle(Offset(x, y), i.isEven ? 1.5 : 1, stars);
+    final stars = Paint();
+    for (final star in PlanetsStarfield.forSize(size)) {
+      // Preserve the finite entrance drift; orbit ticks never move the stars.
+      final y =
+          ((star.position.dy / size.height + entrance * .35) % 1) * size.height;
+      stars.color = starColor.withValues(alpha: starColor.a * star.opacity);
+      canvas.drawCircle(Offset(star.position.dx, y), star.radius, stars);
     }
     // Website dimensions, initial angles, colors and signed linear periods.
     const orbits = [

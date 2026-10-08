@@ -8,11 +8,14 @@ This folder owns small presentation primitives reused across feature boundaries.
   12 seconds clockwise, cyan outer orbit 16 seconds counterclockwise, gold inner
   orbit 18 seconds clockwise, all linear; the logo floats every 8 seconds using
   CSS ease-in-out with a calm 6px vertical float and no logo rotation. One
-  repeating 144-second clock keeps these phases continuous. The settled hero
-  sits slightly higher on both surfaces (27% of Welcome's available screen
-  height, 62% of Home's decorative area, with Home's artwork lifted by another
-  6% of that area into the existing scroll padding); rings scale to retain
-  top-edge room for their planets on shorter layouts, leaving more breathing
+  repeating 144-second clock keeps these phases continuous. Welcome retains
+  its settled position at 27% of the available screen height. Home centers
+  within the actual reservation from the body's top to
+  the first card, including the 24px scroll padding and the column's vertical
+  centering space. The scroll viewport fills the body while the cards retain
+  their centered positions; the painter extends upward into that reserved space.
+  Its rings and logo scale to retain top-edge room for their planets on shorter
+  layouts, leaving more breathing
   room below the logo without moving functional actions.
   Both surfaces pause without advancing hidden time when backgrounded, covered
   by another route, disabled by TickerMode, or scrolled outside the viewport.
@@ -21,6 +24,13 @@ This folder owns small presentation primitives reused across feature boundaries.
   composition without replaying that entrance. Artwork ignores touches; Home
   places opaque, naturally sized cards above it and reduces decoration on
   short/scaled screens.
+
+- `planets_starfield.dart` owns the shared seeded irregular star map: roughly
+  one star per 2,400 logical square pixels, bounded to 8–100, with modest radius
+  and opacity variation and separation-based scattering. Four size maps are
+  cached; rebuilding/evicting a size regenerates identical coordinates from
+  seed `0x504c414e`. Only Welcome's existing finite entrance drift moves stars;
+  orbit ticking does not. No image, network or additional clock is involved.
 
 - `empty_state.dart`, `error_state.dart`, and `loading_state.dart` provide the
   standard asynchronous screen states.
