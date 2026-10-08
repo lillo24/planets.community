@@ -1,6 +1,6 @@
 # MODINT01 moderation/Auth integration review
 
-Status: **draft integration; October 8 technical QA and hosted validation passed; not merged or deployed**. Founder
+Status: **draft integration; behavioral QA complete; final-copy local checks and pinned-source CI passed; later-main conflicts remain; not merged or deployed**. Founder
 moderation copy/presentation and unresolved policy review remain mandatory.
 No predecessor PR is closed, retargeted, marked ready, or merged by this task.
 
@@ -56,9 +56,38 @@ Messages/Settings coverage. The original four incoming Messages expectation
 failures are retained separately; aligning them with the existing global account
 guard fixed the tests without changing production behavior.
 The EN/IT preview render passed and both sentences were inspected in full without
-clipping. Normally classified hosted CI will run once for the corrective source;
-actual checkout/classification/executed/skipped jobs and exact tested/published
-SHAs will be recorded in the PR evidence and this section before handoff.
+clipping. The corrective source is **`ce942c10c316f7ea4754bf2a37cbbeb19ecfb809`**,
+a two-parent commit retaining prior publication `70c0454b` and main `55219709`.
+[Normally classified run 37789890129](https://github.com/lillo24/planets.community/actions/runs/37789890129)
+ran once, without a manual dispatch or duplicate suite. Classification selected
+**318 paths, all four area flags true** from the complete PR diff. Its actual
+checkout `9ce4ba5e192de10cac8b25afacb3ece48b0a1b73` has parents pinned main and
+corrective source, and full tree `b29da59814d5e49810d3a5dd2e1482d431c464e7`
+matches that source exactly. **Classification, Mobile, Web, Site and Database all
+passed; no area job was skipped.** Hosted Mobile passes 1,830 tests / two existing
+skips; Database confirms 128 SQL files / 3,904 assertions and the unchanged
+232-signature suspension inventory. The manual-dispatch-only `Verify both
+divergent populated upgrades` step was skipped as configured, not claimed run.
+The status watcher briefly encountered a GitHub read timeout; a read-only status
+request recovered. No hosted run/job was rerun or manually dispatched.
+
+Final documentation-only publication follows this tested source with `[skip ci]`
+to avoid duplicating the normally classified run. Exact tested/published SHAs and
+documentation-only source equivalence are recorded in the PR evidence comment;
+runtime/tests/workflows/configuration/manifests are unchanged after `ce942c10`.
+This is not an unrun published-head CI pass, a latest-main integration claim or
+a waiver for a later merge.
+
+While this run was executing, main advanced again to
+**`6650d995c4a393ef43e13f16d51933645be72db9`**, adding the unrelated disabled
+Geoapify foundation (new migration/RPC/Edge Function/generated contracts and
+tooling). Read-only merge-tree assessment found conflicts in
+`apps/web/src/types/database.generated.ts` and `package.json`. This later
+cross-domain reconciliation is intentionally **not** folded into the small copy
+correction or called tested by the pinned run. The PR remains draft with these
+current-main conflicts; reconciliation/affected validation is a later merge
+prerequisite, not another behavioral QA demand because founder copy approval is
+pending. Founder wording/presentation review can proceed on the corrected text.
 
 No local backend was restarted/reset, no APK/all-application rebuild or full
 OTP/request/browser/Database campaign was run for the copy. The founder's request

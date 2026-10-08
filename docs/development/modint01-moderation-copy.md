@@ -2,8 +2,9 @@
 
 Regenerated from and compared with the actual EN/IT ARBs after the October 8
 final-copy correction. All 46 key pairs below are verbatim; only
-`noticesRestrictionEffect` changed. Exact tested/published source records are
-in the linked PR evidence and review packet. This is proposed founder-review
+`noticesRestrictionEffect` changed. Tested corrective source:
+`ce942c10c316f7ea4754bf2a37cbbeb19ecfb809`. Exact publication/source-equivalence
+records are in the PR evidence and review packet. This is proposed founder-review
 copy, not founder approval.
 
 Extracted verbatim from the combined `app_en.arb` and `app_it.arb`. This is delivered

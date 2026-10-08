@@ -3,6 +3,10 @@
 These two PNGs are **synthetic widget-harness previews**, not native-device,
 real-OTP, real-backend, browser-flow or founder-approval evidence.
 
+Captured from the corrective runtime/localization source committed as
+`ce942c10c316f7ea4754bf2a37cbbeb19ecfb809`; later documentation-only publication
+does not change their pixels or runtime provenance.
+
 - `restriction-copy-en-widget-preview.png`: corrected English private notice.
 - `restriction-copy-it-widget-preview.png`: corrected Italian private notice.
 
