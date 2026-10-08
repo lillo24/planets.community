@@ -277,7 +277,22 @@ void main() {
     await t.pumpWidget(app(c, ListView(children: [panel(detail: true)])));
     await settled(t);
     final old = r.outputs.single;
+    // Native codec completion runs outside WidgetTester's fake clock.
+    for (
+      var n = 0;
+      n < 100 && t.widget<RawImage>(find.byType(RawImage)).image == null;
+      n++
+    ) {
+      await t.runAsync(
+        () => Future<void>.delayed(const Duration(milliseconds: 20)),
+      );
+      await t.pump();
+    }
+    final decoded = t.widget<RawImage>(find.byType(RawImage)).image;
+    expect(decoded, isNotNull);
     t.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
+    // Private pixel ownership ends before a backgrounded app can pump a frame.
+    expect(decoded!.debugDisposed, true);
     await t.pump();
     t.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
     await t.pump();

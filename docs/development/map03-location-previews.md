@@ -54,6 +54,8 @@ membership, role, meeting-details and content changes revoke pending work,
 coordinates and images. Generations prevent old reads from refilling cleared
 caches. Late protected byte buffers are overwritten. Decoded images are
 widget-owned and disposed through RawImage, outside Flutter's global ImageCache.
+Revocation disposes the decoded bitmap and invalidates pending decode immediately,
+even if the backgrounded app cannot schedule another UI frame.
 A visible panel reauthorizes every 15 seconds, hiding geometry/bitmap during
 the read and reusing its bitmap only after matching key AND revision.
 Known revocation clears immediately; remote changes without a client signal

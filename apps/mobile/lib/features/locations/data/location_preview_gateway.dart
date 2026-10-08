@@ -161,7 +161,7 @@ class ServerStaticPreviewGateway implements StaticPreviewGateway {
     } on PreviewUnavailable {
       rethrow;
     } on FunctionException catch (error) {
-      throw PreviewUnavailable([403, 409].contains(error.status));
+      throw PreviewUnavailable([401, 403, 409].contains(error.status));
     } catch (_) {
       throw const PreviewUnavailable();
     }

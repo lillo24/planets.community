@@ -226,6 +226,7 @@ void main() {
     ('budget_exhausted', 200, false),
     ('invalid_image', 200, false),
     ('unauthorized', 200, true),
+    ('unauthorized', 401, true),
     ('unauthorized', 403, true),
     ('stale', 200, true),
     ('stale', 409, true),

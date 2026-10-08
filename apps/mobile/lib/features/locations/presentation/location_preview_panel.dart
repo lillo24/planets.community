@@ -42,6 +42,7 @@ class LocationPreviewPanel extends ConsumerStatefulWidget {
 class _LocationPreviewPanelState extends ConsumerState<LocationPreviewPanel>
     with WidgetsBindingObserver {
   final _box = GlobalKey();
+  var _bitmap = GlobalKey<_UncachedPreviewImageState>();
   ScrollPosition? _scroll;
   Timer? _lease;
   Completer<void>? _abort;
@@ -78,6 +79,7 @@ class _LocationPreviewPanelState extends ConsumerState<LocationPreviewPanel>
   }
 
   void _eraseImage() {
+    _revokeBitmap();
     if (_imageProtected) {
       _bytes?.fillRange(0, _bytes!.length, 0);
     }
@@ -87,11 +89,20 @@ class _LocationPreviewPanelState extends ConsumerState<LocationPreviewPanel>
     _imageProtected = false;
   }
 
+  void _revokeBitmap() {
+    _bitmap.currentState?.revoke();
+    _bitmap = GlobalKey<_UncachedPreviewImageState>();
+  }
+
   void _revoke({bool keepImage = false}) {
     ++_epoch;
     if (_abort?.isCompleted == false) _abort!.complete();
     _abort = null;
-    if (!keepImage) _eraseImage();
+    if (!keepImage) {
+      _eraseImage();
+    } else {
+      _revokeBitmap();
+    }
     _preview = null;
     _loading = false;
     _opening = false;
@@ -365,6 +376,7 @@ class _LocationPreviewPanelState extends ConsumerState<LocationPreviewPanel>
                           child: SizedBox(
                             height: widget.detail ? 160 : 80,
                             child: _UncachedPreviewImage(
+                              key: _bitmap,
                               bytes: _bytes!,
                               failureLabel: l10n.locationPreviewImageFailed,
                             ),
@@ -409,6 +421,7 @@ class _UncachedPreviewImage extends StatefulWidget {
   const _UncachedPreviewImage({
     required this.bytes,
     required this.failureLabel,
+    super.key,
   });
   final Uint8List bytes;
   final String failureLabel;
@@ -420,6 +433,14 @@ class _UncachedPreviewImageState extends State<_UncachedPreviewImage> {
   ui.Image? _image;
   int _epoch = 0;
   bool _failed = false;
+
+  // Revoke synchronously even when backgrounding prevents another UI frame.
+  void revoke() {
+    ++_epoch;
+    _image?.dispose();
+    _image = null;
+  }
+
   @override
   void initState() {
     super.initState();
