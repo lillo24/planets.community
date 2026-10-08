@@ -1,14 +1,18 @@
 # Location foundation
 
-Owns transient place-search contracts and honest disabled presentation. No live
-adapter, key flag, map SDK, Project serialization, GPS permission or paid call is
-registered. Production always uses `DisabledPlaceSearchGateway`.
+Owns transient place-search contracts, the MAP01 server adapter and honest
+disabled presentation. Production still uses `DisabledPlaceSearchGateway`.
+No editor wiring, map SDK, GPS permission or live provider traffic is activated.
 
-- `domain/place_search.dart`: bounded Italy/Trento requests, broad versus address
+- `domain/place_search.dart`: bounded Italy/Trento requests, locality/address/amenity
   suggestions, mandatory adapter-supplied expiry and independent public locality
   representation. No JSON or `ProposalInput` conversion exists.
 - `data/place_search_gateway.dart`: app-owned search/resolve interface and the
-  disabled Riverpod registration. Synthetic adapters live only in tests.
+  disabled Riverpod registration.
+- `data/server_place_search_gateway.dart`: injectable authenticated Edge adapter
+  bound to a saved actor/item/revision/slot. Resolves opaque server receipts with
+  narrow provenance and unchanged expiry; never accepts a Geoapify key or public
+  private-detail cache. Its default is disabled. MAP02 owns lifecycle wiring.
 - `application/place_search_controller.dart`: one transient editor session,
   350 ms debounce, 2–160 character requests, five unique Italian results, opaque
   session tokens and five-second timeouts. Typing never implies selection.
@@ -20,7 +24,10 @@ registered. Production always uses `DisabledPlaceSearchGateway`.
   no URL, platform view or fabricated directions.
 
 Project manual fields, DRAFT01 snapshots and public/participant gateways retain
-their contracts. The transient controller is **not wired into production forms**.
+their contracts. Canonical nullable storage and versioned receipt/read/write
+RPCs are documented in the [MAP01 contract](../../../../../docs/development/map01-geoapify-location.md).
+Short-lived receipt objects must not enter draft snapshots. The transient
+controller is **not wired into production forms**.
 Future activation must bind its lifecycle to actor/form generation and canonical
 entitlement changes. A cancellation unit test does not prove live authorization.
 

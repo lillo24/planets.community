@@ -5,6 +5,10 @@ This folder owns the reproducible local PLANETS database and its security valida
 - `config.toml` configures the local stack and fail-closed Data API defaults.
 - `migrations/` is the canonical, timestamp-ordered SQL schema history.
 - `tests/` contains native pgTAP invariants and transactional security probes.
+- `functions/` contains purpose-limited external service adapters. MAP01's
+  `location-search` stays disabled with no key. Canonical private budgets/receipts,
+  parent geography and versioned location RPCs are migration-owned; see the
+  [data/exposure contract and runbook](../docs/development/map01-geoapify-location.md).
 - MSG02 stores body-free source identities, send-time incoming eligibility and
   private read frontiers in `private.message_*`. Complete totals authorize once
   per conversation and apply the canonical group history cutoff to metadata.

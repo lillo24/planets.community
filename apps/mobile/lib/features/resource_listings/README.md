@@ -1,5 +1,10 @@
 # Scambio-Dona mobile boundary
 
+MAP01 adds a nullable canonical public selected location/point through versioned
+owner-only receipt writes. It introduces no private pickup or Project membership
+boundary. Legacy manual edits clear verified geometry; no search UI or map is
+activated. See the [location contract](../../../../../docs/development/map01-geoapify-location.md).
+
 This feature owns the Flutter discovery and owner-management experience for
 standalone Scambio-Dona listings. It stays separate from Projects,
 Participation, and Project resources.
