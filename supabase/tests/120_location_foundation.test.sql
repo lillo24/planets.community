@@ -108,6 +108,18 @@ select throws_ok($$select public.apply_item_location_v1('a9010000-0000-4000-8000
 select throws_ok($$select public.apply_item_location_v1('a9010000-0000-4000-8000-000000000003','one_time','a9020000-0000-4000-8000-000000000001',current_setting('test.map01.revision')::bigint,gen_random_uuid(),'clear',null,'unchanged',null)$$,'42501',null,'Project outsider cannot edit');
 reset role;
 
+-- MAP03 exact-only Tavolo cannot become a public centroid.
+update public.projects set registration_capacity=10 where id='a9020000-0000-4000-8000-000000000002';
+insert into public.recurring_activity_schedules(recurring_activity_id,recurrence_type,weekday,local_start_time,duration_minutes,event_timezone,effective_from)
+ values('a9020000-0000-4000-8000-000000000002','weekly',1,'12:00',60,'Europe/Rome',current_date);
+update public.recurring_activities set lifecycle_state='published',published_at=now(),title='MAP03 synthetic Tavolo',summary='Synthetic summary',description='Synthetic description' where id='a9020000-0000-4000-8000-000000000002';
+set local role anon;
+select is(public.get_location_preview_v1('recurring','a9020000-0000-4000-8000-000000000002','card')->'place','null'::jsonb,'MAP03 exact-only Tavolo card has no public point');
+reset role;
+set local role authenticated;
+select set_config('request.jwt.claim.sub','a9010000-0000-4000-8000-000000000001',true);
+select is(public.get_location_preview_v1('recurring','a9020000-0000-4000-8000-000000000002','protected_detail','a9010000-0000-4000-8000-000000000001')->'place'->>'kind','amenity','MAP03 Tavolo creator exact detail');
+reset role;
 -- Exact read policy is evaluated on every request; legacy public RPCs stay narrow.
 update public.projects set registration_capacity=10 where id='a9020000-0000-4000-8000-000000000001';
 update public.proposals set lifecycle_state='published',published_at=now(),title='Location privacy fixture',
@@ -120,6 +132,9 @@ insert into public.project_memberships(id,project_id,participant_profile_id,orig
  values('a9050000-0000-4000-8000-000000000001','a9020000-0000-4000-8000-000000000001','a9010000-0000-4000-8000-000000000002','a9040000-0000-4000-8000-000000000001',now()-interval '1 day');
 set local role anon;
 select is(public.get_public_item_location_v1('one_time','a9020000-0000-4000-8000-000000000001')->'exact_place','null'::jsonb,'Anonymous exact-ID projection has no participant-only point/reference/label');
+select is(public.get_location_preview_v1('one_time','a9020000-0000-4000-8000-000000000001','card')->'place'->>'kind','locality','MAP03 independent Project card locality');
+select is(public.get_location_preview_v1('resource','a9020000-0000-4000-8000-000000000003','card')->'place'->>'kind','address','MAP03 Resource public precision');
+select throws_ok($$select public.get_location_preview_v1('one_time','a9020000-0000-4000-8000-000000000001','protected_detail','a9010000-0000-4000-8000-000000000002')$$,'42501',null,'MAP03 anonymous protected denied');
 select ok((public.get_public_item_location_v1('one_time','a9020000-0000-4000-8000-000000000001')->'public_place'->>'latitude')='45','Anonymous reads independent area only');
 select ok(public.get_public_item_location_v1('resource','a9020000-0000-4000-8000-000000000003')->'public_place'->>'kind'='address','Published Resource location is canonical public data');
 select ok((select to_jsonb(x)::text not like '%SECRET%' from public.get_public_proposal('a9020000-0000-4000-8000-000000000001') x),'Legacy public detail cannot leak selected exact metadata');
@@ -128,6 +143,9 @@ reset role;
 set local role authenticated;
 select set_config('request.jwt.claim.sub','a9010000-0000-4000-8000-000000000002',true);
 select ok(public.get_authorized_item_location_v1('a9010000-0000-4000-8000-000000000002','one_time','a9020000-0000-4000-8000-000000000001')->'exact_place'->>'label' like 'SECRET%','Current member reads protected exact selected place');
+select is(public.get_location_preview_v1('one_time','a9020000-0000-4000-8000-000000000001','protected_detail','a9010000-0000-4000-8000-000000000002')->'place'->>'latitude','44','MAP03 accepted member exact detail');
+select is(public.get_location_preview_v1('one_time','a9020000-0000-4000-8000-000000000001','card')->'place'->>'latitude','45','MAP03 member card remains broad');
+select throws_ok($$select public.get_location_preview_v1('one_time','a9020000-0000-4000-8000-000000000001','protected_detail','a9010000-0000-4000-8000-000000000001')$$,'42501',null,'MAP03 actor mismatch fails closed');
 select throws_ok($$select public.apply_item_location_v1('a9010000-0000-4000-8000-000000000002','one_time','a9020000-0000-4000-8000-000000000001',0,gen_random_uuid(),'clear',null,'unchanged',null)$$,'42501',null,'Ordinary member has read but no structural write authority');
 reset role;
 -- Accepted organizer roles reuse the existing canonical structural distinction.
@@ -137,6 +155,7 @@ select set_config('test.map01.offer',public.create_project_role_offer('a9010000-
 select set_config('request.jwt.claim.sub','a9010000-0000-4000-8000-000000000002',true);
 select set_config('test.map01.delegate',public.accept_project_role_offer('a9010000-0000-4000-8000-000000000002',current_setting('test.map01.offer')::uuid)::text,true);
 select ok(public.get_authorized_item_location_v1('a9010000-0000-4000-8000-000000000002','one_time','a9020000-0000-4000-8000-000000000001')->'exact_place'->>'label' like 'SECRET%','Co-organizer can read canonical protected location');
+select is(public.get_location_preview_v1('one_time','a9020000-0000-4000-8000-000000000001','protected_detail','a9010000-0000-4000-8000-000000000002')->>'audience','protected','MAP03 active delegate entitlement');
 select throws_ok($$select public.apply_item_location_v1('a9010000-0000-4000-8000-000000000002','one_time','a9020000-0000-4000-8000-000000000001',0,gen_random_uuid(),'unchanged',null,'unchanged',null)$$,'42501',null,'Co-organizer cannot structurally edit location');
 select set_config('request.jwt.claim.sub','a9010000-0000-4000-8000-000000000001',true);
 select public.revoke_project_delegate('a9010000-0000-4000-8000-000000000001',current_setting('test.map01.delegate')::uuid);
@@ -155,13 +174,17 @@ update public.project_memberships set removed_at=now(),removed_by_profile_id='a9
 set local role authenticated;
 select set_config('request.jwt.claim.sub','a9010000-0000-4000-8000-000000000002',true);
 select throws_ok($$select public.get_authorized_item_location_v1('a9010000-0000-4000-8000-000000000002','one_time','a9020000-0000-4000-8000-000000000001')$$,'42501',null,'Removed member loses exact data immediately');
+select throws_ok($$select public.get_location_preview_v1('one_time','a9020000-0000-4000-8000-000000000001','protected_detail','a9010000-0000-4000-8000-000000000002')$$,'42501',null,'MAP03 removed member denied');
 reset role;
 update public.proposal_meeting_details set exact_location_visibility='public' where proposal_id='a9020000-0000-4000-8000-000000000001';
 set local role anon;
 select ok(public.get_public_item_location_v1('one_time','a9020000-0000-4000-8000-000000000001')->'exact_place'->>'label' like 'SECRET%','Explicit canonical public exact visibility permits detail projection');
+select is(public.get_location_preview_v1('one_time','a9020000-0000-4000-8000-000000000001','public_detail')->'place'->>'kind','address','MAP03 public exact detail');
+select is(public.get_location_preview_v1('one_time','a9020000-0000-4000-8000-000000000001','card')->'place'->>'kind','locality','MAP03 public exact never becomes card precision');
 reset role;
 update public.proposal_meeting_details set exact_location_visibility='participants' where proposal_id='a9020000-0000-4000-8000-000000000001';
 select is(public.get_public_item_location_v1('one_time','a9020000-0000-4000-8000-000000000001')->'exact_place','null'::jsonb,'Visibility revocation removes public precision');
+select is(public.get_location_preview_v1('one_time','a9020000-0000-4000-8000-000000000001','public_detail')->'place'->>'kind','locality','MAP03 visibility revocation removes detail precision');
 select ok(private.proposal_template_reusable_content('a9020000-0000-4000-8000-000000000001')::text not like '%SECRET%','Template reusable allowlist excludes source-private place metadata/points');
 
 -- A legacy manual edit drops verified public data rather than leaving an old pin.
@@ -177,6 +200,8 @@ set local role authenticated;
 select lives_ok($$select public.apply_item_location_v1('a9010000-0000-4000-8000-000000000001','one_time','a9020000-0000-4000-8000-000000000001',current_setting('test.map01.revision')::bigint,gen_random_uuid(),'clear',null,'clear',null)$$,'Clear works without provider access and preserves manual drafts');
 reset role;
 select is((select public_location_label from public.proposals where id='a9020000-0000-4000-8000-000000000001'),'Synthetic area','Clear preserves current public text');
+select is(public.get_location_preview_v1('one_time','a9020000-0000-4000-8000-000000000001','card')->'place','null'::jsonb,'MAP03 retained text cannot recreate a point');
+select is(public.get_location_preview_v1('one_time','a9020000-0000-4000-8000-000000000001','card')->'legacy'->>'country_code','IT','MAP03 safe legacy country retained');
 
 -- Expiry, cross-item and kill-switch checks at the durable boundary.
 select set_config('test.map01.resource',pg_temp.receipt('a9010000-0000-4000-8000-000000000001','resource','a9020000-0000-4000-8000-000000000003','public','address')::text,true);
@@ -198,13 +223,13 @@ reset role;
 -- Enforceable metering: global, per-actor daily and per-minute reservations.
 update private.location_search_config set enabled=true,global_daily=1,actor_daily=80,actor_minute=10;
 delete from private.location_search_batches; delete from private.location_search_budgets;
-select is(public.reserve_location_search_v1('a9010000-0000-4000-8000-000000000001','recurring','a9020000-0000-4000-8000-000000000002',1,'exact',gen_random_uuid(),repeat('b',64))->>'status','ok','Budget allows first request');
-select is(public.reserve_location_search_v1('a9010000-0000-4000-8000-000000000001','recurring','a9020000-0000-4000-8000-000000000002',1,'exact',gen_random_uuid(),repeat('c',64))->>'status','budget_exhausted','Global cap is enforced before second provider call');
+select is(public.reserve_location_search_v1('a9010000-0000-4000-8000-000000000001','recurring','a9020000-0000-4000-8000-000000000002',(select location_revision from public.recurring_activities where id='a9020000-0000-4000-8000-000000000002'),'exact',gen_random_uuid(),repeat('b',64))->>'status','ok','Budget allows first request');
+select is(public.reserve_location_search_v1('a9010000-0000-4000-8000-000000000001','recurring','a9020000-0000-4000-8000-000000000002',(select location_revision from public.recurring_activities where id='a9020000-0000-4000-8000-000000000002'),'exact',gen_random_uuid(),repeat('c',64))->>'status','budget_exhausted','Global cap is enforced before second provider call');
 update private.location_search_config set global_daily=1000,actor_daily=1;
-select is(public.reserve_location_search_v1('a9010000-0000-4000-8000-000000000001','recurring','a9020000-0000-4000-8000-000000000002',1,'exact',gen_random_uuid(),repeat('c',64))->>'status','budget_exhausted','Per-actor daily cap enforced');
+select is(public.reserve_location_search_v1('a9010000-0000-4000-8000-000000000001','recurring','a9020000-0000-4000-8000-000000000002',(select location_revision from public.recurring_activities where id='a9020000-0000-4000-8000-000000000002'),'exact',gen_random_uuid(),repeat('c',64))->>'status','budget_exhausted','Per-actor daily cap enforced');
 update private.location_search_config set actor_daily=80,actor_minute=1;
-select is(public.reserve_location_search_v1('a9010000-0000-4000-8000-000000000001','recurring','a9020000-0000-4000-8000-000000000002',1,'exact',gen_random_uuid(),repeat('c',64))->>'status','rate_limited','Per-actor minute cap enforced');
+select is(public.reserve_location_search_v1('a9010000-0000-4000-8000-000000000001','recurring','a9020000-0000-4000-8000-000000000002',(select location_revision from public.recurring_activities where id='a9020000-0000-4000-8000-000000000002'),'exact',gen_random_uuid(),repeat('c',64))->>'status','rate_limited','Per-actor minute cap enforced');
 delete from private.location_search_config;
-select is(public.reserve_location_search_v1('a9010000-0000-4000-8000-000000000001','recurring','a9020000-0000-4000-8000-000000000002',1,'exact',gen_random_uuid(),repeat('c',64))->>'status','disabled','Missing metering configuration fails closed');
+select is(public.reserve_location_search_v1('a9010000-0000-4000-8000-000000000001','recurring','a9020000-0000-4000-8000-000000000002',(select location_revision from public.recurring_activities where id='a9020000-0000-4000-8000-000000000002'),'exact',gen_random_uuid(),repeat('c',64))->>'status','disabled','Missing metering configuration fails closed');
 select * from finish();
 rollback;

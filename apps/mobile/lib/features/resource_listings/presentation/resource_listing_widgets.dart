@@ -2,6 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 import '../../../core/theme/app_tokens.dart';
+import '../../locations/domain/location_preview.dart';
+import '../../locations/presentation/location_preview_panel.dart';
+import '../../locations/presentation/location_attribution.dart';
+
 import '../../../l10n/generated/app_localizations.dart';
 import '../../cover_media/presentation/cover_image.dart';
 import '../domain/resource_listing_models.dart';
@@ -167,6 +171,8 @@ class PublicResourceListingCard extends StatelessWidget {
             countryCode: listing.countryCode,
           );
     return Semantics(
+      container: true,
+      explicitChildNodes: true,
       button: true,
       label: [
         mode,
@@ -238,12 +244,16 @@ class PublicResourceListingCard extends StatelessWidget {
                           text: interest,
                           key: Key('resource-interest-count-${listing.id}'),
                         ),
-                        _IconText(
-                          icon: Icons.location_on_outlined,
-                          text: location,
-                          key: Key('resource-location-${listing.id}'),
-                        ),
                       ],
+                    ),
+                    LocationPreviewPanel(
+                      item: PreviewItem('resource', listing.id),
+                      legacy: LegacyPreviewArea(
+                        listing.locality,
+                        listing.countryCode,
+                      ),
+                      publicLabel: location,
+                      key: Key('resource-location-${listing.id}'),
                     ),
                     if (footer case final footer?) ...[
                       const SizedBox(height: AppSpacing.medium),
@@ -266,6 +276,7 @@ class ResourceListingLocation extends StatelessWidget {
     required this.locality,
     required this.administrativeArea,
     required this.countryCode,
+    this.listingId,
     super.key,
   });
 
@@ -273,6 +284,7 @@ class ResourceListingLocation extends StatelessWidget {
   final String locality;
   final String? administrativeArea;
   final String countryCode;
+  final String? listingId;
 
   @override
   Widget build(BuildContext context) {
@@ -290,7 +302,18 @@ class ResourceListingLocation extends StatelessWidget {
           style: Theme.of(context).textTheme.titleLarge,
         ),
         const SizedBox(height: AppSpacing.small),
-        Text(location, key: const Key('resource-canonical-location')),
+        if (listingId case final id?)
+          LocationPreviewPanel(
+            item: PreviewItem('resource', id),
+            legacy: LegacyPreviewArea(locality, countryCode),
+            publicLabel: location,
+            detail: true,
+            labelKey: const Key('resource-canonical-location'),
+          )
+        else ...[
+          Text(location, key: const Key('resource-canonical-location')),
+          const LocationAttribution(),
+        ],
       ],
     );
   }

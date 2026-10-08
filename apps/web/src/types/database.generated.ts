@@ -3036,6 +3036,10 @@ export type Database = {
         }
         Returns: string
       }
+      finish_location_preview_v1: {
+        Args: { p_image_base64?: string; p_image_key: string; p_token: string }
+        Returns: undefined
+      }
       get_authorized_item_location_v1: {
         Args: { p_expected_profile_id: string; p_item: string; p_kind: string }
         Returns: Json
@@ -3047,6 +3051,15 @@ export type Database = {
           invitation_id: string
           invite_token: string
         }[]
+      }
+      get_location_preview_v1: {
+        Args: {
+          p_expected_profile_id?: string
+          p_item: string
+          p_kind: string
+          p_view: string
+        }
+        Returns: Json
       }
       get_moderation_case_corroboration: {
         Args: { p_case_id: string; p_expected_staff_profile_id: string }
@@ -3572,6 +3585,10 @@ export type Database = {
       }
       get_public_item_location_v1: {
         Args: { p_item: string; p_kind: string }
+        Returns: Json
+      }
+      get_public_location_previews_v1: {
+        Args: { p_items: Json }
         Returns: Json
       }
       get_public_profile: {
@@ -5223,6 +5240,10 @@ export type Database = {
           p_skill_ids?: string[]
         }
         Returns: string
+      }
+      reserve_location_preview_v1: {
+        Args: { p_actor: string; p_cacheable: boolean; p_image_key: string }
+        Returns: Json
       }
       reserve_location_search_v1: {
         Args: {

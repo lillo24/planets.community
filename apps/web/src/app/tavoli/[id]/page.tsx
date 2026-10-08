@@ -1,3 +1,4 @@
+import { LocationAttribution } from "@/features/locations/location-attribution";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { CalendarDaysIcon, MapPinIcon } from "lucide-react";
@@ -90,6 +91,7 @@ export default async function TavoloDetailPage({
               <MapPinIcon aria-hidden="true" className="size-5 shrink-0" />
               {activity.public_location_label}
             </p>
+            <LocationAttribution />
             {activity.exact_location.kind === "restricted" ? (
               <p data-testid="restricted-location">
                 Exact location available after joining.

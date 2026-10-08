@@ -1,4 +1,4 @@
-# Shared location editing
+# Shared locations
 
 Owns MAP01 search contracts and MAP02's editor-local transaction. Production
 still uses `DisabledPlaceSearchGateway`: manual fields remain functional. The
@@ -46,8 +46,7 @@ Short-lived receipt objects must not enter draft snapshots. The transient
 controller is wired through a **disabled production factory**. Actor/form
 generations, readiness, entitlement denials and expiry revoke transient work.
 Credits stay visible after clear and in manual mode because derived ordinary
-text may survive geometry. MAP03 must credit other public surfaces before
-activation. A native fake does not prove live provider authorization.
+text may survive geometry. MAP03 credits relevant public surfaces; provider activation still requires owner review. A native fake does not prove live provider authorization.
 
 Projects choose an independent public locality and optional exact address/venue;
 instructions and Participants/Public remain separate. Resources have one public
@@ -59,3 +58,12 @@ Future private maps belong only to canonical identity-bound protected reads,
 never shared public caches.
 
 See [provider readiness](../../../../../docs/development/location-provider-readiness.md).
+
+MAP03 is separate from editing. The location_preview domain model defines
+read-only precision and Maps URLs; location_preview_gateway owns RPCs, the
+disabled static factory and launcher. public_preview_batch owns bounded
+public-only read/image caches. location_preview_panel owns laziness, generations,
+leases, uncached native decoding and distinct taps. location_attribution is the
+fixed linked credit atom shared with editors. The old location_fallbacks map
+remains a compatibility widget; real detail now uses the shared panel.
+See [MAP03](../../../../../docs/development/map03-location-previews.md).

@@ -26,6 +26,8 @@ dependencies:
   url_launcher: 6.3.2
 
 dev_dependencies:
+  # Already resolved via Supabase; declares SDK binary-transport test fixtures.
+  http: 1.6.0
   flutter_driver:
     sdk: flutter
   integration_test:

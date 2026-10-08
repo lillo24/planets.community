@@ -77,26 +77,28 @@ void main() {
     tester,
   ) async {
     await tester.pumpWidget(
-      _localized(
-        ListView(
-          children: [
-            ProposalCard(
-              proposal: proposalSummaryFixture(
-                capacity: projectCapacityFixture(
-                  registrationCapacity: 4,
-                  currentParticipantCount: 3,
+      ProviderScope(
+        child: _localized(
+          ListView(
+            children: [
+              ProposalCard(
+                proposal: proposalSummaryFixture(
+                  capacity: projectCapacityFixture(
+                    registrationCapacity: 4,
+                    currentParticipantCount: 3,
+                  ),
                 ),
+                onTap: () {},
               ),
-              onTap: () {},
-            ),
-            ProposalCard(
-              proposal: proposalSummaryFixture(
-                id: 'legacy',
-                capacity: projectCapacityFixture(registrationCapacity: null),
+              ProposalCard(
+                proposal: proposalSummaryFixture(
+                  id: 'legacy',
+                  capacity: projectCapacityFixture(registrationCapacity: null),
+                ),
+                onTap: () {},
               ),
-              onTap: () {},
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -356,6 +358,8 @@ void main() {
   testWidgets('direct detail shows event schedule and Required/Useful skills', (
     tester,
   ) async {
+    await tester.binding.setSurfaceSize(const Size(800, 1200));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
     final gateway = FakeProposalGateway()
       ..publicDetail = proposalDetailFixture(
         skills: [

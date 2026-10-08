@@ -113,3 +113,7 @@ server-only key, approve quota/cost budgets, complete public attribution and
 native provider QA, and deliberately review scoped mobile factory registration
 plus both runtime and database kill switches. No deployment, accounts, billing,
 signing or publishing occurs in MAP02.
+
+[MAP03](map03-location-previews.md) now owns read-only previews, public batching,
+static transport, public attribution and the shared rendering/autocomplete
+credit ceiling. Provider defaults remain disabled.

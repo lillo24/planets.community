@@ -16,6 +16,9 @@ import type {
 describe("public Tavoli presentation", () => {
   it("renders a linked card with topic, rough location, and event-zone meeting", () => {
     render(<RecurringActivityCard activity={summary} />);
+    expect(
+      screen.getByRole("link", { name: "Powered by Geoapify" }),
+    ).toHaveAttribute("href", "https://www.geoapify.com/");
 
     expect(
       screen.getByRole("link", { name: "Philosophy table" }),

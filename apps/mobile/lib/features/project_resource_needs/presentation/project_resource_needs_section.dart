@@ -23,9 +23,13 @@ class _ProjectResourceNeedsSectionState
     Future<void>.microtask(_load);
   }
 
-  Future<void> _load() => ref
-      .read(publicProjectResourceNeedsProvider(widget.projectId).notifier)
-      .load();
+  Future<void> _load() async {
+    // A lazy detail section can leave the viewport before its microtask runs.
+    if (!mounted) return;
+    await ref
+        .read(publicProjectResourceNeedsProvider(widget.projectId).notifier)
+        .load();
+  }
 
   @override
   Widget build(BuildContext context) {
