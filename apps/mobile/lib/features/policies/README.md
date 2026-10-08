@@ -12,6 +12,9 @@
   and generation checks for identity/version replacement and disposal. The app
   router gates editors, management, message details and invitation continuations.
   Standalone router constructors deny writing when no acceptance reader is given.
+  Router refresh waits until after an active build frame. Native duplicate
+  suppression preserves a pending acceptance form, but lets an acknowledged
+  cold-start delivery resume its continuation.
   Public inline Resource request/search creation rechecks before opening/writing.
 - `presentation/policy_acceptance_screen.dart` owns the unchecked control,
   provisional status, separate Terms/Rules links and disabled-until-checked action.

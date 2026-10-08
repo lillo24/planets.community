@@ -268,4 +268,30 @@ void main() {
     expect(find.textContaining('alice@example.test'), findsNothing);
     expect(find.byKey(const Key('help-mail-status')), findsNothing);
   });
+  testWidgets('native cold start resumes only after explicit acknowledgement', (
+    tester,
+  ) async {
+    final destination = "/join/project/${'c' * 43}";
+    tester.platformDispatcher.defaultRouteNameTestValue =
+        'https://planets.community$destination';
+    addTearDown(tester.platformDispatcher.clearDefaultRouteNameTestValue);
+    final store = FakePolicyAcceptanceStore();
+    final app = await pumpHelp(
+      tester,
+      auth: FakeAuthGateway(
+        snapshot: const AuthSnapshot(identity: AuthIdentity(id: 'alice')),
+      ),
+      policyStore: store,
+    );
+    await tester.pumpAndSettle();
+    final router = app.read(appRouterProvider);
+    expect(router.state.uri.path, policyAcceptancePath);
+    expect(store.writes, 0);
+    await helpTap(tester, 'policy-acceptance-checkbox');
+    await helpTap(tester, 'policy-acceptance-continue');
+    await tester.pumpAndSettle();
+    expect(store.writes, 1);
+    expect(router.state.uri.path, destination);
+    expect(tester.takeException(), isNull);
+  });
 }

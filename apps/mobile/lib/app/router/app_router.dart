@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -143,7 +144,8 @@ RoutingConfig _routingConfig(
                 ((current.uri.path == '/auth' ||
                         current.uri.path == '/auth/verify' ||
                         current.uri.path == '/profile/edit' ||
-                        current.uri.path == policyAcceptancePath) &&
+                        (current.uri.path == policyAcceptancePath &&
+                            !(readPolicyAccepted?.call() ?? false))) &&
                     continuation == destination))) {
           startupFlow?.deferForExternalJourney();
           return const Block.stop(); // Preserve the existing match list/form.
@@ -1010,7 +1012,20 @@ final appRouterProvider = Provider<GoRouter>((ref) {
     }
     router.refresh();
   });
-  ref.listen(policyAcceptanceProvider, (_, _) => router.refresh());
+  ref.listen(policyAcceptanceProvider, (_, _) {
+    // Identity/version rebuilding may be observed while redirect is building
+    // Router. Refresh after that frame, while still denying writes immediately.
+    if (SchedulerBinding.instance.schedulerPhase ==
+        SchedulerPhase.persistentCallbacks) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (ref.mounted) {
+          router.refresh();
+        }
+      });
+    } else {
+      router.refresh();
+    }
+  });
   ref.listen(pendingEmailOtpProvider, (_, _) => router.refresh());
   ref.listen(authCommandProvider, (previous, next) {
     if (next.didSignOut &&
