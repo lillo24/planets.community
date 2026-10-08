@@ -13,6 +13,11 @@ earlier deferred schema/provider shortlist below. Free commercial production
 scope still needs owner clarification before activation. MAP02 can develop on
 MAP01's implemented head without a live account/key.
 
+MAP02 implements reusable editor selection and deterministic tests. Default
+registration and both backend switches remain off; manual fields still work.
+See [MAP02](map02-location-selector.md) for scoped activation wiring, draft/receipt
+ordering and the MAP03 attribution gate.
+
 ## Historical UI-NEXT-04 assessment
 
 The following assessment records the former disabled-only delivery. Its

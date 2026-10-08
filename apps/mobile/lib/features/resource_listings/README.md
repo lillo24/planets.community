@@ -3,7 +3,12 @@
 MAP01 adds a nullable canonical public selected location/point through versioned
 owner-only receipt writes. It introduces no private pickup or Project membership
 boundary. Legacy manual edits clear verified geometry; no search UI or map is
-activated. See the [location contract](../../../../../docs/development/map01-geoapify-location.md).
+activated by default. MAP02 adds the shared selector exercised through injected
+gateways, with one public locality/address/amenity slot and no participant
+control or private pickup address. Manual Save/Publish/Close remains independent
+of lookup. Editor families and stable creation UUIDs isolate draft retry;
+canonical refresh updates public text without overwriting unrelated form edits.
+See the [MAP02 contract](../../../../../docs/development/map02-location-selector.md).
 
 This feature owns the Flutter discovery and owner-management experience for
 standalone Scambio-Dona listings. It stays separate from Projects,

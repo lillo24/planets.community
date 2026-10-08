@@ -40,8 +40,9 @@ abstract interface class RecurringActivityGateway {
   );
   Future<String> createDraft(
     String expectedCreatorId,
-    RecurringActivityInput input,
-  );
+    RecurringActivityInput input, {
+    String? clientRequestId,
+  });
   Future<void> updateOwnActivity(
     String expectedCreatorId,
     String activityId,
@@ -244,10 +245,16 @@ class SupabaseRecurringActivityGateway implements RecurringActivityGateway {
   @override
   Future<String> createDraft(
     String expectedCreatorId,
-    RecurringActivityInput input,
-  ) => _client.rpc<String>(
-    'create_recurring_activity_draft',
-    params: _contentParams(expectedCreatorId, input),
+    RecurringActivityInput input, {
+    String? clientRequestId,
+  }) => _client.rpc<String>(
+    clientRequestId == null
+        ? 'create_recurring_activity_draft'
+        : 'create_editor_recurring_activity_draft',
+    params: {
+      ..._contentParams(expectedCreatorId, input),
+      'p_client_request_id': ?clientRequestId,
+    },
   );
 
   @override

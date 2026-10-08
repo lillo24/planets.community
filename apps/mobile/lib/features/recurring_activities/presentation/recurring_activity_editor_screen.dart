@@ -3,6 +3,7 @@ import 'package:flutter/rendering.dart' show ScrollCacheExtent;
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:uuid/uuid.dart';
 import 'package:intl/intl.dart';
 
 import '../../../core/theme/app_tokens.dart';
@@ -11,7 +12,9 @@ import '../../../core/widgets/error_state.dart';
 import '../../../core/widgets/loading_state.dart';
 import '../../../devtools/demo/demo_widgets.dart';
 import '../../../l10n/generated/app_localizations.dart';
+import '../../locations/presentation/location_editor_section.dart';
 import '../../auth/application/auth_session_controller.dart';
+import '../../auth/domain/auth_models.dart';
 import '../../cover_media/domain/cover_media_models.dart';
 import '../../cover_media/presentation/cover_editor_section.dart';
 import '../../profile_photo/presentation/profile_photo_trust_gate.dart';
@@ -31,6 +34,14 @@ class RecurringActivityEditorScreen extends ConsumerStatefulWidget {
 
 class _RecurringActivityEditorScreenState
     extends ConsumerState<RecurringActivityEditorScreen> {
+  var _sessionId = const Uuid().v4();
+  NotifierProvider<
+    RecurringActivityEditorController,
+    RecurringActivityEditorState
+  >
+  get _editorProvider => recurringActivityEditorSessionProvider(_sessionId);
+  String? _retainedId;
+  final _locationHandle = LocationEditorHandle();
   final _formKey = GlobalKey<FormState>();
   final _title = TextEditingController();
   final _summary = TextEditingController();
@@ -65,12 +76,55 @@ class _RecurringActivityEditorScreenState
     Future<void>.microtask(_load);
   }
 
+  void _resetFormScope() {
+    _locationHandle.beforeContentSave();
+    _sessionId = const Uuid().v4();
+    _retainedId = null;
+    _coverChange = const CoverChange.unchanged();
+    _attemptPublish = false;
+    for (final field in [
+      _title,
+      _summary,
+      _description,
+      _capacity,
+      _topic,
+      _country,
+      _locality,
+      _administrativeArea,
+      _publicLocation,
+      _exactMeeting,
+      _timezone,
+      _duration,
+    ]) {
+      field.clear();
+    }
+    _hydratedId = null;
+    _hasSchedule = false;
+    _startTime = null;
+    _effectiveFrom = null;
+    _countOrganizersTowardCapacity = false;
+    _visibility = RecurringExactLocationVisibility.participants;
+    _timezone.text = 'UTC';
+  }
+
+  @override
+  void didUpdateWidget(RecurringActivityEditorScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.activityId != widget.activityId) {
+      _resetFormScope();
+      Future<void>.microtask(_load);
+    }
+  }
+
   Future<void> _load() async {
+    final auth = ref.read(authSessionProvider);
     final identity = _expectedIdentity;
-    if (identity != null) {
+    if (auth.phase == AuthSessionPhase.ready &&
+        auth.identity?.id == identity &&
+        identity != null) {
       await ref
-          .read(recurringActivityEditorProvider.notifier)
-          .load(identity, widget.activityId);
+          .read(_editorProvider.notifier)
+          .load(identity, widget.activityId ?? _retainedId);
     }
   }
 
@@ -97,12 +151,31 @@ class _RecurringActivityEditorScreenState
 
   @override
   Widget build(BuildContext context) {
+    ref.listen(authSessionProvider.select((s) => (s.phase, s.identity?.id)), (
+      previous,
+      next,
+    ) {
+      _locationHandle.beforeContentSave();
+      if (previous?.$2 != next.$2) {
+        _resetFormScope();
+        _expectedIdentity = next.$2;
+      }
+      if (next.$1 == AuthSessionPhase.ready) {
+        _expectedIdentity = next.$2;
+        Future<void>.microtask(_load);
+      }
+    });
+
     final l10n = AppLocalizations.of(context);
-    final state = ref.watch(recurringActivityEditorProvider);
+    final state = ref.watch(_editorProvider);
     final identity = ref.watch(authSessionProvider).identity?.id;
-    final belongsToIdentity = identity != null && identity == _expectedIdentity;
+    final belongsToIdentity =
+        ref.watch(authSessionProvider).phase == AuthSessionPhase.ready &&
+        identity != null &&
+        identity == _expectedIdentity;
     if (belongsToIdentity) {
       final activity = state.activity;
+      if (activity != null) _retainedId = activity.id;
       if (activity != null && _hydratedId != activity.id) _hydrate(activity);
     }
     final existing = belongsToIdentity ? state.activity : null;
@@ -147,6 +220,7 @@ class _RecurringActivityEditorScreenState
                         ),
                       ),
                     _field(
+                      fieldKey: const Key('tavoli-title-field'),
                       controller: _title,
                       label: l10n.tavoliTitleLabel,
                       max: 100,
@@ -204,40 +278,80 @@ class _RecurringActivityEditorScreenState
                       max: 120,
                     ),
                     const SizedBox(height: AppSpacing.medium),
-                    Text(
-                      l10n.tavoliLocationTitle,
-                      style: Theme.of(context).textTheme.titleLarge,
-                    ),
-                    _field(
-                      controller: _country,
-                      label: l10n.tavoliCountryLabel,
-                      max: 2,
-                      requiredForPublish: true,
-                      validator: (value) {
-                        final trimmed = value?.trim() ?? '';
-                        if (trimmed.isNotEmpty &&
-                            !RegExp(r'^[A-Za-z]{2}$').hasMatch(trimmed)) {
-                          return l10n.proposalCountryCodeError;
+                    LocationEditorSection(
+                      key: ValueKey(_sessionId),
+                      handle: _locationHandle,
+                      manualPublicLabel: () => _publicLocation.text,
+                      actorId: identity,
+                      itemKind: 'recurring',
+                      itemId: () => ref.read(_editorProvider).activity?.id,
+                      savePending: () async =>
+                          await _submit(false, navigate: false)
+                          ? ref.read(_editorProvider).activity?.id
+                          : null,
+                      enabled: !structuralAccessDenied,
+                      exactIsPublic:
+                          _visibility ==
+                          RecurringExactLocationVisibility.public,
+                      contentControllers: [
+                        _title,
+                        _summary,
+                        _description,
+                        _capacity,
+                        _topic,
+                        _country,
+                        _locality,
+                        _administrativeArea,
+                        _publicLocation,
+                        _exactMeeting,
+                        _timezone,
+                        _duration,
+                      ],
+                      contentVersion:
+                          '$_visibility:$_hasSchedule:$_recurrenceType:$_weekday:$_dayOfMonth:$_startTime:$_effectiveFrom:$_countOrganizersTowardCapacity:$_coverChange',
+                      onCanonical: (value) {
+                        final place = value.publicPlace;
+                        if (place != null) {
+                          _country.text = 'IT';
+                          _locality.text = place.locality;
+                          _administrativeArea.text =
+                              place.administrativeArea ?? '';
+                          _publicLocation.text = place.label;
                         }
-                        return null;
                       },
-                    ),
-                    _field(
-                      controller: _locality,
-                      label: l10n.tavoliLocalityLabel,
-                      max: 120,
-                      requiredForPublish: true,
-                    ),
-                    _field(
-                      controller: _administrativeArea,
-                      label: l10n.tavoliAdministrativeAreaLabel,
-                      max: 120,
-                    ),
-                    _field(
-                      controller: _publicLocation,
-                      label: l10n.tavoliPublicLocationLabel,
-                      max: 180,
-                      requiredForPublish: true,
+                      manualChildren: [
+                        _field(
+                          controller: _country,
+                          label: l10n.tavoliCountryLabel,
+                          max: 2,
+                          requiredForPublish: true,
+                          validator: (value) {
+                            final trimmed = value?.trim() ?? '';
+                            if (trimmed.isNotEmpty &&
+                                !RegExp(r'^[A-Za-z]{2}$').hasMatch(trimmed)) {
+                              return l10n.proposalCountryCodeError;
+                            }
+                            return null;
+                          },
+                        ),
+                        _field(
+                          controller: _locality,
+                          label: l10n.tavoliLocalityLabel,
+                          max: 120,
+                          requiredForPublish: true,
+                        ),
+                        _field(
+                          controller: _administrativeArea,
+                          label: l10n.tavoliAdministrativeAreaLabel,
+                          max: 120,
+                        ),
+                        _field(
+                          controller: _publicLocation,
+                          label: l10n.tavoliPublicLocationLabel,
+                          max: 180,
+                          requiredForPublish: true,
+                        ),
+                      ],
                     ),
                     _field(
                       controller: _exactMeeting,
@@ -558,6 +672,7 @@ class _RecurringActivityEditorScreenState
   }
 
   Widget _field({
+    Key? fieldKey,
     required TextEditingController controller,
     required String label,
     required int max,
@@ -570,8 +685,9 @@ class _RecurringActivityEditorScreenState
   }) => Padding(
     padding: const EdgeInsets.only(top: AppSpacing.small),
     child: TextFormField(
+      key: fieldKey,
       controller: controller,
-      enabled: !ref.watch(recurringActivityEditorProvider).isBusy,
+      enabled: !ref.watch(_editorProvider).isBusy,
       maxLines: maxLines,
       keyboardType: keyboardType,
       inputFormatters: inputFormatters,
@@ -633,18 +749,19 @@ class _RecurringActivityEditorScreenState
     countOrganizersTowardCapacity: _countOrganizersTowardCapacity,
   );
 
-  Future<void> _submit(bool publish) async {
-    final existing = ref.read(recurringActivityEditorProvider).activity;
+  Future<bool> _submit(bool publish, {bool navigate = true}) async {
+    _locationHandle.beforeContentSave();
+    final existing = ref.read(_editorProvider).activity;
     final existingPublished =
         existing != null &&
         existing.lifecycle != RecurringActivityLifecycle.draft;
     setState(() => _attemptPublish = publish || existingPublished);
     final valid = _formKey.currentState?.validate() ?? false;
     if (!valid || ((publish || existingPublished) && !_schedulePublishable)) {
-      return;
+      return false;
     }
     final identity = _expectedIdentity;
-    if (identity == null) return;
+    if (identity == null) return false;
     if (publish &&
         !await requireProfilePhotoForTrustAction(
           context: context,
@@ -652,10 +769,10 @@ class _RecurringActivityEditorScreenState
           expectedProfileId: identity,
           reason: ProfilePhotoTrustReason.publishPersonalActivity,
         )) {
-      return;
+      return false;
     }
-    if (!mounted) return;
-    final controller = ref.read(recurringActivityEditorProvider.notifier);
+    if (!mounted) return false;
+    final controller = ref.read(_editorProvider.notifier);
     final id = publish
         ? await controller.publish(
             identity,
@@ -676,18 +793,19 @@ class _RecurringActivityEditorScreenState
     if (id == null &&
         mounted &&
         publish &&
-        ref.read(recurringActivityEditorProvider).failure ==
+        ref.read(_editorProvider).failure ==
             RecurringActivityFailureKind.profilePhotoRequired) {
       await showProfilePhotoTrustGate(
         context: context,
         reason: ProfilePhotoTrustReason.publishPersonalActivity,
       );
-      return;
+      return false;
     }
-    if (id == null || !mounted) return;
+    if (id == null || !mounted) return false;
     _coverChange = const CoverChange.unchanged();
     ref.invalidate(ownRecurringActivitiesProvider);
     ref.invalidate(publicRecurringActivitiesProvider);
+    if (!navigate) return true;
     if (publish) {
       context.go('/tavoli/mine');
     } else if (widget.activityId == null) {
@@ -697,6 +815,7 @@ class _RecurringActivityEditorScreenState
         SnackBar(content: Text(AppLocalizations.of(context).tavoliSaveChanges)),
       );
     }
+    return true;
   }
 
   Future<void> _runLifecycle(
@@ -709,12 +828,12 @@ class _RecurringActivityEditorScreenState
     final identity = _expectedIdentity;
     if (identity == null) return;
     final succeeded = await operation(
-      ref.read(recurringActivityEditorProvider.notifier),
+      ref.read(_editorProvider.notifier),
       identity,
     );
     if (!succeeded &&
         mounted &&
-        ref.read(recurringActivityEditorProvider).failure !=
+        ref.read(_editorProvider).failure !=
             RecurringActivityFailureKind.forbidden) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(AppLocalizations.of(context).tavoliSafeError)),

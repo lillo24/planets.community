@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:uuid/uuid.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../auth/application/auth_session_controller.dart';
@@ -263,17 +264,26 @@ final ownResourceListingsProvider =
 
 class ResourceListingEditorController
     extends Notifier<ResourceListingEditorState> {
+  ResourceListingEditorController([this.sessionId]);
+  final String? sessionId;
+  String? _creationRequestId, _boundId;
+  ResourceListingInput? _creationIntent;
   var _revision = 0;
 
   @override
   ResourceListingEditorState build() {
-    ref.listen(authSessionProvider.select((session) => session.identity?.id), (
-      _,
-      _,
-    ) {
-      _revision++;
-      state = const ResourceListingEditorState();
-    });
+    ref.listen(
+      authSessionProvider.select(
+        (session) => (session.phase, session.identity?.id),
+      ),
+      (_, _) {
+        _revision++;
+        _creationRequestId = null;
+        _creationIntent = null;
+        _boundId = null;
+        state = const ResourceListingEditorState();
+      },
+    );
     ref.onDispose(() => _revision++);
     return const ResourceListingEditorState();
   }
@@ -394,7 +404,7 @@ class ResourceListingEditorController
     }
 
     final revision = ++_revision;
-    var retainedId = state.listingId;
+    var retainedId = state.listingId ?? _boundId;
     var createdNow = false;
     var publishCompleted = false;
     state = ResourceListingEditorState(
@@ -409,7 +419,22 @@ class ResourceListingEditorController
       _requireReadyIdentity(expectedOwnerId);
       final gateway = ref.read(resourceListingGatewayProvider);
       if (retainedId == null) {
-        retainedId = await gateway.createDraft(expectedOwnerId, input);
+        _creationRequestId ??= const Uuid().v4();
+        _creationIntent ??= input;
+        retainedId = await gateway.createDraft(
+          expectedOwnerId,
+          _creationIntent!,
+          clientRequestId: _creationRequestId,
+        );
+        if (!_isCurrent(revision, expectedOwnerId)) return null;
+        _boundId = retainedId;
+        if (!identical(input, _creationIntent)) {
+          await gateway.updateOwnResourceListing(
+            expectedOwnerId,
+            retainedId,
+            input,
+          );
+        }
         createdNow = true;
         if (!_isCurrent(revision, expectedOwnerId)) return null;
         state = ResourceListingEditorState(
@@ -624,6 +649,13 @@ class ResourceListingEditorController
     }
   }
 }
+
+final resourceListingEditorSessionProvider = NotifierProvider.autoDispose
+    .family<
+      ResourceListingEditorController,
+      ResourceListingEditorState,
+      String
+    >(ResourceListingEditorController.new);
 
 final resourceListingEditorProvider =
     NotifierProvider<

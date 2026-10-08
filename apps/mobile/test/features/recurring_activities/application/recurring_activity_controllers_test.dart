@@ -17,6 +17,30 @@ import '../../../support/fake_cover_media.dart';
 import '../../../support/fake_recurring_activity.dart';
 
 void main() {
+  test('MAP02 response-loss bootstrap retries one actor request before applying newer content', () async {
+    final gateway = FakeRecurringActivityGateway()
+      ..createResponseError = StateError('synthetic lost response');
+    final session = _readyContainer(gateway);
+    addTearDown(session.container.dispose);
+    addTearDown(session.auth.close);
+    final controller = session.container.read(
+      recurringActivityEditorProvider.notifier,
+    );
+    await controller.load('user-1', null);
+    expect(
+      await controller.saveDraft('user-1', recurringInputFixture()),
+      isNull,
+    );
+    expect(
+      await controller.saveDraft('user-1', recurringInputFixture()),
+      'new-tavolo',
+    );
+    expect(gateway.creationRequests[0], isNotNull);
+    expect(gateway.creationRequests[0], gateway.creationRequests[1]);
+    expect(gateway.ownItems.length, 1);
+    expect(gateway.calls, contains('update:new-tavolo'));
+  });
+
   test(
     'failed refresh retains rows and their pagination snapshot until success',
     () async {

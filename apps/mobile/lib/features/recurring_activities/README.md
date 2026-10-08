@@ -20,6 +20,14 @@ notifications, resources, or occurrence-level editing. The sibling
 
 ## Source map
 
+MAP02 adds the shared location section with default manual entry and disabled
+lookup. Deliberate injected lookup saves content/cover, obtains a canonical ID
+and revision, and completes each public-area or exact receipt separately.
+Instructions, visibility and schedule remain separate. Editor families isolate
+forms; stable actor-bound creation UUIDs recover lost responses before newer
+content updates. Readiness/account/form replacement revokes location work.
+See the [MAP02 contract](../../../../../docs/development/map02-location-selector.md).
+
 - `domain/recurring_activity_models.dart` owns strict public, owner, schedule,
   occurrence, lifecycle, editor-input, validation, and UI-state models.
 - `data/recurring_activity_gateway.dart` is the only Supabase boundary. It

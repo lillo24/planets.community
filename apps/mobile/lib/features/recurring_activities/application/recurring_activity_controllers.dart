@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:uuid/uuid.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../auth/application/auth_session_controller.dart';
@@ -372,17 +373,24 @@ final ownRecurringActivitiesProvider =
 
 class RecurringActivityEditorController
     extends Notifier<RecurringActivityEditorState> {
+  RecurringActivityEditorController([this.sessionId]);
+  final String? sessionId;
+  String? _creationRequestId, _boundId;
+  RecurringActivityInput? _creationIntent;
   var _revision = 0;
 
   @override
   RecurringActivityEditorState build() {
-    ref.listen(authSessionProvider.select((value) => value.identity?.id), (
-      _,
-      _,
-    ) {
-      _revision++;
-      state = const RecurringActivityEditorState();
-    });
+    ref.listen(
+      authSessionProvider.select((value) => (value.phase, value.identity?.id)),
+      (_, _) {
+        _revision++;
+        _creationRequestId = null;
+        _creationIntent = null;
+        _boundId = null;
+        state = const RecurringActivityEditorState();
+      },
+    );
     ref.onDispose(() => _revision++);
     return const RecurringActivityEditorState();
   }
@@ -565,19 +573,29 @@ class RecurringActivityEditorController
     try {
       _requireReadyIdentity(expectedCreatorId);
       final gateway = ref.read(recurringActivityGatewayProvider);
-      final id = existing == null
-          ? await gateway.createDraft(expectedCreatorId, input)
-          : existing.isEditable
-          ? existing.id
-          : throw const RecurringActivityInvalidStateException();
+      var id = existing?.id ?? _boundId;
+      if (id == null) {
+        _creationRequestId ??= const Uuid().v4();
+        _creationIntent ??= input;
+        id = await gateway.createDraft(
+          expectedCreatorId,
+          _creationIntent!,
+          clientRequestId: _creationRequestId,
+        );
+        if (!_isCurrent(revision)) return null;
+        _boundId = id;
+        if (!identical(input, _creationIntent)) {
+          await gateway.updateOwnActivity(expectedCreatorId, id, input);
+        }
+      } else {
+        if (existing != null && !existing.isEditable) {
+          throw const RecurringActivityInvalidStateException();
+        }
+        await gateway.updateOwnActivity(expectedCreatorId, id, input);
+      }
       persistedActivityId = id;
       if (!_isCurrent(revision)) return null;
       _requireReadyIdentity(expectedCreatorId);
-      if (existing != null) {
-        await gateway.updateOwnActivity(expectedCreatorId, id, input);
-        if (!_isCurrent(revision)) return null;
-        _requireReadyIdentity(expectedCreatorId);
-      }
       if (coverChange.kind != CoverChangeKind.unchanged) {
         try {
           await ref
@@ -808,6 +826,13 @@ class RecurringActivityEditorController
     }
   }
 }
+
+final recurringActivityEditorSessionProvider = NotifierProvider.autoDispose
+    .family<
+      RecurringActivityEditorController,
+      RecurringActivityEditorState,
+      String
+    >(RecurringActivityEditorController.new);
 
 final recurringActivityEditorProvider =
     NotifierProvider<

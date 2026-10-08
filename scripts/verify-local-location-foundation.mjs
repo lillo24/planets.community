@@ -259,8 +259,222 @@ try {
     )[0].empty,
     "Disabled failed replace leaves manual draft intact",
   );
+
+  // MAP02: editor bootstrap and canonical receipts in the other domains.
+  // The normalized provider fixture stays entirely synthetic.
+  await db`update private.location_search_config set enabled=true,actor_minute=10 where singleton`;
+  for (const kind of ["recurring", "resource"]) {
+    const domain =
+      kind === "recurring" ? "recurring_activity" : "resource_listing";
+    const expectedKey =
+      kind === "recurring"
+        ? "p_expected_creator_profile_id"
+        : "p_expected_owner_profile_id";
+    const args = {
+      [expectedKey]: owner.id,
+      p_client_request_id: randomUUID(),
+      p_title: "MAP02 sparse editor draft",
+      p_description: "",
+      p_country_code: "FR",
+      p_locality: "Legacy locality",
+      p_administrative_area: null,
+      p_public_location_label: "Legacy text",
+      ...(kind === "resource"
+        ? { p_listing_mode: "donate" }
+        : {
+            p_summary: "",
+            p_topic: null,
+            p_exact_meeting_text: "Private user instructions",
+            p_exact_location_visibility: "participants",
+            p_recurrence_type: null,
+            p_weekday: null,
+            p_day_of_month: null,
+            p_local_start_time: null,
+            p_duration_minutes: null,
+            p_event_timezone: null,
+            p_effective_from: null,
+            p_registration_capacity: null,
+            p_count_organizers_toward_capacity: false,
+          }),
+    };
+    const createName = "create_editor_" + domain + "_draft";
+    const ids = await Promise.all([
+      rpc(owner.client, createName, args),
+      rpc(owner.client, createName, args),
+    ]);
+    check(ids[0] === ids[1], kind + " duplicate draft deliveries converge");
+    const item = ids[0],
+      recoverName = "recover_editor_" + domain + "_draft";
+    check(
+      (await rpc(owner.client, recoverName, {
+        [expectedKey]: owner.id,
+        p_client_request_id: args.p_client_request_id,
+      })) === item,
+      kind + " lost creation response recovers canonical ID",
+    );
+    check(
+      (await rpc(peer.client, recoverName, {
+        [expectedKey]: peer.id,
+        p_client_request_id: args.p_client_request_id,
+      })) === null,
+      kind + " recovery is actor-bound",
+    );
+    await denied(
+      owner.client,
+      createName,
+      { ...args, p_title: "Changed retry intent" },
+      "22023",
+    );
+    await denied(anonymous, createName, args, "42501");
+    await denied(server, createName, args, "42501");
+    const readArgs = {
+      p_expected_profile_id: owner.id,
+      p_kind: kind,
+      p_item: item,
+    };
+    const initial = await rpc(
+      owner.client,
+      "get_authorized_item_location_v1",
+      readArgs,
+    );
+    const slots = kind === "resource" ? ["public"] : ["area", "exact"];
+    let latest = initial;
+    for (const slot of slots) {
+      const broad = slot === "area";
+      const fixture = broad
+        ? normalizeResults(
+            {
+              results: [
+                {
+                  country_code: "it",
+                  city: "Trento",
+                  state: "Trentino",
+                  result_type: "city",
+                  formatted: "Trento, Trentino",
+                  lat: 46,
+                  lon: 11,
+                  rank: { confidence: 1 },
+                  datasource: { sourcename: "openstreetmap" },
+                },
+              ],
+            },
+            "it",
+          )
+        : normalized;
+      const bound = {
+        p_actor: owner.id,
+        p_kind: kind,
+        p_item: item,
+        p_revision: latest.revision,
+        p_slot: slot,
+        p_session: randomUUID(),
+        p_query_hash: (slot === "area" ? "e" : "f").repeat(64),
+      };
+      const reservedSlot = await rpc(
+        server,
+        "reserve_location_search_v1",
+        bound,
+      );
+      const issuedSlot = await rpc(server, "issue_location_selections_v1", {
+        p_batch: reservedSlot.batch_id,
+        p_places: fixture,
+      });
+      const receiptSlot = issuedSlot.suggestions[0].id;
+      await rpc(server, "resolve_location_selection_v1", {
+        ...Object.fromEntries(
+          Object.entries(bound).filter(([k]) => k !== "p_query_hash"),
+        ),
+        p_receipt: receiptSlot,
+      });
+      const write = {
+        ...readArgs,
+        p_expected_revision: latest.revision,
+        p_request_id: randomUUID(),
+        p_public_action: slot === "exact" ? "unchanged" : "replace",
+        p_public_receipt: slot === "exact" ? null : receiptSlot,
+        p_exact_action: slot === "exact" ? "replace" : "unchanged",
+        p_exact_receipt: slot === "exact" ? receiptSlot : null,
+      };
+      await denied(
+        peer.client,
+        "apply_item_location_v1",
+        { ...write, p_expected_profile_id: peer.id },
+        "42501",
+      );
+      const appliedRevision = await rpc(
+        owner.client,
+        "apply_item_location_v1",
+        write,
+      );
+      check(
+        (await rpc(owner.client, "apply_item_location_v1", write)) ===
+          appliedRevision,
+        kind + " " + slot + " response-loss retry retains mutation ID",
+      );
+      latest = await rpc(
+        owner.client,
+        "get_authorized_item_location_v1",
+        readArgs,
+      );
+      check(
+        latest.revision === appliedRevision,
+        kind + " canonical reread matches committed revision",
+      );
+    }
+    check(
+      latest.public_place !== null,
+      kind + " independently selected public place",
+    );
+    check(
+      kind === "resource"
+        ? latest.exact_place === null
+        : latest.exact_place !== null,
+      kind + " precision/privacy shape is canonical",
+    );
+    if (kind === "recurring") {
+      const [meeting] =
+        await db`select exact_meeting_text,exact_location_visibility from public.recurring_activity_meeting_details where recurring_activity_id=${item}`;
+      check(
+        meeting.exact_meeting_text === "Private user instructions" &&
+          meeting.exact_location_visibility === "participants",
+        "Tavolo selections preserve instructions and visibility",
+      );
+    }
+    await denied(
+      peer.client,
+      "get_authorized_item_location_v1",
+      { ...readArgs, p_expected_profile_id: peer.id },
+      "42501",
+    );
+    check(
+      (await rpc(anonymous, "get_public_item_location_v1", {
+        p_kind: kind,
+        p_item: item,
+      })) === null,
+      kind + " draft has no public selection projection",
+    );
+    await rpc(owner.client, "apply_item_location_v1", {
+      ...readArgs,
+      p_expected_revision: latest.revision,
+      p_request_id: randomUUID(),
+      p_public_action: "clear",
+      p_public_receipt: null,
+      p_exact_action: "unchanged",
+      p_exact_receipt: null,
+    });
+    const cleared = await rpc(
+      owner.client,
+      "get_authorized_item_location_v1",
+      readArgs,
+    );
+    check(
+      cleared.public_place === null &&
+        (kind === "resource" || cleared.exact_place !== null),
+      kind + " clear changes only the requested slot",
+    );
+  }
   console.log(
-    `MAP01 ${checks} authenticated REST/concurrency checks passed; fake provider only, no Geoapify traffic.`,
+    `MAP01/MAP02 ${checks} authenticated REST/concurrency checks passed; fake provider only, no Geoapify traffic.`,
   );
 } finally {
   await db`update private.location_search_config set enabled=${original.enabled},global_daily=${original.global_daily},actor_daily=${original.actor_daily},actor_minute=${original.actor_minute} where singleton`;

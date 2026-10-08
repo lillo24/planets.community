@@ -1,12 +1,18 @@
 # Proposals feature
 
 UI-NEXT-04 keeps every manual location field and canonical meeting read intact.
-The editor uses `locations/presentation/location_fallbacks.dart` for unavailable
-search feedback and the detail for an inert map fallback. The transient search
-controller remains unwired; see `../locations/README.md` and provider readiness
-before any activation. MAP01 adds nullable canonical provider metadata and
-actor/item/revision-bound server receipts, with no editor wiring. Existing
+MAP02's shared `locations/presentation/location_editor_section.dart` keeps manual
+entry while lookup is disabled and exposes injected receipt-backed selection.
+The detail retains its inert map fallback. See `../locations/README.md` and
+provider readiness before activation. MAP01 owns canonical provider metadata and
+actor/item/revision-bound server receipts. Existing
 manual text edits clear stale verified pins. See the [shared location contract](../../../../../docs/development/map01-geoapify-location.md).
+
+Lookup saves through DRAFT01 without navigating, then obtains an authorized
+revision. Public area and exact place are separate slot transactions;
+instructions/visibility stay ordinary content. The location handle revokes
+receipts before Save/Publish. Canonical public text is acknowledged in departure
+snapshots after apply/reread without adding query, receipt, session or point.
 
 This feature owns one-time proposal discovery and authenticated structural
 management for the immutable Creator and current Co-creators.

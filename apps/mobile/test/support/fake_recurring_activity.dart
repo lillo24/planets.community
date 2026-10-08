@@ -18,6 +18,10 @@ typedef RequestedTavoliLoader =
     });
 
 class FakeRecurringActivityGateway implements RecurringActivityGateway {
+  final creationRequests = <String?>[];
+  final _creationReceipts = <String, String>{};
+  Object? createResponseError;
+
   List<PublicRecurringActivitySummary> publicItems = [];
   List<RequestedRecurringActivitySummary> requestedItems = [];
   PublicRecurringActivityDetail? publicDetail;
@@ -120,15 +124,26 @@ class FakeRecurringActivityGateway implements RecurringActivityGateway {
   @override
   Future<String> createDraft(
     String expectedCreatorId,
-    RecurringActivityInput input,
-  ) async {
+    RecurringActivityInput input, {
+    String? clientRequestId,
+  }) async {
     _throwIfNeeded();
     calls.add('create');
+    creationRequests.add(clientRequestId);
+    final receipt = _creationReceipts['$expectedCreatorId:$clientRequestId'];
+    if (clientRequestId != null && receipt != null) return receipt;
     _throwMutationIfNeeded();
     if (mutationDelay case final delay?) await delay;
     lastExpectedIdentity = expectedCreatorId;
     lastInput = input;
     ownItems = [ownRecurringActivityFixture(id: 'new-tavolo', input: input)];
+    if (clientRequestId != null) {
+      _creationReceipts['$expectedCreatorId:$clientRequestId'] = 'new-tavolo';
+    }
+    if (createResponseError case final error?) {
+      createResponseError = null;
+      throw error;
+    }
     return 'new-tavolo';
   }
 

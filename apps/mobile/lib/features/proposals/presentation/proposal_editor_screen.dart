@@ -13,9 +13,9 @@ import '../../../core/widgets/loading_state.dart';
 import '../../../devtools/demo/demo_widgets.dart';
 import '../../../devtools/demo/demo_tools.dart';
 import '../../../l10n/generated/app_localizations.dart';
+import '../../locations/presentation/location_editor_section.dart';
 import '../../auth/application/auth_session_controller.dart';
 import '../../auth/domain/auth_models.dart';
-import '../../locations/presentation/location_fallbacks.dart';
 import '../../cover_media/domain/cover_media_models.dart';
 import '../../cover_media/presentation/cover_editor_section.dart';
 import '../../template_workshop/presentation/template_workshop_screens.dart';
@@ -173,6 +173,7 @@ class _ProposalForm extends ConsumerStatefulWidget {
 
 class _ProposalFormState extends ConsumerState<_ProposalForm>
     with WidgetsBindingObserver {
+  final _locationHandle = LocationEditorHandle();
   final _formKey = GlobalKey<FormState>();
   final _titleAnchor = GlobalKey();
   final _summaryAnchor = GlobalKey();
@@ -582,6 +583,7 @@ class _ProposalFormState extends ConsumerState<_ProposalForm>
   }
 
   Future<bool> _save({required bool publish, bool navigate = true}) async {
+    _locationHandle.beforeContentSave();
     if (_saving ||
         ref.read(proposalEditorSessionProvider(widget.sessionId)).isBusy) {
       return false;
@@ -1054,38 +1056,85 @@ class _ProposalFormState extends ConsumerState<_ProposalForm>
                   ),
                 ),
                 const SizedBox(height: AppSpacing.large),
-                const ManualLocationNotice(),
-                _field(
-                  _country,
-                  l10n.proposalCountryLabel,
-                  2,
-                  anchorKey: _countryAnchor,
-                  fieldKey: const Key('proposal-country'),
-                  required: true,
-                  validator: _validateCountry,
-                ),
-                _field(
-                  _locality,
-                  l10n.proposalLocalityLabel,
-                  120,
-                  anchorKey: _localityAnchor,
-                  fieldKey: const Key('proposal-locality'),
-                  required: true,
-                ),
-                _field(
-                  _administrativeArea,
-                  l10n.proposalAdministrativeAreaLabel,
-                  120,
-                  anchorKey: _administrativeAreaAnchor,
-                  fieldKey: const Key('proposal-administrative-area'),
-                ),
-                _field(
-                  _publicLocation,
-                  l10n.proposalPublicLocationLabel,
-                  180,
-                  anchorKey: _publicLocationAnchor,
-                  fieldKey: const Key('proposal-public-location'),
-                  required: true,
+                LocationEditorSection(
+                  key: ValueKey(widget.sessionId),
+                  handle: _locationHandle,
+                  manualPublicLabel: () => _publicLocation.text,
+                  actorId: widget.identityId,
+                  itemKind: 'one_time',
+                  itemId: () => ref
+                      .read(proposalEditorSessionProvider(widget.sessionId))
+                      .proposal
+                      ?.id,
+                  savePending: () async =>
+                      await _save(publish: false, navigate: false)
+                      ? ref
+                            .read(
+                              proposalEditorSessionProvider(widget.sessionId),
+                            )
+                            .proposal
+                            ?.id
+                      : null,
+                  enabled: contentEditable,
+                  exactIsPublic: _visibility == ExactLocationVisibility.public,
+                  contentControllers: [
+                    _title,
+                    _summary,
+                    _description,
+                    _capacity,
+                    _timezone,
+                    _country,
+                    _locality,
+                    _administrativeArea,
+                    _publicLocation,
+                    _exactLocation,
+                  ],
+                  contentVersion:
+                      '$_startsAt:$_endsAt:$_visibility:$_skills:$_coverRevision:$_countOrganizersTowardCapacity',
+                  onCanonical: (value) {
+                    final place = value.publicPlace;
+                    if (place != null) {
+                      _country.text = 'IT';
+                      _locality.text = place.locality;
+                      _administrativeArea.text = place.administrativeArea ?? '';
+                      _publicLocation.text = place.label;
+                      _acknowledged = _snapshot();
+                    }
+                  },
+                  manualChildren: [
+                    _field(
+                      _country,
+                      l10n.proposalCountryLabel,
+                      2,
+                      anchorKey: _countryAnchor,
+                      fieldKey: const Key('proposal-country'),
+                      required: true,
+                      validator: _validateCountry,
+                    ),
+                    _field(
+                      _locality,
+                      l10n.proposalLocalityLabel,
+                      120,
+                      anchorKey: _localityAnchor,
+                      fieldKey: const Key('proposal-locality'),
+                      required: true,
+                    ),
+                    _field(
+                      _administrativeArea,
+                      l10n.proposalAdministrativeAreaLabel,
+                      120,
+                      anchorKey: _administrativeAreaAnchor,
+                      fieldKey: const Key('proposal-administrative-area'),
+                    ),
+                    _field(
+                      _publicLocation,
+                      l10n.proposalPublicLocationLabel,
+                      180,
+                      anchorKey: _publicLocationAnchor,
+                      fieldKey: const Key('proposal-public-location'),
+                      required: true,
+                    ),
+                  ],
                 ),
                 _field(
                   _exactLocation,

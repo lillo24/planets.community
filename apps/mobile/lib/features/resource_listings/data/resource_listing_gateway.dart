@@ -32,8 +32,9 @@ abstract interface class ResourceListingGateway {
 
   Future<String> createDraft(
     String expectedOwnerId,
-    ResourceListingInput input,
-  );
+    ResourceListingInput input, {
+    String? clientRequestId,
+  });
 
   Future<void> updateOwnResourceListing(
     String expectedOwnerId,
@@ -287,10 +288,16 @@ class SupabaseResourceListingGateway implements ResourceListingGateway {
   @override
   Future<String> createDraft(
     String expectedOwnerId,
-    ResourceListingInput input,
-  ) => _client.rpc<String>(
-    'create_resource_listing_draft',
-    params: contract.contentParams(expectedOwnerId, input),
+    ResourceListingInput input, {
+    String? clientRequestId,
+  }) => _client.rpc<String>(
+    clientRequestId == null
+        ? 'create_resource_listing_draft'
+        : 'create_editor_resource_listing_draft',
+    params: {
+      ...contract.contentParams(expectedOwnerId, input),
+      'p_client_request_id': ?clientRequestId,
+    },
   );
 
   @override

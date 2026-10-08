@@ -21,6 +21,36 @@ const _resourceCoverPath =
     '00000000-0000-4000-8000-000000000301.webp';
 
 void main() {
+  test('MAP02 response-loss bootstrap retries one actor request before applying newer content', () async {
+    final gateway = FakeResourceListingGateway()
+      ..createResponseError = StateError('synthetic lost response');
+    final session = _readyContainer(gateway);
+    addTearDown(session.container.dispose);
+    addTearDown(session.auth.close);
+    final controller = session.container.read(
+      resourceListingEditorProvider.notifier,
+    );
+    await controller.load(resourceOwnerProfileId, null);
+    expect(
+      await controller.save(
+        resourceOwnerProfileId,
+        resourceListingInputFixture(),
+      ),
+      isNull,
+    );
+    expect(
+      await controller.save(
+        resourceOwnerProfileId,
+        resourceListingInputFixture(),
+      ),
+      newResourceListingId,
+    );
+    expect(gateway.creationRequests[0], isNotNull);
+    expect(gateway.creationRequests[0], gateway.creationRequests[1]);
+    expect(gateway.ownItems.length, 1);
+    expect(gateway.calls, contains('update:$newResourceListingId'));
+  });
+
   test('maps the authoritative photo gate to a dedicated failure', () {
     expect(
       mapResourceListingFailure(
