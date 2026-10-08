@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../core/theme/app_tokens.dart';
 import '../core/widgets/planets_hero.dart';
+import '../features/help/presentation/help_routes.dart';
 import '../features/notifications/presentation/home_notification_button.dart';
 import '../l10n/generated/app_localizations.dart';
 
@@ -16,8 +17,21 @@ class FoundationScreen extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(l10n.appTitle),
+        title: FittedBox(
+          fit: BoxFit.scaleDown,
+          alignment: Alignment.centerLeft,
+          child: Text(l10n.appTitle),
+        ),
         actions: [
+          IconButton(
+            key: const Key('open-help-button'),
+            tooltip: l10n.helpTitle,
+            onPressed: () {
+              ScaffoldMessenger.of(context).hideCurrentSnackBar();
+              context.push(HelpRoutes.path);
+            },
+            icon: const Icon(Icons.help_outline),
+          ),
           const HomeNotificationButton(),
           IconButton(
             key: const Key('open-settings-button'),

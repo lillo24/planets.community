@@ -8,7 +8,9 @@ This folder owns application startup presentation and navigation, not backend ru
 - `router/app_navigation_shell.dart` maps the single Material 3 navigation bar to stable branches and routes.
 - `foundation_screen.dart` is Home; its Projects and Cultural Tables entry uses
   the shell's Browse branch switch, its Scambio-Dona entry opens the Browse-owned resource routes,
-  and its AppBar opens public Settings.
+  and its AppBar opens public Help, Notifications and public Settings. The brand
+  scales down when needed to retain all three 48px actions on narrow screens.
+  Opening Help dismisses a transient Home snackbar so it cannot cover the menu.
   Its shared PLANETS hero sits behind opaque functional cards; decorative height
   shrinks for short screens/large text, while cards retain natural height and
   remain scrollable. Home never replays Welcome's entrance; its shared circular
@@ -28,6 +30,11 @@ This folder owns application startup presentation and navigation, not backend ru
 
 The Home branch also owns public `/settings`, `/settings/language`, and
 `/settings/navigation`.
+Public `/help` and its contact/bug/person children live above the shell. Pushing
+Help retains the caller's shell, while direct Back falls back to Home/Help.
+Its [feature map](../features/help/README.md) owns support configuration and draft
+privacy. Tutorial replay pushes the existing `/intro` capability and returns to
+Help without changing first-run status.
 Settings conditionally links ready signed-in profiles to the existing protected
 notification preferences and profile editor routes; it is never itself an Auth
 destination.
@@ -141,9 +148,9 @@ opens with `/notifications` as its return destination. Known
 semantic targets cross to the existing Messages or Browse routes with canonical
 `go` navigation, while unknown targets never guess a destination.
 
-`startup/` owns ordinary signed-out Welcome and the dormant installation tutorial;
+`startup/` owns ordinary signed-out Welcome and the interactive installation tutorial;
 see its [entry and preference contract](startup/README.md). Home keeps public
-discovery, Notifications and Settings without the Auth testing card or envelope.
+discovery, Help, Notifications and Settings without the Auth testing card or envelope.
 When Browse occupies the third slot, Settings offers a labelled Messages row.
 Only `/messages` is public/contextual; all private descendants remain guarded.
 

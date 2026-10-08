@@ -168,3 +168,15 @@ use a separate task emulator rather than the retained founder demo device/stack.
 The widget suite supplies deterministic timer, replay, session and layout checks.
 Native iOS gestures/motion require a separate device run and are not inferred from
 this Android smoke.
+
+## Home Help smoke
+
+`flutter test integration_test/help_smoke_test.dart -d <dedicated-emulator>`
+checks Home Help, the complete replay returning to Help, person-report guidance,
+bug review/edit/copy, and an injected mail handoff with backend-free fixtures.
+To also exercise the real Android missing-handler path, run on an owned QA device
+with no enabled mail app and add `--dart-define=HELP01_NO_MAIL_CLIENT=true`.
+That test-only flag selects the real launcher and expects a visible failure while
+retaining the draft. Do not disable apps on the founder's retained demo device.
+Neither mode sends mail or proves delivery; native composer cancellation with a
+configured account and native iOS handoff still need their own device checks.
