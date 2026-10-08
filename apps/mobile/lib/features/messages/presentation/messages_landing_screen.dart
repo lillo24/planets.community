@@ -2,11 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/theme/app_tokens.dart';
+import '../../../core/widgets/empty_state.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../auth/application/auth_session_controller.dart';
 import '../../auth/application/auth_command_controller.dart';
 import '../../auth/domain/auth_models.dart';
 import '../../auth/presentation/auth_status.dart';
+import '../domain/message_chat_models.dart';
+import 'messages_navigation.dart';
 import 'messages_screen.dart';
 
 /// Only /messages is public. Mount private loaders solely for a ready identity;
@@ -21,64 +25,116 @@ class MessagesLandingScreen extends ConsumerWidget {
     if (session.phase == AuthSessionPhase.ready) {
       return MessagesScreen(key: ValueKey(session.identity!.id));
     }
-    final signedOut = session.phase == AuthSessionPhase.signedOut;
-    final setup = session.phase == AuthSessionPhase.profileSetupRequired;
+    if (session.phase == AuthSessionPhase.signedOut ||
+        session.phase == AuthSessionPhase.profileSetupRequired) {
+      final scope = ref.watch(messagesNavigationProvider).scope;
+      return MessagesFrame(
+        key: const Key('messages-context-screen'),
+        chats: Column(
+          children: [
+            MessageChatScopeToggle(
+              scope: scope,
+              onChanged: ref
+                  .read(messagesNavigationProvider.notifier)
+                  .selectScope,
+            ),
+            const SizedBox(height: AppSpacing.small),
+            Expanded(child: _MessagesAccessState(scope: scope)),
+          ],
+        ),
+        requests: const _MessagesAccessState(),
+      );
+    }
     return Scaffold(
       key: const Key('messages-context-screen'),
       appBar: AppBar(title: Text(l10n.messagesTitle)),
-      body: SafeArea(
-        child: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(24),
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 420),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  if (signedOut || setup) ...[
-                    const Icon(Icons.forum_outlined, size: 48),
-                    const SizedBox(height: 16),
-                    Text(
-                      signedOut
-                          ? l10n.messagesSignInContext
-                          : session.hasProfileAnchor
-                          ? l10n.profileSetupRequired
-                          : l10n.authProfileSetupFailure,
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 24),
-                    FilledButton(
-                      key: const Key('messages-context-action'),
-                      onPressed: () {
-                        if (setup && !session.hasProfileAnchor) {
-                          ref
-                              .read(authCommandProvider.notifier)
-                              .retryProfileSetup();
-                          return;
-                        }
-                        context.push(
-                          Uri(
-                            path: signedOut ? '/auth' : '/profile/edit',
-                            queryParameters: const {'returnTo': '/messages'},
-                          ).toString(),
-                        );
-                      },
-                      child: Text(
-                        signedOut
-                            ? l10n.welcomeLogin
-                            : session.hasProfileAnchor
-                            ? l10n.profileSetupAction
-                            : l10n.retryAction,
-                      ),
-                    ),
-                  ] else
-                    const AuthStatus(),
-                ],
-              ),
+      body: const SafeArea(child: _ScrollableContext(child: AuthStatus())),
+    );
+  }
+}
+
+/// Guest/setup states never watch private Messages or photo providers.
+class _MessagesAccessState extends ConsumerWidget {
+  const _MessagesAccessState({this.scope});
+
+  final MessageChatScope? scope;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final session = ref.watch(authSessionProvider);
+    final busy = ref.watch(authCommandProvider.select((state) => state.isBusy));
+    final l10n = AppLocalizations.of(context);
+    final signedOut = session.phase == AuthSessionPhase.signedOut;
+    final message = signedOut
+        ? switch (scope) {
+            MessageChatScope.private => l10n.messagesGuestPrivateMessage,
+            MessageChatScope.groups => l10n.messagesGuestGroupsMessage,
+            null => l10n.messagesGuestRequestsMessage,
+          }
+        : session.hasProfileAnchor
+        ? l10n.profileSetupRequired
+        : l10n.authProfileSetupFailure;
+    return _ScrollableContext(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          EmptyState(
+            key: Key('messages-access-${scope?.name ?? 'requests'}'),
+            title: scope == null
+                ? l10n.messagesGuestRequestsTitle
+                : l10n.messagesGuestChatsTitle,
+            message: message,
+            icon: switch (scope) {
+              MessageChatScope.private => Icons.lock_outline,
+              MessageChatScope.groups => Icons.groups_outlined,
+              null => Icons.mark_email_unread_outlined,
+            },
+          ),
+          FilledButton(
+            key: const Key('messages-context-action'),
+            onPressed: busy
+                ? null
+                : () {
+                    if (!signedOut && !session.hasProfileAnchor) {
+                      ref
+                          .read(authCommandProvider.notifier)
+                          .retryProfileSetup();
+                      return;
+                    }
+                    context.push(
+                      Uri(
+                        path: signedOut ? '/auth' : '/profile/edit',
+                        queryParameters: const {'returnTo': '/messages'},
+                      ).toString(),
+                    );
+                  },
+            child: Text(
+              signedOut
+                  ? l10n.welcomeLogin
+                  : session.hasProfileAnchor
+                  ? l10n.profileSetupAction
+                  : l10n.retryAction,
             ),
           ),
-        ),
+        ],
       ),
     );
   }
+}
+
+class _ScrollableContext extends StatelessWidget {
+  const _ScrollableContext({required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) => Center(
+    child: SingleChildScrollView(
+      padding: const EdgeInsets.all(AppSpacing.medium),
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 420),
+        child: child,
+      ),
+    ),
+  );
 }
