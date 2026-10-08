@@ -1,3 +1,7 @@
+import 'package:planets_mobile/features/policies/data/policy_acceptance_store.dart';
+
+import 'fake_policy.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -59,6 +63,7 @@ Future<ProviderContainer> pumpHelp(
   SupportMailLauncher? launcher,
   FakeProposalGateway? proposals,
   FakeResourceListingGateway? resources,
+  FakePolicyAcceptanceStore? policyStore,
   FakeMessageChatsGateway? chats,
   FakeMessagesGateway? messages,
 }) async {
@@ -69,6 +74,10 @@ Future<ProviderContainer> pumpHelp(
   await tester.pumpWidget(
     ProviderScope(
       overrides: [
+        // Ordinary Help fixtures represent accounts that already acknowledged policies.
+        policyAcceptanceStoreProvider.overrideWithValue(
+          policyStore ?? FakePolicyAcceptanceStore(preaccepted: true),
+        ),
         initialStartupPreferenceProvider.overrideWithValue(
           await restoreStartupPreference(preferences),
         ),

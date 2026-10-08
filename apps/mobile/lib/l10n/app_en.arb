@@ -2344,5 +2344,39 @@
   "locationErrorStale": "The item changed. Search and select again.",
   "locationErrorUnauthorized": "Location access is no longer available. Return to your items.",
   "locationErrorUnsupported": "This place or source is not supported. Use manual entry.",
-  "locationErrorProvider": "Location lookup could not complete. Use manual entry or try again later."
+  "locationErrorProvider": "Location lookup could not complete. Use manual entry or try again later.",
+  "policyPrivacy": "Privacy Policy",
+  "policyTerms": "Terms of Use",
+  "policyRules": "Community Rules",
+  "policyAcceptanceTitle": "Terms and Community Rules",
+  "policyAcceptanceExplanation": "Before uploading your profile or photo, creating content or messaging, read and explicitly accept the Terms and Community Rules. The Privacy Policy is informational; this is not general consent to data processing or marketing.",
+  "policyProvisional": "Provisional version — under review. The linked documents contain proposals and open items.",
+  "policyVersion": "Terms/Rules version: {version}",
+  "policyLocalAcknowledgement": "Saved on this device for your account and this version only. Another device or reinstall may require acceptance again. Public browsing, support, reporting, blocking, deletion requests and sign-out remain available.",
+  "policyAcceptLabel": "I accept the Terms of Use and Community Rules linked above.",
+  "policyAcceptAction": "Accept and continue",
+  "policyCancel": "Continue browsing; cancel this action",
+  "policyReadFailed": "Could not read the acknowledgement on this device. Retry before creating content.",
+  "policyWriteFailed": "Acceptance was not saved. Check the control and retry; content creation remains unavailable.",
+  "policyLinkFailed": "Could not open the page. Retry or copy the link and open it in your browser.",
+  "policyCopyLink": "Copy link",
+  "policyCopied": "Copied.",
+  "policyCopyFailed": "Could not copy. Select the visible text and copy it manually.",
+  "policyDeleteAccount": "Delete account",
+  "policyDeletionExplanation": "This prepares an email request to Leonardo Colli, who handles deletion manually. Opening or sending an email does not instantly delete your account. You choose Send or Cancel in your email app; PLANETS cannot observe that choice.",
+  "policyDeletionOutcome": "The intended outcome, subject to a verified procedure, removes your personal profile photo and profile data and shows “Deleted profile”. Previously sent messages are intended to remain in authorised histories; that does not anonymise their text or authorise indefinite retention. The full deletion procedure still requires validation.",
+  "policyDeletionRights": "You may request erasure or restriction of personal information in messages. Any lawful retention exception must be narrowly justified. Leonardo will verify identity proportionately if needed and confirm the outcome. A reply is normally due within one month under applicable rights rules; it is not proof that deletion is complete or a backup purge deadline.",
+  "policyDeletionFromEmail": "Preferably send from the email used for PLANETS. If needed, enter your account email below and review the draft. You can also request deletion on the website without signing in or reinstalling.",
+  "policyAccountEmail": "Account email (optional, entered by you)",
+  "policyCopyAddress": "Copy email address",
+  "policyCopyDraft": "Copy reviewed email",
+  "policyDeletionWebsite": "Deletion instructions on the website",
+  "policyReviewAction": "Read Terms and Rules to continue",
+  "@policyVersion": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  }
 }

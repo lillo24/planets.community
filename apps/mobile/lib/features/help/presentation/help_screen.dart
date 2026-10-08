@@ -87,6 +87,7 @@ class HelpScaffold extends StatelessWidget {
     required this.children,
     this.fallback = HelpRoutes.path,
     this.scrollController,
+    this.onBack,
     super.key,
   });
 
@@ -94,6 +95,7 @@ class HelpScaffold extends StatelessWidget {
   final List<Widget> children;
   final String fallback;
   final ScrollController? scrollController;
+  final VoidCallback? onBack;
 
   @override
   Widget build(BuildContext context) => Scaffold(
@@ -101,13 +103,15 @@ class HelpScaffold extends StatelessWidget {
       title: Text(title),
       leading: BackButton(
         key: const Key('help-back'),
-        onPressed: () {
-          if (context.canPop()) {
-            context.pop();
-          } else {
-            context.go(fallback);
-          }
-        },
+        onPressed:
+            onBack ??
+            () {
+              if (context.canPop()) {
+                context.pop();
+              } else {
+                context.go(fallback);
+              }
+            },
       ),
     ),
     body: SafeArea(
