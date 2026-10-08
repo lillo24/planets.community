@@ -3,8 +3,99 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:planets_mobile/core/widgets/planets_hero.dart';
+import 'package:planets_mobile/core/widgets/planets_starfield.dart';
 
 void main() {
+  test(
+    'seeded star map has responsive density, variation and irregular spread',
+    () {
+      final small = PlanetsStarfield.forSize(const Size(160, 200));
+      final phone = PlanetsStarfield.forSize(const Size(390, 600));
+      final wide = PlanetsStarfield.forSize(const Size(1200, 1200));
+      expect(small.length, lessThan(phone.length));
+      expect(phone.length, inInclusiveRange(60, 100));
+      expect(wide.length, lessThanOrEqualTo(100));
+      expect(phone.map((s) => s.radius).toSet().length, greaterThan(20));
+      expect(phone.where((s) => s.opacity < .75).length, greaterThan(60));
+      expect(phone.where((s) => s.opacity > .8).length, greaterThan(2));
+      for (var row = 0; row < 3; row++) {
+        for (var column = 0; column < 3; column++) {
+          final cell = Rect.fromLTWH(column * 130, row * 200, 130, 200);
+          expect(
+            phone.where((s) => cell.contains(s.position)).length,
+            greaterThan(3),
+          );
+        }
+      }
+      for (var i = 0; i < phone.length; i++) {
+        for (var j = i + 1; j < phone.length; j++) {
+          expect(
+            (phone[i].position - phone[j].position).distance,
+            greaterThan(12),
+          );
+        }
+      }
+      // Coordinates are continuous samples, not shared grid lines/diagonals.
+      expect(phone.map((s) => s.position.dx).toSet(), hasLength(phone.length));
+      expect(phone.map((s) => s.position.dy).toSet(), hasLength(phone.length));
+      expect(
+        phone.map((s) => s.position.dx - s.position.dy).toSet(),
+        hasLength(phone.length),
+      );
+      final original = phone
+          .map((s) => (s.position, s.radius, s.opacity))
+          .toList();
+      for (var i = 0; i < 6; i++) {
+        PlanetsStarfield.forSize(Size(200.0 + i, 300));
+      }
+      expect(
+        PlanetsStarfield.forSize(const Size(390, 600))
+            .map((s) => (s.position, s.radius, s.opacity)),
+        original,
+      );
+    },
+  );
+
+  for (final home in [false, true]) {
+    testWidgets(
+      'stars stay fixed through orbit ticks and rebuilds home=$home',
+      (tester) async {
+        _motion(tester, true);
+        await tester.pumpWidget(_app(home: home));
+        await tester.pump();
+        await tester.pump(const Duration(seconds: 3));
+        List<(Offset, double)> positions() {
+          final finder = find.byKey(
+            Key(home ? 'home-planets-hero' : 'welcome-flight'),
+          );
+          final canvas = TestRecordingCanvas();
+          tester
+              .widget<CustomPaint>(finder)
+              .painter!
+              .paint(canvas, tester.getSize(finder));
+          return canvas.invocations
+              .where((call) => call.invocation.memberName == #drawCircle)
+              .map((call) => call.invocation.positionalArguments)
+              .where((args) => (args[1] as double) < 2)
+              .map((args) => (args[0] as Offset, args[1] as double))
+              .toList();
+        }
+
+        final initial = positions();
+        expect(initial.length, greaterThan(60));
+        await tester.pump(const Duration(seconds: 17));
+        expect(positions(), initial);
+        await tester.pumpWidget(_app(home: home));
+        expect(positions(), initial);
+        await tester.pumpWidget(const SizedBox());
+        await tester.pumpWidget(_app(home: home));
+        await tester.pump();
+        await tester.pump(const Duration(seconds: 3));
+        expect(positions(), initial);
+        expect(tester.takeException(), isNull);
+      },
+    );
+  }
   for (final home in [false, true]) {
     testWidgets('website circular periods continue on home=$home', (
       tester,
@@ -213,10 +304,10 @@ void _expectOrbits(WidgetTester tester, double seconds, {bool home = true}) {
   final planets = circles.where((args) => args[1] == 5.2).toList();
   expect(rings, hasLength(3));
   expect(planets, hasLength(3));
-  final center = Offset(160, home ? 124 : 135);
-  // These 320px fixtures have limited headroom: preserve the far planet halo
-  // while moving the whole composition higher than its old 140/150px centers.
-  final diameter = home ? 162.857142857 : 178.571428571;
+  final center = Offset(160, home ? 100 : 135);
+  // Home centers within its 200px reservation; Welcome retains its settled
+  // 135px center. Both fit the far planet's halo above the artwork boundary.
+  final diameter = home ? 128.571428571 : 178.571428571;
   var index = 0;
   // Fixed website values: far clockwise, outer counterclockwise, inner clockwise.
   for (final orbit in [

@@ -78,6 +78,65 @@ void main() {
           expect(find.byType(PlanetsEntranceMotion), findsNothing);
           expect(find.byType(PlanetsOrbitMotion), findsOneWidget);
           await tester.pump(const Duration(seconds: 3));
+          final viewport = tester.getRect(find.byType(SingleChildScrollView));
+          final body = tester.getRect(
+            find.byWidget(tester.widget<Scaffold>(find.byType(Scaffold)).body!),
+          );
+          expect(viewport.top, closeTo(body.top, .01));
+          expect(viewport.height, closeTo(body.height, .01));
+          final cardBoundary = tester.getRect(
+            find.byKey(const Key('browse-proposals-button')),
+          );
+          final artwork = find.byKey(const Key('home-planets-hero'));
+          final artworkBounds = tester.getRect(artwork);
+          final logoBounds = tester.getRect(
+            find.byKey(const Key('planets-floating-logo')),
+          );
+          expect(artworkBounds.top, closeTo(viewport.top, .01));
+          expect(
+            hero.logoAreaHeight,
+            closeTo(cardBoundary.top - viewport.top, .01),
+          );
+          final middle = (viewport.top + cardBoundary.top) / 2;
+          expect(
+            logoBounds.center.dy,
+            inInclusiveRange(middle - 6.01, middle + .01),
+          );
+          expect(logoBounds.center.dx, closeTo(cardBoundary.center.dx, .01));
+          expect(logoBounds.top, greaterThan(viewport.top));
+          expect(logoBounds.bottom, lessThan(cardBoundary.top - 12));
+          final recorded = TestRecordingCanvas();
+          tester
+              .widget<CustomPaint>(artwork)
+              .painter!
+              .paint(recorded, tester.getSize(artwork));
+          final rings = recorded.invocations
+              .where((c) => c.invocation.memberName == #drawCircle)
+              .map((c) => c.invocation.positionalArguments)
+              .where(
+                (args) => (args[2] as Paint).style == PaintingStyle.stroke,
+              );
+          for (final ring in rings) {
+            final center = (ring[0] as Offset) + artworkBounds.topLeft;
+            final radius = ring[1] as double;
+            expect(center.dy, closeTo(middle, .01));
+            expect(
+              center.dy - radius - 9.2,
+              greaterThanOrEqualTo(viewport.top),
+            );
+            expect(
+              center.dy + radius + 9.2,
+              lessThanOrEqualTo(cardBoundary.top),
+            );
+            expect(
+              center.dx - radius - 9.2,
+              greaterThanOrEqualTo(artworkBounds.left),
+            );
+            expect(
+              center.dx + radius + 9.2,
+              lessThanOrEqualTo(artworkBounds.right),
+            );
+          }
           if (!compact) {
             final logo = tester.getRect(
               find.byKey(const Key('planets-floating-logo')),

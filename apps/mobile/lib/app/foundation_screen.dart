@@ -54,39 +54,73 @@ class FoundationScreen extends StatelessWidget {
                     .clamp(64.0, 240.0);
                 return SingleChildScrollView(
                   padding: const EdgeInsets.all(AppSpacing.large),
-                  child: Stack(
-                    // Let decoration use the scroll view's top padding while
-                    // the viewport still clips it away from the app bar.
-                    clipBehavior: Clip.none,
-                    children: [
-                      Positioned.fill(
-                        top: -heroHeight * .06,
-                        child: RepaintBoundary(
-                          child: PlanetsHero.home(logoAreaHeight: heroHeight),
-                        ),
-                      ),
-                      Column(
-                        mainAxisSize: MainAxisSize.min,
+                  // Keep the cards' existing vertical centering, but make the
+                  // scrolling viewport cover the entire body above the nav bar.
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(
+                      minHeight: (constraints.maxHeight - AppSpacing.large * 2)
+                          .clamp(0.0, double.infinity),
+                    ),
+                    child: Center(
+                      child: Stack(
+                        // The reservation starts at the body's top boundary and
+                        // ends at the first card, including the scroll padding.
+                        clipBehavior: Clip.none,
                         children: [
-                          SizedBox(height: heroHeight),
-                          _HomePillarCard(
-                            key: const Key('browse-proposals-button'),
-                            icon: Icons.explore_outlined,
-                            title: l10n.homeProjectsTitle,
-                            message: l10n.homeProjectsMessage,
-                            onTap: () => context.go('/proposals'),
+                          Positioned.fill(
+                            top: -AppSpacing.large,
+                            child: LayoutBuilder(
+                              builder: (_, artworkConstraints) {
+                                // This is the actual centering space above the
+                                // column, derived after the cards have laid out.
+                                final topSpace =
+                                    ((constraints.maxHeight -
+                                                AppSpacing.large -
+                                                artworkConstraints.maxHeight) /
+                                            2)
+                                        .clamp(0.0, double.infinity);
+                                final artworkHeight =
+                                    artworkConstraints.maxHeight + topSpace;
+                                return OverflowBox(
+                                  alignment: Alignment.bottomCenter,
+                                  minHeight: artworkHeight,
+                                  maxHeight: artworkHeight,
+                                  child: RepaintBoundary(
+                                    child: PlanetsHero.home(
+                                      logoAreaHeight:
+                                          heroHeight +
+                                          AppSpacing.large +
+                                          topSpace,
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
                           ),
-                          const SizedBox(height: AppSpacing.small),
-                          _HomePillarCard(
-                            key: const Key('browse-resources-button'),
-                            icon: Icons.inventory_2_outlined,
-                            title: l10n.resourceTitle,
-                            message: l10n.homeResourcesMessage,
-                            onTap: () => context.go('/resources'),
+                          Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              SizedBox(height: heroHeight),
+                              _HomePillarCard(
+                                key: const Key('browse-proposals-button'),
+                                icon: Icons.explore_outlined,
+                                title: l10n.homeProjectsTitle,
+                                message: l10n.homeProjectsMessage,
+                                onTap: () => context.go('/proposals'),
+                              ),
+                              const SizedBox(height: AppSpacing.small),
+                              _HomePillarCard(
+                                key: const Key('browse-resources-button'),
+                                icon: Icons.inventory_2_outlined,
+                                title: l10n.resourceTitle,
+                                message: l10n.homeResourcesMessage,
+                                onTap: () => context.go('/resources'),
+                              ),
+                            ],
                           ),
                         ],
                       ),
-                    ],
+                    ),
                   ),
                 );
               },
