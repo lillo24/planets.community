@@ -36,3 +36,11 @@ reopen restores the same unanswered request. “Later” writes nothing. The cop
 warns that a two-person interaction can make reporter identity inferable and
 that staff review is manual. This feature emits no notification or Resource
 state change.
+
+TW02 extends the shared typed vocabulary with `proposal_template`.
+`proposalTemplateReportTarget` in `moderation_routes.dart` gives TW04 the current
+form route without a Workshop screen/navigation entry. Original Creators use the
+same authenticated manual-review flow and neutral receipt. Italian/English
+copy explains that reporting removes nothing automatically. Template provenance
+never activates Project corroboration or Resource counterstatement disclosures;
+identity-change/retry safeguards and narrow own-report parsing are reused.

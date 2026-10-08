@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
 import '../../../core/theme/app_tokens.dart';
+import '../../messages/presentation/message_read_viewport.dart';
 import '../../../core/widgets/error_state.dart';
 import '../../../core/widgets/loading_state.dart';
 import '../../../l10n/generated/app_localizations.dart';
@@ -165,154 +166,170 @@ class _ResourceChatScreenState extends ConsumerState<ResourceChatScreen>
       }
     });
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          summary?.listingTitle ?? l10n.resourceChatTitle,
-          maxLines: 2,
-          overflow: TextOverflow.ellipsis,
+    return MessageReadViewport(
+      profileId: _expectedProfileId,
+      kind: 'resource_chat',
+      chatId: summary?.chatId,
+      boundary:
+          belongs &&
+              state.phase == ResourceChatDetailPhase.ready &&
+              state.failure == null
+          ? state.readBoundary
+          : null,
+      scrollController: _scrollController,
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text(
+            summary?.listingTitle ?? l10n.resourceChatTitle,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+          ),
         ),
-      ),
-      body: SafeArea(
-        child:
-            !belongs ||
-                (state.phase == ResourceChatDetailPhase.loading &&
-                    messages.isEmpty)
-            ? LoadingState(message: l10n.resourceChatLoading)
-            : state.phase == ResourceChatDetailPhase.failure && messages.isEmpty
-            ? ErrorState(
-                message: resourceChatFailureMessage(l10n, state.failure!),
-                onRetry: _load,
-              )
-            : Column(
-                children: [
-                  if (summary != null)
-                    _CounterpartyHeader(
-                      summary: summary,
-                      onBlockingChanged: _refresh,
-                    ),
-                  if (summary != null)
-                    ResourceExchangeAgreementSection(
-                      listingTitle: summary.listingTitle,
-                      ownerDisplayName: summary.ownerDisplayName,
-                      requesterDisplayName: summary.requesterDisplayName,
-                    ),
-                  if (state.hasConnectionIssue)
-                    Semantics(
-                      liveRegion: true,
-                      child: Container(
-                        key: const Key('resource-chat-connection-issue'),
-                        width: double.infinity,
-                        padding: const EdgeInsets.all(AppSpacing.small),
-                        color: Theme.of(context).colorScheme.errorContainer,
-                        child: Text(l10n.resourceChatConnectionIssue),
+        body: SafeArea(
+          child:
+              !belongs ||
+                  (state.phase == ResourceChatDetailPhase.loading &&
+                      messages.isEmpty)
+              ? LoadingState(message: l10n.resourceChatLoading)
+              : state.phase == ResourceChatDetailPhase.failure &&
+                    messages.isEmpty
+              ? ErrorState(
+                  message: resourceChatFailureMessage(l10n, state.failure!),
+                  onRetry: _load,
+                )
+              : Column(
+                  children: [
+                    if (summary != null)
+                      _CounterpartyHeader(
+                        summary: summary,
+                        onBlockingChanged: _refresh,
                       ),
-                    ),
-                  if (state.failure case final failure?)
-                    Semantics(
-                      liveRegion: true,
-                      child: Container(
-                        key: const Key('resource-chat-inline-error'),
-                        width: double.infinity,
-                        padding: const EdgeInsets.all(AppSpacing.small),
-                        color: Theme.of(context).colorScheme.errorContainer,
-                        child: Text(resourceChatFailureMessage(l10n, failure)),
+                    if (summary != null)
+                      ResourceExchangeAgreementSection(
+                        listingTitle: summary.listingTitle,
+                        ownerDisplayName: summary.ownerDisplayName,
+                        requesterDisplayName: summary.requesterDisplayName,
                       ),
-                    ),
-                  Expanded(
-                    child: RefreshIndicator(
-                      onRefresh: _refresh,
-                      child: ListView(
-                        key: const Key('resource-chat-history'),
-                        controller: _scrollController,
-                        physics: const AlwaysScrollableScrollPhysics(),
-                        padding: const EdgeInsets.all(AppSpacing.medium),
-                        children: [
-                          if (state.hasMoreOlder)
-                            Center(
-                              child: OutlinedButton(
-                                key: const Key('resource-chat-load-older'),
-                                onPressed: state.isLoadingOlder
-                                    ? null
-                                    : _loadOlder,
-                                child: state.isLoadingOlder
-                                    ? const SizedBox.square(
-                                        dimension: 20,
-                                        child: CircularProgressIndicator(
-                                          strokeWidth: 2,
-                                        ),
-                                      )
-                                    : Text(l10n.resourceChatLoadOlder),
+                    if (state.hasConnectionIssue)
+                      Semantics(
+                        liveRegion: true,
+                        child: Container(
+                          key: const Key('resource-chat-connection-issue'),
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(AppSpacing.small),
+                          color: Theme.of(context).colorScheme.errorContainer,
+                          child: Text(l10n.resourceChatConnectionIssue),
+                        ),
+                      ),
+                    if (state.failure case final failure?)
+                      Semantics(
+                        liveRegion: true,
+                        child: Container(
+                          key: const Key('resource-chat-inline-error'),
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(AppSpacing.small),
+                          color: Theme.of(context).colorScheme.errorContainer,
+                          child: Text(
+                            resourceChatFailureMessage(l10n, failure),
+                          ),
+                        ),
+                      ),
+                    Expanded(
+                      child: RefreshIndicator(
+                        onRefresh: _refresh,
+                        child: ListView(
+                          key: const Key('resource-chat-history'),
+                          controller: _scrollController,
+                          physics: const AlwaysScrollableScrollPhysics(),
+                          padding: const EdgeInsets.all(AppSpacing.medium),
+                          children: [
+                            if (state.hasMoreOlder)
+                              Center(
+                                child: OutlinedButton(
+                                  key: const Key('resource-chat-load-older'),
+                                  onPressed: state.isLoadingOlder
+                                      ? null
+                                      : _loadOlder,
+                                  child: state.isLoadingOlder
+                                      ? const SizedBox.square(
+                                          dimension: 20,
+                                          child: CircularProgressIndicator(
+                                            strokeWidth: 2,
+                                          ),
+                                        )
+                                      : Text(l10n.resourceChatLoadOlder),
+                                ),
                               ),
-                            ),
-                          if (messages.isEmpty)
-                            Padding(
-                              padding: const EdgeInsets.symmetric(
-                                vertical: AppSpacing.xLarge,
-                              ),
-                              child: Column(
-                                children: [
-                                  Text(
-                                    l10n.resourceChatNoMessages,
-                                    key: const Key('resource-chat-empty'),
-                                    style: Theme.of(context)
-                                        .textTheme
-                                        .titleMedium,
-                                  ),
-                                  if (summary?.hasSendEntitlement == true) ...[
-                                    const SizedBox(height: AppSpacing.small),
+                            if (messages.isEmpty)
+                              Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: AppSpacing.xLarge,
+                                ),
+                                child: Column(
+                                  children: [
                                     Text(
-                                      l10n.resourceChatEmptyGuidance,
-                                      textAlign: TextAlign.center,
+                                      l10n.resourceChatNoMessages,
+                                      key: const Key('resource-chat-empty'),
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .titleMedium,
                                     ),
-                                  ],
-                                ],
-                              ),
-                            )
-                          else
-                            for (final message in messages)
-                              _MessageBubble(
-                                message: message,
-                                isMine:
-                                    message.senderProfileId ==
-                                    _expectedProfileId,
-                                onReport:
-                                    message.senderProfileId ==
-                                        _expectedProfileId
-                                    ? null
-                                    : () => ModerationRoutes.openReport(
-                                        context,
-                                        resourceMessageReportTarget(
-                                          message.messageId,
-                                          l10n.moderationResourceMessageTarget,
-                                        ),
+                                    if (summary?.hasSendEntitlement ==
+                                        true) ...[
+                                      const SizedBox(height: AppSpacing.small),
+                                      Text(
+                                        l10n.resourceChatEmptyGuidance,
+                                        textAlign: TextAlign.center,
                                       ),
-                              ),
-                        ],
+                                    ],
+                                  ],
+                                ),
+                              )
+                            else
+                              for (final message in messages)
+                                _MessageBubble(
+                                  message: message,
+                                  isMine:
+                                      message.senderProfileId ==
+                                      _expectedProfileId,
+                                  onReport:
+                                      message.senderProfileId ==
+                                          _expectedProfileId
+                                      ? null
+                                      : () => ModerationRoutes.openReport(
+                                          context,
+                                          resourceMessageReportTarget(
+                                            message.messageId,
+                                            l10n.moderationResourceMessageTarget,
+                                          ),
+                                        ),
+                                ),
+                          ],
+                        ),
                       ),
                     ),
-                  ),
-                  if (summary?.hasSendEntitlement == true)
-                    _Composer(
-                      controller: _composer,
-                      isSending: state.isSending,
-                      onSend: _send,
-                    )
-                  else if (summary != null)
-                    Semantics(
-                      liveRegion: true,
-                      child: Container(
-                        key: const Key('resource-chat-read-only'),
-                        width: double.infinity,
-                        padding: const EdgeInsets.all(AppSpacing.medium),
-                        color: Theme.of(context)
-                            .colorScheme
-                            .surfaceContainerHighest,
-                        child: Text(l10n.resourceChatReadOnlyNotice),
+                    if (summary?.hasSendEntitlement == true)
+                      _Composer(
+                        controller: _composer,
+                        isSending: state.isSending,
+                        onSend: _send,
+                      )
+                    else if (summary != null)
+                      Semantics(
+                        liveRegion: true,
+                        child: Container(
+                          key: const Key('resource-chat-read-only'),
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(AppSpacing.medium),
+                          color: Theme.of(context)
+                              .colorScheme
+                              .surfaceContainerHighest,
+                          child: Text(l10n.resourceChatReadOnlyNotice),
+                        ),
                       ),
-                    ),
-                ],
-              ),
+                  ],
+                ),
+        ),
       ),
     );
   }

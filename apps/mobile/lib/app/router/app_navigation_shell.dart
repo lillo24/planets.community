@@ -10,11 +10,13 @@ import '../../devtools/demo/demo_widgets.dart';
 import '../../features/auth/application/auth_session_controller.dart';
 import '../../features/auth/domain/auth_models.dart';
 import '../../features/messages/presentation/messages_routes.dart';
+import '../../features/messages/presentation/message_unread_badge.dart';
 import '../../features/notifications/application/notifications_controllers.dart';
 import '../../features/moderation/presentation/moderation_evidence_session_prompt.dart';
 import '../../features/settings/application/navigation_preference_controller.dart';
 import '../../features/settings/domain/navigation_preference.dart';
 import '../../l10n/generated/app_localizations.dart';
+import 'draft_departure_coordinator.dart';
 
 enum AppBranch { profile, home, browse }
 
@@ -27,22 +29,22 @@ class AppNavigationShell extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
     final demoToolsEnabled = ref.watch(demoToolsEnabledProvider);
-    // Imperative push history belongs to the branch Navigator even when the
-    // shell route URI still names that branch's public root.
-    final branchCanPop = navigationShell
-        .route
-        .branches[navigationShell.currentIndex]
-        .navigatorKey
-        .currentState
-        ?.canPop();
-    final path = GoRouter.of(context).routerDelegate.state.uri.path;
+    final router = GoRouter.of(context);
+    // Canonical matches include imperative pushes. A replaced branch Navigator
+    // may still report its departing page during a Material transition.
+    final activeMatch =
+        router.routerDelegate.currentConfiguration.matches.lastOrNull;
+    final branchCanPop = activeMatch is ShellRouteMatch
+        ? activeMatch.matches.length > 1
+        : router.canPop();
+    final path = router.routerDelegate.state.uri.path;
     final preference = ref.watch(navigationPreferenceProvider).destination;
     final isMessages = isMessagesPath(path);
     // Cross-branch pushes can keep the originating Navigator's branch index.
     // The active URI identifies the screen actually visible above that stack.
     final routeRoot = Uri(path: path).pathSegments.firstOrNull;
     final isBrowse = switch (routeRoot) {
-      'proposals' || 'tavoli' || 'resources' => true,
+      'proposals' || 'tavoli' || 'resources' || 'drafts' => true,
       _ => false,
     };
     // The visible slot follows direct/pushed routes while active. Elsewhere it
@@ -63,7 +65,8 @@ class AppNavigationShell extends ConsumerWidget {
         (navigationShell.currentIndex == AppBranch.browse.index &&
             (path == '/proposals' ||
                 path == '/tavoli' ||
-                path == '/resources'));
+                path == '/resources' ||
+                path == '/drafts'));
     final returnsHomeOnBack = branchCanPop != true && isSecondaryRoot;
     final scaffold = Scaffold(
       body: Stack(
@@ -81,6 +84,7 @@ class AppNavigationShell extends ConsumerWidget {
       bottomNavigationBar: NavigationBar(
         selectedIndex: selectedIndex,
         onDestinationSelected: (index) {
+          if (ref.read(draftDepartureProvider).preparing) return;
           if (index == AppBranch.home.index) {
             FocusManager.instance.primaryFocus?.unfocus();
             navigationShell.goBranch(index, initialLocation: true);
@@ -128,16 +132,15 @@ class AppNavigationShell extends ConsumerWidget {
                   ? 'nav-messages'
                   : 'nav-browse',
             ),
-            icon: Icon(
-              rightDestination == BottomTabDestination.messages
-                  ? Icons.forum_outlined
-                  : Icons.explore_outlined,
-            ),
-            selectedIcon: Icon(
-              rightDestination == BottomTabDestination.messages
-                  ? Icons.forum
-                  : Icons.explore,
-            ),
+            icon: rightDestination == BottomTabDestination.messages
+                ? const MessageUnreadBadge(child: Icon(Icons.forum_outlined))
+                : const Icon(Icons.explore_outlined),
+            selectedIcon: rightDestination == BottomTabDestination.messages
+                ? const MessageUnreadBadge(
+                    selected: true,
+                    child: Icon(Icons.forum),
+                  )
+                : const Icon(Icons.explore),
             label: rightDestination == BottomTabDestination.messages
                 ? l10n.messagesTitle
                 : l10n.navigationBrowse,

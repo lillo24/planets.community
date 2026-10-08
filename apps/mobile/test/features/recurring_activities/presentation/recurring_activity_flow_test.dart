@@ -1,3 +1,5 @@
+import '../../../support/fake_policy.dart';
+
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -173,6 +175,8 @@ void main() {
     final app = await _pump(tester, recurring: recurring, signedIn: false);
 
     app.read(appRouterProvider).go('/tavoli/tavolo-1');
+    // Complete awaitable route entry before asserting the pending data load.
+    await tester.pump();
     await tester.pump();
     expect(find.byType(LoadingState), findsOneWidget);
     expect(find.byType(ErrorState), findsNothing);
@@ -454,10 +458,11 @@ void main() {
     expect(find.byKey(const Key('tavoli-editor-pause')), findsOneWidget);
     expect(find.byKey(const Key('tavoli-editor-end')), findsOneWidget);
 
-    await _scrollTo(
+    // The location section changes scroll offsets; keep this tap in the body.
+    await _center(
       tester,
       find.byKey(const Key('tavoli-count-organizers-capacity')),
-      -500,
+      delta: -500,
     );
     await tester.tap(find.byKey(const Key('tavoli-count-organizers-capacity')));
     await tester.pumpAndSettle();
@@ -591,14 +596,18 @@ Future<void> _scrollTo(WidgetTester tester, Finder target, double delta) =>
       scrollable: find.byType(Scrollable).hitTestable().first,
     );
 
-Future<void> _center(WidgetTester tester, Finder target) async {
+Future<void> _center(
+  WidgetTester tester,
+  Finder target, {
+  double delta = 400,
+}) async {
   if (target.evaluate().isEmpty) {
-    await _scrollTo(tester, target, 400);
+    await _scrollTo(tester, target, delta);
   }
   await Scrollable.ensureVisible(
     tester.element(target),
     alignment: 0.5,
-    duration: const Duration(milliseconds: 100),
+    duration: Duration.zero,
   );
   await tester.pumpAndSettle();
 }
@@ -619,6 +628,7 @@ Future<ProviderContainer> _pump(
   await tester.pumpWidget(
     ProviderScope(
       overrides: [
+        preacceptedPolicyFixture,
         appConfigProvider.overrideWithValue(
           AppConfig.fromValues(
             appEnvironment: 'local',

@@ -21,7 +21,7 @@ void main() {
       expect(needsSource, contains("'$rpc'"));
     }
     expect(needsSource, isNot(contains('.from(')));
-    expect(chatSource, contains("'list_own_project_chat_feed'"));
+    expect(chatSource, contains("'get_own_message_feed_page'"));
     expect(chatSource, isNot(contains("'list_own_project_chat_messages'")));
   });
 }

@@ -6,6 +6,7 @@ import '../../participation/domain/participation_models.dart';
 import '../../project_chat/domain/project_chat_models.dart';
 import '../../resource_chat/domain/resource_chat_models.dart';
 import '../domain/message_chat_models.dart';
+import '../domain/message_unread_models.dart';
 
 abstract interface class MessageChatsGateway {
   Future<MessageChatPage> listItems({
@@ -30,7 +31,7 @@ class SupabaseMessageChatsGateway implements MessageChatsGateway {
     MessageChatCursor? cursor,
   }) async {
     final response = await _client.rpc<List<dynamic>>(
-      'list_own_scoped_conversation_items',
+      'list_own_scoped_conversation_items_v4',
       params: {
         'p_expected_profile_id': expectedProfileId,
         'p_scope': scope.wireValue,
@@ -83,6 +84,9 @@ class MessageChatsPayloadParser {
     'project_request_resolved_at',
     'accepted_project_group_chat_id',
     'pending_count',
+    'unread_count',
+    'latest_request_activity_status',
+    'latest_group_system_event_label',
   };
 
   MessageChatItem item(Object? value) {
@@ -100,6 +104,7 @@ class MessageChatsPayloadParser {
   ProjectMessageChatItem _projectItem(Map<String, dynamic> row) {
     _requireNulls(row, const {
       'pending_count',
+      'latest_request_activity_status',
       'resource_request_id',
       'resource_agreement_id',
       'resource_listing_id',
@@ -110,6 +115,11 @@ class MessageChatsPayloadParser {
       ..._projectRequestKeys,
     });
     return ProjectMessageChatItem(
+      latestSystemEventLabel: _optionalString(
+        row,
+        'latest_group_system_event_label',
+      ),
+      unreadCount: messageUnreadCount(row['unread_count']),
       chatId: _uuid(row, 'chat_id'),
       activityAt: _date(row, 'activity_at'),
       displayTitle: _string(row, 'display_title'),
@@ -134,6 +144,8 @@ class MessageChatsPayloadParser {
   ResourceMessageChatItem _resourceItem(Map<String, dynamic> row) {
     _requireNulls(row, const {
       'pending_count',
+      'latest_request_activity_status',
+      'latest_group_system_event_label',
       'project_id',
       'project_kind',
       ..._projectRequestKeys,
@@ -150,6 +162,7 @@ class MessageChatsPayloadParser {
       );
     }
     return ResourceMessageChatItem(
+      unreadCount: messageUnreadCount(row['unread_count']),
       chatId: _uuid(row, 'chat_id'),
       activityAt: _date(row, 'activity_at'),
       displayTitle: _string(row, 'display_title'),
@@ -181,6 +194,7 @@ class MessageChatsPayloadParser {
 
   ProjectRequestMessageChatItem _projectRequestItem(Map<String, dynamic> row) {
     _requireNulls(row, const {
+      'latest_group_system_event_label',
       'project_id',
       'project_kind',
       'resource_request_id',
@@ -211,7 +225,15 @@ class MessageChatsPayloadParser {
         'Participation-request chat lifecycle shape was inconsistent.',
       );
     }
+    final latestStatus = _optionalString(row, 'latest_request_activity_status');
+    if (latestStatus == null && row['last_visible_message_id'] == null) {
+      throw const FormatException('Pair latest activity was missing.');
+    }
     return ProjectRequestMessageChatItem(
+      latestRequestActivityStatus: latestStatus == null
+          ? null
+          : JoinRequestStatus.fromWire(latestStatus),
+      unreadCount: messageUnreadCount(row['unread_count']),
       chatId: _uuid(row, 'chat_id'),
       activityAt: _date(row, 'activity_at'),
       displayTitle: _string(row, 'display_title'),

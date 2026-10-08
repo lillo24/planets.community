@@ -1,19 +1,51 @@
-# CT-01: start the Play closed test
+# CT-01: release plumbing and deferred Play closed test
 
 This is staging distribution of current `main`, not a production launch.
-CT-01 initially started at `67133025b4dc8a90a3d303e70d69df6ee6faf84c`, which
-already includes #147. The continuation reconciles current `main` at
-`eb70fe249978585f754fa9175d337d7ef8b99e17` (including #150 through #153).
-The original 59 canonical migrations are unchanged; merged #153 adds
-`20261006101031_participation_pair_conversations.sql`, bringing the deployment
-target to 60. It does not incorporate the unmerged Template Workshop #146.
+CT-01 initially started at `67133025b4dc8a90a3d303e70d69df6ee6faf84c` and
+previously reconciled through `eb70fe249978585f754fa9175d337d7ef8b99e17`.
+The code-merge continuation reconciles `main` at
+`5cfcdd14331f003b5cf3b5e92cb1c2bcd62d9878`, preserving merged MAP02 #174,
+POLICY01 #178 and TUT03 #177. It does not incorporate unmerged Map activation.
+The previously verified staging deployment contained 60 canonical migrations;
+that historical result does not establish deployment of the current migration
+history. Do not apply hosted migrations during this code-only merge.
 Use the permanent Android package `community.planets.app`, Flutter 3.47.2,
 and `0.1.0+1`. Check Play's existing bundle history before uploading; increase
 the version code only if 1 has already been used for this package.
 
-Do not call the backend ready before two external OTP deliveries succeed.
-Do not merge CT-01 before that, or claim the clock has started before the closed
-release is published and at least 12 testers are continuously opted in.
+## Code merge is not release approval
+
+The founder authorizes merging PR #149 once its current-main reconciliation,
+mobile tests, Android compile/signing safeguards, secret review and final-head
+CI pass. External OTP and physical-device checks are no longer code-merge gates;
+they remain publication gates. Merging does not authorize a backend deployment,
+new AAB, Play upload, provider activation or a running tester clock.
+
+Do not produce the final Play AAB until the intended Map integration is merged.
+That integration must update its own checkout from the new `main` containing
+CT-01 before its later merge and run its own independent validation. Preserve
+the permanent package ID, upload-key arrangement, deep links and current policy,
+location and tutorial behavior during that reconciliation.
+
+The subsequent release task must:
+
+1. Reconcile staging migration history safely with the actual integrated app
+   revision, without reset, seed or history rewriting.
+2. Build a **new** signed AAB from then-current `main` using the same upload key;
+   verify app ID, signer, SDK >=36, version code, staging origin and demos off.
+   Earlier CT-01 AABs are historical artifacts, not final upload candidates.
+3. Verify external email OTP/session flows and representative physical-device
+   journeys. One reported successful personal-email login is useful evidence,
+   not a second distinct external inbox result or a completed smoke suite.
+4. Review live Privacy/Terms/Rules/deletion links, in-app acceptance and Play data
+   declarations against that actual AAB, including its eventual Map behavior.
+5. Obtain founder release approval and publish specifically to **Closed testing**.
+
+Do not call the backend/release ready before the external tests pass. The clock
+starts only after the closed release is actually published and at least 12
+testers are continuously opted in, not after a merge, AAB build or sideload.
+The setup/build/publication sections below are a future authorized release
+runbook, not actions authorized by this code-merge continuation.
 
 ## 1. Create the Free test backend
 
@@ -187,6 +219,13 @@ keystore/passwords securely outside Git. Existing Android ignore rules exclude
 Debug builds need no signing secrets. Every release build fails if signing
 fields or the keystore are missing; known debug-key names are rejected.
 
+Before removing a release-task checkout, preserve ignored `android/key.properties`
+and `config/staging.json` outside Git in an owner-restricted directory and verify
+the copies match. Confirm the referenced permanent upload keystore also survives
+cleanup. Restore the inputs into the eventual current-main build checkout only
+after confirming those destinations are ignored; never overwrite other local
+signing/configuration or print credentials. Keep the backup/passwords local.
+
 Copy `apps/mobile/config/staging.example.json` to ignored `staging.json`. Supply
 the **actual new project's** HTTPS URL and its `sb_publishable_` key from Project
 Settings > API Keys. Keep `APP_ENV` as `"staging"`, `ENABLE_DEMO_TOOLS` as the
@@ -265,7 +304,7 @@ compile/target 36; no Gradle/Flutter version change is needed for CT-01.
 | Data collected/shared, purposes, optionality and retention? | Email/auth identifiers, profile/display name/skills, selected public/private profile fields, rough/exact meeting location text, user content, private messages, optional profile/cover photos and session/device-local preferences exist. Sentry is off with empty DSN; no maps/GPS permission or configured push provider. Owner must classify Supabase/Resend processing, optional data, deletion/retention and the actual Data safety answers. |
 | Target age groups and children-directed status?             | No accepted minimum-age/child policy in this release task. Owner must choose the offered Play age bands (under 13, 13–15, 16–17, 18+) and whether children are targeted; do not infer adult-only from test recruitment.                                                                                                                                                                                                                           |
 | Content rating / user-generated content questionnaire?      | Profiles, shared activity/listing content, photos and chat are user-generated. Owner must answer the questionnaire about interaction, moderation and applicable content; repository code cannot establish legal guarantees.                                                                                                                                                                                                                       |
-| Privacy policy URL / account deletion URL and process?      | Owner must provide a live applicable policy and deletion/retention process. Auth/signup exists; do not claim implemented account deletion or retention guarantees without evidence. Use the dashboard's exact required fields; report any unmet policy requirement as a publication blocker.                                                                                                                                                      |
+| Privacy policy URL / account deletion URL and process?      | POLICY01 adds provisional public policies, in-app version acceptance and a manual deletion-request path; it does not implement automated deletion or settle retention policy. Verify the live pages/process and founder-approved Play answers against the actual release. Report any unmet requirement as a publication blocker.                                                                                                                  |
 
 These declarations are not finalized by CT-01. A required legal/policy question
 must be answered by the owner; it cannot be replaced by an invented policy.

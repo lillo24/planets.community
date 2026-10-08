@@ -1,12 +1,50 @@
 # Proposals feature
 
+UI-NEXT-04 keeps every manual location field and canonical meeting read intact.
+MAP02's shared `locations/presentation/location_editor_section.dart` keeps manual
+entry while lookup is disabled and exposes injected receipt-backed selection.
+The detail retains its inert map fallback. See `../locations/README.md` and
+provider readiness before activation. MAP01 owns canonical provider metadata and
+actor/item/revision-bound server receipts. Existing
+manual text edits clear stale verified pins. See the [shared location contract](../../../../../docs/development/map01-geoapify-location.md).
+
+Lookup saves through DRAFT01 without navigating, then obtains an authorized
+revision. Public area and exact place are separate slot transactions;
+instructions/visibility stay ordinary content. The location handle revokes
+receipts before Save/Publish. Canonical public text is acknowledged in departure
+snapshots after apply/reread without adding query, receipt, session or point.
+
 This feature owns one-time proposal discovery and authenticated structural
 management for the immutable Creator and current Co-creators.
+
+SIM02 adds automatic unpublished-editor suggestions through the narrow
+`domain/similar_proposal.dart` DTO/query, `data/similar_proposal_gateway.dart`
+RPC parser, `application/similar_proposal_controller.dart` actor/session debounce
+and `presentation/similar_proposal_suggestions.dart` inline entry/sheet.
+`proposal_editor_screen.dart` observes only matching fields and fully dismisses
+the sheet before ordinary guarded detail navigation. Published editors never
+match. See [inputs, lifecycle and draft handoff](../../../../../docs/development/automatic-editor-suggestions.md).
+
+TW04 adds Browse and unpublished-editor entries to the sibling
+`template_workshop/` feature. Public browse keeps the AppBar Workshop action and
+floating Create Project action; template/scratch choice belongs to the creation
+chooser, without a second inline CTA above discovery filters.
+The unpublished editor's **Create from a template** action
+pushes through the existing draft departure guard; it preserves this editor
+and opens any accepted copy in a different editor by its canonical ID.
+Near publication, IT/EN copy explains automatic eligible reuse at Completed
+(end + 24 elapsed hours), including open resource descriptions and free-text
+responsibility. Ordinary blank creation, My Proposals and Tavoli remain intact.
 
 - `domain/` defines proposal, lifecycle, status, skill and time-zone models.
 - `data/` calls only the canonical Supabase proposal RPCs and reads the existing controlled skill catalog.
 - `application/` coordinates pagination, requester-only Requested enrichment, detail loading and race-safe owner commands. Every owner mutation carries the identity for which the screen was rendered.
 - `presentation/` contains public list/detail screens and complete-profile create/edit/my-proposals screens.
+
+`presentation/proposal_widgets.dart` places only the requested-participation
+badge at the top-right of the public card cover (including its placeholder).
+The lifecycle badge stays beside the title; requested borders, text, semantics
+and card navigation retain their existing behavior.
 
 `presentation/skill_filter.dart` adapts the shared compact tag selector for a
 staged discovery filter. The bounded bottom sheet uses searchable category
@@ -35,7 +73,8 @@ only changes visibility: text controllers retain pending input and provider
 state retains applied filters, results, and pagination.
 
 Browse owns list, detail, mine and editor routes inside the app's stateful shell.
-Switching tabs preserves the list scroll/filters and an unsaved editor. Identity
+Switching tabs preserves list scroll/filters and saves meaningful dirty unpublished
+Proposal content before switching. Published edits remain deliberate. Identity
 changes discard the shell's retained stacks and clear owner controllers. Revision
 checks after each await reject late loads/mutations and prevent an old draft
 creation from proceeding to publish in a later session. Every owner RPC still
@@ -51,7 +90,7 @@ photo boundary and degrades to a placeholder independently of detail content.
 
 The public client never reads proposal tables directly. Rough location is available on public cards; exact meeting text is rendered only when the sanitized detail RPC returns it. The shared `participation/` feature adds request/member actions and may replace the restricted explanation with participant-authorized operational meeting text without adding that data to Proposal models. The sibling `cover_media/` feature owns optional cover processing, persistence orchestration, and loading; Proposal controllers create/update the parent before cover reconciliation and publish only after it succeeds. Recurring activities and maps remain outside this feature.
 
-Cover add/change/remove choices stay local to the editor until Save or Publish.
+Cover add/change/remove choices stay local to the editor until Save, Publish or guarded draft departure.
 If cover persistence fails after content succeeds, the controller retains the
 same draft and reports whether a draft or later changes were saved. Public and
 owner cards/details consume only the canonical `coverObjectPath`; they do not
@@ -71,14 +110,17 @@ sessions never call the personalized RPC. Account, filter, pull-refresh, and
 own-participation revisions refresh or clear the projection without turning a
 private-read failure into a public-feed error.
 
-Public details are self-contained: they show the localized start/end schedule in the event's named timezone and the same Required/Useful skill labels as cards. The editor stores UTC instants, initializes both pickers from event-zone wall time, and keeps those instants unchanged while timezone text is invalid. Invalid timezone input displays a validation message and cannot open a picker; correcting the timezone refreshes the schedule without silently changing the instants.
+Public details show the localized schedule in the named event zone and the same
+Required/Useful skills as cards. The editor stores UTC instants and initializes
+pickers from event-zone wall time. An unknown stored zone fails validation safely
+and cannot open a picker; the editor never guesses a replacement zone.
 
 The time helpers explicitly support the existing `UTC` default as an alias for `Etc/UTC`, because the bundled timezone dataset excludes that legacy alias.
 
 When demo tools are enabled, new-proposal forms expose a **Fill sample data**
 action with synthetic values and a future schedule. The configuration gate is
 hard-off in production, and the preset never persists or sends data until the
-developer chooses Save draft or Publish. Save/publish validation shows a fixed field-name summary
+developer chooses Save draft, Publish or leaves the meaningful draft. Save/publish validation shows a fixed field-name summary
 that remains visible while the form scrolls, inline errors for text, timezone,
 country and schedule controls, and brings the first mounted invalid field into
 view. Drafts keep their intentionally optional fields while still validating
@@ -109,3 +151,47 @@ The editor uses the exact structural management read for both Creator and
 Co-creator access. Co-organizers and stale/demoted/revoked Co-creators fail
 closed. Successful structural mutations refresh the exact record and affected
 owned, delegated, public-list, and public-detail state.
+
+DRAFT01 gives each editor a separate session controller, immutable raw
+acknowledgements (`application/proposal_draft_session.dart`) and a stable
+actor/request first-creation key. `presentation/own_proposals_screen.dart`
+offers explicit recovery for unresolved opaque in-memory creation markers.
+The editor registers with the app router's departure coordinator; invalid
+fields stay editable and partial image failures retain the same draft. See
+[save-before-navigation and recovery](../../../../../docs/development/proposal-draft-departure.md).
+
+## UI-NEXT-02 discovery and drafts
+
+Public controls remain mounted during idle/loading/error/empty results. Same-query
+refresh retains rows and reports progress/failure; changed filters clear previous
+rows. Owner/delegated loads settle independently, never refetch a completed peer
+because its sibling is pending, and clear private caches on readiness changes.
+The folder action opens `/drafts?types=project`; the hub's management menu retains
+this feature's published/history/co-organizer screen and DRAFT01 recovery.
+
+## UI-NEXT-03 creation and controls
+
+`presentation/proposal_creation_choice.dart` owns the mutation-free
+`/proposals/create` chooser. Scratch uses `/proposals/create/scratch`; templates
+use the existing Workshop and independent canonical application. Direct edits
+and recovery bypass the chooser. Blank scratch forms have no Workshop shortcut;
+meaningful edited drafts retain guarded save-before-Workshop navigation.
+
+`presentation/proposal_editor_controls.dart` owns capacity stepping/direct raw
+entry, localized dates, adaptive equal-width control pairs, and the shared
+compact skill selector. The form still owns validation, acknowledgements,
+matching, cover reconciliation and mutations. New selected skills default to
+Useful; existing/template importance is preserved. Chip removal removes its
+importance too. Capacity stays unset until intentionally entered or incremented.
+Malformed raw edits remain available for correction.
+
+Genuine scratch creation and new canonical template applications default to the
+named `Europe/Rome` zone. Existing records and recovered receipts retain their
+zone and UTC instants; non-Rome records show a compact zone hint. There is no
+editable timezone box. Date controls and Save draft/Publish have equal widths
+when space permits and stack on narrow screens or large text. Resources and
+cancellation remain separate. Sample fill stays centrally gated, appears after
+real actions, confirms overwriting meaningful input and never submits itself.
+Only the informational publication-notice copy was removed; policy is unchanged.
+Typed hub entry returns to its filters on a successful save; ordinary entry
+retains My Proposals as the save destination. Location fields remain manual.

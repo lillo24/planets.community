@@ -1,5 +1,21 @@
 # Database development
 
+The [SIM01 matching contract](similar-active-proposals.md) owns the narrow
+authenticated upcoming-Proposal idea lookup, lexical admission/ranking and
+query-plan evidence. `proposal:similar:verify:local` is an explicit Database CI
+and full `check:db` step, with `115`/`116` pgTAP grants/access coverage.
+
+The [source-linked Template Workshop guide](template-workshop.md) owns TW01's
+identity/baseline, Completed eligibility, reusable projection/version, public
+RPC grants and bounded blueprint pagination contracts. Its HTTP/concurrency
+verifier is included in `npm run proposal:verify:local`; upgrade-backfill
+rehearsal is an explicit isolated-local procedure. TW02 adds protected template
+reporting/removal; TW03 adds authenticated atomic full-collection copying and
+applicant-private immutable receipts. `moderation:verify:local` and
+`template:apply:verify:local` now run explicitly in Database CI. Historical TW02
+API coverage was local; see the guide for the corrected record and populated
+TW03 upgrade procedure.
+
 The stack-integration candidate replays the complete cumulative schema from the
 validated `main` baseline plus the included open product stacks. Candidate-only
 migrations, generated types, and verification commands remain unmerged to
@@ -425,6 +441,11 @@ the migration. It runs before the standard clean reset. Use an owned disposable
 stack only: outside CI set `PLANETS_DISPOSABLE_QA=1`, and configure its project ID,
 ports and `MAILPIT_URL` first. Ordinary verification never resets:
 
+After applying MSG01, the upgrade verifier polls its first read-only
+`list_own_participation_conversation_items` call for up to ten seconds only
+when PostgREST returns `PGRST202` while registering the new RPC in its schema
+cache. Other failures are immediate; mutations are never retried.
+
 ```text
 npm run participation:conversations:upgrade:verify:local
 npm run participation:conversations:verify:local
@@ -635,6 +656,16 @@ Authenticated users use expected-identity-bound functions for keyset-paginated i
 
 `private.push_delivery_jobs` stores one recipient-level semantic job per source event, recipient, and kind, with strict mutually exclusive Project, Resource coordination, or listing-only matching reference shapes. It intentionally stores no provider token, raw outbox payload, saved-search identifier/filter, request/message body, agreement terms, exact meeting data, or per-device attempt. `process_push_outbox_batch` is service-only, selects available supported Project, Resource, and saved-search-match events with `FOR UPDATE SKIP LOCKED`, reuses the shared resolver, applies only each recipient's effective `push_enabled` value, and records `push.v1` success after complete fan-out. Matching jobs are immediately available and deduplicated by recipient/listing across overlapping saved searches. The projector does not query installations or depend on `public.notifications`; in-app and push preference combinations remain independent. Migration-time `push.v1` receipts cover already-existing supported events so provider delivery cannot unexpectedly replay historical activity. Delivery results never rewrite those projection receipts. Provider delivery, push-preview policy, and mobile matching copy/routes remain separate work.
 
+The push projector rechecks its receipt after locking each event, before resolving
+recipients or incrementing counters. Its cursor's earlier snapshot can still show
+a receipt as absent when another worker commits before the unchanged event row is
+locked. The fresh check closes that gap under the worker's default READ COMMITTED
+isolation; unique recipient jobs alone do not prevent duplicate processing counts
+or suppression. Keep this function VOLATILE so its internal queries get fresh
+statement snapshots. See PostgreSQL 17's
+[snapshot rules](https://www.postgresql.org/docs/17/transaction-iso.html#XACT-READ-COMMITTED)
+and [function volatility](https://www.postgresql.org/docs/17/xfunc-volatility.html).
+
 `private.prepare_push_delivery_jobs` locks available, unprepared jobs with `FOR UPDATE SKIP LOCKED` and snapshots their recipient's active installations exactly once. Each snapshot becomes one `private.push_delivery_targets` row containing only installation identity, platform/provider, schedule, status, attempt count, and lease state. The token remains solely on the installation. Registrations after `fanout_at` do not receive historical work. A job without active installations completes immediately with `no_targets`; otherwise it completes with `delivered_or_terminal` only after every target reaches `delivered`, `invalid_token`, `permanent_failure`, or `no_longer_registered`.
 
 `private.claim_push_delivery_targets` validates bounded worker/batch/lease inputs, first retires stale ownership snapshots, then uses `FOR UPDATE SKIP LOCKED` to assign distinct pending targets. Claim increments the target attempt number, creates one unfinished `private.push_delivery_attempts` row atomically, and returns a fresh UUID lease plus semantic job context—including nullable chat/message IDs—and the installation's current raw token/version. It never returns a chat body. The raw token exists only in this private routine response; jobs, targets, attempts, public APIs, ordinary generated types, and logs do not contain it. The service role has `USAGE` on the unexposed `private` schema and `EXECUTE` on the three worker entry points, but no table privileges. A trusted worker must therefore use a direct PostgreSQL connection; `private` is intentionally absent from the Data API exposed-schema list.
@@ -789,6 +820,12 @@ the deterministic local profiles and device-QA sequence.
 
 `push:verify:local` uses three complete authenticated identities, synthetic provider tokens, the two service-only projectors, and narrow local-database assertions. It proves idempotent registration, rotation, account transfer, owner-only unregister, independent in-app/push preferences, concurrent push projection, semantic job privacy, retry idempotency, suppression receipts, consumer coexistence, and unsupported-event preservation. It prints no tokens, keys, request messages, or meeting values.
 
+It also runs 100 lost-receipt retry rounds with four concurrent workers, deleting
+only its own synthetic event's push receipt between rounds. Every round requires
+exactly one processed event, no additional job or suppression, and exactly one job
+and receipt afterward. This stress regression exercises cursor/commit timing; it
+does not replace the strict initial projection or retry assertions.
+
 `push:project:local` is a trusted local helper that derives the service credential only from current local Supabase status, invokes the service-only push projector, and prints aggregate processed/created/suppressed counts. It must never be embedded in or called by Flutter.
 
 `push:delivery:verify:local` is a real direct-database fake worker and must run immediately after a clean reset/pgTAP pass, before integrations create unprepared push jobs. It concurrently prepares synthetic jobs and claims two installations, records fake delivered/transient results, advances the retry schedule without waiting, reclaims under a new lease, rejects the old response, verifies safe attempt history and completion, exercises stale invalid-token rotation protection, retires a transfer-before-claim target, and verifies `no_targets`. It makes no provider/network call and prints no token, credential, database URL, message, or meeting value.
@@ -894,3 +931,19 @@ activates. It prints no identities, tokens, messages, or database URL.
 `tavoli:web:verify:local` uses synthetic local OTP data and the production Next.js server to prove signed-out Tavoli list/detail rendering, rough-location and next-meeting output, exclusion of paused/ended rows from discovery, retained sanitized historical detail, exact-ID 404 behavior, and detail-only public/restricted exact-location handling. It never prints test addresses, tokens, keys, or protected meeting content.
 
 `npm run check:db` performs reset, lint, advisors, pgTAP, the real fake push-delivery worker protocol, the mobile/backend Auth check, the deterministic immediate-session/RLS check, the two-user profile visibility check, the proposal privacy/lifecycle check, the recurring activity recurrence/privacy/lifecycle check, the multi-user Project participation, delegate, shared-workspace, participation-request chat, and participation-aware Browse checks, notification/push projection, structured Messages integration, Project-chat lifecycle/message/notification integrations, the Scambio-Dona listing, saved-search, request, agreement, chat, and unified Messages/notification integrations, the Project resource-need and matching integrations, contribution-selection, acceptance-triage, membership-commitment, coverage, resurfacing, and actual-contribution integrations, moderation evidence integrations, user-block pair-serialization races, type regeneration, and drift detection as one validation sequence. It assumes `npm run db:start` has already succeeded and leaves stack lifecycle to the caller. CI additionally generates local web configuration, builds Next.js, runs the web-session and public Tavoli integrations, and always stops Supabase.
+
+TW-STACK01 retains all Template/SIM/DRAFT and PI verifiers, adds the unrestricted
+post-producer notification regression and uses one combined demo runner. MSG01's
+ordinary pair verifier runs after consumer fixtures and blocking, immediately
+before that regression: some earlier consumer fixtures acknowledge pre-existing
+events to isolate their own batch totals. Keep MSG01's real delegated rejection
+available for canonical projection rather than acknowledging it in those fixtures.
+Its populated upgrade still runs before the clean reset. The
+separate `npm run template:stack:upgrades:local` archives exact main/TW05 inputs,
+seeds each predecessor, snapshots old columns, and uses pinned CLI
+`supabase migration up --local --include-all` twice without a populated reset.
+This option applies missing interleaved timestamps. No migration/history is
+renamed or rewritten. Nullable added origin/resolution/template-case fields
+remain null on legacy rows; new receipts/baselines/events are not fabricated.
+Only after preservation passes does an explicit combined seed/rerun run.
+See [upgrade and validation evidence](template-stack-integration.md).

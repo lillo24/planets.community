@@ -1,0 +1,116 @@
+# Startup entry and installation tutorial
+
+This module owns ordinary signed-out entry and the device-local introduction.
+It does not own Auth, profile readiness, native-link delivery or product actions.
+
+- `startup_flow.dart` owns the explicit tutorial version, approved page registry,
+  installation preference store, run-only entry/defer flags and sanitized resume
+  destinations. Bootstrap restores its preference before launching the app.
+- `welcome_screen.dart` uses the shared `core/widgets/planets_hero.dart` native
+  circular orbits/stars around the unchanged bundled founder logo. After the
+  finite upward entrance, the shared website-speed planet rotations and logo
+  float continue while visible. Both clocks pause when hidden/backgrounded;
+  reduced motion settles immediately without ticking. Actions
+  are available throughout, and a failed asset load keeps them available.
+- `tutorial_screen.dart` owns the interactive /intro playback, current public
+  screen widgets, painted target lookup using stable keys, slow interruptible
+  detail scrolling, layout/lifecycle guards, and a barrier against all underlying taps.
+- `tutorial_presentation.dart` owns localized step copy, the spotlight painter,
+  and clearly labelled illustrations. Examples are widgets only, never records
+  injected into canonical public providers or Supabase.
+- `tutorial_routes.dart` owns the typed in-memory replay capability and safe
+  Back/Skip return. `tutorial_pages.dart` keeps the registry's synthetic page
+  harness for existing startup policy tests; production uses guided steps.
+
+Production activates `interactive-2`. Its eleven manually paced focus states are:
+introduction (no spotlight), Home Projects, first displayed Project card, its
+detail/participation, browse Create, browse Drafts, Home Scambio–Dona, Scambio's
+card/Create/Drafts together, Messages Chat/Requests, Messages Private/Groups,
+and farewell (no spotlight). Explanation text never advances on a timer.
+Next or the noninteractive overlay advances once; Previous and system Back move
+one state backward and restore the surface, frozen selection and scroll position.
+Back on the introduction exits safely. Only the 250 ms surface commit is debounced;
+Next/Previous can interrupt the detail scroll without waiting for it to finish.
+
+Selection follows the existing public browse order (Requested first when present,
+then ordinary Projects), including Full, closed, photo-less and actionless items.
+The selected identity is fixed for this tour. Public read waits are bounded to
+25 layout probes (normally about two seconds); absent/inaccessible data uses a
+labelled cover-bearing illustration. A failed/disappearing detail cannot substitute
+a different real Project. Illustrations never enter providers or database records.
+Advancing before the browse read resolves keeps selection active in detail; it
+shows loading until that read succeeds or the bounded wait expires.
+Public browse screens accept an optional tutorial-only placeholder widget; their
+normal filtering and fixed Create/Drafts controls are retained. Real covers and
+participation state use the existing product widgets and authorization.
+
+On first detail entry the cover/title remain visible briefly, then the existing
+vertical list scrolls linearly at roughly 70 logical pixels per second, stopping
+at the real Join action or truthful Full/participation status. Body and Needs text
+are not spotlighted. Reflow, backgrounding, Next/Previous, account replacement and
+disposal invalidate old probes/scroll callbacks. Reduced motion uses immediate
+focus. PageStorage belongs to the tour and is never persisted beyond it.
+Detail scroll-metric changes refresh focus after late section layout updates, so
+the spotlight follows the real participation control without another data read.
+
+Scambio has three separate outlined holes: first listing, fixed Create FAB,
+and fixed My listings/Drafts action. The card is revealed by scrolling only its
+list; its visible hole is clipped above the FAB so it cannot overlap that control.
+Messages uses its existing frame and scope selector with `controlsOnly: true`:
+guest states remain truthful; conversations, inboxes and subscriptions never mount.
+Underlying controls are excluded from semantics and gestures. Tutorial explanation,
+Next, Previous and Skip stay accessible outside the barrier and wrap/scroll at large
+text. Farewell requires explicit **Start exploring**; Skip remains a dismissal.
+
+The fallback cover is the unchanged licensed `garden-tools.webp` demo fixture,
+bundled under `assets/tutorial`. Its provenance and checksum are recorded in that
+folder's README and the original `scripts/demo-assets/assets.json`.
+
+Focused regressions live in `test/app/startup/interactive_tutorial_test.dart` and
+`startup_flow_test.dart`; Help replay coverage remains in `help_flow_test.dart`.
+Android visual smoke uses the existing integration-test harness and an isolated,
+task-owned emulator, with no shared database or device mutations:
+
+```powershell
+flutter drive -d <owned-emulator-id> --driver=test_driver/tutorial_screenshots.dart --target=integration_test/tutorial_smoke_test.dart --dart-define=TUT03_SCREENSHOTS=true
+```
+
+The host driver saves PNGs under `build/tutorial-screenshots` for the actual Home
+transition, Scambio grouped focus, covered fallback, introduction and Full Project.
+Without the define, `flutter test integration_test/tutorial_smoke_test.dart -d
+<owned-emulator-id>` runs the same non-destructive guest journeys without captures.
+These fake-gateway native tests validate layout/interaction, not live backend reads
+or physical Android/iOS devices. `npm run check:mobile` remains the full local gate.
+
+`planets.startup.completedTutorialVersion` remains the only persisted startup key.
+A bare version records completed; `dismissed:<version>` records deliberate Skip.
+Legacy bare versions remain readable. Only version/status is persisted, never
+identity, selected Project IDs, return destinations or invitation/OTP data.
+Finish and Skip navigate only after the local write succeeds. Errors remain
+visible/retryable. Back, background interruption, account replacement and external
+navigation do not write a status. First Explore and successful ordinary initial
+Login offer an unseen version; restored sessions and explicit native/Auth journeys
+retain the existing deferral policy. Completion/dismissal is installation-wide.
+
+HELP01 can call the same audited route after either completion or dismissal:
+
+```dart
+await TutorialRoutes.replay(context, returnTo: '/help');
+```
+
+Replay uses a typed `extra`, not a query flag, keeps the caller on the router stack,
+and pops back on Finish, Skip or Back from the introduction. Its sanitized safe return is a fallback if
+there is no caller to pop to. It does not erase or write installation status and
+does not bypass any Auth guard. No second navigator or native-link listener exists.
+
+Successful explicit logout reports `AuthCommandState.didSignOut`; the existing
+router resets only `hasEntered` and opens Welcome after Auth clears private
+stacks. Failure, expired sessions and abandoned late commands do not reopen it.
+Explore then suppresses Welcome again, including across background/resume.
+Tutorial completion and the current-run tutorial deferral are untouched.
+
+Debug builds expose **Reset welcome and tutorial (development)** in Settings.
+It removes only this key and the current-run flags; Auth, language/navigation
+preferences and backend data are untouched. Signed-out QA returns to Welcome;
+an authenticated session continues normally. The reset does not ship in profile
+or release builds.

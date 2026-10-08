@@ -18,7 +18,10 @@ void main() {
     final auth = FakeAuthGateway();
     final profile = FakeProfileAnchorGateway();
     addTearDown(auth.close);
-    final router = createAppRouter(initialLocation: '/private/raw-path');
+    final router = createAppRouter(
+      readPolicyAccepted: () => true,
+      initialLocation: '/private/raw-path',
+    );
     addTearDown(router.dispose);
 
     await tester.pumpWidget(
@@ -45,7 +48,10 @@ void main() {
     final auth = FakeAuthGateway();
     final profile = FakeProfileAnchorGateway();
     addTearDown(auth.close);
-    final router = createAppRouter(initialLocation: '/auth/verify');
+    final router = createAppRouter(
+      readPolicyAccepted: () => true,
+      initialLocation: '/auth/verify',
+    );
     addTearDown(router.dispose);
 
     await tester.pumpWidget(
@@ -75,6 +81,7 @@ void main() {
     addTearDown(auth.close);
     final session = const AuthSessionState.ready(AuthIdentity(id: 'user-1'));
     final router = createAppRouter(
+      readPolicyAccepted: () => true,
       initialLocation: '/auth?returnTo=https://attacker.example',
       readAuthSession: () => session,
     );
@@ -93,7 +100,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('Mobile foundation ready'), findsOneWidget);
+    expect(find.byKey(const Key('home-planets-hero')), findsOneWidget);
     expect(find.text('This page is not available.'), findsNothing);
   });
 
@@ -105,6 +112,7 @@ void main() {
     addTearDown(auth.close);
     const session = AuthSessionState.signedOut();
     final router = createAppRouter(
+      readPolicyAccepted: () => true,
       initialLocation: '/profile/edit',
       readAuthSession: () => session,
     );
@@ -139,6 +147,7 @@ void main() {
     const session = AuthSessionState.signedOut();
     const destination = '/messages/chats/chat-9/info';
     final router = createAppRouter(
+      readPolicyAccepted: () => true,
       initialLocation: destination,
       readAuthSession: () => session,
     );
@@ -179,6 +188,7 @@ void main() {
     );
     const destination = '/messages/chats/chat-9';
     final router = createAppRouter(
+      readPolicyAccepted: () => true,
       initialLocation: destination,
       readAuthSession: () => session,
     );

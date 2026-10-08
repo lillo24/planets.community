@@ -1,3 +1,5 @@
+import '../../../support/fake_policy.dart';
+
 import 'dart:async';
 import 'dart:typed_data';
 
@@ -257,6 +259,7 @@ class PhotoFlowHarness {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
+          preacceptedPolicyFixture,
           appConfigProvider.overrideWithValue(
             AppConfig.fromValues(
               appEnvironment: 'local',
@@ -282,7 +285,7 @@ class PhotoFlowHarness {
   }
 
   Future<void> openProfile(WidgetTester tester) async {
-    await _tapVisible(tester, find.text('View profile'));
+    await tester.tap(find.byKey(const Key('nav-profile')));
     await tester.pumpAndSettle();
   }
 

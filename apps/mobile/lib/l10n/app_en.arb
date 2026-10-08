@@ -571,6 +571,12 @@
   "tavoliLocalityFilter": "Filter by locality",
   "tavoliLoadMore": "Load more",
   "tavoliNextMeeting": "Next meeting",
+  "tavoliOccurrenceToday": "Today",
+  "tavoliOccurrenceTomorrow": "Tomorrow",
+  "tavoliOccurrenceInDays": "In {days} days",
+  "@tavoliOccurrenceInDays": {
+    "placeholders": { "days": { "type": "int" } }
+  },
   "tavoliUpcomingMeetings": "Upcoming meetings",
   "tavoliNoUpcomingMeetings": "There are no active upcoming meetings.",
   "tavoliWeeklySummary": "Every {weekday} at {time}",
@@ -903,7 +909,7 @@
   "notificationsParticipationAlerts": "Participation alerts",
   "notificationsChatMessages": "Chat messages",
   "notificationsResourceActivity": "Resource activity",
-  "notificationsResourcePreferenceExplanation": "Requests, Resource conversations, and exchange updates. This setting affects future in-app alerts; existing history remains available.",
+  "notificationsResourcePreferenceExplanation": "Resource requests and exchange updates. Human messages use Messages badges. This setting affects future activity alerts; existing history remains available.",
   "notificationsMatchingAlerts": "Saved search matches",
   "notificationsMatchingInApp": "In-app",
   "notificationsMatchingPreferenceExplanation": "Show an alert when a newly published Scambio-Dona listing matches one of your saved searches.",
@@ -1441,8 +1447,9 @@
   "joinAcceptanceForbidden": "This request is not available for the current account.",
   "joinAcceptanceLoadError": "Unable to load contribution offers. Try again.",
   "projectNeedsTitle": "Needs",
-  "projectNeedsNeededNow": "Needed now",
-  "projectNeedsAllCovered": "Everything currently needed is covered.",
+  "projectNeedsCovered": "Covered",
+  "projectNeedsMarkAsNeeded": "Mark as needed",
+  "projectNeedsAllCovered": "All needs are covered.",
   "projectNeedsCompetencesGroup": "Competences / Knowledge",
   "projectNeedsResourcesGroup": "Resources / Materials",
   "projectNeedsRequired": "Required",
@@ -1450,7 +1457,6 @@
   "projectNeedsCanHelp": "I can help",
   "projectNeedsCanBring": "I can bring it",
   "projectNeedsFoundOutsideAction": "Found outside app",
-  "projectNeedsFoundOutsideSection": "Found outside the app",
   "projectNeedsNeededAgain": "Needed again",
   "projectNeedsSystemEvent": "{name} is needed again.",
   "@projectNeedsSystemEvent": {
@@ -2054,6 +2060,96 @@
   "projectWorkspaceCancelAction": "Cancel",
   "projectWorkspaceOpenFailure": "The external workspace could not be opened.",
   "projectWorkspaceToolsSemantics": "Project coordination tools",
+  "moderationTemplateDisclosure": "You can report a template, including one linked to your own Proposal. Staff review reports manually. Reporting does not automatically remove the template or its source Proposal.",
+  "proposalDraftSaved": "Draft saved",
+  "proposalDraftImageNotSaved": "Draft content saved; image change not confirmed.",
+  "proposalDraftLeaveTitle": "Keep your draft",
+  "proposalDraftLeaveError": "Your changes could not be saved. Correct the highlighted fields or retry. Discard abandons only unsaved changes; any draft already saved remains in My Proposals.",
+  "proposalDraftKeepEditing": "Keep editing",
+  "proposalDraftDiscard": "Discard unsaved changes",
+  "proposalDraftLeaveWithoutImage": "Leave without image change",
+  "proposalDraftRecover": "Recover draft",
+  "proposalDraftRecoveryError": "Draft recovery failed. Retry from My Proposals.",
+  "workshopTitle": "Template Workshop",
+  "workshopStartFromTemplate": "Start from a template",
+  "workshopContext": "Reuse ideas from completed one-time Proposals to start your own independent draft.",
+  "workshopCompleted": "From a completed Proposal",
+  "workshopCreatorFallback": "Community creator",
+  "workshopCreator": "Original creator: {name}",
+  "@workshopCreator": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "workshopEmpty": "No completed Proposal templates are available yet.",
+  "workshopNoMatches": "No templates match these filters.",
+  "workshopReadError": "Templates could not be loaded. Retry to check availability.",
+  "workshopLoadMore": "Load more",
+  "workshopRefresh": "Refresh availability",
+  "workshopUnavailable": "This template is no longer available for new use or reporting.",
+  "workshopDuration": "Duration guidance: {seconds} seconds. Choose new dates and times for your draft.",
+  "@workshopDuration": {
+    "placeholders": {
+      "seconds": {
+        "type": "String"
+      }
+    }
+  },
+  "workshopCapacity": "Use suggested capacity: {capacity}",
+  "@workshopCapacity": {
+    "placeholders": {
+      "capacity": {
+        "type": "int"
+      }
+    }
+  },
+  "workshopCapacityHint": "An editable suggestion for your new draft.",
+  "workshopBlueprints": "Resource descriptions: {loaded} of {total}",
+  "@workshopBlueprints": {
+    "placeholders": {
+      "loaded": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "workshopBlueprintError": "Resource preview could not be completed. Retry or refresh the template.",
+  "workshopChanged": "This preview changed. Review the updated content before starting a new draft.",
+  "workshopReviewed": "I reviewed this preview",
+  "workshopCopyHint": "Start a new private draft with text, skills and all open resource descriptions. Choose new logistics; people and the cover image are not copied. This does not join or publish a Proposal.",
+  "workshopUse": "Use template · Start a new draft",
+  "workshopUseAgain": "Start another independent draft",
+  "workshopReport": "Report template",
+  "workshopViewSource": "View source Proposal",
+  "workshopPending": "Draft creation is awaiting confirmation.",
+  "workshopAccepted": "Your independent draft is ready.",
+  "workshopRecoveryLifetime": "Retry or open this same draft while the app is running. Confirmed drafts are also in My Proposals.",
+  "workshopOpen": "Open draft",
+  "workshopRetry": "Retry",
+  "workshopApplying": "Creating draft…",
+  "workshopApplyUncertain": "Creation could not be confirmed. Retry checks and repeats the same request safely.",
+  "workshopForbidden": "This request is not authorized. Check your account and refresh template availability; retry keeps the same request.",
+  "workshopProfileRequired": "Complete your profile before creating a new draft. A profile photo is not required to use a template.",
+  "workshopIncompatible": "This request has incompatible inputs. It cannot be replaced with a guessed draft.",
+  "workshopOpenError": "The accepted draft could not be opened. Open or retry the same draft; no new copy will be created.",
+  "workshopPublicationNotice": "When this published Proposal reaches Completed (24 hours after its end), its eligible text, skills and open resource descriptions automatically become reusable in Template Workshop. This does not need a separate submission or approval. Check what you include in free text.",
+  "similarMayExist": "A similar activity may already exist.",
+  "similarView": "View similar Projects",
+  "similarDismiss": "Hide suggestions",
+  "similarReopen": "Show suggestions",
+  "similarLoading": "Checking similar activities…",
+  "similarError": "Similar activities could not be checked. You can keep editing.",
+  "similarClose": "Close similar Projects",
+  "similarOpen": "View Project",
+  "similarFull": "Full",
+  "similarCapacityUnknown": "Registration capacity not set",
+  "similarTitleReason": "Related title topic",
+  "similarTagsReason": "Related title topic and shared selected tags",
+  "similarLocalityReason": "Same rough locality",
   "settingsNavigation": "Navigation",
   "settingsBottomRightTab": "Bottom-right tab",
   "settingsNavigationHelp": "Choose the shortcut shown on this device. When you open Messages or Browse, the tab shows that destination while you are there.",
@@ -2076,5 +2172,216 @@
         "type": "String"
       }
     }
-  }
+  },
+  "messageUnreadConversations": "{count, plural, =1{1 conversation with unread messages} other{{count} conversations with unread messages}}",
+  "messageUnreadMessages": "{count, plural, =1{1 unread message} other{{count} unread messages}}",
+  "messageUnreadUnavailable": "Unread count unavailable or stale. Refresh Messages to retry.",
+  "messageReadRetry": "Messages were not marked read. Tap to retry.",
+  "@messageUnreadConversations": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@messageUnreadMessages": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "messagePrivateChatSemantics": "Conversation with {name}",
+  "@messagePrivateChatSemantics": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "messageOwnPreview": "You: {body}",
+  "@messageOwnPreview": {
+    "placeholders": {
+      "body": {
+        "type": "String"
+      }
+    }
+  },
+  "messageRequestPendingPreview": "Pending request",
+  "messageRequestAcceptedPreview": "Request accepted",
+  "messageRequestRejectedPreview": "Request rejected",
+  "messageRequestWithdrawnPreview": "Request withdrawn",
+  "pairChatReadOnlyReactivation": "You can send messages again when there is a new pending request.",
+  "welcomeExplore": "Explore App",
+  "welcomeLogin": "Log in",
+  "messagesSignInContext": "Log in to join projects, donate or exchange, and manage your conversations.",
+  "authRestoreFailure": "Your session could not be restored. Retry to check your saved session.",
+  "startupPreferenceError": "Your introduction preference could not be saved or restored. Please retry.",
+  "tutorialNext": "Next",
+  "tutorialFinish": "Finish",
+  "startupDevelopmentReset": "Reset welcome and tutorial (development)",
+  "draftsTitle": "My drafts",
+  "draftsManagement": "Published projects and history",
+  "draftsAllTypes": "All types",
+  "draftsLoading": "Loading drafts…",
+  "draftsEmptyTitle": "No saved drafts",
+  "draftsEmptyMessage": "Saved, unpublished drafts of the selected types appear here.",
+  "draftsSourceError": "Could not refresh {source} drafts. Retry to get the complete list.",
+  "@draftsSourceError": {
+    "placeholders": {
+      "source": {
+        "type": "String"
+      }
+    }
+  },
+  "browsePreviousResults": "Previous results — these do not match the current filters.",
+  "proposalStartChoice": "How would you like to start?",
+  "proposalFromTemplate": "From a template",
+  "proposalFromScratch": "From scratch",
+  "proposalCapacityDecrease": "Decrease registration capacity",
+  "proposalCapacityIncrease": "Increase registration capacity",
+  "proposalChooseDateTime": "Choose date and time",
+  "proposalScheduleZone": "Times shown in {zone}",
+  "proposalDemoReplaceTitle": "Replace your entries?",
+  "proposalDemoReplaceMessage": "Sample data will replace the values you have entered. Nothing is saved until you choose to save or publish.",
+  "@proposalScheduleZone": {"placeholders": {"zone": {"type": "String"}}},
+  "locationManualEntryNotice": "Place search is unavailable. Enter the location below.",
+  "locationMapUnavailable": "Map preview unavailable. Use the location information above.",
+  "locationRestrictedPreview": "Everyone sees the public rough location. Exact meeting instructions are available only to authorized organizers and current participants.",
+  "locationPublicPreview": "Everyone sees the public rough location and exact meeting instructions.",
+  "messagesGuestChatsTitle": "No conversations",
+  "messagesGuestRequestsTitle": "No requests",
+  "messagesGuestPrivateMessage": "Log in to join projects, donate or exchange, and manage your private conversations.",
+  "messagesGuestGroupsMessage": "Log in to view group conversations for the projects you participate in.",
+  "messagesGuestRequestsMessage": "Log in to view and manage participation and Scambio-Dona requests.",
+  "tutorialSkip": "Skip tutorial",
+  "tutorialSlogan": "One idea. The right people. Something real.",
+  "tutorialIntroduction": "Build projects together and give things a new life.",
+  "tutorialHome": "Discover what people near you are organizing.",
+  "tutorialProjectCard": "Every project starts with an idea. Open it to discover how to take part.",
+  "tutorialProjectPurpose": "Here you can discover the idea and its purpose.",
+  "tutorialProjectNeeds": "Discover which skills and resources the project needs.",
+  "tutorialProjectParticipation": "Interested? You can request to take part. This tour sends no requests.",
+  "tutorialProjectCreate": "You can create a project of your own.",
+  "tutorialDrafts": "Save an idea as a draft and return to it later.",
+  "tutorialResourceModes": "Donate what you no longer use or exchange what you need.",
+  "tutorialResourceCard": "Discover things that can find a new home.",
+  "tutorialResourceCreate": "Create a listing to donate or exchange something.",
+  "tutorialMessagesTabs": "Here you find conversations and participation requests.",
+  "tutorialMessagesScopes": "Private conversations and project groups have their own spaces.",
+  "tutorialMessagesPreview": "Tutorial: your conversations stay private.",
+  "tutorialFarewell": "Have fun!",
+  "tutorialStartExploring": "Start exploring",
+  "tutorialIllustration": "Example — not a live listing",
+  "tutorialExampleProject": "A garden for everyone",
+  "tutorialExamplePurpose": "Create a small shared garden with your neighbors.",
+  "tutorialExampleNeeds": "Gardening skills, tools and a few seedlings.",
+  "tutorialExampleResource": "Garden tools to give away",
+  "tutorialStepProgress": "Step {current} of {total}",
+  "@tutorialStepProgress": {
+    "placeholders": {
+      "current": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "helpTitle": "Help",
+  "helpTutorial": "How PLANETS works",
+  "helpContactCreators": "Contact the creators",
+  "helpReportBug": "Report a bug",
+  "helpReportPerson": "Report a person",
+  "helpContactExplanation": "Contact the PLANETS creators through your mail app.",
+  "helpContactSubject": "PLANETS — Contact the creators",
+  "helpEmailUnconfigured": "Email support is not configured yet. You can still draft and copy a bug report.",
+  "helpOpenMail": "Open mail app",
+  "helpMailChoice": "You choose whether to send or cancel in your mail app. PLANETS cannot confirm delivery.",
+  "helpMailOpened": "Mail app opened. You choose whether to send.",
+  "helpMailUnavailable": "The mail app could not be opened. Check that one is installed, or copy the address and your draft.",
+  "helpPersonExplanation": "Direct person reporting from Help is not yet available. Reporting needs the relevant person or context. Use Report on the relevant Project, Tavolo, Resource listing, message or template to report that content. Existing reporting options depend on your access to that context.",
+  "helpBugExplanation": "Describe a technical problem. Only the text you enter is included in the draft. Avoid private information. The draft stays here while you use your mail app and is cleared when you leave this screen or your account session changes.",
+  "helpBugDescription": "Problem description (required)",
+  "helpBugSteps": "Steps to reproduce (optional)",
+  "helpBugExpected": "Expected result (optional)",
+  "helpBugRequired": "Describe the problem before reviewing the draft.",
+  "helpBugReview": "Review draft",
+  "helpBugEdit": "Edit draft",
+  "helpBugCopy": "Copy draft",
+  "helpBugCopied": "Draft copied.",
+  "helpBugCopyFailed": "The draft could not be copied. Try again.",
+  "helpBugSubject": "PLANETS — Bug report",
+  "locationWhereProject": "Where will it take place?",
+  "locationWhereResource": "Where is it located?",
+  "locationAreaPublic": "The public area is a broad locality. A meeting address is selected separately.",
+  "locationResourcePublic": "The selected locality, address or venue is public.",
+  "locationDraftCue": "Choosing a place saves your current draft first.",
+  "locationChooseArea": "Choose a place",
+  "locationChooseExact": "Choose exact place",
+  "locationExactTitle": "Exact meeting place (optional)",
+  "locationExactPublic": "This precise place is public. Meeting instructions stay separate.",
+  "locationExactPrivate": "This precise place is visible to authorized participants and managers. Meeting instructions stay separate.",
+  "locationChange": "Change",
+  "locationClear": "Clear",
+  "locationUseManual": "Use manual entry",
+  "locationNoVerifiedPlace": "Manual text only · no verified location",
+  "locationSearchTitle": "Find a place in Italy",
+  "locationQueryLabel": "Locality, address or venue",
+  "locationLoading": "Looking up the place",
+  "locationNoMatches": "No matching places for this precision. Try another search.",
+  "locationSelectionPending": "Confirm to save this place. Typed text alone is not a selection.",
+  "locationCancel": "Cancel",
+  "locationRetry": "Retry saving",
+  "locationSavePlace": "Save place",
+  "locationKindLocality": "Locality · broad area",
+  "locationKindAddress": "Address · precise place",
+  "locationKindAmenity": "Venue · precise place",
+  "locationErrorOffline": "Connection unavailable. Retry saving or cancel; manual entry remains available.",
+  "locationErrorTimeout": "The request timed out. Retry saving or cancel.",
+  "locationErrorQuota": "Location lookup has reached its limit. Use manual entry.",
+  "locationErrorExpired": "The selection expired. Search and select again.",
+  "locationErrorStale": "The item changed. Search and select again.",
+  "locationErrorUnauthorized": "Location access is no longer available. Return to your items.",
+  "locationErrorUnsupported": "This place or source is not supported. Use manual entry.",
+  "locationErrorProvider": "Location lookup could not complete. Use manual entry or try again later.",
+  "policyPrivacy": "Privacy Policy",
+  "policyTerms": "Terms of Use",
+  "policyRules": "Community Rules",
+  "policyAcceptanceTitle": "Terms and Community Rules",
+  "policyAcceptanceExplanation": "Before uploading your profile or photo, creating content or messaging, read and explicitly accept the Terms and Community Rules. The Privacy Policy is informational; this is not general consent to data processing or marketing.",
+  "policyProvisional": "Provisional version — under review. The linked documents contain proposals and open items.",
+  "policyVersion": "Terms/Rules version: {version}",
+  "policyLocalAcknowledgement": "Saved on this device for your account and this version only. Another device or reinstall may require acceptance again. Public browsing, support, reporting, blocking, deletion requests and sign-out remain available.",
+  "policyAcceptLabel": "I accept the Terms of Use and Community Rules linked above.",
+  "policyAcceptAction": "Accept and continue",
+  "policyCancel": "Continue browsing; cancel this action",
+  "policyReadFailed": "Could not read the acknowledgement on this device. Retry before creating content.",
+  "policyWriteFailed": "Acceptance was not saved. Check the control and retry; content creation remains unavailable.",
+  "policyLinkFailed": "Could not open the page. Retry or copy the link and open it in your browser.",
+  "policyCopyLink": "Copy link",
+  "policyCopied": "Copied.",
+  "policyCopyFailed": "Could not copy. Select the visible text and copy it manually.",
+  "policyDeleteAccount": "Delete account",
+  "policyDeletionExplanation": "This prepares an email request to Leonardo Colli, who handles deletion manually. Opening or sending an email does not instantly delete your account. You choose Send or Cancel in your email app; PLANETS cannot observe that choice.",
+  "policyDeletionOutcome": "The intended outcome, subject to a verified procedure, removes your personal profile photo and profile data and shows “Deleted profile”. Previously sent messages are intended to remain in authorised histories; that does not anonymise their text or authorise indefinite retention. The full deletion procedure still requires validation.",
+  "policyDeletionRights": "You may request erasure or restriction of personal information in messages. Any lawful retention exception must be narrowly justified. Leonardo will verify identity proportionately if needed and confirm the outcome. A reply is normally due within one month under applicable rights rules; it is not proof that deletion is complete or a backup purge deadline.",
+  "policyDeletionFromEmail": "Preferably send from the email used for PLANETS. If needed, enter your account email below and review the draft. You can also request deletion on the website without signing in or reinstalling.",
+  "policyAccountEmail": "Account email (optional, entered by you)",
+  "policyCopyAddress": "Copy email address",
+  "policyCopyDraft": "Copy reviewed email",
+  "policyDeletionWebsite": "Deletion instructions on the website",
+  "policyReviewAction": "Read Terms and Rules to continue",
+  "@policyVersion": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "tutorialProjectDetail": "Read about the project as we scroll to participation. You can request to join when available; full or restricted projects explain their status. Nothing is sent in this tour.",
+  "tutorialHomeResources": "Back on Home: give things a new life with Exchange–Donate.",
+  "tutorialResources": "Discover a listing, create your own, or return to your listings and drafts.",
+  "tutorialExampleResourceSummary": "Give a few useful tools a new home.",
+  "tutorialExampleAction": "Example action — this demonstration sends no request."
 }

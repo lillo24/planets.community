@@ -14,7 +14,7 @@ outbox, register devices, deliver push, or own participation/chat actions.
   results. It never calls the service-only projector.
 - `application/notifications_controllers.dart` owns inbox paging, unread state,
   mark-one/mark-all, duplicate-action guards, rollback/reload behavior,
-  Participation/Chat/Resources/Matching preference state, and identity
+  Participation/Resources/Matching preference state, and identity
   revisions.
 - `presentation/notification_destination.dart` maps known semantic targets to
   the 07A Messages request item, the canonical Project-chat route, Resource
@@ -28,7 +28,7 @@ outbox, register devices, deliver push, or own participation/chat actions.
 - `presentation/notifications_screen.dart` owns inbox loading, empty, safe
   error, refresh, keyset pagination, read state, and tap orchestration.
 - `presentation/notification_preferences_screen.dart` exposes Participation,
-  Chat, Resources, and the global Matching in-app controls while keeping Push
+  Resources, and the global Matching in-app controls while keeping Push
   hidden.
 - `presentation/notification_routes.dart` identifies the guarded Home routes.
 
@@ -82,8 +82,9 @@ late work. Unread count refreshes when a ready Home bell is built, when the
 inbox loads/refreshes, and after read actions. 06B deliberately adds no timer,
 Realtime subscription, or background service.
 
-The preference screen requires exactly one configurable Participation, Chat,
-Resources, and Matching row, ignoring unknown future categories. It preserves each
+The preference screen requires exactly one configurable Participation,
+Resources, and Matching row, ignoring unknown future categories. A retained
+Chat row is optional and preserved, with no obsolete in-app control. It preserves each
 hidden `push_enabled` value unchanged when setting its
 `in_app_enabled` value. Disabling a category affects future projected in-app
 rows only; existing history remains. No category-specific push toggle is
@@ -125,7 +126,13 @@ counts, and lets the tester pull-to-refresh. It is suitable for preparing
 participant-removal, preference suppression/re-enable, and additional paging
 rows without adding a QA control to the app.
 
-06D chat alerts use only safe actor/Project display context and semantic
-Project/chat/message identifiers; they never fetch or render message bodies.
+MSG02 classifies by semantic kind: ordinary `chat_message_received` and
+`resource_chat_message_received` events create no future inbox rows and existing
+rows are excluded before paging, bell counts and mark-all. Historical rows remain
+unchanged; exact own-ID read/navigation remains supported and never acknowledges
+chat. Request, membership, Resource exchange/terms/milestone/cancellation and
+Matching alerts retain their activity behavior, including chat destinations.
+The shared event resolver, suppressed receipts, push preferences and supported
+push jobs remain intact. Human-message attention belongs to Messages unread.
 Device registration, FCM/APNs, permission timing, and safe provider previews
 remain 06C2B. Native QA remains deferred to the consolidated Plan 12 pass.

@@ -1,29 +1,45 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart' show ScrollCacheExtent;
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:uuid/uuid.dart';
+
+import '../../../app/router/draft_departure_coordinator.dart';
 
 import '../../../core/theme/app_tokens.dart';
 import '../../../core/widgets/error_state.dart';
 import '../../../core/widgets/loading_state.dart';
 import '../../../devtools/demo/demo_widgets.dart';
+import '../../../devtools/demo/demo_tools.dart';
 import '../../../l10n/generated/app_localizations.dart';
+import '../../locations/presentation/location_editor_section.dart';
 import '../../auth/application/auth_session_controller.dart';
+import '../../auth/domain/auth_models.dart';
 import '../../cover_media/domain/cover_media_models.dart';
 import '../../cover_media/presentation/cover_editor_section.dart';
+import '../../template_workshop/presentation/template_workshop_screens.dart';
 import '../../participation/domain/participation_models.dart';
 import '../../profile_photo/presentation/profile_photo_trust_gate.dart';
 import '../../project_resource_needs/presentation/project_resource_need_routes.dart';
 import '../application/proposal_controllers.dart';
+import '../application/proposal_draft_session.dart';
+import '../application/similar_proposal_controller.dart';
 import '../domain/proposal_models.dart';
 import '../domain/proposal_time.dart';
+import '../domain/similar_proposal.dart';
+import 'similar_proposal_suggestions.dart';
+import 'proposal_editor_controls.dart';
 
 class ProposalEditorScreen extends ConsumerStatefulWidget {
-  const ProposalEditorScreen({this.proposalId, super.key});
+  const ProposalEditorScreen({
+    this.proposalId,
+    this.returnToHub = false,
+    super.key,
+  });
 
   final String? proposalId;
+  final bool returnToHub;
 
   @override
   ConsumerState<ProposalEditorScreen> createState() =>
@@ -32,6 +48,8 @@ class ProposalEditorScreen extends ConsumerStatefulWidget {
 
 class _ProposalEditorScreenState extends ConsumerState<ProposalEditorScreen> {
   String? _requestedIdentity;
+  var _sessionId = const Uuid().v4();
+  VoidCallback? _releaseSession;
 
   @override
   void initState() {
@@ -40,21 +58,48 @@ class _ProposalEditorScreenState extends ConsumerState<ProposalEditorScreen> {
   }
 
   Future<void> _load({bool force = false}) async {
-    final identity = ref.read(authSessionProvider).identity;
-    if (identity != null && (force || _requestedIdentity != identity.id)) {
+    if (!mounted) return;
+    final session = ref.read(authSessionProvider);
+    final identity = session.identity;
+    if (session.phase == AuthSessionPhase.ready &&
+        identity != null &&
+        (force || _requestedIdentity != identity.id)) {
       _requestedIdentity = identity.id;
-      await ref
-          .read(proposalEditorProvider.notifier)
-          .load(identity.id, widget.proposalId);
+      final controller = ref.read(
+        proposalEditorSessionProvider(_sessionId).notifier,
+      );
+      _releaseSession = controller.releaseSession;
+      await controller.load(identity.id, widget.proposalId);
     }
+  }
+
+  @override
+  void didUpdateWidget(ProposalEditorScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.proposalId != widget.proposalId) {
+      _releaseSession?.call();
+      _releaseSession = null;
+      _sessionId = const Uuid().v4();
+      _requestedIdentity = null;
+      Future<void>.microtask(_load);
+    }
+  }
+
+  @override
+  void dispose() {
+    _releaseSession?.call();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final identity = ref.watch(authSessionProvider).identity;
-    final state = ref.watch(proposalEditorProvider);
+    final session = ref.watch(authSessionProvider);
+    final identity = session.identity;
+    final state = ref.watch(proposalEditorSessionProvider(_sessionId));
+    // A create route keeps its session after binding the first canonical ID.
     final proposalMatches =
+        widget.proposalId == null ||
         state.phase == ProposalEditorPhase.failure ||
         state.proposal?.id == widget.proposalId;
     final isCurrent =
@@ -66,6 +111,12 @@ class _ProposalEditorScreenState extends ConsumerState<ProposalEditorScreen> {
         state.failure == ProposalFailureKind.forbidden;
     if (identity != null && _requestedIdentity != identity.id) {
       Future<void>.microtask(_load);
+    } else if (session.phase == AuthSessionPhase.ready &&
+        identity != null &&
+        state.phase == ProposalEditorPhase.idle) {
+      // Access loss clears the session even if the account ID stays the same.
+      // Reload once readiness returns instead of retaining an empty loading state.
+      Future<void>.microtask(() => _load(force: true));
     }
     return Scaffold(
       appBar: AppBar(
@@ -88,10 +139,12 @@ class _ProposalEditorScreenState extends ConsumerState<ProposalEditorScreen> {
                 onRetry: () => _load(force: true),
               )
             : _ProposalForm(
-                key: ValueKey('${identity.id}:${widget.proposalId ?? 'new'}'),
+                key: ValueKey('${identity.id}:$_sessionId'),
+                sessionId: _sessionId,
                 identityId: identity.id,
                 proposal: state.proposal,
                 categories: state.categories,
+                returnToHub: widget.returnToHub,
               ),
       ),
     );
@@ -101,20 +154,26 @@ class _ProposalEditorScreenState extends ConsumerState<ProposalEditorScreen> {
 class _ProposalForm extends ConsumerStatefulWidget {
   const _ProposalForm({
     required this.identityId,
+    required this.sessionId,
     required this.proposal,
     required this.categories,
+    required this.returnToHub,
     super.key,
   });
 
   final String identityId;
+  final String sessionId;
   final OwnProposal? proposal;
   final List<ProposalSkillCategory> categories;
+  final bool returnToHub;
 
   @override
   ConsumerState<_ProposalForm> createState() => _ProposalFormState();
 }
 
-class _ProposalFormState extends ConsumerState<_ProposalForm> {
+class _ProposalFormState extends ConsumerState<_ProposalForm>
+    with WidgetsBindingObserver {
+  final _locationHandle = LocationEditorHandle();
   final _formKey = GlobalKey<FormState>();
   final _titleAnchor = GlobalKey();
   final _summaryAnchor = GlobalKey();
@@ -146,6 +205,21 @@ class _ProposalFormState extends ConsumerState<_ProposalForm> {
   bool _validatingPublish = false;
   List<String> _validationIssues = const [];
   CoverChange _coverChange = const CoverChange.unchanged();
+  int _coverRevision = 0;
+  int _acknowledgedCoverRevision = 0;
+  int _coverResetEpoch = 0;
+  late ProposalDraftSnapshot _acknowledged;
+  late final DraftDepartureOwner _departureOwner;
+  late final DraftDepartureCoordinator _departure;
+  bool _saving = false;
+  ProposalDraftSnapshot? _partialAcknowledged;
+  late final SimilarProposalController _similar;
+  bool _appResumed = true;
+  bool _sheetOpen = false;
+  bool _openingCandidate = false;
+  bool _preparingDeparture = false;
+  ModalRoute<String>? _suggestionRoute;
+  String get _similarKey => '${widget.identityId}:${widget.sessionId}';
 
   @override
   void initState() {
@@ -157,7 +231,10 @@ class _ProposalFormState extends ConsumerState<_ProposalForm> {
     _capacity = TextEditingController(
       text: p?.capacity.registrationCapacity?.toString() ?? '',
     );
-    _timezone = TextEditingController(text: p?.eventTimezone ?? 'UTC');
+    // Only genuine scratch creation adopts Italy's default; legacy values stay.
+    _timezone = TextEditingController(
+      text: p == null ? 'Europe/Rome' : p.eventTimezone ?? 'UTC',
+    );
     _country = TextEditingController(text: p?.countryCode ?? '');
     _locality = TextEditingController(text: p?.locality ?? '');
     _administrativeArea = TextEditingController(
@@ -175,10 +252,43 @@ class _ProposalFormState extends ConsumerState<_ProposalForm> {
       for (final skill in p?.skills ?? const <ProposalSkill>[])
         skill.id: skill.importance,
     };
+    _acknowledged = _snapshot();
+    _departure = ref.read(draftDepartureProvider);
+    _similar = ref.read(similarProposalProvider(_similarKey).notifier);
+    _similar.acquireSession();
+    _appResumed =
+        WidgetsBinding.instance.lifecycleState == null ||
+        WidgetsBinding.instance.lifecycleState == AppLifecycleState.resumed;
+    WidgetsBinding.instance.addObserver(this);
+    for (final controller in [_title, _country, _locality]) {
+      controller.addListener(_syncMatching);
+    }
+  }
+
+  bool _registeredDeparture = false;
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    Future<void>.microtask(_syncMatching);
+    if (_registeredDeparture) return;
+    _registeredDeparture = true;
+    _departureOwner = DraftDepartureOwner(
+      actorId: widget.identityId,
+      pageKey: GoRouterState.of(context).pageKey,
+      isActive: () =>
+          mounted &&
+          TickerMode.valuesOf(context).enabled &&
+          (ModalRoute.of(context)?.isCurrent ?? false),
+      prepare: _prepareDeparture,
+    );
+    _departure.register(_departureOwner);
   }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _similar.releaseSession();
+    _departure.unregister(_departureOwner);
     for (final controller in [
       _title,
       _summary,
@@ -196,13 +306,142 @@ class _ProposalFormState extends ConsumerState<_ProposalForm> {
     super.dispose();
   }
 
+  @override
+  void didUpdateWidget(_ProposalForm oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Binding is lookup invalidation only; accepted router departure still owns
+    // its original choice and performs exactly one DRAFT01 preparation.
+    Future<void>.microtask(_syncMatching);
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    _appResumed = state == AppLifecycleState.resumed;
+    _syncMatching();
+  }
+
+  void _syncMatching() {
+    if (!mounted) return;
+    final session = ref.read(authSessionProvider);
+    final editor = ref.read(proposalEditorSessionProvider(widget.sessionId));
+    final ready =
+        session.phase == AuthSessionPhase.ready &&
+        session.identity?.id == widget.identityId &&
+        editor.expectedCreatorId == widget.identityId;
+    final draft =
+        widget.proposal == null ||
+        widget.proposal?.lifecycle == ProposalLifecycle.draft;
+    final busy =
+        _saving || editor.isBusy || _preparingDeparture || _openingCandidate;
+    final route = ModalRoute.of(context);
+    final visible = TickerMode.valuesOf(context).enabled;
+    final temporarySheet =
+        _sheetOpen &&
+        _appResumed &&
+        ready &&
+        draft &&
+        visible &&
+        !busy &&
+        ((route?.isCurrent ?? false) || (_suggestionRoute?.isCurrent ?? false));
+    _similar.setActive(
+      ready &&
+          draft &&
+          _appResumed &&
+          visible &&
+          (route?.isCurrent ?? false) &&
+          !busy &&
+          !_sheetOpen,
+      sheet: temporarySheet,
+    );
+    try {
+      _similar.setQuery(
+        ready && draft
+            ? SimilarProposalQuery.fromForm(
+                actorId: widget.identityId,
+                title: _title.text,
+                skillIds: _skills.keys,
+                country: _country.text,
+                locality: _locality.text,
+                excludedProposalId: ref
+                    .read(
+                      proposalEditorSessionProvider(widget.sessionId).notifier,
+                    )
+                    .boundProposalId,
+              )
+            : null,
+      );
+    } on FormatException {
+      _similar.invalidInput();
+    }
+  }
+
+  Future<void> _viewSimilar() async {
+    if (_sheetOpen || _openingCandidate || !_departureOwner.isActive()) return;
+    final selection = _similar.selection();
+    if (selection == null) return;
+    final items = ref.read(similarProposalProvider(_similarKey)).items;
+    _sheetOpen = true;
+    _similar.setActive(false, sheet: true);
+    FocusManager.instance.primaryFocus?.unfocus();
+    final selected = await showModalBottomSheet<String>(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      builder: (context) {
+        _suggestionRoute = ModalRoute.of<String>(context);
+        return SimilarProposalSheet(
+          items: items,
+          sessionId: _similarKey,
+          selection: selection,
+        );
+      },
+    );
+    // popped resolves before the exit animation. completed waits for actual
+    // overlay removal; endOfFrame restores editor TickerMode/route ownership.
+    await _suggestionRoute?.completed;
+    await WidgetsBinding.instance.endOfFrame;
+    if (!mounted) return;
+    final valid =
+        selected != null &&
+        _appResumed &&
+        _departureOwner.isActive() &&
+        identical(_departure.activeOwner, _departureOwner) &&
+        _similar.accepts(selection, selected);
+    _sheetOpen = false;
+    _suggestionRoute = null;
+    if (!valid) {
+      _syncMatching();
+      return;
+    }
+    setState(() => _openingCandidate = true);
+    _syncMatching();
+    try {
+      // The ordinary router guard owns saving, retry/discard and destination
+      // feedback. Never manually prepare and then prepare again through push.
+      await context.push('/proposals/$selected');
+    } finally {
+      if (mounted) {
+        setState(() => _openingCandidate = false);
+        _syncMatching();
+      }
+    }
+  }
+
   ProposalInput _input() => ProposalInput(
     title: _title.text,
     summary: _summary.text,
     description: _description.text,
     startsAt: _startsAt,
     endsAt: _endsAt,
-    eventTimezone: _timezone.text,
+    // Preserve a legacy unset zone while its schedule remains unset. Choosing
+    // dates uses the pre-existing UTC picker convention, never the new Rome default.
+    eventTimezone:
+        widget.proposal != null &&
+            widget.proposal!.eventTimezone == null &&
+            _startsAt == null &&
+            _endsAt == null
+        ? ''
+        : _timezone.text,
     countryCode: _country.text,
     locality: _locality.text,
     administrativeArea: _administrativeArea.text,
@@ -214,13 +453,149 @@ class _ProposalFormState extends ConsumerState<_ProposalForm> {
     countOrganizersTowardCapacity: _countOrganizersTowardCapacity,
   );
 
-  Future<void> _save({required bool publish}) async {
+  ProposalDraftSnapshot _snapshot() => ProposalDraftSnapshot(
+    text: [
+      _title.text,
+      _summary.text,
+      _description.text,
+      _capacity.text,
+      _timezone.text,
+      _country.text,
+      _locality.text,
+      _administrativeArea.text,
+      _publicLocation.text,
+      _exactLocation.text,
+    ],
+    input: _input(),
+    coverRevision: _coverRevision,
+  );
+
+  Future<DraftDepartureOutcome> _prepareDeparture() async {
+    _preparingDeparture = true;
+    _syncMatching();
+    try {
+      return await _prepareDraftDeparture();
+    } finally {
+      _preparingDeparture = false;
+      _syncMatching();
+    }
+  }
+
+  Future<DraftDepartureOutcome> _prepareDraftDeparture() async {
+    if (widget.proposal?.lifecycle == ProposalLifecycle.published) {
+      return DraftDepartureOutcome.noChange;
+    }
+    if (_saving ||
+        ref.read(proposalEditorSessionProvider(widget.sessionId)).isBusy) {
+      return DraftDepartureOutcome.blocked;
+    }
+    final current = _snapshot();
+    final controller = ref.read(
+      proposalEditorSessionProvider(widget.sessionId).notifier,
+    );
+    if (current.sameAs(_acknowledged) ||
+        (controller.boundProposalId == null && !current.meaningful)) {
+      return DraftDepartureOutcome.noChange;
+    }
+    if (await _save(publish: false, navigate: false)) {
+      return _snapshot().sameAs(_acknowledged)
+          ? DraftDepartureOutcome.saved
+          : DraftDepartureOutcome.blocked;
+    }
+    if (!mounted ||
+        ref.read(authSessionProvider).identity?.id != widget.identityId) {
+      return DraftDepartureOutcome.blocked;
+    }
+    final partial =
+        ref
+            .read(proposalEditorSessionProvider(widget.sessionId))
+            .coverPartialSave !=
+        null;
+    final l10n = AppLocalizations.of(context);
+    final discard = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(l10n.proposalDraftLeaveTitle),
+        content: Text(
+          partial
+              ? l10n.proposalDraftImageNotSaved
+              : l10n.proposalDraftLeaveError,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text(l10n.proposalDraftKeepEditing),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: Text(
+              partial
+                  ? l10n.proposalDraftLeaveWithoutImage
+                  : l10n.proposalDraftDiscard,
+            ),
+          ),
+        ],
+      ),
+    );
+    if (discard != true || !mounted) return DraftDepartureOutcome.blocked;
+    // Discard only unacknowledged changes; preserve a known/ambiguous creation.
+    if (partial && _partialAcknowledged != null) {
+      _acknowledged = _partialAcknowledged!;
+    }
+    _restoreAcknowledged();
+    return partial
+        ? DraftDepartureOutcome.partial
+        : DraftDepartureOutcome.discarded;
+  }
+
+  void _restoreAcknowledged() {
+    final controllers = [
+      _title,
+      _summary,
+      _description,
+      _capacity,
+      _timezone,
+      _country,
+      _locality,
+      _administrativeArea,
+      _publicLocation,
+      _exactLocation,
+    ];
+    final input = _acknowledged.input;
+    setState(() {
+      for (final entry in controllers.indexed) {
+        entry.$2.text = _acknowledged.text[entry.$1];
+      }
+      _startsAt = input.startsAt;
+      _endsAt = input.endsAt;
+      _visibility = input.exactLocationVisibility;
+      _countOrganizersTowardCapacity = input.countOrganizersTowardCapacity;
+      _skills
+        ..clear()
+        ..addAll(input.skillImportanceById);
+      _coverChange = const CoverChange.unchanged();
+      _coverRevision = _acknowledged.coverRevision;
+      _acknowledgedCoverRevision = _coverRevision;
+      // Discard remounts the cover picker even when its saved revision is unchanged.
+      _coverResetEpoch++;
+      _validationIssues = const [];
+    });
+  }
+
+  Future<bool> _save({required bool publish, bool navigate = true}) async {
+    _locationHandle.beforeContentSave();
+    if (_saving ||
+        ref.read(proposalEditorSessionProvider(widget.sessionId)).isBusy) {
+      return false;
+    }
     final publishedEdit =
         widget.proposal?.lifecycle == ProposalLifecycle.published;
     final validateCompleteContent = publish || publishedEdit;
     setState(() => _validatingPublish = validateCompleteContent);
     final valid = _formKey.currentState?.validate() ?? false;
-    final input = _input();
+    final captured = _snapshot();
+    final input = captured.input;
+    final capturedCover = _coverChange;
     final issues = _validationIssueLabels(
       input,
       publish: validateCompleteContent,
@@ -241,13 +616,13 @@ class _ProposalFormState extends ConsumerState<_ProposalForm> {
           );
         }
       }
-      return;
+      return false;
     }
     if (_validationIssues.isNotEmpty) {
       setState(() => _validationIssues = const []);
     }
     final identity = ref.read(authSessionProvider).identity;
-    if (identity?.id != widget.identityId) return;
+    if (identity?.id != widget.identityId) return false;
     if (publish &&
         !await requireProfilePhotoForTrustAction(
           context: context,
@@ -255,43 +630,79 @@ class _ProposalFormState extends ConsumerState<_ProposalForm> {
           expectedProfileId: widget.identityId,
           reason: ProfilePhotoTrustReason.publishPersonalActivity,
         )) {
-      return;
+      return false;
     }
-    if (!mounted) return;
-    final controller = ref.read(proposalEditorProvider.notifier);
+    if (!mounted) return false;
+    setState(() => _saving = true);
+    _syncMatching();
+    final controller = ref.read(
+      proposalEditorSessionProvider(widget.sessionId).notifier,
+    );
     final id = publish
         ? await controller.publish(
             widget.identityId,
             input,
-            coverChange: _coverChange,
+            coverChange: capturedCover,
           )
         : publishedEdit
         ? await controller.saveChanges(
             widget.identityId,
             input,
-            coverChange: _coverChange,
+            coverChange: capturedCover,
           )
         : await controller.saveDraft(
             widget.identityId,
             input,
-            coverChange: _coverChange,
+            coverChange: capturedCover,
           );
+    if (!mounted ||
+        ref.read(authSessionProvider).identity?.id != widget.identityId) {
+      return false;
+    }
+    setState(() => _saving = false);
+    _syncMatching();
+    if (id == null &&
+        ref
+                .read(proposalEditorSessionProvider(widget.sessionId))
+                .coverPartialSave !=
+            null) {
+      _partialAcknowledged = ProposalDraftSnapshot(
+        text: captured.text,
+        input: captured.input,
+        coverRevision: _acknowledged.coverRevision,
+      );
+    }
     if (id == null &&
         mounted &&
         publish &&
-        ref.read(proposalEditorProvider).failure ==
+        ref.read(proposalEditorSessionProvider(widget.sessionId)).failure ==
             ProposalFailureKind.profilePhotoRequired) {
       await showProfilePhotoTrustGate(
         context: context,
         reason: ProfilePhotoTrustReason.publishPersonalActivity,
       );
-      return;
+      return false;
     }
     if (id != null && mounted) {
+      setState(() {
+        _acknowledged = captured;
+        if (_coverRevision == captured.coverRevision) {
+          _coverChange = const CoverChange.unchanged();
+          _acknowledgedCoverRevision = _coverRevision;
+        }
+      });
       ref.invalidate(ownProposalsProvider);
       ref.invalidate(publicProposalsProvider);
-      context.go('/proposals/mine');
+      if (navigate) {
+        if (widget.returnToHub && context.canPop()) {
+          context.pop();
+        } else {
+          context.go('/proposals/mine');
+        }
+      }
+      return true;
     }
+    return false;
   }
 
   Future<void> _confirmCancel() async {
@@ -315,7 +726,7 @@ class _ProposalFormState extends ConsumerState<_ProposalForm> {
     );
     if (confirmed != true || !mounted) return;
     final cancelled = await ref
-        .read(proposalEditorProvider.notifier)
+        .read(proposalEditorSessionProvider(widget.sessionId).notifier)
         .cancel(widget.identityId);
     if (!cancelled && mounted) {
       ScaffoldMessenger.of(context)
@@ -323,7 +734,33 @@ class _ProposalFormState extends ConsumerState<_ProposalForm> {
     }
   }
 
-  void _fillSampleData() {
+  Future<void> _fillSampleData() async {
+    if (_snapshot().meaningful) {
+      final l = AppLocalizations.of(context);
+      final replace = await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+          scrollable: true,
+          title: Text(l.proposalDemoReplaceTitle),
+          content: Text(l.proposalDemoReplaceMessage),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: Text(l.proposalDraftKeepEditing),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: Text(l.demoFillSampleAction),
+            ),
+          ],
+        ),
+      );
+      if (replace != true) return;
+    }
+    if (!mounted ||
+        ref.read(authSessionProvider).identity?.id != widget.identityId) {
+      return;
+    }
     final start = ref
         .read(proposalClockProvider)()
         .toUtc()
@@ -334,7 +771,7 @@ class _ProposalFormState extends ConsumerState<_ProposalForm> {
       _description.text = 'We will prepare the site, assemble raised beds, and share the work in small teams.';
       _capacity.text = '20';
       _countOrganizersTowardCapacity = false;
-      _timezone.text = 'UTC';
+      _timezone.text = 'Europe/Rome';
       _country.text = 'IT';
       _locality.text = 'Bologna';
       _administrativeArea.text = 'Emilia-Romagna';
@@ -353,6 +790,7 @@ class _ProposalFormState extends ConsumerState<_ProposalForm> {
       _validationIssues = const [];
     });
     _formKey.currentState?.validate();
+    _syncMatching();
   }
 
   Future<void> _pickDateTime({required bool start}) async {
@@ -382,12 +820,20 @@ class _ProposalFormState extends ConsumerState<_ProposalForm> {
       firstDate: now.subtract(const Duration(days: 1)),
       lastDate: now.add(const Duration(days: 3650)),
     );
-    if (date == null || !mounted) return;
+    if (date == null ||
+        !mounted ||
+        ref.read(authSessionProvider).identity?.id != widget.identityId) {
+      return;
+    }
     final time = await showTimePicker(
       context: context,
       initialTime: TimeOfDay.fromDateTime(initial),
     );
-    if (time == null || !mounted) return;
+    if (time == null ||
+        !mounted ||
+        ref.read(authSessionProvider).identity?.id != widget.identityId) {
+      return;
+    }
     final wall = DateTime(
       date.year,
       date.month,
@@ -401,7 +847,10 @@ class _ProposalFormState extends ConsumerState<_ProposalForm> {
   }
 
   void _refreshValidationSummary() {
-    if (_validationIssues.isEmpty) return;
+    if (_validationIssues.isEmpty) {
+      setState(() {});
+      return;
+    }
     final issues = _validationIssueLabels(
       _input(),
       publish: _validatingPublish,
@@ -414,8 +863,8 @@ class _ProposalFormState extends ConsumerState<_ProposalForm> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final state = ref.watch(proposalEditorProvider);
-    final busy = state.isBusy;
+    final state = ref.watch(proposalEditorSessionProvider(widget.sessionId));
+    final busy = state.isBusy || _saving;
     final proposal = widget.proposal;
     final now = ref.read(proposalClockProvider)();
     final contentEditable = proposal == null || proposal.isEditableAt(now);
@@ -423,6 +872,7 @@ class _ProposalFormState extends ConsumerState<_ProposalForm> {
         proposal == null || proposal.lifecycle == ProposalLifecycle.draft;
     final isPublished = proposal?.lifecycle == ProposalLifecycle.published;
     final canCancel = proposal?.canCancelAt(now) ?? false;
+    Future<void>.microtask(_syncMatching);
     final readOnlyMessage = proposal == null || contentEditable
         ? null
         : proposal.lifecycle == ProposalLifecycle.cancelled
@@ -456,27 +906,25 @@ class _ProposalFormState extends ConsumerState<_ProposalForm> {
             ),
           Expanded(
             child: ListView(
-              // The bounded editor keeps validated fields mounted while an
-              // error summary scrolls between them after submission.
-              scrollCacheExtent: const ScrollCacheExtent.pixels(1200),
               padding: const EdgeInsets.all(AppSpacing.large),
-              children: [
+              // Retain built fields and pending covers when they scroll offscreen.
+              children: <Widget>[
+                if (isDraft &&
+                    (widget.proposal != null || _snapshot().meaningful))
+                  OutlinedButton.icon(
+                    key: const Key('proposal-editor-workshop'),
+                    onPressed: busy
+                        ? null
+                        : () => context.push(WorkshopRoutes.catalog),
+                    icon: const Icon(Icons.auto_stories_outlined),
+                    label: Text(l10n.workshopStartFromTemplate),
+                  ),
                 if (readOnlyMessage != null) ...[
                   Card(
                     key: const Key('proposal-editor-read-only'),
                     child: Padding(
                       padding: const EdgeInsets.all(AppSpacing.medium),
                       child: Text(readOnlyMessage),
-                    ),
-                  ),
-                  const SizedBox(height: AppSpacing.medium),
-                ],
-                if (widget.proposal == null) ...[
-                  Align(
-                    alignment: Alignment.centerLeft,
-                    child: DemoFillSampleAction(
-                      buttonKey: const Key('proposal-fill-sample'),
-                      onPressed: busy ? null : _fillSampleData,
                     ),
                   ),
                   const SizedBox(height: AppSpacing.medium),
@@ -490,12 +938,24 @@ class _ProposalFormState extends ConsumerState<_ProposalForm> {
                   required: true,
                   minimumLength: 2,
                 ),
+                if (isDraft)
+                  SimilarProposalEntry(
+                    sessionId: _similarKey,
+                    enabled: !busy && !_openingCandidate,
+                    onView: _viewSimilar,
+                  ),
                 CoverEditorSection(
+                  key: ValueKey(
+                    '${widget.sessionId}:$_acknowledgedCoverRevision:$_coverResetEpoch',
+                  ),
                   ownerProfileId: widget.identityId,
                   title: widget.proposal?.title ?? l10n.proposalCreateTitle,
                   canonicalObjectPath: widget.proposal?.coverObjectPath,
                   enabled: !busy,
-                  onChanged: (change) => _coverChange = change,
+                  onChanged: (change) => setState(() {
+                    _coverChange = change;
+                    _coverRevision++;
+                  }),
                 ),
                 const SizedBox(height: AppSpacing.large),
                 _field(
@@ -518,26 +978,17 @@ class _ProposalFormState extends ConsumerState<_ProposalForm> {
                 Padding(
                   key: _capacityAnchor,
                   padding: const EdgeInsets.only(bottom: AppSpacing.medium),
-                  child: TextFormField(
-                    key: const Key('proposal-people-capacity'),
+                  child: ProposalCapacityControl(
                     controller: _capacity,
                     enabled: !busy && contentEditable,
-                    keyboardType: TextInputType.number,
-                    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                    maxLength: 6,
-                    decoration: InputDecoration(
-                      labelText: l10n.projectRegistrationCapacityLabel,
-                      helperText: l10n.projectRegistrationCapacityHelp,
-                    ),
-                    onChanged: (_) => _refreshValidationSummary(),
                     validator: (_) => _validateCapacity(),
+                    onChanged: _refreshValidationSummary,
                   ),
                 ),
                 SwitchListTile(
                   key: const Key('proposal-count-organizers-capacity'),
                   contentPadding: EdgeInsets.zero,
                   title: Text(l10n.projectCountOrganizersCapacityLabel),
-                  subtitle: Text(l10n.projectCountOrganizersCapacityHelp),
                   value: _countOrganizersTowardCapacity,
                   onChanged: busy || !contentEditable
                       ? null
@@ -545,153 +996,145 @@ class _ProposalFormState extends ConsumerState<_ProposalForm> {
                           () => _countOrganizersTowardCapacity = value,
                         ),
                 ),
-                _field(
-                  _timezone,
-                  l10n.proposalTimezoneLabel,
-                  100,
-                  anchorKey: _timezoneAnchor,
-                  fieldKey: const Key('proposal-timezone'),
-                  validator: _validateTimezone,
+                Text(
+                  l10n.projectCountOrganizersCapacityHelp,
+                  style: Theme.of(context).textTheme.bodySmall,
                 ),
-                ValueListenableBuilder<TextEditingValue>(
-                  valueListenable: _timezone,
-                  builder: (context, timezone, _) {
-                    // Observe the controller itself, including when these rows are
-                    // rebuilt after scrolling, and never convert unvalidated text.
-                    final timezoneName = timezone.text.trim();
-                    final validTimezone = isKnownProposalTimeZone(timezoneName);
-                    String schedule(DateTime? value) => value == null
-                        ? l10n.proposalDateNotSet
-                        : !validTimezone
-                        ? l10n.proposalTimezoneError
-                        : proposalUtcToWallTime(
-                            value,
-                            timezoneName,
-                          ).toString().substring(0, 16);
-                    return Column(
-                      children: [
-                        Container(
-                          key: _startAnchor,
-                          child: FormField<DateTime?>(
-                            key: const Key('proposal-start-field'),
-                            validator: (_) =>
-                                _validatingPublish && _startsAt == null
-                                ? l10n.proposalStartRequired
-                                : null,
-                            builder: (field) => Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  children: [
-                                    Expanded(
-                                      child: Text(
-                                        '${l10n.proposalStartLabel}: ${schedule(_startsAt)}',
-                                      ),
-                                    ),
-                                    TextButton(
-                                      key: const Key('proposal-pick-start'),
-                                      onPressed: busy || !contentEditable
-                                          ? null
-                                          : () => _pickDateTime(start: true),
-                                      child: Text(l10n.proposalChooseAction),
-                                    ),
-                                  ],
-                                ),
-                                if (field.hasError)
-                                  Text(
-                                    field.errorText!,
-                                    style: TextStyle(
-                                      color: Theme.of(context)
-                                          .colorScheme
-                                          .error,
-                                    ),
-                                  ),
-                              ],
-                            ),
+                const SizedBox(height: AppSpacing.large),
+                Container(
+                  key: _timezoneAnchor,
+                  child: _timezone.text != 'Europe/Rome'
+                      ? Padding(
+                          padding: const EdgeInsets.only(
+                            bottom: AppSpacing.medium,
                           ),
-                        ),
-                        Container(
-                          key: _endAnchor,
-                          child: FormField<DateTime?>(
-                            key: const Key('proposal-end-field'),
-                            validator: (_) {
-                              if (_validatingPublish && _endsAt == null) {
-                                return l10n.proposalEndRequired;
-                              }
-                              if (_startsAt != null &&
-                                  _endsAt != null &&
-                                  !_endsAt!.isAfter(_startsAt!)) {
-                                return l10n.proposalEndAfterStart;
-                              }
-                              return null;
-                            },
-                            builder: (field) => Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  children: [
-                                    Expanded(
-                                      child: Text(
-                                        '${l10n.proposalEndLabel}: ${schedule(_endsAt)}',
-                                      ),
-                                    ),
-                                    TextButton(
-                                      key: const Key('proposal-pick-end'),
-                                      onPressed: busy || !contentEditable
-                                          ? null
-                                          : () => _pickDateTime(start: false),
-                                      child: Text(l10n.proposalChooseAction),
-                                    ),
-                                  ],
-                                ),
-                                if (field.hasError)
-                                  Text(
-                                    field.errorText!,
-                                    style: TextStyle(
-                                      color: Theme.of(context)
-                                          .colorScheme
-                                          .error,
-                                    ),
-                                  ),
-                              ],
-                            ),
+                          child: Text(
+                            l10n.proposalScheduleZone(_timezone.text),
+                            key: const Key('proposal-legacy-zone'),
                           ),
-                        ),
-                      ],
-                    );
+                        )
+                      : const SizedBox.shrink(),
+                ),
+                ProposalControlPair(
+                  first: Container(
+                    key: _startAnchor,
+                    child: ProposalDateControl(
+                      label: l10n.proposalStartLabel,
+                      value: _startsAt,
+                      timezone: _timezone.text,
+                      enabled: !busy && contentEditable,
+                      onPick: () => _pickDateTime(start: true),
+                      fieldKey: const Key('proposal-start-field'),
+                      pickKey: const Key('proposal-pick-start'),
+                      validator: (_) => _validatingPublish && _startsAt == null
+                          ? l10n.proposalStartRequired
+                          : null,
+                    ),
+                  ),
+                  second: Container(
+                    key: _endAnchor,
+                    child: ProposalDateControl(
+                      label: l10n.proposalEndLabel,
+                      value: _endsAt,
+                      timezone: _timezone.text,
+                      enabled: !busy && contentEditable,
+                      onPick: () => _pickDateTime(start: false),
+                      fieldKey: const Key('proposal-end-field'),
+                      pickKey: const Key('proposal-pick-end'),
+                      validator: (_) {
+                        if (_validatingPublish && _endsAt == null) {
+                          return l10n.proposalEndRequired;
+                        }
+                        if (_startsAt != null &&
+                            _endsAt != null &&
+                            !_endsAt!.isAfter(_startsAt!)) {
+                          return l10n.proposalEndAfterStart;
+                        }
+                        return null;
+                      },
+                    ),
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.large),
+                LocationEditorSection(
+                  key: ValueKey(widget.sessionId),
+                  handle: _locationHandle,
+                  manualPublicLabel: () => _publicLocation.text,
+                  actorId: widget.identityId,
+                  itemKind: 'one_time',
+                  itemId: () => ref
+                      .read(proposalEditorSessionProvider(widget.sessionId))
+                      .proposal
+                      ?.id,
+                  savePending: () async =>
+                      await _save(publish: false, navigate: false)
+                      ? ref
+                            .read(
+                              proposalEditorSessionProvider(widget.sessionId),
+                            )
+                            .proposal
+                            ?.id
+                      : null,
+                  enabled: contentEditable,
+                  exactIsPublic: _visibility == ExactLocationVisibility.public,
+                  contentControllers: [
+                    _title,
+                    _summary,
+                    _description,
+                    _capacity,
+                    _timezone,
+                    _country,
+                    _locality,
+                    _administrativeArea,
+                    _publicLocation,
+                    _exactLocation,
+                  ],
+                  contentVersion:
+                      '$_startsAt:$_endsAt:$_visibility:$_skills:$_coverRevision:$_countOrganizersTowardCapacity',
+                  onCanonical: (value) {
+                    final place = value.publicPlace;
+                    if (place != null) {
+                      _country.text = 'IT';
+                      _locality.text = place.locality;
+                      _administrativeArea.text = place.administrativeArea ?? '';
+                      _publicLocation.text = place.label;
+                      _acknowledged = _snapshot();
+                    }
                   },
-                ),
-                _field(
-                  _country,
-                  l10n.proposalCountryLabel,
-                  2,
-                  anchorKey: _countryAnchor,
-                  fieldKey: const Key('proposal-country'),
-                  required: true,
-                  validator: _validateCountry,
-                ),
-                _field(
-                  _locality,
-                  l10n.proposalLocalityLabel,
-                  120,
-                  anchorKey: _localityAnchor,
-                  fieldKey: const Key('proposal-locality'),
-                  required: true,
-                ),
-                _field(
-                  _administrativeArea,
-                  l10n.proposalAdministrativeAreaLabel,
-                  120,
-                  anchorKey: _administrativeAreaAnchor,
-                  fieldKey: const Key('proposal-administrative-area'),
-                ),
-                _field(
-                  _publicLocation,
-                  l10n.proposalPublicLocationLabel,
-                  180,
-                  anchorKey: _publicLocationAnchor,
-                  fieldKey: const Key('proposal-public-location'),
-                  required: true,
+                  manualChildren: [
+                    _field(
+                      _country,
+                      l10n.proposalCountryLabel,
+                      2,
+                      anchorKey: _countryAnchor,
+                      fieldKey: const Key('proposal-country'),
+                      required: true,
+                      validator: _validateCountry,
+                    ),
+                    _field(
+                      _locality,
+                      l10n.proposalLocalityLabel,
+                      120,
+                      anchorKey: _localityAnchor,
+                      fieldKey: const Key('proposal-locality'),
+                      required: true,
+                    ),
+                    _field(
+                      _administrativeArea,
+                      l10n.proposalAdministrativeAreaLabel,
+                      120,
+                      anchorKey: _administrativeAreaAnchor,
+                      fieldKey: const Key('proposal-administrative-area'),
+                    ),
+                    _field(
+                      _publicLocation,
+                      l10n.proposalPublicLocationLabel,
+                      180,
+                      anchorKey: _publicLocationAnchor,
+                      fieldKey: const Key('proposal-public-location'),
+                      required: true,
+                    ),
+                  ],
                 ),
                 _field(
                   _exactLocation,
@@ -725,29 +1168,32 @@ class _ProposalFormState extends ConsumerState<_ProposalForm> {
                       : (selection) =>
                             setState(() => _visibility = selection.single),
                 ),
+                const SizedBox(height: AppSpacing.small),
+                Text(
+                  _visibility == ExactLocationVisibility.participants
+                      ? l10n.locationRestrictedPreview
+                      : l10n.locationPublicPreview,
+                  key: const Key('location-visibility-preview'),
+                ),
                 const SizedBox(height: AppSpacing.large),
                 Text(
                   l10n.proposalSkillsTitle,
                   style: Theme.of(context).textTheme.titleLarge,
                 ),
-                for (final category in widget.categories) ...[
-                  const SizedBox(height: AppSpacing.medium),
-                  Text(
-                    category.label,
-                    style: Theme.of(context).textTheme.titleMedium,
-                  ),
-                  for (final skill in category.skills)
-                    _SkillControl(
-                      skill: skill,
-                      value: _skills[skill.id],
-                      enabled: !busy && contentEditable,
-                      onChanged: (importance) => setState(() {
-                        importance == null
-                            ? _skills.remove(skill.id)
-                            : _skills[skill.id] = importance;
-                      }),
-                    ),
-                ],
+                const SizedBox(height: AppSpacing.small),
+                ProposalSkillsControl(
+                  categories: widget.categories,
+                  values: _skills,
+                  enabled: !busy && contentEditable,
+                  onChanged: (values) {
+                    setState(() {
+                      _skills
+                        ..clear()
+                        ..addAll(values);
+                    });
+                    _syncMatching();
+                  },
+                ),
                 if (state.coverPartialSave != null) ...[
                   const SizedBox(height: AppSpacing.medium),
                   Semantics(
@@ -800,18 +1246,6 @@ class _ProposalFormState extends ConsumerState<_ProposalForm> {
                         icon: const Icon(Icons.inventory_2_outlined),
                         label: Text(l10n.projectResourcesManage),
                       ),
-                    if (isDraft && contentEditable)
-                      OutlinedButton(
-                        key: const Key('proposal-save-draft'),
-                        onPressed: busy ? null : () => _save(publish: false),
-                        child: Text(l10n.proposalSaveDraftAction),
-                      ),
-                    if (isDraft && contentEditable)
-                      FilledButton(
-                        key: const Key('proposal-publish'),
-                        onPressed: busy ? null : () => _save(publish: true),
-                        child: Text(l10n.proposalPublishAction),
-                      ),
                     if (isPublished && contentEditable)
                       FilledButton(
                         key: const Key('proposal-save-changes'),
@@ -826,7 +1260,37 @@ class _ProposalFormState extends ConsumerState<_ProposalForm> {
                       ),
                   ],
                 ),
-              ],
+                if (isDraft && contentEditable) ...[
+                  const SizedBox(height: AppSpacing.medium),
+                  ProposalControlPair(
+                    first: OutlinedButton(
+                      key: const Key('proposal-save-draft'),
+                      style: OutlinedButton.styleFrom(
+                        minimumSize: const Size.fromHeight(56),
+                      ),
+                      onPressed: busy ? null : () => _save(publish: false),
+                      child: Text(l10n.proposalSaveDraftAction),
+                    ),
+                    second: FilledButton(
+                      key: const Key('proposal-publish'),
+                      style: FilledButton.styleFrom(
+                        minimumSize: const Size.fromHeight(56),
+                      ),
+                      onPressed: busy ? null : () => _save(publish: true),
+                      child: Text(l10n.proposalPublishAction),
+                    ),
+                  ),
+                ],
+                if (widget.proposal == null &&
+                    ref.watch(demoToolsEnabledProvider)) ...[
+                  const SizedBox(height: AppSpacing.large),
+                  const Divider(),
+                  DemoFillSampleAction(
+                    buttonKey: const Key('proposal-fill-sample'),
+                    onPressed: busy ? null : _fillSampleData,
+                  ),
+                ],
+              ].map((child) => _RetainedDraftField(child: child)).toList(),
             ),
           ),
         ],
@@ -851,7 +1315,7 @@ class _ProposalFormState extends ConsumerState<_ProposalForm> {
       key: fieldKey ?? Key('proposal-field-${label.hashCode}'),
       controller: controller,
       enabled:
-          !ref.watch(proposalEditorProvider).isBusy &&
+          !ref.watch(proposalEditorSessionProvider(widget.sessionId)).isBusy &&
           (widget.proposal == null ||
               widget.proposal!.isEditableAt(ref.read(proposalClockProvider)())),
       maxLength: maxLength,
@@ -891,15 +1355,6 @@ class _ProposalFormState extends ConsumerState<_ProposalForm> {
       return l10n.proposalMaximumLength(maximumLength);
     }
     return null;
-  }
-
-  String? _validateTimezone(String? value) {
-    final text = (value ?? '').trim();
-    if (text.isEmpty && !_validatingPublish) return null;
-    if (text.isEmpty) return AppLocalizations.of(context).proposalRequiredField;
-    return isKnownProposalTimeZone(text)
-        ? null
-        : AppLocalizations.of(context).proposalTimezoneError;
   }
 
   String? _validateCountry(String? value) {
@@ -1048,42 +1503,22 @@ class _ProposalFormState extends ConsumerState<_ProposalForm> {
   }
 }
 
-class _SkillControl extends StatelessWidget {
-  const _SkillControl({
-    required this.skill,
-    required this.value,
-    required this.enabled,
-    required this.onChanged,
-  });
+class _RetainedDraftField extends StatefulWidget {
+  const _RetainedDraftField({required this.child});
+  final Widget child;
 
-  final ProposalCatalogSkill skill;
-  final ProposalSkillImportance? value;
-  final bool enabled;
-  final ValueChanged<ProposalSkillImportance?> onChanged;
+  @override
+  State<_RetainedDraftField> createState() => _RetainedDraftFieldState();
+}
+
+class _RetainedDraftFieldState extends State<_RetainedDraftField>
+    with AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true;
 
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
-    return Row(
-      children: [
-        Expanded(child: Text(skill.label)),
-        DropdownButton<ProposalSkillImportance?>(
-          key: Key('proposal-skill-${skill.slug}'),
-          value: value,
-          onChanged: enabled ? onChanged : null,
-          items: [
-            DropdownMenuItem(value: null, child: Text(l10n.proposalSkillNone)),
-            DropdownMenuItem(
-              value: ProposalSkillImportance.required,
-              child: Text(l10n.proposalSkillRequired),
-            ),
-            DropdownMenuItem(
-              value: ProposalSkillImportance.useful,
-              child: Text(l10n.proposalSkillUseful),
-            ),
-          ],
-        ),
-      ],
-    );
+    super.build(context);
+    return widget.child;
   }
 }

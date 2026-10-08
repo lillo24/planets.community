@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:uuid/uuid.dart';
 
 import '../../auth/application/auth_session_controller.dart';
 import '../../auth/domain/auth_models.dart';
@@ -12,6 +13,7 @@ import '../../project_delegates/application/project_delegate_controllers.dart';
 import '../data/proposal_gateway.dart';
 import '../domain/proposal_models.dart';
 import '../domain/proposal_time.dart';
+import 'proposal_draft_session.dart';
 
 final proposalClockProvider = Provider<DateTime Function()>(
   (ref) => DateTime.now,
@@ -53,7 +55,8 @@ class PublicProposalsController extends Notifier<PublicProposalsState> {
       return;
     }
     final revision = ++_publicRevision;
-    final currentItems = reset ? const <ProposalSummary>[] : state.items;
+    final currentItems = state.items;
+    final appendedItems = reset ? const <ProposalSummary>[] : currentItems;
     final query = state.query;
     final locality = state.locality;
     final skillIds = state.selectedSkillIds;
@@ -111,7 +114,7 @@ class PublicProposalsController extends Notifier<PublicProposalsState> {
           _readyProfileId() == profileId;
       state = PublicProposalsState(
         phase: ProposalLoadPhase.ready,
-        items: List.unmodifiable([...currentItems, ...page]),
+        items: List.unmodifiable([...appendedItems, ...page]),
         requestedItems: acceptRequested
             ? List.unmodifiable(requested)
             : state.requestedItems,
@@ -286,13 +289,15 @@ class OwnProposalsController extends Notifier<OwnProposalsState> {
 
   @override
   OwnProposalsState build() {
-    ref.listen(authSessionProvider.select((session) => session.identity?.id), (
-      _,
-      _,
-    ) {
-      _revision++;
-      state = const OwnProposalsState();
-    });
+    ref.listen(
+      authSessionProvider.select(
+        (session) => (session.phase, session.identity?.id),
+      ),
+      (_, _) {
+        _revision++;
+        state = const OwnProposalsState();
+      },
+    );
     ref.onDispose(() => _revision++);
     return const OwnProposalsState();
   }
@@ -430,17 +435,58 @@ final ownProposalsProvider =
     );
 
 class ProposalEditorController extends Notifier<ProposalEditorState> {
+  ProposalEditorController([this.sessionId]);
+  final String? sessionId;
   var _revision = 0;
+  void Function()? _closeRetention;
+  void releaseSession() {
+    _revision++;
+    _closeRetention?.call();
+    _closeRetention = null;
+  }
+
+  String? _boundProposalId;
+  String? _creationRequestId;
+  ProposalInput? _creationIntent;
+  String? get boundProposalId => _boundProposalId ?? state.proposal?.id;
 
   @override
   ProposalEditorState build() {
-    ref.listen(authSessionProvider.select((session) => session.identity?.id), (
-      _,
-      _,
-    ) {
-      _revision++;
-      state = const ProposalEditorState();
-    });
+    // Riverpod pauses offstage widget subscriptions. Retained tabs still own
+    // this session; the screen releases retention on actual disposal.
+    if (sessionId != null) {
+      _closeRetention = ref.keepAlive().close;
+    }
+    ref.listen(
+      authSessionProvider.select(
+        (session) => (session.phase, session.identity?.id),
+      ),
+      (previous, next) {
+        if (previous?.$2 == next.$2 &&
+            next.$2 != null &&
+            (next.$1 == AuthSessionPhase.checkingProfile ||
+                next.$1 == AuthSessionPhase.ready)) {
+          if (next.$1 == AuthSessionPhase.checkingProfile) {
+            _revision++;
+            if (state.isBusy) {
+              state = ProposalEditorState(
+                phase: ProposalEditorPhase.failure,
+                expectedCreatorId: state.expectedCreatorId,
+                proposal: state.proposal,
+                categories: state.categories,
+                failure: ProposalFailureKind.unavailable,
+              );
+            }
+          }
+          return;
+        }
+        _revision++;
+        _boundProposalId = null;
+        _creationRequestId = null;
+        _creationIntent = null;
+        state = const ProposalEditorState();
+      },
+    );
     ref.onDispose(() => _revision++);
     return const ProposalEditorState();
   }
@@ -449,6 +495,13 @@ class ProposalEditorController extends Notifier<ProposalEditorState> {
 
   Future<void> load(String expectedCreatorId, String? proposalId) async {
     final revision = ++_revision;
+    if (state.expectedCreatorId != expectedCreatorId ||
+        (proposalId != null && proposalId != boundProposalId)) {
+      _boundProposalId = proposalId;
+      _creationRequestId = null;
+      _creationIntent = null;
+    }
+    proposalId ??= _boundProposalId;
     state = ProposalEditorState(
       phase: ProposalEditorPhase.loading,
       expectedCreatorId: expectedCreatorId,
@@ -601,6 +654,7 @@ class ProposalEditorController extends Notifier<ProposalEditorState> {
     required bool publish,
     required CoverChange coverChange,
   }) async {
+    input = freezeProposalInput(input);
     final revision = ++_revision;
     final existingProposal = state.proposal;
     String? persistedProposalId;
@@ -615,17 +669,38 @@ class ProposalEditorController extends Notifier<ProposalEditorState> {
     try {
       _requireReadyIdentity(expectedCreatorId);
       final gateway = ref.read(proposalGatewayProvider);
-      final proposalId = existingProposal == null
-          ? await gateway.createDraft(expectedCreatorId, input)
-          : existingProposal.isEditableAt(ref.read(proposalClockProvider)())
-          ? existingProposal.id
-          : throw const ProposalInvalidStateException();
-      persistedProposalId = proposalId;
-      if (!_isCurrent(revision)) return null;
-      if (existingProposal != null) {
+      var proposalId = boundProposalId;
+      if (proposalId == null) {
+        _creationRequestId ??= const Uuid().v4();
+        _creationIntent ??= input;
+        ref
+            .read(draftCreationRecoveryProvider.notifier)
+            .remember(expectedCreatorId, _creationRequestId!);
+        proposalId = await gateway.createDraft(
+          expectedCreatorId,
+          _creationIntent!,
+          clientRequestId: _creationRequestId,
+        );
+        if (!_isCurrent(revision)) return null;
+        _boundProposalId = proposalId;
+        ref
+            .read(draftCreationRecoveryProvider.notifier)
+            .resolved(expectedCreatorId, _creationRequestId!);
+        // An exact retry must recover the frozen creation intent before newer
+        // form content is applied through the ordinary owner update contract.
+        if (!identical(input, _creationIntent)) {
+          await gateway.updateOwnProposal(expectedCreatorId, proposalId, input);
+          if (!_isCurrent(revision)) return null;
+        }
+      } else {
+        if (existingProposal != null &&
+            !existingProposal.isEditableAt(ref.read(proposalClockProvider)())) {
+          throw const ProposalInvalidStateException();
+        }
         await gateway.updateOwnProposal(expectedCreatorId, proposalId, input);
         if (!_isCurrent(revision)) return null;
       }
+      persistedProposalId = proposalId;
       _requireReadyIdentity(expectedCreatorId);
       if (coverChange.kind != CoverChangeKind.unchanged) {
         try {
@@ -689,6 +764,7 @@ class ProposalEditorController extends Notifier<ProposalEditorState> {
     } catch (error) {
       if (!_isCurrent(revision)) return null;
       final failure = mapProposalFailure(error);
+      persistedProposalId ??= boundProposalId;
       var canonical = persistedProposalId == null
           ? existingProposal
           : await _refreshAfterPartialSave(
@@ -840,6 +916,11 @@ class ProposalEditorController extends Notifier<ProposalEditorState> {
 
 final proposalEditorProvider =
     NotifierProvider<ProposalEditorController, ProposalEditorState>(
+      ProposalEditorController.new,
+    );
+
+final proposalEditorSessionProvider = NotifierProvider.autoDispose
+    .family<ProposalEditorController, ProposalEditorState, String>(
       ProposalEditorController.new,
     );
 

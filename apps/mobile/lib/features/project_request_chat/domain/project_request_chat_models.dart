@@ -186,12 +186,14 @@ class ProjectRequestChatFeedCursor {
 
 class ProjectRequestChatFeedPage {
   const ProjectRequestChatFeedPage({
+    this.readBoundary,
     required this.items,
     required this.hasMore,
   });
 
   final List<ProjectRequestChatFeedItem> items;
   final bool hasMore;
+  final String? readBoundary;
 }
 
 class ProjectRequestChatMessageSentSignal {

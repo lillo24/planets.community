@@ -131,13 +131,20 @@ Raw Auth deletion is deliberately blocked while a profile or actor-linked audit 
 
 ### One-time proposal domain
 
-`proposals` stores a creator-owned one-time activity, content, schedule, IANA event time zone, and rough public location. Its business lifecycle is only `draft`, `published`, or `cancelled`. Upcoming, Happening, Just Finished, and Completed are derived from `starts_at`, `ends_at`, and the current time; Just Finished begins exactly at the end and lasts until, but not including, 24 hours later. Completed proposals remain historical canonical records and may become sources for future explicit Community templates, but are not themselves mutable template records.
+`proposals` stores a creator-owned one-time activity, content, schedule, IANA event time zone, and rough public location. Its business lifecycle is only `draft`, `published`, or `cancelled`. Upcoming, Happening, Just Finished, and Completed are derived from `starts_at`, `ends_at`, and the current time; Just Finished begins exactly at the end and lasts until, but not including, 24 hours later. TW01 establishes one linked template identity automatically at first successful publication; its allow-listed reusable content follows canonical published content, while Workshop use requires canonical Completed and current visibility/removal eligibility. Completed remains elapsed time rather than evidence that an event happened or succeeded. Proposals remain historical source records, separate from template identities.
 
 `proposal_meeting_details` physically separates exact meeting text/coordinates from the rough public location. Public list payloads never include exact meeting data. Exact-ID public detail returns exact meeting text only for `public` visibility; `participants` visibility returns no protected value and an explicit restricted flag. The shared participant boundary returns protected operational meeting information only to the creator or a current accepted participant without weakening this anonymous contract. `proposal_skills` reuses the controlled 03C catalog with `required` or `useful` meaning; no second or free-form taxonomy exists.
 
 Complete-profile creators manage proposals only through expected-identity-bound `create_proposal_draft`, `update_own_proposal`, `publish_proposal`, and `cancel_proposal` operations. Public clients use sanitized `list_public_proposals` and `get_public_proposal`; owners use separate complete owner reads. Published content freezes when an activity starts, cancellation is terminal and permitted only before its end, and publish/cancel record content-free audit/outbox identifiers without delivering notifications.
 
 `private.audit_events` stores append-oriented operational and security history, not product analytics. `private.outbox_events` stores transaction-local handoff records for later asynchronous work; it is not itself a queue or delivery implementation. Both remain outside the Data API with no direct client grants. Future domain operations can write them within the same transaction, while queue consumption and delivery remain owned by plan 06.
+
+MAP01 reuses nullable public-area/protected-exact geography and adds normalized
+OSM-backed Geoapify selected metadata with source attribution. New versioned
+RPCs accept only actor/item/revision-bound server receipts and enforce existing
+structural edits and meeting reads. Legacy public signatures remain unchanged;
+exact-only selections never produce a public area. The provider remains
+disabled. [Location contract and exposure matrix](../development/map01-geoapify-location.md).
 
 ### Recurring activity domain
 
@@ -149,11 +156,14 @@ Complete-profile creators manage proposals only through expected-identity-bound 
 
 Complete-profile creators use expected-identity-bound create/publish/resume operations; all owner mutations reject stale account-switch forms before changing data. Publication, schedule changes, pause, resume, and end record content-free audit/outbox metadata without implementing notification delivery. 04B2A provides the full Flutter Tavoli experience. 04B2B provides signed-out, read-only Next.js discovery through only the sanitized public list/detail operations; its list cursor preserves one caller-owned reference-time snapshot across pages.
 
+MAP01 applies the same nullable receipt foundation to Tavoli without merging
+their lifecycle/schedule domain into one-time proposals.
+
 ### Scambio-Dona listing domain
 
 `resource_listings` stores standalone owner-managed Scambio-Dona availability separately from Projects and participation. `donate` and `exchange` are discovery intents only: `exchange` does not define lending, barter, transfer, return, payment, reservation, contact, or handoff behavior. The stored lifecycle is `draft`, `published`, or terminal `closed`; closure means only that the listing is no longer publicly available.
 
-Drafts may be incomplete and remain private. Publication requires a bounded plain-text title and description plus country, locality, and a public rough-location label. There is no exact address, point, contact field, inline media field, resource taxonomy, quantity, price, Project foreign key, requester, or transaction state; the one optional cover is separate canonical metadata. An editable published listing must remain publishable atomically, and changing its mode changes only its discovery bucket.
+Drafts may be incomplete and remain private. Publication requires a bounded plain-text title and description plus country, locality, and a public rough-location label. MAP01 adds nullable owner-selected public geocoding metadata and a public point; there is no private pickup-address boundary. The one optional cover is separate canonical metadata. An editable published listing must remain publishable atomically, and changing its mode changes only its discovery bucket.
 
 Complete-profile owners use expected-identity-bound create and publish operations, while authenticated owners use the same identity boundary for update, close, and owner history. The table has RLS but no client policies or direct grants. Anonymous and authenticated clients use narrow list/detail functions; list discovery is newest-first paired keyset pagination with optional mode, case-insensitive locality equality, and literal case-insensitive title/description substring filters. Detail returns an owner display name only when the existing profile visibility row is public. Publish and close write identifier-only audit/outbox state for later consumers without projecting notifications.
 
@@ -483,7 +493,7 @@ Edge Functions and background workers remain valid implementation choices when t
 | Messages                | Authenticated discriminated Project/Resource Requests plus the existing Project-only Chats tab                   | Canonical request domains; complete three-part cursor; Resource chats remain 04C4C3B                           |
 | Project chat            | Structural anchor, immutable message history, authorized list/send APIs, and private Realtime hints              | Creator plus current/former participants under canonical membership-time rules                                 |
 | Notifications           | Controlled categories/preferences, recipient in-app records, private installations, and recipient push jobs      | Recipient, per-consumer source event receipt, optional project/request/membership                              |
-| Templates               | Reusable proposal structure derived from approved past/community content                                         | Source proposal, attribution, moderation/publication state                                                     |
+| Templates               | Automatic source-linked reusable projection from Completed one-time Proposals                                    | Immutable source/Creator identity, content token, live attribution and private removal state                   |
 | Community statistics    | Aggregated views over canonical activity and participation                                                       | Proposal type, location, participation, time                                                                   |
 | Moderation              | Reports, blocks, content status, actions, internal notes, appeals if introduced                                  | Users, proposals, messages, media, administrators                                                              |
 | Audit/operations        | Security-relevant and administrative action history                                                              | Actor, target, action, timestamps, metadata                                                                    |
@@ -504,7 +514,7 @@ Edge Functions and background workers remain valid implementation choices when t
 | Messages                    | Authenticated discriminated Project/Resource Requests plus the existing Project-only Chats tab                   | Canonical request domains; complete three-part cursor; Resource chats remain 04C4C3B                           |
 | Project chat                | Structural anchor, immutable message history, authorized list/send APIs, and private Realtime hints              | Owner/active delegates plus current/former participants under canonical membership-time rules                  |
 | Notifications               | Controlled categories/preferences, recipient in-app records, private installations, and recipient push jobs      | Recipient, per-consumer source event receipt, optional project/request/membership                              |
-| Templates                   | Reusable proposal structure derived from approved past/community content                                         | Source proposal, attribution, moderation/publication state                                                     |
+| Templates                   | Automatic source-linked reusable projection from Completed one-time Proposals                                    | Immutable source/Creator identity, content token, live attribution and private removal state                   |
 | Community statistics        | Aggregated views over canonical activity and participation                                                       | Proposal type, location, participation, time                                                                   |
 | Moderation                  | Reports, blocks, content status, actions, internal notes, appeals if introduced                                  | Users, proposals, messages, media, administrators                                                              |
 | Audit/operations            | Security-relevant and administrative action history                                                              | Actor, target, action, timestamps, metadata                                                                    |
@@ -579,7 +589,7 @@ Regardless of final state names:
 - repeated commands must not duplicate members, chats, notifications, or statistics;
 - membership/history records must preserve enough information for derived stats and moderation;
 - deleting or suspending an account must not corrupt historical proposals;
-- templates must copy approved reusable fields rather than stay invisibly coupled to mutable source content.
+- future Projects created from templates must atomically copy the allowed reusable fields and provenance, remaining independent of later source edits; the linked template itself follows its canonical source.
 
 ### Participation and automatic chat
 
@@ -772,19 +782,45 @@ The database stores canonical media metadata and authorization context. A storag
 
 ## Templates and community data
 
-A template should be an explicit reusable representation, not simply “load the old proposal and mutate it.” This permits:
+TW01 implements the backend foundation on its draft-review branch. First
+successful publication synchronously establishes one private linked identity
+per one-time Proposal and retains a narrow original-Creator-private last saved
+Bozza baseline. Legacy backfill establishes identities without inventing drafts
+or events. There is no explicit submission or approval queue.
 
-- stable attribution to a source proposal;
-- removal of private or event-specific details;
-- moderation before community publication;
-- versioning or deprecation later;
-- analytics on template reuse.
+The template is an allow-listed synchronous projection of latest published
+source text, controlled skills, open need title/details, capacity recommendation,
+duration and source-authorized cover. STABLE RPCs return consistent snapshots
+and an opaque content hash; globally-public author names are sanitized live and
+never stored in copied content. Private meeting/workspace/participation data,
+coverage/contributions and staff evidence are excluded. Free text is not
+automatically anonymized.
+
+Catalog/detail and bounded, version-checked resource-blueprint pages share
+canonical Completed (end + 24 hours), current source visibility and private
+template-removal eligibility. No scheduled completion write is needed.
+TW02 implements reporting/removal; TW03 implements atomic copying into an
+independent ordinary private Proposal draft on its selected draft-review base.
+Applicant-private immutable receipts recover exact accepted actions without
+rewriting edited or published drafts. TW04 owns mobile Workshop. No template
+participation, outcome editor, comparison UI or production backfill is implemented.
+The consumable contracts, actor matrix, version semantics and lock ownership
+are recorded in [the Template Workshop guide](../development/template-workshop.md).
 
 Community statistics should be derived from canonical records through SQL views initially. Examples may include counts by category, broad location, time, completion state, and participation. Materialized views or cached aggregates are deferred until measured performance requires them.
 
 ## Administration and moderation
 
 Administrative tools are separate from normal user flows but use the same canonical backend.
+
+TW02, implemented as an unmerged draft on TW01's explicitly selected head, adds
+manual template reporting (including original-Creator self-report) and one
+staff-only audited removal of Workshop availability. Source provenance remains
+separate from Project incident context. Staff see only the current published
+reusable allow-list, never private Bozza. Protected reasons/attribution and
+identity-bound receipts are retained; public reads share TW01 eligibility.
+Source Projects and independent copies remain unaffected. TW03 copying is
+implemented on its selected unmerged base; TW04 Workshop screens remain deferred. See the [Workshop contract](../development/template-workshop.md).
 
 Plan 09A1 implements the first manual-review slice. Private moderation cases
 anchor an immutable typed target and canonical subject/context; append-only
@@ -941,3 +977,11 @@ The foundation does not include:
 - sophisticated gamification before canonical participation history exists.
 
 These can be reconsidered through explicit architecture/product decisions when evidence supports them.
+
+DRAFT01 implements unpublished one-time Proposal save-before-navigation on the
+selected TW03 draft base. Identity-bound mobile sessions acknowledge immutable
+raw revisions; a narrow private canonical first-creation receipt prevents duplicate
+drafts after lost responses. Published editing remains deliberate, and TW03
+provenance/needs remain independent of removed sources. The
+[draft departure contract](../development/proposal-draft-departure.md) defines
+invalid/partial outcomes, retained tabs and forced-auth limitations.

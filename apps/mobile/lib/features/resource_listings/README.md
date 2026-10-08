@@ -1,5 +1,15 @@
 # Scambio-Dona mobile boundary
 
+MAP01 adds a nullable canonical public selected location/point through versioned
+owner-only receipt writes. It introduces no private pickup or Project membership
+boundary. Legacy manual edits clear verified geometry; no search UI or map is
+activated by default. MAP02 adds the shared selector exercised through injected
+gateways, with one public locality/address/amenity slot and no participant
+control or private pickup address. Manual Save/Publish/Close remains independent
+of lookup. Editor families and stable creation UUIDs isolate draft retry;
+canonical refresh updates public text without overwriting unrelated form edits.
+See the [MAP02 contract](../../../../../docs/development/map02-location-selector.md).
+
 This feature owns the Flutter discovery and owner-management experience for
 standalone Scambio-Dona listings. It stays separate from Projects,
 Participation, and Project resources.
@@ -114,3 +124,12 @@ remain outside this feature.
 09B2 composes Block/Unblock for a visible non-owner listing. A caller-owned
 owner block explains why a new request is unavailable and offers Unblock;
 public listing visibility and accepted Resource coordination remain unchanged.
+
+## UI-NEXT-02 discovery and drafts
+
+Search and Donate/Exchange toggles stay mounted in every result state. A changed
+filter retains the established prior-row contract with an explicit previous-results
+caption and disabled old card actions until success; refresh failures remain
+visible alongside retained cards. Both/neither toggle rules are unchanged.
+The folder action opens `/drafts?types=donate,exchange`; the hub menu retains
+owner publication/history management. Private caches clear on readiness changes.

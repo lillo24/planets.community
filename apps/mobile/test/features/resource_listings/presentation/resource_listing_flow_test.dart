@@ -1,3 +1,5 @@
+import '../../../support/fake_policy.dart';
+
 import 'dart:async';
 import 'dart:typed_data';
 
@@ -6,6 +8,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:image/image.dart' as image;
 import 'package:planets_mobile/app/planets_app.dart';
+import 'package:planets_mobile/app/startup/startup_flow.dart';
 import 'package:planets_mobile/app/router/app_router.dart';
 import 'package:planets_mobile/core/config/app_config.dart';
 import 'package:planets_mobile/features/auth/data/auth_gateway.dart';
@@ -375,6 +378,8 @@ void main() {
       final gateway = FakeResourceListingGateway()
         ..publicItems = [publicResourceListingFixture()];
       await _pump(tester, gateway: gateway, signedIn: false);
+
+      await _tap(tester, 'welcome-explore');
 
       expect(find.text('Projects and Cultural Tables'), findsOneWidget);
       expect(find.text('Scambio-Dona'), findsOneWidget);
@@ -1194,6 +1199,8 @@ void main() {
         ..publicDetailResult = pending.future;
       final app = await _pump(tester, gateway: gateway, signedIn: false);
       app.read(appRouterProvider).go('/resources/$resourceListingId');
+      // Complete awaitable route entry before asserting the pending data load.
+      await tester.pump();
       await tester.pump();
 
       expect(find.text('Loading listings…'), findsOneWidget);
@@ -1222,6 +1229,8 @@ void main() {
     final pending = Completer<PublicResourceListingDetail?>();
     gateway.publicDetailResult = pending.future;
     app.read(appRouterProvider).go('/resources/$secondResourceListingId');
+    // Complete awaitable route entry before asserting the pending data load.
+    await tester.pump();
     await tester.pump();
 
     expect(find.text('Loading listings…'), findsOneWidget);
@@ -1291,6 +1300,11 @@ Future<ProviderContainer> _pump(
   await tester.pumpWidget(
     ProviderScope(
       overrides: [
+        preacceptedPolicyFixture,
+        // Feature fixtures begin after onboarding; startup tests own first-run.
+        initialStartupPreferenceProvider.overrideWithValue(
+          StartupPreference(completedVersion: productionTutorial.version),
+        ),
         appConfigProvider.overrideWithValue(
           AppConfig.fromValues(
             appEnvironment: 'local',

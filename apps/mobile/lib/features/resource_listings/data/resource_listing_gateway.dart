@@ -3,6 +3,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/backend/cover_media_path.dart';
 import '../../../core/backend/supabase_backend.dart';
+import '../../../core/backend/owner_collection.dart';
 import '../domain/resource_listing_models.dart';
 
 const resourceListingPageSize = 20;
@@ -31,8 +32,9 @@ abstract interface class ResourceListingGateway {
 
   Future<String> createDraft(
     String expectedOwnerId,
-    ResourceListingInput input,
-  );
+    ResourceListingInput input, {
+    String? clientRequestId,
+  });
 
   Future<void> updateOwnResourceListing(
     String expectedOwnerId,
@@ -257,9 +259,12 @@ class SupabaseResourceListingGateway implements ResourceListingGateway {
   Future<List<OwnResourceListing>> listOwnResourceListings(
     String expectedOwnerId,
   ) async {
-    final response = await _client.rpc<List<dynamic>>(
+    final response = await readOwnerCollection(
+      _client,
       'list_own_resource_listings',
       params: {'p_expected_owner_profile_id': expectedOwnerId},
+      idColumn: 'listing_id',
+      descendingIdTie: true,
     );
     return response
         .cast<Map<String, dynamic>>()
@@ -283,10 +288,16 @@ class SupabaseResourceListingGateway implements ResourceListingGateway {
   @override
   Future<String> createDraft(
     String expectedOwnerId,
-    ResourceListingInput input,
-  ) => _client.rpc<String>(
-    'create_resource_listing_draft',
-    params: contract.contentParams(expectedOwnerId, input),
+    ResourceListingInput input, {
+    String? clientRequestId,
+  }) => _client.rpc<String>(
+    clientRequestId == null
+        ? 'create_resource_listing_draft'
+        : 'create_editor_resource_listing_draft',
+    params: {
+      ...contract.contentParams(expectedOwnerId, input),
+      'p_client_request_id': ?clientRequestId,
+    },
   );
 
   @override

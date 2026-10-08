@@ -1,9 +1,12 @@
+import '../../support/fake_policy.dart';
+
 import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:planets_mobile/app/planets_app.dart';
+import 'package:planets_mobile/app/startup/startup_flow.dart';
 import 'package:planets_mobile/app/router/app_navigation_shell.dart';
 import 'package:planets_mobile/app/router/app_router.dart';
 import 'package:planets_mobile/core/config/app_config.dart';
@@ -49,6 +52,153 @@ import '../../support/fake_messages.dart';
 import '../../support/fake_message_chats.dart';
 
 void main() {
+  testWidgets(
+    'protected creation return opens the chooser before scratch and never creates on sign-in',
+    (tester) async {
+      final proposals = FakeProposalGateway();
+      final app = await _pump(tester, signedIn: false, proposals: proposals);
+      final router = app.read(appRouterProvider);
+      router.go('/proposals/create');
+      await tester.pumpAndSettle();
+      expect(
+        router.routerDelegate.state.uri.queryParameters['returnTo'],
+        '/proposals/create',
+      );
+      await tester.enterText(
+        find.byKey(const Key('auth-email-field')),
+        'person@example.com',
+      );
+      await _tap(tester, 'auth-request-button');
+      await tester.enterText(
+        find.byKey(const Key('auth-code-field')),
+        '123456',
+      );
+      await _tap(tester, 'auth-verify-button');
+      expect(find.text('How would you like to start?'), findsOneWidget);
+      expect(proposals.calls, isNot(contains('create')));
+      await _tap(tester, 'proposal-start-scratch');
+      expect(find.byKey(const Key('proposal-title')), findsOneWidget);
+      expect(proposals.calls, isNot(contains('create')));
+    },
+  );
+
+  testWidgets(
+    'saving a typed hub Project returns to its filters and refreshes its own rows',
+    (tester) async {
+      final gateway = FakeProposalGateway()..ownItems = [ownProposalFixture()];
+      final app = await _pump(
+        tester,
+        proposals: gateway,
+        proposalNow: DateTime.utc(2026, 9, 3),
+      );
+      final router = app.read(appRouterProvider);
+      router.go('/drafts?types=project');
+      await tester.pumpAndSettle();
+      await _tap(tester, 'draft-project-proposal-1');
+      expect(find.byKey(const Key('proposal-start-scratch')), findsNothing);
+      await tester.enterText(
+        find.byKey(const Key('proposal-title')),
+        'Saved from the hub',
+      );
+      final save = find.byKey(const Key('proposal-save-draft'));
+      await tester.scrollUntilVisible(
+        save,
+        300,
+        scrollable: find
+            .descendant(
+              of: find.byType(ListView),
+              matching: find.byType(Scrollable),
+            )
+            .first,
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(save);
+      await tester.pumpAndSettle();
+      expect(router.routerDelegate.state.uri.path, '/drafts');
+      expect(
+        tester
+            .widget<FilterChip>(find.byKey(const Key('draft-type-project')))
+            .selected,
+        isTrue,
+      );
+      expect(find.text('Saved from the hub'), findsOneWidget);
+      expect(gateway.calls.where((call) => call == 'create'), isEmpty);
+      expect(
+        gateway.calls.where((call) => call == 'update:proposal-1'),
+        hasLength(1),
+      );
+    },
+  );
+
+  testWidgets(
+    'draft hub keeps Browse selected and retains contextual filters across Home',
+    (tester) async {
+      final app = await _pump(
+        tester,
+        destination: BottomTabDestination.messages,
+      );
+      final router = app.read(appRouterProvider);
+      router.go('/proposals');
+      await tester.pumpAndSettle();
+      await _tap(tester, 'my-proposals-action');
+      expect(router.routerDelegate.state.uri.path, '/drafts');
+      expect(
+        tester.widget<NavigationBar>(find.byType(NavigationBar)).selectedIndex,
+        2,
+      );
+      expect(find.byKey(const Key('nav-browse')), findsOneWidget);
+      await tester.tap(find.byKey(const Key('draft-type-donate')));
+      await tester.pump();
+      await _tap(tester, 'nav-home');
+      expect(router.routerDelegate.state.uri.path, '/');
+      // Home uses the saved Messages preference; explicit hub re-entry is also safe.
+      router.go('/drafts?types=table');
+      await tester.pumpAndSettle();
+      expect(
+        tester.widget<NavigationBar>(find.byType(NavigationBar)).selectedIndex,
+        2,
+      );
+      expect(
+        tester
+            .widget<FilterChip>(find.byKey(const Key('draft-type-table')))
+            .selected,
+        isTrue,
+      );
+      await tester.binding.handlePopRoute();
+      await tester.pumpAndSettle();
+      expect(router.routerDelegate.state.uri.path, '/');
+    },
+  );
+  testWidgets('draft contextual intent survives protected sign-in return', (
+    tester,
+  ) async {
+    final projects = FakeProposalGateway();
+    final app = await _pump(tester, signedIn: false, proposals: projects);
+    final router = app.read(appRouterProvider);
+    router.go('/proposals');
+    await tester.pumpAndSettle();
+    await _tap(tester, 'my-proposals-action');
+    expect(router.routerDelegate.state.uri.path, '/auth');
+    expect(
+      router.routerDelegate.state.uri.queryParameters['returnTo'],
+      '/drafts?types=project',
+    );
+    expect(projects.calls, isNot(contains('list-own')));
+    await tester.enterText(
+      find.byKey(const Key('auth-email-field')),
+      'person@example.com',
+    );
+    await _tap(tester, 'auth-request-button');
+    await tester.enterText(find.byKey(const Key('auth-code-field')), '123456');
+    await _tap(tester, 'auth-verify-button');
+    expect(router.routerDelegate.state.uri.path, '/drafts');
+    expect(
+      tester
+          .widget<FilterChip>(find.byKey(const Key('draft-type-project')))
+          .selected,
+      isTrue,
+    );
+  });
   for (final locale in ['en', 'it']) {
     testWidgets(
       'Home and Browse use requested $locale copy on a narrow screen',
@@ -123,7 +273,21 @@ void main() {
           proposals.calls.where((call) => call.startsWith('public-detail:')),
           isEmpty,
         );
-        expect(app.read(proposalEditorProvider).proposal?.id, 'proposal-1');
+        expect(
+          tester
+              .widget<ProposalEditorScreen>(find.byType(ProposalEditorScreen))
+              .proposalId,
+          'proposal-1',
+        );
+        expect(
+          tester
+              .widget<TextFormField>(
+                find.widgetWithText(TextFormField, 'Title'),
+              )
+              .controller!
+              .text,
+          'Paint the square',
+        );
         expect(proposals.lastExpectedIdentity, 'user-1');
       }
       expect(
@@ -305,6 +469,8 @@ void main() {
     );
     final router = app.read(appRouterProvider);
     await _tap(tester, 'nav-messages');
+    expect(router.routerDelegate.state.uri.path, '/messages');
+    await _tap(tester, 'messages-context-action');
     expect(router.routerDelegate.state.uri.path, '/auth');
     expect(
       router.routerDelegate.state.uri.queryParameters['returnTo'],
@@ -317,6 +483,8 @@ void main() {
     await _tap(tester, 'auth-request-button');
     await tester.enterText(find.byKey(const Key('auth-code-field')), '123456');
     await _tap(tester, 'auth-verify-button');
+    expect(router.routerDelegate.state.uri.path, '/messages');
+    await _tap(tester, 'messages-context-action');
     expect(router.routerDelegate.state.uri.path, '/profile/edit');
     expect(
       router.routerDelegate.state.uri.queryParameters['returnTo'],
@@ -421,13 +589,22 @@ void main() {
     );
     final app = await _pump(tester, auth: auth, destination: null);
     final router = app.read(appRouterProvider);
-    router.go('/proposals/create');
+    router.go('/proposals/create/scratch');
     await tester.pumpAndSettle();
     await tester.enterText(
       find.widgetWithText(TextFormField, 'Title'),
       'Private draft',
     );
     await _tap(tester, 'nav-profile');
+    expect(find.text('Draft saved'), findsOneWidget);
+    // The successful draft guard shows feedback above Profile's bottom action.
+    // Advance its actual duration before exercising the sign-out tap.
+    await tester.pump(tester.widget<SnackBar>(find.byType(SnackBar)).duration);
+    await tester.pumpAndSettle();
+    expect(
+      find.byType(ProposalEditorScreen, skipOffstage: false),
+      findsOneWidget,
+    );
     final action = find.byKey(const Key('account-sign-out-button'));
     await tester.ensureVisible(action);
     final button = tester.widget<FilledButton>(action);
@@ -444,9 +621,13 @@ void main() {
     await _tap(tester, 'account-sign-out-button');
     expect(auth.signOutCount, 1);
     expect(app.read(authSessionProvider).isAuthenticated, isFalse);
-    expect(find.byKey(const Key('profile-example-label')), findsOneWidget);
+    expect(find.byKey(const Key('welcome-screen')), findsOneWidget);
     expect(find.byKey(const Key('account-sign-out-button')), findsNothing);
     expect(find.text('Private draft', skipOffstage: false), findsNothing);
+    expect(
+      find.byType(ProposalEditorScreen, skipOffstage: false),
+      findsNothing,
+    );
     expect(
       app.read(navigationPreferenceProvider).destination,
       BottomTabDestination.messages,
@@ -454,7 +635,7 @@ void main() {
   });
 
   for (final complete in [true, false]) {
-    testWidgets('Home sign out follows demo gate for complete=$complete', (
+    testWidgets('Home omits account testing controls for complete=$complete', (
       tester,
     ) async {
       await _pump(tester, complete: complete, enableDemoTools: 'false');
@@ -462,7 +643,7 @@ void main() {
       await tester.pumpWidget(const SizedBox.shrink());
       await tester.pumpAndSettle();
       await _pump(tester, complete: complete, enableDemoTools: 'true');
-      expect(find.widgetWithText(TextButton, 'Sign out'), findsOneWidget);
+      expect(find.widgetWithText(TextButton, 'Sign out'), findsNothing);
     });
   }
 
@@ -494,7 +675,7 @@ void main() {
 
     for (final entry in {
       '/profile/edit': 'profile-fill-sample',
-      '/proposals/create': 'proposal-fill-sample',
+      '/proposals/create/scratch': 'proposal-fill-sample',
       '/tavoli/create': 'tavoli-fill-sample',
       '/resources/create': 'resource-fill-sample',
     }.entries) {
@@ -621,7 +802,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(router.routeInformationProvider.value.uri.path, '/');
-      expect(find.text('Mobile foundation ready'), findsOneWidget);
+      expect(find.byKey(const Key('home-planets-hero')), findsOneWidget);
       expect(find.byKey(const Key('auth-email-field')), findsNothing);
 
       for (final root in ['/resources', '/profile']) {
@@ -1092,12 +1273,13 @@ void main() {
   );
 
   testWidgets(
-    'profile and proposal edits survive switching and retapping tabs',
+    'Profile retains local edits while Proposal tab departure persists one draft',
     (tester) async {
       final auth = FakeAuthGateway(
         snapshot: const AuthSnapshot(identity: AuthIdentity(id: 'user-1')),
       );
-      final app = await _pump(tester, auth: auth);
+      final proposals = FakeProposalGateway();
+      final app = await _pump(tester, auth: auth, proposals: proposals);
       final router = app.read(appRouterProvider);
       router.go('/profile/edit');
       await tester.pumpAndSettle();
@@ -1108,11 +1290,20 @@ void main() {
       await _tap(tester, 'nav-home');
       await _tap(tester, 'nav-browse');
       await _tap(tester, 'proposal-create-action');
+      if (find
+          .byKey(const Key('proposal-start-scratch'))
+          .evaluate()
+          .isNotEmpty) {
+        await _tap(tester, 'proposal-start-scratch');
+      }
       await tester.enterText(
         find.widgetWithText(TextFormField, 'Title'),
         'Unsaved activity',
       );
       await _tap(tester, 'nav-profile');
+      expect(proposals.calls.where((call) => call == 'create'), hasLength(1));
+      expect(proposals.ownItems.single.title, 'Unsaved activity');
+      expect(find.text('Draft saved'), findsOneWidget);
       await _tap(tester, 'nav-profile');
       auth.emit(const AuthSnapshot(identity: AuthIdentity(id: 'user-1')));
       await tester.pumpAndSettle();
@@ -1132,6 +1323,42 @@ void main() {
       );
     },
   );
+
+  testWidgets('dirty Home reset and rapid tab taps retain one bound draft', (
+    tester,
+  ) async {
+    final pending = Completer<void>();
+    final proposals = FakeProposalGateway()..mutationDelay = pending.future;
+    final app = await _pump(tester, proposals: proposals);
+    app.read(appRouterProvider).go('/proposals/create/scratch');
+    await tester.pumpAndSettle();
+    await tester.enterText(
+      find.byKey(const Key('proposal-title')),
+      'Home departure',
+    );
+    await tester.tap(find.byKey(const Key('nav-home')));
+    await tester.pump();
+    await tester.tap(find.byKey(const Key('nav-profile')));
+    await tester.pump();
+    pending.complete();
+    await tester.pumpAndSettle();
+    expect(
+      tester.widget<NavigationBar>(find.byType(NavigationBar)).selectedIndex,
+      AppBranch.home.index,
+    );
+    expect(proposals.calls.where((c) => c == 'create'), hasLength(1));
+    expect(find.text('Draft saved'), findsOneWidget);
+    await _tap(tester, 'nav-browse');
+    expect(_text(tester, 'proposal-title'), 'Home departure');
+    proposals.mutationDelay = null;
+    await tester.enterText(
+      find.byKey(const Key('proposal-title')),
+      'Same bound draft',
+    );
+    await _tap(tester, 'nav-home');
+    expect(proposals.calls.where((c) => c == 'create'), hasLength(1));
+    expect(proposals.calls, contains('update:new-draft'));
+  });
 
   testWidgets('public Profile keeps protected edit intent through Auth', (
     tester,
@@ -1177,12 +1404,18 @@ void main() {
       await _tap(tester, 'nav-home');
       await _tap(tester, 'nav-browse');
       await _tap(tester, 'proposal-create-action');
+      if (find
+          .byKey(const Key('proposal-start-scratch'))
+          .evaluate()
+          .isNotEmpty) {
+        await _tap(tester, 'proposal-start-scratch');
+      }
       expect(
         find.byKey(const Key('profile-display-name-field')),
         findsOneWidget,
       );
       await _tap(tester, 'nav-home');
-      expect(find.text('Mobile foundation ready'), findsOneWidget);
+      expect(find.byKey(const Key('home-planets-hero')), findsOneWidget);
     },
   );
 
@@ -1207,6 +1440,9 @@ void main() {
     );
     await _tap(tester, 'nav-browse');
     await _tap(tester, 'proposal-create-action');
+    if (find.byKey(const Key('proposal-start-scratch')).evaluate().isNotEmpty) {
+      await _tap(tester, 'proposal-start-scratch');
+    }
     await tester.enterText(
       find.widgetWithText(TextFormField, 'Title'),
       'Private draft A',
@@ -1224,6 +1460,9 @@ void main() {
     );
     expect(find.text('Private draft A', skipOffstage: false), findsNothing);
     await _tap(tester, 'proposal-create-action');
+    if (find.byKey(const Key('proposal-start-scratch')).evaluate().isNotEmpty) {
+      await _tap(tester, 'proposal-start-scratch');
+    }
     await _tap(tester, 'nav-home');
     auth.emit(const AuthSnapshot());
     await tester.pumpAndSettle();
@@ -1315,6 +1554,11 @@ Future<ProviderContainer> _pump(
   await tester.pumpWidget(
     ProviderScope(
       overrides: [
+        preacceptedPolicyFixture,
+        // Feature fixtures begin after onboarding; startup tests own first-run.
+        initialStartupPreferenceProvider.overrideWithValue(
+          StartupPreference(completedVersion: productionTutorial.version),
+        ),
         if (proposalNow != null)
           proposalClockProvider.overrideWithValue(() => proposalNow),
         if (destination != null)
@@ -1394,6 +1638,10 @@ Future<ProviderContainer> _pump(
     ),
   );
   await tester.pumpAndSettle();
+  if (find.byKey(const Key('welcome-explore')).evaluate().isNotEmpty) {
+    await tester.tap(find.byKey(const Key('welcome-explore')));
+    await tester.pumpAndSettle();
+  }
   return ProviderScope.containerOf(tester.element(find.byType(PlanetsApp)));
 }
 

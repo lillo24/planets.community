@@ -1,12 +1,17 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/theme/app_tokens.dart';
+import '../../../app/startup/startup_flow.dart';
+import '../../messages/presentation/message_unread_badge.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../auth/application/auth_session_controller.dart';
 import '../../auth/domain/auth_models.dart';
 import '../../auth/presentation/account_sign_out_action.dart';
+import '../../policies/application/policy_documents.dart';
+import '../../policies/presentation/policy_link_action.dart';
 import '../application/language_preference_controller.dart';
 import '../application/navigation_preference_controller.dart';
 import '../domain/language_preference.dart';
@@ -78,6 +83,45 @@ class SettingsScreen extends ConsumerWidget {
                     onTap: () => context.push('/settings/navigation'),
                   ),
                 ),
+                if (navigationPreference.destination ==
+                    BottomTabDestination.browse)
+                  Card(
+                    child: ListTile(
+                      key: const Key('settings-messages-row'),
+                      leading: const MessageUnreadBadge(
+                        child: Icon(Icons.forum_outlined),
+                      ),
+                      title: Text(l10n.messagesTitle),
+                      trailing: const Icon(Icons.chevron_right),
+                      onTap: () => context.go('/messages'),
+                    ),
+                  ),
+                if (kDebugMode)
+                  TextButton(
+                    key: const Key('startup-development-reset'),
+                    onPressed: () async {
+                      final reset = await ref
+                          .read(startupFlowProvider)
+                          .resetForDevelopment();
+                      if (!context.mounted) return;
+                      if (reset) {
+                        context.go('/');
+                      } else {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text(l10n.startupPreferenceError)),
+                        );
+                      }
+                    },
+                    child: Text(l10n.startupDevelopmentReset),
+                  ),
+                Card(
+                  child: PolicyLinkAction(
+                    key: const Key('settings-privacy-policy-row'),
+                    asTile: true,
+                    label: l10n.policyPrivacy,
+                    uri: ref.watch(policyDocumentsProvider).privacy,
+                  ),
+                ),
                 if (showAccountSettings) ...[
                   const SizedBox(height: AppSpacing.large),
                   _SectionLabel(l10n.settingsAccountSection),
@@ -115,6 +159,14 @@ class SettingsScreen extends ConsumerWidget {
                   const Divider(),
                   const SizedBox(height: AppSpacing.medium),
                   const AccountSignOutAction(),
+                  const SizedBox(height: AppSpacing.medium),
+                  const Divider(),
+                  ListTile(
+                    key: const Key('settings-delete-account-row'),
+                    leading: const Icon(Icons.person_remove_outlined),
+                    title: Text(l10n.policyDeleteAccount),
+                    onTap: () => context.push(accountDeletionPath),
+                  ),
                 ],
               ],
             ),

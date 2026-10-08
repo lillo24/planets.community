@@ -1,9 +1,12 @@
+import '../../../support/fake_policy.dart';
+
 import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:planets_mobile/app/planets_app.dart';
+import 'package:planets_mobile/app/startup/startup_flow.dart';
 import 'package:planets_mobile/app/router/app_router.dart';
 import 'package:planets_mobile/core/config/app_config.dart';
 import 'package:planets_mobile/features/auth/data/auth_gateway.dart';
@@ -40,6 +43,7 @@ void main() {
     await tester.tap(action);
     await tester.pumpAndSettle();
     expect(app.read(authSessionProvider).isAuthenticated, isFalse);
+    expect(_path(app), '/welcome');
   });
 
   for (final complete in [true, false]) {
@@ -66,7 +70,7 @@ void main() {
         await tester.pumpAndSettle();
         expect(auth.signOutCount, 1);
         expect(app.read(authSessionProvider).isAuthenticated, isFalse);
-        expect(_path(app), '/settings');
+        expect(_path(app), '/welcome');
         expect(action, findsNothing);
       },
     );
@@ -109,6 +113,7 @@ void main() {
       await tester.pumpAndSettle();
       expect(auth.signOutCount, 2);
       expect(app.read(authSessionProvider).isAuthenticated, isFalse);
+      expect(_path(app), '/welcome');
     },
   );
 
@@ -311,6 +316,11 @@ Future<ProviderContainer> _pump(
   await tester.pumpWidget(
     ProviderScope(
       overrides: [
+        preacceptedPolicyFixture,
+        // Feature fixtures begin after onboarding; startup tests own first-run.
+        initialStartupPreferenceProvider.overrideWithValue(
+          StartupPreference(completedVersion: productionTutorial.version),
+        ),
         appConfigProvider.overrideWithValue(_testConfig()),
         authGatewayProvider.overrideWithValue(gateway),
         profileAnchorGatewayProvider.overrideWithValue(
@@ -342,6 +352,10 @@ Future<ProviderContainer> _pump(
     ),
   );
   await tester.pumpAndSettle();
+  if (find.byKey(const Key('welcome-explore')).evaluate().isNotEmpty) {
+    await tester.tap(find.byKey(const Key('welcome-explore')));
+    await tester.pumpAndSettle();
+  }
   return ProviderScope.containerOf(tester.element(find.byType(PlanetsApp)));
 }
 

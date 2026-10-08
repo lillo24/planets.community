@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/backend/supabase_backend.dart';
+import '../../messages/domain/message_unread_models.dart';
 import '../../participation/domain/participation_models.dart';
 import '../domain/project_chat_models.dart';
 
@@ -76,19 +77,26 @@ class SupabaseProjectChatGateway implements ProjectChatGateway {
     required int limit,
     ProjectChatFeedCursor? cursor,
   }) async {
-    final response = await _client.rpc<List<dynamic>>(
-      'list_own_project_chat_feed',
+    final envelope = await _client.rpc<Object?>(
+      'get_own_message_feed_page',
       params: {
         'p_expected_profile_id': expectedProfileId,
         'p_chat_id': chatId,
+        'p_kind': 'project_chat',
         'p_limit': limit + 1,
         'p_before_created_at': cursor?.createdAt.toUtc().toIso8601String(),
         'p_before_item_kind': cursor?.itemKind.wireValue,
         'p_before_item_id': cursor?.itemId,
       },
     );
+    final snapshot = MessageFeedSnapshot.parse(
+      envelope,
+      newest: cursor == null,
+    );
+    final response = snapshot.items;
     final parsed = response.map(parser.feedItem).toList(growable: false);
     return ProjectChatFeedPage(
+      readBoundary: snapshot.boundary,
       items: List.unmodifiable(parsed.take(limit)),
       hasMore: parsed.length > limit,
     );

@@ -8,6 +8,7 @@ import '../../../core/widgets/error_state.dart';
 import '../../../core/widgets/loading_state.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../auth/application/auth_session_controller.dart';
+import '../../auth/domain/auth_models.dart';
 import '../../cover_media/presentation/project_cover_image.dart';
 import '../../participation/domain/participation_models.dart';
 import '../../profile_photo/presentation/profile_photo_trust_gate.dart';
@@ -16,6 +17,8 @@ import '../../project_delegates/domain/project_delegate_models.dart';
 import '../../project_delegates/presentation/project_delegate_routes.dart';
 import '../../project_resource_needs/presentation/project_resource_need_routes.dart';
 import '../application/proposal_controllers.dart';
+import '../application/proposal_draft_session.dart';
+import '../data/proposal_gateway.dart';
 import '../domain/proposal_models.dart';
 
 class OwnProposalsScreen extends ConsumerStatefulWidget {
@@ -35,7 +38,11 @@ class _OwnProposalsScreenState extends ConsumerState<OwnProposalsScreen> {
   }
 
   Future<void> _load({bool force = false}) async {
-    final identity = ref.read(authSessionProvider).identity;
+    if (!mounted) return;
+    final session = ref.read(authSessionProvider);
+    final identity = session.phase == AuthSessionPhase.ready
+        ? session.identity
+        : null;
     if (identity != null && (force || _requestedIdentity != identity.id)) {
       _requestedIdentity = identity.id;
       await Future.wait([
@@ -45,10 +52,57 @@ class _OwnProposalsScreenState extends ConsumerState<OwnProposalsScreen> {
     }
   }
 
+  Future<void> _recover(String actor, String request) async {
+    try {
+      final id = await ref
+          .read(proposalGatewayProvider)
+          .recoverDraftCreation(actor, request);
+      if (!mounted || ref.read(authSessionProvider).identity?.id != actor) {
+        return;
+      }
+      ref.read(draftCreationRecoveryProvider.notifier).resolved(actor, request);
+      if (id != null) {
+        context.push('/proposals/$id/edit');
+      } else {
+        await _load(force: true);
+      }
+    } catch (_) {
+      if (!mounted || ref.read(authSessionProvider).identity?.id != actor) {
+        return;
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            AppLocalizations.of(context).proposalDraftRecoveryError,
+          ),
+        ),
+      );
+    }
+  }
+
+  Future<void> _loadMissing() async {
+    if (!mounted) return;
+    final session = ref.read(authSessionProvider);
+    final actor = session.phase == AuthSessionPhase.ready
+        ? session.identity?.id
+        : null;
+    if (actor == null) return;
+    await Future.wait([
+      if (ref.read(ownProposalsProvider).phase == ProposalLoadPhase.idle)
+        ref.read(ownProposalsProvider.notifier).load(actor),
+      if (ref.read(delegatedProjectsProvider).phase ==
+          ProjectDelegateLoadPhase.idle)
+        ref.read(delegatedProjectsProvider.notifier).load(actor),
+    ]);
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final identity = ref.watch(authSessionProvider).identity;
+    final session = ref.watch(authSessionProvider);
+    final identity = session.phase == AuthSessionPhase.ready
+        ? session.identity
+        : null;
     final state = ref.watch(ownProposalsProvider);
     final items = state.expectedCreatorId == identity?.id
         ? state.items
@@ -64,17 +118,28 @@ class _OwnProposalsScreenState extends ConsumerState<OwnProposalsScreen> {
     } else if (identity != null &&
         (state.phase == ProposalLoadPhase.idle ||
             delegatedState.phase == ProjectDelegateLoadPhase.idle)) {
-      Future<void>.microtask(() => _load(force: true));
+      Future<void>.microtask(_loadMissing);
     }
 
     return Scaffold(
       appBar: AppBar(title: Text(l10n.proposalMyTitle)),
+      persistentFooterButtons: [
+        for (final request
+            in ref.watch(draftCreationRecoveryProvider)[identity?.id] ??
+                <String>{})
+          TextButton(
+            onPressed: () => _recover(identity!.id, request),
+            child: Text(l10n.proposalDraftRecover),
+          ),
+      ],
       body: SafeArea(
         child: identity == null
             ? const SizedBox.shrink()
             : items.isEmpty &&
                   delegated.isEmpty &&
-                  (state.phase == ProposalLoadPhase.loading ||
+                  (state.phase == ProposalLoadPhase.idle ||
+                      state.phase == ProposalLoadPhase.loading ||
+                      delegatedState.phase == ProjectDelegateLoadPhase.idle ||
                       delegatedState.phase == ProjectDelegateLoadPhase.loading)
             ? LoadingState(message: l10n.proposalLoading)
             : items.isEmpty &&
@@ -95,6 +160,25 @@ class _OwnProposalsScreenState extends ConsumerState<OwnProposalsScreen> {
                 child: ListView(
                   padding: const EdgeInsets.all(AppSpacing.medium),
                   children: [
+                    if (state.phase == ProposalLoadPhase.loading ||
+                        delegatedState.phase ==
+                            ProjectDelegateLoadPhase.loading)
+                      LinearProgressIndicator(
+                        semanticsLabel: l10n.proposalLoading,
+                      ),
+                    if (state.phase == ProposalLoadPhase.failure &&
+                        items.isNotEmpty)
+                      ErrorState(
+                        message: l10n.proposalSafeError,
+                        onRetry: () => _load(force: true),
+                      ),
+                    if (delegatedState.phase ==
+                            ProjectDelegateLoadPhase.failure &&
+                        delegated.isNotEmpty)
+                      ErrorState(
+                        message: l10n.projectDelegateSafeError,
+                        onRetry: () => _load(force: true),
+                      ),
                     Text(
                       l10n.projectCreatedByYouTitle,
                       style: Theme.of(context).textTheme.titleLarge,
@@ -107,7 +191,11 @@ class _OwnProposalsScreenState extends ConsumerState<OwnProposalsScreen> {
                         onPressed: () => _load(force: true),
                         child: Text(l10n.retryAction),
                       ),
-                    ] else if (items.isEmpty)
+                    ] else if (items.isEmpty &&
+                        (state.phase == ProposalLoadPhase.idle ||
+                            state.phase == ProposalLoadPhase.loading))
+                      LoadingState(message: l10n.proposalLoading)
+                    else if (items.isEmpty)
                       Text(l10n.projectCreatedByYouEmpty)
                     else
                       for (final proposal in items) ...[
@@ -131,7 +219,13 @@ class _OwnProposalsScreenState extends ConsumerState<OwnProposalsScreen> {
                         onPressed: () => _load(force: true),
                         child: Text(l10n.retryAction),
                       ),
-                    ] else if (delegated.isEmpty)
+                    ] else if (delegated.isEmpty &&
+                        (delegatedState.phase ==
+                                ProjectDelegateLoadPhase.idle ||
+                            delegatedState.phase ==
+                                ProjectDelegateLoadPhase.loading))
+                      LoadingState(message: l10n.proposalLoading)
+                    else if (delegated.isEmpty)
                       Text(l10n.projectCoorganizingEmpty)
                     else
                       for (final project in delegated) ...[

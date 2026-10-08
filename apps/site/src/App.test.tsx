@@ -48,7 +48,7 @@ afterEach(() => {
 });
 
 describe("PLANETS public site", () => {
-  it("renders the compact public navigation without inventing a contact address", () => {
+  it("renders the compact public navigation and labelled contact links", () => {
     render(<App />);
 
     const navigation = screen.getByRole("navigation", {
@@ -64,7 +64,25 @@ describe("PLANETS public site", () => {
       "#contatti",
       "#privacy",
     ]);
-    expect(document.querySelector('a[href^="mailto:"]')).toBeNull();
+    const contacts = screen.getByRole("region", { name: "Contatti" });
+    expect(
+      within(contacts)
+        .getAllByRole("term")
+        .map((term) => term.textContent),
+    ).toEqual(["Email", "Telefono"]);
+    expect(
+      within(contacts)
+        .getByRole("link", { name: "developer.planets.community@gmail.com" })
+        .getAttribute("href"),
+    ).toBe("mailto:developer.planets.community@gmail.com");
+    expect(
+      within(contacts)
+        .getByRole("link", { name: "+39 3703263412" })
+        .getAttribute("href"),
+    ).toBe("tel:+393703263412");
+    expect(contacts.textContent).not.toContain(
+      "Il contatto pubblico sarà aggiunto qui prima della messa online.",
+    );
   });
 
   it("renders the corrected text container mapping and independent detail sections", () => {

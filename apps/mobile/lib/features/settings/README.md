@@ -34,3 +34,8 @@ identity and retained through sign-out; it has no backend or account sync.
 Settings ends with the Auth feature's shared destructive Sign out action for
 every authenticated phase, including incomplete profiles. It remains public,
 and signed-out users see no Sign out action.
+
+When Browse replaces the Messages shortcut, the public Navigation section also
+contains a labelled Messages row (including the existing ready-user unread badge).
+It goes to `/messages` and preserves the shell's three branches. Debug builds
+also expose the narrowly scoped [startup reset](../../app/startup/README.md).

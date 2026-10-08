@@ -8,6 +8,46 @@ import 'package:planets_mobile/features/project_chat/domain/project_chat_models.
 import 'package:planets_mobile/features/resource_chat/domain/resource_chat_models.dart';
 
 void main() {
+  test(
+    'v4 request preview status is independent of route context and strict',
+    () {
+      const parser = MessageChatsPayloadParser();
+      for (final status in JoinRequestStatus.values) {
+        final item = parser.item(
+          _projectRequestRow()
+            ..['latest_request_activity_status'] = status.wireValue,
+        ) as ProjectRequestMessageChatItem;
+        expect(item.requestStatus, JoinRequestStatus.pending);
+        expect(item.latestRequestActivityStatus, status);
+      }
+      expect(
+        () => parser.item(
+          _projectRequestRow()..['latest_request_activity_status'] = 'unknown',
+        ),
+        throwsFormatException,
+      );
+      expect(
+        () => parser.item(
+          _projectRow()..['latest_request_activity_status'] = 'accepted',
+        ),
+        throwsFormatException,
+      );
+      expect(
+        () => parser.item(
+          _resourceRow()
+            ..['latest_group_system_event_label'] = 'Private context',
+        ),
+        throwsFormatException,
+      );
+      expect(
+        () => parser.item(
+          _projectRow()..remove('latest_request_activity_status'),
+        ),
+        throwsFormatException,
+      );
+    },
+  );
+
   const parser = MessageChatsPayloadParser();
 
   test('strictly parses all Project viewer roles', () {
@@ -49,6 +89,7 @@ void main() {
 
     final fallback = parser.item(
       _projectRequestRow()
+        ..['latest_request_activity_status'] = 'pending'
         ..['last_visible_message_id'] = null
         ..['last_visible_message_body'] = null
         ..['last_visible_message_at'] = null
@@ -112,7 +153,7 @@ void main() {
     final source = File('lib/features/messages/data/message_chats_gateway.dart')
         .readAsStringSync();
 
-    expect(source, contains("'list_own_scoped_conversation_items'"));
+    expect(source, contains("'list_own_scoped_conversation_items_v4'"));
     expect(source, contains("'p_scope'"));
     expect(source, contains("'p_cursor_activity_at'"));
     expect(source, contains("'p_cursor_item_kind'"));
@@ -134,7 +175,10 @@ const _requestId = '00000000-0000-4000-8000-000000000301';
 
 Map<String, dynamic> _commonRow({String chatId = _chatId}) => {
   'chat_id': chatId,
+  'unread_count': 0,
   'pending_count': null,
+  'latest_request_activity_status': null,
+  'latest_group_system_event_label': null,
   'activity_at': '2026-09-20T12:00:00Z',
   'display_title': 'Shared title',
   'is_read_only': false,
@@ -194,6 +238,7 @@ Map<String, dynamic> _resourceRow({
 Map<String, dynamic> _projectRequestRow() => {
   ..._commonRow(),
   'item_kind': 'project_request_chat',
+  'unread_count': 0,
   'pending_count': 1,
   'viewer_role': 'creator',
   'project_id': null,

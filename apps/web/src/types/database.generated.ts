@@ -1701,6 +1701,7 @@ export type Database = {
           exact_location_visibility: string
           exact_meeting_text: string | null
           proposal_id: string
+          selected_exact_place: Json | null
           updated_at: string
         }
         Insert: {
@@ -1708,6 +1709,7 @@ export type Database = {
           exact_location_visibility?: string
           exact_meeting_text?: string | null
           proposal_id: string
+          selected_exact_place?: Json | null
           updated_at?: string
         }
         Update: {
@@ -1715,6 +1717,7 @@ export type Database = {
           exact_location_visibility?: string
           exact_meeting_text?: string | null
           proposal_id?: string
+          selected_exact_place?: Json | null
           updated_at?: string
         }
         Relationships: [
@@ -1777,8 +1780,10 @@ export type Database = {
           id: string
           lifecycle_state: string
           locality: string | null
+          location_revision: number
           public_location_label: string | null
           published_at: string | null
+          selected_public_place: Json | null
           starts_at: string | null
           summary: string | null
           title: string | null
@@ -1797,8 +1802,10 @@ export type Database = {
           id?: string
           lifecycle_state?: string
           locality?: string | null
+          location_revision?: number
           public_location_label?: string | null
           published_at?: string | null
+          selected_public_place?: Json | null
           starts_at?: string | null
           summary?: string | null
           title?: string | null
@@ -1817,8 +1824,10 @@ export type Database = {
           id?: string
           lifecycle_state?: string
           locality?: string | null
+          location_revision?: number
           public_location_label?: string | null
           published_at?: string | null
+          selected_public_place?: Json | null
           starts_at?: string | null
           summary?: string | null
           title?: string | null
@@ -1846,10 +1855,12 @@ export type Database = {
           id: string
           lifecycle_state: string
           locality: string | null
+          location_revision: number
           paused_at: string | null
           public_location_label: string | null
           published_at: string | null
           resumed_at: string | null
+          selected_public_place: Json | null
           summary: string | null
           title: string | null
           topic: string | null
@@ -1866,10 +1877,12 @@ export type Database = {
           id?: string
           lifecycle_state?: string
           locality?: string | null
+          location_revision?: number
           paused_at?: string | null
           public_location_label?: string | null
           published_at?: string | null
           resumed_at?: string | null
+          selected_public_place?: Json | null
           summary?: string | null
           title?: string | null
           topic?: string | null
@@ -1886,10 +1899,12 @@ export type Database = {
           id?: string
           lifecycle_state?: string
           locality?: string | null
+          location_revision?: number
           paused_at?: string | null
           public_location_label?: string | null
           published_at?: string | null
           resumed_at?: string | null
+          selected_public_place?: Json | null
           summary?: string | null
           title?: string | null
           topic?: string | null
@@ -1911,6 +1926,7 @@ export type Database = {
           exact_location_visibility: string
           exact_meeting_text: string | null
           recurring_activity_id: string
+          selected_exact_place: Json | null
           updated_at: string
         }
         Insert: {
@@ -1918,6 +1934,7 @@ export type Database = {
           exact_location_visibility?: string
           exact_meeting_text?: string | null
           recurring_activity_id: string
+          selected_exact_place?: Json | null
           updated_at?: string
         }
         Update: {
@@ -1925,6 +1942,7 @@ export type Database = {
           exact_location_visibility?: string
           exact_meeting_text?: string | null
           recurring_activity_id?: string
+          selected_exact_place?: Json | null
           updated_at?: string
         }
         Relationships: [
@@ -2287,9 +2305,12 @@ export type Database = {
           lifecycle_state: string
           listing_mode: string
           locality: string | null
+          location_revision: number
           owner_profile_id: string
+          public_location: unknown
           public_location_label: string | null
           published_at: string | null
+          selected_public_place: Json | null
           title: string | null
           updated_at: string
         }
@@ -2303,9 +2324,12 @@ export type Database = {
           lifecycle_state?: string
           listing_mode: string
           locality?: string | null
+          location_revision?: number
           owner_profile_id: string
+          public_location?: unknown
           public_location_label?: string | null
           published_at?: string | null
+          selected_public_place?: Json | null
           title?: string | null
           updated_at?: string
         }
@@ -2319,9 +2343,12 @@ export type Database = {
           lifecycle_state?: string
           listing_mode?: string
           locality?: string | null
+          location_revision?: number
           owner_profile_id?: string
+          public_location?: unknown
           public_location_label?: string | null
           published_at?: string | null
+          selected_public_place?: Json | null
           title?: string | null
           updated_at?: string
         }
@@ -2572,6 +2599,15 @@ export type Database = {
         Args: { p_expected_owner_profile_id: string; p_request_id: string }
         Returns: string
       }
+      acknowledge_own_message_read: {
+        Args: {
+          p_boundary: string
+          p_chat_id: string
+          p_expected_profile_id: string
+          p_kind: string
+        }
+        Returns: Json
+      }
       acknowledge_project_requirement_attention: {
         Args: {
           p_expected_profile_id: string
@@ -2590,6 +2626,20 @@ export type Database = {
           created_at: string
           note_id: string
         }[]
+      }
+      apply_item_location_v1: {
+        Args: {
+          p_exact_action: string
+          p_exact_receipt: string
+          p_expected_profile_id: string
+          p_expected_revision: number
+          p_item: string
+          p_kind: string
+          p_public_action: string
+          p_public_receipt: string
+          p_request_id: string
+        }
+        Returns: number
       }
       block_user: {
         Args: {
@@ -2679,6 +2729,69 @@ export type Database = {
       }
       close_resource_listing: {
         Args: { p_expected_owner_profile_id: string; p_listing_id: string }
+        Returns: string
+      }
+      create_editor_proposal_draft: {
+        Args: {
+          p_administrative_area: string
+          p_client_request_id: string
+          p_count_organizers_toward_capacity: boolean
+          p_country_code: string
+          p_description: string
+          p_ends_at: string
+          p_event_timezone: string
+          p_exact_location_visibility: string
+          p_exact_meeting_text: string
+          p_expected_creator_profile_id: string
+          p_locality: string
+          p_public_location_label: string
+          p_registration_capacity: number
+          p_skill_ids: string[]
+          p_skill_importances: string[]
+          p_starts_at: string
+          p_summary: string
+          p_title: string
+        }
+        Returns: string
+      }
+      create_editor_recurring_activity_draft: {
+        Args: {
+          p_administrative_area: string
+          p_client_request_id: string
+          p_count_organizers_toward_capacity: boolean
+          p_country_code: string
+          p_day_of_month: number
+          p_description: string
+          p_duration_minutes: number
+          p_effective_from: string
+          p_event_timezone: string
+          p_exact_location_visibility: string
+          p_exact_meeting_text: string
+          p_expected_creator_profile_id: string
+          p_local_start_time: string
+          p_locality: string
+          p_public_location_label: string
+          p_recurrence_type: string
+          p_registration_capacity: number
+          p_summary: string
+          p_title: string
+          p_topic: string
+          p_weekday: number
+        }
+        Returns: string
+      }
+      create_editor_resource_listing_draft: {
+        Args: {
+          p_administrative_area: string
+          p_client_request_id: string
+          p_country_code: string
+          p_description: string
+          p_expected_owner_profile_id: string
+          p_listing_mode: string
+          p_locality: string
+          p_public_location_label: string
+          p_title: string
+        }
         Returns: string
       }
       create_project_delegate_invitation:
@@ -2792,6 +2905,27 @@ export type Database = {
             }
             Returns: string
           }
+      create_proposal_draft_from_template: {
+        Args: {
+          p_client_request_id: string
+          p_content_version: string
+          p_expected_creator_profile_id: string
+          p_prefill_capacity?: boolean
+          p_template_id: string
+        }
+        Returns: {
+          accepted_at: string
+          accepted_content_version: string
+          capacity_recommendation: number
+          duration_seconds: number
+          outcome: string
+          prefill_capacity: boolean
+          proposal_id: string
+          request_id: string
+          source_proposal_id: string
+          template_id: string
+        }[]
+      }
       create_recurring_activity_draft:
         | {
             Args: {
@@ -2902,6 +3036,10 @@ export type Database = {
         }
         Returns: string
       }
+      get_authorized_item_location_v1: {
+        Args: { p_expected_profile_id: string; p_item: string; p_kind: string }
+        Returns: Json
+      }
       get_current_project_participant_invitation: {
         Args: { p_expected_profile_id: string; p_project_id: string }
         Returns: {
@@ -2958,6 +3096,22 @@ export type Database = {
           target_summary: string
         }[]
       }
+      get_moderation_case_template: {
+        Args: { p_case_id: string; p_expected_staff_profile_id: string }
+        Returns: {
+          content: Json
+          content_changed: boolean
+          current_content_version: string
+          original_creator_profile_id: string
+          publicly_available: boolean
+          removal_action: Json
+          removed_at: string
+          report_content_version: string
+          resource_blueprint_count: number
+          source_proposal_id: string
+          template_id: string
+        }[]
+      }
       get_own_blocked_profile_status: {
         Args: {
           p_expected_blocker_profile_id: string
@@ -2987,6 +3141,23 @@ export type Database = {
           target_kind: string
           target_summary: string
         }[]
+      }
+      get_own_message_feed_page: {
+        Args: {
+          p_before_created_at?: string
+          p_before_item_id?: string
+          p_before_item_kind?: string
+          p_chat_id: string
+          p_expected_profile_id: string
+          p_kind: string
+          p_limit: number
+          p_only_pending?: boolean
+        }
+        Returns: Json
+      }
+      get_own_message_unread_summary: {
+        Args: { p_expected_profile_id: string }
+        Returns: Json
       }
       get_own_moderation_staff_access: {
         Args: { p_expected_profile_id: string }
@@ -3164,6 +3335,35 @@ export type Database = {
           summary: string
           title: string
           updated_at: string
+        }[]
+      }
+      get_own_proposal_template_application: {
+        Args: {
+          p_client_request_id: string
+          p_expected_creator_profile_id: string
+        }
+        Returns: {
+          accepted_at: string
+          accepted_content_version: string
+          capacity_recommendation: number
+          duration_seconds: number
+          prefill_capacity: boolean
+          proposal_id: string
+          request_id: string
+          source_proposal_id: string
+          template_id: string
+        }[]
+      }
+      get_own_proposal_template_baseline: {
+        Args: { p_expected_creator_profile_id: string; p_template_id: string }
+        Returns: {
+          captured_at: string
+          description: string
+          skill_selections: Json
+          source_proposal_id: string
+          summary: string
+          template_id: string
+          title: string
         }[]
       }
       get_own_recurring_activity: {
@@ -3370,6 +3570,10 @@ export type Database = {
           project_kind: string
         }[]
       }
+      get_public_item_location_v1: {
+        Args: { p_item: string; p_kind: string }
+        Returns: Json
+      }
       get_public_profile: {
         Args: { p_profile_id: string }
         Returns: {
@@ -3399,6 +3603,24 @@ export type Database = {
           skills: Json
           starts_at: string
           summary: string
+          title: string
+        }[]
+      }
+      get_public_proposal_template: {
+        Args: { p_template_id: string }
+        Returns: {
+          content_version: string
+          cover_object_path: string
+          creator_display_name: string
+          description: string
+          duration_seconds: number
+          original_creator_profile_id: string
+          registration_capacity_recommendation: number
+          resource_blueprint_count: number
+          skills: Json
+          source_proposal_id: string
+          summary: string
+          template_id: string
           title: string
         }[]
       }
@@ -3501,6 +3723,10 @@ export type Database = {
           status: string
         }[]
       }
+      issue_location_selections_v1: {
+        Args: { p_batch: string; p_places: Json }
+        Returns: Json
+      }
       leave_project: {
         Args: {
           p_expected_participant_profile_id: string
@@ -3525,6 +3751,20 @@ export type Database = {
           joined_at: string
           profile_id: string
           role_rank: number
+        }[]
+      }
+      list_moderation_case_template_blueprints: {
+        Args: {
+          p_case_id: string
+          p_content_version: string
+          p_cursor_need_id?: string
+          p_expected_staff_profile_id: string
+          p_limit?: number
+        }
+        Returns: {
+          details: string
+          source_need_id: string
+          title: string
         }[]
       }
       list_moderation_cases: {
@@ -4164,6 +4404,28 @@ export type Database = {
           viewer_role: string
         }[]
       }
+      list_own_scoped_conversation_items_v3: {
+        Args: {
+          p_cursor_activity_at?: string
+          p_cursor_chat_id?: string
+          p_cursor_item_kind?: string
+          p_expected_profile_id: string
+          p_limit: number
+          p_scope: string
+        }
+        Returns: Json
+      }
+      list_own_scoped_conversation_items_v4: {
+        Args: {
+          p_cursor_activity_at?: string
+          p_cursor_chat_id?: string
+          p_cursor_item_kind?: string
+          p_expected_profile_id: string
+          p_limit: number
+          p_scope: string
+        }
+        Returns: Json
+      }
       list_own_scoped_message_chat_items: {
         Args: {
           p_cursor_activity_at?: string
@@ -4488,6 +4750,39 @@ export type Database = {
           title: string
         }[]
       }
+      list_public_proposal_template_resource_blueprints: {
+        Args: {
+          p_content_version: string
+          p_cursor_need_id?: string
+          p_limit?: number
+          p_template_id: string
+        }
+        Returns: {
+          details: string
+          source_need_id: string
+          title: string
+        }[]
+      }
+      list_public_proposal_templates: {
+        Args: {
+          p_cursor_id?: string
+          p_cursor_linked_at?: string
+          p_limit?: number
+          p_query?: string
+          p_skill_ids?: string[]
+        }
+        Returns: {
+          cover_object_path: string
+          creator_display_name: string
+          linked_at: string
+          original_creator_profile_id: string
+          skills: Json
+          source_proposal_id: string
+          summary: string
+          template_id: string
+          title: string
+        }[]
+      }
       list_public_proposals: {
         Args: {
           p_cursor_id?: string
@@ -4620,6 +4915,35 @@ export type Database = {
           resolved_at: string
           resolved_by_profile_id: string
           status: string
+        }[]
+      }
+      list_similar_active_proposals: {
+        Args: {
+          p_country_code?: string
+          p_excluded_proposal_id?: string
+          p_expected_profile_id: string
+          p_limit?: number
+          p_locality?: string
+          p_skill_ids?: string[]
+          p_title: string
+        }
+        Returns: {
+          administrative_area: string
+          availability: string
+          country_code: string
+          cover_object_path: string
+          derived_status: string
+          ends_at: string
+          event_timezone: string
+          locality: string
+          location_relation: string
+          proposal_id: string
+          public_location_label: string
+          shared_skill_ids: string[]
+          starts_at: string
+          summary: string
+          title: string
+          title_evidence: string
         }[]
       }
       mark_all_notifications_read: {
@@ -4757,6 +5081,27 @@ export type Database = {
         }
         Returns: string
       }
+      recover_editor_proposal_draft: {
+        Args: {
+          p_client_request_id: string
+          p_expected_creator_profile_id: string
+        }
+        Returns: string
+      }
+      recover_editor_recurring_activity_draft: {
+        Args: {
+          p_client_request_id: string
+          p_expected_creator_profile_id: string
+        }
+        Returns: string
+      }
+      recover_editor_resource_listing_draft: {
+        Args: {
+          p_client_request_id: string
+          p_expected_owner_profile_id: string
+        }
+        Returns: string
+      }
       regenerate_project_participant_invitation: {
         Args: { p_expected_profile_id: string; p_project_id: string }
         Returns: {
@@ -4798,6 +5143,23 @@ export type Database = {
       reject_resource_listing_request: {
         Args: { p_expected_owner_profile_id: string; p_request_id: string }
         Returns: string
+      }
+      remove_moderation_case_template: {
+        Args: {
+          p_case_id: string
+          p_client_request_id: string
+          p_expected_staff_profile_id: string
+          p_reason: string
+          p_reviewed_content_version: string
+          p_template_id: string
+        }
+        Returns: {
+          effective_action_id: string
+          effective_actor_profile_id: string
+          effective_at: string
+          outcome: string
+          request_id: string
+        }[]
       }
       remove_project_member: {
         Args: { p_expected_creator_profile_id: string; p_membership_id: string }
@@ -4861,6 +5223,30 @@ export type Database = {
           p_skill_ids?: string[]
         }
         Returns: string
+      }
+      reserve_location_search_v1: {
+        Args: {
+          p_actor: string
+          p_item: string
+          p_kind: string
+          p_query_hash: string
+          p_revision: number
+          p_session: string
+          p_slot: string
+        }
+        Returns: Json
+      }
+      resolve_location_selection_v1: {
+        Args: {
+          p_actor: string
+          p_item: string
+          p_kind: string
+          p_receipt: string
+          p_revision: number
+          p_session: string
+          p_slot: string
+        }
+        Returns: Json
       }
       resume_recurring_activity: {
         Args: {

@@ -9,6 +9,8 @@ class FakeAuthGateway implements AuthGateway {
   FakeAuthGateway({this.snapshot = const AuthSnapshot()});
 
   AuthSnapshot snapshot;
+  Object? snapshotError;
+  Object? streamError;
   Object? requestError;
   Object? verifyError;
   Future<void>? requestDelay;
@@ -27,10 +29,16 @@ class FakeAuthGateway implements AuthGateway {
       StreamController<AuthSnapshot>.broadcast();
 
   @override
-  AuthSnapshot get currentSnapshot => snapshot;
+  AuthSnapshot get currentSnapshot {
+    if (snapshotError != null) throw snapshotError!;
+    return snapshot;
+  }
 
   @override
-  Stream<AuthSnapshot> get authStateChanges => _states.stream;
+  Stream<AuthSnapshot> get authStateChanges {
+    if (streamError != null) throw streamError!;
+    return _states.stream;
+  }
 
   void emit(AuthSnapshot value) => _states.add(value);
 

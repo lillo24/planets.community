@@ -1,6 +1,6 @@
 # Messages
 
-This feature owns the authenticated mobile Messages information architecture.
+This feature owns the public mobile Messages frame and authenticated content.
 It keeps canonical structured Project and Resource requests in `Requests` and a
 mixed chronological conversation projection in `Chats`. The Chats tab exposes
 independently paged `Private` and `Groups` scopes: Private contains Resource and
@@ -15,8 +15,8 @@ roles. Server grouping occurs before paging. The existing typed
 `ProjectRequestMessageChatItem` and wire discriminator `project_request_chat`
 now identify a pair row; its representative request ID is navigation context.
 The canonical pending total and entitlement are independent of that request's
-status. Requests remains the separate request-management view. MSG02 unread
-state and chat-alert removal remain deferred.
+status. Requests remains the separate request-management view. MSG02 adds
+durable human-message unread state; activity alerts remain in Notifications.
 
 ## Source map
 
@@ -30,11 +30,33 @@ state and chat-alert removal remain deferred.
   exact-item reads use the unified 04C4C2 RPCs; Project-only selection and
   mutation operations keep their existing 04C3B1/05A boundaries. Each narrow
   response is parsed strictly and cross-domain field mixtures fail closed.
-- `data/message_chats_gateway.dart` reads `list_own_scoped_conversation_items`,
+- `data/message_chats_gateway.dart` reads `list_own_scoped_conversation_items_v4`,
   the canonical scoped unified Chats RPC with pair pending totals. It strictly
   validates branch XOR fields, request-context lifecycle fields,
   human-preview completeness, and the Resource-only canonical opposite-party
   identity returned by that projection.
+  Two nullable preview fields distinguish the latest pair request status and
+  latest visible group system-event label from an older human preview. Pair
+  route context remains independent; human activity wins exact timestamp ties.
+  The released v3 shape and function remain unchanged.
+- `domain/message_unread_models.dart` validates complete account/scope counts
+  and server-issued newest-feed snapshot tokens.
+- `data/message_unread_gateway.dart` owns expected-identity summary/read RPCs
+  and one private account invalidation subscription. The shared
+  `core/backend/private_broadcast_payload.dart` separates legitimate Realtime
+  transport metadata from the strict identifier-only application payload.
+- `application/message_unread_controller.dart` owns canonical count refresh,
+  coalescing, foreground/reconnect recovery, stale/error state, and identity
+  revisions. It never adjusts totals arithmetically.
+- `presentation/message_unread_badge.dart` renders zero-hidden counts, visual
+  caps and exact localized accessibility labels. Home and the Messages-labelled
+  navigation slot share the complete conversation total; Groups uses its scope
+  total, and rows use incoming human-message counts.
+- `presentation/message_read_viewport.dart` acknowledges only a successfully
+  rendered newest boundary at the latest scroll position in a foreground,
+  unobscured conversation. All three detail features reuse it. Hidden branches,
+  previews, older scroll, group info and failed loads cannot acknowledge.
+  Failed reads preserve the exact token for explicit retry.
 - `application/message_chats_controller.dart` owns one identity-bound scope's
   paging, composite deduplication, loaded-pair subscriptions (also read-only), debounced
   canonical refresh, aggregated connection state, reconnect catch-up, and one
@@ -48,12 +70,26 @@ state and chat-alert removal remain deferred.
   canonical post-triage synchronization with participation and the inbox.
 - `presentation/messages_routes.dart` owns stable request, chat, and group-info
   routes used by navigation and future notification routing.
-- `presentation/messages_screen.dart` owns the two-tab shell, Private/Groups
-  toggle, independent loading/refresh/pagination, centrally discriminated chat
+- `presentation/messages_navigation.dart` owns the data-free Chat/Requests
+  frame and Private/Groups selector shared by guests, incomplete profiles and
+  ready users. Its in-memory presentation provider remembers tab and scope
+  independently across Auth/profile completion and cancellation. It holds no
+  identity, content, unread counts or device-persisted state.
+- `presentation/messages_screen.dart` owns authenticated
+  independent loading/refresh/pagination, centrally discriminated chat
   cards, Private Project-request/Resource counterparty avatars, and role-aware
   Project/Resource request cards. Group rows never receive a person avatar.
-  Chats and Private are deterministic defaults; no unread or agreement activity
-  copy is fabricated.
+  Chat and Private are initial defaults. Canonical unread counts are
+  independent of pending requests and agreement activity.
+  Conversation rows share identity/preview content with trailing local time
+  above incoming human-message count. Private rows use counterparty names;
+  role/kind/read-only/context metadata stays in detail experiences. Scope
+  labels contain canonical conversation counts to the right, zero hidden;
+  unknown/stale counts remain explicit. Selected navigation badges use theme
+  inverse colors, including the unavailable variant.
+  Private counterparty previews omit the redundant name; historical replies
+  by a different legacy author retain that author's name, and own replies use
+  localized You/Tu.
 - `presentation/participation_request_details.dart` owns the reusable authorized
   Project request details sheet/content, canonical actions, resolved history,
   and Proposal/Tavolo navigation. The old full-screen request route is a thin
@@ -61,6 +97,11 @@ state and chat-alert removal remain deferred.
   detail-only so the inbox never performs per-row selection fan-out.
 - `presentation/messages_formatters.dart` owns the shared safe relative-time and
   status formatting used by Messages and request-chat presentation.
+  Conversation timestamps use local calendar days: today `HH:mm`, earlier
+  within six days an abbreviated localized weekday, otherwise localized
+  compact date including year. Existing request/detail date formatting stays
+  separate. Pair read-only footer explains reactivation through a new eligible
+  pending request; it does not change canonical send entitlement.
 - The adjacent `project_request_chat/` feature owns request-chat transport,
   identity-bound state, private identifier-only Realtime signals, structured
   request history, pinned lifecycle actions, and the pending-only composer.
@@ -128,8 +169,9 @@ default bottom-right navigation shortcut:
 /messages/chats/resource/:chatId
 ```
 
-Both routes require authentication and a complete profile. Their exact safe
-internal destination survives email OTP and profile completion. The persistent
+Only `/messages` is public. Every descendant requires authentication and a
+complete profile. Its exact safe internal destination survives email OTP and
+profile completion. The persistent
 bottom navigation is Profile / Home / Messages by default, with Browse available
 as a device-local Settings preference. Direct Messages or Browse entry makes the
 right slot reflect the current destination regardless of that preference; the
@@ -142,5 +184,41 @@ The retained request-chat route resolves endpoints to the pair with exact reques
 context and authorized non-endpoint delegates to request details. The UX-NAV01
 shell and post-auth return contract remain in their existing router owners.
 Loaded read-only pair rows keep one subscription per pair so reactivation can
-refresh their summaries. New/unloaded pairs appear on normal list refresh; this
-change adds no global live-inbox subscription or fabricated unread counts.
+refresh their summaries. One additional account subscription invalidates unread
+totals and scoped lists even for new/unloaded conversations. Unknown or failed
+counts display an explicit unavailable/stale indicator; refreshing Messages,
+foreground resume or reconnection retries the canonical read. Account changes
+clear counts immediately and dispose old subscriptions.
+
+## Durable unread and rollout
+
+Only incoming human messages create eligible receipts. See
+[ADR 0008](../../../../../docs/architecture/decisions/0008-message-unread-and-activity-alerts.md)
+for commit ordering, one-time rollout baseline and group admission/re-entry.
+The badge counts authorized unread conversations across complete scopes, never
+loaded pages. Resource chats retain request-scoped identity. Read-only history
+retains unread until opened and acknowledged; activity mark-all never reads it.
+Unread is private own-state, independent of notification preferences/projectors.
+Apply the backend migration before releasing this client; old clients gain no
+badges or acknowledgement merely from migration.
+
+`presentation/messages_landing_screen.dart` gates only the public `/messages`
+root. Signed-out users can select Chat/Requests and Private/Groups, each with a
+localized empty explanation and Log in returning to `/messages`. Guest scope
+labels are plain presentation: no private list/request/photo controllers or
+count labels mount. Incomplete profiles share this frame with completion/retry
+and safe root cancellation. Restoring, checking-profile and failed sessions
+expose the shared truthful recovery state. Private loaders mount only for a ready
+identity, keyed by actor; every descendant keeps router protection.
+
+### Tutorial targets (TUT01 handoff)
+
+The shared frame provides stable keys `messages-tab-chat`,
+`messages-tab-requests`, `message-chat-scope-private` and
+`message-chat-scope-groups`; the containing selector retains
+`message-chat-scope-toggle`. TabBar and SegmentedButton supply localized labels
+and selected semantics. A guide can highlight the keyed Tab/segment label bounds;
+select Chat before targeting either scope because Requests hides that selector.
+Use the same keys for guest/setup and ready views. The guide must not mount a
+private screen or read a Messages controller to locate these controls. TUT02 can
+use the actual TUT01 commit as a stacked dependency if its PR is still open.

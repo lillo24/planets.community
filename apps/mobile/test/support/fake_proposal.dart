@@ -27,6 +27,9 @@ class FakeProposalGateway implements ProposalGateway {
   List<OwnProposal> ownItems = [];
   Object? error;
   Object? publishError;
+  Object? createResponseError;
+  Object? ownReadError;
+  String createdId = 'new-draft';
   Object? mutationError;
   Object? requestedError;
   RequestedProposalLoader? requestedLoader;
@@ -123,6 +126,7 @@ class FakeProposalGateway implements ProposalGateway {
     String proposalId,
   ) async {
     _throwIfNeeded();
+    if (ownReadError case final failure?) throw failure;
     lastExpectedIdentity = expectedCreatorId;
     return ownResult ??
         Future.value(
@@ -133,17 +137,34 @@ class FakeProposalGateway implements ProposalGateway {
   @override
   Future<String> createDraft(
     String expectedCreatorId,
-    ProposalInput input,
-  ) async {
+    ProposalInput input, {
+    String? clientRequestId,
+  }) async {
     _throwIfNeeded();
     calls.add('create');
     _throwMutationIfNeeded();
     if (mutationDelay case final delay?) await delay;
     lastExpectedIdentity = expectedCreatorId;
     lastInput = input;
-    ownItems = [ownProposalFixture(id: 'new-draft', input: input), ...ownItems];
-    return 'new-draft';
+    final receipt = _receipts['$expectedCreatorId:$clientRequestId'];
+    if (clientRequestId != null && receipt != null) return receipt;
+    ownItems = [ownProposalFixture(id: createdId, input: input), ...ownItems];
+    if (clientRequestId != null) {
+      _receipts['$expectedCreatorId:$clientRequestId'] = createdId;
+    }
+    if (createResponseError case final failure?) {
+      createResponseError = null;
+      throw failure;
+    }
+    return createdId;
   }
+
+  final _receipts = <String, String>{};
+  @override
+  Future<String?> recoverDraftCreation(
+    String expectedCreatorId,
+    String clientRequestId,
+  ) async => _receipts['$expectedCreatorId:$clientRequestId'];
 
   @override
   Future<void> updateOwnProposal(
@@ -229,8 +250,8 @@ OwnProposal _copyProposal(
   title: input?.title ?? proposal.title,
   summary: input?.summary ?? proposal.summary,
   description: input?.description ?? proposal.description,
-  startsAt: input?.startsAt ?? proposal.startsAt,
-  endsAt: input?.endsAt ?? proposal.endsAt,
+  startsAt: input == null ? proposal.startsAt : input.startsAt,
+  endsAt: input == null ? proposal.endsAt : input.endsAt,
   eventTimezone: input?.eventTimezone ?? proposal.eventTimezone,
   countryCode: input?.countryCode ?? proposal.countryCode,
   locality: input?.locality ?? proposal.locality,
@@ -253,8 +274,9 @@ OwnProposal _copyProposal(
       ? DateTime.utc(2026, 9, 3)
       : proposal.cancelledAt,
   capacity: projectCapacityFixture(
-    registrationCapacity:
-        input?.registrationCapacity ?? proposal.capacity.registrationCapacity,
+    registrationCapacity: input == null
+        ? proposal.capacity.registrationCapacity
+        : input.registrationCapacity,
     countOrganizersTowardCapacity:
         input?.countOrganizersTowardCapacity ??
         proposal.capacity.countOrganizersTowardCapacity,
@@ -350,13 +372,14 @@ ProposalDetail proposalDetailFixture({
 );
 
 ProposalInput proposalInputFixture({
+  String title = 'Paint the square',
   DateTime? startsAt,
   DateTime? endsAt,
   String eventTimezone = 'Europe/Rome',
   int? registrationCapacity = 20,
   bool countOrganizersTowardCapacity = false,
 }) => ProposalInput(
-  title: 'Paint the square',
+  title: title,
   summary: 'Create a community mural together.',
   description: 'A full proposal description.',
   startsAt: startsAt ?? DateTime.utc(2026, 9, 10, 10),
@@ -376,6 +399,7 @@ ProposalInput proposalInputFixture({
 OwnProposal ownProposalFixture({
   String id = 'proposal-1',
   ProposalInput? input,
+  bool unsetTimezone = false,
   String? coverObjectPath,
   ProposalLifecycle lifecycle = ProposalLifecycle.draft,
   ProposalStatus? status,
@@ -392,7 +416,7 @@ OwnProposal ownProposalFixture({
     description: value.description,
     startsAt: startsAt ?? value.startsAt,
     endsAt: endsAt ?? value.endsAt,
-    eventTimezone: value.eventTimezone,
+    eventTimezone: unsetTimezone ? null : value.eventTimezone,
     countryCode: value.countryCode,
     locality: value.locality,
     administrativeArea: value.administrativeArea,

@@ -14,7 +14,7 @@ npm run demo:seed:local
 npm run demo:reset:local
 ```
 
-`demo:seed:local` brings the thirteen known scenarios owned by five stable demo identities to their desired state. Repeated runs reuse canonical entity IDs, add only missing transitions/messages, refresh relative Proposal times, and let the notification projector consume pending supported local events. It does not reset unrelated developer rows.
+`demo:seed:local` composes the original nine scenarios, PI05's four invitation activities and TW05's 18-source Workshop/matching inventory under seven synthetic personas. Eight core Completed templates remain publicly usable; dedicated fixtures own removal/cancellation/version QA. Repeated seeds preserve canonical IDs, receipts, Completed clocks/tokens and owner edits; only documented relative-time examples refresh. It does not reset unrelated developer rows. The [TW05 record](workshop-demo-validation.md) and [integration record](template-stack-integration.md) document inventory and evidence.
 
 Older local worlds are adopted in place: an exact legacy `DEMO · ...` title owned by its expected demo identity is renamed to the realistic title before reconciliation. Ambiguous or duplicate matches fail loudly. This narrow trusted local SQL is necessary for already-frozen historical/closed rows and never searches by a broad prefix or changes other accounts' content. The closed legacy Resource example is temporarily restored to its prior published state only when it lacks the expected cover, repaired through the normal owner media API, and closed again without changing its ID.
 
@@ -52,7 +52,7 @@ from `check:db` mutation-verifier data and the founder's phone-demo services.
 | `demo-dario@planets.invalid` | Dario        | Photo-free participant in both invitation Projects; retained leave/removal history |
 | `demo-elena@planets.invalid` | Elena        | Photo-free, otherwise ready, unjoined recipient for explicit interactive Join      |
 
-All five have complete synthetic basic profiles. Giulia, Marco and Sara retain their controlled skills and locally generated abstract initial avatars. Dario and Elena explicitly have no canonical profile-photo row; seeding clears an existing row through the owner API and verification asserts absence. Their avatar fallback does not represent uploaded media. Clearing the canonical row does not promise removal of an earlier orphaned Storage object.
+All seven have complete synthetic basic profiles. Giulia, Marco and Sara retain their controlled skills and abstract initial avatars. Dario and Elena have no canonical profile-photo row; verification asserts absence. PLANETS — demo locale owns three synthetic starter examples; Revisore — demo locale is the only fixture staff identity. Both Workshop personas use abstract geometric avatars. Clearing a canonical photo does not promise removal of an earlier orphaned Storage object.
 
 The realistic Italian scenario set is:
 
@@ -75,7 +75,7 @@ The original nine examples remain intact. Four additional activities reuse exist
 
 Both active cases retain a replaced generation, a revoked generation and one current generation. Marco's pending ordinary request has skill/resource offers and a human request-chat message before direct admission withdraws it with `direct_participant_invitation`; the original request, offers, message and superseding membership relationship remain. Tavoli have no Proposal skill selections. No automatic membership commitments are created. Sara is also admitted; Creator and already-joined receipts consume no new slot. Dario has deliberate joined → left → joined → removed → joined episodes and can read/send Project chat without a photo. Elena stays unjoined and cannot read the private chat or meeting details.
 
-The finished concert and paused reading group also receive links while joinable. Their existing historical/paused purpose stays intact. Resuming the reading group makes the same unrevoked generation usable again. Ordinary public sharing uses the public detail with one `intent=join` marker and never admits by opening it.
+The finished concert and paused reading group also receive links while joinable. Their existing historical/paused purpose stays intact. On an explicit TW05-to-integrated seed, the original concert may already have its historical cover but lack a PI05 generation: only that missing generation is prepared with its Upcoming fixture clock before restoring Just Finished. Existing generations and unchanged reruns never rewind it. Resuming the reading group makes the same unrevoked generation usable again. Ordinary public sharing uses the public detail with one `intent=join` marker and never admits by opening it.
 
 Raw links are written only to ignored `.env.demo-participant-links.json`, keyed by generation ID and scoped to the loopback API. Keep that file private; normal command output contains no capabilities. Current links are obtained through the authenticated `get_current_project_participant_invitation` RPC, or the normal mobile organizer sharing sheet. Retrieving/resharing does not rotate. The PI05 loopback browser launch helper below consumes the ignored journal/current manager API without echoing a token. It is distinct from canonical `https://planets.community` URLs and proves no public hosting or OS association.
 
@@ -93,7 +93,18 @@ Each seed admission UUID is derived from Project, account, generation and delibe
 
 Interactive changes are intentional drift: verification fails if Elena joined, a baseline generation was revoked/regenerated, or a required member departed. Seeding restores departed seeded members with retained history, but refuses extra/revoked baseline generations rather than silently erasing them. Use `demo:reset:local` only on a known disposable stack to rebuild deliberate baseline history; it resets the entire selected local database. A journal from another API is rejected and must be moved aside deliberately. Never reset a shared rehearsal stack.
 
-`check:db` and hosted Database CI execute the bounded demo check **after** clean pgTAP and existing mutation verifiers, before generated-type drift validation. The [PI05 record](../implementation/pi05-integration-qa-and-demo-data.md) owns isolated browser/mobile reproduction and separates GUI, HTTP, gateway and native evidence.
+`check:db` and hosted Database CI execute `demo:stack:check:local` **after** clean pgTAP, existing mutation verifiers and the unrestricted notification regression, before generated-type drift. It shares the lock/session pool across PI05's admission phase and TW05's Workshop phase; each standalone command remains usable. Dynamic public/private base-table digests include every current invitation and participation-pair table; the initial 5 October candidate covered 77 tables. Only starts/ends/updated clocks for exact original relative-time Proposals, the two PI05 relative-time Proposals and active Workshop fixtures are excluded; application destinations and Completed sources/copies retain full timestamps. The [PI05 record](../implementation/pi05-integration-qa-and-demo-data.md) and [integrated evidence](template-stack-integration.md) distinguish GUI, HTTP, gateway and native checks.
+
+The combined world also retains MSG01's two distinct pending mural/monthly-Tavolo
+requests, one writable Marco/Giulia pair and its two canonical human follow-ups.
+Explicit seeding returns only those two exact message IDs to the scoped demo
+worker; unrelated messages, even in that same pair, stay outside its inventory.
+MSG01 events retain the canonical worker's unhandled behavior until MSG02; the
+demo adds no chat alerts. Read-only verification never creates or sends messages.
+
+## Workshop stability and non-repairing verification
+
+`demo:verify:local` checks already-created identities and canonical state without product repair. `npm run demo:workshop:check:local` is explicitly mutating, bounded, and never resets: it proves committed-copy interruption/recovery, unchanged IDs/tokens/Bozza/needs/receipts/reports/removal/audit/outbox/notifications, and independent version copies. A coordinated advisory lock prevents half-built snapshots. Interactive baseline drift is reported; removed templates and owner-edited copies are never silently restored. Repeat destructive native journeys only with an explicit reset of a known disposable local stack. See the [TW05 record](workshop-demo-validation.md) for exclusions and later PI05 composition.
 
 ## Vendored media and lifecycle ordering
 
@@ -124,3 +135,49 @@ Ordinary authenticated clients own domain and media mutations. The service role 
 The demo tooling originally landed on `main` after the 08B media branch diverged. DEMO-01 reconciled the established DEMO-B implementation from `main` into the cover-media stack instead of creating a second seeder, then adapted it to the newer profile-photo and cover contracts.
 
 The stable registry could support a future staging runner, but no trusted staging-admin credential/configuration contract exists. Adding one requires an explicit separately named command, HTTPS target allow-listing, account-owner credentials, and non-production environment proof. Production remains an invalid target.
+
+## UI-NEXT-02 own-draft inventory
+
+Giulia (`demo-alice@planets.invalid`) owns four additional ordinary unpublished
+drafts. Their broad synthetic location is Trento; none has an exact meeting place.
+
+| Type     | Initial title                               |
+| -------- | ------------------------------------------- |
+| Project  | Bozza demo · Un pomeriggio per il quartiere |
+| Tavolo   | Bozza demo · Tavolo di lettura              |
+| Donate   | Bozza demo · Libri da donare                |
+| Exchange | Bozza demo · Materiali da scambiare         |
+
+Use the existing explicit mutating `demo:seed:local` on a selected disposable local
+stack, then sign in as Giulia and open a discovery folder or `/drafts`. Toggle
+any types together; clearing the last selected type shows all. The management
+menu preserves published history/co-organizer access. A ready different persona
+has a genuinely empty hub unless it saved its own drafts. Opening a draft uses
+the ordinary editor, and publishing removes it after the affected source refresh.
+
+`scripts/lib/demo-drafts.mjs` stores only opaque draft IDs/request IDs/pending kinds
+in the host temp directory: `planets-demo-drafts-<sha256>.json`, where the hash
+covers version, local API URL and Giulia's canonical profile ID. Worktrees on the
+same host/API/account share it. No credentials, email, tokens, location or user
+content is stored. Preserve this file when moving an existing database to another
+host: locate the receipt whose hash matches that API/account and copy it to that
+host's temp directory. It is a trusted local seeding receipt, not an application
+cache or new database ownership model.
+
+An initial pending receipt is saved before creation. Project retries use their
+canonical creation request; Tavolo/Resource committed unknown outcomes recover
+only an exact initial title under the same owner when exactly one row exists.
+Known destinations may be renamed, edited or published: unchanged seeds retain
+their IDs and content. Missing/lost receipts with existing matches, ambiguous
+matches, missing known destinations, or unresolved pending operations fail
+loudly and require local reconciliation; they never silently create replacements.
+Inspect the indicated canonical owner's rows and recover the original opaque ID
+into the matching receipt only after confirming that operation's outcome. Do not
+erase a pending receipt or re-run creation after an unknown committed outcome.
+A confirmed failed/rolled-back create with no row may have its pending entry
+cleared explicitly on that disposable stack.
+
+`demo:verify:local` only reads these destinations; `demo:check:local` proves
+seed/verify/unchanged-seed/verify stability. The receipt is separate from the
+participant-link journal and survives worktree cleanup. No app-start hook,
+background publishing, fake login or remote seeding is introduced.

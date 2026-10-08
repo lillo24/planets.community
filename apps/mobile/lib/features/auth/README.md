@@ -66,8 +66,21 @@ Flow revisions and disposal checks ignore late command completions after the
 flow is abandoned or replaced, including profile retry and sign-out. They do
 not cancel native/provider/network operations or roll back a canonical session
 already established externally. Sign-out still uses only `AuthGateway.signOut`.
+Only a current successful explicit sign-out sets `AuthCommandState.didSignOut`.
+Application routing consumes this completion to reopen Welcome; passive session
+loss, failed sign-out and abandoned late completions cannot produce it.
 
 Permanent Android/iOS identifiers, external provider configuration, real
 adapters, account-linking validation, and device QA remain deferred. See the
 [AUTH01A status and activation checklists](../../../../../docs/development/auth01a-provider-ready-auth-infrastructure.md)
 before starting Google or Apple activation.
+
+Session restoration has an explicit `restorationFailed` phase. Snapshot or
+subscription failures show recovery and cannot impersonate signed-out entry.
+Retry rechecks the stored session without starting a new login. Existing ready
+identity/readiness is retained for a same-actor `tokenRefreshed` event; expired
+sessions and actor changes still invalidate navigation/private state. Other Auth
+events continue to recheck readiness. This follows the resolved Supabase event
+contract and its [stream-error guidance](https://supabase.com/docs/reference/dart/auth-onauthstatechange).
+Auth cancellation preserves both public invitation previews and the contextual
+Messages root; protected chat/detail continuations still require authentication.

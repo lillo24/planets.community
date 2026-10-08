@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 import '../../../core/theme/app_tokens.dart';
+import '../../messages/presentation/message_read_viewport.dart';
 import '../../../core/widgets/error_state.dart';
 import '../../../core/widgets/loading_state.dart';
 import '../../../l10n/generated/app_localizations.dart';
@@ -254,211 +255,230 @@ class _ProjectRequestChatScreenState
       }
     });
 
-    return Scaffold(
-      appBar: AppBar(
-        title: summary == null
-            ? Text(l10n.projectRequestChatTitle)
-            : Row(
-                children: [
-                  VisibleProfilePhotoAvatar(
-                    key: const Key('project-request-chat-counterparty-photo'),
-                    entry: counterpartyPhoto,
-                    imageSemanticsLabel: l10n
-                        .resourceChatCounterpartyPhotoLabel(
-                          summary.counterpartyDisplayName,
-                        ),
-                    placeholderSemanticsLabel: l10n
-                        .resourceChatCounterpartyPhotoLabel(
-                          summary.counterpartyDisplayName,
-                        ),
-                    radius: 18,
-                  ),
-                  const SizedBox(width: AppSpacing.small),
-                  Expanded(
-                    child: Text(
-                      summary.counterpartyDisplayName,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                ],
-              ),
-      ),
-      body: SafeArea(
-        child:
-            !belongs ||
-                (state.phase == ProjectRequestChatPhase.loading &&
-                    items.isEmpty)
-            ? LoadingState(message: l10n.projectRequestChatLoading)
-            : state.phase == ProjectRequestChatPhase.failure && items.isEmpty
-            ? ErrorState(
-                message: projectRequestChatFailureMessage(l10n, state.failure!),
-                onRetry: _load,
-              )
-            : LayoutBuilder(
-                builder: (context, constraints) => Column(
+    return MessageReadViewport(
+      profileId: _expectedProfileId,
+      kind: 'project_request_chat',
+      chatId: summary?.chatId,
+      boundary:
+          belongs &&
+              state.phase == ProjectRequestChatPhase.ready &&
+              state.failure == null
+          ? state.readBoundary
+          : null,
+      scrollController: _scrollController,
+      child: Scaffold(
+        appBar: AppBar(
+          title: summary == null
+              ? Text(l10n.projectRequestChatTitle)
+              : Row(
                   children: [
-                    ConstrainedBox(
-                      constraints: BoxConstraints(
-                        // Keep transcript/composer space when text or the
-                        // keyboard makes the pending banner taller.
-                        maxHeight: constraints.maxHeight * .45,
-                      ),
-                      child: SingleChildScrollView(
-                        child: Column(
-                          children: [
-                            if (summary != null)
-                              _RequestStatusBanner(
-                                expectedProfileId: _expectedProfileId!,
-                                summary: summary,
-                                isResolving: _isResolving,
-                                onOpenDetails: _showDetails,
-                                onReject: _reject,
-                                onAccept: _accept,
-                              ),
-                            if (state.hasConnectionIssue)
-                              _Notice(
-                                key: const Key(
-                                  'project-request-chat-connection-issue',
-                                ),
-                                text: l10n.projectRequestChatConnectionIssue,
-                                isError: true,
-                              ),
-                            if (state.failure case final failure?)
-                              _Notice(
-                                key: const Key(
-                                  'project-request-chat-inline-error',
-                                ),
-                                text: projectRequestChatFailureMessage(
-                                  l10n,
-                                  failure,
-                                ),
-                                isError: true,
-                              ),
-                          ],
-                        ),
-                      ),
+                    VisibleProfilePhotoAvatar(
+                      key: const Key('project-request-chat-counterparty-photo'),
+                      entry: counterpartyPhoto,
+                      imageSemanticsLabel: l10n
+                          .resourceChatCounterpartyPhotoLabel(
+                            summary.counterpartyDisplayName,
+                          ),
+                      placeholderSemanticsLabel: l10n
+                          .resourceChatCounterpartyPhotoLabel(
+                            summary.counterpartyDisplayName,
+                          ),
+                      radius: 18,
                     ),
+                    const SizedBox(width: AppSpacing.small),
                     Expanded(
-                      child: RefreshIndicator(
-                        onRefresh: _refresh,
-                        child: ListView(
-                          key: const Key('project-request-chat-history'),
-                          controller: _scrollController,
-                          physics: const AlwaysScrollableScrollPhysics(),
-                          padding: const EdgeInsets.all(AppSpacing.medium),
-                          children: [
-                            if (state.hasMoreOlder)
-                              Center(
-                                child: OutlinedButton(
-                                  key: const Key(
-                                    'project-request-chat-load-older',
-                                  ),
-                                  onPressed: state.isLoadingOlder
-                                      ? null
-                                      : _loadOlder,
-                                  child: state.isLoadingOlder
-                                      ? const SizedBox.square(
-                                          dimension: 20,
-                                          child: CircularProgressIndicator(
-                                            strokeWidth: 2,
-                                          ),
-                                        )
-                                      : Text(l10n.projectRequestChatLoadOlder),
-                                ),
-                              ),
-                            if (items.isEmpty)
-                              Padding(
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: AppSpacing.xLarge,
-                                ),
-                                child: Text(
-                                  l10n.projectRequestChatEmpty,
-                                  textAlign: TextAlign.center,
-                                ),
-                              )
-                            else
-                              for (final item in items)
-                                switch (item) {
-                                  ProjectRequestChatRequestItem request =>
-                                    _StructuredRequestCard(
-                                      key: ValueKey(request.canonicalKey),
-                                      item: request,
-                                      isMine:
-                                          request.requesterProfileId ==
-                                          _expectedProfileId,
-                                      highlighted:
-                                          request.requestId == widget.requestId,
-                                      onOpenDetails: () =>
-                                          _showDetails(request.requestId),
-                                      onOpenGroup: (chatId) {
-                                        if (_hasExpectedIdentity) {
-                                          context.push(
-                                            projectChatRoute(chatId),
-                                          );
-                                        }
-                                      },
-                                    ),
-                                  ProjectRequestChatHumanMessage message =>
-                                    _MessageBubble(
-                                      key: ValueKey(message.canonicalKey),
-                                      message: message,
-                                      onOpenDetails: () {
-                                        if (message.requestId
-                                            case final requestId?) {
-                                          _showDetails(requestId);
-                                        }
-                                      },
-                                      isMine:
-                                          message.senderProfileId ==
-                                          _expectedProfileId,
-                                    ),
-                                },
-                          ],
-                        ),
-                      ),
-                    ),
-                    ConstrainedBox(
-                      constraints: BoxConstraints(
-                        maxHeight: constraints.maxHeight * .4,
-                      ),
-                      child: SingleChildScrollView(
-                        child: Column(
-                          children: [
-                            if (summary != null &&
-                                !items.any(
-                                  (item) =>
-                                      item is ProjectRequestChatRequestItem &&
-                                      item.requestId == widget.requestId,
-                                ))
-                              TextButton(
-                                onPressed: () => _showDetails(widget.requestId),
-                                child: Text(
-                                  l10n.pairReferencedRequest(
-                                    summary.projectTitle,
-                                  ),
-                                ),
-                              ),
-                            if (summary?.hasSendEntitlement == true)
-                              _Composer(
-                                controller: _composer,
-                                isSending: state.isSending,
-                                onSend: _send,
-                              )
-                            else if (summary != null)
-                              _Notice(
-                                key: const Key(
-                                  'project-request-chat-read-only',
-                                ),
-                                text: l10n.projectRequestChatReadOnly,
-                              ),
-                          ],
-                        ),
+                      child: Text(
+                        summary.counterpartyDisplayName,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
                   ],
                 ),
-              ),
+        ),
+        body: SafeArea(
+          child:
+              !belongs ||
+                  (state.phase == ProjectRequestChatPhase.loading &&
+                      items.isEmpty)
+              ? LoadingState(message: l10n.projectRequestChatLoading)
+              : state.phase == ProjectRequestChatPhase.failure && items.isEmpty
+              ? ErrorState(
+                  message: projectRequestChatFailureMessage(
+                    l10n,
+                    state.failure!,
+                  ),
+                  onRetry: _load,
+                )
+              : LayoutBuilder(
+                  builder: (context, constraints) => Column(
+                    children: [
+                      ConstrainedBox(
+                        constraints: BoxConstraints(
+                          // Keep transcript/composer space when text or the
+                          // keyboard makes the pending banner taller.
+                          maxHeight: constraints.maxHeight * .45,
+                        ),
+                        child: SingleChildScrollView(
+                          child: Column(
+                            children: [
+                              if (summary != null)
+                                _RequestStatusBanner(
+                                  expectedProfileId: _expectedProfileId!,
+                                  summary: summary,
+                                  isResolving: _isResolving,
+                                  onOpenDetails: _showDetails,
+                                  onReject: _reject,
+                                  onAccept: _accept,
+                                ),
+                              if (state.hasConnectionIssue)
+                                _Notice(
+                                  key: const Key(
+                                    'project-request-chat-connection-issue',
+                                  ),
+                                  text: l10n.projectRequestChatConnectionIssue,
+                                  isError: true,
+                                ),
+                              if (state.failure case final failure?)
+                                _Notice(
+                                  key: const Key(
+                                    'project-request-chat-inline-error',
+                                  ),
+                                  text: projectRequestChatFailureMessage(
+                                    l10n,
+                                    failure,
+                                  ),
+                                  isError: true,
+                                ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      Expanded(
+                        child: RefreshIndicator(
+                          onRefresh: _refresh,
+                          child: ListView(
+                            key: const Key('project-request-chat-history'),
+                            controller: _scrollController,
+                            physics: const AlwaysScrollableScrollPhysics(),
+                            padding: const EdgeInsets.all(AppSpacing.medium),
+                            children: [
+                              if (state.hasMoreOlder)
+                                Center(
+                                  child: OutlinedButton(
+                                    key: const Key(
+                                      'project-request-chat-load-older',
+                                    ),
+                                    onPressed: state.isLoadingOlder
+                                        ? null
+                                        : _loadOlder,
+                                    child: state.isLoadingOlder
+                                        ? const SizedBox.square(
+                                            dimension: 20,
+                                            child: CircularProgressIndicator(
+                                              strokeWidth: 2,
+                                            ),
+                                          )
+                                        : Text(
+                                            l10n.projectRequestChatLoadOlder,
+                                          ),
+                                  ),
+                                ),
+                              if (items.isEmpty)
+                                Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: AppSpacing.xLarge,
+                                  ),
+                                  child: Text(
+                                    l10n.projectRequestChatEmpty,
+                                    textAlign: TextAlign.center,
+                                  ),
+                                )
+                              else
+                                for (final item in items)
+                                  switch (item) {
+                                    ProjectRequestChatRequestItem request =>
+                                      _StructuredRequestCard(
+                                        key: ValueKey(request.canonicalKey),
+                                        item: request,
+                                        isMine:
+                                            request.requesterProfileId ==
+                                            _expectedProfileId,
+                                        highlighted:
+                                            request.requestId ==
+                                            widget.requestId,
+                                        onOpenDetails: () =>
+                                            _showDetails(request.requestId),
+                                        onOpenGroup: (chatId) {
+                                          if (_hasExpectedIdentity) {
+                                            context.push(
+                                              projectChatRoute(chatId),
+                                            );
+                                          }
+                                        },
+                                      ),
+                                    ProjectRequestChatHumanMessage message =>
+                                      _MessageBubble(
+                                        key: ValueKey(message.canonicalKey),
+                                        message: message,
+                                        onOpenDetails: () {
+                                          if (message.requestId
+                                              case final requestId?) {
+                                            _showDetails(requestId);
+                                          }
+                                        },
+                                        isMine:
+                                            message.senderProfileId ==
+                                            _expectedProfileId,
+                                      ),
+                                  },
+                            ],
+                          ),
+                        ),
+                      ),
+                      ConstrainedBox(
+                        constraints: BoxConstraints(
+                          maxHeight: constraints.maxHeight * .4,
+                        ),
+                        child: SingleChildScrollView(
+                          child: Column(
+                            children: [
+                              if (summary != null &&
+                                  !items.any(
+                                    (item) =>
+                                        item is ProjectRequestChatRequestItem &&
+                                        item.requestId == widget.requestId,
+                                  ))
+                                TextButton(
+                                  onPressed: () =>
+                                      _showDetails(widget.requestId),
+                                  child: Text(
+                                    l10n.pairReferencedRequest(
+                                      summary.projectTitle,
+                                    ),
+                                  ),
+                                ),
+                              if (summary?.hasSendEntitlement == true)
+                                _Composer(
+                                  controller: _composer,
+                                  isSending: state.isSending,
+                                  onSend: _send,
+                                )
+                              else if (summary != null)
+                                _Notice(
+                                  key: const Key(
+                                    'project-request-chat-read-only',
+                                  ),
+                                  text: l10n.pairChatReadOnlyReactivation,
+                                ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+        ),
       ),
     );
   }

@@ -39,7 +39,9 @@ select columns_are(
     'published_at',
     'paused_at',
     'resumed_at',
-    'ended_at'
+    'ended_at',
+    'selected_public_place',
+    'location_revision'
   ],
   'series rows contain content, lifecycle, and rough location without one-time timestamps'
 );
@@ -70,7 +72,8 @@ select columns_are(
     'exact_meeting_text',
     'exact_location_visibility',
     'exact_location',
-    'updated_at'
+    'updated_at',
+    'selected_exact_place'
   ],
   'exact meeting information is physically separate from public rough location'
 );

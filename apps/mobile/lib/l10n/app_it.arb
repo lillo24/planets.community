@@ -244,6 +244,9 @@
   "tavoliLocalityFilter": "Filtra per località",
   "tavoliLoadMore": "Carica altri Tavoli",
   "tavoliNextMeeting": "Prossimo incontro",
+  "tavoliOccurrenceToday": "Oggi",
+  "tavoliOccurrenceTomorrow": "Domani",
+  "tavoliOccurrenceInDays": "Tra {days} giorni",
   "tavoliUpcomingMeetings": "Prossimi incontri",
   "tavoliNoUpcomingMeetings": "Non ci sono incontri in programma.",
   "tavoliWeeklySummary": "Ogni {weekday} alle {time}",
@@ -612,7 +615,7 @@
   "projectRequestChatMessageSemantics": "{sender}, {message}, {time}",
   "notificationsSignInMessage": "Accedi per visualizzare le notifiche.",
   "notificationsResourceActivity": "Attività delle risorse",
-  "notificationsResourcePreferenceExplanation": "Richieste, conversazioni sulle risorse e aggiornamenti sullo scambio. Questa impostazione riguarda i futuri avvisi in-app; la cronologia esistente rimane disponibile.",
+  "notificationsResourcePreferenceExplanation": "Richieste di risorse e aggiornamenti sullo scambio. I messaggi usano i contatori in Messaggi. Questa impostazione riguarda i futuri avvisi di attività; la cronologia esistente rimane disponibile.",
   "notificationsMatchingAlerts": "Corrispondenze di ricerca salvate",
   "notificationsMatchingInApp": "In-app",
   "notificationsMatchingPreferenceExplanation": "Mostra un avviso quando un nuovo annuncio Scambio-Dona corrisponde a una delle tue ricerche salvate.",
@@ -881,8 +884,9 @@
   "joinAcceptanceForbidden": "Questa richiesta non è disponibile per l'account corrente.",
   "joinAcceptanceLoadError": "Impossibile caricare le offerte di contributo. Riprovare.",
   "projectNeedsTitle": "Bisogni",
-  "projectNeedsNeededNow": "Necessari ora",
-  "projectNeedsAllCovered": "Tutto ciò che è attualmente necessario è coperto.",
+  "projectNeedsCovered": "Coperto",
+  "projectNeedsMarkAsNeeded": "Segna come necessario",
+  "projectNeedsAllCovered": "Tutti i bisogni sono coperti.",
   "projectNeedsCompetencesGroup": "Competenze / Conoscenza",
   "projectNeedsResourcesGroup": "Risorse / Materiali",
   "projectNeedsRequired": "Richiesto",
@@ -890,7 +894,6 @@
   "projectNeedsCanHelp": "Posso aiutare",
   "projectNeedsCanBring": "Posso portarlo",
   "projectNeedsFoundOutsideAction": "Trovato fuori dall'app",
-  "projectNeedsFoundOutsideSection": "Trovato fuori dall'app",
   "projectNeedsNeededAgain": "Necessari di nuovo",
   "projectNeedsSystemEvent": "{name} è necessario di nuovo.",
   "projectNeedsCoveredElsewhere": "Qualcun altro ha appena coperto questo bisogno.",
@@ -1325,6 +1328,96 @@
   "projectWorkspaceCancelAction": "Annulla",
   "projectWorkspaceOpenFailure": "Impossibile aprire lo spazio di lavoro esterno.",
   "projectWorkspaceToolsSemantics": "Strumenti di coordinamento dei progetti",
+  "moderationTemplateDisclosure": "Puoi segnalare un template, anche se collegato alla tua Proposta. Lo staff valuta le segnalazioni manualmente. La segnalazione non rimuove automaticamente il template o la Proposta di origine.",
+  "proposalDraftSaved": "Bozza salvata",
+  "proposalDraftImageNotSaved": "Contenuto della bozza salvato; modifica immagine non confermata.",
+  "proposalDraftLeaveTitle": "Conserva la tua bozza",
+  "proposalDraftLeaveError": "Impossibile salvare le modifiche. Correggi i campi evidenziati o riprova. Scarta abbandona solo le modifiche non salvate; una bozza già salvata resta in Le mie proposte.",
+  "proposalDraftKeepEditing": "Continua a modificare",
+  "proposalDraftDiscard": "Scarta modifiche non salvate",
+  "proposalDraftLeaveWithoutImage": "Esci senza modifica immagine",
+  "proposalDraftRecover": "Recupera bozza",
+  "proposalDraftRecoveryError": "Recupero della bozza non riuscito. Riprova da Le mie proposte.",
+  "workshopTitle": "Laboratorio dei modelli",
+  "workshopStartFromTemplate": "Crea da un modello",
+  "workshopContext": "Riusa idee di Proposte singole concluse per iniziare una tua bozza indipendente.",
+  "workshopCompleted": "Da una Proposta conclusa",
+  "workshopCreatorFallback": "Persona della comunità",
+  "workshopCreator": "Creatore originale: {name}",
+  "@workshopCreator": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "workshopEmpty": "Non ci sono ancora modelli di Proposte concluse disponibili.",
+  "workshopNoMatches": "Nessun modello corrisponde a questi filtri.",
+  "workshopReadError": "Impossibile caricare i modelli. Riprova per verificarne la disponibilità.",
+  "workshopLoadMore": "Carica altri",
+  "workshopRefresh": "Aggiorna disponibilità",
+  "workshopUnavailable": "Questo modello non è più disponibile per nuovi utilizzi o segnalazioni.",
+  "workshopDuration": "Durata indicativa: {seconds} secondi. Scegli nuove date e orari per la tua bozza.",
+  "@workshopDuration": {
+    "placeholders": {
+      "seconds": {
+        "type": "String"
+      }
+    }
+  },
+  "workshopCapacity": "Usa la capienza suggerita: {capacity}",
+  "@workshopCapacity": {
+    "placeholders": {
+      "capacity": {
+        "type": "int"
+      }
+    }
+  },
+  "workshopCapacityHint": "Un suggerimento modificabile per la tua nuova bozza.",
+  "workshopBlueprints": "Descrizioni delle risorse: {loaded} di {total}",
+  "@workshopBlueprints": {
+    "placeholders": {
+      "loaded": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "workshopBlueprintError": "Impossibile completare l’anteprima delle risorse. Riprova o aggiorna il modello.",
+  "workshopChanged": "L’anteprima è cambiata. Controlla il contenuto aggiornato prima di iniziare una nuova bozza.",
+  "workshopReviewed": "Ho controllato l’anteprima",
+  "workshopCopyHint": "Inizia una nuova bozza privata con testi, competenze e tutte le descrizioni delle risorse aperte. Scegli nuovi dettagli organizzativi; persone e immagine di copertina non vengono copiate. Non ti iscrive a una Proposta e non la pubblica.",
+  "workshopUse": "Usa modello · Inizia una nuova bozza",
+  "workshopUseAgain": "Inizia un’altra bozza indipendente",
+  "workshopReport": "Segnala modello",
+  "workshopViewSource": "Vedi la Proposta originale",
+  "workshopPending": "La creazione della bozza attende conferma.",
+  "workshopAccepted": "La tua bozza indipendente è pronta.",
+  "workshopRecoveryLifetime": "Riprova o apri questa stessa bozza mentre l’app è in esecuzione. Le bozze confermate sono anche in Le mie Proposte.",
+  "workshopOpen": "Apri bozza",
+  "workshopRetry": "Riprova",
+  "workshopApplying": "Creazione della bozza…",
+  "workshopApplyUncertain": "Impossibile confermare la creazione. Riprova verifica e ripete la stessa richiesta in modo sicuro.",
+  "workshopForbidden": "La richiesta non è autorizzata. Controlla l’account e aggiorna la disponibilità del modello; Riprova mantiene la stessa richiesta.",
+  "workshopProfileRequired": "Completa il profilo prima di creare una nuova bozza. Per usare un modello non serve una foto del profilo.",
+  "workshopIncompatible": "Questa richiesta ha dati incompatibili. Non è possibile sostituirla con una bozza presunta.",
+  "workshopOpenError": "Impossibile aprire la bozza accettata. Apri o riprova la stessa bozza; non verrà creata un’altra copia.",
+  "workshopPublicationNotice": "Quando questa Proposta pubblicata diventa Conclusa (24 ore dopo la fine), i testi, le competenze e le descrizioni delle risorse aperte idonei diventano automaticamente riutilizzabili nel Laboratorio dei modelli. Non serve una candidatura o approvazione separata. Controlla ciò che includi nei testi liberi.",
+  "similarMayExist": "Potrebbe esserci già un’attività simile.",
+  "similarView": "Vedi progetti simili",
+  "similarDismiss": "Nascondi suggerimenti",
+  "similarReopen": "Mostra suggerimenti",
+  "similarLoading": "Ricerca di attività simili…",
+  "similarError": "Non è stato possibile cercare attività simili. Puoi continuare a scrivere.",
+  "similarClose": "Chiudi progetti simili",
+  "similarOpen": "Vedi progetto",
+  "similarFull": "Al completo",
+  "similarCapacityUnknown": "Capienza non impostata",
+  "similarTitleReason": "Argomento simile nel titolo",
+  "similarTagsReason": "Argomento simile nel titolo e tag selezionati in comune",
+  "similarLocalityReason": "Stessa località indicativa",
   "settingsNavigation": "Navigazione",
   "settingsBottomRightTab": "Scheda in basso a destra",
   "settingsNavigationHelp": "Scegli la scorciatoia da mostrare su questo dispositivo. Quando apri Messaggi o Esplora, la scheda mostra quella destinazione finché resti lì.",
@@ -1347,5 +1440,216 @@
         "type": "String"
       }
     }
-  }
+  },
+  "messageUnreadConversations": "{count, plural, =1{1 conversazione con messaggi non letti} other{{count} conversazioni con messaggi non letti}}",
+  "messageUnreadMessages": "{count, plural, =1{1 messaggio non letto} other{{count} messaggi non letti}}",
+  "messageUnreadUnavailable": "Conteggio non disponibile o non aggiornato. Aggiorna Messaggi per riprovare.",
+  "messageReadRetry": "I messaggi non sono stati segnati come letti. Tocca per riprovare.",
+  "@messageUnreadConversations": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@messageUnreadMessages": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "messagePrivateChatSemantics": "Conversazione con {name}",
+  "@messagePrivateChatSemantics": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "messageOwnPreview": "Tu: {body}",
+  "@messageOwnPreview": {
+    "placeholders": {
+      "body": {
+        "type": "String"
+      }
+    }
+  },
+  "messageRequestPendingPreview": "Richiesta in attesa",
+  "messageRequestAcceptedPreview": "Richiesta accettata",
+  "messageRequestRejectedPreview": "Richiesta rifiutata",
+  "messageRequestWithdrawnPreview": "Richiesta ritirata",
+  "pairChatReadOnlyReactivation": "Potrai inviare messaggi quando ci sarà una nuova richiesta in attesa.",
+  "welcomeExplore": "Esplora l'app",
+  "welcomeLogin": "Accedi",
+  "messagesSignInContext": "Accedi per partecipare ai progetti, donare o scambiare e gestire le tue conversazioni.",
+  "authRestoreFailure": "Non è stato possibile ripristinare la sessione. Riprova per verificare la sessione salvata.",
+  "startupPreferenceError": "Non è stato possibile salvare o ripristinare la preferenza dell’introduzione. Riprova.",
+  "tutorialNext": "Avanti",
+  "tutorialFinish": "Termina",
+  "startupDevelopmentReset": "Reimposta benvenuto e tutorial (sviluppo)",
+  "draftsTitle": "Le mie bozze",
+  "draftsManagement": "Progetti pubblicati e cronologia",
+  "draftsAllTypes": "Tutti i tipi",
+  "draftsLoading": "Caricamento bozze…",
+  "draftsEmptyTitle": "Nessuna bozza salvata",
+  "draftsEmptyMessage": "Qui trovi le bozze salvate e non pubblicate dei tipi selezionati.",
+  "draftsSourceError": "Impossibile aggiornare le bozze di {source}. Riprova per ottenere l’elenco completo.",
+  "@draftsSourceError": {
+    "placeholders": {
+      "source": {
+        "type": "String"
+      }
+    }
+  },
+  "browsePreviousResults": "Risultati precedenti: non corrispondono ai filtri attuali.",
+  "proposalStartChoice": "Come vuoi iniziare?",
+  "proposalFromTemplate": "Da un modello",
+  "proposalFromScratch": "Da zero",
+  "proposalCapacityDecrease": "Riduci la capienza iscrizioni",
+  "proposalCapacityIncrease": "Aumenta la capienza iscrizioni",
+  "proposalChooseDateTime": "Scegli data e ora",
+  "proposalScheduleZone": "Orari mostrati in {zone}",
+  "proposalDemoReplaceTitle": "Sostituire i dati inseriti?",
+  "proposalDemoReplaceMessage": "I dati di esempio sostituiranno i valori inseriti. Nulla viene salvato finché non scegli di salvare o pubblicare.",
+  "@proposalScheduleZone": {"placeholders": {"zone": {"type": "String"}}},
+  "locationManualEntryNotice": "La ricerca dei luoghi non è disponibile. Inserisci il luogo qui sotto.",
+  "locationMapUnavailable": "Anteprima della mappa non disponibile. Usa le informazioni sul luogo qui sopra.",
+  "locationRestrictedPreview": "Tutti vedono la zona indicativa pubblica. Le istruzioni precise sono disponibili solo agli organizzatori autorizzati e ai partecipanti attuali.",
+  "locationPublicPreview": "Tutti vedono la zona indicativa pubblica e le istruzioni precise per l'incontro.",
+  "messagesGuestChatsTitle": "Nessuna conversazione",
+  "messagesGuestRequestsTitle": "Nessuna richiesta",
+  "messagesGuestPrivateMessage": "Accedi per partecipare ai progetti, donare o scambiare e gestire le tue conversazioni private.",
+  "messagesGuestGroupsMessage": "Accedi per vedere le conversazioni di gruppo dei progetti a cui partecipi.",
+  "messagesGuestRequestsMessage": "Accedi per vedere e gestire le richieste di partecipazione e di Scambio-Dona.",
+  "tutorialSkip": "Salta tutorial",
+  "tutorialSlogan": "Un'idea. Le persone giuste. Qualcosa di concreto.",
+  "tutorialIntroduction": "Realizza progetti insieme e dai nuova vita alle cose.",
+  "tutorialHome": "Scopri cosa stanno organizzando le persone vicino a te.",
+  "tutorialProjectCard": "Ogni progetto nasce da un'idea. Aprilo per scoprire come partecipare.",
+  "tutorialProjectPurpose": "Qui puoi scoprire l'idea e il suo obiettivo.",
+  "tutorialProjectNeeds": "Scopri quali competenze e risorse servono al progetto.",
+  "tutorialProjectParticipation": "Ti interessa? Puoi chiedere di partecipare. Il tutorial non invia richieste.",
+  "tutorialProjectCreate": "Puoi creare un progetto anche tu.",
+  "tutorialDrafts": "Salva un'idea in bozza e riprendila più tardi.",
+  "tutorialResourceModes": "Dona ciò che non usi o scambia ciò che ti serve.",
+  "tutorialResourceCard": "Scopri cose che possono trovare una nuova casa.",
+  "tutorialResourceCreate": "Crea un annuncio per donare o scambiare qualcosa.",
+  "tutorialMessagesTabs": "Qui trovi le conversazioni e le richieste di partecipazione.",
+  "tutorialMessagesScopes": "Le conversazioni private e i gruppi dei progetti hanno i loro spazi.",
+  "tutorialMessagesPreview": "Tutorial: le tue conversazioni restano private.",
+  "tutorialFarewell": "Buon divertimento!",
+  "tutorialStartExploring": "Inizia a esplorare",
+  "tutorialIllustration": "Esempio — non è un annuncio reale",
+  "tutorialExampleProject": "Un giardino per tutti",
+  "tutorialExamplePurpose": "Crea un piccolo giardino condiviso con i tuoi vicini.",
+  "tutorialExampleNeeds": "Competenze di giardinaggio, attrezzi e qualche piantina.",
+  "tutorialExampleResource": "Attrezzi da giardinaggio da regalare",
+  "tutorialStepProgress": "Passaggio {current} di {total}",
+  "@tutorialStepProgress": {
+    "placeholders": {
+      "current": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "helpTitle": "Aiuto",
+  "helpTutorial": "Come funziona PLANETS",
+  "helpContactCreators": "Contatta i creatori",
+  "helpReportBug": "Segnala un bug",
+  "helpReportPerson": "Segnala una persona",
+  "helpContactExplanation": "Contatta i creatori di PLANETS tramite la tua app di posta.",
+  "helpContactSubject": "PLANETS — Contatta i creatori",
+  "helpEmailUnconfigured": "Il supporto via email non è ancora configurato. Puoi comunque preparare e copiare una segnalazione di bug.",
+  "helpOpenMail": "Apri app di posta",
+  "helpMailChoice": "Scegli tu se inviare o annullare nella tua app di posta. PLANETS non può confermare la consegna.",
+  "helpMailOpened": "App di posta aperta. Scegli tu se inviare.",
+  "helpMailUnavailable": "Non è stato possibile aprire l'app di posta. Verifica che sia installata, oppure copia l'indirizzo e la bozza.",
+  "helpPersonExplanation": "La segnalazione diretta di una persona da Aiuto non è ancora disponibile. Serve la persona o il contesto pertinente. Usa Segnala nel Progetto, Tavolo, annuncio Scambio, messaggio o modello pertinente per segnalare quel contenuto. Le opzioni disponibili dipendono dal tuo accesso a quel contesto.",
+  "helpBugExplanation": "Descrivi un problema tecnico. La bozza include solo il testo che inserisci. Evita informazioni private. La bozza rimane qui mentre usi l'app di posta e viene cancellata quando lasci questa schermata o cambia la sessione del tuo account.",
+  "helpBugDescription": "Descrizione del problema (obbligatoria)",
+  "helpBugSteps": "Passaggi per riprodurlo (facoltativi)",
+  "helpBugExpected": "Risultato atteso (facoltativo)",
+  "helpBugRequired": "Descrivi il problema prima di rivedere la bozza.",
+  "helpBugReview": "Rivedi bozza",
+  "helpBugEdit": "Modifica bozza",
+  "helpBugCopy": "Copia bozza",
+  "helpBugCopied": "Bozza copiata.",
+  "helpBugCopyFailed": "Non è stato possibile copiare la bozza. Riprova.",
+  "helpBugSubject": "PLANETS — Segnalazione bug",
+  "locationWhereProject": "Dove si svolge?",
+  "locationWhereResource": "Dove si trova?",
+  "locationAreaPublic": "La zona pubblica è una località. Il luogo preciso si sceglie separatamente.",
+  "locationResourcePublic": "La località, l’indirizzo o il luogo selezionato è pubblico.",
+  "locationDraftCue": "Scegliere un luogo salva prima la bozza attuale.",
+  "locationChooseArea": "Scegli un luogo",
+  "locationChooseExact": "Scegli il luogo preciso",
+  "locationExactTitle": "Luogo preciso (facoltativo)",
+  "locationExactPublic": "Questo luogo preciso è pubblico. Le istruzioni restano separate.",
+  "locationExactPrivate": "Questo luogo preciso è visibile ai partecipanti autorizzati e ai responsabili. Le istruzioni restano separate.",
+  "locationChange": "Cambia",
+  "locationClear": "Rimuovi",
+  "locationUseManual": "Inserisci manualmente",
+  "locationNoVerifiedPlace": "Solo testo manuale · nessuna posizione verificata",
+  "locationSearchTitle": "Cerca un luogo in Italia",
+  "locationQueryLabel": "Località, indirizzo o luogo",
+  "locationLoading": "Ricerca del luogo in corso",
+  "locationNoMatches": "Nessun luogo di questo tipo. Prova un’altra ricerca.",
+  "locationSelectionPending": "Conferma per salvare il luogo. Il testo digitato non è una selezione.",
+  "locationCancel": "Annulla",
+  "locationRetry": "Riprova il salvataggio",
+  "locationSavePlace": "Salva luogo",
+  "locationKindLocality": "Località · zona pubblica",
+  "locationKindAddress": "Indirizzo · luogo preciso",
+  "locationKindAmenity": "Luogo · posizione precisa",
+  "locationErrorOffline": "Connessione non disponibile. Riprova il salvataggio o annulla; puoi inserire il luogo manualmente.",
+  "locationErrorTimeout": "La richiesta è scaduta. Riprova il salvataggio o annulla.",
+  "locationErrorQuota": "La ricerca ha raggiunto il limite. Inserisci il luogo manualmente.",
+  "locationErrorExpired": "La selezione è scaduta. Cerca e seleziona di nuovo.",
+  "locationErrorStale": "L’elemento è cambiato. Cerca e seleziona di nuovo.",
+  "locationErrorUnauthorized": "Non puoi più accedere alla posizione. Torna ai tuoi elementi.",
+  "locationErrorUnsupported": "Questo luogo o la fonte non è supportato. Inserisci il luogo manualmente.",
+  "locationErrorProvider": "La ricerca del luogo non è riuscita. Inserisci il luogo manualmente o riprova più tardi.",
+  "policyPrivacy": "Informativa privacy",
+  "policyTerms": "Termini di utilizzo",
+  "policyRules": "Regole della community",
+  "policyAcceptanceTitle": "Termini e Regole della community",
+  "policyAcceptanceExplanation": "Prima di caricare profilo o foto, creare contenuti o inviare messaggi, leggi e accetta esplicitamente i Termini e le Regole. L’Informativa privacy è informativa: non è un consenso generale al trattamento dei dati o al marketing.",
+  "policyProvisional": "Versione provvisoria — in revisione. I documenti collegati contengono proposte e punti aperti.",
+  "policyVersion": "Versione Termini/Regole: {version}",
+  "policyLocalAcknowledgement": "Salvata su questo dispositivo per il tuo account e questa versione. Un altro dispositivo o la reinstallazione possono richiedere una nuova accettazione. Esplorazione pubblica, assistenza, segnalazioni, blocco, richieste di eliminazione e uscita restano disponibili.",
+  "policyAcceptLabel": "Accetto i Termini di utilizzo e le Regole della community collegati sopra.",
+  "policyAcceptAction": "Accetta e continua",
+  "policyCancel": "Continua a esplorare; annulla questa azione",
+  "policyReadFailed": "Impossibile leggere l’accettazione su questo dispositivo. Riprova prima di creare contenuti.",
+  "policyWriteFailed": "Accettazione non salvata. Verifica la selezione e riprova; la creazione di contenuti resta non disponibile.",
+  "policyLinkFailed": "Impossibile aprire la pagina. Riprova oppure copia il link e aprilo nel browser.",
+  "policyCopyLink": "Copia link",
+  "policyCopied": "Copiato.",
+  "policyCopyFailed": "Impossibile copiare. Seleziona il testo visibile e copialo manualmente.",
+  "policyDeleteAccount": "Elimina account",
+  "policyDeletionExplanation": "Questa schermata prepara una richiesta email a Leonardo Colli, che gestisce l’eliminazione manualmente. Aprire o inviare l’email non elimina subito l’account. Scegli Invio o Annulla nella tua app email; PLANETS non può osservare la scelta.",
+  "policyDeletionOutcome": "Il comportamento previsto, subordinato a una procedura verificata, rimuove foto personale e dati del profilo e mostra “Profilo eliminato”. I messaggi già inviati sono destinati a restare nelle cronologie autorizzate: il testo non diventa anonimo e non è autorizzata una conservazione indefinita. La procedura completa richiede ancora verifica.",
+  "policyDeletionRights": "Puoi chiedere cancellazione o limitazione dei dati personali nei messaggi. Eventuali eccezioni lecite di conservazione devono essere circoscritte e motivate. Leonardo verificherà proporzionatamente l’identità se necessario e confermerà l’esito. Il riscontro è di norma dovuto entro un mese secondo i diritti applicabili: non prova il completamento della cancellazione e non è un termine di eliminazione dei backup.",
+  "policyDeletionFromEmail": "Invia preferibilmente dall’email usata per PLANETS. Se necessario, indica sotto l’email dell’account e rivedi la bozza. Puoi richiedere l’eliminazione anche dal sito senza accedere o reinstallare.",
+  "policyAccountEmail": "Email dell’account (facoltativa, inserita da te)",
+  "policyCopyAddress": "Copia indirizzo email",
+  "policyCopyDraft": "Copia email da rivedere",
+  "policyDeletionWebsite": "Istruzioni di eliminazione sul sito",
+  "policyReviewAction": "Leggi Termini e Regole per continuare",
+  "@policyVersion": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "tutorialProjectDetail": "Leggi il progetto mentre scorriamo fino alla partecipazione. Puoi chiedere di unirti quando disponibile; i progetti pieni o con restrizioni mostrano il loro stato. Il tutorial non invia nulla.",
+  "tutorialHomeResources": "Di nuovo sulla Home: dai una nuova vita agli oggetti con Scambio–Dona.",
+  "tutorialResources": "Scopri un annuncio, creane uno tuo o torna ai tuoi annunci e alle bozze.",
+  "tutorialExampleResourceSummary": "Dai una nuova casa a qualche attrezzo utile.",
+  "tutorialExampleAction": "Azione di esempio — questa dimostrazione non invia richieste."
 }

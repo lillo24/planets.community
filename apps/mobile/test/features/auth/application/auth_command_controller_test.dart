@@ -389,6 +389,7 @@ void main() {
           container.read(pendingEmailOtpProvider)?.email,
           'new@example.com',
         );
+        expect(container.read(authCommandProvider).didSignOut, isFalse);
       },
     );
   }

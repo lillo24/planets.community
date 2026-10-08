@@ -1,3 +1,5 @@
+import '../../support/fake_policy.dart';
+
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -30,6 +32,8 @@ import 'package:planets_mobile/features/project_participant_invites/domain/parti
 import 'package:planets_mobile/features/project_participant_invites/presentation/participant_invitation_routes.dart';
 import 'package:planets_mobile/features/project_resource_needs/data/project_resource_needs_gateway.dart';
 import 'package:planets_mobile/features/proposals/data/proposal_gateway.dart';
+import 'package:planets_mobile/features/proposals/data/similar_proposal_gateway.dart';
+import 'package:planets_mobile/features/cover_media/application/project_cover_reconciler.dart';
 import 'package:planets_mobile/features/recurring_activities/data/recurring_activity_gateway.dart';
 
 import '../../support/fake_auth.dart';
@@ -41,12 +45,160 @@ import '../../support/fake_profile_photo.dart';
 import '../../support/fake_project_delegates.dart';
 import '../../support/fake_project_resource_needs.dart';
 import '../../support/fake_proposal.dart';
+import '../../support/fake_similar_proposal.dart';
+import '../../support/fake_cover_media.dart';
 import '../../support/fake_recurring_activity.dart';
 
 void main() {
   final token = 'A' * 43;
   const publicId = 'fb040000-0000-4000-8000-000000000002';
   final nativeInvite = 'https://planets.community/join/project/$token';
+  for (final operation in ['go', 'replace', 'pushReplacement', 'pop']) {
+    testWidgets('ordinary $operation keeps the integrated editor guard', (
+      tester,
+    ) async {
+      final drafts = FakeProposalGateway();
+      final h = await _pump(tester, '/link-unavailable', drafts: drafts);
+      h.router.push('/proposals/create/scratch');
+      await tester.pumpAndSettle();
+      await tester.enterText(
+        find.byKey(const Key('proposal-title')),
+        'Internal departure',
+      );
+      switch (operation) {
+        case 'go':
+          h.router.go('/link-unavailable');
+        case 'replace':
+          h.router.replace<void>('/link-unavailable');
+        case 'pushReplacement':
+          h.router.pushReplacement<void>('/link-unavailable');
+        case 'pop':
+          h.router.pop();
+      }
+      await tester.pumpAndSettle();
+      expect(drafts.ownItems, hasLength(1));
+      expect(drafts.calls.where((c) => c == 'create'), hasLength(1));
+      expect(h.router.state.uri.path, '/link-unavailable');
+      expect(h.gateway.admissions, isEmpty);
+    });
+  }
+  for (final destination in ['/link-unavailable', nativeInvite]) {
+    testWidgets('integrated router saves dirty editor before $destination', (
+      tester,
+    ) async {
+      final drafts = FakeProposalGateway();
+      final h = await _pump(
+        tester,
+        '/proposals/create/scratch',
+        drafts: drafts,
+      );
+      await tester.enterText(
+        find.byKey(const Key('proposal-title')),
+        'Saved departure',
+      );
+      if (destination.startsWith('https')) {
+        await _deliver(tester, destination);
+      } else {
+        h.router.push(destination);
+        await tester.pumpAndSettle();
+      }
+      expect(drafts.calls.where((c) => c == 'create'), hasLength(1));
+      expect(h.router.state.uri.path, Uri.parse(destination).path);
+      expect(h.gateway.admissions, isEmpty);
+      expect(tester.takeException(), isNull);
+    });
+  }
+  testWidgets(
+    'native departure save failure stays in editor and retry saves once',
+    (tester) async {
+      final drafts = FakeProposalGateway()
+        ..mutationError = StateError('save unavailable');
+      final h = await _pump(
+        tester,
+        '/proposals/create/scratch',
+        drafts: drafts,
+      );
+      await tester.enterText(
+        find.byKey(const Key('proposal-title')),
+        'Recoverable',
+      );
+      await _deliver(tester, nativeInvite);
+      expect(h.router.state.uri.path, '/proposals/create/scratch');
+      expect(h.gateway.admissions, isEmpty);
+      await tester.tap(find.text('Keep editing'));
+      await tester.pumpAndSettle();
+      drafts.mutationError = null;
+      await _deliver(tester, nativeInvite);
+      expect(h.router.state.uri.path, '/join/project/$token');
+      expect(drafts.lastInput!.title, 'Recoverable');
+      expect(drafts.ownItems, hasLength(1));
+    },
+  );
+  testWidgets(
+    'competing internal route preserves the first native guarded replay',
+    (tester) async {
+      final pending = Completer<void>();
+      final drafts = FakeProposalGateway()..mutationDelay = pending.future;
+      final h = await _pump(
+        tester,
+        '/proposals/create/scratch',
+        drafts: drafts,
+      );
+      await tester.enterText(find.byKey(const Key('proposal-title')), 'Replay');
+      await tester.binding.defaultBinaryMessenger.handlePlatformMessage(
+        'flutter/navigation',
+        const JSONMethodCodec().encodeMethodCall(
+          MethodCall('pushRouteInformation', {'location': nativeInvite}),
+        ),
+        (_) {},
+      );
+      await tester.pump();
+      final competing = h.router.push<void>(
+        '/link-unavailable',
+        extra: 'retained',
+      );
+      await tester.pump();
+      pending.complete();
+      await tester.pumpAndSettle();
+      await competing;
+      expect(h.router.state.uri.path, '/join/project/$token');
+      expect(drafts.ownItems, hasLength(1));
+      expect(drafts.calls.where((c) => c == 'create'), hasLength(1));
+      expect(h.gateway.admissions, isEmpty);
+    },
+  );
+  testWidgets(
+    'account switch during delayed native departure cancels delivery',
+    (tester) async {
+      final pending = Completer<void>();
+      final drafts = FakeProposalGateway()..mutationDelay = pending.future;
+      final h = await _pump(
+        tester,
+        '/proposals/create/scratch',
+        drafts: drafts,
+      );
+      await tester.enterText(
+        find.byKey(const Key('proposal-title')),
+        'Old actor',
+      );
+      await tester.binding.defaultBinaryMessenger.handlePlatformMessage(
+        'flutter/navigation',
+        const JSONMethodCodec().encodeMethodCall(
+          MethodCall('pushRouteInformation', {'location': nativeInvite}),
+        ),
+        (_) {},
+      );
+      await tester.pump();
+      h.container
+          .read(authSessionProvider.notifier)
+          .markProfileReady(const AuthIdentity(id: 'user-2'));
+      pending.complete();
+      await tester.pumpAndSettle();
+      expect(h.router.state.uri.path, isNot('/join/project/$token'));
+      expect(h.gateway.admissions, isEmpty);
+      expect(find.text('Draft saved'), findsNothing);
+    },
+  );
   testWidgets('native cold start tolerates Auth restoration during entry', (
     tester,
   ) async {
@@ -756,6 +908,7 @@ _pump(
   String publicProjectId = 'project-1',
   FakeProjectDelegateGateway? delegateGateway,
   bool startAuthInApp = false,
+  FakeProposalGateway? drafts,
 }) async {
   if (platformColdStart) {
     tester.platformDispatcher.defaultRouteNameTestValue = location;
@@ -776,6 +929,7 @@ _pump(
   final invitations = gateway ?? FakeParticipantInvitationGateway();
   final container = ProviderContainer(
     overrides: [
+      preacceptedPolicyFixture,
       appConfigProvider.overrideWithValue(
         AppConfig.fromValues(
           appEnvironment: 'local',
@@ -803,11 +957,18 @@ _pump(
       projectInviteSharingProvider.overrideWithValue(sharing),
       participationGatewayProvider.overrideWithValue(participation),
       proposalGatewayProvider.overrideWithValue(
-        FakeProposalGateway()
-          ..publicDetail = proposalDetailFixture(
-            id: publicProjectId,
-            creatorProfileId: 'organizer',
-          ),
+        drafts ??
+            (FakeProposalGateway()
+              ..publicDetail = proposalDetailFixture(
+                id: publicProjectId,
+                creatorProfileId: 'organizer',
+              )),
+      ),
+      similarProposalGatewayProvider.overrideWithValue(
+        FakeSimilarProposalGateway(),
+      ),
+      projectCoverReconcilerProvider.overrideWithValue(
+        FakeProjectCoverReconciler(),
       ),
       recurringActivityGatewayProvider.overrideWithValue(
         FakeRecurringActivityGateway()

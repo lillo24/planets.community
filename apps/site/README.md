@@ -8,6 +8,19 @@ invoking Worker code for matching files. The package is independent from
 `apps/web`, which owns dynamic public discovery and the future authenticated
 admin surface.
 
+## Public contacts
+
+The four public app-policy HTML routes (`/privacy`, `/terms`, `/community-rules`,
+`/delete-account`) are owned by [`src/policies`](src/policies/README.md) and emitted
+at build time. They are distinct from the landing page's waitlist privacy notice.
+Their draft status and pinned Terms/Rules version also appear in the mobile app.
+
+The `Contatti` section publishes the founder-approved email
+`developer.planets.community@gmail.com` and phone number `+39 3703263412`.
+`src/site-content.ts` owns their displayed values and the phone URI; `src/App.tsx`
+renders labelled email and telephone links. The email prefers a line break before
+`@` on narrow screens, with character wrapping available at larger text sizes.
+
 ## Waitlist purpose and data boundary
 
 The waitlist exists solely to send one email when the PLANETS Android/iOS app
@@ -161,6 +174,7 @@ configure Resend, add analytics, or authorize waitlist reuse.
 - `index.html` owns document metadata and the primary-logo preload.
 - `public/brand/planets-logo.png` is the unchanged founder-supplied logo.
 - `src/App.tsx` owns the page landmarks, content, and privacy copy.
+- `src/site-content.ts` owns the approved public contact details.
 - `src/WaitlistForm.tsx` owns accessible client validation and request states.
 - `src/TurnstileWidget.tsx` loads and renders Turnstile only when configured.
 - `src/waitlist-api.ts` owns the same-origin client request boundary.

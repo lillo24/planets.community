@@ -46,5 +46,9 @@ transport metadata never grants access or replaces durable refresh.
 
 `/messages/chats/request/:requestId` resolves the pair and highlights that request
 if loaded; an older referenced request has an exact details link without requiring
-the entire transcript. IT/EN copy is generated from ARB sources. Unread state and
-chat-alert removal belong to MSG02.
+the entire transcript. IT/EN copy is generated from ARB sources. MSG02 history
+uses `get_own_message_feed_page` for an own newest snapshot boundary; the shared
+Messages viewport acknowledges only foreground, unobscured latest content.
+Older/pending-only pages issue no boundary. Pair unread counts remain independent
+of pending totals and read-only/send entitlement. See the Messages feature and
+ADR 0008 for baseline, commit ordering and activity-alert separation.

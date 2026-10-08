@@ -5,6 +5,9 @@ import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_tokens.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../application/auth_command_controller.dart';
+import '../application/auth_session_controller.dart';
+import '../domain/auth_models.dart';
+import 'auth_status.dart';
 import '../application/return_destination.dart';
 import 'auth_failure_message.dart';
 
@@ -53,6 +56,14 @@ class _RequestCodeScreenState extends ConsumerState<RequestCodeScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
+    final session = ref.watch(authSessionProvider);
+    if (session.phase == AuthSessionPhase.restoring ||
+        session.phase == AuthSessionPhase.restorationFailed ||
+        session.phase == AuthSessionPhase.checkingProfile) {
+      return const Scaffold(
+        body: SafeArea(child: Center(child: AuthStatus())),
+      );
+    }
     final command = ref.watch(authCommandProvider);
     final error = command.failure;
 

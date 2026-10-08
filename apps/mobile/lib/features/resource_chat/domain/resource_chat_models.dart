@@ -104,11 +104,16 @@ class ResourceChatMessageCursor {
 }
 
 class ResourceChatMessagePage {
-  const ResourceChatMessagePage({required this.items, required this.hasMore});
+  const ResourceChatMessagePage({
+    required this.items,
+    required this.hasMore,
+    this.readBoundary,
+  });
 
   /// Canonical backend order: newest first.
   final List<ResourceChatMessage> items;
   final bool hasMore;
+  final String? readBoundary;
 }
 
 sealed class ResourceChatSignal {

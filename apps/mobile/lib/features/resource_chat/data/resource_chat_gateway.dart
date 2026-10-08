@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/backend/supabase_backend.dart';
+import '../../messages/domain/message_unread_models.dart';
 import '../domain/resource_chat_models.dart';
 
 const _messageSentEvent = 'resource.chat_message_sent';
@@ -66,18 +67,26 @@ class SupabaseResourceChatGateway implements ResourceChatGateway {
     required int limit,
     ResourceChatMessageCursor? cursor,
   }) async {
-    final response = await _client.rpc<List<dynamic>>(
-      'list_own_resource_request_chat_messages',
+    final envelope = await _client.rpc<Object?>(
+      'get_own_message_feed_page',
       params: {
         'p_expected_profile_id': expectedProfileId,
         'p_chat_id': chatId,
+        'p_kind': 'resource_chat',
         'p_limit': limit + 1,
         'p_before_created_at': cursor?.createdAt.toUtc().toIso8601String(),
-        'p_before_message_id': cursor?.messageId,
+        'p_before_item_id': cursor?.messageId,
+        'p_before_item_kind': cursor == null ? null : 'message',
       },
     );
+    final snapshot = MessageFeedSnapshot.parse(
+      envelope,
+      newest: cursor == null,
+    );
+    final response = snapshot.items;
     final parsed = response.map(parser.message).toList(growable: false);
     return ResourceChatMessagePage(
+      readBoundary: snapshot.boundary,
       items: List.unmodifiable(parsed.take(limit)),
       hasMore: parsed.length > limit,
     );
