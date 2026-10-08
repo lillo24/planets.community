@@ -1,0 +1,6 @@
+# Copy to key.properties and fill locally. Never commit the real file.
+# Absolute Windows paths use forward slashes; relative paths start at android/.
+storeFile=C:/Users/YOUR_USER/.planets/android/planets-upload.jks
+storePassword=REPLACE_LOCALLY
+keyAlias=upload
+keyPassword=REPLACE_LOCALLY

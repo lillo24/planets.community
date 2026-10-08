@@ -364,11 +364,17 @@ production database URLs, service-role keys, signing material, or local machine
 state. SITE-02 needs no remote Cloudflare resource, Resend setup, analytics, or
 tracking; Sentry remains optional elsewhere.
 
-## Provisional mobile identifiers
+## Mobile identifiers and Android distribution
 
-The official Flutter scaffold currently uses these deliberately provisional identifiers:
+The mobile platform identifiers are:
 
-- Android: `community.planets.bootstrap.planets_mobile`
+- Android: `community.planets.app` (permanent, founder-approved for Play)
 - iOS: `community.planets.bootstrap.planetsMobile`
 
-The visible application name is `PLANETS`. The founder/account owner must choose the final Android application ID and iOS bundle ID before Firebase/FCM registration, store provisioning, signing, or any other provider setup tied to application identity. Changing those identifiers is deferred; the current values do not claim ownership of a production namespace.
+The visible application name is `PLANETS`. The iOS bundle ID remains provisional
+and requires the founder's decision before provider/store setup. Android release
+builds require `apps/mobile/android/key.properties` and a local upload keystore;
+they fail without signing material and never use the debug signing config.
+The staging example explicitly disables demo tools with the string `"false"`.
+See [Play closed testing](play-closed-test.md) for Free Supabase, Resend OTP,
+the signed bundle command and the founder's publication steps.

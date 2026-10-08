@@ -1,4 +1,4 @@
-package community.planets.bootstrap.planets_mobile
+package community.planets.app
 
 import io.flutter.embedding.android.FlutterActivity
 
