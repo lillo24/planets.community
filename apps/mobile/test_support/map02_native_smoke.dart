@@ -59,20 +59,40 @@ Future<void> main(List<String> args) async {
         await tap('location-choose-$slot');
         await tap('location-query');
         await driver.enterText('Trento');
-        await driver.waitFor(find.byValueKey('location-result-locality'));
+        await driver.waitFor(
+          find.byValueKey('location-result-locality'),
+          timeout: const Duration(seconds: 30),
+        );
         await tap('location-result-locality');
+        await driver.waitFor(
+          find.byValueKey('location-selected-receipt'),
+          timeout: const Duration(seconds: 30),
+        );
         await capture('map02-$kind-pending');
         await tap('location-confirm');
-        await driver.waitForAbsent(find.byValueKey('location-query'));
+        await driver.waitForAbsent(
+          find.byValueKey('location-query'),
+          timeout: const Duration(seconds: 30),
+        );
         if (kind != 'resource') {
           await reveal('location-choose-exact');
           await tap('location-choose-exact');
           await tap('location-query');
           await driver.enterText('Trento');
-          await driver.waitFor(find.byValueKey('location-result-address'));
+          await driver.waitFor(
+            find.byValueKey('location-result-address'),
+            timeout: const Duration(seconds: 30),
+          );
           await tap('location-result-address');
+          await driver.waitFor(
+            find.byValueKey('location-selected-receipt'),
+            timeout: const Duration(seconds: 30),
+          );
           await tap('location-confirm');
-          await driver.waitForAbsent(find.byValueKey('location-query'));
+          await driver.waitForAbsent(
+            find.byValueKey('location-query'),
+            timeout: const Duration(seconds: 30),
+          );
         }
         await reveal('location-stored-$slot');
         await capture('map02-$kind-stored');
@@ -83,7 +103,10 @@ Future<void> main(List<String> args) async {
             : 'resource-save-draft';
         await reveal(save);
         await tap(save);
-        await driver.waitFor(find.byValueKey('native-saved'));
+        await driver.waitFor(
+          find.byValueKey('native-saved'),
+          timeout: const Duration(seconds: 30),
+        );
         await capture('map02-$kind-saved');
         await tap('native-saved');
       }
