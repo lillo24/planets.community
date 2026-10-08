@@ -5,7 +5,11 @@ Implemented from `PLANETS_TUT03_guided_tour_fidelity_fix.md`, starting at
 Before the PR, the change was rebased onto merged MAP02 at
 `9d5e882e681dc2958b2a8be873d733654fc2ee47`; all 77 startup/tutorial/navigation/Help
 tests passed on that integrated base. Both sets of appended localization entries
-were preserved. Final-head Mobile CI is required before merge.
+were preserved. A subsequent rebase integrated merged POLICY01 at
+`9ae1222a161632d258e052450ce653035f07643c`; all 102 startup/tutorial/navigation/Help
+and policy tests passed, as did formatting and analysis. Upstream policy guards,
+test fixtures and localization content/formatting were preserved.
+Final-head Mobile CI is required before merge.
 The existing `/intro` coordinator and typed Help replay remain the owners.
 
 The corrected `interactive-2` tour waits for Next/overlay input. Previous and system
@@ -53,6 +57,10 @@ Back during scroll, actual guest Join interception, covered empty/unavailable
 fallbacks, disappearing detail, guest/ready Messages privacy, English/Italian at
 320 px and 2× text in light/dark with reduced motion, account replacement,
 Help replay/return, local write failure/retry and corrected-version reoffer.
+Two final regressions cover Next before the public feed resolves and late Needs
+layout after participation focus has settled. The latter reproduced a stale
+spotlight; detail scroll-metric notifications now refresh the actual control.
+All 79 focused startup/tutorial/navigation/Help tests passed with these guards.
 
 The required local gate is `npm run check:mobile` (localization, formatting,
 analysis and the complete mobile test suite): 1,725 tests passed with the two
@@ -63,5 +71,7 @@ a stacked replay caller cannot be popped twice and installation status stays int
 The early analyzer run identified
 three formatting lints, which were fixed. A parallel rerun was interrupted under
 host memory pressure; only the completed final rerun counts as validation.
+Android captures preceded these final asynchronous-read/layout guards; their
+behavior is covered by the focused tests, rather than a second native replay.
 GitHub's existing path classifier selects Mobile for this change and leaves
 unaffected Database/Web/Site jobs skipped. No CI configuration was changed.

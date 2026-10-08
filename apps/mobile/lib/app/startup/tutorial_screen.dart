@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/widgets/loading_state.dart';
 import '../../core/widgets/planets_hero.dart';
 import '../../features/auth/application/auth_session_controller.dart';
 import '../../features/messages/presentation/messages_landing_screen.dart';
@@ -473,12 +474,21 @@ class _TutorialScreenState extends ConsumerState<TutorialScreen>
     TutorialStep.introduction ||
     TutorialStep.farewell => const Scaffold(body: Center(child: PlanetsHero())),
     TutorialStep.home || TutorialStep.homeResources => const FoundationScreen(),
-    TutorialStep.projectCard => _projectBrowse(select: true),
+    TutorialStep.projectCard => _projectBrowse(),
     TutorialStep.projectCreate ||
     TutorialStep.projectDrafts => _projectBrowse(),
     TutorialStep.projectDetail =>
-      _fallback || _projectId == null
+      _fallback
           ? const TutorialIllustration()
+          : _projectId == null
+          ? Scaffold(
+              appBar: AppBar(
+                title: Text(AppLocalizations.of(context).proposalDetailTitle),
+              ),
+              body: LoadingState(
+                message: AppLocalizations.of(context).proposalLoading,
+              ),
+            )
           : ProposalDetailScreen(
               key: PageStorageKey('proposal-detail-$_projectId'),
               proposalId: _projectId!,
@@ -488,11 +498,9 @@ class _TutorialScreenState extends ConsumerState<TutorialScreen>
       const MessagesLandingScreen(controlsOnly: true),
   };
 
-  Widget _projectBrowse({bool select = false}) {
-    final state = ref.watch(publicProposalsProvider);
-    if (select &&
-        _projectId == null &&
-        !_projectFallback &&
+  void _selectProject(PublicProposalsState state) {
+    if (_projectId == null &&
+        !_fallback &&
         state.phase == ProposalLoadPhase.ready) {
       // Match the actual browse order, including the authenticated Requested
       // section. Never skip Full/actionless/photo-less public Projects.
@@ -501,13 +509,13 @@ class _TutorialScreenState extends ConsumerState<TutorialScreen>
       } else if (state.ordinaryItems.isNotEmpty) {
         _projectId = state.ordinaryItems.first.id;
       }
+      if (_projectId != null) _attempts = 0;
     }
-    return PublicProposalsScreen(
-      tutorialPlaceholder: _projectFallback
-          ? const TutorialExampleCard()
-          : null,
-    );
   }
+
+  Widget _projectBrowse() => PublicProposalsScreen(
+    tutorialPlaceholder: _projectFallback ? const TutorialExampleCard() : null,
+  );
 
   Widget _resources() {
     final state = ref.watch(publicResourceListingsProvider);
@@ -533,6 +541,11 @@ class _TutorialScreenState extends ConsumerState<TutorialScreen>
       return TutorialPages(returnTo: widget.returnTo);
     }
     final l = AppLocalizations.of(context);
+    if (_step == TutorialStep.projectCard || _isDetail) {
+      // Next stays available while loading. Keep selection active in detail
+      // until the first public read settles, without substituting an example.
+      _selectProject(ref.watch(publicProposalsProvider));
+    }
     void refreshFocus() {
       _interrupt();
       setState(() {
@@ -610,12 +623,28 @@ class _TutorialScreenState extends ConsumerState<TutorialScreen>
                       children: [
                         ExcludeSemantics(
                           child: IgnorePointer(
-                            child: KeyedSubtree(
-                              key: ValueKey(
-                                'tutorial-surface-${_surfaceGroup()}',
-                              ),
-                              child: _content(),
-                            ),
+                            child:
+                                NotificationListener<ScrollMetricsNotification>(
+                                  onNotification: (_) {
+                                    if (_isDetail) {
+                                      // Async detail sections can move participation
+                                      // after initial focus. Re-locate real controls
+                                      // from layout metrics without loading data here.
+                                      _attempts = 0;
+                                      if (_targets.isNotEmpty) {
+                                        setState(() => _targets = const []);
+                                      }
+                                      _scheduleProbe();
+                                    }
+                                    return false;
+                                  },
+                                  child: KeyedSubtree(
+                                    key: ValueKey(
+                                      'tutorial-surface-${_surfaceGroup()}',
+                                    ),
+                                    child: _content(),
+                                  ),
+                                ),
                           ),
                         ),
                         Positioned.fill(

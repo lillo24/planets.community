@@ -38,6 +38,8 @@ The selected identity is fixed for this tour. Public read waits are bounded to
 25 layout probes (normally about two seconds); absent/inaccessible data uses a
 labelled cover-bearing illustration. A failed/disappearing detail cannot substitute
 a different real Project. Illustrations never enter providers or database records.
+Advancing before the browse read resolves keeps selection active in detail; it
+shows loading until that read succeeds or the bounded wait expires.
 Public browse screens accept an optional tutorial-only placeholder widget; their
 normal filtering and fixed Create/Drafts controls are retained. Real covers and
 participation state use the existing product widgets and authorization.
@@ -48,6 +50,8 @@ at the real Join action or truthful Full/participation status. Body and Needs te
 are not spotlighted. Reflow, backgrounding, Next/Previous, account replacement and
 disposal invalidate old probes/scroll callbacks. Reduced motion uses immediate
 focus. PageStorage belongs to the tour and is never persisted beyond it.
+Detail scroll-metric changes refresh focus after late section layout updates, so
+the spotlight follows the real participation control without another data read.
 
 Scambio has three separate outlined holes: first listing, fixed Create FAB,
 and fixed My listings/Drafts action. The card is revealed by scrolling only its

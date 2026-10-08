@@ -290,6 +290,43 @@ void main() {
     },
   );
 
+  testWidgets('late Needs layout keeps the spotlight on the real Join action', (
+    tester,
+  ) async {
+    final pending = Completer<void>();
+    final needs = FakeProjectResourceNeedsGateway()
+      ..publicDelay = pending.future
+      ..publicItems = [
+        for (var i = 0; i < 6; i++)
+          publicProjectResourceNeedFixture(
+            id: 'late-$i',
+            title: 'Material $i',
+            details:
+                'A real resource description that changes the layout. ' * 5,
+          ),
+      ];
+    final projects = FakeProposalGateway()
+      ..publicItems = [proposalSummaryFixture()]
+      ..publicDetail = proposalDetailFixture();
+    await _pump(tester, proposals: projects, needs: needs);
+    await tap(tester, 'welcome-explore');
+    for (var i = 0; i < TutorialStep.projectDetail.index; i++) {
+      await tap(tester, 'tutorial-next');
+    }
+    await ready(tester);
+    expectFocus(tester, 'participation-join-proposal-1');
+    await frames(tester, 30);
+    pending.complete();
+    await frames(tester, 30);
+    await ready(tester);
+    expectFocus(tester, 'participation-join-proposal-1');
+    expect(
+      find.byKey(const Key('tutorial-copy-projectDetail')),
+      findsOneWidget,
+    );
+    expect(find.byKey(const Key('tutorial-illustration-label')), findsNothing);
+  });
+
   testWidgets('Previous interrupts detail scroll and restores the same card', (
     tester,
   ) async {
@@ -417,6 +454,47 @@ void main() {
       expect(
         projects.calls.where((c) => c.startsWith('public-detail')),
         isEmpty,
+      );
+    },
+  );
+
+  testWidgets(
+    'Next during feed loading still opens the first real Project when it arrives',
+    (tester) async {
+      final pending = Completer<List<ProposalSummary>>();
+      final projects = FakeProposalGateway()
+        ..publicDetail = proposalDetailFixture(id: 'late-real')
+        ..publicLoader = ({
+          required limit,
+          cursor,
+          query,
+          locality,
+          skillIds,
+        }) => pending.future;
+      await _pump(tester, proposals: projects);
+      await tap(tester, 'welcome-explore');
+      for (var i = 0; i < TutorialStep.projectDetail.index; i++) {
+        await tap(tester, 'tutorial-next');
+      }
+      expect(
+        find.byKey(const Key('tutorial-copy-projectDetail')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const Key('tutorial-illustration-label')),
+        findsNothing,
+      );
+      pending.complete([
+        proposalSummaryFixture(id: 'late-real'),
+        proposalSummaryFixture(),
+      ]);
+      await ready(tester);
+      expect(projects.calls, contains('public-detail:late-real'));
+      expect(projects.calls, isNot(contains('public-detail:proposal-1')));
+      expectFocus(tester, 'participation-join-late-real');
+      expect(
+        find.byKey(const Key('tutorial-illustration-label')),
+        findsNothing,
       );
     },
   );
