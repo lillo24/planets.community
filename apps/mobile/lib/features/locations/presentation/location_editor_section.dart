@@ -303,9 +303,15 @@ class _LocationEditorSectionState extends ConsumerState<LocationEditorSection>
           ] else ...[
             if (_session.canonical?.publicPlace case final place?)
               _slot(resource ? 'public' : 'area', '', place),
-            if (!resource)
-              if (_session.canonical?.exactPlace case final place?)
-                _slot('exact', '', place),
+            if (!resource && _session.canonical?.exactPlace != null) ...[
+              Text(l10n.locationExactTitle),
+              Text(
+                widget.exactIsPublic
+                    ? l10n.locationExactPublic
+                    : l10n.locationExactPrivate,
+              ),
+              _slot('exact', '', _session.canonical!.exactPlace),
+            ],
           ],
           if (!_factory.available || _manual) ...widget.manualChildren,
           if (_session.busy) const LinearProgressIndicator(),
