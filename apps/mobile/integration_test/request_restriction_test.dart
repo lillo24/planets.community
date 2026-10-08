@@ -626,7 +626,17 @@ Future<void> _tap(WidgetTester tester, String key) async {
   final target = find.byKey(Key(key));
   await tester.ensureVisible(target);
   await settleNativeUi(tester);
-  await tester.tap(target);
+  // A native IME/closing modal can outlive Flutter's animation-idle frame.
+  // Wait before the single tap, not by retrying a possibly committed mutation.
+  final deadline = DateTime.now().add(const Duration(seconds: 30));
+  while (target.hitTestable().evaluate().isEmpty) {
+    if (DateTime.now().isAfter(deadline)) {
+      throw StateError('Native request control is not hittable: $key.');
+    }
+    await tester.ensureVisible(target);
+    await tester.pump(const Duration(milliseconds: 100));
+  }
+  await tester.tap(target.hitTestable());
   await tester.pump();
 }
 

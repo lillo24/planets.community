@@ -37,6 +37,10 @@ detail's lazy list to its request control with a bounded 20-scroll limit. A
 published listing's control can be below the cover/metadata on the small phone;
 waiting for an unmounted action alone cannot make it appear. Authorization,
 request assertions and async deadlines are unchanged.
+Request taps also wait for the actual hit-testable control before one tap: a
+closing modal/native IME can outlive Flutter animation-idle. This uses the same
+30-second bound and never retries a potentially committed mutation or silences
+missed-tap warnings. Reconcile a timed-out action before any fixture replay.
 The OTP smoke additionally covers navigation choices,
 photo-free participant admission, nullable request origin, chat continuity under
 content hiding, all private notice types and suspension during ordinary access.
