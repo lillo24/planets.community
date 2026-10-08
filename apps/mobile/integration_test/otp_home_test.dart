@@ -409,7 +409,11 @@ void main() {
       );
       expect(router.routerDelegate.state.uri.path, '/account/suspended');
       if (modint) {
-        await tester.binding.handlePopRoute();
+        // At the root, Android Back is allowed to exit the Activity. Dispatching
+        // SystemNavigator.pop here destroys the test's frame source. Check the
+        // real router delegation without faking a platform handler or trapping
+        // the user; actual Back/cold-reopen is a separate native resume check.
+        expect(await router.routerDelegate.popRoute(), isFalse);
         await settleNativeUi(tester);
         expect(router.routerDelegate.state.uri.path, '/account/suspended');
       }

@@ -25,6 +25,13 @@ The helper's widget regressions keep real orbit motion and reject stuck loaders.
 The OTP language helper changes away and back when a retained device preference
 already equals the requested language: a selected radio does not emit a save or
 pop. It still uses the real Settings controls and unchanged save deadlines.
+The root suspension route delegates Back to Android's ordinary Activity exit.
+The continuous OTP target asserts that router result without issuing a platform
+exit and losing its frame source. `suspension_resume_test.dart` separately verifies
+normal cold bootstrap from the real persisted suspended session after an actual
+Back exit. Use the same prior defines, without clearing app data or replaying
+admission, with `test_driver/otp_home_driver.dart` and a matching precompiled APK.
+It captures EN/IT denial and uses the real suspension-screen Sign out action.
 The OTP smoke additionally covers navigation choices,
 photo-free participant admission, nullable request origin, chat continuity under
 content hiding, all private notice types and suspension during ordinary access.
