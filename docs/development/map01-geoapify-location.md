@@ -183,6 +183,14 @@ explicitly public exact detail must never be reused as a generic browse/map pin.
 
 ## Owner activation and operations
 
+MAP02 wires the reusable selector into three Flutter editors while retaining
+disabled/manual registration. Its scoped factory, save/retry ordering,
+idempotent Tavolo/Resource bootstrap, exposure and native rehearsal are documented
+in [MAP02](map02-location-selector.md). No UI flag, key, live traffic or switch
+activation is introduced. MAP03 must credit public surfaces, including derived
+text retained after clear/template copy, before activation. An injected native
+fake is presentation evidence only.
+
 1. Confirm commercial production scope with Geoapify and approve intended
    volume/cost ceiling and ODbL/attribution responsibilities. Update truthful
    location/privacy disclosures; voluntarily searched addresses can be personal

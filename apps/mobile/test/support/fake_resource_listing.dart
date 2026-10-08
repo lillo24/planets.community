@@ -15,6 +15,10 @@ typedef OwnResourceListingLoader = Future<List<OwnResourceListing>> Function(
 );
 
 class FakeResourceListingGateway implements ResourceListingGateway {
+  final creationRequests = <String?>[];
+  final _creationReceipts = <String, String>{};
+  Object? createResponseError;
+
   List<PublicResourceListingSummary> publicItems = [];
   PublicResourceListingDetail? publicDetail;
   Future<PublicResourceListingDetail?>? publicDetailResult;
@@ -100,10 +104,14 @@ class FakeResourceListingGateway implements ResourceListingGateway {
   @override
   Future<String> createDraft(
     String expectedOwnerId,
-    ResourceListingInput input,
-  ) async {
+    ResourceListingInput input, {
+    String? clientRequestId,
+  }) async {
     _throw(error);
     calls.add('create');
+    creationRequests.add(clientRequestId);
+    final receipt = _creationReceipts['$expectedOwnerId:$clientRequestId'];
+    if (clientRequestId != null && receipt != null) return receipt;
     createCount++;
     lastExpectedOwnerId = expectedOwnerId;
     lastInput = input;
@@ -114,6 +122,13 @@ class FakeResourceListingGateway implements ResourceListingGateway {
       input: input,
     );
     ownItems = [created, ...ownItems];
+    if (clientRequestId != null) {
+      _creationReceipts['$expectedOwnerId:$clientRequestId'] = created.id;
+    }
+    if (createResponseError case final error?) {
+      createResponseError = null;
+      throw error;
+    }
     return created.id;
   }
 

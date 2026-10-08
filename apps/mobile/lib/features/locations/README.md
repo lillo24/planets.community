@@ -1,8 +1,24 @@
-# Location foundation
+# Shared location editing
 
-Owns transient place-search contracts, the MAP01 server adapter and honest
-disabled presentation. Production still uses `DisabledPlaceSearchGateway`.
-No editor wiring, map SDK, GPS permission or live provider traffic is activated.
+Owns MAP01 search contracts and MAP02's editor-local transaction. Production
+still uses `DisabledPlaceSearchGateway`: manual fields remain functional. The
+three editors exercise the selector through injected scoped factories. No map
+SDK, GPS permission, provider key or live traffic is activated.
+
+- `domain/item_location.dart` parses canonical normalized editor selections,
+  omitting coordinates, provider IDs and receipts from the protected projection.
+- `data/item_location_gateway.dart` owns authorized reads, receipt-only writes
+  and the disabled scoped factory. Activation must construct a separate server
+  gateway for each supplied actor/item/revision/slot; both backend switches apply.
+- `application/location_editor_session.dart` owns save, authorized revision,
+  scoped search/resolve, stable mutation UUID and canonical reread. Response-loss
+  retry retains exact input without another content save; superseding edits fail.
+- `presentation/location_editor_section.dart` owns EN/IT manual/lookup modes,
+  explicit tap/confirmation, type, Change/Clear/manual controls, fixed credit
+  links, focus/keyboard/Back and actor/readiness/route/foreground invalidation.
+  The editor handle revokes receipts before ordinary Save/Publish. Unchanged
+  hydration or cursor movement is not a content edit. A stable key retains the
+  first-save session when editor list contents change.
 
 - `domain/place_search.dart`: bounded Italy/Trento requests, locality/address/amenity
   suggestions, mandatory adapter-supplied expiry and independent public locality
@@ -12,7 +28,7 @@ No editor wiring, map SDK, GPS permission or live provider traffic is activated.
 - `data/server_place_search_gateway.dart`: injectable authenticated Edge adapter
   bound to a saved actor/item/revision/slot. Resolves opaque server receipts with
   narrow provenance and unchanged expiry; never accepts a Geoapify key or public
-  private-detail cache. Its default is disabled. MAP02 owns lifecycle wiring.
+  private-detail cache. Its default is disabled; MAP02 owns lifecycle wiring.
 - `application/place_search_controller.dart`: one transient editor session,
   350 ms debounce, 2–160 character requests, five unique Italian results, opaque
   session tokens and five-second timeouts. Typing never implies selection.
@@ -27,9 +43,15 @@ Project manual fields, DRAFT01 snapshots and public/participant gateways retain
 their contracts. Canonical nullable storage and versioned receipt/read/write
 RPCs are documented in the [MAP01 contract](../../../../../docs/development/map01-geoapify-location.md).
 Short-lived receipt objects must not enter draft snapshots. The transient
-controller is **not wired into production forms**.
-Future activation must bind its lifecycle to actor/form generation and canonical
-entitlement changes. A cancellation unit test does not prove live authorization.
+controller is wired through a **disabled production factory**. Actor/form
+generations, readiness, entitlement denials and expiry revoke transient work.
+Credits stay visible after clear and in manual mode because derived ordinary
+text may survive geometry. MAP03 must credit other public surfaces before
+activation. A native fake does not prove live provider authorization.
+
+Projects choose an independent public locality and optional exact address/venue;
+instructions and Participants/Public remain separate. Resources have one public
+slot of any supported precision. See the [MAP02 flow and reproduction](../../../../../docs/development/map02-location-selector.md).
 
 `PublicPlaceArea` rejects a precise result. A future adapter must resolve broad
 area independently; rounding, blurring or zooming out an exact pin is insufficient.

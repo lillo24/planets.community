@@ -175,6 +175,9 @@ class PlaceSearchController extends ChangeNotifier {
       if (_disposed) return;
       // Erase labels/points too: expiry cannot preserve forbidden cached content.
       _clear(discardQuery: _selection != null);
+      _problem = PlaceSearchProblem.expired;
+      _phase = PlaceSearchPhase.failure;
+      notifyListeners();
     });
   }
 

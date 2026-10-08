@@ -3,13 +3,16 @@ import 'package:flutter/rendering.dart' show ScrollCacheExtent;
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:uuid/uuid.dart';
 
 import '../../../core/theme/app_tokens.dart';
 import '../../../core/widgets/error_state.dart';
 import '../../../core/widgets/loading_state.dart';
 import '../../../devtools/demo/demo_widgets.dart';
 import '../../../l10n/generated/app_localizations.dart';
+import '../../locations/presentation/location_editor_section.dart';
 import '../../auth/application/auth_session_controller.dart';
+import '../../auth/domain/auth_models.dart';
 import '../../cover_media/domain/cover_media_models.dart';
 import '../../cover_media/presentation/cover_editor_section.dart';
 import '../../profile_photo/presentation/profile_photo_trust_gate.dart';
@@ -29,6 +32,11 @@ class ResourceListingEditorScreen extends ConsumerStatefulWidget {
 
 class _ResourceListingEditorScreenState
     extends ConsumerState<ResourceListingEditorScreen> {
+  var _sessionId = const Uuid().v4();
+  NotifierProvider<ResourceListingEditorController, ResourceListingEditorState>
+  get _editorProvider => resourceListingEditorSessionProvider(_sessionId);
+  String? _retainedId;
+  final _locationHandle = LocationEditorHandle();
   final _formKey = GlobalKey<FormState>();
   final _title = TextEditingController();
   final _description = TextEditingController();
@@ -59,31 +67,77 @@ class _ResourceListingEditorScreenState
     super.dispose();
   }
 
+  void _resetFormScope() {
+    _locationHandle.beforeContentSave();
+    _sessionId = const Uuid().v4();
+    _retainedId = null;
+    _coverChange = const CoverChange.unchanged();
+    _attemptPublish = false;
+    for (final field in [
+      _title,
+      _description,
+      _country,
+      _locality,
+      _administrativeArea,
+      _publicLocation,
+    ]) {
+      field.clear();
+    }
+    _hydratedVersion = null;
+    _mode = ResourceListingMode.donate;
+  }
+
+  @override
+  void didUpdateWidget(ResourceListingEditorScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.listingId != widget.listingId) {
+      _resetFormScope();
+      Future<void>.microtask(_load);
+    }
+  }
+
   Future<void> _load() async {
     final identity = ref.read(authSessionProvider).identity;
-    if (identity != null) {
+    if (identity != null &&
+        ref.read(authSessionProvider).phase == AuthSessionPhase.ready) {
       if (_requestedIdentity != identity.id) {
         _coverChange = const CoverChange.unchanged();
       }
       _requestedIdentity = identity.id;
       await ref
-          .read(resourceListingEditorProvider.notifier)
-          .load(identity.id, widget.listingId);
+          .read(_editorProvider.notifier)
+          .load(identity.id, widget.listingId ?? _retainedId);
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    ref.listen(authSessionProvider.select((s) => (s.phase, s.identity?.id)), (
+      previous,
+      next,
+    ) {
+      _locationHandle.beforeContentSave();
+      if (previous?.$2 != next.$2) {
+        _resetFormScope();
+        _requestedIdentity = next.$2;
+      }
+      if (next.$1 == AuthSessionPhase.ready) {
+        _requestedIdentity = next.$2;
+        Future<void>.microtask(_load);
+      }
+    });
+
     final l10n = AppLocalizations.of(context);
     final identity = ref.watch(authSessionProvider).identity;
-    final state = ref.watch(resourceListingEditorProvider);
+    final state = ref.watch(_editorProvider);
     final ownsState = state.expectedOwnerId == identity?.id;
     final listing = ownsState ? state.listing : null;
     if (identity != null && _requestedIdentity != identity.id) {
       Future<void>.microtask(_load);
     }
     if (listing != null) {
-      final version = '${listing.id}:${listing.updatedAt.toIso8601String()}';
+      _retainedId = listing.id;
+      final version = listing.id;
       if (_hydratedVersion != version) {
         _hydrate(listing);
         _hydratedVersion = version;
@@ -108,7 +162,9 @@ class _ResourceListingEditorScreenState
         ),
       ),
       body: SafeArea(
-        child: identity == null
+        child:
+            identity == null ||
+                ref.watch(authSessionProvider).phase != AuthSessionPhase.ready
             ? const SizedBox.shrink()
             : showInitialLoading
             ? LoadingState(message: l10n.resourceLoading)
@@ -194,51 +250,86 @@ class _ResourceListingEditorScreenState
                       maxLines: 6,
                       enabled: !isClosed,
                     ),
-                    _field(
-                      key: const Key('resource-country-field'),
-                      controller: _country,
-                      label: l10n.resourceCountryCodeField,
-                      max: 2,
-                      requiredForPublish: true,
+                    LocationEditorSection(
+                      key: ValueKey(_sessionId),
+                      handle: _locationHandle,
+                      manualPublicLabel: () => _publicLocation.text,
+                      actorId: identity.id,
+                      itemKind: 'resource',
+                      itemId: () => ref.read(_editorProvider).listingId,
+                      savePending: () async =>
+                          await _submit(publish: false, navigate: false)
+                          ? ref.read(_editorProvider).listingId
+                          : null,
                       enabled: !isClosed,
-                      inputFormatters: [
-                        LengthLimitingTextInputFormatter(2),
-                        _UpperCaseTextFormatter(),
+                      exactIsPublic: false,
+                      contentControllers: [
+                        _title,
+                        _description,
+                        _country,
+                        _locality,
+                        _administrativeArea,
+                        _publicLocation,
                       ],
-                      validator: (value) {
-                        final trimmed = value?.trim() ?? '';
-                        if (_attemptPublish && trimmed.isEmpty) {
-                          return l10n.resourceRequiredField;
+                      contentVersion: '$_mode:$_coverChange',
+                      onCanonical: (value) {
+                        final place = value.publicPlace;
+                        if (place != null) {
+                          _country.text = 'IT';
+                          _locality.text = place.locality;
+                          _administrativeArea.text =
+                              place.administrativeArea ?? '';
+                          _publicLocation.text = place.label;
                         }
-                        if (trimmed.isNotEmpty &&
-                            !RegExp(r'^[A-Z]{2}$').hasMatch(trimmed)) {
-                          return l10n.resourceCountryCodeValidation;
-                        }
-                        return null;
                       },
-                    ),
-                    _field(
-                      key: const Key('resource-locality-field'),
-                      controller: _locality,
-                      label: l10n.resourceLocalityField,
-                      max: 120,
-                      requiredForPublish: true,
-                      enabled: !isClosed,
-                    ),
-                    _field(
-                      key: const Key('resource-administrative-area-field'),
-                      controller: _administrativeArea,
-                      label: l10n.resourceAdministrativeAreaField,
-                      max: 120,
-                      enabled: !isClosed,
-                    ),
-                    _field(
-                      key: const Key('resource-public-location-field'),
-                      controller: _publicLocation,
-                      label: l10n.resourcePublicLocationField,
-                      max: 180,
-                      requiredForPublish: true,
-                      enabled: !isClosed,
+                      manualChildren: [
+                        _field(
+                          key: const Key('resource-country-field'),
+                          controller: _country,
+                          label: l10n.resourceCountryCodeField,
+                          max: 2,
+                          requiredForPublish: true,
+                          enabled: !isClosed,
+                          inputFormatters: [
+                            LengthLimitingTextInputFormatter(2),
+                            _UpperCaseTextFormatter(),
+                          ],
+                          validator: (value) {
+                            final trimmed = value?.trim() ?? '';
+                            if (_attemptPublish && trimmed.isEmpty) {
+                              return l10n.resourceRequiredField;
+                            }
+                            if (trimmed.isNotEmpty &&
+                                !RegExp(r'^[A-Z]{2}$').hasMatch(trimmed)) {
+                              return l10n.resourceCountryCodeValidation;
+                            }
+                            return null;
+                          },
+                        ),
+                        _field(
+                          key: const Key('resource-locality-field'),
+                          controller: _locality,
+                          label: l10n.resourceLocalityField,
+                          max: 120,
+                          requiredForPublish: true,
+                          enabled: !isClosed,
+                        ),
+                        _field(
+                          key: const Key('resource-administrative-area-field'),
+                          controller: _administrativeArea,
+                          label: l10n.resourceAdministrativeAreaField,
+                          max: 120,
+                          enabled: !isClosed,
+                        ),
+                        _field(
+                          key: const Key('resource-public-location-field'),
+                          controller: _publicLocation,
+                          label: l10n.resourcePublicLocationField,
+                          max: 180,
+                          requiredForPublish: true,
+                          enabled: !isClosed,
+                        ),
+                      ],
                     ),
                     if (state.coverPartialSave != null) ...[
                       const SizedBox(height: AppSpacing.medium),
@@ -351,7 +442,7 @@ class _ResourceListingEditorScreenState
     child: TextFormField(
       key: key,
       controller: controller,
-      enabled: enabled,
+      enabled: enabled && !ref.watch(_editorProvider).isBusy,
       maxLines: maxLines,
       inputFormatters: inputFormatters,
       decoration: InputDecoration(labelText: label),
@@ -382,18 +473,16 @@ class _ResourceListingEditorScreenState
     publicLocationLabel: _publicLocation.text,
   );
 
-  Future<void> _submit({required bool publish}) async {
-    final lifecycle = ref
-        .read(resourceListingEditorProvider)
-        .listing
-        ?.lifecycle;
+  Future<bool> _submit({required bool publish, bool navigate = true}) async {
+    _locationHandle.beforeContentSave();
+    final lifecycle = ref.read(_editorProvider).listing?.lifecycle;
     setState(
       () => _attemptPublish =
           publish || lifecycle == ResourceListingLifecycle.published,
     );
-    if (!(_formKey.currentState?.validate() ?? false)) return;
+    if (!(_formKey.currentState?.validate() ?? false)) return false;
     final identity = ref.read(authSessionProvider).identity;
-    if (identity == null) return;
+    if (identity == null) return false;
     if (publish) {
       final mayContinue = await requireProfilePhotoForTrustAction(
         context: context,
@@ -401,9 +490,9 @@ class _ResourceListingEditorScreenState
         expectedProfileId: identity.id,
         reason: ProfilePhotoTrustReason.scambioDona,
       );
-      if (!mayContinue || !mounted) return;
+      if (!mayContinue || !mounted) return false;
     }
-    final controller = ref.read(resourceListingEditorProvider.notifier);
+    final controller = ref.read(_editorProvider.notifier);
     final id = publish
         ? await controller.publish(
             identity.id,
@@ -415,19 +504,20 @@ class _ResourceListingEditorScreenState
             _input(),
             coverChange: _coverChange,
           );
-    if (!mounted) return;
+    if (!mounted) return false;
     if (id == null) {
       if (publish &&
-          ref.read(resourceListingEditorProvider).failure ==
+          ref.read(_editorProvider).failure ==
               ResourceListingFailureKind.profilePhotoRequired) {
         await showProfilePhotoTrustGate(
           context: context,
           reason: ProfilePhotoTrustReason.scambioDona,
         );
       }
-      return;
+      return false;
     }
     _coverChange = const CoverChange.unchanged();
+    if (!navigate) return true;
     if (publish) {
       context.go('/resources/mine');
     } else if (widget.listingId == null) {
@@ -437,6 +527,7 @@ class _ResourceListingEditorScreenState
         SnackBar(content: Text(AppLocalizations.of(context).resourceSaved)),
       );
     }
+    return true;
   }
 
   Future<void> _confirmClose() async {
@@ -462,9 +553,7 @@ class _ResourceListingEditorScreenState
     if (confirmed != true || !mounted) return;
     final identity = ref.read(authSessionProvider).identity;
     if (identity == null) return;
-    final closed = await ref
-        .read(resourceListingEditorProvider.notifier)
-        .close(identity.id);
+    final closed = await ref.read(_editorProvider.notifier).close(identity.id);
     if (closed && mounted) {
       context.go('/resources/mine');
     }

@@ -1,5 +1,14 @@
 # Disposable mobile GUI rehearsal
 
+`map02_rehearsal.dart` is a debug-only, explicitly opted-in
+(`MAP02_REHEARSAL=true`) harness for the real Proposal/Tavolo/Resource editors.
+All domain/location gateways are deterministic fakes with a reserved `.invalid`
+URL. `map02_native_smoke.dart` takes a verified task-owned VM URI and capture
+directory and exercises EN/IT typing, explicit selection, independent Project
+slots and ordinary draft saves. It proves presentation, not live Geoapify,
+database writes or iOS. Use an isolated emulator and preserve other ADB sessions.
+See the [MAP02 runbook](../../../docs/development/map02-location-selector.md).
+
 `ui_next04_native_smoke.dart` exercises the disabled map/manual-entry foundation
 on the explicitly opted-in UI02 fake-gateway harness built from the UI04 checkout.
 Pass the verified owned emulator VM URI and capture directory. It makes no live
