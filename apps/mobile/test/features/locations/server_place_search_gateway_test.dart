@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:planets_mobile/features/locations/data/server_place_search_gateway.dart';
 import 'package:planets_mobile/features/locations/domain/place_search.dart';
 
@@ -186,4 +187,34 @@ void main() {
       );
     }
   });
+
+  for (final entry in {
+    401: PlaceSearchProblem.unauthorized,
+    0: PlaceSearchProblem.offline,
+  }.entries) {
+    test(
+      'SDK failure ${entry.key} preserves its status without exposing its body',
+      () async {
+        final gateway = ServerPlaceSearchGateway.withEndpoint(
+          scope: scope,
+          actor: () => actorId,
+          enabled: true,
+          invoke: (_) async => throw FunctionException(
+            status: entry.key,
+            details: const {'private': 'SECRET'},
+          ),
+        );
+        await expectLater(
+          gateway.search(request()),
+          throwsA(
+            isA<PlaceSearchFailure>().having(
+              (error) => error.problem,
+              'problem',
+              entry.value,
+            ),
+          ),
+        );
+      },
+    );
+  }
 }

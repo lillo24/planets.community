@@ -1215,6 +1215,7 @@ export async function exerciseWorkshopTransition(context) {
 
 // Digest every product table, including full audit/outbox/report/application history.
 // Only clock-refresh fields in known tables are excluded; authentication is in auth schema.
+// MAP01 revisions advance when those same known fixtures move their schedules.
 export async function snapshotDemoDomain(sql) {
   const clocks =
     await sql`select p.id from public.proposals p join auth.users u on u.id=p.creator_profile_id
@@ -1235,7 +1236,7 @@ export async function snapshotDemoDomain(sql) {
   for (const { name } of tables) {
     const [{ rows }] =
       name === "public.proposals"
-        ? await sql`select coalesce(jsonb_agg(content order by content::text),'[]'::jsonb) as rows from (select case when id=any(${clocks.map((c) => c.id)}::uuid[]) then to_jsonb(t)-array['starts_at','ends_at','updated_at'] else to_jsonb(t) end as content from public.proposals t) s`
+        ? await sql`select coalesce(jsonb_agg(content order by content::text),'[]'::jsonb) as rows from (select case when id=any(${clocks.map((c) => c.id)}::uuid[]) then to_jsonb(t)-array['starts_at','ends_at','updated_at','location_revision'] else to_jsonb(t) end as content from public.proposals t) s`
         : await sql`select coalesce(jsonb_agg(to_jsonb(t) order by to_jsonb(t)::text),'[]'::jsonb) as rows from ${sql(name)} t`;
     snapshot[name] = {
       count: rows.length,

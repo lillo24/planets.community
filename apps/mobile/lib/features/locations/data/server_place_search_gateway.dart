@@ -60,16 +60,29 @@ class ServerPlaceSearchGateway implements PlaceSearchGateway {
     Map<String, dynamic> fields,
   ) async {
     _checkActor();
-    final response = await invoke({
-      'operation': operation,
-      'expected_profile_id': scope.actorId,
-      'item_kind': scope.itemKind,
-      'item_id': scope.itemId,
-      'revision': scope.revision,
-      'slot': scope.slot,
-      'session_token': sessionToken,
-      ...fields,
-    });
+    final dynamic response;
+    try {
+      response = await invoke({
+        'operation': operation,
+        'expected_profile_id': scope.actorId,
+        'item_kind': scope.itemKind,
+        'item_id': scope.itemId,
+        'revision': scope.revision,
+        'slot': scope.slot,
+        'session_token': sessionToken,
+        ...fields,
+      });
+    } on FunctionException catch (error) {
+      // The SDK throws for non-2xx responses before returning our envelope.
+      // Never propagate its response body or reason phrase into UI/logs.
+      throw PlaceSearchFailure(
+        error.status == 0
+            ? PlaceSearchProblem.offline
+            : error.status == 401 || error.status == 403
+            ? PlaceSearchProblem.unauthorized
+            : PlaceSearchProblem.provider,
+      );
+    }
     _checkActor(); // Reject late data after account replacement.
     if (response is! Map<String, dynamic> || response['status'] is! String) {
       throw const FormatException('Invalid location endpoint envelope.');
