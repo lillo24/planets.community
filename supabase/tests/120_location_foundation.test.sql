@@ -109,6 +109,9 @@ select throws_ok($$select public.apply_item_location_v1('a9010000-0000-4000-8000
 reset role;
 
 -- MAP03 exact-only Tavolo cannot become a public centroid.
+update public.projects set registration_capacity=10 where id='a9020000-0000-4000-8000-000000000002';
+insert into public.recurring_activity_schedules(recurring_activity_id,recurrence_type,weekday,local_start_time,duration_minutes,event_timezone,effective_from)
+ values('a9020000-0000-4000-8000-000000000002','weekly',1,'12:00',60,'Europe/Rome',current_date);
 update public.recurring_activities set lifecycle_state='published',published_at=now(),title='MAP03 synthetic Tavolo',summary='Synthetic summary',description='Synthetic description' where id='a9020000-0000-4000-8000-000000000002';
 set local role anon;
 select is(public.get_location_preview_v1('recurring','a9020000-0000-4000-8000-000000000002','card')->'place','null'::jsonb,'MAP03 exact-only Tavolo card has no public point');

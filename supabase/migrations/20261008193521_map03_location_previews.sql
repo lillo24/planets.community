@@ -54,7 +54,7 @@ grant execute on function public.get_location_preview_v1(text,uuid,text,uuid) to
 
 create function public.get_public_location_previews_v1(p_items jsonb)
 returns jsonb language plpgsql stable security definer set search_path = '' as $$
-declare item jsonb; result jsonb := '[]'; preview jsonb;
+declare item jsonb; result jsonb := '[]'::jsonb; preview jsonb;
 begin
  if jsonb_typeof(p_items) is distinct from 'array' or jsonb_array_length(p_items)>50 then
   raise exception using errcode='22023',message='Preview batch requires at most 50 items.';

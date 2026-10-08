@@ -557,9 +557,10 @@ void main() {
     expect(tester.widget<Text>(age).data, '3h ago');
     expect(find.byKey(const Key('resource-mode-exchange')), findsOneWidget);
     expect(tester.getTopLeft(age).dx, greaterThan(tester.getTopLeft(title).dx));
+    // MAP03 gives location its own tap region below the interest metadata.
     expect(
-      tester.getTopLeft(interest).dx,
-      lessThan(tester.getTopLeft(location).dx),
+      tester.getTopLeft(location).dy,
+      greaterThanOrEqualTo(tester.getBottomLeft(interest).dy),
     );
   });
 
