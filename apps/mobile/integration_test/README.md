@@ -22,6 +22,9 @@ Home/Welcome orbit is visible, without disabling its intentional repeating
 animation. Other screens retain a strict animation-idle wait; canonical async
 readiness/result assertions and their 30-second deadlines remain unchanged.
 The helper's widget regressions keep real orbit motion and reject stuck loaders.
+The OTP language helper changes away and back when a retained device preference
+already equals the requested language: a selected radio does not emit a save or
+pop. It still uses the real Settings controls and unchanged save deadlines.
 The OTP smoke additionally covers navigation choices,
 photo-free participant admission, nullable request origin, chat continuity under
 content hiding, all private notice types and suspension during ordinary access.

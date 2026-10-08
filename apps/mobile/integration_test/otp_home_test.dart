@@ -856,6 +856,26 @@ Future<void> _language(
   await settleNativeUi(tester);
   await tester.tap(find.byKey(const Key('settings-language-row')));
   await settleNativeUi(tester);
+  final selected = ProviderScope.containerOf(
+    tester.element(find.byType(PlanetsApp)),
+  ).read(languagePreferenceProvider);
+  // A retained device preference can already match this run's first choice.
+  // RadioGroup intentionally does not save/pop when tapping its selected value.
+  // Exercise a real change first, then save the required screenshot language.
+  if (selected.name == language) {
+    await tester.tap(
+      find.byKey(
+        Key('language-${language == 'english' ? 'italian' : 'english'}-option'),
+      ),
+    );
+    await _wait(
+      tester,
+      () => router.routerDelegate.state.uri.path == '/settings',
+      'alternate language saved',
+    );
+    await tester.tap(find.byKey(const Key('settings-language-row')));
+    await settleNativeUi(tester);
+  }
   await tester.tap(find.byKey(Key('language-$language-option')));
   await _wait(
     tester,
