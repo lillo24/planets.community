@@ -41,7 +41,11 @@ typedef _ResourceFilterTuple = ({
 });
 
 class PublicResourceListingsScreen extends ConsumerStatefulWidget {
-  const PublicResourceListingsScreen({super.key});
+  const PublicResourceListingsScreen({this.tutorialPlaceholder, super.key});
+
+  /// Tutorial-only presentation after a bounded read fails; no synthetic
+  /// listing is added to providers and real filters/actions are unchanged.
+  final Widget? tutorialPlaceholder;
 
   @override
   ConsumerState<PublicResourceListingsScreen> createState() =>
@@ -263,7 +267,9 @@ class _PublicResourceListingsScreenState
                   key: const Key('resource-previous-results'),
                 ),
               const SizedBox(height: AppSpacing.medium),
-              if ((state.phase == ResourceListingLoadPhase.idle ||
+              if (widget.tutorialPlaceholder != null)
+                widget.tutorialPlaceholder!
+              else if ((state.phase == ResourceListingLoadPhase.idle ||
                       state.phase == ResourceListingLoadPhase.loading) &&
                   state.items.isEmpty)
                 LoadingState(message: l10n.resourceLoading)

@@ -1280,9 +1280,21 @@
   "projectOrganizerCapacityConflict": "Aumenta la capienza iscrizioni prima di conteggiare gli organizzatori.",
   "projectCapacityNotSet": "Capienza iscrizioni non impostata",
   "projectCapacityUpToParticipants": "Fino a {capacity} partecipanti",
-  "@projectCapacityUpToParticipants": { "placeholders": { "capacity": { "type": "int" } } },
+  "@projectCapacityUpToParticipants": {
+    "placeholders": {
+      "capacity": {
+        "type": "int"
+      }
+    }
+  },
   "projectCapacityLimit": "Capienza {capacity}",
-  "@projectCapacityLimit": { "placeholders": { "capacity": { "type": "int" } } },
+  "@projectCapacityLimit": {
+    "placeholders": {
+      "capacity": {
+        "type": "int"
+      }
+    }
+  },
   "projectCapacityUsage": "{used} / {capacity} posti utilizzati",
   "projectCapacityParticipantUsage": "{participants} / {capacity} posti partecipante utilizzati",
   "projectOrganizerIncludedCount": "{count} organizzatori inclusi",
@@ -1512,7 +1524,13 @@
   "proposalScheduleZone": "Orari mostrati in {zone}",
   "proposalDemoReplaceTitle": "Sostituire i dati inseriti?",
   "proposalDemoReplaceMessage": "I dati di esempio sostituiranno i valori inseriti. Nulla viene salvato finché non scegli di salvare o pubblicare.",
-  "@proposalScheduleZone": {"placeholders": {"zone": {"type": "String"}}},
+  "@proposalScheduleZone": {
+    "placeholders": {
+      "zone": {
+        "type": "String"
+      }
+    }
+  },
   "locationManualEntryNotice": "La ricerca dei luoghi non è disponibile. Inserisci il luogo qui sotto.",
   "locationMapUnavailable": "Anteprima della mappa non disponibile. Usa le informazioni sul luogo qui sopra.",
   "locationRestrictedPreview": "Tutti vedono la zona indicativa pubblica. Le istruzioni precise sono disponibili solo agli organizzatori autorizzati e ai partecipanti attuali.",
@@ -1540,11 +1558,11 @@
   "tutorialMessagesPreview": "Tutorial: le tue conversazioni restano private.",
   "tutorialFarewell": "Buon divertimento!",
   "tutorialStartExploring": "Inizia a esplorare",
-  "tutorialIllustration": "Esempio del tutorial — non è un annuncio reale",
+  "tutorialIllustration": "Esempio — non è un annuncio reale",
   "tutorialExampleProject": "Un giardino per tutti",
   "tutorialExamplePurpose": "Crea un piccolo giardino condiviso con i tuoi vicini.",
   "tutorialExampleNeeds": "Competenze di giardinaggio, attrezzi e qualche piantina.",
-  "tutorialExampleResource": "Un annaffiatoio da donare",
+  "tutorialExampleResource": "Attrezzi da giardinaggio da regalare",
   "tutorialStepProgress": "Passaggio {current} di {total}",
   "@tutorialStepProgress": {
     "placeholders": {
@@ -1646,5 +1664,10 @@
         "type": "String"
       }
     }
-  }
+  },
+  "tutorialProjectDetail": "Leggi il progetto mentre scorriamo fino alla partecipazione. Puoi chiedere di unirti quando disponibile; i progetti pieni o con restrizioni mostrano il loro stato. Il tutorial non invia nulla.",
+  "tutorialHomeResources": "Di nuovo sulla Home: dai una nuova vita agli oggetti con Scambio–Dona.",
+  "tutorialResources": "Scopri un annuncio, creane uno tuo o torna ai tuoi annunci e alle bozze.",
+  "tutorialExampleResourceSummary": "Dai una nuova casa a qualche attrezzo utile.",
+  "tutorialExampleAction": "Azione di esempio — questa dimostrazione non invia richieste."
 }

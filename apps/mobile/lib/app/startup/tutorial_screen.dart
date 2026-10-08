@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -8,7 +9,6 @@ import '../../core/widgets/planets_hero.dart';
 import '../../features/auth/application/auth_session_controller.dart';
 import '../../features/messages/presentation/messages_landing_screen.dart';
 import '../../features/proposals/application/proposal_controllers.dart';
-import '../../features/project_resource_needs/application/project_resource_needs_controllers.dart';
 import '../../features/proposals/domain/proposal_models.dart';
 import '../../features/proposals/presentation/public_proposals_screen.dart';
 import '../../features/resource_listings/application/resource_listing_controllers.dart';
@@ -36,37 +36,55 @@ class TutorialScreen extends ConsumerStatefulWidget {
 class _TutorialScreenState extends ConsumerState<TutorialScreen>
     with WidgetsBindingObserver {
   final _surface = GlobalKey();
+  final _scrollStorage = PageStorageBucket();
   int _index = 0;
   int _generation = 0;
   int _attempts = 0;
-  Timer? _automatic;
   Timer? _probe;
-  Timer? _debounce;
+  Timer? _transition;
   bool _active = true;
   bool _locked = false;
   bool _saving = false;
   bool _failed = false;
-  bool _fallback = false;
   bool _scrolling = false;
-  Rect? _target;
+  bool _detailStarted = false;
+  bool _projectFallback = false;
+  bool _detailFallback = false;
+  bool _resourceFallback = false;
+  List<Rect> _targets = const [];
   ScrollPosition? _movingPosition;
   String? _projectId;
   String? _resourceId;
-  String? _focusedAnchor;
   ({Locale locale, Size size, double scale, bool reduced})? _layout;
 
   TutorialStep get _step =>
       ref.read(startupFlowProvider).registry.steps[_index];
-  bool get _isDetail => const {
-    TutorialStep.projectPurpose,
-    TutorialStep.projectNeeds,
-    TutorialStep.projectParticipation,
-  }.contains(_step);
+  bool get _isDetail => _step == TutorialStep.projectDetail;
+  bool get _noSpotlight =>
+      _step == TutorialStep.introduction || _step == TutorialStep.farewell;
+  bool get _fallback => switch (_step) {
+    TutorialStep.projectCard => _projectFallback,
+    TutorialStep.projectDetail => _projectFallback || _detailFallback,
+    TutorialStep.resources => _resourceFallback,
+    _ => false,
+  };
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+  }
+
+  void _interrupt() {
+    _generation++;
+    _probe?.cancel();
+    // animateTo completes after jumpTo, but its stale generation cannot rearm.
+    final position = _movingPosition;
+    if (position != null && position.hasPixels) {
+      position.jumpTo(position.pixels);
+    }
+    _movingPosition = null;
+    _scrolling = false;
   }
 
   @override
@@ -79,15 +97,8 @@ class _TutorialScreenState extends ConsumerState<TutorialScreen>
       reduced: MediaQuery.disableAnimationsOf(context),
     );
     if (_layout != null && _layout != layout) {
-      _generation++;
-      _automatic?.cancel();
-      _automatic = null;
-      _probe?.cancel();
-      _movingPosition?.jumpTo(_movingPosition!.pixels);
-      _movingPosition = null;
-      _scrolling = false;
-      _target = null;
-      _focusedAnchor = null;
+      _interrupt();
+      _targets = const [];
       _attempts = 0;
     }
     _layout = layout;
@@ -96,22 +107,15 @@ class _TutorialScreenState extends ConsumerState<TutorialScreen>
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
-    _automatic?.cancel();
     _probe?.cancel();
-    _debounce?.cancel();
+    _transition?.cancel();
     super.dispose();
   }
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     _active = state == AppLifecycleState.resumed;
-    _generation++;
-    _automatic?.cancel();
-    _automatic = null;
-    _probe?.cancel();
-    _movingPosition?.jumpTo(_movingPosition!.pixels);
-    _movingPosition = null;
-    _scrolling = false;
+    _interrupt();
     if (_active) {
       _attempts = 0;
       _scheduleProbe();
@@ -119,6 +123,7 @@ class _TutorialScreenState extends ConsumerState<TutorialScreen>
   }
 
   void _leave({bool completed = false}) {
+    _interrupt();
     if (widget.replay && context.canPop()) {
       context.pop();
     } else {
@@ -133,9 +138,9 @@ class _TutorialScreenState extends ConsumerState<TutorialScreen>
 
   Future<void> _save({required bool dismiss}) async {
     if (_saving) return;
-    _automatic?.cancel();
-    _probe?.cancel();
+    _interrupt();
     if (widget.replay) {
+      setState(() => _saving = true);
       _leave();
       return;
     }
@@ -158,30 +163,38 @@ class _TutorialScreenState extends ConsumerState<TutorialScreen>
     }
   }
 
+  void _previous() {
+    if (_saving || _locked || !_active) return;
+    if (_index == 0) {
+      _leave();
+    } else {
+      _move(_index - 1);
+    }
+  }
+
   void _advance() {
     if (_locked || _saving || !_active) return;
     if (_step == TutorialStep.farewell) {
       unawaited(_save(dismiss: false));
-      return;
+    } else {
+      _move(_index + 1);
     }
-    _locked = true;
-    _debounce?.cancel();
-    _debounce = Timer(const Duration(milliseconds: 350), () => _locked = false);
-    _automatic?.cancel();
-    _automatic = null;
-    _probe?.cancel();
-    _generation++;
-    _movingPosition?.jumpTo(_movingPosition!.pixels);
-    _movingPosition = null;
-    // Stop the old scroll before changing the focused target.
+  }
+
+  void _move(int index) {
+    _interrupt();
     setState(() {
-      _index++;
+      _locked = true;
+      _index = index;
       _attempts = 0;
-      _target = null;
-      _focusedAnchor = null;
-      _fallback = false;
-      _scrolling = false;
+      _targets = const [];
       _failed = false;
+    });
+    // Only the short surface commit is debounced, never the explanation/read
+    // or detail scroll. Previous/Next may interrupt that scroll afterwards.
+    _transition?.cancel();
+    _transition = Timer(const Duration(milliseconds: 250), () {
+      if (mounted) setState(() => _locked = false);
     });
     _scheduleProbe();
   }
@@ -191,7 +204,8 @@ class _TutorialScreenState extends ConsumerState<TutorialScreen>
         !_active ||
         _saving ||
         _probe?.isActive == true ||
-        _scrolling) {
+        _scrolling ||
+        _noSpotlight) {
       return;
     }
     final generation = _generation;
@@ -226,266 +240,290 @@ class _TutorialScreenState extends ConsumerState<TutorialScreen>
     return match;
   }
 
-  String _anchor() {
-    if (_fallback) {
-      return switch (_step) {
-        TutorialStep.projectPurpose => 'tutorial-example-purpose',
-        TutorialStep.projectNeeds => 'tutorial-example-needs',
-        TutorialStep.projectParticipation => 'tutorial-example-participation',
-        _ => 'tutorial-example-card',
-      };
-    }
-    return switch (_step) {
-      TutorialStep.introduction => 'planets-floating-logo',
-      TutorialStep.home => 'browse-proposals-button',
-      TutorialStep.projectCard => 'proposal-card-title-$_projectId',
-      TutorialStep.projectPurpose => 'tutorial-project-purpose',
-      TutorialStep.projectNeeds => 'tutorial-project-needs',
-      TutorialStep.projectParticipation => 'participation-join-$_projectId',
-      TutorialStep.projectCreate => 'proposal-create-action',
-      TutorialStep.projectDrafts => 'my-proposals-action',
-      TutorialStep.resourceModes => 'resource-mode-filter',
-      TutorialStep.resourceCard => 'resource-card-title-$_resourceId',
-      TutorialStep.resourceCreate => 'resource-create-action',
-      TutorialStep.resourceDrafts => 'resource-my-listings-action',
-      TutorialStep.messagesTabs => 'messages-tab-chat',
-      TutorialStep.messagesScopes => 'message-chat-scope-toggle',
-      TutorialStep.farewell => 'message-chat-scope-toggle',
-    };
-  }
+  List<String> _anchors() => switch (_step) {
+    TutorialStep.introduction || TutorialStep.farewell => const [],
+    TutorialStep.home => const ['browse-proposals-button'],
+    TutorialStep.homeResources => const ['browse-resources-button'],
+    TutorialStep.projectCard => [
+      _fallback ? 'tutorial-example-card' : 'proposal-card-$_projectId',
+    ],
+    TutorialStep.projectDetail => [
+      if (_fallback)
+        'tutorial-example-participation'
+      else if (_find(Key('participation-join-$_projectId')) != null)
+        'participation-join-$_projectId'
+      else if (_find(Key('participation-full-$_projectId')) != null)
+        'participation-full-$_projectId'
+      else
+        'participation-title-$_projectId',
+    ],
+    TutorialStep.projectCreate => const ['proposal-create-action'],
+    TutorialStep.projectDrafts => const ['my-proposals-action'],
+    TutorialStep.resources => [
+      _fallback ? 'tutorial-example-card' : 'resource-card-$_resourceId',
+      'resource-create-action',
+      'resource-my-listings-action',
+    ],
+    TutorialStep.messagesTabs => const [
+      'messages-tab-chat',
+      'messages-tab-requests',
+    ],
+    TutorialStep.messagesScopes => const ['message-chat-scope-toggle'],
+  };
 
   bool _dataPending() {
     if (_fallback) return false;
-    if (_step == TutorialStep.projectCard) {
-      final state = ref.read(publicProposalsProvider);
-      return state.phase != ProposalLoadPhase.ready;
-    }
+    if (_step == TutorialStep.projectCard) return _projectId == null;
     if (_isDetail) {
       final state = ref.read(proposalDetailProvider);
-      final detail = state.proposalId == _projectId ? state.detail : null;
-      if (state.phase != ProposalLoadPhase.ready ||
-          detail == null ||
-          !_eligible(detail.summary)) {
-        return true;
-      }
-      if (_step == TutorialStep.projectNeeds && _projectId != null) {
-        final needs = ref.read(publicProjectResourceNeedsProvider(_projectId!));
-        return needs.phase == PublicProjectResourceNeedsPhase.loading ||
-            needs.phase == PublicProjectResourceNeedsPhase.failure;
-      }
-      return false;
+      return state.phase != ProposalLoadPhase.ready ||
+          state.proposalId != _projectId ||
+          state.detail == null ||
+          state.detail!.summary.id != _projectId;
     }
-    if (_step == TutorialStep.resourceCard) {
-      final state = ref.read(publicResourceListingsProvider);
-      return state.phase != ResourceListingLoadPhase.ready ||
-          !state.resultsMatchFilters;
-    }
+    if (_step == TutorialStep.resources) return _resourceId == null;
     return false;
   }
 
+  void _useFallback() {
+    setState(() {
+      if (_isDetail) _detailFallback = true;
+      if (_step == TutorialStep.projectCard) _projectFallback = true;
+      if (_step == TutorialStep.resources) _resourceFallback = true;
+      _targets = const [];
+      _attempts = 0;
+    });
+    _scheduleProbe();
+  }
+
+  Future<void> _scrollTo(
+    ScrollPosition position,
+    double offset,
+    int generation, {
+    required bool slow,
+  }) async {
+    _movingPosition = position;
+    _scrolling = true;
+    final distance = (offset - position.pixels).abs();
+    final reduced = MediaQuery.disableAnimationsOf(context);
+    await position.animateTo(
+      offset.clamp(position.minScrollExtent, position.maxScrollExtent),
+      duration: reduced
+          ? const Duration(milliseconds: 1)
+          : Duration(
+              milliseconds: slow
+                  ? (distance / 70 * 1000).round().clamp(800, 12000)
+                  : 250,
+            ),
+      curve: Curves.linear,
+    );
+    if (!mounted || generation != _generation) return;
+    _movingPosition = null;
+    _scrolling = false;
+    _scheduleProbe();
+  }
+
   Future<void> _locate(int generation) async {
-    if (_scrolling) return;
+    if (_scrolling || generation != _generation) return;
     _attempts++;
     final rootBox = _surface.currentContext?.findRenderObject() as RenderBox?;
     if (rootBox == null || !rootBox.hasSize) {
       _scheduleProbe();
       return;
     }
-    final anchor = _find(Key(_anchor()));
-    final box = anchor?.findRenderObject();
-    Rect? rect;
-    if (!_dataPending() &&
-        box is RenderBox &&
-        box.hasSize &&
-        box.size.width > 0 &&
-        box.size.height > 0) {
-      rect = box.localToGlobal(Offset.zero, ancestor: rootBox) & box.size;
-      final visible = (Offset.zero & rootBox.size).deflate(8);
-      if (_focusedAnchor != _anchor() &&
-          (rect.top >= visible.bottom ||
-              rect.bottom <= visible.top ||
-              rect.top < visible.top ||
-              (rect.bottom > visible.bottom &&
-                  rect.height <= visible.height))) {
-        final scrollable = Scrollable.maybeOf(anchor!);
-        if (scrollable != null &&
-            scrollable.axisDirection != AxisDirection.right &&
-            scrollable.axisDirection != AxisDirection.left) {
-          _automatic?.cancel();
-          _automatic = null;
-          _scrolling = true;
-          _focusedAnchor = _anchor();
-          _movingPosition = scrollable.position;
-          await Scrollable.ensureVisible(
-            anchor,
-            alignment: rect.height > visible.height ? 0 : .3,
-            duration: MediaQuery.disableAnimationsOf(context)
-                ? Duration.zero
-                : const Duration(milliseconds: 240),
-          );
-          if (!mounted || generation != _generation) return;
-          _scrolling = false;
-          _movingPosition = null;
-          _scheduleProbe();
-          return;
-        }
-      }
-      if (_step == TutorialStep.messagesTabs) {
-        final requests = _find(const Key('messages-tab-requests'))
-            ?.findRenderObject();
-        if (requests is RenderBox && requests.hasSize) {
-          rect = rect.expandToInclude(
-            requests.localToGlobal(Offset.zero, ancestor: rootBox) &
-                requests.size,
-          );
-        }
-      }
-      rect = rect.intersect(visible);
-      if (rect.isEmpty) rect = null;
-    }
-    if (rect != null) {
-      if (_target != rect) setState(() => _target = rect);
-      if (_automatic == null &&
-          _step != TutorialStep.farewell &&
-          !_failed &&
-          (!ref.read(startupFlowProvider).preference.restoreFailed ||
-              widget.replay)) {
-        final shownAnchor = _anchor();
-        _automatic = Timer(const Duration(seconds: 4), () {
-          _automatic = null;
-          if (mounted &&
-              generation == _generation &&
-              _active &&
-              ModalRoute.of(context)?.isCurrent == true &&
-              !_dataPending() &&
-              !_scrolling &&
-              shownAnchor == _anchor()) {
-            _advance();
-          } else if (mounted) {
-            _scheduleProbe();
-          }
-        });
+    if (_dataPending()) {
+      if (_attempts >= 25) {
+        _useFallback();
+      } else {
+        _scheduleProbe();
       }
       return;
     }
-    _automatic?.cancel();
-    _automatic = null;
-    if (_target != null) setState(() => _target = null);
-    // Find lazily built detail/list anchors with short, interruptible scrolls.
-    if (!_dataPending() &&
+    if (_isDetail &&
+        !_detailStarted &&
+        !MediaQuery.disableAnimationsOf(context)) {
+      _detailStarted = true;
+      // Let the selected cover/title be read before moving through the body.
+      _probe = Timer(const Duration(seconds: 1), _scheduleProbe);
+      return;
+    }
+    _detailStarted = _detailStarted || _isDetail;
+    final anchors = _anchors();
+    final visible = (Offset.zero & rootBox.size).deflate(8);
+    final rects = <Rect>[];
+    for (var i = 0; i < anchors.length; i++) {
+      final anchor = _find(Key(anchors[i]));
+      final box = anchor?.findRenderObject();
+      if (box is! RenderBox || !box.hasSize || box.size.isEmpty) break;
+      var rect = box.localToGlobal(Offset.zero, ancestor: rootBox) & box.size;
+      var viewport = visible;
+      final scrollable = Scrollable.maybeOf(anchor!);
+      if (scrollable != null &&
+          axisDirectionToAxis(scrollable.axisDirection) == Axis.vertical) {
+        final scrollBox = scrollable.context.findRenderObject();
+        if (scrollBox is RenderBox && scrollBox.hasSize) {
+          viewport = viewport.intersect(
+            scrollBox.localToGlobal(Offset.zero, ancestor: rootBox) &
+                scrollBox.size,
+          );
+        }
+        // Keep the resource card hole separate from its fixed Create action.
+        if (_step == TutorialStep.resources && i == 0) {
+          final fab = _find(const Key('resource-create-action'))
+              ?.findRenderObject();
+          if (fab is RenderBox && fab.hasSize) {
+            viewport = Rect.fromLTRB(
+              viewport.left,
+              viewport.top,
+              viewport.right,
+              fab.localToGlobal(Offset.zero, ancestor: rootBox).dy - 14,
+            );
+          }
+        }
+        final tooLow =
+            rect.bottom > viewport.bottom && rect.height <= viewport.height;
+        if (rect.top < viewport.top - 1 ||
+            rect.top >= viewport.bottom ||
+            tooLow) {
+          final delta = rect.top - viewport.top - 8;
+          final next = (scrollable.position.pixels + delta).clamp(
+            scrollable.position.minScrollExtent,
+            scrollable.position.maxScrollExtent,
+          );
+          if ((next - scrollable.position.pixels).abs() > 1) {
+            await _scrollTo(
+              scrollable.position,
+              next,
+              generation,
+              slow: _isDetail,
+            );
+            return;
+          }
+        }
+      }
+      rect = rect.intersect(viewport);
+      if (rect.isEmpty) break;
+      rects.add(rect);
+    }
+    if (rects.length == anchors.length) {
+      // Chat/Requests is one contiguous group; Scambio is three distinct holes.
+      final targets = _step == TutorialStep.messagesTabs
+          ? [rects[0].expandToInclude(rects[1])]
+          : rects;
+      if (!listEquals(_targets, targets)) {
+        setState(() => _targets = List.unmodifiable(targets));
+      }
+      return;
+    }
+    // Lazy details/cards may not be built yet. Scan only the real vertical list,
+    // slowly in detail, without highlighting intermediate body/needs content.
+    final scrollable = _firstVerticalScrollable();
+    if (scrollable != null &&
+        scrollable.position.pixels < scrollable.position.maxScrollExtent - 1) {
+      await _scrollTo(
+        scrollable.position,
+        (scrollable.position.pixels + 160).clamp(
+          0,
+          scrollable.position.maxScrollExtent,
+        ),
+        generation,
+        slow: _isDetail,
+      );
+      return;
+    }
+    if (_attempts >= 25 &&
         !_fallback &&
         (_isDetail ||
             _step == TutorialStep.projectCard ||
-            _step == TutorialStep.resourceCard)) {
-      ScrollableState? scroll;
-      void visit(Element element) {
-        if (element is StatefulElement && element.state is ScrollableState) {
-          final candidate = element.state as ScrollableState;
-          if (candidate.axisDirection == AxisDirection.down) {
-            scroll ??= candidate;
-          }
-        }
-        element.visitChildren(visit);
-      }
-
-      (_surface.currentContext! as Element).visitChildren(visit);
-      if (scroll != null &&
-          scroll!.position.hasContentDimensions &&
-          scroll!.position.pixels < scroll!.position.maxScrollExtent &&
-          _attempts < 30) {
-        _scrolling = true;
-        final position = scroll!.position;
-        _movingPosition = position;
-        if (MediaQuery.disableAnimationsOf(context)) {
-          position.jumpTo(
-            (position.pixels + 160).clamp(0, position.maxScrollExtent),
-          );
-        } else {
-          await position.animateTo(
-            (position.pixels + 160).clamp(0, position.maxScrollExtent),
-            duration: const Duration(milliseconds: 120),
-            curve: Curves.easeInOut,
-          );
-        }
-        if (!mounted || generation != _generation) return;
-        _scrolling = false;
-        _movingPosition = null;
-        _scheduleProbe();
-        return;
-      }
+            _step == TutorialStep.resources)) {
+      _useFallback();
+    } else if (_attempts < 30) {
+      _scheduleProbe();
     }
-    // Bounded waiting: offline/empty/unjoinable/missing actions use labelled
-    // illustration widgets, never synthetic records in real browse providers.
-    if (!_fallback &&
-        _attempts >= 25 &&
-        (_isDetail ||
-            _step == TutorialStep.projectCard ||
-            _step == TutorialStep.resourceCard)) {
-      setState(() {
-        _fallback = true;
-        _attempts = 0;
-      });
-    }
-    _scheduleProbe();
   }
 
-  static bool _eligible(ProposalSummary item) =>
-      (item.status == ProposalStatus.upcoming ||
-          item.status == ProposalStatus.happening) &&
-      !item.capacity.isFull;
-
-  String _surfaceGroup() => _isDetail
-      ? 'detail-$_projectId'
-      : switch (_step) {
-          TutorialStep.projectCard ||
-          TutorialStep.projectCreate ||
-          TutorialStep.projectDrafts => 'projects',
-          TutorialStep.resourceModes ||
-          TutorialStep.resourceCard ||
-          TutorialStep.resourceCreate ||
-          TutorialStep.resourceDrafts => 'resources',
-          TutorialStep.messagesTabs ||
-          TutorialStep.messagesScopes ||
-          TutorialStep.farewell => 'messages',
-          _ => _step.name,
-        };
-
-  Widget _content() {
-    if (_fallback) return TutorialIllustration(step: _step);
-    switch (_step) {
-      case TutorialStep.introduction:
-        return const Scaffold(body: Center(child: PlanetsHero()));
-      case TutorialStep.home:
-        return const FoundationScreen();
-      case TutorialStep.projectCard:
-        final items = ref
-            .watch(publicProposalsProvider)
-            .ordinaryItems
-            .where(_eligible);
-        _projectId = items.isEmpty ? null : items.first.id;
-        return const PublicProposalsScreen();
-      case TutorialStep.projectPurpose:
-      case TutorialStep.projectNeeds:
-      case TutorialStep.projectParticipation:
-        ref.watch(proposalDetailProvider);
-        return _projectId == null
-            ? TutorialIllustration(step: _step)
-            : ProposalDetailScreen(proposalId: _projectId!);
-      case TutorialStep.projectCreate:
-      case TutorialStep.projectDrafts:
-        return const PublicProposalsScreen();
-      case TutorialStep.resourceModes:
-      case TutorialStep.resourceCard:
-      case TutorialStep.resourceCreate:
-      case TutorialStep.resourceDrafts:
-        final state = ref.watch(publicResourceListingsProvider);
-        _resourceId = state.items.isEmpty ? null : state.items.first.id;
-        return const PublicResourceListingsScreen();
-      case TutorialStep.messagesTabs:
-      case TutorialStep.messagesScopes:
-      case TutorialStep.farewell:
-        return const MessagesLandingScreen(controlsOnly: true);
+  ScrollableState? _firstVerticalScrollable() {
+    ScrollableState? result;
+    void visit(Element element) {
+      if (element is StatefulElement && element.state is ScrollableState) {
+        final state = element.state as ScrollableState;
+        if (axisDirectionToAxis(state.axisDirection) == Axis.vertical) {
+          result ??= state;
+        }
+      }
+      element.visitChildren(visit);
     }
+
+    final root = _surface.currentContext;
+    if (root != null) visit(root as Element);
+    return result;
+  }
+
+  String _surfaceGroup() => switch (_step) {
+    TutorialStep.projectCard ||
+    TutorialStep.projectCreate ||
+    TutorialStep.projectDrafts => 'projects',
+    TutorialStep.projectDetail => 'detail-$_projectId-$_fallback',
+    TutorialStep.home || TutorialStep.homeResources => 'home',
+    TutorialStep.messagesTabs || TutorialStep.messagesScopes => 'messages',
+    _ => _step.name,
+  };
+
+  Widget _content() => switch (_step) {
+    TutorialStep.introduction ||
+    TutorialStep.farewell => const Scaffold(body: Center(child: PlanetsHero())),
+    TutorialStep.home || TutorialStep.homeResources => const FoundationScreen(),
+    TutorialStep.projectCard => _projectBrowse(select: true),
+    TutorialStep.projectCreate ||
+    TutorialStep.projectDrafts => _projectBrowse(),
+    TutorialStep.projectDetail =>
+      _fallback || _projectId == null
+          ? const TutorialIllustration()
+          : ProposalDetailScreen(
+              key: PageStorageKey('proposal-detail-$_projectId'),
+              proposalId: _projectId!,
+            ),
+    TutorialStep.resources => _resources(),
+    TutorialStep.messagesTabs || TutorialStep.messagesScopes =>
+      const MessagesLandingScreen(controlsOnly: true),
+  };
+
+  Widget _projectBrowse({bool select = false}) {
+    final state = ref.watch(publicProposalsProvider);
+    if (select &&
+        _projectId == null &&
+        !_projectFallback &&
+        state.phase == ProposalLoadPhase.ready) {
+      // Match the actual browse order, including the authenticated Requested
+      // section. Never skip Full/actionless/photo-less public Projects.
+      if (state.requestedItems.isNotEmpty) {
+        _projectId = state.requestedItems.first.proposal.id;
+      } else if (state.ordinaryItems.isNotEmpty) {
+        _projectId = state.ordinaryItems.first.id;
+      }
+    }
+    return PublicProposalsScreen(
+      tutorialPlaceholder: _projectFallback
+          ? const TutorialExampleCard()
+          : null,
+    );
+  }
+
+  Widget _resources() {
+    final state = ref.watch(publicResourceListingsProvider);
+    if (_resourceId == null &&
+        !_resourceFallback &&
+        state.phase == ResourceListingLoadPhase.ready &&
+        state.resultsMatchFilters &&
+        state.items.isNotEmpty) {
+      _resourceId = state.items.first.id;
+    }
+    return PublicResourceListingsScreen(
+      key: const PageStorageKey('public-resources-list'),
+      tutorialPlaceholder: _resourceFallback
+          ? const TutorialExampleCard(resource: true)
+          : null,
+    );
   }
 
   @override
@@ -495,14 +533,29 @@ class _TutorialScreenState extends ConsumerState<TutorialScreen>
       return TutorialPages(returnTo: widget.returnTo);
     }
     final l = AppLocalizations.of(context);
+    void refreshFocus() {
+      _interrupt();
+      setState(() {
+        _targets = const [];
+        _attempts = 0;
+      });
+    }
+
+    ref.listen(publicProposalsProvider, (_, _) {
+      if (_step == TutorialStep.projectCard) refreshFocus();
+    });
+    ref.listen(proposalDetailProvider, (_, _) {
+      if (_isDetail) refreshFocus();
+    });
+    ref.listen(publicResourceListingsProvider, (_, _) {
+      if (_step == TutorialStep.resources) refreshFocus();
+    });
     ref.listen(authSessionProvider.select((s) => (s.phase, s.identity?.id)), (
       old,
       next,
     ) {
       if (old != next) {
-        _generation++;
-        _automatic?.cancel();
-        _probe?.cancel();
+        _interrupt();
         // Leave without a status write. Router reconciliation owns the new
         // identity and protected destinations; no former actor content survives.
         Future<void>.microtask(() {
@@ -517,7 +570,7 @@ class _TutorialScreenState extends ConsumerState<TutorialScreen>
       builder: (context, _) => PopScope(
         canPop: false,
         onPopInvokedWithResult: (didPop, _) {
-          if (!didPop && !_saving) _leave();
+          if (!didPop) _previous();
         },
         child: Scaffold(
           key: const Key('tutorial-screen'),
@@ -526,7 +579,10 @@ class _TutorialScreenState extends ConsumerState<TutorialScreen>
               children: [
                 Row(
                   children: [
-                    BackButton(onPressed: _saving ? null : _leave),
+                    BackButton(
+                      key: const Key('tutorial-previous'),
+                      onPressed: _saving || _locked ? null : _previous,
+                    ),
                     Expanded(
                       child: Text(
                         l.tutorialStepProgress(
@@ -546,37 +602,43 @@ class _TutorialScreenState extends ConsumerState<TutorialScreen>
                   ],
                 ),
                 Expanded(
-                  child: Stack(
-                    key: _surface,
-                    fit: StackFit.expand,
-                    children: [
-                      ExcludeSemantics(
-                        child: IgnorePointer(
-                          child: KeyedSubtree(
-                            key: ValueKey(
-                              'tutorial-surface-${_surfaceGroup()}-$_fallback',
-                            ),
-                            child: _content(),
-                          ),
-                        ),
-                      ),
-                      Positioned.fill(
-                        child: GestureDetector(
-                          key: const Key('tutorial-overlay'),
-                          behavior: HitTestBehavior.opaque,
-                          onTap: restoreFailed || _step == TutorialStep.farewell
-                              ? null
-                              : _advance,
-                          child: CustomPaint(
-                            key: const Key('tutorial-spotlight'),
-                            painter: TutorialScrim(
-                              _target,
-                              Colors.black.withValues(alpha: .62),
+                  child: PageStorage(
+                    bucket: _scrollStorage,
+                    child: Stack(
+                      key: _surface,
+                      fit: StackFit.expand,
+                      children: [
+                        ExcludeSemantics(
+                          child: IgnorePointer(
+                            child: KeyedSubtree(
+                              key: ValueKey(
+                                'tutorial-surface-${_surfaceGroup()}',
+                              ),
+                              child: _content(),
                             ),
                           ),
                         ),
-                      ),
-                    ],
+                        Positioned.fill(
+                          child: GestureDetector(
+                            key: const Key('tutorial-overlay'),
+                            behavior: HitTestBehavior.opaque,
+                            onTap:
+                                restoreFailed || _step == TutorialStep.farewell
+                                ? null
+                                : _advance,
+                            child: CustomPaint(
+                              key: const Key('tutorial-spotlight'),
+                              painter: TutorialScrim(
+                                _targets,
+                                _noSpotlight
+                                    ? Colors.transparent
+                                    : Colors.black.withValues(alpha: .62),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
                 ConstrainedBox(
@@ -613,7 +675,7 @@ class _TutorialScreenState extends ConsumerState<TutorialScreen>
                   padding: const EdgeInsets.all(12),
                   child: FilledButton(
                     key: const Key('tutorial-next'),
-                    onPressed: _saving
+                    onPressed: _saving || _locked
                         ? null
                         : restoreFailed
                         ? () async {

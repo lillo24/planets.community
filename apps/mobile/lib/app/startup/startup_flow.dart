@@ -26,22 +26,18 @@ enum TutorialStep {
   introduction,
   home,
   projectCard,
-  projectPurpose,
-  projectNeeds,
-  projectParticipation,
+  projectDetail,
   projectCreate,
   projectDrafts,
-  resourceModes,
-  resourceCard,
-  resourceCreate,
-  resourceDrafts,
+  homeResources,
+  resources,
   messagesTabs,
   messagesScopes,
   farewell,
 }
 
 const productionTutorial = TutorialRegistry(
-  version: 'interactive-1',
+  version: 'interactive-2',
   steps: TutorialStep.values,
 );
 
