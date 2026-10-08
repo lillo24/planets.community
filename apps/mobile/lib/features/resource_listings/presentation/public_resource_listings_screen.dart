@@ -11,6 +11,7 @@ import '../../../core/widgets/empty_state.dart';
 import '../../../core/widgets/error_state.dart';
 import '../../../core/widgets/loading_state.dart';
 import '../../../l10n/generated/app_localizations.dart';
+import '../../policies/presentation/policy_write_boundary.dart';
 import '../../auth/application/auth_session_controller.dart';
 import '../../cover_media/presentation/cover_image.dart';
 import '../../auth/domain/auth_models.dart';
@@ -392,6 +393,7 @@ class _PublicResourceListingsScreenState
   }
 
   Future<void> _saveCurrentSearch(String expectedProfileId) async {
+    if (!requirePolicyAcknowledgement(context, ref, '/resources')) return;
     final l10n = AppLocalizations.of(context);
     final input = _currentInput();
     if (!input.isValid) return;
@@ -814,11 +816,20 @@ class _ResourceRequestListingActions extends ConsumerWidget {
       }
       return FilledButton.icon(
         key: const Key('resource-request-action'),
-        onPressed: () => showResourceRequestComposer(
-          context,
-          listingId: listingId,
-          expectedRequesterProfileId: expectedProfileId,
-        ),
+        onPressed: () {
+          if (!requirePolicyAcknowledgement(
+            context,
+            ref,
+            '/resources/$listingId',
+          )) {
+            return;
+          }
+          showResourceRequestComposer(
+            context,
+            listingId: listingId,
+            expectedRequesterProfileId: expectedProfileId,
+          );
+        },
         icon: const Icon(Icons.front_hand_outlined),
         label: Text(l10n.resourceRequestAction),
       );

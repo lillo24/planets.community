@@ -1,3 +1,5 @@
+import '../../../support/fake_policy.dart';
+
 import 'dart:async';
 import 'dart:typed_data';
 
@@ -257,6 +259,7 @@ class PhotoFlowHarness {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
+          preacceptedPolicyFixture,
           appConfigProvider.overrideWithValue(
             AppConfig.fromValues(
               appEnvironment: 'local',

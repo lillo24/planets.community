@@ -1612,5 +1612,39 @@
   "locationErrorStale": "L’elemento è cambiato. Cerca e seleziona di nuovo.",
   "locationErrorUnauthorized": "Non puoi più accedere alla posizione. Torna ai tuoi elementi.",
   "locationErrorUnsupported": "Questo luogo o la fonte non è supportato. Inserisci il luogo manualmente.",
-  "locationErrorProvider": "La ricerca del luogo non è riuscita. Inserisci il luogo manualmente o riprova più tardi."
+  "locationErrorProvider": "La ricerca del luogo non è riuscita. Inserisci il luogo manualmente o riprova più tardi.",
+  "policyPrivacy": "Informativa privacy",
+  "policyTerms": "Termini di utilizzo",
+  "policyRules": "Regole della community",
+  "policyAcceptanceTitle": "Termini e Regole della community",
+  "policyAcceptanceExplanation": "Prima di caricare profilo o foto, creare contenuti o inviare messaggi, leggi e accetta esplicitamente i Termini e le Regole. L’Informativa privacy è informativa: non è un consenso generale al trattamento dei dati o al marketing.",
+  "policyProvisional": "Versione provvisoria — in revisione. I documenti collegati contengono proposte e punti aperti.",
+  "policyVersion": "Versione Termini/Regole: {version}",
+  "policyLocalAcknowledgement": "Salvata su questo dispositivo per il tuo account e questa versione. Un altro dispositivo o la reinstallazione possono richiedere una nuova accettazione. Esplorazione pubblica, assistenza, segnalazioni, blocco, richieste di eliminazione e uscita restano disponibili.",
+  "policyAcceptLabel": "Accetto i Termini di utilizzo e le Regole della community collegati sopra.",
+  "policyAcceptAction": "Accetta e continua",
+  "policyCancel": "Continua a esplorare; annulla questa azione",
+  "policyReadFailed": "Impossibile leggere l’accettazione su questo dispositivo. Riprova prima di creare contenuti.",
+  "policyWriteFailed": "Accettazione non salvata. Verifica la selezione e riprova; la creazione di contenuti resta non disponibile.",
+  "policyLinkFailed": "Impossibile aprire la pagina. Riprova oppure copia il link e aprilo nel browser.",
+  "policyCopyLink": "Copia link",
+  "policyCopied": "Copiato.",
+  "policyCopyFailed": "Impossibile copiare. Seleziona il testo visibile e copialo manualmente.",
+  "policyDeleteAccount": "Elimina account",
+  "policyDeletionExplanation": "Questa schermata prepara una richiesta email a Leonardo Colli, che gestisce l’eliminazione manualmente. Aprire o inviare l’email non elimina subito l’account. Scegli Invio o Annulla nella tua app email; PLANETS non può osservare la scelta.",
+  "policyDeletionOutcome": "Il comportamento previsto, subordinato a una procedura verificata, rimuove foto personale e dati del profilo e mostra “Profilo eliminato”. I messaggi già inviati sono destinati a restare nelle cronologie autorizzate: il testo non diventa anonimo e non è autorizzata una conservazione indefinita. La procedura completa richiede ancora verifica.",
+  "policyDeletionRights": "Puoi chiedere cancellazione o limitazione dei dati personali nei messaggi. Eventuali eccezioni lecite di conservazione devono essere circoscritte e motivate. Leonardo verificherà proporzionatamente l’identità se necessario e confermerà l’esito. Il riscontro è di norma dovuto entro un mese secondo i diritti applicabili: non prova il completamento della cancellazione e non è un termine di eliminazione dei backup.",
+  "policyDeletionFromEmail": "Invia preferibilmente dall’email usata per PLANETS. Se necessario, indica sotto l’email dell’account e rivedi la bozza. Puoi richiedere l’eliminazione anche dal sito senza accedere o reinstallare.",
+  "policyAccountEmail": "Email dell’account (facoltativa, inserita da te)",
+  "policyCopyAddress": "Copia indirizzo email",
+  "policyCopyDraft": "Copia email da rivedere",
+  "policyDeletionWebsite": "Istruzioni di eliminazione sul sito",
+  "policyReviewAction": "Leggi Termini e Regole per continuare",
+  "@policyVersion": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  }
 }

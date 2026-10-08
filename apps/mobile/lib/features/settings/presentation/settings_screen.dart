@@ -10,6 +10,8 @@ import '../../../l10n/generated/app_localizations.dart';
 import '../../auth/application/auth_session_controller.dart';
 import '../../auth/domain/auth_models.dart';
 import '../../auth/presentation/account_sign_out_action.dart';
+import '../../policies/application/policy_documents.dart';
+import '../../policies/presentation/policy_link_action.dart';
 import '../application/language_preference_controller.dart';
 import '../application/navigation_preference_controller.dart';
 import '../domain/language_preference.dart';
@@ -112,6 +114,14 @@ class SettingsScreen extends ConsumerWidget {
                     },
                     child: Text(l10n.startupDevelopmentReset),
                   ),
+                Card(
+                  child: PolicyLinkAction(
+                    key: const Key('settings-privacy-policy-row'),
+                    asTile: true,
+                    label: l10n.policyPrivacy,
+                    uri: ref.watch(policyDocumentsProvider).privacy,
+                  ),
+                ),
                 if (showAccountSettings) ...[
                   const SizedBox(height: AppSpacing.large),
                   _SectionLabel(l10n.settingsAccountSection),
@@ -149,6 +159,14 @@ class SettingsScreen extends ConsumerWidget {
                   const Divider(),
                   const SizedBox(height: AppSpacing.medium),
                   const AccountSignOutAction(),
+                  const SizedBox(height: AppSpacing.medium),
+                  const Divider(),
+                  ListTile(
+                    key: const Key('settings-delete-account-row'),
+                    leading: const Icon(Icons.person_remove_outlined),
+                    title: Text(l10n.policyDeleteAccount),
+                    onTap: () => context.push(accountDeletionPath),
+                  ),
                 ],
               ],
             ),

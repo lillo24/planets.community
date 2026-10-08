@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -6,6 +7,10 @@ import '../../features/auth/application/auth_command_controller.dart';
 import '../../features/auth/application/auth_session_controller.dart';
 import '../../features/auth/application/return_destination.dart';
 import '../../features/auth/domain/auth_models.dart';
+import '../../features/policies/application/policy_documents.dart';
+import '../../features/policies/application/policy_acceptance_controller.dart';
+import '../../features/policies/presentation/policy_acceptance_screen.dart';
+import '../../features/policies/presentation/account_deletion_screen.dart';
 import '../../features/drafts/domain/draft_entry.dart';
 import '../../features/drafts/presentation/drafts_screen.dart';
 import '../../features/auth/presentation/request_code_screen.dart';
@@ -85,6 +90,7 @@ GoRouter createAppRouter({
   PendingEmailOtpReader? readPendingEmailOtp,
   DraftDepartureCoordinator? draftDeparture,
   StartupFlow? startupFlow,
+  bool Function()? readPolicyAccepted,
 }) {
   final configuration = _NativeRoutingConfig(
     _routingConfig(
@@ -93,6 +99,7 @@ GoRouter createAppRouter({
       draftDeparture,
       null,
       startupFlow,
+      readPolicyAccepted,
     ),
     draftDeparture,
   );
@@ -112,6 +119,7 @@ RoutingConfig _routingConfig(
   DraftDepartureCoordinator? draftDeparture, [
   VoidCallback? cancelExternalAuth,
   StartupFlow? startupFlow,
+  bool Function()? readPolicyAccepted,
 ]) {
   final sessionReader =
       readAuthSession ?? () => const AuthSessionState.signedOut();
@@ -122,14 +130,22 @@ RoutingConfig _routingConfig(
       VoidCallback? committedNativeCancellation;
       if (next.uri.hasScheme || next.uri.hasAuthority) {
         final destination = nativeProjectDestination(next.uri);
-        final continuation = current.uri.path == '/auth/verify'
+        var continuation = current.uri.path == '/auth/verify'
             ? pendingReader()?.returnTo
             : current.uri.queryParameters['returnTo'];
+        if (current.uri.path == policyAcceptancePath && continuation != null) {
+          final profileContinuation = Uri.tryParse(continuation);
+          if (profileContinuation?.path == '/profile/edit') {
+            continuation = profileContinuation?.queryParameters['returnTo'];
+          }
+        }
         if (destination != null &&
             (current.uri.toString() == destination ||
                 ((current.uri.path == '/auth' ||
                         current.uri.path == '/auth/verify' ||
-                        current.uri.path == '/profile/edit') &&
+                        current.uri.path == '/profile/edit' ||
+                        (current.uri.path == policyAcceptancePath &&
+                            !(readPolicyAccepted?.call() ?? false))) &&
                     continuation == destination))) {
           startupFlow?.deferForExternalJourney();
           return const Block.stop(); // Preserve the existing match list/form.
@@ -250,6 +266,62 @@ RoutingConfig _routingConfig(
         ).toString();
       }
 
+      // UI-only acknowledgement. Reporting, blocking, Help, public browsing,
+      // deletion requests and Settings/sign-out deliberately bypass this gate.
+      if (isAuthRoute &&
+          (session.phase == AuthSessionPhase.ready ||
+              session.phase == AuthSessionPhase.profileSetupRequired)) {
+        final destination =
+            pending?.returnTo ??
+            sanitizeReturnDestination(state.uri.queryParameters['returnTo']);
+        final destinationPath = Uri.parse(destination).path;
+        if (destinationPath == '/settings' ||
+            destinationPath == accountDeletionPath ||
+            destinationPath == '/profile/blocked-users' ||
+            destinationPath.startsWith('/profile/reports') ||
+            destinationPath.startsWith('/profile/review-requests') ||
+            destinationPath == '/help' ||
+            destinationPath.startsWith('/help/')) {
+          return startupFlow?.continueTo(destination) ?? destination;
+        }
+      }
+      // A standalone router must also deny writing without an explicit reader.
+      final accepted = readPolicyAccepted?.call() ?? false;
+      if (path == policyAcceptancePath) {
+        if (!session.isAuthenticated) return '/';
+        if (accepted) {
+          return policyReturnDestination(state.uri.queryParameters['returnTo']);
+        }
+        return null;
+      }
+      final isInvite =
+          ParticipantInvitationRoutes.isInvitePath(path) ||
+          ProjectDelegateRoutes.isInvitePath(path);
+      final needsPolicy =
+          isProfileEditRoute ||
+          isInvite ||
+          (isActivityManagementRoute &&
+              !isModerationRoute &&
+              !isNotificationsRoute) ||
+          (isAuthRoute &&
+              (session.phase == AuthSessionPhase.ready ||
+                  session.phase == AuthSessionPhase.profileSetupRequired));
+      if (session.isAuthenticated && !accepted && needsPolicy) {
+        var destination = state.uri.toString();
+        if (isAuthRoute) {
+          destination =
+              pending?.returnTo ??
+              sanitizeReturnDestination(state.uri.queryParameters['returnTo']);
+          if (session.phase == AuthSessionPhase.profileSetupRequired) {
+            destination = Uri(
+              path: '/profile/edit',
+              queryParameters: {'returnTo': destination},
+            ).toString();
+          }
+        }
+        return policyAcceptanceDestination(destination);
+      }
+
       if (session.phase == AuthSessionPhase.profileSetupRequired &&
           (isParticipationRoute ||
               isProjectResourceNeedManagementRoute ||
@@ -272,7 +344,8 @@ RoutingConfig _routingConfig(
       }
 
       if (session.phase == AuthSessionPhase.profileSetupRequired &&
-          isActivityManagementRoute) {
+          isActivityManagementRoute &&
+          !isModerationRoute) {
         return Uri(
           path: '/profile/edit',
           queryParameters: {'returnTo': state.uri.toString()},
@@ -338,6 +411,14 @@ RoutingConfig _routingConfig(
       return null;
     },
     routes: [
+      GoRoute(
+        path: policyAcceptancePath,
+        builder: (context, state) => const PolicyAcceptanceScreen(),
+      ),
+      GoRoute(
+        path: accountDeletionPath,
+        builder: (context, state) => const AccountDeletionScreen(),
+      ),
       GoRoute(
         path: HelpRoutes.path,
         builder: (context, state) => const HelpScreen(),
@@ -902,6 +983,12 @@ final appRouterProvider = Provider<GoRouter>((ref) {
     ref.read(draftDepartureProvider),
     () => ref.read(authCommandProvider.notifier).cancelFlow(),
     startup,
+    () => ref
+        .read(policyAcceptanceProvider)
+        .allows(
+          ref.read(authSessionProvider).identity?.id,
+          ref.read(policyVersionProvider),
+        ),
   );
   final routes = _NativeRoutingConfig(
     configuration(),
@@ -924,6 +1011,20 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       routes.value = configuration();
     }
     router.refresh();
+  });
+  ref.listen(policyAcceptanceProvider, (_, _) {
+    // Identity/version rebuilding may be observed while redirect is building
+    // Router. Refresh after that frame, while still denying writes immediately.
+    if (SchedulerBinding.instance.schedulerPhase ==
+        SchedulerPhase.persistentCallbacks) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (ref.mounted) {
+          router.refresh();
+        }
+      });
+    } else {
+      router.refresh();
+    }
   });
   ref.listen(pendingEmailOtpProvider, (_, _) => router.refresh());
   ref.listen(authCommandProvider, (previous, next) {

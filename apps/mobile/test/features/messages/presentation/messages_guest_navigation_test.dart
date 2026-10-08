@@ -1,3 +1,5 @@
+import '../../../support/fake_policy.dart';
+
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -372,6 +374,7 @@ class _Fixture {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
+          preacceptedPolicyFixture,
           appConfigProvider.overrideWithValue(
             AppConfig.fromValues(
               appEnvironment: 'local',

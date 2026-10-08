@@ -2,6 +2,7 @@ import { type PointerEvent, useRef, useState } from "react";
 
 import { PUBLIC_CONTACT_EMAIL, PUBLIC_CONTACT_PHONE } from "./site-content";
 import { WaitlistForm } from "./WaitlistForm";
+import { policyLinks } from "./policies/metadata";
 
 const [contactEmailMailbox, contactEmailDomain] =
   PUBLIC_CONTACT_EMAIL.split("@");
@@ -298,6 +299,11 @@ export function App() {
 
           <nav aria-label="Navigazione a piè di pagina">
             {primaryNavigation.slice(1).map(([label, href]) => (
+              <a href={href} key={href}>
+                {label}
+              </a>
+            ))}
+            {policyLinks.map(([label, href]) => (
               <a href={href} key={href}>
                 {label}
               </a>

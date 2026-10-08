@@ -10,6 +10,11 @@ admin surface.
 
 ## Public contacts
 
+The four public app-policy HTML routes (`/privacy`, `/terms`, `/community-rules`,
+`/delete-account`) are owned by [`src/policies`](src/policies/README.md) and emitted
+at build time. They are distinct from the landing page's waitlist privacy notice.
+Their draft status and pinned Terms/Rules version also appear in the mobile app.
+
 The `Contatti` section publishes the founder-approved email
 `developer.planets.community@gmail.com` and phone number `+39 3703263412`.
 `src/site-content.ts` owns their displayed values and the phone URI; `src/App.tsx`

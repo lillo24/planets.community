@@ -413,6 +413,7 @@ pumpWorkshop(
   final guard = c.read(draftDepartureProvider);
   final router = actualRouter
       ? createAppRouter(
+          readPolicyAccepted: () => true,
           initialLocation: initial,
           readAuthSession: () => c.read(authSessionProvider),
           draftDeparture: guard,
