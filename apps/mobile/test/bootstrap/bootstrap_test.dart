@@ -2,6 +2,7 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:planets_mobile/app/planets_app.dart';
+import 'package:planets_mobile/app/startup/startup_flow.dart';
 import 'package:planets_mobile/bootstrap/bootstrap.dart';
 import 'package:planets_mobile/core/config/app_config.dart';
 import 'package:planets_mobile/features/auth/data/auth_gateway.dart';
@@ -21,6 +22,9 @@ void main() {
       Widget? launchedApplication;
 
       await bootstrapApplication(
+        // This fixture verifies the launched navigation preference after onboarding.
+        startupPreferenceLoader: () async =>
+            StartupPreference(completedVersion: productionTutorial.version),
         configLoader: () {
           events.add('config');
           return config;

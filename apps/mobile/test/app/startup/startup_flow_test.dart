@@ -11,6 +11,22 @@ void main() {
     pages: [(_) => const Text('Synthetic page')],
   );
 
+  test('dismissal restores independently from completion and suppresses this version', () async {
+    final store = FakeStartupStore();
+    final flow = StartupFlow(
+      store,
+      productionTutorial,
+      const StartupPreference(),
+    );
+    addTearDown(flow.dispose);
+    expect(await flow.dismissTutorial(), isTrue);
+    final restored = await restoreStartupPreference(store);
+    expect(restored.completedVersion, isNull);
+    expect(restored.dismissedVersion, productionTutorial.version);
+    final restart = StartupFlow(store, productionTutorial, restored);
+    addTearDown(restart.dispose);
+    expect(restart.needsTutorial, isFalse);
+  });
   test('empty registry neither opens nor completes a tutorial', () async {
     final store = FakeStartupStore();
     final flow = StartupFlow(store, empty, const StartupPreference());

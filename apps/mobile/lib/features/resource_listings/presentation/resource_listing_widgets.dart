@@ -200,6 +200,7 @@ class PublicResourceListingCard extends StatelessWidget {
                         Expanded(
                           child: Text(
                             listing.title,
+                            key: Key('resource-card-title-${listing.id}'),
                             style: Theme.of(context).textTheme.titleLarge,
                           ),
                         ),
