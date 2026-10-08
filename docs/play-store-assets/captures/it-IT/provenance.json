@@ -1,0 +1,161 @@
+{
+  "schemaVersion": 1,
+  "createdOn": "2026-10-08",
+  "sourceCommit": "6650d995c4a393ef43e13f16d51933645be72db9",
+  "sourceRef": "origin/main",
+  "device": {
+    "avd": "PLANETS_PLAY_ASSETS01",
+    "serial": "emulator-5562",
+    "platform": "Android 15 / API 35",
+    "abi": "x86_64",
+    "viewport": [1080, 1920],
+    "densityDpi": 320,
+    "theme": "light",
+    "fontScale": 1,
+    "demoTools": false,
+    "logicalViewportDp": [540, 960],
+    "locale": "it-IT (selected through Settings > Language)",
+    "statusBar": "Android SystemUI demo clock 09:41; system and notification icons hidden through cmd statusbar send-disable-flag"
+  },
+  "captures": {
+    "01-iniziative.png": {
+      "sourceCommit": "6650d995c4a393ef43e13f16d51933645be72db9",
+      "capturedAtUtc": "2026-10-08T16:58:31.706548+00:00",
+      "sha256": "200c5bc0e0a5b85c9e4df697959c7b435c3ed002b0941a1c5c4b0c80a336e6e8",
+      "method": "ADB screencap -p from the real running Flutter Android app; original pixels retained",
+      "device": {
+        "avd": "PLANETS_PLAY_ASSETS01",
+        "serial": "emulator-5562",
+        "platform": "Android 15 / API 35",
+        "abi": "x86_64",
+        "viewport": [1080, 1920],
+        "densityDpi": 320,
+        "theme": "light",
+        "fontScale": 1,
+        "demoTools": false,
+        "logicalViewportDp": [540, 960],
+        "locale": "it-IT (selected through Settings > Language)",
+        "statusBar": "Android SystemUI demo clock 09:41; system and notification icons hidden through cmd statusbar send-disable-flag"
+      },
+      "buildApkSha256": "e4ca0316ecf62c285964ca03f07871ada39579a987feeec347c5d044628a1a08",
+      "syntheticData": true,
+      "exportTransform": "RGB conversion and sRGB metadata only; no resizing, cropping or retouching"
+    },
+    "02-dettagli-attivita.png": {
+      "sourceCommit": "6650d995c4a393ef43e13f16d51933645be72db9",
+      "capturedAtUtc": "2026-10-08T17:09:31.912431+00:00",
+      "sha256": "95047bcc4a9c3bc5b2fd9ef84e26eb72bbcbc12ccaab741b56280a94d8bc48de",
+      "method": "ADB screencap -p from the real running Flutter Android app; original pixels retained",
+      "device": {
+        "avd": "PLANETS_PLAY_ASSETS01",
+        "serial": "emulator-5562",
+        "platform": "Android 15 / API 35",
+        "abi": "x86_64",
+        "viewport": [1080, 1920],
+        "densityDpi": 320,
+        "theme": "light",
+        "fontScale": 1,
+        "demoTools": false,
+        "logicalViewportDp": [540, 960],
+        "locale": "it-IT (selected through Settings > Language)",
+        "statusBar": "Android SystemUI demo clock 09:41; system and notification icons hidden through cmd statusbar send-disable-flag"
+      },
+      "buildApkSha256": "e4ca0316ecf62c285964ca03f07871ada39579a987feeec347c5d044628a1a08",
+      "syntheticData": true,
+      "exportTransform": "RGB conversion and sRGB metadata only; no resizing, cropping or retouching"
+    },
+    "03-scambio-dona.png": {
+      "sourceCommit": "6650d995c4a393ef43e13f16d51933645be72db9",
+      "capturedAtUtc": "2026-10-08T17:06:59.034647+00:00",
+      "sha256": "58235fe7867db0f10941f303016483efa6d878e42cc4976efa9e1736d1228c3d",
+      "method": "ADB screencap -p from the real running Flutter Android app; original pixels retained",
+      "device": {
+        "avd": "PLANETS_PLAY_ASSETS01",
+        "serial": "emulator-5562",
+        "platform": "Android 15 / API 35",
+        "abi": "x86_64",
+        "viewport": [1080, 1920],
+        "densityDpi": 320,
+        "theme": "light",
+        "fontScale": 1,
+        "demoTools": false,
+        "logicalViewportDp": [540, 960],
+        "locale": "it-IT (selected through Settings > Language)",
+        "statusBar": "Android SystemUI demo clock 09:41; system and notification icons hidden through cmd statusbar send-disable-flag"
+      },
+      "buildApkSha256": "e4ca0316ecf62c285964ca03f07871ada39579a987feeec347c5d044628a1a08",
+      "syntheticData": true,
+      "exportTransform": "RGB conversion and sRGB metadata only; no resizing, cropping or retouching"
+    },
+    "04-chat.png": {
+      "sourceCommit": "6650d995c4a393ef43e13f16d51933645be72db9",
+      "capturedAtUtc": "2026-10-08T17:05:35.812118+00:00",
+      "sha256": "df875926403c28b7dcc0250a632ab98146d9e8f239b35de6980ac0a75347ea8d",
+      "method": "ADB screencap -p from the real running Flutter Android app; original pixels retained",
+      "device": {
+        "avd": "PLANETS_PLAY_ASSETS01",
+        "serial": "emulator-5562",
+        "platform": "Android 15 / API 35",
+        "abi": "x86_64",
+        "viewport": [1080, 1920],
+        "densityDpi": 320,
+        "theme": "light",
+        "fontScale": 1,
+        "demoTools": false,
+        "logicalViewportDp": [540, 960],
+        "locale": "it-IT (selected through Settings > Language)",
+        "statusBar": "Android SystemUI demo clock 09:41; system and notification icons hidden through cmd statusbar send-disable-flag"
+      },
+      "buildApkSha256": "e4ca0316ecf62c285964ca03f07871ada39579a987feeec347c5d044628a1a08",
+      "syntheticData": true,
+      "exportTransform": "RGB conversion and sRGB metadata only; no resizing, cropping or retouching"
+    },
+    "05-dona.png": {
+      "sourceCommit": "6650d995c4a393ef43e13f16d51933645be72db9",
+      "capturedAtUtc": "2026-10-08T17:08:11.622783+00:00",
+      "sha256": "0f31bed187bb3514c8a33d2e94f3e5afd6c0c4839ca302737175544b22a52bb8",
+      "method": "ADB screencap -p from the real running Flutter Android app; original pixels retained",
+      "device": {
+        "avd": "PLANETS_PLAY_ASSETS01",
+        "serial": "emulator-5562",
+        "platform": "Android 15 / API 35",
+        "abi": "x86_64",
+        "viewport": [1080, 1920],
+        "densityDpi": 320,
+        "theme": "light",
+        "fontScale": 1,
+        "demoTools": false,
+        "logicalViewportDp": [540, 960],
+        "locale": "it-IT (selected through Settings > Language)",
+        "statusBar": "Android SystemUI demo clock 09:41; system and notification icons hidden through cmd statusbar send-disable-flag"
+      },
+      "buildApkSha256": "e4ca0316ecf62c285964ca03f07871ada39579a987feeec347c5d044628a1a08",
+      "syntheticData": true,
+      "exportTransform": "RGB conversion and sRGB metadata only; no resizing, cropping or retouching"
+    }
+  },
+  "releaseCompatibility": {
+    "status": "requires-rebuild-or-recapture-before-upload",
+    "existingReleasePr": "https://github.com/lillo24/planets.community/pull/149",
+    "existingReleaseBranchHead": "d790054a3c1a4ac0315364967f9686d78c2d68f1",
+    "existingAabSha256": "d671efb4f390b1aad1ced2c1728a5fa13555f42867cbf62056ced71201af0932",
+    "existingAabBuildCommit": "Not individually recorded in the inspected bundle-verification file; the reconciled release branch differs from current main.",
+    "instruction": "Rebuild the distributed AAB from the captured source or recapture from its actual source before upload; these draft assets do not attest release readiness."
+  },
+  "build": {
+    "mode": "Flutter Android release APK for capture only",
+    "packageId": "community.planets.bootstrap.planets_mobile",
+    "appVersion": "0.1.0+1",
+    "apkSha256": "e4ca0316ecf62c285964ca03f07871ada39579a987feeec347c5d044628a1a08",
+    "flutter": "3.47.2",
+    "dart": "3.13.2",
+    "command": "flutter build apk --release --target-platform android-x64 --dart-define-from-file=config/local.json --dart-define=ENABLE_DEMO_TOOLS=false",
+    "distributionArtifact": false
+  },
+  "demo": {
+    "environment": "Owned disposable local Supabase project planets-play-assets01, loopback API 54621",
+    "personas": "Deterministic synthetic Giulia and Sara; no real users",
+    "fixtures": "Existing demo world; only mural and Repair Cafe daytime schedules adjusted through creator RPCs by prepare-demo-clock.mjs",
+    "validation": "Baseline demo:verify:local passed before capture-specific schedule updates and normal read-frontier changes; adjusted dates verified through public RPC reads"
+  }
+}

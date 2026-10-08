@@ -1,0 +1,3 @@
+.rendered/
+*.zip
+__pycache__/
