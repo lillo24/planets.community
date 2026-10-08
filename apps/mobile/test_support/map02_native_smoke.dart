@@ -10,12 +10,34 @@ Future<void> main(List<String> args) async {
   final driver = await FlutterDriver.connect(dartVmServiceUrl: args[0]);
   Future<void> tap(String key) =>
       driver.tap(find.byValueKey(key), timeout: const Duration(seconds: 30));
-  Future<void> reveal(String key) => driver.scrollUntilVisible(
-    find.byType('ListView'),
-    find.byValueKey(key),
-    dyScroll: -240,
-    timeout: const Duration(seconds: 30),
-  );
+  Future<void> reveal(String key) async {
+    final bottom =
+        (await driver.getBottomRight(find.byType('Scaffold'))).dy - 50;
+    // Gesture scrolling avoids ensureVisible's animated future hanging after
+    // Android interrupts the rehearsal with a System UI ANR.
+    for (var step = 0; step < 30; step++) {
+      var delta = -200.0;
+      try {
+        final point = await driver.getCenter(
+          find.byValueKey(key),
+          timeout: const Duration(seconds: 2),
+        );
+        if (point.dy >= 120 && point.dy <= bottom) return;
+        if (point.dy < 120) delta = 200;
+      } on DriverError {
+        // A lazy child can require scrolling before it has a render object.
+      }
+      await driver.scroll(
+        find.byType('ListView'),
+        0,
+        delta,
+        const Duration(milliseconds: 100),
+        timeout: const Duration(seconds: 30),
+      );
+    }
+    throw StateError('Could not reveal the native rehearsal control: $key');
+  }
+
   Future<void> capture(String name) async =>
       File('${args[1]}/$name.png').writeAsBytes(await driver.screenshot());
   try {
@@ -77,7 +99,7 @@ Future<void> main(List<String> args) async {
         }
       }
       stdout.writeln(
-        'MAP02 task-owned Android: three real editors, EN/IT keyboard, explicit selection, independent Project slots and draft saves passed. All provider/storage operations were deterministic fakes.',
+        'MAP02 task-owned Android: three real editors, EN/IT emulated text entry, explicit selection, independent Project slots and draft saves passed. All provider/storage operations were deterministic fakes.',
       );
     });
   } finally {

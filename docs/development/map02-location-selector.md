@@ -98,7 +98,7 @@ phone/demo stack or ports 54321/54322.
 `test_support/map02_rehearsal.dart` and `map02_native_smoke.dart` provide an
 explicit debug-only (`MAP02_REHEARSAL=true`) Android journey using the real
 three editors and deterministic domain/location gateways. The driver requires
-a verified task-owned VM URI and capture directory, covers EN/IT, keyboard,
+a verified task-owned VM URI and capture directory, covers EN/IT, emulated text entry,
 explicit selection, independent Project slots and draft saves, and checks fake
 write totals. Native presentation is separate from real local RPC evidence;
 neither proves live Geoapify or iOS behavior.
