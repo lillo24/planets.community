@@ -20,6 +20,10 @@ This folder owns the reproducible local PLANETS database and its security valida
 - `config.toml` configures the local stack and fail-closed Data API defaults.
 - `migrations/` is the canonical, timestamp-ordered SQL schema history.
 - `tests/` contains native pgTAP invariants and transactional security probes.
+- `functions/` contains purpose-limited external service adapters. MAP01's
+  `location-search` stays disabled with no key. Canonical private budgets/receipts,
+  parent geography and versioned location RPCs are migration-owned; see the
+  [data/exposure contract and runbook](../docs/development/map01-geoapify-location.md).
 - MSG02 stores body-free source identities, send-time incoming eligibility and
   private read frontiers in `private.message_*`. Complete totals authorize once
   per conversation and apply the canonical group history cutoff to metadata.
@@ -58,9 +62,14 @@ no private grants, suspension exception or outbox change is introduced.
 MODINT01's committed-main continuation composes the new participation-pair and
 message-unread broadcasters with the existing suspended-recipient filter through
 forward migration `20261006184900`. No history, unread receipt or active-peer chat
-entitlement is changed. The RPC inventory is now 231 signatures; SQL `119` and
+entitlement is changed. The inventory is now 238 signatures after MAP01; SQL `119` and
 the expanded real-auth integration verifier cover the combined boundary. See
 the current continuation evidence in the MODINT01 review packet.
+
+MODINT01 forward migration `20261008145225` closes the MAP01 service-role actor
+suspension gap under the canonical profile-before-item barrier. SQL `121` and
+`verify-local-location-suspension.mjs` cover current actor access, existing
+batches, public hide/private entitlement and persisted concurrent outcomes.
 SIM01 adds authenticated-only `list_similar_active_proposals`, a private
 immutable title normalizer and partial published-title GIN index. `115`/`116`
 cover grants, input bounds, narrow payload, ranking and exact-start eligibility.

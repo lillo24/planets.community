@@ -32,12 +32,20 @@ describe("public proposal models", () => {
       exact_meeting_text: null,
       exact_location_restricted: true,
       private_meeting_value: "must never survive parsing",
+      selected_exact_place: {
+        label: "SECRET selected address",
+        latitude: 44,
+        longitude: 10,
+      },
+      exact_location: "SECRET geometry",
+      selection_receipt: "SECRET receipt",
     });
 
     expect(parsed.exact_location_restricted).toBe(true);
     expect(parsed.exact_meeting_text).toBeNull();
     expect(parsed.cover_object_path).toBe(coverObjectPath);
     expect(parsed).not.toHaveProperty("private_meeting_value");
+    expect(JSON.stringify(parsed)).not.toContain("SECRET");
   });
 
   it("accepts no cover and rejects a non-null path for another Proposal", () => {

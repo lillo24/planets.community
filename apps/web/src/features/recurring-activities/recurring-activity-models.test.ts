@@ -51,6 +51,40 @@ describe("public recurring activity payloads", () => {
     ).toThrow("Unexpected recurring activity list field");
   });
 
+  it("excludes protected selected-location fields before SSR serialization", () => {
+    for (const field of [
+      "selected_exact_place",
+      "exact_location",
+      "selection_receipt",
+    ]) {
+      if (field === "exact_location") {
+        expect(() =>
+          parsePublicRecurringActivitySummary({
+            ...summaryRow(),
+            [field]: "SECRET",
+          }),
+        ).toThrow("Unexpected recurring activity list field");
+      } else {
+        expect(
+          JSON.stringify(
+            parsePublicRecurringActivitySummary({
+              ...summaryRow(),
+              [field]: "SECRET",
+            }),
+          ),
+        ).not.toContain("SECRET");
+      }
+      expect(
+        JSON.stringify(
+          parsePublicRecurringActivityDetail({
+            ...detailRow(),
+            [field]: "SECRET",
+          }),
+        ),
+      ).not.toContain("SECRET");
+    }
+  });
+
   it("parses valid weekly and monthly public details", () => {
     const weekly = parsePublicRecurringActivityDetail(detailRow());
     const monthly = parsePublicRecurringActivityDetail(

@@ -1,4 +1,23 @@
-# UI-NEXT-04 provider readiness
+# Location provider readiness
+
+## Current MAP01 decision, 2026-10-08
+
+Geoapify is now the accepted free-first implementation target. The disabled
+server adapter, nullable canonical storage, private selection receipts and hard
+request budgets are implemented by MAP01. Production mobile registration stays
+disabled; no key, live traffic, deployment, map SDK or editor search UI is active.
+The [MAP01 decision and runbook](map01-geoapify-location.md) owns current API,
+field-by-field storage/attribution rights, exposure matrix, configuration and
+activation gates. Its verified OSM-backed geocoding contract supersedes the
+earlier deferred schema/provider shortlist below. Free commercial production
+scope still needs owner clarification before activation. MAP02 can develop on
+MAP01's implemented head without a live account/key.
+
+## Historical UI-NEXT-04 assessment
+
+The following assessment records the former disabled-only delivery. Its
+Google/Mapbox options and activation checklist are historical context, not the
+current selected implementation or a prohibition on MAP01's reviewed schema.
 
 ## Approved delivery
 

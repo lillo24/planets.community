@@ -1,5 +1,12 @@
 # MODINT01 current moderation working copy
 
+MAP01/HELP01 reconciliation preserves every EN/IT value in this 46-pair packet,
+including the exact participant-link restriction correction below. New location
+service suspension enforcement changes no moderation sentence or policy. Current
+combined-source tested/published provenance is in the PR #154 review/evidence;
+the corrective-copy SHA below remains the source of these unchanged strings and
+their two explicitly labelled widget previews, not a new native campaign.
+
 Regenerated from and compared with the actual EN/IT ARBs after the October 8
 final-copy correction. All 46 key pairs below are verbatim; only
 `noticesRestrictionEffect` changed. Tested corrective source:

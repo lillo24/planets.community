@@ -18,14 +18,26 @@ first remain; suspension first prevents the new transition. Two reciprocal-admin
 winner orders also prove a suspended waiting admin cannot commit the opposite
 suspension. There are 24 lock-observed cases in total.
 
-`moderation:suspension:audit:local` compares 231 public signatures against
-`account-suspension-rpc-inventory.json` (205 deny, 22 public, one own-status
-exception, three service/worker-only). `--inventory` prints the reviewable
+`moderation:suspension:audit:local` compares 238 public signatures against
+`account-suspension-rpc-inventory.json` (208 deny, 23 public, one own-status
+exception, six service/worker-only). `--inventory` prints the reviewable
 replacement inventory without secrets. The audit is intentionally heuristic,
 not proof that every path executes a guard; signature drift and real-auth tests
 are independent checks. These commands are included in `check:db`.
 They also run inside the existing change-scoped Database CI job, without adding
 another recurring workflow or unrelated-area trigger.
+
+MODINT01/MAP01 forward migration `20261008145225_modint_location_account_access.sql`
+takes the verified/stored actor's existing moderation profile barrier, checks
+canonical account access, then locks the item. Reserve (including cached reuse),
+resolve, issue and apply retain all actor/item/revision/slot/session bindings.
+Suspension-first allocates no new budgets/batches/receipts; service-first work
+remains accounted, not recalled/refunded. `location:verify:local` runs MAP01 then
+the real-auth location/suspension verifier with 18 exact-blocker races and
+persisted accounting, after pgTAP in full local/Database CI. The three service
+RPCs additionally require an audited human-actor gate despite service-only grants.
+SQL `121` covers service-account/public-hide/private-entitlement invariants.
+No real provider request is made; both committed kill switches remain off.
 
 MODINT01 adds `moderation:integration:verify:local` for combined PI01/People
 authorization: all 15 new private RPCs from main deny real pre-existing suspended

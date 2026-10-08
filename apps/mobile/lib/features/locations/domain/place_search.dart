@@ -1,7 +1,20 @@
 /// Transient search data, deliberately outside Project inputs and serialization.
-enum PlaceKind { locality, address }
+enum PlaceKind { locality, address, amenity }
 
-enum PlaceSearchProblem { disabled, offline, quota, timeout, provider }
+enum PlaceSearchProblem {
+  disabled,
+  unconfigured,
+  offline,
+  quota,
+  timeout,
+  provider,
+  credentials,
+  metering,
+  expired,
+  stale,
+  unauthorized,
+  unsupported,
+}
 
 class PlaceSearchFailure implements Exception {
   const PlaceSearchFailure(this.problem);
@@ -67,11 +80,19 @@ class ResolvedPlace {
     required this.locality,
     required this.administrativeArea,
     required this.point,
+    this.selectionReceipt,
+    this.attribution,
+    this.sourceLicense,
+    this.verifiedAt,
   });
   final PlaceSuggestion suggestion;
   // Verified structured components, never parsed from a formatted label.
   final String? locality, administrativeArea;
   final PlacePoint? point;
+  // A receipt authorizes a later canonical mutation for one actor/item/revision.
+  // It is not a provider ID, durable location object or entitlement grant.
+  final String? selectionReceipt, attribution, sourceLicense;
+  final DateTime? verifiedAt;
 }
 
 /// Accepts only an independently resolved broad locality, never an exact pin.

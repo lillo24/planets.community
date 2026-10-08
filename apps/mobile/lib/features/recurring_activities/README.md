@@ -1,5 +1,10 @@
 # Recurring activities (Tavoli)
 
+MAP01 reuses existing public-area and protected-exact geography with nullable
+selected metadata. Its canonical receipt RPCs preserve current meeting
+entitlement and Creator/Co-creator structural authority; ended series remain
+immutable. No search UI or maps are wired here. See the [location contract](../../../../../docs/development/map01-geoapify-location.md).
+
 Draft Tavoli remain editable without a profile photo. Publishing performs a
 local trust preflight, while `publish_recurring_activity` authoritatively
 requires a current canonical photo only for the draft-to-published transition;

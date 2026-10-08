@@ -4,7 +4,9 @@ UI-NEXT-04 keeps every manual location field and canonical meeting read intact.
 The editor uses `locations/presentation/location_fallbacks.dart` for unavailable
 search feedback and the detail for an inert map fallback. The transient search
 controller remains unwired; see `../locations/README.md` and provider readiness
-before any activation. No provider-derived field or location migration is added.
+before any activation. MAP01 adds nullable canonical provider metadata and
+actor/item/revision-bound server receipts, with no editor wiring. Existing
+manual text edits clear stale verified pins. See the [shared location contract](../../../../../docs/development/map01-geoapify-location.md).
 
 This feature owns one-time proposal discovery and authenticated structural
 management for the immutable Creator and current Co-creators.

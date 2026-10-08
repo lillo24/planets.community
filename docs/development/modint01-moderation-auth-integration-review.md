@@ -1,10 +1,115 @@
 # MODINT01 moderation/Auth integration review
 
-Status: **draft integration; behavioral QA complete; final-copy local checks and pinned-source CI passed; later-main conflicts remain; not merged or deployed**. Founder
+Status: **draft integration; prior behavioral QA complete; MAP01/HELP01 reconciliation locally validated; final-source CI pending; not merged or deployed**. Founder
 moderation copy/presentation and unresolved policy review remain mandatory.
 No predecessor PR is closed, retargeted, marked ready, or merged by this task.
 
 ## Exact inputs and provenance
+
+### MAP01 / HELP01 reconciliation on PR #154 (October 8)
+
+This continuation starts from published `db29c344c3a589e397bab627016080fe52d22d83`
+and pins actual fetched main **`70f8ed3b92db2ba90792c3bd4de44412f1b3462d`**, matching
+the prompt. MAP01 #172 and HELP01 #173 are merged into the existing branch/PR;
+both histories and the selected moderation stack are retained. Actual conflicts
+were `package.json` and `apps/web/src/types/database.generated.ts`. Package checks
+retain moderation/integration commands and put MAP01 verification after pgTAP;
+that command now runs the focused suspension verifier too. Types are generated
+from the actual replayed combined schema, never a textual union. No authored
+workflow/trigger change or dependency upgrade is introduced.
+
+The old 232-signature inventory is replaced by **238 reviewed signatures**:
+208 deny, 23 public/anonymous, one own-status exception, six service-only. Three
+new service RPC entries also require an explicit audited actor-gate call chain;
+service privilege is not an account-access exemption. New SQL filename `121`
+has a unique prefix. Nine inherited prefix groups (108–115 and 119) have distinct
+complete filenames in the prior integration; none is overwritten/dropped or
+renamed solely for this task. pgTAP discovers the complete filenames.
+
+The rollback-only regression first failed **15 of 26** meaningful assertions:
+suspended actors could reserve new budget/batches and issue/resolve/cache results
+in all three domains. The same 26 assertions pass after forward migration
+`20261008145225_modint_location_account_access.sql`. Its sole SQL responsibility
+is to take the verified/stored actor's existing moderation barrier, assert current
+canonical account activity, then take the existing item locks. Stored batch actors
+are rechecked for issue; no service-role `auth.uid()` substitute is used. Final
+expanded SQL adds hide/private-read preservation: **41 new + 72 MAP01 assertions**
+pass. Two fixture setup issues (missing publication capacity and Tavolo schedule)
+were corrected without changing production rules or weakening assertions.
+
+The real-auth/service verifier passes **162 checks** across active Creator/Co-creator/Resource-owner
+and pre-existing suspended sessions, protected read/write and expected-actor
+failure, unchanged service grants, old pending/issued/cached batches and **18
+exact `pg_blocking_pids` winner edges**. Persisted accounting is asserted for
+both winner orders: already-started work remains honestly metered; suspension-
+first emits no new budget/batch/receipt. It never promises recall of in-flight
+network requests. Both kill switches remain off after fixtures; no Geoapify key,
+real provider call, hosted database or shared demo operation is used.
+
+Edge's actual REST adapter shares the tested finite SQLSTATE mapping: canonical
+PT403 yields reasonless `403 {"status":"unauthorized"}` without reason, staff note
+or raw diagnostics. Flutter's existing gateway rejects that envelope/SDK failure
+and late search/resolve after actor replacement. Production registration remains
+disabled; MAP02 actor/form-generation and same-actor entitlement cancellation
+remain activation prerequisites, not a claim of newly wired UI.
+
+HELP01's signed-out Help, review-before-mail handoff, memory-only draft, truthful
+launcher outcomes, approved contact and typed tutorial replay are preserved.
+The existing global gate already handles direct Help/tutorial URLs, Back/Welcome,
+same-actor suspension/failure and late clipboard/mail callbacks. **No additional
+production Help/Auth/router change is required.** Focused Mobile tests initially passed 118;
+a final late-resolve gateway regression is included in complete Mobile validation.
+Existing EN/IT narrow/large-text and Finish/Skip/Back/no-private-read assertions
+remain intact. No support email is handed off or sent; verifier OTP mail is confined
+to the owned local Mailpit. The exact corrected `noticesRestrictionEffect`
+strings are unchanged, and the existing 46-pair copy packet remains verbatim.
+
+Local complete Mobile/Web/Site/Database and final-source hosted CI results,
+tested/published source-equivalence and target-main disposition are recorded on
+completion below and in the PR evidence. The first Web attempt hit an admin-route
+import timeout and consequent late mock count; its failure is retained. The second
+attempt passed 452 tests but failed to start the return-destination worker, so it
+is not a pass either. The repository already uses one worker; neither retry
+changes tests, expectations, worker configuration or timeouts. Web is rerun alone
+after the other complete checks to avoid simultaneous validation load.
+No old CI or native capture is claimed as evidence for this new integration.
+
+Complete local `check:db` passes: replay, populated conversation/MSG02 upgrade
+proofs, lint/security advisors, **130 SQL files / 4,017 assertions**, all real-auth/
+concurrency verifiers, demo compatibility, **238-signature audit** and regenerated
+type drift. `check:site` passes UI (34) and waitlist (19) tests, lint, typecheck,
+build and Workers deployment **dry-run only**. The task backend was stopped with
+normal backup retained; canonical config was restored byte-for-byte. Its final
+location config was disabled with unchanged 1000/day global, 80/day actor and
+10/minute actor budgets. Shared backends/emulator/build processes were not stopped.
+Complete local Mobile generation/formatting/analysis and tests pass: **1,879 tests**,
+with two unchanged opt-in `PI02_LOCAL_SMOKE` / `PI04_LOCAL_REHEARSAL` skips. The
+full run includes the final late-resolve gateway regression and all merged Help,
+tutorial, global status, EN/IT and narrow/large-text tests. No skip was added here.
+The isolated standard `check:web` passes **78 tooling + 456 Web tests** (one
+unchanged opt-in skip), lint, typecheck and Next production build. Both earlier
+failed attempts above remain separate; no expectations/timeouts were changed.
+
+Before publication, main advanced to **`4f158f323ebdfacbc9e86b66072ac91c80118ddd`**
+(Play Store assets #175). All 24 changed paths are confined to
+`docs/play-store-assets/` and its archived plan. There is no diff in `apps/`,
+`scripts/`, `supabase/`, `.github/`, or root package manifests/lockfile. The
+final documentation-only publication will include this ancestor; the actual CI
+checkout and unchanged validation-source trees will be checked rather than
+assuming the first pin is still target main. No asset export/demo script is run
+and no Play upload is performed by this continuation.
+
+The completed Android/browser campaigns below keep their tested-source boundaries.
+Location production wiring is still disabled, and Help changed behavior is
+covered with injected real-router widgets, so no full native/browser/OTP campaign,
+new moderation screenshots or APK build is repeated. Founder wording/presentation
+approval remains the next decision after technical integration validation.
+Dependency/Realtime/device/accessibility/hosting/policy dispositions below are
+unchanged. Existing emulator/build processes are left running as requested.
+PR #154 stays draft/unmerged; no predecessor closure, readiness transition,
+deployment, activation, billing/DNS action or dependency upgrade is authorized.
+
+### Historical completed source records
 
 ### Final restriction-copy correction on PR #154 (October 8)
 

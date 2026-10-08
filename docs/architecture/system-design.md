@@ -139,6 +139,13 @@ Complete-profile creators manage proposals only through expected-identity-bound 
 
 `private.audit_events` stores append-oriented operational and security history, not product analytics. `private.outbox_events` stores transaction-local handoff records for later asynchronous work; it is not itself a queue or delivery implementation. Both remain outside the Data API with no direct client grants. Future domain operations can write them within the same transaction, while queue consumption and delivery remain owned by plan 06.
 
+MAP01 reuses nullable public-area/protected-exact geography and adds normalized
+OSM-backed Geoapify selected metadata with source attribution. New versioned
+RPCs accept only actor/item/revision-bound server receipts and enforce existing
+structural edits and meeting reads. Legacy public signatures remain unchanged;
+exact-only selections never produce a public area. The provider remains
+disabled. [Location contract and exposure matrix](../development/map01-geoapify-location.md).
+
 ### Recurring activity domain
 
 `recurring_activities` stores persistent creator-owned Tavoli separately from one-time proposals. Its explicit lifecycle is `draft`, `published`, `paused`, or `ended`; clock time never completes a series. Published Tavoli remain open-ended until paused or ended, paused series retain their content/history without active discovery occurrences, and ended series are terminal historical records.
@@ -149,11 +156,14 @@ Complete-profile creators manage proposals only through expected-identity-bound 
 
 Complete-profile creators use expected-identity-bound create/publish/resume operations; all owner mutations reject stale account-switch forms before changing data. Publication, schedule changes, pause, resume, and end record content-free audit/outbox metadata without implementing notification delivery. 04B2A provides the full Flutter Tavoli experience. 04B2B provides signed-out, read-only Next.js discovery through only the sanitized public list/detail operations; its list cursor preserves one caller-owned reference-time snapshot across pages.
 
+MAP01 applies the same nullable receipt foundation to Tavoli without merging
+their lifecycle/schedule domain into one-time proposals.
+
 ### Scambio-Dona listing domain
 
 `resource_listings` stores standalone owner-managed Scambio-Dona availability separately from Projects and participation. `donate` and `exchange` are discovery intents only: `exchange` does not define lending, barter, transfer, return, payment, reservation, contact, or handoff behavior. The stored lifecycle is `draft`, `published`, or terminal `closed`; closure means only that the listing is no longer publicly available.
 
-Drafts may be incomplete and remain private. Publication requires a bounded plain-text title and description plus country, locality, and a public rough-location label. There is no exact address, point, contact field, inline media field, resource taxonomy, quantity, price, Project foreign key, requester, or transaction state; the one optional cover is separate canonical metadata. An editable published listing must remain publishable atomically, and changing its mode changes only its discovery bucket.
+Drafts may be incomplete and remain private. Publication requires a bounded plain-text title and description plus country, locality, and a public rough-location label. MAP01 adds nullable owner-selected public geocoding metadata and a public point; there is no private pickup-address boundary. The one optional cover is separate canonical metadata. An editable published listing must remain publishable atomically, and changing its mode changes only its discovery bucket.
 
 Complete-profile owners use expected-identity-bound create and publish operations, while authenticated owners use the same identity boundary for update, close, and owner history. The table has RLS but no client policies or direct grants. Anonymous and authenticated clients use narrow list/detail functions; list discovery is newest-first paired keyset pagination with optional mode, case-insensitive locality equality, and literal case-insensitive title/description substring filters. Detail returns an owner display name only when the existing profile visibility row is public. Publish and close write identifier-only audit/outbox state for later consumers without projecting notifications.
 
@@ -483,7 +493,7 @@ Edge Functions and background workers remain valid implementation choices when t
 | Messages                | Authenticated discriminated Project/Resource Requests plus the existing Project-only Chats tab                   | Canonical request domains; complete three-part cursor; Resource chats remain 04C4C3B                           |
 | Project chat            | Structural anchor, immutable message history, authorized list/send APIs, and private Realtime hints              | Creator plus current/former participants under canonical membership-time rules                                 |
 | Notifications           | Controlled categories/preferences, recipient in-app records, private installations, and recipient push jobs      | Recipient, per-consumer source event receipt, optional project/request/membership                              |
-| Templates               | Automatic source-linked reusable projection from Completed one-time Proposals                                    | Immutable source/Creator identity, content token, live attribution and private removal state                    |
+| Templates               | Automatic source-linked reusable projection from Completed one-time Proposals                                    | Immutable source/Creator identity, content token, live attribution and private removal state                   |
 | Community statistics    | Aggregated views over canonical activity and participation                                                       | Proposal type, location, participation, time                                                                   |
 | Moderation              | Reports, blocks, content status, actions, internal notes, appeals if introduced                                  | Users, proposals, messages, media, administrators                                                              |
 | Audit/operations        | Security-relevant and administrative action history                                                              | Actor, target, action, timestamps, metadata                                                                    |
@@ -504,7 +514,7 @@ Edge Functions and background workers remain valid implementation choices when t
 | Messages                    | Authenticated discriminated Project/Resource Requests plus the existing Project-only Chats tab                   | Canonical request domains; complete three-part cursor; Resource chats remain 04C4C3B                           |
 | Project chat                | Structural anchor, immutable message history, authorized list/send APIs, and private Realtime hints              | Owner/active delegates plus current/former participants under canonical membership-time rules                  |
 | Notifications               | Controlled categories/preferences, recipient in-app records, private installations, and recipient push jobs      | Recipient, per-consumer source event receipt, optional project/request/membership                              |
-| Templates                   | Automatic source-linked reusable projection from Completed one-time Proposals                                    | Immutable source/Creator identity, content token, live attribution and private removal state                    |
+| Templates                   | Automatic source-linked reusable projection from Completed one-time Proposals                                    | Immutable source/Creator identity, content token, live attribution and private removal state                   |
 | Community statistics        | Aggregated views over canonical activity and participation                                                       | Proposal type, location, participation, time                                                                   |
 | Moderation                  | Reports, blocks, content status, actions, internal notes, appeals if introduced                                  | Users, proposals, messages, media, administrators                                                              |
 | Audit/operations            | Security-relevant and administrative action history                                                              | Actor, target, action, timestamps, metadata                                                                    |

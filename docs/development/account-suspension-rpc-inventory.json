@@ -123,6 +123,15 @@
     ]
   },
   {
+    "signature": "apply_item_location_v1(uuid,text,uuid,bigint,uuid,text,uuid,text,uuid)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.apply_item_location_v1",
+      "private.require_resource_listing_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
     "signature": "apply_moderation_consequence(uuid,uuid,text,text,text)",
     "classification": "DENY_WHILE_SUSPENDED",
     "gate": [
@@ -450,6 +459,15 @@
     "gate": [
       "public.end_recurring_activity",
       "private.require_expected_recurring_activity_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "get_authorized_item_location_v1(uuid,text,uuid)",
+    "classification": "DENY_WHILE_SUSPENDED",
+    "gate": [
+      "public.get_authorized_item_location_v1",
+      "private.require_resource_listing_identity",
       "private.assert_profile_account_active"
     ]
   },
@@ -795,6 +813,11 @@
     ]
   },
   {
+    "signature": "get_public_item_location_v1(text,uuid)",
+    "classification": "PUBLIC/ANONYMOUS_DATA",
+    "gate": null
+  },
+  {
     "signature": "get_public_profile(uuid)",
     "classification": "PUBLIC/ANONYMOUS_DATA",
     "gate": null
@@ -839,6 +862,15 @@
     "gate": [
       "public.get_resource_listing_request",
       "private.require_resource_listing_request_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "issue_location_selections_v1(uuid,jsonb)",
+    "classification": "SERVICE/WORKER_ONLY",
+    "gate": [
+      "public.issue_location_selections_v1",
+      "private.lock_location_item",
       "private.assert_profile_account_active"
     ]
   },
@@ -1685,6 +1717,24 @@
       "public.request_to_join_project",
       "private.require_complete_participation_profile",
       "private.require_participation_identity",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "reserve_location_search_v1(uuid,text,uuid,bigint,text,uuid,text)",
+    "classification": "SERVICE/WORKER_ONLY",
+    "gate": [
+      "public.reserve_location_search_v1",
+      "private.lock_location_item",
+      "private.assert_profile_account_active"
+    ]
+  },
+  {
+    "signature": "resolve_location_selection_v1(uuid,text,uuid,bigint,text,uuid,uuid)",
+    "classification": "SERVICE/WORKER_ONLY",
+    "gate": [
+      "public.resolve_location_selection_v1",
+      "private.lock_location_item",
       "private.assert_profile_account_active"
     ]
   },

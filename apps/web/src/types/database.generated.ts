@@ -1701,6 +1701,7 @@ export type Database = {
           exact_location_visibility: string
           exact_meeting_text: string | null
           proposal_id: string
+          selected_exact_place: Json | null
           updated_at: string
         }
         Insert: {
@@ -1708,6 +1709,7 @@ export type Database = {
           exact_location_visibility?: string
           exact_meeting_text?: string | null
           proposal_id: string
+          selected_exact_place?: Json | null
           updated_at?: string
         }
         Update: {
@@ -1715,6 +1717,7 @@ export type Database = {
           exact_location_visibility?: string
           exact_meeting_text?: string | null
           proposal_id?: string
+          selected_exact_place?: Json | null
           updated_at?: string
         }
         Relationships: [
@@ -1777,8 +1780,10 @@ export type Database = {
           id: string
           lifecycle_state: string
           locality: string | null
+          location_revision: number
           public_location_label: string | null
           published_at: string | null
+          selected_public_place: Json | null
           starts_at: string | null
           summary: string | null
           title: string | null
@@ -1797,8 +1802,10 @@ export type Database = {
           id?: string
           lifecycle_state?: string
           locality?: string | null
+          location_revision?: number
           public_location_label?: string | null
           published_at?: string | null
+          selected_public_place?: Json | null
           starts_at?: string | null
           summary?: string | null
           title?: string | null
@@ -1817,8 +1824,10 @@ export type Database = {
           id?: string
           lifecycle_state?: string
           locality?: string | null
+          location_revision?: number
           public_location_label?: string | null
           published_at?: string | null
+          selected_public_place?: Json | null
           starts_at?: string | null
           summary?: string | null
           title?: string | null
@@ -1846,10 +1855,12 @@ export type Database = {
           id: string
           lifecycle_state: string
           locality: string | null
+          location_revision: number
           paused_at: string | null
           public_location_label: string | null
           published_at: string | null
           resumed_at: string | null
+          selected_public_place: Json | null
           summary: string | null
           title: string | null
           topic: string | null
@@ -1866,10 +1877,12 @@ export type Database = {
           id?: string
           lifecycle_state?: string
           locality?: string | null
+          location_revision?: number
           paused_at?: string | null
           public_location_label?: string | null
           published_at?: string | null
           resumed_at?: string | null
+          selected_public_place?: Json | null
           summary?: string | null
           title?: string | null
           topic?: string | null
@@ -1886,10 +1899,12 @@ export type Database = {
           id?: string
           lifecycle_state?: string
           locality?: string | null
+          location_revision?: number
           paused_at?: string | null
           public_location_label?: string | null
           published_at?: string | null
           resumed_at?: string | null
+          selected_public_place?: Json | null
           summary?: string | null
           title?: string | null
           topic?: string | null
@@ -1911,6 +1926,7 @@ export type Database = {
           exact_location_visibility: string
           exact_meeting_text: string | null
           recurring_activity_id: string
+          selected_exact_place: Json | null
           updated_at: string
         }
         Insert: {
@@ -1918,6 +1934,7 @@ export type Database = {
           exact_location_visibility?: string
           exact_meeting_text?: string | null
           recurring_activity_id: string
+          selected_exact_place?: Json | null
           updated_at?: string
         }
         Update: {
@@ -1925,6 +1942,7 @@ export type Database = {
           exact_location_visibility?: string
           exact_meeting_text?: string | null
           recurring_activity_id?: string
+          selected_exact_place?: Json | null
           updated_at?: string
         }
         Relationships: [
@@ -2287,9 +2305,12 @@ export type Database = {
           lifecycle_state: string
           listing_mode: string
           locality: string | null
+          location_revision: number
           owner_profile_id: string
+          public_location: unknown
           public_location_label: string | null
           published_at: string | null
+          selected_public_place: Json | null
           title: string | null
           updated_at: string
         }
@@ -2303,9 +2324,12 @@ export type Database = {
           lifecycle_state?: string
           listing_mode: string
           locality?: string | null
+          location_revision?: number
           owner_profile_id: string
+          public_location?: unknown
           public_location_label?: string | null
           published_at?: string | null
+          selected_public_place?: Json | null
           title?: string | null
           updated_at?: string
         }
@@ -2319,9 +2343,12 @@ export type Database = {
           lifecycle_state?: string
           listing_mode?: string
           locality?: string | null
+          location_revision?: number
           owner_profile_id?: string
+          public_location?: unknown
           public_location_label?: string | null
           published_at?: string | null
+          selected_public_place?: Json | null
           title?: string | null
           updated_at?: string
         }
@@ -2608,6 +2635,20 @@ export type Database = {
           p_user_reason: string
         }
         Returns: string
+      }
+      apply_item_location_v1: {
+        Args: {
+          p_exact_action: string
+          p_exact_receipt: string
+          p_expected_profile_id: string
+          p_expected_revision: number
+          p_item: string
+          p_kind: string
+          p_public_action: string
+          p_public_receipt: string
+          p_request_id: string
+        }
+        Returns: number
       }
       apply_moderation_consequence: {
         Args: {
@@ -2974,6 +3015,10 @@ export type Database = {
           p_recurring_activity_id: string
         }
         Returns: string
+      }
+      get_authorized_item_location_v1: {
+        Args: { p_expected_profile_id: string; p_item: string; p_kind: string }
+        Returns: Json
       }
       get_current_project_participant_invitation: {
         Args: { p_expected_profile_id: string; p_project_id: string }
@@ -3518,6 +3563,10 @@ export type Database = {
           project_kind: string
         }[]
       }
+      get_public_item_location_v1: {
+        Args: { p_item: string; p_kind: string }
+        Returns: Json
+      }
       get_public_profile: {
         Args: { p_profile_id: string }
         Returns: {
@@ -3666,6 +3715,10 @@ export type Database = {
           resolved_by_profile_id: string
           status: string
         }[]
+      }
+      issue_location_selections_v1: {
+        Args: { p_batch: string; p_places: Json }
+        Returns: Json
       }
       leave_project: {
         Args: {
@@ -5187,6 +5240,30 @@ export type Database = {
           p_skill_ids?: string[]
         }
         Returns: string
+      }
+      reserve_location_search_v1: {
+        Args: {
+          p_actor: string
+          p_item: string
+          p_kind: string
+          p_query_hash: string
+          p_revision: number
+          p_session: string
+          p_slot: string
+        }
+        Returns: Json
+      }
+      resolve_location_selection_v1: {
+        Args: {
+          p_actor: string
+          p_item: string
+          p_kind: string
+          p_receipt: string
+          p_revision: number
+          p_session: string
+          p_slot: string
+        }
+        Returns: Json
       }
       resume_recurring_activity: {
         Args: {

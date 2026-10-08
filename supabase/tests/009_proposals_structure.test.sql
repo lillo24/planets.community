@@ -31,7 +31,9 @@ select columns_are(
     'created_at',
     'updated_at',
     'published_at',
-    'cancelled_at'
+    'cancelled_at',
+    'selected_public_place',
+    'location_revision'
   ],
   'proposal rows contain lifecycle, content, schedule, and rough location only'
 );
@@ -43,7 +45,8 @@ select columns_are(
     'exact_meeting_text',
     'exact_location_visibility',
     'exact_location',
-    'updated_at'
+    'updated_at',
+    'selected_exact_place'
   ],
   'exact meeting information is physically separate from rough location'
 );

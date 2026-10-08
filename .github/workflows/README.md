@@ -53,3 +53,16 @@ rejection events existed for the new unrestricted regression. The workflow now
 calls the existing real producer before that check; it does not manufacture
 events or weaken the assertion. Its short concurrency check is necessary to
 reproduce the TW05 defect on CI.
+
+# MAP01 location validation
+
+Database validation includes the authenticated location receipt/concurrency
+verifier after pgTAP. It injects synthetic provider-shaped geocoding data and
+makes no Geoapify requests. Tooling/Web validation exercises the same Edge
+adapter's pure modules with fake HTTP/Auth/metering dependencies. The workflow
+addition preserves required status aggregation and existing path boundaries.
+
+MODINT01 expands that existing command to run the canonical service-actor
+suspension verifier after MAP01, including exact-blocker races. Both histories'
+moderation/integration verifiers and the suspension inventory audit are retained;
+this continuation adds no workflow trigger or duplicate validation campaign.

@@ -28,6 +28,22 @@ export function accountGatePath(functions, start, visited = new Set()) {
 }
 
 export function classifyAccountRpc(functions, entry) {
+  // Reviewed MAP01 service entry points carry a verified/stored actor. Their
+  // service-only grants do not exempt that actor from the account boundary.
+  if (
+    [
+      "reserve_location_search_v1",
+      "issue_location_selections_v1",
+      "resolve_location_selection_v1",
+    ].includes(entry.name)
+  ) {
+    const gate = accountGatePath(functions, entry);
+    if (!gate)
+      throw new Error(`Service actor account gate missing: ${entry.signature}`);
+    if (entry.auth || entry.anon)
+      throw new Error(`Location service grants widened: ${entry.signature}`);
+    return { classification: "SERVICE/WORKER_ONLY", gate };
+  }
   if (!entry.auth) return { classification: "SERVICE/WORKER_ONLY", gate: null };
   if (entry.name === "get_own_account_suspension_status") {
     return { classification: "ALLOW_WHILE_SUSPENDED", gate: null };

@@ -22,6 +22,11 @@ domain verification and change-scoped validation tooling.
 - `verify-local-similar-active-proposals.mjs` owns SIM01 OTP/API, ranking,
   capacity/blocking/media/privacy and read-only assertions. Its rollback-only
   `fixtures/sim01-query-plan.sql` supplies reproducible EXPLAIN work.
+- `verify-local-location-suspension.mjs` composes MAP01 service receipts with
+  MODINT01 canonical actor status. It checks real pre-existing sessions, all item
+  scopes, service grants, identity mismatch and 18 observed winner-order races
+  with persisted accounting. `location:verify:local` runs MAP01 first, then this
+  verifier, after pgTAP in full local/Database CI. Fake provider data only.
 - `process-local-*.mjs` exercise local projections/workers.
 - `verify-local-message-unread.mjs` owns MSG02 authenticated count/read,
   delayed-commit, private invalidation and activity/push separation proofs.

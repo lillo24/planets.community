@@ -25,7 +25,10 @@ select columns_are(
     'created_at',
     'updated_at',
     'published_at',
-    'closed_at'
+    'closed_at',
+    'selected_public_place',
+    'location_revision',
+    'public_location'
   ],
   'listing rows contain only owner, discovery intent, lifecycle, content, and rough location'
 );

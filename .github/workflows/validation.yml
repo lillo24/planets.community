@@ -168,6 +168,11 @@ jobs:
       - name: Run database security tests
         run: npm run db:test
 
+      - name: Verify authenticated MAP01 receipts and location concurrency
+        env:
+          MAILPIT_URL: http://127.0.0.1:54324
+        run: npm run location:verify:local
+
       - name: Verify push delivery worker protocol
         run: npm run push:delivery:verify:local
 
