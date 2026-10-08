@@ -36,6 +36,9 @@ zoom=10, without markers/directions. Exact points use /maps/search/ with api=1
 and query=lat,lon. Instructions, JWTs, labels and secrets are excluded. Universal
 HTTPS URLs use external application launch with platform/browser fallback and
 localized failure feedback.
+The fresh tap also replaces the panel projection and cancels older in-flight
+reads/images when revision or public/protected audience changed. A late image
+cannot restore exact access after the tap observed a public fallback or denial.
 [Google Maps URL contract](https://developers.google.com/maps/documentation/urls/get-started).
 
 ## Client ownership and invalidation

@@ -213,11 +213,13 @@ class _LocationPreviewPanelState extends ConsumerState<LocationPreviewPanel>
       if (value != null && !_safe(value)) throw const PreviewUnavailable(true);
       _preview = value;
       if (value == null) {
-        _eraseImage();
+        _revoke();
         _failed = true;
         return;
       }
-      if (_imageKey != value.imageKey || _imageRevision != value.revision) {
+      if (_imageKey != value.imageKey ||
+          _imageRevision != value.revision ||
+          _imageProtected != value.isProtected) {
         _eraseImage();
       }
       final renderer = ref.read(staticPreviewGatewayProvider);
@@ -259,8 +261,7 @@ class _LocationPreviewPanelState extends ConsumerState<LocationPreviewPanel>
       }
     } catch (_) {
       if (!_current(epoch, actor)) return;
-      _eraseImage();
-      _preview = null;
+      _revoke();
       _failed = true;
     } finally {
       if (_current(epoch, actor)) setState(() => _loading = false);
@@ -269,7 +270,8 @@ class _LocationPreviewPanelState extends ConsumerState<LocationPreviewPanel>
 
   Future<void> _open() async {
     if (_opening || !_foreground || !_visible) return;
-    final epoch = _epoch, actor = _actor;
+    var epoch = _epoch;
+    final actor = _actor;
     setState(() => _opening = true);
     try {
       final current = await ref
@@ -283,6 +285,18 @@ class _LocationPreviewPanelState extends ConsumerState<LocationPreviewPanel>
       if (current == null || !_safe(current)) {
         throw const PreviewUnavailable(true);
       }
+      // A fresh tap can observe departure/visibility changes before the lease.
+      // Cancel older reads/renders so they cannot restore the prior projection.
+      if (_preview?.revision != current.revision ||
+          _preview?.imageKey != current.imageKey ||
+          _preview?.isProtected != current.isProtected) {
+        _revoke();
+        epoch = _epoch;
+      }
+      setState(() {
+        _preview = current;
+        _opening = true;
+      });
       final url = googleMapsPreviewUrl(current, current.legacy);
       if (url == null ||
           !await ref.read(previewMapsLauncherProvider).open(url)) {
@@ -290,8 +304,8 @@ class _LocationPreviewPanelState extends ConsumerState<LocationPreviewPanel>
       }
     } catch (_) {
       if (mounted && _current(epoch, actor)) {
-        _eraseImage();
-        _preview = null;
+        _revoke();
+        epoch = _epoch;
         _failed = true;
         ScaffoldMessenger.maybeOf(context)?.showSnackBar(
           SnackBar(

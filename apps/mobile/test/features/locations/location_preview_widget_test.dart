@@ -244,6 +244,41 @@ void main() {
       },
     );
   }
+  testWidgets(
+    'fresh public tap rejects a late image from revoked exact access',
+    (t) async {
+      final g = FakePreviewGateway()
+        ..protected = true
+        ..exact = true;
+      final pending = Completer<Uint8List>();
+      final r = FakeStaticPreviewGateway()..pending = () => pending.future;
+      final m = FakePreviewMapsLauncher();
+      final c = setup(g, r, m);
+      addTearDown(c.dispose);
+      c
+          .read(authSessionProvider.notifier)
+          .markProfileReady(const AuthIdentity(id: 'Alice'));
+      await t.pumpWidget(app(c, ListView(children: [panel(detail: true)])));
+      await t.pump();
+      await t.pump(const Duration(milliseconds: 30));
+      expect(r.calls, 1);
+      // Canonical entitlement changed, but the rendered account stayed Alice.
+      g
+        ..protected = false
+        ..exact = false;
+      await t.tap(find.byKey(const Key('location-preview-item')));
+      await settled(t);
+      expect(m.urls.single.queryParameters['map_action'], 'map');
+      final late = fakePreviewPng();
+      pending.complete(late);
+      await settled(t);
+      expect(late.every((value) => value == 0), true);
+      expect(find.byType(RawImage), findsNothing);
+      expect(find.text('SECRET synthetic venue'), findsNothing);
+      expect(find.text('Synthetic Trento area'), findsOneWidget);
+      await t.pumpWidget(const SizedBox());
+    },
+  );
   testWidgets('fresh denied tap launches nothing and reports failure', (
     t,
   ) async {
