@@ -40,6 +40,7 @@ void main() {
     await tester.tap(action);
     await tester.pumpAndSettle();
     expect(app.read(authSessionProvider).isAuthenticated, isFalse);
+    expect(_path(app), '/welcome');
   });
 
   for (final complete in [true, false]) {
@@ -66,7 +67,7 @@ void main() {
         await tester.pumpAndSettle();
         expect(auth.signOutCount, 1);
         expect(app.read(authSessionProvider).isAuthenticated, isFalse);
-        expect(_path(app), '/settings');
+        expect(_path(app), '/welcome');
         expect(action, findsNothing);
       },
     );
@@ -109,6 +110,7 @@ void main() {
       await tester.pumpAndSettle();
       expect(auth.signOutCount, 2);
       expect(app.read(authSessionProvider).isAuthenticated, isFalse);
+      expect(_path(app), '/welcome');
     },
   );
 
@@ -342,6 +344,10 @@ Future<ProviderContainer> _pump(
     ),
   );
   await tester.pumpAndSettle();
+  if (find.byKey(const Key('welcome-explore')).evaluate().isNotEmpty) {
+    await tester.tap(find.byKey(const Key('welcome-explore')));
+    await tester.pumpAndSettle();
+  }
   return ProviderScope.containerOf(tester.element(find.byType(PlanetsApp)));
 }
 

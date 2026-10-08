@@ -8,7 +8,7 @@ import 'package:planets_mobile/features/auth/data/auth_gateway.dart';
 import 'support/fake_auth.dart';
 
 void main() {
-  testWidgets('renders the localized neutral foundation at the root route', (
+  testWidgets('Welcome explores the localized public foundation', (
     tester,
   ) async {
     final auth = FakeAuthGateway();
@@ -26,9 +26,14 @@ void main() {
     );
     await tester.pumpAndSettle();
 
+    expect(find.text('Explore App'), findsOneWidget);
+    expect(find.text('Log in'), findsOneWidget);
+    await tester.tap(find.byKey(const Key('welcome-explore')));
+    await tester.pumpAndSettle();
+
     expect(find.text('PLANETS'), findsOneWidget);
-    expect(find.text('Mobile foundation ready'), findsOneWidget);
-    expect(find.text('Sign in'), findsOneWidget);
+    expect(find.byKey(const Key('home-planets-hero')), findsOneWidget);
+    expect(find.text('Sign in'), findsNothing);
     expect(find.byType(MaterialApp), findsOneWidget);
   });
 }

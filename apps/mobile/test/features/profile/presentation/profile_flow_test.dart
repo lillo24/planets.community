@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:ui' show SemanticsAction;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -6,6 +7,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:planets_mobile/app/planets_app.dart';
 import 'package:planets_mobile/app/router/app_router.dart';
 import 'package:planets_mobile/core/config/app_config.dart';
+import 'package:planets_mobile/core/theme/app_tokens.dart';
 import 'package:planets_mobile/core/widgets/error_state.dart';
 import 'package:planets_mobile/core/widgets/loading_state.dart';
 import 'package:planets_mobile/features/auth/data/auth_gateway.dart';
@@ -14,12 +16,224 @@ import 'package:planets_mobile/features/auth/presentation/request_code_screen.da
 import 'package:planets_mobile/features/profile/data/profile_gateway.dart';
 import 'package:planets_mobile/features/profile/domain/profile_models.dart';
 import 'package:planets_mobile/features/profile_photo/data/profile_photo_gateway.dart';
+import 'package:planets_mobile/l10n/generated/app_localizations.dart';
 
 import '../../../support/fake_auth.dart';
 import '../../../support/fake_profile.dart';
 import '../../../support/fake_profile_photo.dart';
 
 void main() {
+  testWidgets(
+    'Profile edit input and competence picker stay separated at 360px and 2x text',
+    (tester) async {
+      tester.view.physicalSize = const Size(360, 900);
+      tester.view.devicePixelRatio = 1;
+      tester.platformDispatcher.textScaleFactorTestValue = 2;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+      final auth = FakeAuthGateway(
+        snapshot: const AuthSnapshot(identity: AuthIdentity(id: 'user-1')),
+      );
+      addTearDown(auth.close);
+      final app = await _pumpApp(
+        tester,
+        auth,
+        FakeProfileAnchorGateway()..readiness = ProfileAnchorReadiness.complete,
+        FakeProfileGateway(),
+      );
+      app.read(appRouterProvider).go('/profile/edit');
+      await tester.pumpAndSettle();
+      final picker = find.byKey(const Key('profile-skills-trigger'));
+      await tester.ensureVisible(picker);
+      await tester.pumpAndSettle();
+      final bio = tester.getRect(find.byKey(const Key('profile-bio-field')));
+      expect(
+        tester.getRect(picker).top - bio.bottom,
+        greaterThanOrEqualTo(AppSpacing.large),
+      );
+      expect(tester.getRect(picker).right, lessThanOrEqualTo(360));
+      expect(tester.takeException(), isNull);
+    },
+  );
+  testWidgets(
+    'visibility stays in Edit Profile and the Settings privacy entry',
+    (tester) async {
+      final auth = FakeAuthGateway(
+        snapshot: const AuthSnapshot(identity: AuthIdentity(id: 'user-1')),
+      );
+      addTearDown(auth.close);
+      final anchor = FakeProfileAnchorGateway()
+        ..readiness = ProfileAnchorReadiness.complete;
+      final profile = FakeProfileGateway(data: _competenceLabelFixture());
+      final app = await _pumpApp(tester, auth, anchor, profile);
+      final router = app.read(appRouterProvider);
+      router.go('/profile');
+      await tester.pumpAndSettle();
+      final l10n = AppLocalizations.of(
+        tester.element(find.byKey(const Key('profile-display-name'))),
+      );
+      expect(find.text(l10n.profileVisibilityTitle), findsNothing);
+      expect(find.text(l10n.profileAudiencePublic), findsNothing);
+      expect(find.text(l10n.profileAudiencePrivate), findsNothing);
+      final collection = find.byKey(const Key('profile-competence-labels'));
+      final edit = find.byKey(const Key('profile-edit-button'));
+      expect(
+        tester.getTopLeft(edit).dy - tester.getBottomLeft(collection).dy,
+        greaterThanOrEqualTo(AppSpacing.large),
+      );
+      await _tapVisible(tester, edit);
+      expect(find.text(l10n.profileVisibilityTitle), findsOneWidget);
+      for (final field in ProfileFieldKey.values) {
+        expect(
+          find.byKey(Key('profile-visibility-${field.wireValue}')),
+          findsOneWidget,
+        );
+      }
+      router.go('/settings');
+      await tester.pumpAndSettle();
+      final privacy = find.byKey(const Key('settings-profile-privacy-row'));
+      await tester.scrollUntilVisible(
+        privacy,
+        250,
+        scrollable: find.byType(Scrollable).hitTestable().first,
+      );
+      await tester.tap(privacy);
+      await tester.pumpAndSettle();
+      expect(router.routeInformationProvider.value.uri.path, '/profile/edit');
+      expect(
+        router.routeInformationProvider.value.uri.queryParameters['returnTo'],
+        '/settings',
+      );
+      expect(find.text(l10n.profileVisibilityTitle), findsOneWidget);
+      for (final field in ProfileFieldKey.values) {
+        expect(
+          tester
+              .widget<SegmentedButton<ProfileAudience>>(
+                find.byKey(Key('profile-visibility-${field.wireValue}')),
+              )
+              .selected,
+          {profile.data.profile.visibility[field]},
+        );
+      }
+      expect(profile.updateCount, 0);
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  for (final scale in [1.0, 2.4]) {
+    testWidgets(
+      'read-only competences are flat, ordered and inert at 320px/$scale',
+      (tester) async {
+        await tester.binding.setSurfaceSize(const Size(320, 1400));
+        addTearDown(() => tester.binding.setSurfaceSize(null));
+        tester.platformDispatcher.textScaleFactorTestValue = scale;
+        addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+        final auth = FakeAuthGateway(
+          snapshot: const AuthSnapshot(identity: AuthIdentity(id: 'user-1')),
+        );
+        addTearDown(auth.close);
+        final anchor = FakeProfileAnchorGateway()
+          ..readiness = ProfileAnchorReadiness.complete;
+        final profile = FakeProfileGateway(data: _competenceLabelFixture());
+        final app = await _pumpApp(tester, auth, anchor, profile);
+        app.read(appRouterProvider).go('/profile');
+        await tester.pumpAndSettle();
+        final semantics = tester.ensureSemantics();
+        try {
+          final collection = find.byKey(const Key('profile-competence-labels'));
+          expect(collection, findsOneWidget);
+          final labels = tester
+              .widgetList<Chip>(
+                find.descendant(of: collection, matching: find.byType(Chip)),
+              )
+              .toList();
+          expect(labels.map((chip) => (chip.label as Text).data).toList(), [
+            'Mural painting',
+            'Photography',
+            'Musician',
+          ]);
+          for (final category in profile.data.categories) {
+            expect(find.text(category.label), findsNothing);
+          }
+          expect(find.text('Unselected competence'), findsNothing);
+          expect(
+            find.descendant(
+              of: collection,
+              matching: find.byIcon(Icons.cancel),
+            ),
+            findsNothing,
+          );
+          expect(
+            find.descendant(of: collection, matching: find.byIcon(Icons.close)),
+            findsNothing,
+          );
+          final before = Set<String>.of(profile.data.profile.selectedSkillIds);
+          for (final chip in labels) {
+            final label = (chip.label as Text).data!;
+            expect(find.text(label), findsOneWidget);
+            expect(chip.onDeleted, isNull);
+            expect(chip.deleteIcon, isNull);
+            expect(chip.visualDensity, VisualDensity.compact);
+            final finder = find.byKey(chip.key!);
+            await tester.ensureVisible(finder);
+            await tester.pumpAndSettle();
+            final bounds = tester.getRect(finder);
+            final wrapBounds = tester.getRect(collection);
+            expect(bounds.left, greaterThanOrEqualTo(wrapBounds.left));
+            expect(bounds.right, lessThanOrEqualTo(wrapBounds.right));
+            final data = tester.getSemantics(finder).getSemanticsData();
+            expect(data.flagsCollection.isButton, isFalse);
+            expect(data.hasAction(SemanticsAction.tap), isFalse);
+            await tester.tap(finder);
+            await tester.pumpAndSettle();
+            expect(find.byType(BottomSheet), findsNothing);
+            expect(
+              app
+                  .read(appRouterProvider)
+                  .routeInformationProvider
+                  .value
+                  .uri
+                  .path,
+              '/profile',
+            );
+          }
+          expect(profile.updateCount, 0);
+          expect(profile.data.profile.selectedSkillIds, before);
+          expect(tester.takeException(), isNull);
+        } finally {
+          semantics.dispose();
+        }
+      },
+    );
+  }
+
+  testWidgets(
+    'read-only empty competences retain localized copy without an empty Wrap',
+    (tester) async {
+      final auth = FakeAuthGateway(
+        snapshot: const AuthSnapshot(identity: AuthIdentity(id: 'user-1')),
+      );
+      addTearDown(auth.close);
+      final anchor = FakeProfileAnchorGateway()
+        ..readiness = ProfileAnchorReadiness.complete;
+      final profile = FakeProfileGateway(
+        data: _competenceLabelFixture(selected: {}),
+      );
+      final app = await _pumpApp(tester, auth, anchor, profile);
+      app.read(appRouterProvider).go('/profile');
+      await tester.pumpAndSettle();
+      final l10n = AppLocalizations.of(
+        tester.element(find.byKey(const Key('profile-display-name'))),
+      );
+      expect(find.text(l10n.profileNoSkills), findsOneWidget);
+      expect(find.byKey(const Key('profile-competence-labels')), findsNothing);
+      expect(find.text('Music'), findsNothing);
+      expect(find.text('Art & Creativity'), findsNothing);
+      expect(profile.updateCount, 0);
+    },
+  );
+
   testWidgets('Profile idle and loading render loading without a fake error', (
     tester,
   ) async {
@@ -139,7 +353,7 @@ void main() {
     final profile = FakeProfileGateway();
     addTearDown(auth.close);
     await _pumpApp(tester, auth, anchor, profile);
-    await tester.tap(find.text('Complete profile'));
+    await tester.tap(find.byKey(const Key('nav-profile')));
     await tester.pumpAndSettle();
 
     final fill = find.byKey(const Key('profile-fill-sample'));
@@ -183,8 +397,8 @@ void main() {
     addTearDown(auth.close);
     await _pumpApp(tester, auth, anchor, profile);
 
-    expect(find.text('Complete profile'), findsOneWidget);
-    await tester.tap(find.text('Complete profile'));
+    expect(find.byKey(const Key('nav-profile')), findsOneWidget);
+    await tester.tap(find.byKey(const Key('nav-profile')));
     await tester.pumpAndSettle();
 
     expect(find.byType(CheckboxListTile), findsNothing);
@@ -258,7 +472,7 @@ void main() {
     final profile = FakeProfileGateway();
     addTearDown(auth.close);
     await _pumpApp(tester, auth, anchor, profile);
-    await tester.tap(find.text('Complete profile'));
+    await tester.tap(find.byKey(const Key('nav-profile')));
     await tester.pumpAndSettle();
 
     await tester.enterText(
@@ -290,7 +504,7 @@ void main() {
     final profile = FakeProfileGateway()..updateError = StateError(rawFailure);
     addTearDown(auth.close);
     await _pumpApp(tester, auth, anchor, profile);
-    await tester.tap(find.text('Complete profile'));
+    await tester.tap(find.byKey(const Key('nav-profile')));
     await tester.pumpAndSettle();
     await tester.enterText(
       find.byKey(const Key('profile-display-name-field')),
@@ -320,7 +534,7 @@ void main() {
     final profile = FakeProfileGateway(data: profileFixture(complete: true));
     addTearDown(auth.close);
     await _pumpApp(tester, auth, anchor, profile);
-    await tester.tap(find.text('View profile'));
+    await tester.tap(find.byKey(const Key('nav-profile')));
     await tester.pumpAndSettle();
     expect(find.text('Musician'), findsOneWidget);
 
@@ -358,7 +572,7 @@ void main() {
       );
     addTearDown(auth.close);
     await _pumpApp(tester, auth, anchor, profile);
-    await tester.tap(find.text('View profile'));
+    await tester.tap(find.byKey(const Key('nav-profile')));
     await tester.pumpAndSettle();
     expect(find.text('Casey'), findsOneWidget);
 
@@ -369,6 +583,48 @@ void main() {
     expect(find.text('Casey'), findsNothing);
     expect(profile.loadCount, 2);
   });
+}
+
+ProfileEditorData _competenceLabelFixture({Set<String>? selected}) {
+  final base = profileFixture(complete: true);
+  return ProfileEditorData(
+    profile: OwnProfile(
+      id: base.profile.id,
+      displayName: base.profile.displayName,
+      bio: base.profile.bio,
+      updatedAt: base.profile.updatedAt,
+      // Selection insertion order deliberately differs from catalog order.
+      selectedSkillIds:
+          selected ?? {'skill-musician', 'skill-photo', 'skill-mural'},
+      visibility: base.profile.visibility,
+    ),
+    categories: [
+      ProfileSkillCategory(
+        id: 'category-art',
+        slug: 'art-creativity',
+        label: 'Art & Creativity',
+        sortOrder: 1,
+        skills: [
+          base.categories.first.skills.first,
+          const ProfileSkill(
+            id: 'skill-photo',
+            categoryId: 'category-art',
+            slug: 'photography',
+            label: 'Photography',
+            sortOrder: 2,
+          ),
+          const ProfileSkill(
+            id: 'skill-other',
+            categoryId: 'category-art',
+            slug: 'other',
+            label: 'Unselected competence',
+            sortOrder: 3,
+          ),
+        ],
+      ),
+      base.categories.last,
+    ],
+  );
 }
 
 Future<ProviderContainer> _pumpApp(
@@ -401,6 +657,10 @@ Future<ProviderContainer> _pumpApp(
     ),
   );
   await tester.pumpAndSettle();
+  if (find.byKey(const Key('welcome-explore')).evaluate().isNotEmpty) {
+    await tester.tap(find.byKey(const Key('welcome-explore')));
+    await tester.pumpAndSettle();
+  }
   return ProviderScope.containerOf(tester.element(find.byType(PlanetsApp)));
 }
 

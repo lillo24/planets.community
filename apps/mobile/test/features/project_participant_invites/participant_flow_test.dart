@@ -57,7 +57,7 @@ void main() {
     ) async {
       final drafts = FakeProposalGateway();
       final h = await _pump(tester, '/link-unavailable', drafts: drafts);
-      h.router.push('/proposals/create');
+      h.router.push('/proposals/create/scratch');
       await tester.pumpAndSettle();
       await tester.enterText(
         find.byKey(const Key('proposal-title')),
@@ -85,7 +85,11 @@ void main() {
       tester,
     ) async {
       final drafts = FakeProposalGateway();
-      final h = await _pump(tester, '/proposals/create', drafts: drafts);
+      final h = await _pump(
+        tester,
+        '/proposals/create/scratch',
+        drafts: drafts,
+      );
       await tester.enterText(
         find.byKey(const Key('proposal-title')),
         'Saved departure',
@@ -107,13 +111,17 @@ void main() {
     (tester) async {
       final drafts = FakeProposalGateway()
         ..mutationError = StateError('save unavailable');
-      final h = await _pump(tester, '/proposals/create', drafts: drafts);
+      final h = await _pump(
+        tester,
+        '/proposals/create/scratch',
+        drafts: drafts,
+      );
       await tester.enterText(
         find.byKey(const Key('proposal-title')),
         'Recoverable',
       );
       await _deliver(tester, nativeInvite);
-      expect(h.router.state.uri.path, '/proposals/create');
+      expect(h.router.state.uri.path, '/proposals/create/scratch');
       expect(h.gateway.admissions, isEmpty);
       await tester.tap(find.text('Keep editing'));
       await tester.pumpAndSettle();
@@ -129,7 +137,11 @@ void main() {
     (tester) async {
       final pending = Completer<void>();
       final drafts = FakeProposalGateway()..mutationDelay = pending.future;
-      final h = await _pump(tester, '/proposals/create', drafts: drafts);
+      final h = await _pump(
+        tester,
+        '/proposals/create/scratch',
+        drafts: drafts,
+      );
       await tester.enterText(find.byKey(const Key('proposal-title')), 'Replay');
       await tester.binding.defaultBinaryMessenger.handlePlatformMessage(
         'flutter/navigation',
@@ -158,7 +170,11 @@ void main() {
     (tester) async {
       final pending = Completer<void>();
       final drafts = FakeProposalGateway()..mutationDelay = pending.future;
-      final h = await _pump(tester, '/proposals/create', drafts: drafts);
+      final h = await _pump(
+        tester,
+        '/proposals/create/scratch',
+        drafts: drafts,
+      );
       await tester.enterText(
         find.byKey(const Key('proposal-title')),
         'Old actor',

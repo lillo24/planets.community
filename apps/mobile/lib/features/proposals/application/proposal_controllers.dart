@@ -55,7 +55,8 @@ class PublicProposalsController extends Notifier<PublicProposalsState> {
       return;
     }
     final revision = ++_publicRevision;
-    final currentItems = reset ? const <ProposalSummary>[] : state.items;
+    final currentItems = state.items;
+    final appendedItems = reset ? const <ProposalSummary>[] : currentItems;
     final query = state.query;
     final locality = state.locality;
     final skillIds = state.selectedSkillIds;
@@ -113,7 +114,7 @@ class PublicProposalsController extends Notifier<PublicProposalsState> {
           _readyProfileId() == profileId;
       state = PublicProposalsState(
         phase: ProposalLoadPhase.ready,
-        items: List.unmodifiable([...currentItems, ...page]),
+        items: List.unmodifiable([...appendedItems, ...page]),
         requestedItems: acceptRequested
             ? List.unmodifiable(requested)
             : state.requestedItems,

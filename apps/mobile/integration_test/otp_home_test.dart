@@ -138,10 +138,12 @@ void main() {
             !container.read(authCommandProvider).isBusy,
         'complete A settles',
       );
+      router.go('/');
+      await tester.pumpAndSettle();
       await binding.takeScreenshot('authqa01-normal-home-en');
       expect(container.read(authCommandProvider).failure, isNull);
       expect(router.routerDelegate.state.uri.path, '/');
-      expect(find.text("You're signed in."), findsOneWidget);
+      expect(find.byKey(const Key('home-planets-hero')), findsOneWidget);
       expect(find.byKey(const Key('auth-safe-error')), findsNothing);
       final idA = app.auth.currentUser!.id;
       final profileA = await app
@@ -301,7 +303,7 @@ void main() {
       );
 
       // Profile deliberately becomes the signed-out example, not an Auth page.
-      // Navigate normally to Home's sign-in entry before the next account.
+      // Main now returns explicit logout to Welcome; use its normal login entry.
       router.go('/');
       await tester.pumpAndSettle();
       await _uiLogin(tester, emailNew, mailpit);
@@ -322,7 +324,9 @@ void main() {
           .eq('id', idNew)
           .single();
       expect(anchor['display_name'], isNull);
-      await tester.tap(find.text('Complete profile'));
+      router.go('/messages');
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('messages-context-action')));
       await _wait(
         tester,
         () => find
@@ -353,7 +357,7 @@ void main() {
       );
       router.go('/');
       await tester.pumpAndSettle();
-      expect(find.text("You're signed in."), findsOneWidget);
+      expect(find.byKey(const Key('home-planets-hero')), findsOneWidget);
       expect(find.byKey(const Key('auth-safe-error')), findsNothing);
       await _signOut(tester, router);
       await _wait(
@@ -492,7 +496,7 @@ void main() {
       );
       router.go('/');
       await tester.pumpAndSettle();
-      expect(find.text("You're signed in."), findsOneWidget);
+      expect(find.byKey(const Key('home-planets-hero')), findsOneWidget);
       expect(find.byKey(const Key('auth-safe-error')), findsNothing);
       debugPrint(
         'AUTHQA native suspension fail-closed and fresh restoration passed',
@@ -861,15 +865,30 @@ Future<void> _language(
 
 Future<void> _uiLogin(WidgetTester tester, String email, String mailpit) async {
   await tester.pumpAndSettle();
+  if (find.byKey(const Key('auth-email-field')).evaluate().isEmpty &&
+      find.byKey(const Key('welcome-login')).evaluate().isEmpty) {
+    // Home no longer contains an Auth card. Public Messages owns contextual
+    // login after exploring; it still invokes the ordinary OTP UI.
+    ProviderScope.containerOf(tester.element(find.byType(PlanetsApp)))
+        .read(appRouterProvider)
+        .go('/messages');
+    await tester.pumpAndSettle();
+  }
   await _wait(
     tester,
     () =>
         find.byKey(const Key('auth-email-field')).evaluate().isNotEmpty ||
-        find.text('Sign in').evaluate().isNotEmpty,
+        find.byKey(const Key('welcome-login')).evaluate().isNotEmpty ||
+        find.byKey(const Key('messages-context-action')).evaluate().isNotEmpty,
     'normal sign-in destination mounted after account exit',
   );
   if (find.byKey(const Key('auth-email-field')).evaluate().isEmpty) {
-    await tester.tap(find.text('Sign in'));
+    final welcome = find.byKey(const Key('welcome-login'));
+    await tester.tap(
+      welcome.evaluate().isNotEmpty
+          ? welcome
+          : find.byKey(const Key('messages-context-action')),
+    );
     await tester.pumpAndSettle();
   }
   final mailbox = _Mailbox(mailpit);

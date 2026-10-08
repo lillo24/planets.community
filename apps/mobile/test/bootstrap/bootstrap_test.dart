@@ -73,6 +73,8 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('welcome-explore')));
+      await tester.pumpAndSettle();
       final appContext = tester.element(find.byType(PlanetsApp));
       final container = ProviderScope.containerOf(appContext);
       expect(identical(container.read(appConfigProvider), config), isTrue);

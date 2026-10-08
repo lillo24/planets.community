@@ -129,7 +129,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Jordan: Bring a small brush.'), findsOneWidget);
     expect(find.text('No messages yet'), findsOneWidget);
-    expect(find.text('Read-only'), findsOneWidget);
+    expect(find.text('Read-only'), findsNothing);
     expect(find.textContaining('unread'), findsNothing);
     expect(chats.subscriptions, hasLength(1));
     expect(chats.subscriptions.single.chatId, 'chat-1');
@@ -452,7 +452,9 @@ void main() {
     await tester.tap(find.text('I can help'));
     await tester.pumpAndSettle();
     expect(needs.calls, contains('claim:skill:skill-1'));
-    expect(find.text('Painting'), findsNothing);
+    expect(find.text('Painting'), findsOneWidget);
+    expect(find.text('Covered'), findsOneWidget);
+    expect(find.text('I can help'), findsNothing);
   });
 
   testWidgets('creator sees manual management without participant actions', (
@@ -481,8 +483,10 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Found outside app'), findsOneWidget);
-    expect(find.text('Found outside the app'), findsOneWidget);
-    expect(find.text('Needed again'), findsOneWidget);
+    expect(find.text('Found outside the app'), findsNothing);
+    expect(find.text('Needed now'), findsNothing);
+    expect(find.text('Needed again'), findsNothing);
+    expect(find.byTooltip('Mark as needed'), findsOneWidget);
     expect(find.text('I can help'), findsNothing);
   });
 

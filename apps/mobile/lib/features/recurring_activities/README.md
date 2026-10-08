@@ -26,8 +26,26 @@ notifications, resources, or occurrence-level editing. The sibling
   account-switch invalidation.
 - `presentation/` owns the separate Tavoli list/detail, constrained editor,
   My Tavoli lifecycle surface, and narrow recurring widgets.
+- `presentation/recurring_occurrence_urgency.dart` formats upcoming 0–6-day
+  occurrence labels using calendar dates in the occurrence's event timezone,
+  with an explicit reference instant for deterministic tests.
 
 ## Discovery and routes
+
+Browse cards show title, summary, recurring schedule and rough location in
+icon/text rows, followed by the existing public capacity label. Optional free-text
+topic and the exact next-meeting body row are omitted here; topic remains in
+detail/editor/domain. Location uses the same public rough label as Proposals
+without appending locality a second time.
+
+The cover shows Today/Oggi, Tomorrow/Domani or In N days/Tra N giorni for
+upcoming occurrences 0–6 calendar days away in their event timezone. Already
+started and 7+ day occurrences have no urgency badge. The label is sampled on
+each card build, with no polling or live countdown. The theme's error-container
+colors give a mild attention cue. Requested keeps its shared semantics and
+border, and moves to the cover's right edge; urgency sits on the left. Actual
+badge widths determine whether Requested needs a second row at large text
+sizes, avoiding overlap while retaining both edge anchors.
 
 Cultural Tables Browse starts with locality collapsed behind a compact filter
 button. A badge marks an applied locality while collapsed. Opening or closing
@@ -130,3 +148,12 @@ authority. Successful mutations refresh owned, delegated, and affected public
 state. A backend authority denial invalidates cached management/delegated state
 and removes the editor controls; account revisions continue to discard late
 responses.
+
+## UI-NEXT-02 discovery and drafts
+
+Family/search controls remain mounted during idle/loading/error/empty results.
+Same-query refresh retains rows; failure retains their pagination reference-time
+snapshot. Changed filters clear previous rows. Owner/delegated sources settle
+independently and clear private caches on readiness changes.
+The folder action opens `/drafts?types=table`; management/history remains reachable
+from the hub's menu.

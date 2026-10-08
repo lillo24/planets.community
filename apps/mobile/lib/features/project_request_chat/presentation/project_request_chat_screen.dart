@@ -469,7 +469,7 @@ class _ProjectRequestChatScreenState
                                   key: const Key(
                                     'project-request-chat-read-only',
                                   ),
-                                  text: l10n.projectRequestChatReadOnly,
+                                  text: l10n.pairChatReadOnlyReactivation,
                                 ),
                             ],
                           ),

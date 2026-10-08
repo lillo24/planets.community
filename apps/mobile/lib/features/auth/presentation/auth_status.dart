@@ -24,6 +24,15 @@ class AuthStatus extends ConsumerWidget {
       child: Padding(
         padding: const EdgeInsets.all(AppSpacing.medium),
         child: switch (session.phase) {
+          AuthSessionPhase.restorationFailed => _StatusBody(
+            icon: const Icon(Icons.sync_problem_outlined),
+            message: l10n.authRestoreFailure,
+            action: FilledButton(
+              onPressed: () =>
+                  ref.read(authSessionProvider.notifier).retryRestoration(),
+              child: Text(l10n.retryAction),
+            ),
+          ),
           AuthSessionPhase.restoring => _StatusBody(
             icon: const SizedBox.square(
               dimension: 20,

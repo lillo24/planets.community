@@ -114,3 +114,12 @@ remain outside this feature.
 09B2 composes Block/Unblock for a visible non-owner listing. A caller-owned
 owner block explains why a new request is unavailable and offers Unblock;
 public listing visibility and accepted Resource coordination remain unchanged.
+
+## UI-NEXT-02 discovery and drafts
+
+Search and Donate/Exchange toggles stay mounted in every result state. A changed
+filter retains the established prior-row contract with an explicit previous-results
+caption and disabled old card actions until success; refresh failures remain
+visible alongside retained cards. Both/neither toggle rules are unchanged.
+The folder action opens `/drafts?types=donate,exchange`; the hub menu retains
+owner publication/history management. Private caches clear on readiness changes.

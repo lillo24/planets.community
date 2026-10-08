@@ -47,7 +47,8 @@ void main() {
         tester.element(find.byType(PlanetsApp)),
       );
       final router = app.read(appRouterProvider);
-      await tester.tap(find.text('Sign in'));
+      // Main moved normal login to Welcome and removed Home's Auth card.
+      await tester.tap(find.byKey(const Key('welcome-login')));
       await tester.pumpAndSettle();
       await tester.enterText(
         find.byKey(const Key('auth-email-field')),
@@ -73,18 +74,28 @@ void main() {
       expect(app.read(pendingEmailOtpProvider), isNull);
       expect(find.byKey(const Key('auth-safe-error')), findsNothing);
       if (readiness == ProfileAnchorReadiness.complete) {
-        expect(find.text("You're signed in."), findsOneWidget);
-        // A genuine CURRENT sign-out failure must still be visible on ready Home.
+        expect(app.read(authSessionProvider).phase, AuthSessionPhase.ready);
+        expect(find.byKey(const Key('home-planets-hero')), findsOneWidget);
+        // A genuine CURRENT failure must remain visible at the canonical exit.
         auth.signOutError = const AuthException('synthetic', statusCode: '503');
-        await tester.tap(find.text('Sign out'));
+        router.go('/settings');
+        await tester.pumpAndSettle();
+        await tester.scrollUntilVisible(
+          find.byKey(const Key('account-sign-out-button')),
+          300,
+        );
+        await tester.tap(find.byKey(const Key('account-sign-out-button')));
         await tester.pumpAndSettle();
         expect(app.read(authSessionProvider).phase, AuthSessionPhase.ready);
         expect(
           app.read(authCommandProvider).failure,
           AuthFailureKind.serviceUnavailable,
         );
-        expect(find.byKey(const Key('auth-safe-error')), findsOneWidget);
-        expect(find.text("You're signed in."), findsOneWidget);
+        await tester.ensureVisible(
+          find.byKey(const Key('account-sign-out-error')),
+        );
+        expect(find.byKey(const Key('account-sign-out-error')), findsOneWidget);
+        expect(app.read(authSessionProvider).phase, AuthSessionPhase.ready);
       } else {
         expect(
           app.read(authSessionProvider).phase,
@@ -92,6 +103,9 @@ void main() {
         );
         expect(app.read(authSessionProvider).hasProfileAnchor, isTrue);
         expect(find.text("You're signed in."), findsNothing);
+        expect(find.byKey(const Key('home-planets-hero')), findsOneWidget);
+        router.go('/messages');
+        await tester.pumpAndSettle();
         expect(find.text('Complete profile'), findsOneWidget);
       }
       await tester.pumpWidget(const SizedBox.shrink());

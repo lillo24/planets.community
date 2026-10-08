@@ -15,7 +15,10 @@ preview independent of Auth/Storage. PlanetsApp refreshes on foreground/resume;
 Auth snapshot revisions reject late completion after sign-out/account switching.
 Private controllers watch `accountAccessIdentityId`: ordinary refresh preserves
 same-account caches, while suspension/status failure clears them and closes chat
-subscriptions. Router guards hide ordinary UI while any bootstrap is pending.
+subscriptions. Router guards hide ordinary UI during full bootstrap. An already
+ready same-actor token refresh retains navigation while checking account status;
+denial/failure still closes private UI, and the database denies access immediately.
+Welcome alone owns unresolved signed-out restoration/retry, not account denial.
 There is no existing centralized RPC-error interception; individual screens do
 not gain ad-hoc suspension handlers. Backend denial is immediate at subsequent
 authorization boundaries; mobile detects it on resume or explicit status refresh.
@@ -90,6 +93,9 @@ ignore late command completions after the
 flow is abandoned or replaced, including profile retry and sign-out. They do
 not cancel native/provider/network operations or roll back a canonical session
 already established externally. Sign-out still uses only `AuthGateway.signOut`.
+Only a current successful explicit sign-out sets `AuthCommandState.didSignOut`.
+Application routing consumes this completion to reopen Welcome; passive session
+loss, failed sign-out and abandoned late completions cannot produce it.
 
 Permanent Android/iOS identifiers, external provider configuration, real
 adapters, account-linking validation, and device QA remain deferred. See the
@@ -111,3 +117,14 @@ including failed sign-out; there is no ready-session blanket error suppression.
 The status timeout, database rules and suspension allowlist are unchanged.
 See `docs/development/authqa01-otp-bootstrap-and-home-status.md` for the separate
 disposition of #142's normal-Home observation and native evidence.
+
+Session restoration has an explicit `restorationFailed` phase. Snapshot or
+subscription failures show recovery and cannot impersonate signed-out entry.
+Retry rechecks the stored session without starting a new login. Existing ready
+identity/readiness is retained while a fresh account-status check runs for a
+same-actor `tokenRefreshed` event; expired
+sessions and actor changes still invalidate navigation/private state. Other Auth
+events continue to recheck readiness. This follows the resolved Supabase event
+contract and its [stream-error guidance](https://supabase.com/docs/reference/dart/auth-onauthstatechange).
+Auth cancellation preserves both public invitation previews and the contextual
+Messages root; protected chat/detail continuations still require authentication.

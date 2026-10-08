@@ -6,12 +6,14 @@ import '../../features/auth/application/auth_command_controller.dart';
 import '../../features/auth/application/auth_session_controller.dart';
 import '../../features/auth/application/return_destination.dart';
 import '../../features/auth/domain/auth_models.dart';
+import '../../features/drafts/domain/draft_entry.dart';
+import '../../features/drafts/presentation/drafts_screen.dart';
 import '../../features/auth/presentation/request_code_screen.dart';
 import '../../features/auth/presentation/account_suspension_screen.dart';
 import '../../features/auth/presentation/verify_code_screen.dart';
 import '../../features/blocking/presentation/blocked_users_screen.dart';
 import '../../features/messages/presentation/messages_routes.dart';
-import '../../features/messages/presentation/messages_screen.dart';
+import '../../features/messages/presentation/messages_landing_screen.dart';
 import '../../features/messages/presentation/participation_request_message_screen.dart';
 import '../../features/moderation/domain/moderation_models.dart';
 import '../../features/moderation/presentation/counterstatement_screen.dart';
@@ -47,6 +49,7 @@ import '../../features/participation/presentation/join_request_screen.dart';
 import '../../features/participation/presentation/participation_routes.dart';
 import '../../features/proposals/presentation/own_proposals_screen.dart';
 import '../../features/proposals/presentation/proposal_editor_screen.dart';
+import '../../features/proposals/presentation/proposal_creation_choice.dart';
 import '../../features/proposals/presentation/public_proposals_screen.dart';
 import '../../features/template_workshop/presentation/template_workshop_screens.dart';
 import '../../features/recurring_activities/presentation/own_recurring_activities_screen.dart';
@@ -64,6 +67,9 @@ import '../../features/settings/presentation/settings_screen.dart';
 import '../../features/settings/presentation/navigation_selection_screen.dart';
 import '../../l10n/generated/app_localizations.dart';
 import '../foundation_screen.dart';
+import '../startup/startup_flow.dart';
+import '../startup/welcome_screen.dart';
+import '../startup/tutorial_screen.dart';
 import 'app_navigation_shell.dart';
 import 'native_project_links.dart';
 import 'draft_departure_coordinator.dart';
@@ -76,9 +82,16 @@ GoRouter createAppRouter({
   AuthSessionReader? readAuthSession,
   PendingEmailOtpReader? readPendingEmailOtp,
   DraftDepartureCoordinator? draftDeparture,
+  StartupFlow? startupFlow,
 }) {
   final configuration = _NativeRoutingConfig(
-    _routingConfig(readAuthSession, readPendingEmailOtp, draftDeparture),
+    _routingConfig(
+      readAuthSession,
+      readPendingEmailOtp,
+      draftDeparture,
+      null,
+      startupFlow,
+    ),
     draftDeparture,
   );
   final router = GoRouter.routingConfig(
@@ -96,6 +109,7 @@ RoutingConfig _routingConfig(
   PendingEmailOtpReader? readPendingEmailOtp,
   DraftDepartureCoordinator? draftDeparture, [
   VoidCallback? cancelExternalAuth,
+  StartupFlow? startupFlow,
 ]) {
   final sessionReader =
       readAuthSession ?? () => const AuthSessionState.signedOut();
@@ -115,6 +129,7 @@ RoutingConfig _routingConfig(
                         current.uri.path == '/auth/verify' ||
                         current.uri.path == '/profile/edit') &&
                     continuation == destination))) {
+          startupFlow?.deferForExternalJourney();
           return const Block.stop(); // Preserve the existing match list/form.
         }
         if (cancelExternalAuth != null &&
@@ -127,12 +142,16 @@ RoutingConfig _routingConfig(
       final decision =
           await (draftDeparture?.onEnter(context, current, next, router) ??
               const Allow());
-      if (decision is Block || committedNativeCancellation == null) {
+      if (decision is Block ||
+          (committedNativeCancellation == null &&
+              !next.uri.hasScheme &&
+              !next.uri.hasAuthority)) {
         return decision;
       }
       return Allow(
         then: () async {
           await decision.then?.call();
+          startupFlow?.deferForExternalJourney();
           committedNativeCancellation?.call();
         },
       );
@@ -144,6 +163,32 @@ RoutingConfig _routingConfig(
       final session = sessionReader();
       final pending = pendingReader();
       final path = state.uri.path;
+      if (startupFlow != null) {
+        // Only the ordinary root is gated. Explicit links/continuations own
+        // their journey, including during Auth restoration.
+        if (path != '/' &&
+            path != '/welcome' &&
+            path != '/intro' &&
+            path != '/auth' &&
+            path != '/auth/verify' &&
+            !startupFlow.hasEntered) {
+          startupFlow.deferForExternalJourney();
+        }
+        if (path == '/' &&
+            !startupFlow.hasEntered &&
+            session.identity == null) {
+          return '/welcome';
+        }
+        if (path == '/welcome' &&
+            (startupFlow.hasEntered || session.identity != null)) {
+          return '/';
+        }
+        if (path == '/intro' && !startupFlow.needsTutorial) {
+          return startupReturnDestination(
+            state.uri.queryParameters['returnTo'],
+          );
+        }
+      }
       final isRequestRoute = path == '/auth';
       final isVerifyRoute = path == '/auth/verify';
       final isAuthRoute = isRequestRoute || isVerifyRoute;
@@ -153,10 +198,12 @@ RoutingConfig _routingConfig(
           path.startsWith('/profile/review-requests');
       final isProfileEditRoute = path == '/profile/edit';
       final isProposalManagementRoute =
+          path == DraftRoutes.path ||
           path == WorkshopRoutes.catalog ||
           path.startsWith('${WorkshopRoutes.catalog}/') ||
           path == '/proposals/mine' ||
           path == '/proposals/create' ||
+          path == '/proposals/create/scratch' ||
           (path.startsWith('/proposals/') && path.endsWith('/edit'));
       final isTavoliManagementRoute =
           path == '/tavoli/mine' ||
@@ -173,7 +220,7 @@ RoutingConfig _routingConfig(
           ParticipantInvitationRoutes.isManagementPath(path);
       final isProjectWorkspaceManagementRoute =
           ProjectWorkspaceRoutes.isManagementPath(path);
-      final isMessagesRoute = isMessagesPath(path);
+      final isMessagesRoute = isMessagesPath(path) && path != '/messages';
       final isNotificationsRoute = isNotificationsPath(path);
       final isActivityManagementRoute =
           isProposalManagementRoute ||
@@ -188,7 +235,15 @@ RoutingConfig _routingConfig(
           isModerationRoute;
 
       const accountStatusPath = '/account/suspended';
+      // Welcome owns unresolved signed-out restoration and its retry UI. Once
+      // an identity is known, all routes obey the canonical account gate.
+      if (path == '/welcome' &&
+          (session.phase == AuthSessionPhase.restoring ||
+              session.phase == AuthSessionPhase.restorationFailed)) {
+        return null;
+      }
       if (session.phase == AuthSessionPhase.restoring ||
+          session.phase == AuthSessionPhase.restorationFailed ||
           session.phase == AuthSessionPhase.checkingAccount ||
           session.phase == AuthSessionPhase.accountCheckFailed ||
           session.phase == AuthSessionPhase.checkingProfile ||
@@ -240,7 +295,10 @@ RoutingConfig _routingConfig(
 
       if (session.phase == AuthSessionPhase.profileSetupRequired &&
           isActivityManagementRoute) {
-        return '/profile/edit';
+        return Uri(
+          path: '/profile/edit',
+          queryParameters: {'returnTo': state.uri.toString()},
+        ).toString();
       }
 
       if (session.phase == AuthSessionPhase.profileSetupRequired &&
@@ -250,8 +308,10 @@ RoutingConfig _routingConfig(
       }
 
       if (session.phase == AuthSessionPhase.ready && isAuthRoute) {
-        return pending?.returnTo ??
+        final destination =
+            pending?.returnTo ??
             sanitizeReturnDestination(state.uri.queryParameters['returnTo']);
+        return startupFlow?.continueTo(destination) ?? destination;
       }
 
       if (session.phase == AuthSessionPhase.profileSetupRequired &&
@@ -265,7 +325,8 @@ RoutingConfig _routingConfig(
             ProjectWorkspaceRoutes.isManagementPath(returnTo) ||
             ProjectDelegateRoutes.isInvitePath(returnTo) ||
             ParticipantInvitationRoutes.isInvitePath(returnTo) ||
-            isMessagesPath(returnTo) ||
+            (isMessagesPath(returnTo) &&
+                Uri.parse(returnTo).path != '/messages') ||
             isNotificationsPath(returnTo) ||
             _isResourceManagementPath(returnTo)) {
           return Uri(
@@ -279,7 +340,11 @@ RoutingConfig _routingConfig(
               session.phase == AuthSessionPhase.profileSetupRequired) &&
           isAuthRoute &&
           !(isVerifyRoute && pending != null)) {
-        return '/';
+        if (session.phase == AuthSessionPhase.checkingProfile) return null;
+        final destination =
+            pending?.returnTo ??
+            sanitizeReturnDestination(state.uri.queryParameters['returnTo']);
+        return startupFlow?.continueTo(destination) ?? destination;
       }
 
       if (isVerifyRoute && pending == null) {
@@ -295,6 +360,18 @@ RoutingConfig _routingConfig(
       return null;
     },
     routes: [
+      GoRoute(
+        path: '/welcome',
+        builder: (context, state) => const WelcomeScreen(),
+      ),
+      GoRoute(
+        path: '/intro',
+        builder: (context, state) => TutorialScreen(
+          returnTo: startupReturnDestination(
+            state.uri.queryParameters['returnTo'],
+          ),
+        ),
+      ),
       GoRoute(
         path: '/link-unavailable',
         builder: (context, state) => const _UnknownRouteScreen(),
@@ -357,14 +434,30 @@ RoutingConfig _routingConfig(
                 routes: [
                   GoRoute(
                     path: 'edit',
-                    builder: (context, state) => ProfileEditScreen(
-                      returnTo: state.uri.queryParameters['returnTo'] == null
-                          ? '/profile'
-                          : sanitizeReturnDestination(
-                              state.uri.queryParameters['returnTo'],
-                            ),
-                      cancelTo: profileEditCancelDestination(
-                        state.uri.queryParameters['returnTo'],
+                    // Explicit Flutter page preserves the iOS edge detector;
+                    // go_router 18's app-type adapter otherwise uses a page
+                    // without transitions for this Flutter MaterialApp.
+                    pageBuilder: (context, state) => MaterialPage<void>(
+                      key: state.pageKey,
+                      child: ProfileEditScreen(
+                        returnTo: state.uri.queryParameters['returnTo'] == null
+                            ? '/profile'
+                            : sanitizeReturnDestination(
+                                state.uri.queryParameters['returnTo'],
+                              ),
+                        cancelTo: profileEditCancelDestination(
+                          state.uri.queryParameters['returnTo'],
+                          profileReady:
+                              sessionReader().phase == AuthSessionPhase.ready,
+                        ),
+                        returnByPop: canPopToProfileCancel(
+                          context,
+                          profileEditCancelDestination(
+                            state.uri.queryParameters['returnTo'],
+                            profileReady:
+                                sessionReader().phase == AuthSessionPhase.ready,
+                          ),
+                        ),
                       ),
                     ),
                   ),
@@ -440,7 +533,7 @@ RoutingConfig _routingConfig(
               ),
               GoRoute(
                 path: '/messages',
-                builder: (context, state) => const MessagesScreen(),
+                builder: (context, state) => const MessagesLandingScreen(),
                 routes: [
                   GoRoute(
                     path: 'requests/resource/:requestId',
@@ -503,10 +596,27 @@ RoutingConfig _routingConfig(
             ],
           ),
           StatefulShellBranch(
+            initialLocation: '/proposals',
             routes: [
               GoRoute(
+                path: DraftRoutes.path,
+                pageBuilder: (context, state) => MaterialPage<void>(
+                  key: state.pageKey,
+                  child: DraftsScreen(
+                    initialTypes: DraftRoutes.parse(
+                      state.uri.queryParameters['types'],
+                    ),
+                  ),
+                ),
+              ),
+              GoRoute(
                 path: '/proposals',
-                builder: (context, state) => const PublicProposalsScreen(),
+                // Family roots switch without a slide/fade. Detail/editor pages retain
+                // native transitions and the existing departure guard.
+                pageBuilder: (context, state) => NoTransitionPage<void>(
+                  key: state.pageKey,
+                  child: const PublicProposalsScreen(),
+                ),
                 routes: [
                   GoRoute(
                     path: 'workshop',
@@ -532,13 +642,20 @@ RoutingConfig _routingConfig(
                   ),
                   GoRoute(
                     path: 'create',
-                    onExit: draftDeparture?.onExit,
-                    // Explicit Flutter Material pages retain native transitions
-                    // with go_router 18's separate material_ui app detection.
                     pageBuilder: (context, state) => MaterialPage<void>(
                       key: state.pageKey,
-                      child: const ProposalEditorScreen(),
+                      child: const ProposalCreationChoice(),
                     ),
+                    routes: [
+                      GoRoute(
+                        path: 'scratch',
+                        onExit: draftDeparture?.onExit,
+                        pageBuilder: (context, state) => MaterialPage<void>(
+                          key: state.pageKey,
+                          child: const ProposalEditorScreen(),
+                        ),
+                      ),
+                    ],
                   ),
                   GoRoute(
                     path: ':id',
@@ -564,6 +681,7 @@ RoutingConfig _routingConfig(
                           key: state.pageKey,
                           child: ProposalEditorScreen(
                             proposalId: state.pathParameters['id'],
+                            returnToHub: state.extra == DraftEditorOrigin.hub,
                           ),
                         ),
                       ),
@@ -626,8 +744,10 @@ RoutingConfig _routingConfig(
               ),
               GoRoute(
                 path: '/tavoli',
-                builder: (context, state) =>
-                    const PublicRecurringActivitiesScreen(),
+                pageBuilder: (context, state) => NoTransitionPage<void>(
+                  key: state.pageKey,
+                  child: const PublicRecurringActivitiesScreen(),
+                ),
                 routes: [
                   GoRoute(
                     path: 'mine',
@@ -786,11 +906,13 @@ bool _isResourceManagementPath(String destination) {
 }
 
 final appRouterProvider = Provider<GoRouter>((ref) {
+  final startup = ref.read(startupFlowProvider);
   RoutingConfig configuration() => _routingConfig(
     () => ref.read(authSessionProvider),
     () => ref.read(pendingEmailOtpProvider),
     ref.read(draftDepartureProvider),
     () => ref.read(authCommandProvider.notifier).cancelFlow(),
+    startup,
   );
   final routes = _NativeRoutingConfig(
     configuration(),
@@ -803,6 +925,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
   );
   routes.readIncomingUri = () => router.routeInformationProvider.value.uri;
   ref.listen(authSessionProvider, (previous, next) {
+    if (next.identity != null) startup.enter();
     if ((previous?.identity?.id != next.identity?.id ||
             previous?.accountAccessIdentityId !=
                 next.accountAccessIdentityId) &&
@@ -816,10 +939,20 @@ final appRouterProvider = Provider<GoRouter>((ref) {
     router.refresh();
   });
   ref.listen(pendingEmailOtpProvider, (_, _) => router.refresh());
+  ref.listen(authCommandProvider, (previous, next) {
+    if (next.didSignOut &&
+        previous?.didSignOut != true &&
+        ref.read(authSessionProvider).phase == AuthSessionPhase.signedOut) {
+      startup.returnToWelcomeAfterSignOut();
+      router.go('/welcome');
+    }
+  });
+  startup.addListener(router.refresh);
+  ref.onDispose(() => startup.removeListener(router.refresh));
   ref.onDispose(router.dispose);
   ref.onDispose(routes.dispose);
   return router;
-});
+}, dependencies: [startupFlowProvider]);
 
 /// External deliveries compose native validation with draft departure. Ordinary
 /// routes retain the draft hook while an editor owns it; startup without an

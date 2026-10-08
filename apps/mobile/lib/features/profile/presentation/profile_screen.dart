@@ -10,6 +10,8 @@ import '../../../core/widgets/error_state.dart';
 import '../../../core/widgets/loading_state.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../auth/application/auth_session_controller.dart';
+import '../../auth/domain/auth_models.dart';
+import '../../auth/presentation/auth_status.dart';
 import '../../auth/presentation/account_sign_out_action.dart';
 import '../../blocking/presentation/blocking_routes.dart';
 import '../../moderation/presentation/moderation_routes.dart';
@@ -48,6 +50,14 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
+    final session = ref.watch(authSessionProvider);
+    if (session.phase == AuthSessionPhase.restoring ||
+        session.phase == AuthSessionPhase.restorationFailed) {
+      return Scaffold(
+        appBar: AppBar(title: Text(l10n.profileTitle)),
+        body: const SafeArea(child: Center(child: AuthStatus())),
+      );
+    }
     final state = ref.watch(profileProvider);
     final userId = ref.watch(authSessionProvider).identity?.id;
     final data = state.data?.profile.id == userId ? state.data : null;
@@ -192,17 +202,12 @@ class _ProfileBody extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final profile = data.profile;
-    final selectedByCategory = data.categories
-        .map(
-          (category) => MapEntry(
-            category,
-            category.skills
-                .where((skill) => profile.selectedSkillIds.contains(skill.id))
-                .toList(growable: false),
-          ),
-        )
-        .where((entry) => entry.value.isNotEmpty)
-        .toList(growable: false);
+    // Retain catalog category/skill order without displaying category headings.
+    final selectedSkills = [
+      for (final category in data.categories)
+        for (final skill in category.skills)
+          if (profile.selectedSkillIds.contains(skill.id)) skill,
+    ];
 
     return Center(
       child: SingleChildScrollView(
@@ -240,43 +245,22 @@ class _ProfileBody extends StatelessWidget {
                 style: Theme.of(context).textTheme.titleLarge,
               ),
               const SizedBox(height: AppSpacing.small),
-              if (selectedByCategory.isEmpty)
+              if (selectedSkills.isEmpty)
                 Text(l10n.profileNoSkills)
               else
-                for (final entry in selectedByCategory) ...[
-                  Text(
-                    entry.key.label,
-                    style: Theme.of(context).textTheme.titleMedium,
-                  ),
-                  const SizedBox(height: AppSpacing.xSmall),
-                  Wrap(
-                    spacing: AppSpacing.small,
-                    runSpacing: AppSpacing.small,
-                    children: [
-                      for (final skill in entry.value)
-                        Chip(label: Text(skill.label)),
-                    ],
-                  ),
-                  const SizedBox(height: AppSpacing.medium),
-                ],
-              const SizedBox(height: AppSpacing.small),
-              Text(
-                l10n.profileVisibilityTitle,
-                style: Theme.of(context).textTheme.titleLarge,
-              ),
-              const SizedBox(height: AppSpacing.small),
-              _VisibilitySummary(
-                label: l10n.profileDisplayNameLabel,
-                audience: profile.visibility[ProfileFieldKey.displayName]!,
-              ),
-              _VisibilitySummary(
-                label: l10n.profileBioLabel,
-                audience: profile.visibility[ProfileFieldKey.bio]!,
-              ),
-              _VisibilitySummary(
-                label: l10n.profileSkillsTitle,
-                audience: profile.visibility[ProfileFieldKey.skills]!,
-              ),
+                Wrap(
+                  key: const Key('profile-competence-labels'),
+                  spacing: AppSpacing.small,
+                  runSpacing: AppSpacing.xSmall,
+                  children: [
+                    for (final skill in selectedSkills)
+                      Chip(
+                        key: Key('profile-competence-${skill.id}'),
+                        label: Text(skill.label),
+                        visualDensity: VisualDensity.compact,
+                      ),
+                  ],
+                ),
               const SizedBox(height: AppSpacing.large),
               FilledButton.icon(
                 key: const Key('profile-edit-button'),
@@ -316,27 +300,6 @@ class _ProfileBody extends StatelessWidget {
             ],
           ),
         ),
-      ),
-    );
-  }
-}
-
-class _VisibilitySummary extends StatelessWidget {
-  const _VisibilitySummary({required this.label, required this.audience});
-
-  final String label;
-  final ProfileAudience audience;
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
-    return ListTile(
-      contentPadding: EdgeInsets.zero,
-      title: Text(label),
-      trailing: Text(
-        audience == ProfileAudience.public
-            ? l10n.profileAudiencePublic
-            : l10n.profileAudiencePrivate,
       ),
     );
   }

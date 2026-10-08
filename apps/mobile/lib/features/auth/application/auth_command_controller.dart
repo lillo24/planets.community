@@ -295,7 +295,7 @@ class AuthCommandController extends Notifier<AuthCommandState> {
       }
       ref.read(pendingEmailOtpProvider.notifier).clear();
       ref.read(authSessionProvider.notifier).markSignedOut();
-      state = const AuthCommandState();
+      state = const AuthCommandState(didSignOut: true);
     } catch (error) {
       if (!_isCurrent(revision)) {
         return;

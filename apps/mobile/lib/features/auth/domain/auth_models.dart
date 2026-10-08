@@ -1,5 +1,6 @@
 enum AuthSessionPhase {
   restoring,
+  restorationFailed,
   signedOut,
   checkingAccount,
   accountCheckFailed,
@@ -16,10 +17,17 @@ class AuthIdentity {
 }
 
 class AuthSnapshot {
-  const AuthSnapshot({this.identity, this.isExpired = false});
+  const AuthSnapshot({
+    this.identity,
+    this.isExpired = false,
+    this.isTokenRefresh = false,
+  });
 
   final AuthIdentity? identity;
   final bool isExpired;
+
+  /// A warm token refresh keeps established readiness and navigation intact.
+  final bool isTokenRefresh;
 }
 
 enum ProfileAnchorReadiness { missing, incomplete, complete }
@@ -52,6 +60,8 @@ class AuthSessionState {
         identity: identity,
         suspension: status,
       );
+  const AuthSessionState.restorationFailed()
+    : this._(phase: AuthSessionPhase.restorationFailed);
 
   const AuthSessionState.checkingProfile(AuthIdentity identity)
     : this._(phase: AuthSessionPhase.checkingProfile, identity: identity);
@@ -91,7 +101,9 @@ class AuthSessionState {
     AuthSessionPhase.suspended ||
     AuthSessionPhase.ready ||
     AuthSessionPhase.profileSetupRequired => true,
-    AuthSessionPhase.restoring || AuthSessionPhase.signedOut => false,
+    AuthSessionPhase.restoring ||
+    AuthSessionPhase.restorationFailed ||
+    AuthSessionPhase.signedOut => false,
   };
 }
 
@@ -183,11 +195,15 @@ class AuthCommandState {
     this.phase = AuthCommandPhase.idle,
     this.failure,
     this.resendAvailableAt,
+    this.didSignOut = false,
   });
 
   final AuthCommandPhase phase;
   final AuthFailureKind? failure;
   final DateTime? resendAvailableAt;
+
+  /// A successful explicit command, distinct from expiry or a session event.
+  final bool didSignOut;
 
   bool get isBusy => switch (phase) {
     AuthCommandPhase.requestingCode ||

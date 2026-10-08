@@ -480,6 +480,10 @@ function combinedPrivateRpcChecks(user, chatId, requestId) {
       { ...expected, p_scope: "private", p_limit: 20 },
     ],
     [
+      "list_own_scoped_conversation_items_v4",
+      { ...expected, p_scope: "private", p_limit: 20 },
+    ],
+    [
       "send_participation_conversation_message",
       { ...expected, p_chat_id: chatId, p_body: "Synthetic denied command" },
     ],

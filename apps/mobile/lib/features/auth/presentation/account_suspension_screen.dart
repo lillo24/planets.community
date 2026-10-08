@@ -22,14 +22,21 @@ class AccountSuspensionScreen extends ConsumerWidget {
     return AccountSuspensionBody(
       reason: session.suspension?.userReason,
       checking: checking,
-      failed: session.phase == AuthSessionPhase.accountCheckFailed,
+      failed:
+          session.phase == AuthSessionPhase.accountCheckFailed ||
+          session.phase == AuthSessionPhase.restorationFailed,
       commandError: command.failure == null
           ? null
           : authFailureMessage(AppLocalizations.of(context), command.failure!),
       onCheck: checking || command.isBusy
           ? null
           : () {
-              ref.read(authSessionProvider.notifier).refresh();
+              final controller = ref.read(authSessionProvider.notifier);
+              if (session.phase == AuthSessionPhase.restorationFailed) {
+                controller.retryRestoration();
+              } else {
+                controller.refresh();
+              }
             },
       onSignOut: command.isBusy
           ? null

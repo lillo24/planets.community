@@ -51,9 +51,11 @@ class PublicRecurringActivitiesController
   Future<void> load({bool reset = true}) async {
     if (state.isBusy) return;
     final revision = ++_publicRevision;
-    final currentItems = reset
+    final currentItems = state.items;
+    final appendedItems = reset
         ? const <PublicRecurringActivitySummary>[]
-        : state.items;
+        : currentItems;
+    final previousReferenceTime = state.referenceTime;
     final referenceTime = reset || state.referenceTime == null
         ? ref.read(recurringActivityClockProvider)().toUtc()
         : state.referenceTime!;
@@ -105,7 +107,7 @@ class PublicRecurringActivitiesController
           _readyProfileId() == profileId;
       state = PublicRecurringActivitiesState(
         phase: RecurringActivityLoadPhase.ready,
-        items: List.unmodifiable([...currentItems, ...page]),
+        items: List.unmodifiable([...appendedItems, ...page]),
         requestedItems: acceptRequested
             ? List.unmodifiable(requested)
             : state.requestedItems,
@@ -120,7 +122,7 @@ class PublicRecurringActivitiesController
           items: currentItems,
           requestedItems: state.requestedItems,
           locality: locality,
-          referenceTime: referenceTime,
+          referenceTime: reset ? previousReferenceTime : referenceTime,
           hasMore: state.hasMore,
           failure: mapRecurringActivityFailure(error),
         );

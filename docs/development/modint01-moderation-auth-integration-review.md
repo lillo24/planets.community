@@ -6,7 +6,42 @@ No predecessor PR is closed, retargeted, marked ready, or merged by this task.
 
 ## Exact inputs and provenance
 
-### Committed-main continuation (2026-10-06–07, native replay blocked)
+### October 8 committed-main reconciliation (validation in progress)
+
+After the founder started only the owned backend, its health check passed.
+Fetched committed main advanced to `e7971d6611a1bd750c0c51b797234f5cf19c9dec`
+(merged #156–#167). The previous published head
+`cf85c6895cf0351429e1c8a2b91d13569b5afcae` conflicted with that main; this
+continuation merges it into the same branch/PR without rewriting either history.
+All thirteen conflict files retain both histories' behavior and localization keys.
+
+Auth retains main's explicit restoration failure/retry, Welcome/logout behavior
+and warm same-actor navigation. A warm token refresh still performs the fresh
+canonical suspension check; denial/failure closes private views without another
+profile-readiness read. Full bootstrap and OTP replacement/ABA epochs remain.
+Welcome owns only unresolved signed-out restoration, never a suspension bypass.
+Focused unit/widget coverage includes warm suspension/error, late actor results,
+Welcome/tutorial/drafts escape prevention and private-link restoration retry.
+
+Main removed Home's Auth card. The convergence tests now use ordinary Welcome
+login, assert canonical ready/incomplete state plus the actual Home hero, and
+verify genuine sign-out errors at the current Settings action. Native harnesses
+use Welcome or public Messages login and Messages' profile setup action; normal
+OTP, canonical gateways, guards and assertions remain. No session is injected.
+The first full Mobile run's two obsolete Home-entry test failures are retained
+in the private log; their corrected focused replay passed. The final full run
+and new combined Database/Web/Site gates are not yet claimed here.
+
+The new v4 conversation-list API enters the reviewed suspension inventory and
+real-auth pre-existing-session/expected-ID denial matrix. New template timezone
+defaults and push-projector receipt recheck preserve their canonical account and
+worker boundaries. Required fresh database and Android validation is pending.
+October 6–7 browser/native/CI evidence below is historical, not proof of this
+October 8 merge. The previously compiled APKs/configs must not be replayed as
+current-source evidence: prepare fresh actors after database gates and rebuild.
+Draft, founder review, no merge/deploy and dependency/Realtime limitations remain.
+
+### Historical committed-main continuation (2026-10-06–07, native replay blocked)
 
 The continuation prompt supersedes the original #146/#153 exclusion below.
 Fetched main was pinned once at `9cd024cc38c02b0333a32f8abe71fdc9681df548`,
@@ -211,8 +246,9 @@ node apps/mobile/integration_test/prepare_request_restriction_fixtures.mjs --mod
 # and REQUEST_SCREENSHOT_DIR. Never reuse OTP target's APK/config for this target.
 ```
 
-The already compiled, unused October 7 OTP pair can instead be replayed without
-another build or fixture preparation after resuming the retained backend:
+The unused October 7 APK pair below is retained historical provenance only.
+It cannot validate October 8's newer main; use fresh preparation/build above.
+These historical commands are not the current-source handoff:
 
 ```powershell
 Push-Location apps/mobile

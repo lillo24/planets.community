@@ -644,6 +644,12 @@
   "tavoliLocalityFilter": "Filter by locality",
   "tavoliLoadMore": "Load more",
   "tavoliNextMeeting": "Next meeting",
+  "tavoliOccurrenceToday": "Today",
+  "tavoliOccurrenceTomorrow": "Tomorrow",
+  "tavoliOccurrenceInDays": "In {days} days",
+  "@tavoliOccurrenceInDays": {
+    "placeholders": { "days": { "type": "int" } }
+  },
   "tavoliUpcomingMeetings": "Upcoming meetings",
   "tavoliNoUpcomingMeetings": "There are no active upcoming meetings.",
   "tavoliWeeklySummary": "Every {weekday} at {time}",
@@ -1978,8 +1984,9 @@
   "joinAcceptanceForbidden": "This request is not available for the current account.",
   "joinAcceptanceLoadError": "Unable to load contribution offers. Try again.",
   "projectNeedsTitle": "Needs",
-  "projectNeedsNeededNow": "Needed now",
-  "projectNeedsAllCovered": "Everything currently needed is covered.",
+  "projectNeedsCovered": "Covered",
+  "projectNeedsMarkAsNeeded": "Mark as needed",
+  "projectNeedsAllCovered": "All needs are covered.",
   "projectNeedsCompetencesGroup": "Competences / Knowledge",
   "projectNeedsResourcesGroup": "Resources / Materials",
   "projectNeedsRequired": "Required",
@@ -1987,7 +1994,6 @@
   "projectNeedsCanHelp": "I can help",
   "projectNeedsCanBring": "I can bring it",
   "projectNeedsFoundOutsideAction": "Found outside app",
-  "projectNeedsFoundOutsideSection": "Found outside the app",
   "projectNeedsNeededAgain": "Needed again",
   "projectNeedsSystemEvent": "{name} is needed again.",
   "@projectNeedsSystemEvent": {
@@ -3119,5 +3125,63 @@
   "noticesRemovalEffect": "Removal does not automatically resubmit withdrawn requests, reopen closed content or republish cancelled content. Other restrictions may still apply.",
   "noticesProject": "Project",
   "noticesTavolo": "Tavolo",
-  "noticesResource": "Scambio/Dona Resource"
+  "noticesResource": "Scambio/Dona Resource",
+  "messagePrivateChatSemantics": "Conversation with {name}",
+  "@messagePrivateChatSemantics": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "messageOwnPreview": "You: {body}",
+  "@messageOwnPreview": {
+    "placeholders": {
+      "body": {
+        "type": "String"
+      }
+    }
+  },
+  "messageRequestPendingPreview": "Pending request",
+  "messageRequestAcceptedPreview": "Request accepted",
+  "messageRequestRejectedPreview": "Request rejected",
+  "messageRequestWithdrawnPreview": "Request withdrawn",
+  "pairChatReadOnlyReactivation": "You can send messages again when there is a new pending request.",
+  "welcomeExplore": "Explore App",
+  "welcomeLogin": "Log in",
+  "messagesSignInContext": "Log in to join projects, donate or exchange, and manage your conversations.",
+  "authRestoreFailure": "Your session could not be restored. Retry to check your saved session.",
+  "startupPreferenceError": "Your introduction preference could not be saved or restored. Please retry.",
+  "tutorialNext": "Next",
+  "tutorialFinish": "Finish",
+  "startupDevelopmentReset": "Reset welcome and tutorial (development)",
+  "draftsTitle": "My drafts",
+  "draftsManagement": "Published projects and history",
+  "draftsAllTypes": "All types",
+  "draftsLoading": "Loading drafts…",
+  "draftsEmptyTitle": "No saved drafts",
+  "draftsEmptyMessage": "Saved, unpublished drafts of the selected types appear here.",
+  "draftsSourceError": "Could not refresh {source} drafts. Retry to get the complete list.",
+  "@draftsSourceError": {
+    "placeholders": {
+      "source": {
+        "type": "String"
+      }
+    }
+  },
+  "browsePreviousResults": "Previous results — these do not match the current filters.",
+  "proposalStartChoice": "How would you like to start?",
+  "proposalFromTemplate": "From a template",
+  "proposalFromScratch": "From scratch",
+  "proposalCapacityDecrease": "Decrease registration capacity",
+  "proposalCapacityIncrease": "Increase registration capacity",
+  "proposalChooseDateTime": "Choose date and time",
+  "proposalScheduleZone": "Times shown in {zone}",
+  "proposalDemoReplaceTitle": "Replace your entries?",
+  "proposalDemoReplaceMessage": "Sample data will replace the values you have entered. Nothing is saved until you choose to save or publish.",
+  "@proposalScheduleZone": {"placeholders": {"zone": {"type": "String"}}},
+  "locationManualEntryNotice": "Place search is unavailable. Enter the location below.",
+  "locationMapUnavailable": "Map preview unavailable. Use the location information above.",
+  "locationRestrictedPreview": "Everyone sees the public rough location. Exact meeting instructions are available only to authorized organizers and current participants.",
+  "locationPublicPreview": "Everyone sees the public rough location and exact meeting instructions."
 }

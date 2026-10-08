@@ -9,6 +9,11 @@ This folder owns application startup presentation and navigation, not backend ru
 - `foundation_screen.dart` is Home; its Projects and Cultural Tables entry uses
   the shell's Browse branch switch, its Scambio-Dona entry opens the Browse-owned resource routes,
   and its AppBar opens public Settings.
+  Its shared PLANETS hero sits behind opaque functional cards; decorative height
+  shrinks for short screens/large text, while cards retain natural height and
+  remain scrollable. Home never replays Welcome's entrance; its shared circular
+  planet rotations and logo float continue at the informative website's speeds
+  while visible, pausing offscreen/backgrounded and respecting reduced motion.
 - `startup_failure_app.dart` is the safe fallback when bootstrap cannot launch the application.
 
 ## Navigation contract
@@ -34,7 +39,8 @@ shows and selects the actual destination even when the saved shortcut differs.
 On Profile, Home, Settings, and Notifications, it shows the saved choice.
 Messages remains on the Home branch; changing the preference does not rebuild
 or reorder the route tree. An inactive Messages shortcut opens canonical
-`/messages` through the existing Auth/profile guards. Re-tapping active
+`/messages`, whose public contextual state offers Auth/profile completion when
+needed. Its private descendants retain their guards. Re-tapping active
 Messages or Browse preserves its nested route. Browse's shortcut restores its
 retained branch state; public discovery also remains reachable from Home.
 
@@ -70,7 +76,8 @@ Messages/Notifications route when present, otherwise to Profile.
 For guarded Proposal/Tavolo Join setup, Profile edit keeps separate destinations:
 Save resumes the exact sanitized Join route, while the visible Back action and
 system Back return to the corresponding public Project detail. Other Profile
-edit flows conservatively cancel to Profile.
+edit flows cancel to a safe public ancestor/Home; ordinary ready editing returns
+to Profile. Both invitation families retain their exact public preview.
 
 PI02 adds public `/join/project/:token` outside the shell, distinct from the
 authority `/invite/project/:token` route. Participant Auth/profile returns and
@@ -134,8 +141,8 @@ it is loaded only for the creator/current member and cleared when identity or
 current membership changes. It is never added to public activity models.
 
 Messages request and Project-chat state are independent identity-bound
-boundaries. Home exposes their shared two-tab entry point through an AppBar
-action as well as the configurable bottom-right shortcut. The
+boundaries. Their shared two-tab entry is reachable through the configurable
+bottom-right shortcut or a labelled Settings row when Browse occupies that slot. The
 request-specific route is the client resolution target for 06A's semantic
 `participation_request` notification target. Chat and group-info routes are
 protected by the same Auth/profile guards and are reconstructed on identity
@@ -151,6 +158,20 @@ opens with `/notifications` as its return destination. Known
 semantic targets cross to the existing Messages or Browse routes with canonical
 `go` navigation, while unknown targets never guess a destination.
 
-Router/widget regressions live in `test/app/router/navigation_shell_test.dart`.
+`startup/` owns ordinary signed-out Welcome and the dormant installation tutorial;
+see its [entry and preference contract](startup/README.md). Home keeps public
+discovery, Notifications and Settings without the Auth testing card or envelope.
+When Browse occupies the third slot, Settings offers a labelled Messages row.
+Only `/messages` is public/contextual; all private descendants remain guarded.
+
+Profile editing uses an explicit Flutter `MaterialPage` so iOS has its native
+edge detector with the resolved go_router 18 app adapter. Its PopScope permits
+native popping only when the actual preceding route is the stable cancel
+destination. Canonical incomplete setup cancels to a safe public origin/Home,
+not the incomplete Profile below it. Save always resumes the stored authorized
+destination, independently of Cancel, through the optional tutorial boundary.
+
+Router/widget regressions live in `test/app/router/navigation_shell_test.dart`
+and `test/app/startup/`.
 Native Android/iOS navigation, keyboard and hot-reload QA remains a separate,
 manual pre-merge gate; automated widget tests are not a substitute.

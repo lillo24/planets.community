@@ -9,6 +9,7 @@ import '../../../core/widgets/error_state.dart';
 import '../../../core/widgets/loading_state.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../auth/application/auth_session_controller.dart';
+import '../../auth/domain/auth_models.dart';
 import '../../cover_media/presentation/project_cover_image.dart';
 import '../../participation/domain/participation_models.dart';
 import '../../profile_photo/presentation/profile_photo_trust_gate.dart';
@@ -39,7 +40,11 @@ class _OwnRecurringActivitiesScreenState
   }
 
   Future<void> _load({bool force = false}) async {
-    final identity = ref.read(authSessionProvider).identity;
+    if (!mounted) return;
+    final session = ref.read(authSessionProvider);
+    final identity = session.phase == AuthSessionPhase.ready
+        ? session.identity
+        : null;
     if (identity != null && (force || _requestedIdentity != identity.id)) {
       _requestedIdentity = identity.id;
       await Future.wait([
@@ -49,10 +54,30 @@ class _OwnRecurringActivitiesScreenState
     }
   }
 
+  Future<void> _loadMissing() async {
+    if (!mounted) return;
+    final session = ref.read(authSessionProvider);
+    final actor = session.phase == AuthSessionPhase.ready
+        ? session.identity?.id
+        : null;
+    if (actor == null) return;
+    await Future.wait([
+      if (ref.read(ownRecurringActivitiesProvider).phase ==
+          RecurringActivityLoadPhase.idle)
+        ref.read(ownRecurringActivitiesProvider.notifier).load(actor),
+      if (ref.read(delegatedProjectsProvider).phase ==
+          ProjectDelegateLoadPhase.idle)
+        ref.read(delegatedProjectsProvider.notifier).load(actor),
+    ]);
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final identity = ref.watch(authSessionProvider).identity;
+    final session = ref.watch(authSessionProvider);
+    final identity = session.phase == AuthSessionPhase.ready
+        ? session.identity
+        : null;
     final state = ref.watch(ownRecurringActivitiesProvider);
     final items = state.expectedCreatorId == identity?.id
         ? state.items
@@ -68,7 +93,7 @@ class _OwnRecurringActivitiesScreenState
     } else if (identity != null &&
         (state.phase == RecurringActivityLoadPhase.idle ||
             delegatedState.phase == ProjectDelegateLoadPhase.idle)) {
-      Future<void>.microtask(() => _load(force: true));
+      Future<void>.microtask(_loadMissing);
     }
     return Scaffold(
       appBar: AppBar(title: Text(l10n.tavoliMyTitle)),
@@ -77,7 +102,9 @@ class _OwnRecurringActivitiesScreenState
             ? const SizedBox.shrink()
             : items.isEmpty &&
                   delegated.isEmpty &&
-                  (state.phase == RecurringActivityLoadPhase.loading ||
+                  (state.phase == RecurringActivityLoadPhase.idle ||
+                      state.phase == RecurringActivityLoadPhase.loading ||
+                      delegatedState.phase == ProjectDelegateLoadPhase.idle ||
                       delegatedState.phase == ProjectDelegateLoadPhase.loading)
             ? LoadingState(message: l10n.tavoliLoading)
             : items.isEmpty &&
@@ -98,6 +125,25 @@ class _OwnRecurringActivitiesScreenState
                 child: ListView(
                   padding: const EdgeInsets.all(AppSpacing.medium),
                   children: [
+                    if (state.phase == RecurringActivityLoadPhase.loading ||
+                        delegatedState.phase ==
+                            ProjectDelegateLoadPhase.loading)
+                      LinearProgressIndicator(
+                        semanticsLabel: l10n.tavoliLoading,
+                      ),
+                    if (state.phase == RecurringActivityLoadPhase.failure &&
+                        items.isNotEmpty)
+                      ErrorState(
+                        message: l10n.tavoliSafeError,
+                        onRetry: () => _load(force: true),
+                      ),
+                    if (delegatedState.phase ==
+                            ProjectDelegateLoadPhase.failure &&
+                        delegated.isNotEmpty)
+                      ErrorState(
+                        message: l10n.projectDelegateSafeError,
+                        onRetry: () => _load(force: true),
+                      ),
                     Text(
                       l10n.projectCreatedByYouTitle,
                       style: Theme.of(context).textTheme.titleLarge,
@@ -110,7 +156,11 @@ class _OwnRecurringActivitiesScreenState
                         onPressed: () => _load(force: true),
                         child: Text(l10n.retryAction),
                       ),
-                    ] else if (items.isEmpty)
+                    ] else if (items.isEmpty &&
+                        (state.phase == RecurringActivityLoadPhase.idle ||
+                            state.phase == RecurringActivityLoadPhase.loading))
+                      LoadingState(message: l10n.tavoliLoading)
+                    else if (items.isEmpty)
                       Text(l10n.projectCreatedByYouEmpty)
                     else
                       for (final activity in items) ...[
@@ -134,7 +184,13 @@ class _OwnRecurringActivitiesScreenState
                         onPressed: () => _load(force: true),
                         child: Text(l10n.retryAction),
                       ),
-                    ] else if (delegated.isEmpty)
+                    ] else if (delegated.isEmpty &&
+                        (delegatedState.phase ==
+                                ProjectDelegateLoadPhase.idle ||
+                            delegatedState.phase ==
+                                ProjectDelegateLoadPhase.loading))
+                      LoadingState(message: l10n.tavoliLoading)
+                    else if (delegated.isEmpty)
                       Text(l10n.projectCoorganizingEmpty)
                     else
                       for (final project in delegated) ...[

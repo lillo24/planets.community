@@ -34,6 +34,7 @@ class _TemplateWorkshopScreenState extends ConsumerState<TemplateWorkshopScreen>
   late final TextEditingController _query;
   Timer? _debounce;
   bool _active = false;
+  bool _visiting = false;
   @override
   void initState() {
     super.initState();
@@ -98,8 +99,14 @@ class _TemplateWorkshopScreenState extends ConsumerState<TemplateWorkshopScreen>
   }
 
   Future<void> _visit(String route) async {
-    await context.push(route);
-    if (mounted) await _refresh();
+    if (_visiting) return;
+    _visiting = true;
+    try {
+      await context.push(route);
+      if (mounted) await _refresh();
+    } finally {
+      _visiting = false;
+    }
   }
 
   @override
@@ -130,8 +137,6 @@ class _TemplateWorkshopScreenState extends ConsumerState<TemplateWorkshopScreen>
             key: const PageStorageKey('template-catalog-scroll'),
             padding: const EdgeInsets.all(AppSpacing.medium),
             children: [
-              Text(l.workshopContext),
-              const SizedBox(height: AppSpacing.medium),
               TextField(
                 key: const Key('template-query'),
                 controller: _query,
@@ -139,6 +144,23 @@ class _TemplateWorkshopScreenState extends ConsumerState<TemplateWorkshopScreen>
                 decoration: InputDecoration(
                   labelText: l.proposalSearchLabel,
                   prefixIcon: const Icon(Icons.search),
+                  isDense: true,
+                  counterText: '',
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.medium,
+                    vertical: AppSpacing.small,
+                  ),
+                  suffixIcon: state.query.isNotEmpty || state.skills.isNotEmpty
+                      ? IconButton(
+                          key: const Key('template-reset-filters'),
+                          tooltip: l.skillFilterClear,
+                          icon: const Icon(Icons.clear),
+                          onPressed: () {
+                            _query.clear();
+                            _filter(skills: {});
+                          },
+                        )
+                      : null,
                 ),
                 textInputAction: TextInputAction.search,
                 onChanged: (_) {
@@ -147,14 +169,19 @@ class _TemplateWorkshopScreenState extends ConsumerState<TemplateWorkshopScreen>
                 },
                 onSubmitted: (_) => _filter(),
               ),
-              if (state.categories.isNotEmpty)
+              if (state.categories.isNotEmpty) ...[
+                const SizedBox(height: AppSpacing.medium),
                 SkillFilter(
                   categories: state.categories,
                   selectedIds: state.skills,
                   onApply: (ids) => _filter(skills: ids),
                 ),
+              ],
+              const SizedBox(height: AppSpacing.medium),
+              Text(l.workshopContext),
               for (final attempt in attempts)
                 Card(
+                  margin: const EdgeInsets.only(bottom: AppSpacing.medium),
                   child: ListTile(
                     title: Text(
                       attempt.destinationId == null
@@ -191,6 +218,7 @@ class _TemplateWorkshopScreenState extends ConsumerState<TemplateWorkshopScreen>
                 ),
               for (final item in state.items)
                 Card(
+                  margin: const EdgeInsets.only(bottom: AppSpacing.medium),
                   clipBehavior: Clip.antiAlias,
                   child: InkWell(
                     key: Key('template-card-${item.id}'),

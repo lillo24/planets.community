@@ -11,8 +11,12 @@ sessions through its UI. Sign-out uses current Settings/Profile controls, not
 the demo-only Home button. Both harnesses scroll to the actual lower sign-out
 action in lazy Settings on the small phone; no direct session mutation replaces
 that UI action. Both helpers settle route/IME animation before real OTP taps.
-After a Profile or Settings exit, account switching uses Home's existing sign-in entry; those
+After a Profile or Settings exit, main reopens Welcome. Account switching uses
+its normal Log in button (or public Messages' contextual login after exploring); those
 signed-out screens need not redirect automatically to Auth.
+Main removed the Home Auth card: native ready-Home captures assert the actual
+hero plus canonical ready identity/no command failure, not obsolete status text.
+Incomplete-profile completion uses the normal Messages setup action.
 The OTP smoke additionally covers navigation choices,
 photo-free participant admission, nullable request origin, chat continuity under
 content hiding, all private notice types and suspension during ordinary access.

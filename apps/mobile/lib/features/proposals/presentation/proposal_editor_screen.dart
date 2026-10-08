@@ -11,9 +11,11 @@ import '../../../core/theme/app_tokens.dart';
 import '../../../core/widgets/error_state.dart';
 import '../../../core/widgets/loading_state.dart';
 import '../../../devtools/demo/demo_widgets.dart';
+import '../../../devtools/demo/demo_tools.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../auth/application/auth_session_controller.dart';
 import '../../auth/domain/auth_models.dart';
+import '../../locations/presentation/location_fallbacks.dart';
 import '../../cover_media/domain/cover_media_models.dart';
 import '../../cover_media/presentation/cover_editor_section.dart';
 import '../../template_workshop/presentation/template_workshop_screens.dart';
@@ -27,11 +29,17 @@ import '../domain/proposal_models.dart';
 import '../domain/proposal_time.dart';
 import '../domain/similar_proposal.dart';
 import 'similar_proposal_suggestions.dart';
+import 'proposal_editor_controls.dart';
 
 class ProposalEditorScreen extends ConsumerStatefulWidget {
-  const ProposalEditorScreen({this.proposalId, super.key});
+  const ProposalEditorScreen({
+    this.proposalId,
+    this.returnToHub = false,
+    super.key,
+  });
 
   final String? proposalId;
+  final bool returnToHub;
 
   @override
   ConsumerState<ProposalEditorScreen> createState() =>
@@ -136,6 +144,7 @@ class _ProposalEditorScreenState extends ConsumerState<ProposalEditorScreen> {
                 identityId: identity.id,
                 proposal: state.proposal,
                 categories: state.categories,
+                returnToHub: widget.returnToHub,
               ),
       ),
     );
@@ -148,6 +157,7 @@ class _ProposalForm extends ConsumerStatefulWidget {
     required this.sessionId,
     required this.proposal,
     required this.categories,
+    required this.returnToHub,
     super.key,
   });
 
@@ -155,6 +165,7 @@ class _ProposalForm extends ConsumerStatefulWidget {
   final String sessionId;
   final OwnProposal? proposal;
   final List<ProposalSkillCategory> categories;
+  final bool returnToHub;
 
   @override
   ConsumerState<_ProposalForm> createState() => _ProposalFormState();
@@ -219,7 +230,10 @@ class _ProposalFormState extends ConsumerState<_ProposalForm>
     _capacity = TextEditingController(
       text: p?.capacity.registrationCapacity?.toString() ?? '',
     );
-    _timezone = TextEditingController(text: p?.eventTimezone ?? 'UTC');
+    // Only genuine scratch creation adopts Italy's default; legacy values stay.
+    _timezone = TextEditingController(
+      text: p == null ? 'Europe/Rome' : p.eventTimezone ?? 'UTC',
+    );
     _country = TextEditingController(text: p?.countryCode ?? '');
     _locality = TextEditingController(text: p?.locality ?? '');
     _administrativeArea = TextEditingController(
@@ -418,7 +432,15 @@ class _ProposalFormState extends ConsumerState<_ProposalForm>
     description: _description.text,
     startsAt: _startsAt,
     endsAt: _endsAt,
-    eventTimezone: _timezone.text,
+    // Preserve a legacy unset zone while its schedule remains unset. Choosing
+    // dates uses the pre-existing UTC picker convention, never the new Rome default.
+    eventTimezone:
+        widget.proposal != null &&
+            widget.proposal!.eventTimezone == null &&
+            _startsAt == null &&
+            _endsAt == null
+        ? ''
+        : _timezone.text,
     countryCode: _country.text,
     locality: _locality.text,
     administrativeArea: _administrativeArea.text,
@@ -669,7 +691,13 @@ class _ProposalFormState extends ConsumerState<_ProposalForm>
       });
       ref.invalidate(ownProposalsProvider);
       ref.invalidate(publicProposalsProvider);
-      if (navigate) context.go('/proposals/mine');
+      if (navigate) {
+        if (widget.returnToHub && context.canPop()) {
+          context.pop();
+        } else {
+          context.go('/proposals/mine');
+        }
+      }
       return true;
     }
     return false;
@@ -704,7 +732,33 @@ class _ProposalFormState extends ConsumerState<_ProposalForm>
     }
   }
 
-  void _fillSampleData() {
+  Future<void> _fillSampleData() async {
+    if (_snapshot().meaningful) {
+      final l = AppLocalizations.of(context);
+      final replace = await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+          scrollable: true,
+          title: Text(l.proposalDemoReplaceTitle),
+          content: Text(l.proposalDemoReplaceMessage),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: Text(l.proposalDraftKeepEditing),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: Text(l.demoFillSampleAction),
+            ),
+          ],
+        ),
+      );
+      if (replace != true) return;
+    }
+    if (!mounted ||
+        ref.read(authSessionProvider).identity?.id != widget.identityId) {
+      return;
+    }
     final start = ref
         .read(proposalClockProvider)()
         .toUtc()
@@ -715,7 +769,7 @@ class _ProposalFormState extends ConsumerState<_ProposalForm>
       _description.text = 'We will prepare the site, assemble raised beds, and share the work in small teams.';
       _capacity.text = '20';
       _countOrganizersTowardCapacity = false;
-      _timezone.text = 'UTC';
+      _timezone.text = 'Europe/Rome';
       _country.text = 'IT';
       _locality.text = 'Bologna';
       _administrativeArea.text = 'Emilia-Romagna';
@@ -764,12 +818,20 @@ class _ProposalFormState extends ConsumerState<_ProposalForm>
       firstDate: now.subtract(const Duration(days: 1)),
       lastDate: now.add(const Duration(days: 3650)),
     );
-    if (date == null || !mounted) return;
+    if (date == null ||
+        !mounted ||
+        ref.read(authSessionProvider).identity?.id != widget.identityId) {
+      return;
+    }
     final time = await showTimePicker(
       context: context,
       initialTime: TimeOfDay.fromDateTime(initial),
     );
-    if (time == null || !mounted) return;
+    if (time == null ||
+        !mounted ||
+        ref.read(authSessionProvider).identity?.id != widget.identityId) {
+      return;
+    }
     final wall = DateTime(
       date.year,
       date.month,
@@ -783,7 +845,10 @@ class _ProposalFormState extends ConsumerState<_ProposalForm>
   }
 
   void _refreshValidationSummary() {
-    if (_validationIssues.isEmpty) return;
+    if (_validationIssues.isEmpty) {
+      setState(() {});
+      return;
+    }
     final issues = _validationIssueLabels(
       _input(),
       publish: _validatingPublish,
@@ -842,7 +907,8 @@ class _ProposalFormState extends ConsumerState<_ProposalForm>
               padding: const EdgeInsets.all(AppSpacing.large),
               // Retain built fields and pending covers when they scroll offscreen.
               children: <Widget>[
-                if (isDraft)
+                if (isDraft &&
+                    (widget.proposal != null || _snapshot().meaningful))
                   OutlinedButton.icon(
                     key: const Key('proposal-editor-workshop'),
                     onPressed: busy
@@ -857,16 +923,6 @@ class _ProposalFormState extends ConsumerState<_ProposalForm>
                     child: Padding(
                       padding: const EdgeInsets.all(AppSpacing.medium),
                       child: Text(readOnlyMessage),
-                    ),
-                  ),
-                  const SizedBox(height: AppSpacing.medium),
-                ],
-                if (widget.proposal == null) ...[
-                  Align(
-                    alignment: Alignment.centerLeft,
-                    child: DemoFillSampleAction(
-                      buttonKey: const Key('proposal-fill-sample'),
-                      onPressed: busy ? null : _fillSampleData,
                     ),
                   ),
                   const SizedBox(height: AppSpacing.medium),
@@ -920,26 +976,17 @@ class _ProposalFormState extends ConsumerState<_ProposalForm>
                 Padding(
                   key: _capacityAnchor,
                   padding: const EdgeInsets.only(bottom: AppSpacing.medium),
-                  child: TextFormField(
-                    key: const Key('proposal-people-capacity'),
+                  child: ProposalCapacityControl(
                     controller: _capacity,
                     enabled: !busy && contentEditable,
-                    keyboardType: TextInputType.number,
-                    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                    maxLength: 6,
-                    decoration: InputDecoration(
-                      labelText: l10n.projectRegistrationCapacityLabel,
-                      helperText: l10n.projectRegistrationCapacityHelp,
-                    ),
-                    onChanged: (_) => _refreshValidationSummary(),
                     validator: (_) => _validateCapacity(),
+                    onChanged: _refreshValidationSummary,
                   ),
                 ),
                 SwitchListTile(
                   key: const Key('proposal-count-organizers-capacity'),
                   contentPadding: EdgeInsets.zero,
                   title: Text(l10n.projectCountOrganizersCapacityLabel),
-                  subtitle: Text(l10n.projectCountOrganizersCapacityHelp),
                   value: _countOrganizersTowardCapacity,
                   onChanged: busy || !contentEditable
                       ? null
@@ -947,122 +994,67 @@ class _ProposalFormState extends ConsumerState<_ProposalForm>
                           () => _countOrganizersTowardCapacity = value,
                         ),
                 ),
-                _field(
-                  _timezone,
-                  l10n.proposalTimezoneLabel,
-                  100,
-                  anchorKey: _timezoneAnchor,
-                  fieldKey: const Key('proposal-timezone'),
-                  validator: _validateTimezone,
+                Text(
+                  l10n.projectCountOrganizersCapacityHelp,
+                  style: Theme.of(context).textTheme.bodySmall,
                 ),
-                ValueListenableBuilder<TextEditingValue>(
-                  valueListenable: _timezone,
-                  builder: (context, timezone, _) {
-                    // Observe the controller itself, including when these rows are
-                    // rebuilt after scrolling, and never convert unvalidated text.
-                    final timezoneName = timezone.text.trim();
-                    final validTimezone = isKnownProposalTimeZone(timezoneName);
-                    String schedule(DateTime? value) => value == null
-                        ? l10n.proposalDateNotSet
-                        : !validTimezone
-                        ? l10n.proposalTimezoneError
-                        : proposalUtcToWallTime(
-                            value,
-                            timezoneName,
-                          ).toString().substring(0, 16);
-                    return Column(
-                      children: [
-                        Container(
-                          key: _startAnchor,
-                          child: FormField<DateTime?>(
-                            key: const Key('proposal-start-field'),
-                            validator: (_) =>
-                                _validatingPublish && _startsAt == null
-                                ? l10n.proposalStartRequired
-                                : null,
-                            builder: (field) => Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  children: [
-                                    Expanded(
-                                      child: Text(
-                                        '${l10n.proposalStartLabel}: ${schedule(_startsAt)}',
-                                      ),
-                                    ),
-                                    TextButton(
-                                      key: const Key('proposal-pick-start'),
-                                      onPressed: busy || !contentEditable
-                                          ? null
-                                          : () => _pickDateTime(start: true),
-                                      child: Text(l10n.proposalChooseAction),
-                                    ),
-                                  ],
-                                ),
-                                if (field.hasError)
-                                  Text(
-                                    field.errorText!,
-                                    style: TextStyle(
-                                      color: Theme.of(context)
-                                          .colorScheme
-                                          .error,
-                                    ),
-                                  ),
-                              ],
-                            ),
+                const SizedBox(height: AppSpacing.large),
+                Container(
+                  key: _timezoneAnchor,
+                  child: _timezone.text != 'Europe/Rome'
+                      ? Padding(
+                          padding: const EdgeInsets.only(
+                            bottom: AppSpacing.medium,
                           ),
-                        ),
-                        Container(
-                          key: _endAnchor,
-                          child: FormField<DateTime?>(
-                            key: const Key('proposal-end-field'),
-                            validator: (_) {
-                              if (_validatingPublish && _endsAt == null) {
-                                return l10n.proposalEndRequired;
-                              }
-                              if (_startsAt != null &&
-                                  _endsAt != null &&
-                                  !_endsAt!.isAfter(_startsAt!)) {
-                                return l10n.proposalEndAfterStart;
-                              }
-                              return null;
-                            },
-                            builder: (field) => Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  children: [
-                                    Expanded(
-                                      child: Text(
-                                        '${l10n.proposalEndLabel}: ${schedule(_endsAt)}',
-                                      ),
-                                    ),
-                                    TextButton(
-                                      key: const Key('proposal-pick-end'),
-                                      onPressed: busy || !contentEditable
-                                          ? null
-                                          : () => _pickDateTime(start: false),
-                                      child: Text(l10n.proposalChooseAction),
-                                    ),
-                                  ],
-                                ),
-                                if (field.hasError)
-                                  Text(
-                                    field.errorText!,
-                                    style: TextStyle(
-                                      color: Theme.of(context)
-                                          .colorScheme
-                                          .error,
-                                    ),
-                                  ),
-                              ],
-                            ),
+                          child: Text(
+                            l10n.proposalScheduleZone(_timezone.text),
+                            key: const Key('proposal-legacy-zone'),
                           ),
-                        ),
-                      ],
-                    );
-                  },
+                        )
+                      : const SizedBox.shrink(),
                 ),
+                ProposalControlPair(
+                  first: Container(
+                    key: _startAnchor,
+                    child: ProposalDateControl(
+                      label: l10n.proposalStartLabel,
+                      value: _startsAt,
+                      timezone: _timezone.text,
+                      enabled: !busy && contentEditable,
+                      onPick: () => _pickDateTime(start: true),
+                      fieldKey: const Key('proposal-start-field'),
+                      pickKey: const Key('proposal-pick-start'),
+                      validator: (_) => _validatingPublish && _startsAt == null
+                          ? l10n.proposalStartRequired
+                          : null,
+                    ),
+                  ),
+                  second: Container(
+                    key: _endAnchor,
+                    child: ProposalDateControl(
+                      label: l10n.proposalEndLabel,
+                      value: _endsAt,
+                      timezone: _timezone.text,
+                      enabled: !busy && contentEditable,
+                      onPick: () => _pickDateTime(start: false),
+                      fieldKey: const Key('proposal-end-field'),
+                      pickKey: const Key('proposal-pick-end'),
+                      validator: (_) {
+                        if (_validatingPublish && _endsAt == null) {
+                          return l10n.proposalEndRequired;
+                        }
+                        if (_startsAt != null &&
+                            _endsAt != null &&
+                            !_endsAt!.isAfter(_startsAt!)) {
+                          return l10n.proposalEndAfterStart;
+                        }
+                        return null;
+                      },
+                    ),
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.large),
+                const ManualLocationNotice(),
                 _field(
                   _country,
                   l10n.proposalCountryLabel,
@@ -1127,32 +1119,32 @@ class _ProposalFormState extends ConsumerState<_ProposalForm>
                       : (selection) =>
                             setState(() => _visibility = selection.single),
                 ),
+                const SizedBox(height: AppSpacing.small),
+                Text(
+                  _visibility == ExactLocationVisibility.participants
+                      ? l10n.locationRestrictedPreview
+                      : l10n.locationPublicPreview,
+                  key: const Key('location-visibility-preview'),
+                ),
                 const SizedBox(height: AppSpacing.large),
                 Text(
                   l10n.proposalSkillsTitle,
                   style: Theme.of(context).textTheme.titleLarge,
                 ),
-                for (final category in widget.categories) ...[
-                  const SizedBox(height: AppSpacing.medium),
-                  Text(
-                    category.label,
-                    style: Theme.of(context).textTheme.titleMedium,
-                  ),
-                  for (final skill in category.skills)
-                    _SkillControl(
-                      skill: skill,
-                      value: _skills[skill.id],
-                      enabled: !busy && contentEditable,
-                      onChanged: (importance) {
-                        setState(() {
-                          importance == null
-                              ? _skills.remove(skill.id)
-                              : _skills[skill.id] = importance;
-                        });
-                        _syncMatching();
-                      },
-                    ),
-                ],
+                const SizedBox(height: AppSpacing.small),
+                ProposalSkillsControl(
+                  categories: widget.categories,
+                  values: _skills,
+                  enabled: !busy && contentEditable,
+                  onChanged: (values) {
+                    setState(() {
+                      _skills
+                        ..clear()
+                        ..addAll(values);
+                    });
+                    _syncMatching();
+                  },
+                ),
                 if (state.coverPartialSave != null) ...[
                   const SizedBox(height: AppSpacing.medium),
                   Semantics(
@@ -1187,7 +1179,6 @@ class _ProposalFormState extends ConsumerState<_ProposalForm>
                   ),
                 ],
                 const SizedBox(height: AppSpacing.large),
-                if (isDraft) Text(l10n.workshopPublicationNotice),
                 Wrap(
                   spacing: AppSpacing.small,
                   runSpacing: AppSpacing.small,
@@ -1206,18 +1197,6 @@ class _ProposalFormState extends ConsumerState<_ProposalForm>
                         icon: const Icon(Icons.inventory_2_outlined),
                         label: Text(l10n.projectResourcesManage),
                       ),
-                    if (isDraft && contentEditable)
-                      OutlinedButton(
-                        key: const Key('proposal-save-draft'),
-                        onPressed: busy ? null : () => _save(publish: false),
-                        child: Text(l10n.proposalSaveDraftAction),
-                      ),
-                    if (isDraft && contentEditable)
-                      FilledButton(
-                        key: const Key('proposal-publish'),
-                        onPressed: busy ? null : () => _save(publish: true),
-                        child: Text(l10n.proposalPublishAction),
-                      ),
                     if (isPublished && contentEditable)
                       FilledButton(
                         key: const Key('proposal-save-changes'),
@@ -1232,6 +1211,36 @@ class _ProposalFormState extends ConsumerState<_ProposalForm>
                       ),
                   ],
                 ),
+                if (isDraft && contentEditable) ...[
+                  const SizedBox(height: AppSpacing.medium),
+                  ProposalControlPair(
+                    first: OutlinedButton(
+                      key: const Key('proposal-save-draft'),
+                      style: OutlinedButton.styleFrom(
+                        minimumSize: const Size.fromHeight(56),
+                      ),
+                      onPressed: busy ? null : () => _save(publish: false),
+                      child: Text(l10n.proposalSaveDraftAction),
+                    ),
+                    second: FilledButton(
+                      key: const Key('proposal-publish'),
+                      style: FilledButton.styleFrom(
+                        minimumSize: const Size.fromHeight(56),
+                      ),
+                      onPressed: busy ? null : () => _save(publish: true),
+                      child: Text(l10n.proposalPublishAction),
+                    ),
+                  ),
+                ],
+                if (widget.proposal == null &&
+                    ref.watch(demoToolsEnabledProvider)) ...[
+                  const SizedBox(height: AppSpacing.large),
+                  const Divider(),
+                  DemoFillSampleAction(
+                    buttonKey: const Key('proposal-fill-sample'),
+                    onPressed: busy ? null : _fillSampleData,
+                  ),
+                ],
               ].map((child) => _RetainedDraftField(child: child)).toList(),
             ),
           ),
@@ -1297,15 +1306,6 @@ class _ProposalFormState extends ConsumerState<_ProposalForm>
       return l10n.proposalMaximumLength(maximumLength);
     }
     return null;
-  }
-
-  String? _validateTimezone(String? value) {
-    final text = (value ?? '').trim();
-    if (text.isEmpty && !_validatingPublish) return null;
-    if (text.isEmpty) return AppLocalizations.of(context).proposalRequiredField;
-    return isKnownProposalTimeZone(text)
-        ? null
-        : AppLocalizations.of(context).proposalTimezoneError;
   }
 
   String? _validateCountry(String? value) {
@@ -1471,45 +1471,5 @@ class _RetainedDraftFieldState extends State<_RetainedDraftField>
   Widget build(BuildContext context) {
     super.build(context);
     return widget.child;
-  }
-}
-
-class _SkillControl extends StatelessWidget {
-  const _SkillControl({
-    required this.skill,
-    required this.value,
-    required this.enabled,
-    required this.onChanged,
-  });
-
-  final ProposalCatalogSkill skill;
-  final ProposalSkillImportance? value;
-  final bool enabled;
-  final ValueChanged<ProposalSkillImportance?> onChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
-    return Row(
-      children: [
-        Expanded(child: Text(skill.label)),
-        DropdownButton<ProposalSkillImportance?>(
-          key: Key('proposal-skill-${skill.slug}'),
-          value: value,
-          onChanged: enabled ? onChanged : null,
-          items: [
-            DropdownMenuItem(value: null, child: Text(l10n.proposalSkillNone)),
-            DropdownMenuItem(
-              value: ProposalSkillImportance.required,
-              child: Text(l10n.proposalSkillRequired),
-            ),
-            DropdownMenuItem(
-              value: ProposalSkillImportance.useful,
-              child: Text(l10n.proposalSkillUseful),
-            ),
-          ],
-        ),
-      ],
-    );
   }
 }

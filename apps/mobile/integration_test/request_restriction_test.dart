@@ -475,7 +475,7 @@ void main() {
               AuthSessionPhase.signedOut,
           'requester sign-out',
         );
-        // Settings stays available signed out; Home owns the normal sign-in entry.
+        // Explicit logout reopens Welcome; use the normal Welcome/Home login UI.
         router.go('/');
         await tester.pumpAndSettle();
         await _uiLogin(tester, unrelatedEmail, mailbox);
@@ -645,8 +645,20 @@ Future<void> _wait(
 
 Future<void> _uiLogin(WidgetTester tester, String email, String url) async {
   await tester.pumpAndSettle();
+  if (find.byKey(const Key('auth-email-field')).evaluate().isEmpty &&
+      find.byKey(const Key('welcome-login')).evaluate().isEmpty) {
+    ProviderScope.containerOf(tester.element(find.byType(PlanetsApp)))
+        .read(appRouterProvider)
+        .go('/messages');
+    await tester.pumpAndSettle();
+  }
   if (find.byKey(const Key('auth-email-field')).evaluate().isEmpty) {
-    await tester.tap(find.text('Sign in'));
+    final welcome = find.byKey(const Key('welcome-login'));
+    await tester.tap(
+      welcome.evaluate().isNotEmpty
+          ? welcome
+          : find.byKey(const Key('messages-context-action')),
+    );
     await tester.pumpAndSettle();
   }
   final mailbox = _Mailbox(url);

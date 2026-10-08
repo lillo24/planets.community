@@ -12,6 +12,7 @@ import '../application/auth_session_controller.dart';
 import '../application/return_destination.dart';
 import '../domain/auth_models.dart';
 import 'auth_failure_message.dart';
+import 'auth_status.dart';
 
 class VerifyCodeScreen extends ConsumerStatefulWidget {
   const VerifyCodeScreen({super.key});
@@ -72,6 +73,12 @@ class _VerifyCodeScreenState extends ConsumerState<VerifyCodeScreen> {
     final command = ref.watch(authCommandProvider);
     final pending = ref.watch(pendingEmailOtpProvider);
     final session = ref.watch(authSessionProvider);
+    if (session.phase == AuthSessionPhase.restoring ||
+        session.phase == AuthSessionPhase.restorationFailed) {
+      return const Scaffold(
+        body: SafeArea(child: Center(child: AuthStatus())),
+      );
+    }
     final secondsRemaining = _secondsRemaining(command.resendAvailableAt);
     final error = command.failure;
     final needsProfileRetry =

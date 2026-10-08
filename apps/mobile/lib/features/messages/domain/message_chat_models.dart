@@ -89,6 +89,7 @@ final class ProjectMessageChatItem extends MessageChatItem {
     required super.lastVisibleMessageAt,
     required super.lastVisibleSenderProfileId,
     required super.lastVisibleSenderDisplayName,
+    this.latestSystemEventLabel,
     required this.projectId,
     required this.projectKind,
     required this.viewerRole,
@@ -97,6 +98,7 @@ final class ProjectMessageChatItem extends MessageChatItem {
   final String projectId;
   final ProjectKind projectKind;
   final ProjectChatViewerRole viewerRole;
+  final String? latestSystemEventLabel;
 
   bool get isCreator => viewerRole == ProjectChatViewerRole.creator;
   bool get isDelegate => viewerRole == ProjectChatViewerRole.delegate;
@@ -161,6 +163,7 @@ final class ProjectRequestMessageChatItem extends MessageChatItem {
     required this.resolvedAt,
     required this.acceptedProjectGroupChatId,
     this.pendingCount = 0,
+    this.latestRequestActivityStatus,
   }) : super(kind: MessageChatItemKind.projectRequestChat);
 
   final String requestId;
@@ -177,6 +180,10 @@ final class ProjectRequestMessageChatItem extends MessageChatItem {
 
   /// Canonical total across the pair; request fields above are route context.
   final int pendingCount;
+
+  /// Latest structured activity across the pair, independent of route context.
+  /// Null means the visible human preview is latest (human wins exact ties).
+  final JoinRequestStatus? latestRequestActivityStatus;
 
   String? get previewBody => lastVisibleMessageBody ?? requestMessage;
 }

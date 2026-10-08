@@ -83,6 +83,12 @@ Private Messages reuses the same bounded batch/cache boundary for Project
 request and Resource counterparties. Refresh revalidates metadata while
 unchanged immutable object versions reuse bytes; pagination requests only new
 targets, and denial leaves the placeholder without failing chat data.
+During same-viewer single/batch revalidation, loading entries retain previously
+authorized in-memory metadata/bytes until a successful replacement is ready.
+Canonical absence clears them immediately; metadata/download failures still
+produce an explicit failure entry without bytes. Explicit target/all invalidation
+and viewer changes clear immediately and reject late responses. This does not
+skip authorization revalidation or persist images to disk.
 
 An exact Resource-listing context RPC likewise resolves the owner server-side
 for an owner or a currently public listing and never broadens generic profile

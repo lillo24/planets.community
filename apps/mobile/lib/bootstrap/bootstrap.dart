@@ -4,6 +4,7 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../app/planets_app.dart';
+import '../app/startup/startup_flow.dart';
 import '../core/backend/supabase_backend.dart';
 import '../core/config/app_config.dart';
 import '../core/monitoring/app_monitoring.dart';
@@ -24,6 +25,10 @@ typedef ApplicationLauncher = void Function(Widget application);
 typedef LanguagePreferenceLoader = Future<LanguagePreference> Function();
 typedef NavigationPreferenceLoader =
     Future<NavigationPreferenceState> Function();
+typedef StartupPreferenceLoader = Future<StartupPreference> Function();
+
+Future<StartupPreference> loadStartupPreference() =>
+    restoreStartupPreference(SharedPreferencesStartupStore());
 
 Future<LanguagePreference> loadLanguagePreference() =>
     restoreLanguagePreference(SharedPreferencesLanguagePreferenceStore());
@@ -39,6 +44,7 @@ Future<void> bootstrapApplication({
   LanguagePreferenceLoader languagePreferenceLoader = loadLanguagePreference,
   NavigationPreferenceLoader navigationPreferenceLoader =
       loadNavigationPreference,
+  StartupPreferenceLoader startupPreferenceLoader = loadStartupPreference,
 }) async {
   final config = configLoader();
   LanguagePreference languagePreference;
@@ -54,12 +60,19 @@ Future<void> bootstrapApplication({
     navigationPreference = const NavigationPreferenceState(restoreFailed: true);
   }
   await backendInitializer(config);
+  StartupPreference startupPreference;
+  try {
+    startupPreference = await startupPreferenceLoader();
+  } catch (_) {
+    startupPreference = const StartupPreference(restoreFailed: true);
+  }
   await monitoringLauncher(
     config,
     () => applicationLauncher(
       ProviderScope(
         overrides: [
           appConfigProvider.overrideWithValue(config),
+          initialStartupPreferenceProvider.overrideWithValue(startupPreference),
           initialLanguagePreferenceProvider.overrideWithValue(
             languagePreference,
           ),

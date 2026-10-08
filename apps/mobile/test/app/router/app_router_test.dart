@@ -93,7 +93,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('Mobile foundation ready'), findsOneWidget);
+    expect(find.byKey(const Key('home-planets-hero')), findsOneWidget);
     expect(find.text('This page is not available.'), findsNothing);
   });
 

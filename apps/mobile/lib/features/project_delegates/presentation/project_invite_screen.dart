@@ -177,6 +177,11 @@ class _ProjectInviteScreenState extends ConsumerState<ProjectInviteScreen> {
       AuthSessionPhase.suspended => const Center(
         child: CircularProgressIndicator(),
       ),
+      AuthSessionPhase.restorationFailed => FilledButton(
+        onPressed: () =>
+            ref.read(authSessionProvider.notifier).retryRestoration(),
+        child: Text(l10n.retryAction),
+      ),
       AuthSessionPhase.signedOut => FilledButton(
         key: const Key('project-invite-sign-in'),
         onPressed: () => context.go(

@@ -49,16 +49,45 @@ class AuthSessionController extends Notifier<AuthSessionState> {
     }
     _started = true;
 
-    final gateway = ref.read(authGatewayProvider);
-    _subscription = gateway.authStateChanges.listen(
-      (snapshot) => unawaited(_applySnapshot(snapshot)),
-      onError: (Object _, StackTrace _) {
-        if (state.phase == AuthSessionPhase.restoring) {
-          state = const AuthSessionState.signedOut();
-        }
-      },
-    );
-    await _applySnapshot(gateway.currentSnapshot);
+    try {
+      final gateway = ref.read(authGatewayProvider);
+      _subscription = gateway.authStateChanges.listen(
+        (snapshot) => unawaited(_applySnapshot(snapshot)),
+        onError: (Object _, StackTrace _) {
+          if (state.phase == AuthSessionPhase.restoring) {
+            _revision += 1;
+            state = const AuthSessionState.restorationFailed();
+          }
+        },
+      );
+    } catch (_) {
+      // Subscription setup is part of restoration, not a signed-out result.
+      _revision += 1;
+      state = const AuthSessionState.restorationFailed();
+      return;
+    }
+    await _restoreSnapshot();
+  }
+
+  Future<void> retryRestoration() async {
+    if (state.phase != AuthSessionPhase.restorationFailed) return;
+    state = const AuthSessionState.restoring();
+    if (_subscription == null) {
+      _started = false;
+      await start();
+      return;
+    }
+    await _restoreSnapshot();
+  }
+
+  Future<void> _restoreSnapshot() async {
+    try {
+      await _applySnapshot(ref.read(authGatewayProvider).currentSnapshot);
+    } catch (_) {
+      // Gateway snapshot failures must not impersonate an absent session.
+      _revision += 1;
+      state = const AuthSessionState.restorationFailed();
+    }
   }
 
   Future<void> _applySnapshot(AuthSnapshot snapshot) async {
@@ -71,6 +100,14 @@ class AuthSessionController extends Notifier<AuthSessionState> {
       return;
     }
 
+    // Preserve a warm ready session and retained navigation, but never skip the
+    // fresh canonical suspension check. Denial/failure still closes private UI.
+    if (snapshot.isTokenRefresh &&
+        state.phase == AuthSessionPhase.ready &&
+        state.identity?.id == identity.id) {
+      await _beginBootstrap(identity, preserveReady: true).result;
+      return;
+    }
     await bootstrap(identity);
   }
 
@@ -120,6 +157,7 @@ class AuthSessionController extends Notifier<AuthSessionState> {
     AuthIdentity identity, {
     bool ensureProfile = false,
     ProfileAnchorReadiness? confirmedReadiness,
+    bool preserveReady = false,
   }) {
     if (state.identity != null && state.identity?.id != identity.id) {
       _identityEpoch++;
@@ -138,6 +176,7 @@ class AuthSessionController extends Notifier<AuthSessionState> {
     operation.result = _runBootstrap(
       operation,
       confirmedReadiness,
+      preserveReady,
     ).whenComplete(() => operation.settled = true);
     return operation;
   }
@@ -145,10 +184,11 @@ class AuthSessionController extends Notifier<AuthSessionState> {
   Future<AuthBootstrapOutcome> _runBootstrap(
     _BootstrapOperation operation,
     ProfileAnchorReadiness? confirmedReadiness,
+    bool preserveReady,
   ) async {
     final identity = operation.identity;
     final revision = operation.revision;
-    state = AuthSessionState.checkingAccount(identity);
+    if (!preserveReady) state = AuthSessionState.checkingAccount(identity);
     try {
       final status = await ref
           .read(authGatewayProvider)
@@ -167,6 +207,7 @@ class AuthSessionController extends Notifier<AuthSessionState> {
           ? AuthBootstrapOutcome.failed
           : AuthBootstrapOutcome.superseded;
     }
+    if (preserveReady) return AuthBootstrapOutcome.completed;
     state = AuthSessionState.checkingProfile(identity);
     try {
       if (operation.ensureProfile) {

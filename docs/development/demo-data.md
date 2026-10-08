@@ -135,3 +135,49 @@ Ordinary authenticated clients own domain and media mutations. The service role 
 The demo tooling originally landed on `main` after the 08B media branch diverged. DEMO-01 reconciled the established DEMO-B implementation from `main` into the cover-media stack instead of creating a second seeder, then adapted it to the newer profile-photo and cover contracts.
 
 The stable registry could support a future staging runner, but no trusted staging-admin credential/configuration contract exists. Adding one requires an explicit separately named command, HTTPS target allow-listing, account-owner credentials, and non-production environment proof. Production remains an invalid target.
+
+## UI-NEXT-02 own-draft inventory
+
+Giulia (`demo-alice@planets.invalid`) owns four additional ordinary unpublished
+drafts. Their broad synthetic location is Trento; none has an exact meeting place.
+
+| Type     | Initial title                               |
+| -------- | ------------------------------------------- |
+| Project  | Bozza demo · Un pomeriggio per il quartiere |
+| Tavolo   | Bozza demo · Tavolo di lettura              |
+| Donate   | Bozza demo · Libri da donare                |
+| Exchange | Bozza demo · Materiali da scambiare         |
+
+Use the existing explicit mutating `demo:seed:local` on a selected disposable local
+stack, then sign in as Giulia and open a discovery folder or `/drafts`. Toggle
+any types together; clearing the last selected type shows all. The management
+menu preserves published history/co-organizer access. A ready different persona
+has a genuinely empty hub unless it saved its own drafts. Opening a draft uses
+the ordinary editor, and publishing removes it after the affected source refresh.
+
+`scripts/lib/demo-drafts.mjs` stores only opaque draft IDs/request IDs/pending kinds
+in the host temp directory: `planets-demo-drafts-<sha256>.json`, where the hash
+covers version, local API URL and Giulia's canonical profile ID. Worktrees on the
+same host/API/account share it. No credentials, email, tokens, location or user
+content is stored. Preserve this file when moving an existing database to another
+host: locate the receipt whose hash matches that API/account and copy it to that
+host's temp directory. It is a trusted local seeding receipt, not an application
+cache or new database ownership model.
+
+An initial pending receipt is saved before creation. Project retries use their
+canonical creation request; Tavolo/Resource committed unknown outcomes recover
+only an exact initial title under the same owner when exactly one row exists.
+Known destinations may be renamed, edited or published: unchanged seeds retain
+their IDs and content. Missing/lost receipts with existing matches, ambiguous
+matches, missing known destinations, or unresolved pending operations fail
+loudly and require local reconciliation; they never silently create replacements.
+Inspect the indicated canonical owner's rows and recover the original opaque ID
+into the matching receipt only after confirming that operation's outcome. Do not
+erase a pending receipt or re-run creation after an unknown committed outcome.
+A confirmed failed/rolled-back create with no row may have its pending entry
+cleared explicitly on that disposable stack.
+
+`demo:verify:local` only reads these destinations; `demo:check:local` proves
+seed/verify/unchanged-seed/verify stability. The receipt is separate from the
+participant-link journal and survives worktree cleanup. No app-start hook,
+background publishing, fake login or remote seeding is introduced.

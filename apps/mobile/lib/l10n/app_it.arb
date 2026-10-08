@@ -244,6 +244,9 @@
   "tavoliLocalityFilter": "Filtra per località",
   "tavoliLoadMore": "Carica altri Tavoli",
   "tavoliNextMeeting": "Prossimo incontro",
+  "tavoliOccurrenceToday": "Oggi",
+  "tavoliOccurrenceTomorrow": "Domani",
+  "tavoliOccurrenceInDays": "Tra {days} giorni",
   "tavoliUpcomingMeetings": "Prossimi incontri",
   "tavoliNoUpcomingMeetings": "Non ci sono incontri in programma.",
   "tavoliWeeklySummary": "Ogni {weekday} alle {time}",
@@ -881,8 +884,9 @@
   "joinAcceptanceForbidden": "Questa richiesta non è disponibile per l'account corrente.",
   "joinAcceptanceLoadError": "Impossibile caricare le offerte di contributo. Riprovare.",
   "projectNeedsTitle": "Bisogni",
-  "projectNeedsNeededNow": "Necessari ora",
-  "projectNeedsAllCovered": "Tutto ciò che è attualmente necessario è coperto.",
+  "projectNeedsCovered": "Coperto",
+  "projectNeedsMarkAsNeeded": "Segna come necessario",
+  "projectNeedsAllCovered": "Tutti i bisogni sono coperti.",
   "projectNeedsCompetencesGroup": "Competenze / Conoscenza",
   "projectNeedsResourcesGroup": "Risorse / Materiali",
   "projectNeedsRequired": "Richiesto",
@@ -890,7 +894,6 @@
   "projectNeedsCanHelp": "Posso aiutare",
   "projectNeedsCanBring": "Posso portarlo",
   "projectNeedsFoundOutsideAction": "Trovato fuori dall'app",
-  "projectNeedsFoundOutsideSection": "Trovato fuori dall'app",
   "projectNeedsNeededAgain": "Necessari di nuovo",
   "projectNeedsSystemEvent": "{name} è necessario di nuovo.",
   "projectNeedsCoveredElsewhere": "Qualcun altro ha appena coperto questo bisogno.",
@@ -1522,5 +1525,63 @@
   "noticesRemovalEffect": "La rimozione non reinvia automaticamente le richieste ritirate, non riapre i contenuti chiusi e non ripubblica quelli annullati. Possono restare altre limitazioni.",
   "noticesProject": "Progetto",
   "noticesTavolo": "Tavolo",
-  "noticesResource": "Risorsa di Scambio/Dona"
+  "noticesResource": "Risorsa di Scambio/Dona",
+  "messagePrivateChatSemantics": "Conversazione con {name}",
+  "@messagePrivateChatSemantics": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "messageOwnPreview": "Tu: {body}",
+  "@messageOwnPreview": {
+    "placeholders": {
+      "body": {
+        "type": "String"
+      }
+    }
+  },
+  "messageRequestPendingPreview": "Richiesta in attesa",
+  "messageRequestAcceptedPreview": "Richiesta accettata",
+  "messageRequestRejectedPreview": "Richiesta rifiutata",
+  "messageRequestWithdrawnPreview": "Richiesta ritirata",
+  "pairChatReadOnlyReactivation": "Potrai inviare messaggi quando ci sarà una nuova richiesta in attesa.",
+  "welcomeExplore": "Esplora l'app",
+  "welcomeLogin": "Accedi",
+  "messagesSignInContext": "Accedi per partecipare ai progetti, donare o scambiare e gestire le tue conversazioni.",
+  "authRestoreFailure": "Non è stato possibile ripristinare la sessione. Riprova per verificare la sessione salvata.",
+  "startupPreferenceError": "Non è stato possibile salvare o ripristinare la preferenza dell’introduzione. Riprova.",
+  "tutorialNext": "Avanti",
+  "tutorialFinish": "Termina",
+  "startupDevelopmentReset": "Reimposta benvenuto e tutorial (sviluppo)",
+  "draftsTitle": "Le mie bozze",
+  "draftsManagement": "Progetti pubblicati e cronologia",
+  "draftsAllTypes": "Tutti i tipi",
+  "draftsLoading": "Caricamento bozze…",
+  "draftsEmptyTitle": "Nessuna bozza salvata",
+  "draftsEmptyMessage": "Qui trovi le bozze salvate e non pubblicate dei tipi selezionati.",
+  "draftsSourceError": "Impossibile aggiornare le bozze di {source}. Riprova per ottenere l’elenco completo.",
+  "@draftsSourceError": {
+    "placeholders": {
+      "source": {
+        "type": "String"
+      }
+    }
+  },
+  "browsePreviousResults": "Risultati precedenti: non corrispondono ai filtri attuali.",
+  "proposalStartChoice": "Come vuoi iniziare?",
+  "proposalFromTemplate": "Da un modello",
+  "proposalFromScratch": "Da zero",
+  "proposalCapacityDecrease": "Riduci la capienza iscrizioni",
+  "proposalCapacityIncrease": "Aumenta la capienza iscrizioni",
+  "proposalChooseDateTime": "Scegli data e ora",
+  "proposalScheduleZone": "Orari mostrati in {zone}",
+  "proposalDemoReplaceTitle": "Sostituire i dati inseriti?",
+  "proposalDemoReplaceMessage": "I dati di esempio sostituiranno i valori inseriti. Nulla viene salvato finché non scegli di salvare o pubblicare.",
+  "@proposalScheduleZone": {"placeholders": {"zone": {"type": "String"}}},
+  "locationManualEntryNotice": "La ricerca dei luoghi non è disponibile. Inserisci il luogo qui sotto.",
+  "locationMapUnavailable": "Anteprima della mappa non disponibile. Usa le informazioni sul luogo qui sopra.",
+  "locationRestrictedPreview": "Tutti vedono la zona indicativa pubblica. Le istruzioni precise sono disponibili solo agli organizzatori autorizzati e ai partecipanti attuali.",
+  "locationPublicPreview": "Tutti vedono la zona indicativa pubblica e le istruzioni precise per l'incontro."
 }

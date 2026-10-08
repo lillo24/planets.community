@@ -15,6 +15,10 @@ database owns eligibility, copying, permissions and receipts.
   skills, authorized source covers, shared template-only Report and ordinary
   editor navigation. No new bottom-navigation branch.
 
+The catalog separates the search input and competence selector with
+`AppSpacing.medium`, matching public Project discovery. See the focused
+[search/input spacing audit](../../../../../docs/development/needs-workshop-polish.md).
+
 Catalog requests use 20 rows and the raw last-row `(linked_at, template_id)`
 cursor. Filters reset pagination even during pending requests; appended cards
 deduplicate by template identity. Link time is publication time, not an event
@@ -44,3 +48,9 @@ and [local native smoke](../../../integration_test/README.md). Workshop,
 SIM01/SIM02/TW05 and participation-pair/unread history are now committed main
 inputs to MODINT01. Founder review and this candidate's final live QA remain
 separate from inherited feature validation.
+
+UI-NEXT-03 places compact keyword and controlled searchable skill filters before
+the context text. Active query/skills expose one reset action; debounce, combined
+queries, cursors and stale-generation rejection remain unchanged. New canonical
+applications default only the destination timezone to `Europe/Rome`; schedule and
+location remain unset. Receipt recovery never rewrites existing drafts.

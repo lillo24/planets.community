@@ -58,6 +58,106 @@ import '../../../support/fake_resource_exchange.dart';
 import 'package:planets_mobile/l10n/generated/app_localizations.dart';
 
 void main() {
+  testWidgets(
+    'private preview preserves legacy third-party attribution and labels own messages',
+    (tester) async {
+      const viewer = '00000000-0000-4000-8000-000000000101';
+      final app = await _pump(
+        tester,
+        identityId: viewer,
+        messages: FakeMessagesGateway(),
+        chats: FakeMessageChatsGateway()
+          ..items = [
+            projectRequestMessageChatFixture(
+              senderProfileId: '00000000-0000-4000-8000-000000000103',
+              senderDisplayName: 'Former delegate',
+              messageBody: 'Historical reply',
+            ),
+            projectRequestMessageChatFixture(
+              chatId: '00000000-0000-4000-8000-000000000412',
+              requestId: '00000000-0000-4000-8000-000000000312',
+              senderProfileId: viewer,
+              senderDisplayName: 'Me',
+              messageBody: 'Own reply',
+            ),
+          ],
+      );
+      app.read(appRouterProvider).go('/messages');
+      await tester.pumpAndSettle();
+      expect(find.text('Former delegate: Historical reply'), findsOneWidget);
+      expect(find.text('You: Own reply'), findsOneWidget);
+      expect(find.textContaining('Bob:'), findsNothing);
+    },
+  );
+  testWidgets(
+    'pair latest request transition overrides older human and route context',
+    (tester) async {
+      final app = await _pump(
+        tester,
+        messages: FakeMessagesGateway(),
+        chats: FakeMessageChatsGateway()
+          ..items = [
+            projectRequestMessageChatFixture(
+              latestRequestActivityStatus: JoinRequestStatus.accepted,
+              unreadCount: 3,
+            ),
+            resourceMessageChatFixture(),
+            projectMessageChatFixture(
+              latestSystemEventLabel: 'Garden tools',
+              isReadOnly: true,
+            ),
+          ],
+      );
+      app.read(appRouterProvider).go('/messages');
+      await tester.pumpAndSettle();
+      expect(find.text('Request accepted'), findsOneWidget);
+      expect(find.text('I can bring brushes.'), findsNothing);
+      expect(find.text('Paint the square'), findsNothing);
+      expect(find.text('Pending request'), findsNothing);
+      expect(find.text('Read-only'), findsNothing);
+      expect(find.textContaining('Updated'), findsNothing);
+      final card = find.byKey(
+        const Key(
+          'project-request-chat-item-00000000-0000-4000-8000-000000000411',
+        ),
+      );
+      final time = find.descendant(
+        of: card,
+        matching: find.byKey(
+          const Key(
+            'chat-time-project_request_chat:00000000-0000-4000-8000-000000000411',
+          ),
+        ),
+      );
+      final count = find.descendant(
+        of: card,
+        matching: find.byType(MessageInlineCount),
+      );
+      expect(
+        tester.getTopLeft(count).dy,
+        greaterThan(tester.getBottomLeft(time).dy),
+      );
+      expect(
+        tester.getBottomRight(count).dx,
+        closeTo(tester.getBottomRight(time).dx, 1),
+      );
+      expect(
+        find.descendant(of: card, matching: find.byType(Badge)),
+        findsNothing,
+      );
+      final shape = tester.widget<Card>(card).shape! as RoundedRectangleBorder;
+      expect(shape.side.width, 2);
+      await tester.tap(find.text('Groups'));
+      await tester.pumpAndSettle();
+      expect(find.textContaining('Garden tools'), findsOneWidget);
+      expect(find.text('Current participant'), findsNothing);
+      expect(find.text('Proposal'), findsNothing);
+      expect(find.text('Read-only'), findsNothing);
+      expect(find.textContaining('Updated'), findsNothing);
+      expect(find.byType(MessageInlineCount), findsNothing);
+    },
+  );
+
   testWidgets('complete badges and row counts preserve compact navigation', (
     tester,
   ) async {
@@ -81,7 +181,7 @@ void main() {
     );
     final router = app.read(appRouterProvider);
     final homeBadge = find.descendant(
-      of: find.byType(AppBar),
+      of: find.byKey(const Key('nav-messages')),
       matching: find.byType(MessageCountBadge),
     );
     expect(tester.widget<MessageCountBadge>(homeBadge).count, 3);
@@ -95,6 +195,32 @@ void main() {
     router.go('/messages');
     await tester.pumpAndSettle();
     expect(find.bySemanticsLabel(RegExp('3 unread messages')), findsOneWidget);
+    final toggle = find.byKey(const Key('message-chat-scope-toggle'));
+    for (final (name, count) in [('Private', '2'), ('Groups', '1')]) {
+      final label = find.descendant(of: toggle, matching: find.text(name));
+      final number = find.descendant(of: toggle, matching: find.text(count));
+      expect(
+        tester.getTopLeft(number).dx,
+        greaterThan(tester.getBottomRight(label).dx),
+      );
+      expect(
+        find.descendant(of: toggle, matching: find.byType(Badge)),
+        findsNothing,
+      );
+      expect(
+        find.bySemanticsLabel(
+          RegExp('$name, $count conversation.*with unread messages'),
+        ),
+        findsOneWidget,
+      );
+    }
+    final navBadges = tester.widgetList<MessageUnreadBadge>(
+      find.descendant(
+        of: find.byKey(const Key('nav-messages')),
+        matching: find.byType(MessageUnreadBadge),
+      ),
+    );
+    expect(navBadges.any((b) => b.selected), isTrue);
     await tester.scrollUntilVisible(
       find.bySemanticsLabel(RegExp('7 unread messages')),
       200,
@@ -284,6 +410,12 @@ void main() {
         find.byKey(const Key('project-request-chat-read-only')),
         findsOneWidget,
       );
+      expect(
+        find.text(
+          'You can send messages again when there is a new pending request.',
+        ),
+        findsOneWidget,
+      );
       expect(find.byKey(const Key('pair-request-$firstId')), findsOneWidget);
       expect(find.byKey(const Key('pair-request-$secondId')), findsOneWidget);
     },
@@ -435,9 +567,12 @@ void main() {
       ),
       findsOneWidget,
     );
-    expect(find.text('Scambio-Dona · Resource conversation'), findsOneWidget);
+    expect(find.text('Scambio-Dona · Resource conversation'), findsNothing);
+    expect(find.text('Jordan'), findsOneWidget);
+    expect(find.text('Garden tools'), findsNothing);
+    expect(find.text('Paint the square'), findsNothing);
     expect(find.text('No messages yet.'), findsOneWidget);
-    expect(find.text('Read-only'), findsOneWidget);
+    expect(find.text('Read-only'), findsNothing);
     expect(
       find.byKey(
         const Key(
@@ -920,6 +1055,12 @@ void main() {
         findsOneWidget,
       );
       expect(
+        find.text(
+          'You can send messages again when there is a new pending request.',
+        ),
+        findsOneWidget,
+      );
+      expect(
         find.byKey(const Key('project-request-chat-composer')),
         findsNothing,
       );
@@ -1178,8 +1319,8 @@ void main() {
     expect(find.byKey(const Key('nav-profile')), findsOneWidget);
     expect(find.byKey(const Key('nav-messages')), findsOneWidget);
     expect(find.byKey(const Key('nav-home')), findsOneWidget);
-    expect(find.byKey(const Key('open-messages-button')), findsOneWidget);
-    await tester.tap(find.byKey(const Key('open-messages-button')));
+    expect(find.byKey(const Key('open-messages-button')), findsNothing);
+    await tester.tap(find.byKey(const Key('nav-messages')));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Requests'));
     await tester.pumpAndSettle();

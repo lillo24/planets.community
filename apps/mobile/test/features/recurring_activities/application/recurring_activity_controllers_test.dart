@@ -17,6 +17,50 @@ import '../../../support/fake_cover_media.dart';
 import '../../../support/fake_recurring_activity.dart';
 
 void main() {
+  test(
+    'failed refresh retains rows and their pagination snapshot until success',
+    () async {
+      var now = DateTime.utc(2026, 9, 4, 10);
+      final gateway = FakeRecurringActivityGateway()
+        ..publicItems = List.generate(
+          recurringActivityPageSize,
+          (index) => publicRecurringSummaryFixture(id: 'tavolo-$index'),
+        );
+      final container = ProviderContainer(
+        overrides: [
+          recurringActivityGatewayProvider.overrideWithValue(gateway),
+          recurringActivityClockProvider.overrideWithValue(() => now),
+        ],
+      );
+      addTearDown(container.dispose);
+      final controller = container.read(
+        publicRecurringActivitiesProvider.notifier,
+      );
+      await controller.load();
+      final snapshot = container
+          .read(publicRecurringActivitiesProvider)
+          .referenceTime;
+      now = now.add(const Duration(days: 1));
+      gateway.error = StateError('synthetic refresh failure');
+      await controller.load();
+      final failed = container.read(publicRecurringActivitiesProvider);
+      expect(failed.phase, RecurringActivityLoadPhase.failure);
+      expect(failed.items, hasLength(recurringActivityPageSize));
+      expect(failed.referenceTime, snapshot);
+      gateway.error = null;
+      await controller.load(reset: false);
+      expect(gateway.referenceTimes.last, snapshot);
+      await controller.load();
+      expect(
+        container.read(publicRecurringActivitiesProvider).referenceTime,
+        now,
+      );
+      expect(
+        container.read(publicRecurringActivitiesProvider).items,
+        hasLength(recurringActivityPageSize),
+      );
+    },
+  );
   test('pagination reuses one snapshot and sends the keyset cursor', () async {
     var clock = DateTime.utc(2026, 9, 4, 10);
     final gateway = FakeRecurringActivityGateway()

@@ -30,7 +30,8 @@ class ProposalDraftSnapshot {
       text.indexed.any(
         (entry) =>
             entry.$2.trim().isNotEmpty &&
-            (entry.$1 != 4 || entry.$2.trim() != 'UTC'),
+            (entry.$1 != 4 ||
+                !{'UTC', 'Europe/Rome'}.contains(entry.$2.trim())),
       ) ||
       input.startsAt != null ||
       input.endsAt != null ||

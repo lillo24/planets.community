@@ -24,6 +24,9 @@ void main() {
       expect(find.text('Account suspended'), findsOneWidget);
       expect(find.text('Synthetic subject reason'), findsOneWidget);
       for (final path in [
+        '/welcome',
+        '/intro',
+        '/drafts',
         '/profile',
         '/profile/edit',
         '/settings',
@@ -105,6 +108,42 @@ void main() {
       );
     },
   );
+
+  testWidgets('private-link restoration failure can retry the stored session', (
+    tester,
+  ) async {
+    final auth = FakeAuthGateway()
+      ..snapshotError = StateError('private restore error');
+    addTearDown(auth.close);
+    final container = await pumpApp(tester, auth);
+    final router = container.read(appRouterProvider);
+    router.go('/settings/notices');
+    await tester.pumpAndSettle();
+    expect(
+      router.routeInformationProvider.value.uri.path,
+      '/account/suspended',
+    );
+    expect(
+      find.text(
+        'Private moderation notices and their history, with the reasons intended for you. This is not a public profile badge or a score.',
+      ),
+      findsNothing,
+    );
+    expect(
+      find.text('Account access could not be verified. Try again or sign out.'),
+      findsOneWidget,
+    );
+    expect(find.text('private restore error'), findsNothing);
+    auth.snapshotError = null;
+    await tester.tap(find.byKey(const Key('account-status-check')));
+    await tester.pumpAndSettle();
+    expect(
+      container.read(authSessionProvider).phase,
+      AuthSessionPhase.signedOut,
+    );
+    expect(router.routeInformationProvider.value.uri.path, '/auth');
+    expect(find.byKey(const Key('auth-email-field')), findsOneWidget);
+  });
 }
 
 Future<ProviderContainer> pumpApp(
