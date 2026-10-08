@@ -187,6 +187,12 @@ Disabled JSON association 404s do not establish Android/iOS verified app links.
 
 ## Validation record
 
+The follow-up [LINK-HOST-02 CPU diagnosis](link-host02-cpu-diagnosis.md) separates
+global initialization, fresh local first requests and repeated route classes.
+It replaces causal guesses from the tiny mixed samples with production workerd
+profiles and version-scoped hosted windows. Its SSR-preload trial was discarded;
+the deployed runtime remains the version recorded below. PR #176 stays draft.
+
 The final PR records exact check results and deployed version. Local focused
 ingress tests and real workerd anonymous probes exercise associations, sensitive
 headers, lists, missing details, HEAD/POST, Flight/prefetch, assets, redirects and

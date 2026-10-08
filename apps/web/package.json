@@ -10,6 +10,7 @@
     "typecheck": "next typegen && tsc --noEmit",
     "test": "vitest run",
     "worker:build:staging": "node --env-file=.env.worker-staging.local scripts/worker-staging.mjs build",
+    "worker:profile-build:staging": "node --env-file=.env.worker-staging.local scripts/worker-staging.mjs profile-build",
     "worker:preview:staging": "node --env-file=.env.worker-staging.local scripts/worker-staging.mjs preview",
     "worker:dry-run:staging": "node --env-file=.env.worker-staging.local scripts/worker-staging.mjs dry-run",
     "worker:deploy:staging": "node --env-file=.env.worker-staging.local scripts/worker-staging.mjs deploy"
@@ -34,6 +35,7 @@
   },
   "devDependencies": {
     "@cloudflare/vite-plugin": "1.63.0",
+    "@jridgewell/trace-mapping": "0.3.31",
     "@tailwindcss/postcss": "^4",
     "@testing-library/dom": "10.4.1",
     "@testing-library/jest-dom": "7.0.1",
@@ -51,7 +53,8 @@
     "vinext": "1.0.1",
     "vite": "8.3.0",
     "vitest": "4.1.11",
-    "wrangler": "4.148.0"
+    "wrangler": "4.148.0",
+    "ws": "8.21.0"
   },
   "type": "module"
 }

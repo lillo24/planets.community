@@ -1,6 +1,6 @@
 import { spawnSync } from "node:child_process";
 import { createRequire } from "node:module";
-import { readFileSync } from "node:fs";
+import { readFileSync, readdirSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { parsePublicEnv } from "../src/lib/config/public-env.ts";
 
@@ -37,7 +37,7 @@ for (const name of [
 const require = createRequire(import.meta.url);
 const mode = process.argv[2];
 let binary, args;
-if (mode === "build") {
+if (mode === "build" || mode === "profile-build") {
   binary = resolve(
     dirname(require.resolve("vite/package.json")),
     "bin/vite.js",
@@ -49,6 +49,8 @@ if (mode === "build") {
     "--mode",
     "worker-staging",
   ];
+  // Diagnostic maps stay local; rebuild normally before deploying.
+  if (mode === "profile-build") args.push("--sourcemap", "hidden");
 } else {
   const output = "dist/server/wrangler.json";
   const wrangler = JSON.parse(readFileSync(output, "utf8"));
@@ -76,8 +78,20 @@ if (mode === "build") {
     ];
   else if (mode === "dry-run")
     args = ["deploy", "--config", output, "--dry-run"];
-  else if (mode === "deploy") args = ["deploy", "--config", output];
-  else throw new Error("Expected build, preview, dry-run or deploy.");
+  else if (mode === "deploy") {
+    if (
+      readdirSync("dist/client", { recursive: true }).some((path) =>
+        path.endsWith(".map"),
+      )
+    )
+      throw new Error(
+        "Rebuild without diagnostic source maps before deployment.",
+      );
+    args = ["deploy", "--config", output];
+  } else
+    throw new Error(
+      "Expected build, profile-build, preview, dry-run or deploy.",
+    );
 }
 const result = spawnSync(process.execPath, [binary, ...args], {
   stdio: "inherit",
