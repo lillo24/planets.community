@@ -23,6 +23,7 @@ import 'message_chats_failure_message.dart';
 import 'messages_formatters.dart';
 import 'messages_failure_message.dart';
 import 'messages_routes.dart';
+import 'messages_navigation.dart';
 import 'message_unread_badge.dart';
 import 'participation_request_details.dart';
 
@@ -114,38 +115,16 @@ class _MessagesScreenState extends ConsumerState<MessagesScreen>
 
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
-    return DefaultTabController(
-      length: 2,
-      child: Scaffold(
-        appBar: AppBar(
-          title: Text(l10n.messagesTitle),
-          bottom: TabBar(
-            tabs: [
-              Tab(text: l10n.messagesChatsTab, icon: const Icon(Icons.forum)),
-              Tab(
-                text: l10n.messagesRequestsTab,
-                icon: const Icon(Icons.mark_email_unread_outlined),
-              ),
-            ],
-          ),
-        ),
-        body: SafeArea(
-          child: TabBarView(
-            children: [
-              _ChatsTab(
-                expectedProfileId: _expectedProfileId,
-                onRefresh: _loadChats,
-                onLoadMore: _loadMoreChats,
-              ),
-              _RequestsTab(
-                expectedProfileId: _expectedProfileId,
-                onRefresh: _loadRequests,
-                onLoadMore: _loadMoreRequests,
-              ),
-            ],
-          ),
-        ),
+    return MessagesFrame(
+      chats: _ChatsTab(
+        expectedProfileId: _expectedProfileId,
+        onRefresh: _loadChats,
+        onLoadMore: _loadMoreChats,
+      ),
+      requests: _RequestsTab(
+        expectedProfileId: _expectedProfileId,
+        onRefresh: _loadRequests,
+        onLoadMore: _loadMoreRequests,
       ),
     );
   }
@@ -167,12 +146,11 @@ class _ChatsTab extends ConsumerStatefulWidget {
 }
 
 class _ChatsTabState extends ConsumerState<_ChatsTab> {
-  var _scope = MessageChatScope.private;
-
   @override
   Widget build(BuildContext context) {
+    final scope = ref.watch(messagesNavigationProvider).scope;
     final l10n = AppLocalizations.of(context);
-    final state = switch (_scope) {
+    final state = switch (scope) {
       MessageChatScope.private => ref.watch(messageChatsProvider),
       MessageChatScope.groups => ref.watch(groupMessageChatsProvider),
     };
@@ -184,39 +162,16 @@ class _ChatsTabState extends ConsumerState<_ChatsTab> {
 
     return Column(
       children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(
-            AppSpacing.medium,
-            AppSpacing.small,
-            AppSpacing.medium,
-            0,
+        MessageChatScopeToggle(
+          scope: scope,
+          onChanged: ref.read(messagesNavigationProvider.notifier).selectScope,
+          privateLabel: MessageScopeLabel(
+            scope: MessageChatScope.private,
+            label: l10n.messageChatsPrivate,
           ),
-          child: SizedBox(
-            width: double.infinity,
-            child: SegmentedButton<MessageChatScope>(
-              key: const Key('message-chat-scope-toggle'),
-              showSelectedIcon: false,
-              segments: [
-                ButtonSegment(
-                  value: MessageChatScope.private,
-                  label: MessageScopeLabel(
-                    scope: MessageChatScope.private,
-                    label: l10n.messageChatsPrivate,
-                  ),
-                ),
-                ButtonSegment(
-                  value: MessageChatScope.groups,
-                  label: MessageScopeLabel(
-                    scope: MessageChatScope.groups,
-                    label: l10n.messageChatsGroups,
-                  ),
-                ),
-              ],
-              selected: {_scope},
-              onSelectionChanged: (selection) {
-                setState(() => _scope = selection.single);
-              },
-            ),
+          groupsLabel: MessageScopeLabel(
+            scope: MessageChatScope.groups,
+            label: l10n.messageChatsGroups,
           ),
         ),
         const SizedBox(height: AppSpacing.small),
@@ -237,13 +192,13 @@ class _ChatsTabState extends ConsumerState<_ChatsTab> {
                       child: SizedBox(
                         height: constraints.maxHeight,
                         child: EmptyState(
-                          title: _scope == MessageChatScope.private
+                          title: scope == MessageChatScope.private
                               ? l10n.messageChatsPrivateEmptyTitle
                               : l10n.projectChatsEmptyTitle,
-                          message: _scope == MessageChatScope.private
+                          message: scope == MessageChatScope.private
                               ? l10n.messageChatsPrivateEmptyMessage
                               : l10n.projectChatsEmptyMessage,
-                          icon: _scope == MessageChatScope.private
+                          icon: scope == MessageChatScope.private
                               ? Icons.lock_outline
                               : Icons.groups_outlined,
                         ),
@@ -307,7 +262,7 @@ class _ChatsTabState extends ConsumerState<_ChatsTab> {
                             key: const Key('message-chats-load-more'),
                             onPressed: state.isBusy
                                 ? null
-                                : () => widget.onLoadMore(_scope),
+                                : () => widget.onLoadMore(scope),
                             child: state.phase == MessageChatsPhase.loadingMore
                                 ? const SizedBox.square(
                                     dimension: 20,
