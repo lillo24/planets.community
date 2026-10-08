@@ -879,11 +879,17 @@ h2 {
   color: var(--pink);
 }
 
-.contact-link {
-  display: inline-block;
+.contact-links {
+  display: grid;
+  justify-items: start;
+  gap: 0.75rem;
   margin-top: 1.25rem;
+}
+
+.contact-link {
   font-size: 1.15rem;
   font-weight: 800;
+  overflow-wrap: anywhere;
   text-underline-offset: 0.25rem;
 }
 
