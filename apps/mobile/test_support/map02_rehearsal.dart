@@ -51,7 +51,6 @@ void main() {
   if (!kDebugMode || !const bool.fromEnvironment('MAP02_REHEARSAL')) {
     throw StateError('MAP02 rehearsal requires an opted-in debug build.');
   }
-  WidgetsFlutterBinding.ensureInitialized();
   final locations = _Locations(), factory = FakeEditorPlaceFactory();
   final proposals = FakeProposalGateway(),
       recurring = FakeRecurringActivityGateway(),
@@ -76,6 +75,7 @@ void main() {
       throw StateError('Unknown bounded MAP02 rehearsal command.');
     },
   );
+  WidgetsFlutterBinding.ensureInitialized();
   final container = ProviderContainer(
     overrides: [
       appConfigProvider.overrideWithValue(
