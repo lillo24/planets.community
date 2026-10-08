@@ -1,5 +1,9 @@
 # MODINT01 current moderation working copy
 
+Regenerated and compared with the actual EN/IT ARBs on October 8 at
+`cf5469ab32912299b4e382e8ef582e99cbf99b51`: all 46 key pairs below are
+verbatim and unchanged. This refresh is source evidence, not founder approval.
+
 Extracted verbatim from the combined `app_en.arb` and `app_it.arb`. This is delivered
 working copy for founder review, **not policy approval**. Staff-written reasons are
 plain text shown verbatim to their intended account; the native examples use only

@@ -1,18 +1,22 @@
 # MODINT01 moderation/Auth integration review
 
-Status: **draft integration; required live QA incomplete; not merged or deployed**. Founder
+Status: **draft integration; October 8 technical QA and hosted validation passed; not merged or deployed**. Founder
 moderation copy/presentation and unresolved policy review remain mandatory.
 No predecessor PR is closed, retargeted, marked ready, or merged by this task.
 
 ## Exact inputs and provenance
 
-### October 8 committed-main reconciliation (validation in progress)
+### October 8 committed-main reconciliation and current evidence
 
 After the founder started only the owned backend, its health check passed.
 Fetched committed main advanced to `e7971d6611a1bd750c0c51b797234f5cf19c9dec`
 (merged #156–#167). The previous published head
 `cf85c6895cf0351429e1c8a2b91d13569b5afcae` conflicted with that main; this
 continuation merges it into the same branch/PR without rewriting either history.
+Reconciliation commit `8eafa099b17723f30c654cfd10bfa9d7d8ac20d7` has parents
+`cf85c6895cf0351429e1c8a2b91d13569b5afcae` and that main pin. All ten selected
+predecessor commits listed in the historical inputs remain ancestors. The final
+runtime/test source is `cf5469ab32912299b4e382e8ef582e99cbf99b51`.
 All thirteen conflict files retain both histories' behavior and localization keys.
 
 Auth retains main's explicit restoration failure/retry, Welcome/logout behavior
@@ -29,17 +33,146 @@ verify genuine sign-out errors at the current Settings action. Native harnesses
 use Welcome or public Messages login and Messages' profile setup action; normal
 OTP, canonical gateways, guards and assertions remain. No session is injected.
 The first full Mobile run's two obsolete Home-entry test failures are retained
-in the private log; their corrected focused replay passed. The final full run
-and new combined Database/Web/Site gates are not yet claimed here.
+in the private log; corrected focused and full runs passed.
 
 The new v4 conversation-list API enters the reviewed suspension inventory and
 real-auth pre-existing-session/expected-ID denial matrix. New template timezone
 defaults and push-projector receipt recheck preserve their canonical account and
-worker boundaries. Required fresh database and Android validation is pending.
-October 6–7 browser/native/CI evidence below is historical, not proof of this
-October 8 merge. The previously compiled APKs/configs must not be replayed as
-current-source evidence: prepare fresh actors after database gates and rebuild.
-Draft, founder review, no merge/deploy and dependency/Realtime limitations remain.
+worker boundaries. Fresh disposable-stack Database, browser and Android campaigns
+have now passed. October 6–7 browser/native/CI evidence below stays historical,
+not proof of this October 8 merge. No old APK was reused for the complete OTP or
+request campaign. Draft, founder review, no merge/deploy and operational limits remain.
+
+#### Current validation and source boundaries
+
+| Area                            | Actual October 8 evidence                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| ------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Database                        | Full `npm run check:db` at `8eafa09`: populated conversation/unread upgrades, owned-stack reset/replay, lint/advisors, **128 pgTAP files / 3,904 assertions**, domain/media/chat/notification/push/resource/moderation/demo recovery/idempotency, generated-type drift and observed-lock membership coverage pass. No shared/hosted reset.                                                                                                                                                           |
+| Combined security audit         | **232 public RPC signatures** audited, including v4 conversation reads and the explicit safe own-status exception. Real authenticated pre-existing-session/expected-ID denials and addressed-row/cached-socket fanout suppression pass. The additional dynamic matrix contains **19** checks; the earlier hardcoded console label of 18 was corrected at `343f324`, then all 19 passed again.                                                                                                        |
+| Concurrency                     | Consequence: 36 races. Suspension: 24 observed-lock winner-order races. MODINT: six apply/admission and two revoke/recovery observed-lock races pass.                                                                                                                                                                                                                                                                                                                                                |
+| Populated v4 upgrade            | Five actors / ten scope pages pass; the prior v3 definition/payload remains unchanged and v4 is additive. Demo fixtures were reseeded after the final database reset, before fresh UI actors.                                                                                                                                                                                                                                                                                                        |
+| Mobile                          | Full l10n/format/analysis and **1,799 passing tests / two pre-existing skips** at `4db8f02`. Production Mobile/unit/OTP-helper source is byte-identical from that source to `cf5469a`; the later changes affect only the request harness and its map. Matching final request APK compilation and analysis pass.                                                                                                                                                                                      |
+| Web/tooling                     | **63 tooling tests**, **455 Web tests / one pre-existing skip**, lint/types and production Next 16.3.8 build pass at `8eafa09`. Web/runtime/dependency/backend trees are unchanged through `cf5469a`.                                                                                                                                                                                                                                                                                                |
+| Site                            | **34 client + 19 worker tests**, lint/types/build and Cloudflare deployment dry run pass at `8eafa09`; relevant source unchanged through `cf5469a`. No deployment.                                                                                                                                                                                                                                                                                                                                   |
+| Web Auth / Tavoli / HTTP-SSR    | Fresh real-OTP Auth and Tavoli checks pass. Affected hosting contracts pass: chunked Proxy refresh, interleaved HTML/Flight and private cache isolation, private evidence/notes denial, forged moderator/admin-self suspension denial, stale/suspended staff reauthorization and independent sign-out. These are local contracts, not provider/CDN/free-tier validation.                                                                                                                             |
+| Android OTP                     | Complete normal-main campaign passes at `4db8f02`: ordinary OTP, missing/incomplete/complete profile, ready Home, both navigation choices, account exits/switching, late-state isolation, EN/IT notices/history, suspension/shortcuts/deep-link denial/sign-out/revocation refresh, photo-free admission/recovery/membership/chat continuity, pair privacy and template/private-copy access. No production gateway or session injection.                                                             |
+| Android request forms           | Complete matching campaign passes at **`cf5469a`**: Project and Resource canonical restriction denials with independently confirmed own status; EN/IT explanations; notices/Back with retained draft/modal; revoke and one deliberate fresh retry; unrelated account/block isolation, same-ID session replacement and both PT403 suspension routes.                                                                                                                                                  |
+| Actual Android Back/cold resume | At `9f3c0d1`, root Back really exits the Activity to the Android launcher. A separate ordinary cold launch preserves the real suspended OTP session, rechecks canonical status, remains denied in EN/IT and at `/messages`, then signs out. The continuous campaign separately verifies the router delegates root Back to OS exit. Auth/suspension/router production source is unchanged afterward; the stronger resume assertion added at `4db8f02` was not replayed as a separate cold-resume run. |
+
+Private logs identify each exact run; they are retained locally because they can
+contain OTP/session material. Final OTP log: `otp-device-oct8-layout-final.log`;
+final requests: `request-device-oct8-hit-test.log`; actual cold resume:
+`resume-device-oct8.log`. A build or an earlier partial attempt is not a flow pass.
+
+Matching private APK SHA-256 records:
+
+- OTP `4db8f02`: `FF2534EB79953F08FA8AFBC0490F745F4ADB37CFDB5BA719018DA5CAF03D013A`.
+- Requests `cf5469a`: `37AFFB6E9DC86B57D4016820F8BDFA51A7D54B423898B9D800E3C1720E6CABA7`.
+- Separate suspended cold resume `9f3c0d1`: `691FD0C5599B518A3FE4D14F99528F143FF5B3F79113FA35BE153AF5CC11D32B`.
+
+#### Demonstrated failures and bounded repairs
+
+Failed runs and partial captures remain outside Git, separately identified; no
+unknown admission/retry outcome was blindly repeated and no timeout/assertion
+or canonical permission was weakened.
+
+- Main's Home/Welcome orbit intentionally keeps animating. The native settling
+  helper now waits for finite entrance/route motion while retaining that real
+  ticker; other routes still use bounded strict settling. Two widget tests
+  cover the real ticker and a stuck non-hero loader. Selecting an already-retained
+  language does not save/pop, so the harness chooses the other radio and back.
+- Root Back legitimately closes Android's Activity. Waiting for more driver
+  frames from a closed Activity was not evidence of an access escape. The
+  separate cold-resume campaign above verifies the actual persisted denial.
+- A native run exposed a real shared `EmptyState` RenderFlex overflow during
+  first-time profile/IME layout. Two red unit reproductions (360px normal text
+  and 320px/2× text with reduced height) demonstrate the problem. The existing
+  state is now scrollable with unchanged copy/padding/centering; both regressions,
+  full Mobile and complete native OTP replay pass. Responsive/layout/test guidance
+  informed this bounded fix, not an Auth/domain redesign.
+- Resource detail's lazy list had not mounted its below-cover request button.
+  The harness now scrolls only that detail list with a bounded search. A later
+  closing-overlay/IME frame intercepted a Project retry tap. Canonical readback
+  confirmed the withdrawn Project request and the one fresh Resource pending
+  request before new actors were prepared. Final `cf5469a` waits until a control
+  is actually hit-testable, then taps **once**; it does not suppress missed-hit
+  warnings or automatically retry mutations. Both forms now pass.
+- The first disposable Database command lacked the explicit reset opt-in and
+  failed before reset. One earlier hosted Database attempt passed all 3,904 SQL
+  assertions but failed Docker cleanup (`directory not empty`, exit 125); only
+  that failed job was rerun. Both failures remain recorded, not reclassified.
+
+#### Current browser actions and captures
+
+Normal browser OTP and actual controls pass for moderator safety apply/revoke,
+distinct public reason/private note, persisted history and absence of moderator
+suspension controls; admin suspension/unsuspension also passes. A valid suspended
+ordinary session gets Web's canonical setup denial, can sign out and cannot open
+the private staff case. A fresh photo-free participant completes basic profile,
+Join, token-free confirmation, explicit read-only participation refresh and the
+public app-link fallback. Canonical readback proves one membership, one receipt,
+zero photos and invitation origin, with no new admission on recovery.
+
+Hidden/unknown/elapsed-Project/revoked invitation states are generic; hidden DOM
+contains no hidden title/Project ID. Hide/revoke uses canonical real-auth RPCs;
+only synthetic Project times were temporarily backdated then restored for the
+existing end-time boundary. No invitation TTL or new policy is introduced. Two
+consequence episodes each retain apply/revoke history and distinct private/public
+text. Browser setup/mutations used real sessions, not injected browser authority.
+
+The [capture map](screenshots/modint01-continuation/README.md) indexes **26 current
+native PNGs** (20 complete OTP, four final request explanations, two separate
+actual Back/cold-resume captures) and **two new settled browser JPGs**. Every
+published image was visually inspected; no OTP, bearer link, privileged key or
+private note is included. Five October 8 browser captures were compositor-stale
+or loading frames despite verified settled DOM/actions; they are withheld, not
+presented as fresh screenshot proof. Seven October 6 browser captures remain
+explicitly historical. No image was redrawn or edited into a claimed pass.
+
+The current pair screen visibly says live updates are temporarily unavailable.
+Canonical send/feed/history continuity passed; healthy client Realtime delivery
+and the historical incident's root cause are **not** claimed. App/store links
+are not OS-association or download tests; download URLs remain unconfigured.
+
+#### Hosted source and publication
+
+[Final runtime/test-source hosted run 37771267505](https://github.com/lillo24/planets.community/actions/runs/37771267505)
+tests `cf5469ab32912299b4e382e8ef582e99cbf99b51`. Classification, Mobile, Web,
+Database and Site all completed successfully. The classifier selected **285
+changed paths; all four area flags true**. Every job checked out GitHub merge
+`96c00697382bba1a6e0b59d38be06a4799a1ad35`, with parents pinned main `e7971d6`
+and tested source `cf5469a`. Its full tree
+`7f7c0ab8621d4b7ddb72815ba1aa3253fdf326f3` exactly matches the tested source.
+The retained final hosted log confirms 128 files / 3,904 assertions and the
+232-signature suspension audit, not merely a green classifier.
+Previous reconciled-source runs `37759137371`, `37764775667`, `37766991874` and
+`37768973300` passed, but do not substitute for this final harness source.
+No hosted quota exception or CI waiver is used. Target main was reconfirmed
+unchanged and the draft PR was cleanly mergeable after these final-source checks.
+
+Only documentation/maps/screenshots may follow the final tested source. The PR
+evidence comment records separate exact tested/published SHAs and verifies their
+runtime/test/workflow/config/manifest source equivalence. A publication-only
+`[skip ci]` commit is permitted by this continuation prompt; it is **not** an
+unrun published-head CI claim or a waiver for a future merge.
+
+#### Current remaining checks and cleanup
+
+| Item                                     | Disposition                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
+| ---------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Required real Android/browser campaigns  | Passed with the exact source/run boundaries above; partial historical attempts remain distinct.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| Final-source hosted validation           | All five jobs passed on `cf5469a`; actual checkout, classification and full-tree equivalence verified above.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| Founder review                           | Review the verbatim 46-key EN/IT copy and current screenshots, reason/history presentation and labels. No approval inferred from QA. PR stays draft.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| Physical device / iOS / accessibility    | Physical-device, iOS, TalkBack, VoiceOver and hardware-keyboard checks **unrun**; separate consolidated review.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| Browser screenshot completeness          | Only two settled October 8 browser frames published; five stale/loading frames withheld. This is a capture limitation, not an unexecuted browser action or a relabelled old screenshot.                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| Dependency / hosting / policy boundaries | Fresh full audit: **16 open findings (1 moderate, 14 high, 1 critical)**. No upgrades/security waiver. Historical DB/Realtime causes, Cloudflare CPU/hosting suitability, provider activation and founder-owned warning/disclosure/appeal/age/retention policies remain unresolved or separately scoped.                                                                                                                                                                                                                                                                                                                                                   |
+| Owned backend/configuration              | `npm run db:stop` reports the MODINT01 project with `backup=true`; no owned containers remain. Canonical TOML is restored byte-for-byte (SHA-256 `2E67B7A5CDA9FFC671C31B4461C1C8B896CC75C3BF727F6E406EE573EEFBD8F6`). Shared stack remains running and untouched.                                                                                                                                                                                                                                                                                                                                                                                          |
+| Other owned resources                    | Browser server/drivers and the task app stopped. Generated Mobile/Web/Android local configuration was retained outside the checkout with matching file hashes; Supabase CLI state was also moved to the private backup; generated Flutter build/Dart artifacts were cleaned after APKs/logs were retained. Task-owned headless emulator/build-daemon stop commands were policy-blocked. The founder explicitly requested leaving those processes running rather than manual cleanup; they still consume host memory. This is a cleanup exception, not a successful stop or an outstanding QA gate. No shared ADB/global daemon stop or workaround is used. |
+
+Private continuation evidence lives under the retained backup's
+`continuation-4a8d143592974b4385e5e770279f2990/`; it must not be uploaded. The
+draft branch/worktree remains intentionally available for founder review/fix-up.
+No ready-for-review change, predecessor cleanup, merge or deployment is authorized.
 
 ### Historical committed-main continuation (2026-10-06–07, native replay blocked)
 
@@ -677,10 +810,10 @@ host, signing, app-store or production account operation is performed.
 
 The [exact current EN/IT copy extract](modint01-moderation-copy.md) is generated
 from the merged source, with no copy rewrite or founder approval inferred.
-The original-run browser screenshot above remains historical. Current continuation
-captures and provenance are indexed above. Native type/history captures are now
-available from a partial run; required suspension and request-form captures and
-complete driver passes remain missing. No earlier capture is relabelled as a pass.
+The original-run browser screenshot above remains historical. Current October 8
+captures and exact provenance are indexed above. Complete OTP/request passes and
+all required EN/IT native states are now available; the actual cold-resume subset
+has its own source/run record. No earlier capture is relabelled as a current pass.
 
 | Topic                                           | What this draft delivers                                                                | Founder review / separate decision                         |
 | ----------------------------------------------- | --------------------------------------------------------------------------------------- | ---------------------------------------------------------- |
@@ -692,7 +825,7 @@ complete driver passes remain missing. No earlier capture is relabelled as a pas
 | Minimum age / identity                          | No age or identity rule introduced                                                      | Separate policy and any legal review                       |
 
 - Review exact current EN/IT moderation wording and synthetic screenshots
-  (full combined-head native evidence pending), especially notices, own request
+  (October 8 complete native evidence), especially notices, own request
   explanations, suspension and private-history apply/revoke labels.
 - Approve reason presentation and distinctions between current/ended consequences
   without inferring staff identity, counterparty restrictions or evidence.
@@ -720,8 +853,8 @@ The final exact tested/published SHAs and source-tree equivalence are also recor
 in the PR evidence comment, since a commit cannot contain its own resulting SHA.
 There is no unrun published-head CI claim and no CI availability waiver.
 
-For the current continuation use the explicit configuration preparation/startup,
-compiled-pair provenance and native handoff near the top of this packet instead
-of inferring readiness from this old cleanup. Browser continuation has completed.
-Neither green hosted CI nor founder review waives the remaining real Android
-flows/screenshots. No merge/readiness or deployment is authorized here.
+For the current continuation use the October 8 source/results/cleanup section,
+not this historical cleanup or the old APK handoff. Required Android/browser
+campaigns have completed with their explicit provenance and limitations. Neither
+technical QA nor hosted CI grants founder copy approval or merge/readiness/deployment
+authorization. Any later rehearsal must prepare owned configuration first.
