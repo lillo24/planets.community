@@ -17,6 +17,11 @@ signed-out screens need not redirect automatically to Auth.
 Main removed the Home Auth card: native ready-Home captures assert the actual
 hero plus canonical ready identity/no command failure, not obsolete status text.
 Incomplete-profile completion uses the normal Messages setup action.
+`native_ui_settle.dart` settles finite entrance/route motion when the actual
+Home/Welcome orbit is visible, without disabling its intentional repeating
+animation. Other screens retain a strict animation-idle wait; canonical async
+readiness/result assertions and their 30-second deadlines remain unchanged.
+The helper's widget regressions keep real orbit motion and reject stuck loaders.
 The OTP smoke additionally covers navigation choices,
 photo-free participant admission, nullable request origin, chat continuity under
 content hiding, all private notice types and suspension during ordinary access.

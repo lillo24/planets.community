@@ -22,6 +22,7 @@ import 'package:planets_mobile/main.dart' as normal;
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'isolated_pkce_storage.dart';
+import 'native_ui_settle.dart';
 
 // Starts the NORMAL main.dart bootstrap signed out. No app gateway/provider
 // override or pre-mounted app login: all ordinary OTPs enter through real UI.
@@ -139,7 +140,7 @@ void main() {
         'complete A settles',
       );
       router.go('/');
-      await tester.pumpAndSettle();
+      await settleNativeUi(tester);
       await binding.takeScreenshot('authqa01-normal-home-en');
       expect(container.read(authCommandProvider).failure, isNull);
       expect(router.routerDelegate.state.uri.path, '/');
@@ -158,14 +159,14 @@ void main() {
 
       await _language(tester, router, 'italian');
       router.go('/');
-      await tester.pumpAndSettle();
+      await settleNativeUi(tester);
       expect(find.byKey(const Key('auth-safe-error')), findsNothing);
       await binding.takeScreenshot('authqa01-normal-home-it');
       await _language(tester, router, 'english');
 
       if (modint) {
         router.go('/');
-        await tester.pumpAndSettle();
+        await settleNativeUi(tester);
         expect(find.text('Sign out'), findsNothing);
         final savedDestination = container
             .read(navigationPreferenceProvider)
@@ -179,9 +180,9 @@ void main() {
           savedDestination,
         ]) {
           router.go('/settings');
-          await tester.pumpAndSettle();
+          await settleNativeUi(tester);
           await tester.tap(find.byKey(const Key('settings-navigation-row')));
-          await tester.pumpAndSettle();
+          await settleNativeUi(tester);
           await tester.tap(
             find.byKey(Key('navigation-${destination.name}-option')),
           );
@@ -227,12 +228,12 @@ void main() {
         await container
             .read(languagePreferenceProvider.notifier)
             .select(LanguagePreference.italian);
-        await tester.pumpAndSettle();
+        await settleNativeUi(tester);
         await binding.takeScreenshot('modint01-safety-active-it');
         await container
             .read(languagePreferenceProvider.notifier)
             .select(LanguagePreference.english);
-        await tester.pumpAndSettle();
+        await settleNativeUi(tester);
       }
       await tester.pageBack();
       await _wait(
@@ -269,7 +270,7 @@ void main() {
       );
 
       router.go('/settings/notices');
-      await tester.pumpAndSettle();
+      await settleNativeUi(tester);
       await _uiLogin(tester, emailB, mailpit);
       await _wait(
         tester,
@@ -288,7 +289,7 @@ void main() {
       );
       expect(find.text('Synthetic AuthQA notice'), findsNothing);
       router.go('/');
-      await tester.pumpAndSettle();
+      await settleNativeUi(tester);
       expect(find.byKey(const Key('auth-safe-error')), findsNothing);
       await _signOut(tester, router, profile: modint);
       await _wait(
@@ -305,7 +306,7 @@ void main() {
       // Profile deliberately becomes the signed-out example, not an Auth page.
       // Main now returns explicit logout to Welcome; use its normal login entry.
       router.go('/');
-      await tester.pumpAndSettle();
+      await settleNativeUi(tester);
       await _uiLogin(tester, emailNew, mailpit);
       await _wait(
         tester,
@@ -325,7 +326,7 @@ void main() {
           .single();
       expect(anchor['display_name'], isNull);
       router.go('/messages');
-      await tester.pumpAndSettle();
+      await settleNativeUi(tester);
       await tester.tap(find.byKey(const Key('messages-context-action')));
       await _wait(
         tester,
@@ -356,7 +357,7 @@ void main() {
         'Synthetic AuthQA new',
       );
       router.go('/');
-      await tester.pumpAndSettle();
+      await settleNativeUi(tester);
       expect(find.byKey(const Key('home-planets-hero')), findsOneWidget);
       expect(find.byKey(const Key('auth-safe-error')), findsNothing);
       await _signOut(tester, router);
@@ -373,7 +374,7 @@ void main() {
 
       if (modint) {
         router.go('/');
-        await tester.pumpAndSettle();
+        await settleNativeUi(tester);
         await _uiLogin(tester, emailA, mailpit);
         await _wait(
           tester,
@@ -409,7 +410,7 @@ void main() {
       expect(router.routerDelegate.state.uri.path, '/account/suspended');
       if (modint) {
         await tester.binding.handlePopRoute();
-        await tester.pumpAndSettle();
+        await settleNativeUi(tester);
         expect(router.routerDelegate.state.uri.path, '/account/suspended');
       }
       if (modint) {
@@ -417,12 +418,12 @@ void main() {
         await container
             .read(languagePreferenceProvider.notifier)
             .select(LanguagePreference.italian);
-        await tester.pumpAndSettle();
+        await settleNativeUi(tester);
         await binding.takeScreenshot('modint01-suspension-it');
         await container
             .read(languagePreferenceProvider.notifier)
             .select(LanguagePreference.english);
-        await tester.pumpAndSettle();
+        await settleNativeUi(tester);
       }
       for (final target in [
         '/',
@@ -441,7 +442,7 @@ void main() {
           '/join/project/${const String.fromEnvironment('MODINT_PARTICIPANT_TOKEN')}',
       ]) {
         router.go(target);
-        await tester.pumpAndSettle();
+        await settleNativeUi(tester);
         expect(router.routerDelegate.state.uri.path, '/account/suspended');
         expect(find.byKey(const Key('settings-notices-row')), findsNothing);
         expect(find.text('Synthetic AuthQA notice'), findsNothing);
@@ -456,7 +457,7 @@ void main() {
       await tester.ensureVisible(
         find.byKey(const Key('account-status-sign-out')),
       );
-      await tester.pumpAndSettle();
+      await settleNativeUi(tester);
       await tester.tap(find.byKey(const Key('account-status-sign-out')));
       await _wait(
         tester,
@@ -466,7 +467,7 @@ void main() {
         'suspension-screen canonical sign-out',
       );
       router.go('/');
-      await tester.pumpAndSettle();
+      await settleNativeUi(tester);
       await _uiLogin(tester, emailA, mailpit);
       await _wait(
         tester,
@@ -495,7 +496,7 @@ void main() {
         'A status restoration',
       );
       router.go('/');
-      await tester.pumpAndSettle();
+      await settleNativeUi(tester);
       expect(find.byKey(const Key('home-planets-hero')), findsOneWidget);
       expect(find.byKey(const Key('auth-safe-error')), findsNothing);
       debugPrint(
@@ -512,7 +513,7 @@ void main() {
         await container
             .read(languagePreferenceProvider.notifier)
             .select(LanguagePreference.italian);
-        await tester.pumpAndSettle();
+        await settleNativeUi(tester);
         await binding.takeScreenshot('modint01-suspension-removed-it');
       }
       expect(tester.takeException(), isNull);
@@ -573,7 +574,7 @@ Future<void> _signOut(
     maxScrolls: 10,
   );
   await tester.ensureVisible(find.byKey(const Key('account-sign-out-button')));
-  await tester.pumpAndSettle();
+  await settleNativeUi(tester);
   await tester.tap(find.byKey(const Key('account-sign-out-button')));
   await tester.pump();
 }
@@ -661,7 +662,7 @@ Future<String> _combinedMainFlows(
   expect(draftId, isNotEmpty);
   await binding.takeScreenshot('modint01-template-private-copy-en');
   router.go('/');
-  await tester.pumpAndSettle();
+  await settleNativeUi(tester);
   debugPrint(
     'MODINT01 native canonical pair send and photo-free private template copy passed; delegate denial was verified by preparation.',
   );
@@ -725,19 +726,19 @@ Future<void> _integrationFlows(
       scrollable: find.byType(Scrollable).first,
     );
     await tester.ensureVisible(card);
-    await tester.pumpAndSettle();
+    await settleNativeUi(tester);
     await binding.takeScreenshot('modint01-$name-en');
     await container
         .read(languagePreferenceProvider.notifier)
         .select(LanguagePreference.italian);
-    await tester.pumpAndSettle();
+    await settleNativeUi(tester);
     await binding.takeScreenshot('modint01-$name-it');
     await container
         .read(languagePreferenceProvider.notifier)
         .select(LanguagePreference.english);
-    await tester.pumpAndSettle();
+    await settleNativeUi(tester);
     router.go('/');
-    await tester.pumpAndSettle();
+    await settleNativeUi(tester);
   }
 
   router.go('/join/project/$token');
@@ -773,7 +774,7 @@ Future<void> _integrationFlows(
     200,
     scrollable: find.byType(Scrollable).first,
   );
-  await tester.pumpAndSettle();
+  await settleNativeUi(tester);
   await tester.tap(find.byType(OutlinedButton));
   await _wait(
     tester,
@@ -797,7 +798,7 @@ Future<void> _integrationFlows(
   await tester.ensureVisible(
     find.byKey(const Key('participant-invite-open-chat')),
   );
-  await tester.pumpAndSettle();
+  await settleNativeUi(tester);
   await tester.tap(find.byKey(const Key('participant-invite-open-chat')));
   await _wait(
     tester,
@@ -852,9 +853,9 @@ Future<void> _language(
   String language,
 ) async {
   router.go('/settings');
-  await tester.pumpAndSettle();
+  await settleNativeUi(tester);
   await tester.tap(find.byKey(const Key('settings-language-row')));
-  await tester.pumpAndSettle();
+  await settleNativeUi(tester);
   await tester.tap(find.byKey(Key('language-$language-option')));
   await _wait(
     tester,
@@ -864,7 +865,7 @@ Future<void> _language(
 }
 
 Future<void> _uiLogin(WidgetTester tester, String email, String mailpit) async {
-  await tester.pumpAndSettle();
+  await settleNativeUi(tester);
   if (find.byKey(const Key('auth-email-field')).evaluate().isEmpty &&
       find.byKey(const Key('welcome-login')).evaluate().isEmpty) {
     // Home no longer contains an Auth card. Public Messages owns contextual
@@ -872,7 +873,7 @@ Future<void> _uiLogin(WidgetTester tester, String email, String mailpit) async {
     ProviderScope.containerOf(tester.element(find.byType(PlanetsApp)))
         .read(appRouterProvider)
         .go('/messages');
-    await tester.pumpAndSettle();
+    await settleNativeUi(tester);
   }
   await _wait(
     tester,
@@ -889,13 +890,13 @@ Future<void> _uiLogin(WidgetTester tester, String email, String mailpit) async {
           ? welcome
           : find.byKey(const Key('messages-context-action')),
     );
-    await tester.pumpAndSettle();
+    await settleNativeUi(tester);
   }
   final mailbox = _Mailbox(mailpit);
   try {
     final ids = await mailbox.ids(email);
     await tester.enterText(find.byKey(const Key('auth-email-field')), email);
-    await tester.pumpAndSettle();
+    await settleNativeUi(tester);
     await tester.ensureVisible(find.byKey(const Key('auth-request-button')));
     await tester.tap(find.byKey(const Key('auth-request-button')));
     await _wait(
@@ -906,7 +907,7 @@ Future<void> _uiLogin(WidgetTester tester, String email, String mailpit) async {
     final token = await mailbox.freshOtp(email, ids);
     await tester.enterText(find.byKey(const Key('auth-code-field')), token);
     // Native route/IME animation can otherwise intercept this real UI tap.
-    await tester.pumpAndSettle();
+    await settleNativeUi(tester);
     await tester.ensureVisible(find.byKey(const Key('auth-verify-button')));
     await tester.tap(find.byKey(const Key('auth-verify-button')));
     await tester.pump();

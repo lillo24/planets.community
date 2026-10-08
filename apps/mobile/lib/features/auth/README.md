@@ -112,8 +112,9 @@ A sign-out/switch epoch rejects both success and failure from an older operation
 even after the same account signs in again; an identity-ID match alone cannot
 restore an abandoned flow. Provider disposal also invalidates pending commands.
 `bootstrap` retains its existing boolean contract for ordinary restoration and
-profile confirmation. Home still displays genuine current command failures,
-including failed sign-out; there is no ready-session blanket error suppression.
+profile confirmation. Main's Home no longer owns an Auth card; current command
+failures remain visible at the Auth/account-exit controls, including Settings'
+failed sign-out. There is no ready-session blanket error suppression.
 The status timeout, database rules and suspension allowlist are unchanged.
 See `docs/development/authqa01-otp-bootstrap-and-home-status.md` for the separate
 disposition of #142's normal-Home observation and native evidence.

@@ -19,6 +19,7 @@ import 'package:planets_mobile/main.dart' as normal;
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'isolated_pkce_storage.dart';
+import 'native_ui_settle.dart';
 
 // Real normal main/OTP/forms; staff client only arranges synthetic consequences.
 // No app provider override, injected session, remote target or production hook.
@@ -151,7 +152,7 @@ void main() {
             .read(languagePreferenceProvider.notifier)
             .select(LanguagePreference.english);
         router.go('/');
-        await tester.pumpAndSettle();
+        await settleNativeUi(tester);
         await _uiLogin(tester, email, mailbox);
         await _wait(
           tester,
@@ -181,7 +182,7 @@ void main() {
             find.byKey(const Key('participation-message-field')),
             message,
           );
-          await tester.pumpAndSettle();
+          await settleNativeUi(tester);
         }
 
         Future<void> resourceForm(String message) async {
@@ -210,7 +211,7 @@ void main() {
             find.byKey(const Key('resource-request-message')),
             message,
           );
-          await tester.pumpAndSettle();
+          await settleNativeUi(tester);
         }
 
         Future<void> explanation(bool active) async {
@@ -237,7 +238,7 @@ void main() {
                       .isNotEmpty,
               'generic denial',
             );
-            await tester.pumpAndSettle();
+            await settleNativeUi(tester);
             expect(error, findsNothing);
           }
           // Staff-written user reason stays in notices, never composer error copy.
@@ -296,12 +297,12 @@ void main() {
         await tester.ensureVisible(
           find.byKey(const Key('own-request-restriction-notices')),
         );
-        await tester.pumpAndSettle();
+        await settleNativeUi(tester);
         await binding.takeScreenshot('09c2b2-project-en');
         await container
             .read(languagePreferenceProvider.notifier)
             .select(LanguagePreference.italian);
-        await tester.pumpAndSettle();
+        await settleNativeUi(tester);
         await binding.takeScreenshot('09c2b2-project-it');
         await _tap(tester, 'own-request-restriction-notices');
         await _wait(
@@ -339,12 +340,12 @@ void main() {
         await tester.ensureVisible(
           find.byKey(const Key('own-request-restriction-notices')),
         );
-        await tester.pumpAndSettle();
+        await settleNativeUi(tester);
         await binding.takeScreenshot('09c2b2-resource-it');
         await container
             .read(languagePreferenceProvider.notifier)
             .select(LanguagePreference.english);
-        await tester.pumpAndSettle();
+        await settleNativeUi(tester);
         await binding.takeScreenshot('09c2b2-resource-en');
         await _tap(tester, 'own-request-restriction-notices');
         await _wait(
@@ -443,7 +444,7 @@ void main() {
           await explanation(false);
           if (resource) {
             await tester.tap(find.text('Cancel'));
-            await tester.pumpAndSettle();
+            await settleNativeUi(tester);
           }
         }
         restriction = await restrict();
@@ -460,7 +461,7 @@ void main() {
           await explanation(true);
           if (resource) {
             await tester.tap(find.text('Cancel'));
-            await tester.pumpAndSettle();
+            await settleNativeUi(tester);
           }
         }
         debugPrint(
@@ -477,7 +478,7 @@ void main() {
         );
         // Explicit logout reopens Welcome; use the normal Welcome/Home login UI.
         router.go('/');
-        await tester.pumpAndSettle();
+        await settleNativeUi(tester);
         await _uiLogin(tester, unrelatedEmail, mailbox);
         await _wait(
           tester,
@@ -519,7 +520,7 @@ void main() {
           'unrelated sign-out',
         );
         router.go('/');
-        await tester.pumpAndSettle();
+        await settleNativeUi(tester);
         await _uiLogin(tester, email, mailbox);
         await _wait(
           tester,
@@ -609,14 +610,14 @@ Future<Object?> _rpc(
 Future<void> _tap(WidgetTester tester, String key) async {
   final target = find.byKey(Key(key));
   await tester.ensureVisible(target);
-  await tester.pumpAndSettle();
+  await settleNativeUi(tester);
   await tester.tap(target);
   await tester.pump();
 }
 
 Future<void> _signOut(WidgetTester tester, GoRouter router) async {
   router.go('/settings');
-  await tester.pumpAndSettle();
+  await settleNativeUi(tester);
   // Reach the real lower action before ensureVisible; lazy Settings children
   // are not mounted outside the small phone's initial viewport.
   await tester.scrollUntilVisible(
@@ -644,13 +645,13 @@ Future<void> _wait(
 }
 
 Future<void> _uiLogin(WidgetTester tester, String email, String url) async {
-  await tester.pumpAndSettle();
+  await settleNativeUi(tester);
   if (find.byKey(const Key('auth-email-field')).evaluate().isEmpty &&
       find.byKey(const Key('welcome-login')).evaluate().isEmpty) {
     ProviderScope.containerOf(tester.element(find.byType(PlanetsApp)))
         .read(appRouterProvider)
         .go('/messages');
-    await tester.pumpAndSettle();
+    await settleNativeUi(tester);
   }
   if (find.byKey(const Key('auth-email-field')).evaluate().isEmpty) {
     final welcome = find.byKey(const Key('welcome-login'));
@@ -659,13 +660,13 @@ Future<void> _uiLogin(WidgetTester tester, String email, String url) async {
           ? welcome
           : find.byKey(const Key('messages-context-action')),
     );
-    await tester.pumpAndSettle();
+    await settleNativeUi(tester);
   }
   final mailbox = _Mailbox(url);
   try {
     final before = await mailbox.ids(email);
     await tester.enterText(find.byKey(const Key('auth-email-field')), email);
-    await tester.pumpAndSettle();
+    await settleNativeUi(tester);
     await tester.ensureVisible(find.byKey(const Key('auth-request-button')));
     await tester.tap(find.byKey(const Key('auth-request-button')));
     await _wait(
@@ -676,7 +677,7 @@ Future<void> _uiLogin(WidgetTester tester, String email, String url) async {
     final code = await mailbox.freshOtp(email, before);
     await tester.enterText(find.byKey(const Key('auth-code-field')), code);
     // Wait for the native route/IME before tapping the real verification action.
-    await tester.pumpAndSettle();
+    await settleNativeUi(tester);
     await tester.ensureVisible(find.byKey(const Key('auth-verify-button')));
     await tester.tap(find.byKey(const Key('auth-verify-button')));
     await tester.pump();

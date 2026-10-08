@@ -424,7 +424,7 @@ try {
   );
 
   console.log(
-    "MODINT01 authenticated integration passed: hidden preview; restriction/block/hide; read-only receipt replay; 15 invitation/People RPCs, 18 combined template/draft/pair/unread RPCs and 6 compatibility overloads denied on pre-existing suspended sessions; combined expected-ID mismatch; pair/unread addressed-delivery filtering and restoration; safe own-status/revoke recovery; truthful membership origins.",
+    `MODINT01 authenticated integration passed: hidden preview; restriction/block/hide; read-only receipt replay; 15 invitation/People RPCs, ${pairChecks.length} combined template/draft/pair/unread RPCs and 6 compatibility overloads denied on pre-existing suspended sessions; combined expected-ID mismatch; pair/unread addressed-delivery filtering and restoration; safe own-status/revoke recovery; truthful membership origins.`,
   );
 } finally {
   await sql.end({ timeout: 5 });
