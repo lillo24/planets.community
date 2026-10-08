@@ -1555,5 +1555,29 @@
         "type": "int"
       }
     }
-  }
+  },
+  "helpTitle": "Aiuto",
+  "helpTutorial": "Come funziona PLANETS",
+  "helpContactCreators": "Contatta i creatori",
+  "helpReportBug": "Segnala un bug",
+  "helpReportPerson": "Segnala una persona",
+  "helpContactExplanation": "Contatta i creatori di PLANETS tramite la tua app di posta.",
+  "helpContactSubject": "PLANETS — Contatta i creatori",
+  "helpEmailUnconfigured": "Il supporto via email non è ancora configurato. Puoi comunque preparare e copiare una segnalazione di bug.",
+  "helpOpenMail": "Apri app di posta",
+  "helpMailChoice": "Scegli tu se inviare o annullare nella tua app di posta. PLANETS non può confermare la consegna.",
+  "helpMailOpened": "App di posta aperta. Scegli tu se inviare.",
+  "helpMailUnavailable": "Non è stato possibile aprire l'app di posta. Verifica che sia installata, oppure copia l'indirizzo e la bozza.",
+  "helpPersonExplanation": "La segnalazione diretta di una persona da Aiuto non è ancora disponibile. Serve la persona o il contesto pertinente. Usa Segnala nel Progetto, Tavolo, annuncio Scambio, messaggio o modello pertinente per segnalare quel contenuto. Le opzioni disponibili dipendono dal tuo accesso a quel contesto.",
+  "helpBugExplanation": "Descrivi un problema tecnico. La bozza include solo il testo che inserisci. Evita informazioni private. La bozza rimane qui mentre usi l'app di posta e viene cancellata quando lasci questa schermata o cambia la sessione del tuo account.",
+  "helpBugDescription": "Descrizione del problema (obbligatoria)",
+  "helpBugSteps": "Passaggi per riprodurlo (facoltativi)",
+  "helpBugExpected": "Risultato atteso (facoltativo)",
+  "helpBugRequired": "Descrivi il problema prima di rivedere la bozza.",
+  "helpBugReview": "Rivedi bozza",
+  "helpBugEdit": "Modifica bozza",
+  "helpBugCopy": "Copia bozza",
+  "helpBugCopied": "Bozza copiata.",
+  "helpBugCopyFailed": "Non è stato possibile copiare la bozza. Riprova.",
+  "helpBugSubject": "PLANETS — Segnalazione bug"
 }

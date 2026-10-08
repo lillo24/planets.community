@@ -11,6 +11,9 @@ import '../../features/drafts/presentation/drafts_screen.dart';
 import '../../features/auth/presentation/request_code_screen.dart';
 import '../../features/auth/presentation/verify_code_screen.dart';
 import '../../features/blocking/presentation/blocked_users_screen.dart';
+import '../../features/help/presentation/bug_report_screen.dart';
+import '../../features/help/presentation/help_routes.dart';
+import '../../features/help/presentation/help_screen.dart';
 import '../../features/messages/presentation/messages_routes.dart';
 import '../../features/messages/presentation/messages_landing_screen.dart';
 import '../../features/messages/presentation/participation_request_message_screen.dart';
@@ -335,6 +338,24 @@ RoutingConfig _routingConfig(
       return null;
     },
     routes: [
+      GoRoute(
+        path: HelpRoutes.path,
+        builder: (context, state) => const HelpScreen(),
+        routes: [
+          GoRoute(
+            path: 'contact',
+            builder: (context, state) => const HelpContactScreen(),
+          ),
+          GoRoute(
+            path: 'bug',
+            builder: (context, state) => const BugReportScreen(),
+          ),
+          GoRoute(
+            path: 'person',
+            builder: (context, state) => const HelpPersonScreen(),
+          ),
+        ],
+      ),
       GoRoute(
         path: '/welcome',
         builder: (context, state) => const WelcomeScreen(),

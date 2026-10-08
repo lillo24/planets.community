@@ -2287,5 +2287,29 @@
         "type": "int"
       }
     }
-  }
+  },
+  "helpTitle": "Help",
+  "helpTutorial": "How PLANETS works",
+  "helpContactCreators": "Contact the creators",
+  "helpReportBug": "Report a bug",
+  "helpReportPerson": "Report a person",
+  "helpContactExplanation": "Contact the PLANETS creators through your mail app.",
+  "helpContactSubject": "PLANETS — Contact the creators",
+  "helpEmailUnconfigured": "Email support is not configured yet. You can still draft and copy a bug report.",
+  "helpOpenMail": "Open mail app",
+  "helpMailChoice": "You choose whether to send or cancel in your mail app. PLANETS cannot confirm delivery.",
+  "helpMailOpened": "Mail app opened. You choose whether to send.",
+  "helpMailUnavailable": "The mail app could not be opened. Check that one is installed, or copy the address and your draft.",
+  "helpPersonExplanation": "Direct person reporting from Help is not yet available. Reporting needs the relevant person or context. Use Report on the relevant Project, Tavolo, Resource listing, message or template to report that content. Existing reporting options depend on your access to that context.",
+  "helpBugExplanation": "Describe a technical problem. Only the text you enter is included in the draft. Avoid private information. The draft stays here while you use your mail app and is cleared when you leave this screen or your account session changes.",
+  "helpBugDescription": "Problem description (required)",
+  "helpBugSteps": "Steps to reproduce (optional)",
+  "helpBugExpected": "Expected result (optional)",
+  "helpBugRequired": "Describe the problem before reviewing the draft.",
+  "helpBugReview": "Review draft",
+  "helpBugEdit": "Edit draft",
+  "helpBugCopy": "Copy draft",
+  "helpBugCopied": "Draft copied.",
+  "helpBugCopyFailed": "The draft could not be copied. Try again.",
+  "helpBugSubject": "PLANETS — Bug report"
 }
