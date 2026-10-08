@@ -27,6 +27,7 @@ This folder owns the dynamic Next.js public-discovery application, ordinary web 
 - `src/types/database.generated.ts` is generated from the canonical public Supabase schema and must not be edited manually.
 - `src/instrumentation.ts`, `src/instrumentation-client.ts`, and `sentry.*.config.ts` own optional Next.js/Sentry instrumentation.
 - `src/proxy.ts` refreshes and propagates Supabase session cookies before rendering. It does not authorize routes or redirect users.
+- `worker/`, `vite.worker.config.mts`, `wrangler.staging.jsonc` and `scripts/worker-staging.mjs` own the isolated beta Worker trial. Normal Next/Node commands remain available; see the [LINK-HOST-01 runbook](../../docs/development/link-host01-cloudflare-invitations.md) for runtime adaptations, staging-only deployment and the separately approved canonical cutover.
 - `components.json` records the shadcn Base UI/neutral/RSC configuration.
 - `vitest.config.mts` and colocated `*.test.ts(x)` files own the unit/component test harness.
 
