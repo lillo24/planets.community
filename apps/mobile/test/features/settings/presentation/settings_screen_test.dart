@@ -1,3 +1,5 @@
+import '../../../support/fake_policy.dart';
+
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -314,6 +316,7 @@ Future<ProviderContainer> _pump(
   await tester.pumpWidget(
     ProviderScope(
       overrides: [
+        preacceptedPolicyFixture,
         // Feature fixtures begin after onboarding; startup tests own first-run.
         initialStartupPreferenceProvider.overrideWithValue(
           StartupPreference(completedVersion: productionTutorial.version),

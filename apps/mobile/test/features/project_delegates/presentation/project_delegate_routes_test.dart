@@ -46,6 +46,7 @@ void main() {
       addTearDown(auth.close);
       final route = '/invite/project/${'A' * 43}';
       final router = createAppRouter(
+        readPolicyAccepted: () => true,
         initialLocation: route,
         readAuthSession: () => const AuthSessionState.signedOut(),
       );
@@ -98,7 +99,10 @@ void main() {
         AuthIdentity(id: 'user-1'),
         hasProfileAnchor: true,
       );
-      final router = createAppRouter(readAuthSession: () => session);
+      final router = createAppRouter(
+        readPolicyAccepted: () => true,
+        readAuthSession: () => session,
+      );
       addTearDown(router.dispose);
 
       final container = ProviderContainer(
@@ -148,6 +152,7 @@ void main() {
     addTearDown(auth.close);
     final route = '/invite/project/${'C' * 43}';
     final router = createAppRouter(
+      readPolicyAccepted: () => true,
       initialLocation: route,
       readAuthSession: () => const AuthSessionState.signedOut(),
     );
@@ -192,6 +197,7 @@ void main() {
     final route = '/invite/project/${'D' * 43}';
     const session = AuthSessionState.ready(AuthIdentity(id: 'user-1'));
     final router = createAppRouter(
+      readPolicyAccepted: () => true,
       initialLocation: route,
       readAuthSession: () => session,
     );

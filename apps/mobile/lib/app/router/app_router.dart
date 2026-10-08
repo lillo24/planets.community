@@ -283,7 +283,8 @@ RoutingConfig _routingConfig(
           return startupFlow?.continueTo(destination) ?? destination;
         }
       }
-      final accepted = readPolicyAccepted?.call() ?? true;
+      // A standalone router must also deny writing without an explicit reader.
+      final accepted = readPolicyAccepted?.call() ?? false;
       if (path == policyAcceptancePath) {
         if (!session.isAuthenticated) return '/';
         if (accepted) {

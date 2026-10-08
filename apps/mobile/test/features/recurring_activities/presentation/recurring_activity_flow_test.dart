@@ -1,3 +1,5 @@
+import '../../../support/fake_policy.dart';
+
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -626,6 +628,7 @@ Future<ProviderContainer> _pump(
   await tester.pumpWidget(
     ProviderScope(
       overrides: [
+        preacceptedPolicyFixture,
         appConfigProvider.overrideWithValue(
           AppConfig.fromValues(
             appEnvironment: 'local',

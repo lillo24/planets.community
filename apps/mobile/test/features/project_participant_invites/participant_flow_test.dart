@@ -1,3 +1,5 @@
+import '../../support/fake_policy.dart';
+
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -927,6 +929,7 @@ _pump(
   final invitations = gateway ?? FakeParticipantInvitationGateway();
   final container = ProviderContainer(
     overrides: [
+      preacceptedPolicyFixture,
       appConfigProvider.overrideWithValue(
         AppConfig.fromValues(
           appEnvironment: 'local',

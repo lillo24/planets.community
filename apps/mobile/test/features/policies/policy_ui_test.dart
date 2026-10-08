@@ -187,6 +187,27 @@ void main() {
         continuation.queryParameters['returnTo'],
         "/join/project/${'a' * 43}",
       );
+      final pendingPolicyUri = router.state.uri;
+      await helpTap(tester, 'policy-acceptance-checkbox');
+      await tester.binding.defaultBinaryMessenger.handlePlatformMessage(
+        'flutter/navigation',
+        const JSONMethodCodec().encodeMethodCall(
+          MethodCall('pushRouteInformation', {
+            'location': "https://planets.community/join/project/${'a' * 43}",
+          }),
+        ),
+        (_) {},
+      );
+      await tester.pumpAndSettle();
+      expect(router.state.uri, pendingPolicyUri);
+      expect(
+        tester
+            .widget<CheckboxListTile>(
+              find.byKey(const Key('policy-acceptance-checkbox')),
+            )
+            .value,
+        isTrue,
+      );
       for (final path in [
         '/settings',
         '/help',

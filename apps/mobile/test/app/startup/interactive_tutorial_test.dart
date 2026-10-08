@@ -1,3 +1,5 @@
+import '../../support/fake_policy.dart';
+
 import 'package:planets_mobile/features/settings/data/language_preference_store.dart';
 
 import '../../support/fake_settings.dart';
@@ -580,6 +582,7 @@ Future<ProviderContainer> _pump(
   await tester.pumpWidget(
     ProviderScope(
       overrides: [
+        preacceptedPolicyFixture,
         initialLanguagePreferenceProvider.overrideWithValue(language),
         languagePreferenceStoreProvider.overrideWithValue(
           FakeLanguagePreferenceStore(),

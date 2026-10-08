@@ -11,6 +11,7 @@
 - `application/policy_acceptance_controller.dart` owns loading/retry/save states
   and generation checks for identity/version replacement and disposal. The app
   router gates editors, management, message details and invitation continuations.
+  Standalone router constructors deny writing when no acceptance reader is given.
   Public inline Resource request/search creation rechecks before opening/writing.
 - `presentation/policy_acceptance_screen.dart` owns the unchecked control,
   provisional status, separate Terms/Rules links and disabled-until-checked action.
@@ -45,3 +46,6 @@ Run `npm run check:mobile`. The backend-free production-screen smoke is
 It uses synthetic identities and an injected mail launcher, not a real email send.
 The driver saves actual screen captures under the system temporary directory's
 `planets-policy01-runtime` folder. It does not prove an OS email/browser handoff.
+
+Existing feature test harnesses use `preacceptedPolicyFixture` to keep their
+accounts after acknowledgement; dedicated policy tests inject unaccepted stores.

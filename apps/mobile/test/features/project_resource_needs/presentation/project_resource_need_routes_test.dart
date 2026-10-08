@@ -1,3 +1,5 @@
+import '../../../support/fake_policy.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -194,11 +196,13 @@ _pump(
         ? ProfileAnchorReadiness.incomplete
         : ProfileAnchorReadiness.complete;
   final router = createAppRouter(
+    readPolicyAccepted: () => true,
     initialLocation: destination,
     readAuthSession: () => session,
   );
   final container = ProviderContainer(
     overrides: [
+      preacceptedPolicyFixture,
       appConfigProvider.overrideWithValue(
         AppConfig.fromValues(
           appEnvironment: 'local',
