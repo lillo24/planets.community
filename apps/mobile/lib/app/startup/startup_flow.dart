@@ -8,18 +8,52 @@ import '../../features/auth/application/return_destination.dart';
 const tutorialCompletionKey = 'planets.startup.completedTutorialVersion';
 
 /// Bump only when an approved tutorial should be offered again on this device.
-/// The production registry deliberately has no pages until content is approved.
+/// Pages remain available for small test harnesses; production uses guided steps.
 class TutorialRegistry {
-  const TutorialRegistry({this.version = '1', this.pages = const []});
+  const TutorialRegistry({
+    this.version = '1',
+    this.pages = const [],
+    this.steps = const [],
+  });
 
   final String version;
   final List<WidgetBuilder> pages;
+  final List<TutorialStep> steps;
+  bool get isEmpty => pages.isEmpty && steps.isEmpty;
 }
 
+enum TutorialStep {
+  introduction,
+  home,
+  projectCard,
+  projectPurpose,
+  projectNeeds,
+  projectParticipation,
+  projectCreate,
+  projectDrafts,
+  resourceModes,
+  resourceCard,
+  resourceCreate,
+  resourceDrafts,
+  messagesTabs,
+  messagesScopes,
+  farewell,
+}
+
+const productionTutorial = TutorialRegistry(
+  version: 'interactive-1',
+  steps: TutorialStep.values,
+);
+
 class StartupPreference {
-  const StartupPreference({this.completedVersion, this.restoreFailed = false});
+  const StartupPreference({
+    this.completedVersion,
+    this.dismissedVersion,
+    this.restoreFailed = false,
+  });
 
   final String? completedVersion;
+  final String? dismissedVersion;
   final bool restoreFailed;
 }
 
@@ -53,7 +87,12 @@ Future<StartupPreference> restoreStartupPreference(
   StartupPreferenceStore store,
 ) async {
   try {
-    return StartupPreference(completedVersion: await store.read());
+    final value = await store.read();
+    // Legacy bare versions represent completion. Dismissal uses the same local
+    // key, containing only status and version, never a destination or identity.
+    return value != null && value.startsWith('dismissed:')
+        ? StartupPreference(dismissedVersion: value.substring(10))
+        : StartupPreference(completedVersion: value);
   } catch (_) {
     // The preference boundary reports failure separately from never completed.
     return const StartupPreference(restoreFailed: true);
@@ -71,10 +110,11 @@ class StartupFlow extends ChangeNotifier {
   bool tutorialDeferred = false;
 
   bool get needsTutorial =>
-      registry.pages.isNotEmpty &&
+      !registry.isEmpty &&
       !tutorialDeferred &&
       (preference.restoreFailed ||
-          preference.completedVersion != registry.version);
+          (preference.completedVersion != registry.version &&
+              preference.dismissedVersion != registry.version));
 
   // These run-only flags are read on the next router transition. They do not
   // rebuild routing configuration or discard an OTP/editor stack.
@@ -108,13 +148,25 @@ class StartupFlow extends ChangeNotifier {
   }
 
   Future<bool> finishTutorial() async {
-    if (registry.pages.isEmpty || preference.restoreFailed) return false;
+    if (registry.isEmpty || preference.restoreFailed) return false;
     try {
       await store.complete(registry.version);
     } catch (_) {
       return false;
     }
     preference = StartupPreference(completedVersion: registry.version);
+    notifyListeners();
+    return true;
+  }
+
+  Future<bool> dismissTutorial() async {
+    if (registry.isEmpty || preference.restoreFailed) return false;
+    try {
+      await store.complete('dismissed:${registry.version}');
+    } catch (_) {
+      return false;
+    }
+    preference = StartupPreference(dismissedVersion: registry.version);
     notifyListeners();
     return true;
   }
@@ -142,7 +194,7 @@ String startupReturnDestination(String? destination) {
 }
 
 final tutorialRegistryProvider = Provider<TutorialRegistry>(
-  (ref) => const TutorialRegistry(),
+  (ref) => productionTutorial,
 );
 final startupPreferenceStoreProvider = Provider<StartupPreferenceStore>(
   (ref) => SharedPreferencesStartupStore(),

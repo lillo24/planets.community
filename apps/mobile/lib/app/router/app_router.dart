@@ -68,6 +68,7 @@ import '../foundation_screen.dart';
 import '../startup/startup_flow.dart';
 import '../startup/welcome_screen.dart';
 import '../startup/tutorial_screen.dart';
+import '../startup/tutorial_routes.dart';
 import 'app_navigation_shell.dart';
 import 'native_project_links.dart';
 import 'draft_departure_coordinator.dart';
@@ -181,7 +182,9 @@ RoutingConfig _routingConfig(
             (startupFlow.hasEntered || session.identity != null)) {
           return '/';
         }
-        if (path == '/intro' && !startupFlow.needsTutorial) {
+        if (path == '/intro' &&
+            !startupFlow.needsTutorial &&
+            state.extra is! TutorialReplayRequest) {
           return startupReturnDestination(
             state.uri.queryParameters['returnTo'],
           );
@@ -339,9 +342,10 @@ RoutingConfig _routingConfig(
       GoRoute(
         path: '/intro',
         builder: (context, state) => TutorialScreen(
-          returnTo: startupReturnDestination(
-            state.uri.queryParameters['returnTo'],
-          ),
+          returnTo: state.extra is TutorialReplayRequest
+              ? (state.extra! as TutorialReplayRequest).returnTo
+              : startupReturnDestination(state.uri.queryParameters['returnTo']),
+          replay: state.extra is TutorialReplayRequest,
         ),
       ),
       GoRoute(

@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:planets_mobile/app/planets_app.dart';
+import 'package:planets_mobile/app/startup/startup_flow.dart';
 import 'package:planets_mobile/app/router/app_router.dart';
 import 'package:planets_mobile/core/config/app_config.dart';
 import 'package:planets_mobile/core/theme/app_tokens.dart';
@@ -638,6 +639,10 @@ Future<ProviderContainer> _pumpApp(
   await tester.pumpWidget(
     ProviderScope(
       overrides: [
+        // Feature fixtures begin after onboarding; startup tests own first-run.
+        initialStartupPreferenceProvider.overrideWithValue(
+          StartupPreference(completedVersion: productionTutorial.version),
+        ),
         appConfigProvider.overrideWithValue(
           AppConfig.fromValues(
             appEnvironment: 'local',

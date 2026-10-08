@@ -102,6 +102,7 @@ class ProposalCard extends StatelessWidget {
                       Expanded(
                         child: Text(
                           proposal.title,
+                          key: Key('proposal-card-title-${proposal.id}'),
                           style: Theme.of(context).textTheme.titleLarge,
                         ),
                       ),

@@ -405,7 +405,10 @@ class _ProposalDetailScreenState extends ConsumerState<ProposalDetailScreen> {
                     style: Theme.of(context).textTheme.titleMedium,
                   ),
                   const SizedBox(height: AppSpacing.large),
-                  Text(detail.description),
+                  Text(
+                    detail.description,
+                    key: const Key('tutorial-project-purpose'),
+                  ),
                   const SizedBox(height: AppSpacing.large),
                   Text(
                     l10n.proposalScheduleTitle,
@@ -428,7 +431,10 @@ class _ProposalDetailScreenState extends ConsumerState<ProposalDetailScreen> {
                     const SizedBox(height: AppSpacing.small),
                     ProposalSkillRequirements(skills: detail.summary.skills),
                   ],
-                  ProjectResourceNeedsSection(projectId: detail.summary.id),
+                  ProjectResourceNeedsSection(
+                    key: const Key('tutorial-project-needs'),
+                    projectId: detail.summary.id,
+                  ),
                   if (ref.watch(authSessionProvider).identity?.id ==
                       detail.creatorProfileId) ...[
                     const SizedBox(height: AppSpacing.medium),

@@ -38,9 +38,15 @@ class MessagesNavigation extends Notifier<MessagesNavigationSelection> {
 
 /// Data-free frame shared by guest/setup presentation and ready Messages.
 class MessagesFrame extends ConsumerStatefulWidget {
-  const MessagesFrame({required this.chats, required this.requests, super.key});
+  const MessagesFrame({
+    required this.chats,
+    required this.requests,
+    this.initialTabIndex,
+    super.key,
+  });
 
   final Widget chats;
+  final int? initialTabIndex;
   final Widget requests;
 
   @override
@@ -57,7 +63,9 @@ class _MessagesFrameState extends ConsumerState<MessagesFrame>
     _tabs = TabController(
       length: 2,
       vsync: this,
-      initialIndex: ref.read(messagesNavigationProvider).tabIndex,
+      initialIndex:
+          widget.initialTabIndex ??
+          ref.read(messagesNavigationProvider).tabIndex,
     )..addListener(_rememberTab);
   }
 
@@ -74,6 +82,10 @@ class _MessagesFrameState extends ConsumerState<MessagesFrame>
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
+    // A scaled label may wrap to two lines in a narrow tab. Reserve its natural
+    // space above the view rather than clipping an icon/label Column.
+    final scaledLabel = MediaQuery.textScalerOf(context).scale(14);
+    final double? tabHeight = scaledLabel > 18 ? 32 + scaledLabel * 3 : null;
     return Scaffold(
       appBar: AppBar(
         title: Text(l10n.messagesTitle),
@@ -82,11 +94,13 @@ class _MessagesFrameState extends ConsumerState<MessagesFrame>
           tabs: [
             Tab(
               key: const Key('messages-tab-chat'),
+              height: tabHeight,
               text: l10n.messagesChatsTab,
               icon: const Icon(Icons.forum),
             ),
             Tab(
               key: const Key('messages-tab-requests'),
+              height: tabHeight,
               text: l10n.messagesRequestsTab,
               icon: const Icon(Icons.mark_email_unread_outlined),
             ),

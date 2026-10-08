@@ -16,21 +16,20 @@ import 'messages_screen.dart';
 /// Only /messages is public. Mount private loaders solely for a ready identity;
 /// descendants still use router protection and repository read boundaries.
 class MessagesLandingScreen extends ConsumerWidget {
-  const MessagesLandingScreen({super.key});
+  const MessagesLandingScreen({this.controlsOnly = false, super.key});
+
+  /// Tutorial presentation: real navigation with no private list mounts/reads.
+  final bool controlsOnly;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final session = ref.watch(authSessionProvider);
     final l10n = AppLocalizations.of(context);
-    if (session.phase == AuthSessionPhase.ready) {
-      return MessagesScreen(key: ValueKey(session.identity!.id));
-    }
-    if (session.phase == AuthSessionPhase.signedOut ||
-        session.phase == AuthSessionPhase.profileSetupRequired) {
+    if (session.phase == AuthSessionPhase.ready && controlsOnly) {
       final scope = ref.watch(messagesNavigationProvider).scope;
       return MessagesFrame(
-        key: const Key('messages-context-screen'),
-        chats: Column(
+        initialTabIndex: controlsOnly ? 0 : null,
+        chats: ListView(
           children: [
             MessageChatScopeToggle(
               scope: scope,
@@ -38,10 +37,48 @@ class MessagesLandingScreen extends ConsumerWidget {
                   .read(messagesNavigationProvider.notifier)
                   .selectScope,
             ),
-            const SizedBox(height: AppSpacing.small),
-            Expanded(child: _MessagesAccessState(scope: scope)),
+            Padding(
+              padding: const EdgeInsets.all(AppSpacing.medium),
+              child: Text(l10n.tutorialMessagesPreview),
+            ),
           ],
         ),
+        requests: Center(child: Text(l10n.tutorialMessagesPreview)),
+      );
+    }
+    if (session.phase == AuthSessionPhase.ready) {
+      return MessagesScreen(key: ValueKey(session.identity!.id));
+    }
+    if (session.phase == AuthSessionPhase.signedOut ||
+        session.phase == AuthSessionPhase.profileSetupRequired) {
+      final scope = ref.watch(messagesNavigationProvider).scope;
+      return MessagesFrame(
+        initialTabIndex: controlsOnly ? 0 : null,
+        key: const Key('messages-context-screen'),
+        chats: controlsOnly
+            ? ListView(
+                children: [
+                  MessageChatScopeToggle(
+                    scope: scope,
+                    onChanged: ref
+                        .read(messagesNavigationProvider.notifier)
+                        .selectScope,
+                  ),
+                  const _MessagesAccessState(),
+                ],
+              )
+            : Column(
+                children: [
+                  MessageChatScopeToggle(
+                    scope: scope,
+                    onChanged: ref
+                        .read(messagesNavigationProvider.notifier)
+                        .selectScope,
+                  ),
+                  const SizedBox(height: AppSpacing.small),
+                  Expanded(child: _MessagesAccessState(scope: scope)),
+                ],
+              ),
         requests: const _MessagesAccessState(),
       );
     }
