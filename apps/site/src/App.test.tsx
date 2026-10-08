@@ -48,7 +48,7 @@ afterEach(() => {
 });
 
 describe("PLANETS public site", () => {
-  it("renders the compact public navigation and approved contact links", () => {
+  it("renders the compact public navigation and labelled contact links", () => {
     render(<App />);
 
     const navigation = screen.getByRole("navigation", {
@@ -65,6 +65,11 @@ describe("PLANETS public site", () => {
       "#privacy",
     ]);
     const contacts = screen.getByRole("region", { name: "Contatti" });
+    expect(
+      within(contacts)
+        .getAllByRole("term")
+        .map((term) => term.textContent),
+    ).toEqual(["Email", "Telefono"]);
     expect(
       within(contacts)
         .getByRole("link", { name: "developer.planets.community@gmail.com" })

@@ -13,7 +13,8 @@ admin surface.
 The `Contatti` section publishes the founder-approved email
 `developer.planets.community@gmail.com` and phone number `+39 3703263412`.
 `src/site-content.ts` owns their displayed values and the phone URI; `src/App.tsx`
-renders email and telephone links. Contact links wrap on narrow screens.
+renders labelled email and telephone links. The email prefers a line break before
+`@` on narrow screens, with character wrapping available at larger text sizes.
 
 ## Waitlist purpose and data boundary
 
