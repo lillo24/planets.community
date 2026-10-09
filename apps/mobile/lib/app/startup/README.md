@@ -39,7 +39,8 @@ introduction (no spotlight), Home Projects, first displayed Project card, its
 detail/participation, browse Create, browse Drafts, Home Scambio–Dona, Scambio's
 card/Create/Drafts together, Messages Requests inbox, Messages Private/Groups,
 and farewell (no spotlight). Explanation text never advances on a timer.
-Next or the noninteractive overlay advances once; Previous and system Back move
+Only Next advances; tapping the preview or explanation leaves the step unchanged.
+Previous and system Back move
 one state backward and restore the surface, frozen selection and scroll position.
 Back on the introduction exits safely. Only the 250 ms surface commit is debounced;
 Next/Previous can interrupt the detail scroll without waiting for it to finish.

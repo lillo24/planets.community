@@ -566,9 +566,7 @@ void main() {
       );
       await tester.tap(find.byKey(const Key('tutorial-next')));
       await tester.pump();
-      await tester.tapAt(
-        tester.getCenter(find.byKey(const Key('tutorial-overlay'))),
-      );
+      await tester.tap(find.byKey(const Key('tutorial-next')));
       await tester.pump();
       expect(find.byKey(const Key('tutorial-copy-home')), findsOneWidget);
       await ready(tester);
@@ -591,7 +589,7 @@ void main() {
   );
 
   testWidgets(
-    'exact empty guest sequence uses covered examples and three disjoint resource holes',
+    'guest sequence ignores screen taps and uses buttons with covered examples',
     (tester) async {
       final store = FakeStartupStore();
       final projects = FakeProposalGateway();
@@ -610,6 +608,14 @@ void main() {
       for (final step in TutorialStep.values) {
         await ready(tester);
         expect(find.byKey(Key('tutorial-copy-${step.name}')), findsOneWidget);
+        await tester.tapAt(
+          tester.getCenter(find.byKey(const Key('tutorial-overlay'))),
+        );
+        await frames(tester, 6);
+        await tester.tap(find.byKey(Key('tutorial-copy-${step.name}')));
+        await frames(tester, 6);
+        expect(find.byKey(Key('tutorial-copy-${step.name}')), findsOneWidget);
+        expect(store.writes, 0);
         final count =
             step == TutorialStep.introduction || step == TutorialStep.farewell
             ? 0
@@ -753,6 +759,11 @@ void main() {
             scrim(tester).targets.single.center,
       );
       await frames(tester, 6);
+      expect(
+        find.byKey(const Key('tutorial-copy-projectDetail')),
+        findsOneWidget,
+      );
+      await tap(tester, 'tutorial-next');
       expect(find.byKey(const Key('proposal-create-action')), findsOneWidget);
       expect(
         find.byKey(const Key('tutorial-copy-projectCreate')),
@@ -829,7 +840,7 @@ void main() {
   });
 
   testWidgets(
-    'real guest Join is spotlighted but overlay tap cannot open Auth or send a request',
+    'tapping real guest Join cannot advance, open Auth or send a request',
     (tester) async {
       final projects = FakeProposalGateway()
         ..publicItems = [proposalSummaryFixture()]
@@ -847,7 +858,7 @@ void main() {
       );
       await frames(tester, 6);
       expect(
-        find.byKey(const Key('tutorial-copy-projectCreate')),
+        find.byKey(const Key('tutorial-copy-projectDetail')),
         findsOneWidget,
       );
       expect(
