@@ -67,3 +67,7 @@ leases, uncached native decoding and distinct taps. location_attribution is the
 fixed linked credit atom shared with editors. The old location_fallbacks map
 remains a compatibility widget; real detail now uses the shared panel.
 See [MAP03](../../../../../docs/development/map03-location-previews.md).
+
+MAP04 public radius/bounds queries live in the separate geographic_discovery
+feature. It never uses editor receipts or protected preview reads. MAP05 must
+define a distinct public search-center lookup before enabling autocomplete.
