@@ -974,6 +974,14 @@ void main() {
               expectFocus(tester, 'messages-requests-action');
               expect(find.byType(TabBar), findsNothing);
               expect(find.byType(BackButton), findsNothing);
+              expect(
+                find.byKey(const Key('messages-access-private')),
+                findsOneWidget,
+              );
+              expect(
+                find.byKey(const Key('messages-access-requests')),
+                findsNothing,
+              );
             }
             if (step == TutorialStep.resources) expectDisjointResources(tester);
             await tap(tester, 'tutorial-next');

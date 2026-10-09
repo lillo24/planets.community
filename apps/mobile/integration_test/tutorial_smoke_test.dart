@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:planets_mobile/app/startup/startup_flow.dart';
+import 'package:planets_mobile/features/proposals/presentation/public_proposals_screen.dart';
 import 'package:planets_mobile/features/settings/domain/language_preference.dart';
 
 import '../test/app/startup/interactive_tutorial_test.dart' as tour;
@@ -103,6 +104,7 @@ void main() {
     for (final step in TutorialStep.values) {
       if (screenshots && step == TutorialStep.projectDetail) {
         await _capture(tester, binding, 'tut04-short-detail-top');
+        await _detailScrollBegins(tester);
         await tester.pump(const Duration(milliseconds: 400));
         await _capture(tester, binding, 'tut04-short-detail-scroll');
       }
@@ -183,6 +185,7 @@ void main() {
       }
       if (screenshots && step == TutorialStep.projectDetail) {
         await _capture(tester, binding, 'tut04-long-detail-top');
+        await _detailScrollBegins(tester);
         await tester.pump(const Duration(seconds: 2));
         await _capture(tester, binding, 'tut04-long-detail-scroll');
       }
@@ -218,6 +221,20 @@ Future<void> _next(WidgetTester tester) async {
   await tester.tap(find.byKey(const Key('tutorial-next')));
   await tester.pump();
   await tester.pump(const Duration(milliseconds: 260));
+}
+
+Future<void> _detailScrollBegins(WidgetTester tester) async {
+  final detailScroll = find.descendant(
+    of: find.byType(ProposalDetailScreen),
+    matching: find.byType(Scrollable),
+  );
+  for (var i = 0; i < 100; i++) {
+    await tester.pump(const Duration(milliseconds: 40));
+    if (tester.state<ScrollableState>(detailScroll.first).position.pixels > 3) {
+      return;
+    }
+  }
+  fail('real Project detail did not begin scrolling');
 }
 
 Future<void> _captureFade(
