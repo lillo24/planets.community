@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
+import '../../../core/widgets/page_app_bar.dart';
 import '../../../core/theme/app_tokens.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../auth/application/auth_session_controller.dart';
@@ -145,7 +146,7 @@ class _ParticipantLinkManagementScreenState
         state.isFor(_account, widget.projectId, widget.kind);
     final ready = belongs && state.ready && state.role.isManager;
     return Scaffold(
-      appBar: AppBar(title: Text(l10n.participantLinksTitle)),
+      appBar: pageAppBar(context, title: Text(l10n.participantLinksTitle)),
       body: SafeArea(
         child: ListView(
           padding: const EdgeInsets.all(AppSpacing.large),

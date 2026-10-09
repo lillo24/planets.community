@@ -64,3 +64,10 @@ records a separate idle build/layout trace to audit this boundary.
   caller owns committed selection state; staged mode applies changes only when
   requested by discovery filters. Clear/Apply or Done actions stack with a small
   gap when their labels cannot fit horizontally, including enlarged text.
+
+- `page_app_bar.dart` owns the arrow-free mobile header convention and localized
+  textual Close for pushed routes. It keeps existing guards through `maybePop`,
+  accepts flow-owned cancellation, and wraps actions below the title for compact
+  enlarged-text layouts. `PageAppBarScope` prevents embedded tutorial pages from
+  borrowing the enclosing route's exit. See the navigation-header audit in
+  `docs/development/navigation-headers.md`.

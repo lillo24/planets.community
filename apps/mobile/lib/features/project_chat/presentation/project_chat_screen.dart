@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
+import '../../../core/widgets/page_app_bar.dart';
 import '../../../core/theme/app_tokens.dart';
 import '../../messages/presentation/message_read_viewport.dart';
 import '../../../core/widgets/empty_state.dart';
@@ -212,7 +213,8 @@ class _ProjectChatScreenState extends ConsumerState<ProjectChatScreen>
           : null,
       scrollController: _scrollController,
       child: Scaffold(
-        appBar: AppBar(
+        appBar: pageAppBar(
+          context,
           title: Text(summary?.projectTitle ?? l10n.projectChatTitle),
           actions: [
             IconButton(

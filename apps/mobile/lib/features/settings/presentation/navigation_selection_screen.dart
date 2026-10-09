@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/widgets/page_app_bar.dart';
 import '../../../core/theme/app_tokens.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../application/navigation_preference_controller.dart';
@@ -44,7 +45,7 @@ class _NavigationSelectionScreenState
     final preference = ref.watch(navigationPreferenceProvider);
 
     return Scaffold(
-      appBar: AppBar(title: Text(l10n.settingsBottomRightTab)),
+      appBar: pageAppBar(context, title: Text(l10n.settingsBottomRightTab)),
       body: SafeArea(
         child: Align(
           alignment: Alignment.topCenter,

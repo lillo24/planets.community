@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/widgets/page_app_bar.dart';
 import '../../../core/theme/app_tokens.dart';
 import '../../../core/widgets/empty_state.dart';
 import '../../../core/widgets/error_state.dart';
@@ -122,7 +123,7 @@ class _OwnProposalsScreenState extends ConsumerState<OwnProposalsScreen> {
     }
 
     return Scaffold(
-      appBar: AppBar(title: Text(l10n.proposalMyTitle)),
+      appBar: pageAppBar(context, title: Text(l10n.proposalMyTitle)),
       persistentFooterButtons: [
         for (final request
             in ref.watch(draftCreationRecoveryProvider)[identity?.id] ??

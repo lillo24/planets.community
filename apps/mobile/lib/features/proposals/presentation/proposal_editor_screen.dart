@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:uuid/uuid.dart';
 
+import '../../../core/widgets/page_app_bar.dart';
 import '../../../app/router/draft_departure_coordinator.dart';
 
 import '../../../core/theme/app_tokens.dart';
@@ -119,7 +120,8 @@ class _ProposalEditorScreenState extends ConsumerState<ProposalEditorScreen> {
       Future<void>.microtask(() => _load(force: true));
     }
     return Scaffold(
-      appBar: AppBar(
+      appBar: pageAppBar(
+        context,
         title: Text(
           widget.proposalId == null
               ? l10n.proposalCreateTitle

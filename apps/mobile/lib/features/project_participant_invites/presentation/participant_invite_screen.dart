@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/widgets/page_app_bar.dart';
 import '../../../core/theme/app_tokens.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../auth/application/auth_session_controller.dart';
@@ -131,7 +132,17 @@ class _ParticipantInviteScreenState
       }
     }
     return Scaffold(
-      appBar: AppBar(title: Text(l10n.participantInviteTitle)),
+      appBar: pageAppBar(
+        context,
+        onClose: () {
+          if (context.canPop()) {
+            context.pop();
+          } else {
+            context.go('/');
+          }
+        },
+        title: Text(l10n.participantInviteTitle),
+      ),
       body: SafeArea(
         child: !current
             ? const Center(child: CircularProgressIndicator())

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/widgets/page_app_bar.dart';
 import '../../../core/theme/app_tokens.dart';
 import '../../../core/widgets/error_state.dart';
 import '../../../core/widgets/loading_state.dart';
@@ -181,7 +182,10 @@ class _ProjectWorkspaceScreenState
         !role.isManager;
 
     return Scaffold(
-      appBar: AppBar(title: Text(l10n.projectWorkspaceManageTitle)),
+      appBar: pageAppBar(
+        context,
+        title: Text(l10n.projectWorkspaceManageTitle),
+      ),
       body: SafeArea(
         child: loading
             ? LoadingState(message: l10n.projectWorkspaceLoading)

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/widgets/page_app_bar.dart';
 import '../../geographic_discovery/domain/map_discovery.dart';
 import '../../geographic_discovery/presentation/map_view_button.dart';
 import '../../locations/presentation/location_attribution.dart';
@@ -72,7 +73,8 @@ class _PublicRecurringActivitiesScreenState
     final l10n = AppLocalizations.of(context);
     final state = ref.watch(publicRecurringActivitiesProvider);
     return Scaffold(
-      appBar: AppBar(
+      appBar: pageAppBar(
+        context,
         title: Text(l10n.tavoliTitle),
         actions: [
           IconButton(
@@ -287,13 +289,13 @@ class _PublicRecurringActivityDetailScreenState
     );
     if (presentation == AsyncDataPresentation.loading) {
       return Scaffold(
-        appBar: AppBar(title: Text(l10n.tavoliDetailTitle)),
+        appBar: pageAppBar(context, title: Text(l10n.tavoliDetailTitle)),
         body: LoadingState(message: l10n.tavoliLoading),
       );
     }
     if (presentation != AsyncDataPresentation.content) {
       return Scaffold(
-        appBar: AppBar(title: Text(l10n.tavoliDetailTitle)),
+        appBar: pageAppBar(context, title: Text(l10n.tavoliDetailTitle)),
         body: ErrorState(message: l10n.tavoliSafeError, onRetry: _load),
       );
     }
@@ -318,7 +320,8 @@ class _PublicRecurringActivityDetailScreenState
       capacity: resolvedDetail.capacity,
     );
     final screen = Scaffold(
-      appBar: AppBar(
+      appBar: pageAppBar(
+        context,
         title: Text(l10n.tavoliDetailTitle),
         actions: [
           if (resolvedDetail.lifecycle != RecurringActivityLifecycle.draft)

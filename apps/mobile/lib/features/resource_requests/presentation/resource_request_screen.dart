@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/widgets/page_app_bar.dart';
 import '../../../core/theme/app_tokens.dart';
 import '../../../core/widgets/error_state.dart';
 import '../../../core/widgets/loading_state.dart';
@@ -80,7 +81,7 @@ class _ResourceRequestScreenState extends ConsumerState<ResourceRequestScreen> {
         !belongs ||
         (state.phase == ResourceRequestDetailPhase.loading && item == null);
     return Scaffold(
-      appBar: AppBar(title: Text(l10n.resourceRequestDetailTitle)),
+      appBar: pageAppBar(context, title: Text(l10n.resourceRequestDetailTitle)),
       body: SafeArea(
         child: initialLoading
             ? LoadingState(message: l10n.resourceRequestLoading)

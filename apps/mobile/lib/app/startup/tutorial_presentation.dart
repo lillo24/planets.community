@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
+import '../../core/widgets/page_app_bar.dart';
 import '../../l10n/generated/app_localizations.dart';
 import 'startup_flow.dart';
 
@@ -81,7 +82,8 @@ class TutorialIllustration extends StatelessWidget {
   const TutorialIllustration({super.key});
   @override
   Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(
+    appBar: pageAppBar(
+      context,
       title: Text(AppLocalizations.of(context).proposalDetailTitle),
     ),
     body: ListView(

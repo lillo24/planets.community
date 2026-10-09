@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'package:go_router/go_router.dart';
 
+import '../core/widgets/page_app_bar.dart';
 import '../core/theme/app_tokens.dart';
 import '../core/widgets/planets_hero.dart';
 import '../features/help/presentation/help_routes.dart';
@@ -16,7 +17,8 @@ class FoundationScreen extends StatelessWidget {
     final l10n = AppLocalizations.of(context);
 
     return Scaffold(
-      appBar: AppBar(
+      appBar: pageAppBar(
+        context,
         title: FittedBox(
           fit: BoxFit.scaleDown,
           alignment: Alignment.centerLeft,

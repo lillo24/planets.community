@@ -3,6 +3,7 @@ import 'package:flutter/scheduler.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/widgets/page_app_bar.dart';
 import '../../features/geographic_discovery/domain/map_discovery.dart';
 import '../../features/geographic_discovery/presentation/map_discovery_screen.dart';
 import '../../features/auth/application/auth_command_controller.dart';
@@ -1094,7 +1095,17 @@ class _UnknownRouteScreen extends StatelessWidget {
     final l10n = AppLocalizations.of(context);
 
     return Scaffold(
-      appBar: AppBar(title: Text(l10n.appTitle)),
+      appBar: pageAppBar(
+        context,
+        onClose: () {
+          if (context.canPop()) {
+            context.pop();
+          } else {
+            context.go('/');
+          }
+        },
+        title: Text(l10n.appTitle),
+      ),
       body: SafeArea(
         child: Center(
           child: Padding(

@@ -33,7 +33,7 @@ void main() {
       final app = await pumpEditor(tester, locale: locale);
       await tester.enterText(find.byKey(const Key('proposal-title')), 'Garden');
       await selectMural(tester);
-      await tester.tap(find.byType(BackButton));
+      await tester.tap(find.byKey(const Key('page-close')));
       await tester.pumpAndSettle();
       expect(find.text('Original destination'), findsOneWidget);
       expect(app.gateway.lastInput!.skillImportanceById, {

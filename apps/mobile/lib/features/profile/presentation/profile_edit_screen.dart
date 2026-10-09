@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/widgets/page_app_bar.dart';
 import '../../../core/theme/app_tokens.dart';
 import '../../../core/widgets/async_data_presentation.dart';
 import '../../../core/widgets/error_state.dart';
@@ -112,11 +113,11 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
         if (!didPop) _cancel();
       },
       child: Scaffold(
-        appBar: AppBar(
-          leading: BackButton(
-            key: const Key('profile-cancel-button'),
-            onPressed: _cancel,
-          ),
+        appBar: pageAppBar(
+          context,
+          closeKey: const Key('profile-cancel-button'),
+          closeLabel: MaterialLocalizations.of(context).cancelButtonLabel,
+          onClose: _cancel,
           title: Text(
             data?.profile.isComplete == true
                 ? l10n.profileEditTitle
@@ -230,11 +231,11 @@ class _ProfileEditFormState extends ConsumerState<_ProfileEditForm> {
         if (!didPop) _cancel();
       },
       child: Scaffold(
-        appBar: AppBar(
-          leading: BackButton(
-            key: const Key('profile-cancel-button'),
-            onPressed: _cancel,
-          ),
+        appBar: pageAppBar(
+          context,
+          closeKey: const Key('profile-cancel-button'),
+          closeLabel: MaterialLocalizations.of(context).cancelButtonLabel,
+          onClose: _cancel,
           title: Text(
             widget.data.profile.isComplete
                 ? l10n.profileEditTitle

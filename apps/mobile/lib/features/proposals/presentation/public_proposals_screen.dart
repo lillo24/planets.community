@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/widgets/page_app_bar.dart';
 import '../../geographic_discovery/domain/map_discovery.dart';
 import '../../geographic_discovery/presentation/map_view_button.dart';
 
@@ -85,7 +86,8 @@ class _PublicProposalsScreenState extends ConsumerState<PublicProposalsScreen> {
     final state = ref.watch(publicProposalsProvider);
 
     return Scaffold(
-      appBar: AppBar(
+      appBar: pageAppBar(
+        context,
         title: Text(l10n.proposalsTitle),
         actions: [
           IconButton(
@@ -395,7 +397,8 @@ class _ProposalDetailScreenState extends ConsumerState<ProposalDetailScreen> {
             capacity: detail.summary.capacity,
           );
     final screen = Scaffold(
-      appBar: AppBar(
+      appBar: pageAppBar(
+        context,
         title: Text(l10n.proposalDetailTitle),
         actions: [
           if (detail != null)

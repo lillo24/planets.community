@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/widgets/page_app_bar.dart';
 import '../../../core/theme/app_tokens.dart';
 import '../../../core/widgets/error_state.dart';
 import '../../../core/widgets/loading_state.dart';
@@ -77,7 +78,10 @@ class _CounterstatementDetailScreenState
     final detail = state.expectedProfileId == profileId ? state.detail : null;
 
     return Scaffold(
-      appBar: AppBar(title: Text(l10n.counterstatementDetailTitle)),
+      appBar: pageAppBar(
+        context,
+        title: Text(l10n.counterstatementDetailTitle),
+      ),
       body: SafeArea(
         child: state.isLoading && detail == null
             ? LoadingState(message: l10n.moderationReviewRequestsLoading)

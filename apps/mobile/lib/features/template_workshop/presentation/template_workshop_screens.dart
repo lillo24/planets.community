@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/widgets/page_app_bar.dart';
 import '../../../core/theme/app_tokens.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../auth/application/auth_session_controller.dart';
@@ -129,7 +130,7 @@ class _TemplateWorkshopScreenState extends ConsumerState<TemplateWorkshopScreen>
           )
         : const <TemplateAttempt>[];
     return Scaffold(
-      appBar: AppBar(title: Text(l.workshopTitle)),
+      appBar: pageAppBar(context, title: Text(l.workshopTitle)),
       body: SafeArea(
         child: RefreshIndicator(
           onRefresh: _refresh,
@@ -427,7 +428,8 @@ class _TemplateWorkshopDetailScreenState
         attempt != null && applications.busy.contains(attempt.requestId);
     final detail = state.detail;
     return Scaffold(
-      appBar: AppBar(
+      appBar: pageAppBar(
+        context,
         title: Text(l.workshopTitle),
         actions: [
           IconButton(

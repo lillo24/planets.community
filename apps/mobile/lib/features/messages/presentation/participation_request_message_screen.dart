@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/widgets/page_app_bar.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import 'participation_request_details.dart';
 
@@ -10,7 +11,8 @@ class ParticipationRequestMessageScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(
+    appBar: pageAppBar(
+      context,
       title: Text(AppLocalizations.of(context).messagesRequestDetailTitle),
     ),
     body: SafeArea(

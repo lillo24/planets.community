@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
+import '../../../core/widgets/page_app_bar.dart';
 import '../../../core/theme/app_tokens.dart';
 import '../../../core/widgets/loading_state.dart';
 import '../../../l10n/generated/app_localizations.dart';
@@ -71,7 +72,17 @@ class _ProjectInviteScreenState extends ConsumerState<ProjectInviteScreen> {
         : l10n.projectInviteRoleTitle(_roleLabel(l10n, requestedRole));
 
     return Scaffold(
-      appBar: AppBar(title: Text(title)),
+      appBar: pageAppBar(
+        context,
+        onClose: () {
+          if (context.canPop()) {
+            context.pop();
+          } else {
+            context.go('/');
+          }
+        },
+        title: Text(title),
+      ),
       body: SafeArea(
         child: !current || state.phase == ProjectDelegateLoadPhase.loading
             ? LoadingState(message: l10n.participationLoading)

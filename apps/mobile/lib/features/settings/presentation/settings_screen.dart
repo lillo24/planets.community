@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/widgets/page_app_bar.dart';
 import '../../../core/theme/app_tokens.dart';
 import '../../../app/startup/startup_flow.dart';
 import '../../messages/presentation/message_unread_badge.dart';
@@ -29,7 +30,7 @@ class SettingsScreen extends ConsumerWidget {
     final showAccountSettings = session.phase == AuthSessionPhase.ready;
 
     return Scaffold(
-      appBar: AppBar(title: Text(l10n.settingsTitle)),
+      appBar: pageAppBar(context, title: Text(l10n.settingsTitle)),
       body: SafeArea(
         child: Align(
           alignment: Alignment.topCenter,
@@ -242,7 +243,7 @@ class _LanguageSelectionScreenState
     final preference = ref.watch(languagePreferenceProvider);
 
     return Scaffold(
-      appBar: AppBar(title: Text(l10n.settingsLanguage)),
+      appBar: pageAppBar(context, title: Text(l10n.settingsLanguage)),
       body: SafeArea(
         child: Align(
           alignment: Alignment.topCenter,

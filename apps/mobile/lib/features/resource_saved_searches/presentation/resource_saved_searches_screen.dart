@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/widgets/page_app_bar.dart';
 import '../../../core/theme/app_tokens.dart';
 import '../../../core/widgets/empty_state.dart';
 import '../../../core/widgets/error_state.dart';
@@ -53,7 +54,7 @@ class _ResourceSavedSearchesScreenState
     final belongs = state.expectedProfileId == profileId;
     final items = belongs ? state.items : const <ResourceSavedSearch>[];
     return Scaffold(
-      appBar: AppBar(title: Text(l10n.resourceSavedSearchesTitle)),
+      appBar: pageAppBar(context, title: Text(l10n.resourceSavedSearchesTitle)),
       body: SafeArea(
         child:
             profileId == null ||
