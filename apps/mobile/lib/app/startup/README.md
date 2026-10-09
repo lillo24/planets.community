@@ -15,6 +15,13 @@ It does not own Auth, profile readiness, native-link delivery or product actions
   Welcome targets a 40% SafeArea center with full-path halo bounds. Both actions
   have 60dp minimum height, 16px vertical padding and a 16px gap; long labels
   wrap and short/keyboard layouts scroll rather than clipping controls.
+  The first accepted Explore/Login tap disables both actions synchronously and
+  starts routing in that same gesture. The next paint shows destination chrome,
+  or the pending disabled action if routing is still resolving. Pending Explore
+  keeps the existing sparkle glyph static, without loading a new icon. A forced
+  extra Welcome paint increased cold-entry latency in native profiles, so there
+  is no timer, deferred commit or additional transition. A stale Welcome gesture
+  checks the pending URI and signed-out phase; the router owns newer requests.
 - `tutorial_screen.dart` owns the interactive /intro playback, current public
   screen widgets, painted target lookup using stable keys, adaptive interruptible
   detail scrolling, layout/lifecycle guards, and a barrier against all underlying taps.
