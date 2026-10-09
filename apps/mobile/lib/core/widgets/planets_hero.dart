@@ -64,7 +64,7 @@ class PlanetsHero extends StatelessWidget {
                   ringColor: scheme.onSurface.withValues(
                     alpha: scheme.brightness == Brightness.dark ? .2 : .1,
                   ),
-                  starColor: scheme.primary.withValues(alpha: .28),
+                  starColor: scheme.primary.withValues(alpha: .36),
                   backgroundColor: Theme.of(context).scaffoldBackgroundColor,
                 ),
                 child: LayoutBuilder(
