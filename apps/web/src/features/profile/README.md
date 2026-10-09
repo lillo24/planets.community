@@ -13,6 +13,9 @@ This folder owns the minimal authenticated `/profile` settings surface.
 - `profile-form-view.tsx` composes generated shadcn components for profile fields,
   categorized controlled skills, and simple public/private choices. It ignores
   save completion after unmount; `profile-form.tsx` supplies Next navigation.
+  Its opt-in `nameOnly` mode asks only for a display name and retains the loaded
+  bio, skills and visibility values when saving through the canonical gateway.
+  Empty bios are already supported; no generated biography is stored.
 
 The database owns validation, atomicity, RLS, and sanitized public reads. Photo
 media, location, custom skills, proficiency, public directory/search, and

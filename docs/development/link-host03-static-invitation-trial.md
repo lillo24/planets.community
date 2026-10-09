@@ -54,6 +54,21 @@ continuation was invented.
 
 ## Session and configuration
 
+The founder-requested invitation setup now asks only for a name and offers
+Continue. Biography, skills and visibility controls are omitted from this static
+target; loaded values are preserved through the same canonical profile gateway.
+An empty biography is already normalized to SQL NULL by `update_own_profile`, so
+no placeholder text or schema change is needed. Profile personalization remains
+available in the app, and saving the name returns to the invitation without
+submitting Join. The full Next profile editor retains its existing controls.
+This UI follow-up does not replace the exact deployed-version measurement or
+browser proof record below; the recorded staging deployment predates it.
+Follow-up validation: `npm run check:web` passed (61 tooling tests, 298 Web tests,
+two existing opt-in backend skips, lint/typecheck, Next production build and
+static invitation build). All 11 focused profile-form tests passed, including
+name-only validation, empty biography and preservation of existing hidden fields;
+scoped formatting and `git diff --check` passed.
+
 Resolved Supabase SDKs are `@supabase/ssr 0.12.5` and `supabase-js 2.113.0`.
 The static target reuses `createSupabaseBrowserClient`: the SSR SDK owns its
 JavaScript-readable, SameSite=Lax cookie session, default persistence/automatic

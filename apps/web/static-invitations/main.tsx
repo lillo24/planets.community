@@ -226,6 +226,7 @@ function ProfilePage({ returnTo }: { returnTo: string }) {
         <ProfileFormView
           key={data.profile.id}
           initialData={data}
+          nameOnly
           returnTo={returnTo}
           gateway={profileGateway}
         />

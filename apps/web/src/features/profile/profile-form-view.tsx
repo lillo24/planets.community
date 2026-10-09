@@ -48,6 +48,8 @@ type ProfileFormProps = Readonly<{
   returnTo?: string;
   gateway?: WebProfileGateway;
   onRefresh?: () => void;
+  // Invitation setup collects only a name; omitted fields keep their loaded values.
+  nameOnly?: boolean;
 }>;
 
 export function ProfileFormView({
@@ -55,6 +57,7 @@ export function ProfileFormView({
   returnTo = "/profile",
   gateway,
   onRefresh,
+  nameOnly = false,
 }: ProfileFormProps) {
   const router = useClientNavigation();
   const [profileGateway] = useState(() => gateway ?? createWebProfileGateway());
@@ -148,11 +151,16 @@ export function ProfileFormView({
     <Card className="w-full" aria-labelledby="profile-settings-title">
       <CardHeader>
         <CardTitle id="profile-settings-title">
-          {incomplete ? "Complete your profile" : "Your profile"}
+          {nameOnly
+            ? "What's your name?"
+            : incomplete
+              ? "Complete your profile"
+              : "Your profile"}
         </CardTitle>
         <CardDescription>
-          Display name is required. Bio and controlled skills are optional, and
-          each field can be public or private.
+          {nameOnly
+            ? "Add your name to continue. You can personalize your profile in the app."
+            : "Display name is required. Bio and controlled skills are optional, and each field can be public or private."}
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -160,7 +168,7 @@ export function ProfileFormView({
           <FieldGroup>
             <Field data-invalid={errors.displayName !== undefined || undefined}>
               <FieldLabel htmlFor="profile-display-name">
-                Display name
+                {nameOnly ? "Name" : "Display name"}
               </FieldLabel>
               <Input
                 id="profile-display-name"
@@ -179,87 +187,93 @@ export function ProfileFormView({
               ) : null}
             </Field>
 
-            <Field data-invalid={errors.bio !== undefined || undefined}>
-              <FieldLabel htmlFor="profile-bio">Bio</FieldLabel>
-              <Textarea
-                id="profile-bio"
-                value={bio}
-                onChange={(event) => setBio(event.target.value)}
-                maxLength={500}
-                rows={4}
-                disabled={busy}
-                aria-invalid={errors.bio !== undefined || undefined}
-                placeholder="Share how you enjoy contributing."
-              />
-              <FieldDescription>
-                Optional, up to 500 characters.
-              </FieldDescription>
-              {errors.bio ? <FieldError>{errors.bio}</FieldError> : null}
-            </Field>
+            {!nameOnly ? (
+              <>
+                <Field data-invalid={errors.bio !== undefined || undefined}>
+                  <FieldLabel htmlFor="profile-bio">Bio</FieldLabel>
+                  <Textarea
+                    id="profile-bio"
+                    value={bio}
+                    onChange={(event) => setBio(event.target.value)}
+                    maxLength={500}
+                    rows={4}
+                    disabled={busy}
+                    aria-invalid={errors.bio !== undefined || undefined}
+                    placeholder="Share how you enjoy contributing."
+                  />
+                  <FieldDescription>
+                    Optional, up to 500 characters.
+                  </FieldDescription>
+                  {errors.bio ? <FieldError>{errors.bio}</FieldError> : null}
+                </Field>
 
-            <FieldSet>
-              <FieldLegend>Skills</FieldLegend>
-              <FieldDescription>
-                Choose capabilities you would enjoy bringing to community
-                projects.
-              </FieldDescription>
-              {initialData.categories.map((category) => (
-                <FieldSet key={category.id}>
-                  <FieldLegend variant="label">{category.label}</FieldLegend>
-                  <FieldGroup data-slot="checkbox-group">
-                    {category.skills.map((skill) => {
-                      const skillId = `profile-skill-${skill.slug}`;
-                      return (
-                        <Field key={skill.id} orientation="horizontal">
-                          <Checkbox
-                            id={skillId}
-                            checked={selectedSkillIds.has(skill.id)}
-                            onCheckedChange={(checked) =>
-                              setSkill(skill.id, checked)
-                            }
-                            disabled={busy}
-                          />
-                          <FieldContent>
-                            <FieldLabel htmlFor={skillId}>
-                              {skill.label}
-                            </FieldLabel>
-                          </FieldContent>
-                        </Field>
-                      );
-                    })}
-                  </FieldGroup>
+                <FieldSet>
+                  <FieldLegend>Skills</FieldLegend>
+                  <FieldDescription>
+                    Choose capabilities you would enjoy bringing to community
+                    projects.
+                  </FieldDescription>
+                  {initialData.categories.map((category) => (
+                    <FieldSet key={category.id}>
+                      <FieldLegend variant="label">
+                        {category.label}
+                      </FieldLegend>
+                      <FieldGroup data-slot="checkbox-group">
+                        {category.skills.map((skill) => {
+                          const skillId = `profile-skill-${skill.slug}`;
+                          return (
+                            <Field key={skill.id} orientation="horizontal">
+                              <Checkbox
+                                id={skillId}
+                                checked={selectedSkillIds.has(skill.id)}
+                                onCheckedChange={(checked) =>
+                                  setSkill(skill.id, checked)
+                                }
+                                disabled={busy}
+                              />
+                              <FieldContent>
+                                <FieldLabel htmlFor={skillId}>
+                                  {skill.label}
+                                </FieldLabel>
+                              </FieldContent>
+                            </Field>
+                          );
+                        })}
+                      </FieldGroup>
+                    </FieldSet>
+                  ))}
                 </FieldSet>
-              ))}
-            </FieldSet>
 
-            <FieldSet>
-              <FieldLegend>Public profile visibility</FieldLegend>
-              <FieldDescription>
-                Public viewers see only fields marked public. You always see
-                your complete profile.
-              </FieldDescription>
-              <VisibilityField
-                field="display_name"
-                label="Display name"
-                value={visibility.display_name}
-                disabled={busy}
-                onChange={setAudience}
-              />
-              <VisibilityField
-                field="bio"
-                label="Bio"
-                value={visibility.bio}
-                disabled={busy}
-                onChange={setAudience}
-              />
-              <VisibilityField
-                field="skills"
-                label="Skills"
-                value={visibility.skills}
-                disabled={busy}
-                onChange={setAudience}
-              />
-            </FieldSet>
+                <FieldSet>
+                  <FieldLegend>Public profile visibility</FieldLegend>
+                  <FieldDescription>
+                    Public viewers see only fields marked public. You always see
+                    your complete profile.
+                  </FieldDescription>
+                  <VisibilityField
+                    field="display_name"
+                    label="Display name"
+                    value={visibility.display_name}
+                    disabled={busy}
+                    onChange={setAudience}
+                  />
+                  <VisibilityField
+                    field="bio"
+                    label="Bio"
+                    value={visibility.bio}
+                    disabled={busy}
+                    onChange={setAudience}
+                  />
+                  <VisibilityField
+                    field="skills"
+                    label="Skills"
+                    value={visibility.skills}
+                    disabled={busy}
+                    onChange={setAudience}
+                  />
+                </FieldSet>
+              </>
+            ) : null}
 
             {failed ? (
               <Alert variant="destructive" aria-live="polite">
@@ -276,7 +290,9 @@ export function ProfileFormView({
                 <CircleCheckIcon />
                 <AlertTitle>Profile saved</AlertTitle>
                 <AlertDescription>
-                  Your profile and visibility choices are up to date.
+                  {nameOnly
+                    ? "Your name is saved. You can personalize your profile in the app."
+                    : "Your profile and visibility choices are up to date."}
                 </AlertDescription>
               </Alert>
             ) : null}
@@ -286,7 +302,7 @@ export function ProfileFormView({
       <CardFooter>
         <Button type="submit" form="profile-settings-form" disabled={busy}>
           {busy ? <Spinner data-icon="inline-start" /> : null}
-          Save profile
+          {nameOnly ? "Continue" : "Save profile"}
         </Button>
       </CardFooter>
     </Card>

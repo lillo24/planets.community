@@ -6,6 +6,9 @@ the informational Site, and native associations remain separate.
 
 - `main.tsx` supplies History navigation, a single SDK browser client/controller,
   verified Auth/profile loading and identity-bound cleanup to the shared views.
+  Profile setup uses the shared form's `nameOnly` mode: name and Continue only.
+  Biography, skills and visibility are kept as loaded and can be personalized
+  later in the app. Saving a name still returns to an explicit invitation Join.
 - `routes.ts` owns exact trial paths and narrows the canonical safe-return parser.
 - `public-config.ts` / `vite.config.mts` accept only the documented public keys,
   build static assets and reject Next/vinext/server-only runtime modules.
