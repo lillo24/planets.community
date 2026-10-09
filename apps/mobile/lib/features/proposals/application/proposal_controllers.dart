@@ -242,12 +242,66 @@ final publicProposalsProvider =
 
 class ProposalDetailController extends Notifier<ProposalDetailState> {
   var _revision = 0;
+  Future<void>? _prefetch;
+  String? _prefetchId;
+  (AuthSessionPhase, String?)? _prefetchSession;
+  (AuthSessionPhase, String?)? _loadedSession;
+
+  (AuthSessionPhase, String?) _session() {
+    final session = ref.read(authSessionProvider);
+    return (session.phase, session.identity?.id);
+  }
 
   @override
   ProposalDetailState build() => const ProposalDetailState();
 
-  Future<void> load(String proposalId) async {
+  /// Opt-in public tour reads coalesce by ID and session and reuse ready data.
+  /// Normal load/retry remains a fresh read. Only this opt-in path coalesces.
+  Future<void> ensureLoaded(String proposalId) {
+    final session = _session();
+    if (state.proposalId == proposalId &&
+        state.phase == ProposalLoadPhase.ready &&
+        state.detail != null &&
+        _loadedSession == session) {
+      return Future.value();
+    }
+    if (_prefetchId == proposalId &&
+        _prefetchSession == session &&
+        _prefetch != null) {
+      return _prefetch!;
+    }
+    if (state.proposalId == proposalId &&
+        state.phase == ProposalLoadPhase.loading &&
+        _prefetch == null) {
+      return Future.value();
+    }
+    final pending = load(proposalId, guardIdentity: true);
+    _prefetchId = proposalId;
+    _prefetch = pending;
+    _prefetchSession = session;
+    return pending.whenComplete(() {
+      if (identical(_prefetch, pending)) {
+        _prefetch = null;
+        _prefetchId = null;
+        _prefetchSession = null;
+      }
+    });
+  }
+
+  /// Normal explicit loads remain fresh. Tour-prefetch results additionally
+  /// reject a replaced session before entering the shared public projection.
+  Future<void> load(String proposalId, {bool guardIdentity = false}) async {
+    final session = _session();
     final revision = ++_revision;
+    bool acceptsResult() {
+      if (!ref.mounted || revision != _revision) return false;
+      if (guardIdentity && _session() != session) {
+        state = const ProposalDetailState();
+        return false;
+      }
+      return true;
+    }
+
     final current = state.proposalId == proposalId ? state.detail : null;
     state = ProposalDetailState(
       phase: ProposalLoadPhase.loading,
@@ -258,16 +312,17 @@ class ProposalDetailController extends Notifier<ProposalDetailState> {
       final detail = await ref
           .read(proposalGatewayProvider)
           .getPublicProposal(proposalId);
-      if (revision != _revision) {
+      if (!acceptsResult()) {
         return;
       }
+      _loadedSession = session;
       state = ProposalDetailState(
         phase: ProposalLoadPhase.ready,
         proposalId: proposalId,
         detail: detail,
       );
     } catch (error) {
-      if (revision == _revision) {
+      if (acceptsResult()) {
         state = ProposalDetailState(
           phase: ProposalLoadPhase.failure,
           proposalId: proposalId,

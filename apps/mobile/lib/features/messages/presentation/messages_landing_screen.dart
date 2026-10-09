@@ -64,7 +64,7 @@ class MessagesLandingScreen extends ConsumerWidget {
                         .read(messagesNavigationProvider.notifier)
                         .selectScope,
                   ),
-                  const _MessagesAccessState(),
+                  _MessagesAccessState(scope: scope),
                 ],
               )
             : Column(

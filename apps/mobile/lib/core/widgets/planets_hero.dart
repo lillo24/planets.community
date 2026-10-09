@@ -11,15 +11,26 @@ class PlanetsHero extends StatelessWidget {
     super.key,
     this.logoAsset = 'assets/brand/planets-logo.png',
     this.screenHeight,
-  }) : logoAreaHeight = null;
+  }) : logoAreaHeight = null,
+       farewell = false;
 
   const PlanetsHero.home({super.key, required this.logoAreaHeight})
     : logoAsset = 'assets/brand/planets-logo.png',
-      screenHeight = null;
+      screenHeight = null,
+      farewell = false;
+
+  /// Small farewell ascent and continuous star travel, isolated from Welcome
+  /// and Home. Both use the existing visibility/lifecycle-aware motion clocks.
+  const PlanetsHero.farewell({super.key})
+    : logoAsset = 'assets/brand/planets-logo.png',
+      screenHeight = null,
+      logoAreaHeight = null,
+      farewell = true;
 
   final String logoAsset;
   final double? screenHeight;
   final double? logoAreaHeight;
+  final bool farewell;
 
   @override
   Widget build(BuildContext context) {
@@ -35,7 +46,7 @@ class PlanetsHero extends StatelessWidget {
   }
 
   _HeroGeometry _geometry(Size size, double entrance) =>
-      _HeroGeometry(size, entrance, screenHeight, logoAreaHeight);
+      _HeroGeometry(size, entrance, screenHeight, logoAreaHeight, farewell);
 
   Widget _artwork(BuildContext context, double entrance, Widget? child) =>
       PlanetsOrbitMotion(
@@ -52,7 +63,9 @@ class PlanetsHero extends StatelessWidget {
             child: ClipRect(
               child: CustomPaint(
                 key: Key(
-                  logoAreaHeight == null
+                  farewell
+                      ? 'farewell-planets-hero'
+                      : logoAreaHeight == null
                       ? 'welcome-flight'
                       : 'home-planets-hero',
                 ),
@@ -61,6 +74,7 @@ class PlanetsHero extends StatelessWidget {
                   seconds: seconds,
                   screenHeight: screenHeight,
                   logoAreaHeight: logoAreaHeight,
+                  farewell: farewell,
                   ringColor: scheme.onSurface.withValues(
                     alpha: scheme.brightness == Brightness.dark ? .2 : .1,
                   ),
@@ -218,9 +232,12 @@ class _HeroGeometry {
     double entrance,
     double? screenHeight,
     double? logoAreaHeight,
+    bool farewell,
   ) : center = Offset(
         size.width / 2,
-        logoAreaHeight == null
+        farewell
+            ? size.height * (.5 - .06 * Curves.easeOut.transform(entrance))
+            : logoAreaHeight == null
             ? (screenHeight ?? size.height) *
                   (.5 - .23 * Curves.easeOut.transform(entrance))
             : logoAreaHeight / 2,
@@ -236,14 +253,19 @@ class _HeroGeometry {
           math.max(
             0,
             ((logoAreaHeight == null
-                        ? (screenHeight ?? size.height) * .27
+                        ? (screenHeight ?? size.height) * (farewell ? .44 : .27)
                         : logoAreaHeight / 2) -
                     10) /
                 .7,
           ),
         ),
       ),
-      logoExtent = logoAreaHeight == null
+      logoExtent = farewell
+          ? math.min(
+              math.min(size.width * .57, 270),
+              math.max(0, size.height * .6 - 28),
+            )
+          : logoAreaHeight == null
           ? math.min(size.width * .57, 270)
           : math.min(
               160,
@@ -274,6 +296,7 @@ class _OrbitPainter extends CustomPainter {
     required this.seconds,
     required this.screenHeight,
     required this.logoAreaHeight,
+    required this.farewell,
     required this.ringColor,
     required this.starColor,
     required this.backgroundColor,
@@ -283,6 +306,7 @@ class _OrbitPainter extends CustomPainter {
   final double seconds;
   final double? screenHeight;
   final double? logoAreaHeight;
+  final bool farewell;
   final Color ringColor;
   final Color starColor;
   final Color backgroundColor;
@@ -294,14 +318,22 @@ class _OrbitPainter extends CustomPainter {
       entrance,
       screenHeight,
       logoAreaHeight,
+      farewell,
     );
     final stars = Paint();
     for (final star in PlanetsStarfield.forSize(size)) {
-      // Preserve the finite entrance drift; orbit ticks never move the stars.
-      final y =
-          ((star.position.dy / size.height + entrance * .35) % 1) * size.height;
       stars.color = starColor.withValues(alpha: starColor.a * star.opacity);
-      canvas.drawCircle(Offset(star.position.dx, y), star.radius, stars);
+      canvas.drawCircle(
+        PlanetsStarfield.positionAt(
+          star,
+          size,
+          entrance: entrance,
+          seconds: seconds,
+          farewell: farewell,
+        ),
+        star.radius,
+        stars,
+      );
     }
     // Website dimensions, initial angles, colors and signed linear periods.
     const orbits = [
@@ -355,6 +387,7 @@ class _OrbitPainter extends CustomPainter {
       seconds != old.seconds ||
       screenHeight != old.screenHeight ||
       logoAreaHeight != old.logoAreaHeight ||
+      farewell != old.farewell ||
       ringColor != old.ringColor ||
       starColor != old.starColor ||
       backgroundColor != old.backgroundColor;

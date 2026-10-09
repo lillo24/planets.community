@@ -17,6 +17,14 @@ snapshots after apply/reread without adding query, receipt, session or point.
 This feature owns one-time proposal discovery and authenticated structural
 management for the immutable Creator and current Co-creators.
 
+The guided tour reuses public discovery's current filters, page size and
+requested-first ordering. Its opt-in `ProposalDetailController.ensureLoaded`
+coalesces one ID/session's prefetch and reuses matching ready data; replaced
+sessions cannot commit prefetched results. Ordinary `load` remains a fresh read.
+`ProposalDetailScreen(tutorialPreview: true)` uses the same real sections with
+eager layout so the tour measures the participation target before one smooth
+scroll. Normal detail keeps its lazy list, loaders and actions.
+
 SIM02 adds automatic unpublished-editor suggestions through the narrow
 `domain/similar_proposal.dart` DTO/query, `data/similar_proposal_gateway.dart`
 RPC parser, `application/similar_proposal_controller.dart` actor/session debounce
