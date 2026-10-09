@@ -18,6 +18,32 @@ class PlanetsStarfield {
   static const _seed = 0x504c414e;
   static final _cache = <Size, List<PlanetsStar>>{};
 
+  /// Farewell velocities repeat exactly with the shared 144-second clock.
+  /// Wrap outside the clip by the star radius so no visible teleport occurs.
+  static Offset positionAt(
+    PlanetsStar star,
+    Size size, {
+    required double entrance,
+    required double seconds,
+    bool farewell = false,
+  }) {
+    if (size.isEmpty) return star.position;
+    if (!farewell) {
+      return Offset(
+        star.position.dx,
+        ((star.position.dy / size.height + entrance * .35) % 1) * size.height,
+      );
+    }
+    final span = size.height + star.radius * 2;
+    final cycles =
+        2 + (star.radius > .95 ? 1 : 0) + (star.radius > 1.25 ? 1 : 0);
+    return Offset(
+      star.position.dx,
+      (star.position.dy + star.radius + span * seconds / 144 * cycles) % span -
+          star.radius,
+    );
+  }
+
   static List<PlanetsStar> forSize(Size size) {
     if (size.isEmpty) return const [];
     return _cache[size] ?? _generate(size);

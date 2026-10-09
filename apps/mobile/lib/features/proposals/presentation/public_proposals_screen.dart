@@ -301,11 +301,16 @@ class ProposalDetailScreen extends ConsumerStatefulWidget {
   const ProposalDetailScreen({
     required this.proposalId,
     this.joinIntent = false,
+    this.tutorialPreview = false,
     super.key,
   });
 
   final String proposalId;
   final bool joinIntent;
+
+  /// Reuse prefetched public detail and measure every real section before
+  /// the guided scroll. Ordinary detail keeps its lazy list and fresh read.
+  final bool tutorialPreview;
 
   @override
   ConsumerState<ProposalDetailScreen> createState() =>
@@ -321,7 +326,11 @@ class _ProposalDetailScreenState extends ConsumerState<ProposalDetailScreen> {
 
   Future<void> _load() async {
     await Future.wait([
-      ref.read(proposalDetailProvider.notifier).load(widget.proposalId),
+      widget.tutorialPreview
+          ? ref
+                .read(proposalDetailProvider.notifier)
+                .ensureLoaded(widget.proposalId)
+          : ref.read(proposalDetailProvider.notifier).load(widget.proposalId),
       ref
           .read(projectCreatorPhotoProvider.notifier)
           .load(widget.proposalId, force: true),
@@ -394,8 +403,10 @@ class _ProposalDetailScreenState extends ConsumerState<ProposalDetailScreen> {
       ),
       body: SafeArea(
         child: detail == null
-            ? emptyDetail
-            : ListView(
+            ? widget.tutorialPreview
+                  ? SingleChildScrollView(child: emptyDetail)
+                  : emptyDetail
+            : _detailBody(
                 padding: const EdgeInsets.all(AppSpacing.large),
                 children: [
                   ProjectCoverImage(
@@ -532,4 +543,17 @@ class _ProposalDetailScreenState extends ConsumerState<ProposalDetailScreen> {
         ? participation.withRequestIntent(screen)
         : screen;
   }
+
+  Widget _detailBody({
+    required EdgeInsets padding,
+    required List<Widget> children,
+  }) => widget.tutorialPreview
+      ? SingleChildScrollView(
+          padding: padding,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: children,
+          ),
+        )
+      : ListView(padding: padding, children: children);
 }

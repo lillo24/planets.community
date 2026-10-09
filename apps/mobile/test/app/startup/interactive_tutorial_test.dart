@@ -5,6 +5,8 @@ import 'package:planets_mobile/features/settings/data/language_preference_store.
 import '../../support/fake_settings.dart';
 
 import 'dart:async';
+import 'dart:convert';
+import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -34,6 +36,9 @@ import 'package:planets_mobile/features/proposals/application/proposal_controlle
 import 'package:planets_mobile/features/resource_listings/application/resource_listing_controllers.dart';
 import 'package:planets_mobile/app/startup/tutorial_presentation.dart';
 import 'package:planets_mobile/app/startup/tutorial_routes.dart';
+import 'package:planets_mobile/app/startup/tutorial_motion.dart';
+import 'package:planets_mobile/features/cover_media/data/cover_media_gateway.dart';
+import 'package:planets_mobile/features/cover_media/application/cover_image_loader.dart';
 import 'package:planets_mobile/features/proposals/data/proposal_gateway.dart';
 import 'package:planets_mobile/features/proposals/domain/proposal_models.dart';
 import 'package:planets_mobile/features/project_resource_needs/data/project_resource_needs_gateway.dart';
@@ -44,11 +49,344 @@ import 'package:planets_mobile/features/settings/application/language_preference
 import 'package:planets_mobile/features/settings/domain/language_preference.dart';
 
 import '../../support/fake_proposal.dart';
+import '../../support/fake_cover_media.dart';
 import '../../support/fake_resource_listing.dart';
 import '../../support/fake_profile_photo.dart';
 import '../../support/fake_project_resource_needs.dart';
 
 void main() {
+  testWidgets(
+    'fade pauses; refresh and rotation remeasure without page entry',
+    (tester) async {
+      tester.platformDispatcher.accessibilityFeaturesTestValue =
+          const FakeAccessibilityFeatures(disableAnimations: false);
+      addTearDown(tester.platformDispatcher.clearAllTestValues);
+      final projects = FakeProposalGateway()
+        ..publicItems = [proposalSummaryFixture()]
+        ..publicDetail = proposalDetailFixture();
+      final app = await _pump(tester, proposals: projects);
+      await tap(tester, 'welcome-explore');
+      await tap(tester, 'tutorial-next');
+      for (var i = 0; i < 30 && scrim(tester).color.a == 0; i++) {
+        await tester.pump(const Duration(milliseconds: 40));
+      }
+      final opacity = scrim(tester).color.a;
+      expect(opacity, inExclusiveRange(0, .62));
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
+      await tester.pump(const Duration(seconds: 10));
+      expect(scrim(tester).color.a, opacity);
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+      await ready(tester);
+      await tap(tester, 'tutorial-next');
+      await ready(tester);
+      await app.read(publicProposalsProvider.notifier).load();
+      await tester.pump();
+      expect(scrim(tester).color.a, closeTo(.62, .001));
+      await ready(tester);
+      for (var i = 0; i < 3; i++) {
+        await tap(tester, 'tutorial-next');
+        await ready(tester);
+      }
+      expectFocus(tester, 'my-proposals-action');
+      await tester.binding.setSurfaceSize(const Size(844, 390));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+      await tester.pump();
+      expect(scrim(tester).color.a, closeTo(.62, .001));
+      await ready(tester);
+      expectFocus(tester, 'my-proposals-action');
+      await tap(tester, 'tutorial-previous');
+      await ready(tester);
+      expectFocus(tester, 'proposal-create-action');
+      await tap(tester, 'tutorial-previous');
+      expect(scrim(tester).color.a, 0);
+      await ready(tester);
+      expectFocus(tester, 'participation-join-proposal-1');
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  testWidgets(
+    'ready warmup follows Requested first and preserves active filters',
+    (tester) async {
+      final requested = proposalSummaryFixture(id: 'requested-first');
+      final projects = FakeProposalGateway()
+        ..publicItems = [proposalSummaryFixture()]
+        ..requestedItems = [
+          RequestedProposalSummary(
+            requestId: 'request-1',
+            requestCreatedAt: DateTime.utc(2026, 10, 1),
+            proposal: requested,
+          ),
+        ]
+        ..publicDetail = proposalDetailFixture(id: requested.id);
+      final auth = FakeAuthGateway(
+        snapshot: const AuthSnapshot(identity: AuthIdentity(id: 'viewer')),
+      );
+      final app = await _pump(tester, proposals: projects, auth: auth);
+      await app
+          .read(publicProposalsProvider.notifier)
+          .applyFilters(
+            query: 'garden',
+            locality: 'Bologna',
+            skillIds: {'skill-mural'},
+          );
+      final calls = projects.calls.where((c) => c == 'list-public').length;
+      app.read(appRouterProvider).go('/settings');
+      await frames(tester, 6);
+      TutorialRoutes.replay(
+        tester.element(find.byKey(const Key('settings-language-row'))),
+        returnTo: '/settings',
+      );
+      await frames(tester, 6);
+      expect(projects.calls.where((c) => c == 'list-public'), hasLength(calls));
+      expect(projects.lastQuery, 'garden');
+      expect(projects.lastLocality, 'Bologna');
+      expect(projects.lastSkillIds, {'skill-mural'});
+      expect(projects.calls.where((c) => c.startsWith('public-detail')), [
+        'public-detail:requested-first',
+      ]);
+      await tap(tester, 'tutorial-next');
+      await tap(tester, 'tutorial-next');
+      await ready(tester);
+      expectFocus(tester, 'proposal-card-requested-first');
+    },
+  );
+
+  testWidgets(
+    'prefetched detail coalesces, retries and rejects account replacement',
+    (tester) async {
+      final delay = Completer<ProposalDetail?>();
+      final auth = FakeAuthGateway(
+        snapshot: const AuthSnapshot(identity: AuthIdentity(id: 'alice')),
+      );
+      final projects = FakeProposalGateway()..publicDetailResult = delay.future;
+      final app = await _pump(tester, auth: auth, proposals: projects);
+      final controller = app.read(proposalDetailProvider.notifier);
+      final first = controller.ensureLoaded('proposal-1');
+      final second = controller.ensureLoaded('proposal-1');
+      expect(
+        projects.calls.where((c) => c.startsWith('public-detail')),
+        hasLength(1),
+      );
+      auth.emit(const AuthSnapshot(identity: AuthIdentity(id: 'bob')));
+      await frames(tester, 6);
+      delay.complete(proposalDetailFixture());
+      await Future.wait([first, second]);
+      expect(app.read(proposalDetailProvider).detail, isNull);
+      projects.publicDetailResult = Future.error(
+        StateError('unavailable public detail'),
+      );
+      await controller.ensureLoaded('proposal-1');
+      expect(app.read(proposalDetailProvider).phase, ProposalLoadPhase.failure);
+      projects.publicDetailResult = null;
+      projects.publicDetail = proposalDetailFixture();
+      await controller.ensureLoaded('proposal-1');
+      await controller.ensureLoaded('proposal-1');
+      expect(app.read(proposalDetailProvider).phase, ProposalLoadPhase.ready);
+      expect(
+        projects.calls.where((c) => c.startsWith('public-detail')),
+        hasLength(3),
+      );
+    },
+  );
+
+  testWidgets('warmup preserves a different covered detail until tour visit', (
+    tester,
+  ) async {
+    final projects = FakeProposalGateway()
+      ..publicItems = [proposalSummaryFixture()]
+      ..publicDetail = proposalDetailFixture(id: 'caller');
+    final app = await _pump(tester, proposals: projects);
+    await app.read(proposalDetailProvider.notifier).load('caller');
+    await tap(tester, 'welcome-explore');
+    expect(app.read(proposalDetailProvider).proposalId, 'caller');
+    expect(projects.calls.where((c) => c.startsWith('public-detail')), [
+      'public-detail:caller',
+    ]);
+    projects.publicDetail = proposalDetailFixture();
+    for (var i = 0; i < 3; i++) {
+      await tap(tester, 'tutorial-next');
+    }
+    await ready(tester);
+    expectFocus(tester, 'participation-join-proposal-1');
+    expect(
+      projects.calls.where((c) => c == 'public-detail:proposal-1'),
+      hasLength(1),
+    );
+  });
+  testWidgets('every new page paints unobscured before the spotlight fade', (
+    tester,
+  ) async {
+    tester.platformDispatcher.accessibilityFeaturesTestValue =
+        const FakeAccessibilityFeatures(disableAnimations: false);
+    addTearDown(tester.platformDispatcher.clearAllTestValues);
+    await _pump(
+      tester,
+      proposals: FakeProposalGateway()
+        ..publicItems = [proposalSummaryFixture()]
+        ..publicDetail = proposalDetailFixture(),
+    );
+    await tap(tester, 'welcome-explore');
+    final previous = tester.getRect(find.byKey(const Key('tutorial-previous')));
+    final next = tester.getRect(find.byKey(const Key('tutorial-next')));
+    expect(previous.height, greaterThanOrEqualTo(54));
+    expect(next.height, greaterThanOrEqualTo(54));
+    expect(previous.width, closeTo(next.width, 1));
+    expect(previous.top, next.top);
+    expect(find.byType(BackButton), findsNothing);
+    for (final step in TutorialStep.values.skip(1)) {
+      await tap(tester, 'tutorial-next');
+      final newPage = {
+        TutorialStep.home,
+        TutorialStep.projectCard,
+        TutorialStep.projectDetail,
+        TutorialStep.projectCreate,
+        TutorialStep.homeResources,
+        TutorialStep.resources,
+        TutorialStep.messagesTabs,
+      }.contains(step);
+      if (newPage) {
+        expect(scrim(tester).color.a, 0, reason: step.name);
+        expect(
+          find.byKey(const Key('tutorial-next')).hitTestable(),
+          findsOneWidget,
+        );
+        var sawFade = false;
+        for (var frame = 0; frame < 150; frame++) {
+          await tester.pump(const Duration(milliseconds: 40));
+          final alpha = scrim(tester).color.a;
+          if (alpha > 0 && alpha < .61) {
+            sawFade = true;
+            break;
+          }
+        }
+        expect(sawFade, isTrue, reason: step.name);
+      }
+      await ready(tester);
+    }
+    expect(scrim(tester).color.a, 0);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('intro warms first three canonical covers and one detail only', (
+    tester,
+  ) async {
+    final coverDelay = Completer<Uint8List>();
+    final covers = FakeCoverMediaGateway()..downloadDelay = coverDelay.future;
+    final projects = FakeProposalGateway()
+      ..publicItems = [
+        for (var i = 1; i <= 4; i++)
+          proposalSummaryFixture(
+            id: 'project-$i',
+            coverObjectPath: 'public/$i.webp',
+          ),
+      ]
+      ..publicDetail = proposalDetailFixture(id: 'project-1');
+    final app = await _pump(tester, proposals: projects, covers: covers);
+    await tap(tester, 'welcome-explore');
+    expect(projects.calls.where((c) => c == 'list-public'), hasLength(1));
+    expect(projects.calls.where((c) => c.startsWith('public-detail')), [
+      'public-detail:project-1',
+    ]);
+    expect(covers.calls, [
+      for (var i = 1; i <= 3; i++) 'download:public/$i.webp',
+    ]);
+    expect(
+      app.read(publicCoverBytesProvider('public/1.webp')).isLoading,
+      isTrue,
+    );
+    coverDelay.complete(
+      base64Decode(
+        'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aB9kAAAAASUVORK5CYII=',
+      ),
+    );
+    await frames(tester, 4);
+    expect(
+      app.read(publicCoverBytesProvider('public/1.webp')).hasValue,
+      isTrue,
+    );
+    await tap(tester, 'tutorial-next');
+    await tap(tester, 'tutorial-next');
+    await ready(tester);
+    await tap(tester, 'tutorial-next');
+    await ready(tester);
+    await tap(tester, 'tutorial-previous');
+    await ready(tester);
+    expect(projects.calls.where((c) => c == 'list-public'), hasLength(1));
+    expect(
+      projects.calls.where((c) => c.startsWith('public-detail')),
+      hasLength(1),
+    );
+    expect(
+      covers.calls.where((c) => c == 'download:public/1.webp'),
+      hasLength(1),
+    );
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets(
+    'detail timing scales with actual short and long distance at 500px/s',
+    (tester) async {
+      tester.platformDispatcher.accessibilityFeaturesTestValue =
+          const FakeAccessibilityFeatures(disableAnimations: false);
+      addTearDown(tester.platformDispatcher.clearAllTestValues);
+      final durations = <int>[];
+      final distances = <double>[];
+      for (final paragraphs in [1, 55]) {
+        final projects = FakeProposalGateway()
+          ..publicItems = [proposalSummaryFixture()]
+          ..publicDetail = longTutorialDetail(paragraphs);
+        await _pump(tester, proposals: projects);
+        await tap(tester, 'welcome-explore');
+        for (var i = 0; i < 3; i++) {
+          await tap(tester, 'tutorial-next');
+        }
+        final list = find.byKey(
+          const PageStorageKey('proposal-detail-proposal-1'),
+        );
+        final position = tester
+            .state<ScrollableState>(
+              find
+                  .descendant(of: list, matching: find.byType(Scrollable))
+                  .first,
+            )
+            .position;
+        var elapsed = 0;
+        var distance = 0.0;
+        for (var frame = 0; frame < 900; frame++) {
+          final before = position.pixels;
+          await tester.pump(const Duration(milliseconds: 40));
+          final movement = position.pixels - before;
+          expect(
+            movement,
+            lessThanOrEqualTo(tutorialScrollPixelsPerSecond * .04 + 1),
+          );
+          distance += movement.abs();
+          if (movement.abs() > .1) elapsed += 40;
+          if (scrim(tester).targets.isNotEmpty) break;
+        }
+        await ready(tester);
+        expectFocus(tester, 'participation-join-proposal-1');
+        final hole = scrim(tester).targets.single;
+        expect(
+          hole.bottom,
+          lessThanOrEqualTo(
+            tester.getSize(find.byKey(const Key('tutorial-overlay'))).height,
+          ),
+        );
+        durations.add(elapsed);
+        distances.add(distance);
+        await tester.pumpWidget(const SizedBox());
+      }
+      expect(distances.last, greaterThan(distances.first * 3));
+      expect(durations.last, greaterThan(durations.first * 3));
+      expect(
+        tutorialScrollDuration(distances.last).inMilliseconds,
+        closeTo(durations.last, 100),
+      );
+    },
+  );
+
   testWidgets(
     'changing locale and text size preserves stage and rearms focus safely',
     (tester) async {
@@ -200,7 +538,7 @@ void main() {
   );
 
   testWidgets(
-    'first Full Project is frozen, detail scrolls slowly and Full stays truthful',
+    'first Full Project is frozen, measured scroll pauses and Full stays truthful',
     (tester) async {
       tester.platformDispatcher.accessibilityFeaturesTestValue =
           const FakeAccessibilityFeatures(disableAnimations: false);
@@ -252,7 +590,7 @@ void main() {
           .position;
       expect(position.pixels, 0);
       expect(scrim(tester).targets, isEmpty);
-      await frames(tester, 25);
+      await frames(tester, 8);
       expect(position.pixels, greaterThan(0));
       expect(position.pixels, lessThan(position.maxScrollExtent));
       tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
@@ -628,6 +966,15 @@ void main() {
               findsOneWidget,
             );
             expect(tester.takeException(), isNull, reason: step.name);
+            if (step == TutorialStep.projectDrafts) {
+              expectFocus(tester, 'my-proposals-action');
+            }
+            if (step == TutorialStep.messagesTabs) {
+              expectFocus(tester, 'messages-requests-action');
+              expect(find.byType(TabBar), findsNothing);
+              expect(find.byType(BackButton), findsNothing);
+            }
+            if (step == TutorialStep.resources) expectDisjointResources(tester);
             await tap(tester, 'tutorial-next');
           }
           expect(find.byKey(const Key('tutorial-screen')), findsNothing);
@@ -795,6 +1142,7 @@ Future<void> ready(WidgetTester tester) async {
                 .painter!
             as TutorialScrim;
     if (paint.targets.isNotEmpty &&
+        paint.color.a > .61 &&
         (find.byKey(const Key('tutorial-copy-resources')).evaluate().isEmpty ||
             paint.targets.length == 3)) {
       return;
@@ -819,6 +1167,7 @@ Future<ProviderContainer> _pump(
   FakeMessageChatsGateway? chats,
   BottomTabDestination destination = BottomTabDestination.messages,
   bool settle = true,
+  FakeCoverMediaGateway? covers,
 }) async {
   final gateway = auth ?? FakeAuthGateway();
   addTearDown(gateway.close);
@@ -826,6 +1175,9 @@ Future<ProviderContainer> _pump(
     ProviderScope(
       overrides: [
         preacceptedPolicyFixture,
+        coverMediaGatewayProvider.overrideWithValue(
+          covers ?? FakeCoverMediaGateway(),
+        ),
         initialLanguagePreferenceProvider.overrideWithValue(language),
         languagePreferenceStoreProvider.overrideWithValue(
           FakeLanguagePreferenceStore(),
@@ -887,7 +1239,32 @@ Future<ProviderContainer> pumpTutorialSmoke(
   FakeStartupStore? store,
   FakeProposalGateway? proposals,
   FakeResourceListingGateway? resources,
-}) => _pump(tester, store: store, proposals: proposals, resources: resources);
+  FakeCoverMediaGateway? covers,
+  LanguagePreference language = LanguagePreference.english,
+}) => _pump(
+  tester,
+  store: store,
+  proposals: proposals,
+  resources: resources,
+  covers: covers,
+  language: language,
+);
+
+ProposalDetail longTutorialDetail(int paragraphs) {
+  final base = proposalDetailFixture();
+  return ProposalDetail(
+    summary: base.summary,
+    creatorProfileId: base.creatorProfileId,
+    creatorDisplayName: base.creatorDisplayName,
+    description: List.filled(
+      paragraphs,
+      'Neighbors build a garden together, sharing tools and practical skills.',
+    ).join('\n\n'),
+    exactMeetingText: base.exactMeetingText,
+    exactLocationRestricted: base.exactLocationRestricted,
+  );
+}
+
 TutorialScrim scrim(WidgetTester tester) =>
     tester
             .widget<CustomPaint>(find.byKey(const Key('tutorial-spotlight')))
@@ -896,7 +1273,18 @@ TutorialScrim scrim(WidgetTester tester) =>
 
 void expectFocus(WidgetTester tester, String key, {int index = 0}) {
   final surface = tester.getTopLeft(find.byKey(const Key('tutorial-overlay')));
-  final bounds = tester.getRect(find.byKey(Key(key))).shift(-surface);
+  final iconTarget =
+      key == 'my-proposals-action' ||
+      key == 'resource-my-listings-action' ||
+      key == 'messages-requests-action';
+  final anchor = find.byKey(Key(key));
+  final bounds = tester
+      .getRect(
+        iconTarget
+            ? find.descendant(of: anchor, matching: find.byType(Icon)).first
+            : anchor,
+      )
+      .shift(-surface);
   final target = scrim(tester).targets[index];
   expect(bounds.inflate(1).contains(target.center), isTrue, reason: key);
   final visible =
@@ -904,7 +1292,7 @@ void expectFocus(WidgetTester tester, String key, {int index = 0}) {
           .deflate(8);
   expect(
     target.width,
-    closeTo(bounds.intersect(visible).width, 1),
+    closeTo(bounds.inflate(iconTarget ? 3 : 6).intersect(visible).width, 1),
     reason: key,
   );
   if (key.contains('card-')) expect(target.height, greaterThan(50));
@@ -917,7 +1305,7 @@ void expectDisjointResources(WidgetTester tester) {
   expectFocus(tester, 'resource-my-listings-action', index: 2);
   for (var i = 0; i < targets.length; i++) {
     for (var j = i + 1; j < targets.length; j++) {
-      expect(targets[i].inflate(6).overlaps(targets[j].inflate(6)), isFalse);
+      expect(targets[i].overlaps(targets[j]), isFalse);
     }
   }
 }

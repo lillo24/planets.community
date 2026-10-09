@@ -6,6 +6,108 @@ import 'package:planets_mobile/core/widgets/planets_hero.dart';
 import 'package:planets_mobile/core/widgets/planets_starfield.dart';
 
 void main() {
+  for (final height in [180.0, 500.0]) {
+    testWidgets('farewell small ascent fits rings at height $height', (
+      tester,
+    ) async {
+      _motion(tester, true);
+      await tester.pumpWidget(_farewellApp(height: height));
+      await tester.pump();
+      double center() =>
+          _farewellCircles(tester)
+                  .firstWhere(
+                    (args) => (args[2] as Paint).style == PaintingStyle.stroke,
+                  )[0]
+                  .dy
+              as double;
+      expect(center(), closeTo(height * .5, .01));
+      await tester.pump(const Duration(milliseconds: 1100));
+      expect(center(), inExclusiveRange(height * .44, height * .5));
+      await tester.pump(const Duration(milliseconds: 1100));
+      expect(center(), closeTo(height * .44, .01));
+      for (final args in _farewellCircles(
+        tester,
+      ).where((args) => (args[2] as Paint).style == PaintingStyle.stroke)) {
+        final point = args[0] as Offset;
+        final radius = args[1] as double;
+        expect(point.dy - radius - 9.2, greaterThanOrEqualTo(0));
+        expect(point.dy + radius + 9.2, lessThanOrEqualTo(height));
+      }
+      expect(tester.takeException(), isNull);
+    });
+  }
+
+  testWidgets('farewell stars continue down, wrap seamlessly and pause', (
+    tester,
+  ) async {
+    _motion(tester, true);
+    await tester.pumpWidget(_farewellApp());
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 3));
+    List<Offset> positions() =>
+        _farewellCircles(tester)
+            .where((args) => (args[1] as double) < 2)
+            .map((args) => args[0] as Offset)
+            .toList();
+    final before = positions();
+    await tester.pump(const Duration(seconds: 1));
+    final moving = positions();
+    expect(moving, isNot(before));
+    expect(
+      [
+        for (var i = 0; i < before.length; i++)
+          if (moving[i].dy > before[i].dy) i,
+      ].length,
+      greaterThan(before.length * .8),
+    );
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
+    await tester.pump(const Duration(seconds: 20));
+    expect(positions(), moving);
+    expect(tester.binding.transientCallbackCount, 0);
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 1));
+    expect(positions(), isNot(moving));
+    final resumed = positions();
+    await tester.pumpWidget(_farewellApp(enabled: false));
+    await tester.pump(const Duration(seconds: 20));
+    expect(positions(), resumed);
+    expect(tester.binding.transientCallbackCount, 0);
+    const size = Size(320, 500);
+    for (final star in PlanetsStarfield.forSize(size)) {
+      final a = PlanetsStarfield.positionAt(
+        star,
+        size,
+        entrance: 1,
+        seconds: 0,
+        farewell: true,
+      );
+      final b = PlanetsStarfield.positionAt(
+        star,
+        size,
+        entrance: 1,
+        seconds: 144,
+        farewell: true,
+      );
+      expect((a - b).distance, lessThan(.001));
+    }
+  });
+
+  testWidgets('reduced farewell is settled and static', (tester) async {
+    await tester.pumpWidget(_farewellApp());
+    await tester.pumpAndSettle();
+    final circles = _farewellCircles(tester);
+    final ring = circles.firstWhere(
+      (args) => (args[2] as Paint).style == PaintingStyle.stroke,
+    );
+    expect((ring[0] as Offset).dy, closeTo(220, .01));
+    await tester.pump(const Duration(seconds: 20));
+    expect(
+      _farewellCircles(tester).map((args) => args.take(2).toList()),
+      circles.map((args) => args.take(2).toList()),
+    );
+    expect(tester.binding.transientCallbackCount, 0);
+  });
   test(
     'seeded star map has responsive density, variation and irregular spread',
     () {
@@ -254,6 +356,32 @@ void main() {
       _expectOrbits(tester, 7);
     },
   );
+}
+
+Widget _farewellApp({double height = 500, bool enabled = true}) => MaterialApp(
+  home: Center(
+    child: TickerMode(
+      enabled: enabled,
+      child: SizedBox(
+        width: 320,
+        height: height,
+        child: const PlanetsHero.farewell(),
+      ),
+    ),
+  ),
+);
+
+List<List<dynamic>> _farewellCircles(WidgetTester tester) {
+  final finder = find.byKey(const Key('farewell-planets-hero'));
+  final canvas = TestRecordingCanvas();
+  tester
+      .widget<CustomPaint>(finder)
+      .painter!
+      .paint(canvas, tester.getSize(finder));
+  return canvas.invocations
+      .where((call) => call.invocation.memberName == #drawCircle)
+      .map((call) => call.invocation.positionalArguments)
+      .toList();
 }
 
 void _motion(WidgetTester tester, bool enabled) {

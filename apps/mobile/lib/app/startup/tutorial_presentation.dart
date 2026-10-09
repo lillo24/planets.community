@@ -117,8 +117,10 @@ class TutorialScrim extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     var path = Path()..addRect(Offset.zero & size);
     final holes = targets.map(
-      (rect) =>
-          RRect.fromRectAndRadius(rect.inflate(6), const Radius.circular(12)),
+      (rect) => RRect.fromRectAndRadius(
+        rect.intersect(Offset.zero & size),
+        const Radius.circular(12),
+      ),
     );
     for (final hole in holes) {
       path = Path.combine(

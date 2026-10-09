@@ -25,13 +25,19 @@ This folder owns small presentation primitives reused across feature boundaries.
   composition without replaying that entrance. Artwork ignores touches; Home
   places opaque, naturally sized cards above it and reduces decoration on
   short/scaled screens.
+  `PlanetsHero.farewell` is isolated to the tutorial finale: it rises gently
+  from 50% to 44% of its usable canvas over the existing 2.2-second entrance
+  clock, fits rings on short displays and retains the same orbits/logo float.
 
 - `planets_starfield.dart` owns the shared seeded irregular star map: roughly
   one star per 2,400 logical square pixels, bounded to 8–100, with modest radius
   and opacity variation and separation-based scattering. Four size maps are
   cached; rebuilding/evicting a size regenerates identical coordinates from
   seed `0x504c414e`. Only Welcome's existing finite entrance drift moves stars;
-  orbit ticking does not. No image, network or additional clock is involved.
+  orbit ticking does not on Home/Welcome. Farewell alone uses the existing
+  144-second orbit clock for continuous downward star travel at 2–4 whole wraps
+  per cycle, with radius-aware offscreen wrapping. It pauses with the artwork
+  and is static under reduced motion. No image, network or additional clock is involved.
 
 - `empty_state.dart`, `error_state.dart`, and `loading_state.dart` provide the
   standard asynchronous screen states.
