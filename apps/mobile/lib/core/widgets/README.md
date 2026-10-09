@@ -9,15 +9,15 @@ This folder owns small presentation primitives reused across feature boundaries.
   orbit 18 seconds clockwise, all linear; the logo floats every 8 seconds using
   CSS ease-in-out with a calm 6px vertical float and no logo rotation. One
   repeating 144-second clock keeps these phases continuous. Welcome retains
-  its settled position at 27% of the available screen height. Home centers
-  within the actual reservation from the body's top to
-  the first card, including the 24px scroll padding and the column's vertical
-  centering space. The scroll viewport fills the body; the 288px hero reservation
-  cap lowers the cards slightly on roomy phones while height/text scaling keeps
-  compact layouts tight. The painter extends upward into that reserved space.
-  Its rings and logo scale to retain top-edge room for their planets on shorter
-  layouts, leaving more breathing
-  room below the logo without moving functional actions.
+  its settled center at 40% of the SafeArea on ordinary portrait phones. Its
+  complete upward entrance path, rings, halos and floating logo fit the actual
+  canvas left above the 60dp-minimum actions; short/scaled layouts shrink it.
+  Home retains its original upper center by transferring up to 24px of bottom
+  scroll padding into the artwork-to-card gap. Growing both the minimum content
+  height and column by the same amount preserves centering space and gives 24px more
+  visible ring-to-card clearance on ordinary phones, without shifting the hero.
+  Large text and short screens give that extra decoration space back. The scroll
+  viewport still fills the body, and the painter reaches its top boundary.
   Both surfaces pause without advancing hidden time when backgrounded, covered
   by another route, disabled by TickerMode, or scrolled outside the viewport.
   Reduced motion renders the initial orbit phases and settled entrance without
@@ -31,9 +31,11 @@ This folder owns small presentation primitives reused across feature boundaries.
 
 - `planets_starfield.dart` owns the shared seeded irregular star map: roughly
   one star per 2,400 logical square pixels, bounded to 8–100, with modest radius
-  and opacity variation and separation-based scattering. Four size maps are
+  and opacity variation and separation-based scattering. Four size/distribution maps are
   cached; rebuilding/evicting a size regenerates identical coordinates from
-  seed `0x504c414e`. Only Welcome's existing finite entrance drift moves stars;
+  seed `0x504c414e`. Home/Welcome weight the lower visible backdrop; Home samples
+  only above the first opaque card, avoiding stars wasted behind it. The finite
+  Welcome drift settles onto those sampled coordinates. Only that entrance moves stars;
   orbit ticking does not on Home/Welcome. Farewell alone uses the existing
   144-second orbit clock for continuous downward star travel at 2–4 whole wraps
   per cycle, with radius-aware offscreen wrapping. It pauses with the artwork

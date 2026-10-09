@@ -32,7 +32,12 @@ void main() {
           final router = GoRouter(
             routes: [
               GoRoute(path: '/', builder: (_, _) => const FoundationScreen()),
-              for (final path in ['/proposals', '/resources', '/settings'])
+              for (final path in [
+                '/proposals',
+                '/resources',
+                '/settings',
+                '/help',
+              ])
                 GoRoute(
                   path: path,
                   builder: (_, _) => Scaffold(body: Text(path)),
@@ -95,9 +100,19 @@ void main() {
           expect(artworkBounds.top, closeTo(viewport.top, .01));
           expect(
             hero.logoAreaHeight,
-            closeTo(cardBoundary.top - viewport.top, .01),
+            closeTo(
+              cardBoundary.top -
+                  viewport.top -
+                  tester
+                      .getSize(find.byKey(const Key('home-artwork-gap')))
+                      .height,
+              .01,
+            ),
           );
-          final middle = (viewport.top + cardBoundary.top) / 2;
+          final gap = tester
+              .getSize(find.byKey(const Key('home-artwork-gap')))
+              .height;
+          final middle = (viewport.top + cardBoundary.top) / 2 - gap / 2;
           expect(
             logoBounds.center.dy,
             inInclusiveRange(middle - 6.01, middle + .01),
@@ -173,6 +188,11 @@ void main() {
             router.go('/');
             await settle();
           }
+          await tester.tap(find.byKey(const Key('open-help-button')));
+          await settle();
+          expect(router.routerDelegate.state.uri.path, '/help');
+          router.pop();
+          await settle();
           await tester.tap(find.byKey(const Key('open-settings-button')));
           await settle();
           expect(router.routerDelegate.state.uri.path, '/settings');
