@@ -24,8 +24,10 @@ proof, not performance measurements or authenticated backend evidence.
 - [Nested Help](help-contact.png)
 - [OTP](otp-close.png)
 
-`npm run check:mobile` passed: localization, format, analysis, **1,960 tests**
-and two existing skipped tests. This includes the full source header inventory,
+`npm run check:mobile` passed: localization, format, analysis, **1,988 tests**
+and two existing skipped tests, re-run after integrating main
+`367a5e18ed437b81c3c059fe690ec5aacffaf453` (shared basemap cache). The native
+captures above precede this independent map-cache integration. This includes the full source header inventory,
 Android/iOS-themed guarded exit tests, EN/IT 320dp/200% actions, editor departure,
 OTP retry/session preservation, policy, invitations, crop, chat/request return,
 account changes and Help/tutorial replay. Earlier failed layout/finder runs were
