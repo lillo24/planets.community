@@ -28,7 +28,7 @@ class MessagesLandingScreen extends ConsumerWidget {
     if (session.phase == AuthSessionPhase.ready && controlsOnly) {
       final scope = ref.watch(messagesNavigationProvider).scope;
       return MessagesFrame(
-        initialTabIndex: controlsOnly ? 0 : null,
+        controlsOnly: controlsOnly,
         chats: ListView(
           children: [
             MessageChatScopeToggle(
@@ -53,7 +53,7 @@ class MessagesLandingScreen extends ConsumerWidget {
         session.phase == AuthSessionPhase.profileSetupRequired) {
       final scope = ref.watch(messagesNavigationProvider).scope;
       return MessagesFrame(
-        initialTabIndex: controlsOnly ? 0 : null,
+        controlsOnly: controlsOnly,
         key: const Key('messages-context-screen'),
         chats: controlsOnly
             ? ListView(
@@ -82,10 +82,11 @@ class MessagesLandingScreen extends ConsumerWidget {
         requests: const _MessagesAccessState(),
       );
     }
-    return Scaffold(
+    return MessagesFrame(
       key: const Key('messages-context-screen'),
-      appBar: AppBar(title: Text(l10n.messagesTitle)),
-      body: const SafeArea(child: _ScrollableContext(child: AuthStatus())),
+      controlsOnly: controlsOnly,
+      chats: const _ScrollableContext(child: AuthStatus()),
+      requests: const _ScrollableContext(child: AuthStatus()),
     );
   }
 }
