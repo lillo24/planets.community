@@ -36,17 +36,17 @@ void main() {
             TutorialStep.resources,
             TutorialStep.messagesTabs,
           }.contains(step)) {
-        await binding.takeScreenshot('tut04-page-${step.name}');
+        await _capture(tester, binding, 'tut04-page-${step.name}');
         await _captureFade(tester, binding, 'tut04-fade-${step.name}');
       }
       if (screenshots && step == TutorialStep.farewell) {
-        await binding.takeScreenshot('tut04-farewell-early');
+        await _capture(tester, binding, 'tut04-farewell-early');
         await tester.pump(const Duration(milliseconds: 600));
-        await binding.takeScreenshot('tut04-farewell-middle');
+        await _capture(tester, binding, 'tut04-farewell-middle');
         await tester.pump(const Duration(seconds: 3));
-        await binding.takeScreenshot('tut04-farewell-settled');
+        await _capture(tester, binding, 'tut04-farewell-settled');
         await tester.pump(const Duration(seconds: 3));
-        await binding.takeScreenshot('tut04-farewell-stars-later');
+        await _capture(tester, binding, 'tut04-farewell-stars-later');
       }
       await tour.ready(tester);
       expect(find.byKey(Key('tutorial-copy-${step.name}')), findsOneWidget);
@@ -61,7 +61,7 @@ void main() {
             TutorialStep.resources,
           }.contains(step)) {
         await tester.pump();
-        await binding.takeScreenshot('tut03-${step.name}');
+        await _capture(tester, binding, 'tut03-${step.name}');
       }
       if (screenshots &&
           const {
@@ -70,7 +70,7 @@ void main() {
             TutorialStep.messagesTabs,
             TutorialStep.messagesScopes,
           }.contains(step)) {
-        await binding.takeScreenshot('tut04-focus-${step.name}');
+        await _capture(tester, binding, 'tut04-focus-${step.name}');
       }
       await _next(tester);
     }
@@ -102,9 +102,9 @@ void main() {
     await tour.tap(tester, 'welcome-explore');
     for (final step in TutorialStep.values) {
       if (screenshots && step == TutorialStep.projectDetail) {
-        await binding.takeScreenshot('tut04-short-detail-top');
+        await _capture(tester, binding, 'tut04-short-detail-top');
         await tester.pump(const Duration(milliseconds: 400));
-        await binding.takeScreenshot('tut04-short-detail-scroll');
+        await _capture(tester, binding, 'tut04-short-detail-scroll');
       }
       await tour.ready(tester);
       if (step == TutorialStep.projectCard) {
@@ -118,15 +118,15 @@ void main() {
         );
         if (screenshots) {
           await tester.pump();
-          await binding.takeScreenshot('tut03-real-full');
-          await binding.takeScreenshot('tut04-short-detail-full');
+          await _capture(tester, binding, 'tut03-real-full');
+          await _capture(tester, binding, 'tut04-short-detail-full');
         }
       }
       if (step == TutorialStep.resources) {
         tour.expectDisjointResources(tester);
         if (screenshots) {
           await tester.pump();
-          await binding.takeScreenshot('tut03-real-resources');
+          await _capture(tester, binding, 'tut03-real-resources');
         }
       }
       expect(tester.takeException(), isNull);
@@ -179,12 +179,12 @@ void main() {
     expect(covers.calls.where((c) => c.startsWith('download:')), hasLength(3));
     for (final step in TutorialStep.values) {
       if (screenshots && step == TutorialStep.projectCard) {
-        await binding.takeScreenshot('tut04-it-narrow-preloaded-projects');
+        await _capture(tester, binding, 'tut04-it-narrow-preloaded-projects');
       }
       if (screenshots && step == TutorialStep.projectDetail) {
-        await binding.takeScreenshot('tut04-long-detail-top');
+        await _capture(tester, binding, 'tut04-long-detail-top');
         await tester.pump(const Duration(seconds: 2));
-        await binding.takeScreenshot('tut04-long-detail-scroll');
+        await _capture(tester, binding, 'tut04-long-detail-scroll');
       }
       await tour.ready(tester);
       if (step == TutorialStep.projectDrafts) {
@@ -201,7 +201,7 @@ void main() {
             TutorialStep.resources,
             TutorialStep.messagesTabs,
           }.contains(step)) {
-        await binding.takeScreenshot('tut04-it-narrow-${step.name}');
+        await _capture(tester, binding, 'tut04-it-narrow-${step.name}');
       }
       expect(tester.takeException(), isNull);
       await _next(tester);
@@ -229,10 +229,24 @@ Future<void> _captureFade(
     await tester.pump(const Duration(milliseconds: 40));
     final opacity = tour.scrim(tester).color.a;
     if (opacity > .1 && opacity < .6) {
-      await binding.takeScreenshot(name);
+      await _capture(tester, binding, name);
       return;
     }
     if (opacity >= .6) fail('missed spotlight fade: $name');
   }
   fail('spotlight fade did not start: $name');
+}
+
+Future<void> _capture(
+  WidgetTester tester,
+  IntegrationTestWidgetsFlutterBinding binding,
+  String name,
+) async {
+  // A post-frame target update needs another paint, then Android's image view
+  // needs time to acquire that rasterized frame. onlyPumps suppresses the
+  // screenshot plugin's implicit frame request, so flush explicitly here.
+  await tester.pump();
+  await tester.pump(const Duration(milliseconds: 32));
+  await Future<void>.delayed(const Duration(milliseconds: 80));
+  await binding.takeScreenshot(name);
 }
