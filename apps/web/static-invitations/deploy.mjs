@@ -10,6 +10,7 @@ import {
 } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, resolve } from "node:path";
+import { assertStagingArtifact } from "./artifact.mjs";
 import {
   accountId,
   workerName,
@@ -66,15 +67,7 @@ const scripts = readdirSync(`${assets}/assets`)
   .filter((name) => name.endsWith(".js"))
   .map((name) => readFileSync(`${assets}/assets/${name}`, "utf8"))
   .join("\n");
-assert(
-  scripts.includes("https://cllpvruvrrvxczjitlqd.supabase.co") &&
-    !scripts.includes("http://127.0.0.1:59121"),
-  "Build staging client before deployment.",
-);
-assert(
-  !scripts.includes("sb_secret_") && !scripts.includes("sourceMappingURL="),
-  "Invalid public artifact.",
-);
+assertStagingArtifact(scripts);
 const logDir = fileURLToPath(
   new URL("../.wrangler/link-host03/", import.meta.url),
 );
