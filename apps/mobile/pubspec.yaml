@@ -24,6 +24,8 @@ dependencies:
   timezone: 0.11.1
   uuid: 4.6.0
   url_launcher: 6.3.2
+  flutter_map: 8.3.2
+  latlong2: 0.9.1
 
 dev_dependencies:
   # Already resolved via Supabase; declares SDK binary-transport test fixtures.

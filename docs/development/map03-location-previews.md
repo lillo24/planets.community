@@ -1,10 +1,23 @@
 # MAP03 location previews and Google Maps
 
-Proposal, Tavolo and Scambio/Dona cards now have a separate Maps tap region;
-the remainder opens PLANETS detail. Details share the same read-only panel.
-The default build says that map imagery is unavailable and retains readable
-location text and a deliberate Maps action. No GPS, tracking, Google SDK/key,
-silent geocoding or MAP04/05 discovery is introduced.
+MAP05 now adds a required master gate and exact quarter-credit ceiling shared
+with editor searches, center lookups and tiles. The MAP03 limits below remain
+additional guards; [MAP05 activation](map05-interactive-discovery.md) is required
+before live use of any consumer. MAP03's protected-image authorization is unchanged.
+
+MAP-UX01 restores compact icon/text location metadata on Proposal, Tavolo and
+Scambio/Dona feed cards. The whole card opens PLANETS detail, with no preview
+reads, image work or external Maps action. Feeds credit retained derived labels
+once in a compact footer; Resource matches do the same.
+
+Details share one read-only location panel and retain separately authorized
+meeting instructions. Disabled static rendering reserves no image space and
+adds no unavailable-image boilerplate. Authorized text appears without waiting
+for optional imagery; actual PNGs use a modest 144dp detail preview. Enabled
+render failures show one fallback, while denial revokes protected state.
+One real Google Maps button is offered only for a current canonical safe
+destination, and still performs a fresh read on tap. No GPS, tracking, Google
+SDK/key or silent geocoding is introduced. See [MAP-UX01](map-ux01-location-polish.md).
 
 ## Canonical precision and permissions
 
@@ -45,11 +58,12 @@ cannot restore exact access after the tap observed a public fallback or denial.
 
 The location_preview domain model never enters MAP02 editor snapshots, DRAFT01
 or templates. location_preview_gateway owns canonical reads, the disabled
-static transport and launcher. public_preview_batch groups visible cards within
+static transport and launcher. The retained compatibility public_preview_batch groups panels within
 16 ms, chunks at 50, deduplicates pending reads and keeps at most 100 public
 projections for 15 seconds. Public locality bitmaps have a separate 32-entry,
 one-minute RAM cache with in-flight deduplication. Exact/protected images do
-not enter this shared cache.
+not enter this shared cache. Feed cards no longer mount those panels or use
+the public batch read path. Cache sizes, lifetimes and billing are unchanged.
 
 location_preview_panel checks the clipped viewport, current route, TickerMode
 and foreground before fetching. Offscreen, route, actor/readiness, ABA,
@@ -181,5 +195,5 @@ can also start the harness directly in image mode.
 This is not live Geoapify output, native Google dispatch, iOS, physical-device
 privacy or owner policy approval evidence. Final gate counts are recorded in PR.
 
-MAP04 may stack on the implemented head; MAP05 remains deferred. Neither new
+MAP04 queries and MAP05's disabled interactive view are now implemented. Neither
 geographic discovery nor a live key is required for this disabled Maps-link path.

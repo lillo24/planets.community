@@ -11,10 +11,41 @@ import '../../features/auth/presentation/auth_status.dart';
 import '../../l10n/generated/app_localizations.dart';
 import 'startup_flow.dart';
 
-class WelcomeScreen extends ConsumerWidget {
+enum _WelcomeAction { explore, login }
+
+class WelcomeScreen extends ConsumerStatefulWidget {
   const WelcomeScreen({super.key});
+
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<WelcomeScreen> createState() => _WelcomeScreenState();
+}
+
+class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
+  _WelcomeAction? _opening;
+
+  void _begin(_WelcomeAction action) {
+    if (_opening != null) return;
+    final router = GoRouter.of(context);
+    if (router.routeInformationProvider.value.uri.path != '/welcome' ||
+        ref.read(authSessionProvider).phase != AuthSessionPhase.signedOut) {
+      return;
+    }
+    setState(() => _opening = action);
+    // Start routing in this gesture. The next paint can show the destination
+    // or disabled actions if routing is pending; forcing an extra Welcome
+    // paint increased cold-entry latency in native profile measurements.
+    final flow = ref.read(startupFlowProvider);
+    switch (action) {
+      case _WelcomeAction.explore:
+        router.go(flow.continueTo('/'));
+      case _WelcomeAction.login:
+        flow.enter();
+        router.go('/auth');
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final session = ref.watch(authSessionProvider);
     final l10n = AppLocalizations.of(context);
     if (session.phase != AuthSessionPhase.signedOut) {
@@ -52,27 +83,59 @@ class WelcomeScreen extends ConsumerWidget {
                           children: [
                             FilledButton.icon(
                               key: const Key('welcome-explore'),
-                              onPressed: () => context.go(
-                                ref.read(startupFlowProvider).continueTo('/'),
-                              ),
-                              icon: PlanetsEntranceMotion(
-                                builder: (context, progress, child) => Opacity(
-                                  opacity:
-                                      .8 +
-                                      .2 * math.cos(progress * math.pi * 4),
-                                  child: child,
+                              style: FilledButton.styleFrom(
+                                minimumSize: const Size(0, 60),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 24,
+                                  vertical: 16,
                                 ),
-                                child: const Icon(Icons.auto_awesome, size: 18),
+                                textStyle: Theme.of(context)
+                                    .textTheme
+                                    .titleMedium,
                               ),
+                              onPressed: _opening == null
+                                  ? () => _begin(_WelcomeAction.explore)
+                                  : null,
+                              icon: _opening == _WelcomeAction.explore
+                                  ? const Icon(
+                                      Icons.auto_awesome,
+                                      key: Key('welcome-opening'),
+                                      size: 22,
+                                    )
+                                  : PlanetsEntranceMotion(
+                                      builder: (context, progress, child) =>
+                                          Opacity(
+                                            opacity:
+                                                .8 +
+                                                .2 *
+                                                    math.cos(
+                                                      progress * math.pi * 4,
+                                                    ),
+                                            child: child,
+                                          ),
+                                      child: const Icon(
+                                        Icons.auto_awesome,
+                                        size: 22,
+                                      ),
+                                    ),
                               label: Text(l10n.welcomeExplore),
                             ),
-                            const SizedBox(height: 12),
+                            const SizedBox(height: 16),
                             TextButton(
                               key: const Key('welcome-login'),
-                              onPressed: () {
-                                ref.read(startupFlowProvider).enter();
-                                context.go('/auth');
-                              },
+                              style: TextButton.styleFrom(
+                                minimumSize: const Size(0, 60),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 24,
+                                  vertical: 16,
+                                ),
+                                textStyle: Theme.of(context)
+                                    .textTheme
+                                    .titleMedium,
+                              ),
+                              onPressed: _opening == null
+                                  ? () => _begin(_WelcomeAction.login)
+                                  : null,
                               child: Text(l10n.welcomeLogin),
                             ),
                           ],

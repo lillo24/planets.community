@@ -9,12 +9,16 @@ import 'package:planets_mobile/features/auth/domain/auth_models.dart';
 import 'package:planets_mobile/features/locations/data/location_preview_gateway.dart';
 import 'package:planets_mobile/features/locations/domain/location_preview.dart';
 import 'package:planets_mobile/features/locations/presentation/location_preview_panel.dart';
+import 'package:planets_mobile/features/locations/presentation/location_attribution.dart';
+import 'package:planets_mobile/features/participation/domain/participation_models.dart';
+import 'package:planets_mobile/features/participation/presentation/project_participation_section.dart';
 import 'package:planets_mobile/features/proposals/presentation/proposal_widgets.dart';
 import 'package:planets_mobile/features/recurring_activities/presentation/recurring_activity_widgets.dart';
 import 'package:planets_mobile/features/resource_listings/presentation/resource_listing_widgets.dart';
 import 'package:planets_mobile/l10n/generated/app_localizations.dart';
 
 import '../../support/fake_location_preview.dart';
+import '../../support/fake_participation.dart';
 import '../../support/fake_proposal.dart';
 import '../../support/fake_recurring_activity.dart';
 import '../../support/fake_resource_listing.dart';
@@ -63,9 +67,201 @@ Future<void> settled(WidgetTester t) async {
 }
 
 void main() {
+  for (final kind in ProjectKind.values) {
+    testWidgets(
+      '$kind detail has one location unit and preserves meeting instructions',
+      (t) async {
+        final g = FakePreviewGateway()
+          ..pending = (item, _) async => LocationPreview(
+            item: item,
+            revision: 1,
+            isProtected: false,
+            legacy: const LegacyPreviewArea('Trento', 'IT'),
+          );
+        final c = setup(
+          g,
+          FakeStaticPreviewGateway(enabled: false),
+          FakePreviewMapsLauncher(),
+        );
+        addTearDown(c.dispose);
+        await t.pumpWidget(
+          app(
+            c,
+            ListView(
+              children: [
+                ProjectParticipationSection(
+                  projectId: 'item',
+                  projectKind: kind,
+                  creatorProfileId: 'creator',
+                  acceptsNewRequests: true,
+                  publicLocationLines: const ['Public area'],
+                  publicExactMeetingText: 'Use the public east entrance.',
+                  exactLocationRestricted: false,
+                  capacity: capacityFixture(),
+                  previewArea: const LegacyPreviewArea('Trento', 'IT'),
+                ),
+              ],
+            ),
+          ),
+        );
+        await settled(t);
+        expect(find.text('Public area'), findsOneWidget);
+        expect(find.text('Use the public east entrance.'), findsOneWidget);
+        expect(find.byType(LocationPreviewPanel), findsOneWidget);
+        expect(find.byType(LocationAttribution), findsOneWidget);
+        expect(
+          find.text('Area information · map image unavailable'),
+          findsNothing,
+        );
+        expect(
+          find.byKey(const Key('location-open-maps-item')),
+          findsOneWidget,
+        );
+        await t.pumpWidget(const SizedBox());
+      },
+    );
+  }
+  testWidgets(
+    'Resource detail and legacy each retain one label and credit group',
+    (t) async {
+      final g = FakePreviewGateway()
+        ..pending = (item, _) async => LocationPreview(
+          item: item,
+          revision: 1,
+          isProtected: false,
+          legacy: const LegacyPreviewArea('Trento', 'IT'),
+        );
+      final c = setup(
+        g,
+        FakeStaticPreviewGateway(enabled: false),
+        FakePreviewMapsLauncher(),
+      );
+      addTearDown(c.dispose);
+      for (final id in [null, 'resource']) {
+        await t.pumpWidget(
+          app(
+            c,
+            ListView(
+              children: [
+                ResourceListingLocation(
+                  listingId: id,
+                  publicLocationLabel: 'Public area',
+                  locality: 'Trento',
+                  administrativeArea: null,
+                  countryCode: 'IT',
+                ),
+              ],
+            ),
+          ),
+        );
+        await settled(t);
+        expect(find.text('Public area'), findsOneWidget);
+        expect(find.byType(LocationAttribution), findsOneWidget);
+        expect(
+          find.byType(LocationPreviewPanel),
+          id == null ? findsNothing : findsOneWidget,
+        );
+        await t.pumpWidget(const SizedBox());
+      }
+    },
+  );
+  for (final valid in [false, true]) {
+    testWidgets(
+      'legacy destination validity=$valid uses only canonical public locality',
+      (t) async {
+        final g = FakePreviewGateway()
+          ..pending = (item, _) async => LocationPreview(
+            item: item,
+            revision: 1,
+            isProtected: false,
+            legacy: LegacyPreviewArea(
+              valid ? 'Trento' : 'Private street 42',
+              'IT',
+            ),
+          );
+        final r = FakeStaticPreviewGateway(enabled: false),
+            m = FakePreviewMapsLauncher();
+        final c = setup(g, r, m);
+        addTearDown(c.dispose);
+        await t.pumpWidget(app(c, ListView(children: [panel(detail: true)])));
+        await settled(t);
+        expect(find.text('Public area'), findsOneWidget);
+        final action = find.byKey(const Key('location-open-maps-item'));
+        expect(action, valid ? findsOneWidget : findsNothing);
+        if (valid) {
+          await t.tap(action);
+          await settled(t);
+          expect(g.reads, 2);
+          expect(m.urls.single.queryParameters['query'], 'Trento, IT');
+        }
+        expect(r.calls, 0);
+        await t.pumpWidget(const SizedBox());
+      },
+    );
+  }
+  testWidgets(
+    'public Resource exact preview keeps its canonical place and one action',
+    (t) async {
+      final g = FakePreviewGateway()
+        ..pending = (item, _) async => previewFixture(item, exact: true);
+      final r = FakeStaticPreviewGateway(enabled: false),
+          m = FakePreviewMapsLauncher();
+      final c = setup(g, r, m);
+      addTearDown(c.dispose);
+      await t.pumpWidget(
+        app(
+          c,
+          ListView(
+            children: const [
+              LocationPreviewPanel(
+                item: PreviewItem('resource', 'resource'),
+                legacy: LegacyPreviewArea('Trento', 'IT'),
+                publicLabel: 'Public resource',
+                detail: true,
+              ),
+            ],
+          ),
+        ),
+      );
+      await settled(t);
+      expect(find.text('SECRET synthetic venue'), findsOneWidget);
+      await t.tap(find.byKey(const Key('location-open-maps-resource')));
+      await settled(t);
+      expect(m.urls.single.queryParameters['query'], '44.0,10.0');
+      await t.pumpWidget(const SizedBox());
+    },
+  );
+  testWidgets(
+    'lease removes protected label, bitmap and action until reauthorized',
+    (t) async {
+      final g = FakePreviewGateway()
+        ..protected = true
+        ..exact = true;
+      final r = FakeStaticPreviewGateway(), m = FakePreviewMapsLauncher();
+      final c = setup(g, r, m);
+      addTearDown(c.dispose);
+      c
+          .read(authSessionProvider.notifier)
+          .markProfileReady(const AuthIdentity(id: 'Alice'));
+      await t.pumpWidget(app(c, ListView(children: [panel(detail: true)])));
+      await settled(t);
+      expect(t.getSize(find.byType(RawImage)).height, 144);
+      final pending = Completer<LocationPreview?>();
+      g.pending = (_, _) => pending.future;
+      await t.pump(const Duration(seconds: 15));
+      await t.pump();
+      expect(find.text('SECRET synthetic venue'), findsNothing);
+      expect(find.byType(RawImage), findsNothing);
+      expect(find.byKey(const Key('location-open-maps-item')), findsNothing);
+      pending.complete(null);
+      await settled(t);
+      expect(r.outputs.single.every((x) => x == 0), true);
+      await t.pumpWidget(const SizedBox());
+    },
+  );
   for (final language in ['en', 'it']) {
     testWidgets(
-      '$language disabled honest panel with attribution and 320px 2x Maps tap',
+      '$language compact disabled detail with attribution and 320px 2x Maps tap',
       (t) async {
         await t.binding.setSurfaceSize(const Size(320, 900));
         addTearDown(() => t.binding.setSurfaceSize(null));
@@ -75,16 +271,27 @@ void main() {
         final c = setup(g, r, m);
         addTearDown(c.dispose);
         await t.pumpWidget(
-          app(c, ListView(children: [panel()]), language: language, scale: 2),
+          app(
+            c,
+            ListView(children: [panel(detail: true)]),
+            language: language,
+            scale: 2,
+          ),
         );
         await settled(t);
         expect(r.calls, 0);
         expect(find.byType(RawImage), findsNothing);
+        expect(
+          find.text('Area information · map image unavailable'),
+          findsNothing,
+        );
+        expect(find.text('Map preview unavailable'), findsNothing);
+        expect(find.byType(TextButton), findsNWidgets(3));
         expect(find.text('Powered by Geoapify'), findsOneWidget);
         expect(find.text('© OpenStreetMap contributors'), findsOneWidget);
-        await t.tap(find.byKey(const Key('location-preview-item')));
+        await t.tap(find.byKey(const Key('location-open-maps-item')));
         await settled(t);
-        expect(g.reads, 1);
+        expect(g.reads, 2);
         expect(m.urls.single.queryParameters['map_action'], 'map');
         expect(t.takeException(), isNull);
         await t.pumpWidget(const SizedBox());
@@ -126,51 +333,61 @@ void main() {
     await t.pumpWidget(const SizedBox());
   });
   for (final type in ['proposal', 'recurring', 'resource']) {
-    testWidgets('$type distinct Maps and PLANETS detail card taps', (t) async {
-      int taps = 0;
-      final g = FakePreviewGateway(),
-          r = FakeStaticPreviewGateway(enabled: false),
-          m = FakePreviewMapsLauncher();
-      final c = setup(g, r, m);
-      addTearDown(c.dispose);
-      final Widget card;
-      final String id;
-      final String title;
-      if (type == 'proposal') {
-        final p = proposalSummaryFixture();
-        id = p.id;
-        title = p.title;
-        card = ProposalCard(proposal: p, onTap: () => taps++);
-      } else if (type == 'recurring') {
-        final p = publicRecurringSummaryFixture();
-        id = p.id;
-        title = p.title;
-        card = RecurringActivityCard(activity: p, onTap: () => taps++);
-      } else {
-        final p = publicResourceListingFixture();
-        id = p.id;
-        title = p.title;
-        card = PublicResourceListingCard(
-          listing: p,
-          now: DateTime.utc(2026, 10, 8),
-          onTap: () => taps++,
-        );
-      }
-      await t.pumpWidget(app(c, ListView(children: [card])));
-      await settled(t);
-      await t.ensureVisible(find.byKey(Key('location-preview-$id')));
-      await settled(t);
-      await t.tap(find.byKey(Key('location-preview-$id')));
-      await settled(t);
-      expect(taps, 0);
-      expect(m.urls.length, 1);
-      await t.ensureVisible(find.text(title));
-      await settled(t);
-      await t.tap(find.text(title));
-      await settled(t);
-      expect(taps, 1);
-      await t.pumpWidget(const SizedBox());
-    });
+    testWidgets(
+      '$type compact location navigates internally with no preview IO',
+      (t) async {
+        int taps = 0;
+        final g = FakePreviewGateway(),
+            r = FakeStaticPreviewGateway(enabled: false),
+            m = FakePreviewMapsLauncher();
+        final c = setup(g, r, m);
+        addTearDown(c.dispose);
+        final Widget card;
+        final String title;
+        final String location;
+        if (type == 'proposal') {
+          final p = proposalSummaryFixture();
+          title = p.title;
+          location = p.publicLocationLabel;
+          card = ProposalCard(proposal: p, onTap: () => taps++);
+        } else if (type == 'recurring') {
+          final p = publicRecurringSummaryFixture();
+          title = p.title;
+          location = p.publicLocationLabel;
+          card = RecurringActivityCard(activity: p, onTap: () => taps++);
+        } else {
+          final p = publicResourceListingFixture();
+          title = p.title;
+          location = p.locality;
+          card = PublicResourceListingCard(
+            listing: p,
+            now: DateTime.utc(2026, 10, 8),
+            onTap: () => taps++,
+          );
+        }
+        await t.pumpWidget(app(c, ListView(children: [card])));
+        await settled(t);
+        expect(find.byType(LocationPreviewPanel), findsNothing);
+        expect(find.byType(RawImage), findsNothing);
+        expect(find.byIcon(Icons.open_in_new), findsNothing);
+        expect(find.byIcon(Icons.location_on_outlined), findsOneWidget);
+        await t.ensureVisible(find.text(location));
+        await settled(t);
+        await t.tap(find.text(location));
+        await settled(t);
+        expect(taps, 1);
+        expect(m.urls, isEmpty);
+        expect(g.reads, 0);
+        expect(g.batches, 0);
+        expect(r.calls, 0);
+        await t.ensureVisible(find.text(title));
+        await settled(t);
+        await t.tap(find.text(title));
+        await settled(t);
+        expect(taps, 2);
+        await t.pumpWidget(const SizedBox());
+      },
+    );
   }
   testWidgets(
     'readiness loss erases exact image; late account ABA completion rejected',
@@ -234,8 +451,12 @@ void main() {
           find.text('SECRET synthetic venue'),
           denied ? findsNothing : findsOneWidget,
         );
+        expect(
+          find.byKey(const Key('location-open-maps-item')),
+          denied ? findsNothing : findsOneWidget,
+        );
         if (!denied) {
-          await t.tap(find.byKey(const Key('location-preview-item')));
+          await t.tap(find.byKey(const Key('location-open-maps-item')));
           await settled(t);
           expect(m.urls.single.path, '/maps/search/');
           expect(m.urls.single.queryParameters['query'], '44.0,10.0');
@@ -266,7 +487,7 @@ void main() {
       g
         ..protected = false
         ..exact = false;
-      await t.tap(find.byKey(const Key('location-preview-item')));
+      await t.tap(find.byKey(const Key('location-open-maps-item')));
       await settled(t);
       expect(m.urls.single.queryParameters['map_action'], 'map');
       final late = fakePreviewPng();
@@ -290,7 +511,7 @@ void main() {
     await t.pumpWidget(app(c, ListView(children: [panel()])));
     await settled(t);
     g.denied = true;
-    await t.tap(find.byKey(const Key('location-preview-item')));
+    await t.tap(find.byKey(const Key('location-open-maps-item')));
     await settled(t);
     expect(m.urls, isEmpty);
     expect(find.byType(SnackBar), findsOneWidget);
@@ -350,7 +571,7 @@ void main() {
       addTearDown(c.dispose);
       await t.pumpWidget(app(c, ListView(children: [panel()])));
       await settled(t);
-      await t.tap(find.byKey(const Key('location-preview-item')));
+      await t.tap(find.byKey(const Key('location-open-maps-item')));
       await settled(t);
       expect(m.urls.length, 1);
       expect(find.byType(SnackBar), findsOneWidget);

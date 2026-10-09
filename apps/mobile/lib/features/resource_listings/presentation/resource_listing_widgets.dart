@@ -244,16 +244,12 @@ class PublicResourceListingCard extends StatelessWidget {
                           text: interest,
                           key: Key('resource-interest-count-${listing.id}'),
                         ),
+                        _IconText(
+                          icon: Icons.location_on_outlined,
+                          text: location,
+                          key: Key('resource-location-${listing.id}'),
+                        ),
                       ],
-                    ),
-                    LocationPreviewPanel(
-                      item: PreviewItem('resource', listing.id),
-                      legacy: LegacyPreviewArea(
-                        listing.locality,
-                        listing.countryCode,
-                      ),
-                      publicLabel: location,
-                      key: Key('resource-location-${listing.id}'),
                     ),
                     if (footer case final footer?) ...[
                       const SizedBox(height: AppSpacing.medium),

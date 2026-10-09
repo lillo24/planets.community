@@ -11,15 +11,34 @@ class PlanetsHero extends StatelessWidget {
     super.key,
     this.logoAsset = 'assets/brand/planets-logo.png',
     this.screenHeight,
-  }) : logoAreaHeight = null;
+  }) : logoAreaHeight = null,
+       starfieldHeight = null,
+       farewell = false;
 
-  const PlanetsHero.home({super.key, required this.logoAreaHeight})
+  const PlanetsHero.home({
+    super.key,
+    required this.logoAreaHeight,
+    this.starfieldHeight,
+  }) : logoAsset = 'assets/brand/planets-logo.png',
+       screenHeight = null,
+       farewell = false;
+
+  /// Small farewell ascent and continuous star travel, isolated from Welcome
+  /// and Home. Both use the existing visibility/lifecycle-aware motion clocks.
+  const PlanetsHero.farewell({super.key})
     : logoAsset = 'assets/brand/planets-logo.png',
-      screenHeight = null;
+      screenHeight = null,
+      logoAreaHeight = null,
+      starfieldHeight = null,
+      farewell = true;
 
   final String logoAsset;
   final double? screenHeight;
   final double? logoAreaHeight;
+
+  /// Visible backdrop ending before opaque Home cards, independent of orbit size.
+  final double? starfieldHeight;
+  final bool farewell;
 
   @override
   Widget build(BuildContext context) {
@@ -35,10 +54,18 @@ class PlanetsHero extends StatelessWidget {
   }
 
   _HeroGeometry _geometry(Size size, double entrance) =>
-      _HeroGeometry(size, entrance, screenHeight, logoAreaHeight);
+      _HeroGeometry(size, entrance, screenHeight, logoAreaHeight, farewell);
 
-  Widget _artwork(BuildContext context, double entrance, Widget? child) =>
-      PlanetsOrbitMotion(
+  Widget _artwork(
+    BuildContext context,
+    double entrance,
+    Widget? child,
+  ) => LayoutBuilder(
+    builder: (context, constraints) {
+      // Orbit/float ticks change paint only. Keep settled geometry outside
+      // their builder so Home does not relayout its Stack every frame.
+      final geometry = _geometry(constraints.biggest, entrance);
+      return PlanetsOrbitMotion(
         activeBounds: (size) => _geometry(size, entrance).animatedBounds,
         child: child,
         builder: (context, seconds, child) {
@@ -52,7 +79,9 @@ class PlanetsHero extends StatelessWidget {
             child: ClipRect(
               child: CustomPaint(
                 key: Key(
-                  logoAreaHeight == null
+                  farewell
+                      ? 'farewell-planets-hero'
+                      : logoAreaHeight == null
                       ? 'welcome-flight'
                       : 'home-planets-hero',
                 ),
@@ -61,38 +90,37 @@ class PlanetsHero extends StatelessWidget {
                   seconds: seconds,
                   screenHeight: screenHeight,
                   logoAreaHeight: logoAreaHeight,
+                  starfieldHeight: starfieldHeight,
+                  farewell: farewell,
                   ringColor: scheme.onSurface.withValues(
                     alpha: scheme.brightness == Brightness.dark ? .2 : .1,
                   ),
-                  starColor: scheme.primary.withValues(alpha: .36),
+                  starColor: scheme.primary.withValues(alpha: .44),
                   backgroundColor: Theme.of(context).scaffoldBackgroundColor,
                 ),
-                child: LayoutBuilder(
-                  builder: (context, constraints) {
-                    final geometry = _geometry(constraints.biggest, entrance);
-                    return Stack(
-                      clipBehavior: Clip.none,
-                      children: [
-                        Positioned(
-                          left: geometry.center.dx - geometry.logoExtent / 2,
-                          top: geometry.center.dy - geometry.logoExtent / 2,
-                          width: geometry.logoExtent,
-                          height: geometry.logoExtent,
-                          child: Transform.translate(
-                            key: const Key('planets-floating-logo'),
-                            offset: Offset(0, -6 * floatAmount),
-                            child: child,
-                          ),
-                        ),
-                      ],
-                    );
-                  },
+                child: Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    Positioned(
+                      left: geometry.center.dx - geometry.logoExtent / 2,
+                      top: geometry.center.dy - geometry.logoExtent / 2,
+                      width: geometry.logoExtent,
+                      height: geometry.logoExtent,
+                      child: Transform.translate(
+                        key: const Key('planets-floating-logo'),
+                        offset: Offset(0, -6 * floatAmount),
+                        child: child,
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),
           );
         },
       );
+    },
+  );
 }
 
 /// One 144-second clock is a whole number of all 12/16/18/8-second cycles.
@@ -213,21 +241,48 @@ class _PlanetsOrbitMotionState extends State<PlanetsOrbitMotion>
 }
 
 class _HeroGeometry {
-  _HeroGeometry(
+  factory _HeroGeometry(
     Size size,
     double entrance,
     double? screenHeight,
     double? logoAreaHeight,
-  ) : center = Offset(
+    bool farewell,
+  ) {
+    if (!farewell && logoAreaHeight == null) {
+      // Fit the complete entrance path, including the far planet's halo. The
+      // safe-screen target adapts to the canvas left by large/translated actions.
+      final screen = screenHeight ?? size.height;
+      final settled = math.min(screen * .4, size.height * .6);
+      final start = math.min(screen * .5, size.height * .65);
+      final room = math.max(0.0, math.min(settled, size.height - start) - 10);
+      return _HeroGeometry._(
+        Offset(
+          size.width / 2,
+          start + (settled - start) * Curves.easeOut.transform(entrance),
+        ),
+        math.min(
+          size.width * .68,
+          math.min(
+            300.0,
+            math.max(0.0, math.min(size.width / 2 - 10, room)) / .7,
+          ),
+        ),
+        math.min(
+          math.min(size.width * .57, 270.0),
+          math.max(0.0, room * 2 - 8),
+        ),
+      );
+    }
+    return _HeroGeometry._(
+      Offset(
         size.width / 2,
-        logoAreaHeight == null
-            ? (screenHeight ?? size.height) *
-                  (.5 - .23 * Curves.easeOut.transform(entrance))
-            : logoAreaHeight / 2,
+        farewell
+            ? size.height * (.5 - .06 * Curves.easeOut.transform(entrance))
+            : logoAreaHeight! / 2,
       ),
       // Fit the far ring and its planet halo above the settled center, so
       // raising the composition doesn't clip circular artwork on short screens.
-      baseDiameter = math.min(
+      math.min(
         logoAreaHeight == null
             ? size.width * .68
             : math.max(0, (size.width / 2 - 10) / .7),
@@ -236,21 +291,30 @@ class _HeroGeometry {
           math.max(
             0,
             ((logoAreaHeight == null
-                        ? (screenHeight ?? size.height) * .27
+                        ? (screenHeight ?? size.height) * (farewell ? .44 : .27)
                         : logoAreaHeight / 2) -
                     10) /
                 .7,
           ),
         ),
       ),
-      logoExtent = logoAreaHeight == null
+      farewell
+          ? math.min(
+              math.min(size.width * .57, 270),
+              math.max(0, size.height * .6 - 28),
+            )
+          : logoAreaHeight == null
           ? math.min(size.width * .57, 270)
           : math.min(
               160,
               // Retain 14px either side on short/large-text reservations;
               // the upward-only 6px float also stays clear of the top edge.
               math.min(size.width * .45, math.max(0, logoAreaHeight - 28)),
-            );
+            ),
+    );
+  }
+
+  const _HeroGeometry._(this.center, this.baseDiameter, this.logoExtent);
 
   final Offset center;
   final double baseDiameter;
@@ -274,6 +338,8 @@ class _OrbitPainter extends CustomPainter {
     required this.seconds,
     required this.screenHeight,
     required this.logoAreaHeight,
+    required this.starfieldHeight,
+    required this.farewell,
     required this.ringColor,
     required this.starColor,
     required this.backgroundColor,
@@ -283,6 +349,8 @@ class _OrbitPainter extends CustomPainter {
   final double seconds;
   final double? screenHeight;
   final double? logoAreaHeight;
+  final double? starfieldHeight;
+  final bool farewell;
   final Color ringColor;
   final Color starColor;
   final Color backgroundColor;
@@ -294,14 +362,30 @@ class _OrbitPainter extends CustomPainter {
       entrance,
       screenHeight,
       logoAreaHeight,
+      farewell,
     );
     final stars = Paint();
-    for (final star in PlanetsStarfield.forSize(size)) {
-      // Preserve the finite entrance drift; orbit ticks never move the stars.
-      final y =
-          ((star.position.dy / size.height + entrance * .35) % 1) * size.height;
+    final backdrop = Size(
+      size.width,
+      math.min(size.height, starfieldHeight ?? size.height),
+    );
+    for (final star in PlanetsStarfield.forSize(
+      backdrop,
+      lowerWeighted: !farewell,
+    )) {
       stars.color = starColor.withValues(alpha: starColor.a * star.opacity);
-      canvas.drawCircle(Offset(star.position.dx, y), star.radius, stars);
+      canvas.drawCircle(
+        PlanetsStarfield.positionAt(
+          star,
+          backdrop,
+          entrance: entrance,
+          seconds: seconds,
+          farewell: farewell,
+          settledBackdrop: !farewell,
+        ),
+        star.radius,
+        stars,
+      );
     }
     // Website dimensions, initial angles, colors and signed linear periods.
     const orbits = [
@@ -355,6 +439,8 @@ class _OrbitPainter extends CustomPainter {
       seconds != old.seconds ||
       screenHeight != old.screenHeight ||
       logoAreaHeight != old.logoAreaHeight ||
+      starfieldHeight != old.starfieldHeight ||
+      farewell != old.farewell ||
       ringColor != old.ringColor ||
       starColor != old.starColor ||
       backgroundColor != old.backgroundColor;

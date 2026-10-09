@@ -125,8 +125,9 @@ void main() {
     app.read(appRouterProvider).go('/messages');
     await tester.pumpAndSettle();
 
-    expect(find.text('Chats'), findsOneWidget);
-    expect(find.text('Requests'), findsOneWidget);
+    expect(find.text('Messages'), findsNWidgets(2));
+    expect(find.byKey(const Key('messages-requests-action')), findsOneWidget);
+    expect(find.byType(TabBar), findsNothing);
     await tester.tap(find.text('Groups'));
     await tester.pumpAndSettle();
     expect(find.text('Jordan: Bring a small brush.'), findsOneWidget);

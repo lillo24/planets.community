@@ -2,6 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../geographic_discovery/domain/map_discovery.dart';
+import '../../geographic_discovery/presentation/map_view_button.dart';
+import '../../locations/presentation/location_attribution.dart';
+
 import '../../../app/router/browse_activity_switcher.dart';
 import '../../../core/theme/app_tokens.dart';
 import '../../locations/domain/location_preview.dart';
@@ -90,6 +94,8 @@ class _PublicRecurringActivitiesScreenState
             padding: const EdgeInsets.all(AppSpacing.medium),
             children: [
               const BrowseActivitySwitcher(selected: BrowseActivityType.tavoli),
+              MapViewButton(origin: MapDiscoveryOrigin.tavoli),
+              const SizedBox(height: 8),
               const SizedBox(height: AppSpacing.medium),
               Align(
                 alignment: Alignment.centerRight,
@@ -204,6 +210,9 @@ class _PublicRecurringActivitiesScreenState
                       ? const CircularProgressIndicator()
                       : Text(l10n.tavoliLoadMore),
                 ),
+              const LocationAttribution(),
+              // Let credit links scroll above the floating Create action.
+              const SizedBox(height: 80),
             ],
           ),
         ),
@@ -297,7 +306,7 @@ class _PublicRecurringActivityDetailScreenState
       acceptsNewRequests:
           resolvedDetail.lifecycle == RecurringActivityLifecycle.published,
       publicLocationLines: [
-        '${resolvedDetail.publicLocationLabel} · ${resolvedDetail.locality}',
+        resolvedDetail.publicLocationLabel,
         ?resolvedDetail.administrativeArea,
       ],
       previewArea: LegacyPreviewArea(

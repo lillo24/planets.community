@@ -4,6 +4,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../geographic_discovery/domain/map_discovery.dart';
+import '../../geographic_discovery/presentation/map_view_button.dart';
+import '../../locations/presentation/location_attribution.dart';
+
 import '../../../core/theme/app_tokens.dart';
 import '../../../core/widgets/async_data_presentation.dart';
 import '../../../core/widgets/browse_filter_button.dart';
@@ -137,6 +141,11 @@ class _PublicResourceListingsScreenState
             physics: const AlwaysScrollableScrollPhysics(),
             padding: const EdgeInsets.all(AppSpacing.medium),
             children: [
+              MapViewButton(
+                origin: MapDiscoveryOrigin.resources,
+                prepare: _flushFilters,
+              ),
+              const SizedBox(height: 8),
               Semantics(
                 label: l10n.resourceModeFilterLabel,
                 child: SegmentedButton<ResourceListingMode>(
@@ -338,6 +347,9 @@ class _PublicResourceListingsScreenState
                         )
                       : Text(l10n.resourceLoadMore),
                 ),
+              const LocationAttribution(),
+              // Let credit links scroll above the floating Create action.
+              const SizedBox(height: 80),
             ],
           ),
         ),

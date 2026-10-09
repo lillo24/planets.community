@@ -18,6 +18,7 @@ class MessagesNavigationSelection {
     this.scope = MessageChatScope.private,
   });
 
+  /// 0 is the Chats root; 1 is the secondary Requests inbox.
   final int tabIndex;
   final MessageChatScope scope;
 }
@@ -37,81 +38,67 @@ class MessagesNavigation extends Notifier<MessagesNavigationSelection> {
 }
 
 /// Data-free frame shared by guest/setup presentation and ready Messages.
-class MessagesFrame extends ConsumerStatefulWidget {
+class MessagesFrame extends ConsumerWidget {
   const MessagesFrame({
     required this.chats,
     required this.requests,
-    this.initialTabIndex,
+    this.controlsOnly = false,
     super.key,
   });
 
   final Widget chats;
-  final int? initialTabIndex;
+  final bool controlsOnly;
   final Widget requests;
 
   @override
-  ConsumerState<MessagesFrame> createState() => _MessagesFrameState();
-}
-
-class _MessagesFrameState extends ConsumerState<MessagesFrame>
-    with SingleTickerProviderStateMixin {
-  late final TabController _tabs;
-
-  @override
-  void initState() {
-    super.initState();
-    _tabs = TabController(
-      length: 2,
-      vsync: this,
-      initialIndex:
-          widget.initialTabIndex ??
-          ref.read(messagesNavigationProvider).tabIndex,
-    )..addListener(_rememberTab);
-  }
-
-  void _rememberTab() =>
-      ref.read(messagesNavigationProvider.notifier).selectTab(_tabs.index);
-
-  @override
-  void dispose() {
-    _tabs.removeListener(_rememberTab);
-    _tabs.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
-    // A scaled label may wrap to two lines in a narrow tab. Reserve its natural
-    // space above the view rather than clipping an icon/label Column.
-    final scaledLabel = MediaQuery.textScalerOf(context).scale(14);
-    final double? tabHeight = scaledLabel > 18 ? 32 + scaledLabel * 3 : null;
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(l10n.messagesTitle),
-        bottom: TabBar(
-          controller: _tabs,
-          tabs: [
-            Tab(
-              key: const Key('messages-tab-chat'),
-              height: tabHeight,
-              text: l10n.messagesChatsTab,
-              icon: const Icon(Icons.forum),
+    final requestsOpen =
+        !controlsOnly && ref.watch(messagesNavigationProvider).tabIndex == 1;
+    void returnToChats() =>
+        ref.read(messagesNavigationProvider.notifier).selectTab(0);
+    return PopScope(
+      canPop: !requestsOpen,
+      onPopInvokedWithResult: (didPop, result) {
+        if (!didPop && requestsOpen) returnToChats();
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          automaticallyImplyLeading: false,
+          leading: requestsOpen
+              ? BackButton(
+                  key: const Key('messages-return-chats'),
+                  onPressed: returnToChats,
+                )
+              : null,
+          title: FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Text(
+              requestsOpen ? l10n.messagesRequestsTab : l10n.messagesTitle,
             ),
-            Tab(
-              key: const Key('messages-tab-requests'),
-              height: tabHeight,
-              text: l10n.messagesRequestsTab,
-              icon: const Icon(Icons.mark_email_unread_outlined),
-            ),
-          ],
+          ),
+          actions: requestsOpen
+              ? null
+              : [
+                  IconButton(
+                    key: const Key('messages-requests-action'),
+                    tooltip: l10n.messagesRequestsTab,
+                    constraints: const BoxConstraints(
+                      minWidth: 48,
+                      minHeight: 48,
+                    ),
+                    // A tour preview keeps the real control visible without
+                    // changing the remembered destination behind the tour.
+                    onPressed: controlsOnly
+                        ? () {}
+                        : () => ref
+                              .read(messagesNavigationProvider.notifier)
+                              .selectTab(1),
+                    icon: const Icon(Icons.inbox_outlined),
+                  ),
+                ],
         ),
-      ),
-      body: SafeArea(
-        child: TabBarView(
-          controller: _tabs,
-          children: [widget.chats, widget.requests],
-        ),
+        body: SafeArea(child: requestsOpen ? requests : chats),
       ),
     );
   }

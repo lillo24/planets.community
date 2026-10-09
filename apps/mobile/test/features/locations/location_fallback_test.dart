@@ -127,7 +127,7 @@ void main() {
       );
       expect(
         find.text('Area information · map image unavailable'),
-        findsOneWidget,
+        findsNothing,
       );
       expect(find.textContaining('fountain'), findsNothing);
       expect(find.byType(LocationPreviewPanel), findsOneWidget);

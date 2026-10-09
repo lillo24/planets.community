@@ -3,7 +3,8 @@
 UI-NEXT-04 keeps every manual location field and canonical meeting read intact.
 MAP02's shared `locations/presentation/location_editor_section.dart` keeps manual
 entry while lookup is disabled and exposes injected receipt-backed selection.
-The detail retains its inert map fallback. See `../locations/README.md` and
+The detail uses the shared authorized location preview; feed cards use compact
+icon/text metadata with one attribution footer for the feed. See `../locations/README.md` and
 provider readiness before activation. MAP01 owns canonical provider metadata and
 actor/item/revision-bound server receipts. Existing
 manual text edits clear stale verified pins. See the [shared location contract](../../../../../docs/development/map01-geoapify-location.md).
@@ -16,6 +17,14 @@ snapshots after apply/reread without adding query, receipt, session or point.
 
 This feature owns one-time proposal discovery and authenticated structural
 management for the immutable Creator and current Co-creators.
+
+The guided tour reuses public discovery's current filters, page size and
+requested-first ordering. Its opt-in `ProposalDetailController.ensureLoaded`
+coalesces one ID/session's prefetch and reuses matching ready data; replaced
+sessions cannot commit prefetched results. Ordinary `load` remains a fresh read.
+`ProposalDetailScreen(tutorialPreview: true)` uses the same real sections with
+eager layout so the tour measures the participation target before one smooth
+scroll. Normal detail keeps its lazy list, loaders and actions.
 
 SIM02 adds automatic unpublished-editor suggestions through the narrow
 `domain/similar_proposal.dart` DTO/query, `data/similar_proposal_gateway.dart`

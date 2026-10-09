@@ -9,6 +9,7 @@ import '../../core/widgets/loading_state.dart';
 import '../../core/widgets/planets_hero.dart';
 import '../../features/auth/application/auth_session_controller.dart';
 import '../../features/messages/presentation/messages_landing_screen.dart';
+import '../../features/cover_media/application/cover_image_loader.dart';
 import '../../features/proposals/application/proposal_controllers.dart';
 import '../../features/proposals/domain/proposal_models.dart';
 import '../../features/proposals/presentation/public_proposals_screen.dart';
@@ -21,6 +22,7 @@ import 'startup_flow.dart';
 import 'tutorial_pages.dart';
 import 'tutorial_presentation.dart';
 import 'tutorial_routes.dart';
+import 'tutorial_motion.dart';
 
 class TutorialScreen extends ConsumerStatefulWidget {
   const TutorialScreen({
@@ -35,7 +37,7 @@ class TutorialScreen extends ConsumerStatefulWidget {
 }
 
 class _TutorialScreenState extends ConsumerState<TutorialScreen>
-    with WidgetsBindingObserver {
+    with SingleTickerProviderStateMixin, WidgetsBindingObserver {
   final _surface = GlobalKey();
   final _scrollStorage = PageStorageBucket();
   int _index = 0;
@@ -43,12 +45,24 @@ class _TutorialScreenState extends ConsumerState<TutorialScreen>
   int _attempts = 0;
   Timer? _probe;
   Timer? _transition;
+  Timer? _hold;
+  late final _reveal =
+      AnimationController(vsync: this, duration: tutorialSpotlightFade)
+        ..addStatusListener((status) {
+          if (mounted && status == AnimationStatus.completed) {
+            setState(() => _revealPhase = TutorialRevealPhase.ready);
+          }
+        });
+  TutorialRevealPhase _revealPhase = TutorialRevealPhase.entering;
+  bool _newPage = true;
+  bool _pageRecognized = false;
+  final _warmedCovers = <String>{};
+  Size? _surfaceSize;
   bool _active = true;
   bool _locked = false;
   bool _saving = false;
   bool _failed = false;
   bool _scrolling = false;
-  bool _detailStarted = false;
   bool _projectFallback = false;
   bool _detailFallback = false;
   bool _resourceFallback = false;
@@ -64,7 +78,9 @@ class _TutorialScreenState extends ConsumerState<TutorialScreen>
   bool get _noSpotlight =>
       _step == TutorialStep.introduction || _step == TutorialStep.farewell;
   bool get _fallback => switch (_step) {
-    TutorialStep.projectCard => _projectFallback,
+    TutorialStep.projectCard ||
+    TutorialStep.projectCreate ||
+    TutorialStep.projectDrafts => _projectFallback,
     TutorialStep.projectDetail => _projectFallback || _detailFallback,
     TutorialStep.resources => _resourceFallback,
     _ => false,
@@ -74,11 +90,26 @@ class _TutorialScreenState extends ConsumerState<TutorialScreen>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    // Public, nonblocking and filter-preserving; browse reuses this controller.
+    Future<void>.microtask(() {
+      if (!mounted) return;
+      if (ref.read(publicProposalsProvider).phase == ProposalLoadPhase.idle) {
+        unawaited(ref.read(publicProposalsProvider.notifier).load());
+      }
+    });
   }
 
-  void _interrupt() {
+  void _interrupt({bool preserveReveal = false}) {
     _generation++;
     _probe?.cancel();
+    if (!preserveReveal) {
+      _hold?.cancel();
+      _reveal.stop();
+      if (_revealPhase == TutorialRevealPhase.unobscured) {
+        _revealPhase = TutorialRevealPhase.entering;
+        _pageRecognized = false;
+      }
+    }
     // animateTo completes after jumpTo, but its stale generation cannot rearm.
     final position = _movingPosition;
     if (position != null && position.hasPixels) {
@@ -98,9 +129,13 @@ class _TutorialScreenState extends ConsumerState<TutorialScreen>
       reduced: MediaQuery.disableAnimationsOf(context),
     );
     if (_layout != null && _layout != layout) {
-      _interrupt();
+      _interrupt(preserveReveal: true);
       _targets = const [];
       _attempts = 0;
+      if (layout.reduced && _pageRecognized) {
+        _reveal.value = 1;
+        _revealPhase = TutorialRevealPhase.ready;
+      }
     }
     _layout = layout;
   }
@@ -110,6 +145,8 @@ class _TutorialScreenState extends ConsumerState<TutorialScreen>
     WidgetsBinding.instance.removeObserver(this);
     _probe?.cancel();
     _transition?.cancel();
+    _hold?.cancel();
+    _reveal.dispose();
     super.dispose();
   }
 
@@ -183,6 +220,7 @@ class _TutorialScreenState extends ConsumerState<TutorialScreen>
   }
 
   void _move(int index) {
+    final previousPage = _surfaceGroup();
     _interrupt();
     setState(() {
       _locked = true;
@@ -190,6 +228,10 @@ class _TutorialScreenState extends ConsumerState<TutorialScreen>
       _attempts = 0;
       _targets = const [];
       _failed = false;
+      _newPage = previousPage != _surfaceGroup();
+      _pageRecognized = !_newPage;
+      _revealPhase = TutorialRevealPhase.entering;
+      _reveal.value = 0;
     });
     // Only the short surface commit is debounced, never the explanation/read
     // or detail scroll. Previous/Next may interrupt that scroll afterwards.
@@ -241,6 +283,23 @@ class _TutorialScreenState extends ConsumerState<TutorialScreen>
     return match;
   }
 
+  void _measureSurface(Size size) {
+    final previous = _surfaceSize;
+    _surfaceSize = size;
+    if (previous == null || previous == size) return;
+    // The actual canvas can resize independently of MediaQuery (explanation
+    // reflow, split view or test/native viewport constraints).
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _interrupt(preserveReveal: true);
+      setState(() {
+        _targets = const [];
+        _attempts = 0;
+      });
+      _scheduleProbe();
+    });
+  }
+
   List<String> _anchors() => switch (_step) {
     TutorialStep.introduction || TutorialStep.farewell => const [],
     TutorialStep.home => const ['browse-proposals-button'],
@@ -265,16 +324,17 @@ class _TutorialScreenState extends ConsumerState<TutorialScreen>
       'resource-create-action',
       'resource-my-listings-action',
     ],
-    TutorialStep.messagesTabs => const [
-      'messages-tab-chat',
-      'messages-tab-requests',
-    ],
+    TutorialStep.messagesTabs => const ['messages-requests-action'],
     TutorialStep.messagesScopes => const ['message-chat-scope-toggle'],
   };
 
   bool _dataPending() {
     if (_fallback) return false;
-    if (_step == TutorialStep.projectCard) return _projectId == null;
+    if (_step == TutorialStep.projectCard ||
+        _step == TutorialStep.projectCreate ||
+        _step == TutorialStep.projectDrafts) {
+      return _projectId == null;
+    }
     if (_isDetail) {
       final state = ref.read(proposalDetailProvider);
       return state.phase != ProposalLoadPhase.ready ||
@@ -289,10 +349,18 @@ class _TutorialScreenState extends ConsumerState<TutorialScreen>
   void _useFallback() {
     setState(() {
       if (_isDetail) _detailFallback = true;
-      if (_step == TutorialStep.projectCard) _projectFallback = true;
+      if (_step == TutorialStep.projectCard ||
+          _step == TutorialStep.projectCreate ||
+          _step == TutorialStep.projectDrafts) {
+        _projectFallback = true;
+      }
       if (_step == TutorialStep.resources) _resourceFallback = true;
       _targets = const [];
       _attempts = 0;
+      _pageRecognized = false;
+      _revealPhase = TutorialRevealPhase.entering;
+      _newPage = true;
+      _reveal.value = 0;
     });
     _scheduleProbe();
   }
@@ -307,17 +375,21 @@ class _TutorialScreenState extends ConsumerState<TutorialScreen>
     _scrolling = true;
     final distance = (offset - position.pixels).abs();
     final reduced = MediaQuery.disableAnimationsOf(context);
-    await position.animateTo(
-      offset.clamp(position.minScrollExtent, position.maxScrollExtent),
-      duration: reduced
-          ? const Duration(milliseconds: 1)
-          : Duration(
-              milliseconds: slow
-                  ? (distance / 70 * 1000).round().clamp(800, 12000)
-                  : 250,
-            ),
-      curve: Curves.linear,
+    final destination = offset.clamp(
+      position.minScrollExtent,
+      position.maxScrollExtent,
     );
+    if (reduced) {
+      position.jumpTo(destination);
+    } else {
+      await position.animateTo(
+        destination,
+        duration: slow
+            ? tutorialScrollDuration(distance)
+            : const Duration(milliseconds: 250),
+        curve: Curves.linear,
+      );
+    }
     if (!mounted || generation != _generation) return;
     _movingPosition = null;
     _scrolling = false;
@@ -340,21 +412,40 @@ class _TutorialScreenState extends ConsumerState<TutorialScreen>
       }
       return;
     }
-    if (_isDetail &&
-        !_detailStarted &&
-        !MediaQuery.disableAnimationsOf(context)) {
-      _detailStarted = true;
-      // Let the selected cover/title be read before moving through the body.
-      _probe = Timer(const Duration(seconds: 1), _scheduleProbe);
-      return;
+    if (!_pageRecognized) {
+      if (MediaQuery.disableAnimationsOf(context)) {
+        _pageRecognized = true;
+      } else {
+        // This probe runs after meaningful content has painted. Rebuilds and
+        // later metric/image changes do not restart an already recognized page.
+        if (_revealPhase != TutorialRevealPhase.unobscured) {
+          setState(() => _revealPhase = TutorialRevealPhase.unobscured);
+          _hold = Timer(tutorialPageHold, () {
+            if (!mounted ||
+                !_active ||
+                _revealPhase != TutorialRevealPhase.unobscured) {
+              return;
+            }
+            _pageRecognized = true;
+            _scheduleProbe();
+          });
+        }
+        return;
+      }
     }
-    _detailStarted = _detailStarted || _isDetail;
     final anchors = _anchors();
     final visible = (Offset.zero & rootBox.size).deflate(8);
     final rects = <Rect>[];
     for (var i = 0; i < anchors.length; i++) {
       final anchor = _find(Key(anchors[i]));
-      final box = anchor?.findRenderObject();
+      // Toolbar keys include their 48dp hit padding. Measure the actual visible
+      // icon for a snug Drafts/Requests hole instead of shifting global rects.
+      final iconTarget =
+          anchors[i] == 'my-proposals-action' ||
+          anchors[i] == 'resource-my-listings-action' ||
+          anchors[i] == 'messages-requests-action';
+      final box = (iconTarget ? _iconElement(anchor) : anchor)
+          ?.findRenderObject();
       if (box is! RenderBox || !box.hasSize || box.size.isEmpty) break;
       var rect = box.localToGlobal(Offset.zero, ancestor: rootBox) & box.size;
       var viewport = visible;
@@ -383,9 +474,17 @@ class _TutorialScreenState extends ConsumerState<TutorialScreen>
         }
         final tooLow =
             rect.bottom > viewport.bottom && rect.height <= viewport.height;
+        // A tall card can start inside the viewport yet expose only a sliver
+        // after list reordering or a taller discovery header. Reveal enough
+        // actual content before accepting its clipped spotlight.
+        final tooLittle =
+            rect.height > viewport.height &&
+            rect.intersect(viewport).height <
+                (viewport.height * .5).clamp(0, 96);
         if (rect.top < viewport.top - 1 ||
             rect.top >= viewport.bottom ||
-            tooLow) {
+            tooLow ||
+            tooLittle) {
           final delta = rect.top - viewport.top - 8;
           final next = (scrollable.position.pixels + delta).clamp(
             scrollable.position.minScrollExtent,
@@ -402,31 +501,48 @@ class _TutorialScreenState extends ConsumerState<TutorialScreen>
           }
         }
       }
-      rect = rect.intersect(viewport);
+      rect = rect.inflate(iconTarget ? 3 : 6).intersect(viewport);
       if (rect.isEmpty) break;
       rects.add(rect);
     }
     if (rects.length == anchors.length) {
-      // Chat/Requests is one contiguous group; Scambio is three distinct holes.
-      final targets = _step == TutorialStep.messagesTabs
-          ? [rects[0].expandToInclude(rects[1])]
-          : rects;
+      // Each target remains separate, including the three Scambio controls.
+      final targets = rects;
       if (!listEquals(_targets, targets)) {
-        setState(() => _targets = List.unmodifiable(targets));
+        setState(() {
+          _targets = List.unmodifiable(targets);
+          if (_revealPhase == TutorialRevealPhase.entering ||
+              _revealPhase == TutorialRevealPhase.unobscured) {
+            _revealPhase = TutorialRevealPhase.fading;
+            if (MediaQuery.disableAnimationsOf(context)) {
+              _reveal.value = 1;
+              _revealPhase = TutorialRevealPhase.ready;
+            } else {
+              _reveal.duration = _newPage
+                  ? tutorialSpotlightFade
+                  : tutorialFocusFade;
+              _reveal.forward(from: 0);
+            }
+          } else if (_revealPhase == TutorialRevealPhase.fading &&
+              !_reveal.isAnimating) {
+            _reveal.forward();
+          }
+        });
+      }
+      if (_revealPhase == TutorialRevealPhase.fading && !_reveal.isAnimating) {
+        _reveal.forward();
       }
       return;
     }
-    // Lazy details/cards may not be built yet. Scan only the real vertical list,
-    // slowly in detail, without highlighting intermediate body/needs content.
+    // Public browse cards can be lazy. The tutorial's real detail uses eager
+    // section layout, so its measured participation distance needs one motion.
     final scrollable = _firstVerticalScrollable();
     if (scrollable != null &&
         scrollable.position.pixels < scrollable.position.maxScrollExtent - 1) {
       await _scrollTo(
         scrollable.position,
-        (scrollable.position.pixels + 160).clamp(
-          0,
-          scrollable.position.maxScrollExtent,
-        ),
+        (scrollable.position.pixels + scrollable.position.viewportDimension)
+            .clamp(0, scrollable.position.maxScrollExtent),
         generation,
         slow: _isDetail,
       );
@@ -460,6 +576,20 @@ class _TutorialScreenState extends ConsumerState<TutorialScreen>
     return result;
   }
 
+  Element? _iconElement(Element? parent) {
+    Element? result;
+    void visit(Element element) {
+      if (element.widget is Icon) {
+        result ??= element;
+      } else {
+        element.visitChildren(visit);
+      }
+    }
+
+    if (parent != null) visit(parent);
+    return result;
+  }
+
   String _surfaceGroup() => switch (_step) {
     TutorialStep.projectCard ||
     TutorialStep.projectCreate ||
@@ -471,8 +601,10 @@ class _TutorialScreenState extends ConsumerState<TutorialScreen>
   };
 
   Widget _content() => switch (_step) {
-    TutorialStep.introduction ||
-    TutorialStep.farewell => const Scaffold(body: Center(child: PlanetsHero())),
+    TutorialStep.introduction => const Scaffold(
+      body: Center(child: PlanetsHero()),
+    ),
+    TutorialStep.farewell => const Scaffold(body: PlanetsHero.farewell()),
     TutorialStep.home || TutorialStep.homeResources => const FoundationScreen(),
     TutorialStep.projectCard => _projectBrowse(),
     TutorialStep.projectCreate ||
@@ -492,6 +624,7 @@ class _TutorialScreenState extends ConsumerState<TutorialScreen>
           : ProposalDetailScreen(
               key: PageStorageKey('proposal-detail-$_projectId'),
               proposalId: _projectId!,
+              tutorialPreview: true,
             ),
     TutorialStep.resources => _resources(),
     TutorialStep.messagesTabs || TutorialStep.messagesScopes =>
@@ -510,6 +643,41 @@ class _TutorialScreenState extends ConsumerState<TutorialScreen>
         _projectId = state.ordinaryItems.first.id;
       }
       if (_projectId != null) _attempts = 0;
+    }
+  }
+
+  void _primeProjects(PublicProposalsState state) {
+    if (!identical(state, ref.read(publicProposalsProvider)) ||
+        state.phase != ProposalLoadPhase.ready) {
+      return;
+    }
+    final visible = [
+      ...state.requestedItems.map((item) => item.proposal),
+      ...state.ordinaryItems,
+    ];
+    for (final proposal in visible.take(3)) {
+      final path = proposal.coverObjectPath;
+      if (path != null && _warmedCovers.add(path)) {
+        // The same authorized public FutureProvider/cache used by cover widgets;
+        // errors remain visible there and never become fabricated thumbnails.
+        unawaited(
+          ref
+              .read(publicCoverBytesProvider(path).future)
+              .then<void>((_) {}, onError: (Object error, StackTrace stack) {}),
+        );
+      }
+    }
+    if (visible.isNotEmpty && _projectId == null && !_projectFallback) {
+      _projectId = visible.first.id;
+      final detail = ref.read(proposalDetailProvider);
+      // Preserve a different detail belonging to a covered caller during
+      // warmup. Visiting this tour's detail can load its selected ID normally.
+      if (detail.phase == ProposalLoadPhase.idle ||
+          detail.proposalId == _projectId) {
+        unawaited(
+          ref.read(proposalDetailProvider.notifier).ensureLoaded(_projectId!),
+        );
+      }
     }
   }
 
@@ -541,13 +709,19 @@ class _TutorialScreenState extends ConsumerState<TutorialScreen>
       return TutorialPages(returnTo: widget.returnTo);
     }
     final l = AppLocalizations.of(context);
+    final projects = ref.watch(publicProposalsProvider);
+    // Provider reads/mutations are scheduled outside build; frozen tour
+    // selection remains the first actual canonical visible result.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted && _active) _primeProjects(projects);
+    });
     if (_step == TutorialStep.projectCard || _isDetail) {
       // Next stays available while loading. Keep selection active in detail
       // until the first public read settles, without substituting an example.
       _selectProject(ref.watch(publicProposalsProvider));
     }
     void refreshFocus() {
-      _interrupt();
+      _interrupt(preserveReveal: true);
       setState(() {
         _targets = const [];
         _attempts = 0;
@@ -592,10 +766,7 @@ class _TutorialScreenState extends ConsumerState<TutorialScreen>
               children: [
                 Row(
                   children: [
-                    BackButton(
-                      key: const Key('tutorial-previous'),
-                      onPressed: _saving || _locked ? null : _previous,
-                    ),
+                    const SizedBox(width: 16),
                     Expanded(
                       child: Text(
                         l.tutorialStepProgress(
@@ -615,59 +786,73 @@ class _TutorialScreenState extends ConsumerState<TutorialScreen>
                   ],
                 ),
                 Expanded(
-                  child: PageStorage(
-                    bucket: _scrollStorage,
-                    child: Stack(
-                      key: _surface,
-                      fit: StackFit.expand,
-                      children: [
-                        ExcludeSemantics(
-                          child: IgnorePointer(
-                            child:
-                                NotificationListener<ScrollMetricsNotification>(
-                                  onNotification: (_) {
-                                    if (_isDetail) {
-                                      // Async detail sections can move participation
-                                      // after initial focus. Re-locate real controls
-                                      // from layout metrics without loading data here.
-                                      _attempts = 0;
-                                      if (_targets.isNotEmpty) {
-                                        setState(() => _targets = const []);
-                                      }
-                                      _scheduleProbe();
-                                    }
-                                    return false;
-                                  },
-                                  child: KeyedSubtree(
-                                    key: ValueKey(
-                                      'tutorial-surface-${_surfaceGroup()}',
+                  child: LayoutBuilder(
+                    builder: (context, constraints) {
+                      _measureSurface(constraints.biggest);
+                      return PageStorage(
+                        bucket: _scrollStorage,
+                        child: Stack(
+                          key: _surface,
+                          fit: StackFit.expand,
+                          children: [
+                            ExcludeSemantics(
+                              child: IgnorePointer(
+                                child:
+                                    NotificationListener<
+                                      ScrollMetricsNotification
+                                    >(
+                                      onNotification: (_) {
+                                        if (_isDetail) {
+                                          // Async detail sections can move participation
+                                          // after initial focus. Re-locate real controls
+                                          // from layout metrics without loading data here.
+                                          _attempts = 0;
+                                          if (_targets.isNotEmpty) {
+                                            setState(() => _targets = const []);
+                                          }
+                                          _scheduleProbe();
+                                        }
+                                        return false;
+                                      },
+                                      child: KeyedSubtree(
+                                        key: ValueKey(
+                                          'tutorial-surface-${_surfaceGroup()}',
+                                        ),
+                                        child: _content(),
+                                      ),
                                     ),
-                                    child: _content(),
-                                  ),
-                                ),
-                          ),
-                        ),
-                        Positioned.fill(
-                          child: GestureDetector(
-                            key: const Key('tutorial-overlay'),
-                            behavior: HitTestBehavior.opaque,
-                            onTap:
-                                restoreFailed || _step == TutorialStep.farewell
-                                ? null
-                                : _advance,
-                            child: CustomPaint(
-                              key: const Key('tutorial-spotlight'),
-                              painter: TutorialScrim(
-                                _targets,
-                                _noSpotlight
-                                    ? Colors.transparent
-                                    : Colors.black.withValues(alpha: .62),
                               ),
                             ),
-                          ),
+                            Positioned.fill(
+                              child: GestureDetector(
+                                key: const Key('tutorial-overlay'),
+                                behavior: HitTestBehavior.opaque,
+                                onTap:
+                                    restoreFailed ||
+                                        _step == TutorialStep.farewell
+                                    ? null
+                                    : _advance,
+                                child: AnimatedBuilder(
+                                  animation: _reveal,
+                                  builder: (context, child) => CustomPaint(
+                                    key: const Key('tutorial-spotlight'),
+                                    painter: TutorialScrim(
+                                      _targets,
+                                      _noSpotlight
+                                          ? Colors.transparent
+                                          : Colors.black.withValues(
+                                              alpha: .62 * _reveal.value,
+                                            ),
+                                      opacity: _noSpotlight ? 0 : _reveal.value,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
-                      ],
-                    ),
+                      );
+                    },
                   ),
                 ),
                 ConstrainedBox(
@@ -688,7 +873,8 @@ class _TutorialScreenState extends ConsumerState<TutorialScreen>
                           Text(
                             tutorialCopy(l, _step),
                             key: ValueKey('tutorial-copy-${_step.name}'),
-                            style: Theme.of(context).textTheme.bodyLarge,
+                            style: Theme.of(context).textTheme.titleMedium
+                                ?.copyWith(fontSize: 19, height: 1.4),
                           ),
                           if (_failed || restoreFailed)
                             Text(
@@ -702,23 +888,49 @@ class _TutorialScreenState extends ConsumerState<TutorialScreen>
                 ),
                 Padding(
                   padding: const EdgeInsets.all(12),
-                  child: FilledButton(
-                    key: const Key('tutorial-next'),
-                    onPressed: _saving || _locked
-                        ? null
-                        : restoreFailed
-                        ? () async {
-                            await flow.retryRestore();
-                            if (mounted) setState(() {});
-                          }
-                        : _advance,
-                    child: Text(
-                      restoreFailed
-                          ? l.retryAction
-                          : _step == TutorialStep.farewell
-                          ? l.tutorialStartExploring
-                          : l.tutorialNext,
-                    ),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton(
+                          key: const Key('tutorial-previous'),
+                          style: OutlinedButton.styleFrom(
+                            minimumSize: const Size.fromHeight(56),
+                          ),
+                          onPressed: _saving || _locked ? null : _previous,
+                          child: FittedBox(
+                            fit: BoxFit.scaleDown,
+                            child: Text(l.tutorialPrevious),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: FilledButton(
+                          style: FilledButton.styleFrom(
+                            minimumSize: const Size.fromHeight(56),
+                          ),
+                          key: const Key('tutorial-next'),
+                          onPressed: _saving || _locked
+                              ? null
+                              : restoreFailed
+                              ? () async {
+                                  await flow.retryRestore();
+                                  if (mounted) setState(() {});
+                                }
+                              : _advance,
+                          child: FittedBox(
+                            fit: BoxFit.scaleDown,
+                            child: Text(
+                              restoreFailed
+                                  ? l.retryAction
+                                  : _step == TutorialStep.farewell
+                                  ? l.tutorialStartExploring
+                                  : l.tutorialNext,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ],

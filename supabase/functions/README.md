@@ -15,3 +15,10 @@ upstream options and bounds PNGs; handler.mjs validates identifiers/view, reads
 current public/user authorization, reserves credits and rechecks before delivery;
 index.ts supplies separate anonymous/user/service transports and server secrets.
 See [MAP03](../../docs/development/map03-location-previews.md).
+
+`map-provider/` owns MAP05's separate authenticated center/selection and fixed
+XYZ tile adapter. It shares the exact quarter-credit account ceiling with the
+two existing adapters, accepts no arbitrary URL or client actor claims, and
+ships disabled. Its README maps the pure handler, upstream bounds and Deno
+bindings; [MAP05](../../docs/development/map05-interactive-discovery.md) owns
+activation, guest restrictions, transient caching and shutdown.

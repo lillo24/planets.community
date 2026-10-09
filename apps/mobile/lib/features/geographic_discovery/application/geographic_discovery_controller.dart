@@ -44,6 +44,7 @@ class GeographicDiscoveryController extends Notifier<GeographicDiscoveryState> {
   }
 
   void setActive(bool active) {
+    if (!ref.mounted) return;
     if (_active == active) return;
     _active = active;
     _epoch++;
@@ -52,6 +53,7 @@ class GeographicDiscoveryController extends Notifier<GeographicDiscoveryState> {
   }
 
   void cancel() {
+    if (!ref.mounted) return;
     _epoch++;
     _query = null;
     state = const GeographicDiscoveryState();
@@ -70,7 +72,8 @@ class GeographicDiscoveryController extends Notifier<GeographicDiscoveryState> {
   Future<void> loadMore() async {
     if (!_active ||
         _query == null ||
-        state.phase != GeoPhase.ready ||
+        (state.phase != GeoPhase.ready && state.phase != GeoPhase.failure) ||
+        state.failure == GeoFailureKind.expiredCursor ||
         state.loadingMore ||
         state.page?.hasMore != true) {
       return;

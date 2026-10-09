@@ -1486,6 +1486,7 @@
   "authRestoreFailure": "Non è stato possibile ripristinare la sessione. Riprova per verificare la sessione salvata.",
   "startupPreferenceError": "Non è stato possibile salvare o ripristinare la preferenza dell’introduzione. Riprova.",
   "tutorialNext": "Avanti",
+  "tutorialPrevious": "Indietro",
   "tutorialFinish": "Termina",
   "startupDevelopmentReset": "Reimposta benvenuto e tutorial (sviluppo)",
   "draftsTitle": "Le mie bozze",
@@ -1535,7 +1536,7 @@
   "tutorialResourceModes": "Dona ciò che non usi o scambia ciò che ti serve.",
   "tutorialResourceCard": "Scopri cose che possono trovare una nuova casa.",
   "tutorialResourceCreate": "Crea un annuncio per donare o scambiare qualcosa.",
-  "tutorialMessagesTabs": "Qui trovi le conversazioni e le richieste di partecipazione.",
+  "tutorialMessagesTabs": "Apri qui le richieste per visualizzarle e gestirle.",
   "tutorialMessagesScopes": "Le conversazioni private e i gruppi dei progetti hanno i loro spazi.",
   "tutorialMessagesPreview": "Tutorial: le tue conversazioni restano private.",
   "tutorialFarewell": "Buon divertimento!",
@@ -1658,5 +1659,68 @@
   "locationPreviewVerified": "Luogo selezionato verificato",
   "locationPreviewImageFailed": "Anteprima della mappa non disponibile",
   "locationOpenGoogleMaps": "Apri in Google Maps",
-  "locationMapsLaunchFailed": "Impossibile aprire Google Maps. Riprova."
+  "locationMapsLaunchFailed": "Impossibile aprire Google Maps. Riprova.",
+  "mapView": "Mappa",
+  "mapList": "Lista",
+  "mapAll": "Tutti",
+  "mapFamily": "Mostra sulla mappa",
+  "mapCreate": "Crea annuncio",
+  "mapPublicReference": "Trento è il riferimento iniziale di ricerca, non la tua posizione. Scegli un altro centro o sposta la mappa.",
+  "mapSearchPlace": "Scegli un luogo in Italia",
+  "mapLookupDisabled": "La ricerca dei luoghi è disattivata. Usa il centro della mappa o Cerca in questa zona.",
+  "mapGuestLookupDisabled": "La ricerca dei luoghi richiede l'accesso. Puoi comunque scegliere la zona sulla mappa.",
+  "mapCenterFailed": "Ricerca del luogo non riuscita. Modifica il testo e riprova; nessun centro è stato selezionato.",
+  "mapCenterExpired": "Il suggerimento è scaduto. Cerca di nuovo il luogo.",
+  "mapRadius": "Raggio di ricerca",
+  "mapRadiusMode": "Ricerca nel raggio intorno al riferimento selezionato.",
+  "mapBoundsMode": "Ricerca nella zona visibile selezionata.",
+  "mapFixtureTiles": "Tessere sintetiche di prova — nessuna cartografia reale o richiesta al fornitore.",
+  "mapBasemapDisabled": "Cartografia non disponibile. Questo riquadro interattivo mostra solo i punti di riferimento pubblici.",
+  "mapBasemapFailed": "Caricamento della cartografia non riuscito. Risultati pubblici e controlli della zona restano disponibili.",
+  "mapZoomIn": "Ingrandisci",
+  "mapZoomOut": "Riduci",
+  "mapSearchArea": "Cerca in questa zona",
+  "mapBackRadius": "Torna alla ricerca per raggio",
+  "mapUseCenter": "Usa il centro della mappa come riferimento",
+  "mapSelectedReference": "Riferimento selezionato sulla mappa",
+  "mapZoomInRequired": "Ingrandisci per cercare in una zona più piccola e supportata.",
+  "mapLoading": "Caricamento dei risultati pubblici…",
+  "mapEmpty": "Nessun risultato con riferimento geografico in questa zona.",
+  "mapTooBroad": "Questa zona contiene troppi risultati potenziali. Restringi la zona o i filtri.",
+  "mapMalformed": "Non è stato possibile verificare la risposta. Aggiorna per riprovare.",
+  "mapCursorExpired": "Questa ricerca è scaduta. Aggiorna per avviarne una nuova.",
+  "mapInvalidArea": "La zona o il filtro non è supportato. Modificalo e riprova.",
+  "mapAdditionalPageFailed": "Non è stato possibile caricare altri risultati. Quelli confermati restano visibili; riprova.",
+  "mapSearchFailed": "La ricerca geografica non è disponibile. Riprova o torna alla Lista.",
+  "mapLoaded": "{count} risultati caricati. Segnaposto e gruppi includono solo i risultati caricati.",
+  "@mapLoaded": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "mapClusterLoaded": "Scegli tra {count} risultati caricati",
+  "@mapClusterLoaded": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "mapSkills": "Progetti: {count} competenze selezionate (almeno una corrispondenza)",
+  "@mapSkills": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "mapListDifference": "La Lista può mostrare più elementi: i luoghi inseriti manualmente senza coordinate pubbliche verificate non hanno un segnaposto.",
+  "mapApproximate": "Zona pubblica approssimativa. Il luogo dell'incontro potrebbe essere altrove.",
+  "mapPrecise": "Riferimento pubblico di un indirizzo o luogo.",
+  "mapOpenDetail": "Apri annuncio",
+  "mapLoadMore": "Carica altri risultati",
+  "mapRefresh": "Aggiorna ricerca",
+  "mapInheritedFilters": "I filtri della Lista si applicano alle rispettive categorie. Torna alla Lista per modificarli."
 }

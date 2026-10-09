@@ -1,5 +1,9 @@
 # MAP04 geographic discovery
 
+The shared Flutter List/Map view is now implemented in MAP05. It consumes this
+unchanged public-only contract and supplies deliberate queries/pages, clustering
+and independent disabled provider adapters. See [MAP05](map05-interactive-discovery.md).
+
 MAP04 adds a public, read-only PostGIS API and an unused-by-existing-screens
 typed Flutter feature. MAP01/02 edit/search and MAP03 preview/launch behavior
 remain separate. No provider request, live-key activation, GPS permission,
@@ -148,15 +152,17 @@ apps/mobile/lib/features/geographic_discovery owns GeoQuery, strict GeoItem/
 GeoPage/GeoCursor parsing, RpcGeographicDiscoveryGateway and the Riverpod
 GeographicDiscoveryController. It checks finite/precision/allowlist/cover/
 page/snapshot/order contracts and maps invalidInput, tooBroad, unavailable and
-malformed failures. No existing List screen imports this feature.
+malformed failures. MAP05 now consumes this module from the three List entry
+points; its UI and separate provider boundary are documented in
+[map05-interactive-discovery.md](map05-interactive-discovery.md).
 
 Use an explicit route/session provider key and active lifecycle signal. Search
 starts a new generation; loadMore serializes. Context/identity/readiness/ABA/
 disposal changes clear stale results. The README documents refresh/error and
-logical cancellation behavior. MAP05 still owns map widgets, clustering,
-marker/card UX, Search this area, and deliberate new queries. Public search-
-center autocomplete requires a separate anonymous/public lookup and abuse/cost
-contract: do not reuse MAP02 authenticated item-bound edit receipts.
+logical cancellation behavior. MAP05 owns map widgets, clustering, marker/card
+UX, Search this area, and deliberate new queries. Its independent search-center
+gateway uses authenticated-user metering; guest paid lookup stays disabled.
+MAP02 authenticated item-bound edit receipts retain their separate purpose.
 
 Task-owned local project planets-map04-qa uses API 55631, database 55632,
 Mailpit 55634 and distinct auxiliary ports. Configuration is temporary and must

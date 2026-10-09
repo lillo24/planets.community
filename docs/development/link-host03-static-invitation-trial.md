@@ -4,13 +4,18 @@
 
 This is an isolated feasibility trial from main
 `723582be49fcbd78c19bd5316da661c297f7eeba` on 2026-10-09. The source branch is
-`codex/link-host03-static-invitations`. It must remain a draft, unmerged PR.
+`codex/link-host03-static-invitations`. It was delivered as a draft PR; the founder
+authorized merging PR #187 into main on 2026-10-09. Source merge does not authorize
+canonical route cutover or a new staging/production deployment.
 PR #176 remains independently draft at
 `409ecc3e2b0afc3c3cf88aaea0b626c8bd06184f`; none of its vinext code is a dependency.
 No live Site, canonical routing, DNS, billing or shared backend data/schema was
 changed. This provisional boundary does not replace the accepted architecture.
-The final main fetch was `1d9871bd64197226089b8477a6fac2ae94431504`; intervening
-files were mobile hero/layout polish only, with no Web/backend dependency change.
+The original trial's final main fetch was `1d9871bd64197226089b8477a6fac2ae94431504`.
+Merge preparation integrated main `200037e061bf6d199c83a819f41c4535348c5fc4`
+without conflicts. This preserves main's mobile/tutorial/map work and generated
+database types; the invitation/Auth/profile implementations and their canonical
+RPC contracts do not change during integration.
 
 The client-only Vite target in `apps/web/static-invitations` imports the existing
 canonical participant controller/gateway/parsers, numeric OTP gateway, profile

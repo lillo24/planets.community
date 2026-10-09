@@ -38,6 +38,15 @@ The authenticated-user helper is local integration tooling only. It must never
 log OTPs, access or refresh tokens, API keys, Authorization headers, or database
 credentials.
 
+- `map-provider-fixture.mjs` creates a valid neutral PNG and synthetic OSM-backed
+  center responses, without network access.
+- `map-provider.test.mjs` verifies the pure MAP05 Edge boundary, paid-service
+  zero-IO gates, fixed requests, identity checks, deadlines and safe failures.
+- `verify-map-discovery-provider.mjs` adds real Auth/REST permissions, atomic
+  quarter-credit races, deduplication, expiry and shutdown checks to the existing
+  explicitly disposable location verifier. It restores its configuration and
+  deletes only its owned cache keys; no live provider is contacted.
+
 The demo-world helper is also trusted local tooling. It reads vendored WebP
 fixtures from `scripts/demo-assets`, so seeding stays offline after checkout.
 It uses ordinary authenticated clients for domain and Storage/RPC media
@@ -52,7 +61,7 @@ Deterministic media uploads never use upsert; a rerun may reuse only an exact
 already-owned version path left by an interrupted commit, which the canonical
 RPC revalidates before adoption.
 
-- `demo-workshop.mjs` owns TW05’s finite source inventory, stable actor/purpose request identities, canonical source/copy/report/removal phases, read-only assertions, dedicated clock transition and complete product-table snapshot digests. `demo-world.mjs` remains the single orchestrator, supplying auth, media, target safety and the shared coordination lock. The focused tests cover inventory uniqueness, request scope and elapsed-hour/DST margins.
+- `demo-workshop.mjs` owns TW05’s finite source inventory, stable actor/purpose request identities, canonical source/copy/report/removal phases, read-only assertions, dedicated clock transition and complete product-table snapshot digests. `demo-world.mjs` remains the single orchestrator, supplying auth, media, target safety and the shared coordination lock. The focused tests cover inventory uniqueness, request scope, elapsed-hour/DST margins and the natural approximate public label (`locality, zona indicativa`) with unchanged private fixture instructions. Editing this source does not update existing database rows; MAP-UX01 runs no seed or refresh.
 
 TW-STACK01 composes invitation and Workshop projections against their exact
 combined finite event inventory. Verification reuses only existing identities;

@@ -1324,10 +1324,11 @@ void main() {
     expect(find.byKey(const Key('open-messages-button')), findsNothing);
     await tester.tap(find.byKey(const Key('nav-messages')));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Requests'));
+    await tester.tap(find.byKey(const Key('messages-requests-action')));
     await tester.pumpAndSettle();
 
-    expect(find.text('Messages'), findsNWidgets(2));
+    expect(find.text('Messages'), findsOneWidget);
+    expect(find.text('Requests'), findsOneWidget);
     expect(
       tester.widget<NavigationBar>(find.byType(NavigationBar)).selectedIndex,
       2,
@@ -1354,7 +1355,7 @@ void main() {
     // Complete awaitable route entry before asserting the pending data load.
     await tester.pump();
     await tester.pump();
-    await tester.tap(find.text('Requests'));
+    await tester.tap(find.byKey(const Key('messages-requests-action')));
     await tester.pump(const Duration(seconds: 1));
     pending.complete();
     await tester.pumpAndSettle();
@@ -1389,7 +1390,7 @@ void main() {
     );
     app.read(appRouterProvider).go('/messages');
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Requests'));
+    await tester.tap(find.byKey(const Key('messages-requests-action')));
     await tester.pumpAndSettle();
 
     expect(find.byKey(Key('message-item-request-1')), findsOneWidget);
@@ -1424,6 +1425,16 @@ void main() {
     await tester.pumpAndSettle();
     expect(resourceRequests.calls, contains('accept:$resourceRequestId'));
     expect(find.text('Coordination is open.'), findsOneWidget);
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+    expect(
+      app.read(appRouterProvider).routeInformationProvider.value.uri.path,
+      '/messages',
+    );
+    expect(find.byKey(const Key('messages-return-chats')), findsOneWidget);
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('messages-requests-action')), findsOneWidget);
   });
 
   testWidgets('participation Request card opens the shared details sheet', (
@@ -1441,7 +1452,7 @@ void main() {
     final app = await _pump(tester, messages: messages);
     app.read(appRouterProvider).go('/messages');
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Requests'));
+    await tester.tap(find.byKey(const Key('messages-requests-action')));
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('message-item-request-1')));
     await tester.pumpAndSettle();
@@ -1688,7 +1699,7 @@ void main() {
     final app = await _pump(tester, messages: messages);
     app.read(appRouterProvider).go('/messages');
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Requests'));
+    await tester.tap(find.byKey(const Key('messages-requests-action')));
     await tester.pumpAndSettle();
 
     expect(find.textContaining(raw), findsNothing);

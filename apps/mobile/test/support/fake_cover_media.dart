@@ -8,6 +8,7 @@ import 'package:planets_mobile/features/cover_media/domain/cover_media_models.da
 class FakeCoverMediaGateway implements CoverMediaGateway {
   final calls = <String>[];
   Uint8List downloadResult = Uint8List.fromList([1, 2, 3]);
+  Future<Uint8List>? downloadDelay;
   String? currentObjectPath;
   bool failUpload = false;
   bool failCommit = false;
@@ -51,7 +52,7 @@ class FakeCoverMediaGateway implements CoverMediaGateway {
   @override
   Future<Uint8List> downloadCover(String objectPath) async {
     calls.add('download:$objectPath');
-    return downloadResult;
+    return downloadDelay ?? downloadResult;
   }
 
   @override

@@ -4,9 +4,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../geographic_discovery/domain/map_discovery.dart';
+import '../../geographic_discovery/presentation/map_view_button.dart';
+
 import '../../../app/router/browse_activity_switcher.dart';
 import '../../../core/theme/app_tokens.dart';
 import '../../locations/domain/location_preview.dart';
+import '../../locations/presentation/location_attribution.dart';
 import '../../../core/widgets/async_data_presentation.dart';
 import '../../../core/widgets/browse_filter_button.dart';
 import '../../../core/widgets/empty_state.dart';
@@ -110,6 +114,11 @@ class _PublicProposalsScreenState extends ConsumerState<PublicProposalsScreen> {
               const BrowseActivitySwitcher(
                 selected: BrowseActivityType.proposals,
               ),
+              MapViewButton(
+                origin: MapDiscoveryOrigin.projects,
+                prepare: _flushQuery,
+              ),
+              const SizedBox(height: 8),
               const SizedBox(height: AppSpacing.medium),
               Row(
                 children: [
@@ -251,6 +260,9 @@ class _PublicProposalsScreenState extends ConsumerState<PublicProposalsScreen> {
                       ? const CircularProgressIndicator()
                       : Text(l10n.proposalLoadMore),
                 ),
+              const LocationAttribution(),
+              // Let credit links scroll above the floating Create action.
+              const SizedBox(height: 80),
             ],
           ),
         ),
@@ -293,11 +305,16 @@ class ProposalDetailScreen extends ConsumerStatefulWidget {
   const ProposalDetailScreen({
     required this.proposalId,
     this.joinIntent = false,
+    this.tutorialPreview = false,
     super.key,
   });
 
   final String proposalId;
   final bool joinIntent;
+
+  /// Reuse prefetched public detail and measure every real section before
+  /// the guided scroll. Ordinary detail keeps its lazy list and fresh read.
+  final bool tutorialPreview;
 
   @override
   ConsumerState<ProposalDetailScreen> createState() =>
@@ -313,7 +330,11 @@ class _ProposalDetailScreenState extends ConsumerState<ProposalDetailScreen> {
 
   Future<void> _load() async {
     await Future.wait([
-      ref.read(proposalDetailProvider.notifier).load(widget.proposalId),
+      widget.tutorialPreview
+          ? ref
+                .read(proposalDetailProvider.notifier)
+                .ensureLoaded(widget.proposalId)
+          : ref.read(proposalDetailProvider.notifier).load(widget.proposalId),
       ref
           .read(projectCreatorPhotoProvider.notifier)
           .load(widget.proposalId, force: true),
@@ -386,8 +407,10 @@ class _ProposalDetailScreenState extends ConsumerState<ProposalDetailScreen> {
       ),
       body: SafeArea(
         child: detail == null
-            ? emptyDetail
-            : ListView(
+            ? widget.tutorialPreview
+                  ? SingleChildScrollView(child: emptyDetail)
+                  : emptyDetail
+            : _detailBody(
                 padding: const EdgeInsets.all(AppSpacing.large),
                 children: [
                   ProjectCoverImage(
@@ -524,4 +547,17 @@ class _ProposalDetailScreenState extends ConsumerState<ProposalDetailScreen> {
         ? participation.withRequestIntent(screen)
         : screen;
   }
+
+  Widget _detailBody({
+    required EdgeInsets padding,
+    required List<Widget> children,
+  }) => widget.tutorialPreview
+      ? SingleChildScrollView(
+          padding: padding,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: children,
+          ),
+        )
+      : ListView(padding: padding, children: children);
 }

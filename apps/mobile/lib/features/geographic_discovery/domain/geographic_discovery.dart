@@ -14,7 +14,13 @@ enum GeoPrecision { locality, address, amenity }
 
 enum GeoResourceMode { donate, exchange }
 
-enum GeoFailureKind { invalidInput, tooBroad, unavailable, malformed }
+enum GeoFailureKind {
+  invalidInput,
+  tooBroad,
+  unavailable,
+  malformed,
+  expiredCursor,
+}
 
 class GeoFailure implements Exception {
   const GeoFailure(this.kind);

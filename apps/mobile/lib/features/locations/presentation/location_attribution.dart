@@ -10,20 +10,51 @@ class LocationAttribution extends StatelessWidget {
     key: const Key('location-attribution'),
     spacing: AppSpacing.small,
     children: [
-      TextButton(
-        onPressed: () => launchUrl(
-          Uri.parse('https://www.geoapify.com/'),
-          mode: LaunchMode.externalApplication,
-        ),
-        child: const Text('Powered by Geoapify'),
+      _link(
+        context,
+        'Powered by Geoapify',
+        'https://www.geoapify.com/',
+        'geoapify',
       ),
-      TextButton(
-        onPressed: () => launchUrl(
-          Uri.parse('https://www.openstreetmap.org/copyright'),
-          mode: LaunchMode.externalApplication,
-        ),
-        child: const Text('© OpenStreetMap contributors'),
+      _link(
+        context,
+        '© OpenStreetMap contributors',
+        'https://www.openstreetmap.org/copyright',
+        'osm',
       ),
     ],
   );
+
+  Widget _link(
+    BuildContext context,
+    String label,
+    String url,
+    String provider,
+  ) {
+    void open() {
+      launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
+    }
+
+    // One labelled link/action, while the actual button retains keyboard focus.
+    return Semantics(
+      key: Key('location-attribution-$provider'),
+      link: true,
+      button: true,
+      label: label,
+      onTap: open,
+      excludeSemantics: true,
+      child: TextButton(
+        onPressed: open,
+        style: TextButton.styleFrom(
+          foregroundColor: Theme.of(context).colorScheme.onSurfaceVariant,
+          textStyle: Theme.of(context).textTheme.labelSmall
+              ?.copyWith(decoration: TextDecoration.underline),
+          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+          minimumSize: const Size(48, 48),
+          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+        ),
+        child: Text(label),
+      ),
+    );
+  }
 }

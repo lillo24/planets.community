@@ -50,16 +50,31 @@ class FoundationScreen extends StatelessWidget {
                 final textScale =
                     MediaQuery.textScalerOf(context).scale(14) / 14;
                 // Give space back to the naturally sized cards before decoration.
+                // The larger cap adds breathing room above the cards on roomy
+                // phones; compact/scaled layouts keep their height-derived space.
                 final heroHeight = (constraints.maxHeight * .42 / textScale)
-                    .clamp(64.0, 240.0);
+                    .clamp(64.0, 288.0);
+                // Transfer up to 24px of bottom padding above the cards. Growing
+                // both the minimum content height and column by that amount
+                // preserves the original centering space and artwork position.
+                final artworkGap = (constraints.maxHeight - 440 * textScale)
+                    .clamp(0.0, AppSpacing.large);
                 return SingleChildScrollView(
-                  padding: const EdgeInsets.all(AppSpacing.large),
+                  padding: EdgeInsets.fromLTRB(
+                    AppSpacing.large,
+                    AppSpacing.large,
+                    AppSpacing.large,
+                    AppSpacing.large - artworkGap,
+                  ),
                   // Keep the cards' existing vertical centering, but make the
                   // scrolling viewport cover the entire body above the nav bar.
                   child: ConstrainedBox(
                     constraints: BoxConstraints(
-                      minHeight: (constraints.maxHeight - AppSpacing.large * 2)
-                          .clamp(0.0, double.infinity),
+                      minHeight:
+                          (constraints.maxHeight -
+                                  AppSpacing.large * 2 +
+                                  artworkGap)
+                              .clamp(0.0, double.infinity),
                     ),
                     child: Center(
                       child: Stack(
@@ -76,7 +91,8 @@ class FoundationScreen extends StatelessWidget {
                                 final topSpace =
                                     ((constraints.maxHeight -
                                                 AppSpacing.large -
-                                                artworkConstraints.maxHeight) /
+                                                artworkConstraints.maxHeight +
+                                                artworkGap) /
                                             2)
                                         .clamp(0.0, double.infinity);
                                 final artworkHeight =
@@ -87,6 +103,11 @@ class FoundationScreen extends StatelessWidget {
                                   maxHeight: artworkHeight,
                                   child: RepaintBoundary(
                                     child: PlanetsHero.home(
+                                      starfieldHeight:
+                                          heroHeight +
+                                          AppSpacing.large +
+                                          topSpace +
+                                          artworkGap,
                                       logoAreaHeight:
                                           heroHeight +
                                           AppSpacing.large +
@@ -101,6 +122,10 @@ class FoundationScreen extends StatelessWidget {
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               SizedBox(height: heroHeight),
+                              SizedBox(
+                                key: const Key('home-artwork-gap'),
+                                height: artworkGap,
+                              ),
                               _HomePillarCard(
                                 key: const Key('browse-proposals-button'),
                                 icon: Icons.explore_outlined,
