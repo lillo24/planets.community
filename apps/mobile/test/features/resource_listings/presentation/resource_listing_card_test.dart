@@ -42,14 +42,14 @@ void main() {
         final metadata = find.byKey(
           const Key('resource-metadata-$resourceListingId'),
         );
-        expect(tester.widget<Wrap>(metadata).children, hasLength(1));
+        expect(tester.widget<Wrap>(metadata).children, hasLength(2));
         final interest = find.byKey(
           const Key('resource-interest-count-$resourceListingId'),
         );
         final location = find.byKey(
           const Key('resource-location-$resourceListingId'),
         );
-        for (final group in [interest]) {
+        for (final group in [interest, location]) {
           final icon = find.descendant(of: group, matching: find.byType(Icon));
           final text = find.descendant(of: group, matching: find.byType(Text));
           expect(tester.getTopLeft(text).dx - tester.getTopRight(icon).dx, 8);

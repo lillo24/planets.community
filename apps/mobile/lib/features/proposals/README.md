@@ -3,7 +3,8 @@
 UI-NEXT-04 keeps every manual location field and canonical meeting read intact.
 MAP02's shared `locations/presentation/location_editor_section.dart` keeps manual
 entry while lookup is disabled and exposes injected receipt-backed selection.
-The detail retains its inert map fallback. See `../locations/README.md` and
+The detail uses the shared authorized location preview; feed cards use compact
+icon/text metadata with one attribution footer for the feed. See `../locations/README.md` and
 provider readiness before activation. MAP01 owns canonical provider metadata and
 actor/item/revision-bound server receipts. Existing
 manual text edits clear stale verified pins. See the [shared location contract](../../../../../docs/development/map01-geoapify-location.md).

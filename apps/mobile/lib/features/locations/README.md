@@ -63,8 +63,13 @@ MAP03 is separate from editing. The location_preview domain model defines
 read-only precision and Maps URLs; location_preview_gateway owns RPCs, the
 disabled static factory and launcher. public_preview_batch owns bounded
 public-only read/image caches. location_preview_panel owns laziness, generations,
-leases, uncached native decoding and distinct taps. location_attribution is the
-fixed linked credit atom shared with editors. The old location_fallbacks map
+leases, uncached native decoding and one explicit reauthorized Maps button.
+MAP-UX01 removes preview panels from feed cards. Detail panels show authorized
+text immediately, no image space when disabled, a 144dp actual PNG when enabled,
+and one fallback on rendering failure. Denial still revokes protected state.
+location_attribution is the compact labelSmall linked credit atom shared with
+editors, detail, Map and List footers, retaining 48dp keyboard/tap targets.
+The old location_fallbacks map
 remains a compatibility widget; real detail now uses the shared panel.
 See [MAP03](../../../../../docs/development/map03-location-previews.md).
 

@@ -10,6 +10,7 @@ import '../../geographic_discovery/presentation/map_view_button.dart';
 import '../../../app/router/browse_activity_switcher.dart';
 import '../../../core/theme/app_tokens.dart';
 import '../../locations/domain/location_preview.dart';
+import '../../locations/presentation/location_attribution.dart';
 import '../../../core/widgets/async_data_presentation.dart';
 import '../../../core/widgets/browse_filter_button.dart';
 import '../../../core/widgets/empty_state.dart';
@@ -259,6 +260,9 @@ class _PublicProposalsScreenState extends ConsumerState<PublicProposalsScreen> {
                       ? const CircularProgressIndicator()
                       : Text(l10n.proposalLoadMore),
                 ),
+              const LocationAttribution(),
+              // Let credit links scroll above the floating Create action.
+              const SizedBox(height: 80),
             ],
           ),
         ),

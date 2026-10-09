@@ -8,6 +8,11 @@ contracts. No provider, hosting, key, billing or policy publication is activated
 
 ## User behavior and ownership
 
+MAP-UX01 uses the same full-width equal-half List/Map selector in every feed
+and on Map, with selected semantics and keyboard access. The selected half does
+not navigate. The inactive List half pops the preserved route or falls back to
+the appropriate origin root for a directly opened map.
+
 Entry inherits Projects' keyword/locality/ANY skills, Tavoli's applied locality,
 and Resources' keyword/locality/Dona-or-Scambia selection. Each filter still
 applies only to its original family when the map selects All. Map family choices

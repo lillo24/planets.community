@@ -189,7 +189,23 @@ class ProjectParticipationSection extends ConsumerWidget {
           style: Theme.of(context).textTheme.titleLarge,
         ),
         const SizedBox(height: AppSpacing.small),
-        for (final line in publicLocationLines) Text(line),
+        if (previewArea case final area?)
+          LocationPreviewPanel(
+            item: PreviewItem(
+              projectKind == ProjectKind.oneTime ? 'one_time' : 'recurring',
+              projectId,
+            ),
+            legacy: area,
+            publicLabel: publicLocationLines.join(' · '),
+            detail: true,
+            contentVersion: (
+              exactLocationRestricted,
+              publicExactMeetingText,
+              acceptsNewRequests,
+            ),
+          )
+        else
+          for (final line in publicLocationLines) Text(line),
         const SizedBox(height: AppSpacing.small),
         Text(
           exactLocationRestricted
@@ -227,21 +243,6 @@ class ProjectParticipationSection extends ConsumerWidget {
             ),
           ),
         ],
-        if (previewArea case final area?)
-          LocationPreviewPanel(
-            item: PreviewItem(
-              projectKind == ProjectKind.oneTime ? 'one_time' : 'recurring',
-              projectId,
-            ),
-            legacy: area,
-            publicLabel: publicLocationLines.join(' · '),
-            detail: true,
-            contentVersion: (
-              exactLocationRestricted,
-              publicExactMeetingText,
-              acceptsNewRequests,
-            ),
-          ),
         const SizedBox(height: AppSpacing.large),
         Row(
           key: Key('participation-title-$projectId'),
