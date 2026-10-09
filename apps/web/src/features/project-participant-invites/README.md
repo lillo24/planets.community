@@ -10,13 +10,32 @@ in `project-delegates`; ordinary joining stays in the mobile request journey.
 - `participant-rpc.ts` implements the typed shared read/admission contract;
   `participant-gateway.ts` adds the browser client and Auth identity observer.
 - `participant-server.ts` provides read-only, request-scoped server adapters.
+- `participant-project-gateway.ts` projects the existing public Proposal/Tavolo
+  detail APIs to title, description and canonical cover path only. It downloads
+  bounded WebP covers through the private bucket's normal SDK/RLS boundary,
+  without signing URLs or introducing a Worker image proxy.
+- `participant-project-card.tsx` displays those details inline, ignores late
+  reads, releases object URLs, and keeps details usable when optional media
+  fails. Failed metadata reads offer an explicit retry.
 - `participant-controller.ts` owns explicit admission and identity/revision
   guards, retained attempts, receipt recovery and independent status retries.
 - `participant-browser.ts` retains one controller in browser/tab memory, outside
   React mounts. It is created only in the browser, never during server rendering.
-- `participant-invite-flow.tsx` renders preview, prerequisites, explicit Join,
-  recovery and deliberate re-entry; `participant-confirmation.tsx` rechecks live
-  canonical participation before presenting the app handoff.
+- `participant-invite-flow-view.tsx` renders preview, prerequisites, explicit Join,
+  recovery and deliberate re-entry; `participant-confirmation-view.tsx` rechecks
+  live canonical participation before presenting the app handoff. The original
+  `participant-invite-flow.tsx` / `participant-confirmation.tsx` entry points retain
+  Next navigation. The static trial uses the same views and canonical controller
+  with a small host adapter, without Next runtime aliases.
+  That adapter can carry one explicit Join through Auth/name prerequisites using
+  a tab-local, OTP-subject-bound request. The shared view consumes it once and
+  calls this same controller; opening a link or restoring Auth cannot admit.
+  Successful invitation/confirmation views omit Refresh controls; failed reads
+  retain read-only recovery. The preview leads with Join Project and the actual
+  project card, without an extra View Project or Leave invitation link.
+  The styled "You're in! 🌸" confirmation and "You joined the project" text
+  appear only after a fresh canonical membership check; owner context stays
+  distinct.
 - `participant-messages.ts` supplies safe UI failure copy.
 - Colocated tests and `participant-test-fixtures.ts` cover wire contracts,
   gateway calls, identity/navigation races and controls. The opt-in production

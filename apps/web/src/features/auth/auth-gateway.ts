@@ -8,7 +8,9 @@ import type { Database } from "@/types/database.generated";
 
 export interface WebAuthGateway {
   requestEmailOtp(email: string): Promise<void>;
-  verifyEmailOtp(email: string, token: string): Promise<void>;
+  // The canonical gateway returns the verified OTP subject. Ordinary Auth
+  // callers can ignore it; injected legacy/test gateways may return void.
+  verifyEmailOtp(email: string, token: string): Promise<string | void>;
   ensureCurrentProfileAnchor(): Promise<void>;
   signOut(): Promise<void>;
 }
@@ -26,7 +28,7 @@ export class SupabaseWebAuthGateway implements WebAuthGateway {
     }
   }
 
-  async verifyEmailOtp(email: string, token: string): Promise<void> {
+  async verifyEmailOtp(email: string, token: string): Promise<string> {
     const { data, error } = await this.client.auth.verifyOtp({
       email,
       token,
@@ -35,9 +37,11 @@ export class SupabaseWebAuthGateway implements WebAuthGateway {
     if (error) {
       throw error;
     }
-    if (!data.user && !data.session?.user) {
+    const account = (data.user ?? data.session?.user)?.id;
+    if (typeof account !== "string" || !account) {
       throw new Error("OTP verification completed without an identity.");
     }
+    return account;
   }
 
   async ensureCurrentProfileAnchor(): Promise<void> {

@@ -68,6 +68,43 @@ describe("Supabase client factories", () => {
     });
   });
 
+  it("keeps static numeric OTP sessions in SDK cookies with uncached, no-referrer requests", async () => {
+    const { createSupabaseBrowserClient } =
+      await import("@/lib/supabase/browser");
+    createSupabaseBrowserClient(
+      {
+        appEnv: "staging",
+        supabaseUrl: "https://trial.supabase.co",
+        supabasePublishableKey: "sb_publishable_test",
+      },
+      true,
+    );
+    const options = createBrowserClient.mock.calls.at(-1)?.[2];
+    expect(options.auth).toEqual({ detectSessionInUrl: false });
+    expect(options.cookieOptions).toEqual({ secure: true });
+    expect(options).not.toHaveProperty("storage");
+    const request = vi
+      .spyOn(globalThis, "fetch")
+      .mockResolvedValueOnce(new Response());
+    try {
+      await options.global.fetch("https://trial.supabase.co/rest/v1/profiles", {
+        headers: { Authorization: "Bearer test" },
+        cache: "force-cache",
+        referrerPolicy: "unsafe-url",
+      });
+      expect(request).toHaveBeenCalledWith(
+        "https://trial.supabase.co/rest/v1/profiles",
+        {
+          headers: { Authorization: "Bearer test" },
+          cache: "no-store",
+          referrerPolicy: "no-referrer",
+        },
+      );
+    } finally {
+      request.mockRestore();
+    }
+  });
+
   it("lets Proxy own cookie writes when a Server Component cannot set them", async () => {
     createServerClient.mockReturnValue({ kind: "server" });
     set.mockImplementationOnce(() => {

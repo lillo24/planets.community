@@ -1,4 +1,5 @@
 import {
+  act,
   cleanup,
   fireEvent,
   render,
@@ -22,6 +23,114 @@ vi.mock("next/navigation", () => ({
 afterEach(cleanup);
 
 describe("ProfileForm", () => {
+  it("asks only for a name in invitation setup and saves an empty bio without a placeholder", async () => {
+    const profileGateway = gateway();
+    const returnTo = `/join/project/${"a".repeat(43)}`;
+    const initialData = fixture();
+    render(
+      <ProfileForm
+        initialData={initialData}
+        gateway={profileGateway}
+        returnTo={returnTo}
+        nameOnly
+      />,
+    );
+
+    expect(screen.getByText("What's your name?")).toBeVisible();
+    expect(screen.getAllByRole("textbox")).toHaveLength(1);
+    expect(screen.queryByLabelText("Bio")).not.toBeInTheDocument();
+    expect(screen.queryByRole("checkbox")).not.toBeInTheDocument();
+    expect(
+      screen.queryByText("Public profile visibility"),
+    ).not.toBeInTheDocument();
+    fireEvent.change(screen.getByRole("textbox", { name: "Name" }), {
+      target: { value: "  Casey  " },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Continue" }));
+
+    await waitFor(() => expect(routerReplace).toHaveBeenCalledWith(returnTo));
+    expect(profileGateway.updateOwnProfile).toHaveBeenCalledOnce();
+    expect(profileGateway.updateOwnProfile).toHaveBeenCalledWith({
+      expectedProfileId: "user-a",
+      displayName: "Casey",
+      bio: "",
+      selectedSkillIds: [],
+      visibility: initialData.profile.visibility,
+    });
+  });
+
+  it("preserves existing bio, skills and visibility during name-only setup", async () => {
+    const profileGateway = gateway();
+    const initialData = fixture();
+    const profile = {
+      ...initialData.profile,
+      bio: "I enjoy community projects.",
+      selectedSkillIds: ["skill-mural"],
+      visibility: {
+        display_name: "private",
+        bio: "private",
+        skills: "public",
+      } as const,
+    };
+    render(
+      <ProfileForm
+        initialData={{ ...initialData, profile }}
+        gateway={profileGateway}
+        nameOnly
+      />,
+    );
+    fireEvent.change(screen.getByRole("textbox", { name: "Name" }), {
+      target: { value: "Casey" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Continue" }));
+
+    await waitFor(() =>
+      expect(profileGateway.updateOwnProfile).toHaveBeenCalledWith({
+        expectedProfileId: profile.id,
+        displayName: "Casey",
+        bio: profile.bio,
+        selectedSkillIds: profile.selectedSkillIds,
+        visibility: profile.visibility,
+      }),
+    );
+  });
+
+  it("requires a valid name before continuing from invitation setup", () => {
+    const profileGateway = gateway();
+    render(
+      <ProfileForm initialData={fixture()} gateway={profileGateway} nameOnly />,
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Continue" }));
+
+    expect(screen.getByText(/Enter 2 to 60 characters/u)).toBeVisible();
+    expect(profileGateway.updateOwnProfile).not.toHaveBeenCalled();
+    expect(routerReplace).not.toHaveBeenCalled();
+  });
+
+  it("ignores a save completion after an identity/navigation unmount", async () => {
+    let complete!: () => void;
+    const pending = new Promise<void>((resolve) => {
+      complete = resolve;
+    });
+    const profileGateway = {
+      updateOwnProfile: vi.fn().mockReturnValue(pending),
+    };
+    const view = render(
+      <ProfileForm
+        initialData={fixture()}
+        gateway={profileGateway}
+        returnTo="/join/project/stale"
+      />,
+    );
+    fireEvent.change(screen.getByRole("textbox", { name: "Display name" }), {
+      target: { value: "Synthetic profile" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Save profile" }));
+    view.unmount();
+    await act(async () => complete());
+    expect(routerReplace).not.toHaveBeenCalled();
+    expect(routerRefresh).not.toHaveBeenCalled();
+  });
   beforeEach(() => vi.clearAllMocks());
   it("completes non-photo profile and returns to the explicit participant invitation", async () => {
     const profileGateway = gateway();

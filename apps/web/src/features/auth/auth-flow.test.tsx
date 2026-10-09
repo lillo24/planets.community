@@ -279,6 +279,28 @@ function createGateway(): WebAuthGateway {
 }
 
 describe("participant OTP continuity", () => {
+  it("ignores verification completion after leaving the flow", async () => {
+    const gateway = createGateway();
+    const pending = createDeferred<void>();
+    vi.mocked(gateway.verifyEmailOtp).mockReturnValue(pending.promise);
+    const navigation = createNavigation();
+    const view = render(
+      <AuthFlow
+        returnTo="/profile"
+        gateway={gateway}
+        navigation={navigation}
+      />,
+    );
+    await requestCode("stale-flow@planets.invalid");
+    fireEvent.change(screen.getByLabelText("Six-digit code"), {
+      target: { value: "123456" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Verify code" }));
+    view.unmount();
+    await act(async () => pending.resolve());
+    expect(gateway.ensureCurrentProfileAnchor).not.toHaveBeenCalled();
+    expect(navigation.replace).not.toHaveBeenCalled();
+  });
   it.each(["new-user@planets.invalid", "existing-user@planets.invalid"])(
     "returns %s to explicit invitation after OTP/anchor only",
     async (email) => {

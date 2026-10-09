@@ -8,7 +8,13 @@
     "start": "next start",
     "lint": "eslint",
     "typecheck": "next typegen && tsc --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "invitation:build:local": "vite build --config static-invitations/vite.config.mts --mode trial-local",
+    "invitation:build:staging": "vite build --config static-invitations/vite.config.mts --mode trial-staging",
+    "invitation:preview": "wrangler dev --config static-invitations/wrangler.jsonc --local --port 8797 --log-level error",
+    "invitation:dry-run": "wrangler deploy --config static-invitations/wrangler.jsonc --dry-run",
+    "invitation:check": "node static-invitations/check-build.mjs",
+    "invitation:deploy:staging": "node static-invitations/deploy.mjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.7.0",
@@ -42,6 +48,8 @@
     "jsdom": "30.0.1",
     "tailwindcss": "^4",
     "typescript": "^5",
-    "vitest": "4.1.11"
+    "vite": "8.3.0",
+    "vitest": "4.1.11",
+    "wrangler": "4.131.1"
   }
 }
