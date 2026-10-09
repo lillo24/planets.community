@@ -1,6 +1,7 @@
 "use client";
 import { ClientLink as Link } from "@/lib/navigation/client-navigation";
 import { useEffect, useState, useSyncExternalStore } from "react";
+import { CheckIcon, SparklesIcon } from "lucide-react";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import type { HandoffConfig } from "../project-app-handoff/handoff-config";
@@ -74,14 +75,24 @@ function ConfirmationControls({
       ) : state.readFailure ? (
         <FailureAlert failure={state.readFailure} />
       ) : current ? (
-        <>
-          <p>
+        <section className="grid justify-items-center gap-5 rounded-3xl border bg-gradient-to-br from-violet-50 via-card to-rose-50 px-6 py-10 text-center shadow-sm sm:px-10 sm:py-14 dark:from-violet-950/40 dark:to-rose-950/40">
+          <div
+            aria-hidden="true"
+            className="relative flex size-20 items-center justify-center rounded-full bg-violet-100 text-violet-600 dark:bg-violet-950 dark:text-violet-300"
+          >
+            <CheckIcon className="size-10" strokeWidth={2.5} />
+            <SparklesIcon className="absolute -top-2 -right-3 size-7 text-rose-400" />
+          </div>
+          <h1 className="text-4xl font-semibold tracking-tight sm:text-5xl">
+            {state.participation?.creator ? "Your project 🌸" : "You're in! 🌸"}
+          </h1>
+          <p className="text-lg text-muted-foreground">
             {state.participation?.creator
               ? "This is your project."
               : "You joined the project."}
           </p>
           <ProjectAppHandoffView project={project} config={config} confirmed />
-        </>
+        </section>
       ) : state.auth?.phase === "signedOut" ? (
         <>
           <p>Sign in to check your participation in this Project.</p>

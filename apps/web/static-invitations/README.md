@@ -10,6 +10,10 @@ the informational Site, and native associations remain separate.
   Biography, skills and visibility are kept as loaded and can be personalized
   later in the app. One explicit Join click on the preview continues through
   login/name setup to a verified confirmation; no second Join is requested.
+  The preview shows public title/description and an optional canonical cover
+  inline. Auth/profile use one header back arrow, which cancels pending Join.
+  Verified confirmation offers Open PLANETS and store badges; absent listing
+  URLs leave the badges disabled and labelled Coming soon.
 - `join-continuation.ts` holds that pending request in tab memory only, bound to
   the actual locally verified OTP subject or the already verified signed-in
   account. Cancel, Back, reload and identity/context changes clear it. Link

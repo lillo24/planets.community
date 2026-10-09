@@ -57,6 +57,7 @@ type AuthFlowProps = Readonly<{
   navigation?: AuthNavigation;
   now?: () => number;
   onCancel?: () => void;
+  showBackLink?: boolean;
 }>;
 
 type FlowPhase = "request" | "verify" | "profileSetup";
@@ -70,6 +71,7 @@ export function AuthFlowView({
   navigation,
   now = systemNow,
   onCancel,
+  showBackLink = true,
 }: AuthFlowProps) {
   const router = useClientNavigation();
   const [authGateway] = useState(() => gateway ?? createWebAuthGateway());
@@ -301,7 +303,7 @@ export function AuthFlowView({
             {busy === "signOut" ? <Spinner data-icon="inline-start" /> : null}
             Sign out
           </Button>
-          {cancelTo !== "/" ? (
+          {showBackLink && cancelTo !== "/" ? (
             <Link href={cancelTo} prefetch={false} onClick={onCancel}>
               Cancel sign-in
             </Link>
@@ -385,7 +387,7 @@ export function AuthFlowView({
           >
             Use another email
           </Button>
-          {cancelTo !== "/" ? (
+          {showBackLink && cancelTo !== "/" ? (
             <Link href={cancelTo} prefetch={false} onClick={onCancel}>
               Cancel sign-in
             </Link>
@@ -431,14 +433,20 @@ export function AuthFlowView({
           </FieldGroup>
         </form>
       </CardContent>
-      <CardFooter className="flex justify-between gap-2">
-        <Button
-          variant="ghost"
-          render={<Link href={cancelTo} prefetch={false} onClick={onCancel} />}
-          nativeButton={false}
-        >
-          {cancelTo === "/" ? "Back to home" : "Back to invitation"}
-        </Button>
+      <CardFooter
+        className={`flex gap-2 ${showBackLink ? "justify-between" : "justify-end"}`}
+      >
+        {showBackLink ? (
+          <Button
+            variant="ghost"
+            render={
+              <Link href={cancelTo} prefetch={false} onClick={onCancel} />
+            }
+            nativeButton={false}
+          >
+            {cancelTo === "/" ? "Back to home" : "Back to invitation"}
+          </Button>
+        ) : null}
         <Button type="submit" form="request-code-form" disabled={busy !== null}>
           {busy === "request" ? <Spinner data-icon="inline-start" /> : null}
           Send code

@@ -1,5 +1,6 @@
 import { createRoot } from "react-dom/client";
 import { useEffect, useState, useSyncExternalStore } from "react";
+import { ArrowLeftIcon } from "lucide-react";
 import type { trialPublicConfig } from "./public-config";
 import { trialRoute, trialReturn } from "./routes";
 import { JoinContinuation } from "./join-continuation";
@@ -20,6 +21,7 @@ import type { ProfileEditorData } from "../src/features/profile/profile-models";
 import { SupabaseWebProfileGateway } from "../src/features/profile/profile-gateway";
 import { ParticipantController } from "../src/features/project-participant-invites/participant-controller";
 import { SupabaseParticipantGateway } from "../src/features/project-participant-invites/participant-gateway";
+import { SupabaseInvitationProjectGateway } from "../src/features/project-participant-invites/participant-project-gateway";
 import { ParticipantInviteFlowView } from "../src/features/project-participant-invites/participant-invite-flow-view";
 import { ParticipantConfirmationView } from "../src/features/project-participant-invites/participant-confirmation-view";
 import { readParticipantAuth } from "../src/features/project-participant-invites/participant-rpc";
@@ -54,6 +56,7 @@ const authGateway: WebAuthGateway = {
   },
 };
 const profileGateway = new SupabaseWebProfileGateway(client);
+const projectGateway = new SupabaseInvitationProjectGateway(client);
 // Exactly one controller per tab/process. Only the SDK session uses cookies;
 // invitation capabilities and action UUIDs never enter browser storage.
 const controller = new ParticipantController(
@@ -224,12 +227,6 @@ function AuthPage({ returnTo }: { returnTo: string }) {
         >
           Try setup again
         </button>
-        <TrialLink
-          href={participantCancelDestination(returnTo)}
-          onClick={joinContinuation.cancel}
-        >
-          Back to invitation
-        </TrialLink>
       </div>
     );
   return (
@@ -237,6 +234,7 @@ function AuthPage({ returnTo }: { returnTo: string }) {
       returnTo={returnTo}
       gateway={authGateway}
       onCancel={joinContinuation.cancel}
+      showBackLink={false}
     />
   );
 }
@@ -266,12 +264,6 @@ function ProfilePage({ returnTo }: { returnTo: string }) {
   }, [epoch, attempt, returnTo]);
   return (
     <>
-      <TrialLink
-        href={participantCancelDestination(returnTo)}
-        onClick={joinContinuation.cancel}
-      >
-        Back to invitation
-      </TrialLink>
       {data === "error" ? (
         <RetryError retry={() => setAttempt((n) => n + 1)} />
       ) : data ? (
@@ -313,7 +305,19 @@ export function App() {
   return (
     <ClientNavigationProvider adapter={adapter}>
       <header>
-        <strong>PLANETS</strong>
+        <div className="flex items-center gap-3">
+          {route?.kind === "auth" || route?.kind === "profile" ? (
+            <TrialLink
+              href={participantCancelDestination(returnTo)}
+              onClick={joinContinuation.cancel}
+              aria-label="Back to project"
+              className="rounded-full p-2 text-muted-foreground hover:bg-muted focus-visible:outline-2 focus-visible:outline-violet-500"
+            >
+              <ArrowLeftIcon aria-hidden="true" className="size-5" />
+            </TrialLink>
+          ) : null}
+          <strong className="tracking-widest">PLANETS</strong>
+        </div>
         {identity ? (
           <button
             onClick={() => {
@@ -328,7 +332,7 @@ export function App() {
       {logoutFailure ? <p role="alert">Sign-out failed. Try again.</p> : null}
       <main
         key={`${routeKey}:${route?.kind === "profile" || route?.kind === "auth" ? epoch : ""}`}
-        className="mx-auto grid w-full max-w-3xl gap-6 p-6"
+        className="mx-auto grid w-full max-w-2xl gap-6 px-5 py-8 sm:px-6 sm:py-12"
       >
         {route?.kind === "invite" ? (
           <ParticipantInviteFlowView
@@ -336,6 +340,7 @@ export function App() {
             initialRead={emptyRead}
             config={handoff}
             controller={controller}
+            projectGateway={projectGateway}
             onJoinPrerequisites={(auth, preview) =>
               joinContinuation.begin(route.token, preview.project, auth.account)
             }

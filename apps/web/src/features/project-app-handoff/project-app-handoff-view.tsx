@@ -1,8 +1,8 @@
-import { ClientLink as Link } from "@/lib/navigation/client-navigation";
 import { buttonVariants } from "@/components/ui/button";
 import type { ProjectContext } from "../project-participant-invites/participant-models";
 import type { HandoffConfig } from "./handoff-config";
-import { projectAppUrl, projectPath } from "./project-links";
+import { projectAppUrl } from "./project-links";
+import { StoreBadge } from "./store-badge";
 
 export function ProjectAppHandoffView({
   project,
@@ -16,9 +16,9 @@ export function ProjectAppHandoffView({
   confirmed?: boolean;
 }>) {
   return (
-    <div className="grid gap-4">
+    <div className="grid w-full justify-items-center gap-6">
       {confirmed ? (
-        <p>
+        <p className="max-w-md leading-relaxed text-muted-foreground">
           Open the app with the same PLANETS account to find your project and
           its group chat.
         </p>
@@ -28,44 +28,20 @@ export function ProjectAppHandoffView({
           and contribution steps and organizer approval.
         </p>
       )}
-      <div className="flex flex-wrap gap-3">
-        <a
-          className={buttonVariants()}
-          href={projectAppUrl(project, ordinaryIntent)}
-          referrerPolicy="no-referrer"
-        >
-          Open PLANETS
-        </a>
-        {config.android ? (
-          <a
-            className={buttonVariants({ variant: "outline" })}
-            href={config.android}
-            rel="noreferrer"
-            referrerPolicy="no-referrer"
-          >
-            Download for Android
-          </a>
-        ) : null}
-        {config.ios ? (
-          <a
-            className={buttonVariants({ variant: "outline" })}
-            href={config.ios}
-            rel="noreferrer"
-            referrerPolicy="no-referrer"
-          >
-            Download for iPhone
-          </a>
-        ) : null}
+      <a
+        className={buttonVariants({
+          className:
+            "h-12 rounded-full bg-violet-600 px-8 text-base text-white hover:bg-violet-500",
+        })}
+        href={projectAppUrl(project, ordinaryIntent)}
+        referrerPolicy="no-referrer"
+      >
+        Open PLANETS
+      </a>
+      <div className="flex flex-wrap justify-center gap-3">
+        <StoreBadge platform="android" href={config.android} />
+        <StoreBadge platform="ios" href={config.ios} />
       </div>
-      <p className="text-sm text-muted-foreground">
-        If the app doesn&apos;t open, view the project in your browser
-        {config.android || config.ios
-          ? " or use a download option above."
-          : ". App downloads are not available here yet."}
-      </p>
-      <Link href={projectPath(project)} prefetch={false}>
-        View Project in this browser
-      </Link>
     </div>
   );
 }

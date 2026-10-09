@@ -18,6 +18,16 @@ import {
   token,
 } from "./participant-test-fixtures";
 vi.mock("client-only", () => ({}));
+vi.mock("./participant-project-gateway", () => ({
+  createInvitationProjectGateway: () => ({
+    read: async () => ({
+      title: "Community mural",
+      description: "Paint a mural with people in your city.",
+      coverObjectPath: null,
+    }),
+    cover: vi.fn(),
+  }),
+}));
 const replace = vi.fn();
 vi.mock("next/navigation", () => ({ useRouter: () => ({ replace }) }));
 const controllers: ParticipantController[] = [];
@@ -51,10 +61,21 @@ describe("participant browser controls", () => {
       "href",
       `/auth?returnTo=${encodeURIComponent(`/join/project/${token}`)}`,
     );
-    expect(screen.getByRole("link", { name: "View Project" })).toHaveAttribute(
-      "href",
-      `/proposals/${project.id}`,
-    );
+    expect(
+      await screen.findByText("Paint a mural with people in your city."),
+    ).toBeVisible();
+    expect(
+      screen.getByRole("heading", { name: "Join Project", level: 1 }),
+    ).toBeVisible();
+    expect(
+      screen.getByRole("heading", { name: "Community mural", level: 2 }),
+    ).toBeVisible();
+    expect(
+      screen.queryByRole("link", { name: /View Project|Leave invitation/ }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByText(/No profile photo|Existing contribution offers/),
+    ).not.toBeInTheDocument();
     expect(gateway.accept).not.toHaveBeenCalled();
     expect(screen.queryByText(/expires/i)).not.toBeInTheDocument();
   });

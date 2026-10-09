@@ -81,18 +81,28 @@ describe("ordinary and confirmed app handoff", () => {
       projectAppUrl(project),
     );
   });
-  it("shows same-account explanation and honest absent listings with no automatic navigation", () => {
+  it("shows same-account explanation and disabled store badges without fallback clutter or automatic navigation", () => {
     render(<ProjectAppHandoff project={project} config={{}} confirmed />);
     expect(screen.getByText(/same PLANETS account/)).toBeVisible();
     expect(
-      screen.getByText(/App downloads are not available here yet/i),
-    ).toBeVisible();
+      screen.getByRole("button", { name: "Google Play (coming soon)" }),
+    ).toBeDisabled();
+    expect(
+      screen.getByRole("button", { name: "App Store (coming soon)" }),
+    ).toBeDisabled();
+    expect(
+      screen.queryByText(
+        /App downloads are not available|If the app doesn't open/i,
+      ),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("link", { name: "View Project in this browser" }),
+    ).not.toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Open PLANETS" })).toHaveAttribute(
       "href",
       projectAppUrl(project),
     );
     expect(replace).not.toHaveBeenCalled();
-    expect(screen.queryByRole("button")).not.toBeInTheDocument();
   });
   it("renders configured deliberate downloads without attaching admission/session data", () => {
     render(
@@ -105,14 +115,12 @@ describe("ordinary and confirmed app handoff", () => {
         confirmed
       />,
     );
-    expect(screen.getByRole("link", { name: /Android/ })).toHaveAttribute(
-      "href",
-      "https://downloads.example/android",
-    );
-    expect(screen.getByRole("link", { name: /iPhone/ })).toHaveAttribute(
-      "href",
-      "https://downloads.example/ios",
-    );
+    expect(
+      screen.getByRole("link", { name: "Download on Google Play" }),
+    ).toHaveAttribute("href", "https://downloads.example/android");
+    expect(
+      screen.getByRole("link", { name: "Download on App Store" }),
+    ).toHaveAttribute("href", "https://downloads.example/ios");
   });
   it("omits missing listings and permits HTTP only on explicit local loopback", () => {
     expect(parseHandoffConfig({})).toEqual({});

@@ -115,6 +115,19 @@ vi.mock("../src/features/project-participant-invites/participant-rpc", () => ({
   readParticipantAuth: fake.readAuth,
 }));
 vi.mock(
+  "../src/features/project-participant-invites/participant-project-gateway",
+  () => ({
+    SupabaseInvitationProjectGateway: class {
+      read = async () => ({
+        title: "Community mural",
+        description: "Paint a mural with people in your city.",
+        coverObjectPath: null,
+      });
+      cover = vi.fn();
+    },
+  }),
+);
+vi.mock(
   "../src/features/project-participant-invites/participant-gateway",
   () => ({
     SupabaseParticipantGateway: class {
@@ -292,7 +305,10 @@ describe("actual static host onboarding with canonical Auth/profile and admissio
     render(<App />);
     fireEvent.click(await screen.findByRole("link", { name: "Join Project" }));
     await requestCode();
-    fireEvent.click(screen.getByRole("link", { name: "Cancel sign-in" }));
+    expect(
+      screen.queryByRole("link", { name: "Cancel sign-in" }),
+    ).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("link", { name: "Back to project" }));
     expect(
       await screen.findByRole("link", { name: "Join Project" }),
     ).toBeVisible();

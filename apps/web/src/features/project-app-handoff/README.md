@@ -9,8 +9,13 @@ ordinary detail CTAs and verified participant confirmations.
   settings are an honest unavailable state; invalid settings throw redacted
   configuration errors. HTTPS without credentials/fragments is required;
   explicit `NEXT_PUBLIC_APP_ENV=local` permits HTTP only on loopback hosts.
-- `project-app-handoff-view.tsx` renders deliberate app/download links, browser
-  fallback and the same-account sign-in explanation. `project-app-handoff.tsx`
+- `project-app-handoff-view.tsx` renders deliberate app/store links and the
+  same-account sign-in explanation, without a browser-fallback paragraph/link.
+  `store-badge.tsx` renders Google Play/App Store badges. Missing download URLs
+  produce disabled Coming soon badges, never invented listing URLs. Configure
+  `NEXT_PUBLIC_PLANETS_ANDROID_DOWNLOAD_URL` and
+  `NEXT_PUBLIC_PLANETS_IOS_DOWNLOAD_URL` with the actual store listings to enable
+  them. `project-app-handoff.tsx`
   retains the Next adapter; the static trial shares the view.
 - `ordinary-project-handoff.tsx` adds the dismissible public intent and public
   lifecycle copy; it calls no request/admission gateway.

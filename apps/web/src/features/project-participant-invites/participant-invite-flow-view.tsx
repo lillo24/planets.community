@@ -15,7 +15,6 @@ import type { HandoffConfig } from "../project-app-handoff/handoff-config";
 import {
   confirmationPath,
   participantReturnPath,
-  projectPath,
 } from "../project-app-handoff/project-links";
 import { browserParticipantController } from "./participant-browser";
 import type { ParticipantController } from "./participant-controller";
@@ -26,6 +25,11 @@ import type {
   ProjectContext,
 } from "./participant-models";
 import { participantFailureMessage } from "./participant-messages";
+import { ParticipantProjectCard } from "./participant-project-card";
+import type { InvitationProjectGateway } from "./participant-project-gateway";
+
+const joinButtonClass =
+  "h-12 w-full rounded-full bg-violet-600 px-8 text-base text-white shadow-sm hover:bg-violet-500 sm:w-auto sm:min-w-48 sm:justify-self-center";
 
 type JoinSetup = Readonly<{
   onJoinPrerequisites?: (
@@ -41,6 +45,7 @@ export function ParticipantInviteFlowView({
   token,
   initialRead,
   controller,
+  projectGateway,
   ...joinSetup
 }: Readonly<{
   token: string;
@@ -50,6 +55,7 @@ export function ParticipantInviteFlowView({
   }>;
   config: HandoffConfig;
   controller?: ParticipantController;
+  projectGateway?: InvitationProjectGateway;
 }> &
   JoinSetup) {
   const [active, setActive] = useState<ParticipantController | null>(null);
@@ -70,22 +76,36 @@ export function ParticipantInviteFlowView({
         <PreviewBody
           preview={initialRead.preview}
           failure={initialRead.failure}
+          gateway={projectGateway}
         />
         <p role="status">
           <Spinner className="inline-block" /> Checking your account…
         </p>
       </div>
     );
-  return <InviteControls token={token} controller={active} {...joinSetup} />;
+  return (
+    <InviteControls
+      token={token}
+      controller={active}
+      projectGateway={projectGateway}
+      {...joinSetup}
+    />
+  );
 }
 function InviteControls({
   token,
   controller,
+  projectGateway,
   onJoinPrerequisites,
   joiningAfterSetup = false,
   continueJoin,
   cancelJoin,
-}: Readonly<{ token: string; controller: ParticipantController }> & JoinSetup) {
+}: Readonly<{
+  token: string;
+  controller: ParticipantController;
+  projectGateway?: InvitationProjectGateway;
+}> &
+  JoinSetup) {
   const state = useSyncExternalStore(
     controller.subscribe,
     controller.snapshot,
@@ -157,7 +177,11 @@ function InviteControls({
   const setupPath = `${state.auth?.phase === "incompleteProfile" ? "/profile" : "/auth"}?returnTo=${encodeURIComponent(destination)}`;
   return (
     <div className="grid gap-4">
-      <PreviewBody preview={state.preview} failure={state.previewFailure} />
+      <PreviewBody
+        preview={state.preview}
+        failure={state.previewFailure}
+        gateway={projectGateway}
+      />
       {state.failure ? <FailureAlert failure={state.failure} /> : null}
       {state.readFailure ? (
         <div className="grid gap-3">
@@ -186,7 +210,7 @@ function InviteControls({
       ) : null}
       {needsSetup && onJoinPrerequisites && state.preview?.available ? (
         <Link
-          className={buttonVariants()}
+          className={buttonVariants({ className: joinButtonClass })}
           href={setupPath}
           prefetch={false}
           onClick={(event) => {
@@ -261,19 +285,19 @@ function InviteControls({
       state.preview?.available &&
       state.participation &&
       !current ? (
-        <Button onClick={() => void join()}>Join Project</Button>
+        <Button className={joinButtonClass} onClick={() => void join()}>
+          Join Project
+        </Button>
       ) : null}
       {!blocked &&
       ended &&
       state.preview?.available &&
       state.auth?.phase === "ready" &&
       state.receipt?.outcome !== "creator" ? (
-        <Button onClick={() => void join(true)}>Join Project again</Button>
+        <Button className={joinButtonClass} onClick={() => void join(true)}>
+          Join Project again
+        </Button>
       ) : null}
-      <p className="text-sm text-muted-foreground">
-        No profile photo or organizer approval is needed. Existing contribution
-        offers aren&apos;t added when you join through this invitation.
-      </p>
       {state.previewFailure && !state.readFailure ? (
         <Button
           variant="outline"
@@ -283,35 +307,40 @@ function InviteControls({
           Try again
         </Button>
       ) : null}
-      <Link href="/" prefetch={false} onClick={cancelJoin}>
-        Leave invitation
-      </Link>
     </div>
   );
 }
 function PreviewBody({
   preview,
   failure,
-}: Readonly<{ preview?: ParticipantPreview; failure?: ParticipantFailure }>) {
-  if (failure) return <FailureAlert failure={failure} />;
-  if (!preview) return null;
-  if (!preview.available)
-    return (
-      <Alert>
-        <AlertTitle>Invitation unavailable</AlertTitle>
-        <AlertDescription>
-          This invitation cannot be used now. A previous pending join can still
-          be checked after signing in.
-        </AlertDescription>
-      </Alert>
-    );
+  gateway,
+}: Readonly<{
+  preview?: ParticipantPreview;
+  failure?: ParticipantFailure;
+  gateway?: InvitationProjectGateway;
+}>) {
   return (
-    <div className="grid gap-3">
-      <p className="text-2xl font-semibold">{preview.title}</p>
-      <p>{preview.project.kind === "one_time" ? "Proposal" : "Tavolo"}</p>
-      <Link href={projectPath(preview.project)} prefetch={false}>
-        View Project
-      </Link>
+    <div className="grid gap-5">
+      <h1 className="text-center text-3xl font-semibold tracking-tight sm:text-4xl">
+        Join Project
+      </h1>
+      {failure ? (
+        <FailureAlert failure={failure} />
+      ) : !preview ? null : !preview.available ? (
+        <Alert>
+          <AlertTitle>Invitation unavailable</AlertTitle>
+          <AlertDescription>
+            This invitation cannot be used now. A previous pending join can
+            still be checked after signing in.
+          </AlertDescription>
+        </Alert>
+      ) : (
+        <ParticipantProjectCard
+          project={preview.project}
+          title={preview.title}
+          gateway={gateway}
+        />
+      )}
     </div>
   );
 }
