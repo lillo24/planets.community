@@ -894,14 +894,8 @@ class _TutorialScreenState extends ConsumerState<TutorialScreen>
                               ),
                             ),
                             Positioned.fill(
-                              child: GestureDetector(
+                              child: AbsorbPointer(
                                 key: const Key('tutorial-overlay'),
-                                behavior: HitTestBehavior.opaque,
-                                onTap:
-                                    restoreFailed ||
-                                        _step == TutorialStep.farewell
-                                    ? null
-                                    : _advance,
                                 child: AnimatedBuilder(
                                   animation: Listenable.merge([
                                     _reveal,
