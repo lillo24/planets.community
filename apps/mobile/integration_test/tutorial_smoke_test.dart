@@ -246,7 +246,12 @@ Future<void> _captureFade(
     await tester.pump(const Duration(milliseconds: 40));
     final opacity = tour.scrim(tester).color.a;
     if (opacity > .1 && opacity < .6) {
-      await _capture(tester, binding, name);
+      // This frame already painted the intermediate alpha. Do not pump again:
+      // a slow emulator can advance the 380ms fade to completion between pumps.
+      // onlyPumps keeps this painted frame stable while Android acquires it.
+      await Future<void>.delayed(const Duration(milliseconds: 80));
+      expect(tour.scrim(tester).color.a, inExclusiveRange(.1, .6));
+      await binding.takeScreenshot(name);
       return;
     }
     if (opacity >= .6) fail('missed spotlight fade: $name');
