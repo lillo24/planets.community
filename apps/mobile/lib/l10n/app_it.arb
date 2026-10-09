@@ -1518,7 +1518,7 @@
   "locationMapUnavailable": "Anteprima della mappa non disponibile. Usa le informazioni sul luogo qui sopra.",
   "locationRestrictedPreview": "Tutti vedono la zona indicativa pubblica. Le istruzioni precise sono disponibili solo agli organizzatori autorizzati e ai partecipanti attuali.",
   "locationPublicPreview": "Tutti vedono la zona indicativa pubblica e le istruzioni precise per l'incontro.",
-  "messagesGuestChatsTitle": "Nessuna conversazione",
+  "messagesGuestChatsTitle": "Le tue conversazioni",
   "messagesGuestRequestsTitle": "Nessuna richiesta",
   "messagesGuestPrivateMessage": "Accedi per partecipare ai progetti, donare o scambiare e gestire le tue conversazioni private.",
   "messagesGuestGroupsMessage": "Accedi per vedere le conversazioni di gruppo dei progetti a cui partecipi.",
@@ -1722,5 +1722,11 @@
   "mapOpenDetail": "Apri annuncio",
   "mapLoadMore": "Carica altri risultati",
   "mapRefresh": "Aggiorna ricerca",
-  "mapInheritedFilters": "I filtri della Lista si applicano alle rispettive categorie. Torna alla Lista per modificarli."
+  "mapInheritedFilters": "I filtri della Lista si applicano alle rispettive categorie. Torna alla Lista per modificarli.",
+  "messagesExampleLabel": "Esempio · conversazione inventata",
+  "messagesExamplePrivateTitle": "Alex",
+  "messagesExamplePrivateBody": "Posso unirmi al progetto dell’orto? Posso portare degli attrezzi.",
+  "messagesExampleGroupTitle": "Progetto orto di comunità",
+  "messagesExampleGroupBody": "Organizziamo insieme la prima giornata di semina.",
+  "messagesExampleTime": "2 min fa"
 }

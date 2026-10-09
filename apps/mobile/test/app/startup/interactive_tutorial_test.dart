@@ -55,6 +55,98 @@ import '../../support/fake_profile_photo.dart';
 import '../../support/fake_project_resource_needs.dart';
 
 void main() {
+  for (final dark in [false, true]) {
+    testWidgets(
+      'same-page Next/Previous keeps alpha through every frame dark=$dark',
+      (tester) async {
+        tester.platformDispatcher.accessibilityFeaturesTestValue =
+            const FakeAccessibilityFeatures(disableAnimations: false);
+        tester.platformDispatcher.platformBrightnessTestValue = dark
+            ? Brightness.dark
+            : Brightness.light;
+        addTearDown(tester.platformDispatcher.clearAllTestValues);
+        await _pump(
+          tester,
+          proposals: FakeProposalGateway()
+            ..publicItems = [proposalSummaryFixture()]
+            ..publicDetail = proposalDetailFixture(),
+        );
+        await tap(tester, 'welcome-explore');
+        for (var i = 0; i < TutorialStep.projectCreate.index; i++) {
+          await tap(tester, 'tutorial-next');
+          await ready(tester);
+        }
+        for (final pair in [
+          (from: 'proposal-create-action', to: 'my-proposals-action'),
+          (from: 'messages-requests-action', to: 'message-chat-scope-toggle'),
+        ]) {
+          expectFocus(tester, pair.from);
+          final before = scrim(tester).targets.single;
+          await tester.tap(find.byKey(const Key('tutorial-next')));
+          await tester.pump();
+          expect(scrim(tester).targets.single, before);
+          var sawMovement = false;
+          for (var frame = 0; frame < 20; frame++) {
+            await tester.pump(const Duration(milliseconds: 16));
+            expect(scrim(tester).color.a, closeTo(.62, .001));
+            final hole = scrim(tester).targets.single;
+            if (hole != before) sawMovement = true;
+            if (frame == 9) {
+              for (final state in [
+                AppLifecycleState.inactive,
+                AppLifecycleState.hidden,
+                AppLifecycleState.paused,
+              ]) {
+                tester.binding.handleAppLifecycleStateChanged(state);
+              }
+              final paused = hole;
+              await tester.pump(const Duration(seconds: 10));
+              expect(scrim(tester).targets.single, paused);
+              for (final state in [
+                AppLifecycleState.hidden,
+                AppLifecycleState.inactive,
+                AppLifecycleState.resumed,
+              ]) {
+                tester.binding.handleAppLifecycleStateChanged(state);
+              }
+            }
+          }
+          expect(sawMovement, isTrue);
+          await ready(tester);
+          expectFocus(tester, pair.to);
+          // Back, a blocked double-tap, then interrupt the focus just after the
+          // surface commit debounce. No frame may reset the dimmer.
+          await tester.binding.handlePopRoute();
+          await tester.pump();
+          await tester.tap(
+            find.byKey(const Key('tutorial-previous')),
+            warnIfMissed: false,
+          );
+          for (var frame = 0; frame < 18; frame++) {
+            await tester.pump(const Duration(milliseconds: 16));
+            expect(scrim(tester).color.a, closeTo(.62, .001));
+          }
+          await tester.tap(find.byKey(const Key('tutorial-next')));
+          await tester.pump();
+          expect(scrim(tester).color.a, closeTo(.62, .001));
+          await ready(tester);
+          expectFocus(tester, pair.to);
+          if (pair.from == 'proposal-create-action') {
+            for (
+              var i = TutorialStep.projectDrafts.index;
+              i < TutorialStep.messagesTabs.index;
+              i++
+            ) {
+              await tap(tester, 'tutorial-next');
+              await ready(tester);
+            }
+          }
+        }
+        expect(tester.takeException(), isNull);
+      },
+    );
+  }
+
   testWidgets(
     'fade pauses; refresh and rotation remeasure without page entry',
     (tester) async {
@@ -975,7 +1067,7 @@ void main() {
               expect(find.byType(TabBar), findsNothing);
               expect(find.byType(BackButton), findsNothing);
               expect(
-                find.byKey(const Key('messages-access-private')),
+                find.byKey(const Key('messages-example-private')),
                 findsOneWidget,
               );
               expect(
@@ -1016,7 +1108,7 @@ void main() {
         await ready(tester);
         if (step == TutorialStep.messagesScopes) {
           expect(
-            find.text('Tutorial: your conversations stay private.'),
+            find.byKey(const Key('messages-example-groups')),
             findsWidgets,
           );
         }
@@ -1154,7 +1246,17 @@ Future<void> ready(WidgetTester tester) async {
         paint.color.a > .61 &&
         (find.byKey(const Key('tutorial-copy-resources')).evaluate().isEmpty ||
             paint.targets.length == 3)) {
-      return;
+      // Same-page focus keeps alpha and the old hole while the new anchor is
+      // measured, then moves for 180ms. Wait for geometry as well as opacity.
+      var stable = true;
+      for (var frame = 0; frame < 6; frame++) {
+        await tester.pump(const Duration(milliseconds: 80));
+        if (scrim(tester).targets.isEmpty || scrim(tester).color.a < .61) {
+          stable = false;
+          break;
+        }
+      }
+      if (stable) return;
     }
   }
   fail(

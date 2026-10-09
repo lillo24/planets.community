@@ -37,8 +37,10 @@ This folder owns small presentation primitives reused across feature boundaries.
   only above the first opaque card, avoiding stars wasted behind it. The finite
   Welcome drift settles onto those sampled coordinates. Only that entrance moves stars;
   orbit ticking does not on Home/Welcome. Farewell alone uses the existing
-  144-second orbit clock for continuous downward star travel at 2–4 whole wraps
-  per cycle, with radius-aware offscreen wrapping. It pauses with the artwork
+  144-second orbit clock for continuous downward star travel at 21–36 whole wraps
+  per cycle (4.00–6.86 seconds per traversal, gently faster for larger stars),
+  with radius-aware offscreen wrapping. Integer cycle counts make the 144-second
+  phase boundary seamless. It pauses with the artwork
   and is static under reduced motion. No image, network or additional clock is involved.
 
 Settled hero geometry is laid out outside the continuous orbit builder. Float

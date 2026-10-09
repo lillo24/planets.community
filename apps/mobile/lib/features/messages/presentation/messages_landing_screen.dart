@@ -10,36 +10,44 @@ import '../../auth/application/auth_command_controller.dart';
 import '../../auth/domain/auth_models.dart';
 import '../../auth/presentation/auth_status.dart';
 import '../domain/message_chat_models.dart';
+import 'message_example_preview.dart';
 import 'messages_navigation.dart';
 import 'messages_screen.dart';
 
 /// Only /messages is public. Mount private loaders solely for a ready identity;
 /// descendants still use router protection and repository read boundaries.
 class MessagesLandingScreen extends ConsumerWidget {
-  const MessagesLandingScreen({this.controlsOnly = false, super.key});
+  const MessagesLandingScreen({
+    this.controlsOnly = false,
+    this.previewScope,
+    super.key,
+  }) : assert(controlsOnly || previewScope == null);
 
   /// Tutorial presentation: real navigation with no private list mounts/reads.
   final bool controlsOnly;
+
+  /// A tour step can illustrate Groups without changing remembered navigation.
+  final MessageChatScope? previewScope;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final session = ref.watch(authSessionProvider);
     final l10n = AppLocalizations.of(context);
-    if (session.phase == AuthSessionPhase.ready && controlsOnly) {
-      final scope = ref.watch(messagesNavigationProvider).scope;
+    if (controlsOnly) {
+      final scope = previewScope ?? ref.watch(messagesNavigationProvider).scope;
       return MessagesFrame(
         controlsOnly: controlsOnly,
         chats: ListView(
           children: [
             MessageChatScopeToggle(
               scope: scope,
-              onChanged: ref
-                  .read(messagesNavigationProvider.notifier)
-                  .selectScope,
+              onChanged: previewScope == null
+                  ? ref.read(messagesNavigationProvider.notifier).selectScope
+                  : (_) {},
             ),
             Padding(
               padding: const EdgeInsets.all(AppSpacing.medium),
-              child: Text(l10n.tutorialMessagesPreview),
+              child: MessageExamplePreview(scope: scope),
             ),
           ],
         ),
@@ -55,30 +63,18 @@ class MessagesLandingScreen extends ConsumerWidget {
       return MessagesFrame(
         controlsOnly: controlsOnly,
         key: const Key('messages-context-screen'),
-        chats: controlsOnly
-            ? ListView(
-                children: [
-                  MessageChatScopeToggle(
-                    scope: scope,
-                    onChanged: ref
-                        .read(messagesNavigationProvider.notifier)
-                        .selectScope,
-                  ),
-                  _MessagesAccessState(scope: scope),
-                ],
-              )
-            : Column(
-                children: [
-                  MessageChatScopeToggle(
-                    scope: scope,
-                    onChanged: ref
-                        .read(messagesNavigationProvider.notifier)
-                        .selectScope,
-                  ),
-                  const SizedBox(height: AppSpacing.small),
-                  Expanded(child: _MessagesAccessState(scope: scope)),
-                ],
-              ),
+        chats: Column(
+          children: [
+            MessageChatScopeToggle(
+              scope: scope,
+              onChanged: ref
+                  .read(messagesNavigationProvider.notifier)
+                  .selectScope,
+            ),
+            const SizedBox(height: AppSpacing.small),
+            Expanded(child: _MessagesAccessState(scope: scope)),
+          ],
+        ),
         requests: const _MessagesAccessState(),
       );
     }
@@ -123,11 +119,15 @@ class _MessagesAccessState extends ConsumerWidget {
                 : l10n.messagesGuestChatsTitle,
             message: message,
             icon: switch (scope) {
-              MessageChatScope.private => Icons.lock_outline,
+              MessageChatScope.private => Icons.chat_bubble_outline,
               MessageChatScope.groups => Icons.groups_outlined,
               null => Icons.mark_email_unread_outlined,
             },
           ),
+          if (signedOut && scope != null) ...[
+            MessageExamplePreview(scope: scope!),
+            const SizedBox(height: AppSpacing.medium),
+          ],
           FilledButton(
             key: const Key('messages-context-action'),
             onPressed: busy

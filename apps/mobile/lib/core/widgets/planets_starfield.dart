@@ -39,8 +39,10 @@ class PlanetsStarfield {
       );
     }
     final span = size.height + star.radius * 2;
-    final cycles =
-        2 + (star.radius > .95 ? 1 : 0) + (star.radius > 1.25 ? 1 : 0);
+    // 21–36 whole crossings per clock: 4.00–6.86 seconds per traversal.
+    // Integer cycles keep the shared phase wrap seamless, including offscreen
+    // radius padding; larger stars travel gently faster without new timers.
+    final cycles = 21 + ((star.radius - .65) / .85 * 15).round().clamp(0, 15);
     return Offset(
       star.position.dx,
       (star.position.dy + star.radius + span * seconds / 144 * cycles) % span -
