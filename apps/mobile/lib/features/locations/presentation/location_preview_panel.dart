@@ -9,6 +9,8 @@ import '../../../core/theme/app_tokens.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../auth/application/auth_session_controller.dart';
 import '../../auth/domain/auth_models.dart';
+import '../../geographic_discovery/application/shared_basemap_tiles.dart';
+import '../../geographic_discovery/presentation/read_only_basemap.dart';
 import '../../participation/application/participation_controllers.dart';
 import '../../project_delegates/application/project_delegate_controllers.dart';
 import '../application/public_preview_batch.dart';
@@ -16,8 +18,8 @@ import '../data/location_preview_gateway.dart';
 import '../domain/location_preview.dart';
 import 'location_attribution.dart';
 
-/// A location panel, not an illustrated/fabricated map. Only a validated bitmap
-/// becomes a map. All outbound Maps actions perform a fresh canonical read.
+/// A location panel with validated tiles or explicitly selected static imagery.
+/// All outbound Maps actions perform a fresh canonical read.
 class LocationPreviewPanel extends ConsumerStatefulWidget {
   const LocationPreviewPanel({
     required this.item,
@@ -43,6 +45,7 @@ class _LocationPreviewPanelState extends ConsumerState<LocationPreviewPanel>
     with WidgetsBindingObserver {
   final _box = GlobalKey();
   var _bitmap = GlobalKey<_UncachedPreviewImageState>();
+  var _tiles = GlobalKey<ReadOnlyBasemapState>();
   ScrollPosition? _scroll;
   Timer? _lease;
   Completer<void>? _abort;
@@ -96,6 +99,8 @@ class _LocationPreviewPanelState extends ConsumerState<LocationPreviewPanel>
 
   void _revoke({bool keepImage = false}) {
     ++_epoch;
+    _tiles.currentState?.revoke();
+    _tiles = GlobalKey<ReadOnlyBasemapState>();
     if (_abort?.isCompleted == false) _abort!.complete();
     _abort = null;
     if (!keepImage) {
@@ -224,7 +229,10 @@ class _LocationPreviewPanelState extends ConsumerState<LocationPreviewPanel>
         _eraseImage();
       }
       final renderer = ref.read(staticPreviewGatewayProvider);
-      if (renderer.enabled && value.place != null && _bytes == null) {
+      if (!(widget.detail && ref.read(detailBasemapEnabledProvider)) &&
+          renderer.enabled &&
+          value.place != null &&
+          _bytes == null) {
         try {
           final batch = ref.read(publicPreviewBatchProvider);
           final bytes = await batch.loadImage(
@@ -334,6 +342,8 @@ class _LocationPreviewPanelState extends ConsumerState<LocationPreviewPanel>
     }
     final l10n = AppLocalizations.of(context);
     final value = _preview, place = value?.place;
+    final tiled = widget.detail && ref.watch(detailBasemapEnabledProvider);
+    final tileStore = tiled ? ref.watch(sharedBasemapTilesProvider) : null;
     final label = place?.label ?? widget.publicLabel;
     // Only a current canonical projection can offer an outbound destination.
     // Revocation removes the action together with protected labels and pixels.
@@ -365,8 +375,27 @@ class _LocationPreviewPanelState extends ConsumerState<LocationPreviewPanel>
               l10n.locationPreviewApproximate,
               style: Theme.of(context).textTheme.bodySmall,
             ),
+          if (tiled && tileStore!.enabled && value != null && place != null)
+            Padding(
+              padding: const EdgeInsets.only(top: AppSpacing.small),
+              child: ClipRRect(
+                borderRadius: AppRadii.medium,
+                child: ReadOnlyBasemap(
+                  key: _tiles,
+                  store: tileStore,
+                  latitude: place.latitude,
+                  longitude: place.longitude,
+                  protected: value.isProtected,
+                  approximate: place.isArea,
+                  semanticLabel: place.isArea
+                      ? '${place.label}. ${l10n.locationPreviewApproximate}'
+                      : place.label,
+                  failureLabel: l10n.locationPreviewImageFailed,
+                ),
+              ),
+            ),
           // Disabled imagery has no reserved space or availability boilerplate.
-          if (value != null && _bytes != null)
+          if (!tiled && value != null && _bytes != null)
             Padding(
               padding: const EdgeInsets.only(top: AppSpacing.small),
               child: ClipRRect(
@@ -408,6 +437,7 @@ class _LocationPreviewPanelState extends ConsumerState<LocationPreviewPanel>
     _scroll?.removeListener(_scheduleVisibility);
     ++_epoch;
     if (_abort?.isCompleted == false) _abort!.complete();
+    _tiles.currentState?.revoke();
     _eraseImage();
     super.dispose();
   }
@@ -490,3 +520,9 @@ class _UncachedPreviewImageState extends State<_UncachedPreviewImage> {
     super.dispose();
   }
 }
+
+// Independent opt-in. Fixtures override this provider and the tile gateway;
+// enabling tiles never enables static fallback, including guests and failures.
+final detailBasemapEnabledProvider = Provider<bool>(
+  (ref) => const bool.fromEnvironment('LOCATION_DETAIL_TILES_ENABLED'),
+);

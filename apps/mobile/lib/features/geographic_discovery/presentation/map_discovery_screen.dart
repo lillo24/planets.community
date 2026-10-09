@@ -19,6 +19,7 @@ import '../../recurring_activities/application/recurring_activity_controllers.da
 import '../../resource_listings/application/resource_listing_controllers.dart';
 import '../application/geographic_discovery_controller.dart';
 import '../application/map_discovery_sessions.dart';
+import '../application/shared_basemap_tiles.dart';
 import '../data/map_provider_gateway.dart';
 import '../domain/geographic_discovery.dart';
 import '../domain/map_discovery.dart';
@@ -163,7 +164,7 @@ class _MapDiscoveryScreenState extends ConsumerState<MapDiscoveryScreen>
   void _syncTiles() {
     final gateway = ref.read(mapProviderGatewayProvider);
     if (_allowed(gateway) && gateway.tilesEnabled && !_tileFailed) {
-      _tiles ??= GatewayTileProvider(gateway);
+      _tiles ??= GatewayTileProvider(ref.read(sharedBasemapTilesProvider));
     }
   }
 

@@ -91,7 +91,10 @@ abstract interface class MapProviderGateway {
   bool get isFixture;
   Future<List<MapCenterSuggestion>> search(String query, String language);
   Future<MapSearchCenter> resolve(String id);
-  Future<Uint8List> tile(int z, int x, int y);
+
+  /// Transfers a fresh caller-owned buffer. Cancellation aborts transport but
+  /// cannot roll back a server reservation that already occurred.
+  Future<Uint8List> tile(int z, int x, int y, {Future<void>? cancellation});
 }
 
 class DisabledMapProviderGateway implements MapProviderGateway {
@@ -111,7 +114,7 @@ class DisabledMapProviderGateway implements MapProviderGateway {
   Future<MapSearchCenter> resolve(String id) =>
       Future.error(const MapProviderFailure('disabled'));
   @override
-  Future<Uint8List> tile(int z, int x, int y) =>
+  Future<Uint8List> tile(int z, int x, int y, {Future<void>? cancellation}) =>
       Future.error(const MapProviderFailure('disabled'));
 }
 
@@ -132,13 +135,18 @@ class ServerMapProviderGateway implements MapProviderGateway {
   Future<Object?> _call(
     Map<String, dynamic> body, {
     required bool enabled,
+    Future<void>? cancellation,
   }) async {
     if (!enabled) throw const MapProviderFailure('disabled');
     final actor = client.auth.currentUser?.id;
     if (actor == null) throw const MapProviderFailure('guest_disabled');
     try {
       final response = await client.functions
-          .invoke('map-provider', body: {...body, 'expected_profile_id': actor})
+          .invoke(
+            'map-provider',
+            body: {...body, 'expected_profile_id': actor},
+            abortSignal: cancellation,
+          )
           .timeout(const Duration(seconds: 8));
       if (client.auth.currentUser?.id != actor) {
         throw const MapProviderFailure('stale');
@@ -208,18 +216,27 @@ class ServerMapProviderGateway implements MapProviderGateway {
   }
 
   @override
-  Future<Uint8List> tile(int z, int x, int y) async {
+  Future<Uint8List> tile(
+    int z,
+    int x,
+    int y, {
+    Future<void>? cancellation,
+  }) async {
     if (z < 7 || z > 18 || x < 0 || y < 0 || x >= 1 << z || y >= 1 << z) {
       throw const MapProviderFailure('invalid_request');
     }
-    final data = await _call({
-      'operation': 'tile',
-      'z': z,
-      'x': x,
-      'y': y,
-      'style': 'osm-carto',
-      'version': 1,
-    }, enabled: tilesEnabled);
+    final data = await _call(
+      {
+        'operation': 'tile',
+        'z': z,
+        'x': x,
+        'y': y,
+        'style': 'osm-carto',
+        'version': 1,
+      },
+      enabled: tilesEnabled,
+      cancellation: cancellation,
+    );
     if (data is! Uint8List ||
         data.length < 45 ||
         data.length > 262144 ||

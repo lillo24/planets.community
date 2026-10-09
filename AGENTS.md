@@ -112,6 +112,11 @@ Pre-production migration squashing is acceptable only when the active implementa
 
 ## External services and account-owner actions
 
+Map discovery and detail previews share only generic public basemap bytes.
+Protected exact detail selection, overlays and private tile buffers must remain
+authorization-scoped. See `docs/development/map-cache01-shared-tiles.md` for
+ownership, disabled client flags, memory/TTL bounds and activation requirements.
+
 PLANETS may use external resources such as managed or self-hosted Supabase environments, Firebase/APNs, web/object-storage providers, Cloudflare, Resend, Sentry, PostHog, Codemagic, and Apple/Google developer services.
 
 Do not fabricate credentials, account state, provider configuration, billing setup, domain ownership, signing material, or production resources.

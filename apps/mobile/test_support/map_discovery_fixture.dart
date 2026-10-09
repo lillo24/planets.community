@@ -182,15 +182,21 @@ class FixtureMapProviderGateway implements MapProviderGateway {
 
   Uint8List? _tile;
   @override
-  Future<Uint8List> tile(int z, int x, int y) async {
+  Future<Uint8List> tile(
+    int z,
+    int x,
+    int y, {
+    Future<void>? cancellation,
+  }) async {
     tileCalls.add((z, x, y));
     if (failure case final error?) throw error;
     // A neutral checkerboard is a labelled synthetic renderer fixture, never streets.
-    return _tile ??= Uint8List.fromList(
+    _tile ??= Uint8List.fromList(
       image.encodePng(
         image.Image(width: 256, height: 256)
           ..clear(image.ColorRgb8(225, 232, 235)),
       ),
     );
+    return Uint8List.fromList(_tile!);
   }
 }
