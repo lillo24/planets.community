@@ -104,14 +104,31 @@ void main() {
           await capture('${step.name}-next-0');
           await tester.pump(const Duration(milliseconds: 80));
           await capture('${step.name}-next-80');
-          await tester.pump(const Duration(milliseconds: 120));
+          if (same) {
+            await tester.pump(const Duration(milliseconds: 16));
+            await capture('${step.name}-next-96');
+            await tester.pump(const Duration(milliseconds: 104));
+          } else {
+            await tester.pump(const Duration(milliseconds: 120));
+          }
           await capture('${step.name}-next-200');
-          await tester.pump(const Duration(milliseconds: 600));
-          await capture('${step.name}-next-800');
-          await tester.pump(const Duration(milliseconds: 300));
-          await capture('${step.name}-next-1100');
-          await tester.pump(const Duration(milliseconds: 400));
-          await capture('${step.name}-next-1500');
+          if (switches) {
+            // A page may also scroll to a real anchor after its readable hold.
+            // Sample adaptively instead of jumping past its 380ms fade.
+            var fades = 0;
+            for (var frame = 0; frame < 160; frame++) {
+              await tester.pump(const Duration(milliseconds: 40));
+              final alpha = tour.scrim(tester).color.a;
+              if (alpha > 0 && alpha < .61) {
+                await capture('${step.name}-fade-${fades++}');
+              }
+              if (alpha >= .61) break;
+            }
+            expect(fades, greaterThan(0), reason: '$theme ${step.name} fade');
+          } else {
+            await tester.pump(const Duration(milliseconds: 600));
+            await capture('${step.name}-next-800');
+          }
           await tour.ready(tester);
           await capture('${step.name}-next-ready');
           if (same) {
