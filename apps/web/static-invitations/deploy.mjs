@@ -18,12 +18,14 @@ import {
 } from "./cloudflare.mjs";
 const require = createRequire(import.meta.url);
 const app = fileURLToPath(new URL("../", import.meta.url));
-const config = JSON.parse(
-  readFileSync(new URL("./wrangler.jsonc", import.meta.url), "utf8").replace(
-    /^\s*\/\/.*$/gmu,
-    "",
-  ),
+// Use the existing TypeScript JSONC parser: formatting may retain comments and
+// trailing commas, both accepted by Wrangler. Never evaluate configuration code.
+const parsed = require("typescript").parseConfigFileTextToJson(
+  "wrangler.jsonc",
+  readFileSync(new URL("./wrangler.jsonc", import.meta.url), "utf8"),
 );
+assert(!parsed.error, "Invalid trial JSONC configuration.");
+const config = parsed.config;
 assert.equal(config.name, workerName);
 assert.equal(config.account_id, accountId);
 assert(
