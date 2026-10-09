@@ -23,6 +23,10 @@
   root Back. Its visible right tab follows main's device-local Messages/Browse
   preference and the actual active destination; editor departures still use
   the single draft coordinator.
+- Public `/messages` presents Chats without a leading toolbar Back. Its
+  secondary Requests state consumes system/toolbar Back to return to Chats;
+  nested protected request/chat routes retain their router-owned Back stack.
+  Presentation destination and scope survive Auth and profile completion.
 - `draft_departure_coordinator.dart` prepares the active Proposal editor before
   router transitions/pops and delivers confirmed destination feedback through
   the application's ScaffoldMessenger.

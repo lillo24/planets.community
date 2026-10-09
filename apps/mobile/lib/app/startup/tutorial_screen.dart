@@ -265,10 +265,7 @@ class _TutorialScreenState extends ConsumerState<TutorialScreen>
       'resource-create-action',
       'resource-my-listings-action',
     ],
-    TutorialStep.messagesTabs => const [
-      'messages-tab-chat',
-      'messages-tab-requests',
-    ],
+    TutorialStep.messagesTabs => const ['messages-requests-action'],
     TutorialStep.messagesScopes => const ['message-chat-scope-toggle'],
   };
 
@@ -407,10 +404,8 @@ class _TutorialScreenState extends ConsumerState<TutorialScreen>
       rects.add(rect);
     }
     if (rects.length == anchors.length) {
-      // Chat/Requests is one contiguous group; Scambio is three distinct holes.
-      final targets = _step == TutorialStep.messagesTabs
-          ? [rects[0].expandToInclude(rects[1])]
-          : rects;
+      // Each target remains separate, including the three Scambio controls.
+      final targets = rects;
       if (!listEquals(_targets, targets)) {
         setState(() => _targets = List.unmodifiable(targets));
       }
