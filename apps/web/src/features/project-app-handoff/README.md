@@ -9,8 +9,9 @@ ordinary detail CTAs and verified participant confirmations.
   settings are an honest unavailable state; invalid settings throw redacted
   configuration errors. HTTPS without credentials/fragments is required;
   explicit `NEXT_PUBLIC_APP_ENV=local` permits HTTP only on loopback hosts.
-- `project-app-handoff.tsx` renders deliberate app/download links, browser
-  fallback and the same-account sign-in explanation.
+- `project-app-handoff-view.tsx` renders deliberate app/download links, browser
+  fallback and the same-account sign-in explanation. `project-app-handoff.tsx`
+  retains the Next adapter; the static trial shares the view.
 - `ordinary-project-handoff.tsx` adds the dismissible public intent and public
   lifecycle copy; it calls no request/admission gateway.
 - `project-handoff.test.tsx` verifies query handling, dismissal, links and config.

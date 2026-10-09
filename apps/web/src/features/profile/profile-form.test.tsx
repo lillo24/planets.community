@@ -1,4 +1,5 @@
 import {
+  act,
   cleanup,
   fireEvent,
   render,
@@ -22,6 +23,30 @@ vi.mock("next/navigation", () => ({
 afterEach(cleanup);
 
 describe("ProfileForm", () => {
+  it("ignores a save completion after an identity/navigation unmount", async () => {
+    let complete!: () => void;
+    const pending = new Promise<void>((resolve) => {
+      complete = resolve;
+    });
+    const profileGateway = {
+      updateOwnProfile: vi.fn().mockReturnValue(pending),
+    };
+    const view = render(
+      <ProfileForm
+        initialData={fixture()}
+        gateway={profileGateway}
+        returnTo="/join/project/stale"
+      />,
+    );
+    fireEvent.change(screen.getByRole("textbox", { name: "Display name" }), {
+      target: { value: "Synthetic profile" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Save profile" }));
+    view.unmount();
+    await act(async () => complete());
+    expect(routerReplace).not.toHaveBeenCalled();
+    expect(routerRefresh).not.toHaveBeenCalled();
+  });
   beforeEach(() => vi.clearAllMocks());
   it("completes non-photo profile and returns to the explicit participant invitation", async () => {
     const profileGateway = gateway();

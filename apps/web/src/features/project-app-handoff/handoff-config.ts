@@ -1,4 +1,4 @@
-import { PublicEnvError } from "@/lib/config/public-env";
+import { PublicEnvError } from "../../lib/config/public-env";
 
 export type HandoffConfig = Readonly<{ android?: string; ios?: string }>;
 type HandoffInput = Readonly<{

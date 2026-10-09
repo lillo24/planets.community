@@ -6,7 +6,7 @@ This folder owns ordinary-user web authentication and the minimum application-id
 - `return-destination.ts` accepts only safe internal post-auth destinations and rejects external, protocol-relative, encoded, and auth-loop targets.
 - Participant returns add narrow cancellation to the exact preview or token-free public Project, including nested profile continuation; normal Home and authority-invite defaults stay unchanged. All `/auth` and `/profile` responses receive no-store/no-referrer/noindex headers, protecting encoded token returns.
 - `auth-gateway.ts` is the browser-only Supabase boundary for requesting/verifying numeric email OTPs, ensuring the own-ID profile anchor, and signing out.
-- `auth-flow.tsx` owns the in-memory request, verify, resend, duplicate-submit, retry, and navigation state machine for `/auth`.
+- `auth-flow-view.tsx` owns the in-memory request, verify, resend, duplicate-submit, retry, and navigation state machine for `/auth`. Unmounting invalidates late verification/setup results. `auth-flow.tsx` supplies the normal Next navigation adapter; the isolated static trial supplies its own adapter to the same view.
 - `auth-session-actions.tsx` provides profile-anchor retry and sign-out for restored authenticated sessions.
 - `auth-status-card.tsx` renders only signed-out, ready, or profile-setup-required status; it receives no email, token, or user ID.
 - `current-auth.ts` is the server-only trusted session/profile-readiness reader. It uses verified claims rather than `getSession()`.

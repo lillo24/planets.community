@@ -1,0 +1,19 @@
+{
+  "$schema": "../../../node_modules/wrangler/config-schema.json",
+  "name": "planets-link-host03-static-staging",
+  "account_id": "5e9cf144fb13c9913f8570b32d7288a8",
+  // Latest date supported by the repository's existing Wrangler/workerd pin.
+  "compatibility_date": "2026-09-18",
+  "main": "worker.ts",
+  "workers_dev": true,
+  "preview_urls": false,
+  "routes": [],
+  "observability": { "enabled": false },
+  "assets": {
+    "directory": "../dist/static-invitations",
+    "binding": "ASSETS",
+    "html_handling": "none",
+    "not_found_handling": "none",
+    "run_worker_first": ["/*", "!/assets/*"],
+  },
+}

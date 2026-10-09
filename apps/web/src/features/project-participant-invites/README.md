@@ -14,9 +14,12 @@ in `project-delegates`; ordinary joining stays in the mobile request journey.
   guards, retained attempts, receipt recovery and independent status retries.
 - `participant-browser.ts` retains one controller in browser/tab memory, outside
   React mounts. It is created only in the browser, never during server rendering.
-- `participant-invite-flow.tsx` renders preview, prerequisites, explicit Join,
-  recovery and deliberate re-entry; `participant-confirmation.tsx` rechecks live
-  canonical participation before presenting the app handoff.
+- `participant-invite-flow-view.tsx` renders preview, prerequisites, explicit Join,
+  recovery and deliberate re-entry; `participant-confirmation-view.tsx` rechecks
+  live canonical participation before presenting the app handoff. The original
+  `participant-invite-flow.tsx` / `participant-confirmation.tsx` entry points retain
+  Next navigation. The static trial uses the same views and canonical controller
+  with a small host adapter, without Next runtime aliases.
 - `participant-messages.ts` supplies safe UI failure copy.
 - Colocated tests and `participant-test-fixtures.ts` cover wire contracts,
   gateway calls, identity/navigation races and controls. The opt-in production
