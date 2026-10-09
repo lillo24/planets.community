@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:collection';
 import 'dart:ui' as ui;
 
 import 'package:flutter/foundation.dart';
@@ -7,23 +6,23 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 
+import '../application/shared_basemap_tiles.dart';
 import '../data/map_provider_gateway.dart';
 import '../domain/geographic_discovery.dart';
 import '../domain/map_discovery.dart';
 
 /// Tile IO has no public URL template/key and is detached when the route is inactive.
 class GatewayTileProvider extends TileProvider {
-  GatewayTileProvider(this.gateway);
-  final MapProviderGateway gateway;
-  final _images = <(int, int, int), _GatewayTileImage>{};
-  final _queue =
-      Queue<(_GatewayTileImage, Completer<ui.Codec>, ImageDecoderCallback)>();
-  int _running = 0;
+  GatewayTileProvider(SharedBasemapTiles store) : scope = store.openScope() {
+    scope.onRevoke = _release;
+  }
+  final BasemapTileScope scope;
+  final _images = <BasemapTileId, _GatewayTileImage>{};
   bool _alive = true;
 
   @override
   ImageProvider getImage(TileCoordinates coordinates, TileLayer options) {
-    final key = (coordinates.z, coordinates.x, coordinates.y);
+    final key = BasemapTileId(coordinates.z, coordinates.x, coordinates.y);
     final image = _images.putIfAbsent(key, () => _GatewayTileImage(this, key));
     if (_images.length > 64) {
       final oldest = _images.remove(_images.keys.first);
@@ -32,60 +31,46 @@ class GatewayTileProvider extends TileProvider {
     return image;
   }
 
-  Future<ui.Codec> _load(_GatewayTileImage image, ImageDecoderCallback decode) {
-    if (!_alive || _queue.length >= 64) {
-      return Future.error(const MapProviderFailure('unavailable'));
-    }
-    final complete = Completer<ui.Codec>();
-    _queue.add((image, complete, decode));
-    _drain();
-    return complete.future;
-  }
-
-  void _drain() {
-    while (_alive && _running < 6 && _queue.isNotEmpty) {
-      final (image, complete, decode) = _queue.removeFirst();
-      _running++;
-      unawaited(() async {
-        try {
-          final (z, x, y) = image.tile;
-          final bytes = await gateway.tile(z, x, y);
-          if (!_alive) throw const MapProviderFailure('stale');
-          final buffer = await ui.ImmutableBuffer.fromUint8List(bytes);
-          final codec = await decode(buffer);
-          if (!_alive) {
-            codec.dispose();
-            throw const MapProviderFailure('stale');
-          }
-          complete.complete(codec);
-        } catch (error, stack) {
-          complete.completeError(error, stack);
-        } finally {
-          _running--;
-          _drain();
-        }
-      }());
+  Future<ui.Codec> _load(
+    _GatewayTileImage image,
+    ImageDecoderCallback decode,
+  ) async {
+    if (!_alive) throw const MapProviderFailure('stale');
+    try {
+      final bytes = await scope.tile(image.tile);
+      if (!_alive) throw const MapProviderFailure('stale');
+      final buffer = await ui.ImmutableBuffer.fromUint8List(bytes);
+      final codec = await decode(buffer);
+      if (!_alive) {
+        codec.dispose();
+        throw const MapProviderFailure('stale');
+      }
+      return codec;
+    } catch (_) {
+      if (_alive) scope.evict(image.tile);
+      rethrow;
     }
   }
 
-  @override
-  void dispose() {
+  void _release() {
     _alive = false;
-    for (final (_, complete, _) in _queue) {
-      complete.completeError(const MapProviderFailure('stale'));
-    }
-    _queue.clear();
     for (final image in _images.values) {
       PaintingBinding.instance.imageCache.evict(image);
     }
     _images.clear();
+  }
+
+  @override
+  void dispose() {
+    _release();
+    scope.dispose();
   }
 }
 
 class _GatewayTileImage extends ImageProvider<_GatewayTileImage> {
   const _GatewayTileImage(this.provider, this.tile);
   final GatewayTileProvider provider;
-  final (int, int, int) tile;
+  final BasemapTileId tile;
   @override
   Future<_GatewayTileImage> obtainKey(ImageConfiguration configuration) =>
       SynchronousFuture(this);

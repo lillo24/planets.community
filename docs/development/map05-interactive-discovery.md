@@ -229,3 +229,12 @@ the deliberate journey, and test_driver owns host screenshot export. Native
 iOS, real provider imagery, billing, production ingress and physical-device QA
 remain external activation work. See the [MAP05 validation record](map05-validation.md)
 for measured results and any environment limitations.
+
+## MAP-CACHE01 shared byte ownership
+
+GatewayTileProvider now delegates compressed bytes and request scheduling to the
+app-owned shared public basemap store; its decoded image resources remain route
+owned and are evicted on disposal. Eligible detail previews use the same tuple/grid
+and store, with an independent default-off opt-in. Client retention defaults to
+zero and needs a reviewed explicit TTL. See [MAP-CACHE01](map-cache01-shared-tiles.md)
+for protected isolation, bounds, cancellation and quantified fake reuse.

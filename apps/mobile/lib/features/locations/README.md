@@ -76,3 +76,9 @@ See [MAP03](../../../../../docs/development/map03-location-previews.md).
 MAP04 public radius/bounds queries live in the separate geographic_discovery
 feature. It never uses editor receipts or protected preview reads. MAP05 must
 define a distinct public search-center lookup before enabling autocomplete.
+
+MAP-CACHE01 lets the existing canonical detail panel explicitly select the shared
+read-only tile compositor, with default-off LOCATION_DETAIL_TILES_ENABLED.
+Selecting tiles excludes static generation, including on errors/guests. Lease
+revocation destroys protected tile pixels/buffers before reauthorization.
+See [cache contract and fake measurements](../../../../../docs/development/map-cache01-shared-tiles.md).

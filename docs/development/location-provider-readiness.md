@@ -132,3 +132,9 @@ See [MAP04 geographic discovery](map04-geographic-discovery.md). MAP05 public
 center autocomplete must define its own public/anonymous authorization, abuse
 and cost boundary; MAP02 item-bound authenticated edit receipts are unsuitable.
 MAP01 search and MAP03 static rendering remain disabled.
+
+MAP-CACHE01 implements disabled shared-tile detail composition and bounded
+session RAM reuse. The [cache activation record](map-cache01-shared-tiles.md)
+describes the new default-off detail flag and zero-default client retention.
+License/proxy/TTL review and native/live verification remain owner work; no
+hosted provider configuration is inferred from fixture success.

@@ -197,3 +197,11 @@ privacy or owner policy approval evidence. Final gate counts are recorded in PR.
 
 MAP04 queries and MAP05's disabled interactive view are now implemented. Neither
 geographic discovery nor a live key is required for this disabled Maps-link path.
+
+## MAP-CACHE01 tiled detail option
+
+The same canonical detail projection can now select a default-off, noninteractive
+144dp tile composition with local symbols. Selecting tiles excludes static
+rendering; failures never initiate a static request. Public generic bytes share
+with discovery, while protected selection/bytes/pixels remain authorization-scoped.
+See [cache ownership, flags, tests and activation](map-cache01-shared-tiles.md).

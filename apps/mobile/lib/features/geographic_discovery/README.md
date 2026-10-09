@@ -30,3 +30,11 @@ anonymous paid-provider lookup are absent.
 The database remains authoritative for the exact viewport-area limit and
 15-minute cursor expiration. See the MAP04 runbook and
 [MAP05 behavior/configuration/activation](../../../../../docs/development/map05-interactive-discovery.md).
+
+MAP-CACHE01 adds domain/basemap_tile.dart (byte-affecting identity),
+domain/basemap_viewport.dart (demand-only XYZ composition),
+application/shared_basemap_tiles.dart (app-owned public LRU, bounded scheduler,
+revocable protected scopes and lifecycle/auth invalidation), and
+presentation/read_only_basemap.dart (uncached native detail pixels/local overlays).
+The discovery GatewayTileProvider now shares compressed bytes while retaining
+route-owned ImageProvider resources. See [cache ownership and opt-in](../../../../../docs/development/map-cache01-shared-tiles.md).
