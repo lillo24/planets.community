@@ -256,6 +256,7 @@ void main() {
           await tester.pump(const Duration(milliseconds: 40));
           final alpha = scrim(tester).color.a;
           if (alpha > 0 && alpha < .61) {
+            expect(scrim(tester).opacity, closeTo(alpha / .62, .001));
             sawFade = true;
             break;
           }
@@ -1250,10 +1251,12 @@ Future<ProviderContainer> pumpTutorialSmoke(
   language: language,
 );
 
-ProposalDetail longTutorialDetail(int paragraphs) {
+ProposalDetail longTutorialDetail(int paragraphs, {String? coverObjectPath}) {
   final base = proposalDetailFixture();
   return ProposalDetail(
-    summary: base.summary,
+    summary: coverObjectPath == null
+        ? base.summary
+        : proposalSummaryFixture(coverObjectPath: coverObjectPath),
     creatorProfileId: base.creatorProfileId,
     creatorDisplayName: base.creatorDisplayName,
     description: List.filled(
@@ -1286,7 +1289,11 @@ void expectFocus(WidgetTester tester, String key, {int index = 0}) {
       )
       .shift(-surface);
   final target = scrim(tester).targets[index];
-  expect(bounds.inflate(1).contains(target.center), isTrue, reason: key);
+  expect(
+    bounds.inflate(1).contains(target.center),
+    isTrue,
+    reason: '$key bounds=$bounds target=$target',
+  );
   final visible =
       (Offset.zero & tester.getSize(find.byKey(const Key('tutorial-overlay'))))
           .deflate(8);

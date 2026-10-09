@@ -160,7 +160,10 @@ void main() {
             coverObjectPath: 'public/tutorial-cover-$i.webp',
           ),
       ]
-      ..publicDetail = tour.longTutorialDetail(32);
+      ..publicDetail = tour.longTutorialDetail(
+        32,
+        coverObjectPath: 'public/tutorial-cover-1.webp',
+      );
     final resources = FakeResourceListingGateway()
       ..publicItems = [publicResourceListingFixture()];
     await tour.pumpTutorialSmoke(

@@ -109,9 +109,10 @@ String tutorialCopy(AppLocalizations l, TutorialStep step) => switch (step) {
 /// Separate holes preserve the relationship between disjoint real controls.
 /// Gestures and accessible tutorial controls live outside this painter.
 class TutorialScrim extends CustomPainter {
-  TutorialScrim(this.targets, this.color);
+  TutorialScrim(this.targets, this.color, {this.opacity = 1});
   final List<Rect> targets;
   final Color color;
+  final double opacity;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -134,7 +135,7 @@ class TutorialScrim extends CustomPainter {
       canvas.drawRRect(
         hole,
         Paint()
-          ..color = Colors.white
+          ..color = Colors.white.withValues(alpha: opacity)
           ..style = PaintingStyle.stroke
           ..strokeWidth = 2,
       );
@@ -143,5 +144,7 @@ class TutorialScrim extends CustomPainter {
 
   @override
   bool shouldRepaint(TutorialScrim oldDelegate) =>
-      !listEquals(targets, oldDelegate.targets) || color != oldDelegate.color;
+      !listEquals(targets, oldDelegate.targets) ||
+      color != oldDelegate.color ||
+      opacity != oldDelegate.opacity;
 }

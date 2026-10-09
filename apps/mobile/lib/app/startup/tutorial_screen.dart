@@ -474,9 +474,17 @@ class _TutorialScreenState extends ConsumerState<TutorialScreen>
         }
         final tooLow =
             rect.bottom > viewport.bottom && rect.height <= viewport.height;
+        // A tall card can start inside the viewport yet expose only a sliver
+        // after list reordering or a taller discovery header. Reveal enough
+        // actual content before accepting its clipped spotlight.
+        final tooLittle =
+            rect.height > viewport.height &&
+            rect.intersect(viewport).height <
+                (viewport.height * .5).clamp(0, 96);
         if (rect.top < viewport.top - 1 ||
             rect.top >= viewport.bottom ||
-            tooLow) {
+            tooLow ||
+            tooLittle) {
           final delta = rect.top - viewport.top - 8;
           final next = (scrollable.position.pixels + delta).clamp(
             scrollable.position.minScrollExtent,
@@ -835,6 +843,7 @@ class _TutorialScreenState extends ConsumerState<TutorialScreen>
                                           : Colors.black.withValues(
                                               alpha: .62 * _reveal.value,
                                             ),
+                                      opacity: _noSpotlight ? 0 : _reveal.value,
                                     ),
                                   ),
                                 ),
