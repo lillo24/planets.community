@@ -190,14 +190,20 @@ class _VerifyCodeScreenState extends ConsumerState<VerifyCodeScreen> {
                             : l10n.authResendAction,
                       ),
                     ),
-                    TextButton(
-                      key: const Key('auth-verify-back-button'),
-                      onPressed: command.isBusy
-                          ? null
-                          : () => _useDifferentEmail(pending),
-                      child: Text(l10n.authUseDifferentEmailAction),
-                    ),
                   ],
+                  // Also available when profile-anchor creation needs retry;
+                  // the former header Back offered this same identity exit.
+                  TextButton(
+                    key: const Key('auth-verify-back-button'),
+                    onPressed: command.isBusy
+                        ? null
+                        : () => _useDifferentEmail(pending),
+                    child: Text(
+                      needsProfileRetry
+                          ? MaterialLocalizations.of(context).backButtonTooltip
+                          : l10n.authUseDifferentEmailAction,
+                    ),
+                  ),
                 ],
               ),
             ),

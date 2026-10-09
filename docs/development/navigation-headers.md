@@ -6,14 +6,15 @@ Pushed pages imply a localized textual Close, using `Navigator.maybePop` so the
 existing PopScope/router onExit departure guards still decide whether to leave.
 Branch roots keep their bottom navigation without an extra Close. At less than
 480dp and text scaling above 20px for a 14px font, textual actions wrap in a reserved
-112dp area below the title; their semantics and touch targets are retained.
+112dp area below the title when multiple actions need room. Single Close and
+icon-only bars keep the ordinary height; semantics and touch targets are retained.
 
 Flow-owned exits override the implied callback:
 
 | Surface | On-screen exit and existing behavior |
 | --- | --- |
 | Messages Requests | Chats text action returns to the retained scope; system Back consumes Requests first |
-| Auth request / OTP | Close cancels the same Auth continuation; OTP has the existing Use a different email body action and system Back |
+| Auth request / OTP | Close cancels the same Auth continuation; OTP keeps Use a different email and system Back; a verified profile-retry state has a textual Back with the original callback and no sign-out |
 | Profile setup/edit | Cancel calls the original pop-or-cancel destination; Save stays separate |
 | Help/contact/bug/person and policy/account pages | Close retains HelpScaffold's supplied callback or pop/fallback destination |
 | Project organizer / participant invitations and unavailable link | Close pops a retained stack or returns Home on direct entry |

@@ -29,6 +29,7 @@ PreferredSizeWidget pageAppBar(
       ),
   ];
   final expanded =
+      buttons.length > 1 &&
       buttons.any((button) => button is ButtonStyleButton) &&
       MediaQuery.sizeOf(context).width < 480 &&
       MediaQuery.textScalerOf(context).scale(14) > 20;

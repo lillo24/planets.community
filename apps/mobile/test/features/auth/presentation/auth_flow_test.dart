@@ -9,12 +9,48 @@ import 'package:planets_mobile/app/planets_app.dart';
 import 'package:planets_mobile/app/router/app_router.dart';
 import 'package:planets_mobile/core/config/app_config.dart';
 import 'package:planets_mobile/features/auth/application/auth_command_controller.dart';
+import 'package:planets_mobile/features/auth/application/auth_session_controller.dart';
 import 'package:planets_mobile/features/auth/data/auth_gateway.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../support/fake_auth.dart';
 
 void main() {
+  testWidgets(
+    'OTP Back retains the verified session after profile-anchor failure',
+    (tester) async {
+      final auth = FakeAuthGateway();
+      final profile = FakeProfileAnchorGateway()
+        ..ensureError = StateError('synthetic anchor failure');
+      addTearDown(auth.close);
+      final app = await _pumpApp(tester, auth, profile);
+      await _openAuth(tester);
+      await tester.pumpAndSettle();
+      await tester.enterText(
+        find.byKey(const Key('auth-email-field')),
+        'example@example.invalid',
+      );
+      await tester.tap(find.byKey(const Key('auth-request-button')));
+      await tester.pumpAndSettle();
+      await tester.enterText(
+        find.byKey(const Key('auth-code-field')),
+        '123456',
+      );
+      await tester.tap(find.byKey(const Key('auth-verify-button')));
+      await tester.pumpAndSettle();
+      expect(find.byType(BackButton), findsNothing);
+      expect(app.read(appRouterProvider).state.uri.path, '/auth/verify');
+      final changeEmail = find.byKey(const Key('auth-verify-back-button'));
+      await tester.ensureVisible(changeEmail);
+      await tester.tap(changeEmail);
+      await tester.pumpAndSettle();
+      expect(app.read(appRouterProvider).state.uri.path, '/intro');
+      expect(app.read(authSessionProvider).isAuthenticated, isTrue);
+      expect(app.read(pendingEmailOtpProvider), isNull);
+      expect(auth.verifyCount, 1);
+    },
+  );
+
   testWidgets('requests a code once and shows only a masked email', (
     tester,
   ) async {

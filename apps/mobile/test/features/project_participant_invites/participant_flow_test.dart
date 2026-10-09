@@ -541,7 +541,7 @@ void main() {
           h.gateway.calls.where((s) => s.startsWith('regenerate')),
           isEmpty,
         );
-        await tester.tap(find.text('Close'));
+        await tester.tap(find.text('Close').hitTestable());
         await tester.pumpAndSettle();
         await tester.tap(find.byKey(const Key('project-share-action')));
         await tester.pumpAndSettle();
