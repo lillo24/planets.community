@@ -6,6 +6,46 @@ import 'package:planets_mobile/core/widgets/planets_hero.dart';
 import 'package:planets_mobile/core/widgets/planets_starfield.dart';
 
 void main() {
+  test('farewell crossings take 4–7 seconds with seamless offscreen wrapping', () {
+    const size = Size(320, 500);
+    for (final star in PlanetsStarfield.forSize(size)) {
+      Offset at(double seconds) => PlanetsStarfield.positionAt(
+        star,
+        size,
+        entrance: 1,
+        seconds: seconds,
+        farewell: true,
+      );
+      final span = size.height + 2 * star.radius;
+      final travel = (at(1).dy - at(0).dy + span) % span;
+      expect(travel, inInclusiveRange(span / 7, span / 4 + .001));
+      final period = span / travel;
+      expect((at(period) - at(0)).distance, lessThan(.001));
+      expect((at(144) - at(0)).distance, lessThan(.001));
+      // Across the shared-clock wrap, every star moves forward a small amount;
+      // a wrapped coordinate differs by exactly the radius-padded span.
+      final seamTravel = (at(.001).dy - at(143.999).dy + span) % span;
+      expect(seamTravel, closeTo(travel * .002, .001));
+      for (var tick = 0; tick < 1200; tick++) {
+        final p = at(tick * .25);
+        expect(p.dx, star.position.dx);
+        expect(p.dy, inInclusiveRange(-star.radius, size.height + star.radius));
+      }
+      for (final seconds in [0.0, 1.0, 144.0, 300.0]) {
+        expect(
+          PlanetsStarfield.positionAt(
+            star,
+            size,
+            entrance: 1,
+            seconds: seconds,
+            settledBackdrop: true,
+          ),
+          star.position,
+        );
+      }
+    }
+  });
+
   test('lower backdrop stays seeded, bounded and separate from farewell', () {
     const size = Size(360, 560);
     final uniform = PlanetsStarfield.forSize(size);
@@ -93,13 +133,7 @@ void main() {
     await tester.pump(const Duration(seconds: 1));
     final moving = positions();
     expect(moving, isNot(before));
-    expect(
-      [
-        for (var i = 0; i < before.length; i++)
-          if (moving[i].dy > before[i].dy) i,
-      ].length,
-      greaterThan(before.length * .8),
-    );
+    expect(moving.where((p) => !before.contains(p)).length, before.length);
     tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
     await tester.pump(const Duration(seconds: 20));
     expect(positions(), moving);

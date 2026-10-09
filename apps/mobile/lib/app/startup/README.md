@@ -47,8 +47,12 @@ Previous and Next share a 56dp bottom row; the header contains progress/Skip.
 The 19sp explanation uses the theme's title style and scrolls within a bounded
 pane. New surfaces first paint meaningful content (or a bounded honest fallback),
 hold unobscured for 600ms, then fade scrim/holes together over 380ms. Focus changes
-within one surface use 180ms. Ordinary provider/image/layout updates remeasure
-without repeating page entry. Reduced motion settles after content is ready.
+within one surface move only the hole/border over 180ms, keeping the current
+scrim alpha and any unfinished page hold/fade. Retargeting captures the currently
+visible geometry, including after interruption. Explanation reflow retains that
+hole until the new real anchor is measured. Page and focus use independent
+controllers, both paused by lifecycle; no same-page dimmer reset occurs.
+Ordinary provider/image/layout updates remeasure without repeating page entry. Reduced motion settles after content is ready.
 
 Selection follows the existing public browse order (Requested first when present,
 then ordinary Projects), including Full, closed, photo-less and actionless items.
@@ -90,13 +94,19 @@ Toolbar Drafts/Requests targets measure the rendered Icon, add 3px breathing roo
 and clamp inside the surface. Other targets add 6px once, before clamping;
 the painter applies no extra global inflation.
 Messages uses its existing frame and scope selector with `controlsOnly: true`:
-guest states remain truthful; conversations, inboxes and subscriptions never mount.
-Underlying controls are excluded from semantics and gestures. Tutorial explanation,
+all identities see explicitly labelled fictional, inert conversation examples;
+conversations, inboxes, photo readers and subscriptions never mount. Requests focus
+shows the Private example, then the selector focus shows Groups through a local
+`previewScope`, leaving remembered Messages navigation untouched. The example
+label/content remain in semantics; preview controls have no pointer actions.
+Other underlying pages remain excluded from semantics and gestures. Tutorial explanation,
 Next, Previous and Skip stay accessible outside the barrier and wrap/scroll at large
 text. Farewell requires explicit **Start exploring**; Skip remains a dismissal.
 Farewell alone uses `PlanetsHero.farewell`: a small ascent from 50% to 44% of
 its canvas, bounded rings, unchanged orbit/float periods and continuously
-descending seeded stars. The existing motion clocks pause hidden/backgrounded;
+descending seeded stars at 21–36 whole crossings per 144-second phase
+(4.00–6.86 seconds each), with radius-padded offscreen wrapping.
+The existing motion clocks pause hidden/backgrounded;
 reduced motion is a static settled composition. Home/Welcome retain their
 approved positions, entrance and star behavior.
 
@@ -152,3 +162,8 @@ It removes only this key and the current-run flags; Auth, language/navigation
 preferences and backend data are untouched. Signed-out QA returns to Welcome;
 an authenticated session continues normally. The reset does not ship in profile
 or release builds.
+
+TUT05 multi-frame capture uses `integration_test/tutorial_visual_probe_test.dart`
+and `test_driver/tutorial_visual_probe.dart`. See
+[the evidence record](../../../../../docs/development/evidence/tut05/README.md) for
+before/after sources, capture commands, phase/alpha records and native QA limits.

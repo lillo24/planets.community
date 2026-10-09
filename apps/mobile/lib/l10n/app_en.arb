@@ -2250,7 +2250,7 @@
   "locationMapUnavailable": "Map preview unavailable. Use the location information above.",
   "locationRestrictedPreview": "Everyone sees the public rough location. Exact meeting instructions are available only to authorized organizers and current participants.",
   "locationPublicPreview": "Everyone sees the public rough location and exact meeting instructions.",
-  "messagesGuestChatsTitle": "No conversations",
+  "messagesGuestChatsTitle": "Your conversations",
   "messagesGuestRequestsTitle": "No requests",
   "messagesGuestPrivateMessage": "Log in to join projects, donate or exchange, and manage your private conversations.",
   "messagesGuestGroupsMessage": "Log in to view group conversations for the projects you participate in.",
@@ -2454,5 +2454,11 @@
   "mapOpenDetail": "Open listing",
   "mapLoadMore": "Load more results",
   "mapRefresh": "Refresh search",
-  "mapInheritedFilters": "List filters apply to their respective families. Return to List to edit them."
+  "mapInheritedFilters": "List filters apply to their respective families. Return to List to edit them.",
+  "messagesExampleLabel": "Example · fictional conversation",
+  "messagesExamplePrivateTitle": "Alex",
+  "messagesExamplePrivateBody": "Can I join the garden project? I can bring some tools.",
+  "messagesExampleGroupTitle": "Community garden project",
+  "messagesExampleGroupBody": "Let’s plan our first planting day together.",
+  "messagesExampleTime": "2 min ago"
 }

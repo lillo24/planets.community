@@ -10,6 +10,7 @@ import '../../core/widgets/loading_state.dart';
 import '../../core/widgets/planets_hero.dart';
 import '../../features/auth/application/auth_session_controller.dart';
 import '../../features/messages/presentation/messages_landing_screen.dart';
+import '../../features/messages/domain/message_chat_models.dart';
 import '../../features/cover_media/application/cover_image_loader.dart';
 import '../../features/proposals/application/proposal_controllers.dart';
 import '../../features/proposals/domain/proposal_models.dart';
@@ -38,7 +39,7 @@ class TutorialScreen extends ConsumerStatefulWidget {
 }
 
 class _TutorialScreenState extends ConsumerState<TutorialScreen>
-    with SingleTickerProviderStateMixin, WidgetsBindingObserver {
+    with TickerProviderStateMixin, WidgetsBindingObserver {
   final _surface = GlobalKey();
   final _scrollStorage = PageStorageBucket();
   int _index = 0;
@@ -54,8 +55,35 @@ class _TutorialScreenState extends ConsumerState<TutorialScreen>
             setState(() => _revealPhase = TutorialRevealPhase.ready);
           }
         });
+  late final _focus = AnimationController(
+    vsync: this,
+    duration: tutorialFocusFade,
+    value: 1,
+  );
+  List<Rect> _focusFrom = const [];
+  bool _pendingFocus = false;
+  // Page alpha and focus geometry have independent clocks. Retargeting an
+  // already visible page must never uncover the entire surface for one frame.
+  List<Rect> get _visibleTargets => _focusFrom.length == _targets.length
+      ? List.generate(
+          _targets.length,
+          (i) => Rect.lerp(
+            _focusFrom[i],
+            _targets[i],
+            Curves.easeInOut.transform(_focus.value),
+          )!,
+        )
+      : _targets;
+
+  void _clearTargets() {
+    _focus.stop();
+    _focusFrom = const [];
+    _targets = const [];
+    _pendingFocus = false;
+    _focus.value = 1;
+  }
+
   TutorialRevealPhase _revealPhase = TutorialRevealPhase.entering;
-  bool _newPage = true;
   bool _pageRecognized = false;
   final _warmedCovers = <String>{};
   Size? _surfaceSize;
@@ -103,6 +131,7 @@ class _TutorialScreenState extends ConsumerState<TutorialScreen>
   void _interrupt({bool preserveReveal = false}) {
     _generation++;
     _probe?.cancel();
+    _focus.stop();
     if (!preserveReveal) {
       _hold?.cancel();
       _reveal.stop();
@@ -131,7 +160,7 @@ class _TutorialScreenState extends ConsumerState<TutorialScreen>
     );
     if (_layout != null && _layout != layout) {
       _interrupt(preserveReveal: true);
-      _targets = const [];
+      _clearTargets();
       _attempts = 0;
       if (layout.reduced && _pageRecognized) {
         _reveal.value = 1;
@@ -148,6 +177,7 @@ class _TutorialScreenState extends ConsumerState<TutorialScreen>
     _transition?.cancel();
     _hold?.cancel();
     _reveal.dispose();
+    _focus.dispose();
     super.dispose();
   }
 
@@ -156,6 +186,7 @@ class _TutorialScreenState extends ConsumerState<TutorialScreen>
     _active = state == AppLifecycleState.resumed;
     _interrupt();
     if (_active) {
+      if (_focus.value < 1) _focus.forward();
       _attempts = 0;
       _scheduleProbe();
     }
@@ -221,18 +252,28 @@ class _TutorialScreenState extends ConsumerState<TutorialScreen>
   }
 
   void _move(int index) {
-    final previousPage = _surfaceGroup();
-    _interrupt();
+    final nextStep = ref.read(startupFlowProvider).registry.steps[index];
+    final newPage = _surfaceGroup() != _surfaceGroup(nextStep);
+    final visibleTargets = _visibleTargets;
+    _interrupt(preserveReveal: !newPage);
     setState(() {
       _locked = true;
       _index = index;
       _attempts = 0;
-      _targets = const [];
       _failed = false;
-      _newPage = previousPage != _surfaceGroup();
-      _pageRecognized = !_newPage;
-      _revealPhase = TutorialRevealPhase.entering;
-      _reveal.value = 0;
+      if (newPage) {
+        _clearTargets();
+        _pageRecognized = false;
+        _revealPhase = TutorialRevealPhase.entering;
+        _reveal.value = 0;
+      } else {
+        // Keep both completed alpha and an in-flight page hold/fade. Only the
+        // hole moves once its new real anchor has been measured.
+        _targets = visibleTargets;
+        _focusFrom = const [];
+        _focus.value = 1;
+        _pendingFocus = true;
+      }
     });
     // Only the short surface commit is debounced, never the explanation/read
     // or detail scroll. Previous/Next may interrupt that scroll afterwards.
@@ -292,9 +333,16 @@ class _TutorialScreenState extends ConsumerState<TutorialScreen>
     // reflow, split view or test/native viewport constraints).
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
+      final visibleTargets = _visibleTargets;
       _interrupt(preserveReveal: true);
       setState(() {
-        _targets = const [];
+        // Explanation reflow also resizes the preview on a same-page step.
+        // Retain its visible focus until remeasurement instead of flashing a
+        // completely filled mask between the old and new hole.
+        _targets = visibleTargets;
+        _focusFrom = const [];
+        _focus.value = 1;
+        _pendingFocus = visibleTargets.isNotEmpty;
         _attempts = 0;
       });
       _scheduleProbe();
@@ -356,11 +404,10 @@ class _TutorialScreenState extends ConsumerState<TutorialScreen>
         _projectFallback = true;
       }
       if (_step == TutorialStep.resources) _resourceFallback = true;
-      _targets = const [];
+      _clearTargets();
       _attempts = 0;
       _pageRecognized = false;
       _revealPhase = TutorialRevealPhase.entering;
-      _newPage = true;
       _reveal.value = 0;
     });
     _scheduleProbe();
@@ -511,7 +558,20 @@ class _TutorialScreenState extends ConsumerState<TutorialScreen>
       final targets = rects;
       if (!listEquals(_targets, targets)) {
         setState(() {
+          final from = _visibleTargets;
+          final moveFocus =
+              (_pendingFocus || _focus.value < 1) &&
+              from.isNotEmpty &&
+              from.length == targets.length &&
+              !MediaQuery.disableAnimationsOf(context);
           _targets = List.unmodifiable(targets);
+          _pendingFocus = false;
+          _focusFrom = moveFocus ? from : const [];
+          if (moveFocus) {
+            _focus.forward(from: 0);
+          } else {
+            _focus.value = 1;
+          }
           if (_revealPhase == TutorialRevealPhase.entering ||
               _revealPhase == TutorialRevealPhase.unobscured) {
             _revealPhase = TutorialRevealPhase.fading;
@@ -519,9 +579,7 @@ class _TutorialScreenState extends ConsumerState<TutorialScreen>
               _reveal.value = 1;
               _revealPhase = TutorialRevealPhase.ready;
             } else {
-              _reveal.duration = _newPage
-                  ? tutorialSpotlightFade
-                  : tutorialFocusFade;
+              _reveal.duration = tutorialSpotlightFade;
               _reveal.forward(from: 0);
             }
           } else if (_revealPhase == TutorialRevealPhase.fading &&
@@ -591,14 +649,14 @@ class _TutorialScreenState extends ConsumerState<TutorialScreen>
     return result;
   }
 
-  String _surfaceGroup() => switch (_step) {
+  String _surfaceGroup([TutorialStep? step]) => switch (step ?? _step) {
     TutorialStep.projectCard ||
     TutorialStep.projectCreate ||
     TutorialStep.projectDrafts => 'projects',
     TutorialStep.projectDetail => 'detail-$_projectId-$_fallback',
     TutorialStep.home || TutorialStep.homeResources => 'home',
     TutorialStep.messagesTabs || TutorialStep.messagesScopes => 'messages',
-    _ => _step.name,
+    _ => (step ?? _step).name,
   };
 
   Widget _content() => switch (_step) {
@@ -629,8 +687,13 @@ class _TutorialScreenState extends ConsumerState<TutorialScreen>
               tutorialPreview: true,
             ),
     TutorialStep.resources => _resources(),
-    TutorialStep.messagesTabs || TutorialStep.messagesScopes =>
-      const MessagesLandingScreen(controlsOnly: true),
+    TutorialStep.messagesTabs ||
+    TutorialStep.messagesScopes => MessagesLandingScreen(
+      controlsOnly: true,
+      previewScope: _step == TutorialStep.messagesTabs
+          ? MessageChatScope.private
+          : MessageChatScope.groups,
+    ),
   };
 
   void _selectProject(PublicProposalsState state) {
@@ -725,7 +788,7 @@ class _TutorialScreenState extends ConsumerState<TutorialScreen>
     void refreshFocus() {
       _interrupt(preserveReveal: true);
       setState(() {
-        _targets = const [];
+        _clearTargets();
         _attempts = 0;
       });
     }
@@ -798,6 +861,9 @@ class _TutorialScreenState extends ConsumerState<TutorialScreen>
                           fit: StackFit.expand,
                           children: [
                             ExcludeSemantics(
+                              excluding:
+                                  _step != TutorialStep.messagesTabs &&
+                                  _step != TutorialStep.messagesScopes,
                               child: IgnorePointer(
                                 child:
                                     NotificationListener<
@@ -810,7 +876,7 @@ class _TutorialScreenState extends ConsumerState<TutorialScreen>
                                           // from layout metrics without loading data here.
                                           _attempts = 0;
                                           if (_targets.isNotEmpty) {
-                                            setState(() => _targets = const []);
+                                            setState(_clearTargets);
                                           }
                                           _scheduleProbe();
                                         }
@@ -837,11 +903,14 @@ class _TutorialScreenState extends ConsumerState<TutorialScreen>
                                     ? null
                                     : _advance,
                                 child: AnimatedBuilder(
-                                  animation: _reveal,
+                                  animation: Listenable.merge([
+                                    _reveal,
+                                    _focus,
+                                  ]),
                                   builder: (context, child) => CustomPaint(
                                     key: const Key('tutorial-spotlight'),
                                     painter: TutorialScrim(
-                                      _targets,
+                                      _visibleTargets,
                                       _noSpotlight
                                           ? Colors.transparent
                                           : Colors.black.withValues(

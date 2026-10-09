@@ -1,0 +1,1037 @@
+{
+  "phase": "after",
+  "frames": [
+    {
+      "frame": "light-home-settled",
+      "alpha": 0.62,
+      "holes": 1,
+      "observedElapsedMs": 3124
+    },
+    {
+      "frame": "light-home-next-0",
+      "alpha": 0.0,
+      "holes": 0,
+      "observedElapsedMs": 4139
+    },
+    {
+      "frame": "light-home-next-80",
+      "alpha": 0.0,
+      "holes": 0,
+      "observedElapsedMs": 4451
+    },
+    {
+      "frame": "light-home-next-200",
+      "alpha": 0.0,
+      "holes": 0,
+      "observedElapsedMs": 4755
+    },
+    {
+      "frame": "light-home-fade-0",
+      "alpha": 0.2175433157894737,
+      "holes": 1,
+      "observedElapsedMs": 5608
+    },
+    {
+      "frame": "light-home-fade-1",
+      "alpha": 0.5710526315789474,
+      "holes": 1,
+      "observedElapsedMs": 5822
+    },
+    {
+      "frame": "light-home-next-ready",
+      "alpha": 0.62,
+      "holes": 1,
+      "observedElapsedMs": 6787
+    },
+    {
+      "frame": "light-projectDetail-settled",
+      "alpha": 0.62,
+      "holes": 1,
+      "observedElapsedMs": 10953
+    },
+    {
+      "frame": "light-projectDetail-next-0",
+      "alpha": 0.0,
+      "holes": 0,
+      "observedElapsedMs": 11269
+    },
+    {
+      "frame": "light-projectDetail-next-80",
+      "alpha": 0.0,
+      "holes": 0,
+      "observedElapsedMs": 11612
+    },
+    {
+      "frame": "light-projectDetail-next-200",
+      "alpha": 0.0,
+      "holes": 0,
+      "observedElapsedMs": 11952
+    },
+    {
+      "frame": "light-projectDetail-fade-0",
+      "alpha": 0.19034978947368422,
+      "holes": 1,
+      "observedElapsedMs": 12424
+    },
+    {
+      "frame": "light-projectDetail-fade-1",
+      "alpha": 0.5438591052631578,
+      "holes": 1,
+      "observedElapsedMs": 12639
+    },
+    {
+      "frame": "light-projectDetail-next-ready",
+      "alpha": 0.62,
+      "holes": 1,
+      "observedElapsedMs": 13571
+    },
+    {
+      "frame": "light-projectCreate-settled",
+      "alpha": 0.62,
+      "holes": 1,
+      "observedElapsedMs": 14421
+    },
+    {
+      "frame": "light-projectCreate-next-0",
+      "alpha": 0.62,
+      "holes": 1,
+      "observedElapsedMs": 14628
+    },
+    {
+      "frame": "light-projectCreate-next-80",
+      "alpha": 0.62,
+      "holes": 1,
+      "observedElapsedMs": 14973
+    },
+    {
+      "frame": "light-projectCreate-next-96",
+      "alpha": 0.62,
+      "holes": 1,
+      "observedElapsedMs": 15155
+    },
+    {
+      "frame": "light-projectCreate-next-200",
+      "alpha": 0.62,
+      "holes": 1,
+      "observedElapsedMs": 15435
+    },
+    {
+      "frame": "light-projectCreate-next-800",
+      "alpha": 0.62,
+      "holes": 1,
+      "observedElapsedMs": 16203
+    },
+    {
+      "frame": "light-projectCreate-next-ready",
+      "alpha": 0.62,
+      "holes": 1,
+      "observedElapsedMs": 17057
+    },
+    {
+      "frame": "light-projectCreate-previous-0",
+      "alpha": 0.62,
+      "holes": 1,
+      "observedElapsedMs": 17291
+    },
+    {
+      "frame": "light-projectCreate-rapid-next-0",
+      "alpha": 0.62,
+      "holes": 1,
+      "observedElapsedMs": 17826
+    },
+    {
+      "frame": "light-homeResources-settled",
+      "alpha": 0.62,
+      "holes": 1,
+      "observedElapsedMs": 21437
+    },
+    {
+      "frame": "light-homeResources-next-0",
+      "alpha": 0.0,
+      "holes": 0,
+      "observedElapsedMs": 21755
+    },
+    {
+      "frame": "light-homeResources-next-80",
+      "alpha": 0.0,
+      "holes": 0,
+      "observedElapsedMs": 22095
+    },
+    {
+      "frame": "light-homeResources-next-200",
+      "alpha": 0.0,
+      "holes": 0,
+      "observedElapsedMs": 22370
+    },
+    {
+      "frame": "light-homeResources-fade-0",
+      "alpha": 0.1903514210526316,
+      "holes": 3,
+      "observedElapsedMs": 23385
+    },
+    {
+      "frame": "light-homeResources-fade-1",
+      "alpha": 0.5438607368421052,
+      "holes": 3,
+      "observedElapsedMs": 23588
+    },
+    {
+      "frame": "light-homeResources-next-ready",
+      "alpha": 0.62,
+      "holes": 3,
+      "observedElapsedMs": 24520
+    },
+    {
+      "frame": "light-resources-settled",
+      "alpha": 0.62,
+      "holes": 3,
+      "observedElapsedMs": 25370
+    },
+    {
+      "frame": "light-resources-next-0",
+      "alpha": 0.0,
+      "holes": 0,
+      "observedElapsedMs": 25610
+    },
+    {
+      "frame": "light-resources-next-80",
+      "alpha": 0.0,
+      "holes": 0,
+      "observedElapsedMs": 25873
+    },
+    {
+      "frame": "light-resources-next-200",
+      "alpha": 0.0,
+      "holes": 0,
+      "observedElapsedMs": 26153
+    },
+    {
+      "frame": "light-resources-fade-0",
+      "alpha": 0.1903514210526316,
+      "holes": 1,
+      "observedElapsedMs": 26524
+    },
+    {
+      "frame": "light-resources-fade-1",
+      "alpha": 0.5166672105263157,
+      "holes": 1,
+      "observedElapsedMs": 26724
+    },
+    {
+      "frame": "light-resources-next-ready",
+      "alpha": 0.62,
+      "holes": 1,
+      "observedElapsedMs": 27651
+    },
+    {
+      "frame": "light-messagesTabs-settled",
+      "alpha": 0.62,
+      "holes": 1,
+      "observedElapsedMs": 28503
+    },
+    {
+      "frame": "light-messagesTabs-next-0",
+      "alpha": 0.62,
+      "holes": 1,
+      "observedElapsedMs": 28712
+    },
+    {
+      "frame": "light-messagesTabs-next-80",
+      "alpha": 0.62,
+      "holes": 1,
+      "observedElapsedMs": 29006
+    },
+    {
+      "frame": "light-messagesTabs-next-96",
+      "alpha": 0.62,
+      "holes": 1,
+      "observedElapsedMs": 29186
+    },
+    {
+      "frame": "light-messagesTabs-next-200",
+      "alpha": 0.62,
+      "holes": 1,
+      "observedElapsedMs": 29454
+    },
+    {
+      "frame": "light-messagesTabs-next-800",
+      "alpha": 0.62,
+      "holes": 1,
+      "observedElapsedMs": 30222
+    },
+    {
+      "frame": "light-messagesTabs-next-ready",
+      "alpha": 0.62,
+      "holes": 1,
+      "observedElapsedMs": 31075
+    },
+    {
+      "frame": "light-messagesTabs-previous-0",
+      "alpha": 0.62,
+      "holes": 1,
+      "observedElapsedMs": 31389
+    },
+    {
+      "frame": "light-messagesTabs-rapid-next-0",
+      "alpha": 0.62,
+      "holes": 1,
+      "observedElapsedMs": 32106
+    },
+    {
+      "frame": "light-farewell-0",
+      "alpha": 0.0,
+      "holes": 0,
+      "observedElapsedMs": 37111
+    },
+    {
+      "frame": "light-farewell-1",
+      "alpha": 0.0,
+      "holes": 0,
+      "observedElapsedMs": 38354
+    },
+    {
+      "frame": "light-farewell-2",
+      "alpha": 0.0,
+      "holes": 0,
+      "observedElapsedMs": 39615
+    },
+    {
+      "frame": "light-farewell-3",
+      "alpha": 0.0,
+      "holes": 0,
+      "observedElapsedMs": 40854
+    },
+    {
+      "frame": "light-farewell-4",
+      "alpha": 0.0,
+      "holes": 0,
+      "observedElapsedMs": 42111
+    },
+    {
+      "frame": "light-farewell-5",
+      "alpha": 0.0,
+      "holes": 0,
+      "observedElapsedMs": 43350
+    },
+    {
+      "frame": "dark-home-settled",
+      "alpha": 0.62,
+      "holes": 1,
+      "observedElapsedMs": 3043
+    },
+    {
+      "frame": "dark-home-next-0",
+      "alpha": 0.0,
+      "holes": 0,
+      "observedElapsedMs": 3483
+    },
+    {
+      "frame": "dark-home-next-80",
+      "alpha": 0.0,
+      "holes": 0,
+      "observedElapsedMs": 3892
+    },
+    {
+      "frame": "dark-home-next-200",
+      "alpha": 0.0,
+      "holes": 0,
+      "observedElapsedMs": 4257
+    },
+    {
+      "frame": "dark-home-fade-0",
+      "alpha": 0.2719303684210526,
+      "holes": 1,
+      "observedElapsedMs": 4905
+    },
+    {
+      "frame": "dark-home-fade-1",
+      "alpha": 0.62,
+      "holes": 1,
+      "observedElapsedMs": 5150
+    },
+    {
+      "frame": "dark-home-next-ready",
+      "alpha": 0.62,
+      "holes": 1,
+      "observedElapsedMs": 6067
+    },
+    {
+      "frame": "dark-projectDetail-settled",
+      "alpha": 0.62,
+      "holes": 1,
+      "observedElapsedMs": 10255
+    },
+    {
+      "frame": "dark-projectDetail-next-0",
+      "alpha": 0.0,
+      "holes": 0,
+      "observedElapsedMs": 10890
+    },
+    {
+      "frame": "dark-projectDetail-next-80",
+      "alpha": 0.0,
+      "holes": 0,
+      "observedElapsedMs": 11271
+    },
+    {
+      "frame": "dark-projectDetail-next-200",
+      "alpha": 0.0,
+      "holes": 0,
+      "observedElapsedMs": 11608
+    },
+    {
+      "frame": "dark-projectDetail-fade-0",
+      "alpha": 0.24473684210526317,
+      "holes": 1,
+      "observedElapsedMs": 12108
+    },
+    {
+      "frame": "dark-projectDetail-next-ready",
+      "alpha": 0.62,
+      "holes": 1,
+      "observedElapsedMs": 13189
+    },
+    {
+      "frame": "dark-projectCreate-settled",
+      "alpha": 0.62,
+      "holes": 1,
+      "observedElapsedMs": 14070
+    },
+    {
+      "frame": "dark-projectCreate-next-0",
+      "alpha": 0.62,
+      "holes": 1,
+      "observedElapsedMs": 14291
+    },
+    {
+      "frame": "dark-projectCreate-next-80",
+      "alpha": 0.62,
+      "holes": 1,
+      "observedElapsedMs": 14592
+    },
+    {
+      "frame": "dark-projectCreate-next-96",
+      "alpha": 0.62,
+      "holes": 1,
+      "observedElapsedMs": 14767
+    },
+    {
+      "frame": "dark-projectCreate-next-200",
+      "alpha": 0.62,
+      "holes": 1,
+      "observedElapsedMs": 15052
+    },
+    {
+      "frame": "dark-projectCreate-next-800",
+      "alpha": 0.62,
+      "holes": 1,
+      "observedElapsedMs": 15818
+    },
+    {
+      "frame": "dark-projectCreate-next-ready",
+      "alpha": 0.62,
+      "holes": 1,
+      "observedElapsedMs": 16669
+    },
+    {
+      "frame": "dark-projectCreate-previous-0",
+      "alpha": 0.62,
+      "holes": 1,
+      "observedElapsedMs": 16874
+    },
+    {
+      "frame": "dark-projectCreate-rapid-next-0",
+      "alpha": 0.62,
+      "holes": 1,
+      "observedElapsedMs": 17406
+    },
+    {
+      "frame": "dark-homeResources-settled",
+      "alpha": 0.62,
+      "holes": 1,
+      "observedElapsedMs": 20886
+    },
+    {
+      "frame": "dark-homeResources-next-0",
+      "alpha": 0.0,
+      "holes": 0,
+      "observedElapsedMs": 21167
+    },
+    {
+      "frame": "dark-homeResources-next-80",
+      "alpha": 0.0,
+      "holes": 0,
+      "observedElapsedMs": 21489
+    },
+    {
+      "frame": "dark-homeResources-next-200",
+      "alpha": 0.0,
+      "holes": 0,
+      "observedElapsedMs": 21786
+    },
+    {
+      "frame": "dark-homeResources-fade-0",
+      "alpha": 0.16315789473684209,
+      "holes": 3,
+      "observedElapsedMs": 22721
+    },
+    {
+      "frame": "dark-homeResources-fade-1",
+      "alpha": 0.5166672105263157,
+      "holes": 3,
+      "observedElapsedMs": 22937
+    },
+    {
+      "frame": "dark-homeResources-next-ready",
+      "alpha": 0.62,
+      "holes": 3,
+      "observedElapsedMs": 23853
+    },
+    {
+      "frame": "dark-resources-settled",
+      "alpha": 0.62,
+      "holes": 3,
+      "observedElapsedMs": 24701
+    },
+    {
+      "frame": "dark-resources-next-0",
+      "alpha": 0.0,
+      "holes": 0,
+      "observedElapsedMs": 24924
+    },
+    {
+      "frame": "dark-resources-next-80",
+      "alpha": 0.0,
+      "holes": 0,
+      "observedElapsedMs": 25206
+    },
+    {
+      "frame": "dark-resources-next-200",
+      "alpha": 0.0,
+      "holes": 0,
+      "observedElapsedMs": 25486
+    },
+    {
+      "frame": "dark-resources-fade-0",
+      "alpha": 0.16315789473684209,
+      "holes": 1,
+      "observedElapsedMs": 26055
+    },
+    {
+      "frame": "dark-resources-fade-1",
+      "alpha": 0.48947368421052634,
+      "holes": 1,
+      "observedElapsedMs": 26254
+    },
+    {
+      "frame": "dark-resources-next-ready",
+      "alpha": 0.62,
+      "holes": 1,
+      "observedElapsedMs": 27151
+    },
+    {
+      "frame": "dark-messagesTabs-settled",
+      "alpha": 0.62,
+      "holes": 1,
+      "observedElapsedMs": 28003
+    },
+    {
+      "frame": "dark-messagesTabs-next-0",
+      "alpha": 0.62,
+      "holes": 1,
+      "observedElapsedMs": 28211
+    },
+    {
+      "frame": "dark-messagesTabs-next-80",
+      "alpha": 0.62,
+      "holes": 1,
+      "observedElapsedMs": 28503
+    },
+    {
+      "frame": "dark-messagesTabs-next-96",
+      "alpha": 0.62,
+      "holes": 1,
+      "observedElapsedMs": 28686
+    },
+    {
+      "frame": "dark-messagesTabs-next-200",
+      "alpha": 0.62,
+      "holes": 1,
+      "observedElapsedMs": 28952
+    },
+    {
+      "frame": "dark-messagesTabs-next-800",
+      "alpha": 0.62,
+      "holes": 1,
+      "observedElapsedMs": 29718
+    },
+    {
+      "frame": "dark-messagesTabs-next-ready",
+      "alpha": 0.62,
+      "holes": 1,
+      "observedElapsedMs": 30610
+    },
+    {
+      "frame": "dark-messagesTabs-previous-0",
+      "alpha": 0.62,
+      "holes": 1,
+      "observedElapsedMs": 30868
+    },
+    {
+      "frame": "dark-messagesTabs-rapid-next-0",
+      "alpha": 0.62,
+      "holes": 1,
+      "observedElapsedMs": 31410
+    },
+    {
+      "frame": "dark-farewell-0",
+      "alpha": 0.0,
+      "holes": 0,
+      "observedElapsedMs": 36119
+    },
+    {
+      "frame": "dark-farewell-1",
+      "alpha": 0.0,
+      "holes": 0,
+      "observedElapsedMs": 37303
+    },
+    {
+      "frame": "dark-farewell-2",
+      "alpha": 0.0,
+      "holes": 0,
+      "observedElapsedMs": 38486
+    },
+    {
+      "frame": "dark-farewell-3",
+      "alpha": 0.0,
+      "holes": 0,
+      "observedElapsedMs": 39668
+    },
+    {
+      "frame": "dark-farewell-4",
+      "alpha": 0.0,
+      "holes": 0,
+      "observedElapsedMs": 40835
+    },
+    {
+      "frame": "dark-farewell-5",
+      "alpha": 0.0,
+      "holes": 0,
+      "observedElapsedMs": 42019
+    }
+  ],
+  "images": [
+    {
+      "name": "light-home-settled",
+      "path": "/data/user/0/community.planets.app/code_cache/tut05-light-home-settled.png"
+    },
+    {
+      "name": "light-home-next-0",
+      "path": "/data/user/0/community.planets.app/code_cache/tut05-light-home-next-0.png"
+    },
+    {
+      "name": "light-home-next-80",
+      "path": "/data/user/0/community.planets.app/code_cache/tut05-light-home-next-80.png"
+    },
+    {
+      "name": "light-home-next-200",
+      "path": "/data/user/0/community.planets.app/code_cache/tut05-light-home-next-200.png"
+    },
+    {
+      "name": "light-home-fade-0",
+      "path": "/data/user/0/community.planets.app/code_cache/tut05-light-home-fade-0.png"
+    },
+    {
+      "name": "light-home-fade-1",
+      "path": "/data/user/0/community.planets.app/code_cache/tut05-light-home-fade-1.png"
+    },
+    {
+      "name": "light-home-next-ready",
+      "path": "/data/user/0/community.planets.app/code_cache/tut05-light-home-next-ready.png"
+    },
+    {
+      "name": "light-projectDetail-settled",
+      "path": "/data/user/0/community.planets.app/code_cache/tut05-light-projectDetail-settled.png"
+    },
+    {
+      "name": "light-projectDetail-next-0",
+      "path": "/data/user/0/community.planets.app/code_cache/tut05-light-projectDetail-next-0.png"
+    },
+    {
+      "name": "light-projectDetail-next-80",
+      "path": "/data/user/0/community.planets.app/code_cache/tut05-light-projectDetail-next-80.png"
+    },
+    {
+      "name": "light-projectDetail-next-200",
+      "path": "/data/user/0/community.planets.app/code_cache/tut05-light-projectDetail-next-200.png"
+    },
+    {
+      "name": "light-projectDetail-fade-0",
+      "path": "/data/user/0/community.planets.app/code_cache/tut05-light-projectDetail-fade-0.png"
+    },
+    {
+      "name": "light-projectDetail-fade-1",
+      "path": "/data/user/0/community.planets.app/code_cache/tut05-light-projectDetail-fade-1.png"
+    },
+    {
+      "name": "light-projectDetail-next-ready",
+      "path": "/data/user/0/community.planets.app/code_cache/tut05-light-projectDetail-next-ready.png"
+    },
+    {
+      "name": "light-projectCreate-settled",
+      "path": "/data/user/0/community.planets.app/code_cache/tut05-light-projectCreate-settled.png"
+    },
+    {
+      "name": "light-projectCreate-next-0",
+      "path": "/data/user/0/community.planets.app/code_cache/tut05-light-projectCreate-next-0.png"
+    },
+    {
+      "name": "light-projectCreate-next-80",
+      "path": "/data/user/0/community.planets.app/code_cache/tut05-light-projectCreate-next-80.png"
+    },
+    {
+      "name": "light-projectCreate-next-96",
+      "path": "/data/user/0/community.planets.app/code_cache/tut05-light-projectCreate-next-96.png"
+    },
+    {
+      "name": "light-projectCreate-next-200",
+      "path": "/data/user/0/community.planets.app/code_cache/tut05-light-projectCreate-next-200.png"
+    },
+    {
+      "name": "light-projectCreate-next-800",
+      "path": "/data/user/0/community.planets.app/code_cache/tut05-light-projectCreate-next-800.png"
+    },
+    {
+      "name": "light-projectCreate-next-ready",
+      "path": "/data/user/0/community.planets.app/code_cache/tut05-light-projectCreate-next-ready.png"
+    },
+    {
+      "name": "light-projectCreate-previous-0",
+      "path": "/data/user/0/community.planets.app/code_cache/tut05-light-projectCreate-previous-0.png"
+    },
+    {
+      "name": "light-projectCreate-rapid-next-0",
+      "path": "/data/user/0/community.planets.app/code_cache/tut05-light-projectCreate-rapid-next-0.png"
+    },
+    {
+      "name": "light-homeResources-settled",
+      "path": "/data/user/0/community.planets.app/code_cache/tut05-light-homeResources-settled.png"
+    },
+    {
+      "name": "light-homeResources-next-0",
+      "path": "/data/user/0/community.planets.app/code_cache/tut05-light-homeResources-next-0.png"
+    },
+    {
+      "name": "light-homeResources-next-80",
+      "path": "/data/user/0/community.planets.app/code_cache/tut05-light-homeResources-next-80.png"
+    },
+    {
+      "name": "light-homeResources-next-200",
+      "path": "/data/user/0/community.planets.app/code_cache/tut05-light-homeResources-next-200.png"
+    },
+    {
+      "name": "light-homeResources-fade-0",
+      "path": "/data/user/0/community.planets.app/code_cache/tut05-light-homeResources-fade-0.png"
+    },
+    {
+      "name": "light-homeResources-fade-1",
+      "path": "/data/user/0/community.planets.app/code_cache/tut05-light-homeResources-fade-1.png"
+    },
+    {
+      "name": "light-homeResources-next-ready",
+      "path": "/data/user/0/community.planets.app/code_cache/tut05-light-homeResources-next-ready.png"
+    },
+    {
+      "name": "light-resources-settled",
+      "path": "/data/user/0/community.planets.app/code_cache/tut05-light-resources-settled.png"
+    },
+    {
+      "name": "light-resources-next-0",
+      "path": "/data/user/0/community.planets.app/code_cache/tut05-light-resources-next-0.png"
+    },
+    {
+      "name": "light-resources-next-80",
+      "path": "/data/user/0/community.planets.app/code_cache/tut05-light-resources-next-80.png"
+    },
+    {
+      "name": "light-resources-next-200",
+      "path": "/data/user/0/community.planets.app/code_cache/tut05-light-resources-next-200.png"
+    },
+    {
+      "name": "light-resources-fade-0",
+      "path": "/data/user/0/community.planets.app/code_cache/tut05-light-resources-fade-0.png"
+    },
+    {
+      "name": "light-resources-fade-1",
+      "path": "/data/user/0/community.planets.app/code_cache/tut05-light-resources-fade-1.png"
+    },
+    {
+      "name": "light-resources-next-ready",
+      "path": "/data/user/0/community.planets.app/code_cache/tut05-light-resources-next-ready.png"
+    },
+    {
+      "name": "light-messagesTabs-settled",
+      "path": "/data/user/0/community.planets.app/code_cache/tut05-light-messagesTabs-settled.png"
+    },
+    {
+      "name": "light-messagesTabs-next-0",
+      "path": "/data/user/0/community.planets.app/code_cache/tut05-light-messagesTabs-next-0.png"
+    },
+    {
+      "name": "light-messagesTabs-next-80",
+      "path": "/data/user/0/community.planets.app/code_cache/tut05-light-messagesTabs-next-80.png"
+    },
+    {
+      "name": "light-messagesTabs-next-96",
+      "path": "/data/user/0/community.planets.app/code_cache/tut05-light-messagesTabs-next-96.png"
+    },
+    {
+      "name": "light-messagesTabs-next-200",
+      "path": "/data/user/0/community.planets.app/code_cache/tut05-light-messagesTabs-next-200.png"
+    },
+    {
+      "name": "light-messagesTabs-next-800",
+      "path": "/data/user/0/community.planets.app/code_cache/tut05-light-messagesTabs-next-800.png"
+    },
+    {
+      "name": "light-messagesTabs-next-ready",
+      "path": "/data/user/0/community.planets.app/code_cache/tut05-light-messagesTabs-next-ready.png"
+    },
+    {
+      "name": "light-messagesTabs-previous-0",
+      "path": "/data/user/0/community.planets.app/code_cache/tut05-light-messagesTabs-previous-0.png"
+    },
+    {
+      "name": "light-messagesTabs-rapid-next-0",
+      "path": "/data/user/0/community.planets.app/code_cache/tut05-light-messagesTabs-rapid-next-0.png"
+    },
+    {
+      "name": "light-farewell-0",
+      "path": "/data/user/0/community.planets.app/code_cache/tut05-light-farewell-0.png"
+    },
+    {
+      "name": "light-farewell-1",
+      "path": "/data/user/0/community.planets.app/code_cache/tut05-light-farewell-1.png"
+    },
+    {
+      "name": "light-farewell-2",
+      "path": "/data/user/0/community.planets.app/code_cache/tut05-light-farewell-2.png"
+    },
+    {
+      "name": "light-farewell-3",
+      "path": "/data/user/0/community.planets.app/code_cache/tut05-light-farewell-3.png"
+    },
+    {
+      "name": "light-farewell-4",
+      "path": "/data/user/0/community.planets.app/code_cache/tut05-light-farewell-4.png"
+    },
+    {
+      "name": "light-farewell-5",
+      "path": "/data/user/0/community.planets.app/code_cache/tut05-light-farewell-5.png"
+    },
+    {
+      "name": "dark-home-settled",
+      "path": "/data/user/0/community.planets.app/code_cache/tut05-dark-home-settled.png"
+    },
+    {
+      "name": "dark-home-next-0",
+      "path": "/data/user/0/community.planets.app/code_cache/tut05-dark-home-next-0.png"
+    },
+    {
+      "name": "dark-home-next-80",
+      "path": "/data/user/0/community.planets.app/code_cache/tut05-dark-home-next-80.png"
+    },
+    {
+      "name": "dark-home-next-200",
+      "path": "/data/user/0/community.planets.app/code_cache/tut05-dark-home-next-200.png"
+    },
+    {
+      "name": "dark-home-fade-0",
+      "path": "/data/user/0/community.planets.app/code_cache/tut05-dark-home-fade-0.png"
+    },
+    {
+      "name": "dark-home-fade-1",
+      "path": "/data/user/0/community.planets.app/code_cache/tut05-dark-home-fade-1.png"
+    },
+    {
+      "name": "dark-home-next-ready",
+      "path": "/data/user/0/community.planets.app/code_cache/tut05-dark-home-next-ready.png"
+    },
+    {
+      "name": "dark-projectDetail-settled",
+      "path": "/data/user/0/community.planets.app/code_cache/tut05-dark-projectDetail-settled.png"
+    },
+    {
+      "name": "dark-projectDetail-next-0",
+      "path": "/data/user/0/community.planets.app/code_cache/tut05-dark-projectDetail-next-0.png"
+    },
+    {
+      "name": "dark-projectDetail-next-80",
+      "path": "/data/user/0/community.planets.app/code_cache/tut05-dark-projectDetail-next-80.png"
+    },
+    {
+      "name": "dark-projectDetail-next-200",
+      "path": "/data/user/0/community.planets.app/code_cache/tut05-dark-projectDetail-next-200.png"
+    },
+    {
+      "name": "dark-projectDetail-fade-0",
+      "path": "/data/user/0/community.planets.app/code_cache/tut05-dark-projectDetail-fade-0.png"
+    },
+    {
+      "name": "dark-projectDetail-next-ready",
+      "path": "/data/user/0/community.planets.app/code_cache/tut05-dark-projectDetail-next-ready.png"
+    },
+    {
+      "name": "dark-projectCreate-settled",
+      "path": "/data/user/0/community.planets.app/code_cache/tut05-dark-projectCreate-settled.png"
+    },
+    {
+      "name": "dark-projectCreate-next-0",
+      "path": "/data/user/0/community.planets.app/code_cache/tut05-dark-projectCreate-next-0.png"
+    },
+    {
+      "name": "dark-projectCreate-next-80",
+      "path": "/data/user/0/community.planets.app/code_cache/tut05-dark-projectCreate-next-80.png"
+    },
+    {
+      "name": "dark-projectCreate-next-96",
+      "path": "/data/user/0/community.planets.app/code_cache/tut05-dark-projectCreate-next-96.png"
+    },
+    {
+      "name": "dark-projectCreate-next-200",
+      "path": "/data/user/0/community.planets.app/code_cache/tut05-dark-projectCreate-next-200.png"
+    },
+    {
+      "name": "dark-projectCreate-next-800",
+      "path": "/data/user/0/community.planets.app/code_cache/tut05-dark-projectCreate-next-800.png"
+    },
+    {
+      "name": "dark-projectCreate-next-ready",
+      "path": "/data/user/0/community.planets.app/code_cache/tut05-dark-projectCreate-next-ready.png"
+    },
+    {
+      "name": "dark-projectCreate-previous-0",
+      "path": "/data/user/0/community.planets.app/code_cache/tut05-dark-projectCreate-previous-0.png"
+    },
+    {
+      "name": "dark-projectCreate-rapid-next-0",
+      "path": "/data/user/0/community.planets.app/code_cache/tut05-dark-projectCreate-rapid-next-0.png"
+    },
+    {
+      "name": "dark-homeResources-settled",
+      "path": "/data/user/0/community.planets.app/code_cache/tut05-dark-homeResources-settled.png"
+    },
+    {
+      "name": "dark-homeResources-next-0",
+      "path": "/data/user/0/community.planets.app/code_cache/tut05-dark-homeResources-next-0.png"
+    },
+    {
+      "name": "dark-homeResources-next-80",
+      "path": "/data/user/0/community.planets.app/code_cache/tut05-dark-homeResources-next-80.png"
+    },
+    {
+      "name": "dark-homeResources-next-200",
+      "path": "/data/user/0/community.planets.app/code_cache/tut05-dark-homeResources-next-200.png"
+    },
+    {
+      "name": "dark-homeResources-fade-0",
+      "path": "/data/user/0/community.planets.app/code_cache/tut05-dark-homeResources-fade-0.png"
+    },
+    {
+      "name": "dark-homeResources-fade-1",
+      "path": "/data/user/0/community.planets.app/code_cache/tut05-dark-homeResources-fade-1.png"
+    },
+    {
+      "name": "dark-homeResources-next-ready",
+      "path": "/data/user/0/community.planets.app/code_cache/tut05-dark-homeResources-next-ready.png"
+    },
+    {
+      "name": "dark-resources-settled",
+      "path": "/data/user/0/community.planets.app/code_cache/tut05-dark-resources-settled.png"
+    },
+    {
+      "name": "dark-resources-next-0",
+      "path": "/data/user/0/community.planets.app/code_cache/tut05-dark-resources-next-0.png"
+    },
+    {
+      "name": "dark-resources-next-80",
+      "path": "/data/user/0/community.planets.app/code_cache/tut05-dark-resources-next-80.png"
+    },
+    {
+      "name": "dark-resources-next-200",
+      "path": "/data/user/0/community.planets.app/code_cache/tut05-dark-resources-next-200.png"
+    },
+    {
+      "name": "dark-resources-fade-0",
+      "path": "/data/user/0/community.planets.app/code_cache/tut05-dark-resources-fade-0.png"
+    },
+    {
+      "name": "dark-resources-fade-1",
+      "path": "/data/user/0/community.planets.app/code_cache/tut05-dark-resources-fade-1.png"
+    },
+    {
+      "name": "dark-resources-next-ready",
+      "path": "/data/user/0/community.planets.app/code_cache/tut05-dark-resources-next-ready.png"
+    },
+    {
+      "name": "dark-messagesTabs-settled",
+      "path": "/data/user/0/community.planets.app/code_cache/tut05-dark-messagesTabs-settled.png"
+    },
+    {
+      "name": "dark-messagesTabs-next-0",
+      "path": "/data/user/0/community.planets.app/code_cache/tut05-dark-messagesTabs-next-0.png"
+    },
+    {
+      "name": "dark-messagesTabs-next-80",
+      "path": "/data/user/0/community.planets.app/code_cache/tut05-dark-messagesTabs-next-80.png"
+    },
+    {
+      "name": "dark-messagesTabs-next-96",
+      "path": "/data/user/0/community.planets.app/code_cache/tut05-dark-messagesTabs-next-96.png"
+    },
+    {
+      "name": "dark-messagesTabs-next-200",
+      "path": "/data/user/0/community.planets.app/code_cache/tut05-dark-messagesTabs-next-200.png"
+    },
+    {
+      "name": "dark-messagesTabs-next-800",
+      "path": "/data/user/0/community.planets.app/code_cache/tut05-dark-messagesTabs-next-800.png"
+    },
+    {
+      "name": "dark-messagesTabs-next-ready",
+      "path": "/data/user/0/community.planets.app/code_cache/tut05-dark-messagesTabs-next-ready.png"
+    },
+    {
+      "name": "dark-messagesTabs-previous-0",
+      "path": "/data/user/0/community.planets.app/code_cache/tut05-dark-messagesTabs-previous-0.png"
+    },
+    {
+      "name": "dark-messagesTabs-rapid-next-0",
+      "path": "/data/user/0/community.planets.app/code_cache/tut05-dark-messagesTabs-rapid-next-0.png"
+    },
+    {
+      "name": "dark-farewell-0",
+      "path": "/data/user/0/community.planets.app/code_cache/tut05-dark-farewell-0.png"
+    },
+    {
+      "name": "dark-farewell-1",
+      "path": "/data/user/0/community.planets.app/code_cache/tut05-dark-farewell-1.png"
+    },
+    {
+      "name": "dark-farewell-2",
+      "path": "/data/user/0/community.planets.app/code_cache/tut05-dark-farewell-2.png"
+    },
+    {
+      "name": "dark-farewell-3",
+      "path": "/data/user/0/community.planets.app/code_cache/tut05-dark-farewell-3.png"
+    },
+    {
+      "name": "dark-farewell-4",
+      "path": "/data/user/0/community.planets.app/code_cache/tut05-dark-farewell-4.png"
+    },
+    {
+      "name": "dark-farewell-5",
+      "path": "/data/user/0/community.planets.app/code_cache/tut05-dark-farewell-5.png"
+    }
+  ]
+}

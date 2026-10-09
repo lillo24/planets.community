@@ -204,11 +204,13 @@ badges or acknowledgement merely from migration.
 
 `presentation/messages_landing_screen.dart` gates only the public `/messages`
 root. Chats is implicit, with no root back arrow or top tabs. The top-right
-48dp inbox action opens Requests in place; its toolbar Back and system Back
+48dp inbox action opens Requests in place; its textual Chats action and system Back
 return to Chats before the enclosing route can pop. Child request/chat routes
 keep their ordinary router-owned Back behavior. Signed-out users can select
 Private/Groups and open Requests, each with a
-localized empty explanation and Log in returning to `/messages`. Guest scope
+localized sign-in explanation and Log in returning to `/messages`. Signed-out
+Chats also shows one clearly labelled fictional example for the selected scope,
+with a neutral conversation icon rather than a locked empty inbox. Guest scope
 labels are plain presentation: no private list/request/photo controllers or
 count labels mount. Incomplete profiles share this frame with completion/retry
 and safe root cancellation. Restoring, checking-profile and failed sessions
@@ -227,3 +229,12 @@ without changing its remembered destination, and never mounts private readers
 even for a ready identity.
 Use the same keys for guest/setup and ready views. The guide must not mount a
 private screen or read a Messages controller to locate these controls.
+
+`presentation/message_example_preview.dart` owns only localized fictional artwork:
+placeholder avatar, invented title/body and a fixed illustrative relative timestamp.
+Its visible Example label is in semantics; it has no tap/send/unread/media behavior
+and no providers. `controlsOnly` selects this presentation before any session-specific
+branch, for guests, ready identities and transitions alike. `previewScope` lets the
+tour teach Private then Groups without changing the ordinary remembered scope.
+Examples also accompany ordinary signed-out Chats; they never enter a ready
+account's real loading/empty/error/content list or a profile-setup recovery screen.

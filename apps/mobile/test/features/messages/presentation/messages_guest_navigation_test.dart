@@ -85,6 +85,12 @@ void main() {
           expect(find.text(l10n.messagesGuestChatsTitle), findsOneWidget);
           expect(find.text(l10n.messagesGuestPrivateMessage), findsOneWidget);
           expect(
+            find.byKey(const Key('messages-example-private')),
+            findsOneWidget,
+          );
+          expect(find.byIcon(Icons.lock_outline), findsNothing);
+          expect(find.text(l10n.messagesExampleLabel), findsOneWidget);
+          expect(
             tester.getSemantics(
               find.byKey(const Key('message-chat-scope-private')),
             ),
@@ -92,6 +98,10 @@ void main() {
           );
           await _tap(tester, 'message-chat-scope-groups');
           expect(find.text(l10n.messagesGuestGroupsMessage), findsOneWidget);
+          expect(
+            find.byKey(const Key('messages-example-groups')),
+            findsOneWidget,
+          );
           expect(
             tester.getSemantics(
               find.byKey(const Key('message-chat-scope-groups')),
@@ -191,7 +201,40 @@ void main() {
       'controls-only ${session.phase.name} never mounts private data',
       (tester) async {
         final fixture = _Fixture();
-        final app = await fixture.pump(tester, session: session, preview: true);
+        await tester.binding.setSurfaceSize(const Size(320, 640));
+        addTearDown(() => tester.binding.setSurfaceSize(null));
+        tester.platformDispatcher.textScaleFactorTestValue = 2;
+        addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+        final semantics = tester.ensureSemantics();
+        final app = await fixture.pump(
+          tester,
+          session: session,
+          preview: true,
+          language: LanguagePreference.italian,
+        );
+        final l10n = AppLocalizations.of(
+          tester.element(find.byType(MessagesFrame)),
+        );
+        expect(
+          find.byKey(const Key('messages-example-private')),
+          findsOneWidget,
+        );
+        expect(find.byKey(const Key('messages-context-action')), findsNothing);
+        expect(find.byIcon(Icons.lock_outline), findsNothing);
+        expect(find.byType(Badge), findsNothing);
+        expect(
+          find.bySemanticsLabel(RegExp(l10n.messagesExampleLabel)),
+          findsWidgets,
+        );
+        final sample = find.byKey(const Key('messages-example-private'));
+        expect(
+          find.descendant(of: sample, matching: find.byType(InkWell)),
+          findsNothing,
+        );
+        expect(
+          find.descendant(of: sample, matching: find.byType(GestureDetector)),
+          findsNothing,
+        );
         app.read(messagesNavigationProvider.notifier)
           ..selectTab(1)
           ..selectScope(MessageChatScope.groups);
@@ -205,6 +248,11 @@ void main() {
           find.byKey(const Key('message-chat-scope-toggle')),
           findsOneWidget,
         );
+        expect(
+          find.byKey(const Key('messages-example-groups')),
+          findsOneWidget,
+        );
+        expect(find.text(l10n.messagesExampleGroupBody), findsOneWidget);
         await _tap(tester, 'messages-requests-action');
         expect(app.read(messagesNavigationProvider).tabIndex, 1);
         expect(app.exists(messageChatsProvider), isFalse);
@@ -212,6 +260,8 @@ void main() {
         expect(app.exists(messagesInboxProvider), isFalse);
         expect(app.exists(visibleProfilePhotoProvider), isFalse);
         fixture.expectNoPrivateCalls();
+        expect(tester.takeException(), isNull);
+        semantics.dispose();
       },
     );
   }
@@ -257,6 +307,7 @@ void main() {
     await _tap(tester, 'auth-verify-button');
     expect(router.routerDelegate.state.uri.path, '/messages');
     expect(find.byType(MessagesScreen), findsOneWidget);
+    expect(find.byKey(const Key('messages-example-label')), findsNothing);
     expect(app.read(messagesNavigationProvider).tabIndex, 1);
     expect(fixture.messages.calls, isNotEmpty);
     expect(fixture.chats.calls, isNotEmpty);
@@ -303,6 +354,7 @@ void main() {
       await _tap(tester, 'profile-save-button');
       expect(router.routerDelegate.state.uri.path, '/messages');
       expect(find.byType(MessagesScreen), findsOneWidget);
+      expect(find.byKey(const Key('messages-example-label')), findsNothing);
       expect(app.read(messagesNavigationProvider).tabIndex, 1);
       await _tap(tester, 'messages-return-chats');
       expect(
@@ -417,6 +469,7 @@ void main() {
       delay.complete();
       await tester.pumpAndSettle();
       expect(app.read(authSessionProvider).identity!.id, 'bob');
+      expect(find.byKey(const Key('messages-example-label')), findsNothing);
       expect(find.textContaining('Alice request'), findsNothing);
       expect(find.text('Alice private content'), findsNothing);
     },
@@ -442,6 +495,7 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 400));
     expect(app.read(authSessionProvider).identity!.id, 'bob');
+    expect(find.byKey(const Key('messages-example-label')), findsNothing);
     expect(find.text('Alice private content'), findsNothing);
     expect(find.textContaining('Alice request'), findsNothing);
     expect(
