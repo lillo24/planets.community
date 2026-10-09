@@ -3,6 +3,7 @@ import 'dart:typed_data';
 import 'package:crop_your_image/crop_your_image.dart';
 import 'package:flutter/material.dart';
 
+import '../../../core/widgets/page_app_bar.dart';
 import '../../../core/theme/app_tokens.dart';
 import '../../../l10n/generated/app_localizations.dart';
 
@@ -71,7 +72,11 @@ class _CoverCropViewState extends State<CoverCropView> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     return Scaffold(
-      appBar: AppBar(title: Text(l10n.coverAdjust)),
+      appBar: pageAppBar(
+        context,
+        automaticallyImplyClose: false,
+        title: Text(l10n.coverAdjust),
+      ),
       body: SafeArea(
         child: Column(
           children: [

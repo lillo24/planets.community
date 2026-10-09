@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
+import '../../../core/widgets/page_app_bar.dart';
 import '../../../core/theme/app_tokens.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../auth/application/auth_session_controller.dart';
@@ -82,7 +83,7 @@ class _CreatorParticipationScreenState
         state.projectId == widget.projectId;
     if (!belongs) {
       return Scaffold(
-        appBar: AppBar(title: Text(l10n.peopleTitle)),
+        appBar: pageAppBar(context, title: Text(l10n.peopleTitle)),
         body: Center(
           child: session.identity?.id != _expectedProfileId
               ? Text(l10n.peopleForbidden)
@@ -91,7 +92,8 @@ class _CreatorParticipationScreenState
       );
     }
     return Scaffold(
-      appBar: AppBar(
+      appBar: pageAppBar(
+        context,
         title: Text(l10n.peopleTitle),
         actions: [
           if (state.role.isManager)

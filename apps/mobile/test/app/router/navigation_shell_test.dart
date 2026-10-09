@@ -299,7 +299,7 @@ void main() {
         ),
         isEmpty,
       );
-      await tester.pageBack();
+      await tester.tap(find.byKey(const Key('page-close')));
       await tester.pumpAndSettle();
       expect(router.routerDelegate.state.uri.path, '/proposals/mine');
       await _tap(tester, 'own-proposal-open-proposal-1');
@@ -334,14 +334,14 @@ void main() {
         router.routerDelegate.state.uri.path,
         '/proposals/proposal-1/resources',
       );
-      await tester.pageBack();
+      await tester.tap(find.byKey(const Key('page-close')));
       await tester.pumpAndSettle();
       await _tap(tester, 'proposal-edit-proposal-1');
       expect(
         router.routerDelegate.state.uri.path,
         '/proposals/proposal-1/edit',
       );
-      await tester.pageBack();
+      await tester.tap(find.byKey(const Key('page-close')));
       await tester.pumpAndSettle();
       await _tap(tester, 'proposal-publish-proposal-1');
       expect(proposals.calls, contains('publish:proposal-1'));
@@ -740,7 +740,7 @@ void main() {
     }
     router.go('/profile/edit');
     await tester.pumpAndSettle();
-    await tester.tap(find.byType(BackButton));
+    await tester.tap(find.byKey(const Key('profile-cancel-button')));
     await tester.pumpAndSettle();
     expect(router.routeInformationProvider.value.uri.path, '/profile');
     router.go('/proposals/proposal-1');
@@ -1254,7 +1254,7 @@ void main() {
       await _tap(tester, 'nav-home');
       await _tap(tester, 'nav-browse');
       expect(find.text('Proposal details'), findsOneWidget);
-      await tester.tap(find.byType(BackButton));
+      await tester.tap(find.byKey(const Key('page-close')));
       await tester.pumpAndSettle();
       expect(scroll.position.pixels, offset);
       app.read(appRouterProvider).push('/proposals/proposal-1');

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/widgets/page_app_bar.dart';
 import '../../../core/theme/app_tokens.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../domain/message_chat_models.dart';
@@ -63,14 +64,9 @@ class MessagesFrame extends ConsumerWidget {
         if (!didPop && requestsOpen) returnToChats();
       },
       child: Scaffold(
-        appBar: AppBar(
-          automaticallyImplyLeading: false,
-          leading: requestsOpen
-              ? BackButton(
-                  key: const Key('messages-return-chats'),
-                  onPressed: returnToChats,
-                )
-              : null,
+        appBar: pageAppBar(
+          context,
+          automaticallyImplyClose: false,
           title: FittedBox(
             fit: BoxFit.scaleDown,
             child: Text(
@@ -78,7 +74,13 @@ class MessagesFrame extends ConsumerWidget {
             ),
           ),
           actions: requestsOpen
-              ? null
+              ? [
+                  TextButton(
+                    key: const Key('messages-return-chats'),
+                    onPressed: returnToChats,
+                    child: Text(l10n.messagesChatsTab),
+                  ),
+                ]
               : [
                   IconButton(
                     key: const Key('messages-requests-action'),

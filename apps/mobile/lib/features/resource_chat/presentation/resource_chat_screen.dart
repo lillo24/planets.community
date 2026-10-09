@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
+import '../../../core/widgets/page_app_bar.dart';
 import '../../../core/theme/app_tokens.dart';
 import '../../messages/presentation/message_read_viewport.dart';
 import '../../../core/widgets/error_state.dart';
@@ -178,7 +179,8 @@ class _ResourceChatScreenState extends ConsumerState<ResourceChatScreen>
           : null,
       scrollController: _scrollController,
       child: Scaffold(
-        appBar: AppBar(
+        appBar: pageAppBar(
+          context,
           title: Text(
             summary?.listingTitle ?? l10n.resourceChatTitle,
             maxLines: 2,

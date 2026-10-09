@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/widgets/page_app_bar.dart';
 import '../../../core/theme/app_tokens.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../application/auth_command_controller.dart';
@@ -86,20 +87,11 @@ class _VerifyCodeScreenState extends ConsumerState<VerifyCodeScreen> {
         !session.hasProfileAnchor;
 
     final scaffold = Scaffold(
-      appBar: AppBar(
-        leading: BackButton(
-          key: const Key('auth-verify-back-button'),
-          onPressed: () => _useDifferentEmail(pending),
-        ),
+      appBar: pageAppBar(
+        context,
+        closeKey: const Key('auth-verify-close-button'),
+        onClose: _closeAuth,
         title: Text(l10n.authVerifyTitle),
-        actions: [
-          IconButton(
-            key: const Key('auth-verify-close-button'),
-            tooltip: MaterialLocalizations.of(context).closeButtonTooltip,
-            onPressed: _closeAuth,
-            icon: const Icon(Icons.close),
-          ),
-        ],
       ),
       body: SafeArea(
         child: Center(
@@ -199,6 +191,7 @@ class _VerifyCodeScreenState extends ConsumerState<VerifyCodeScreen> {
                       ),
                     ),
                     TextButton(
+                      key: const Key('auth-verify-back-button'),
                       onPressed: command.isBusy
                           ? null
                           : () => _useDifferentEmail(pending),

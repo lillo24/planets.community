@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
+import '../../../core/widgets/page_app_bar.dart';
 import '../../../core/theme/app_tokens.dart';
 import '../../../core/widgets/empty_state.dart';
 import '../../../core/widgets/error_state.dart';
@@ -75,7 +76,7 @@ class _ResourceLoanScheduleScreenState
         state.listingId == widget.listingId;
     final items = matches ? state.items : const <ResourceLoanReservation>[];
     return Scaffold(
-      appBar: AppBar(title: Text(l10n.resourceLoanScheduleTitle)),
+      appBar: pageAppBar(context, title: Text(l10n.resourceLoanScheduleTitle)),
       body: SafeArea(
         child:
             identity == null ||

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
+import '../../../core/widgets/page_app_bar.dart';
 import '../../../core/theme/app_tokens.dart';
 import '../../../core/widgets/empty_state.dart';
 import '../../../core/widgets/error_state.dart';
@@ -45,7 +46,7 @@ class _OwnReportsScreenState extends ConsumerState<OwnReportsScreen> {
     final belongs = state.expectedProfileId == profileId;
     final items = belongs ? state.items : const <OwnModerationReport>[];
     return Scaffold(
-      appBar: AppBar(title: Text(l10n.moderationOwnReportsTitle)),
+      appBar: pageAppBar(context, title: Text(l10n.moderationOwnReportsTitle)),
       body: SafeArea(
         child: state.isLoading && items.isEmpty
             ? LoadingState(message: l10n.moderationReportsLoading)

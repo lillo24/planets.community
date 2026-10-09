@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import '../../../core/widgets/page_app_bar.dart';
 import '../../locations/presentation/location_attribution.dart';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -99,7 +100,10 @@ class _ProjectResourceMatchesScreenState
         (state.phase == ProjectResourceMatchesPhase.loading && items.isEmpty);
 
     return Scaffold(
-      appBar: AppBar(title: Text(l10n.projectResourceMatchesTitle)),
+      appBar: pageAppBar(
+        context,
+        title: Text(l10n.projectResourceMatchesTitle),
+      ),
       bottomNavigationBar: const SafeArea(child: LocationAttribution()),
       body: SafeArea(
         child: initiallyLoading

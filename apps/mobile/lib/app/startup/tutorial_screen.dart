@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/widgets/page_app_bar.dart';
 import '../../core/widgets/loading_state.dart';
 import '../../core/widgets/planets_hero.dart';
 import '../../features/auth/application/auth_session_controller.dart';
@@ -614,7 +615,8 @@ class _TutorialScreenState extends ConsumerState<TutorialScreen>
           ? const TutorialIllustration()
           : _projectId == null
           ? Scaffold(
-              appBar: AppBar(
+              appBar: pageAppBar(
+                context,
                 title: Text(AppLocalizations.of(context).proposalDetailTitle),
               ),
               body: LoadingState(
@@ -818,7 +820,9 @@ class _TutorialScreenState extends ConsumerState<TutorialScreen>
                                         key: ValueKey(
                                           'tutorial-surface-${_surfaceGroup()}',
                                         ),
-                                        child: _content(),
+                                        child: PageAppBarScope(
+                                          child: _content(),
+                                        ),
                                       ),
                                     ),
                               ),

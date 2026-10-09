@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/widgets/page_app_bar.dart';
 import '../../geographic_discovery/domain/map_discovery.dart';
 import '../../geographic_discovery/presentation/map_view_button.dart';
 import '../../locations/presentation/location_attribution.dart';
@@ -112,7 +113,8 @@ class _PublicResourceListingsScreenState
     final pendingInput = _currentInput();
     final now = ref.watch(resourceListingClockProvider)();
     return Scaffold(
-      appBar: AppBar(
+      appBar: pageAppBar(
+        context,
         title: Text(l10n.resourceTitle),
         actions: [
           if (expectedProfileId != null)
@@ -521,7 +523,8 @@ class _PublicResourceListingDetailScreenState
       AsyncDataPresentation.content => const SizedBox.shrink(),
     };
     return Scaffold(
-      appBar: AppBar(
+      appBar: pageAppBar(
+        context,
         title: Text(l10n.resourceDetailTitle),
         actions: [
           if (isOwner)

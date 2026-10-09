@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
+import '../../../core/widgets/page_app_bar.dart';
 import '../../../core/theme/app_tokens.dart';
 import '../../../core/widgets/empty_state.dart';
 import '../../../core/widgets/error_state.dart';
@@ -47,7 +48,7 @@ class _BlockedUsersScreenState extends ConsumerState<BlockedUsersScreen> {
     final belongs = state.expectedProfileId == _expectedProfileId;
     final items = belongs ? state.blockedProfiles : const <BlockedProfile>[];
     return Scaffold(
-      appBar: AppBar(title: Text(l10n.blockingBlockedUsersTitle)),
+      appBar: pageAppBar(context, title: Text(l10n.blockingBlockedUsersTitle)),
       body: SafeArea(
         child:
             !belongs ||

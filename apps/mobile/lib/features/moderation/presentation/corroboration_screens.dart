@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
+import '../../../core/widgets/page_app_bar.dart';
 import '../../../core/theme/app_tokens.dart';
 import '../../../core/widgets/empty_state.dart';
 import '../../../core/widgets/error_state.dart';
@@ -52,7 +53,7 @@ class _CorroborationRequestsScreenState
         : const <GroupCorroborationSummary>[];
 
     return Scaffold(
-      appBar: AppBar(title: Text(l10n.corroborationRequestsTitle)),
+      appBar: pageAppBar(context, title: Text(l10n.corroborationRequestsTitle)),
       body: SafeArea(
         child: state.isLoading && items.isEmpty
             ? LoadingState(message: l10n.corroborationRequestsLoading)
@@ -218,7 +219,7 @@ class _CorroborationDetailScreenState
     final detail = belongs ? state.detail : null;
 
     return Scaffold(
-      appBar: AppBar(title: Text(l10n.corroborationDetailTitle)),
+      appBar: pageAppBar(context, title: Text(l10n.corroborationDetailTitle)),
       body: SafeArea(
         child: state.isLoading && detail == null
             ? LoadingState(message: l10n.corroborationRequestsLoading)

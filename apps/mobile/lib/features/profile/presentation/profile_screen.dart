@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/widgets/page_app_bar.dart';
 import '../../../core/theme/app_tokens.dart';
 import '../../../core/widgets/async_data_presentation.dart';
 import '../../../core/widgets/error_state.dart';
@@ -54,7 +55,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     if (session.phase == AuthSessionPhase.restoring ||
         session.phase == AuthSessionPhase.restorationFailed) {
       return Scaffold(
-        appBar: AppBar(title: Text(l10n.profileTitle)),
+        appBar: pageAppBar(context, title: Text(l10n.profileTitle)),
         body: const SafeArea(child: Center(child: AuthStatus())),
       );
     }
@@ -78,7 +79,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     );
 
     return Scaffold(
-      appBar: AppBar(title: Text(l10n.profileTitle)),
+      appBar: pageAppBar(context, title: Text(l10n.profileTitle)),
       body: SafeArea(
         child: userId == null
             ? const _ExampleProfile()

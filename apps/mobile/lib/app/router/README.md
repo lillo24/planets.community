@@ -24,7 +24,7 @@
   preference and the actual active destination; editor departures still use
   the single draft coordinator.
 - Public `/messages` presents Chats without a leading toolbar Back. Its
-  secondary Requests state consumes system/toolbar Back to return to Chats;
+  secondary Requests state consumes system Back or its textual Chats action;
   nested protected request/chat routes retain their router-owned Back stack.
   Presentation destination and scope survive Auth and profile completion.
 - `draft_departure_coordinator.dart` prepares the active Proposal editor before
@@ -56,3 +56,9 @@ UI-NEXT-03 separates the protected creation chooser (`/proposals/create`) from
 the guarded scratch editor (`/proposals/create/scratch`). Owner edits/recovery
 remain direct. A typed in-memory `DraftEditorOrigin.hub` allows successful Project
 saves to pop to the retained hub; no external return URL is accepted.
+
+All page title bars use the shared `pageAppBar` convention: no leading arrows,
+textual Close on pushed pages, and flow-owned Cancel/Close for Auth/Profile/Help.
+Close uses the original guarded pop/cancel path, including Proposal departure.
+See [navigation headers](../../../../../docs/development/navigation-headers.md)
+for the audited inventory, direct-entry exits and large-text behavior.

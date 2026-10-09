@@ -108,7 +108,8 @@ void main() {
           expect(find.text(l10n.messagesGuestRequestsTitle), findsOneWidget);
           expect(find.text(l10n.messagesGuestRequestsMessage), findsOneWidget);
           expect(find.text(l10n.messagesRequestsTab), findsOneWidget);
-          expect(find.byType(BackButton), findsOneWidget);
+          expect(find.byType(BackButton), findsNothing);
+          expect(find.text(l10n.messagesChatsTab), findsOneWidget);
           expect(inbox, findsNothing);
           expect(
             find.byKey(const Key('message-chat-scope-toggle')),

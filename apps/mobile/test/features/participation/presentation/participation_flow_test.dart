@@ -321,7 +321,7 @@ void main() {
     await tester.tap(find.byKey(const Key('profile-photo-trust-add')));
     await tester.pumpAndSettle();
     expect(find.byType(ProfileEditScreen), findsOneWidget);
-    await tester.pageBack();
+    await tester.tap(find.byKey(const Key('page-close')));
     await tester.pumpAndSettle();
     expect(
       tester

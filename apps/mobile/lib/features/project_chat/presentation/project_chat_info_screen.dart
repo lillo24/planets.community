@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
+import '../../../core/widgets/page_app_bar.dart';
 import '../../../core/theme/app_tokens.dart';
 import '../../../core/widgets/async_data_presentation.dart';
 import '../../../core/widgets/error_state.dart';
@@ -109,7 +110,7 @@ class _ProjectChatInfoScreenState extends ConsumerState<ProjectChatInfoScreen> {
     }
 
     return Scaffold(
-      appBar: AppBar(title: Text(l10n.projectChatGroupInfo)),
+      appBar: pageAppBar(context, title: Text(l10n.projectChatGroupInfo)),
       body: SafeArea(
         child: presentation == AsyncDataPresentation.loading
             ? LoadingState(message: l10n.projectChatInfoLoading)

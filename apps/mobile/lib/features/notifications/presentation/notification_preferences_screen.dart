@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/widgets/page_app_bar.dart';
 import '../../../core/theme/app_tokens.dart';
 import '../../../core/widgets/error_state.dart';
 import '../../../core/widgets/loading_state.dart';
@@ -95,7 +96,7 @@ class _NotificationPreferencesScreenState
             (participation == null || resources == null || matching == null));
 
     return Scaffold(
-      appBar: AppBar(title: Text(l10n.notificationsSettingsTitle)),
+      appBar: pageAppBar(context, title: Text(l10n.notificationsSettingsTitle)),
       body: SafeArea(
         child: isInitialLoading
             ? LoadingState(message: l10n.notificationsPreferencesLoading)

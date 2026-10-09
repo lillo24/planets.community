@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/widgets/page_app_bar.dart';
 import '../../../core/theme/app_tokens.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../template_workshop/presentation/template_workshop_screens.dart';
@@ -28,7 +29,7 @@ class _ProposalCreationChoiceState extends State<ProposalCreationChoice> {
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
     return Scaffold(
-      appBar: AppBar(title: Text(l.proposalCreateTitle)),
+      appBar: pageAppBar(context, title: Text(l.proposalCreateTitle)),
       body: SafeArea(
         child: ListView(
           padding: const EdgeInsets.all(AppSpacing.large),

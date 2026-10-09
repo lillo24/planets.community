@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/widgets/page_app_bar.dart';
 import '../../../core/theme/app_tokens.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../auth/application/auth_session_controller.dart';
@@ -156,7 +157,7 @@ class _JoinRequestScreenState extends ConsumerState<JoinRequestScreen> {
         options.phase == ContributionOptionsPhase.ready;
 
     return Scaffold(
-      appBar: AppBar(title: Text(l10n.participationJoinTitle)),
+      appBar: pageAppBar(context, title: Text(l10n.participationJoinTitle)),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(AppSpacing.large),

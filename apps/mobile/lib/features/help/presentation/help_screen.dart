@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/widgets/page_app_bar.dart';
 import '../../../app/startup/tutorial_routes.dart';
 import '../../../core/theme/app_tokens.dart';
 import '../../../l10n/generated/app_localizations.dart';
@@ -99,20 +100,19 @@ class HelpScaffold extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(
+    appBar: pageAppBar(
+      context,
       title: Text(title),
-      leading: BackButton(
-        key: const Key('help-back'),
-        onPressed:
-            onBack ??
-            () {
-              if (context.canPop()) {
-                context.pop();
-              } else {
-                context.go(fallback);
-              }
-            },
-      ),
+      closeKey: const Key('help-back'),
+      onClose:
+          onBack ??
+          () {
+            if (context.canPop()) {
+              context.pop();
+            } else {
+              context.go(fallback);
+            }
+          },
     ),
     body: SafeArea(
       child: Align(

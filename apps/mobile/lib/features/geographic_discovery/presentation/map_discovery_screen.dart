@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:latlong2/latlong.dart';
 
+import '../../../core/widgets/page_app_bar.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../auth/application/auth_session_controller.dart';
 import '../../auth/domain/auth_models.dart';
@@ -441,7 +442,8 @@ class _MapDiscoveryScreenState extends ConsumerState<MapDiscoveryScreen>
             : l10n.resourceModeExchange,
     ];
     return Scaffold(
-      appBar: AppBar(
+      appBar: pageAppBar(
+        context,
         title: Text(l10n.mapView),
         actions: [
           IconButton(

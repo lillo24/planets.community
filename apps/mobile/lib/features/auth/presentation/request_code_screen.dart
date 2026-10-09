@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/widgets/page_app_bar.dart';
 import '../../../core/theme/app_tokens.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../application/auth_command_controller.dart';
@@ -68,13 +69,10 @@ class _RequestCodeScreenState extends ConsumerState<RequestCodeScreen> {
     final error = command.failure;
 
     final scaffold = Scaffold(
-      appBar: AppBar(
-        leading: IconButton(
-          key: const Key('auth-close-button'),
-          tooltip: MaterialLocalizations.of(context).closeButtonTooltip,
-          onPressed: _closeAuth,
-          icon: const Icon(Icons.close),
-        ),
+      appBar: pageAppBar(
+        context,
+        closeKey: const Key('auth-close-button'),
+        onClose: _closeAuth,
         title: Text(l10n.authRequestTitle),
       ),
       body: SafeArea(

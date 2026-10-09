@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:uuid/uuid.dart';
 import 'package:intl/intl.dart';
 
+import '../../../core/widgets/page_app_bar.dart';
 import '../../../core/theme/app_tokens.dart';
 import '../../../core/time/event_time.dart';
 import '../../../core/widgets/error_state.dart';
@@ -187,7 +188,8 @@ class _RecurringActivityEditorScreenState
         isFailure && existing == null && widget.activityId != null;
     final ended = existing?.lifecycle == RecurringActivityLifecycle.ended;
     return Scaffold(
-      appBar: AppBar(
+      appBar: pageAppBar(
+        context,
         title: Text(
           widget.activityId == null
               ? l10n.tavoliCreateTitle

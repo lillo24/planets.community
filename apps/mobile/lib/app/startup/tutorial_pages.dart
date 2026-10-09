@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/widgets/page_app_bar.dart';
 import '../../l10n/generated/app_localizations.dart';
 import 'startup_flow.dart';
 
@@ -59,7 +60,7 @@ class _TutorialPagesState extends ConsumerState<TutorialPages> {
         },
         child: Scaffold(
           key: const Key('tutorial-screen'),
-          appBar: AppBar(leading: BackButton(onPressed: _cancel)),
+          appBar: pageAppBar(context, onClose: _cancel),
           body: SafeArea(
             child: Column(
               children: [
