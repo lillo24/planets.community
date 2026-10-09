@@ -16,7 +16,7 @@ class PlanetsStar {
 /// Four size maps are retained; eviction regenerates the same coordinates.
 class PlanetsStarfield {
   static const _seed = 0x504c414e;
-  static final _cache = <Size, List<PlanetsStar>>{};
+  static final _cache = <(Size, bool), List<PlanetsStar>>{};
 
   /// Farewell velocities repeat exactly with the shared 144-second clock.
   /// Wrap outside the clip by the star radius so no visible teleport occurs.
@@ -26,12 +26,16 @@ class PlanetsStarfield {
     required double entrance,
     required double seconds,
     bool farewell = false,
+    bool settledBackdrop = false,
   }) {
     if (size.isEmpty) return star.position;
     if (!farewell) {
       return Offset(
         star.position.dx,
-        ((star.position.dy / size.height + entrance * .35) % 1) * size.height,
+        ((star.position.dy / size.height +
+                    (entrance - (settledBackdrop ? 1 : 0)) * .35) %
+                1) *
+            size.height,
       );
     }
     final span = size.height + star.radius * 2;
@@ -44,12 +48,14 @@ class PlanetsStarfield {
     );
   }
 
-  static List<PlanetsStar> forSize(Size size) {
+  /// Home/Welcome weight the visible lower backdrop, before card occlusion.
+  /// Farewell retains its original uniform map and continuous travel.
+  static List<PlanetsStar> forSize(Size size, {bool lowerWeighted = false}) {
     if (size.isEmpty) return const [];
-    return _cache[size] ?? _generate(size);
+    return _cache[(size, lowerWeighted)] ?? _generate(size, lowerWeighted);
   }
 
-  static List<PlanetsStar> _generate(Size size) {
+  static List<PlanetsStar> _generate(Size size, bool lowerWeighted) {
     final random = math.Random(_seed);
     final count = (size.width * size.height / 2400).round().clamp(8, 100);
     final separation = math.min(
@@ -63,9 +69,11 @@ class PlanetsStarfield {
       // Rejection scattering avoids close clusters without a grid. The best
       // candidate keeps work bounded even on unusually thin artwork sizes.
       for (var attempt = 0; attempt < 64; attempt++) {
+        final x = random.nextDouble();
+        final y = random.nextDouble();
         final candidate = Offset(
-          size.width * (.02 + .96 * random.nextDouble()),
-          size.height * (.02 + .96 * random.nextDouble()),
+          size.width * (.02 + .96 * x),
+          size.height * (.02 + .96 * (lowerWeighted ? math.sqrt(y) : y)),
         );
         var distance = double.infinity;
         for (final star in stars) {
@@ -92,6 +100,6 @@ class PlanetsStarfield {
       );
     }
     if (_cache.length == 4) _cache.remove(_cache.keys.first);
-    return _cache[size] = List.unmodifiable(stars);
+    return _cache[(size, lowerWeighted)] = List.unmodifiable(stars);
   }
 }

@@ -52,6 +52,16 @@ class WelcomeScreen extends ConsumerWidget {
                           children: [
                             FilledButton.icon(
                               key: const Key('welcome-explore'),
+                              style: FilledButton.styleFrom(
+                                minimumSize: const Size(0, 60),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 24,
+                                  vertical: 16,
+                                ),
+                                textStyle: Theme.of(context)
+                                    .textTheme
+                                    .titleMedium,
+                              ),
                               onPressed: () => context.go(
                                 ref.read(startupFlowProvider).continueTo('/'),
                               ),
@@ -62,13 +72,23 @@ class WelcomeScreen extends ConsumerWidget {
                                       .2 * math.cos(progress * math.pi * 4),
                                   child: child,
                                 ),
-                                child: const Icon(Icons.auto_awesome, size: 18),
+                                child: const Icon(Icons.auto_awesome, size: 22),
                               ),
                               label: Text(l10n.welcomeExplore),
                             ),
-                            const SizedBox(height: 12),
+                            const SizedBox(height: 16),
                             TextButton(
                               key: const Key('welcome-login'),
+                              style: TextButton.styleFrom(
+                                minimumSize: const Size(0, 60),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 24,
+                                  vertical: 16,
+                                ),
+                                textStyle: Theme.of(context)
+                                    .textTheme
+                                    .titleMedium,
+                              ),
                               onPressed: () {
                                 ref.read(startupFlowProvider).enter();
                                 context.go('/auth');

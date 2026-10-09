@@ -6,6 +6,46 @@ import 'package:planets_mobile/core/widgets/planets_hero.dart';
 import 'package:planets_mobile/core/widgets/planets_starfield.dart';
 
 void main() {
+  test('lower backdrop stays seeded, bounded and separate from farewell', () {
+    const size = Size(360, 560);
+    final uniform = PlanetsStarfield.forSize(size);
+    final lower = PlanetsStarfield.forSize(size, lowerWeighted: true);
+    expect(lower.length, uniform.length);
+    expect(
+      lower.where((s) => s.position.dy > size.height / 2).length,
+      greaterThan(lower.length * .65),
+    );
+    for (final star in lower) {
+      expect((Offset.zero & size).contains(star.position), isTrue);
+      expect(
+        PlanetsStarfield.positionAt(
+          star,
+          size,
+          entrance: 1,
+          seconds: 80,
+          settledBackdrop: true,
+        ),
+        star.position,
+      );
+    }
+    final expected = lower
+        .map((s) => (s.position, s.radius, s.opacity))
+        .toList();
+    for (var i = 0; i < 6; i++) {
+      PlanetsStarfield.forSize(Size(240.0 + i, 320), lowerWeighted: true);
+    }
+    expect(
+      PlanetsStarfield.forSize(
+        size,
+        lowerWeighted: true,
+      ).map((s) => (s.position, s.radius, s.opacity)),
+      expected,
+    );
+    expect(
+      PlanetsStarfield.forSize(size).map((s) => s.position),
+      uniform.map((s) => s.position),
+    );
+  });
   for (final height in [180.0, 500.0]) {
     testWidgets('farewell small ascent fits rings at height $height', (
       tester,
@@ -432,10 +472,10 @@ void _expectOrbits(WidgetTester tester, double seconds, {bool home = true}) {
   final planets = circles.where((args) => args[1] == 5.2).toList();
   expect(rings, hasLength(3));
   expect(planets, hasLength(3));
-  final center = Offset(160, home ? 100 : 135);
+  final center = Offset(160, home ? 100 : 200);
   // Home centers within its 200px reservation; Welcome retains its settled
-  // 135px center. Both fit the far planet's halo above the artwork boundary.
-  final diameter = home ? 128.571428571 : 178.571428571;
+  // 40% center. Both fit the far planet's halo inside the artwork boundary.
+  final diameter = home ? 128.571428571 : 214.285714286;
   var index = 0;
   // Fixed website values: far clockwise, outer counterclockwise, inner clockwise.
   for (final orbit in [

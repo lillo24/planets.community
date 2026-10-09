@@ -12,6 +12,9 @@ It does not own Auth, profile readiness, native-link delivery or product actions
   float continue while visible. Both clocks pause when hidden/backgrounded;
   reduced motion settles immediately without ticking. Actions
   are available throughout, and a failed asset load keeps them available.
+  Welcome targets a 40% SafeArea center with full-path halo bounds. Both actions
+  have 60dp minimum height, 16px vertical padding and a 16px gap; long labels
+  wrap and short/keyboard layouts scroll rather than clipping controls.
 - `tutorial_screen.dart` owns the interactive /intro playback, current public
   screen widgets, painted target lookup using stable keys, adaptive interruptible
   detail scrolling, layout/lifecycle guards, and a barrier against all underlying taps.
