@@ -20,8 +20,11 @@ the informational Site, and native associations remain separate.
   an existing fixture instead of resetting a stack.
 - `local-integration.test.ts` opt-in exercises real local OTP/profile/admission
   adapters; it explicitly does not substitute for a browser journey.
-- `deploy.mjs` guards the fixed staging name, public artifact and existing-version
-  ownership. `cloudflare.mjs` reads existing OAuth privately. `http-probe.mjs`
+- `artifact.mjs` / `artifact.test.ts` distinguish SDK key-type literals from
+  credential-shaped values and reject local artifacts/source-map directives.
+- `deploy.mjs` parses Wrangler JSONC and guards the fixed staging name, public
+  artifact and existing-version ownership. `cloudflare.mjs` reads existing OAuth
+  privately. `http-probe.mjs`
   verifies local/hosted contracts; `hosted-cpu.mjs` records bounded request windows
   and reads aggregate CPU for the exact version without request logging.
 

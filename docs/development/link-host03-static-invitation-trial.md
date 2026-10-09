@@ -9,6 +9,8 @@ PR #176 remains independently draft at
 `409ecc3e2b0afc3c3cf88aaea0b626c8bd06184f`; none of its vinext code is a dependency.
 No live Site, canonical routing, DNS, billing or shared backend data/schema was
 changed. This provisional boundary does not replace the accepted architecture.
+The final main fetch was `1d9871bd64197226089b8477a6fac2ae94431504`; intervening
+files were mobile hero/layout polish only, with no Web/backend dependency change.
 
 The client-only Vite target in `apps/web/static-invitations` imports the existing
 canonical participant controller/gateway/parsers, numeric OTP gateway, profile
@@ -162,10 +164,54 @@ main contains **73**. All five trial APIs exist (`get_project_participant_invita
 `get_own_project_management_role`, `update_own_profile`). Existence does not prove
 full migration/behavior parity. No history repair, migration or shared seed ran.
 
+## Hosted CPU result and decision
+
+The static boundary removes the observed server-rendering CPU problem for these
+trial routes: the first observed Auth request used **0.595 ms** and the highest
+observed repeated-route CPU was **0.740 ms**, well below the Workers Free
+[10 ms invocation budget](https://developers.cloudflare.com/workers/platform/limits/).
+There is no React/server/Auth work in that Worker; actual OTP/profile/Join traffic
+runs from the browser directly to canonical Supabase. This is a practical
+Free-hosting candidate worth continuing, **not a completed browser/hosted journey
+or approval for canonical routing**. The missing browser proof is a tool/fixture
+limitation, not evidence that static Auth is impractical; an app-only fallback is
+not warranted by the CPU result and was not implemented.
+
+Measurements ran 2026-10-09 11:06:38.789–11:07:56.667 UTC on the exact version below:
+361 expected HTTP responses, including 60 emitted-asset reads; no response errors.
+Two sets each sent 30 requests per class. CPU values below are milliseconds
+(Cloudflare microseconds divided by 1000), direct window aggregates, not
+differences or wall-clock timings. Request Observability stayed disabled.
+
+| Class                         | First repeated p50 / p95 / max | Later repeated p50 / p95 / max | Estimated Worker requests first / later |
+| ----------------------------- | ------------------------------ | ------------------------------ | --------------------------------------- |
+| Auth shell                    | 0.414 / 0.480 / 0.480          | 0.384 / 0.525 / 0.525          | 30 / 32                                 |
+| Valid-shaped invitation shell | 0.449 / 0.656 / 0.656          | 0.472 / 0.583 / 0.583          | 30 / 25                                 |
+| Token-free confirmation shell | 0.394 / 0.534 / 0.534          | 0.454 / 0.533 / 0.533          | 30 / 30                                 |
+| Emitted JS asset              | Worker bypass                  | Worker bypass                  | 0 / 0                                   |
+| Unknown route HTTP 404        | 0.317 / 0.740 / 0.740          | 0.346 / 0.591 / 0.591          | 30 / 30                                 |
+| Unsupported method HTTP 405   | 0.322 / 0.422 / 0.422          | 0.355 / 0.565 / 0.565          | 27 / 30                                 |
+
+The one-request first-observed Auth window has one reported invocation at
+0.595 ms (p50/p95/max). It is not a controlled cold-isolate experiment.
+`avg.sampleInterval` exceeds one for repeated windows, so estimated counts can
+differ from requests sent; recent data can also arrive late. The final aggregate
+read was 11:10:09.907 UTC; all reported Worker errors were zero. Repeated-window
+sample intervals ranged from about 1.765 to 5. No route dimension
+exists, so bounded script/version/time windows identify the traffic class.
+These small adaptive samples establish headroom for this simple handler, not a
+production tail guarantee. Empty asset windows corroborate configured asset
+bypass and do not mean an invoked Worker costs zero CPU.
+
 ## Proof record
 
-Deployment/source revisions, final check results and CPU measurements will be
-recorded here after the guarded upload and exact-version probes complete.
+The isolated deployment at 2026-10-09 11:06:27 UTC is Worker version
+`cdaaafea-d3a6-48a9-8402-98e05a4cf2a4`, source
+`2a4055752b92c9bbac6741133f80ffee2485187c` (runtime matches the built implementation
+at `2080224`; subsequent source commits changed deployment guards/tests only).
+Post-deploy API reads verified workers.dev enabled, previews/Observability disabled,
+zero custom domains and zero routes to this Worker in the canonical zone.
+The #176 baseline still deploys `8e7d46f6-6bf5-4a31-aecd-5340efc5600c`.
 
 Automated local validation: 61 tooling tests, 293 web tests (two opt-in backend
 tests skipped in the normal suite), web lint/typecheck, normal Next production
@@ -177,9 +223,20 @@ passed. The command then encountered a temporary extraction script under the
 source root; it was moved into ignored diagnostics and all remaining `check:web`
 stages passed separately. No test timeout or assertion was weakened.
 
+The final real-backend opt-in test also passed with fresh SDK session refresh,
+restoration into a new controller (no retained receipt/action), no extra admission,
+and canonical departure cleanup. Its first restoration assertion raced the SDK's
+deferred `INITIAL_SESSION` replacement read; the test now waits for that real
+read to finish instead of treating the first Promise as settled UI state.
+Two additional deployment-artifact regression tests passed (seven focused
+boundary/artifact cases in total), and changed-script lint/typecheck passed.
+No source map was published. The client transfer is about 158.6 KiB gzip JS plus
+9.5 KiB gzip CSS; Vite reports its >500 KiB uncompressed chunk warning. This is
+browser work/transfer, separate from the 2.18 KiB Worker bundle's CPU.
+
 | Coverage                                                                         | Local                                                                        | Hosted                                                            |
 | -------------------------------------------------------------------------------- | ---------------------------------------------------------------------------- | ----------------------------------------------------------------- |
-| Production static build, route/method/privacy probes                             | Build/dry-run and 26 HTTP cases passed                                       | Pending probes                                                    |
+| Production static build, route/method/privacy probes                             | Build/dry-run and 26 HTTP cases passed                                       | 26 HTTP cases passed on exact deployment                          |
 | Real numeric OTP/profile/explicit Join, both kinds, no photo                     | Adapter/backend test passed; browser reached preview and six-digit form only | Unavailable: no authorized disposable staging OTP/project fixture |
 | No implicit admission, duplicate Join, lost-response same-attempt replay         | Real backend adapter assertions passed                                       | Unavailable                                                       |
 | Fresh confirmation, leave/read retry, deliberate re-entry, revoked/full/blocking | Real backend adapter assertions passed                                       | Unavailable                                                       |
@@ -191,6 +248,11 @@ numeric OTP form. Mailbox-tab reads then repeatedly timed out and final recovery
 reported **Debugger unattached**. No OTP verification, profile-save or Join UI
 success is claimed. HTTP probes and real backend adapters are not substitutes
 for that browser proof. No existing private account/project was reused on staging.
+
+A diagnostic filter accidentally emitted disposable local-stack credentials in
+the tool transcript; no staging credential/session/OTP was emitted or committed.
+That backend and the local helper/preview processes were stopped. Local diagnostic
+files remain ignored; do not copy them into reports or PRs.
 
 ## Rollback/removal and next gate
 
