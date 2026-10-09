@@ -169,7 +169,7 @@ PLANETS_DISPOSABLE_QA=1 and MAILPIT_URL=http://127.0.0.1:55634.
 location:verify:local includes MAP01–04 authenticated REST/probes and performance.
 Its deterministic SQL fixture is the marked section of
 supabase/tests/123_geographic_discovery.test.sql; start from a freshly replayed
-disposable database before rerunning (fixtures commit for REST visibility).
+disposable database before rerunning (fixtures commit for REST visibility and retire after the verifier).
 Set MAP04_EXPLAIN_OUTPUT to an external JSON path to capture plans.
 db:types regenerates the public Web RPC signature; db:types:check checks drift.
 Final command counts, CI/head and known limitations are recorded in the PR.

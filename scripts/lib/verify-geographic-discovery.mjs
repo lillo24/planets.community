@@ -24,255 +24,278 @@ export async function verifyGeographicDiscovery({
     .replaceAll("a9410000-0000-4000-8000-000000000001", owner.id)
     .replaceAll("a9410000-0000-4000-8000-000000000002", peer.id);
   await db.begin((sql) => sql.unsafe(fixture).simple());
-  const query = {
-    mode: "radius",
-    latitude: 46.07,
-    longitude: 11.12,
-    radius_m: 5000,
-  };
-  const search = (client, q = query, cursor = null, limit = 20) =>
-    rpc(client, "search_public_geography_v1", {
-      p_query: q,
-      p_limit: limit,
-      p_cursor: cursor,
-    });
-  const first = await search(anonymous);
-  const frozen = { ...query, reference_time: first.reference_time };
-  check(
-    first.items.length === 7 && !first.has_more && first.next_cursor === null,
-    "MAP04 honest bounded public page",
-  );
-  assert.deepEqual(await search(peer.client, frozen), first);
-  check(true, "MAP04 actual authenticated member JWT equals anonymous");
-  assert.deepEqual(await search(owner.client, frozen), first);
-  check(true, "MAP04 manager gets no extra geographic precision");
-  const fields = [
-    "kind",
-    "item_id",
-    "latitude",
-    "longitude",
-    "precision",
-    "is_approximate",
-    "match_precision",
-    "title",
-    "cover_object_path",
-    "public_location_label",
-    "starts_at",
-    "ends_at",
-    "event_timezone",
-    "derived_status",
-    "listing_mode",
-  ].sort();
-  function inspect(page) {
+  try {
+    const query = {
+      mode: "radius",
+      latitude: 46.07,
+      longitude: 11.12,
+      radius_m: 5000,
+    };
+    const search = (client, q = query, cursor = null, limit = 20) =>
+      rpc(client, "search_public_geography_v1", {
+        p_query: q,
+        p_limit: limit,
+        p_cursor: cursor,
+      });
+    const first = await search(anonymous);
+    const frozen = { ...query, reference_time: first.reference_time };
     check(
-      !/PRIVATE|selected_|exact_location|receipt|email|membership|participant|distance|total_count/.test(
-        JSON.stringify(page),
-      ),
-      "MAP04 recursive private payload scan",
+      first.items.length === 7 && !first.has_more && first.next_cursor === null,
+      "MAP04 honest bounded public page",
     );
-    for (const row of page.items) {
-      assert.deepEqual(Object.keys(row).sort(), fields);
+    assert.deepEqual(await search(peer.client, frozen), first);
+    check(true, "MAP04 actual authenticated member JWT equals anonymous");
+    assert.deepEqual(await search(owner.client, frozen), first);
+    check(true, "MAP04 manager gets no extra geographic precision");
+    const fields = [
+      "kind",
+      "item_id",
+      "latitude",
+      "longitude",
+      "precision",
+      "is_approximate",
+      "match_precision",
+      "title",
+      "cover_object_path",
+      "public_location_label",
+      "starts_at",
+      "ends_at",
+      "event_timezone",
+      "derived_status",
+      "listing_mode",
+    ].sort();
+    function inspect(page) {
       check(
-        row.kind === "resource" ||
-          (row.precision === "locality" &&
-            row.is_approximate &&
-            row.match_precision === "locality_reference"),
-        "MAP04 marker precision allowlist",
+        !/PRIVATE|selected_|exact_location|receipt|email|membership|participant|distance|total_count/.test(
+          JSON.stringify(page),
+        ),
+        "MAP04 recursive private payload scan",
+      );
+      for (const row of page.items) {
+        assert.deepEqual(Object.keys(row).sort(), fields);
+        check(
+          row.kind === "resource" ||
+            (row.precision === "locality" &&
+              row.is_approximate &&
+              row.match_precision === "locality_reference"),
+          "MAP04 marker precision allowlist",
+        );
+        check(
+          row.latitude === 46.07 && row.longitude === 11.12,
+          "MAP04 canonical public coordinates only",
+        );
+      }
+      check(
+        page.attribution.geoapify_url === "https://www.geoapify.com/" &&
+          page.attribution.openstreetmap_url ===
+            "https://www.openstreetmap.org/copyright",
+        "MAP04 retained label credits",
+      );
+    }
+    inspect(first);
+    for (const client of [anonymous, peer.client]) {
+      const { error, data } = await client
+        .from("proposals")
+        .select("approximate_location,selected_public_place")
+        .eq("id", "a9420000-0000-4000-8000-000000000001");
+      check(
+        error
+          ? ["42501", "PGRST205"].includes(error.code)
+          : Array.isArray(data) && data.length === 0,
+        "MAP04 existing owner RLS denies unrelated/member raw geometry",
+      );
+    }
+    const all = [];
+    let cursor = null,
+      pages = 0;
+    do {
+      const page = await search(anonymous, frozen, cursor, 2);
+      all.push(...page.items);
+      cursor = page.next_cursor;
+      pages++;
+      if (!page.has_more) break;
+      assert.ok(pages < 10, "MAP04 cursor terminates");
+    } while (true);
+    assert.deepEqual(all, first.items);
+    check(
+      pages === 4,
+      "MAP04 tied mixed-kind pages have no duplication/omission",
+    );
+    const c = (await search(anonymous, frozen, null, 2)).next_cursor;
+    await denied(
+      anonymous,
+      "search_public_geography_v1",
+      { p_query: { ...frozen, radius_m: 2000 }, p_cursor: c, p_limit: 2 },
+      "22023",
+    );
+    await denied(
+      peer.client,
+      "search_public_geography_v1",
+      {
+        p_query: { ...frozen, resource_mode: "exchange" },
+        p_cursor: c,
+        p_limit: 2,
+      },
+      "22023",
+    );
+    const resource = await search(anonymous, {
+      ...frozen,
+      kinds: ["resource"],
+      resource_mode: "exchange",
+    });
+    check(
+      resource.items.length === 1 &&
+        resource.items[0].listing_mode === "exchange",
+      "MAP04 Resource mode",
+    );
+    const skill = (
+      await db.unsafe(
+        "select skill_id from public.proposal_skills where proposal_id='a9420000-0000-4000-8000-000000000001'",
+      )
+    )[0].skill_id;
+    check(
+      (
+        await search(anonymous, {
+          ...frozen,
+          kinds: ["one_time"],
+          proposal_skill_ids: [skill],
+        })
+      ).items.length === 1,
+      "MAP04 real skill filter",
+    );
+    check(
+      (
+        await search(anonymous, {
+          ...frozen,
+          proposal_keyword: "Garden 1",
+          resource_keyword: "Resource 2",
+        })
+      ).items.length === 3,
+      "MAP04 explicit family keyword scope",
+    );
+    const bbox = {
+      mode: "bounds",
+      south: 46.07,
+      north: 46.08,
+      west: 11.12,
+      east: 11.13,
+      reference_time: first.reference_time,
+    };
+    assert.deepEqual((await search(anonymous, bbox)).items, first.items);
+    check(true, "MAP04 real REST inclusive viewport boundaries");
+    const probes = [];
+    for (let i = 0; i < 8; i++) {
+      probes.push({
+        ...frozen,
+        latitude: -33.86 + i / 100000,
+        longitude: 151.21,
+        radius_m: 1,
+      });
+      probes.push({
+        ...frozen,
+        latitude: 46.07 + i / 100000,
+        longitude: 11.12,
+        radius_m: 1,
+      });
+    }
+    const before = [];
+    for (const p of probes) before.push((await search(anonymous, p)).items);
+    for (const rows of before) {
+      const paired = rows.filter((r) =>
+        [
+          "a9420000-0000-4000-8000-000000000001",
+          "a9420000-0000-4000-8000-000000000002",
+        ].includes(r.item_id),
       );
       check(
-        row.latitude === 46.07 && row.longitude === 11.12,
-        "MAP04 canonical public coordinates only",
+        paired.length === 0 || paired.length === 2,
+        "MAP04 repeated tiny probes cannot distinguish different private venues",
+      );
+    }
+    await db.unsafe(
+      "update public.project_memberships set removed_at=now(),removed_by_profile_id=$1 where id in ('a9460000-0000-4000-8000-000000000001','a9460000-0000-4000-8000-000000000002')",
+      [owner.id],
+    );
+    await db.unsafe(
+      "update public.proposal_meeting_details set exact_location_visibility='public',exact_location=extensions.st_setsrid(extensions.st_makepoint(-30,-20),4326)::extensions.geography where proposal_id='a9420000-0000-4000-8000-000000000001'",
+    );
+    await db.unsafe(
+      "update public.recurring_activity_meeting_details set exact_location_visibility='public',exact_location=extensions.st_setsrid(extensions.st_makepoint(-30,-20),4326)::extensions.geography where recurring_activity_id='a9440000-0000-4000-8000-000000000001'",
+    );
+    assert.deepEqual(await search(peer.client, frozen), first);
+    check(
+      true,
+      "MAP04 removed member/exact visibility cannot alter public output",
+    );
+    for (let i = 0; i < probes.length; i++) {
+      assert.deepEqual((await search(peer.client, probes[i])).items, before[i]);
+      check(
+        true,
+        "MAP04 tiny probe after revocation identical to anon before revocation",
       );
     }
     check(
-      page.attribution.geoapify_url === "https://www.geoapify.com/" &&
-        page.attribution.openstreetmap_url ===
-          "https://www.openstreetmap.org/copyright",
-      "MAP04 retained label credits",
+      (
+        await search(anonymous, {
+          mode: "bounds",
+          south: -33.87,
+          north: -33.85,
+          west: 151.2,
+          east: 151.22,
+        })
+      ).items.length === 0,
+      "MAP04 shifted negative viewport never matches private exact",
     );
-  }
-  inspect(first);
-  for (const client of [anonymous, peer.client]) {
-    const { error, data } = await client
-      .from("proposals")
-      .select("approximate_location,selected_public_place")
-      .eq("id", "a9420000-0000-4000-8000-000000000001");
-    check(
-      error
-        ? ["42501", "PGRST205"].includes(error.code)
-        : Array.isArray(data) && data.length === 0,
-      "MAP04 existing owner RLS denies unrelated/member raw geometry",
-    );
-  }
-  const all = [];
-  let cursor = null,
-    pages = 0;
-  do {
-    const page = await search(anonymous, frozen, cursor, 2);
-    all.push(...page.items);
-    cursor = page.next_cursor;
-    pages++;
-    if (!page.has_more) break;
-    assert.ok(pages < 10, "MAP04 cursor terminates");
-  } while (true);
-  assert.deepEqual(all, first.items);
-  check(
-    pages === 4,
-    "MAP04 tied mixed-kind pages have no duplication/omission",
-  );
-  const c = (await search(anonymous, frozen, null, 2)).next_cursor;
-  await denied(
-    anonymous,
-    "search_public_geography_v1",
-    { p_query: { ...frozen, radius_m: 2000 }, p_cursor: c, p_limit: 2 },
-    "22023",
-  );
-  await denied(
-    peer.client,
-    "search_public_geography_v1",
-    {
-      p_query: { ...frozen, resource_mode: "exchange" },
-      p_cursor: c,
-      p_limit: 2,
-    },
-    "22023",
-  );
-  const resource = await search(anonymous, {
-    ...frozen,
-    kinds: ["resource"],
-    resource_mode: "exchange",
-  });
-  check(
-    resource.items.length === 1 &&
-      resource.items[0].listing_mode === "exchange",
-    "MAP04 Resource mode",
-  );
-  const skill = (
     await db.unsafe(
-      "select skill_id from public.proposal_skills where proposal_id='a9420000-0000-4000-8000-000000000001'",
-    )
-  )[0].skill_id;
-  check(
-    (
-      await search(anonymous, {
-        ...frozen,
-        kinds: ["one_time"],
-        proposal_skill_ids: [skill],
-      })
-    ).items.length === 1,
-    "MAP04 real skill filter",
-  );
-  check(
-    (
-      await search(anonymous, {
-        ...frozen,
-        proposal_keyword: "Garden 1",
-        resource_keyword: "Resource 2",
-      })
-    ).items.length === 3,
-    "MAP04 explicit family keyword scope",
-  );
-  const bbox = {
-    mode: "bounds",
-    south: 46.07,
-    north: 46.08,
-    west: 11.12,
-    east: 11.13,
-    reference_time: first.reference_time,
-  };
-  assert.deepEqual((await search(anonymous, bbox)).items, first.items);
-  check(true, "MAP04 real REST inclusive viewport boundaries");
-  const probes = [];
-  for (let i = 0; i < 8; i++) {
-    probes.push({
-      ...frozen,
-      latitude: -33.86 + i / 100000,
-      longitude: 151.21,
-      radius_m: 1,
-    });
-    probes.push({
-      ...frozen,
-      latitude: 46.07 + i / 100000,
-      longitude: 11.12,
-      radius_m: 1,
-    });
-  }
-  const before = [];
-  for (const p of probes) before.push((await search(anonymous, p)).items);
-  for (const rows of before) {
-    const paired = rows.filter((r) =>
-      [
-        "a9420000-0000-4000-8000-000000000001",
-        "a9420000-0000-4000-8000-000000000002",
-      ].includes(r.item_id),
+      "update public.proposals set selected_public_place=null,approximate_location=null where id='a9420000-0000-4000-8000-000000000001'",
     );
     check(
-      paired.length === 0 || paired.length === 2,
-      "MAP04 repeated tiny probes cannot distinguish different private venues",
+      (await search(anonymous, frozen)).items.length === 6,
+      "MAP04 cleared public selection stops matching subsequent REST reads",
+    );
+    await denied(
+      anonymous,
+      "search_public_geography_v1",
+      { p_query: { ...query, srid: 3857 } },
+      "22023",
+    );
+    await denied(
+      anonymous,
+      "search_public_geography_v1",
+      {
+        p_query: {
+          mode: "bounds",
+          south: 46,
+          north: 47,
+          west: 179,
+          east: -179,
+        },
+      },
+      "22023",
+    );
+    await denied(
+      anonymous,
+      "search_public_geography_v1",
+      { p_query: query, p_limit: 51 },
+      "22023",
+    );
+    await verifyGeographicPerformance({ db, owner, check });
+  } finally {
+    // Keep other integration verifiers independent of these deliberately collocated/title fixtures.
+    // Retire only deterministic MAP04 records owned by this verifier's synthetic actor.
+    await db.unsafe(
+      "update public.proposals set lifecycle_state='cancelled',cancelled_at=greatest(now(),published_at) where id::text like 'a9420000-%' and creator_profile_id=$1 and lifecycle_state='published'",
+      [owner.id],
+    );
+    await db.unsafe(
+      "update public.recurring_activities set lifecycle_state='paused',paused_at=greatest(now(),published_at) where id::text like 'a9440000-%' and creator_profile_id=$1 and lifecycle_state='published'",
+      [owner.id],
+    );
+    await db.unsafe(
+      "update public.resource_listings set lifecycle_state='closed',closed_at=greatest(now(),published_at) where id::text like 'a9430000-%' and owner_profile_id=$1 and lifecycle_state='published'",
+      [owner.id],
     );
   }
-  await db.unsafe(
-    "update public.project_memberships set removed_at=now(),removed_by_profile_id=$1 where id in ('a9460000-0000-4000-8000-000000000001','a9460000-0000-4000-8000-000000000002')",
-    [owner.id],
-  );
-  await db.unsafe(
-    "update public.proposal_meeting_details set exact_location_visibility='public',exact_location=extensions.st_setsrid(extensions.st_makepoint(-30,-20),4326)::extensions.geography where proposal_id='a9420000-0000-4000-8000-000000000001'",
-  );
-  await db.unsafe(
-    "update public.recurring_activity_meeting_details set exact_location_visibility='public',exact_location=extensions.st_setsrid(extensions.st_makepoint(-30,-20),4326)::extensions.geography where recurring_activity_id='a9440000-0000-4000-8000-000000000001'",
-  );
-  assert.deepEqual(await search(peer.client, frozen), first);
-  check(
-    true,
-    "MAP04 removed member/exact visibility cannot alter public output",
-  );
-  for (let i = 0; i < probes.length; i++) {
-    assert.deepEqual((await search(peer.client, probes[i])).items, before[i]);
-    check(
-      true,
-      "MAP04 tiny probe after revocation identical to anon before revocation",
-    );
-  }
-  check(
-    (
-      await search(anonymous, {
-        mode: "bounds",
-        south: -33.87,
-        north: -33.85,
-        west: 151.2,
-        east: 151.22,
-      })
-    ).items.length === 0,
-    "MAP04 shifted negative viewport never matches private exact",
-  );
-  await db.unsafe(
-    "update public.proposals set selected_public_place=null,approximate_location=null where id='a9420000-0000-4000-8000-000000000001'",
-  );
-  check(
-    (await search(anonymous, frozen)).items.length === 6,
-    "MAP04 cleared public selection stops matching subsequent REST reads",
-  );
-  await denied(
-    anonymous,
-    "search_public_geography_v1",
-    { p_query: { ...query, srid: 3857 } },
-    "22023",
-  );
-  await denied(
-    anonymous,
-    "search_public_geography_v1",
-    {
-      p_query: { mode: "bounds", south: 46, north: 47, west: 179, east: -179 },
-    },
-    "22023",
-  );
-  await denied(
-    anonymous,
-    "search_public_geography_v1",
-    { p_query: query, p_limit: 51 },
-    "22023",
-  );
-  await verifyGeographicPerformance({ db, owner, check });
 }
 
 export async function verifyGeographicPerformance({ db, owner, check }) {
