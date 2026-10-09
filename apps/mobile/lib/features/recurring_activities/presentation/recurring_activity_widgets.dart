@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 import '../../../core/theme/app_tokens.dart';
-import '../../locations/domain/location_preview.dart';
-import '../../locations/presentation/location_preview_panel.dart';
 
 import '../../../core/widgets/requested_badge.dart';
 import '../../../l10n/generated/app_localizations.dart';
@@ -100,15 +98,12 @@ class RecurringActivityCard extends StatelessWidget {
                     text: formatRecurringSchedule(activity.schedule, context),
                   ),
                   const SizedBox(height: AppSpacing.small),
-                  LocationPreviewPanel(
-                    item: PreviewItem('recurring', activity.id),
-                    legacy: LegacyPreviewArea(
-                      activity.locality,
-                      activity.countryCode,
-                    ),
-                    publicLabel: activity.publicLocationLabel,
-                    labelKey: Key('tavolo-public-location-${activity.id}'),
+                  _MetadataRow(
+                    icon: Icons.location_on_outlined,
+                    text: activity.publicLocationLabel,
+                    textKey: Key('tavolo-public-location-${activity.id}'),
                   ),
+                  const SizedBox(height: AppSpacing.small),
                   ProjectCapacityLabel(
                     capacity: activity.capacity,
                     presentation: ProjectCapacityPresentation.public,
@@ -124,10 +119,11 @@ class RecurringActivityCard extends StatelessWidget {
 }
 
 class _MetadataRow extends StatelessWidget {
-  const _MetadataRow({required this.icon, required this.text});
+  const _MetadataRow({required this.icon, required this.text, this.textKey});
 
   final IconData icon;
   final String text;
+  final Key? textKey;
 
   @override
   Widget build(BuildContext context) => Row(
@@ -135,7 +131,7 @@ class _MetadataRow extends StatelessWidget {
     children: [
       Icon(icon, size: 20),
       const SizedBox(width: AppSpacing.small),
-      Expanded(child: Text(text)),
+      Expanded(child: Text(text, key: textKey)),
     ],
   );
 }

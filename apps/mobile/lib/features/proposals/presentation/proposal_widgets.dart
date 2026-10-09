@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/theme/app_tokens.dart';
-import '../../locations/domain/location_preview.dart';
-import '../../locations/presentation/location_preview_panel.dart';
 import '../../locations/presentation/location_attribution.dart';
 
 import '../../../core/widgets/requested_badge.dart';
@@ -100,24 +98,17 @@ class ProposalCard extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                  OverflowBar(
+                    alignment: MainAxisAlignment.spaceBetween,
+                    spacing: AppSpacing.small,
+                    overflowSpacing: AppSpacing.xSmall,
                     children: [
-                      Expanded(
-                        child: Text(
-                          proposal.title,
-                          key: Key('proposal-card-title-${proposal.id}'),
-                          style: Theme.of(context).textTheme.titleLarge,
-                        ),
+                      Text(
+                        proposal.title,
+                        key: Key('proposal-card-title-${proposal.id}'),
+                        style: Theme.of(context).textTheme.titleLarge,
                       ),
-                      const SizedBox(width: AppSpacing.small),
-                      Wrap(
-                        spacing: AppSpacing.xSmall,
-                        runSpacing: AppSpacing.xSmall,
-                        children: [
-                          ProposalStatusBadge(status: proposal.status),
-                        ],
-                      ),
+                      ProposalStatusBadge(status: proposal.status),
                     ],
                   ),
                   const SizedBox(height: AppSpacing.small),
@@ -130,14 +121,11 @@ class ProposalCard extends StatelessWidget {
                         '${formatProposalDateTime(proposal.endsAt, proposal.eventTimezone, Localizations.localeOf(context).toLanguageTag())}',
                   ),
                   const SizedBox(height: AppSpacing.small),
-                  LocationPreviewPanel(
-                    item: PreviewItem('one_time', proposal.id),
-                    legacy: LegacyPreviewArea(
-                      proposal.locality,
-                      proposal.countryCode,
-                    ),
-                    publicLabel: proposal.publicLocationLabel,
+                  _IconText(
+                    icon: Icons.location_on_outlined,
+                    text: proposal.publicLocationLabel,
                   ),
+                  const SizedBox(height: AppSpacing.small),
                   ProjectCapacityLabel(
                     capacity: proposal.capacity,
                     presentation: ProjectCapacityPresentation.public,
@@ -191,7 +179,6 @@ class ProposalLocation extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const LocationAttribution(),
         Text(
           l10n.proposalLocationTitle,
           style: Theme.of(context).textTheme.titleLarge,
@@ -209,6 +196,7 @@ class ProposalLocation extends StatelessWidget {
                 : 'proposal-location-public',
           ),
         ),
+        const LocationAttribution(),
       ],
     );
   }

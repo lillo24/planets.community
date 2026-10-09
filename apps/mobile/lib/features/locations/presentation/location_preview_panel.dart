@@ -211,7 +211,8 @@ class _LocationPreviewPanelState extends ConsumerState<LocationPreviewPanel>
           : await ref.read(publicPreviewBatchProvider).read(widget.item);
       if (!_current(epoch, actor)) return;
       if (value != null && !_safe(value)) throw const PreviewUnavailable(true);
-      _preview = value;
+      // Authorized text/action need not wait for optional image rendering.
+      setState(() => _preview = value);
       if (value == null) {
         _revoke();
         _failed = true;
@@ -331,85 +332,68 @@ class _LocationPreviewPanelState extends ConsumerState<LocationPreviewPanel>
       ref.listen(projectManagementRoleProvider, (_, _) => _invalidate());
       ref.listen(participantMeetingDetailsProvider, (_, _) => _invalidate());
     }
-    final l10n = AppLocalizations.of(context),
-        scheme = Theme.of(context).colorScheme;
+    final l10n = AppLocalizations.of(context);
     final value = _preview, place = value?.place;
     final label = place?.label ?? widget.publicLabel;
-    final hasDestination = place != null || widget.legacy.query != null;
+    // Only a current canonical projection can offer an outbound destination.
+    // Revocation removes the action together with protected labels and pixels.
+    final hasDestination =
+        value != null && googleMapsPreviewUrl(value, value.legacy) != null;
     return Padding(
       key: _box,
       padding: const EdgeInsets.symmetric(vertical: AppSpacing.small),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Material(
-            color: scheme.surfaceContainerLow,
-            borderRadius: AppRadii.medium,
-            child: Semantics(
-              button: true,
-              child: InkWell(
-                key: Key('location-preview-${widget.item.id}'),
+          Row(
+            key: Key('location-preview-${widget.item.id}'),
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const ExcludeSemantics(child: Icon(Icons.location_on_outlined)),
+              const SizedBox(width: AppSpacing.small),
+              Expanded(
+                child: Text(
+                  label.isEmpty ? l10n.locationPreviewUnavailable : label,
+                  key: widget.labelKey,
+                  style: Theme.of(context).textTheme.bodyLarge,
+                ),
+              ),
+            ],
+          ),
+          if (place?.isArea == true)
+            Text(
+              l10n.locationPreviewApproximate,
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+          // Disabled imagery has no reserved space or availability boilerplate.
+          if (value != null && _bytes != null)
+            Padding(
+              padding: const EdgeInsets.only(top: AppSpacing.small),
+              child: ClipRRect(
                 borderRadius: AppRadii.medium,
-                onTap: hasDestination && !_opening ? _open : null,
-                child: Padding(
-                  padding: const EdgeInsets.all(AppSpacing.small),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      Row(
-                        children: [
-                          const ExcludeSemantics(
-                            child: Icon(Icons.location_on_outlined),
-                          ),
-                          const SizedBox(width: AppSpacing.small),
-                          Expanded(
-                            child: Text(
-                              label.isEmpty
-                                  ? l10n.locationPreviewUnavailable
-                                  : label,
-                              key: widget.labelKey,
-                              style: Theme.of(context).textTheme.labelLarge,
-                            ),
-                          ),
-                          if (hasDestination)
-                            const ExcludeSemantics(
-                              child: Icon(Icons.open_in_new, size: 20),
-                            ),
-                        ],
-                      ),
-                      Text(
-                        place == null
-                            ? l10n.locationPreviewTextOnly
-                            : place.isArea
-                            ? l10n.locationPreviewApproximate
-                            : l10n.locationPreviewVerified,
-                      ),
-                      if (value != null && _bytes != null)
-                        Padding(
-                          padding: const EdgeInsets.only(top: AppSpacing.small),
-                          child: SizedBox(
-                            height: widget.detail ? 160 : 80,
-                            child: _UncachedPreviewImage(
-                              key: _bitmap,
-                              bytes: _bytes!,
-                              failureLabel: l10n.locationPreviewImageFailed,
-                            ),
-                          ),
-                        ),
-                      if (_failed) Text(l10n.locationPreviewImageFailed),
-                      if (hasDestination)
-                        Text(
-                          _opening
-                              ? l10n.locationLoading
-                              : l10n.locationOpenGoogleMaps,
-                          style: Theme.of(context).textTheme.labelLarge,
-                        ),
-                    ],
+                child: SizedBox(
+                  height: widget.detail ? 144 : 80,
+                  child: _UncachedPreviewImage(
+                    key: _bitmap,
+                    bytes: _bytes!,
+                    failureLabel: l10n.locationPreviewImageFailed,
                   ),
                 ),
               ),
             ),
-          ),
+          if (_failed) Text(l10n.locationPreviewImageFailed),
+          if (hasDestination)
+            Align(
+              alignment: Alignment.centerLeft,
+              child: TextButton.icon(
+                key: Key('location-open-maps-${widget.item.id}'),
+                onPressed: _opening ? null : _open,
+                icon: const Icon(Icons.open_in_new, size: 20),
+                label: Text(
+                  _opening ? l10n.locationLoading : l10n.locationOpenGoogleMaps,
+                ),
+              ),
+            ),
           // Text may remain provider-derived after clear or template reuse.
           const LocationAttribution(),
         ],

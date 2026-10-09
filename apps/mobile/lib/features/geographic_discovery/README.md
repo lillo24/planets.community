@@ -8,7 +8,7 @@ This feature owns the typed public map-search contract and reusable List/Map UI.
 - domain/map_discovery.dart: RAM-only reference/camera preferences, bounded viewport checks, public grid clustering and existing detail destinations.
 - application/map_discovery_sessions.dart: per-origin preferences that survive navigation and clear on account/readiness changes.
 - data/map_provider_gateway.dart: independent actor-bound search-center/selection and fixed XYZ tile transport; both disabled by default.
-- presentation/map_view_button.dart: List entry affordance that preserves the originating route and applied filters.
+- presentation/map_view_button.dart: shared full-width, equal-half List/Map selector on feeds and Map; only the inactive half navigates, preserving the originating route and applied filters. Return pops when possible, otherwise goes to the origin's List root.
 - presentation/map_discovery_screen.dart: shared controls, explicit queries/pages, loaded-only chooser/card, lifecycle and attribution.
 - presentation/public_point_map.dart: Flutter renderer and bounded custom tile queue; no provider URL/key in client code.
 

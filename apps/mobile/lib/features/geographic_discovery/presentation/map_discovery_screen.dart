@@ -22,6 +22,7 @@ import '../application/map_discovery_sessions.dart';
 import '../data/map_provider_gateway.dart';
 import '../domain/geographic_discovery.dart';
 import '../domain/map_discovery.dart';
+import 'map_view_button.dart';
 import 'public_point_map.dart';
 
 class MapDiscoveryScreen extends ConsumerStatefulWidget {
@@ -477,27 +478,7 @@ class _MapDiscoveryScreenState extends ConsumerState<MapDiscoveryScreen>
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Wrap(
-                spacing: 8,
-                children: [
-                  OutlinedButton.icon(
-                    key: const Key('map-return-list'),
-                    icon: const Icon(Icons.list),
-                    label: Text(l10n.mapList),
-                    onPressed: () => context.canPop()
-                        ? context.pop()
-                        : context.go(switch (widget.origin) {
-                            MapDiscoveryOrigin.projects => '/proposals',
-                            MapDiscoveryOrigin.tavoli => '/tavoli',
-                            MapDiscoveryOrigin.resources => '/resources',
-                          }),
-                  ),
-                  Chip(
-                    avatar: const Icon(Icons.map_outlined),
-                    label: Text(l10n.mapView),
-                  ),
-                ],
-              ),
+              MapViewButton(origin: widget.origin, mapSelected: true),
               Text(l10n.mapPublicReference),
               const SizedBox(height: 12),
               DropdownButtonFormField<MapDiscoveryFamily>(

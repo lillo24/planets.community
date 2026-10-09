@@ -400,7 +400,7 @@ function proposalArgs(
     p_country_code: "IT",
     p_locality: d.locality,
     p_administrative_area: "Provincia autonoma di Trento",
-    p_public_location_label: `${d.locality} · luogo sintetico`,
+    p_public_location_label: `${d.locality}, zona indicativa`,
     p_exact_meeting_text: d.operational
       ? "TW05_MEETING_PRIVATE — punto di incontro sintetico, nessun domicilio reale"
       : "Spazio di quartiere sintetico da concordare",

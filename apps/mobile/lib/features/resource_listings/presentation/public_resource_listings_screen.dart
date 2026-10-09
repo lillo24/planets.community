@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../geographic_discovery/domain/map_discovery.dart';
 import '../../geographic_discovery/presentation/map_view_button.dart';
+import '../../locations/presentation/location_attribution.dart';
 
 import '../../../core/theme/app_tokens.dart';
 import '../../../core/widgets/async_data_presentation.dart';
@@ -346,6 +347,9 @@ class _PublicResourceListingsScreenState
                         )
                       : Text(l10n.resourceLoadMore),
                 ),
+              const LocationAttribution(),
+              // Let credit links scroll above the floating Create action.
+              const SizedBox(height: 80),
             ],
           ),
         ),
