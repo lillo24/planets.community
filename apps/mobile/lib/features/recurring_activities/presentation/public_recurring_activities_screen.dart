@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../geographic_discovery/domain/map_discovery.dart';
+import '../../geographic_discovery/presentation/map_view_button.dart';
+
 import '../../../app/router/browse_activity_switcher.dart';
 import '../../../core/theme/app_tokens.dart';
 import '../../locations/domain/location_preview.dart';
@@ -90,6 +93,8 @@ class _PublicRecurringActivitiesScreenState
             padding: const EdgeInsets.all(AppSpacing.medium),
             children: [
               const BrowseActivitySwitcher(selected: BrowseActivityType.tavoli),
+              MapViewButton(origin: MapDiscoveryOrigin.tavoli),
+              const SizedBox(height: 8),
               const SizedBox(height: AppSpacing.medium),
               Align(
                 alignment: Alignment.centerRight,

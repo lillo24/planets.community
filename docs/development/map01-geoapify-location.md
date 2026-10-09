@@ -1,5 +1,10 @@
 # MAP01 shared location foundation
 
+MAP05 adds a required master gate and exact quarter-credit account ceiling for
+all four Geoapify consumers. Existing editor limits remain additional guards;
+see [current meter and activation](map05-interactive-discovery.md). Its public
+search-center API is separate, authenticated-only and disabled by default.
+
 Decision verified on 2026-10-08 against main `4b994d278a9686063573e9ed60e82201dd820256`.
 Geoapify is the accepted free-first implementation target. No account, commercial
 terms acceptance, provider traffic, deployment, GPS permission or map SDK is

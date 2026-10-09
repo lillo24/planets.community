@@ -38,6 +38,15 @@ The authenticated-user helper is local integration tooling only. It must never
 log OTPs, access or refresh tokens, API keys, Authorization headers, or database
 credentials.
 
+- `map-provider-fixture.mjs` creates a valid neutral PNG and synthetic OSM-backed
+  center responses, without network access.
+- `map-provider.test.mjs` verifies the pure MAP05 Edge boundary, paid-service
+  zero-IO gates, fixed requests, identity checks, deadlines and safe failures.
+- `verify-map-discovery-provider.mjs` adds real Auth/REST permissions, atomic
+  quarter-credit races, deduplication, expiry and shutdown checks to the existing
+  explicitly disposable location verifier. It restores its configuration and
+  deletes only its owned cache keys; no live provider is contacted.
+
 The demo-world helper is also trusted local tooling. It reads vendored WebP
 fixtures from `scripts/demo-assets`, so seeding stays offline after checkout.
 It uses ordinary authenticated clients for domain and Storage/RPC media

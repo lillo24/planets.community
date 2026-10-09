@@ -2390,5 +2390,68 @@
   "locationPreviewVerified": "Verified selected place",
   "locationPreviewImageFailed": "Map preview unavailable",
   "locationOpenGoogleMaps": "Open in Google Maps",
-  "locationMapsLaunchFailed": "Could not open Google Maps. Please try again."
+  "locationMapsLaunchFailed": "Could not open Google Maps. Please try again.",
+  "mapView": "Map",
+  "mapList": "List",
+  "mapAll": "All",
+  "mapFamily": "Show on map",
+  "mapCreate": "Create listing",
+  "mapPublicReference": "Trento is the initial search reference, not your location. Choose another center or move the map.",
+  "mapSearchPlace": "Choose a place in Italy",
+  "mapLookupDisabled": "Place lookup is disabled. Use the map center or Search this area.",
+  "mapGuestLookupDisabled": "Live place lookup requires sign-in. Map-based area selection remains available.",
+  "mapCenterFailed": "Place lookup failed. Edit the text and try again; no center was selected.",
+  "mapCenterExpired": "That suggestion expired. Search for the place again.",
+  "mapRadius": "Search radius",
+  "mapRadiusMode": "Radius search around the selected reference.",
+  "mapBoundsMode": "Searching the selected visible area.",
+  "mapFixtureTiles": "Synthetic tile fixture — no real basemap or provider traffic.",
+  "mapBasemapDisabled": "Basemap unavailable. This interactive canvas shows public reference points only.",
+  "mapBasemapFailed": "Basemap failed to load. Public results and area controls remain available.",
+  "mapZoomIn": "Zoom in",
+  "mapZoomOut": "Zoom out",
+  "mapSearchArea": "Search this area",
+  "mapBackRadius": "Back to radius search",
+  "mapUseCenter": "Use map center as reference",
+  "mapSelectedReference": "Selected map reference",
+  "mapZoomInRequired": "Zoom in to search a smaller, supported area.",
+  "mapLoading": "Loading public map results…",
+  "mapEmpty": "No geographically referenced results in this area.",
+  "mapTooBroad": "This area has too many candidates. Narrow the area or filters.",
+  "mapMalformed": "The map response could not be verified. Refresh to try again.",
+  "mapCursorExpired": "This search expired. Refresh to start a new search.",
+  "mapInvalidArea": "This search area or filter is unsupported. Adjust it and try again.",
+  "mapAdditionalPageFailed": "More results could not be loaded. Confirmed results remain visible; retry loading.",
+  "mapSearchFailed": "Geographic search is unavailable. Try again or return to List.",
+  "mapLoaded": "{count} loaded results. Markers and clusters include loaded results only.",
+  "@mapLoaded": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "mapClusterLoaded": "Choose among {count} loaded results",
+  "@mapClusterLoaded": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "mapSkills": "Projects: {count} selected competences (any match)",
+  "@mapSkills": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "mapListDifference": "List can show more items: manually entered locations without verified public coordinates have no map marker.",
+  "mapApproximate": "Approximate public area. The meeting venue may be elsewhere.",
+  "mapPrecise": "Public address or venue reference.",
+  "mapOpenDetail": "Open listing",
+  "mapLoadMore": "Load more results",
+  "mapRefresh": "Refresh search",
+  "mapInheritedFilters": "List filters apply to their respective families. Return to List to edit them."
 }

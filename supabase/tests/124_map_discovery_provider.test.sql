@@ -1,0 +1,100 @@
+begin;
+select no_plan();
+select is((select enabled from private.location_provider_config),false,'Account-wide gate defaults off');
+select is((select daily_units_limit from private.location_provider_config),0,'Account ceiling defaults to zero');
+select ok((select not center_enabled and not tiles_enabled and not cache_license_approved and tile_cache_seconds=0 from private.location_provider_config),'New consumers and unapproved caching off');
+select ok((select bool_and(relrowsecurity) from pg_class c join pg_namespace n on n.oid=c.relnamespace where n.nspname='private' and c.relname in ('location_provider_config','location_provider_usage','map_provider_cache')),'Every new private table has RLS');
+select ok(not has_table_privilege('anon','private.map_provider_cache','SELECT'),'No anonymous cache reads');
+select ok(not has_table_privilege('authenticated','private.map_provider_cache','SELECT'),'No authenticated cache reads');
+select ok(not has_table_privilege('service_role','private.map_provider_cache','SELECT'),'Service uses only bounded RPCs');
+select ok(not has_function_privilege('anon','public.reserve_map_provider_v1(uuid,text,text)','EXECUTE'),'No anonymous reserve RPC');
+select ok(not has_function_privilege('authenticated','public.reserve_map_provider_v1(uuid,text,text)','EXECUTE'),'No authenticated reserve RPC');
+select ok(not has_function_privilege('authenticated','public.resolve_map_center_v1(uuid,uuid)','EXECUTE'),'No client actor impersonation');
+select ok(not has_function_privilege('anon','public.finish_map_provider_v1(text,uuid,jsonb,text)','EXECUTE'),'No anonymous cache writes');
+select ok(has_function_privilege('service_role','public.reserve_map_provider_v1(uuid,text,text)','EXECUTE'),'Edge may reserve');
+select ok(has_function_privilege('service_role','public.finish_map_provider_v1(text,uuid,jsonb,text)','EXECUTE'),'Edge may finish');
+select ok(has_function_privilege('service_role','public.resolve_map_center_v1(uuid,uuid)','EXECUTE'),'Edge may resolve');
+select ok(not has_function_privilege('service_role','private.reserve_location_provider_v1(text,uuid,boolean)','EXECUTE'),'Internal ledger cannot be called by service clients');
+select ok((select bool_and(prosecdef and proconfig @> array['search_path=""']) from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='public' and p.proname in ('reserve_map_provider_v1','finish_map_provider_v1','resolve_map_center_v1')),'Security-definer RPCs have empty search paths');
+select is(private.reserve_location_provider_v1('tile',null,false),'disabled','Master disabled before request metering');
+select is((select count(*) from private.location_provider_usage),0::bigint,'Disabled uses zero credits and request counters');
+
+insert into auth.users(id,email) values('a9510000-0000-4000-8000-000000000001','map05-tap-a@planets.invalid'),('a9510000-0000-4000-8000-000000000002','map05-tap-b@planets.invalid');
+insert into public.profiles(id,display_name) values('a9510000-0000-4000-8000-000000000001','MAP05 A'),('a9510000-0000-4000-8000-000000000002','MAP05 B');
+insert into public.proposals(id,creator_profile_id,country_code,locality,public_location_label,event_timezone)
+ values('a9520000-0000-4000-8000-000000000001','a9510000-0000-4000-8000-000000000001','IT','Trento','Trento','Europe/Rome');
+select is(public.reserve_map_provider_v1(null,'tile',repeat('a',64))->>'status','guest_disabled','Guests denied without trusting IP or installation IDs');
+select throws_ok($$select public.reserve_map_provider_v1('a9510000-0000-4000-8000-000000000001','arbitrary',repeat('a',64))$$,'22023','Invalid map provider scope.','Fixed operation allowlist');
+select throws_ok($$select public.reserve_map_provider_v1('a9510000-0000-4000-8000-000000000001','tile','too-short')$$,'22023','Invalid map provider scope.','Bounded server cache key');
+select throws_ok($$select public.reserve_map_provider_v1('a9510000-0000-4000-8000-000000000099','tile',repeat('a',64))$$,'42501','Map provider actor unavailable.','Actor must exist');
+update private.location_provider_config set enabled=true;
+select is(private.reserve_location_provider_v1('editor','a9510000-0000-4000-8000-000000000001',false),'unconfigured','Zero account ceiling fails closed');
+update private.location_provider_config set daily_units_limit=25,actor_daily_units=8000;
+select is(public.reserve_map_provider_v1('a9510000-0000-4000-8000-000000000001','tile',repeat('a',64))->>'status','disabled','Tile flag independent');
+select is(public.reserve_map_provider_v1('a9510000-0000-4000-8000-000000000001','center',repeat('b',64))->>'status','disabled','Center flag independent');
+update private.location_provider_config set tiles_enabled=true,center_enabled=true;
+select is(public.reserve_map_provider_v1('a9510000-0000-4000-8000-000000000001','tile',repeat('a',64))->>'status','unconfigured','Unapproved retention blocks tile upstream');
+update private.location_provider_config set cache_license_approved=true,tile_cache_seconds=600;
+update private.location_search_config set enabled=true;
+update private.location_preview_config set enabled=true,cache_license_approved=true,daily_credit_limit=100,account_daily_credit_limit=100;
+select is(public.reserve_location_search_v1('a9510000-0000-4000-8000-000000000001','one_time','a9520000-0000-4000-8000-000000000001',0,'area',gen_random_uuid(),repeat('f',64))->>'status','ok','Editor uses common ledger');
+select set_config('test.map05.center',public.reserve_map_provider_v1('a9510000-0000-4000-8000-000000000001','center',repeat('b',64))::text,true);
+select is(current_setting('test.map05.center')::jsonb->>'status','ok','New public-purpose center reservation');
+select set_config('test.map05.tile',public.reserve_map_provider_v1('a9510000-0000-4000-8000-000000000001','tile',repeat('a',64))::text,true);
+select is(current_setting('test.map05.tile')::jsonb->>'status','ok','Quarter-credit tile reservation');
+select is(public.reserve_location_preview_v1(repeat('c',64),false,null)->>'status','ok','Static preview uses common ledger');
+select is((select used from private.location_provider_usage where scope='units:global'),25,'Editor 4 + center 4 + tile 1 + static 16 = 25 quarter-units');
+select is(public.reserve_map_provider_v1('a9510000-0000-4000-8000-000000000002','tile',repeat('d',64))->>'status','budget_exhausted','Shared account ceiling applies across actors');
+select is(public.reserve_location_preview_v1(repeat('e',64),false,null)->>'status','budget_exhausted','Static cannot bypass tile/search account usage');
+select is(public.reserve_location_search_v1('a9510000-0000-4000-8000-000000000001','one_time','a9520000-0000-4000-8000-000000000001',0,'area',gen_random_uuid(),repeat('e',64))->>'status','budget_exhausted','Editor cannot bypass new consumers');
+select is(public.reserve_map_provider_v1('a9510000-0000-4000-8000-000000000001','tile',repeat('a',64))->>'status','pending','Concurrent pending tile deduplicates without charging');
+select is((select used from private.location_provider_usage where scope='units:global'),25,'Pending duplicate does not reserve extra credits');
+
+select throws_ok($$select public.finish_map_provider_v1(repeat('b',64),(current_setting('test.map05.center')::jsonb->>'token')::uuid,'[{"label":"Bad","latitude":91,"longitude":11,"country_code":"it"}]')$$,'22023','Invalid map center.','Bad provider coordinates rejected');
+select throws_ok($$select public.finish_map_provider_v1(repeat('b',64),(current_setting('test.map05.center')::jsonb->>'token')::uuid,'[{"label":"Bad","latitude":46,"longitude":11,"country_code":"us"}]')$$,'22023','Invalid map center.','Italy-only center');
+select throws_ok($$select public.finish_map_provider_v1(repeat('b',64),(current_setting('test.map05.center')::jsonb->>'token')::uuid,'[{"label":"Bad","latitude":46,"longitude":11,"country_code":"it","provider_id":"never"}]')$$,'22023','Invalid map center.','No persisted provider IDs or raw fields');
+select set_config('test.map05.suggestions',public.finish_map_provider_v1(repeat('b',64),(current_setting('test.map05.center')::jsonb->>'token')::uuid,'[{"label":"Synthetic Trento","latitude":46.0748,"longitude":11.1217,"country_code":"it"}]')::text,true);
+select is(current_setting('test.map05.suggestions')::jsonb->>'status','ok','Sanitized transient centers issued');
+select ok(not ((current_setting('test.map05.suggestions')::jsonb->'suggestions'->0) ? 'latitude'),'Suggestions disclose only label and transient selection token');
+select is(public.resolve_map_center_v1('a9510000-0000-4000-8000-000000000002',(current_setting('test.map05.suggestions')::jsonb->'suggestions'->0->>'id')::uuid)->>'status','expired','Another actor cannot resolve a suggestion');
+select is(public.resolve_map_center_v1('a9510000-0000-4000-8000-000000000001',(current_setting('test.map05.suggestions')::jsonb->'suggestions'->0->>'id')::uuid)->'center'->>'label','Synthetic Trento','Actor explicitly resolves its center');
+select is((select used from private.location_provider_usage where scope='units:global'),25,'Resolution has no upstream charge');
+select is(public.reserve_map_provider_v1('a9510000-0000-4000-8000-000000000001','center',repeat('b',64))->>'cached','true','Ready center cache hit at hard ceiling');
+select throws_ok($$select public.finish_map_provider_v1(repeat('a',64),(current_setting('test.map05.tile')::jsonb->>'token')::uuid,null,encode(convert_to('not a PNG','UTF8'),'base64'))$$,'22023','Invalid map tile.','Unrestricted content rejected');
+-- Header fixture exercises SQL bounds; valid decodable PNGs are tested in Node/native fixtures.
+select is(public.finish_map_provider_v1(repeat('a',64),(current_setting('test.map05.tile')::jsonb->>'token')::uuid,null,
+ encode(decode('89504e470d0a1a0a0000000d4948445200000100000001000806000000000000000000000049454e44ae426082','hex'),'base64'))->>'status','ok','Bounded 256px tile retained');
+select is(public.reserve_map_provider_v1('a9510000-0000-4000-8000-000000000002','tile',repeat('a',64))->>'cached','true','Public tile cache may be reused across verified actors');
+select is((select used from private.location_provider_usage where scope='units:global'),25,'Cache hits consume no upstream units');
+update private.location_provider_config set enabled=false;
+select is(public.reserve_map_provider_v1('a9510000-0000-4000-8000-000000000001','tile',repeat('a',64))->>'status','disabled','Master kills cached tiles');
+select is(public.resolve_map_center_v1('a9510000-0000-4000-8000-000000000001',(current_setting('test.map05.suggestions')::jsonb->'suggestions'->0->>'id')::uuid)->>'status','disabled','Master kills cached centers');
+select is(public.reserve_location_preview_v1(repeat('e',64),false,null)->>'status','disabled','Master kills legacy static consumer');
+select is(public.reserve_location_search_v1('a9510000-0000-4000-8000-000000000001','one_time','a9520000-0000-4000-8000-000000000001',0,'area',gen_random_uuid(),repeat('e',64))->>'status','disabled','Master kills legacy editor consumer');
+
+update private.location_provider_config set enabled=true,daily_units_limit=8000,actor_minute_requests=1;
+delete from private.location_provider_usage where scope like 'requests:%';
+select is(public.reserve_map_provider_v1('a9510000-0000-4000-8000-000000000001','tile',repeat('a',64))->>'status','ok','First cached request allowed');
+select is(public.reserve_map_provider_v1('a9510000-0000-4000-8000-000000000001','tile',repeat('a',64))->>'status','rate_limited','Cache hit still throttled');
+update private.location_provider_config set actor_minute_requests=120;
+update private.map_provider_cache set expires_at=statement_timestamp()-interval '1 second' where kind='center';
+select is(public.resolve_map_center_v1('a9510000-0000-4000-8000-000000000001',(current_setting('test.map05.suggestions')::jsonb->'suggestions'->0->>'id')::uuid)->>'status','expired','Selection expires after transient TTL');
+
+do $$ declare claim jsonb; cache_key text; begin
+ for n in 1..5 loop
+  cache_key := encode(extensions.digest('MAP05 circuit '||n,'sha256'),'hex');
+  claim := public.reserve_map_provider_v1('a9510000-0000-4000-8000-000000000001','tile',cache_key);
+  perform public.finish_map_provider_v1(cache_key,(claim->>'token')::uuid);
+ end loop;
+end $$;
+select is((select failure_streak from private.location_provider_config),5,'Five failures open the circuit');
+select is(public.reserve_map_provider_v1('a9510000-0000-4000-8000-000000000001','tile',repeat('d',64))->>'status','unavailable','Circuit denies new upstream reservations');
+select is((select used from private.location_provider_usage where scope='units:global'),30,'Failures charged; open circuit adds no units');
+update private.location_provider_config set blocked_until=statement_timestamp()-interval '1 second';
+select is(public.reserve_map_provider_v1('a9510000-0000-4000-8000-000000000001','tile',encode(extensions.digest('MAP05 circuit 1','sha256'),'hex'))->>'status','unavailable','Failed cache suppresses immediate retry billing');
+update private.map_provider_cache set expires_at=statement_timestamp()-interval '1 second' where state='failed';
+select is(public.reserve_map_provider_v1('a9510000-0000-4000-8000-000000000001','tile',encode(extensions.digest('MAP05 circuit 1','sha256'),'hex'))->>'status','ok','Expired failed cache permits a new bounded reservation');
+delete from private.location_provider_config;
+select is(private.reserve_location_provider_v1('tile','a9510000-0000-4000-8000-000000000001',false),'disabled','Missing account config fails closed');
+select * from finish();
+rollback;

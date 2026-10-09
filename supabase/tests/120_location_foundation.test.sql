@@ -1,5 +1,7 @@
 begin;
 select no_plan();
+-- Explicit rolled-back MAP05 account gate; legacy assertions remain unchanged.
+update private.location_provider_config set enabled=true,daily_units_limit=8000,actor_daily_units=8000;
 insert into auth.users(id,email) values('a9010000-0000-4000-8000-000000000001','map01-tap-owner@planets.invalid'),('a9010000-0000-4000-8000-000000000002','map01-tap-member@planets.invalid'),('a9010000-0000-4000-8000-000000000003','map01-tap-outsider@planets.invalid');
 insert into public.profiles(id,display_name) values('a9010000-0000-4000-8000-000000000001','MAP01 Owner'),('a9010000-0000-4000-8000-000000000002','MAP01 Member'),('a9010000-0000-4000-8000-000000000003','MAP01 Outsider');
 -- Photo-free incomplete drafts are permitted; location does not introduce a gate.

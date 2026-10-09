@@ -1,5 +1,12 @@
 # Disposable mobile GUI rehearsal
 
+`map_discovery_fixture.dart` supplies MAP05 public DTOs and bounded synthetic
+center/tile gateways. `map05_app_fixture.dart` connects actual List/Map/detail
+widgets to those fakes. `integration_test/map_discovery_smoke_test.dart` owns the
+Android journey and rejects any network attempt; `test_driver/map05_driver.dart`
+exports screenshots to an explicitly selected host directory. Production imports
+none of these harnesses. See [MAP05](../../../docs/development/map05-interactive-discovery.md).
+
 `map02_rehearsal.dart` is a debug-only, explicitly opted-in
 (`MAP02_REHEARSAL=true`) harness for the real Proposal/Tavolo/Resource editors.
 All domain/location gateways are deterministic fakes with a reserved `.invalid`

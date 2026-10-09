@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { verifyLocationPreviews } from "./lib/verify-location-previews.mjs";
+import { verifyMapDiscoveryProvider } from "./lib/verify-map-discovery-provider.mjs";
 import { verifyGeographicDiscovery } from "./lib/verify-geographic-discovery.mjs";
 import { randomUUID } from "node:crypto";
 import { createClient } from "@supabase/supabase-js";
@@ -43,7 +44,12 @@ async function denied(client, name, params, code) {
 const original = (
   await db`select * from private.location_search_config where singleton`
 )[0];
+const originalProvider = (
+  await db`select enabled,daily_units_limit,actor_daily_units from private.location_provider_config where singleton`
+)[0];
 try {
+  // Synthetic rehearsal only; no Edge/provider is enabled by these fixture flags.
+  await db`update private.location_provider_config set enabled=true,daily_units_limit=8000,actor_daily_units=8000 where singleton`;
   const [owner, peer] = await Promise.all(
     ["owner", "peer"].map((role) =>
       signInLocalOtpUser({
@@ -498,10 +504,21 @@ try {
     denied,
     check,
   });
+  await verifyMapDiscoveryProvider({
+    db,
+    owner,
+    peer,
+    server,
+    anonymous,
+    rpc,
+    denied,
+    check,
+  });
   console.log(
-    `MAP01/MAP02/MAP03/MAP04 ${checks} authenticated REST/concurrency checks passed; fake provider only, no Geoapify traffic.`,
+    `MAP01/MAP02/MAP03/MAP04/MAP05 ${checks} authenticated REST/concurrency checks passed; fake provider only, no Geoapify traffic.`,
   );
 } finally {
+  await db`update private.location_provider_config set enabled=${originalProvider.enabled},daily_units_limit=${originalProvider.daily_units_limit},actor_daily_units=${originalProvider.actor_daily_units} where singleton`;
   await db`update private.location_search_config set enabled=${original.enabled},global_daily=${original.global_daily},actor_daily=${original.actor_daily},actor_minute=${original.actor_minute} where singleton`;
   await db.end();
 }
