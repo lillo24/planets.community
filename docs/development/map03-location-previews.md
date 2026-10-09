@@ -1,5 +1,10 @@
 # MAP03 location previews and Google Maps
 
+MAP05 now adds a required master gate and exact quarter-credit ceiling shared
+with editor searches, center lookups and tiles. The MAP03 limits below remain
+additional guards; [MAP05 activation](map05-interactive-discovery.md) is required
+before live use of any consumer. MAP03's protected-image authorization is unchanged.
+
 Proposal, Tavolo and Scambio/Dona cards now have a separate Maps tap region;
 the remainder opens PLANETS detail. Details share the same read-only panel.
 The default build says that map imagery is unavailable and retains readable
@@ -181,5 +186,5 @@ can also start the harness directly in image mode.
 This is not live Geoapify output, native Google dispatch, iOS, physical-device
 privacy or owner policy approval evidence. Final gate counts are recorded in PR.
 
-MAP04 may stack on the implemented head; MAP05 remains deferred. Neither new
+MAP04 queries and MAP05's disabled interactive view are now implemented. Neither
 geographic discovery nor a live key is required for this disabled Maps-link path.

@@ -158,7 +158,14 @@ Routine matching and chat activity should not produce parallel email noise by de
 
 The first implementation should store structured administrative location data and an optional approximate PostGIS point. Exact meeting information, when needed, must be separate and restricted to authorized participants.
 
-A visual map SDK and production geocoding provider are deferred. List and distance filters can validate the product before introducing map costs and privacy complexity.
+MAP01–05 extend this foundation with independently selected public locality
+references, public-only geographic queries and an optional Flutter map view.
+MAP05 uses a Flutter renderer behind app-owned provider gateways; all paid
+Geoapify consumers share a server-enforced quarter-credit ceiling. Live provider
+traffic remains disabled pending owner approval, credentials, licensing and
+native QA. Signed-out discovery can read public geography but cannot use paid
+tile/center lookup. Exact meeting geometry never drives discovery pins or
+clusters. See [MAP05](../development/map05-interactive-discovery.md).
 
 ### Derived statistics remain derived
 

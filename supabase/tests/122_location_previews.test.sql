@@ -1,5 +1,7 @@
 begin;
 select no_plan();
+-- Explicit rolled-back MAP05 account gate; legacy assertions remain unchanged.
+update private.location_provider_config set enabled=true,daily_units_limit=8000,actor_daily_units=8000;
 select is((select enabled from private.location_preview_config),false,'DB disabled');
 select is((select daily_credit_limit from private.location_preview_config),0,'Default budget zero');
 select ok(not has_function_privilege('anon','public.reserve_location_preview_v1(text,boolean,uuid)','EXECUTE'),'No anonymous meter');

@@ -54,7 +54,10 @@ class RpcGeographicDiscoveryGateway implements GeographicDiscoveryGateway {
       return page;
     } on PostgrestException catch (e) {
       throw GeoFailure(switch (e.code) {
-        '22023' => GeoFailureKind.invalidInput,
+        '22023' =>
+          cursor == null
+              ? GeoFailureKind.invalidInput
+              : GeoFailureKind.expiredCursor,
         '54000' => GeoFailureKind.tooBroad,
         _ => GeoFailureKind.unavailable,
       });

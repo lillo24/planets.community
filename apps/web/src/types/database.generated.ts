@@ -3040,6 +3040,15 @@ export type Database = {
         Args: { p_image_base64?: string; p_image_key: string; p_token: string }
         Returns: undefined
       }
+      finish_map_provider_v1: {
+        Args: {
+          p_cache_key: string
+          p_centers?: Json
+          p_image_base64?: string
+          p_token: string
+        }
+        Returns: Json
+      }
       get_authorized_item_location_v1: {
         Args: { p_expected_profile_id: string; p_item: string; p_kind: string }
         Returns: Json
@@ -5257,6 +5266,10 @@ export type Database = {
         }
         Returns: Json
       }
+      reserve_map_provider_v1: {
+        Args: { p_actor: string; p_cache_key: string; p_kind: string }
+        Returns: Json
+      }
       resolve_location_selection_v1: {
         Args: {
           p_actor: string
@@ -5267,6 +5280,10 @@ export type Database = {
           p_session: string
           p_slot: string
         }
+        Returns: Json
+      }
+      resolve_map_center_v1: {
+        Args: { p_actor: string; p_suggestion: string }
         Returns: Json
       }
       resume_recurring_activity: {

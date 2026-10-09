@@ -563,6 +563,16 @@ The one-time proposal model includes:
 
 Continuous location tracking is not part of the product foundation.
 
+MAP04/MAP05 discovery reads only independently selected public references:
+approximate locality points for Projects/Tavoli and permitted public Resource
+address/venue points. Membership and private exact locations cannot influence
+matches, ranks, clusters or marker payloads. The Flutter map is an alternative
+to existing List discovery; manual-only locations retain List visibility.
+Paid center/tile lookup uses separate authenticated Edge boundaries and shares
+the database hard ceiling with item searches/static previews. It ships disabled;
+guest paid lookup remains unavailable until a trusted perimeter is separately
+reviewed. No tracking or external-provider activation is implied.
+
 ## Proposal lifecycle
 
 The product document establishes the following general flow:

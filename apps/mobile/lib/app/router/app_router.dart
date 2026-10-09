@@ -3,6 +3,8 @@ import 'package:flutter/scheduler.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../features/geographic_discovery/domain/map_discovery.dart';
+import '../../features/geographic_discovery/presentation/map_discovery_screen.dart';
 import '../../features/auth/application/auth_command_controller.dart';
 import '../../features/auth/application/auth_session_controller.dart';
 import '../../features/auth/application/return_destination.dart';
@@ -668,6 +670,19 @@ RoutingConfig _routingConfig(
           StatefulShellBranch(
             initialLocation: '/proposals',
             routes: [
+              GoRoute(
+                path: '/discover/map/:origin',
+                builder: (context, state) {
+                  final origin = MapDiscoveryOrigin.values
+                      .where(
+                        (value) => value.name == state.pathParameters['origin'],
+                      )
+                      .firstOrNull;
+                  return origin == null
+                      ? const _UnknownRouteScreen()
+                      : MapDiscoveryScreen(origin: origin);
+                },
+              ),
               GoRoute(
                 path: DraftRoutes.path,
                 pageBuilder: (context, state) => MaterialPage<void>(
