@@ -19,8 +19,8 @@ export function ProjectAppHandoffView({
     <div className="grid gap-4">
       {confirmed ? (
         <p>
-          Sign into the same PLANETS account in the app to find this Project and
-          its chat. Browser sign-in is not transferred.
+          Open the app with the same PLANETS account to find your project and
+          its group chat.
         </p>
       ) : (
         <p>
@@ -58,8 +58,7 @@ export function ProjectAppHandoffView({
         ) : null}
       </div>
       <p className="text-sm text-muted-foreground">
-        If this link stays in your browser, you can keep viewing the Project
-        here
+        If the app doesn&apos;t open, view the project in your browser
         {config.android || config.ios
           ? " or use a download option above."
           : ". App downloads are not available here yet."}

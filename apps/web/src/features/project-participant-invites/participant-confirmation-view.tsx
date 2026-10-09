@@ -77,8 +77,8 @@ function ConfirmationControls({
         <>
           <p>
             {state.participation?.creator
-              ? "You own this Project."
-              : "You currently participate in this Project."}
+              ? "This is your project."
+              : "You joined the project."}
           </p>
           <ProjectAppHandoffView project={project} config={config} confirmed />
         </>
@@ -94,18 +94,17 @@ function ConfirmationControls({
           </Link>
         </>
       ) : (
-        <p>
-          You do not currently participate in this Project. An earlier join may
-          have ended; this page does not join you again.
-        </p>
+        <p>You aren&apos;t currently participating in this project.</p>
       )}
-      <Button
-        variant="outline"
-        disabled={state.loading || state.busy}
-        onClick={() => void controller.retryReads()}
-      >
-        Refresh participation
-      </Button>
+      {state.readFailure ? (
+        <Button
+          variant="outline"
+          disabled={state.loading || state.busy}
+          onClick={() => void controller.retryReads()}
+        >
+          Try again
+        </Button>
+      ) : null}
       {!current ? (
         <Link href={projectPath(project)} prefetch={false}>
           View public Project

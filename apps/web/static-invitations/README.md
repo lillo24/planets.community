@@ -8,7 +8,13 @@ the informational Site, and native associations remain separate.
   verified Auth/profile loading and identity-bound cleanup to the shared views.
   Profile setup uses the shared form's `nameOnly` mode: name and Continue only.
   Biography, skills and visibility are kept as loaded and can be personalized
-  later in the app. Saving a name still returns to an explicit invitation Join.
+  later in the app. One explicit Join click on the preview continues through
+  login/name setup to a verified confirmation; no second Join is requested.
+- `join-continuation.ts` holds that pending request in tab memory only, bound to
+  the actual locally verified OTP subject or the already verified signed-in
+  account. Cancel, Back, reload and identity/context changes clear it. Link
+  opening and Auth restoration remain read-only. `onboarding.test.tsx` exercises
+  the actual host, shared forms/controller and mocked Supabase boundaries.
 - `routes.ts` owns exact trial paths and narrows the canonical safe-return parser.
 - `public-config.ts` / `vite.config.mts` accept only the documented public keys,
   build static assets and reject Next/vinext/server-only runtime modules.

@@ -1,7 +1,13 @@
 "use client";
 import { ClientLink as Link } from "@/lib/navigation/client-navigation";
 import { useClientNavigation } from "@/lib/navigation/client-navigation";
-import { useEffect, useRef, useState, useSyncExternalStore } from "react";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from "react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
@@ -14,15 +20,28 @@ import {
 import { browserParticipantController } from "./participant-browser";
 import type { ParticipantController } from "./participant-controller";
 import type {
+  ParticipantAuth,
   ParticipantFailure,
   ParticipantPreview,
+  ProjectContext,
 } from "./participant-models";
 import { participantFailureMessage } from "./participant-messages";
+
+type JoinSetup = Readonly<{
+  onJoinPrerequisites?: (
+    auth: ParticipantAuth,
+    preview: Extract<ParticipantPreview, { available: true }>,
+  ) => void;
+  joiningAfterSetup?: boolean;
+  continueJoin?: (account: string, project: ProjectContext) => boolean;
+  cancelJoin?: () => void;
+}>;
 
 export function ParticipantInviteFlowView({
   token,
   initialRead,
   controller,
+  ...joinSetup
 }: Readonly<{
   token: string;
   initialRead: Readonly<{
@@ -31,7 +50,8 @@ export function ParticipantInviteFlowView({
   }>;
   config: HandoffConfig;
   controller?: ParticipantController;
-}>) {
+}> &
+  JoinSetup) {
   const [active, setActive] = useState<ParticipantController | null>(null);
   useEffect(() => {
     let live = true;
@@ -56,12 +76,16 @@ export function ParticipantInviteFlowView({
         </p>
       </div>
     );
-  return <InviteControls token={token} controller={active} />;
+  return <InviteControls token={token} controller={active} {...joinSetup} />;
 }
 function InviteControls({
   token,
   controller,
-}: Readonly<{ token: string; controller: ParticipantController }>) {
+  onJoinPrerequisites,
+  joiningAfterSetup = false,
+  continueJoin,
+  cancelJoin,
+}: Readonly<{ token: string; controller: ParticipantController }> & JoinSetup) {
   const state = useSyncExternalStore(
     controller.subscribe,
     controller.snapshot,
@@ -77,20 +101,60 @@ function InviteControls({
   }, []);
   const destination = participantReturnPath(token);
   const blocked = state.loading || state.busy;
-  async function join(reenter = false) {
-    await controller.join(reenter);
-    const result = controller.snapshot();
-    if (
-      mounted.current &&
-      controller.isInvite(token) &&
-      result.receipt &&
-      result.project &&
-      (result.participation?.current || result.participation?.creator)
-    )
-      router.replace(confirmationPath(result.project));
-  }
+  const join = useCallback(
+    async (reenter = false) => {
+      await controller.join(reenter);
+      const result = controller.snapshot();
+      if (
+        mounted.current &&
+        controller.isInvite(token) &&
+        result.receipt &&
+        result.project &&
+        (result.participation?.current || result.participation?.creator)
+      )
+        router.replace(confirmationPath(result.project));
+    },
+    [controller, router, token],
+  );
   const current = state.participation?.current || state.participation?.creator;
   const ended = !!state.receipt && !current && !!state.participation;
+  useEffect(() => {
+    if (!joiningAfterSetup || blocked) return;
+    if (
+      state.readFailure ||
+      state.previewFailure ||
+      state.failure ||
+      !state.preview?.available ||
+      ended
+    ) {
+      cancelJoin?.();
+      return;
+    }
+    if (
+      state.auth?.phase !== "ready" ||
+      !state.auth.account ||
+      !state.project ||
+      !state.participation ||
+      !continueJoin?.(state.auth.account, state.project)
+    )
+      return;
+    // Resume only a Join explicitly requested before Auth/name setup. Consuming
+    // that tab-local request is atomic; mounting or restoring Auth never joins.
+    if (current) router.replace(confirmationPath(state.project));
+    else void join();
+  }, [
+    joiningAfterSetup,
+    blocked,
+    state,
+    current,
+    ended,
+    continueJoin,
+    cancelJoin,
+    router,
+    join,
+  ]);
+  const needsSetup = state.auth && state.auth.phase !== "ready" && !blocked;
+  const setupPath = `${state.auth?.phase === "incompleteProfile" ? "/profile" : "/auth"}?returnTo=${encodeURIComponent(destination)}`;
   return (
     <div className="grid gap-4">
       <PreviewBody preview={state.preview} failure={state.previewFailure} />
@@ -101,8 +165,8 @@ function InviteControls({
             <AlertTitle>Participation status could not be checked</AlertTitle>
             <AlertDescription>
               {state.receipt
-                ? "Your join result is recorded, but current membership could not be verified. Retry this read without joining again."
-                : "We could not verify your account or current participation. Try the read again."}
+                ? "Your request was sent, but we couldn't confirm your participation. Try checking again."
+                : "We couldn't check your account or participation. Please try again."}
             </AlertDescription>
           </Alert>
           <Button
@@ -117,10 +181,35 @@ function InviteControls({
       {blocked ? (
         <p role="status">
           <Spinner className="inline-block" />{" "}
-          {state.busy ? "Checking your join…" : "Checking participation…"}
+          {state.busy ? "Joining project…" : "Checking participation…"}
         </p>
       ) : null}
-      {!blocked && state.auth?.phase === "signedOut" ? (
+      {needsSetup && onJoinPrerequisites && state.preview?.available ? (
+        <Link
+          className={buttonVariants()}
+          href={setupPath}
+          prefetch={false}
+          onClick={(event) => {
+            if (
+              event.defaultPrevented ||
+              event.button !== 0 ||
+              event.metaKey ||
+              event.ctrlKey ||
+              event.shiftKey ||
+              event.altKey ||
+              !state.auth ||
+              !state.preview?.available
+            )
+              return;
+            onJoinPrerequisites(state.auth, state.preview);
+          }}
+        >
+          Join Project
+        </Link>
+      ) : null}
+      {!blocked &&
+      state.auth?.phase === "signedOut" &&
+      !(onJoinPrerequisites && state.preview?.available) ? (
         <Link
           className={buttonVariants()}
           href={`/auth?returnTo=${encodeURIComponent(destination)}`}
@@ -131,7 +220,8 @@ function InviteControls({
       ) : null}
       {!blocked &&
       state.auth &&
-      ["missingProfile", "incompleteProfile"].includes(state.auth.phase) ? (
+      ["missingProfile", "incompleteProfile"].includes(state.auth.phase) &&
+      !(onJoinPrerequisites && state.preview?.available) ? (
         <Link
           className={buttonVariants()}
           href={`${state.auth.phase === "missingProfile" ? "/auth" : "/profile"}?returnTo=${encodeURIComponent(destination)}`}
@@ -156,19 +246,16 @@ function InviteControls({
           </Link>
         </>
       ) : null}
-      {ended ? (
-        <p>
-          Your earlier join has ended. Checking its receipt does not restore
-          that membership.
-        </p>
-      ) : null}
+      {ended ? <p>Your previous participation has ended.</p> : null}
       {!blocked &&
+      !joiningAfterSetup &&
       state.auth?.phase === "ready" &&
       state.hasAttempt &&
       !state.receipt ? (
         <Button onClick={() => void join()}>Check previous join</Button>
       ) : null}
       {!blocked &&
+      !joiningAfterSetup &&
       state.auth?.phase === "ready" &&
       !state.hasAttempt &&
       state.preview?.available &&
@@ -184,18 +271,19 @@ function InviteControls({
         <Button onClick={() => void join(true)}>Join Project again</Button>
       ) : null}
       <p className="text-sm text-muted-foreground">
-        Joining through this link needs a basic profile, but no photo or
-        individual organizer approval. Any prior pending request closes; its
-        contribution offers are not added automatically.
+        No profile photo or organizer approval is needed. Existing contribution
+        offers aren&apos;t added when you join through this invitation.
       </p>
-      <Button
-        variant="outline"
-        disabled={blocked}
-        onClick={() => void controller.refresh()}
-      >
-        Refresh invitation
-      </Button>
-      <Link href="/" prefetch={false}>
+      {state.previewFailure && !state.readFailure ? (
+        <Button
+          variant="outline"
+          disabled={blocked}
+          onClick={() => void controller.refresh()}
+        >
+          Try again
+        </Button>
+      ) : null}
+      <Link href="/" prefetch={false} onClick={cancelJoin}>
         Leave invitation
       </Link>
     </div>

@@ -20,6 +20,12 @@ in `project-delegates`; ordinary joining stays in the mobile request journey.
   `participant-invite-flow.tsx` / `participant-confirmation.tsx` entry points retain
   Next navigation. The static trial uses the same views and canonical controller
   with a small host adapter, without Next runtime aliases.
+  That adapter can carry one explicit Join through Auth/name prerequisites using
+  a tab-local, OTP-subject-bound request. The shared view consumes it once and
+  calls this same controller; opening a link or restoring Auth cannot admit.
+  Successful invitation/confirmation views omit Refresh controls; failed reads
+  retain read-only recovery. Confirmation says "You joined the project" only
+  after a fresh canonical membership check; owner context stays distinct.
 - `participant-messages.ts` supplies safe UI failure copy.
 - Colocated tests and `participant-test-fixtures.ts` cover wire contracts,
   gateway calls, identity/navigation races and controls. The opt-in production

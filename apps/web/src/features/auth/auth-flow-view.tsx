@@ -56,6 +56,7 @@ type AuthFlowProps = Readonly<{
   gateway?: WebAuthGateway;
   navigation?: AuthNavigation;
   now?: () => number;
+  onCancel?: () => void;
 }>;
 
 type FlowPhase = "request" | "verify" | "profileSetup";
@@ -68,6 +69,7 @@ export function AuthFlowView({
   gateway,
   navigation,
   now = systemNow,
+  onCancel,
 }: AuthFlowProps) {
   const router = useClientNavigation();
   const [authGateway] = useState(() => gateway ?? createWebAuthGateway());
@@ -300,7 +302,7 @@ export function AuthFlowView({
             Sign out
           </Button>
           {cancelTo !== "/" ? (
-            <Link href={cancelTo} prefetch={false}>
+            <Link href={cancelTo} prefetch={false} onClick={onCancel}>
               Cancel sign-in
             </Link>
           ) : null}
@@ -384,7 +386,7 @@ export function AuthFlowView({
             Use another email
           </Button>
           {cancelTo !== "/" ? (
-            <Link href={cancelTo} prefetch={false}>
+            <Link href={cancelTo} prefetch={false} onClick={onCancel}>
               Cancel sign-in
             </Link>
           ) : null}
@@ -432,7 +434,7 @@ export function AuthFlowView({
       <CardFooter className="flex justify-between gap-2">
         <Button
           variant="ghost"
-          render={<Link href={cancelTo} prefetch={false} />}
+          render={<Link href={cancelTo} prefetch={false} onClick={onCancel} />}
           nativeButton={false}
         >
           {cancelTo === "/" ? "Back to home" : "Back to invitation"}

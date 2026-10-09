@@ -2,12 +2,16 @@ import { createRoot } from "react-dom/client";
 import { useEffect, useState, useSyncExternalStore } from "react";
 import type { trialPublicConfig } from "./public-config";
 import { trialRoute, trialReturn } from "./routes";
+import { JoinContinuation } from "./join-continuation";
 import { createSupabaseBrowserClient } from "../src/lib/supabase/browser";
 import {
   ClientNavigationProvider,
   type ClientLinkProps,
 } from "../src/lib/navigation/client-navigation";
-import { SupabaseWebAuthGateway } from "../src/features/auth/auth-gateway";
+import {
+  SupabaseWebAuthGateway,
+  type WebAuthGateway,
+} from "../src/features/auth/auth-gateway";
 import { AuthFlowView } from "../src/features/auth/auth-flow-view";
 import { participantCancelDestination } from "../src/features/auth/return-destination";
 import { ProfileFormView } from "../src/features/profile/profile-form-view";
@@ -27,7 +31,28 @@ import "./trial.css";
 declare const STATIC_INVITATION_CONFIG: ReturnType<typeof trialPublicConfig>;
 const { config, handoff } = STATIC_INVITATION_CONFIG;
 const client = createSupabaseBrowserClient(config, true);
-const authGateway = new SupabaseWebAuthGateway(client);
+const joinContinuation = new JoinContinuation();
+const canonicalAuthGateway = new SupabaseWebAuthGateway(client);
+const authGateway: WebAuthGateway = {
+  requestEmailOtp: (email) => canonicalAuthGateway.requestEmailOtp(email),
+  ensureCurrentProfileAnchor: () =>
+    canonicalAuthGateway.ensureCurrentProfileAnchor(),
+  async signOut() {
+    joinContinuation.cancel();
+    await canonicalAuthGateway.signOut();
+  },
+  async verifyEmailOtp(email, token) {
+    const proof = joinContinuation.startOtpVerification();
+    try {
+      const account = await canonicalAuthGateway.verifyEmailOtp(email, token);
+      joinContinuation.finishOtpVerification(proof, account);
+      return account;
+    } catch (error) {
+      joinContinuation.finishOtpVerification(proof);
+      throw error;
+    }
+  },
+};
 const profileGateway = new SupabaseWebProfileGateway(client);
 // Exactly one controller per tab/process. Only the SDK session uses cookies;
 // invitation capabilities and action UUIDs never enter browser storage.
@@ -40,6 +65,7 @@ const identityListeners = new Set<() => void>();
 client.auth.onAuthStateChange((_event, session) => {
   const next = session?.user.id ?? null;
   if (next === identity) return;
+  joinContinuation.identityChanged(next);
   identity = next;
   identityEpoch++;
   identityListeners.forEach((listener) => listener());
@@ -65,14 +91,28 @@ function publishRoute() {
   routeRevision++;
   routeListeners.forEach((listener) => listener());
 }
-window.addEventListener("popstate", publishRoute);
+window.addEventListener("popstate", () => {
+  joinContinuation.cancel();
+  publishRoute();
+});
 window.addEventListener("pageshow", (event) => {
-  if (event.persisted) publishRoute();
+  if (event.persisted) {
+    joinContinuation.cancel();
+    publishRoute();
+  }
 });
 function navigate(destination: string, replace = false) {
   const url = new URL(destination, location.origin);
   if (url.origin !== location.origin || !trialRoute(url.pathname))
     throw new Error("Navigation is outside the static trial.");
+  const pending = joinContinuation.snapshot();
+  const destinationInvite = participantCancelDestination(
+    url.pathname === "/auth" || url.pathname === "/profile"
+      ? trialReturn(url.searchParams.get("returnTo") ?? undefined)
+      : url.pathname,
+  );
+  if (pending && destinationInvite !== `/join/project/${pending.token}`)
+    joinContinuation.cancel();
   if (replace) history.replaceState(null, "", url);
   else history.pushState(null, "", url);
   publishRoute();
@@ -121,8 +161,8 @@ function useIdentityEpoch() {
 function RetryError({ retry }: { retry(): void }) {
   return (
     <div role="alert">
-      <p>This read could not be completed. No join was submitted.</p>
-      <button onClick={retry}>Retry read</button>
+      <p>We couldn&apos;t load this page. Please try again.</p>
+      <button onClick={retry}>Try again</button>
     </div>
   );
 }
@@ -184,12 +224,21 @@ function AuthPage({ returnTo }: { returnTo: string }) {
         >
           Try setup again
         </button>
-        <TrialLink href={participantCancelDestination(returnTo)}>
+        <TrialLink
+          href={participantCancelDestination(returnTo)}
+          onClick={joinContinuation.cancel}
+        >
           Back to invitation
         </TrialLink>
       </div>
     );
-  return <AuthFlowView returnTo={returnTo} gateway={authGateway} />;
+  return (
+    <AuthFlowView
+      returnTo={returnTo}
+      gateway={authGateway}
+      onCancel={joinContinuation.cancel}
+    />
+  );
 }
 function ProfilePage({ returnTo }: { returnTo: string }) {
   const epoch = useIdentityEpoch();
@@ -217,8 +266,11 @@ function ProfilePage({ returnTo }: { returnTo: string }) {
   }, [epoch, attempt, returnTo]);
   return (
     <>
-      <TrialLink href={participantCancelDestination(returnTo)}>
-        Cancel profile setup
+      <TrialLink
+        href={participantCancelDestination(returnTo)}
+        onClick={joinContinuation.cancel}
+      >
+        Back to invitation
       </TrialLink>
       {data === "error" ? (
         <RetryError retry={() => setAttempt((n) => n + 1)} />
@@ -236,9 +288,13 @@ function ProfilePage({ returnTo }: { returnTo: string }) {
     </>
   );
 }
-function App() {
+export function App() {
   const routeKey = useSyncExternalStore(routeSubscribe, routeSnapshot);
   const epoch = useIdentityEpoch();
+  const pendingJoin = useSyncExternalStore(
+    joinContinuation.subscribe,
+    joinContinuation.snapshot,
+  );
   const [logoutFailure, setLogoutFailure] = useState(false);
   const route = trialRoute(location.pathname);
   const returns = new URLSearchParams(location.search).getAll("returnTo");
@@ -280,6 +336,16 @@ function App() {
             initialRead={emptyRead}
             config={handoff}
             controller={controller}
+            onJoinPrerequisites={(auth, preview) =>
+              joinContinuation.begin(route.token, preview.project, auth.account)
+            }
+            joiningAfterSetup={
+              pendingJoin?.token === route.token && pendingJoin.account !== null
+            }
+            continueJoin={(account, project) =>
+              joinContinuation.consume(route.token, account, project)
+            }
+            cancelJoin={joinContinuation.cancel}
           />
         ) : route?.kind === "confirmation" ? (
           <ParticipantConfirmationView
@@ -293,11 +359,8 @@ function App() {
           <ProfilePage returnTo={returnTo} />
         ) : route?.kind === "home" ? (
           <>
-            <h1>PLANETS invitation trial</h1>
-            <p>
-              Open a participant invitation to preview it. Joining always needs
-              your explicit confirmation.
-            </p>
+            <h1>PLANETS</h1>
+            <p>Open an invitation to join a project and its group chat.</p>
             <a href={planetsPublicOrigin} referrerPolicy="no-referrer">
               Visit PLANETS
             </a>

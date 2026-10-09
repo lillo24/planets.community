@@ -39,7 +39,14 @@ set the same no-store, no-referrer and noindex/nofollow/noarchive explicitly.
 There is no telemetry, access logging, service worker or published source map.
 
 JWT validation, RLS and canonical RPCs remain authoritative. Auth restoration,
-profile save, cancellation, link opening and read retries never admit. The reused
+profile save alone, cancellation, link opening and participation read retries
+never admit. The static host records one explicit Join on the preview before
+Auth/name setup and continues that same request after its prerequisites. This
+request lives only in tab memory; the actual local OTP verification result binds
+anonymous consent to its subject. Restored/cross-tab login cannot bind it. Cancel,
+Back, reload, identity/context changes or a failed invitation/participation read
+clear it. Consuming it once calls the same canonical controller and allocates
+the normal admission action, rather than adding another admission path. The reused
 controller binds account/token/action UUID, suppresses duplicate submissions,
 ignores stale revisions and retains same-attempt replay recovery. The single
 controller survives component remounts in tab/process memory only; reload loses
@@ -59,15 +66,30 @@ Continue. Biography, skills and visibility controls are omitted from this static
 target; loaded values are preserved through the same canonical profile gateway.
 An empty biography is already normalized to SQL NULL by `update_own_profile`, so
 no placeholder text or schema change is needed. Profile personalization remains
-available in the app, and saving the name returns to the invitation without
-submitting Join. The full Next profile editor retains its existing controls.
+available in the app. If the user clicked Join before setup, saving the name
+continues that request to the token-free, freshly verified confirmation without
+asking for a second Join. Ordinary profile saves do not admit. The full Next
+profile editor retains its existing controls. Healthy views omit Refresh; failed
+reads keep contextual retry controls. Successful confirmation reads "You joined
+the project" and offers the existing app handoff.
 This UI follow-up does not replace the exact deployed-version measurement or
 browser proof record below; the recorded staging deployment predates it.
-Follow-up validation: `npm run check:web` passed (61 tooling tests, 298 Web tests,
+Name-only follow-up validation at `cea1c1e`: `npm run check:web` passed (61 tooling tests, 298 Web tests,
 two existing opt-in backend skips, lint/typecheck, Next production build and
 static invitation build). All 11 focused profile-form tests passed, including
 name-only validation, empty biography and preservation of existing hidden fields;
 scoped formatting and `git diff --check` passed.
+All hosted checks on that name-only source passed in
+[run 37929329842](https://github.com/lillo24/planets.community/actions/runs/37929329842).
+The subsequent single-Join UX follow-up adds actual-host component journeys for
+both kinds, OTP/name continuation, cancellation/Back, restored/cross-tab login
+and read-only failure recovery, plus request identity/nonce regression tests.
+Single-Join validation: the full Web suite passed 311 tests with the two existing
+opt-in skips; all 50 focused cases passed after the copy-lint correction and an
+additional returning-user regression. The 61 tooling tests, lint/typecheck, Next
+production build, static invitation CI build, scoped formatting and diff checks
+passed. No timeout or assertion was weakened. This is component/adapter evidence;
+the founder has not yet rerun the changed continuation in a real browser.
 
 Resolved Supabase SDKs are `@supabase/ssr 0.12.5` and `supabase-js 2.113.0`.
 The static target reuses `createSupabaseBrowserClient`: the SSR SDK owns its
@@ -123,9 +145,12 @@ Open `http://127.0.0.1:3193` and use its launch links instead of printing
 capabilities. New account: `linkhost03-new@planets.invalid`; existing incomplete
 account: `linkhost03-existing@planets.invalid`; switch account:
 `linkhost03-other@planets.invalid`. Private `/otp/proposal`, `/otp/tavolo` and
-`/otp/other` pages display only the corresponding local Mailpit code; never
-capture/log it. Enter it into the real six-digit form, complete a display name
-(photo optional), return to preview, and click Join deliberately. Inspect the
+`/otp/other` pages display only the corresponding fixed fixture account's latest
+local Mailpit code; never capture/log it. For a different email, open Mailpit at
+`http://127.0.0.1:59124` and read its newest message for that exact address.
+Used/expired codes cannot be reused after logout. On the project preview, click
+Join once, enter the real six-digit code and complete a name. The same Join
+should finish without another confirmation click. Inspect the
 token-free confirmation and helper `/status` counts. The fixture includes revoked,
 full and blockable projects; the full slot is occupied through canonical admission
 by a separate synthetic account (the Creator does not occupy that slot).
@@ -249,20 +274,24 @@ No source map was published. The client transfer is about 158.6 KiB gzip JS plus
 9.5 KiB gzip CSS; Vite reports its >500 KiB uncompressed chunk warning. This is
 browser work/transfer, separate from the 2.18 KiB Worker bundle's CPU.
 
-| Coverage                                                                         | Local                                                                        | Hosted                                                            |
-| -------------------------------------------------------------------------------- | ---------------------------------------------------------------------------- | ----------------------------------------------------------------- |
-| Production static build, route/method/privacy probes                             | Build/dry-run and 26 HTTP cases passed                                       | 26 HTTP cases passed on exact deployment                          |
-| Real numeric OTP/profile/explicit Join, both kinds, no photo                     | Adapter/backend test passed; browser reached preview and six-digit form only | Unavailable: no authorized disposable staging OTP/project fixture |
-| No implicit admission, duplicate Join, lost-response same-attempt replay         | Real backend adapter assertions passed                                       | Unavailable                                                       |
-| Fresh confirmation, leave/read retry, deliberate re-entry, revoked/full/blocking | Real backend adapter assertions passed                                       | Unavailable                                                       |
-| Reload/back, resend recovery, session refresh, logout/account switch/cross-tab   | Shared focused regressions; full real-browser journey unproved               | Unavailable                                                       |
-| Browser captures after successful Join                                           | Unavailable                                                                  | Unavailable                                                       |
+| Coverage                                                                         | Local                                                                                                                      | Hosted                                                            |
+| -------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------- |
+| Production static build, route/method/privacy probes                             | Build/dry-run and 26 HTTP cases passed                                                                                     | 26 HTTP cases passed on exact deployment                          |
+| Real numeric OTP/profile/explicit Join, both kinds, no photo                     | Adapter/backend test passed; founder reports local browser success at `cea1c1e` before the single-Join UX follow-up        | Unavailable: no authorized disposable staging OTP/project fixture |
+| No implicit admission, duplicate Join, lost-response same-attempt replay         | Real backend adapter assertions passed                                                                                     | Unavailable                                                       |
+| Fresh confirmation, leave/read retry, deliberate re-entry, revoked/full/blocking | Real backend adapter assertions passed                                                                                     | Unavailable                                                       |
+| Reload/back, resend recovery, session refresh, logout/account switch/cross-tab   | Founder reports reload, logout/relogin and cross-tab logout success at `cea1c1e`; remaining cases have focused regressions | Unavailable                                                       |
+| Browser captures after successful Join                                           | Unavailable                                                                                                                | Unavailable                                                       |
 
 Browser automation initially reached the production-built preview and actual
 numeric OTP form. Mailbox-tab reads then repeatedly timed out and final recovery
-reported **Debugger unattached**. No OTP verification, profile-save or Join UI
-success is claimed. HTTP probes and real backend adapters are not substitutes
-for that browser proof. No existing private account/project was reused on staging.
+reported **Debugger unattached**. That automated run did not prove OTP, profile
+save or Join UI success. On 2026-10-09 the founder subsequently reported successful
+local Proposal/Tavolo signup/name/Join/reload and cross-tab logout/relogin on the
+name-only source `cea1c1e`. This is founder-reported manual evidence, not an
+automated capture or hosted proof, and predates the single-Join UX follow-up.
+HTTP probes and backend adapters do not substitute for real browser proof of
+that changed continuation. No existing private account/project was reused on staging.
 
 A diagnostic filter accidentally emitted disposable local-stack credentials in
 the tool transcript; no staging credential/session/OTP was emitted or committed.
@@ -279,7 +308,7 @@ deployment has no earlier version. To remove only this trial, use
 Do not delete or update #176's Worker, the public Site, domains or DNS. Source
 remains recoverable from the draft PR. No production deployment is part of merge.
 
-Before canonical routing: finish both-kind real browser and authorized hosted
+Before canonical routing: verify the changed single-Join browser journey and authorized hosted
 journeys, reconcile staging parity through its separate authorized process,
 prove SDK cookie/refresh/cross-tab compatibility with Next on the intended origin,
 and select exact participant/Auth/profile/confirmation routes. Keep authority

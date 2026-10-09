@@ -44,13 +44,34 @@ describe("SupabaseWebAuthGateway", () => {
   it("verifies the numeric token using the email OTP type", async () => {
     const gateway = new SupabaseWebAuthGateway(client as never);
 
-    await gateway.verifyEmailOtp("Person@Example.COM", "123456");
+    await expect(
+      gateway.verifyEmailOtp("Person@Example.COM", "123456"),
+    ).resolves.toBe("user-1");
 
     expect(verifyOtp).toHaveBeenCalledWith({
       email: "Person@Example.COM",
       token: "123456",
       type: "email",
     });
+  });
+
+  it("requires a verified OTP subject and propagates verification failures", async () => {
+    const gateway = new SupabaseWebAuthGateway(client as never);
+    verifyOtp.mockResolvedValueOnce({
+      data: { user: null, session: null },
+      error: null,
+    });
+    await expect(
+      gateway.verifyEmailOtp("person@example.com", "123456"),
+    ).rejects.toThrow();
+    const failure = { code: "otp_expired" };
+    verifyOtp.mockResolvedValueOnce({
+      data: { user: null, session: null },
+      error: failure,
+    });
+    await expect(
+      gateway.verifyEmailOtp("person@example.com", "123456"),
+    ).rejects.toBe(failure);
   });
 
   it("inserts only the verified current identity profile anchor", async () => {
