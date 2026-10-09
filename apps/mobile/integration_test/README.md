@@ -1,5 +1,34 @@
 # Local native integration checks
 
+## Navigation profile probe
+
+`navigation_profile_test.dart` runs guest Welcome/intro/Home, three rounds of
+Projects/detail/Back and Scambio returns, Messages Requests/Back and Login.
+It uses the real router/widgets with fake gateways and an in-memory startup
+store, normal motion and profile-mode frame timings. No hosted credentials,
+network/DB reads or retained installation data are used. Run on an owned Android
+emulator with the same resolution, density, refresh rate and clean app cache for
+each comparison. Do not clear the founder's app or shared emulator.
+
+From `apps/mobile`:
+
+```powershell
+flutter drive -d <owned-emulator-id> --profile --no-dds --no-pub --driver=test_driver/navigation_profile.dart --target=integration_test/navigation_profile_test.dart --dart-define=NAVPERF_BEFORE=true
+# Repeat on the changed source without NAVPERF_BEFORE to write after.json.
+```
+
+The driver requires profile mode and writes `build/navigation-profile/{phase}.json`.
+`--no-dds` avoids a device-to-host DDS websocket issue in this Windows setup.
+For repeated builds, build an APK with the same target/define and use
+`--use-application-binary=<apk>` on drive. Gesture-to-chrome measurements include
+test harness scheduling; Back measures the next paint of the persistent bottom
+bar, with the actual resulting route recorded/asserted separately. Frame samples
+cover the action plus 350ms, using Flutter's `watchPerformance`. A separate idle
+timeline enables build/layout profiling; its overhead is excluded from those
+journey summaries. Raw synthetic evidence and a dependency-free Node summarizer
+are under [NAVPERF01 evidence](../../../docs/development/evidence/navperf01/README.md).
+These timings do not prove physical Android/iOS speed or live backend latency.
+
 `template_workshop_smoke_test.dart` runs actual mobile navigation/screens and
 canonical RPCs against an explicitly local backend with verified synthetic OTP
 identities. It preserves a sparse prior form, browses a Completed template,

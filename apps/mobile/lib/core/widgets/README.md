@@ -41,6 +41,13 @@ This folder owns small presentation primitives reused across feature boundaries.
   per cycle, with radius-aware offscreen wrapping. It pauses with the artwork
   and is static under reduced motion. No image, network or additional clock is involved.
 
+Settled hero geometry is laid out outside the continuous orbit builder. Float
+ticks update the paint transform rather than invalidating the hero's
+`LayoutBuilder`/Stack on each frame. Finite entrance and viewport/constraint
+changes still recompute geometry. The opt-in
+[navigation profile probe](../../../integration_test/README.md#navigation-profile-probe)
+records a separate idle build/layout trace to audit this boundary.
+
 - `empty_state.dart`, `error_state.dart`, and `loading_state.dart` provide the
   standard asynchronous screen states.
 - `async_data_presentation.dart` keeps nullable async screens consistent:

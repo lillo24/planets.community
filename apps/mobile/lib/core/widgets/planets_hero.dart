@@ -56,8 +56,16 @@ class PlanetsHero extends StatelessWidget {
   _HeroGeometry _geometry(Size size, double entrance) =>
       _HeroGeometry(size, entrance, screenHeight, logoAreaHeight, farewell);
 
-  Widget _artwork(BuildContext context, double entrance, Widget? child) =>
-      PlanetsOrbitMotion(
+  Widget _artwork(
+    BuildContext context,
+    double entrance,
+    Widget? child,
+  ) => LayoutBuilder(
+    builder: (context, constraints) {
+      // Orbit/float ticks change paint only. Keep settled geometry outside
+      // their builder so Home does not relayout its Stack every frame.
+      final geometry = _geometry(constraints.biggest, entrance);
+      return PlanetsOrbitMotion(
         activeBounds: (size) => _geometry(size, entrance).animatedBounds,
         child: child,
         builder: (context, seconds, child) {
@@ -90,32 +98,29 @@ class PlanetsHero extends StatelessWidget {
                   starColor: scheme.primary.withValues(alpha: .44),
                   backgroundColor: Theme.of(context).scaffoldBackgroundColor,
                 ),
-                child: LayoutBuilder(
-                  builder: (context, constraints) {
-                    final geometry = _geometry(constraints.biggest, entrance);
-                    return Stack(
-                      clipBehavior: Clip.none,
-                      children: [
-                        Positioned(
-                          left: geometry.center.dx - geometry.logoExtent / 2,
-                          top: geometry.center.dy - geometry.logoExtent / 2,
-                          width: geometry.logoExtent,
-                          height: geometry.logoExtent,
-                          child: Transform.translate(
-                            key: const Key('planets-floating-logo'),
-                            offset: Offset(0, -6 * floatAmount),
-                            child: child,
-                          ),
-                        ),
-                      ],
-                    );
-                  },
+                child: Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    Positioned(
+                      left: geometry.center.dx - geometry.logoExtent / 2,
+                      top: geometry.center.dy - geometry.logoExtent / 2,
+                      width: geometry.logoExtent,
+                      height: geometry.logoExtent,
+                      child: Transform.translate(
+                        key: const Key('planets-floating-logo'),
+                        offset: Offset(0, -6 * floatAmount),
+                        child: child,
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),
           );
         },
       );
+    },
+  );
 }
 
 /// One 144-second clock is a whole number of all 12/16/18/8-second cycles.
