@@ -55,6 +55,48 @@ import '../../support/fake_profile_photo.dart';
 import '../../support/fake_project_resource_needs.dart';
 
 void main() {
+  testWidgets(
+    'same-page step preserves an unfinished page fade and example semantics',
+    (tester) async {
+      tester.platformDispatcher.accessibilityFeaturesTestValue =
+          const FakeAccessibilityFeatures(disableAnimations: false);
+      addTearDown(tester.platformDispatcher.clearAllTestValues);
+      final semantics = tester.ensureSemantics();
+      await _pump(
+        tester,
+        registry: const TutorialRegistry(
+          steps: [
+            TutorialStep.messagesTabs,
+            TutorialStep.messagesScopes,
+            TutorialStep.farewell,
+          ],
+        ),
+      );
+      await tap(tester, 'welcome-explore');
+      for (var frame = 0; frame < 30 && scrim(tester).color.a == 0; frame++) {
+        await tester.pump(const Duration(milliseconds: 40));
+      }
+      var alpha = scrim(tester).color.a;
+      expect(alpha, inExclusiveRange(0, .62));
+      expect(find.bySemanticsLabel(RegExp('Example')), findsWidgets);
+      await tester.tap(find.byKey(const Key('tutorial-next')));
+      await tester.pump();
+      expect(scrim(tester).color.a, greaterThanOrEqualTo(alpha));
+      for (var frame = 0; frame < 30; frame++) {
+        await tester.pump(const Duration(milliseconds: 16));
+        final next = scrim(tester).color.a;
+        expect(next, greaterThanOrEqualTo(alpha));
+        alpha = next;
+      }
+      await ready(tester);
+      expectFocus(tester, 'message-chat-scope-toggle');
+      expect(find.byKey(const Key('messages-example-groups')), findsOneWidget);
+      expect(find.bySemanticsLabel(RegExp('Example')), findsWidgets);
+      expect(tester.takeException(), isNull);
+      semantics.dispose();
+    },
+  );
+
   for (final dark in [false, true]) {
     testWidgets(
       'same-page Next/Previous keeps alpha through every frame dark=$dark',

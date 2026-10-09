@@ -5,6 +5,10 @@ import 'package:integration_test/integration_test_driver_extended.dart';
 
 Future<void> main() async {
   final phase = Platform.environment['TUT05_EVIDENCE_PHASE'];
+  final serial = Platform.environment['ANDROID_SERIAL'];
+  if (serial == null || serial.isEmpty) {
+    throw StateError('ANDROID_SERIAL must name the task-owned emulator');
+  }
   if (phase != 'before' && phase != 'after') {
     throw StateError('TUT05_EVIDENCE_PHASE must be before or after');
   }
@@ -23,7 +27,7 @@ Future<void> main() async {
         final item = entry as Map<String, dynamic>;
         final pulled = await Process.run('adb', [
           '-s',
-          'emulator-5586',
+          serial,
           'exec-out',
           'run-as',
           'community.planets.app',

@@ -47,12 +47,20 @@ void main() {
         converted = true;
       }
       final theme = dark ? 'dark' : 'light';
+      final clock = Stopwatch()..start();
       Future<void> capture(String label) async {
+        // Commit through the raster/platform frame before acquiring its image.
+        // Labels describe requested pump increments, not profile timings.
+        await tester.pump();
+        await tester.runAsync(
+          () => Future<void>.delayed(const Duration(milliseconds: 50)),
+        );
         final scrim = tour.scrim(tester);
         samples.add({
           'frame': '$theme-$label',
           'alpha': scrim.color.a,
           'holes': scrim.targets.length,
+          'observedElapsedMs': clock.elapsedMilliseconds,
         });
         final name = '$theme-$label';
         final bytes = await binding.takeScreenshot(name);
@@ -100,7 +108,12 @@ void main() {
           await capture('${step.name}-next-200');
           await tester.pump(const Duration(milliseconds: 600));
           await capture('${step.name}-next-800');
+          await tester.pump(const Duration(milliseconds: 300));
+          await capture('${step.name}-next-1100');
+          await tester.pump(const Duration(milliseconds: 400));
+          await capture('${step.name}-next-1500');
           await tour.ready(tester);
+          await capture('${step.name}-next-ready');
           if (same) {
             await tester.tap(find.byKey(const Key('tutorial-previous')));
             await tester.pump();
