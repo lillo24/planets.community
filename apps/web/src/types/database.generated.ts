@@ -5292,6 +5292,10 @@ export type Database = {
         }
         Returns: string
       }
+      search_public_geography_v1: {
+        Args: { p_cursor?: Json; p_limit?: number; p_query: Json }
+        Returns: Json
+      }
       send_participation_conversation_message: {
         Args: {
           p_body: string

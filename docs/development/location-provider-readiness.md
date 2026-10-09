@@ -124,3 +124,11 @@ emails, instructions, JWTs or unnecessary actor metadata to provider/logs.
 
 Manual entry stays usable until replacement requirements pass. This record is
 neither a licence acceptance nor a deployment.
+
+## MAP04 / MAP05 public search-center handoff
+
+MAP04 adds stored-public-point radius/viewport queries with no provider calls.
+See [MAP04 geographic discovery](map04-geographic-discovery.md). MAP05 public
+center autocomplete must define its own public/anonymous authorization, abuse
+and cost boundary; MAP02 item-bound authenticated edit receipts are unsuitable.
+MAP01 search and MAP03 static rendering remain disabled.
