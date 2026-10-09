@@ -127,12 +127,12 @@ void main() {
           await tester.tap(find.byKey(const Key('tutorial-next')));
           await tester.pump();
           expect(scrim(tester).targets.single, before);
-          var sawMovement = false;
+          final focusFrames = <Rect>[];
           for (var frame = 0; frame < 20; frame++) {
             await tester.pump(const Duration(milliseconds: 16));
             expect(scrim(tester).color.a, closeTo(.62, .001));
             final hole = scrim(tester).targets.single;
-            if (hole != before) sawMovement = true;
+            focusFrames.add(hole);
             if (frame == 9) {
               for (final state in [
                 AppLifecycleState.inactive,
@@ -153,8 +153,13 @@ void main() {
               }
             }
           }
-          expect(sawMovement, isTrue);
           await ready(tester);
+          final destination = scrim(tester).targets.single;
+          expect(
+            focusFrames.any((r) => r != before && r != destination),
+            isTrue,
+            reason: 'The hole must interpolate, not jump between anchors',
+          );
           expectFocus(tester, pair.to);
           // Back, a blocked double-tap, then interrupt the focus just after the
           // surface commit debounce. No frame may reset the dimmer.
