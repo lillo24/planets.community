@@ -50,8 +50,10 @@ class FoundationScreen extends StatelessWidget {
                 final textScale =
                     MediaQuery.textScalerOf(context).scale(14) / 14;
                 // Give space back to the naturally sized cards before decoration.
+                // The larger cap adds breathing room above the cards on roomy
+                // phones; compact/scaled layouts keep their height-derived space.
                 final heroHeight = (constraints.maxHeight * .42 / textScale)
-                    .clamp(64.0, 240.0);
+                    .clamp(64.0, 288.0);
                 return SingleChildScrollView(
                   padding: const EdgeInsets.all(AppSpacing.large),
                   // Keep the cards' existing vertical centering, but make the

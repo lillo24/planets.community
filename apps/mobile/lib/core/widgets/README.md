@@ -12,8 +12,9 @@ This folder owns small presentation primitives reused across feature boundaries.
   its settled position at 27% of the available screen height. Home centers
   within the actual reservation from the body's top to
   the first card, including the 24px scroll padding and the column's vertical
-  centering space. The scroll viewport fills the body while the cards retain
-  their centered positions; the painter extends upward into that reserved space.
+  centering space. The scroll viewport fills the body; the 288px hero reservation
+  cap lowers the cards slightly on roomy phones while height/text scaling keeps
+  compact layouts tight. The painter extends upward into that reserved space.
   Its rings and logo scale to retain top-edge room for their planets on shorter
   layouts, leaving more breathing
   room below the logo without moving functional actions.
