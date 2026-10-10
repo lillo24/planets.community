@@ -290,13 +290,11 @@ void main() {
         List.filled(181, 'x').join(),
       );
       await settleLookup(tester);
-      expect(similar.calls, hasLength(count));
-      await tester.enterText(
-        find.byKey(const Key('proposal-public-location')),
-        'it',
-      );
-      await settleLookup(tester);
+      // The single city field derives a valid Italy hint independently of
+      // invalid locality text; only the bounded locality is omitted.
+      expect(similar.calls, hasLength(count + 1));
       expect(similar.calls.last.countryCode, 'IT');
+      expect(similar.calls.last.locality, isNull);
       await tester.enterText(
         find.byKey(const Key('proposal-public-location')),
         'Trento',
