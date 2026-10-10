@@ -89,3 +89,17 @@ Current product direction from the 08/09 founder discussion and follow-up clarif
 ## Pending requests in Browse
 
 For a signed-in user, a Project or Tavolo with that user's pending join request is surfaced ahead of ordinary mobile discovery results and visually distinguished with a **Requested** badge and theme outline. This applies only to currently pending requests whose project remains publicly discoverable under the active filters, not historical accepted, rejected, or withdrawn attempts. Exact ranking relative to projects the user owns or already participates in remains later UX work, signed-out/public ordering is unchanged, and the public web is not personalized. The treatment is a convenience/status signal rather than a second participation state machine; Messages remains the canonical request history and action surface. Plan 05D implements this accepted direction in merged PR #24.
+
+## Defined one-time Project location (LOCATION01)
+
+The LOCATION01 founder request permits normal defined/operational one-time
+publication with a public city such as Trento and a valid schedule; precise
+venue/instructions are optional. Content, photo, capacity and lifecycle safeguards
+remain. This is separate from time-derived Completed. One public input replaces
+technical country/region fields in this editor. New manual Italy entries need no
+lookup; historical international records retain metadata. Precise content stays
+independently protected. Manual-only cities appear in List without invented pins
+or Maps destinations. Tavoli/Scambio publication semantics remain unchanged.
+
+Public **In definizione / Idea**, absent city/date, lifecycle promotion and a
+collaborative Project chat checklist require separate plans.

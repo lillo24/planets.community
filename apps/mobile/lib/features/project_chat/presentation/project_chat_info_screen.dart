@@ -592,7 +592,7 @@ class _MeetingDetails extends ConsumerWidget {
           const Center(child: CircularProgressIndicator())
         else if (belongs && state.phase == ParticipationLoadPhase.ready)
           SelectableText(
-            state.details!.exactMeetingText,
+            state.details!.exactMeetingText ?? l10n.proposalExactNotChosen,
             key: const Key('project-chat-meeting-text'),
           )
         else ...[

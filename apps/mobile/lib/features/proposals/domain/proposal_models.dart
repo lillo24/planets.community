@@ -328,7 +328,6 @@ bool isPublishableProposalInput(ProposalInput input) =>
     input.countryCode.trim().isNotEmpty &&
     input.locality.trim().isNotEmpty &&
     input.publicLocationLabel.trim().isNotEmpty &&
-    input.exactMeetingText.trim().isNotEmpty &&
     input.registrationCapacity != null;
 
 enum ProposalFailureKind {

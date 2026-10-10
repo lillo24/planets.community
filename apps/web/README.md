@@ -54,7 +54,7 @@ Server Components derive trusted identity with `getClaims()` and read only the m
 
 `/profile` is also server-authenticated. It loads only owner-authorized profile/catalog data and passes no Auth email to the narrow interactive form. It does pass the verified profile ID so the browser's atomic `update_own_profile` call can reject a stale form after a cross-tab account change. PostgreSQL remains authoritative for identity binding, trimming, validation, skill membership, and visibility.
 
-`/proposals` and `/proposals/[id]` use Server Components and the canonical sanitized public RPCs. Cards contain structured rough location and never receive exact meeting data. Detail renders exact meeting text only when explicitly public; otherwise it renders the restricted-location explanation. Temporal labels are database-derived, including the green Just Finished state. Recurrence, participation, and web proposal authoring remain out of scope.
+`/proposals` and `/proposals/[id]` use Server Components and the canonical sanitized public RPCs. Cards contain structured rough location and never receive exact meeting data. Detail renders exact meeting text only when explicitly public. It distinguishes a restricted exact place from absent instructions; city-only Projects display truthful absence copy. Temporal labels are database-derived, including the green Just Finished state. Recurrence, participation, and web proposal authoring remain out of scope.
 
 `/tavoli` and `/tavoli/[id]` are also signed-out Server Component routes. The
 list captures one UTC reference-time snapshot and binds it with the locality to

@@ -305,6 +305,8 @@ List<ProposalSkillCategory> proposalCategoriesFixture() => const [
 ProposalSummary proposalSummaryFixture({
   String id = 'proposal-1',
   String title = 'Paint the square',
+  String locality = 'Bologna',
+  String publicLocationLabel = 'Central Bologna',
   ProposalStatus status = ProposalStatus.upcoming,
   List<ProposalSkill>? skills,
   String? coverObjectPath,
@@ -317,9 +319,9 @@ ProposalSummary proposalSummaryFixture({
   endsAt: DateTime.utc(2026, 9, 10, 12),
   eventTimezone: 'Europe/Rome',
   countryCode: 'IT',
-  locality: 'Bologna',
+  locality: locality,
   administrativeArea: 'Emilia-Romagna',
-  publicLocationLabel: 'Central Bologna',
+  publicLocationLabel: publicLocationLabel,
   status: status,
   skills:
       skills ??
@@ -351,6 +353,9 @@ RequestedProposalSummary requestedProposalFixture({
 ProposalDetail proposalDetailFixture({
   String id = 'proposal-1',
   String title = 'Paint the square',
+  String locality = 'Bologna',
+  String publicLocationLabel = 'Central Bologna',
+  String? exactMeetingText = 'At the fountain, Piazza Maggiore',
   bool restricted = true,
   ProposalStatus status = ProposalStatus.upcoming,
   List<ProposalSkill>? skills,
@@ -360,6 +365,8 @@ ProposalDetail proposalDetailFixture({
   summary: proposalSummaryFixture(
     id: id,
     title: title,
+    locality: locality,
+    publicLocationLabel: publicLocationLabel,
     status: status,
     skills: skills,
     capacity: capacity,
@@ -367,7 +374,7 @@ ProposalDetail proposalDetailFixture({
   creatorProfileId: creatorProfileId,
   creatorDisplayName: 'Casey',
   description: 'A full proposal description.',
-  exactMeetingText: restricted ? null : 'At the fountain, Piazza Maggiore',
+  exactMeetingText: restricted ? null : exactMeetingText,
   exactLocationRestricted: restricted,
 );
 
@@ -376,6 +383,10 @@ ProposalInput proposalInputFixture({
   DateTime? startsAt,
   DateTime? endsAt,
   String eventTimezone = 'Europe/Rome',
+  String countryCode = 'IT',
+  String locality = 'Bologna',
+  String publicLocationLabel = 'Central Bologna',
+  String exactMeetingText = 'At the fountain',
   int? registrationCapacity = 20,
   bool countOrganizersTowardCapacity = false,
 }) => ProposalInput(
@@ -385,11 +396,11 @@ ProposalInput proposalInputFixture({
   startsAt: startsAt ?? DateTime.utc(2026, 9, 10, 10),
   endsAt: endsAt ?? DateTime.utc(2026, 9, 10, 12),
   eventTimezone: eventTimezone,
-  countryCode: 'IT',
-  locality: 'Bologna',
+  countryCode: countryCode,
+  locality: locality,
   administrativeArea: 'Emilia-Romagna',
-  publicLocationLabel: 'Central Bologna',
-  exactMeetingText: 'At the fountain',
+  publicLocationLabel: publicLocationLabel,
+  exactMeetingText: exactMeetingText,
   exactLocationVisibility: ExactLocationVisibility.participants,
   skillImportanceById: const {'skill-mural': ProposalSkillImportance.required},
   registrationCapacity: registrationCapacity,

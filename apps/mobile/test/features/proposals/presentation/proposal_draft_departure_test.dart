@@ -420,7 +420,7 @@ void main() {
   for (final field in {
     'proposal-title': 'x',
     'proposal-people-capacity': 'abc',
-    'proposal-country': 'I',
+    'proposal-public-location': List.filled(181, 'x').join(),
   }.entries) {
     testWidgets(
       'invalid raw ${field.key} blocks departure and remains editable',

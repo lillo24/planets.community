@@ -184,9 +184,6 @@ class _ProposalFormState extends ConsumerState<_ProposalForm>
   final _timezoneAnchor = GlobalKey();
   final _startAnchor = GlobalKey();
   final _endAnchor = GlobalKey();
-  final _countryAnchor = GlobalKey();
-  final _localityAnchor = GlobalKey();
-  final _administrativeAreaAnchor = GlobalKey();
   final _publicLocationAnchor = GlobalKey();
   final _exactLocationAnchor = GlobalKey();
   late final TextEditingController _title;
@@ -1104,79 +1101,72 @@ class _ProposalFormState extends ConsumerState<_ProposalForm>
                       _acknowledged = _snapshot();
                     }
                   },
+                  proposalCityOnly: true,
+                  hasExactDetails: _exactLocation.text.trim().isNotEmpty,
+                  onClearExact: () {
+                    _exactLocation.clear();
+                    _refreshValidationSummary();
+                  },
                   manualChildren: [
                     _field(
-                      _country,
-                      l10n.proposalCountryLabel,
-                      2,
-                      anchorKey: _countryAnchor,
-                      fieldKey: const Key('proposal-country'),
-                      required: true,
-                      validator: _validateCountry,
-                    ),
-                    _field(
-                      _locality,
-                      l10n.proposalLocalityLabel,
-                      120,
-                      anchorKey: _localityAnchor,
-                      fieldKey: const Key('proposal-locality'),
-                      required: true,
-                    ),
-                    _field(
-                      _administrativeArea,
-                      l10n.proposalAdministrativeAreaLabel,
-                      120,
-                      anchorKey: _administrativeAreaAnchor,
-                      fieldKey: const Key('proposal-administrative-area'),
-                    ),
-                    _field(
                       _publicLocation,
-                      l10n.proposalPublicLocationLabel,
+                      l10n.proposalCityLabel,
                       180,
                       anchorKey: _publicLocationAnchor,
                       fieldKey: const Key('proposal-public-location'),
                       required: true,
+                      helper: l10n.proposalCityHint,
+                      onChanged: (value) {
+                        // A typed locality is list-only. The server invalidates
+                        // preceding verified geometry; never infer a map point.
+                        if (_country.text.trim().isEmpty) _country.text = 'IT';
+                        _locality.text = value;
+                        _administrativeArea.clear();
+                      },
                     ),
                   ],
-                ),
-                _field(
-                  _exactLocation,
-                  l10n.proposalExactLocationLabel,
-                  1000,
-                  anchorKey: _exactLocationAnchor,
-                  fieldKey: const Key('proposal-exact-location'),
-                  required: true,
-                  lines: 3,
-                ),
-                const SizedBox(height: AppSpacing.small),
-                Text(
-                  l10n.proposalExactVisibilityLabel,
-                  style: Theme.of(context).textTheme.titleMedium,
-                ),
-                SegmentedButton<ExactLocationVisibility>(
-                  key: const Key('proposal-exact-visibility'),
-                  segments: [
-                    ButtonSegment(
-                      value: ExactLocationVisibility.participants,
-                      label: Text(l10n.proposalExactParticipants),
-                    ),
-                    ButtonSegment(
-                      value: ExactLocationVisibility.public,
-                      label: Text(l10n.proposalExactPublic),
+                  exactChildren: [
+                    _field(
+                      _exactLocation,
+                      l10n.proposalExactLocationLabel,
+                      1000,
+                      anchorKey: _exactLocationAnchor,
+                      fieldKey: const Key('proposal-exact-location'),
+                      lines: 3,
                     ),
                   ],
-                  selected: {_visibility},
-                  onSelectionChanged: busy || !contentEditable
-                      ? null
-                      : (selection) =>
-                            setState(() => _visibility = selection.single),
-                ),
-                const SizedBox(height: AppSpacing.small),
-                Text(
-                  _visibility == ExactLocationVisibility.participants
-                      ? l10n.locationRestrictedPreview
-                      : l10n.locationPublicPreview,
-                  key: const Key('location-visibility-preview'),
+                  exactVisibilityChildren: [
+                    const SizedBox(height: AppSpacing.small),
+                    Text(
+                      l10n.proposalExactVisibilityLabel,
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                    SegmentedButton<ExactLocationVisibility>(
+                      key: const Key('proposal-exact-visibility'),
+                      segments: [
+                        ButtonSegment(
+                          value: ExactLocationVisibility.participants,
+                          label: Text(l10n.proposalExactParticipants),
+                        ),
+                        ButtonSegment(
+                          value: ExactLocationVisibility.public,
+                          label: Text(l10n.proposalExactPublic),
+                        ),
+                      ],
+                      selected: {_visibility},
+                      onSelectionChanged: busy || !contentEditable
+                          ? null
+                          : (selection) =>
+                                setState(() => _visibility = selection.single),
+                    ),
+                    const SizedBox(height: AppSpacing.small),
+                    Text(
+                      _visibility == ExactLocationVisibility.participants
+                          ? l10n.locationRestrictedPreview
+                          : l10n.locationPublicPreview,
+                      key: const Key('location-visibility-preview'),
+                    ),
+                  ],
                 ),
                 const SizedBox(height: AppSpacing.large),
                 Text(
@@ -1324,6 +1314,7 @@ class _ProposalFormState extends ConsumerState<_ProposalForm>
     String? helper,
     Key? fieldKey,
     FormFieldValidator<String>? validator,
+    ValueChanged<String>? onChanged,
   }) => Padding(
     key: anchorKey,
     padding: const EdgeInsets.only(bottom: AppSpacing.medium),
@@ -1343,7 +1334,10 @@ class _ProposalFormState extends ConsumerState<_ProposalForm>
         helperMaxLines: 6,
         alignLabelWithHint: lines > 1,
       ),
-      onChanged: (_) => _refreshValidationSummary(),
+      onChanged: (value) {
+        onChanged?.call(value);
+        _refreshValidationSummary();
+      },
       validator:
           validator ??
           (value) => _validateText(
@@ -1373,15 +1367,6 @@ class _ProposalFormState extends ConsumerState<_ProposalForm>
       return l10n.proposalMaximumLength(maximumLength);
     }
     return null;
-  }
-
-  String? _validateCountry(String? value) {
-    final text = (value ?? '').trim();
-    if (text.isEmpty && !_validatingPublish) return null;
-    if (text.isEmpty) return AppLocalizations.of(context).proposalRequiredField;
-    return RegExp(r'^[A-Za-z]{2}$').hasMatch(text)
-        ? null
-        : AppLocalizations.of(context).proposalCountryCodeError;
   }
 
   List<String> _validationIssueLabels(
@@ -1431,22 +1416,17 @@ class _ProposalFormState extends ConsumerState<_ProposalForm>
     final country = input.countryCode.trim();
     if ((publish && country.isEmpty) ||
         (country.isNotEmpty && !RegExp(r'^[A-Za-z]{2}$').hasMatch(country))) {
-      issues.add(l10n.proposalCountryLabel);
+      issues.add(l10n.proposalCityLabel);
     }
-    text(l10n.proposalLocalityLabel, input.locality, 120, required: true);
-    text(l10n.proposalAdministrativeAreaLabel, input.administrativeArea, 120);
+    text(l10n.proposalCityLabel, input.locality, 120, required: true);
+    text(l10n.proposalCityLabel, input.administrativeArea, 120);
     text(
-      l10n.proposalPublicLocationLabel,
+      l10n.proposalCityLabel,
       input.publicLocationLabel,
       180,
       required: true,
     );
-    text(
-      l10n.proposalExactLocationLabel,
-      input.exactMeetingText,
-      1000,
-      required: true,
-    );
+    text(l10n.proposalExactLocationLabel, input.exactMeetingText, 1000);
     return issues;
   }
 
@@ -1481,14 +1461,14 @@ class _ProposalFormState extends ConsumerState<_ProposalForm>
     final country = input.countryCode.trim();
     if ((publish && country.isEmpty) ||
         (country.isNotEmpty && !RegExp(r'^[A-Za-z]{2}$').hasMatch(country))) {
-      return _countryAnchor;
+      return _publicLocationAnchor;
     }
     if ((publish && input.locality.trim().isEmpty) ||
         input.locality.trim().length > 120) {
-      return _localityAnchor;
+      return _publicLocationAnchor;
     }
     if (input.administrativeArea.trim().length > 120) {
-      return _administrativeAreaAnchor;
+      return _publicLocationAnchor;
     }
     if ((publish && input.publicLocationLabel.trim().isEmpty) ||
         input.publicLocationLabel.trim().length > 180) {

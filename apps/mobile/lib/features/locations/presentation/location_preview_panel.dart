@@ -26,6 +26,7 @@ class LocationPreviewPanel extends ConsumerStatefulWidget {
     required this.legacy,
     required this.publicLabel,
     this.detail = false,
+    this.allowLegacyAreaSearch = true,
     this.contentVersion,
     this.labelKey,
     super.key,
@@ -34,6 +35,10 @@ class LocationPreviewPanel extends ConsumerStatefulWidget {
   final LegacyPreviewArea legacy;
   final String publicLabel;
   final bool detail;
+
+  /// City-only Projects opt out; existing manual precise records and other
+  /// kinds keep canonical broad-area search without inventing coordinates.
+  final bool allowLegacyAreaSearch;
   final Key? labelKey;
   final Object? contentVersion;
   @override
@@ -143,6 +148,7 @@ class _LocationPreviewPanelState extends ConsumerState<LocationPreviewPanel>
     super.didUpdateWidget(oldWidget);
     if (oldWidget.item.key != widget.item.key ||
         oldWidget.detail != widget.detail ||
+        oldWidget.allowLegacyAreaSearch != widget.allowLegacyAreaSearch ||
         oldWidget.publicLabel != widget.publicLabel ||
         oldWidget.contentVersion != widget.contentVersion) {
       _invalidate();
@@ -277,6 +283,13 @@ class _LocationPreviewPanelState extends ConsumerState<LocationPreviewPanel>
     }
   }
 
+  Uri? _mapsDestination(LocationPreview value) {
+    // A typed city is discovery text, not a chosen meeting destination. Other
+    // item kinds keep their existing canonical-locality search behavior.
+    if (!widget.allowLegacyAreaSearch && value.place == null) return null;
+    return googleMapsPreviewUrl(value, value.legacy);
+  }
+
   Future<void> _open() async {
     if (_opening || !_foreground || !_visible) return;
     var epoch = _epoch;
@@ -306,7 +319,7 @@ class _LocationPreviewPanelState extends ConsumerState<LocationPreviewPanel>
         _preview = current;
         _opening = true;
       });
-      final url = googleMapsPreviewUrl(current, current.legacy);
+      final url = _mapsDestination(current);
       if (url == null ||
           !await ref.read(previewMapsLauncherProvider).open(url)) {
         throw const PreviewUnavailable();
@@ -347,8 +360,7 @@ class _LocationPreviewPanelState extends ConsumerState<LocationPreviewPanel>
     final label = place?.label ?? widget.publicLabel;
     // Only a current canonical projection can offer an outbound destination.
     // Revocation removes the action together with protected labels and pixels.
-    final hasDestination =
-        value != null && googleMapsPreviewUrl(value, value.legacy) != null;
+    final hasDestination = value != null && _mapsDestination(value) != null;
     return Padding(
       key: _box,
       padding: const EdgeInsets.symmetric(vertical: AppSpacing.small),

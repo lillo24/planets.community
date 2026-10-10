@@ -43,12 +43,9 @@ void main() {
       );
       await draft.reveal(
         tester,
-        find.byKey(const Key('location-manual-fallback')),
+        find.byKey(const Key('proposal-public-location')),
       );
-      expect(
-        find.text('Place search is unavailable. Enter the location below.'),
-        findsOneWidget,
-      );
+      expect(find.byKey(const Key('proposal-country')), findsNothing);
       await draft.reveal(tester, find.byKey(const Key('proposal-save-draft')));
       await tester.tap(find.byKey(const Key('proposal-save-draft')));
       await tester.pumpAndSettle();
@@ -78,9 +75,13 @@ void main() {
         find.byKey(const Key('proposal-title')),
         'Manual draft',
       );
+      await draft.reveal(
+        tester,
+        find.byKey(const Key('proposal-optional-exact')),
+      );
+      await tester.tap(find.byKey(const Key('proposal-optional-exact')));
+      await tester.pumpAndSettle();
       for (final entry in {
-        'proposal-country': 'IT',
-        'proposal-locality': 'Trento',
         'proposal-public-location': 'User-authored city centre',
         'proposal-exact-location': 'Side entrance, bell 4',
       }.entries) {
@@ -136,6 +137,53 @@ void main() {
     },
   );
 
+  for (final locale in ['en', 'it']) {
+    testWidgets(
+      '$locale city-only public detail states absence without a hidden-place claim',
+      (tester) async {
+        final gateway = FakeProposalGateway()
+          ..publicDetail = proposalDetailFixture(
+            locality: 'Trento',
+            publicLocationLabel: 'Trento',
+            restricted: false,
+            exactMeetingText: null,
+          );
+        await tester.pumpWidget(
+          ProviderScope(
+            overrides: [proposalGatewayProvider.overrideWithValue(gateway)],
+            child: MaterialApp(
+              locale: Locale(locale),
+              localizationsDelegates: AppLocalizations.localizationsDelegates,
+              supportedLocales: AppLocalizations.supportedLocales,
+              home: const ProposalDetailScreen(proposalId: 'proposal-1'),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+        final message = find.byKey(
+          const Key('participation-public-meeting-proposal-1'),
+        );
+        await tester.scrollUntilVisible(message, 200);
+        expect(
+          tester.widget<Text>(message).data,
+          locale == 'it'
+              ? 'Le istruzioni per il luogo preciso non sono ancora state aggiunte.'
+              : 'Precise meeting instructions have not been added yet.',
+        );
+        expect(
+          find.byKey(const Key('participation-restricted-meeting-proposal-1')),
+          findsNothing,
+        );
+        expect(
+          find.byKey(const Key('location-open-maps-proposal-1')),
+          findsNothing,
+        );
+        expect(find.byType(RawImage), findsNothing);
+        expect(tester.takeException(), isNull);
+        await tester.pumpWidget(const SizedBox());
+      },
+    );
+  }
   for (final locale in ['en', 'it']) {
     testWidgets(
       '$locale fallback wraps with narrow, large-text keyboard in dark mode',

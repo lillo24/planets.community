@@ -297,10 +297,14 @@ class ParticipationPayloadParser {
 
   ParticipantMeetingDetails meetingDetails(Object? value) {
     final row = _row(value);
+    final kind = ProjectKind.fromWire(row['project_kind'] as String);
+    final text = kind == ProjectKind.oneTime
+        ? row['exact_meeting_text'] as String?
+        : row['exact_meeting_text'] as String;
     return ParticipantMeetingDetails(
       projectId: row['project_id'] as String,
-      projectKind: ProjectKind.fromWire(row['project_kind'] as String),
-      exactMeetingText: row['exact_meeting_text'] as String,
+      projectKind: kind,
+      exactMeetingText: text,
       exactLocation: row['exact_location'],
     );
   }

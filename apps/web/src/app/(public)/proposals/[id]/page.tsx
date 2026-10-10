@@ -85,9 +85,13 @@ export default async function ProposalDetailPage({
               <p data-testid="restricted-location">
                 Exact location available after joining.
               </p>
-            ) : (
+            ) : proposal.exact_meeting_text ? (
               <p data-testid="public-exact-location">
                 {proposal.exact_meeting_text}
+              </p>
+            ) : (
+              <p data-testid="no-exact-location">
+                Precise meeting instructions have not been added yet.
               </p>
             )}
           </CardContent>

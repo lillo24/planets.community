@@ -355,3 +355,11 @@ the canonical projection after backend rejection; blocking a current member
 does not remove them or change shared Project/chat/meeting access. A caller-owned
 organizer block replaces a new Join CTA with an explanation and Unblock path.
 Inbound-only `PT409` remains direction-neutral.
+
+## Optional one-time instructions (LOCATION01)
+
+`ParticipantMeetingDetails.exactMeetingText` is nullable for an authorized one-time
+meeting row. The gateway keeps recurring instructions strict. A denied read or
+missing row remains distinct from a successful row with absent instructions.
+Public absence copy is used only when the sanitized RPC reports no restricted
+exact content. No participation or authorization transition changes.

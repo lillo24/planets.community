@@ -150,3 +150,9 @@ contract but are not recorded as native-device QA.
 human sender. Blocking never hides that message, filters later shared messages,
 or removes either Project member. Report remains an independent moderation
 action.
+
+## City-only meeting info (LOCATION01)
+
+A successful authorized one-time meeting read with null instructions renders
+localized absence copy. Read errors/denials retain their existing failure states.
+No chat creation, membership, admission or history rule changes.

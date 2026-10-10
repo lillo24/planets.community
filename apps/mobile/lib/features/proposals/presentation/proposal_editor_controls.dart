@@ -240,10 +240,13 @@ class ProposalSkillsControl extends StatelessWidget {
           ))
             Padding(
               padding: const EdgeInsets.only(top: AppSpacing.small),
-              child: Row(
+              // A full-width selector also fits translated labels at 2x text.
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Expanded(child: Text(skill.label)),
+                  Text(skill.label),
                   DropdownButton<ProposalSkillImportance>(
+                    isExpanded: true,
                     key: Key('proposal-skill-${skill.slug}'),
                     value: values[skill.id],
                     onChanged: enabled

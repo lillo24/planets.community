@@ -193,7 +193,7 @@ class ProposalLocation extends StatelessWidget {
         Text(
           detail.exactLocationRestricted
               ? l10n.proposalExactLocationRestricted
-              : detail.exactMeetingText ?? l10n.proposalExactLocationRestricted,
+              : detail.exactMeetingText ?? l10n.proposalExactNotChosen,
           key: Key(
             detail.exactLocationRestricted
                 ? 'proposal-location-restricted'

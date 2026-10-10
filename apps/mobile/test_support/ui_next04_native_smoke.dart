@@ -34,11 +34,10 @@ Future<void> main(List<String> args) async {
       await tap('proposal-start-scratch');
       await tap('proposal-title');
       await driver.enterText('Native manual location draft');
-      await reveal('location-manual-fallback');
+      await reveal('proposal-optional-exact');
       await capture('ui04-manual-entry');
+      await tap('proposal-optional-exact');
       for (final entry in {
-        'proposal-country': 'IT',
-        'proposal-locality': 'Trento',
         'proposal-public-location': 'User-authored city area',
         'proposal-exact-location': 'Side entrance, bell 4',
       }.entries) {

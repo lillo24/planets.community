@@ -622,6 +622,34 @@ void main() {
     },
   );
 
+  testWidgets(
+    'city-only Project chat info tolerates an authorized null meeting row',
+    (tester) async {
+      final chats = FakeProjectChatGateway()
+        ..summaries = [
+          projectChatSummaryFixture(viewerRole: ProjectChatViewerRole.creator),
+        ]
+        ..histories['chat-1'] = [];
+      final participation = FakeParticipationGateway()
+        ..meetingDetails = meetingDetailsFixture(exactMeetingText: null);
+      final app = await _pump(
+        tester,
+        chats: chats,
+        participation: participation,
+      );
+      app.read(appRouterProvider).go('/messages/chats/chat-1/info');
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('project-chat-load-meeting')));
+      await tester.pumpAndSettle();
+      expect(
+        find.text('Precise meeting instructions have not been added yet.'),
+        findsOneWidget,
+      );
+      expect(find.text('Meet beside the blue workshop door.'), findsNothing);
+      expect(tester.takeException(), isNull);
+    },
+  );
+
   testWidgets('former member info never requests protected meeting details', (
     tester,
   ) async {

@@ -133,7 +133,7 @@ Raw Auth deletion is deliberately blocked while a profile or actor-linked audit 
 
 `proposals` stores a creator-owned one-time activity, content, schedule, IANA event time zone, and rough public location. Its business lifecycle is only `draft`, `published`, or `cancelled`. Upcoming, Happening, Just Finished, and Completed are derived from `starts_at`, `ends_at`, and the current time; Just Finished begins exactly at the end and lasts until, but not including, 24 hours later. TW01 establishes one linked template identity automatically at first successful publication; its allow-listed reusable content follows canonical published content, while Workshop use requires canonical Completed and current visibility/removal eligibility. Completed remains elapsed time rather than evidence that an event happened or succeeded. Proposals remain historical source records, separate from template identities.
 
-`proposal_meeting_details` physically separates exact meeting text/coordinates from the rough public location. Public list payloads never include exact meeting data. Exact-ID public detail returns exact meeting text only for `public` visibility; `participants` visibility returns no protected value and an explicit restricted flag. The shared participant boundary returns protected operational meeting information only to the creator or a current accepted participant without weakening this anonymous contract. `proposal_skills` reuses the controlled 03C catalog with `required` or `useful` meaning; no second or free-form taxonomy exists.
+`proposal_meeting_details` physically separates exact meeting text/coordinates from the rough public location. Public list payloads never include exact meeting data. Exact-ID public detail returns exact meeting text only for `public` visibility; `participants` visibility returns no protected value and marks the location restricted only when protected text or geometry exists. LOCATION01 allows absent precise details for a defined one-time Project; city and schedule remain required. The shared participant boundary returns protected operational meeting information only to the creator or a current accepted participant without weakening this anonymous contract. `proposal_skills` reuses the controlled 03C catalog with `required` or `useful` meaning; no second or free-form taxonomy exists.
 
 Complete-profile creators manage proposals only through expected-identity-bound `create_proposal_draft`, `update_own_proposal`, `publish_proposal`, and `cancel_proposal` operations. Public clients use sanitized `list_public_proposals` and `get_public_proposal`; owners use separate complete owner reads. Published content freezes when an activity starts, cancellation is terminal and permitted only before its end, and publish/cancel record content-free audit/outbox identifiers without delivering notifications.
 
@@ -559,7 +559,15 @@ The one-time proposal model includes:
 - municipality and/or postal code;
 - optional approximate PostGIS point for future search;
 - a public display label;
-- exact meeting details in a separate protected record, visible publicly only when explicitly configured or through the creator/current-participant operation.
+- optional exact meeting details in a structurally required protected record, visible publicly only when explicitly configured or through the creator/current-participant operation.
+
+LOCATION01 permits defined one-time publication with city + valid schedule and
+existing content/photo/capacity safeguards. Exact text/points may be absent.
+Manual cities stay List-only until independently verified broad geometry exists.
+A restricted-location flag means actual protected text or geometry exists.
+Public **In definizione / Idea**, absent published schedules and a chat checklist
+remain future work; no lifecycle values change. See the
+[LOCATION01 contract](../development/location01-defined-project-city-only.md).
 
 Continuous location tracking is not part of the product foundation.
 
