@@ -69,6 +69,16 @@ class RpcItemLocationGateway implements ItemLocationGateway {
     required String action,
     String? receipt,
   }) async {
+    if (scope.slot == 'place' && scope.itemKind == 'one_time') {
+      return (await _call('apply_proposal_place_v1', {
+        'p_expected_profile_id': scope.actorId,
+        'p_item': scope.itemId,
+        'p_expected_revision': scope.revision,
+        'p_request_id': requestId,
+        'p_action': action,
+        'p_receipt': receipt,
+      }) as num).toInt();
+    }
     final revision = await _call('apply_item_location_v1', {
       'p_expected_profile_id': scope.actorId,
       'p_kind': scope.itemKind,

@@ -131,6 +131,41 @@ void main() {
             'Lossless draft',
           );
         }
+        if (kind == 'one_time') {
+          final field = find.byKey(const Key('proposal-public-location'));
+          await tester.scrollUntilVisible(
+            field,
+            200,
+            scrollable: find
+                .descendant(
+                  of: find.byType(ListView).first,
+                  matching: find.byType(Scrollable),
+                )
+                .first,
+          );
+          await tester.enterText(field, 'Trento');
+          await tester.pump(const Duration(milliseconds: 350));
+          await tester.pumpAndSettle();
+          await tap(tester, 'location-result-locality');
+          expect(proposal.calls.where((s) => s == 'create'), hasLength(1));
+          expect(factory.scopes.single.slot, 'place');
+          expect(db.value.publicPlace, syntheticArea);
+          expect(proposal.lastInput!.title, 'Lossless draft');
+          await tester.ensureVisible(field);
+          await tester.enterText(field, 'Synthetic venue');
+          await tester.pump(const Duration(milliseconds: 350));
+          await tester.pumpAndSettle();
+          await tap(tester, 'location-result-address');
+          expect(db.value.exactPlace, syntheticExact);
+          expect(db.value.exactIsPublic, isFalse);
+          expect(find.byKey(const Key('location-query')), findsNothing);
+          await tap(tester, 'proposal-remove-exact');
+          expect(db.value.exactPlace, isNull);
+          expect(tester.takeException(), isNull);
+          await tester.pumpWidget(const SizedBox());
+          await tester.pump();
+          return;
+        }
         final choose = find.byKey(
           Key(
             kind == 'resource'

@@ -85,15 +85,17 @@ export function normalizeResults(payload, language) {
               raw.state)
             : undefined),
       );
-      const administrativeArea =
-        raw.state == null ? null : component(raw.state);
+      const administrativeArea = [raw.county, raw.state]
+        .filter((value) => value != null)
+        .map((value) => component(value));
+      const region = [...new Set(administrativeArea)].join(", ") || null;
       const label = broad
         ? component(
             [
               ...new Set(
                 [
                   locality,
-                  administrativeArea,
+                  region,
                   language === "it" ? "Italia" : "Italy",
                 ].filter(Boolean),
               ),
@@ -134,7 +136,7 @@ export function normalizeResults(payload, language) {
         label,
         country_code: "IT",
         locality,
-        administrative_area: administrativeArea,
+        administrative_area: region,
         latitude: raw.lat,
         longitude: raw.lon,
         confidence,

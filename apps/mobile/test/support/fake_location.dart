@@ -50,6 +50,38 @@ class FakeItemLocationGateway implements ItemLocationGateway {
     if (scope.revision != value.revision) {
       throw const PlaceSearchFailure(PlaceSearchProblem.stale);
     }
+    if (scope.slot == 'place') {
+      final visibility = action == 'public' || action == 'participants';
+      final broad = receipt == 'locality';
+      value = ItemLocation(
+        value.revision + 1,
+        publicPlace: visibility
+            ? value.publicPlace
+            : broad
+            ? syntheticArea
+            : null,
+        exactPlace: visibility
+            ? value.exactPlace
+            : action == 'replace' && !broad
+            ? syntheticExact
+            : null,
+        publicLabel: visibility || action == 'clear'
+            ? value.publicLabel
+            : broad
+            ? syntheticArea.label
+            : 'Trento, Trentino, Italia',
+        locality: 'Trento',
+        countryCode: 'IT',
+        administrativeArea: 'Trentino',
+        exactIsPublic: visibility ? action == 'public' : false,
+      );
+      accepted[requestId] = value.revision;
+      if (loseNextResponse) {
+        loseNextResponse = false;
+        throw const PlaceSearchFailure(PlaceSearchProblem.offline);
+      }
+      return value.revision;
+    }
     value = ItemLocation(
       value.revision + 1,
       publicPlace: scope.slot == 'exact'
@@ -64,6 +96,11 @@ class FakeItemLocationGateway implements ItemLocationGateway {
                 ? null
                 : syntheticExact
           : value.exactPlace,
+      publicLabel: value.publicLabel,
+      locality: value.locality,
+      countryCode: value.countryCode,
+      administrativeArea: value.administrativeArea,
+      exactIsPublic: value.exactIsPublic,
     );
     accepted[requestId] = value.revision;
     if (loseNextResponse) {

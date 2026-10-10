@@ -105,14 +105,22 @@ describe("public proposal routes", () => {
       creator_profile_id: "user-1",
       creator_display_name: null,
       description: "Full details",
-      exact_meeting_text: "At the fountain",
+      exact_meeting_text: "Synthetic verified venue",
       exact_location_restricted: false,
+      exactMapsUrl:
+        "https://www.google.com/maps/search/?api=1&query=46.12%2C11.17",
     });
     render(
       await Page({ params: Promise.resolve({ id: summary.proposal_id }) }),
     );
     expect(screen.getByTestId("public-exact-location")).toHaveTextContent(
-      "At the fountain",
+      "Synthetic verified venue",
+    );
+    expect(
+      screen.getByRole("link", { name: "Open exact location in Google Maps" }),
+    ).toHaveAttribute(
+      "href",
+      "https://www.google.com/maps/search/?api=1&query=46.12%2C11.17",
     );
   });
 

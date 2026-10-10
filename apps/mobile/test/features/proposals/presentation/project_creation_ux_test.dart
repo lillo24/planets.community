@@ -55,7 +55,7 @@ void main() {
             find.descendant(of: brief, matching: find.byType(TextField)),
           );
           expect(input.decoration!.labelText, l.proposalSummaryLabel);
-          expect(input.decoration!.helperText, l.projectShortDescriptionHint);
+          expect(input.decoration!.helperText, isNull);
           final full = find.byKey(const Key('proposal-description'));
           await draft.reveal(tester, full);
           expect(
@@ -67,10 +67,10 @@ void main() {
                 .labelText,
             l.proposalDescriptionLabel,
           );
-          await draft.reveal(tester, find.text(l.proposalSkillsHint));
-          expect(find.text(l.proposalSkillsHint), findsOneWidget);
-          await draft.reveal(tester, find.text(l.projectResourcesHint));
-          expect(find.text(l.projectResourcesHint), findsOneWidget);
+          await draft.reveal(tester, find.text(l.proposalSkillsTitle));
+          expect(find.text(l.proposalSkillsHint), findsNothing);
+          await draft.reveal(tester, find.text(l.projectResourcesNeededTitle));
+          expect(find.text(l.projectResourcesHint), findsNothing);
           await draft.reveal(tester, find.text(l.projectResourcesAfterDraft));
           expect(
             find.byKey(const Key('proposal-manage-resources')),

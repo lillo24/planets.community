@@ -196,7 +196,7 @@ select lives_ok($$select public.update_own_resource_listing('a9010000-0000-4000-
 reset role;
 select ok((select selected_public_place is null and public_location is null and country_code='FR' from public.resource_listings where id='a9020000-0000-4000-8000-000000000003'),'Legacy manual Resource edit clears old verified pin');
 update public.proposal_meeting_details set exact_meeting_text='Changed instructions' where proposal_id='a9020000-0000-4000-8000-000000000001';
-select ok((select selected_exact_place is null and exact_location is null from public.proposal_meeting_details where proposal_id='a9020000-0000-4000-8000-000000000001'),'Manual exact edit clears old verified pin');
+select ok((select selected_exact_place is not null and exact_location is not null from public.proposal_meeting_details where proposal_id='a9020000-0000-4000-8000-000000000001'),'Directions edit preserves independently selected exact place');
 select set_config('test.map01.revision',(select location_revision::text from public.proposals where id='a9020000-0000-4000-8000-000000000001'),true);
 set local role authenticated;
 select lives_ok($$select public.apply_item_location_v1('a9010000-0000-4000-8000-000000000001','one_time','a9020000-0000-4000-8000-000000000001',current_setting('test.map01.revision')::bigint,gen_random_uuid(),'clear',null,'clear',null)$$,'Clear works without provider access and preserves manual drafts');

@@ -1,5 +1,10 @@
 # MAP02 location selector
 
+LOCATION02 replaces only the one-time Project editor with a single inline place
+query, an explicit exact-place visibility switch and separate private directions.
+Tavolo/Resource flows below are unchanged. See the
+[current one-time contract](location02-inline-project-place.md).
+
 Dependency: MAP01 PR #172, main `6650d995c4a393ef43e13f16d51933645be72db9`
 (predecessor implementation `6761ac63f5fbe22afff58f18f370555c8ca7d039`).
 This slice adds editor selection without activating Geoapify, maps or discovery.

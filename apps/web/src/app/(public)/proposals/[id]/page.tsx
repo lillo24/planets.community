@@ -94,6 +94,16 @@ export default async function ProposalDetailPage({
                 Precise meeting instructions have not been added yet.
               </p>
             )}
+            {!proposal.exact_location_restricted && proposal.exactMapsUrl && (
+              <a
+                className="inline-flex min-h-12 items-center underline"
+                href={proposal.exactMapsUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Open exact location in Google Maps
+              </a>
+            )}
           </CardContent>
         </Card>
         <section className="grid gap-3">
