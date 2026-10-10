@@ -62,6 +62,7 @@ class _LocationPreviewPanelState extends ConsumerState<LocationPreviewPanel>
   int _epoch = 0;
   bool _visible = false, _foreground = true, _loading = false, _opening = false;
   bool _failed = false, _frameScheduled = false;
+  bool _needsRefresh = true;
   String? get _actor {
     final session = ref.read(authSessionProvider);
     return session.phase == AuthSessionPhase.ready
@@ -78,10 +79,14 @@ class _LocationPreviewPanelState extends ConsumerState<LocationPreviewPanel>
         if (!widget.detail) {
           ref.read(publicPreviewBatchProvider).expire(widget.item);
         }
-        // Hide exact content while reauthorizing. The same widget-owned bitmap
-        // can be reused only after the fresh read confirms its key/revision.
-        _revoke(keepImage: true);
-        _scheduleVisibility();
+        if (_preview?.isProtected != false) {
+          // Private pixels/buffers cannot outlive their authorization lease.
+          _revoke();
+          _scheduleVisibility();
+        } else if (!_opening) {
+          // Renew canonical public status without destroying unchanged pixels.
+          unawaited(_load());
+        }
       }
     });
   }
@@ -102,28 +107,51 @@ class _LocationPreviewPanelState extends ConsumerState<LocationPreviewPanel>
     _bitmap = GlobalKey<_UncachedPreviewImageState>();
   }
 
-  void _revoke({bool keepImage = false}) {
+  void _interruptRead() {
     ++_epoch;
-    _tiles.currentState?.revoke();
-    _tiles = GlobalKey<ReadOnlyBasemapState>();
     if (_abort?.isCompleted == false) _abort!.complete();
     _abort = null;
-    if (!keepImage) {
-      _eraseImage();
-    } else {
-      _revokeBitmap();
-    }
-    _preview = null;
     _loading = false;
     _opening = false;
+    _needsRefresh = true;
+  }
+
+  void _revoke() {
+    _interruptRead();
+    _tiles.currentState?.revoke();
+    _tiles = GlobalKey<ReadOnlyBasemapState>();
+    _eraseImage();
+    _preview = null;
     _failed = false;
     if (mounted) setState(() {});
+  }
+
+  void _suspend() {
+    if (_preview?.isProtected != false) {
+      _revoke();
+    } else {
+      // A retained public view is bounded by this widget, not a new cache/TTL.
+      // Cancel canonical/launch work; revalidate when it becomes visible again.
+      _interruptRead();
+      _failed = false;
+      if (mounted) setState(() {});
+    }
   }
 
   void _invalidate() {
     _revoke();
     ref.read(publicPreviewBatchProvider).clear();
     _scheduleVisibility();
+  }
+
+  void _entitlementChanged() {
+    if (_preview?.isProtected != false) {
+      _invalidate();
+    } else {
+      _interruptRead();
+      _failed = false;
+      _scheduleVisibility();
+    }
   }
 
   @override
@@ -137,8 +165,8 @@ class _LocationPreviewPanelState extends ConsumerState<LocationPreviewPanel>
     }
     if ((ModalRoute.isCurrentOf(context) ?? true) == false ||
         !TickerMode.valuesOf(context).enabled) {
+      if (_visible) _suspend();
       _visible = false;
-      _revoke();
     }
     _scheduleVisibility();
   }
@@ -158,9 +186,15 @@ class _LocationPreviewPanelState extends ConsumerState<LocationPreviewPanel>
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     _foreground = state == AppLifecycleState.resumed;
-    _revoke();
-    ref.read(publicPreviewBatchProvider).clear();
-    if (_foreground) _scheduleVisibility();
+    if (state == AppLifecycleState.inactive) {
+      _suspend();
+    } else if (!_foreground) {
+      _revoke();
+      ref.read(publicPreviewBatchProvider).clear();
+    } else {
+      _needsRefresh = true;
+      _scheduleVisibility();
+    }
   }
 
   void _scheduleVisibility() {
@@ -188,9 +222,12 @@ class _LocationPreviewPanelState extends ConsumerState<LocationPreviewPanel>
         }
         visible = rect.overlaps(viewport);
       }
-      if (!visible && _visible) _revoke();
+      if (!visible && _visible) _suspend();
       _visible = visible;
-      if (visible && _preview == null && !_loading && !_failed) {
+      if (visible &&
+          (_needsRefresh || _preview == null) &&
+          !_loading &&
+          !_failed) {
         unawaited(_load());
       }
     });
@@ -210,10 +247,11 @@ class _LocationPreviewPanelState extends ConsumerState<LocationPreviewPanel>
               (widget.item.kind == 'resource' ||
                   value.place?.isArea != false)));
   Future<void> _load() async {
-    final epoch = _epoch, actor = _actor;
+    if (_loading) return;
+    var epoch = _epoch;
+    final actor = _actor;
     _loading = true;
-    final abort = Completer<void>();
-    _abort = abort;
+    _needsRefresh = false;
     try {
       final value = widget.detail
           ? await ref
@@ -222,13 +260,24 @@ class _LocationPreviewPanelState extends ConsumerState<LocationPreviewPanel>
           : await ref.read(publicPreviewBatchProvider).read(widget.item);
       if (!_current(epoch, actor)) return;
       if (value != null && !_safe(value)) throw const PreviewUnavailable(true);
-      // Authorized text/action need not wait for optional image rendering.
-      setState(() => _preview = value);
       if (value == null) {
         _revoke();
         _failed = true;
         return;
       }
+      if (_preview != null &&
+          (!_preview!.sameLocationAs(value) ||
+              _preview!.isProtected != value.isProtected)) {
+        _revoke();
+        epoch = _epoch;
+        _loading = true;
+        _needsRefresh = false;
+      }
+      // Authorized text/action need not wait for optional image rendering.
+      setState(() {
+        _preview = value;
+        _failed = false;
+      });
       if (_imageKey != value.imageKey ||
           _imageRevision != value.revision ||
           _imageProtected != value.isProtected) {
@@ -239,6 +288,8 @@ class _LocationPreviewPanelState extends ConsumerState<LocationPreviewPanel>
           renderer.enabled &&
           value.place != null &&
           _bytes == null) {
+        final abort = Completer<void>();
+        _abort = abort;
         try {
           final batch = ref.read(publicPreviewBatchProvider);
           final bytes = await batch.loadImage(
@@ -309,8 +360,7 @@ class _LocationPreviewPanelState extends ConsumerState<LocationPreviewPanel>
       }
       // A fresh tap can observe departure/visibility changes before the lease.
       // Cancel older reads/renders so they cannot restore the prior projection.
-      if (_preview?.revision != current.revision ||
-          _preview?.imageKey != current.imageKey ||
+      if (_preview?.sameLocationAs(current) != true ||
           _preview?.isProtected != current.isProtected) {
         _revoke();
         epoch = _epoch;
@@ -342,6 +392,82 @@ class _LocationPreviewPanelState extends ConsumerState<LocationPreviewPanel>
     }
   }
 
+  Widget _mapAction(Widget canvas, LocationPreview value) {
+    final l10n = AppLocalizations.of(context);
+    final place = value.place!;
+    final enabled = !_opening && _foreground && _visible;
+    return Padding(
+      padding: const EdgeInsets.only(top: AppSpacing.small),
+      child: Semantics(
+        key: Key('location-map-action-${widget.item.id}'),
+        link: true,
+        button: true,
+        enabled: enabled,
+        label:
+            '${l10n.locationOpenGoogleMaps}: ${place.label}'
+            '${place.isArea ? '. ${l10n.locationPreviewApproximate}' : ''}',
+        onTap: enabled ? _open : null,
+        excludeSemantics: true,
+        child: ClipRRect(
+          borderRadius: AppRadii.medium,
+          child: Stack(
+            children: [
+              canvas,
+              Positioned.fill(
+                // Paint focus/press ink ABOVE the opaque tile/image pixels.
+                child: Material(
+                  type: MaterialType.transparency,
+                  child: InkWell(
+                    onTap: enabled ? _open : null,
+                    child: Align(
+                      alignment: Alignment.bottomRight,
+                      child: Padding(
+                        padding: const EdgeInsets.all(6),
+                        child: DecoratedBox(
+                          decoration: BoxDecoration(
+                            color: Theme.of(context)
+                                .colorScheme
+                                .surfaceContainerHigh,
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: const Padding(
+                            padding: EdgeInsets.all(4),
+                            child: Icon(Icons.open_in_new, size: 18),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _fallbackAction() => Align(
+    alignment: Alignment.centerLeft,
+    child: TextButton.icon(
+      key: Key('location-open-maps-${widget.item.id}'),
+      onPressed: _opening ? null : _open,
+      style: widget.detail
+          ? TextButton.styleFrom(
+              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+              minimumSize: const Size(48, 48),
+              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            )
+          : null,
+      icon: const Icon(Icons.open_in_new, size: 20),
+      label: Text(
+        _opening
+            ? AppLocalizations.of(context).locationLoading
+            : AppLocalizations.of(context).locationOpenGoogleMaps,
+      ),
+    ),
+  );
+
   @override
   Widget build(BuildContext context) {
     ref.listen(
@@ -349,9 +475,15 @@ class _LocationPreviewPanelState extends ConsumerState<LocationPreviewPanel>
       (_, _) => _invalidate(),
     );
     if (widget.detail && widget.item.kind != 'resource') {
-      ref.listen(ownParticipationProvider, (_, _) => _invalidate());
-      ref.listen(projectManagementRoleProvider, (_, _) => _invalidate());
-      ref.listen(participantMeetingDetailsProvider, (_, _) => _invalidate());
+      ref.listen(ownParticipationProvider, (_, _) => _entitlementChanged());
+      ref.listen(
+        projectManagementRoleProvider,
+        (_, _) => _entitlementChanged(),
+      );
+      ref.listen(
+        participantMeetingDetailsProvider,
+        (_, _) => _entitlementChanged(),
+      );
     }
     final l10n = AppLocalizations.of(context);
     final value = _preview, place = value?.place;
@@ -361,6 +493,10 @@ class _LocationPreviewPanelState extends ConsumerState<LocationPreviewPanel>
     // Only a current canonical projection can offer an outbound destination.
     // Revocation removes the action together with protected labels and pixels.
     final hasDestination = value != null && _mapsDestination(value) != null;
+    final fallback = hasDestination ? _fallbackAction() : null;
+    final showTiles =
+        tiled && tileStore!.enabled && value != null && place != null;
+    final showStatic = !tiled && value != null && _bytes != null;
     return Padding(
       key: _box,
       padding: const EdgeInsets.symmetric(vertical: AppSpacing.small),
@@ -387,56 +523,41 @@ class _LocationPreviewPanelState extends ConsumerState<LocationPreviewPanel>
               l10n.locationPreviewApproximate,
               style: Theme.of(context).textTheme.bodySmall,
             ),
-          if (tiled && tileStore!.enabled && value != null && place != null)
-            Padding(
-              padding: const EdgeInsets.only(top: AppSpacing.small),
-              child: ClipRRect(
-                borderRadius: AppRadii.medium,
-                child: ReadOnlyBasemap(
-                  key: _tiles,
-                  store: tileStore,
-                  latitude: place.latitude,
-                  longitude: place.longitude,
-                  protected: value.isProtected,
-                  approximate: place.isArea,
-                  semanticLabel: place.isArea
-                      ? '${place.label}. ${l10n.locationPreviewApproximate}'
-                      : place.label,
-                  failureLabel: l10n.locationPreviewImageFailed,
-                ),
-              ),
+          if (showTiles)
+            ReadOnlyBasemap(
+              key: _tiles,
+              store: tileStore,
+              latitude: place.latitude,
+              longitude: place.longitude,
+              protected: value.isProtected,
+              approximate: place.isArea,
+              semanticLabel: place.isArea
+                  ? '${place.label}. ${l10n.locationPreviewApproximate}'
+                  : place.label,
+              failureLabel: l10n.locationPreviewImageFailed,
+              imageBuilder: (canvas) => _mapAction(canvas, value),
+              fallback: fallback,
             ),
           // Disabled imagery has no reserved space or availability boilerplate.
-          if (!tiled && value != null && _bytes != null)
-            Padding(
-              padding: const EdgeInsets.only(top: AppSpacing.small),
-              child: ClipRRect(
-                borderRadius: AppRadii.medium,
-                child: SizedBox(
+          if (showStatic)
+            _UncachedPreviewImage(
+              key: _bitmap,
+              bytes: _bytes!,
+              failureLabel: l10n.locationPreviewImageFailed,
+              fallback: fallback,
+              imageBuilder: (image) => _mapAction(
+                SizedBox(
                   height: widget.detail ? 144 : 80,
-                  child: _UncachedPreviewImage(
-                    key: _bitmap,
-                    bytes: _bytes!,
-                    failureLabel: l10n.locationPreviewImageFailed,
-                  ),
+                  width: double.infinity,
+                  child: image,
                 ),
+                value,
               ),
             ),
           if (_failed) Text(l10n.locationPreviewImageFailed),
-          if (hasDestination)
-            Align(
-              alignment: Alignment.centerLeft,
-              child: TextButton.icon(
-                key: Key('location-open-maps-${widget.item.id}'),
-                onPressed: _opening ? null : _open,
-                icon: const Icon(Icons.open_in_new, size: 20),
-                label: Text(
-                  _opening ? l10n.locationLoading : l10n.locationOpenGoogleMaps,
-                ),
-              ),
-            ),
+          if (!showTiles && !showStatic) ?fallback,
           // Text may remain provider-derived after clear or template reuse.
-          const LocationAttribution(),
+          LocationAttribution(centered: widget.detail),
         ],
       ),
     );
@@ -461,10 +582,14 @@ class _UncachedPreviewImage extends StatefulWidget {
   const _UncachedPreviewImage({
     required this.bytes,
     required this.failureLabel,
+    required this.imageBuilder,
+    this.fallback,
     super.key,
   });
   final Uint8List bytes;
   final String failureLabel;
+  final Widget Function(Widget image) imageBuilder;
+  final Widget? fallback;
   @override
   State<_UncachedPreviewImage> createState() => _UncachedPreviewImageState();
 }
@@ -520,11 +645,21 @@ class _UncachedPreviewImageState extends State<_UncachedPreviewImage> {
   }
 
   @override
-  Widget build(BuildContext context) => _failed
-      ? Text(widget.failureLabel)
-      : ExcludeSemantics(
-          child: RawImage(image: _image, fit: BoxFit.contain),
-        );
+  Widget build(BuildContext context) {
+    if (_failed) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [Text(widget.failureLabel), ?widget.fallback],
+      );
+    }
+    if (_image == null) return widget.fallback ?? const SizedBox.shrink();
+    return widget.imageBuilder(
+      ExcludeSemantics(
+        child: RawImage(image: _image, fit: BoxFit.contain),
+      ),
+    );
+  }
+
   @override
   void dispose() {
     ++_epoch;

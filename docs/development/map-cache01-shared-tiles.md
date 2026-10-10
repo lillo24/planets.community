@@ -3,7 +3,7 @@
 Discovery's existing `GatewayTileProvider` and the single Project/Tavolo/Resource
 `LocationPreviewPanel` now use `sharedBasemapTilesProvider`. The detail panel
 composes the same 256px XYZ tiles in `ReadOnlyBasemap`, draws the symbol locally,
-and retains the existing label, attribution and freshly reauthorized Maps button.
+and retains the existing label, attribution and freshly reauthorized Maps action.
 There is no second SDK, provider URL, client key, migration or paid-provider activation.
 Cards and the full-width List/Map selector retain MAP-UX01 behavior.
 
@@ -30,9 +30,13 @@ Cards and the full-width List/Map selector retain MAP-UX01 behavior.
   identities and evicts them on route disposal. Details decode directly, outside
   Flutter's global ImageCache, and synchronously dispose their images on revoke.
   A detail is 144dp high, up to 768dp wide, with no pan buffer or gesture handler.
-  Public reference areas use an open symbol and approximate semantics, not a venue
+  The decoded canvas is the single Maps action, with Material keyboard/focus ink
+  painted above its pixels and localized link/button semantics. Public reference
+  areas use an open symbol and approximate semantics, not a venue
   dot, municipal boundary or invented distance. Exact public Resources use a pin.
-- Public compressed bytes survive route disposal. Auth phase/identity changes
+- Public compressed bytes survive route disposal. A transient Android `inactive`
+  overlay preserves public jobs/bytes; it synchronously revokes private scopes.
+  Auth phase/identity changes
   (including A→B→A), app backgrounding, memory pressure and provider disposal clear
   shared memory and invalidate all pending scopes. No cross-account reuse.
 - Observed `disabled`, `unconfigured` or `guest_disabled` shuts the store off and
@@ -48,9 +52,51 @@ be copied into that scope. Revoke zeroes its compressed buffers and destroys its
 decoded pixels; late transport buffers are zeroed and late decodes disposed.
 The canonical MAP03 read, actor/revision checks, 15-second lease, route visibility,
 membership/management/meeting listeners and fresh Maps-tap read remain authoritative.
-Lease renewal destroys the transient tiled view before reauthorization; it may
-make fresh gateway requests, even when the server can satisfy them from cache.
+Protected lease renewal destroys pixels and zeroes private bytes before reauthorization;
+it may make fresh gateway requests, even when the server can satisfy them from cache.
 MAP04 public discovery never receives this exact projection.
+
+## MAPDETAIL02 lifecycle and interaction
+
+The regression test `public pixels survive both 15s/30s canonical lease renewals`
+failed on the preceding implementation: every lease tick disposed all public
+decoded images while the next canonical read was pending. `inactive` also cleared
+the store and panel, causing needless tile requests around OS overlays. These are
+deterministic component reproductions of churn, not physical screenshot evidence.
+
+Public panels now renew canonical status without replacing an unchanged view.
+Sibling-route, TickerMode and scroll interruption retain only widget-owned public
+pixels and revalidate on return. Transient `inactive` retains public tiles/jobs;
+`hidden`, `paused`, `detached`, account/readiness changes, memory pressure and a
+learned provider shutdown still revoke the relevant scopes. Public canonical
+failure, denial, changed revision/location/label/audience or widget content change
+ends the old view. Retained display buffers do not extend the shared LRU's TTL or
+caps; no disk cache or new provider polling exists.
+
+`protected_detail` describes the RPC audience. When it returns a locality, the
+adapter additionally reads `public_detail`. Only identical item/revision, place
+kind/label/coordinates, image key and legacy locality establish public ownership.
+Unpublished or mismatching areas keep protected isolation. Exact protected places
+never take this path. Each Maps activation still performs a fresh canonical read;
+coordinates in the rendered canvas never directly authorize a launch.
+
+Only a fully decoded tile composition or static image mounts `location-map-action-*`.
+The old `location-open-maps-*` text action remains only while imagery is unavailable
+and a canonical destination exists. Decode/tiling failure shows optional failure
+text without a blank 144dp area. City-only Proposals without verified geometry have
+neither a canvas nor a destination. Detail credits are centered immediately below
+the canvas; their small underlined links wrap internally inside independent 48dp
+targets. They remain near text/fallback after failure or geometry clear because
+ordinary text may retain provider provenance. Other attribution surfaces keep their
+existing layout.
+
+Tests exercise public and private 15-second renewal, route/TickerMode/scroll return,
+inactive and real background transitions, in-flight tiles and delayed native decode,
+account ABA/sign-out, membership/role/meeting denial, content changes and shutdown.
+They verify a single freshly authorized map launch, keyboard activation, parent
+scrolling, truthful fallback, and EN/IT 320dp at 2x text. All provider bytes are
+synthetic. Native Android/iOS QA and a later integrated signed build remain required;
+this PR creates no APK/AAB and leaves the Proposal editor redesign separate.
 
 ## Opt-in and static compatibility
 
@@ -75,12 +121,12 @@ zoom 12, detail 320×144, map 320×400. A neutral synthetic PNG is 762 bytes;
 these are fixtures, not street-map compression or device-memory benchmarks.
 Detail zoom intentionally matches discovery's initial zoom 12.
 
-| Scenario | Loaded tiles | Distinct IDs | Gateway without / with client retention | Edge hits without / with | Upstream misses / reserved units | Hypothetical credits | Shared bytes with retention |
-| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| Five same-area details | 30 | 6 | 30 / 6 | 24 / 0 | 6 | 1.5 | 4,572 |
-| Map → five details → Map | 42 | 6 | 42 / 6 | 36 / 0 | 6 | 1.5 | 4,572 |
-| Map zoom 12 → detail zoom 13 | 10 | 10 | 10 / 10 | 0 / 0 | 10 | 2.5 | 7,620 |
-| Protected detail → revoke | 6 | 6 | 6 | 0 | 6 | 1.5 | 0 |
+| Scenario                     | Loaded tiles | Distinct IDs | Gateway without / with client retention | Edge hits without / with | Upstream misses / reserved units | Hypothetical credits | Shared bytes with retention |
+| ---------------------------- | -----------: | -----------: | --------------------------------------: | -----------------------: | -------------------------------: | -------------------: | --------------------------: |
+| Five same-area details       |           30 |            6 |                                  30 / 6 |                   24 / 0 |                                6 |                  1.5 |                       4,572 |
+| Map → five details → Map     |           42 |            6 |                                  42 / 6 |                   36 / 0 |                                6 |                  1.5 |                       4,572 |
+| Map zoom 12 → detail zoom 13 |           10 |           10 |                                 10 / 10 |                    0 / 0 |                               10 |                  2.5 |                       7,620 |
+| Protected detail → revoke    |            6 |            6 |                                       6 |                        0 |                                6 |                  1.5 |                           0 |
 
 The fake Edge cache stays warm, so client retention saves gateway requests, **not
 additional paid credits** in these sequences. If every baseline request were a
@@ -112,7 +158,7 @@ map/static Edge adapter suites exercise injected fetchers and reservation failur
 
 Reproduce from the repository root with `npm run check:mobile` and
 `node --test scripts/lib/map-provider.test.mjs scripts/lib/location-preview.test.mjs`.
-For the 28 focused cache/widget cases, from `apps/mobile` run
+For the focused cache/widget cases, from `apps/mobile` run
 `flutter test test/features/geographic_discovery/shared_basemap_tiles_test.dart test/features/locations/location_tiles_widget_test.dart --reporter expanded`.
 The expanded output contains the quantitative rows above. No SQL/service source
 changed, so no retained/local/hosted database reset is part of this validation.

@@ -55,7 +55,10 @@ class SharedBasemapTiles with WidgetsBindingObserver {
       throw ArgumentError('Invalid basemap memory bounds');
     }
     final lifecycle = WidgetsBinding.instance.lifecycleState;
-    _foreground = lifecycle == null || lifecycle == AppLifecycleState.resumed;
+    _foreground =
+        lifecycle == null ||
+        lifecycle == AppLifecycleState.resumed ||
+        lifecycle == AppLifecycleState.inactive;
     WidgetsBinding.instance.addObserver(this);
   }
   final BasemapTileLoader load;
@@ -244,8 +247,18 @@ class SharedBasemapTiles with WidgetsBindingObserver {
   void didHaveMemoryPressure() => clear();
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    _foreground = state == AppLifecycleState.resumed;
-    if (!_foreground) clear();
+    // An OS overlay (inactive) is not backgrounding. Public bytes/jobs survive;
+    // private scopes still revoke immediately, before another frame can paint.
+    _foreground =
+        state == AppLifecycleState.resumed ||
+        state == AppLifecycleState.inactive;
+    if (!_foreground) {
+      clear();
+    } else if (state == AppLifecycleState.inactive) {
+      for (final scope in _scopes.where((s) => s.protected).toList()) {
+        scope.dispose();
+      }
+    }
   }
 
   void dispose() {

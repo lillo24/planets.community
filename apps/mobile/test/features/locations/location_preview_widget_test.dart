@@ -68,6 +68,17 @@ Future<void> settled(WidgetTester t) async {
   await t.pumpAndSettle();
 }
 
+Future<void> decodedPreview(WidgetTester t) async {
+  // No empty RawImage is mounted while its native codec is pending.
+  for (var n = 0; n < 100 && find.byType(RawImage).evaluate().isEmpty; n++) {
+    await t.runAsync(
+      () => Future<void>.delayed(const Duration(milliseconds: 10)),
+    );
+    await t.pump();
+  }
+  expect(find.byType(RawImage), findsOneWidget);
+}
+
 void main() {
   for (final kind in ProjectKind.values) {
     testWidgets(
@@ -188,11 +199,34 @@ void main() {
     await settled(t);
     expect(find.text('Public area'), findsOneWidget);
     expect(find.byKey(const Key('location-open-maps-item')), findsNothing);
+    expect(find.byKey(const Key('location-map-action-item')), findsNothing);
     expect(find.byType(RawImage), findsNothing);
     expect(r.calls, 0);
     expect(m.urls, isEmpty);
     await t.pumpWidget(const SizedBox());
   });
+  testWidgets(
+    'decoded static detail canvas replaces fallback and reauthorizes its single Maps tap',
+    (t) async {
+      final g = FakePreviewGateway(),
+          r = FakeStaticPreviewGateway(),
+          m = FakePreviewMapsLauncher();
+      final c = setup(g, r, m);
+      addTearDown(c.dispose);
+      await t.pumpWidget(app(c, ListView(children: [panel(detail: true)])));
+      await settled(t);
+      await decodedPreview(t);
+      final map = find.byKey(const Key('location-map-action-item'));
+      expect(map, findsOneWidget);
+      expect(find.byKey(const Key('location-open-maps-item')), findsNothing);
+      await t.tap(map);
+      await settled(t);
+      expect(g.reads, 2);
+      expect(m.urls.length, 1);
+      expect(m.urls.single.queryParameters['center'], '45.0,12.0');
+      await t.pumpWidget(const SizedBox());
+    },
+  );
   for (final valid in [false, true]) {
     testWidgets(
       'recurring legacy destination validity=$valid uses only canonical public locality',
@@ -287,6 +321,7 @@ void main() {
           .markProfileReady(const AuthIdentity(id: 'Alice'));
       await t.pumpWidget(app(c, ListView(children: [panel(detail: true)])));
       await settled(t);
+      await decodedPreview(t);
       expect(t.getSize(find.byType(RawImage)).height, 144);
       final pending = Completer<LocationPreview?>();
       g.pending = (_, _) => pending.future;
@@ -328,7 +363,8 @@ void main() {
           findsNothing,
         );
         expect(find.text('Map preview unavailable'), findsNothing);
-        expect(find.byType(TextButton), findsNWidgets(3));
+        // Detail credits are compact InkWell links; only the fallback is a button.
+        expect(find.byType(TextButton), findsOneWidget);
         expect(find.text('Powered by Geoapify'), findsOneWidget);
         expect(find.text('© OpenStreetMap contributors'), findsOneWidget);
         await t.tap(find.byKey(const Key('location-open-maps-item')));
@@ -446,6 +482,7 @@ void main() {
       await t.pumpWidget(app(c, ListView(children: [panel(detail: true)])));
       await settled(t);
       expect(find.text('SECRET synthetic venue'), findsOneWidget);
+      await decodedPreview(t);
       expect(find.byType(RawImage), findsOneWidget);
       final first = r.outputs.single;
       auth.markCheckingProfile(const AuthIdentity(id: 'Alice'));
@@ -575,17 +612,7 @@ void main() {
     await t.pumpWidget(app(c, ListView(children: [panel(detail: true)])));
     await settled(t);
     final old = r.outputs.single;
-    // Native codec completion runs outside WidgetTester's fake clock.
-    for (
-      var n = 0;
-      n < 100 && t.widget<RawImage>(find.byType(RawImage)).image == null;
-      n++
-    ) {
-      await t.runAsync(
-        () => Future<void>.delayed(const Duration(milliseconds: 20)),
-      );
-      await t.pump();
-    }
+    await decodedPreview(t);
     final decoded = t.widget<RawImage>(find.byType(RawImage)).image;
     expect(decoded, isNotNull);
     t.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
