@@ -3,7 +3,7 @@
 ## Dependency and integration order
 
 The final integration also includes main `3a10035` (#203, LOCATION02) through
-backend head `c71da87`. Its additive privacy correction keeps legacy Idea
+backend head `87659a4`. Its additive privacy correction keeps legacy Idea
 exclusion and prevents both detail versions from exposing arrival directions.
 The clients retain LOCATION02's single confirmed place input, private directions
 and scoped visibility writes. Ideas skip all map preview requests; Defined web
@@ -96,9 +96,9 @@ Disposable local project `planets-idea01b-qa` uses ports 59421/59422/59424.
 The retained founder stack is not reset. Local configuration and the temporary
 QA Android package identifier are not committed.
 
-- SQL: 127 files, 4,021 assertions passed; legacy readers, optionality, roles,
+- SQL: 128 files, 4,060 assertions passed; legacy readers, optionality, roles,
   privacy, outbox shape and promotion invariants are included.
-- `proposal:verify:local`: base proposal/LOCATION/TW01 checks and 77 real local
+- `proposal:verify:local`: base proposal/LOCATION/TW01 checks and 76 real local
   OTP/JWT Idea checks passed, including join/chat, invitation preservation,
   concurrent promotion/edit/admission and denials.
 - Client tests cover discriminated parsing, publication anchors/filter reset,
