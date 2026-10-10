@@ -15,6 +15,7 @@ import '../../../devtools/demo/demo_widgets.dart';
 import '../../../devtools/demo/demo_tools.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../locations/presentation/location_editor_section.dart';
+import '../../locations/presentation/proposal_location_editor.dart';
 import '../../auth/application/auth_session_controller.dart';
 import '../../auth/domain/auth_models.dart';
 import '../../cover_media/domain/cover_media_models.dart';
@@ -468,6 +469,7 @@ class _ProposalFormState extends ConsumerState<_ProposalForm>
       _administrativeArea.text,
       _publicLocation.text,
       _exactLocation.text,
+      _locationHandle.pendingQuery?.call() ?? '',
     ],
     input: _input(),
     coverRevision: _coverRevision,
@@ -569,6 +571,7 @@ class _ProposalFormState extends ConsumerState<_ProposalForm>
       for (final entry in controllers.indexed) {
         entry.$2.text = _acknowledged.text[entry.$1];
       }
+      _locationHandle.restoreQuery?.call();
       _startsAt = input.startsAt;
       _endsAt = input.endsAt;
       _visibility = input.exactLocationVisibility;
@@ -701,6 +704,7 @@ class _ProposalFormState extends ConsumerState<_ProposalForm>
       return false;
     }
     if (id != null && mounted) {
+      _locationHandle.contentSaved?.call();
       setState(() {
         _acknowledged = captured;
         if (_coverRevision == captured.coverRevision) {
@@ -1017,7 +1021,6 @@ class _ProposalFormState extends ConsumerState<_ProposalForm>
                   _summary,
                   l10n.proposalSummaryLabel,
                   240,
-                  helper: l10n.projectShortDescriptionHint,
                   anchorKey: _summaryAnchor,
                   fieldKey: const Key('proposal-summary'),
                   required: true,
@@ -1103,7 +1106,7 @@ class _ProposalFormState extends ConsumerState<_ProposalForm>
                         ),
                 ),
                 Text(
-                  l10n.projectCountOrganizersCapacityHelp,
+                  l10n.proposalCapacityEditableLater,
                   style: Theme.of(context).textTheme.bodySmall,
                 ),
                 const SizedBox(height: AppSpacing.large),
@@ -1173,12 +1176,11 @@ class _ProposalFormState extends ConsumerState<_ProposalForm>
                   ),
                 ),
                 const SizedBox(height: AppSpacing.large),
-                LocationEditorSection(
-                  key: ValueKey(widget.sessionId),
+                ProposalLocationEditor(
+                  key: _publicLocationAnchor,
                   handle: _locationHandle,
-                  manualPublicLabel: () => _publicLocation.text,
+                  publicLabel: () => _publicLocation.text,
                   actorId: widget.identityId,
-                  itemKind: 'one_time',
                   itemId: () => ref
                       .read(proposalEditorSessionProvider(widget.sessionId))
                       .proposal
@@ -1209,88 +1211,53 @@ class _ProposalFormState extends ConsumerState<_ProposalForm>
                   contentVersion:
                       '$_startsAt:$_endsAt:$_visibility:$_skills:$_coverRevision:$_countOrganizersTowardCapacity',
                   onCanonical: (value) {
-                    final place = value.publicPlace;
-                    if (place != null) {
-                      _country.text = 'IT';
-                      _locality.text = place.locality;
-                      _administrativeArea.text = place.administrativeArea ?? '';
-                      _publicLocation.text = place.label;
-                      _acknowledged = _snapshot();
+                    _country.text = value.countryCode ?? _country.text;
+                    _locality.text =
+                        value.locality ??
+                        value.publicPlace?.locality ??
+                        _locality.text;
+                    _administrativeArea.text =
+                        value.administrativeArea ??
+                        value.publicPlace?.administrativeArea ??
+                        '';
+                    _publicLocation.text =
+                        value.publicLabel ??
+                        value.publicPlace?.label ??
+                        _publicLocation.text;
+                    if (value.exactIsPublic != null) {
+                      _visibility = value.exactIsPublic!
+                          ? ExactLocationVisibility.public
+                          : ExactLocationVisibility.participants;
                     }
+                    _acknowledged = _snapshot();
                   },
-                  proposalCityOnly: true,
-                  hasExactDetails: _exactLocation.text.trim().isNotEmpty,
-                  onClearExact: () {
+                  onManualCity: (value) {
+                    if (_country.text.trim().isEmpty) _country.text = 'IT';
+                    _locality.text = value;
+                    _publicLocation.text = value;
+                    _administrativeArea.clear();
+                    _visibility = ExactLocationVisibility.participants;
+                    _refreshValidationSummary();
+                  },
+                  hasDirections: _exactLocation.text.trim().isNotEmpty,
+                  onClearDirections: () {
                     _exactLocation.clear();
                     _refreshValidationSummary();
                   },
-                  manualChildren: [
-                    _field(
-                      _publicLocation,
-                      l10n.proposalCityLabel,
-                      180,
-                      anchorKey: _publicLocationAnchor,
-                      fieldKey: const Key('proposal-public-location'),
-                      required: true,
-                      helper: l10n.proposalCityHint,
-                      onChanged: (value) {
-                        // A typed locality is list-only. The server invalidates
-                        // preceding verified geometry; never infer a map point.
-                        if (_country.text.trim().isEmpty) _country.text = 'IT';
-                        _locality.text = value;
-                        _administrativeArea.clear();
-                      },
-                    ),
-                  ],
-                  exactChildren: [
-                    _field(
-                      _exactLocation,
-                      l10n.proposalExactLocationLabel,
-                      1000,
-                      anchorKey: _exactLocationAnchor,
-                      fieldKey: const Key('proposal-exact-location'),
-                      lines: 3,
-                    ),
-                  ],
-                  exactVisibilityChildren: [
-                    const SizedBox(height: AppSpacing.small),
-                    Text(
-                      l10n.proposalExactVisibilityLabel,
-                      style: Theme.of(context).textTheme.titleMedium,
-                    ),
-                    SegmentedButton<ExactLocationVisibility>(
-                      key: const Key('proposal-exact-visibility'),
-                      segments: [
-                        ButtonSegment(
-                          value: ExactLocationVisibility.participants,
-                          label: Text(l10n.proposalExactParticipants),
-                        ),
-                        ButtonSegment(
-                          value: ExactLocationVisibility.public,
-                          label: Text(l10n.proposalExactPublic),
-                        ),
-                      ],
-                      selected: {_visibility},
-                      onSelectionChanged: busy || !contentEditable
-                          ? null
-                          : (selection) =>
-                                setState(() => _visibility = selection.single),
-                    ),
-                    const SizedBox(height: AppSpacing.small),
-                    Text(
-                      _visibility == ExactLocationVisibility.participants
-                          ? l10n.locationRestrictedPreview
-                          : l10n.locationPublicPreview,
-                      key: const Key('location-visibility-preview'),
-                    ),
-                  ],
+                  directions: _field(
+                    _exactLocation,
+                    l10n.proposalArrivalDirectionsLabel,
+                    1000,
+                    anchorKey: _exactLocationAnchor,
+                    fieldKey: const Key('proposal-exact-location'),
+                    lines: 3,
+                  ),
                 ),
                 const SizedBox(height: AppSpacing.large),
                 Text(
                   l10n.proposalSkillsTitle,
                   style: Theme.of(context).textTheme.titleLarge,
                 ),
-                Text(l10n.proposalSkillsHint),
                 const SizedBox(height: AppSpacing.small),
                 ProposalSkillsControl(
                   categories: widget.categories,
@@ -1310,7 +1277,6 @@ class _ProposalFormState extends ConsumerState<_ProposalForm>
                   l10n.projectResourcesNeededTitle,
                   style: Theme.of(context).textTheme.titleLarge,
                 ),
-                Text(l10n.projectResourcesHint),
                 if (widget.proposal == null)
                   Text(l10n.projectResourcesAfterDraft)
                 else if (contentEditable)
@@ -1558,6 +1524,9 @@ class _ProposalFormState extends ConsumerState<_ProposalForm>
   }
 
   GlobalKey _firstInvalidAnchor(ProposalInput input, {required bool publish}) {
+    if ((_locationHandle.pendingQuery?.call() ?? '').isNotEmpty) {
+      return _publicLocationAnchor;
+    }
     final titleLength = input.title.trim().length;
     if ((publish && titleLength == 0) ||
         (titleLength > 0 && titleLength < 2) ||

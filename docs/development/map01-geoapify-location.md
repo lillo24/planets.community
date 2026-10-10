@@ -1,5 +1,10 @@
 # MAP01 shared location foundation
 
+LOCATION02 adds the one-time mixed `place` slot, revision-bound visibility and
+participants-only arrival directions. Its current editor/public projection
+contract supersedes the older one-time two-slot presentation described here;
+see [LOCATION02](location02-inline-project-place.md).
+
 MAP05 adds a required master gate and exact quarter-credit account ceiling for
 all four Geoapify consumers. Existing editor limits remain additional guards;
 see [current meter and activation](map05-interactive-discovery.md). Its public

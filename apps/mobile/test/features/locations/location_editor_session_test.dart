@@ -311,4 +311,46 @@ void main() {
       );
     },
   );
+  test(
+    'one-time mixed selection and visibility use the scoped place RPC',
+    () async {
+      final gateway = RpcItemLocationGateway((name, params) async {
+        expect(name, 'apply_proposal_place_v1');
+        expect(params.keys.toSet(), {
+          'p_expected_profile_id',
+          'p_item',
+          'p_expected_revision',
+          'p_request_id',
+          'p_action',
+          'p_receipt',
+        });
+        expect(params['p_expected_profile_id'], 'A');
+        expect(params['p_item'], 'id');
+        expect(params['p_expected_revision'], 7);
+        expect(params['p_request_id'], 'intent');
+        expect(
+          params['p_receipt'],
+          params['p_action'] == 'replace' ? 'receipt' : null,
+        );
+        return 8;
+      });
+      for (final action in ['replace', 'clear', 'public', 'participants']) {
+        expect(
+          await gateway.apply(
+            const PlaceSearchScope(
+              actorId: 'A',
+              itemKind: 'one_time',
+              itemId: 'id',
+              revision: 7,
+              slot: 'place',
+            ),
+            requestId: 'intent',
+            action: action,
+            receipt: action == 'replace' ? 'receipt' : null,
+          ),
+          8,
+        );
+      }
+    },
+  );
 }

@@ -39,11 +39,27 @@ class StoredPlace {
 
 /// Protected, editor-local projection: coordinates are unnecessary for MAP02.
 class ItemLocation {
-  const ItemLocation(this.revision, {this.publicPlace, this.exactPlace});
+  const ItemLocation(
+    this.revision, {
+    this.publicPlace,
+    this.exactPlace,
+    this.publicLabel,
+    this.locality,
+    this.countryCode,
+    this.administrativeArea,
+    this.exactIsPublic,
+  });
   final int revision;
   final StoredPlace? publicPlace, exactPlace;
+  final String? publicLabel, locality, countryCode, administrativeArea;
+  final bool? exactIsPublic;
   factory ItemLocation.fromJson(Map<String, dynamic> value) => ItemLocation(
     (value['revision'] as num).toInt(),
+    publicLabel: value['public_label'] as String?,
+    locality: value['locality'] as String?,
+    countryCode: value['country_code'] as String?,
+    administrativeArea: value['administrative_area'] as String?,
+    exactIsPublic: value['exact_is_public'] as bool?,
     publicPlace: value['public_place'] == null
         ? null
         : StoredPlace.fromJson(

@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { verifyLocationPreviews } from "./lib/verify-location-previews.mjs";
+import { verifyProposalPlace } from "./lib/verify-proposal-place.mjs";
 import { verifyMapDiscoveryProvider } from "./lib/verify-map-discovery-provider.mjs";
 import { verifyGeographicDiscovery } from "./lib/verify-geographic-discovery.mjs";
 import { randomUUID } from "node:crypto";
@@ -485,6 +486,17 @@ try {
     "update private.location_search_config set enabled=true,actor_minute=20 where singleton",
   );
   await verifyLocationPreviews({
+    db,
+    owner,
+    peer,
+    server,
+    anonymous,
+    rpc,
+    denied,
+    check,
+    selected: authorized.exact_place,
+  });
+  await verifyProposalPlace({
     db,
     owner,
     peer,

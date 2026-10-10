@@ -1769,5 +1769,17 @@
         "type": "String"
       }
     }
-  }
+  },
+  "proposalPlaceLabel": "Dove si svolgerà?",
+  "proposalPlaceHint": "Cerca una città, un indirizzo o un luogo, oppure conferma una città pubblica manualmente.",
+  "proposalPlaceConfirm": "Seleziona un suggerimento o conferma una città pubblica prima di salvare.",
+  "proposalManualCityOnly": "Il testo manuale sarà pubblico: inserisci solo una città o zona ampia, mai un indirizzo privato. Non verrà creato un punto sulla mappa.",
+  "proposalUsePublicCity": "Conferma come città/zona pubblica",
+  "proposalShowExactPublic": "Mostra il luogo preciso anche ai non partecipanti",
+  "proposalRemovePlace": "Rimuovi luogo preciso",
+  "proposalArrivalDirections": "Indicazioni aggiuntive per raggiungere il luogo (facoltative)",
+  "proposalArrivalDirectionsLabel": "Ingresso, cancello o altre indicazioni",
+  "proposalDirectionsPrivate": "Solo organizzatori e partecipanti attuali possono leggere queste indicazioni, anche se il luogo selezionato è pubblico.",
+  "proposalClearDirections": "Cancella indicazioni",
+  "proposalCapacityEditableLater": "Puoi modificarlo più avanti nelle impostazioni del progetto."
 }

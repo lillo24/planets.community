@@ -14,40 +14,32 @@ below describing mandatory logistics/start freezes apply to Defined Projects.
 
 The creation chooser centers its heading. IT/EN editor labels distinguish a
 240-character short description (shown on browse cards) from the full description;
-canonical `summary`/`description` fields and validation are unchanged. Project
-skills describe capabilities needed from people, independently of Profile skills.
-Resources/materials/tools have a separate explanation and management route beside
-the skill section; a new unsaved form explains that a draft must exist first.
-No draft is created just to expose resource management. The shared Tavolo fields
-use the same description/resource copy. The redundant public-area paragraph is
-hidden for Projects; exact-location privacy and validation remain visible.
+canonical fields and validation are unchanged. LOCATION02 removes redundant
+short-description, skills and resources helper paragraphs only in this editor.
+Skills and resource selectors remain separate, and new resource management still
+requires a saved draft. Capacity keeps its switch, existing semantics/default and
+one small reassurance that it can be changed later.
 
-LOCATION01 exposes one public city field in the one-time editor. New manual
-entries derive IT internally; ordinary edits retain international metadata.
-Optional precise details start collapsed when absent and can be explicitly
-removed. Defined publication requires city + schedule and existing safeguards,
-with exact details optional. See [LOCATION01](../../../../../docs/development/location01-defined-project-city-only.md).
-MAP02's shared `locations/presentation/location_editor_section.dart` keeps manual
-entry while lookup is disabled and exposes injected receipt-backed selection.
-The detail uses the shared authorized location preview; feed cards use compact
-icon/text metadata with one attribution footer for the feed. See `../locations/README.md` and
-provider readiness before activation. MAP01 owns canonical provider metadata and
-actor/item/revision-bound server receipts. Existing
-manual text edits clear stale verified pins. See the [shared location contract](../../../../../docs/development/map01-geoapify-location.md).
+The one-time editor uses `locations/presentation/proposal_location_editor.dart`:
+one primary inline city/address/venue query, deliberate manual public-city
+confirmation, a private-by-default verified exact selection with an explicit
+public switch, and separate optional participants-only arrival directions.
+Existing visibility is preserved; choosing a replacement defaults private.
+Raw query text never enters public city fields or similar-Project matching.
+New manual cities derive IT internally; ordinary edits retain international
+metadata. Defined publication requires city + schedule and existing safeguards;
+precise places and directions remain optional.
+See [LOCATION02](../../../../../docs/development/location02-inline-project-place.md).
 
 Lookup saves through DRAFT01 without navigating, then obtains an authorized
-revision. Public area and exact place are separate slot transactions;
-instructions/visibility stay ordinary content. The location handle revokes
-receipts before Save/Publish. Canonical public text is acknowledged in departure
-snapshots after apply/reread without adding query, receipt, session or point.
+revision. Receipt and visibility writes are revision-bound; ordinary saves reject
+stale visibility for a verified place. The location handle revokes receipts before
+Save/Publish, retains raw-query validation for draft departure, and acknowledges
+confirmed manual city text only after ordinary save. Public/participant detail
+uses the existing authorized preview; cards remain compact metadata. Manual
+locality changes invalidate stale geometry server-side. Future workflows still
+use the canonical Supabase rules, never a second client domain implementation.
 
-This feature owns one-time proposal discovery and authenticated structural
-management for the immutable Creator and current Co-creators.
-
-The guided tour reuses public discovery's current filters, page size and
-requested-first ordering. Its opt-in `ProposalDetailController.ensureLoaded`
-coalesces one ID/session's prefetch and reuses matching ready data; replaced
-sessions cannot commit prefetched results. Ordinary `load` remains a fresh read.
 `ProposalDetailScreen(tutorialPreview: true)` uses the same real sections with
 eager layout so the tour measures the participation target before one smooth
 scroll. Normal detail keeps its lazy list, loaders and actions.

@@ -21,7 +21,18 @@ export 'location_attribution.dart' show LocationAttribution;
 /// section suppresses this hook only for its own save-before-search operation.
 class LocationEditorHandle {
   VoidCallback? _beforeSave;
+  String Function()? pendingQuery;
+  VoidCallback? restoreQuery;
+  VoidCallback? contentSaved;
   void beforeContentSave() => _beforeSave?.call();
+
+  void bind(VoidCallback callback) => _beforeSave = callback;
+  void unbind() {
+    _beforeSave = null;
+    pendingQuery = null;
+    restoreQuery = null;
+    contentSaved = null;
+  }
 }
 
 /// Manual fields stay functional while registration is disabled. An injected

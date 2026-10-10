@@ -178,6 +178,16 @@ class LocationEditorSession extends ChangeNotifier {
     return retry();
   }
 
+  /// One-time Project place visibility is independent of arrival instructions.
+  /// Capturing a fresh revision after the ordinary save also rejects stale tabs.
+  Future<bool> setProposalVisibility(bool isPublic) async {
+    if (kind != 'one_time' || !await begin('place')) return false;
+    _requestId = const Uuid().v4();
+    _action = isPublic ? 'public' : 'participants';
+    _receipt = null;
+    return retry();
+  }
+
   Future<bool> retry() async {
     final bound = scope, request = _requestId, action = _action, epoch = _epoch;
     if (bound == null || request == null || action == null || busy) {

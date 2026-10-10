@@ -67,6 +67,16 @@ describe("versioned proposal API", () => {
       p_proposal_id: id,
     });
   });
+  it("keeps even a deliberately public Idea place List-only without a map preview", async () => {
+    rpc.mockResolvedValueOnce({
+      data: [{ ...row, exact_meeting_text: "Verified public venue" }],
+      error: null,
+    });
+    const idea = await getPublicProposal(id);
+    expect(idea?.exact_meeting_text).toBe("Verified public venue");
+    expect(idea?.exactMapsUrl).toBeUndefined();
+    expect(rpc).toHaveBeenCalledTimes(1);
+  });
   it("fails on API errors, malformed Defined payloads and absent page anchors", async () => {
     rpc.mockResolvedValue({ data: [], error: new Error("network") });
     await expect(listPublicProposals({})).rejects.toThrow("network");

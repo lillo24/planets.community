@@ -474,8 +474,8 @@ select is(
     select exact_meeting_text
     from public.get_public_proposal(current_setting('test.public_proposal_id')::uuid)
   ),
-  'Piazza Pubblica, by the fountain',
-  'public exact meeting information appears only in exact-ID detail'
+  null::text,
+  'legacy free-text directions never appear in public detail'
 );
 select is(
   (

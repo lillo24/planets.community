@@ -37,6 +37,9 @@ export interface PublicProposalDetail extends PublicProposalSummary {
   creator_display_name: string | null;
   description: string | null;
   exact_meeting_text: string | null;
+  // LOCATION02 compatibility field above is a public verified place label,
+  // never free-text arrival instructions. The server reads a fresh public point.
+  exactMapsUrl?: string | null;
   exact_location_restricted: boolean;
 }
 
