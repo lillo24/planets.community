@@ -259,7 +259,9 @@ class SupabaseProposalGateway implements ProposalGateway {
       params: {
         'p_limit': limit,
         'p_cursor_published_at': cursor?.publishedAt.toUtc().toIso8601String(),
-        'p_reference_time': cursor?.referenceTime.toUtc().toIso8601String(),
+        // Omit on the first page: explicit null bypasses the server default.
+        if (cursor != null)
+          'p_reference_time': cursor.referenceTime.toUtc().toIso8601String(),
         'p_definition_phase': definitionPhase?.wireValue,
         'p_cursor_id': cursor?.id,
         'p_query': query,

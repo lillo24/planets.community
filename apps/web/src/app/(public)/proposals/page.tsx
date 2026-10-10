@@ -205,7 +205,7 @@ async function loadPageData(
   }
 }
 
-export function proposalUrl({
+function proposalUrl({
   locality,
   skillId,
   query: search,
