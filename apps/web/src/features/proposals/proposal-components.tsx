@@ -1,6 +1,6 @@
 import { LocationAttribution } from "@/features/locations/location-attribution";
 import Link from "next/link";
-import { CalendarDaysIcon, MapPinIcon } from "lucide-react";
+import { CalendarDaysIcon, CircleHelpIcon, MapPinIcon } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import {
@@ -20,10 +20,16 @@ const statusLabels: Record<ProposalStatus, string> = {
   completed: "Completed",
 };
 
-export function ProposalStatusBadge({ status }: { status: ProposalStatus }) {
+export function ProposalStatusBadge({
+  status,
+  idea = false,
+}: {
+  status: ProposalStatus | null;
+  idea?: boolean;
+}) {
   return (
     <Badge variant={status === "just_finished" ? "success" : "secondary"}>
-      {statusLabels[status]}
+      {idea ? "In definition" : status ? statusLabels[status] : "Defined"}
     </Badge>
   );
 }
@@ -43,7 +49,10 @@ export function ProposalCard({
         </CardTitle>
         <CardDescription>{proposal.summary}</CardDescription>
         <CardAction>
-          <ProposalStatusBadge status={proposal.derived_status} />
+          <ProposalStatusBadge
+            status={proposal.derived_status}
+            idea={proposal.definition_phase === "idea"}
+          />
         </CardAction>
       </CardHeader>
       <CardContent className="flex flex-col gap-3">
@@ -52,8 +61,12 @@ export function ProposalCard({
           {formatSchedule(proposal)}
         </p>
         <p className="flex gap-2 text-muted-foreground">
-          <MapPinIcon aria-hidden="true" className="size-4 shrink-0" />
-          {proposal.public_location_label}
+          {proposal.public_location_label ? (
+            <MapPinIcon aria-hidden="true" className="size-4 shrink-0" />
+          ) : (
+            <CircleHelpIcon aria-hidden="true" className="size-4 shrink-0" />
+          )}
+          {proposal.public_location_label ?? "Place to decide together"}
         </p>
         <LocationAttribution />
         <div className="flex flex-wrap gap-2">
@@ -70,10 +83,12 @@ export function ProposalCard({
 }
 
 export function formatSchedule(proposal: PublicProposalSummary): string {
+  if (!proposal.starts_at || !proposal.ends_at || !proposal.event_timezone)
+    return "Date to decide together";
   const formatter = new Intl.DateTimeFormat("en-GB", {
     dateStyle: "medium",
     timeStyle: "short",
     timeZone: proposal.event_timezone,
   });
-  return `${formatter.format(new Date(proposal.starts_at))} – ${formatter.format(new Date(proposal.ends_at))}`;
+  return `${proposal.definition_phase === "idea" ? "Tentative: " : ""}${formatter.format(new Date(proposal.starts_at))} – ${formatter.format(new Date(proposal.ends_at))}`;
 }

@@ -18,6 +18,7 @@ abstract interface class ProposalGateway {
     String? query,
     String? locality,
     Set<String>? skillIds,
+    ProposalDefinitionPhase? definitionPhase,
   });
 
   Future<List<RequestedProposalSummary>> listOwnPendingRequestedProposals(
@@ -55,6 +56,13 @@ abstract interface class ProposalGateway {
 
   Future<void> publishProposal(String expectedCreatorId, String proposalId);
 
+  Future<void> publishIdea(String expectedCreatorId, String proposalId);
+  Future<ProposalPromotionRequirements> promotionRequirements(
+    String expectedProfileId,
+    String proposalId,
+  );
+  Future<void> promoteIdea(String expectedProfileId, String proposalId);
+
   Future<void> cancelProposal(String expectedCreatorId, String proposalId);
 }
 
@@ -64,26 +72,50 @@ class ProposalPayloadParser {
   ProposalSummary publicSummary(
     Map<String, dynamic> row,
     ProjectCapacitySnapshot capacity,
-  ) => ProposalSummary(
-    id: _uuid(row, 'proposal_id'),
-    title: _string(row, 'title'),
-    summary: _string(row, 'summary'),
-    startsAt: _date(row, 'starts_at'),
-    endsAt: _date(row, 'ends_at'),
-    eventTimezone: _string(row, 'event_timezone'),
-    countryCode: _string(row, 'country_code'),
-    locality: _string(row, 'locality'),
-    administrativeArea: _optionalString(row, 'administrative_area'),
-    publicLocationLabel: _string(row, 'public_location_label'),
-    status: ProposalStatus.fromWire(_string(row, 'derived_status')),
-    skills: skills(row['skills']),
-    capacity: capacity,
-    coverObjectPath: parseCoverObjectPath(
-      row['cover_object_path'],
-      parentId: _uuid(row, 'proposal_id'),
-      parentSegment: 'projects',
-    ),
-  );
+  ) {
+    final phase = ProposalDefinitionPhase.fromWire(
+      _string(row, 'definition_phase'),
+    );
+    final isIdea = phase == ProposalDefinitionPhase.idea;
+    if (isIdea && row['derived_status'] != null) {
+      throw const FormatException('An Idea cannot have an event status.');
+    }
+    return ProposalSummary(
+      id: _uuid(row, 'proposal_id'),
+      title: _string(row, 'title'),
+      summary: _string(row, 'summary'),
+      startsAt: isIdea
+          ? _optionalDate(row, 'starts_at')
+          : _date(row, 'starts_at'),
+      endsAt: isIdea ? _optionalDate(row, 'ends_at') : _date(row, 'ends_at'),
+      eventTimezone: isIdea
+          ? _optionalString(row, 'event_timezone')
+          : _string(row, 'event_timezone'),
+      countryCode: isIdea
+          ? _optionalString(row, 'country_code')
+          : _string(row, 'country_code'),
+      locality: isIdea
+          ? _optionalString(row, 'locality')
+          : _string(row, 'locality'),
+      administrativeArea: _optionalString(row, 'administrative_area'),
+      publicLocationLabel: isIdea
+          ? _optionalString(row, 'public_location_label')
+          : _string(row, 'public_location_label'),
+      status: isIdea
+          ? null
+          : ProposalStatus.fromWire(_string(row, 'derived_status')),
+      definitionPhase: phase,
+      publishedAt: _optionalDate(row, 'published_at'),
+      referenceTime: _optionalDate(row, 'reference_time'),
+      skills: skills(row['skills']),
+      capacity: capacity,
+      coverObjectPath: parseCoverObjectPath(
+        row['cover_object_path'],
+        parentId: _uuid(row, 'proposal_id'),
+        parentSegment: 'projects',
+      ),
+    );
+  }
 
   ProposalDetail publicDetail(
     Map<String, dynamic> row,
@@ -92,7 +124,9 @@ class ProposalPayloadParser {
     summary: publicSummary(row, capacity),
     creatorProfileId: _uuid(row, 'creator_profile_id'),
     creatorDisplayName: _optionalString(row, 'creator_display_name'),
-    description: _string(row, 'description'),
+    description: row['definition_phase'] == 'idea'
+        ? _optionalString(row, 'description')
+        : _string(row, 'description'),
     exactMeetingText: _optionalString(row, 'exact_meeting_text'),
     exactLocationRestricted: _boolean(row, 'exact_location_restricted'),
   );
@@ -166,6 +200,9 @@ class ProposalPayloadParser {
     }
     return value;
   }
+
+  DateTime? _optionalDate(Map<String, dynamic> row, String key) =>
+      row[key] == null ? null : _date(row, key);
 }
 
 class SupabaseProposalGateway implements ProposalGateway {
@@ -215,12 +252,17 @@ class SupabaseProposalGateway implements ProposalGateway {
     String? query,
     String? locality,
     Set<String>? skillIds,
+    ProposalDefinitionPhase? definitionPhase,
   }) async {
     final response = await _client.rpc<List<dynamic>>(
-      'list_public_proposals',
+      'list_public_proposals_v2',
       params: {
         'p_limit': limit,
-        'p_cursor_starts_at': cursor?.startsAt.toUtc().toIso8601String(),
+        'p_cursor_published_at': cursor?.publishedAt.toUtc().toIso8601String(),
+        // Omit on the first page: explicit null bypasses the server default.
+        if (cursor != null)
+          'p_reference_time': cursor.referenceTime.toUtc().toIso8601String(),
+        'p_definition_phase': definitionPhase?.wireValue,
         'p_cursor_id': cursor?.id,
         'p_query': query,
         'p_locality': locality,
@@ -252,7 +294,7 @@ class SupabaseProposalGateway implements ProposalGateway {
     Set<String>? skillIds,
   }) async {
     final response = await _client.rpc<List<dynamic>>(
-      'list_own_pending_requested_proposals',
+      'list_own_pending_requested_proposals_v2',
       params: {
         'p_expected_requester_profile_id': expectedProfileId,
         'p_query': query,
@@ -287,7 +329,7 @@ class SupabaseProposalGateway implements ProposalGateway {
   Future<ProposalDetail?> getPublicProposal(String proposalId) async {
     final values = await Future.wait<dynamic>([
       _client.rpc<List<dynamic>>(
-        'get_public_proposal',
+        'get_public_proposal_v2',
         params: {'p_proposal_id': proposalId},
       ),
       _publicCapacities([proposalId]),
@@ -306,7 +348,7 @@ class SupabaseProposalGateway implements ProposalGateway {
   Future<List<OwnProposal>> listOwnProposals(String expectedCreatorId) async {
     final response = await readOwnerCollection(
       _client,
-      'list_own_proposals',
+      'list_own_proposals_v2',
       params: {'p_expected_creator_profile_id': expectedCreatorId},
       idColumn: 'proposal_id',
     );
@@ -335,7 +377,7 @@ class SupabaseProposalGateway implements ProposalGateway {
   ) async {
     final values = await Future.wait<dynamic>([
       _client.rpc<List<dynamic>>(
-        'get_own_proposal',
+        'get_own_proposal_v2',
         params: {
           'p_expected_creator_profile_id': expectedCreatorId,
           'p_proposal_id': proposalId,
@@ -425,6 +467,59 @@ class SupabaseProposalGateway implements ProposalGateway {
     );
   }
 
+  @override
+  Future<void> publishIdea(String expectedCreatorId, String proposalId) async {
+    await _client.rpc<String>(
+      'publish_proposal_idea',
+      params: {
+        'p_expected_creator_profile_id': expectedCreatorId,
+        'p_proposal_id': proposalId,
+      },
+    );
+  }
+
+  @override
+  Future<ProposalPromotionRequirements> promotionRequirements(
+    String expectedProfileId,
+    String proposalId,
+  ) async {
+    final value = await _client.rpc<dynamic>(
+      'get_proposal_promotion_requirements',
+      params: {
+        'p_expected_profile_id': expectedProfileId,
+        'p_proposal_id': proposalId,
+      },
+    );
+    if (value is! Map<String, dynamic> ||
+        value['proposal_id'] != proposalId ||
+        value['definition_phase'] != 'idea' ||
+        value['can_promote'] is! bool ||
+        value['missing_fields'] is! List ||
+        (value['missing_fields'] as List).any((field) => field is! String)) {
+      throw const FormatException('Invalid promotion requirements.');
+    }
+    final missing = (value['missing_fields'] as List).cast<String>();
+    if ((value['can_promote'] as bool) != missing.isEmpty) {
+      throw const FormatException('Inconsistent promotion requirements.');
+    }
+    return ProposalPromotionRequirements(
+      proposalId: proposalId,
+      missingFields: List.unmodifiable(missing),
+      canPromote: value['can_promote'] as bool,
+    );
+  }
+
+  @override
+  Future<void> promoteIdea(String expectedProfileId, String proposalId) async {
+    await _client.rpc<String>(
+      'promote_proposal_idea',
+      params: {
+        'p_expected_profile_id': expectedProfileId,
+        'p_proposal_id': proposalId,
+      },
+    );
+  }
+
   Map<String, dynamic> _contentParams(
     String expectedCreatorId,
     ProposalInput input,
@@ -459,6 +554,9 @@ class SupabaseProposalGateway implements ProposalGateway {
     ProjectCapacitySnapshot capacity,
   ) => OwnProposal(
     id: row['proposal_id'] as String,
+    definitionPhase: ProposalDefinitionPhase.fromWire(
+      row['definition_phase'] as String,
+    ),
     lifecycle: ProposalLifecycle.fromWire(row['lifecycle_state'] as String),
     title: row['title'] as String?,
     summary: row['summary'] as String?,

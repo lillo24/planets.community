@@ -18,21 +18,24 @@ export interface PublicProposalSummary {
   cover_object_path: string | null;
   title: string;
   summary: string;
-  starts_at: string;
-  ends_at: string;
-  event_timezone: string;
-  country_code: string;
-  locality: string;
+  definition_phase: "idea" | "defined";
+  published_at: string | null;
+  reference_time: string | null;
+  starts_at: string | null;
+  ends_at: string | null;
+  event_timezone: string | null;
+  country_code: string | null;
+  locality: string | null;
   administrative_area: string | null;
-  public_location_label: string;
-  derived_status: ProposalStatus;
+  public_location_label: string | null;
+  derived_status: ProposalStatus | null;
   skills: ProposalSkill[];
 }
 
 export interface PublicProposalDetail extends PublicProposalSummary {
   creator_profile_id: string;
   creator_display_name: string | null;
-  description: string;
+  description: string | null;
   exact_meeting_text: string | null;
   // LOCATION02 compatibility field above is a public verified place label,
   // never free-text arrival instructions. The server reads a fresh public point.
@@ -41,12 +44,15 @@ export interface PublicProposalDetail extends PublicProposalSummary {
 }
 
 export interface ProposalCursor {
-  startsAt: string;
+  publishedAt: string;
+  referenceTime: string;
   id: string;
 }
 
 export interface ProposalFilters {
   locality?: string;
+  query?: string;
+  definitionPhase?: "idea" | "defined";
   skillId?: string;
   cursor?: ProposalCursor;
 }
@@ -72,7 +78,17 @@ export function parsePublicProposalSummary(
 ): PublicProposalSummary {
   const row = record(value);
   const proposalId = text(row.proposal_id);
+  const phase = text(row.definition_phase);
+  if (phase !== "idea" && phase !== "defined")
+    throw new TypeError("Invalid definition phase");
+  if (phase === "idea" && row.derived_status !== null)
+    throw new TypeError("Idea has event status");
+  const optional = phase === "idea";
   return {
+    definition_phase: phase,
+    published_at: row.published_at == null ? null : instant(row.published_at),
+    reference_time:
+      row.reference_time == null ? null : instant(row.reference_time),
     proposal_id: proposalId,
     cover_object_path: coverObjectPath(
       row.cover_object_path,
@@ -81,14 +97,21 @@ export function parsePublicProposalSummary(
     ),
     title: text(row.title),
     summary: text(row.summary),
-    starts_at: instant(row.starts_at),
-    ends_at: instant(row.ends_at),
-    event_timezone: text(row.event_timezone),
-    country_code: text(row.country_code),
-    locality: text(row.locality),
+    starts_at:
+      optional && row.starts_at === null ? null : instant(row.starts_at),
+    ends_at: optional && row.ends_at === null ? null : instant(row.ends_at),
+    event_timezone: optional
+      ? nullableText(row.event_timezone)
+      : text(row.event_timezone),
+    country_code: optional
+      ? nullableText(row.country_code)
+      : text(row.country_code),
+    locality: optional ? nullableText(row.locality) : text(row.locality),
     administrative_area: nullableText(row.administrative_area),
-    public_location_label: text(row.public_location_label),
-    derived_status: status(row.derived_status),
+    public_location_label: optional
+      ? nullableText(row.public_location_label)
+      : text(row.public_location_label),
+    derived_status: optional ? null : status(row.derived_status),
     skills: array(row.skills).map(parseSkill),
   };
 }
@@ -121,14 +144,20 @@ export function parsePublicProposalDetail(
     ...parsePublicProposalSummary(row),
     creator_profile_id: text(row.creator_profile_id),
     creator_display_name: nullableText(row.creator_display_name),
-    description: text(row.description),
+    description:
+      row.definition_phase === "idea"
+        ? nullableText(row.description)
+        : text(row.description),
     exact_meeting_text: nullableText(row.exact_meeting_text),
     exact_location_restricted: boolean(row.exact_location_restricted),
   };
 }
 
 export function encodeProposalCursor(cursor: ProposalCursor): string {
-  return Buffer.from(JSON.stringify(cursor), "utf8").toString("base64url");
+  return Buffer.from(
+    JSON.stringify({ version: 2, ...cursor }),
+    "utf8",
+  ).toString("base64url");
 }
 
 export function decodeProposalCursor(
@@ -139,7 +168,13 @@ export function decodeProposalCursor(
     const parsed = record(
       JSON.parse(Buffer.from(value, "base64url").toString("utf8")),
     );
-    return { startsAt: instant(parsed.startsAt), id: text(parsed.id) };
+    if (parsed.version !== 2 || !uuidPattern.test(text(parsed.id)))
+      return undefined;
+    return {
+      publishedAt: instant(parsed.publishedAt),
+      referenceTime: instant(parsed.referenceTime),
+      id: text(parsed.id),
+    };
   } catch {
     return undefined;
   }

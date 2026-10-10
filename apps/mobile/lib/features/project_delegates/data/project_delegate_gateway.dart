@@ -345,7 +345,7 @@ class SupabaseProjectDelegateGateway implements ProjectDelegateGateway {
     String expectedProfileId,
   ) async {
     final response = await _client.rpc<List<dynamic>>(
-      'list_own_delegated_projects',
+      'list_own_delegated_projects_v2',
       params: {'p_expected_profile_id': expectedProfileId},
     );
     return response.map(parser.delegatedProject).toList(growable: false);

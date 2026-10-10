@@ -1,10 +1,32 @@
-import { render, screen } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { cleanup, render, screen } from "@testing-library/react";
+import { afterEach, describe, expect, it } from "vitest";
 
 import { ProposalCard, ProposalStatusBadge } from "./proposal-components";
 import type { PublicProposalSummary } from "./proposal-models";
 
 describe("proposal presentation", () => {
+  afterEach(cleanup);
+  it("renders an Idea with no invented schedule, city or event status", () => {
+    render(
+      <ProposalCard
+        proposal={{
+          ...summary,
+          definition_phase: "idea",
+          starts_at: null,
+          ends_at: null,
+          event_timezone: null,
+          locality: null,
+          public_location_label: null,
+          derived_status: null,
+        }}
+      />,
+    );
+    expect(screen.getByText("In definition")).toBeInTheDocument();
+    expect(screen.getByText("Date to decide together")).toBeInTheDocument();
+    expect(screen.getByText("Place to decide together")).toBeInTheDocument();
+    expect(screen.queryByText("Upcoming")).not.toBeInTheDocument();
+    expect(screen.queryByText("Completed")).not.toBeInTheDocument();
+  });
   it("renders all current discovery badges and a semantic green Just Finished badge", () => {
     const { rerender } = render(<ProposalStatusBadge status="upcoming" />);
     expect(screen.getByText("Upcoming")).toBeInTheDocument();
@@ -32,6 +54,9 @@ describe("proposal presentation", () => {
 });
 
 export const summary: PublicProposalSummary = {
+  definition_phase: "defined",
+  published_at: "2026-09-01T10:00:00Z",
+  reference_time: "2026-09-01T11:00:00Z",
   proposal_id: "00000000-0000-4000-8000-000000000001",
   cover_object_path: null,
   title: "Community mural",

@@ -6,6 +6,48 @@ import 'package:planets_mobile/features/participation/domain/project_capacity.da
 void main() {
   const parser = ProposalPayloadParser();
 
+  test('Idea detail keeps undecided logistics and rejects event status', () {
+    final row = {
+      ..._publicDetailRow(),
+      'definition_phase': 'idea',
+      'starts_at': null,
+      'ends_at': null,
+      'event_timezone': null,
+      'country_code': null,
+      'locality': null,
+      'public_location_label': null,
+      'derived_status': null,
+      'description': null,
+    };
+    final detail = parser.publicDetail(row, _capacity);
+    expect(detail.summary.isIdea, isTrue);
+    expect(detail.summary.startsAt, isNull);
+    expect(detail.summary.locality, isNull);
+    expect(detail.summary.status, isNull);
+    expect(detail.description, isNull);
+    expect(
+      () => parser.publicDetail({
+        ...row,
+        'derived_status': 'completed',
+      }, _capacity),
+      throwsFormatException,
+    );
+    expect(
+      () => parser.publicDetail({
+        ...row,
+        'definition_phase': 'defined',
+      }, _capacity),
+      throwsFormatException,
+    );
+    expect(
+      () => parser.publicDetail({
+        ...row,
+        'definition_phase': 'unknown',
+      }, _capacity),
+      throwsFormatException,
+    );
+  });
+
   test('parses the seeded restricted public Proposal detail shape', () {
     final detail = parser.publicDetail(_publicDetailRow(), _capacity);
 
@@ -79,6 +121,7 @@ const _capacity = ProjectCapacitySnapshot(
 );
 
 Map<String, dynamic> _publicDetailRow() => {
+  'definition_phase': 'defined',
   'proposal_id': _proposalId,
   'creator_profile_id': _creatorProfileId,
   'creator_display_name': 'Demo Alice',

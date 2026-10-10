@@ -150,7 +150,8 @@ class _PublicProposalsScreenState extends ConsumerState<PublicProposalsScreen> {
                     expanded: _filtersExpanded,
                     hasActiveFilters:
                         state.locality.trim().isNotEmpty ||
-                        state.selectedSkillIds.isNotEmpty,
+                        state.selectedSkillIds.isNotEmpty ||
+                        state.definitionPhase != null,
                     onPressed: () {
                       FocusScope.of(context).unfocus();
                       setState(() => _filtersExpanded = !_filtersExpanded);
@@ -181,9 +182,44 @@ class _PublicProposalsScreenState extends ConsumerState<PublicProposalsScreen> {
                     onApply: (selection) => _applyFilters(skillIds: selection),
                   ),
                 ],
+                Wrap(
+                  spacing: AppSpacing.small,
+                  children: [
+                    for (final phase in [
+                      null,
+                      ...ProposalDefinitionPhase.values,
+                    ])
+                      ChoiceChip(
+                        key: Key('proposal-phase-${phase?.wireValue ?? "all"}'),
+                        label: Text(
+                          phase == null
+                              ? l10n.proposalPhaseAll
+                              : phase == ProposalDefinitionPhase.idea
+                              ? l10n.proposalPhaseIdea
+                              : l10n.proposalPhaseDefined,
+                        ),
+                        selected: state.definitionPhase == phase,
+                        onSelected: state.isBusy
+                            ? null
+                            : (_) => ref
+                                  .read(publicProposalsProvider.notifier)
+                                  .applyFilters(
+                                    locality: state.locality,
+                                    skillIds: state.selectedSkillIds,
+                                    definitionPhase: phase,
+                                    changePhase: true,
+                                  ),
+                      ),
+                  ],
+                ),
+                Text(
+                  l10n.proposalPublicationOrder,
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+                const SizedBox(height: AppSpacing.small),
               ],
               if (state.phase == ProposalLoadPhase.loading &&
-                  !(state.items.isEmpty && state.requestedItems.isEmpty))
+                  !(state.items.isEmpty && state.visibleRequestedItems.isEmpty))
                 LinearProgressIndicator(semanticsLabel: l10n.proposalLoading),
               const SizedBox(height: AppSpacing.medium),
               if (widget.tutorialPlaceholder != null)
@@ -191,31 +227,32 @@ class _PublicProposalsScreenState extends ConsumerState<PublicProposalsScreen> {
               else if ((state.phase == ProposalLoadPhase.idle ||
                       state.phase == ProposalLoadPhase.loading) &&
                   state.items.isEmpty &&
-                  state.requestedItems.isEmpty)
+                  state.visibleRequestedItems.isEmpty)
                 LoadingState(message: l10n.proposalLoading)
               else if (state.phase == ProposalLoadPhase.failure &&
                   state.items.isEmpty &&
-                  state.requestedItems.isEmpty)
+                  state.visibleRequestedItems.isEmpty)
                 ErrorState(
                   message: l10n.proposalSafeError,
                   onRetry: () =>
                       ref.read(publicProposalsProvider.notifier).load(),
                 )
-              else if (state.items.isEmpty && state.requestedItems.isEmpty)
+              else if (state.items.isEmpty &&
+                  state.visibleRequestedItems.isEmpty)
                 EmptyState(
                   title: l10n.proposalEmptyTitle,
                   message: l10n.proposalEmptyMessage,
                   icon: Icons.event_available_outlined,
                 )
               else ...[
-                if (state.requestedItems.isNotEmpty) ...[
+                if (state.visibleRequestedItems.isNotEmpty) ...[
                   Text(
                     l10n.browseRequestedSection,
                     key: const Key('proposal-requested-section'),
                     style: Theme.of(context).textTheme.titleLarge,
                   ),
                   const SizedBox(height: AppSpacing.small),
-                  for (final requested in state.requestedItems) ...[
+                  for (final requested in state.visibleRequestedItems) ...[
                     ProposalCard(
                       proposal: requested.proposal,
                       isRequested: true,
@@ -225,7 +262,7 @@ class _PublicProposalsScreenState extends ConsumerState<PublicProposalsScreen> {
                     const SizedBox(height: AppSpacing.medium),
                   ],
                 ],
-                if (state.requestedItems.isNotEmpty &&
+                if (state.visibleRequestedItems.isNotEmpty &&
                     state.ordinaryItems.isNotEmpty) ...[
                   Text(
                     l10n.browseOtherProjectsSection,
@@ -264,7 +301,8 @@ class _PublicProposalsScreenState extends ConsumerState<PublicProposalsScreen> {
                 ),
               // DTOs omit provider provenance; nonempty labels may be derived.
               if (widget.tutorialPlaceholder == null &&
-                  (state.items.isNotEmpty || state.requestedItems.isNotEmpty))
+                  (state.items.isNotEmpty ||
+                      state.visibleRequestedItems.isNotEmpty))
                 const LocationAttribution(),
               // Let credit links scroll above the floating Create action.
               const SizedBox(height: 80),
@@ -388,13 +426,21 @@ class _ProposalDetailScreenState extends ConsumerState<ProposalDetailScreen> {
             projectKind: ProjectKind.oneTime,
             creatorProfileId: detail.creatorProfileId,
             acceptsNewRequests:
+                detail.summary.isIdea ||
                 detail.summary.status == ProposalStatus.upcoming ||
                 detail.summary.status == ProposalStatus.happening,
-            publicLocationLines: [detail.summary.publicLocationLabel],
-            previewArea: LegacyPreviewArea(
-              detail.summary.locality,
-              detail.summary.countryCode,
-            ),
+            publicLocationLines: [
+              if (detail.summary.publicLocationLabel != null)
+                detail.summary.publicLocationLabel!
+              else if (detail.summary.isIdea)
+                l10n.proposalPlaceUndecided,
+            ],
+            previewArea: detail.summary.isIdea
+                ? null
+                : LegacyPreviewArea(
+                    detail.summary.locality ?? '',
+                    detail.summary.countryCode ?? '',
+                  ),
             publicExactMeetingText: detail.exactMeetingText,
             exactLocationRestricted: detail.exactLocationRestricted,
             capacity: detail.summary.capacity,
@@ -435,32 +481,44 @@ class _ProposalDetailScreenState extends ConsumerState<ProposalDetailScreen> {
                         detail.summary.title,
                         style: Theme.of(context).textTheme.headlineSmall,
                       ),
-                      ProposalStatusBadge(status: detail.summary.status),
+                      ProposalStatusBadge(
+                        status: detail.summary.status,
+                        isIdea: detail.summary.isIdea,
+                      ),
                     ],
                   ),
                   const SizedBox(height: AppSpacing.small),
                   Text(
                     detail.summary.summary,
+                    key: detail.description == null
+                        ? const Key('tutorial-project-purpose')
+                        : null,
                     style: Theme.of(context).textTheme.titleMedium,
                   ),
-                  const SizedBox(height: AppSpacing.large),
-                  Text(
-                    detail.description,
-                    key: const Key('tutorial-project-purpose'),
-                  ),
+                  if (detail.description != null) ...[
+                    const SizedBox(height: AppSpacing.large),
+                    Text(
+                      detail.description!,
+                      key: const Key('tutorial-project-purpose'),
+                    ),
+                  ],
                   const SizedBox(height: AppSpacing.large),
                   Text(
                     l10n.proposalScheduleTitle,
                     style: Theme.of(context).textTheme.titleLarge,
                   ),
                   const SizedBox(height: AppSpacing.small),
-                  Text(
-                    '${l10n.proposalStartLabel}: ${formatProposalDateTime(detail.summary.startsAt, detail.summary.eventTimezone, Localizations.localeOf(context).toLanguageTag())}',
-                  ),
-                  Text(
-                    '${l10n.proposalEndLabel}: ${formatProposalDateTime(detail.summary.endsAt, detail.summary.eventTimezone, Localizations.localeOf(context).toLanguageTag())}',
-                  ),
-                  Text(detail.summary.eventTimezone),
+                  if (detail.summary.isIdea)
+                    Text(proposalScheduleText(context, detail.summary))
+                  else ...[
+                    Text(
+                      '${l10n.proposalStartLabel}: ${formatProposalDateTime(detail.summary.startsAt!, detail.summary.eventTimezone!, Localizations.localeOf(context).toLanguageTag())}',
+                    ),
+                    Text(
+                      '${l10n.proposalEndLabel}: ${formatProposalDateTime(detail.summary.endsAt!, detail.summary.eventTimezone!, Localizations.localeOf(context).toLanguageTag())}',
+                    ),
+                    Text(detail.summary.eventTimezone!),
+                  ],
                   if (detail.summary.skills.isNotEmpty) ...[
                     const SizedBox(height: AppSpacing.large),
                     Text(

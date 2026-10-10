@@ -1,100 +1,94 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+const { rpc } = vi.hoisted(() => ({ rpc: vi.fn() }));
 vi.mock("server-only", () => ({}));
-const rpc = vi.fn();
 vi.mock("@/lib/supabase/server", () => ({
-  createSupabaseServerClient: vi.fn(async () => ({ rpc })),
+  createSupabaseServerClient: async () => ({ rpc }),
 }));
-import { getPublicProposal } from "./proposal-server";
-const id = "fa021000-0000-4000-8000-000000000001";
+import { getPublicProposal, listPublicProposals } from "./proposal-server";
+
+const id = "00000000-0000-4000-8000-000000000001";
 const row = {
   proposal_id: id,
-  cover_object_path: null,
-  creator_profile_id: "owner",
-  creator_display_name: null,
-  title: "Synthetic Project",
-  summary: "Summary",
-  description: "Description",
-  starts_at: "2030-01-01T10:00:00Z",
-  ends_at: "2030-01-01T12:00:00Z",
-  event_timezone: "Europe/Rome",
-  country_code: "IT",
-  locality: "Trento",
+  definition_phase: "idea",
+  published_at: "2026-09-01T10:00:00Z",
+  reference_time: "2026-09-01T11:00:00Z",
+  title: "Garden together",
+  summary: "Plan a shared garden together.",
+  description: null,
+  starts_at: null,
+  ends_at: null,
+  event_timezone: null,
+  country_code: null,
+  locality: null,
   administrative_area: null,
-  public_location_label: "Trento",
-  derived_status: "upcoming",
+  public_location_label: null,
+  derived_status: null,
   skills: [],
+  cover_object_path: null,
+  creator_profile_id: id,
+  creator_display_name: null,
   exact_meeting_text: null,
-  exact_location_restricted: true,
+  exact_location_restricted: false,
+  exact_location: "PRIVATE VALUE",
 };
-describe("one-time public location server boundary", () => {
-  beforeEach(() => vi.resetAllMocks());
-  it("private place/directions use only public detail with no point read", async () => {
-    rpc.mockResolvedValueOnce({ data: [row], error: null });
-    expect((await getPublicProposal(id))?.exactMapsUrl).toBeUndefined();
-    expect(rpc).toHaveBeenCalledTimes(1);
-    expect(rpc).toHaveBeenCalledWith("get_public_proposal", {
+describe("versioned proposal API", () => {
+  beforeEach(() => rpc.mockReset());
+  it("forwards phase, search and immutable publication cursor/reference together", async () => {
+    rpc.mockResolvedValue({ data: [row], error: null });
+    const cursor = {
+      id,
+      publishedAt: row.published_at,
+      referenceTime: row.reference_time,
+    };
+    const items = await listPublicProposals({
+      definitionPhase: "idea",
+      query: "garden",
+      locality: " Trento ",
+      skillId: id,
+      cursor,
+    });
+    expect(rpc).toHaveBeenCalledWith("list_public_proposals_v2", {
+      p_limit: 12,
+      p_cursor_id: id,
+      p_cursor_published_at: row.published_at,
+      p_reference_time: row.reference_time,
+      p_definition_phase: "idea",
+      p_query: "garden",
+      p_locality: "Trento",
+      p_skill_ids: [id],
+    });
+    expect(items[0].starts_at).toBeNull();
+    expect(items[0]).not.toHaveProperty("exact_location");
+  });
+  it("opts detail/share into v2 and handles honest missing description", async () => {
+    rpc.mockResolvedValue({ data: [row], error: null });
+    expect((await getPublicProposal(id))?.description).toBeNull();
+    expect(rpc).toHaveBeenCalledWith("get_public_proposal_v2", {
       p_proposal_id: id,
     });
   });
-  it("deliberately public selected label gets a fresh actor-free public exact point", async () => {
+  it("keeps even a deliberately public Idea place List-only without a map preview", async () => {
     rpc.mockResolvedValueOnce({
-      data: [
-        {
-          ...row,
-          exact_location_restricted: false,
-          exact_meeting_text: "Synthetic venue",
-        },
-      ],
+      data: [{ ...row, exact_meeting_text: "Verified public venue" }],
       error: null,
     });
-    rpc.mockResolvedValueOnce({
-      data: {
-        item_kind: "one_time",
-        item_id: id,
-        audience: "public",
-        scope: "exact",
-        place: {
-          kind: "amenity",
-          label: "Synthetic venue",
-          latitude: 46.12,
-          longitude: 11.17,
-        },
-      },
-      error: null,
-    });
-    const result = await getPublicProposal(id);
-    expect(new URL(result!.exactMapsUrl!).searchParams.get("query")).toBe(
-      "46.12,11.17",
-    );
-    expect(rpc).toHaveBeenLastCalledWith("get_location_preview_v1", {
-      p_kind: "one_time",
-      p_item: id,
-      p_view: "public_detail",
-    });
+    const idea = await getPublicProposal(id);
+    expect(idea?.exact_meeting_text).toBe("Verified public venue");
+    expect(idea?.exactMapsUrl).toBeUndefined();
+    expect(rpc).toHaveBeenCalledTimes(1);
   });
-  it("privacy change between reads removes Maps destination; read errors are explicit", async () => {
-    const publicRow = {
-      ...row,
-      exact_location_restricted: false,
-      exact_meeting_text: "Synthetic venue",
-    };
-    rpc.mockResolvedValueOnce({ data: [publicRow], error: null });
-    rpc.mockResolvedValueOnce({
-      data: {
-        item_kind: "one_time",
-        item_id: id,
-        audience: "public",
-        scope: "area",
-        place: null,
-      },
+  it("fails on API errors, malformed Defined payloads and absent page anchors", async () => {
+    rpc.mockResolvedValue({ data: [], error: new Error("network") });
+    await expect(listPublicProposals({})).rejects.toThrow("network");
+    rpc.mockResolvedValue({
+      data: [{ ...row, definition_phase: "defined" }],
       error: null,
     });
-    const revoked = await getPublicProposal(id);
-    expect(revoked?.exactMapsUrl).toBeNull();
-    expect(revoked?.exact_meeting_text).toBeNull();
-    expect(revoked?.exact_location_restricted).toBe(true);
-    rpc.mockResolvedValueOnce({ data: [publicRow], error: null });
-    rpc.mockResolvedValueOnce({ data: null, error: new Error("Unavailable") });
-    await expect(getPublicProposal(id)).rejects.toThrow("Unavailable");
+    await expect(listPublicProposals({})).rejects.toThrow();
+    rpc.mockResolvedValue({
+      data: [{ ...row, published_at: null }],
+      error: null,
+    });
+    await expect(listPublicProposals({})).rejects.toThrow("pagination anchor");
   });
 });

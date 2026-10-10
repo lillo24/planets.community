@@ -44,6 +44,8 @@ class FakeProposalGateway implements ProposalGateway {
   String? lastQuery;
   String? lastLocality;
   Set<String>? lastSkillIds;
+  ProposalDefinitionPhase? lastDefinitionPhase;
+  ProposalPromotionRequirements? requirements;
   String? lastRequestedIdentity;
   String? lastRequestedQuery;
   String? lastRequestedLocality;
@@ -62,6 +64,7 @@ class FakeProposalGateway implements ProposalGateway {
     String? query,
     String? locality,
     Set<String>? skillIds,
+    ProposalDefinitionPhase? definitionPhase,
   }) async {
     _throwIfNeeded();
     calls.add('list-public');
@@ -69,6 +72,7 @@ class FakeProposalGateway implements ProposalGateway {
     lastQuery = query;
     lastLocality = locality;
     lastSkillIds = skillIds;
+    lastDefinitionPhase = definitionPhase;
     if (publicLoader case final loader?) {
       return loader(
         limit: limit,
@@ -78,7 +82,14 @@ class FakeProposalGateway implements ProposalGateway {
         skillIds: skillIds,
       );
     }
-    return publicItems.take(limit).toList();
+    return publicItems
+        .where(
+          (item) =>
+              definitionPhase == null ||
+              item.definitionPhase == definitionPhase,
+        )
+        .take(limit)
+        .toList();
   }
 
   @override
@@ -234,6 +245,54 @@ class FakeProposalGateway implements ProposalGateway {
     if (error case final failure?) throw failure;
   }
 
+  @override
+  Future<void> publishIdea(String expectedCreatorId, String proposalId) async {
+    await publishProposal(expectedCreatorId, proposalId);
+    calls.add('publish-idea:$proposalId');
+    ownItems = [
+      for (final item in ownItems)
+        item.id == proposalId
+            ? _copyProposal(item, definitionPhase: ProposalDefinitionPhase.idea)
+            : item,
+    ];
+  }
+
+  @override
+  Future<ProposalPromotionRequirements> promotionRequirements(
+    String expectedProfileId,
+    String proposalId,
+  ) async {
+    _throwIfNeeded();
+    calls.add('promotion-requirements:$proposalId');
+    return requirements ??
+        ProposalPromotionRequirements(
+          proposalId: proposalId,
+          missingFields: const [
+            'starts_at',
+            'locality',
+            'registration_capacity',
+          ],
+          canPromote: false,
+        );
+  }
+
+  @override
+  Future<void> promoteIdea(String expectedProfileId, String proposalId) async {
+    _throwMutationIfNeeded();
+    if (mutationDelay case final delay?) await delay;
+    calls.add('promote:$proposalId');
+    ownItems = [
+      for (final item in ownItems)
+        item.id == proposalId
+            ? _copyProposal(
+                item,
+                definitionPhase: ProposalDefinitionPhase.defined,
+                status: ProposalStatus.upcoming,
+              )
+            : item,
+    ];
+  }
+
   void _throwMutationIfNeeded() {
     if (mutationError case final failure?) throw failure;
   }
@@ -244,8 +303,10 @@ OwnProposal _copyProposal(
   ProposalInput? input,
   ProposalLifecycle? lifecycle,
   ProposalStatus? status,
+  ProposalDefinitionPhase? definitionPhase,
 }) => OwnProposal(
   id: proposal.id,
+  definitionPhase: definitionPhase ?? proposal.definitionPhase,
   lifecycle: lifecycle ?? proposal.lifecycle,
   title: input?.title ?? proposal.title,
   summary: input?.summary ?? proposal.summary,
@@ -258,7 +319,9 @@ OwnProposal _copyProposal(
   administrativeArea: input?.administrativeArea ?? proposal.administrativeArea,
   publicLocationLabel:
       input?.publicLocationLabel ?? proposal.publicLocationLabel,
-  status: lifecycle == ProposalLifecycle.cancelled
+  status:
+      definitionPhase == ProposalDefinitionPhase.idea ||
+          lifecycle == ProposalLifecycle.cancelled
       ? null
       : status ?? proposal.status,
   skills: proposal.skills,
@@ -315,6 +378,8 @@ ProposalSummary proposalSummaryFixture({
   id: id,
   title: title,
   summary: 'Create a community mural together.',
+  publishedAt: DateTime.utc(2026, 9, 1),
+  referenceTime: DateTime.utc(2026, 9, 10),
   startsAt: DateTime.utc(2026, 9, 10, 10),
   endsAt: DateTime.utc(2026, 9, 10, 12),
   eventTimezone: 'Europe/Rome',
@@ -413,6 +478,7 @@ OwnProposal ownProposalFixture({
   bool unsetTimezone = false,
   String? coverObjectPath,
   ProposalLifecycle lifecycle = ProposalLifecycle.draft,
+  ProposalDefinitionPhase definitionPhase = ProposalDefinitionPhase.defined,
   ProposalStatus? status,
   DateTime? startsAt,
   DateTime? endsAt,
@@ -422,6 +488,7 @@ OwnProposal ownProposalFixture({
   return OwnProposal(
     id: id,
     lifecycle: lifecycle,
+    definitionPhase: definitionPhase,
     title: value.title,
     summary: value.summary,
     description: value.description,
@@ -432,7 +499,9 @@ OwnProposal ownProposalFixture({
     locality: value.locality,
     administrativeArea: value.administrativeArea,
     publicLocationLabel: value.publicLocationLabel,
-    status: lifecycle == ProposalLifecycle.published
+    status: definitionPhase == ProposalDefinitionPhase.idea
+        ? null
+        : lifecycle == ProposalLifecycle.published
         ? status ?? ProposalStatus.upcoming
         : null,
     skills: proposalSummaryFixture().skills,

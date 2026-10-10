@@ -1,5 +1,17 @@
 # Proposals feature
 
+IDEA01B opts public/own/requested reads into the v2 phase-aware contract and
+delegated reads into the matching sibling gateway. Published Ideas have nullable
+logistics and no event status; Defined parsing stays strict. Browse phase filters
+compose with existing filters and requested-first deduplication. Publication
+cursors retain the first-page reference time. Ideas never request Map previews.
+`presentation/proposal_planning_review.dart` owns the localized advisory preview;
+the editor saves planning edits as Idea and calls the atomic promotion command
+only after explicit confirmation. The controller guards actor/session revisions.
+See [Idea integration and rollout](../../../../../docs/development/idea01b-public-idea-experience.md)
+for capacity, template and old-client compatibility contracts. The older sections
+below describing mandatory logistics/start freezes apply to Defined Projects.
+
 The creation chooser centers its heading. IT/EN editor labels distinguish a
 240-character short description (shown on browse cards) from the full description;
 canonical fields and validation are unchanged. LOCATION02 removes redundant

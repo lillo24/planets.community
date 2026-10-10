@@ -711,7 +711,7 @@ void main() {
     expect(find.text('Created by you'), findsOneWidget);
     expect(find.text('Projects you help manage'), findsOneWidget);
     expect(find.text('Delegated mural'), findsOneWidget);
-    expect(find.text('Co-creator · Published'), findsOneWidget);
+    expect(find.text('Co-creator · Defined'), findsOneWidget);
     expect(
       find.byKey(const Key('delegated-proposal-manage-delegated-1')),
       findsOneWidget,

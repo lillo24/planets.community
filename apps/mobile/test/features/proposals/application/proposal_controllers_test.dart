@@ -20,6 +20,143 @@ import '../../../support/fake_participation.dart';
 import '../../../support/fake_proposal.dart';
 
 void main() {
+  test('public Idea editing ignores tentative past dates and promotion retains its ID', () async {
+    final gateway = FakeProposalGateway()
+      ..ownItems = [
+        ownProposalFixture(
+          definitionPhase: ProposalDefinitionPhase.idea,
+          lifecycle: ProposalLifecycle.published,
+          startsAt: DateTime.utc(2020),
+          endsAt: DateTime.utc(2020, 1, 2),
+        ),
+      ];
+    final session = _readyContainer(gateway);
+    addTearDown(session.container.dispose);
+    addTearDown(session.auth.close);
+    final controller = session.container.read(proposalEditorProvider.notifier);
+    await controller.load('user-1', 'proposal-1');
+    final original = session.container.read(proposalEditorProvider).proposal!;
+    expect(original.isEditableAt(DateTime.utc(2026)), isTrue);
+    expect(original.canCancelAt(DateTime.utc(2026)), isTrue);
+    expect(
+      await controller.saveChanges(
+        'user-1',
+        proposalInputFixture(registrationCapacity: null),
+      ),
+      'proposal-1',
+    );
+    final review = await controller.reviewPromotion('user-1');
+    expect(review!.canPromote, isFalse);
+    expect(gateway.calls.where((call) => call.startsWith('promote:')), isEmpty);
+    gateway.requirements = const ProposalPromotionRequirements(
+      proposalId: 'proposal-1',
+      missingFields: [],
+      canPromote: true,
+    );
+    expect((await controller.reviewPromotion('user-1'))!.canPromote, isTrue);
+    expect(await controller.promote('user-1'), isTrue);
+    final updated = session.container.read(proposalEditorProvider).proposal!;
+    expect(updated.id, original.id);
+    expect(updated.publishedAt, original.publishedAt);
+    expect(updated.isIdea, isFalse);
+    expect(
+      gateway.calls.where((call) => call == 'promote:proposal-1'),
+      hasLength(1),
+    );
+  });
+
+  for (final code in ['PT422', '42501']) {
+    test(
+      'failed $code promotion keeps public Idea and reports a failure',
+      () async {
+        final gateway = FakeProposalGateway()
+          ..ownItems = [
+            ownProposalFixture(
+              definitionPhase: ProposalDefinitionPhase.idea,
+              lifecycle: ProposalLifecycle.published,
+            ),
+          ];
+        final session = _readyContainer(gateway);
+        addTearDown(session.container.dispose);
+        addTearDown(session.auth.close);
+        final controller = session.container.read(
+          proposalEditorProvider.notifier,
+        );
+        await controller.load('user-1', 'proposal-1');
+        gateway.mutationError = PostgrestException(
+          message: 'Changed authority or planning',
+          code: code,
+        );
+        expect(await controller.promote('user-1'), isFalse);
+        final state = session.container.read(proposalEditorProvider);
+        expect(state.proposal!.isIdea, isTrue);
+        expect(state.proposal!.lifecycle, ProposalLifecycle.published);
+        expect(
+          state.failure,
+          code == 'PT422'
+              ? ProposalFailureKind.invalidInput
+              : ProposalFailureKind.forbidden,
+        );
+      },
+    );
+  }
+
+  test(
+    'Idea filter keeps query and locality and resets publication pagination',
+    () async {
+      final gateway = FakeProposalGateway();
+      final session = _readyContainer(gateway);
+      addTearDown(session.container.dispose);
+      addTearDown(session.auth.close);
+      final controller = session.container.read(
+        publicProposalsProvider.notifier,
+      );
+      await controller.applyFilters(
+        query: 'garden',
+        locality: 'Trento',
+        skillIds: {'skill-mural'},
+        definitionPhase: ProposalDefinitionPhase.idea,
+        changePhase: true,
+      );
+      expect(gateway.lastDefinitionPhase, ProposalDefinitionPhase.idea);
+      expect(gateway.lastQuery, 'garden');
+      expect(gateway.lastLocality, 'Trento');
+      expect(gateway.lastCursor, isNull);
+      await controller.applyFilters(locality: '', skillIds: {});
+      expect(gateway.lastDefinitionPhase, ProposalDefinitionPhase.idea);
+      await controller.applyFilters(
+        locality: '',
+        skillIds: {},
+        changePhase: true,
+      );
+      expect(gateway.lastDefinitionPhase, isNull);
+    },
+  );
+
+  test('logout and rejoin reject a late promotion result', () async {
+    final gateway = FakeProposalGateway()
+      ..ownItems = [
+        ownProposalFixture(
+          definitionPhase: ProposalDefinitionPhase.idea,
+          lifecycle: ProposalLifecycle.published,
+        ),
+      ];
+    final session = _readyContainer(gateway);
+    addTearDown(session.container.dispose);
+    addTearDown(session.auth.close);
+    final controller = session.container.read(proposalEditorProvider.notifier);
+    await controller.load('user-1', 'proposal-1');
+    final pending = Completer<void>();
+    gateway.mutationDelay = pending.future;
+    final result = controller.promote('user-1');
+    session.container.read(authSessionProvider.notifier).markSignedOut();
+    session.container
+        .read(authSessionProvider.notifier)
+        .markProfileReady(const AuthIdentity(id: 'user-1'));
+    pending.complete();
+    expect(await result, isFalse);
+    expect(session.container.read(proposalEditorProvider).proposal, isNull);
+  });
   test(
     'account switch invalidates pending editor and owner list loads',
     () async {
