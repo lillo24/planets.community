@@ -104,7 +104,6 @@ class _ProjectResourceMatchesScreenState
         context,
         title: Text(l10n.projectResourceMatchesTitle),
       ),
-      bottomNavigationBar: const SafeArea(child: LocationAttribution()),
       body: SafeArea(
         child: initiallyLoading
             ? LoadingState(message: l10n.projectResourceMatchesLoading)
@@ -183,6 +182,7 @@ class _ProjectResourceMatchesScreenState
                               )
                             : Text(l10n.projectResourceMatchesLoadMore),
                       ),
+                    if (items.isNotEmpty) const LocationAttribution(),
                   ],
                 ),
               ),
