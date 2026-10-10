@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:planets_mobile/features/locations/presentation/location_preview_panel.dart';
+import 'package:planets_mobile/features/proposals/data/proposal_gateway.dart';
 import 'package:planets_mobile/features/proposals/domain/proposal_models.dart';
+import 'package:planets_mobile/features/proposals/presentation/public_proposals_screen.dart';
 import 'package:planets_mobile/features/proposals/presentation/proposal_widgets.dart';
 import 'package:planets_mobile/features/proposals/presentation/proposal_planning_review.dart';
 import 'package:planets_mobile/l10n/generated/app_localizations.dart';
@@ -102,6 +105,66 @@ void main() {
         expect(tester.takeException(), isNull);
         expect(idea.isIdea, isTrue);
       });
+
+      testWidgets(
+        '$language $scale Idea detail keeps undecided place visible',
+        (tester) async {
+          tester.view.physicalSize = const Size(320, 900);
+          tester.view.devicePixelRatio = 1;
+          addTearDown(tester.view.resetPhysicalSize);
+          addTearDown(tester.view.resetDevicePixelRatio);
+          final summary = ProposalSummary(
+            id: 'idea-1',
+            title: 'Garden together',
+            summary: 'Plan a shared garden together.',
+            definitionPhase: ProposalDefinitionPhase.idea,
+            startsAt: null,
+            endsAt: null,
+            eventTimezone: null,
+            countryCode: null,
+            locality: null,
+            administrativeArea: null,
+            publicLocationLabel: null,
+            status: null,
+            skills: const [],
+            capacity: projectCapacityFixture(registrationCapacity: null),
+          );
+          final gateway = FakeProposalGateway()
+            ..publicDetail = ProposalDetail(
+              summary: summary,
+              creatorProfileId: 'creator-1',
+              creatorDisplayName: 'Casey',
+              description: null,
+              exactMeetingText: null,
+              exactLocationRestricted: false,
+            );
+          await tester.pumpWidget(
+            ProviderScope(
+              overrides: [proposalGatewayProvider.overrideWithValue(gateway)],
+              child: _app(
+                language,
+                scale,
+                const ProposalDetailScreen(proposalId: 'idea-1'),
+              ),
+            ),
+          );
+          await tester.pumpAndSettle();
+          expect(find.text(summary.summary), findsOneWidget);
+          expect(
+            find.byKey(const Key('tutorial-project-purpose')),
+            findsOneWidget,
+          );
+          final place = find.text(
+            language == 'it'
+                ? 'Luogo da decidere insieme'
+                : 'Place to decide together',
+          );
+          await tester.scrollUntilVisible(place, 160);
+          expect(place, findsOneWidget);
+          expect(find.byType(LocationPreviewPanel), findsNothing);
+          expect(tester.takeException(), isNull);
+        },
+      );
 
       testWidgets(
         '$language $scale planning requires an explicit confirm or return',

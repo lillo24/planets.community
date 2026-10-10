@@ -431,7 +431,9 @@ class _ProposalDetailScreenState extends ConsumerState<ProposalDetailScreen> {
                 detail.summary.status == ProposalStatus.happening,
             publicLocationLines: [
               if (detail.summary.publicLocationLabel != null)
-                detail.summary.publicLocationLabel!,
+                detail.summary.publicLocationLabel!
+              else if (detail.summary.isIdea)
+                l10n.proposalPlaceUndecided,
             ],
             previewArea: detail.summary.isIdea
                 ? null
@@ -488,13 +490,18 @@ class _ProposalDetailScreenState extends ConsumerState<ProposalDetailScreen> {
                   const SizedBox(height: AppSpacing.small),
                   Text(
                     detail.summary.summary,
+                    key: detail.description == null
+                        ? const Key('tutorial-project-purpose')
+                        : null,
                     style: Theme.of(context).textTheme.titleMedium,
                   ),
-                  const SizedBox(height: AppSpacing.large),
-                  Text(
-                    detail.description ?? detail.summary.summary,
-                    key: const Key('tutorial-project-purpose'),
-                  ),
+                  if (detail.description != null) ...[
+                    const SizedBox(height: AppSpacing.large),
+                    Text(
+                      detail.description!,
+                      key: const Key('tutorial-project-purpose'),
+                    ),
+                  ],
                   const SizedBox(height: AppSpacing.large),
                   Text(
                     l10n.proposalScheduleTitle,
