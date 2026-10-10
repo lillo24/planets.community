@@ -1,3 +1,5 @@
+import assert from "node:assert/strict";
+
 import { createClient } from "@supabase/supabase-js";
 
 import { readLocalSupabaseStatus } from "./lib/local-supabase-status.mjs";
@@ -27,6 +29,8 @@ async function verifyProposals() {
   await Promise.all(
     [userA, userB].map((user) => ensureLocalProfilePhoto(user)),
   );
+
+  await verifyCityOnlyProposal(userA, userB);
 
   const { data: skills, error: skillError } = await userA.client
     .from("skills")
@@ -283,6 +287,117 @@ async function verifyProposals() {
 
   console.log(
     "Confirmed two-user proposal ownership, stale-identity rejection, literal backend search, public discovery sanitization, detail-only exact location, lifecycle, filters, and time-derived current statuses.",
+  );
+}
+
+// LOCATION01 uses real local JWTs and canonical PostgREST RPCs. The ordinary
+// verifier runs only against its explicitly selected local Supabase stack.
+async function verifyCityOnlyProposal(owner, peer) {
+  const input = {
+    title: "LOCATION01 city-only defined Project",
+    summary: "A scheduled activity in Trento.",
+    description: "No exact venue has been chosen yet.",
+    startsAt: new Date(Date.now() + 2 * 86400000).toISOString(),
+    endsAt: new Date(Date.now() + 2 * 86400000 + 7200000).toISOString(),
+    eventTimezone: "Europe/Rome",
+    countryCode: "IT",
+    locality: "Trento",
+    publicLocationLabel: "Trento",
+    exactMeetingText: null,
+    exactLocationVisibility: "participants",
+    skillIds: [],
+    skillImportances: [],
+  };
+  const id = await createDraft(owner, input);
+  await publish(owner, id);
+  async function rpc(client, name, params) {
+    const { data, error } = await client.rpc(name, params);
+    if (error) throw safeDatabaseFailure(`LOCATION01 ${name}`, error);
+    return data;
+  }
+  const anonymous = createClient(apiUrl, publishableKey, {
+    auth: { persistSession: false },
+  });
+  const detail = await rpc(anonymous, "get_public_proposal", {
+    p_proposal_id: id,
+  });
+  assert.equal(detail.length, 1);
+  assert.equal(detail[0].locality, "Trento");
+  assert.equal(detail[0].exact_meeting_text, null);
+  assert.equal(detail[0].exact_location_restricted, false);
+  const list = await rpc(anonymous, "list_public_proposals", {
+    p_query: "LOCATION01",
+    p_limit: 50,
+  });
+  assert.equal(list.filter((item) => item.proposal_id === id).length, 1);
+  const noAccess = await peer.client.rpc(
+    "get_project_participant_meeting_details",
+    {
+      p_expected_profile_id: peer.id,
+      p_project_id: id,
+    },
+  );
+  assert.equal(noAccess.error?.code, "42501");
+  const request = await rpc(peer.client, "request_to_join_project", {
+    p_expected_requester_profile_id: peer.id,
+    p_project_id: id,
+    p_request_message: null,
+  });
+  await rpc(owner.client, "accept_project_join_request", {
+    p_expected_creator_profile_id: owner.id,
+    p_request_id: request,
+  });
+  const meeting = await rpc(
+    peer.client,
+    "get_project_participant_meeting_details",
+    {
+      p_expected_profile_id: peer.id,
+      p_project_id: id,
+    },
+  );
+  assert.equal(meeting.length, 1);
+  assert.equal(meeting[0].exact_meeting_text, null);
+  assert.equal(meeting[0].exact_location, null);
+  const chat = await rpc(peer.client, "get_own_project_group_chat", {
+    p_expected_profile_id: peer.id,
+    p_project_id: id,
+  });
+  assert.equal(chat.length, 1);
+  assert.equal(chat[0].has_current_entitlement, true);
+  for (const visibility of ["participants", "public"]) {
+    await rpc(
+      owner.client,
+      "update_own_proposal",
+      proposalParams(owner.id, id, {
+        ...input,
+        exactMeetingText: "Synthetic precise entrance",
+        exactLocationVisibility: visibility,
+      }),
+    );
+    const rows = await rpc(anonymous, "get_public_proposal", {
+      p_proposal_id: id,
+    });
+    assert.equal(
+      rows[0].exact_location_restricted,
+      visibility === "participants",
+    );
+    assert.equal(
+      rows[0].exact_meeting_text,
+      visibility === "public" ? "Synthetic precise entrance" : null,
+    );
+  }
+  await rpc(
+    owner.client,
+    "update_own_proposal",
+    proposalParams(owner.id, id, input),
+  );
+  const cleared = await rpc(anonymous, "get_public_proposal", {
+    p_proposal_id: id,
+  });
+  assert.equal(cleared[0].exact_meeting_text, null);
+  assert.equal(cleared[0].exact_location_restricted, false);
+  console.log(
+    "LOCATION01 city-only publication, List/detail, real join/chat, optional visibility and clearing passed.",
   );
 }
 

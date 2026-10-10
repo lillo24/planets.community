@@ -86,8 +86,11 @@ void main() {
       final similar = FakeSimilarProposalGateway()..items = [similarFixture()];
       final app = await draft.pumpEditor(tester, similar: similar);
       await tester.enterText(find.byKey(const Key('proposal-title')), 'repair');
-      await reveal(tester, find.byKey(const Key('proposal-country')));
-      await tester.enterText(find.byKey(const Key('proposal-country')), 'I');
+      await reveal(tester, find.byKey(const Key('proposal-public-location')));
+      await tester.enterText(
+        find.byKey(const Key('proposal-public-location')),
+        List.filled(181, 'x').join(),
+      );
       await settleLookup(tester);
       await openSheet(tester);
       await choose(tester);
@@ -281,15 +284,21 @@ void main() {
       );
       await settleLookup(tester);
       expect(similar.calls, hasLength(count));
-      await reveal(tester, find.byKey(const Key('proposal-country')));
-      await tester.enterText(find.byKey(const Key('proposal-country')), 'ITA');
+      await reveal(tester, find.byKey(const Key('proposal-public-location')));
+      await tester.enterText(
+        find.byKey(const Key('proposal-public-location')),
+        List.filled(181, 'x').join(),
+      );
       await settleLookup(tester);
       expect(similar.calls, hasLength(count));
-      await tester.enterText(find.byKey(const Key('proposal-country')), 'it');
+      await tester.enterText(
+        find.byKey(const Key('proposal-public-location')),
+        'it',
+      );
       await settleLookup(tester);
       expect(similar.calls.last.countryCode, 'IT');
       await tester.enterText(
-        find.byKey(const Key('proposal-locality')),
+        find.byKey(const Key('proposal-public-location')),
         'Trento',
       );
       await settleLookup(tester);
@@ -389,8 +398,11 @@ void main() {
       final similar = FakeSimilarProposalGateway()..items = [similarFixture()];
       final app = await draft.pumpEditor(tester, similar: similar);
       await tester.enterText(find.byKey(const Key('proposal-title')), 'repair');
-      await reveal(tester, find.byKey(const Key('proposal-country')));
-      await tester.enterText(find.byKey(const Key('proposal-country')), 'I');
+      await reveal(tester, find.byKey(const Key('proposal-public-location')));
+      await tester.enterText(
+        find.byKey(const Key('proposal-public-location')),
+        List.filled(181, 'x').join(),
+      );
       await settleLookup(tester);
       await openSheet(tester);
       await choose(tester);
@@ -398,10 +410,13 @@ void main() {
       expect(find.text('Candidate detail'), findsNothing);
       await tester.tap(find.text('Keep editing'));
       await tester.pumpAndSettle();
-      final country = find.byKey(const Key('proposal-country'));
+      final country = find.byKey(const Key('proposal-public-location'));
       await reveal(tester, country);
-      expect(tester.widget<TextFormField>(country).controller!.text, 'I');
-      await tester.enterText(country, 'IT');
+      expect(
+        tester.widget<TextFormField>(country).controller!.text,
+        List.filled(181, 'x').join(),
+      );
+      await tester.enterText(country, 'Trento');
       await settleLookup(tester);
       await openSheet(tester);
       await choose(tester);

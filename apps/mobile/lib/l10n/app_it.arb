@@ -1733,5 +1733,11 @@
   "proposalSkillsHint": "Cerchiamo persone che sappiano fare queste cose, per esempio usare un mixer. Necessaria o utile significa per realizzare questo progetto.",
   "projectResourcesHint": "Cose da procurare o portare, per esempio pennelli e vernici, o altre risorse da condividere.",
   "projectResourcesAfterDraft": "Salva prima una bozza per aggiungere risorse, materiali o strumenti necessari.",
-  "workshopSignInHint": "Accedi con un profilo completo per vedere e utilizzare i modelli."
+  "workshopSignInHint": "Accedi con un profilo completo per vedere e utilizzare i modelli.",
+  "proposalCityLabel": "Dove si svolgerà?",
+  "proposalCityHint": "Es. Trento. Questa città o zona è pubblica; il luogo preciso è facoltativo.",
+  "proposalSearchCity": "Cerca una città",
+  "proposalOptionalExact": "Aggiungi luogo preciso (facoltativo)",
+  "proposalRemoveExact": "Rimuovi dettagli precisi",
+  "proposalExactNotChosen": "Le istruzioni per il luogo preciso non sono ancora state aggiunte."
 }

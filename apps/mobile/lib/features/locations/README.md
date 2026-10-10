@@ -85,3 +85,12 @@ read-only tile compositor, with default-off LOCATION_DETAIL_TILES_ENABLED.
 Selecting tiles excludes static generation, including on errors/guests. Lease
 revocation destroys protected tile pixels/buffers before reauthorization.
 See [cache contract and fake measurements](../../../../../docs/development/map-cache01-shared-tiles.md).
+
+## One-time city adapter (LOCATION01)
+
+`proposalCityOnly` keeps the supplied public field visible through lookup failure.
+Optional exact controls expand for existing content; removal clears the canonical
+protected slot before ordinary instructions. Default Tavolo/Resource editor
+behavior is unchanged. City-only one-time Projects have no Maps action or invented pin;
+verified broad references can offer an approximate destination. Receipts, actor
+scopes, stale-result rejection and attribution remain MAP02 responsibilities.

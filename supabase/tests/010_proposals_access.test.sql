@@ -101,7 +101,7 @@ select throws_ok(
     )
   $$,
   '22023',
-  'Published proposals require complete content, schedule, rough location, and exact meeting information.',
+  'Published proposals require complete content, schedule, and public locality.',
   'publication centrally rejects an incomplete draft'
 );
 select is(

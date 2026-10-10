@@ -321,10 +321,11 @@ ManagerProjectMember creatorMemberFixture({
 ParticipantMeetingDetails meetingDetailsFixture({
   String projectId = 'proposal-1',
   ProjectKind projectKind = ProjectKind.oneTime,
+  String? exactMeetingText = 'Meet beside the blue workshop door.',
 }) => ParticipantMeetingDetails(
   projectId: projectId,
   projectKind: projectKind,
-  exactMeetingText: 'Meet beside the blue workshop door.',
+  exactMeetingText: exactMeetingText,
   exactLocation: null,
 );
 

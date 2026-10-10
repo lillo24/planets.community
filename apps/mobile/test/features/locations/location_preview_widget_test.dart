@@ -43,12 +43,14 @@ Widget app(
     home: Scaffold(body: body),
   ),
 );
-Widget panel({bool detail = false}) => LocationPreviewPanel(
-  item: item,
-  legacy: const LegacyPreviewArea('Trento', 'IT'),
-  publicLabel: 'Public area',
-  detail: detail,
-);
+Widget panel({bool detail = false, bool allowLegacyAreaSearch = true}) =>
+    LocationPreviewPanel(
+      item: item,
+      legacy: const LegacyPreviewArea('Trento', 'IT'),
+      publicLabel: 'Public area',
+      detail: detail,
+      allowLegacyAreaSearch: allowLegacyAreaSearch,
+    );
 ProviderContainer setup(
   FakePreviewGateway g,
   FakeStaticPreviewGateway r,
@@ -165,9 +167,35 @@ void main() {
       }
     },
   );
+  testWidgets('city-only Project has no invented map destination', (t) async {
+    final g = FakePreviewGateway()
+      ..pending = (item, _) async => LocationPreview(
+        item: item,
+        revision: 1,
+        isProtected: false,
+        legacy: const LegacyPreviewArea('Trento', 'IT'),
+      );
+    final r = FakeStaticPreviewGateway(enabled: false);
+    final m = FakePreviewMapsLauncher();
+    final c = setup(g, r, m);
+    addTearDown(c.dispose);
+    await t.pumpWidget(
+      app(
+        c,
+        ListView(children: [panel(detail: true, allowLegacyAreaSearch: false)]),
+      ),
+    );
+    await settled(t);
+    expect(find.text('Public area'), findsOneWidget);
+    expect(find.byKey(const Key('location-open-maps-item')), findsNothing);
+    expect(find.byType(RawImage), findsNothing);
+    expect(r.calls, 0);
+    expect(m.urls, isEmpty);
+    await t.pumpWidget(const SizedBox());
+  });
   for (final valid in [false, true]) {
     testWidgets(
-      'legacy destination validity=$valid uses only canonical public locality',
+      'recurring legacy destination validity=$valid uses only canonical public locality',
       (t) async {
         final g = FakePreviewGateway()
           ..pending = (item, _) async => LocationPreview(
@@ -183,7 +211,21 @@ void main() {
             m = FakePreviewMapsLauncher();
         final c = setup(g, r, m);
         addTearDown(c.dispose);
-        await t.pumpWidget(app(c, ListView(children: [panel(detail: true)])));
+        await t.pumpWidget(
+          app(
+            c,
+            ListView(
+              children: [
+                const LocationPreviewPanel(
+                  item: PreviewItem('recurring', 'item'),
+                  legacy: LegacyPreviewArea('Trento', 'IT'),
+                  publicLabel: 'Public area',
+                  detail: true,
+                ),
+              ],
+            ),
+          ),
+        );
         await settled(t);
         expect(find.text('Public area'), findsOneWidget);
         final action = find.byKey(const Key('location-open-maps-item'));

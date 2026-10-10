@@ -15,11 +15,168 @@ import 'package:planets_mobile/features/profile_photo/data/profile_photo_gateway
 import 'package:planets_mobile/l10n/generated/app_localizations.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import 'package:planets_mobile/features/locations/data/item_location_gateway.dart';
+import 'package:planets_mobile/features/locations/domain/item_location.dart';
+
+import '../../../support/fake_location.dart';
 import '../../../support/fake_auth.dart';
 import '../../../support/fake_proposal.dart';
 import '../../../support/fake_profile_photo.dart';
 
 void main() {
+  for (final language in ['en', 'it']) {
+    for (final scale in [1.0, 2.0]) {
+      testWidgets(
+        '$language $scale city-only location is one field with optional exact details',
+        (tester) async {
+          tester.view.physicalSize = const Size(320, 740);
+          tester.view.devicePixelRatio = 1;
+          addTearDown(tester.view.resetPhysicalSize);
+          addTearDown(tester.view.resetDevicePixelRatio);
+          final gateway = await _pumpEditor(
+            tester,
+            proposalInputFixture(
+              locality: 'Trento',
+              publicLocationLabel: 'Trento',
+              exactMeetingText: '',
+            ),
+            locale: language,
+            scale: scale,
+          );
+          final city = find.byKey(const Key('proposal-public-location'));
+          await _reveal(tester, city);
+          expect(tester.widget<TextFormField>(city).controller!.text, 'Trento');
+          expect(find.byKey(const Key('proposal-country')), findsNothing);
+          expect(find.byKey(const Key('proposal-locality')), findsNothing);
+          expect(
+            find.byKey(const Key('proposal-administrative-area')),
+            findsNothing,
+          );
+          expect(
+            find.byKey(const Key('proposal-exact-location')),
+            findsNothing,
+          );
+          expect(
+            find.byKey(const Key('proposal-exact-visibility')),
+            findsNothing,
+          );
+          await tester.enterText(city, 'Rovereto');
+          await _tap(tester, find.byKey(const Key('proposal-optional-exact')));
+          expect(
+            find.byKey(const Key('proposal-exact-location')),
+            findsOneWidget,
+          );
+          expect(
+            find.byKey(const Key('proposal-exact-visibility')),
+            findsNothing,
+          );
+          final exact = find.byKey(const Key('proposal-exact-location'));
+          await _reveal(tester, exact);
+          await tester.enterText(exact, 'Side entrance');
+          await tester.pumpAndSettle();
+          expect(
+            find.byKey(const Key('proposal-exact-visibility')),
+            findsOneWidget,
+          );
+          expect(tester.takeException(), isNull);
+          await tester.enterText(exact, '');
+          await tester.pumpAndSettle();
+          await _tap(tester, find.byKey(const Key('proposal-publish')));
+          expect(gateway.calls, contains('publish:proposal-1'));
+          expect(gateway.lastInput!.countryCode, 'IT');
+          expect(gateway.lastInput!.locality, 'Rovereto');
+          expect(gateway.lastInput!.publicLocationLabel, 'Rovereto');
+          expect(gateway.lastInput!.exactMeetingText, isEmpty);
+          expect(tester.takeException(), isNull);
+        },
+      );
+    }
+  }
+
+  testWidgets('new city-only draft derives Italy internally and saves once', (
+    tester,
+  ) async {
+    final gateway = await _pumpEditor(tester, null);
+    final city = find.byKey(const Key('proposal-public-location'));
+    await _reveal(tester, city);
+    await tester.enterText(city, 'Trento');
+    await _tap(tester, find.byKey(const Key('proposal-save-draft')));
+    expect(gateway.calls.where((call) => call == 'create'), hasLength(1));
+    expect(gateway.lastInput!.countryCode, 'IT');
+    expect(gateway.lastInput!.locality, 'Trento');
+    expect(gateway.lastInput!.publicLocationLabel, 'Trento');
+    expect(gateway.lastInput!.exactMeetingText, isEmpty);
+  });
+
+  testWidgets(
+    'ordinary international edit retains country, timezone and precise content',
+    (tester) async {
+      final input = proposalInputFixture(
+        countryCode: 'FR',
+        locality: 'Lyon',
+        publicLocationLabel: 'Lyon centre',
+        eventTimezone: 'Europe/Paris',
+      );
+      final gateway = await _pumpEditor(tester, input);
+      await _reveal(tester, find.byKey(const Key('proposal-exact-location')));
+      expect(
+        find.byKey(const Key('proposal-exact-visibility')),
+        findsOneWidget,
+      );
+      await _tap(tester, find.byKey(const Key('proposal-save-draft')));
+      expect(gateway.lastInput!.countryCode, 'FR');
+      expect(gateway.lastInput!.locality, 'Lyon');
+      expect(gateway.lastInput!.publicLocationLabel, 'Lyon centre');
+      expect(gateway.lastInput!.eventTimezone, 'Europe/Paris');
+      expect(gateway.lastInput!.exactMeetingText, input.exactMeetingText);
+      expect(gateway.lastInput!.administrativeArea, input.administrativeArea);
+    },
+  );
+
+  testWidgets(
+    'removing precise details clears protected selection and saves null text',
+    (tester) async {
+      final locations = FakeItemLocationGateway()
+        ..value = const ItemLocation(3, exactPlace: syntheticExact);
+      final gateway = await _pumpEditor(
+        tester,
+        proposalInputFixture(),
+        locations: locations,
+      );
+      await _tap(tester, find.byKey(const Key('proposal-remove-exact')));
+      expect(locations.value.exactPlace, isNull);
+      expect(find.byKey(const Key('proposal-exact-location')), findsNothing);
+      await _tap(tester, find.byKey(const Key('proposal-save-draft')));
+      expect(gateway.lastInput!.exactMeetingText, isEmpty);
+      expect(locations.mutations.single.$1.slot, 'exact');
+      expect(locations.mutations.single.$3, 'clear');
+    },
+  );
+
+  testWidgets(
+    'lost exact-clear response retries once and finishes clearing instructions',
+    (tester) async {
+      final locations = FakeItemLocationGateway()
+        ..value = const ItemLocation(3, exactPlace: syntheticExact)
+        ..loseNextResponse = true;
+      final gateway = await _pumpEditor(
+        tester,
+        proposalInputFixture(),
+        locations: locations,
+      );
+      await _tap(tester, find.byKey(const Key('proposal-remove-exact')));
+      expect(find.byKey(const Key('proposal-exact-location')), findsOneWidget);
+      expect(locations.value.exactPlace, isNull);
+      await _tap(tester, find.byKey(const Key('location-retry')));
+      expect(find.byKey(const Key('proposal-exact-location')), findsNothing);
+      expect(locations.accepted, hasLength(1));
+      expect(locations.mutations.map((m) => m.$2).toSet(), hasLength(1));
+      await _tap(tester, find.byKey(const Key('proposal-save-draft')));
+      expect(gateway.lastInput!.exactMeetingText, isEmpty);
+      expect(tester.takeException(), isNull);
+    },
+  );
+
   testWidgets(
     'legacy undated draft preserves an unset zone while saving text',
     (tester) async {
@@ -219,7 +376,7 @@ void main() {
     expect(
       find.descendant(
         of: summary,
-        matching: find.textContaining('Country code'),
+        matching: find.textContaining('Where will it take place?'),
       ),
       findsOneWidget,
     );
@@ -381,6 +538,9 @@ Future<FakeProposalGateway> _pumpEditor(
   ProposalInput? input, {
   bool hasPhoto = true,
   OwnProposal? proposal,
+  ItemLocationGateway? locations,
+  String locale = 'en',
+  double scale = 1,
 }) async {
   final auth = FakeAuthGateway(
     snapshot: const AuthSnapshot(identity: AuthIdentity(id: 'user-1')),
@@ -407,6 +567,8 @@ Future<FakeProposalGateway> _pumpEditor(
         FakeProfileAnchorGateway()..readiness = ProfileAnchorReadiness.complete,
       ),
       proposalGatewayProvider.overrideWithValue(gateway),
+      if (locations != null)
+        itemLocationGatewayProvider.overrideWithValue(locations),
       profilePhotoGatewayProvider.overrideWithValue(photoGateway),
       proposalClockProvider.overrideWithValue(() => DateTime.utc(2026, 9, 3)),
     ],
@@ -440,6 +602,12 @@ Future<FakeProposalGateway> _pumpEditor(
     UncontrolledProviderScope(
       container: container,
       child: MaterialApp.router(
+        locale: Locale(locale),
+        builder: (context, child) => MediaQuery(
+          data: MediaQuery.of(context)
+              .copyWith(textScaler: TextScaler.linear(scale)),
+          child: child!,
+        ),
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
         routerConfig: router,

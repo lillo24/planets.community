@@ -174,6 +174,7 @@ void main() {
         expect(find.textContaining('Trento, Trentino'), findsWidgets);
         expect(find.byKey(const Key('location-attribution')), findsOneWidget);
         if (kind != 'resource') {
+          if (kind == 'one_time') await tap(tester, 'proposal-optional-exact');
           await tap(tester, 'location-choose-exact');
           await tester.enterText(
             find.byKey(const Key('location-query')),
@@ -221,7 +222,12 @@ void main() {
           tester.view.devicePixelRatio = 1;
           addTearDown(tester.view.resetPhysicalSize);
           addTearDown(tester.view.resetDevicePixelRatio);
-          final harness = await pumpSection(tester, locale: locale, scale: 2);
+          final harness = await pumpSection(
+            tester,
+            locale: locale,
+            scale: 2,
+            cityOnly: true,
+          );
           await tap(tester, 'location-choose-area');
           await tester.enterText(
             find.byKey(const Key('location-query')),
@@ -258,7 +264,7 @@ void main() {
     testWidgets(
       '$failure exposes safe search outcome and permits manual entry',
       (tester) async {
-        final harness = await pumpSection(tester);
+        final harness = await pumpSection(tester, cityOnly: true);
         harness.factory.gateway.failure = failure;
         await tap(tester, 'location-choose-area');
         await tester.enterText(
@@ -272,7 +278,6 @@ void main() {
           findsNothing,
         );
         await tap(tester, 'location-cancel');
-        await tap(tester, 'location-use-manual');
         expect(find.byKey(const Key('manual-test-field')), findsOneWidget);
         expect(harness.db.mutations, isEmpty);
         expect(tester.takeException(), isNull);
@@ -283,7 +288,7 @@ void main() {
   testWidgets(
     'ABA account switch removes query/suggestions and rejects delayed resolve',
     (tester) async {
-      final harness = await pumpSection(tester);
+      final harness = await pumpSection(tester, cityOnly: true);
       await tap(tester, 'location-choose-area');
       await tester.enterText(find.byKey(const Key('location-query')), 'Trento');
       await tester.pump(const Duration(milliseconds: 350));
@@ -361,6 +366,7 @@ pumpSection(
   WidgetTester tester, {
   String locale = 'en',
   double scale = 1,
+  bool cityOnly = false,
   bool disabled = false,
   bool stored = false,
 }) async {
@@ -405,6 +411,7 @@ pumpSection(
           body: SingleChildScrollView(
             padding: const EdgeInsets.all(16),
             child: LocationEditorSection(
+              proposalCityOnly: cityOnly,
               actorId: 'A',
               itemKind: 'one_time',
               itemId: () => id,

@@ -75,6 +75,7 @@ Future<void> main(List<String> args) async {
           timeout: const Duration(seconds: 30),
         );
         if (kind != 'resource') {
+          if (kind == 'one_time') await tap('proposal-optional-exact');
           await reveal('location-choose-exact');
           await tap('location-choose-exact');
           await tap('location-query');

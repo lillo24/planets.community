@@ -1,5 +1,5 @@
-import { render, screen } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { cleanup, render, screen } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { PublicProposalSummary } from "@/features/proposals/proposal-models";
 
@@ -38,6 +38,7 @@ const summary: PublicProposalSummary = {
 };
 
 describe("public proposal routes", () => {
+  afterEach(cleanup);
   beforeEach(() => {
     vi.clearAllMocks();
     listSkillOptions.mockResolvedValue([
@@ -113,6 +114,32 @@ describe("public proposal routes", () => {
     expect(screen.getByTestId("public-exact-location")).toHaveTextContent(
       "At the fountain",
     );
+  });
+
+  it("shows a city-only Project without claiming its absent venue is hidden", async () => {
+    const { default: Page } =
+      await import("@/app/(public)/proposals/[id]/page");
+    getPublicProposal.mockResolvedValue({
+      ...summary,
+      locality: "Trento",
+      public_location_label: "Trento",
+      creator_profile_id: "user-1",
+      creator_display_name: null,
+      description: "Full details",
+      exact_meeting_text: null,
+      exact_location_restricted: false,
+    });
+    render(
+      await Page({ params: Promise.resolve({ id: summary.proposal_id }) }),
+    );
+    expect(screen.getByText("Trento")).toBeInTheDocument();
+    expect(screen.getByTestId("no-exact-location")).toHaveTextContent(
+      "Precise meeting instructions have not been added yet.",
+    );
+    expect(screen.queryByTestId("restricted-location")).not.toBeInTheDocument();
+    expect(
+      screen.queryByTestId("public-exact-location"),
+    ).not.toBeInTheDocument();
   });
 
   it("uses safe route errors and preserves 404 behavior", async () => {

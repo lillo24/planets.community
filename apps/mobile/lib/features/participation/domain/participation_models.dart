@@ -177,7 +177,9 @@ class ParticipantMeetingDetails {
 
   final String projectId;
   final ProjectKind projectKind;
-  final String exactMeetingText;
+
+  /// Null is a legitimate city-only one-time Project, not a failed read.
+  final String? exactMeetingText;
   final Object? exactLocation;
 }
 

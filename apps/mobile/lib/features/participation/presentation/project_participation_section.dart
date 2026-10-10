@@ -140,8 +140,10 @@ class ProjectParticipationSection extends ConsumerWidget {
       );
     }
 
-    final protectedText =
-        canReadProtectedMeeting && meetingState.isReadyFor(profileId, projectId)
+    final hasReadyMeeting =
+        canReadProtectedMeeting &&
+        meetingState.isReadyFor(profileId, projectId);
+    final protectedText = hasReadyMeeting
         ? meetingState.details?.exactMeetingText
         : null;
     final command = ref.watch(participationCommandProvider);
@@ -198,6 +200,10 @@ class ProjectParticipationSection extends ConsumerWidget {
             legacy: area,
             publicLabel: publicLocationLines.join(' · '),
             detail: true,
+            allowLegacyAreaSearch:
+                projectKind != ProjectKind.oneTime ||
+                exactLocationRestricted ||
+                publicExactMeetingText != null,
             contentVersion: (
               exactLocationRestricted,
               publicExactMeetingText,
@@ -209,11 +215,16 @@ class ProjectParticipationSection extends ConsumerWidget {
         const SizedBox(height: AppSpacing.small),
         Text(
           exactLocationRestricted
-              ? protectedText ?? l10n.participationExactLocationRestricted
+              ? protectedText ??
+                    (hasReadyMeeting && projectKind == ProjectKind.oneTime
+                        ? l10n.proposalExactNotChosen
+                        : l10n.participationExactLocationRestricted)
               : publicExactMeetingText ??
-                    l10n.participationExactLocationRestricted,
+                    (projectKind == ProjectKind.oneTime
+                        ? l10n.proposalExactNotChosen
+                        : l10n.participationExactLocationRestricted),
           key: Key(
-            protectedText != null
+            hasReadyMeeting
                 ? 'participation-protected-meeting-$projectId'
                 : exactLocationRestricted
                 ? 'participation-restricted-meeting-$projectId'

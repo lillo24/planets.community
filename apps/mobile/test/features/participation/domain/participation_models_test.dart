@@ -138,6 +138,20 @@ void main() {
       expect(meeting.exactLocation, 'POINT(1 2)');
     });
 
+    test(
+      'city-only one-time meeting absence is a successful authorized row',
+      () {
+        final meeting = parser.meetingDetails({
+          'project_id': 'city-only',
+          'project_kind': 'one_time',
+          'exact_meeting_text': null,
+          'exact_location': null,
+        });
+        expect(meeting.exactMeetingText, isNull);
+        expect(meeting.exactLocation, isNull);
+      },
+    );
+
     test('malformed rows fail instead of returning success-shaped data', () {
       expect(() => parser.ownJoinRequest('not-a-row'), throwsFormatException);
       expect(
@@ -155,7 +169,7 @@ void main() {
       expect(
         () => parser.meetingDetails({
           'project_id': 'proposal-1',
-          'project_kind': 'one_time',
+          'project_kind': 'recurring',
           'exact_meeting_text': null,
           'exact_location': null,
         }),

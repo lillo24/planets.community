@@ -95,6 +95,8 @@ changes.
 
 ## Separate plans still required
 
-Public **In definizione / Idea** and the **one-field location editor/model** remain
-unimplemented. Projects still obey canonical date/location publication rules.
+At UXFIX01 completion, public **In definizione / Idea** and the **one-field
+location editor/model** remained unimplemented. LOCATION01 subsequently adds
+the one-field city editor and optional exact details; Idea remains deferred.
+Projects still obey canonical schedule and public-city publication rules.
 No lifecycle, authorization, capacity, policy or persistence rules were changed.

@@ -10,7 +10,11 @@ No draft is created just to expose resource management. The shared Tavolo fields
 use the same description/resource copy. The redundant public-area paragraph is
 hidden for Projects; exact-location privacy and validation remain visible.
 
-UI-NEXT-04 keeps every manual location field and canonical meeting read intact.
+LOCATION01 exposes one public city field in the one-time editor. New manual
+entries derive IT internally; ordinary edits retain international metadata.
+Optional precise details start collapsed when absent and can be explicitly
+removed. Defined publication requires city + schedule and existing safeguards,
+with exact details optional. See [LOCATION01](../../../../../docs/development/location01-defined-project-city-only.md).
 MAP02's shared `locations/presentation/location_editor_section.dart` keeps manual
 entry while lookup is disabled and exposes injected receipt-backed selection.
 The detail uses the shared authorized location preview; feed cards use compact

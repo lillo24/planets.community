@@ -41,6 +41,11 @@ class LocationEditorSection extends ConsumerStatefulWidget {
     this.handle,
     this.enabled = true,
     this.exactIsPublic = false,
+    this.proposalCityOnly = false,
+    this.hasExactDetails = false,
+    this.exactChildren = const [],
+    this.exactVisibilityChildren = const [],
+    this.onClearExact,
   });
   final String actorId, itemKind;
   final String Function()? manualPublicLabel;
@@ -52,6 +57,12 @@ class LocationEditorSection extends ConsumerStatefulWidget {
   final List<TextEditingController> contentControllers;
   final Object contentVersion;
   final bool enabled, exactIsPublic;
+
+  /// LOCATION01 opts only one-time Proposals into a single public field. Other
+  /// item kinds retain the established MAP02 editor and receipt semantics.
+  final bool proposalCityOnly, hasExactDetails;
+  final List<Widget> exactChildren, exactVisibilityChildren;
+  final VoidCallback? onClearExact;
   @override
   ConsumerState<LocationEditorSection> createState() =>
       _LocationEditorSectionState();
@@ -63,8 +74,8 @@ class _LocationEditorSectionState extends ConsumerState<LocationEditorSection>
   late final EditorPlaceGatewayFactory _factory;
   DialogRoute<void>? _route;
   bool _manual = false, _applyingCanonical = false;
-  bool _preparing = false, _hasOperation = false;
-  bool? _routeCurrent;
+  bool _preparing = false, _hasOperation = false, _removingExact = false;
+  bool? _routeCurrent, _exactExpanded;
   late List<String> _lastText;
   String? _knownId;
   final _returnFocus = FocusNode();
@@ -111,6 +122,7 @@ class _LocationEditorSectionState extends ConsumerState<LocationEditorSection>
     );
     widget.handle?._beforeSave = () {
       if (!_preparing) {
+        _removingExact = false;
         _session.invalidateContent();
         _dismiss();
       }
@@ -157,6 +169,7 @@ class _LocationEditorSectionState extends ConsumerState<LocationEditorSection>
     _lastText = text;
     if (!changed) return;
     if (_applyingCanonical) return;
+    _removingExact = false;
     // Saves/edits cannot retain a receipt issued for preceding content.
     if (_session.scope != null) {
       _session.invalidateContent();
@@ -172,6 +185,7 @@ class _LocationEditorSectionState extends ConsumerState<LocationEditorSection>
     if (oldWidget.actorId != widget.actorId ||
         oldWidget.itemKind != widget.itemKind ||
         (!widget.enabled && oldWidget.enabled)) {
+      _removingExact = false;
       _session.invalidateContent();
       _dismiss();
     } else if (oldWidget.contentVersion != widget.contentVersion) {
@@ -179,6 +193,7 @@ class _LocationEditorSectionState extends ConsumerState<LocationEditorSection>
     }
     final id = widget.itemId();
     if (_knownId != id) {
+      _removingExact = false;
       _knownId = id;
       // Bootstrap itself binds the new ID after saving; don't interrupt it.
       if (!_session.busy) {
@@ -196,12 +211,14 @@ class _LocationEditorSectionState extends ConsumerState<LocationEditorSection>
     if (state == AppLifecycleState.resumed) {
       unawaited(_session.reload());
     } else {
+      _removingExact = false;
       _session.cancel(eraseCanonical: true);
       _dismiss();
     }
   }
 
   Future<void> _choose(String slot) async {
+    _removingExact = false;
     _hasOperation = true;
     FocusManager.instance.primaryFocus?.unfocus();
     final before = widget.contentControllers.map((c) => c.text).toList();
@@ -234,6 +251,27 @@ class _LocationEditorSectionState extends ConsumerState<LocationEditorSection>
     await _session.clear(slot);
   }
 
+  Future<void> _removeExact() async {
+    _hasOperation = true;
+    _removingExact = true;
+    // Clear point-only records with the same actor/revision-bound MAP02 command.
+    if (widget.itemId() != null && !await _session.clear('exact')) return;
+    _finishExactRemoval();
+  }
+
+  void _finishExactRemoval() {
+    if (!mounted || !_removingExact) return;
+    _removingExact = false;
+    widget.onClearExact?.call();
+    setState(() => _exactExpanded = false);
+  }
+
+  Future<void> _retryCityLocation() async {
+    // A lost clear response must also finish the ordinary text edit on retry.
+    // Content/actor changes revoke this intent together with the session receipt.
+    if (await _session.retry()) _finishExactRemoval();
+  }
+
   Future<void> _useManual() async {
     final slot = widget.itemKind == 'resource' ? 'public' : 'area';
     if (_session.canonical?.publicPlace != null &&
@@ -249,6 +287,7 @@ class _LocationEditorSectionState extends ConsumerState<LocationEditorSection>
       _,
       next,
     ) {
+      _removingExact = false;
       _session.cancel(eraseCanonical: true);
       _dismiss();
       if (next.$1 == AuthSessionPhase.ready && next.$2 == widget.actorId) {
@@ -259,94 +298,177 @@ class _LocationEditorSectionState extends ConsumerState<LocationEditorSection>
     final resource = widget.itemKind == 'resource';
     return ListenableBuilder(
       listenable: _session,
-      builder: (context, _) => Column(
-        key: Key('location-section-${widget.itemKind}'),
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            resource ? l10n.locationWhereResource : l10n.locationWhereProject,
-            style: Theme.of(context).textTheme.titleLarge,
-          ),
-          const SizedBox(height: AppSpacing.small),
-          if (resource) Text(l10n.locationResourcePublic),
-          if (!_factory.available) const ManualLocationNotice(),
-          if (_factory.available) ...[
-            Text(l10n.locationDraftCue),
-            _slot(
-              resource ? 'public' : 'area',
-              l10n.locationChooseArea,
-              _session.canonical?.publicPlace,
-            ),
-            if (!resource) ...[
-              const SizedBox(height: AppSpacing.medium),
-              Text(
-                l10n.locationExactTitle,
-                style: Theme.of(context).textTheme.titleMedium,
-              ),
-              Text(
-                widget.exactIsPublic
-                    ? l10n.locationExactPublic
-                    : l10n.locationExactPrivate,
-              ),
-              _slot(
-                'exact',
-                l10n.locationChooseExact,
-                _session.canonical?.exactPlace,
-              ),
-            ],
-            TextButton(
-              key: const Key('location-use-manual'),
-              onPressed: _session.busy || !widget.enabled ? null : _useManual,
-              child: Text(l10n.locationUseManual),
-            ),
-          ] else ...[
-            if (_session.canonical?.publicPlace case final place?)
-              _slot(resource ? 'public' : 'area', '', place),
-            if (!resource && _session.canonical?.exactPlace != null) ...[
-              Text(l10n.locationExactTitle),
-              Text(
-                widget.exactIsPublic
-                    ? l10n.locationExactPublic
-                    : l10n.locationExactPrivate,
-              ),
-              _slot('exact', '', _session.canonical!.exactPlace),
-            ],
-          ],
-          if (!_factory.available || _manual) ...widget.manualChildren,
-          if (_session.busy) const LinearProgressIndicator(),
-          if (_factory.available || _hasOperation)
-            if (_session.problem case final problem?)
-              Semantics(
-                liveRegion: true,
-                child: Text(
-                  locationProblemLabel(l10n, problem),
-                  key: const Key('location-operation-error'),
+      builder: (context, _) => widget.proposalCityOnly
+          ? _cityOnly(l10n)
+          : Column(
+              key: Key('location-section-${widget.itemKind}'),
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  resource
+                      ? l10n.locationWhereResource
+                      : l10n.locationWhereProject,
+                  style: Theme.of(context).textTheme.titleLarge,
                 ),
-              ),
-          if (_session.canRetry)
-            TextButton(
-              key: const Key('location-retry'),
-              onPressed: _session.retry,
-              child: Text(l10n.locationRetry),
+                const SizedBox(height: AppSpacing.small),
+                if (resource) Text(l10n.locationResourcePublic),
+                if (!_factory.available) const ManualLocationNotice(),
+                if (_factory.available) ...[
+                  Text(l10n.locationDraftCue),
+                  _slot(
+                    resource ? 'public' : 'area',
+                    l10n.locationChooseArea,
+                    _session.canonical?.publicPlace,
+                  ),
+                  if (!resource) ...[
+                    const SizedBox(height: AppSpacing.medium),
+                    Text(
+                      l10n.locationExactTitle,
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                    Text(
+                      widget.exactIsPublic
+                          ? l10n.locationExactPublic
+                          : l10n.locationExactPrivate,
+                    ),
+                    _slot(
+                      'exact',
+                      l10n.locationChooseExact,
+                      _session.canonical?.exactPlace,
+                    ),
+                  ],
+                  TextButton(
+                    key: const Key('location-use-manual'),
+                    onPressed: _session.busy || !widget.enabled
+                        ? null
+                        : _useManual,
+                    child: Text(l10n.locationUseManual),
+                  ),
+                ] else ...[
+                  if (_session.canonical?.publicPlace case final place?)
+                    _slot(resource ? 'public' : 'area', '', place),
+                  if (!resource && _session.canonical?.exactPlace != null) ...[
+                    Text(l10n.locationExactTitle),
+                    Text(
+                      widget.exactIsPublic
+                          ? l10n.locationExactPublic
+                          : l10n.locationExactPrivate,
+                    ),
+                    _slot('exact', '', _session.canonical!.exactPlace),
+                  ],
+                ],
+                if (!_factory.available || _manual) ...widget.manualChildren,
+                if (_session.busy) const LinearProgressIndicator(),
+                if (_factory.available || _hasOperation)
+                  if (_session.problem case final problem?)
+                    Semantics(
+                      liveRegion: true,
+                      child: Text(
+                        locationProblemLabel(l10n, problem),
+                        key: const Key('location-operation-error'),
+                      ),
+                    ),
+                if (_session.canRetry)
+                  TextButton(
+                    key: const Key('location-retry'),
+                    onPressed: _session.retry,
+                    child: Text(l10n.locationRetry),
+                  ),
+                // Credits also cover provider-derived manual text retained after clear.
+                const LocationAttribution(),
+              ],
             ),
-          // Credits also cover provider-derived manual text retained after clear.
-          const LocationAttribution(),
-        ],
-      ),
     );
   }
 
-  Widget _slot(String slot, String label, StoredPlace? place) {
+  Widget _cityOnly(AppLocalizations l10n) {
+    final exact =
+        widget.hasExactDetails || _session.canonical?.exactPlace != null;
+    final expanded = _exactExpanded ?? exact;
+    return Column(
+      key: Key('location-section-${widget.itemKind}'),
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        ...widget.manualChildren,
+        if (_factory.available)
+          _slot(
+            'area',
+            l10n.proposalSearchCity,
+            _session.canonical?.publicPlace,
+            compact: true,
+          )
+        else if (_session.canonical?.publicPlace case final place?)
+          _slot('area', '', place, compact: true),
+        Semantics(
+          expanded: expanded,
+          child: TextButton.icon(
+            key: const Key('proposal-optional-exact'),
+            onPressed: () => setState(() => _exactExpanded = !expanded),
+            icon: Icon(
+              expanded ? Icons.expand_less : Icons.add_location_alt_outlined,
+            ),
+            label: Text(l10n.proposalOptionalExact),
+          ),
+        ),
+        if (expanded) ...[
+          ...widget.exactChildren,
+          if (_factory.available || _session.canonical?.exactPlace != null)
+            _slot(
+              'exact',
+              l10n.locationChooseExact,
+              _session.canonical?.exactPlace,
+              compact: true,
+            ),
+          if (exact) ...[
+            ...widget.exactVisibilityChildren,
+            TextButton.icon(
+              key: const Key('proposal-remove-exact'),
+              onPressed: _session.busy || !widget.enabled ? null : _removeExact,
+              icon: const Icon(Icons.delete_outline),
+              label: Text(l10n.proposalRemoveExact),
+            ),
+          ],
+        ],
+        if (_session.busy) const LinearProgressIndicator(),
+        if (_hasOperation ||
+            _session.problem != PlaceSearchProblem.unconfigured)
+          if (_session.problem case final problem?)
+            Semantics(
+              liveRegion: true,
+              child: Text(
+                locationProblemLabel(l10n, problem),
+                key: const Key('location-operation-error'),
+              ),
+            ),
+        if (_session.canRetry)
+          TextButton(
+            key: const Key('location-retry'),
+            onPressed: _retryCityLocation,
+            child: Text(l10n.locationRetry),
+          ),
+        // Manual text can retain provider derivation after selection is cleared.
+        const LocationAttribution(),
+      ],
+    );
+  }
+
+  Widget _slot(
+    String slot,
+    String label,
+    StoredPlace? place, {
+    bool compact = false,
+  }) {
     final l10n = AppLocalizations.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          place == null
-              ? '${slot == 'exact' ? '' : widget.manualPublicLabel?.call() ?? ''}\n${l10n.locationNoVerifiedPlace}'
-              : '${place.label} · ${placeKindLabel(l10n, place.kind)}',
-          key: Key('location-stored-$slot'),
-        ),
+        if (!compact || place != null)
+          Text(
+            place == null
+                ? '${slot == 'exact' ? '' : widget.manualPublicLabel?.call() ?? ''}\n${l10n.locationNoVerifiedPlace}'
+                : '${place.label} · ${placeKindLabel(l10n, place.kind)}',
+            key: Key('location-stored-$slot'),
+          ),
         Wrap(
           spacing: AppSpacing.small,
           runSpacing: AppSpacing.small,
