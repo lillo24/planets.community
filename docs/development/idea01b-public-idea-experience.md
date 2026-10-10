@@ -2,6 +2,13 @@
 
 ## Dependency and integration order
 
+The final integration also includes main `3a10035` (#203, LOCATION02) through
+backend head `c71da87`. Its additive privacy correction keeps legacy Idea
+exclusion and prevents both detail versions from exposing arrival directions.
+The clients retain LOCATION02's single confirmed place input, private directions
+and scoped visibility writes. Ideas skip all map preview requests; Defined web
+details retain LOCATION02's fresh public point/revocation check.
+
 This client branch started at the reviewed PR #201 head
 `cbf44c3981148016632cd2fc1a169708e74d9c34`, then integrated its correction
 `85c150fd965064d8c5d5c092a068e491da703715`. That predecessor includes main
