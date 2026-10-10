@@ -78,8 +78,10 @@ export async function verifyPublicIdeas() {
     p_ends_at: new Date(Date.now() + 5 * 86400000).toISOString(),
     p_event_timezone: "Europe/Rome",
     p_country_code: "IT",
-    p_locality: "Trento",
-    p_public_location_label: "Trento, Italia",
+    // Keep completed race fixtures out of the separate Trento demo's bounded
+    // discovery page. This city is synthetic; no geometry/provider is involved.
+    p_locality: "IDEA01A synthetic city",
+    p_public_location_label: "IDEA01A synthetic city, IT",
     p_registration_capacity: 4,
   };
   const draft = (user, fields) =>
