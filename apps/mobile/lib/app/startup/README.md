@@ -24,21 +24,34 @@ It does not own Auth, profile readiness, native-link delivery or product actions
   checks the pending URI and signed-out phase; the router owns newer requests.
 - `tutorial_screen.dart` owns the interactive /intro playback, current public
   screen widgets, painted target lookup using stable keys, adaptive interruptible
-  detail scrolling, layout/lifecycle guards, and a barrier against all underlying taps.
+  detail scrolling, layout/lifecycle guards, and a barrier against product actions.
+  Only the inert fictional conversation allows reading gestures/scrolling.
 - `tutorial_presentation.dart` owns localized step copy, the spotlight painter,
   and clearly labelled illustrations. Examples are widgets only, never records
   injected into canonical public providers or Supabase.
 - `tutorial_motion.dart` defines the explicit entering/unobscured/fading/ready
   phases, reveal timings and distance-based scroll velocity.
+- `tutorial_project_chat_example.dart` owns a purely local, localized mural
+  conversation with Giulia, Marco and Sara. It reuses the real chat's Card/bubble
+  conventions without mounting `ProjectChatScreen` or accepting any identity,
+  Project/chat ID, provider, photo loader, repository or subscription. There is
+  no composer, timestamp, unread count or product action. Its pinned example
+  label and bounded scroll viewport are separate spotlight targets. It mounts
+  only for its own step and is disposed on movement, exit or account replacement.
+  A preview shorter than 220dp puts the scrollable header beside the bubbles,
+  keeping both viewport anchors measurable in landscape with expanded text.
 - `tutorial_routes.dart` owns the typed in-memory replay capability and safe
   Back/Skip return. `tutorial_pages.dart` keeps the registry's synthetic page
   harness for existing startup policy tests; production uses guided steps.
 
-Production activates `interactive-2`. Its eleven manually paced focus states are:
+Production retains `interactive-2`; completed/dismissed installations are not
+re-onboarded. Explicit Help replay includes the new order. Its twelve manually paced focus states are:
 introduction (no spotlight), Home Projects, first displayed Project card, its
-detail/participation, browse Create, browse Drafts, Home Scambio–Dona, Scambio's
-card/Create/Drafts together, Messages Requests inbox, Messages Private/Groups,
-and farewell (no spotlight). Explanation text never advances on a timer.
+detail/participation, browse Create, browse Drafts, fictional Project group chat,
+Messages Requests inbox, Messages Private/Groups, Home Scambio–Dona, Scambio's
+card/Create/Drafts together, and farewell (no spotlight). The chat explains
+collaboration after admission, then Messages locates it under Groups and
+distinguishes private conversations and Requests. Explanation text never advances on a timer.
 Only Next advances; tapping the preview or explanation leaves the step unchanged.
 Previous and system Back move
 one state backward and restore the surface, frozen selection and scroll position.
@@ -48,7 +61,10 @@ Previous and Next share a 56dp bottom row; the header contains progress/Skip.
 The existing Create explanation distinguishes people's skills (using a mixer)
 from resources to obtain/bring (paintbrushes/paint); it adds no step or action.
 The 19sp explanation uses the theme's title style and scrolls within a bounded
-pane. New surfaces first paint meaningful content (or a bounded honest fallback),
+pane. The chat step uses a smaller 18%-height explanation pane to preserve reading
+space for its pinned label and scrollable bubbles at large accessibility text.
+Other steps retain the 28% bound. New surfaces first paint meaningful content
+(or a bounded honest fallback),
 hold unobscured for 600ms, then fade scrim/holes together over 380ms. Focus changes
 within one surface move only the hole/border over 180ms, keeping the current
 scrim alpha and any unfinished page hold/fade. Retargeting captures the currently
@@ -59,6 +75,8 @@ Ordinary provider/image/layout updates remeasure without repeating page entry. R
 
 Selection follows the existing public browse order (Requested first when present,
 then ordinary Projects), including Full, closed, photo-less and actionless items.
+Published Ideas may have no dates, timezone or city; the tour uses their actual
+card/detail without requiring logistics or implying membership in the sample chat.
 The selected identity is fixed for this tour. Public read waits are bounded to
 25 layout probes (normally about two seconds); absent/inaccessible data uses a
 labelled cover-bearing illustration. A failed/disappearing detail cannot substitute
@@ -118,7 +136,10 @@ bundled under `assets/tutorial`. Its provenance and checksum are recorded in tha
 folder's README and the original `scripts/demo-assets/assets.json`.
 
 Focused regressions live in `test/app/startup/interactive_tutorial_test.dart` and
-`startup_flow_test.dart`; Help replay coverage remains in `help_flow_test.dart`.
+`startup_flow_test.dart`; `tutorial_project_chat_example_test.dart` covers both
+locales/themes at 320dp and 1x/2x text without any ProviderScope. Tour tests cover
+keyboard traversal/Enter, accessible labels, reading scroll, rotation, inert
+private gateways and first-run/replay exit cleanup. Help replay coverage remains in `help_flow_test.dart`.
 Android visual smoke uses the existing integration-test harness and an isolated,
 task-owned emulator, with no shared database or device mutations:
 
@@ -132,6 +153,17 @@ Without the define, `flutter test integration_test/tutorial_smoke_test.dart -d
 <owned-emulator-id>` runs the same non-destructive guest journeys without captures.
 These fake-gateway native tests validate layout/interaction, not live backend reads
 or physical Android/iOS devices. `npm run check:mobile` remains the full local gate.
+
+For the TUT06 English/Italian chat → Messages → Home → Scambio sequence:
+
+```powershell
+flutter drive -d <owned-emulator-id> --driver=test_driver/tutorial_screenshots.dart --target=integration_test/tutorial_chat_sequence_test.dart --dart-define=TUT06_SCREENSHOTS=true
+```
+
+The same driver writes `build/tutorial-screenshots/tut06-*.png`. This target
+uses the existing fake-gateway tour harness and does not need a database.
+Actual captures and validation limits are recorded in the
+[TUT06 evidence](../../../../../docs/development/evidence/tut06/README.md).
 
 `planets.startup.completedTutorialVersion` remains the only persisted startup key.
 A bare version records completed; `dismissed:<version>` records deliberate Skip.

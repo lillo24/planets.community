@@ -23,6 +23,7 @@ import '../foundation_screen.dart';
 import 'startup_flow.dart';
 import 'tutorial_pages.dart';
 import 'tutorial_presentation.dart';
+import 'tutorial_project_chat_example.dart';
 import 'tutorial_routes.dart';
 import 'tutorial_motion.dart';
 
@@ -368,6 +369,10 @@ class _TutorialScreenState extends ConsumerState<TutorialScreen>
     ],
     TutorialStep.projectCreate => const ['proposal-create-action'],
     TutorialStep.projectDrafts => const ['my-proposals-action'],
+    TutorialStep.projectGroupChatExample => const [
+      'tutorial-project-chat-label',
+      'tutorial-project-chat-conversation',
+    ],
     TutorialStep.resources => [
       _fallback ? 'tutorial-example-card' : 'resource-card-$_resourceId',
       'resource-create-action',
@@ -687,6 +692,7 @@ class _TutorialScreenState extends ConsumerState<TutorialScreen>
               tutorialPreview: true,
             ),
     TutorialStep.resources => _resources(),
+    TutorialStep.projectGroupChatExample => const TutorialProjectChatExample(),
     TutorialStep.messagesTabs ||
     TutorialStep.messagesScopes => MessagesLandingScreen(
       controlsOnly: true,
@@ -863,8 +869,14 @@ class _TutorialScreenState extends ConsumerState<TutorialScreen>
                             ExcludeSemantics(
                               excluding:
                                   _step != TutorialStep.messagesTabs &&
-                                  _step != TutorialStep.messagesScopes,
+                                  _step != TutorialStep.messagesScopes &&
+                                  _step != TutorialStep.projectGroupChatExample,
                               child: IgnorePointer(
+                                // The fictional thread has no product actions.
+                                // Allow reading/scrolling it at expanded text.
+                                ignoring:
+                                    _step !=
+                                    TutorialStep.projectGroupChatExample,
                                 child:
                                     NotificationListener<
                                       ScrollMetricsNotification
@@ -894,23 +906,30 @@ class _TutorialScreenState extends ConsumerState<TutorialScreen>
                               ),
                             ),
                             Positioned.fill(
-                              child: AbsorbPointer(
-                                key: const Key('tutorial-overlay'),
-                                child: AnimatedBuilder(
-                                  animation: Listenable.merge([
-                                    _reveal,
-                                    _focus,
-                                  ]),
-                                  builder: (context, child) => CustomPaint(
-                                    key: const Key('tutorial-spotlight'),
-                                    painter: TutorialScrim(
-                                      _visibleTargets,
-                                      _noSpotlight
-                                          ? Colors.transparent
-                                          : Colors.black.withValues(
-                                              alpha: .62 * _reveal.value,
-                                            ),
-                                      opacity: _noSpotlight ? 0 : _reveal.value,
+                              child: IgnorePointer(
+                                ignoring:
+                                    _step ==
+                                    TutorialStep.projectGroupChatExample,
+                                child: AbsorbPointer(
+                                  key: const Key('tutorial-overlay'),
+                                  child: AnimatedBuilder(
+                                    animation: Listenable.merge([
+                                      _reveal,
+                                      _focus,
+                                    ]),
+                                    builder: (context, child) => CustomPaint(
+                                      key: const Key('tutorial-spotlight'),
+                                      painter: TutorialScrim(
+                                        _visibleTargets,
+                                        _noSpotlight
+                                            ? Colors.transparent
+                                            : Colors.black.withValues(
+                                                alpha: .62 * _reveal.value,
+                                              ),
+                                        opacity: _noSpotlight
+                                            ? 0
+                                            : _reveal.value,
+                                      ),
                                     ),
                                   ),
                                 ),
@@ -924,7 +943,13 @@ class _TutorialScreenState extends ConsumerState<TutorialScreen>
                 ),
                 ConstrainedBox(
                   constraints: BoxConstraints(
-                    maxHeight: MediaQuery.sizeOf(context).height * .28,
+                    // Leave room to read the scrollable fictional thread even
+                    // when its pinned label wraps at large accessibility text.
+                    maxHeight:
+                        MediaQuery.sizeOf(context).height *
+                        (_step == TutorialStep.projectGroupChatExample
+                            ? .18
+                            : .28),
                   ),
                   child: SingleChildScrollView(
                     padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
