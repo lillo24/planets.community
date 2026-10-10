@@ -2471,5 +2471,17 @@
   "proposalSearchCity": "Find a city",
   "proposalOptionalExact": "Add a precise meeting place (optional)",
   "proposalRemoveExact": "Remove precise details",
-  "proposalExactNotChosen": "Precise meeting instructions have not been added yet."
+  "proposalExactNotChosen": "Precise meeting instructions have not been added yet.",
+  "proposalPlaceLabel": "Where will it take place?",
+  "proposalPlaceHint": "Search for a city, address or venue, or confirm a public city manually.",
+  "proposalPlaceConfirm": "Select a suggestion or confirm a public city before saving.",
+  "proposalManualCityOnly": "Manual entry is public: use only a city or broad area, never a private address. No map point is created.",
+  "proposalUsePublicCity": "Confirm as public city/area",
+  "proposalShowExactPublic": "Show exact location to non-participants",
+  "proposalRemovePlace": "Remove exact place",
+  "proposalArrivalDirections": "Additional arrival directions (optional)",
+  "proposalArrivalDirectionsLabel": "Entrance, gate or other directions",
+  "proposalDirectionsPrivate": "Only organizers and current participants can read these directions, even when the selected place is public.",
+  "proposalClearDirections": "Clear directions",
+  "proposalCapacityEditableLater": "You can change this later in Project settings."
 }

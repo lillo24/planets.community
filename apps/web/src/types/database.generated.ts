@@ -2641,6 +2641,17 @@ export type Database = {
         }
         Returns: number
       }
+      apply_proposal_place_v1: {
+        Args: {
+          p_action: string
+          p_expected_profile_id: string
+          p_expected_revision: number
+          p_item: string
+          p_receipt?: string
+          p_request_id: string
+        }
+        Returns: number
+      }
       block_user: {
         Args: {
           p_blocked_profile_id: string

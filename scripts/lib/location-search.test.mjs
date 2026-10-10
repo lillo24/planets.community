@@ -46,6 +46,61 @@ const request = (body) =>
 const fails = (status) => (error) =>
   error instanceof LocationFailure && error.status === status;
 
+test("Trento suggestions retain province and region without choosing a match", () => {
+  const results = normalizeResults(
+    {
+      results: [
+        row({
+          city: "Trento",
+          county: "Provincia autonoma di Trento",
+          state: "Trentino-Alto Adige",
+          result_type: "city",
+        }),
+        row({
+          city: "Trento",
+          county: "Provincia di Rovigo",
+          state: "Veneto",
+          result_type: "city",
+        }),
+      ],
+    },
+    "it",
+  );
+  assert.equal(results.length, 2);
+  assert.equal(
+    results[0].label,
+    "Trento, Provincia autonoma di Trento, Trentino-Alto Adige, Italia",
+  );
+  assert.equal(results[1].label, "Trento, Provincia di Rovigo, Veneto, Italia");
+});
+
+test("mixed place slot is restricted to one-time Projects and preserves metering", async () => {
+  for (const kind of ["one_time", "recurring", "resource"]) {
+    const calls = [];
+    const handler = createHandler({
+      enabled: true,
+      key: "synthetic-key",
+      authenticate: async () => actor,
+      rpc: async (name, args) => {
+        calls.push([name, args]);
+        return { status: "disabled" };
+      },
+      fetcher: async () => {
+        throw new Error("Disabled meter must not call provider");
+      },
+    });
+    const result = await (
+      await handler(request(input({ item_kind: kind, slot: "place" })))
+    ).json();
+    assert.equal(
+      result.status,
+      kind === "one_time" ? "disabled" : "invalid_request",
+    );
+    assert.equal(calls.length, kind === "one_time" ? 1 : 0);
+    if (kind === "one_time") assert.equal(calls[0][1].p_slot, "place");
+  }
+});
+
 test("normalization bounds, NFC, controls and input encoding", () => {
   assert.equal(normalizeQuery("  Povo,   Trento  "), "Povo, Trento");
   for (const value of [null, "a", "a".repeat(161), "abc\nxyz", "a\u0000b"])

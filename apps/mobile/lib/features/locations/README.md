@@ -94,11 +94,18 @@ An authorized locality becomes public only after an independently matching publi
 canonical read; the RPC audience alone never relaxes private ownership.
 See [cache contract and fake measurements](../../../../../docs/development/map-cache01-shared-tiles.md).
 
-## One-time city adapter (LOCATION01)
+## One-time inline place editor (LOCATION02)
 
-`proposalCityOnly` keeps the supplied public field visible through lookup failure.
-Optional exact controls expand for existing content; removal clears the canonical
-protected slot before ordinary instructions. Default Tavolo/Resource editor
-behavior is unchanged. City-only one-time Projects have no Maps action or invented pin;
-verified broad references can offer an approximate destination. Receipts, actor
-scopes, stale-result rejection and attribution remain MAP02 responsibilities.
+`presentation/proposal_location_editor.dart` owns the Project-only primary query,
+inline city/address/venue results, deliberate manual-city confirmation, explicit
+exact-place-public switch and separate private arrival-directions disclosure.
+Raw queries do not enter public form/matching fields. `LocationEditorHandle`
+connects unsaved-query validation, draft departure, receipt revocation and save
+acknowledgement. Exact selections default private; existing visibility rehydrates.
+`LocationEditorSession.setProposalVisibility` and the gateway use the new
+revision-bound `apply_proposal_place_v1`; the other editor slots stay unchanged.
+Clearing directions preserves a verified point, and removing the point preserves
+directions. City-only Projects still have no invented map point/destination.
+The former `proposalCityOnly` adapter remains compatible for older consumers,
+but the one-time editor now uses this component. See the
+[LOCATION02 contract and staging handoff](../../../../../docs/development/location02-inline-project-place.md).
