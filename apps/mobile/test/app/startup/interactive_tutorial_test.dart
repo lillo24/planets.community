@@ -9,6 +9,7 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart' show LogicalKeyboardKey;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:planets_mobile/app/planets_app.dart';
@@ -20,6 +21,7 @@ import 'package:planets_mobile/features/auth/data/auth_gateway.dart';
 import 'package:planets_mobile/features/auth/domain/auth_models.dart';
 import 'package:planets_mobile/features/messages/data/messages_gateway.dart';
 import 'package:planets_mobile/features/messages/data/message_chats_gateway.dart';
+import 'package:planets_mobile/features/project_chat/data/project_chat_gateway.dart';
 import 'package:planets_mobile/features/notifications/data/notifications_gateway.dart';
 import 'package:planets_mobile/features/profile/data/profile_gateway.dart';
 import 'package:planets_mobile/features/settings/application/navigation_preference_controller.dart';
@@ -29,6 +31,7 @@ import '../../support/fake_auth.dart';
 import '../../support/fake_startup.dart';
 import '../../support/fake_messages.dart';
 import '../../support/fake_message_chats.dart';
+import '../../support/fake_project_chat.dart';
 import '../../support/fake_notifications.dart';
 import '../../support/fake_profile.dart';
 
@@ -380,6 +383,7 @@ void main() {
         TutorialStep.projectCard,
         TutorialStep.projectDetail,
         TutorialStep.projectCreate,
+        TutorialStep.projectGroupChatExample,
         TutorialStep.homeResources,
         TutorialStep.resources,
         TutorialStep.messagesTabs,
@@ -596,6 +600,7 @@ void main() {
       final resources = FakeResourceListingGateway();
       final chats = FakeMessageChatsGateway();
       final messages = FakeMessagesGateway();
+      final projectChats = FakeProjectChatGateway();
       await _pump(
         tester,
         store: store,
@@ -603,6 +608,7 @@ void main() {
         resources: resources,
         chats: chats,
         messages: messages,
+        projectChats: projectChats,
       );
       await tap(tester, 'welcome-explore');
       for (final step in TutorialStep.values) {
@@ -621,8 +627,22 @@ void main() {
             ? 0
             : step == TutorialStep.resources
             ? 3
+            : step == TutorialStep.projectGroupChatExample
+            ? 2
             : 1;
         expect(scrim(tester).targets, hasLength(count), reason: step.name);
+        if (step == TutorialStep.projectGroupChatExample) {
+          expectFocus(tester, 'tutorial-project-chat-label');
+          expectFocus(tester, 'tutorial-project-chat-conversation', index: 1);
+          expect(find.text('Giulia'), findsOneWidget);
+          expect(find.text('Marco'), findsOneWidget);
+          expect(find.text('Sara'), findsOneWidget);
+        } else {
+          expect(
+            find.byKey(const Key('tutorial-project-chat-example')),
+            findsNothing,
+          );
+        }
         if ({
           TutorialStep.projectCard,
           TutorialStep.projectDetail,
@@ -680,6 +700,8 @@ void main() {
       expect(resources.createCount, 0);
       expect(chats.calls, isEmpty);
       expect(messages.calls, isEmpty);
+      expect(projectChats.calls, isEmpty);
+      expect(projectChats.subscriptions, isEmpty);
     },
   );
 
@@ -1008,6 +1030,205 @@ void main() {
     },
   );
 
+  testWidgets('unscheduled Idea retains its real card and detail before chat', (
+    tester,
+  ) async {
+    final idea = ProposalSummary(
+      id: 'idea-1',
+      title: 'Garden together',
+      summary: 'Plan a shared garden.',
+      definitionPhase: ProposalDefinitionPhase.idea,
+      startsAt: null,
+      endsAt: null,
+      eventTimezone: null,
+      countryCode: null,
+      locality: null,
+      administrativeArea: null,
+      publicLocationLabel: null,
+      status: null,
+      skills: const [],
+      capacity: projectCapacityFixture(registrationCapacity: null),
+    );
+    final base = proposalDetailFixture();
+    final projects = FakeProposalGateway()
+      ..publicItems = [idea]
+      ..publicDetail = ProposalDetail(
+        summary: idea,
+        creatorProfileId: base.creatorProfileId,
+        creatorDisplayName: base.creatorDisplayName,
+        description: 'Choose the place and date together.',
+        exactMeetingText: null,
+        exactLocationRestricted: false,
+      );
+    await _pump(tester, proposals: projects);
+    await tap(tester, 'welcome-explore');
+    for (final step in TutorialStep.values) {
+      await ready(tester);
+      if (step == TutorialStep.projectCard) {
+        expectFocus(tester, 'proposal-card-idea-1');
+        expect(find.byKey(const Key('proposal-status-idea')), findsOneWidget);
+      }
+      if (step == TutorialStep.projectDetail) {
+        expect(
+          find.byKey(const Key('tutorial-illustration-label')),
+          findsNothing,
+        );
+        expect(projects.calls, contains('public-detail:idea-1'));
+      }
+      if (step == TutorialStep.projectGroupChatExample) {
+        expect(find.text('Neighborhood mural'), findsOneWidget);
+        expect(find.text('Garden together'), findsNothing);
+        break;
+      }
+      await tap(tester, 'tutorial-next');
+    }
+    expect(tester.takeException(), isNull);
+  });
+
+  for (final replay in [false, true]) {
+    for (final exit in ['skip', 'back', 'account', 'navigation']) {
+      testWidgets('fictional chat is disposed after $exit replay=$replay', (
+        tester,
+      ) async {
+        final store = FakeStartupStore()
+          ..version = replay ? productionTutorial.version : null;
+        final auth = FakeAuthGateway(
+          snapshot: replay
+              ? const AuthSnapshot(identity: AuthIdentity(id: 'user-1'))
+              : const AuthSnapshot(identity: null),
+        );
+        final chats = FakeMessageChatsGateway();
+        final messages = FakeMessagesGateway();
+        final projectChats = FakeProjectChatGateway();
+        final app = await _pump(
+          tester,
+          store: store,
+          auth: auth,
+          chats: chats,
+          messages: messages,
+          projectChats: projectChats,
+          registry: const TutorialRegistry(
+            steps: [TutorialStep.projectGroupChatExample],
+          ),
+        );
+        if (replay) {
+          TutorialRoutes.replay(
+            tester.element(find.byKey(const Key('browse-proposals-button'))),
+          );
+          await frames(tester, 6);
+        } else {
+          await tap(tester, 'welcome-explore');
+        }
+        await ready(tester);
+        expect(
+          find.byKey(const Key('tutorial-project-chat-example')),
+          findsOneWidget,
+        );
+        final router = app.read(appRouterProvider);
+        switch (exit) {
+          case 'skip':
+            await tap(tester, 'tutorial-skip');
+          case 'back':
+            await tester.binding.handlePopRoute();
+          case 'account':
+            auth.emit(
+              const AuthSnapshot(identity: AuthIdentity(id: 'replacement')),
+            );
+          case 'navigation':
+            router.go('/');
+        }
+        await frames(tester, 15);
+        expect(find.byKey(const Key('tutorial-screen')), findsNothing);
+        expect(
+          find.byKey(const Key('tutorial-project-chat-example')),
+          findsNothing,
+        );
+        expect(
+          find.byKey(const Key('tutorial-chat-message-giulia')),
+          findsNothing,
+        );
+        expect(store.writes, !replay && exit == 'skip' ? 1 : 0);
+        expect(chats.calls, isEmpty);
+        expect(messages.calls, isEmpty);
+        expect(projectChats.calls, isEmpty);
+        expect(projectChats.subscriptions, isEmpty);
+      });
+    }
+  }
+
+  testWidgets(
+    'chat reading, rotation and keyboard Next keep the tour navigable',
+    (tester) async {
+      tester.view.physicalSize = const Size(320, 720);
+      tester.view.devicePixelRatio = 1;
+      tester.platformDispatcher.textScaleFactorTestValue = 2;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      addTearDown(tester.platformDispatcher.clearAllTestValues);
+      await _pump(
+        tester,
+        registry: const TutorialRegistry(
+          steps: [
+            TutorialStep.projectGroupChatExample,
+            TutorialStep.messagesTabs,
+          ],
+        ),
+      );
+      await tap(tester, 'welcome-explore');
+      await ready(tester);
+      final targets = scrim(tester).targets;
+      await tester.drag(
+        find.byKey(const Key('tutorial-project-chat-conversation')),
+        const Offset(0, -140),
+      );
+      await frames(tester, 8);
+      expect(scrim(tester).targets, targets);
+      expect(
+        find.byKey(const Key('tutorial-copy-projectGroupChatExample')),
+        findsOneWidget,
+      );
+      tester.view.physicalSize = const Size(720, 320);
+      await frames(tester, 8);
+      await ready(tester);
+      expectFocus(tester, 'tutorial-project-chat-label');
+      expectFocus(tester, 'tutorial-project-chat-conversation', index: 1);
+      expect(
+        find.text('Example project group chat').hitTestable(),
+        findsOneWidget,
+      );
+      tester.view.physicalSize = const Size(320, 720);
+      await ready(tester);
+      // Focus traversal must reach the tutorial controls rather than any dummy
+      // chat action. Enter activates the same explicit Next as touch/voice.
+      var nextFocused = false;
+      for (var i = 0; i < 12 && !nextFocused; i++) {
+        await tester.sendKeyEvent(LogicalKeyboardKey.tab);
+        await tester.pump();
+        final context = FocusManager.instance.primaryFocus?.context;
+        nextFocused =
+            context?.findAncestorWidgetOfExactType<FilledButton>()?.key ==
+            const Key('tutorial-next');
+      }
+      expect(nextFocused, isTrue);
+      await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+      await frames(tester, 8);
+      await ready(tester);
+      expectFocus(tester, 'messages-requests-action');
+      expect(
+        find.byKey(const Key('tutorial-project-chat-example')),
+        findsNothing,
+      );
+      await tester.binding.handlePopRoute();
+      await frames(tester, 8);
+      await ready(tester);
+      expect(
+        find.byKey(const Key('tutorial-project-chat-example')),
+        findsOneWidget,
+      );
+      expect(tester.takeException(), isNull);
+    },
+  );
+
   testWidgets(
     'Skip persists dismissal of the corrected version and suppresses first run',
     (tester) async {
@@ -1120,6 +1341,14 @@ void main() {
             if (step == TutorialStep.projectDrafts) {
               expectFocus(tester, 'my-proposals-action');
             }
+            if (step == TutorialStep.projectGroupChatExample) {
+              expectFocus(tester, 'tutorial-project-chat-label');
+              expectFocus(
+                tester,
+                'tutorial-project-chat-conversation',
+                index: 1,
+              );
+            }
             if (step == TutorialStep.messagesTabs) {
               expectFocus(tester, 'messages-requests-action');
               expect(find.byType(TabBar), findsNothing);
@@ -1147,11 +1376,13 @@ void main() {
       final store = FakeStartupStore();
       final chats = FakeMessageChatsGateway();
       final messages = FakeMessagesGateway();
+      final projectChats = FakeProjectChatGateway();
       final app = await _pump(
         tester,
         store: store,
         chats: chats,
         messages: messages,
+        projectChats: projectChats,
         auth: FakeAuthGateway(
           snapshot: const AuthSnapshot(identity: AuthIdentity(id: 'user-1')),
         ),
@@ -1175,6 +1406,12 @@ void main() {
       expect(store.writes, 0);
       expect(chats.calls, isEmpty);
       expect(messages.calls, isEmpty);
+      expect(projectChats.calls, isEmpty);
+      expect(projectChats.subscriptions, isEmpty);
+      expect(
+        find.byKey(const Key('tutorial-project-chat-example')),
+        findsNothing,
+      );
       expect(app.read(startupFlowProvider).needsTutorial, isTrue);
     },
   );
@@ -1334,6 +1571,7 @@ Future<ProviderContainer> _pump(
   LanguagePreference language = LanguagePreference.english,
   FakeMessagesGateway? messages,
   FakeMessageChatsGateway? chats,
+  FakeProjectChatGateway? projectChats,
   BottomTabDestination destination = BottomTabDestination.messages,
   bool settle = true,
   FakeCoverMediaGateway? covers,
@@ -1388,6 +1626,9 @@ Future<ProviderContainer> _pump(
         ),
         messageChatsGatewayProvider.overrideWithValue(
           chats ?? FakeMessageChatsGateway(),
+        ),
+        projectChatGatewayProvider.overrideWithValue(
+          projectChats ?? FakeProjectChatGateway(),
         ),
         notificationsGatewayProvider.overrideWithValue(
           FakeNotificationsGateway(),

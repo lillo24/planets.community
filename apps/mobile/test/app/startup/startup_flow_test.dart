@@ -5,6 +5,37 @@ import 'package:planets_mobile/app/startup/startup_flow.dart';
 import '../../support/fake_startup.dart';
 
 void main() {
+  test('production narrative follows collaboration before Scambio-Dona', () {
+    expect(productionTutorial.steps, const [
+      TutorialStep.introduction,
+      TutorialStep.home,
+      TutorialStep.projectCard,
+      TutorialStep.projectDetail,
+      TutorialStep.projectCreate,
+      TutorialStep.projectDrafts,
+      TutorialStep.projectGroupChatExample,
+      TutorialStep.messagesTabs,
+      TutorialStep.messagesScopes,
+      TutorialStep.homeResources,
+      TutorialStep.resources,
+      TutorialStep.farewell,
+    ]);
+  });
+  for (final previous in ['interactive-2', 'dismissed:interactive-2']) {
+    test('TUT06 preserves existing $previous completion policy', () async {
+      final store = FakeStartupStore()..version = previous;
+      final flow = StartupFlow(
+        store,
+        productionTutorial,
+        await restoreStartupPreference(store),
+      );
+      addTearDown(flow.dispose);
+      expect(productionTutorial.version, 'interactive-2');
+      expect(flow.needsTutorial, isFalse);
+      expect(flow.continueTo('/'), '/');
+      expect(store.writes, 0);
+    });
+  }
   for (final previous in ['interactive-1', 'dismissed:interactive-1']) {
     test('corrected tutorial is offered after $previous', () async {
       final store = FakeStartupStore()..version = previous;

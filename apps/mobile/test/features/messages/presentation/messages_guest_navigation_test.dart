@@ -84,6 +84,11 @@ void main() {
             isSemantics(tooltip: l10n.messagesRequestsTab, isButton: true),
           );
           expect(find.text(l10n.messagesGuestChatsTitle), findsOneWidget);
+          expect(
+            find.byKey(const Key('tutorial-project-chat-example')),
+            findsNothing,
+          );
+          expect(find.text(l10n.tutorialChatExampleLabel), findsNothing);
           expect(find.text(l10n.messagesGuestPrivateMessage), findsOneWidget);
           expect(
             find.byKey(const Key('messages-example-private')),
@@ -308,6 +313,11 @@ void main() {
     await _tap(tester, 'auth-verify-button');
     expect(router.routerDelegate.state.uri.path, '/messages');
     expect(find.byType(MessagesScreen), findsOneWidget);
+    expect(
+      find.byKey(const Key('tutorial-project-chat-example')),
+      findsNothing,
+    );
+    expect(find.byKey(const Key('tutorial-chat-message-giulia')), findsNothing);
     expect(find.byKey(const Key('messages-example-label')), findsNothing);
     expect(app.read(messagesNavigationProvider).tabIndex, 1);
     expect(fixture.messages.calls, isNotEmpty);

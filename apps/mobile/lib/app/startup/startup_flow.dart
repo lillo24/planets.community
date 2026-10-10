@@ -29,10 +29,11 @@ enum TutorialStep {
   projectDetail,
   projectCreate,
   projectDrafts,
-  homeResources,
-  resources,
+  projectGroupChatExample,
   messagesTabs,
   messagesScopes,
+  homeResources,
+  resources,
   farewell,
 }
 

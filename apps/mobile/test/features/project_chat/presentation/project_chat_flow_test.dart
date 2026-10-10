@@ -69,6 +69,11 @@ void main() {
     pending.complete();
     await tester.pumpAndSettle();
     expect(find.byKey(const Key('project-chat-composer')), findsOneWidget);
+    expect(
+      find.byKey(const Key('tutorial-project-chat-example')),
+      findsNothing,
+    );
+    expect(find.byKey(const Key('tutorial-chat-message-giulia')), findsNothing);
     expect(find.byKey(const Key('project-chat-tools-strip')), findsOneWidget);
     expect(find.byKey(const Key('project-needs-button')), findsOneWidget);
     expect(

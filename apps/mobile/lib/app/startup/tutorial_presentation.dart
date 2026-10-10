@@ -101,6 +101,7 @@ String tutorialCopy(AppLocalizations l, TutorialStep step) => switch (step) {
   TutorialStep.projectDetail => l.tutorialProjectDetail,
   TutorialStep.projectCreate => l.tutorialProjectCreate,
   TutorialStep.projectDrafts => l.tutorialDrafts,
+  TutorialStep.projectGroupChatExample => l.tutorialProjectGroupChat,
   TutorialStep.homeResources => l.tutorialHomeResources,
   TutorialStep.resources => l.tutorialResources,
   TutorialStep.messagesTabs => l.tutorialMessagesTabs,
