@@ -203,6 +203,46 @@ void main() {
       throwsA(isA<MapProviderFailure>()),
     );
   });
+  test('inactive preserves public jobs/cache but cancels and erases private scopes; paused clears all', () async {
+    final pending = <Completer<Uint8List>>[];
+    final cancelled = <bool>[];
+    final store = SharedBasemapTiles(
+      allowed: () => true,
+      ttl: const Duration(minutes: 1),
+      load: (_, abort) {
+        final index = pending.length;
+        pending.add(Completer<Uint8List>());
+        cancelled.add(false);
+        unawaited(abort.then((_) => cancelled[index] = true));
+        return pending.last.future;
+      },
+    );
+    addTearDown(store.dispose);
+    final public = store.openScope(),
+        private = store.openScope(protected: true);
+    final publicResult = public.tile(a);
+    final privateFailure = expectLater(
+      private.tile(a),
+      throwsA(isA<MapProviderFailure>()),
+    );
+    store.didChangeAppLifecycleState(AppLifecycleState.inactive);
+    await privateFailure;
+    await Future<void>.delayed(Duration.zero);
+    expect(cancelled, [false, true]);
+    final publicBytes = await png(), privateBytes = await png();
+    pending[0].complete(publicBytes);
+    pending[1].complete(privateBytes);
+    await publicResult;
+    await Future<void>.delayed(Duration.zero);
+    expect(privateBytes.every((byte) => byte == 0), true);
+    expect(store.count, 1);
+    store.didChangeAppLifecycleState(AppLifecycleState.resumed);
+    await public.tile(a);
+    expect(pending.length, 2);
+    store.didChangeAppLifecycleState(AppLifecycleState.paused);
+    expect(store.count, 0);
+    await expectLater(public.tile(a), throwsA(isA<MapProviderFailure>()));
+  });
   test('six active and 64 queued; cancellation removes queued IO; malformed retries', () async {
     var calls = 0;
     final pending = Completer<Uint8List>();

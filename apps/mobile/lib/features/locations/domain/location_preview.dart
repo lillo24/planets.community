@@ -46,6 +46,19 @@ class LocationPreview {
   final String? imageKey;
   final LegacyPreviewArea legacy;
   bool get cacheable => !isProtected && place?.isArea == true;
+
+  /// Compare canonical content independently of the audience of the RPC.
+  /// An authorized read can return the same public area as a public read.
+  bool sameLocationAs(LocationPreview other) =>
+      item.key == other.item.key &&
+      revision == other.revision &&
+      imageKey == other.imageKey &&
+      place?.kind == other.place?.kind &&
+      place?.label == other.place?.label &&
+      place?.latitude == other.place?.latitude &&
+      place?.longitude == other.place?.longitude &&
+      legacy.locality == other.legacy.locality &&
+      legacy.countryCode == other.legacy.countryCode;
   factory LocationPreview.fromJson(Map<String, dynamic> json) {
     final place = json['place'] == null
         ? null

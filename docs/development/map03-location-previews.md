@@ -15,8 +15,10 @@ meeting instructions. Disabled static rendering reserves no image space and
 adds no unavailable-image boilerplate. Authorized text appears without waiting
 for optional imagery; actual PNGs use a modest 144dp detail preview. Enabled
 render failures show one fallback, while denial revokes protected state.
-One real Google Maps button is offered only for a current canonical safe
-destination, and still performs a fresh read on tap. No GPS, tracking, Google
+The rendered map is the single Google Maps action; a compact text action remains
+only when no image is rendered and a safe canonical destination exists. Every
+activation performs a fresh read. Small linked detail credits are centered directly
+under the canvas, with independent 48dp targets. No GPS, tracking, Google
 SDK/key or silent geocoding is introduced. See [MAP-UX01](map-ux01-location-polish.md).
 
 ## Canonical precision and permissions
@@ -66,15 +68,20 @@ not enter this shared cache. Feed cards no longer mount those panels or use
 the public batch read path. Cache sizes, lifetimes and billing are unchanged.
 
 location_preview_panel checks the clipped viewport, current route, TickerMode
-and foreground before fetching. Offscreen, route, actor/readiness, ABA,
-membership, role, meeting-details and content changes revoke pending work,
+and foreground before fetching. For protected views, offscreen, route,
+actor/readiness, ABA, membership, role, meeting-details and content changes revoke pending work,
 coordinates and images. Generations prevent old reads from refilling cleared
 caches. Late protected byte buffers are overwritten. Decoded images are
 widget-owned and disposed through RawImage, outside Flutter's global ImageCache.
 Revocation disposes the decoded bitmap and invalidates pending decode immediately,
 even if the backgrounded app cannot schedule another UI frame.
-A visible panel reauthorizes every 15 seconds, hiding geometry/bitmap during
-the read and reusing its bitmap only after matching key AND revision.
+A visible protected panel reauthorizes every 15 seconds, destroying pixels and
+zeroing private buffers before the read. A public panel renews without tearing
+down unchanged images. Public pixels survive route/scroll/TickerMode interruption
+and transient `inactive`, with canonical revalidation on return; real background
+still clears them. Only an independently matching public canonical read can
+classify a protected RPC's locality fallback as public. See the
+[MAPDETAIL02 lifecycle contract](map-cache01-shared-tiles.md#mapdetail02-lifecycle-and-interaction).
 Known revocation clears immediately; remote changes without a client signal
 are observed at that lease or the mandatory fresh tap. OS screenshot/recents
 protection is not established by these component tests.

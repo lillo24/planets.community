@@ -70,9 +70,22 @@ class RpcLocationPreviewGateway implements LocationPreviewGateway {
             : 'public_detail',
         'p_expected_profile_id': protected ? actor : null,
       });
-      return value == null
+      final preview = value == null
           ? null
           : LocationPreview.fromJson(Map<String, dynamic>.from(value as Map));
+      if (preview?.isProtected == true && preview?.place?.isArea == true) {
+        // Audience describes the RPC, not necessarily the selected place. Only
+        // an independently matching PUBLIC read may establish public ownership.
+        // Draft/unpublished areas and mismatches retain protected isolation.
+        final public = await read(item);
+        if (public != null &&
+            !public.isProtected &&
+            public.place?.isArea == true &&
+            preview!.sameLocationAs(public)) {
+          return public;
+        }
+      }
+      return preview;
     } on PreviewUnavailable catch (error) {
       // An unrelated/removed actor remains entitled to the PUBLIC detail.
       if (!protected || !error.denied) rethrow;

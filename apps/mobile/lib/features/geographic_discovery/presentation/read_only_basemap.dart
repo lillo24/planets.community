@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:typed_data';
 import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
@@ -17,12 +18,20 @@ class ReadOnlyBasemap extends StatefulWidget {
     required this.approximate,
     required this.semanticLabel,
     required this.failureLabel,
+    this.imageBuilder,
+    this.fallback,
+    this.decode = decodeBasemapImage,
     super.key,
   });
   final SharedBasemapTiles store;
   final double latitude, longitude;
   final bool protected, approximate;
   final String semanticLabel, failureLabel;
+
+  /// Only an actually decoded canvas is wrapped as an action by the detail UI.
+  final Widget Function(Widget canvas)? imageBuilder;
+  final Widget? fallback;
+  final Future<ui.Image> Function(Uint8List bytes) decode;
   @override
   State<ReadOnlyBasemap> createState() => ReadOnlyBasemapState();
 }
@@ -113,23 +122,19 @@ class ReadOnlyBasemapState extends State<ReadOnlyBasemap> {
       await Future.wait(
         grid.keys.map((id) async {
           if (_images.containsKey(id)) return;
-          ui.Codec? codec;
           try {
             final bytes = await _scope.tile(id);
             if (!mounted || _revoked || epoch != _epoch) return;
-            codec = await ui.instantiateImageCodec(bytes);
-            final frame = await codec.getNextFrame();
+            final image = await widget.decode(bytes);
             if (!mounted || _revoked || epoch != _epoch) {
-              frame.image.dispose();
+              image.dispose();
               return;
             }
             _images.remove(id)?.dispose();
-            _images[id] = frame.image;
+            _images[id] = image;
           } catch (_) {
             if (mounted && !_revoked && epoch == _epoch) _scope.evict(id);
             rethrow;
-          } finally {
-            codec?.dispose();
           }
         }),
       );
@@ -148,9 +153,16 @@ class ReadOnlyBasemapState extends State<ReadOnlyBasemap> {
   Widget build(BuildContext context) => LayoutBuilder(
     builder: (context, constraints) {
       _layout(constraints.maxWidth.clamp(1, 768));
-      if (_failed) return Text(widget.failureLabel);
-      if (!_ready || _revoked) return const SizedBox.shrink();
-      return Semantics(
+      if (_failed) {
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [Text(widget.failureLabel), ?widget.fallback],
+        );
+      }
+      if (!_ready || _revoked) {
+        return widget.fallback ?? const SizedBox.shrink();
+      }
+      final canvas = Semantics(
         image: true,
         label: widget.semanticLabel,
         child: IgnorePointer(
@@ -187,12 +199,23 @@ class ReadOnlyBasemapState extends State<ReadOnlyBasemap> {
           ),
         ),
       );
+      return widget.imageBuilder?.call(canvas) ?? canvas;
     },
   );
   @override
   void dispose() {
     revoke();
     super.dispose();
+  }
+}
+
+/// A view owns the returned image; every codec is disposed, even on failure.
+Future<ui.Image> decodeBasemapImage(Uint8List bytes) async {
+  final codec = await ui.instantiateImageCodec(bytes);
+  try {
+    return (await codec.getNextFrame()).image;
+  } finally {
+    codec.dispose();
   }
 }
 
