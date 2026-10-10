@@ -63,6 +63,11 @@ select throws_ok($$select pg_temp.idea_edit(current_setting('test.idea')::uuid,'
 select throws_ok($$select pg_temp.idea_edit(current_setting('test.idea')::uuid,'{"starts_at":"infinity"}')$$,'22023',null,'infinite tentative date rejected');
 select throws_ok($$select pg_temp.idea_edit(current_setting('test.idea')::uuid,'{"country_code":"ITA"}')$$,'22023',null,'optional country bounds retained');
 select throws_ok($$select public.promote_proposal_idea('fa020000-0000-4000-8000-000000000001',current_setting('test.idea')::uuid)$$,'PT422',null,'promotion rejects missing planning fields atomically');
+select lives_ok($$select pg_temp.idea_edit(current_setting('test.idea')::uuid,'{"exact_meeting_text":"PRIVATE arrival directions","exact_location_visibility":"public"}')$$,'legacy direction visibility does not publish free text');
+select is((select exact_meeting_text from public.get_public_proposal_v2(current_setting('test.idea')::uuid)),null::text,'v2 Idea never exposes LOCATION02 private arrival directions');
+select is((select exact_location_restricted from public.get_public_proposal_v2(current_setting('test.idea')::uuid)),true,'directions without a public verified place remain restricted');
+select is((select count(*) from public.get_public_proposal(current_setting('test.idea')::uuid)),0::bigint,'LOCATION02 legacy detail still excludes Ideas');
+select lives_ok($$select pg_temp.idea_edit(current_setting('test.idea')::uuid,'{"exact_meeting_text":null}')$$,'directions can be cleared while Idea stays public');
 select is((select definition_phase from public.get_public_proposal_v2(current_setting('test.idea')::uuid)),'idea','failed promotion preserves public Idea');
 select ok((public.get_proposal_promotion_requirements('fa020000-0000-4000-8000-000000000001',current_setting('test.idea')::uuid)->'missing_fields') ?& array['description','starts_at','ends_at','event_timezone','country_code','locality','public_location_label','registration_capacity'],'preview lists actual missing requirements');
 
