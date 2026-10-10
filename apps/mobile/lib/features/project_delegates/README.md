@@ -55,7 +55,7 @@ Manage project hub. It does not own Project authoring or lifecycle actions.
 
 The database remains authoritative. The client resolves the current profile's
 role with `get_own_project_management_role`; it does not infer authority from
-public Project data. `list_own_delegated_projects` supplies one current-profile
+public Project data. `list_own_delegated_projects_v2` supplies one current-profile
 projection for My Proposals/My Tavoli without per-card role calls or owner-only
 actions.
 

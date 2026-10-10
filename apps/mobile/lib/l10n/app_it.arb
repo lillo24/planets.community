@@ -178,7 +178,7 @@
   "proposalStatusHappening": "In corso",
   "proposalStatusJustFinished": "Appena conclusa",
   "proposalStatusCompleted": "Completata",
-  "proposalLifecycleDraft": "Bozza",
+  "proposalLifecycleDraft": "Bozza privata",
   "proposalLifecyclePublished": "Pubblicata",
   "proposalLifecycleCancelled": "Annullata",
   "proposalUntitled": "Bozza senza titolo",
@@ -1739,5 +1739,35 @@
   "proposalSearchCity": "Cerca una città",
   "proposalOptionalExact": "Aggiungi luogo preciso (facoltativo)",
   "proposalRemoveExact": "Rimuovi dettagli precisi",
-  "proposalExactNotChosen": "Le istruzioni per il luogo preciso non sono ancora state aggiunte."
+  "proposalExactNotChosen": "Le istruzioni per il luogo preciso non sono ancora state aggiunte.",
+  "proposalPhaseAll": "Tutti",
+  "proposalPhaseIdea": "In definizione",
+  "proposalPhaseDefined": "Definito",
+  "proposalDateUndecided": "Data da decidere insieme",
+  "proposalPlaceUndecided": "Luogo da decidere insieme",
+  "proposalTentativeSchedule": "Da confermare: {schedule}",
+  "proposalPublicationOrder": "Prima i più recenti. Le Idee compaiono solo in Lista.",
+  "proposalPublicationChoice": "Come vuoi pubblicare?",
+  "proposalIdeaPublicHelp": "Un’Idea è pubblica. Le persone possono chiedere di partecipare e decidere insieme i dettagli. Data, città e limite di partecipanti possono restare da definire. Senza limite non c’è un tetto alle iscrizioni; un limite futuro non può essere inferiore ai partecipanti attuali.",
+  "proposalDefinedHelp": "Pubblica un Progetto con data, città e limite di partecipanti. Salvare una bozza privata non la pubblica.",
+  "proposalIdeaPurposeRequired": "Aggiungi un titolo leggibile e una breve spiegazione di almeno 10 caratteri.",
+  "proposalSavePrivateDraft": "Salva bozza privata",
+  "proposalPublishIdea": "Pubblica In definizione",
+  "proposalPublishDefined": "Pubblica Definito",
+  "proposalCompletePlanning": "Passa a Definito",
+  "proposalPlanningMissingHelp": "Completa questi dettagli nell’editor e controlla di nuovo. L’Idea resta pubblica.",
+  "proposalPlanningConfirmHelp": "Conferma questo Progetto pianificato. Identità, partecipanti e cronologia della chat restano gli stessi. Il server ricontrolla i requisiti attuali.",
+  "proposalPlanningReturn": "Torna alle modifiche",
+  "proposalPlanningConfirm": "Conferma Progetto Definito",
+  "proposalPlanningPhotoRequired": "Foto attuale del profilo organizzatore",
+  "proposalPlanningChanged": "I requisiti sono cambiati: ricarica e ricontrolla.",
+  "proposalOrganizerLabel": "Profilo organizzatore",
+  "proposalClearSchedule": "Lascia la data da decidere",
+  "@proposalTentativeSchedule": {
+    "placeholders": {
+      "schedule": {
+        "type": "String"
+      }
+    }
+  }
 }

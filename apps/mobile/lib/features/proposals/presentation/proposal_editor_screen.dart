@@ -31,6 +31,7 @@ import '../domain/proposal_time.dart';
 import '../domain/similar_proposal.dart';
 import 'similar_proposal_suggestions.dart';
 import 'proposal_editor_controls.dart';
+import 'proposal_planning_review.dart';
 
 class ProposalEditorScreen extends ConsumerStatefulWidget {
   const ProposalEditorScreen({
@@ -201,6 +202,8 @@ class _ProposalFormState extends ConsumerState<_ProposalForm>
   late bool _countOrganizersTowardCapacity;
   DateTime? _startsAt;
   DateTime? _endsAt;
+  bool _publishIdea = false;
+  bool get _ideaMode => widget.proposal?.isIdea == true || _publishIdea;
   bool _validatingPublish = false;
   List<String> _validationIssues = const [];
   CoverChange _coverChange = const CoverChange.unchanged();
@@ -435,8 +438,9 @@ class _ProposalFormState extends ConsumerState<_ProposalForm>
     // Preserve a legacy unset zone while its schedule remains unset. Choosing
     // dates uses the pre-existing UTC picker convention, never the new Rome default.
     eventTimezone:
-        widget.proposal != null &&
-            widget.proposal!.eventTimezone == null &&
+        (_ideaMode ||
+                widget.proposal != null &&
+                    widget.proposal!.eventTimezone == null) &&
             _startsAt == null &&
             _endsAt == null
         ? ''
@@ -589,7 +593,7 @@ class _ProposalFormState extends ConsumerState<_ProposalForm>
     }
     final publishedEdit =
         widget.proposal?.lifecycle == ProposalLifecycle.published;
-    final validateCompleteContent = publish || publishedEdit;
+    final validateCompleteContent = (publish || publishedEdit) && !_ideaMode;
     setState(() => _validatingPublish = validateCompleteContent);
     final valid = _formKey.currentState?.validate() ?? false;
     final captured = _snapshot();
@@ -599,14 +603,27 @@ class _ProposalFormState extends ConsumerState<_ProposalForm>
       input,
       publish: validateCompleteContent,
     );
+    final purposeInvalid =
+        (publish || publishedEdit) &&
+        _ideaMode &&
+        !isPublishableIdeaInput(input);
+    if (purposeInvalid) {
+      issues.add(AppLocalizations.of(context).proposalIdeaPurposeRequired);
+    }
     if (!valid || issues.isNotEmpty) {
       setState(() => _validationIssues = issues);
       await WidgetsBinding.instance.endOfFrame;
       if (mounted) {
-        final target = _firstInvalidAnchor(
-          input,
-          publish: validateCompleteContent,
-        ).currentContext;
+        final target =
+            (purposeInvalid
+                    ? (input.title.trim().length < 2
+                          ? _titleAnchor
+                          : _summaryAnchor)
+                    : _firstInvalidAnchor(
+                        input,
+                        publish: validateCompleteContent,
+                      ))
+                .currentContext;
         if (target != null && target.mounted) {
           await Scrollable.ensureVisible(
             target,
@@ -642,6 +659,7 @@ class _ProposalFormState extends ConsumerState<_ProposalForm>
             widget.identityId,
             input,
             coverChange: capturedCover,
+            idea: _ideaMode,
           )
         : publishedEdit
         ? await controller.saveChanges(
@@ -790,6 +808,44 @@ class _ProposalFormState extends ConsumerState<_ProposalForm>
     });
     _formKey.currentState?.validate();
     _syncMatching();
+  }
+
+  Future<void> _reviewPlanning() async {
+    // Persist genuine planning edits without changing the public Idea phase.
+    if (!await _save(publish: false, navigate: false) || !mounted) return;
+    final controller = ref.read(
+      proposalEditorSessionProvider(widget.sessionId).notifier,
+    );
+    setState(() => _saving = true);
+    try {
+      final requirements = await controller.reviewPromotion(widget.identityId);
+      if (!mounted ||
+          requirements == null ||
+          ref.read(authSessionProvider).identity?.id != widget.identityId) {
+        return;
+      }
+      final proposal = ref
+          .read(proposalEditorSessionProvider(widget.sessionId))
+          .proposal;
+      if (proposal == null) return;
+      final confirm = await showDialog<bool>(
+        context: context,
+        builder: (_) => ProposalPlanningReview(
+          proposal: proposal,
+          requirements: requirements,
+        ),
+      );
+      if (!mounted ||
+          confirm != true ||
+          ref.read(authSessionProvider).identity?.id != widget.identityId) {
+        return;
+      }
+      if (await controller.promote(widget.identityId) && mounted) {
+        context.go('/proposals/${proposal.id}');
+      }
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
   }
 
   Future<void> _pickDateTime({required bool start}) async {
@@ -975,6 +1031,56 @@ class _ProposalFormState extends ConsumerState<_ProposalForm>
                   required: true,
                   lines: 6,
                 ),
+                if (isDraft) ...[
+                  Text(
+                    l10n.proposalPublicationChoice,
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                  const SizedBox(height: AppSpacing.small),
+                  Wrap(
+                    spacing: AppSpacing.small,
+                    runSpacing: AppSpacing.small,
+                    children: [
+                      ChoiceChip(
+                        key: const Key('proposal-mode-idea'),
+                        label: Text(l10n.proposalPhaseIdea),
+                        selected: _publishIdea,
+                        onSelected: busy
+                            ? null
+                            : (_) => setState(() {
+                                _publishIdea = true;
+                                _validatingPublish = false;
+                                _validationIssues = const [];
+                              }),
+                      ),
+                      ChoiceChip(
+                        key: const Key('proposal-mode-defined'),
+                        label: Text(l10n.proposalPhaseDefined),
+                        selected: !_publishIdea,
+                        onSelected: busy
+                            ? null
+                            : (_) => setState(() {
+                                _publishIdea = false;
+                                _validatingPublish = false;
+                                _validationIssues = const [];
+                              }),
+                      ),
+                    ],
+                  ),
+                  Text(
+                    _publishIdea
+                        ? l10n.proposalIdeaPublicHelp
+                        : l10n.proposalDefinedHelp,
+                  ),
+                  const SizedBox(height: AppSpacing.large),
+                ] else if (proposal.isIdea) ...[
+                  Text(
+                    l10n.proposalPhaseIdea,
+                    style: Theme.of(context).textTheme.titleLarge,
+                  ),
+                  Text(l10n.proposalIdeaPublicHelp),
+                  const SizedBox(height: AppSpacing.large),
+                ],
                 Padding(
                   key: _capacityAnchor,
                   padding: const EdgeInsets.only(bottom: AppSpacing.medium),
@@ -1015,6 +1121,17 @@ class _ProposalFormState extends ConsumerState<_ProposalForm>
                         )
                       : const SizedBox.shrink(),
                 ),
+                if (_ideaMode && (_startsAt != null || _endsAt != null))
+                  TextButton(
+                    key: const Key('proposal-clear-schedule'),
+                    onPressed: busy
+                        ? null
+                        : () => setState(() {
+                            _startsAt = null;
+                            _endsAt = null;
+                          }),
+                    child: Text(l10n.proposalClearSchedule),
+                  ),
                 ProposalControlPair(
                   first: Container(
                     key: _startAnchor,
@@ -1257,6 +1374,12 @@ class _ProposalFormState extends ConsumerState<_ProposalForm>
                         onPressed: busy ? null : () => _save(publish: false),
                         child: Text(l10n.proposalSaveChangesAction),
                       ),
+                    if (isPublished && proposal!.isIdea && contentEditable)
+                      FilledButton.tonal(
+                        key: const Key('proposal-complete-planning'),
+                        onPressed: busy ? null : _reviewPlanning,
+                        child: Text(l10n.proposalCompletePlanning),
+                      ),
                     if (canCancel)
                       TextButton(
                         key: const Key('proposal-editor-cancel'),
@@ -1274,7 +1397,7 @@ class _ProposalFormState extends ConsumerState<_ProposalForm>
                         minimumSize: const Size.fromHeight(56),
                       ),
                       onPressed: busy ? null : () => _save(publish: false),
-                      child: Text(l10n.proposalSaveDraftAction),
+                      child: Text(l10n.proposalSavePrivateDraft),
                     ),
                     second: FilledButton(
                       key: const Key('proposal-publish'),
@@ -1282,7 +1405,11 @@ class _ProposalFormState extends ConsumerState<_ProposalForm>
                         minimumSize: const Size.fromHeight(56),
                       ),
                       onPressed: busy ? null : () => _save(publish: true),
-                      child: Text(l10n.proposalPublishAction),
+                      child: Text(
+                        _ideaMode
+                            ? l10n.proposalPublishIdea
+                            : l10n.proposalPublishDefined,
+                      ),
                     ),
                   ),
                 ],

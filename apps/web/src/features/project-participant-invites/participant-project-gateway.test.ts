@@ -5,6 +5,9 @@ vi.mock("client-only", () => ({}));
 const cover = `${account}/projects/${project.id}/${account}.webp`;
 function row(kind: "one_time" | "recurring") {
   return {
+    definition_phase: "defined",
+    published_at: "2026-09-01T10:00:00Z",
+    reference_time: "2026-09-01T11:00:00Z",
     proposal_id: project.id,
     recurring_activity_id: project.id,
     cover_object_path: cover,
@@ -69,7 +72,7 @@ describe("public invitation project presentation", () => {
       const detail = await gateway.read({ ...project, kind });
       expect(rpc).toHaveBeenCalledWith(
         kind === "one_time"
-          ? "get_public_proposal"
+          ? "get_public_proposal_v2"
           : "get_public_recurring_activity",
         kind === "one_time"
           ? { p_proposal_id: project.id }
@@ -99,7 +102,11 @@ describe("public invitation project presentation", () => {
     const { rpc, gateway, download } = setup();
     rpc.mockResolvedValueOnce({
       data: [
-        { ...row("one_time"), proposal_id: account, cover_object_path: null },
+        {
+          ...row("one_time"),
+          proposal_id: account,
+          cover_object_path: null,
+        },
       ],
       error: null,
     });

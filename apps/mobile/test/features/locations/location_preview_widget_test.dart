@@ -426,7 +426,7 @@ void main() {
         if (type == 'proposal') {
           final p = proposalSummaryFixture();
           title = p.title;
-          location = p.publicLocationLabel;
+          location = p.publicLocationLabel!;
           card = ProposalCard(proposal: p, onTap: () => taps++);
         } else if (type == 'recurring') {
           final p = publicRecurringSummaryFixture();

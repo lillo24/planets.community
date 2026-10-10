@@ -255,9 +255,10 @@ class _DelegatedProposalCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final lifecycle = switch (project.status) {
+      'in_definition' => l10n.proposalPhaseIdea,
       'completed' => l10n.proposalStatusCompleted,
       'cancelled' => l10n.proposalLifecycleCancelled,
-      _ => l10n.proposalLifecyclePublished,
+      _ => l10n.proposalPhaseDefined,
     };
     final canEdit =
         project.authorityRole == ProjectDelegatedAuthorityRole.coCreator &&
@@ -324,9 +325,11 @@ class _OwnProposalCard extends ConsumerWidget {
     final lifecycle = switch (proposal.lifecycle) {
       ProposalLifecycle.draft => l10n.proposalLifecycleDraft,
       ProposalLifecycle.published =>
-        proposal.status == ProposalStatus.completed
+        proposal.isIdea
+            ? l10n.proposalPhaseIdea
+            : proposal.status == ProposalStatus.completed
             ? l10n.proposalStatusCompleted
-            : l10n.proposalLifecyclePublished,
+            : l10n.proposalPhaseDefined,
       ProposalLifecycle.cancelled => l10n.proposalLifecycleCancelled,
     };
     return Card(

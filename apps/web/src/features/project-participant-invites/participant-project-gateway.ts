@@ -21,7 +21,7 @@ export class SupabaseInvitationProjectGateway implements InvitationProjectGatewa
   async read(project: ProjectContext): Promise<InvitationProject | null> {
     const result =
       project.kind === "one_time"
-        ? await this.client.rpc("get_public_proposal", {
+        ? await this.client.rpc("get_public_proposal_v2", {
             p_proposal_id: project.id,
           })
         : await this.client.rpc("get_public_recurring_activity", {
@@ -45,7 +45,7 @@ export class SupabaseInvitationProjectGateway implements InvitationProjectGatewa
     // Keep only public presentation, never meeting details, identities or offers.
     return {
       title: detail.title,
-      description: detail.description,
+      description: detail.description ?? detail.summary,
       coverObjectPath: detail.cover_object_path,
     };
   }

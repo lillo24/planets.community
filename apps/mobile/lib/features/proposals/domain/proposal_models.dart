@@ -1,6 +1,19 @@
 import '../../cover_media/domain/cover_media_models.dart';
 import '../../participation/domain/project_capacity.dart';
 
+enum ProposalDefinitionPhase {
+  idea('idea'),
+  defined('defined');
+
+  const ProposalDefinitionPhase(this.wireValue);
+  final String wireValue;
+  static ProposalDefinitionPhase fromWire(String value) => switch (value) {
+    'idea' => idea,
+    'defined' => defined,
+    _ => throw const FormatException('Unsupported proposal definition phase.'),
+  };
+}
+
 enum ProposalLifecycle {
   draft('draft'),
   published('published'),
@@ -120,9 +133,14 @@ class ProposalSkillCategory {
 }
 
 class ProposalCursor {
-  const ProposalCursor({required this.startsAt, required this.id});
+  const ProposalCursor({
+    required this.publishedAt,
+    required this.referenceTime,
+    required this.id,
+  });
 
-  final DateTime startsAt;
+  final DateTime publishedAt;
+  final DateTime referenceTime;
   final String id;
 }
 
@@ -142,24 +160,39 @@ class ProposalSummary {
     required this.skills,
     required this.capacity,
     this.coverObjectPath,
+    this.definitionPhase = ProposalDefinitionPhase.defined,
+    this.publishedAt,
+    this.referenceTime,
   });
 
   final String id;
   final String title;
   final String summary;
-  final DateTime startsAt;
-  final DateTime endsAt;
-  final String eventTimezone;
-  final String countryCode;
-  final String locality;
+  final DateTime? startsAt;
+  final DateTime? endsAt;
+  final String? eventTimezone;
+  final String? countryCode;
+  final String? locality;
   final String? administrativeArea;
-  final String publicLocationLabel;
-  final ProposalStatus status;
+  final String? publicLocationLabel;
+  final ProposalStatus? status;
   final List<ProposalSkill> skills;
   final ProjectCapacitySnapshot capacity;
   final String? coverObjectPath;
 
-  ProposalCursor get cursor => ProposalCursor(startsAt: startsAt, id: id);
+  final ProposalDefinitionPhase definitionPhase;
+  final DateTime? publishedAt;
+  final DateTime? referenceTime;
+  bool get isIdea => definitionPhase == ProposalDefinitionPhase.idea;
+  ProposalCursor get cursor => ProposalCursor(
+    publishedAt:
+        publishedAt ??
+        (throw const FormatException('Missing publication cursor.')),
+    referenceTime:
+        referenceTime ??
+        (throw const FormatException('Missing feed reference time.')),
+    id: id,
+  );
 }
 
 class RequestedProposalSummary {
@@ -187,7 +220,7 @@ class ProposalDetail {
   final ProposalSummary summary;
   final String creatorProfileId;
   final String? creatorDisplayName;
-  final String description;
+  final String? description;
   final String? exactMeetingText;
   final bool exactLocationRestricted;
 }
@@ -216,6 +249,7 @@ class OwnProposal {
     required this.cancelledAt,
     required this.capacity,
     this.coverObjectPath,
+    this.definitionPhase = ProposalDefinitionPhase.defined,
   });
 
   final String id;
@@ -240,19 +274,23 @@ class OwnProposal {
   final DateTime? cancelledAt;
   final ProjectCapacitySnapshot capacity;
   final String? coverObjectPath;
+  final ProposalDefinitionPhase definitionPhase;
+  bool get isIdea => definitionPhase == ProposalDefinitionPhase.idea;
 
   bool isEditableAt(DateTime now) =>
       lifecycle == ProposalLifecycle.draft ||
       (lifecycle == ProposalLifecycle.published &&
-          (status == null || status == ProposalStatus.upcoming) &&
-          startsAt != null &&
-          now.isBefore(startsAt!));
+          (isIdea ||
+              (status == null || status == ProposalStatus.upcoming) &&
+                  startsAt != null &&
+                  now.isBefore(startsAt!)));
 
   bool canCancelAt(DateTime now) =>
       lifecycle == ProposalLifecycle.published &&
-      status != ProposalStatus.completed &&
-      endsAt != null &&
-      now.isBefore(endsAt!);
+      (isIdea ||
+          status != ProposalStatus.completed &&
+              endsAt != null &&
+              now.isBefore(endsAt!));
 }
 
 class ProposalInput {
@@ -330,6 +368,24 @@ bool isPublishableProposalInput(ProposalInput input) =>
     input.publicLocationLabel.trim().isNotEmpty &&
     input.registrationCapacity != null;
 
+bool isPublishableIdeaInput(ProposalInput input) =>
+    isValidProposalDraft(input) &&
+    input.title.trim().length >= 2 &&
+    input.summary.trim().length >= 10 &&
+    RegExp(r'[\p{L}\p{N}]', unicode: true).hasMatch(input.title) &&
+    RegExp(r'[\p{L}\p{N}]', unicode: true).hasMatch(input.summary);
+
+class ProposalPromotionRequirements {
+  const ProposalPromotionRequirements({
+    required this.proposalId,
+    required this.missingFields,
+    required this.canPromote,
+  });
+  final String proposalId;
+  final List<String> missingFields;
+  final bool canPromote;
+}
+
 enum ProposalFailureKind {
   invalidInput,
   capacityConflict,
@@ -352,6 +408,7 @@ class PublicProposalsState {
     this.selectedSkillIds = const {},
     this.hasMore = true,
     this.failure,
+    this.definitionPhase,
   });
 
   final ProposalLoadPhase phase;
@@ -364,13 +421,24 @@ class PublicProposalsState {
   final Set<String> selectedSkillIds;
   final bool hasMore;
   final ProposalFailureKind? failure;
+  final ProposalDefinitionPhase? definitionPhase;
 
   bool get isBusy =>
       phase == ProposalLoadPhase.loading ||
       phase == ProposalLoadPhase.loadingMore;
 
+  List<RequestedProposalSummary> get visibleRequestedItems => requestedItems
+      .where(
+        (item) =>
+            definitionPhase == null ||
+            item.proposal.definitionPhase == definitionPhase,
+      )
+      .toList(growable: false);
+
   List<ProposalSummary> get ordinaryItems {
-    final requestedIds = requestedItems.map((item) => item.proposal.id).toSet();
+    final requestedIds = visibleRequestedItems
+        .map((item) => item.proposal.id)
+        .toSet();
     return items
         .where((item) => !requestedIds.contains(item.id))
         .toList(growable: false);

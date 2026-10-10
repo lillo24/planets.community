@@ -41,9 +41,19 @@ export default async function ProposalsPage({
   const params = await searchParams;
   const locality = single(params.locality)?.trim().slice(0, 120) || undefined;
   const skillId = uuid(single(params.skill)) ? single(params.skill) : undefined;
+  const query = single(params.query)?.trim().slice(0, 120) || undefined;
+  const phase = single(params.phase);
+  const definitionPhase =
+    phase === "idea" || phase === "defined" ? phase : undefined;
   const cursor = decodeProposalCursor(single(params.cursor));
 
-  const result = await loadPageData({ locality, skillId, cursor });
+  const result = await loadPageData({
+    locality,
+    skillId,
+    query,
+    definitionPhase,
+    cursor,
+  });
   if (result.status === "error") {
     return (
       <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-8 p-6 md:p-10">
@@ -61,7 +71,8 @@ export default async function ProposalsPage({
   const nextCursor =
     proposals.length === publicProposalPageSize
       ? encodeProposalCursor({
-          startsAt: proposals[proposals.length - 1].starts_at,
+          publishedAt: proposals[proposals.length - 1].published_at!,
+          referenceTime: proposals[proposals.length - 1].reference_time!,
           id: proposals[proposals.length - 1].proposal_id,
         })
       : undefined;
@@ -78,11 +89,35 @@ export default async function ProposalsPage({
           helping together.
         </p>
         <ActivityDiscoverySwitcher active="proposals" />
+        <p className="text-sm text-muted-foreground">
+          Newest published first, including Ideas to plan together.
+        </p>
       </header>
       <form
-        className="grid gap-3 rounded-xl bg-muted/40 p-4 sm:grid-cols-[1fr_16rem_auto]"
+        className="grid gap-3 rounded-xl bg-muted/40 p-4 sm:grid-cols-2"
         action="/proposals"
       >
+        <label className="grid gap-1 text-sm font-medium">
+          Search
+          <Input
+            name="query"
+            defaultValue={query}
+            maxLength={120}
+            placeholder="Search projects"
+          />
+        </label>
+        <label className="grid gap-1 text-sm font-medium">
+          Planning phase
+          <NativeSelect
+            name="phase"
+            defaultValue={definitionPhase ?? ""}
+            className="w-full"
+          >
+            <NativeSelectOption value="">All</NativeSelectOption>
+            <NativeSelectOption value="idea">In definition</NativeSelectOption>
+            <NativeSelectOption value="defined">Defined</NativeSelectOption>
+          </NativeSelect>
+        </label>
         <label className="grid gap-1 text-sm font-medium">
           Locality
           <Input
@@ -133,7 +168,13 @@ export default async function ProposalsPage({
             <PaginationItem>
               <PaginationNext
                 text="More proposals"
-                href={proposalUrl({ locality, skillId, cursor: nextCursor })}
+                href={proposalUrl({
+                  locality,
+                  skillId,
+                  query,
+                  definitionPhase,
+                  cursor: nextCursor,
+                })}
               />
             </PaginationItem>
           </PaginationContent>
@@ -167,15 +208,21 @@ async function loadPageData(
 export function proposalUrl({
   locality,
   skillId,
+  query: search,
+  definitionPhase,
   cursor,
 }: {
   locality?: string;
   skillId?: string;
+  query?: string;
+  definitionPhase?: "idea" | "defined";
   cursor?: string;
 }): string {
   const query = new URLSearchParams();
   if (locality) query.set("locality", locality);
   if (skillId) query.set("skill", skillId);
+  if (search) query.set("query", search);
+  if (definitionPhase) query.set("phase", definitionPhase);
   if (cursor) query.set("cursor", cursor);
   const suffix = query.toString();
   return suffix ? `/proposals?${suffix}` : "/proposals";

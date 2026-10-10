@@ -22,6 +22,9 @@ vi.mock("@/features/proposals/proposal-server", () => ({
 }));
 
 const summary: PublicProposalSummary = {
+  definition_phase: "defined",
+  published_at: "2026-09-01T10:00:00Z",
+  reference_time: "2026-09-01T11:00:00Z",
   proposal_id: "00000000-0000-4000-8000-000000000001",
   cover_object_path: null,
   title: "Community mural",
@@ -38,6 +41,34 @@ const summary: PublicProposalSummary = {
 };
 
 describe("public proposal routes", () => {
+  it("renders an optional Idea detail and keeps the app compatibility fallback", async () => {
+    getPublicProposal.mockResolvedValue({
+      ...summary,
+      definition_phase: "idea",
+      starts_at: null,
+      ends_at: null,
+      event_timezone: null,
+      public_location_label: null,
+      derived_status: null,
+      description: null,
+      creator_profile_id: summary.proposal_id,
+      creator_display_name: null,
+      exact_meeting_text: null,
+      exact_location_restricted: false,
+    });
+    const { default: Page } =
+      await import("@/app/(public)/proposals/[id]/page");
+    render(
+      await Page({ params: Promise.resolve({ id: summary.proposal_id }) }),
+    );
+    expect(screen.getByText("In definition")).toBeInTheDocument();
+    expect(screen.getByText("Date to decide together")).toBeInTheDocument();
+    expect(screen.getByText("Place to decide together")).toBeInTheDocument();
+    expect(
+      screen.getByText(/older app shows it as unavailable/),
+    ).toBeInTheDocument();
+    expect(screen.queryByText("Completed")).not.toBeInTheDocument();
+  });
   afterEach(cleanup);
   beforeEach(() => {
     vi.clearAllMocks();
@@ -50,6 +81,9 @@ describe("public proposal routes", () => {
     listPublicProposals.mockResolvedValue(
       Array.from({ length: 12 }, (_, index) => ({
         ...summary,
+        definition_phase: "defined",
+        published_at: "2026-09-01T10:00:00Z",
+        reference_time: "2026-09-01T11:00:00Z",
         proposal_id: `00000000-0000-4000-8000-${String(index + 1).padStart(12, "0")}`,
       })),
     );
@@ -114,6 +148,40 @@ describe("public proposal routes", () => {
     expect(screen.getByTestId("public-exact-location")).toHaveTextContent(
       "At the fountain",
     );
+  });
+
+  it("keeps phase, keyword, city and skill together in publication pagination", async () => {
+    listPublicProposals.mockResolvedValue(
+      Array.from({ length: 12 }, () => summary),
+    );
+    const { default: Page } = await import("@/app/(public)/proposals/page");
+    render(
+      await Page({
+        searchParams: Promise.resolve({
+          phase: "idea",
+          query: "garden",
+          locality: "Trento",
+          skill: "00000000-0000-4000-8000-000000000010",
+        }),
+      }),
+    );
+    expect(listPublicProposals).toHaveBeenCalledWith(
+      expect.objectContaining({
+        definitionPhase: "idea",
+        query: "garden",
+        locality: "Trento",
+        skillId: "00000000-0000-4000-8000-000000000010",
+      }),
+    );
+    const href = screen
+      .getByRole("button", { name: /Go to next page/i })
+      .getAttribute("href")!;
+    const params = new URL(href, "https://example.test").searchParams;
+    expect(params.get("phase")).toBe("idea");
+    expect(params.get("query")).toBe("garden");
+    expect(params.get("locality")).toBe("Trento");
+    expect(params.get("skill")).toBe("00000000-0000-4000-8000-000000000010");
+    expect(params.get("cursor")).toBeTruthy();
   });
 
   it("shows a city-only Project without claiming its absent venue is hidden", async () => {

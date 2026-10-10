@@ -70,6 +70,7 @@ class PublicProposalsController extends Notifier<PublicProposalsState> {
       query: query,
       locality: locality,
       selectedSkillIds: skillIds,
+      definitionPhase: state.definitionPhase,
       hasMore: state.hasMore,
     );
 
@@ -85,6 +86,7 @@ class PublicProposalsController extends Notifier<PublicProposalsState> {
           query: query.isEmpty ? null : query,
           locality: locality.isEmpty ? null : locality,
           skillIds: skillIds.isEmpty ? null : skillIds,
+          definitionPhase: state.definitionPhase,
         ),
         if (state.categories.isEmpty)
           gateway.loadSkillCatalog()
@@ -122,6 +124,7 @@ class PublicProposalsController extends Notifier<PublicProposalsState> {
         query: query,
         locality: locality,
         selectedSkillIds: skillIds,
+        definitionPhase: state.definitionPhase,
         hasMore: page.length == proposalPageSize,
       );
     } catch (error) {
@@ -134,6 +137,7 @@ class PublicProposalsController extends Notifier<PublicProposalsState> {
           query: state.query,
           locality: state.locality,
           selectedSkillIds: state.selectedSkillIds,
+          definitionPhase: state.definitionPhase,
           hasMore: state.hasMore,
           failure: mapProposalFailure(error),
         );
@@ -145,6 +149,8 @@ class PublicProposalsController extends Notifier<PublicProposalsState> {
     String? query,
     required String locality,
     required Set<String> skillIds,
+    ProposalDefinitionPhase? definitionPhase,
+    bool changePhase = false,
   }) async {
     _publicRevision += 1;
     _requestedRevision += 1;
@@ -154,6 +160,7 @@ class PublicProposalsController extends Notifier<PublicProposalsState> {
       query: (query ?? state.query).trim(),
       locality: locality.trim(),
       selectedSkillIds: Set.unmodifiable(skillIds),
+      definitionPhase: changePhase ? definitionPhase : state.definitionPhase,
     );
     await load();
   }
@@ -230,6 +237,7 @@ class PublicProposalsController extends Notifier<PublicProposalsState> {
     query: state.query,
     locality: state.locality,
     selectedSkillIds: state.selectedSkillIds,
+    definitionPhase: state.definitionPhase,
     hasMore: state.hasMore,
     failure: state.failure,
   );
@@ -637,20 +645,25 @@ class ProposalEditorController extends Notifier<ProposalEditorState> {
     String expectedCreatorId,
     ProposalInput input, {
     CoverChange coverChange = const CoverChange.unchanged(),
+    bool idea = false,
   }) async {
     if (state.isBusy) return null;
     final existing = state.proposal;
     if (existing != null && existing.lifecycle != ProposalLifecycle.draft) {
       return _reject(expectedCreatorId, ProposalFailureKind.invalidState);
     }
-    if (!isPublishableProposalInput(input) ||
-        !isKnownProposalTimeZone(input.eventTimezone)) {
+    if (!(idea
+            ? isPublishableIdeaInput(input)
+            : isPublishableProposalInput(input)) ||
+        (input.eventTimezone.isNotEmpty &&
+            !isKnownProposalTimeZone(input.eventTimezone))) {
       return _reject(expectedCreatorId, ProposalFailureKind.invalidInput);
     }
     return _saveContent(
       expectedCreatorId,
       input,
       publish: true,
+      idea: idea,
       coverChange: coverChange,
     );
   }
@@ -670,12 +683,15 @@ class ProposalEditorController extends Notifier<ProposalEditorState> {
         ProposalFailureKind.invalidState,
       );
     }
-    if (!isPublishableProposalInput(input) ||
+    if (!(existing.isIdea
+            ? isPublishableIdeaInput(input)
+            : isPublishableProposalInput(input)) ||
         !existing.capacity.canUseSettings(
           input.registrationCapacity,
           input.countOrganizersTowardCapacity,
         ) ||
-        !isKnownProposalTimeZone(input.eventTimezone)) {
+        (input.eventTimezone.isNotEmpty &&
+            !isKnownProposalTimeZone(input.eventTimezone))) {
       return _reject(
         expectedStructuralActorId,
         ProposalFailureKind.invalidInput,
@@ -707,6 +723,7 @@ class ProposalEditorController extends Notifier<ProposalEditorState> {
     String expectedCreatorId,
     ProposalInput input, {
     required bool publish,
+    bool idea = false,
     required CoverChange coverChange,
   }) async {
     input = freezeProposalInput(input);
@@ -791,7 +808,11 @@ class ProposalEditorController extends Notifier<ProposalEditorState> {
         _requireReadyIdentity(expectedCreatorId);
       }
       if (publish) {
-        await gateway.publishProposal(expectedCreatorId, proposalId);
+        if (idea) {
+          await gateway.publishIdea(expectedCreatorId, proposalId);
+        } else {
+          await gateway.publishProposal(expectedCreatorId, proposalId);
+        }
         if (!_isCurrent(revision)) return null;
       }
       final proposal = await gateway.getOwnProposal(
@@ -865,6 +886,103 @@ class ProposalEditorController extends Notifier<ProposalEditorState> {
           fallback;
     } catch (_) {
       return fallback;
+    }
+  }
+
+  Future<ProposalPromotionRequirements?> reviewPromotion(
+    String expectedProfileId,
+  ) async {
+    final proposal = state.proposal;
+    if (state.isBusy ||
+        proposal == null ||
+        !proposal.isIdea ||
+        proposal.lifecycle != ProposalLifecycle.published) {
+      return null;
+    }
+    final revision = ++_revision;
+    state = ProposalEditorState(
+      phase: ProposalEditorPhase.saving,
+      expectedCreatorId: expectedProfileId,
+      proposal: proposal,
+      categories: state.categories,
+    );
+    try {
+      _requireReadyIdentity(expectedProfileId);
+      final requirements = await ref
+          .read(proposalGatewayProvider)
+          .promotionRequirements(expectedProfileId, proposal.id);
+      if (!_isCurrent(revision)) return null;
+      _requireReadyIdentity(expectedProfileId);
+      state = ProposalEditorState(
+        phase: ProposalEditorPhase.ready,
+        expectedCreatorId: expectedProfileId,
+        proposal: proposal,
+        categories: state.categories,
+      );
+      return requirements;
+    } catch (error) {
+      if (_isCurrent(revision)) {
+        state = ProposalEditorState(
+          phase: ProposalEditorPhase.failure,
+          expectedCreatorId: expectedProfileId,
+          proposal: proposal,
+          categories: state.categories,
+          failure: mapProposalFailure(error),
+        );
+      }
+      return null;
+    }
+  }
+
+  Future<bool> promote(String expectedProfileId) async {
+    final proposal = state.proposal;
+    if (state.isBusy || proposal == null || !proposal.isIdea) return false;
+    final revision = ++_revision;
+    state = ProposalEditorState(
+      phase: ProposalEditorPhase.publishing,
+      expectedCreatorId: expectedProfileId,
+      proposal: proposal,
+      categories: state.categories,
+    );
+    try {
+      _requireReadyIdentity(expectedProfileId);
+      final gateway = ref.read(proposalGatewayProvider);
+      await gateway.promoteIdea(expectedProfileId, proposal.id);
+      if (!_isCurrent(revision)) return false;
+      _requireReadyIdentity(expectedProfileId);
+      final updated = await gateway.getOwnProposal(
+        expectedProfileId,
+        proposal.id,
+      );
+      if (!_isCurrent(revision)) return false;
+      if (updated == null || updated.isIdea) {
+        throw const ProposalInvalidStateException();
+      }
+      state = ProposalEditorState(
+        phase: ProposalEditorPhase.ready,
+        expectedCreatorId: expectedProfileId,
+        proposal: updated,
+        categories: state.categories,
+      );
+      _refreshProposalSurfaces(
+        expectedProfileId,
+        proposal.id,
+        refreshPublic: true,
+      );
+      return true;
+    } catch (error) {
+      if (_isCurrent(revision)) {
+        state = ProposalEditorState(
+          phase: ProposalEditorPhase.failure,
+          expectedCreatorId: expectedProfileId,
+          proposal: proposal,
+          categories: state.categories,
+          failure: error is PostgrestException && error.code == 'PT422'
+              ? ProposalFailureKind.invalidInput
+              : mapProposalFailure(error),
+        );
+      }
+      return false;
     }
   }
 

@@ -1,7 +1,7 @@
 import { LocationAttribution } from "@/features/locations/location-attribution";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { CalendarDaysIcon, MapPinIcon } from "lucide-react";
+import { CalendarDaysIcon, CircleHelpIcon, MapPinIcon } from "lucide-react";
 
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
@@ -58,9 +58,12 @@ export default async function ProposalDetailPage({
       </Link>
       <article className="flex flex-col gap-8">
         <header className="flex flex-col gap-3">
-          <div className="flex items-start justify-between gap-4">
+          <div className="flex flex-wrap items-start justify-between gap-4">
             <h1 className="text-4xl font-semibold">{proposal.title}</h1>
-            <ProposalStatusBadge status={proposal.derived_status} />
+            <ProposalStatusBadge
+              status={proposal.derived_status}
+              idea={proposal.definition_phase === "idea"}
+            />
           </div>
           <p className="text-xl text-muted-foreground">{proposal.summary}</p>
         </header>
@@ -77,8 +80,15 @@ export default async function ProposalDetailPage({
               {formatSchedule(proposal)}
             </p>
             <p className="flex gap-2">
-              <MapPinIcon aria-hidden="true" className="size-5 shrink-0" />
-              {proposal.public_location_label}
+              {proposal.public_location_label ? (
+                <MapPinIcon aria-hidden="true" className="size-5 shrink-0" />
+              ) : (
+                <CircleHelpIcon
+                  aria-hidden="true"
+                  className="size-5 shrink-0"
+                />
+              )}
+              {proposal.public_location_label ?? "Place to decide together"}
             </p>
             <LocationAttribution />
             {proposal.exact_location_restricted ? (
@@ -99,7 +109,7 @@ export default async function ProposalDetailPage({
         <section className="grid gap-3">
           <h2 className="text-2xl font-semibold">About this proposal</h2>
           <p className="whitespace-pre-wrap text-base leading-7">
-            {proposal.description}
+            {proposal.description ?? proposal.summary}
           </p>
         </section>
         {proposal.skills.length > 0 ? (
@@ -124,11 +134,19 @@ export default async function ProposalDetailPage({
           </p>
         ) : null}
       </article>
+      {proposal.definition_phase === "idea" ? (
+        <p className="text-sm text-muted-foreground">
+          Join in the updated PLANETS app to plan this Idea together. If an
+          older app shows it as unavailable, return to this web page or update
+          the app.
+        </p>
+      ) : null}
       <OrdinaryProjectHandoff
         project={{ id, kind: "one_time" }}
         config={readHandoffConfig()}
         intent={hasOrdinaryIntent(query.intent)}
         joinable={
+          proposal.definition_phase === "idea" ||
           proposal.derived_status === "upcoming" ||
           proposal.derived_status === "happening"
         }

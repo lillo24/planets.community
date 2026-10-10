@@ -13,6 +13,9 @@ const coverObjectPath = `00000000-0000-4000-8000-000000000099/projects/${proposa
 describe("public proposal models", () => {
   it("keeps only the sanitized detail contract", () => {
     const parsed = parsePublicProposalDetail({
+      definition_phase: "defined",
+      published_at: "2026-09-01T10:00:00Z",
+      reference_time: "2026-09-01T11:00:00Z",
       proposal_id: proposalId,
       cover_object_path: coverObjectPath,
       creator_profile_id: "user-1",
@@ -50,6 +53,9 @@ describe("public proposal models", () => {
 
   it("accepts no cover and rejects a non-null path for another Proposal", () => {
     const row = {
+      definition_phase: "defined",
+      published_at: "2026-09-01T10:00:00Z",
+      reference_time: "2026-09-01T11:00:00Z",
       proposal_id: proposalId,
       cover_object_path: null,
       title: "Community mural",
@@ -76,11 +82,19 @@ describe("public proposal models", () => {
 
   it("round-trips bounded cursors and rejects malformed values", () => {
     const cursor = {
-      startsAt: "2026-09-03T10:00:00Z",
+      publishedAt: "2026-09-03T10:00:00Z",
+      referenceTime: "2026-09-03T11:00:00Z",
       id: "00000000-0000-4000-8000-000000000001",
     };
     expect(decodeProposalCursor(encodeProposalCursor(cursor))).toEqual(cursor);
     expect(decodeProposalCursor("not-a-cursor")).toBeUndefined();
     expect(decodeProposalCursor("x".repeat(513))).toBeUndefined();
+    expect(
+      decodeProposalCursor(
+        Buffer.from(
+          JSON.stringify({ startsAt: "2026-09-03T10:00:00Z", id: cursor.id }),
+        ).toString("base64url"),
+      ),
+    ).toBeUndefined();
   });
 });

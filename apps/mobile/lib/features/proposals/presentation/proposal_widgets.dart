@@ -12,26 +12,36 @@ import '../domain/proposal_models.dart';
 import '../domain/proposal_time.dart';
 
 class ProposalStatusBadge extends StatelessWidget {
-  const ProposalStatusBadge({required this.status, super.key});
+  const ProposalStatusBadge({
+    required this.status,
+    this.isIdea = false,
+    super.key,
+  });
 
-  final ProposalStatus status;
+  final ProposalStatus? status;
+  final bool isIdea;
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final label = switch (status) {
-      ProposalStatus.upcoming => l10n.proposalStatusUpcoming,
-      ProposalStatus.happening => l10n.proposalStatusHappening,
-      ProposalStatus.justFinished => l10n.proposalStatusJustFinished,
-      ProposalStatus.completed => l10n.proposalStatusCompleted,
-    };
+    final label = isIdea
+        ? l10n.proposalPhaseIdea
+        : switch (status) {
+            null => l10n.proposalPhaseDefined,
+            ProposalStatus.upcoming => l10n.proposalStatusUpcoming,
+            ProposalStatus.happening => l10n.proposalStatusHappening,
+            ProposalStatus.justFinished => l10n.proposalStatusJustFinished,
+            ProposalStatus.completed => l10n.proposalStatusCompleted,
+          };
     final scheme = Theme.of(context).colorScheme;
     final justFinished = status == ProposalStatus.justFinished;
 
     return Semantics(
       label: label,
       child: Chip(
-        key: Key('proposal-status-${status.wireValue}'),
+        key: Key(
+          'proposal-status-${isIdea ? 'idea' : status?.wireValue ?? 'defined'}',
+        ),
         label: Text(label),
         backgroundColor: justFinished
             ? Colors.green.shade100
@@ -108,7 +118,10 @@ class ProposalCard extends StatelessWidget {
                         key: Key('proposal-card-title-${proposal.id}'),
                         style: Theme.of(context).textTheme.titleLarge,
                       ),
-                      ProposalStatusBadge(status: proposal.status),
+                      ProposalStatusBadge(
+                        status: proposal.status,
+                        isIdea: proposal.isIdea,
+                      ),
                     ],
                   ),
                   const SizedBox(height: AppSpacing.small),
@@ -116,14 +129,16 @@ class ProposalCard extends StatelessWidget {
                   const SizedBox(height: AppSpacing.medium),
                   _IconText(
                     icon: Icons.schedule_outlined,
-                    text:
-                        '${formatProposalDateTime(proposal.startsAt, proposal.eventTimezone, Localizations.localeOf(context).toLanguageTag())} – '
-                        '${formatProposalDateTime(proposal.endsAt, proposal.eventTimezone, Localizations.localeOf(context).toLanguageTag())}',
+                    text: proposalScheduleText(context, proposal),
                   ),
                   const SizedBox(height: AppSpacing.small),
                   _IconText(
-                    icon: Icons.location_on_outlined,
-                    text: proposal.publicLocationLabel,
+                    icon: proposal.publicLocationLabel == null
+                        ? Icons.help_outline
+                        : Icons.location_on_outlined,
+                    text:
+                        proposal.publicLocationLabel ??
+                        AppLocalizations.of(context).proposalPlaceUndecided,
                   ),
                   const SizedBox(height: AppSpacing.small),
                   ProjectCapacityLabel(
@@ -188,7 +203,7 @@ class ProposalLocation extends StatelessWidget {
           style: Theme.of(context).textTheme.titleLarge,
         ),
         const SizedBox(height: AppSpacing.small),
-        Text(detail.summary.publicLocationLabel),
+        Text(detail.summary.publicLocationLabel ?? l10n.proposalPlaceUndecided),
         const SizedBox(height: AppSpacing.small),
         Text(
           detail.exactLocationRestricted
@@ -221,4 +236,19 @@ class _IconText extends StatelessWidget {
       Expanded(child: Text(text)),
     ],
   );
+}
+
+/// Idea dates stay tentative; absent values never become an event schedule.
+String proposalScheduleText(BuildContext context, ProposalSummary proposal) {
+  final l10n = AppLocalizations.of(context);
+  final start = proposal.startsAt;
+  final end = proposal.endsAt;
+  final zone = proposal.eventTimezone;
+  if (start == null || end == null || zone == null) {
+    return l10n.proposalDateUndecided;
+  }
+  final locale = Localizations.localeOf(context).toLanguageTag();
+  final schedule =
+      '${formatProposalDateTime(start, zone, locale)} – ${formatProposalDateTime(end, zone, locale)}';
+  return proposal.isIdea ? l10n.proposalTentativeSchedule(schedule) : schedule;
 }

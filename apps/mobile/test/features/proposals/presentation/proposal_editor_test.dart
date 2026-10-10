@@ -27,6 +27,47 @@ void main() {
   for (final language in ['en', 'it']) {
     for (final scale in [1.0, 2.0]) {
       testWidgets(
+        '$language $scale publishes a public Idea without invented planning',
+        (tester) async {
+          tester.view.physicalSize = const Size(320, 740);
+          tester.view.devicePixelRatio = 1;
+          addTearDown(tester.view.resetPhysicalSize);
+          addTearDown(tester.view.resetDevicePixelRatio);
+          final gateway = await _pumpEditor(
+            tester,
+            null,
+            locale: language,
+            scale: scale,
+          );
+          await _tap(tester, find.byKey(const Key('proposal-mode-idea')));
+          await _seek(tester, find.byKey(const Key('proposal-title')));
+          await tester.enterText(
+            find.byKey(const Key('proposal-title')),
+            'Garden together',
+          );
+          await tester.pumpAndSettle();
+          await _reveal(tester, find.byKey(const Key('proposal-summary')));
+          await tester.enterText(
+            find.byKey(const Key('proposal-summary')),
+            'Let us plan a shared community garden.',
+          );
+          await _tap(tester, find.byKey(const Key('proposal-publish')));
+          expect(gateway.calls, contains('publish-idea:new-draft'));
+          expect(gateway.lastInput!.startsAt, isNull);
+          expect(gateway.lastInput!.endsAt, isNull);
+          expect(gateway.lastInput!.eventTimezone, isEmpty);
+          expect(gateway.lastInput!.locality, isEmpty);
+          expect(gateway.lastInput!.publicLocationLabel, isEmpty);
+          expect(gateway.lastInput!.registrationCapacity, isNull);
+          expect(gateway.lastInput!.description, isEmpty);
+          expect(tester.takeException(), isNull);
+        },
+      );
+    }
+  }
+  for (final language in ['en', 'it']) {
+    for (final scale in [1.0, 2.0]) {
+      testWidgets(
         '$language $scale city-only location is one field with optional exact details',
         (tester) async {
           tester.view.physicalSize = const Size(320, 740);
