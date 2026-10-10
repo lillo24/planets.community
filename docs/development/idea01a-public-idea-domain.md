@@ -1,5 +1,12 @@
 # IDEA01A: public Ideas and forward planning
 
+The integration against main #203 (LOCATION02) adds
+`20261010173000_idea_location_privacy_integration.sql`: the strict legacy detail
+still excludes Ideas, and both detail versions expose only a deliberately public
+verified place label, never arrival directions. LOCATION02's scoped receipt,
+visibility and protected directions contracts are retained. No stored data is
+rewritten. IDEA01B skips map preview reads for Ideas and uses the updated editor.
+
 ## Scope and integration gate
 
 This backend foundation is based on main
