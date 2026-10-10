@@ -28,6 +28,12 @@ Both commands derive credentials from `supabase status` and refuse a non-local o
 npm run demo:verify:local
 ```
 
+If Projects or Workshop appear empty, first identify the build's database and
+clear browse filters; DEMO-A form helpers do not populate staging or the local
+backend. The [UXFIX01 diagnosis](uxfix01-qa-copy.md) records safe endpoint/inventory
+checks and Android host configuration. Do not reset or silently reseed the retained
+phone-demo world to resolve an empty screen.
+
 ## Personas and useful flows
 
 MSG01 reuses Marco and Giulia: Marco's mural request and one added pending request

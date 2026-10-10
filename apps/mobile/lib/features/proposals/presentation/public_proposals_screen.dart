@@ -426,13 +426,14 @@ class _ProposalDetailScreenState extends ConsumerState<ProposalDetailScreen> {
                     borderRadius: AppRadii.medium,
                   ),
                   const SizedBox(height: AppSpacing.large),
-                  Row(
+                  OverflowBar(
+                    alignment: MainAxisAlignment.spaceBetween,
+                    spacing: AppSpacing.small,
+                    overflowSpacing: AppSpacing.small,
                     children: [
-                      Expanded(
-                        child: Text(
-                          detail.summary.title,
-                          style: Theme.of(context).textTheme.headlineSmall,
-                        ),
+                      Text(
+                        detail.summary.title,
+                        style: Theme.of(context).textTheme.headlineSmall,
                       ),
                       ProposalStatusBadge(status: detail.summary.status),
                     ],
@@ -466,6 +467,7 @@ class _ProposalDetailScreenState extends ConsumerState<ProposalDetailScreen> {
                       l10n.proposalSkillsTitle,
                       style: Theme.of(context).textTheme.titleLarge,
                     ),
+                    Text(l10n.proposalSkillsHint),
                     const SizedBox(height: AppSpacing.small),
                     ProposalSkillRequirements(skills: detail.summary.skills),
                   ],

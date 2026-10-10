@@ -23,6 +23,7 @@ import 'package:planets_mobile/features/messages/domain/message_unread_models.da
 import 'package:planets_mobile/features/messages/presentation/messages_navigation.dart';
 import 'package:planets_mobile/features/messages/presentation/messages_landing_screen.dart';
 import 'package:planets_mobile/features/messages/presentation/messages_screen.dart';
+import 'package:planets_mobile/features/messages/presentation/message_example_preview.dart';
 import 'package:planets_mobile/features/profile/data/profile_gateway.dart';
 import 'package:planets_mobile/features/profile_photo/application/visible_profile_photo_controller.dart';
 import 'package:planets_mobile/features/profile_photo/data/profile_photo_gateway.dart';
@@ -86,10 +87,10 @@ void main() {
           expect(find.text(l10n.messagesGuestPrivateMessage), findsOneWidget);
           expect(
             find.byKey(const Key('messages-example-private')),
-            findsOneWidget,
+            findsNothing,
           );
           expect(find.byIcon(Icons.lock_outline), findsNothing);
-          expect(find.text(l10n.messagesExampleLabel), findsOneWidget);
+          expect(find.text(l10n.messagesExampleLabel), findsNothing);
           expect(
             tester.getSemantics(
               find.byKey(const Key('message-chat-scope-private')),
@@ -100,7 +101,7 @@ void main() {
           expect(find.text(l10n.messagesGuestGroupsMessage), findsOneWidget);
           expect(
             find.byKey(const Key('messages-example-groups')),
-            findsOneWidget,
+            findsNothing,
           );
           expect(
             tester.getSemantics(
@@ -326,6 +327,7 @@ void main() {
         ..anchor.readiness = ProfileAnchorReadiness.incomplete;
       final app = await fixture.pump(tester, tutorialCompleted: true);
       expect(find.text('Complete profile'), findsOneWidget);
+      expect(find.byType(MessageExamplePreview), findsNothing);
       expect(find.text('Log in'), findsNothing);
       await _tap(tester, 'message-chat-scope-groups');
       await _tap(tester, 'messages-requests-action');
@@ -377,6 +379,7 @@ void main() {
     fixture.anchor.readiness = ProfileAnchorReadiness.incomplete;
     await _tap(tester, 'messages-context-action');
     expect(find.text('Complete profile'), findsOneWidget);
+    expect(find.byType(MessageExamplePreview), findsNothing);
     expect(fixture.auth.requestCount, 0);
     expect(fixture.anchor.ensureCount, 1);
     fixture.expectNoPrivateCalls();
@@ -454,6 +457,9 @@ void main() {
       final previousCalls = fixture.chats.calls.length;
       await _tap(tester, 'messages-return-chats');
       await _tap(tester, 'message-chat-scope-groups');
+      expect(find.byType(MessageExamplePreview), findsNothing);
+      await _tap(tester, 'message-chat-scope-private');
+      expect(find.byType(MessageExamplePreview), findsNothing);
       expect(fixture.chats.calls.length, previousCalls);
 
       final delay = Completer<void>();

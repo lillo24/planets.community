@@ -236,5 +236,6 @@ Its visible Example label is in semantics; it has no tap/send/unread/media behav
 and no providers. `controlsOnly` selects this presentation before any session-specific
 branch, for guests, ready identities and transitions alike. `previewScope` lets the
 tour teach Private then Groups without changing the ordinary remembered scope.
-Examples also accompany ordinary signed-out Chats; they never enter a ready
-account's real loading/empty/error/content list or a profile-setup recovery screen.
+Examples belong only to `controlsOnly` tutorial previews. Ordinary signed-out
+Chats retain their selectors and login context without fictional rows; setup,
+ready accounts and identity transitions never substitute examples for real data.

@@ -268,9 +268,7 @@ class _LocationEditorSectionState extends ConsumerState<LocationEditorSection>
             style: Theme.of(context).textTheme.titleLarge,
           ),
           const SizedBox(height: AppSpacing.small),
-          Text(
-            resource ? l10n.locationResourcePublic : l10n.locationAreaPublic,
-          ),
+          if (resource) Text(l10n.locationResourcePublic),
           if (!_factory.available) const ManualLocationNotice(),
           if (_factory.available) ...[
             Text(l10n.locationDraftCue),

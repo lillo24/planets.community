@@ -36,6 +36,7 @@ class _ProposalCreationChoiceState extends State<ProposalCreationChoice> {
           children: [
             Text(
               l.proposalStartChoice,
+              textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.headlineSmall,
             ),
             const SizedBox(height: AppSpacing.large),

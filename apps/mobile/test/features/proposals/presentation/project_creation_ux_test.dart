@@ -6,6 +6,7 @@ import 'package:planets_mobile/features/proposals/domain/proposal_models.dart';
 import 'package:planets_mobile/features/proposals/presentation/proposal_editor_screen.dart';
 import 'package:planets_mobile/features/proposals/presentation/proposal_creation_choice.dart';
 import 'package:planets_mobile/features/template_workshop/presentation/template_workshop_screens.dart';
+import 'package:planets_mobile/l10n/generated/app_localizations.dart';
 
 import '../../../support/fake_proposal.dart';
 import '../../template_workshop/presentation/template_workshop_test.dart'
@@ -13,6 +14,75 @@ import '../../template_workshop/presentation/template_workshop_test.dart'
 import 'proposal_draft_departure_test.dart' as draft;
 
 void main() {
+  for (final locale in ['en', 'it']) {
+    for (final scale in [1.0, 2.0]) {
+      testWidgets('creation choice centered at 320px $locale ${scale}x', (
+        tester,
+      ) async {
+        await tester.binding.setSurfaceSize(const Size(320, 900));
+        addTearDown(() => tester.binding.setSurfaceSize(null));
+        await workshop.pumpWorkshop(
+          tester,
+          actualRouter: true,
+          initial: '/proposals/create',
+          locale: locale,
+          scale: scale,
+        );
+        final l = AppLocalizations.of(
+          tester.element(find.byType(ProposalCreationChoice)),
+        );
+        final heading = find.text(l.proposalStartChoice);
+        expect(tester.widget<Text>(heading).textAlign, TextAlign.center);
+        expect(tester.getCenter(heading).dx, closeTo(160, 1));
+        expect(find.text(l.proposalFromTemplate), findsOneWidget);
+        expect(find.text(l.proposalFromScratch), findsOneWidget);
+        expect(tester.takeException(), isNull);
+      });
+      testWidgets(
+        'editor explains brief text, people and resources $locale ${scale}x',
+        (tester) async {
+          await tester.binding.setSurfaceSize(const Size(320, 900));
+          tester.platformDispatcher.textScaleFactorTestValue = scale;
+          addTearDown(() => tester.binding.setSurfaceSize(null));
+          addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+          final app = await draft.pumpEditor(tester, locale: locale);
+          final l = AppLocalizations.of(
+            tester.element(find.byType(ProposalEditorScreen)),
+          );
+          final brief = find.byKey(const Key('proposal-summary'));
+          await draft.reveal(tester, brief);
+          final input = tester.widget<TextField>(
+            find.descendant(of: brief, matching: find.byType(TextField)),
+          );
+          expect(input.decoration!.labelText, l.proposalSummaryLabel);
+          expect(input.decoration!.helperText, l.projectShortDescriptionHint);
+          final full = find.byKey(const Key('proposal-description'));
+          await draft.reveal(tester, full);
+          expect(
+            tester
+                .widget<TextField>(
+                  find.descendant(of: full, matching: find.byType(TextField)),
+                )
+                .decoration!
+                .labelText,
+            l.proposalDescriptionLabel,
+          );
+          await draft.reveal(tester, find.text(l.proposalSkillsHint));
+          expect(find.text(l.proposalSkillsHint), findsOneWidget);
+          await draft.reveal(tester, find.text(l.projectResourcesHint));
+          expect(find.text(l.projectResourcesHint), findsOneWidget);
+          await draft.reveal(tester, find.text(l.projectResourcesAfterDraft));
+          expect(
+            find.byKey(const Key('proposal-manage-resources')),
+            findsNothing,
+          );
+          expect(find.text(l.locationAreaPublic), findsNothing);
+          expect(app.gateway.calls, isNot(contains('create')));
+          expect(tester.takeException(), isNull);
+        },
+      );
+    }
+  }
   testWidgets(
     'Project editor input and competence picker keep spacing at 320px and 2x text',
     (tester) async {
@@ -24,12 +94,25 @@ void main() {
       addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
       await draft.pumpEditor(tester);
       final picker = find.byKey(const Key('proposal-skills-trigger'));
-      await draft.reveal(tester, picker);
-      final preview = tester.getRect(
-        find.byKey(const Key('location-visibility-preview')),
+      final previewFinder = find.byKey(
+        const Key('location-visibility-preview'),
       );
+      await draft.reveal(tester, previewFinder);
+      final position = tester
+          .state<ScrollableState>(
+            find
+                .descendant(
+                  of: find.byType(ListView),
+                  matching: find.byType(Scrollable),
+                )
+                .first,
+          )
+          .position;
+      final previewBottom =
+          tester.getRect(previewFinder).bottom + position.pixels;
+      await draft.reveal(tester, picker);
       expect(
-        tester.getRect(picker).top - preview.bottom,
+        tester.getRect(picker).top + position.pixels - previewBottom,
         greaterThanOrEqualTo(AppSpacing.large),
       );
       expect(tester.getRect(picker).right, lessThanOrEqualTo(320));
@@ -246,6 +329,7 @@ void main() {
       final app = await draft.pumpEditor(tester);
       await draft.selectMural(tester);
       final importance = find.byKey(const Key('proposal-skill-mural'));
+      await draft.reveal(tester, importance);
       expect(
         tester
             .widget<DropdownButton<ProposalSkillImportance>>(importance)
@@ -253,6 +337,8 @@ void main() {
         ProposalSkillImportance.useful,
       );
       final chip = find.byKey(const Key('proposal-skills-selected-mural'));
+      await tester.ensureVisible(chip);
+      await tester.pumpAndSettle();
       tester.widget<InputChip>(chip).onDeleted!();
       await tester.pump();
       app.router.go('/destination');

@@ -79,10 +79,16 @@ void main() {
         find.byKey(const Key('proposal-publish'), skipOffstage: false),
         findsOneWidget,
       );
-      for (var attempt = 0; attempt < 4; attempt++) {
-        await tester.drag(find.byType(ListView).first, const Offset(0, 600));
-        await tester.pump();
-      }
+      await tester.scrollUntilVisible(
+        find.byKey(const Key('proposal-title')),
+        -500,
+        scrollable: find
+            .descendant(
+              of: find.byType(ListView).first,
+              matching: find.byType(Scrollable),
+            )
+            .first,
+      );
       await tester.pumpAndSettle();
       expect(
         tester

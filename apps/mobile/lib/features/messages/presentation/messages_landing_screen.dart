@@ -124,10 +124,6 @@ class _MessagesAccessState extends ConsumerWidget {
               null => Icons.mark_email_unread_outlined,
             },
           ),
-          if (signedOut && scope != null) ...[
-            MessageExamplePreview(scope: scope!),
-            const SizedBox(height: AppSpacing.medium),
-          ],
           FilledButton(
             key: const Key('messages-context-action'),
             onPressed: busy

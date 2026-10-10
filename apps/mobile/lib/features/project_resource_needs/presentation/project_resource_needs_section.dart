@@ -52,6 +52,7 @@ class _ProjectResourceNeedsSectionState
             l10n.projectResourcesNeededTitle,
             style: Theme.of(context).textTheme.titleLarge,
           ),
+          Text(l10n.projectResourcesHint),
           const SizedBox(height: AppSpacing.small),
           if (state.phase == PublicProjectResourceNeedsPhase.loading &&
               state.items.isEmpty)
@@ -62,7 +63,7 @@ class _ProjectResourceNeedsSectionState
                   child: CircularProgressIndicator(strokeWidth: 2),
                 ),
                 const SizedBox(width: AppSpacing.small),
-                Text(l10n.projectResourcesLoading),
+                Expanded(child: Text(l10n.projectResourcesLoading)),
               ],
             )
           else if (state.phase == PublicProjectResourceNeedsPhase.failure &&

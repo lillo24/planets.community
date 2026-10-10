@@ -240,6 +240,7 @@ class _RecurringActivityEditorScreenState
                     _field(
                       controller: _summary,
                       label: l10n.tavoliSummaryLabel,
+                      helper: l10n.projectShortDescriptionHint,
                       max: 240,
                       requiredForPublish: true,
                     ),
@@ -589,23 +590,33 @@ class _RecurringActivityEditorScreenState
                         ),
                       ),
                     const SizedBox(height: AppSpacing.large),
+                    Text(
+                      l10n.projectResourcesNeededTitle,
+                      style: Theme.of(context).textTheme.titleLarge,
+                    ),
+                    Text(l10n.projectResourcesHint),
+                    if (existing == null)
+                      Text(l10n.projectResourcesAfterDraft)
+                    else
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: OutlinedButton.icon(
+                          key: const Key('tavoli-manage-resources'),
+                          onPressed: state.isBusy
+                              ? null
+                              : () => context.push(
+                                  ProjectResourceNeedRoutes.manage(
+                                    ProjectKind.recurring,
+                                    existing.id,
+                                  ),
+                                ),
+                          icon: const Icon(Icons.inventory_2_outlined),
+                          label: Text(l10n.projectResourcesManage),
+                        ),
+                      ),
                     Wrap(
                       spacing: AppSpacing.small,
                       children: [
-                        if (existing != null)
-                          OutlinedButton.icon(
-                            key: const Key('tavoli-manage-resources'),
-                            onPressed: state.isBusy
-                                ? null
-                                : () => context.push(
-                                    ProjectResourceNeedRoutes.manage(
-                                      ProjectKind.recurring,
-                                      existing.id,
-                                    ),
-                                  ),
-                            icon: const Icon(Icons.inventory_2_outlined),
-                            label: Text(l10n.projectResourcesManage),
-                          ),
                         FilledButton.tonal(
                           key: const Key('tavoli-save-draft'),
                           onPressed: state.isBusy ? null : () => _submit(false),
@@ -681,6 +692,7 @@ class _RecurringActivityEditorScreenState
     int min = 0,
     bool requiredForPublish = false,
     int maxLines = 1,
+    String? helper,
     TextInputType? keyboardType,
     List<TextInputFormatter>? inputFormatters,
     String? Function(String?)? validator,
@@ -693,7 +705,11 @@ class _RecurringActivityEditorScreenState
       maxLines: maxLines,
       keyboardType: keyboardType,
       inputFormatters: inputFormatters,
-      decoration: InputDecoration(labelText: label),
+      decoration: InputDecoration(
+        labelText: label,
+        helperText: helper,
+        helperMaxLines: 6,
+      ),
       validator: (value) {
         final custom = validator?.call(value);
         if (custom != null) return custom;
