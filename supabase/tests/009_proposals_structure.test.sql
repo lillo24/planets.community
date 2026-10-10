@@ -33,9 +33,10 @@ select columns_are(
     'published_at',
     'cancelled_at',
     'selected_public_place',
-    'location_revision'
+    'location_revision',
+    'definition_phase'
   ],
-  'proposal rows contain lifecycle, content, schedule, and rough location only'
+  'proposal rows contain lifecycle, definition phase, content, schedule, and rough location only'
 );
 select columns_are(
   'public',

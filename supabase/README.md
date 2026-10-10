@@ -2,6 +2,11 @@
 
 This folder owns the reproducible local PLANETS database and its security validation.
 
+IDEA01A adds a server-owned planning phase, deliberate public Idea publication,
+atomic promotion and versioned nullable readers. Legacy event readers stay
+Defined-only. See the [domain/API handoff](../docs/development/idea01a-public-idea-domain.md)
+for eligibility, compatibility, template baseline and the IDEA01B review gate.
+
 - `config.toml` configures the local stack and fail-closed Data API defaults.
 - `migrations/` is the canonical, timestamp-ordered SQL schema history.
 - `tests/` contains native pgTAP invariants and transactional security probes.

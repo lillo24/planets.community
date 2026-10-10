@@ -1,6 +1,41 @@
 // pg-meta cannot infer nullable RETURNS TABLE fields. Keep participation API
-// and MSG01 typed-feed contracts accurate without changing unrelated records.
+// MSG01 typed-feed and opt-in Idea contracts accurate without changing unrelated records.
+const ideaLogistics = [
+  "starts_at",
+  "ends_at",
+  "event_timezone",
+  "country_code",
+  "locality",
+  "administrative_area",
+  "public_location_label",
+  "derived_status",
+];
+const ideaOwnFields = [
+  ...ideaLogistics,
+  "title",
+  "summary",
+  "description",
+  "cover_object_path",
+  "exact_meeting_text",
+  "published_at",
+  "cancelled_at",
+];
 export const participationRpcNullableFields = Object.freeze({
+  // IDEA01A opts in explicitly. Never widen the legacy strict event projections.
+  get_public_proposal_v2: [
+    ...ideaLogistics,
+    "description",
+    "cover_object_path",
+    "creator_display_name",
+    "exact_meeting_text",
+  ],
+  get_own_proposal_v2: ideaOwnFields,
+  list_own_proposals_v2: ideaOwnFields,
+  list_public_proposals_v2: [...ideaLogistics, "cover_object_path"],
+  list_own_pending_requested_proposals_v2: [
+    ...ideaLogistics,
+    "cover_object_path",
+  ],
   list_own_project_memberships: ["originating_request_id"],
   list_project_members: ["originating_request_id"],
   list_project_members_for_manager: ["originating_request_id"],
