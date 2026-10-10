@@ -73,11 +73,10 @@ select results_eq($$select exact_meeting_text,exact_location_restricted from pub
 select lives_ok($$select pg_temp.exact_details(current_setting('test.city_id')::uuid,'Public meeting entrance','public')$$,
  'explicit public visibility remains supported');
 select results_eq($$select exact_meeting_text,exact_location_restricted from public.get_public_proposal(current_setting('test.city_id')::uuid)$$,
- $$values ('Public meeting entrance'::text,false)$$,'explicitly public instructions round trip');
+ $$values (null::text,true)$$,'legacy public visibility cannot publish free-text instructions');
 
 reset role;
--- Synthetic point fixture only. The normal update RPC must invalidate both
--- protected geometry and provenance when the organizer clears instructions.
+-- Synthetic point fixture only. Directions and selected place now clear independently.
 update public.proposal_meeting_details set selected_exact_place=jsonb_build_object(
  'provider','geoapify','kind','address','result_type','building','label','Synthetic entrance',
  'country_code','IT','locality','Trento','administrative_area',null,'latitude',46.07,'longitude',11.12,
@@ -87,17 +86,17 @@ update public.proposal_meeting_details set selected_exact_place=jsonb_build_obje
  where proposal_id=current_setting('test.city_id')::uuid;
 set local role authenticated;
 select set_config('request.jwt.claim.sub','fa010000-0000-4000-8000-000000000001',true);
-select lives_ok($$select pg_temp.exact_details(current_setting('test.city_id')::uuid,null,'participants')$$,
+select lives_ok($$select pg_temp.exact_details(current_setting('test.city_id')::uuid,null,'public')$$,
  'clearing exact instructions keeps the Project published');
 select is((select count(*) from public.proposal_meeting_details where proposal_id=current_setting('test.city_id')::uuid
- and exact_meeting_text is null and exact_location is null and selected_exact_place is null),1::bigint,
- 'clearing invalidates stale precise coordinates and provenance');
+ and exact_meeting_text is null and exact_location is not null and selected_exact_place is not null),1::bigint,
+ 'clearing instructions retains the separately selected exact place');
 select results_eq($$select exact_meeting_text,exact_location_restricted from public.get_public_proposal(current_setting('test.city_id')::uuid)$$,
- $$values (null::text,false)$$,'cleared venue no longer claims private presence');
+ $$values ('Synthetic entrance'::text,false)$$,'public selected place survives instructions clearing');
 
 set local role anon;
 select results_eq($$select exact_meeting_text,exact_location_restricted from public.get_public_proposal(current_setting('test.city_id')::uuid)$$,
- $$values (null::text,false)$$,'anonymous detail has truthful absence');
+ $$values ('Synthetic entrance'::text,false)$$,'anonymous detail sees selected public label without directions');
 select throws_ok($$select * from public.proposal_meeting_details$$,'42501',null,'anonymous users still cannot read protected storage');
 select is(jsonb_array_length(public.search_public_geography_v1('{"mode":"bounds","south":45.9,"north":46.2,"west":10.9,"east":11.4,"kinds":["one_time"]}'::jsonb)->'items'),0,
  'manual-only city is excluded from coordinate-based Map');

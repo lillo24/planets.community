@@ -61,6 +61,10 @@ void main() {
             findsNothing,
           );
           await tester.enterText(city, 'Rovereto');
+          await _tap(
+            tester,
+            find.byKey(const Key('proposal-confirm-manual-city')),
+          );
           await _tap(tester, find.byKey(const Key('proposal-optional-exact')));
           expect(
             find.byKey(const Key('proposal-exact-location')),
@@ -76,7 +80,7 @@ void main() {
           await tester.pumpAndSettle();
           expect(
             find.byKey(const Key('proposal-exact-visibility')),
-            findsOneWidget,
+            findsNothing,
           );
           expect(tester.takeException(), isNull);
           await tester.enterText(exact, '');
@@ -100,6 +104,7 @@ void main() {
     final city = find.byKey(const Key('proposal-public-location'));
     await _reveal(tester, city);
     await tester.enterText(city, 'Trento');
+    await _tap(tester, find.byKey(const Key('proposal-confirm-manual-city')));
     await _tap(tester, find.byKey(const Key('proposal-save-draft')));
     expect(gateway.calls.where((call) => call == 'create'), hasLength(1));
     expect(gateway.lastInput!.countryCode, 'IT');
@@ -119,10 +124,7 @@ void main() {
       );
       final gateway = await _pumpEditor(tester, input);
       await _reveal(tester, find.byKey(const Key('proposal-exact-location')));
-      expect(
-        find.byKey(const Key('proposal-exact-visibility')),
-        findsOneWidget,
-      );
+      expect(find.byKey(const Key('proposal-exact-visibility')), findsNothing);
       await _tap(tester, find.byKey(const Key('proposal-save-draft')));
       expect(gateway.lastInput!.countryCode, 'FR');
       expect(gateway.lastInput!.locality, 'Lyon');
@@ -133,28 +135,30 @@ void main() {
     },
   );
 
-  testWidgets(
-    'removing precise details clears protected selection and saves null text',
-    (tester) async {
-      final locations = FakeItemLocationGateway()
-        ..value = const ItemLocation(3, exactPlace: syntheticExact);
-      final gateway = await _pumpEditor(
-        tester,
-        proposalInputFixture(),
-        locations: locations,
-      );
-      await _tap(tester, find.byKey(const Key('proposal-remove-exact')));
-      expect(locations.value.exactPlace, isNull);
-      expect(find.byKey(const Key('proposal-exact-location')), findsNothing);
-      await _tap(tester, find.byKey(const Key('proposal-save-draft')));
-      expect(gateway.lastInput!.exactMeetingText, isEmpty);
-      expect(locations.mutations.single.$1.slot, 'exact');
-      expect(locations.mutations.single.$3, 'clear');
-    },
-  );
+  testWidgets('removing exact place preserves separate directions', (
+    tester,
+  ) async {
+    final locations = FakeItemLocationGateway()
+      ..value = const ItemLocation(3, exactPlace: syntheticExact);
+    final gateway = await _pumpEditor(
+      tester,
+      proposalInputFixture(),
+      locations: locations,
+    );
+    await _tap(tester, find.byKey(const Key('proposal-remove-exact')));
+    expect(locations.value.exactPlace, isNull);
+    expect(find.byKey(const Key('proposal-exact-location')), findsOneWidget);
+    await _tap(tester, find.byKey(const Key('proposal-save-draft')));
+    expect(
+      gateway.lastInput!.exactMeetingText,
+      proposalInputFixture().exactMeetingText,
+    );
+    expect(locations.mutations.single.$1.slot, 'exact');
+    expect(locations.mutations.single.$3, 'clear');
+  });
 
   testWidgets(
-    'lost exact-clear response retries once and finishes clearing instructions',
+    'lost exact-clear response retries once and preserves directions',
     (tester) async {
       final locations = FakeItemLocationGateway()
         ..value = const ItemLocation(3, exactPlace: syntheticExact)
@@ -168,11 +172,14 @@ void main() {
       expect(find.byKey(const Key('proposal-exact-location')), findsOneWidget);
       expect(locations.value.exactPlace, isNull);
       await _tap(tester, find.byKey(const Key('location-retry')));
-      expect(find.byKey(const Key('proposal-exact-location')), findsNothing);
+      expect(find.byKey(const Key('proposal-exact-location')), findsOneWidget);
       expect(locations.accepted, hasLength(1));
       expect(locations.mutations.map((m) => m.$2).toSet(), hasLength(1));
       await _tap(tester, find.byKey(const Key('proposal-save-draft')));
-      expect(gateway.lastInput!.exactMeetingText, isEmpty);
+      expect(
+        gateway.lastInput!.exactMeetingText,
+        proposalInputFixture().exactMeetingText,
+      );
       expect(tester.takeException(), isNull);
     },
   );

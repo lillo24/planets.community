@@ -89,6 +89,12 @@ void main() {
         await draft.reveal(tester, field);
         await tester.enterText(field, entry.value);
       }
+      await draft.reveal(
+        tester,
+        find.byKey(const Key('proposal-confirm-manual-city')),
+      );
+      await tester.tap(find.byKey(const Key('proposal-confirm-manual-city')));
+      await tester.pumpAndSettle();
       await draft.reveal(tester, find.byKey(const Key('proposal-save-draft')));
       await tester.tap(find.byKey(const Key('proposal-save-draft')));
       await tester.pumpAndSettle();

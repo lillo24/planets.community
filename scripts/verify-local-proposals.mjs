@@ -242,11 +242,11 @@ async function verifyProposals() {
     !publicCard ||
     JSON.stringify(publicCard).includes(publicExactText) ||
     publicDetails?.length !== 1 ||
-    publicDetails[0].exact_meeting_text !== publicExactText ||
-    publicDetails[0].exact_location_restricted !== false
+    publicDetails[0].exact_meeting_text !== null ||
+    publicDetails[0].exact_location_restricted !== true
   ) {
     throw new Error(
-      "Public exact meeting information did not remain detail-only.",
+      "Legacy directions became public through exact-place visibility.",
     );
   }
   if (
@@ -379,14 +379,8 @@ async function verifyCityOnlyProposal(owner, peer) {
     const rows = await rpc(anonymous, "get_public_proposal", {
       p_proposal_id: id,
     });
-    assert.equal(
-      rows[0].exact_location_restricted,
-      visibility === "participants",
-    );
-    assert.equal(
-      rows[0].exact_meeting_text,
-      visibility === "public" ? "Synthetic precise entrance" : null,
-    );
+    assert.equal(rows[0].exact_location_restricted, true);
+    assert.equal(rows[0].exact_meeting_text, null);
   }
   await rpc(
     owner.client,

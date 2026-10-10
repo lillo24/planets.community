@@ -290,15 +290,18 @@ void main() {
         List.filled(181, 'x').join(),
       );
       await settleLookup(tester);
-      // The single city field derives a valid Italy hint independently of
-      // invalid locality text; only the bounded locality is omitted.
-      expect(similar.calls, hasLength(count + 1));
-      expect(similar.calls.last.countryCode, 'IT');
-      expect(similar.calls.last.locality, isNull);
+      // Typed queries may be private addresses and never enter matching.
+      expect(similar.calls, hasLength(count));
       await tester.enterText(
         find.byKey(const Key('proposal-public-location')),
         'Trento',
       );
+      await reveal(
+        tester,
+        find.byKey(const Key('proposal-confirm-manual-city')),
+      );
+      await tester.tap(find.byKey(const Key('proposal-confirm-manual-city')));
+      await tester.pumpAndSettle();
       await settleLookup(tester);
       expect(similar.calls.last.locality, 'trento');
     },
@@ -415,6 +418,12 @@ void main() {
         List.filled(181, 'x').join(),
       );
       await tester.enterText(country, 'Trento');
+      await reveal(
+        tester,
+        find.byKey(const Key('proposal-confirm-manual-city')),
+      );
+      await tester.tap(find.byKey(const Key('proposal-confirm-manual-city')));
+      await tester.pumpAndSettle();
       await settleLookup(tester);
       await openSheet(tester);
       await choose(tester);
