@@ -104,6 +104,7 @@ select is((select count(*) from private.proposal_templates where source_proposal
 select ok(not private.is_proposal_template_publicly_usable((select id from private.proposal_templates where source_proposal_id=current_setting('test.idea')::uuid),statement_timestamp()),'past tentative Idea is never a usable Completed template');
 select is((select count(*) from private.audit_events where action='proposal.published' and target_id=current_setting('test.idea')::uuid),1::bigint,'publication retry has one audit');
 select is((select count(*) from private.outbox_events where event_type='proposal.published' and payload->>'proposal_id'=current_setting('test.idea')),1::bigint,'publication retry has one outbox event');
+select is((select payload->>'actor_id' from private.outbox_events where event_type='proposal.published' and payload->>'proposal_id'=current_setting('test.idea')),'fa020000-0000-4000-8000-000000000001','Idea publication preserves the established actor_id consumer contract');
 select throws_ok($$select private.lock_project_for_actual_contribution_mutation(current_setting('test.idea')::uuid)$$,'55000',null,'tentative past Idea cannot gain completion-only writes');
 select set_config('test.published_at',(select published_at::text from public.proposals where id=current_setting('test.idea')::uuid),true);
 select set_config('test.chat',(select id::text from public.project_group_chats where project_id=current_setting('test.idea')::uuid),true);

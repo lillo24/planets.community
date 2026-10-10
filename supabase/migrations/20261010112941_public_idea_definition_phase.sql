@@ -3354,7 +3354,7 @@ begin
  insert into private.audit_events(action,actor_user_id,target_type,target_id)
   values('proposal.published',actor,'proposal',p.id);
  insert into private.outbox_events(event_type,payload) values('proposal.published',
-  jsonb_build_object('proposal_id',p.id,'creator_profile_id',actor,'definition_phase','idea'));
+  jsonb_build_object('proposal_id',p.id,'actor_id',actor,'creator_profile_id',actor,'definition_phase','idea'));
  return p.id;
 end;
 $$;
