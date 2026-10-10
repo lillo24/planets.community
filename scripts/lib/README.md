@@ -29,7 +29,8 @@ tooling.
   row, exact request bubbles, resolved history, and no invented message context;
   it never repairs during verification.
 - `participation-rpc-nullability.mjs` corrects pg-meta's missing table-result
-  nullability for participation APIs and MSG01's typed mixed feed. Its tests
+  nullability for participation APIs, MSG01's typed mixed feed and IDEA01A's
+  opt-in nullable logistics. Legacy event results remain strict. Its tests
   fail on schema/type drift rather than writing partial generated types.
 - The matching `*.test.mjs` files verify parsing and request authentication
   behavior or path classification with non-secret fixtures.

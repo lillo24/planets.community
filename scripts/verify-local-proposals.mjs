@@ -5,6 +5,7 @@ import { createClient } from "@supabase/supabase-js";
 import { readLocalSupabaseStatus } from "./lib/local-supabase-status.mjs";
 import { ensureLocalProfilePhoto } from "./lib/local-profile-photo.mjs";
 import { verifyProposalTemplateWorkshop } from "./verify-local-proposal-template-workshop.mjs";
+import { verifyPublicIdeas } from "./verify-local-public-ideas.mjs";
 
 const repositoryRoot = process.cwd();
 const mailpitUrl = (
@@ -16,6 +17,7 @@ const userBEmail = "proposal-integration-b@planets.invalid";
 
 await verifyProposals();
 await verifyProposalTemplateWorkshop();
+await verifyPublicIdeas();
 
 async function verifyProposals() {
   const [userA, userB] = await Promise.all([

@@ -10,6 +10,10 @@ domain verification and change-scoped validation tooling.
   local data. Root `package.json` maps commands; the
   [database guide](../docs/development/database.md) maps setup and checks.
   Run pgTAP before verifiers populate the stack.
+- `verify-local-public-ideas.mjs` exports the IDEA01A OTP/JWT and concurrency
+  scenarios, composed by `verify-local-proposals.mjs`. It requires explicitly
+  disposable loopback API/database/mailbox targets; it never resets or targets
+  hosted data. See the [API/review handoff](../docs/development/idea01a-public-idea-domain.md).
 - `verify-local-similar-active-proposals.mjs` owns SIM01 OTP/API, ranking,
   capacity/blocking/media/privacy and read-only assertions. Its rollback-only
   `fixtures/sim01-query-plan.sql` supplies reproducible EXPLAIN work.

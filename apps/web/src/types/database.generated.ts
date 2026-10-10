@@ -1774,6 +1774,7 @@ export type Database = {
           country_code: string | null
           created_at: string
           creator_profile_id: string
+          definition_phase: string
           description: string | null
           ends_at: string | null
           event_timezone: string | null
@@ -1796,6 +1797,7 @@ export type Database = {
           country_code?: string | null
           created_at?: string
           creator_profile_id: string
+          definition_phase?: string
           description?: string | null
           ends_at?: string | null
           event_timezone?: string | null
@@ -1818,6 +1820,7 @@ export type Database = {
           country_code?: string | null
           created_at?: string
           creator_profile_id?: string
+          definition_phase?: string
           description?: string | null
           ends_at?: string | null
           event_timezone?: string | null
@@ -3399,6 +3402,33 @@ export type Database = {
           title: string
         }[]
       }
+      get_own_proposal_v2: {
+        Args: { p_expected_creator_profile_id: string; p_proposal_id: string }
+        Returns: {
+          administrative_area: string | null
+          cancelled_at: string | null
+          country_code: string | null
+          cover_object_path: string | null
+          created_at: string
+          definition_phase: string
+          derived_status: string | null
+          description: string | null
+          ends_at: string | null
+          event_timezone: string | null
+          exact_location_visibility: string
+          exact_meeting_text: string | null
+          lifecycle_state: string
+          locality: string | null
+          proposal_id: string
+          public_location_label: string | null
+          published_at: string | null
+          skills: Json
+          starts_at: string | null
+          summary: string | null
+          title: string | null
+          updated_at: string
+        }[]
+      }
       get_own_recurring_activity: {
         Args: {
           p_expected_creator_profile_id: string
@@ -3603,6 +3633,10 @@ export type Database = {
           project_kind: string
         }[]
       }
+      get_proposal_promotion_requirements: {
+        Args: { p_expected_profile_id: string; p_proposal_id: string }
+        Returns: Json
+      }
       get_public_item_location_v1: {
         Args: { p_item: string; p_kind: string }
         Returns: Json
@@ -3658,6 +3692,30 @@ export type Database = {
           source_proposal_id: string
           summary: string
           template_id: string
+          title: string
+        }[]
+      }
+      get_public_proposal_v2: {
+        Args: { p_proposal_id: string }
+        Returns: {
+          administrative_area: string | null
+          country_code: string | null
+          cover_object_path: string | null
+          creator_display_name: string | null
+          creator_profile_id: string
+          definition_phase: string
+          derived_status: string | null
+          description: string | null
+          ends_at: string | null
+          event_timezone: string | null
+          exact_location_restricted: boolean
+          exact_meeting_text: string | null
+          locality: string | null
+          proposal_id: string
+          public_location_label: string | null
+          skills: Json
+          starts_at: string | null
+          summary: string
           title: string
         }[]
       }
@@ -3840,6 +3898,17 @@ export type Database = {
         }[]
       }
       list_own_delegated_projects: {
+        Args: { p_expected_profile_id: string }
+        Returns: {
+          authority_role: string
+          delegated_at: string
+          project_id: string
+          project_kind: string
+          project_status: string
+          project_title: string
+        }[]
+      }
+      list_own_delegated_projects_v2: {
         Args: { p_expected_profile_id: string }
         Returns: {
           authority_role: string
@@ -4061,6 +4130,32 @@ export type Database = {
           title: string
         }[]
       }
+      list_own_pending_requested_proposals_v2: {
+        Args: {
+          p_expected_requester_profile_id: string
+          p_locality?: string
+          p_query?: string
+          p_skill_ids?: string[]
+        }
+        Returns: {
+          administrative_area: string | null
+          country_code: string | null
+          cover_object_path: string | null
+          definition_phase: string
+          derived_status: string | null
+          ends_at: string | null
+          event_timezone: string | null
+          locality: string | null
+          proposal_id: string
+          public_location_label: string | null
+          request_created_at: string
+          request_id: string
+          skills: Json
+          starts_at: string | null
+          summary: string
+          title: string
+        }[]
+      }
       list_own_pending_requested_recurring_activities: {
         Args: {
           p_expected_requester_profile_id: string
@@ -4268,6 +4363,33 @@ export type Database = {
           starts_at: string
           summary: string
           title: string
+          updated_at: string
+        }[]
+      }
+      list_own_proposals_v2: {
+        Args: { p_expected_creator_profile_id: string }
+        Returns: {
+          administrative_area: string | null
+          cancelled_at: string | null
+          country_code: string | null
+          cover_object_path: string | null
+          created_at: string
+          definition_phase: string
+          derived_status: string | null
+          description: string | null
+          ends_at: string | null
+          event_timezone: string | null
+          exact_location_visibility: string
+          exact_meeting_text: string | null
+          lifecycle_state: string
+          locality: string | null
+          proposal_id: string
+          public_location_label: string | null
+          published_at: string | null
+          skills: Json
+          starts_at: string | null
+          summary: string | null
+          title: string | null
           updated_at: string
         }[]
       }
@@ -4845,6 +4967,36 @@ export type Database = {
           title: string
         }[]
       }
+      list_public_proposals_v2: {
+        Args: {
+          p_cursor_id?: string
+          p_cursor_published_at?: string
+          p_definition_phase?: string
+          p_limit?: number
+          p_locality?: string
+          p_query?: string
+          p_reference_time?: string
+          p_skill_ids?: string[]
+        }
+        Returns: {
+          administrative_area: string | null
+          country_code: string | null
+          cover_object_path: string | null
+          definition_phase: string
+          derived_status: string | null
+          ends_at: string | null
+          event_timezone: string | null
+          locality: string | null
+          proposal_id: string
+          public_location_label: string | null
+          published_at: string
+          reference_time: string
+          skills: Json
+          starts_at: string | null
+          summary: string
+          title: string
+        }[]
+      }
       list_public_recurring_activities: {
         Args: {
           p_cursor_id?: string
@@ -5076,6 +5228,10 @@ export type Database = {
           processed_count: number
         }[]
       }
+      promote_proposal_idea: {
+        Args: { p_expected_profile_id: string; p_proposal_id: string }
+        Returns: string
+      }
       propose_resource_exchange_terms: {
         Args: {
           p_agreement_id: string
@@ -5094,6 +5250,10 @@ export type Database = {
         Returns: string
       }
       publish_proposal: {
+        Args: { p_expected_creator_profile_id: string; p_proposal_id: string }
+        Returns: string
+      }
+      publish_proposal_idea: {
         Args: { p_expected_creator_profile_id: string; p_proposal_id: string }
         Returns: string
       }

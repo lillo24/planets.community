@@ -28,6 +28,16 @@ test("already accurate generated results are unchanged", () => {
   const output = applyParticipationRpcNullability(fixture());
   assert.equal(applyParticipationRpcNullability(output), output);
 });
+
+test("Idea logistics are nullable without weakening legacy event results", () => {
+  const legacy =
+    "      get_public_proposal: {\n        Returns: {\n          starts_at: string\n        }[]\n      }";
+  const output = applyParticipationRpcNullability(`${fixture()}\n${legacy}`);
+  assert.ok(output.includes(legacy));
+  assert.ok(output.includes("starts_at: string | null"));
+  assert.ok(output.includes("derived_status: string | null"));
+  assert.ok(!participationRpcNullableFields.get_public_proposal);
+});
 test("missing RPCs fail instead of writing partial generated types", () => {
   assert.throws(
     () => applyParticipationRpcNullability(""),
