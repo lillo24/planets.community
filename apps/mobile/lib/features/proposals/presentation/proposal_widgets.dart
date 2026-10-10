@@ -132,6 +132,10 @@ class ProposalCard extends StatelessWidget {
                   ),
                   if (proposal.skills.isNotEmpty) ...[
                     const SizedBox(height: AppSpacing.medium),
+                    Text(
+                      AppLocalizations.of(context).proposalSkillsTitle,
+                      style: Theme.of(context).textTheme.titleSmall,
+                    ),
                     ProposalSkillRequirements(skills: proposal.skills),
                   ],
                 ],

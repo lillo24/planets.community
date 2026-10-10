@@ -1,5 +1,15 @@
 # Proposals feature
 
+The creation chooser centers its heading. IT/EN editor labels distinguish a
+240-character short description (shown on browse cards) from the full description;
+canonical `summary`/`description` fields and validation are unchanged. Project
+skills describe capabilities needed from people, independently of Profile skills.
+Resources/materials/tools have a separate explanation and management route beside
+the skill section; a new unsaved form explains that a draft must exist first.
+No draft is created just to expose resource management. The shared Tavolo fields
+use the same description/resource copy. The redundant public-area paragraph is
+hidden for Projects; exact-location privacy and validation remain visible.
+
 UI-NEXT-04 keeps every manual location field and canonical meeting read intact.
 MAP02's shared `locations/presentation/location_editor_section.dart` keeps manual
 entry while lookup is disabled and exposes injected receipt-backed selection.

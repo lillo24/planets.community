@@ -21,6 +21,7 @@ import 'package:planets_mobile/features/proposals/domain/proposal_models.dart';
 import 'package:planets_mobile/features/proposals/presentation/proposal_editor_screen.dart';
 import 'package:planets_mobile/features/proposals/presentation/public_proposals_screen.dart';
 import 'package:planets_mobile/features/template_workshop/data/template_gateway.dart';
+import 'package:planets_mobile/features/template_workshop/application/template_controllers.dart';
 import 'package:planets_mobile/features/template_workshop/presentation/template_workshop_screens.dart';
 import 'package:planets_mobile/l10n/generated/app_localizations.dart';
 
@@ -32,6 +33,58 @@ import '../../../support/fake_similar_proposal.dart';
 import '../../../support/fake_template.dart';
 
 void main() {
+  testWidgets('guest catalog explains login without reading or showing empty', (
+    tester,
+  ) async {
+    final app = await pumpWorkshop(tester, ready: false);
+    final l = AppLocalizations.of(
+      tester.element(find.byType(TemplateWorkshopScreen)),
+    );
+    expect(find.text(l.workshopSignInHint), findsOneWidget);
+    expect(find.text(l.authSignInAction), findsOneWidget);
+    expect(find.text(l.workshopEmpty), findsNothing);
+    expect(find.byKey(const Key('template-query')), findsNothing);
+    expect(app.templates.calls, isEmpty);
+    app.container
+        .read(authSessionProvider.notifier)
+        .markProfileReady(const AuthIdentity(id: templateActor));
+    await tester.pumpAndSettle();
+    expect(find.byKey(Key('template-card-$templateId')), findsOneWidget);
+    app.auth.emit(const AuthSnapshot());
+    await tester.pumpAndSettle();
+    expect(find.byKey(Key('template-card-$templateId')), findsNothing);
+    expect(find.byKey(const Key('template-auth-required')), findsOneWidget);
+  });
+
+  testWidgets(
+    'empty, filtered and offline catalogs are distinct and retryable',
+    (tester) async {
+      final app = await pumpWorkshop(tester);
+      final l = AppLocalizations.of(
+        tester.element(find.byType(TemplateWorkshopScreen)),
+      );
+      app.templates.cards = [];
+      await app.container.read(templateCatalogProvider.notifier).load();
+      await tester.pumpAndSettle();
+      expect(find.text(l.workshopEmpty), findsOneWidget);
+      await tester.enterText(find.byKey(const Key('template-query')), 'garden');
+      await tester.pump(const Duration(milliseconds: 400));
+      await tester.pumpAndSettle();
+      expect(find.text(l.workshopNoMatches), findsOneWidget);
+      expect(find.text(l.workshopEmpty), findsNothing);
+      app.templates.listError = Exception('offline');
+      await app.container.read(templateCatalogProvider.notifier).load();
+      await tester.pumpAndSettle();
+      expect(find.text(l.workshopReadError), findsOneWidget);
+      expect(find.text(l.workshopNoMatches), findsNothing);
+      app.templates.listError = null;
+      app.templates.cards = [templateCardFixture()];
+      await tester.tap(find.text(l.workshopRetry));
+      await tester.pumpAndSettle();
+      expect(find.byKey(Key('template-card-$templateId')), findsOneWidget);
+      expect(find.text(l.workshopReadError), findsNothing);
+    },
+  );
   testWidgets(
     'return after cancelled debounce applies the visible newest query',
     (tester) async {
@@ -359,6 +412,7 @@ Future<
     FakeTemplateGateway templates,
     FakeProposalGateway proposals,
     FakeModerationGateway moderation,
+    FakeAuthGateway auth,
   })
 >
 pumpWorkshop(
@@ -368,6 +422,7 @@ pumpWorkshop(
   Brightness brightness = Brightness.light,
   double scale = 1,
   bool actualRouter = false,
+  bool ready = true,
   List<ProposalSkillCategory> categories = const [],
   FakeSimilarProposalGateway? similar,
 }) async {
@@ -407,9 +462,13 @@ pumpWorkshop(
       ),
     ],
   );
-  c
-      .read(authSessionProvider.notifier)
-      .markProfileReady(const AuthIdentity(id: templateActor));
+  if (ready) {
+    c
+        .read(authSessionProvider.notifier)
+        .markProfileReady(const AuthIdentity(id: templateActor));
+  } else {
+    await c.read(authSessionProvider.notifier).start();
+  }
   final guard = c.read(draftDepartureProvider);
   final router = actualRouter
       ? createAppRouter(
@@ -501,6 +560,7 @@ pumpWorkshop(
     templates: templates,
     proposals: proposals,
     moderation: moderation,
+    auth: auth,
   );
 }
 

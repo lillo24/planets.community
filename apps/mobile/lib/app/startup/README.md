@@ -45,6 +45,8 @@ one state backward and restore the surface, frozen selection and scroll position
 Back on the introduction exits safely. Only the 250 ms surface commit is debounced;
 Next/Previous can interrupt the detail scroll without waiting for it to finish.
 Previous and Next share a 56dp bottom row; the header contains progress/Skip.
+The existing Create explanation distinguishes people's skills (using a mixer)
+from resources to obtain/bring (paintbrushes/paint); it adds no step or action.
 The 19sp explanation uses the theme's title style and scrolls within a bounded
 pane. New surfaces first paint meaningful content (or a bounded honest fallback),
 hold unobscured for 600ms, then fade scrim/holes together over 380ms. Focus changes

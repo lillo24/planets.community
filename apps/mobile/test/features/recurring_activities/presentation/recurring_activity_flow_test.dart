@@ -8,6 +8,9 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:planets_mobile/app/planets_app.dart';
 import 'package:planets_mobile/app/router/app_router.dart';
 import 'package:planets_mobile/core/config/app_config.dart';
+import 'package:planets_mobile/features/settings/application/language_preference_controller.dart';
+import 'package:planets_mobile/features/settings/domain/language_preference.dart';
+import 'package:planets_mobile/l10n/generated/app_localizations.dart';
 import 'package:planets_mobile/core/widgets/browse_filter_button.dart';
 import 'package:planets_mobile/core/widgets/error_state.dart';
 import 'package:planets_mobile/core/widgets/loading_state.dart';
@@ -38,6 +41,59 @@ import '../../../support/fake_proposal.dart';
 import '../../../support/fake_recurring_activity.dart';
 
 void main() {
+  for (final locale in [
+    LanguagePreference.english,
+    LanguagePreference.italian,
+  ]) {
+    for (final scale in [1.0, 2.0]) {
+      testWidgets(
+        'Tavolo description and resource copy ${locale.name} ${scale}x',
+        (tester) async {
+          await tester.binding.setSurfaceSize(const Size(320, 900));
+          tester.platformDispatcher.textScaleFactorTestValue = scale;
+          addTearDown(() => tester.binding.setSurfaceSize(null));
+          addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+          final recurring = FakeRecurringActivityGateway();
+          final app = await _pump(
+            tester,
+            recurring: recurring,
+            language: locale,
+          );
+          app.read(appRouterProvider).go('/tavoli/create');
+          await tester.pumpAndSettle();
+          final l = AppLocalizations.of(
+            tester.element(find.byKey(const Key('tavoli-title-field'))),
+          );
+          final brief = find.byWidgetPredicate(
+            (w) =>
+                w is TextField &&
+                w.decoration?.labelText == l.tavoliSummaryLabel,
+          );
+          await _scrollTo(tester, brief, 250);
+          expect(
+            tester.widget<TextField>(brief).decoration!.helperText,
+            l.projectShortDescriptionHint,
+          );
+          final full = find.byWidgetPredicate(
+            (w) =>
+                w is TextField &&
+                w.decoration?.labelText == l.tavoliDescriptionLabel,
+          );
+          await _scrollTo(tester, full, 250);
+          expect(full, findsOneWidget);
+          await _scrollTo(tester, find.text(l.projectResourcesAfterDraft), 300);
+          expect(find.text(l.projectResourcesHint), findsOneWidget);
+          expect(find.text(l.locationAreaPublic), findsNothing);
+          expect(
+            find.byKey(const Key('tavoli-manage-resources')),
+            findsNothing,
+          );
+          expect(recurring.calls, isNot(contains('create')));
+          expect(tester.takeException(), isNull);
+        },
+      );
+    }
+  }
   testWidgets(
     'Tavolo locality disclosure retains pending and applied filters',
     (tester) async {
@@ -616,6 +672,7 @@ Future<ProviderContainer> _pump(
   WidgetTester tester, {
   required FakeRecurringActivityGateway recurring,
   bool signedIn = true,
+  LanguagePreference language = LanguagePreference.english,
   bool hasPhoto = true,
   FakeProfilePhotoGateway? photoGateway,
 }) async {
@@ -629,6 +686,7 @@ Future<ProviderContainer> _pump(
     ProviderScope(
       overrides: [
         preacceptedPolicyFixture,
+        initialLanguagePreferenceProvider.overrideWithValue(language),
         appConfigProvider.overrideWithValue(
           AppConfig.fromValues(
             appEnvironment: 'local',

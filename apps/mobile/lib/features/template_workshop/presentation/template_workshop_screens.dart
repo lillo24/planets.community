@@ -9,6 +9,7 @@ import '../../../core/theme/app_tokens.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../auth/application/auth_session_controller.dart';
 import '../../auth/domain/auth_models.dart';
+import '../../auth/presentation/auth_status.dart';
 import '../../cover_media/presentation/project_cover_image.dart';
 import '../../moderation/presentation/moderation_routes.dart';
 import '../../proposals/domain/proposal_models.dart';
@@ -123,6 +124,35 @@ class _TemplateWorkshopScreenState extends ConsumerState<TemplateWorkshopScreen>
       }
     });
     final session = ref.watch(authSessionProvider);
+    // An auth-gated load makes no request. It must not look like an empty catalog.
+    if (session.phase != AuthSessionPhase.ready) {
+      return Scaffold(
+        appBar: pageAppBar(context, title: Text(l.workshopTitle)),
+        body: SafeArea(
+          child: ListView(
+            key: const Key('template-auth-required'),
+            padding: const EdgeInsets.all(AppSpacing.medium),
+            children: [
+              Text(l.workshopSignInHint),
+              if (session.phase == AuthSessionPhase.signedOut)
+                FilledButton(
+                  onPressed: () => context.push(
+                    Uri(
+                      path: '/auth',
+                      queryParameters: const {
+                        'returnTo': WorkshopRoutes.catalog,
+                      },
+                    ).toString(),
+                  ),
+                  child: Text(l.authSignInAction),
+                )
+              else
+                const AuthStatus(),
+            ],
+          ),
+        ),
+      );
+    }
     final applications = ref.watch(templateApplicationsProvider);
     final attempts = session.phase == AuthSessionPhase.ready
         ? applications.attempts.values.where(

@@ -19,6 +19,12 @@ The catalog separates the search input and competence selector with
 `AppSpacing.medium`, matching public Project discovery. See the focused
 [search/input spacing audit](../../../../../docs/development/needs-workshop-polish.md).
 
+Only a ready identity requests the mobile catalog. Signed-out/restoring/setup
+states show explicit authentication context rather than an empty catalog; login
+preserves the catalog return destination. A successful unfiltered empty response,
+no filter matches and a failed read remain distinct. UI tooling never seeds data.
+For backend/fixture diagnosis, see [UXFIX01](../../../../../docs/development/uxfix01-qa-copy.md).
+
 Catalog requests use 20 rows and the raw last-row `(linked_at, template_id)`
 cursor. Filters reset pagination even during pending requests; appended cards
 deduplicate by template identity. Link time is publication time, not an event

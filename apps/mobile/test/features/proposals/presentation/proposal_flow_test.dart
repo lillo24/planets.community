@@ -10,6 +10,7 @@ import 'package:planets_mobile/features/auth/data/auth_gateway.dart';
 import 'package:planets_mobile/features/auth/domain/auth_models.dart';
 import 'package:planets_mobile/features/cover_media/data/cover_media_gateway.dart';
 import 'package:planets_mobile/features/proposals/data/proposal_gateway.dart';
+import 'package:planets_mobile/features/project_resource_needs/data/project_resource_needs_gateway.dart';
 import 'package:planets_mobile/features/proposals/domain/proposal_models.dart';
 import 'package:planets_mobile/features/proposals/presentation/own_proposals_screen.dart';
 import 'package:planets_mobile/features/proposals/presentation/proposal_widgets.dart';
@@ -17,6 +18,7 @@ import 'package:planets_mobile/features/proposals/presentation/public_proposals_
 import 'package:planets_mobile/l10n/generated/app_localizations.dart';
 
 import '../../../support/fake_proposal.dart';
+import '../../../support/fake_project_resource_needs.dart';
 import '../../../support/fake_auth.dart';
 import '../../../support/fake_cover_media.dart';
 
@@ -26,6 +28,77 @@ const _coverPath =
     'c3000000-0000-4000-8000-000000000001.webp';
 
 void main() {
+  for (final locale in ['en', 'it']) {
+    for (final scale in [1.0, 2.0]) {
+      testWidgets(
+        'cards/detail distinguish people and resources $locale ${scale}x',
+        (tester) async {
+          await tester.binding.setSurfaceSize(const Size(320, 900));
+          addTearDown(() => tester.binding.setSurfaceSize(null));
+          await tester.pumpWidget(
+            ProviderScope(
+              child: _localized(
+                ListView(
+                  children: [
+                    ProposalCard(
+                      proposal: proposalSummaryFixture(),
+                      onTap: () {},
+                    ),
+                  ],
+                ),
+                locale: locale,
+                scale: scale,
+              ),
+            ),
+          );
+          await tester.pumpAndSettle();
+          final l = AppLocalizations.of(
+            tester.element(find.byType(ProposalCard)),
+          );
+          await tester.scrollUntilVisible(
+            find.text(l.proposalSkillsTitle),
+            200,
+          );
+          expect(find.text(l.proposalSkillsTitle), findsOneWidget);
+          expect(
+            find.text('${l.proposalSkillRequired}: Mural painting'),
+            findsOneWidget,
+          );
+          expect(tester.takeException(), isNull);
+          await tester.pumpWidget(const SizedBox());
+          final resources = FakeProjectResourceNeedsGateway()
+            ..publicItems = [publicProjectResourceNeedFixture()];
+          await tester.pumpWidget(
+            ProviderScope(
+              overrides: [
+                proposalGatewayProvider.overrideWithValue(
+                  FakeProposalGateway()..publicDetail = proposalDetailFixture(),
+                ),
+                projectResourceNeedsGatewayProvider.overrideWithValue(
+                  resources,
+                ),
+              ],
+              child: _localized(
+                const ProposalDetailScreen(proposalId: 'proposal-1'),
+                locale: locale,
+                scale: scale,
+              ),
+            ),
+          );
+          await tester.pumpAndSettle();
+          await tester.scrollUntilVisible(find.text(l.proposalSkillsHint), 250);
+          expect(find.text(l.proposalSkillsHint), findsOneWidget);
+          await tester.scrollUntilVisible(
+            find.text(l.projectResourcesHint),
+            250,
+          );
+          expect(find.text(l.projectResourcesNeededTitle), findsOneWidget);
+          expect(resources.calls, ['list-public:proposal-1']);
+          expect(tester.takeException(), isNull);
+        },
+      );
+    }
+  }
   testWidgets(
     'public cards render temporal statuses and Just Finished is green',
     (tester) async {
@@ -390,7 +463,7 @@ void main() {
     expect(find.text('Ends: Sep 10, 2026 14:00'), findsOneWidget);
     expect(find.text('Europe/Rome'), findsOneWidget);
     await tester.scrollUntilVisible(find.text('Useful: Gardening'), 200);
-    expect(find.text('Skills for this proposal'), findsOneWidget);
+    expect(find.text('Skills we need from people'), findsOneWidget);
     expect(find.text('Required: Mural painting'), findsOneWidget);
     expect(find.text('Useful: Gardening'), findsOneWidget);
     expect(tester.takeException(), isNull);
@@ -489,16 +562,23 @@ void main() {
   });
 }
 
-Widget _localized(Widget child) => MaterialApp(
-  localizationsDelegates: const [
-    AppLocalizations.delegate,
-    GlobalMaterialLocalizations.delegate,
-    GlobalWidgetsLocalizations.delegate,
-    GlobalCupertinoLocalizations.delegate,
-  ],
-  supportedLocales: AppLocalizations.supportedLocales,
-  home: Scaffold(body: child),
-);
+Widget _localized(Widget child, {String locale = 'en', double scale = 1}) =>
+    MaterialApp(
+      locale: Locale(locale),
+      builder: (context, child) => MediaQuery(
+        data: MediaQuery.of(context)
+            .copyWith(textScaler: TextScaler.linear(scale)),
+        child: child!,
+      ),
+      localizationsDelegates: const [
+        AppLocalizations.delegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      supportedLocales: AppLocalizations.supportedLocales,
+      home: Scaffold(body: child),
+    );
 
 Widget _routerApp(GoRouter router) => MaterialApp.router(
   localizationsDelegates: AppLocalizations.localizationsDelegates,

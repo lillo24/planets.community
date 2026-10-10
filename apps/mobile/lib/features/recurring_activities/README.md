@@ -1,5 +1,10 @@
 # Recurring activities (Tavoli)
 
+The editor shares Project short/full-description labels and the browse-card hint.
+Resource/material/tool needs stay separate from people’s skills and are managed
+only after a canonical draft exists. New forms explain that prerequisite without
+creating a draft. See the [UXFIX01 record](../../../../../docs/development/uxfix01-qa-copy.md).
+
 MAP01 reuses existing public-area and protected-exact geography with nullable
 selected metadata. Its canonical receipt RPCs preserve current meeting
 entitlement and Creator/Co-creator structural authority; ended series remain

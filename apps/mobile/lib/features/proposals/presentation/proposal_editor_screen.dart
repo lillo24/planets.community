@@ -964,6 +964,7 @@ class _ProposalFormState extends ConsumerState<_ProposalForm>
                   _summary,
                   l10n.proposalSummaryLabel,
                   240,
+                  helper: l10n.projectShortDescriptionHint,
                   anchorKey: _summaryAnchor,
                   fieldKey: const Key('proposal-summary'),
                   required: true,
@@ -1182,6 +1183,7 @@ class _ProposalFormState extends ConsumerState<_ProposalForm>
                   l10n.proposalSkillsTitle,
                   style: Theme.of(context).textTheme.titleLarge,
                 ),
+                Text(l10n.proposalSkillsHint),
                 const SizedBox(height: AppSpacing.small),
                 ProposalSkillsControl(
                   categories: widget.categories,
@@ -1196,6 +1198,31 @@ class _ProposalFormState extends ConsumerState<_ProposalForm>
                     _syncMatching();
                   },
                 ),
+                const SizedBox(height: AppSpacing.large),
+                Text(
+                  l10n.projectResourcesNeededTitle,
+                  style: Theme.of(context).textTheme.titleLarge,
+                ),
+                Text(l10n.projectResourcesHint),
+                if (widget.proposal == null)
+                  Text(l10n.projectResourcesAfterDraft)
+                else if (contentEditable)
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: OutlinedButton.icon(
+                      key: const Key('proposal-manage-resources'),
+                      onPressed: busy
+                          ? null
+                          : () => context.push(
+                              ProjectResourceNeedRoutes.manage(
+                                ProjectKind.oneTime,
+                                widget.proposal!.id,
+                              ),
+                            ),
+                      icon: const Icon(Icons.inventory_2_outlined),
+                      label: Text(l10n.projectResourcesManage),
+                    ),
+                  ),
                 if (state.coverPartialSave != null) ...[
                   const SizedBox(height: AppSpacing.medium),
                   Semantics(
@@ -1234,20 +1261,6 @@ class _ProposalFormState extends ConsumerState<_ProposalForm>
                   spacing: AppSpacing.small,
                   runSpacing: AppSpacing.small,
                   children: [
-                    if (widget.proposal != null && contentEditable)
-                      OutlinedButton.icon(
-                        key: const Key('proposal-manage-resources'),
-                        onPressed: busy
-                            ? null
-                            : () => context.push(
-                                ProjectResourceNeedRoutes.manage(
-                                  ProjectKind.oneTime,
-                                  widget.proposal!.id,
-                                ),
-                              ),
-                        icon: const Icon(Icons.inventory_2_outlined),
-                        label: Text(l10n.projectResourcesManage),
-                      ),
                     if (isPublished && contentEditable)
                       FilledButton(
                         key: const Key('proposal-save-changes'),
@@ -1308,6 +1321,7 @@ class _ProposalFormState extends ConsumerState<_ProposalForm>
     bool required = false,
     int minimumLength = 0,
     int lines = 1,
+    String? helper,
     Key? fieldKey,
     FormFieldValidator<String>? validator,
   }) => Padding(
@@ -1325,6 +1339,8 @@ class _ProposalFormState extends ConsumerState<_ProposalForm>
       maxLines: lines,
       decoration: InputDecoration(
         labelText: label,
+        helperText: helper,
+        helperMaxLines: 6,
         alignLabelWithHint: lines > 1,
       ),
       onChanged: (_) => _refreshValidationSummary(),
