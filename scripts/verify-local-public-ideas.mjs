@@ -231,13 +231,13 @@ export async function verifyPublicIdeas() {
       "participants-only Idea details remain protected",
     );
     await edit(owner, id, {
-      p_exact_meeting_text: "Synthetic explicitly public instructions",
+      p_exact_meeting_text: "Synthetic protected legacy instructions",
       p_exact_location_visibility: "public",
     });
     check(
-      (await publicDetail(id)).exact_meeting_text ===
-        "Synthetic explicitly public instructions",
-      "explicit public precise-text choice remains honored",
+      (await publicDetail(id)).exact_meeting_text === null &&
+        (await publicDetail(id)).exact_location_restricted,
+      "LOCATION02 keeps legacy-public arrival text protected in Idea v2 detail",
     );
     await edit(owner, id, {
       p_starts_at: new Date(Date.now() - 5 * 86400000).toISOString(),
