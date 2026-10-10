@@ -66,10 +66,13 @@ MAP03 is separate from editing. The location_preview domain model defines
 read-only precision and Maps URLs; location_preview_gateway owns RPCs, the
 disabled static factory and launcher. public_preview_batch owns bounded
 public-only read/image caches. location_preview_panel owns laziness, generations,
-leases, uncached native decoding and one explicit reauthorized Maps button.
+leases, uncached native decoding and one freshly reauthorized Maps action.
 MAP-UX01 removes preview panels from feed cards. Detail panels show authorized
 text immediately, no image space when disabled, a 144dp actual PNG when enabled,
-and one fallback on rendering failure. Denial still revokes protected state.
+and one fallback on rendering failure. A decoded map is itself the action; only
+unavailable imagery uses a compact text action with a valid canonical destination.
+Centered small detail credits follow the image with independent 48dp links.
+Denial still revokes protected state.
 location_attribution is the compact labelSmall linked credit atom shared with
 editors, detail, Map and List footers, retaining 48dp keyboard/tap targets.
 The old location_fallbacks map
@@ -83,7 +86,12 @@ define a distinct public search-center lookup before enabling autocomplete.
 MAP-CACHE01 lets the existing canonical detail panel explicitly select the shared
 read-only tile compositor, with default-off LOCATION_DETAIL_TILES_ENABLED.
 Selecting tiles excludes static generation, including on errors/guests. Lease
-revocation destroys protected tile pixels/buffers before reauthorization.
+revocation destroys protected tile pixels/buffers before reauthorization. Public
+lease renewal retains an unchanged decoded view; route/scroll/TickerMode return
+and transient OS `inactive` revalidate without restarting public tile transport.
+Real background, account changes and learned shutdown still clear scopes.
+An authorized locality becomes public only after an independently matching public
+canonical read; the RPC audience alone never relaxes private ownership.
 See [cache contract and fake measurements](../../../../../docs/development/map-cache01-shared-tiles.md).
 
 ## One-time city adapter (LOCATION01)

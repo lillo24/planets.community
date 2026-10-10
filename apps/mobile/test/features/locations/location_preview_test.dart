@@ -116,6 +116,54 @@ void main() {
       );
     },
   );
+  for (final scenario in [
+    'matching',
+    'revision',
+    'coordinates',
+    'label',
+    'unpublished',
+    'exact',
+  ]) {
+    test(
+      'protected RPC area ownership requires matching public projection: $scenario',
+      () async {
+        final views = <String>[];
+        final gateway = RpcLocationPreviewGateway((_, args) async {
+          final view = args['p_view'] as String;
+          views.add(view);
+          if (view == 'public_detail' && scenario == 'unpublished') return null;
+          final public = view == 'public_detail';
+          final exact = scenario == 'exact';
+          return {
+            'item_kind': item.kind,
+            'item_id': item.id,
+            'revision': public && scenario == 'revision' ? 2 : 1,
+            'audience': public ? 'public' : 'protected',
+            'scope': exact ? 'exact' : 'area',
+            'place': {
+              'kind': exact ? 'address' : 'locality',
+              'label': public && scenario == 'label'
+                  ? 'Other public area'
+                  : 'Synthetic area',
+              'latitude': public && scenario == 'coordinates' ? 44 : 45,
+              'longitude': 12,
+            },
+            'legacy': {'locality': 'Trento', 'country_code': 'IT'},
+            'image_key': 'a' * 64,
+          };
+        });
+        final result = await gateway.read(item, actor: 'Alice');
+        expect(result!.isProtected, scenario != 'matching');
+        expect(
+          views,
+          scenario == 'exact'
+              ? ['protected_detail']
+              : ['protected_detail', 'public_detail'],
+        );
+        expect(result.cacheable, scenario == 'matching');
+      },
+    );
+  }
   test('frame/RAM dedupe and batches bounded to 50', () async {
     final g = FakePreviewGateway(),
         batch = PublicPreviewBatch(FakePreviewGateway());
