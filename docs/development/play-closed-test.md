@@ -1,5 +1,12 @@
 # CT-01: release plumbing and deferred Play closed test
 
+MAP-LIVE01 provides a separate explicit staging map QA build command and current
+artifact/runtime evidence in the [activation runbook](map-live01-android-activation.md).
+Its five map defines belong on the build command, **not** in `staging.json`.
+Changing staging/main does not change an already installed binary. Compare the
+installed certificate/version before any approved update; an upload-signed APK
+may be incompatible with Play App Signing. Never uninstall to work around that.
+
 This is staging distribution of current `main`, not a production launch.
 CT-01 initially started at `67133025b4dc8a90a3d303e70d69df6ee6faf84c` and
 previously reconciled through `eb70fe249978585f754fa9175d337d7ef8b99e17`.
