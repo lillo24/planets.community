@@ -262,7 +262,10 @@ class _PublicProposalsScreenState extends ConsumerState<PublicProposalsScreen> {
                       ? const CircularProgressIndicator()
                       : Text(l10n.proposalLoadMore),
                 ),
-              const LocationAttribution(),
+              // DTOs omit provider provenance; nonempty labels may be derived.
+              if (widget.tutorialPlaceholder == null &&
+                  (state.items.isNotEmpty || state.requestedItems.isNotEmpty))
+                const LocationAttribution(),
               // Let credit links scroll above the floating Create action.
               const SizedBox(height: 80),
             ],

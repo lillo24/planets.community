@@ -4,6 +4,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/backend/supabase_backend.dart';
+import '../../../core/config/app_config.dart';
+import '../../auth/application/auth_session_controller.dart';
+import '../../auth/domain/auth_models.dart';
 import '../domain/item_location.dart';
 import '../domain/place_search.dart';
 import 'place_search_gateway.dart';
@@ -103,9 +106,62 @@ class FixedEditorPlaceGatewayFactory implements EditorPlaceGatewayFactory {
   PlaceSearchGateway create(PlaceSearchScope scope) => gateway;
 }
 
-// Activation must deliberately replace this factory with a scoped server
-// adapter. No key/flag silently enables traffic or bypasses server kill switches.
-final editorPlaceGatewayFactoryProvider = Provider<EditorPlaceGatewayFactory>(
-  (ref) =>
-      FixedEditorPlaceGatewayFactory(ref.watch(placeSearchGatewayProvider)),
-);
+/// Staging opt-in only; production and ordinary builds retain manual entry.
+final editorPlaceSearchEnabledProvider = Provider<bool>((ref) {
+  const requested = bool.fromEnvironment('LOCATION_EDITOR_SEARCH_ENABLED');
+  return requested &&
+      ref.watch(appConfigProvider).environment == AppEnvironment.staging;
+});
+
+class ServerEditorPlaceGatewayFactory implements EditorPlaceGatewayFactory {
+  const ServerEditorPlaceGatewayFactory(this.client, {required this.actor});
+  final SupabaseClient client;
+  final String? Function() actor;
+
+  String? _currentActor() {
+    final owner = actor();
+    return owner != null && client.auth.currentUser?.id == owner ? owner : null;
+  }
+
+  @override
+  bool get available => _currentActor() != null;
+
+  @override
+  PlaceSearchGateway create(PlaceSearchScope scope) =>
+      ServerPlaceSearchGateway.withEndpoint(
+        scope: scope,
+        enabled: true,
+        actor: _currentActor,
+        invoke: (body) async {
+          final token = client.auth.currentSession?.accessToken;
+          if (token == null || token.isEmpty) {
+            throw const PlaceSearchFailure(PlaceSearchProblem.unauthorized);
+          }
+          // Let the pinned SDK supply the user JWT after any needed refresh;
+          // a snapshotted Authorization header would override that fresh JWT.
+          return (await client.functions.invoke(
+            'location-search',
+            body: body,
+          )).data;
+        },
+      );
+}
+
+// The existing editor still owns save-before-search, scope/revision capture,
+// lifecycle cancellation and receipt-only writes. Both server switches apply.
+final editorPlaceGatewayFactoryProvider = Provider<EditorPlaceGatewayFactory>((
+  ref,
+) {
+  if (!ref.watch(editorPlaceSearchEnabledProvider)) {
+    return FixedEditorPlaceGatewayFactory(
+      ref.watch(placeSearchGatewayProvider),
+    );
+  }
+  return ServerEditorPlaceGatewayFactory(
+    ref.watch(supabaseClientProvider),
+    actor: () {
+      final auth = ref.read(authSessionProvider);
+      return auth.phase == AuthSessionPhase.ready ? auth.identity?.id : null;
+    },
+  );
+});

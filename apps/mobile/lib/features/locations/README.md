@@ -1,14 +1,17 @@
 # Shared locations
 
 Owns MAP01 search contracts and MAP02's editor-local transaction. Production
-still uses `DisabledPlaceSearchGateway`: manual fields remain functional. The
-three editors exercise the selector through injected scoped factories. No map
-SDK, GPS permission, provider key or live traffic is activated.
+and ordinary builds retain manual entry. MAP-LIVE01 adds an explicit staging-only
+`LOCATION_EDITOR_SEARCH_ENABLED=true` opt-in: the factory constructs a distinct
+authenticated server gateway for each saved actor/item/revision/slot. Readiness
+loss fails closed, including late responses. Backend runtime and database kill
+switches and quotas still apply. No provider key enters the client.
+See the [staging activation runbook](../../../../../docs/development/map-live01-android-activation.md).
 
 - `domain/item_location.dart` parses canonical normalized editor selections,
   omitting coordinates, provider IDs and receipts from the protected projection.
 - `data/item_location_gateway.dart` owns authorized reads, receipt-only writes
-  and the disabled scoped factory. Activation must construct a separate server
+  and the default-disabled, staging-only scoped factory. Activation constructs a separate server
   gateway for each supplied actor/item/revision/slot; both backend switches apply.
 - `application/location_editor_session.dart` owns save, authorized revision,
   scoped search/resolve, stable mutation UUID and canonical reread. Response-loss

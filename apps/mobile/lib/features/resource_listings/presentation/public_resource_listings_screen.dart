@@ -349,7 +349,9 @@ class _PublicResourceListingsScreenState
                         )
                       : Text(l10n.resourceLoadMore),
                 ),
-              const LocationAttribution(),
+              // DTOs omit provider provenance; retained labels may be derived.
+              if (widget.tutorialPlaceholder == null && state.items.isNotEmpty)
+                const LocationAttribution(),
               // Let credit links scroll above the floating Create action.
               const SizedBox(height: 80),
             ],

@@ -134,6 +134,7 @@ void main() {
     );
     expect(find.text('Same country'), findsOneWidget);
     expect(find.text('No matching resources found.'), findsOneWidget);
+    expect(find.byKey(const Key('location-attribution')), findsNothing);
     expect(
       find.text('Try a broader location or include both Dona and Scambia.'),
       findsOneWidget,
@@ -172,6 +173,7 @@ void main() {
     expect(find.text('Anywhere'), findsOneWidget);
     expect(find.text('All'), findsOneWidget);
     expect(find.textContaining('secret SQL'), findsNothing);
+    expect(find.byKey(const Key('location-attribution')), findsNothing);
 
     gateway
       ..error = null

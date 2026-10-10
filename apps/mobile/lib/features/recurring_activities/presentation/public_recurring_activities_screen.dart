@@ -212,7 +212,9 @@ class _PublicRecurringActivitiesScreenState
                       ? const CircularProgressIndicator()
                       : Text(l10n.tavoliLoadMore),
                 ),
-              const LocationAttribution(),
+              // DTOs omit provider provenance; nonempty labels may be derived.
+              if (state.items.isNotEmpty || state.requestedItems.isNotEmpty)
+                const LocationAttribution(),
               // Let credit links scroll above the floating Create action.
               const SizedBox(height: 80),
             ],
