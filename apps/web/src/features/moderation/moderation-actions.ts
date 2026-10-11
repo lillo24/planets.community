@@ -3,10 +3,20 @@
 import { revalidatePath } from "next/cache";
 
 import {
+  setGroupSuppression,
   removeModerationTemplate,
   addModerationNote,
   transitionModerationCase,
 } from "./moderation-operations";
+
+export async function setGroupSuppressionAction(
+  input: import("./group-moderation-models").GroupSuppressionInput,
+) {
+  const result = await setGroupSuppression(input);
+  if (result.status === "accepted" || result.status === "stale")
+    revalidatePath(`/admin/cases/${input.caseId}`);
+  return result;
+}
 
 export async function addModerationNoteAction(formData: FormData) {
   const caseId = formData.get("caseId");

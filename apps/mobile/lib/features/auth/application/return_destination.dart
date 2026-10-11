@@ -34,6 +34,7 @@ String profileEditCancelDestination(
   }
   final segments = Uri.parse(sanitized).pathSegments;
   if (segments.isEmpty) return '/';
+  if (segments.first == 'groups') return groupCancelDestination(segments);
   if (segments.first == 'messages') return '/messages';
   if (segments.first == 'settings') return '/settings';
   if (segments.first == 'proposals' ||
@@ -62,6 +63,9 @@ String authCancelDestination(String? continueTo) {
     return sanitized;
   }
   final segments = Uri.parse(sanitized).pathSegments;
+  if (segments.isNotEmpty && segments.first == 'groups') {
+    return groupCancelDestination(segments);
+  }
   if (segments.isNotEmpty && segments.first == 'messages') return '/messages';
   if (segments.length == 3 &&
       (segments.first == 'proposals' || segments.first == 'tavoli') &&
@@ -70,3 +74,8 @@ String authCancelDestination(String? continueTo) {
   }
   return '/';
 }
+
+String groupCancelDestination(List<String> segments) =>
+    segments.length < 2 || const ['mine', 'create'].contains(segments[1])
+    ? '/groups'
+    : '/groups/${segments[1]}';

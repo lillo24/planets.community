@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:planets_mobile/l10n/generated/app_localizations.dart';
-import 'package:planets_mobile/app/router/browse_activity_switcher.dart';
 import 'package:planets_mobile/features/geographic_discovery/domain/geographic_discovery.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:planets_mobile/app/router/browse_activity_switcher.dart';
 import 'package:planets_mobile/features/geographic_discovery/domain/map_discovery.dart';
 import 'package:planets_mobile/features/locations/data/location_preview_gateway.dart';
 import 'package:planets_mobile/features/locations/presentation/location_preview_panel.dart';
@@ -117,8 +117,13 @@ void main() {
               ),
             ),
           );
-          // Material 3's family outline is inset 4dp within its tap target.
-          final gapAbove = selector.top - (family.bottom - 4);
+          // GRP02 adds a Groups entry below the unchanged family control.
+          // Measure spacing after the complete navigation block.
+          final browseBlock = t.getRect(find.byType(BrowseActivitySwitcher));
+          final groups = t.getRect(find.byKey(const Key('browse-groups')));
+          expect(groups.top, greaterThanOrEqualTo(family.bottom));
+          expect(groups.height, greaterThanOrEqualTo(48));
+          final gapAbove = selector.top - browseBlock.bottom;
           final gapBelow = nextRow.top - selector.bottom;
           expect(gapAbove, 16);
           expect(gapBelow, gapAbove);
