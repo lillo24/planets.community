@@ -1,5 +1,12 @@
 # IDEA01A: public Ideas and forward planning
 
+CHECK01 supersedes the original tentative-logistics contract described below:
+publication captures draft logistics privately, individual confirmation alone
+writes official canonical fields, and old published-Idea logistics writes fail
+safely. See [CHECK01](check01-project-organization.md) for the migration gate,
+capacity compatibility and current contract. Historical IDEA01 evidence below
+does not validate CHECK01 or authorize hosted rollout.
+
 The integration against main #203 (LOCATION02) adds
 `20261010173000_idea_location_privacy_integration.sql`: the strict legacy detail
 still excludes Ideas, and both detail versions expose only a deliberately public
@@ -27,7 +34,7 @@ their stored default phase does not imply publication. Only deliberate Idea
 publication changes draft/defined to published/idea. Only explicit promotion
 changes published/idea to published/defined. There is no reverse transition RPC.
 
-A published Idea's optional dates are tentative: `derived_status=null`, even
+A published Idea's confirmed dates are official but `derived_status=null`, even
 when its dates are in the past. Operational freezes/completion apply only after
 promotion. Cancellation still closes collaboration/discovery; a cancelled Idea
 retains phase `idea` and has lifecycle `cancelled`, not Completed. A Defined
@@ -59,7 +66,8 @@ Null capacity means **undecided**, using the existing nullable canonical capacit
 branch. It admits participants without a finite cap; it is not zero or a hidden
 default. A finite capacity continues to use the ordinary participant/organizer
 accounting option, floor and locks. Configuring capacity below current usage or
-overbooking a finite cap fails. An Idea can explicitly clear capacity; Defined,
+overbooking a finite cap fails. CHECK01 requires explicit confirmation for an
+Idea capacity change and adds no official-capacity clearing API; Defined,
 Tavoli and Scambio rules are unchanged. Read canonical capacity snapshots using
 `list_public_project_capacity_statuses` and show undecided when null.
 

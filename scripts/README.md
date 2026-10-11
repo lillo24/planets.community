@@ -17,6 +17,12 @@ domain verification and change-scoped validation tooling.
 - `verify-local-similar-active-proposals.mjs` owns SIM01 OTP/API, ranking,
   capacity/blocking/media/privacy and read-only assertions. Its rollback-only
   `fixtures/sim01-query-plan.sql` supplies reproducible EXPLAIN work.
+- `verify-local-project-organization.mjs` owns CHECK01 OTP/JWT privacy, roles,
+  CAS/retry, bounded task and capacity/admission races. It is composed by
+  `proposal:verify:local` and requires disposable loopback targets.
+- `verify-local-project-organization-upgrade.mjs` rehearses the populated legacy
+  Idea rollout refusal and clean replay on an explicitly disposable non-default
+  local stack. See the [CHECK01 contract](../docs/development/check01-project-organization.md).
 - `verify-local-policy-acceptance.mjs` checks real OTP sessions without profiles,
   concurrent first acceptance, preserved server time, second-session restoration,
   account/version denial and private Data API isolation. It refuses non-loopback
