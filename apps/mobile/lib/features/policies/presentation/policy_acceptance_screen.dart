@@ -53,19 +53,22 @@ class _PolicyAcceptanceScreenState
           PolicyLinkAction(label: l10n.policyTerms, uri: documents.terms),
           PolicyLinkAction(label: l10n.policyRules, uri: documents.rules),
           PolicyLinkAction(label: l10n.policyPrivacy, uri: documents.privacy),
-          Text(l10n.policyLocalAcknowledgement),
+          Text(l10n.policyAccountAcknowledgement),
           if (state.phase == PolicyAcceptancePhase.loading ||
               state.phase == PolicyAcceptancePhase.saving)
             const LinearProgressIndicator(),
-          if (state.phase == PolicyAcceptancePhase.readFailed) ...[
-            Text(l10n.policyReadFailed),
+          if (state.phase == PolicyAcceptancePhase.readFailed ||
+              state.phase == PolicyAcceptancePhase.writeFailed) ...[
+            Text(
+              state.phase == PolicyAcceptancePhase.readFailed
+                  ? l10n.policyReadFailed
+                  : l10n.policyWriteFailed,
+            ),
             TextButton(
               onPressed: ref.read(policyAcceptanceProvider.notifier).retryRead,
               child: Text(l10n.retryAction),
             ),
           ],
-          if (state.phase == PolicyAcceptancePhase.writeFailed)
-            Text(l10n.policyWriteFailed),
           CheckboxListTile(
             key: const Key('policy-acceptance-checkbox'),
             contentPadding: EdgeInsets.zero,
@@ -81,18 +84,6 @@ class _PolicyAcceptanceScreenState
                 ? () => ref.read(policyAcceptanceProvider.notifier).accept()
                 : null,
             child: Text(l10n.policyAcceptAction),
-          ),
-          TextButton(
-            onPressed: () => context.go('/'),
-            child: Text(l10n.policyCancel),
-          ),
-          TextButton(
-            onPressed: () => context.push('/settings'),
-            child: Text(l10n.settingsTitle),
-          ),
-          TextButton(
-            onPressed: () => context.push('/help'),
-            child: Text(l10n.helpTitle),
           ),
           if (ref.watch(authSessionProvider).isAuthenticated)
             const AccountSignOutAction(),

@@ -9,6 +9,9 @@ import 'package:planets_mobile/features/auth/domain/auth_models.dart';
 import 'package:planets_mobile/features/policies/application/policy_documents.dart';
 import 'package:planets_mobile/features/policies/application/policy_acceptance_controller.dart';
 import 'package:planets_mobile/features/settings/domain/language_preference.dart';
+import 'package:planets_mobile/features/policies/presentation/policy_link_action.dart';
+import 'package:planets_mobile/features/help/presentation/help_screen.dart';
+import 'package:planets_mobile/l10n/generated/app_localizations.dart';
 
 import '../../../test_support/policy01_ui_flow.dart';
 import '../../support/fake_auth.dart';
@@ -35,6 +38,100 @@ void main() {
     LanguagePreference.english,
     LanguagePreference.italian,
   ]) {
+    testWidgets(
+      'acceptance retains links, Back and sign-out with three actions removed: $language',
+      (tester) async {
+        tester.view.devicePixelRatio = 1;
+        tester.view.physicalSize = const Size(320, 780);
+        tester.platformDispatcher.textScaleFactorTestValue = 2;
+        addTearDown(tester.view.reset);
+        addTearDown(tester.platformDispatcher.clearAllTestValues);
+        final store = FakePolicyAcceptanceStore();
+        final launcher = FakeSupportMailLauncher();
+        final auth = FakeAuthGateway(
+          snapshot: const AuthSnapshot(identity: AuthIdentity(id: 'alice')),
+        );
+        final app = await pumpHelp(
+          tester,
+          auth: auth,
+          policyStore: store,
+          launcher: launcher,
+          language: language,
+        );
+        final router = app.read(appRouterProvider);
+        final pending = "/join/project/${'d' * 43}";
+        router.go(pending);
+        await tester.pumpAndSettle();
+        final l10n = AppLocalizations.of(
+          tester.element(find.byType(HelpScaffold)),
+        );
+        final scaffold = tester.widget<HelpScaffold>(find.byType(HelpScaffold));
+        expect(scaffold.children.whereType<TextButton>(), isEmpty);
+        expect(
+          scaffold.children.whereType<PolicyLinkAction>().map(
+            (link) => link.label,
+          ),
+          [l10n.policyTerms, l10n.policyRules, l10n.policyPrivacy],
+        );
+        for (final removed in [
+          'Continue browsing; cancel this action',
+          'Continua a esplorare; annulla questa azione',
+          l10n.settingsTitle,
+          l10n.helpTitle,
+        ]) {
+          expect(find.text(removed), findsNothing);
+        }
+        for (final label in [
+          l10n.policyTerms,
+          l10n.policyRules,
+          l10n.policyPrivacy,
+        ]) {
+          final link = find.text(label);
+          await tester.scrollUntilVisible(
+            link,
+            180,
+            scrollable: find
+                .descendant(
+                  of: find.byType(ListView).last,
+                  matching: find.byType(Scrollable),
+                )
+                .first,
+          );
+          await tester.tap(link);
+          await tester.pumpAndSettle();
+        }
+        expect(launcher.opened.map((uri) => uri.path), [
+          '/terms',
+          '/community-rules',
+          '/privacy',
+        ]);
+        await helpVisible(tester, 'policy-acceptance-continue');
+        expect(
+          tester
+              .widget<FilledButton>(
+                find.byKey(const Key('policy-acceptance-continue')),
+              )
+              .onPressed,
+          isNull,
+        );
+        await helpTap(tester, 'help-back');
+        expect(router.state.uri.path, '/');
+        expect(store.writes, 0);
+        router.go(pending);
+        await tester.pumpAndSettle();
+        expect(router.state.uri.queryParameters['returnTo'], pending);
+        await tester.binding.handlePopRoute();
+        await tester.pumpAndSettle();
+        expect(router.state.uri.path, '/');
+        expect(store.writes, 0);
+        router.go(pending);
+        await tester.pumpAndSettle();
+        await helpTap(tester, 'account-sign-out-button');
+        expect(app.read(authSessionProvider).isAuthenticated, isFalse);
+        expect(store.writes, 0);
+        expect(tester.takeException(), isNull);
+      },
+    );
     testWidgets('review, Settings and manual deletion at 320px/2x: $language', (
       tester,
     ) async {
@@ -149,6 +246,33 @@ void main() {
     await helpTap(tester, 'policy-acceptance-continue');
     expect(router.state.uri.path, '/settings');
   });
+  testWidgets(
+    'Retry recovers a committed acceptance after a lost write response',
+    (tester) async {
+      final store = FakePolicyAcceptanceStore()
+        ..commitBeforeWriteError = true
+        ..writeError = TimeoutException('response lost');
+      final app = await pumpHelp(
+        tester,
+        auth: FakeAuthGateway(
+          snapshot: const AuthSnapshot(identity: AuthIdentity(id: 'alice')),
+        ),
+        policyStore: store,
+      );
+      final router = app.read(appRouterProvider);
+      router.go('$policyAcceptancePath?returnTo=%2Fsettings');
+      await tester.pumpAndSettle();
+      await helpTap(tester, 'policy-acceptance-checkbox');
+      await helpTap(tester, 'policy-acceptance-continue');
+      expect(router.state.uri.path, policyAcceptancePath);
+      final retry = find.widgetWithText(TextButton, 'Try again');
+      await tester.ensureVisible(retry);
+      await tester.tap(retry);
+      await tester.pumpAndSettle();
+      expect(router.state.uri.path, '/settings');
+      expect(store.writes, 1);
+    },
+  );
   testWidgets(
     'router gates writes but preserves public/support/safety access and continuations',
     (tester) async {

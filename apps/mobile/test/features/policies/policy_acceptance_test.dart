@@ -44,7 +44,7 @@ void main() {
     expect(allowed('alice'), isTrue);
     expect(allowed('bob'), isFalse);
     expect(allowed('alice', 'v2'), isFalse);
-    expect(store.lastAcceptedAt, isNotNull);
+    expect(store.lastAcceptedAt, FakePolicyAcceptanceStore.serverTime);
     identity('bob');
     await flush();
     expect(allowed('bob'), isFalse);
@@ -58,6 +58,52 @@ void main() {
     await flush();
     expect(allowed('alice'), isFalse);
   });
+  test('fresh device restores a server record without writing', () async {
+    identity('alice');
+    await flush();
+    await container.read(policyAcceptanceProvider.notifier).accept();
+    container.dispose();
+    container = ProviderContainer(
+      overrides: [policyAcceptanceStoreProvider.overrideWithValue(store)],
+    );
+    container.listen(policyAcceptanceProvider, (_, _) {});
+    identity('alice');
+    await flush();
+    expect(allowed('alice'), isTrue);
+    expect(store.writes, 1);
+  });
+  test('duplicate taps wait for one confirmed write', () async {
+    identity('alice');
+    await flush();
+    final delay = Completer<void>();
+    store.writeDelay = delay.future;
+    final writing = container.read(policyAcceptanceProvider.notifier).accept();
+    expect(allowed('alice'), isFalse);
+    expect(
+      await container.read(policyAcceptanceProvider.notifier).accept(),
+      isFalse,
+    );
+    expect(store.writes, 1);
+    delay.complete();
+    expect(await writing, isTrue);
+  });
+  test(
+    'lost write response stays closed until a fresh read confirms it',
+    () async {
+      identity('alice');
+      await flush();
+      store.commitBeforeWriteError = true;
+      store.writeError = TimeoutException('response lost');
+      expect(
+        await container.read(policyAcceptanceProvider.notifier).accept(),
+        isFalse,
+      );
+      expect(allowed('alice'), isFalse);
+      await container.read(policyAcceptanceProvider.notifier).retryRead();
+      expect(allowed('alice'), isTrue);
+      expect(store.writes, 1);
+    },
+  );
   test('version replacement rejects a pending old-version write', () async {
     var version = 'v1';
     container.dispose();

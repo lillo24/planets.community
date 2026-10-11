@@ -14,28 +14,29 @@ class FakePolicyAcceptanceStore implements PolicyAcceptanceStore {
   final Map<String, String> versions = {};
   Object? readError;
   Object? writeError;
+  bool commitBeforeWriteError = false;
   Future<void>? readDelay;
   Future<void>? writeDelay;
   int writes = 0;
   DateTime? lastAcceptedAt;
   @override
-  Future<bool> read(String account, String version) async {
+  Future<DateTime?> read(String account, String version) async {
     final result = preaccepted || versions[account] == version;
     if (readDelay != null) await readDelay;
     if (readError != null) throw readError!;
-    return result;
+    return result ? serverTime : null;
   }
 
+  static final serverTime = DateTime.utc(2026, 10, 11, 10);
+
   @override
-  Future<void> write(
-    String account,
-    String version,
-    DateTime acceptedAt,
-  ) async {
+  Future<DateTime> write(String account, String version) async {
     writes++;
     if (writeDelay != null) await writeDelay;
-    if (writeError != null) throw writeError!;
+    if (writeError != null && !commitBeforeWriteError) throw writeError!;
     versions[account] = version;
-    lastAcceptedAt = acceptedAt;
+    lastAcceptedAt = serverTime;
+    if (writeError != null) throw writeError!;
+    return serverTime;
   }
 }
