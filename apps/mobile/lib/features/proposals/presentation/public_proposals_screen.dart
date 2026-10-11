@@ -116,11 +116,13 @@ class _PublicProposalsScreenState extends ConsumerState<PublicProposalsScreen> {
               const BrowseActivitySwitcher(
                 selected: BrowseActivityType.proposals,
               ),
+              // The family control has 4dp of invisible tap padding per edge.
+              // Keep 16dp between its visible outline and the List/Map row.
+              const SizedBox(height: AppSpacing.medium - 4),
               MapViewButton(
                 origin: MapDiscoveryOrigin.projects,
                 prepare: _flushQuery,
               ),
-              const SizedBox(height: 8),
               const SizedBox(height: AppSpacing.medium),
               Row(
                 children: [

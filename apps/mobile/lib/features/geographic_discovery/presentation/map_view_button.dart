@@ -5,7 +5,7 @@ import '../../../core/theme/app_tokens.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../domain/map_discovery.dart';
 
-/// Equal-width List/Map options: plain selection and a separate outlined action.
+/// Equal-width List/Map options: outlined selection and a separate plain action.
 class MapViewButton extends StatelessWidget {
   const MapViewButton({
     required this.origin,
@@ -85,22 +85,27 @@ class MapViewButton extends StatelessWidget {
         onTap: selected ? null : onTap,
         excludeSemantics: true,
         child: selected
-            ? ConstrainedBox(
-                constraints: const BoxConstraints(minHeight: 48),
-                child: Padding(
-                  padding: padding,
-                  child: IconTheme.merge(
-                    data: IconThemeData(color: scheme.onSurface),
-                    child: DefaultTextStyle.merge(
-                      style: Theme.of(context).textTheme.labelLarge
-                          ?.copyWith(color: scheme.onSurface),
-                      child: content,
+            ? DecoratedBox(
+                decoration: ShapeDecoration(
+                  shape: StadiumBorder(side: BorderSide(color: scheme.outline)),
+                ),
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(minHeight: 48),
+                  child: Padding(
+                    padding: padding,
+                    child: IconTheme.merge(
+                      data: IconThemeData(color: scheme.onSurface),
+                      child: DefaultTextStyle.merge(
+                        style: Theme.of(context).textTheme.labelLarge
+                            ?.copyWith(color: scheme.onSurface),
+                        child: content,
+                      ),
                     ),
                   ),
                 ),
               )
-            : OutlinedButton(
-                style: OutlinedButton.styleFrom(
+            : TextButton(
+                style: TextButton.styleFrom(
                   minimumSize: const Size(0, 48),
                   padding: padding,
                 ),
