@@ -15,7 +15,6 @@ import '../../blocking/presentation/blocking_action.dart';
 import '../../messages/presentation/messages_routes.dart';
 import '../../moderation/presentation/moderation_routes.dart';
 import '../../project_workspace/application/project_workspace_controller.dart';
-import '../../project_workspace/domain/project_workspace_models.dart';
 import '../../project_workspace/presentation/project_workspace_widgets.dart';
 import '../application/project_chat_controllers.dart';
 import '../application/project_needs_controller.dart';
@@ -291,21 +290,13 @@ class _ProjectChatScreenState extends ConsumerState<ProjectChatScreen>
                                     : 0,
                                 onPressed: _openNeeds,
                               ),
-                              if (workspaceBelongs &&
-                                  (workspaceState.phase ==
-                                          ProjectWorkspacePhase.loading ||
-                                      (workspaceState.phase ==
-                                              ProjectWorkspacePhase.ready &&
-                                          (workspaceState.workspace != null ||
-                                              summary!.isManager)))) ...[
-                                const SizedBox(width: AppSpacing.small),
-                                ProjectWorkspaceChatControl(
-                                  expectedProfileId: _expectedProfileId,
-                                  projectId: summary!.projectId,
-                                  projectKind: summary.projectKind,
-                                  isManager: summary.isManager,
-                                ),
-                              ],
+                              const SizedBox(width: AppSpacing.small),
+                              ProjectWorkspaceChatControl(
+                                expectedProfileId: _expectedProfileId,
+                                projectId: summary!.projectId,
+                                projectKind: summary.projectKind,
+                                isManager: summary.isManager,
+                              ),
                             ],
                           ),
                         ),

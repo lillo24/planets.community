@@ -363,21 +363,29 @@ All three delegated-authority tables use RLS with no policies or direct grants. 
 
 ## Project shared workspace
 
-`public.project_shared_workspaces` stores zero or one trimmed absolute HTTPS URL
-per `public.projects` row. The table is RLS-enabled with no policies and no
-direct Data API privileges; authenticated clients use only
-`get_own_project_shared_workspace`, `set_project_shared_workspace`, and
-`clear_project_shared_workspace`. Reads bind the expected profile to Auth and
-require either `private.profile_is_project_manager` or a current membership.
-Writes serialize on the Project row and require the current manager predicate,
-so Creator, Co-creator, and Co-organizer have the same workspace authority.
-Chat existence is deliberately irrelevant, allowing pre-chat configuration.
+`public.project_shared_workspaces` stores zero or more private named HTTPS links
+per `public.projects` row. Stable item UUIDs and creation timestamps define
+ordering; the Project index supports reads and cascade cleanup. Names are trimmed
+1–120 characters without controls. URLs retain the existing 2,048-character HTTPS
+contract. Neither field appears in public reads, templates or generic events.
+The table remains RLS-enabled with no policies or direct Data API privileges.
 
-The URL is capped at 2,048 characters, must be trimmed absolute HTTPS with a
-host and without whitespace, control characters, or user-info credentials, and
-never appears in public Proposal/Tavolo reads, audit events, or outbox payloads.
-No Drive API, OAuth token, provider identifier, file, or attachment is stored;
-the external service remains responsible for content and permissions.
+Authenticated clients use `list_project_workspace_links` (an ordered JSON array,
+avoiding PostgREST row-cap truncation), `save_project_workspace_link` (null ID
+adds, ID updates) and `remove_project_workspace_link`. Reads bind expected
+identity and require a current manager or membership; historical chat access
+is insufficient. Each mutation locks the Project, rechecks the current manager
+and scopes link IDs to their actual Project. Creator, active Co-creator and
+active Co-organizer have identical workspace authority, even before chat exists.
+
+The original get/set/clear RPC signatures and result shapes remain available
+for installed older clients. They share one designated legacy entry in this
+same table; set preserves its name and all extra entries, clear removes only
+that entry without promoting another. The first new add when no legacy entry
+exists receives that designation. Existing rows migrate in place with editable
+name `Workspace`, their original URL and timestamps. No Drive API, OAuth token,
+provider identifier, file or attachment is stored. See
+[WORKSPACE02](workspace02-named-links.md) for upgrade verification and rollout.
 
 ## Structured participation-request Messages
 
@@ -854,8 +862,10 @@ does not replace the strict initial projection or retry assertions.
 `project:workspace:verify:local` uses six real OTP-authenticated profiles and
 narrow local-database assertions. It proves pre-chat setup, all-manager
 replacement, demotion continuity, participant read-only access, leave and
-delegate-revocation independence, one-row concurrent replacement, idempotent
-clear, anonymous denial, and URL-free generic event payloads. It refuses
+delegate-revocation independence, legacy one-row replacement and idempotent clear, concurrent independent named-link
+CRUD, cross-Project item denial, cascade cleanup, anonymous denial, and name/URL-free
+generic event payloads. The explicit `--upgrade` mode proves preservation of a
+populated legacy row and repeat migration-up stability. It refuses
 non-loopback Supabase targets and prints no URL, OTP, token, key, database URL,
 request message, or meeting value.
 

@@ -70,10 +70,12 @@ members perform none of these live-Needs calls.
 
 The extensible organization strip sits above history and moves the existing
 Needs control out of the composer without duplicating it. Workspace state is
-owned by `project_workspace`: a configured link is confirmed by hostname before
-external opening, a manager with no link gets Add workspace, an ordinary
-participant with no link gets no unusable control, and former members get no
-organization strip or workspace read.
+owned by `project_workspace`: the existing Workspace ActionChip remains beside
+Checklist for every current-entitled user, including empty, loading and error
+states. It opens the named-link collection; each entry is confirmed by hostname
+before external opening. Group info reuses the collection and individual manager
+editor. Former members get no organization strip or workspace read. Checklist's
+button, badge, drawer and attention pulse are unchanged by WORKSPACE02.
 
 Realtime is a private authenticated Broadcast hint on
 `project-chat:<chatId>:profile:<profileId>`. The three strict identifier-only

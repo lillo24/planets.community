@@ -533,7 +533,7 @@ async function reconcileNeeds(context, owner, projectId, d) {
 }
 async function operationalSource(context, owner, id) {
   const [workspace] =
-    await context.sql`select * from public.project_shared_workspaces where project_id=${id}`;
+    await context.sql`select * from public.project_shared_workspaces where project_id=${id} and legacy_slot`;
   if (!workspace)
     await rpc(owner.client, "set_project_shared_workspace", {
       p_expected_manager_profile_id: owner.id,

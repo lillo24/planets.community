@@ -136,8 +136,13 @@ select is((select to_jsonb(b)::text from private.proposal_template_baselines as 
 select set_config('test.tw_version',private.proposal_template_content_version(private.proposal_template_reusable_content(current_setting('test.tw_source')::uuid)),true);
 update public.projects set count_organizers_toward_capacity=false where id=current_setting('test.tw_source')::uuid;
 update public.proposal_meeting_details set exact_meeting_text='NEW_MEETING_SECRET' where proposal_id=current_setting('test.tw_source')::uuid;
-insert into public.project_shared_workspaces(project_id,workspace_url)
-values (current_setting('test.tw_source')::uuid,'https://example.invalid/WORKSPACE_SECRET');
+insert into public.project_shared_workspaces(project_id,workspace_url,display_name)
+values (current_setting('test.tw_source')::uuid,'https://example.invalid/WORKSPACE_SECRET','PRIVATE_WORKSPACE_NAME'),
+       (current_setting('test.tw_source')::uuid,'https://example.invalid/BUDGET_SECRET','PRIVATE_BUDGET_NAME');
+select ok(private.proposal_template_reusable_content(current_setting('test.tw_source')::uuid)::text not like
+  '%PRIVATE_WORKSPACE_NAME%', 'private workspace names are excluded from reusable content');
+select ok(private.proposal_template_reusable_content(current_setting('test.tw_source')::uuid)::text not like
+  '%BUDGET_SECRET%', 'additional workspace URLs are excluded from reusable content');
 select is(private.proposal_template_content_version(private.proposal_template_reusable_content(current_setting('test.tw_source')::uuid)),current_setting('test.tw_version'),'operational logistics and organizer policy do not change copied content');
 set local role authenticated;
 select lives_ok($$select public.revoke_project_delegate('e1000000-0000-4000-8000-000000000001',current_setting('test.tw_delegate')::uuid)$$,'Creator revokes delegate');

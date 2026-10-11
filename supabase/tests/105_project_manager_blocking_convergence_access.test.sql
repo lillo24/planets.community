@@ -161,10 +161,10 @@ values (
   statement_timestamp() - interval '1 day'
 );
 
-insert into public.project_shared_workspaces (project_id, workspace_url)
+insert into public.project_shared_workspaces (project_id, workspace_url, legacy_slot)
 values (
   'fd200000-0000-4000-8000-000000000001',
-  'https://workspace.example.org/manager-blocking'
+  'https://workspace.example.org/manager-blocking', true
 );
 
 select results_eq(
