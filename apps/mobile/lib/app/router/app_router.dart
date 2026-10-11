@@ -511,6 +511,7 @@ RoutingConfig _routingConfig(
                 routes: [
                   GoRoute(
                     path: 'edit',
+                    onExit: draftDeparture?.onExit,
                     // Explicit Flutter page preserves the iOS edge detector;
                     // go_router 18's app-type adapter otherwise uses a page
                     // without transitions for this Flutter MaterialApp.

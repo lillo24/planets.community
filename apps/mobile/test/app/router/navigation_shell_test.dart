@@ -1298,7 +1298,7 @@ void main() {
   );
 
   testWidgets(
-    'Profile retains local edits while Proposal tab departure persists one draft',
+    'Profile departure confirms discard while Proposal retains its bound draft',
     (tester) async {
       final auth = FakeAuthGateway(
         snapshot: const AuthSnapshot(identity: AuthIdentity(id: 'user-1')),
@@ -1313,6 +1313,10 @@ void main() {
         'Unsaved Casey',
       );
       await _tap(tester, 'nav-home');
+      await _tap(tester, 'profile-keep-editing');
+      expect(_text(tester, 'profile-display-name-field'), 'Unsaved Casey');
+      await _tap(tester, 'nav-home');
+      await _tap(tester, 'profile-discard-changes');
       await _tap(tester, 'nav-browse');
       await _tap(tester, 'proposal-create-action');
       if (find
@@ -1332,11 +1336,12 @@ void main() {
       await _tap(tester, 'nav-profile');
       auth.emit(const AuthSnapshot(identity: AuthIdentity(id: 'user-1')));
       await tester.pumpAndSettle();
-      expect(_text(tester, 'profile-display-name-field'), 'Unsaved Casey');
+      expect(router.routerDelegate.state.uri.path, '/profile');
       expect(
-        find.byKey(const Key('profile-save-button')).hitTestable(),
+        find.byKey(const Key('profile-display-name')).hitTestable(),
         findsOneWidget,
       );
+      expect(find.byKey(const Key('profile-display-name-field')), findsNothing);
       await _tap(tester, 'nav-home');
       await _tap(tester, 'nav-browse');
       expect(
@@ -1464,6 +1469,7 @@ void main() {
       'Private A',
     );
     await _tap(tester, 'nav-browse');
+    await _tap(tester, 'profile-discard-changes');
     await _tap(tester, 'proposal-create-action');
     if (find.byKey(const Key('proposal-start-scratch')).evaluate().isNotEmpty) {
       await _tap(tester, 'proposal-start-scratch');
