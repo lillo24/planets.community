@@ -2526,6 +2526,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      accept_policy_bundle: {
+        Args: { p_bundle_version: string; p_expected_account_id: string }
+        Returns: {
+          accepted_at: string
+          account_id: string
+          bundle_version: string
+        }[]
+      }
       accept_project_delegate_invitation: {
         Args: { p_expected_delegate_profile_id: string; p_token: string }
         Returns: string
@@ -3576,6 +3584,14 @@ export type Database = {
       get_own_unread_notification_count: {
         Args: { p_expected_profile_id: string }
         Returns: number
+      }
+      get_policy_acceptance: {
+        Args: { p_bundle_version: string; p_expected_account_id: string }
+        Returns: {
+          accepted_at: string
+          account_id: string
+          bundle_version: string
+        }[]
       }
       get_profile_photo_for_viewer: {
         Args: { p_profile_id: string }

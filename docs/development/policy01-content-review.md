@@ -35,8 +35,11 @@ The attachment is the source; live Google Doc access is not a dependency.
   remains subject to erasure/restriction requests and validated legal grounds.
 - B9's applicable rights-response wording is preserved. Response timing is
   distinct from completion of erasure or backup purging.
-- B10 adds the factual device-local acknowledgement: exact account + bundle
-  version + local acceptance time, no server audit or marketing consent.
+- POLICY01B updates only the factual storage descriptions in A2 and B10:
+  exact Auth account + bundle version + first server acceptance time. Acceptance
+  is recognized across devices; historical local-only flags require a fresh
+  explicit acceptance. No general processing/marketing consent or proof of
+  reading is claimed. No substantive Terms/Rules change or bundle bump is made.
   Waitlist notice and consent remain distinct and collection is not activated.
 - `/delete-account` adds the approved manual email instructions, proportional
   verification, reviewed mailto, visible address, intended outcome and explicit
@@ -57,6 +60,24 @@ waitlist activation/retirement all require the indicated review and verification
 Verify the distributed build and actual backend/provider configuration against
 the provisional descriptions before external testing. The source snapshot's
 observations do not certify the installed build or a provider configuration.
+
+## POLICY01B persistence and rollout
+
+The [server contract](policy01b-server-acceptance.md) records the private schema,
+authenticated RPCs, version registration and retry/legacy-local behavior.
+Persistence/confirmation is server-side; the existing protected-action gate is
+client-side and domain RPCs do not acquire a new acceptance prerequisite.
+These records do not prove reading or legal approval. Their retention criteria
+and treatment in verified deletion requests require the remaining policy review.
+The new Auth foreign key cascades on an actual account deletion and adds no
+independent retention exemption or permanent blocker. Existing identity/audit
+constraints and the unimplemented deletion procedure are unchanged.
+
+Apply/review the additive migration on the intended backend before testing or
+releasing the new client there. Publish the factual A2/B10 site corrections before
+that client reaches external users. PR merge alone deploys neither backend nor
+site; hosted migration, website publication and app distribution remain operator
+actions. Do not mask an old backend with a local acceptance fallback.
 
 ## Manual deletion: remaining operator work
 

@@ -182,6 +182,9 @@ jobs:
       - name: Verify deterministic local authenticated sessions
         run: npm run auth:session:verify:local
 
+      - name: Verify account policy acceptance, independent sessions and concurrent retries
+        run: npm run policy:verify:local
+
       - name: Verify profile ownership and mixed visibility
         run: npm run profile:verify:local
 

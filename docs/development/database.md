@@ -5,6 +5,12 @@ through an additive migration, opt-in Workshop reads and the existing atomic
 application/reporting paths. Its operator inventory/readback tooling is
 read-only; shared activation remains a separately authorized action.
 
+The [POLICY01B acceptance contract](policy01b-server-acceptance.md) owns private
+Auth-account/version acknowledgements, registered bundles and authenticated
+read/explicit-accept RPCs. `policy:verify:local` exercises real profile-free OTP
+sessions and concurrent retries; `128` pgTAP covers privileges/history. Domain
+authorization is unchanged and acceptance gating remains client-side.
+
 The [SIM01 matching contract](similar-active-proposals.md) owns the narrow
 authenticated upcoming-Proposal idea lookup, lexical admission/ranking and
 query-plan evidence. `proposal:similar:verify:local` is an explicit Database CI

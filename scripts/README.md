@@ -22,6 +22,10 @@ domain verification and change-scoped validation tooling.
 - `verify-local-similar-active-proposals.mjs` owns SIM01 OTP/API, ranking,
   capacity/blocking/media/privacy and read-only assertions. Its rollback-only
   `fixtures/sim01-query-plan.sql` supplies reproducible EXPLAIN work.
+- `verify-local-policy-acceptance.mjs` checks real OTP sessions without profiles,
+  concurrent first acceptance, preserved server time, second-session restoration,
+  account/version denial and private Data API isolation. It refuses non-loopback
+  API/database/mailbox targets. See the [policy contract](../docs/development/policy01b-server-acceptance.md).
 - `process-local-*.mjs` exercise local projections/workers.
 - `verify-local-message-unread.mjs` owns MSG02 authenticated count/read,
   delayed-commit, private invalidation and activity/push separation proofs.

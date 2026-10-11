@@ -60,11 +60,14 @@ class _ProposalLocationEditorState extends ConsumerState<ProposalLocationEditor>
   late final LocationEditorSession _session;
   late final EditorPlaceGatewayFactory _factory;
   late final TextEditingController _query;
+  final _queryFocus = FocusNode();
+  final _resultsScroll = ScrollController();
   late List<String> _lastText;
   ItemLocation? _location;
   bool _dirty = false, _preparing = false, _applying = false;
   bool _manualPendingSave = false, _settingQuery = false;
   bool _denied = false;
+  bool _manualExpanded = false, _preparationBlocked = false;
   late String _lastQueryText;
   bool? _directionsExpanded;
   Timer? _debounce;
@@ -103,6 +106,7 @@ class _ProposalLocationEditorState extends ConsumerState<ProposalLocationEditor>
         _preparing = true;
         try {
           final id = await widget.savePending();
+          _preparationBlocked = id == null;
           if (id != null) _knownId = id;
           return id;
         } finally {
@@ -136,6 +140,7 @@ class _ProposalLocationEditorState extends ConsumerState<ProposalLocationEditor>
     widget.handle.restoreQuery = () {
       _cancel();
       _dirty = false;
+      _queryFocus.unfocus();
       _setQuery(_location?.exactPlace?.label ?? widget.publicLabel());
       setState(() {});
     };
@@ -234,6 +239,8 @@ class _ProposalLocationEditorState extends ConsumerState<ProposalLocationEditor>
   }
 
   void _setQuery(String value) {
+    // Session progress/rereads must not reset the caret for unchanged text.
+    if (_query.text == value) return;
     _settingQuery = true;
     try {
       _query.text = value;
@@ -251,6 +258,8 @@ class _ProposalLocationEditorState extends ConsumerState<ProposalLocationEditor>
 
   void _edit(String value) {
     _dirty = true;
+    _manualExpanded = false;
+    _preparationBlocked = false;
     if (value.trim().isEmpty && _location?.exactPlace == null) {
       _applying = true;
       try {
@@ -291,6 +300,9 @@ class _ProposalLocationEditorState extends ConsumerState<ProposalLocationEditor>
   }
 
   Future<void> _select(PlaceSuggestion value) async {
+    // Release only this input before canonical text replaces the query. A
+    // focused EditableText otherwise tries to reveal the new caret on commit.
+    _queryFocus.unfocus();
     final generation = _generation;
     await _session.search?.select(value);
     if (!mounted || generation != _generation) return;
@@ -310,6 +322,7 @@ class _ProposalLocationEditorState extends ConsumerState<ProposalLocationEditor>
       return;
     }
     if (!mounted || generation != _generation) return;
+    _queryFocus.unfocus();
     _applying = true;
     try {
       widget.onManualCity(value);
@@ -347,6 +360,7 @@ class _ProposalLocationEditorState extends ConsumerState<ProposalLocationEditor>
           TextFormField(
             key: const Key('proposal-public-location'),
             controller: _query,
+            focusNode: _queryFocus,
             enabled: widget.enabled && !_session.canRetry,
             maxLength: 180,
             maxLengthEnforcement: MaxLengthEnforcement.none,
@@ -364,51 +378,14 @@ class _ProposalLocationEditorState extends ConsumerState<ProposalLocationEditor>
                 ? l10n.proposalPlaceConfirm
                 : null,
           ),
-          if (_session.busy ||
-              search?.phase == PlaceSearchPhase.waiting ||
-              search?.phase == PlaceSearchPhase.searching ||
-              search?.phase == PlaceSearchPhase.resolving)
+          if (!_dirty && _session.busy)
             Semantics(
               label: l10n.locationLoading,
               child: const LinearProgressIndicator(),
             ),
-          if (search?.phase == PlaceSearchPhase.results &&
-              search!.suggestions.isEmpty)
-            Text(l10n.locationNoMatches),
-          for (final suggestion in search?.suggestions ?? <PlaceSuggestion>[])
-            TextButton(
-              key: Key('location-result-${suggestion.id}'),
-              onPressed: _session.busy || _session.canRetry
-                  ? null
-                  : () => _select(suggestion),
-              child: Align(
-                alignment: Alignment.centerLeft,
-                child: Text(
-                  '${suggestion.label}\n${placeKindLabel(l10n, suggestion.kind)}',
-                ),
-              ),
-            ),
-          if (_dirty) ...[
-            Text(
-              l10n.proposalManualCityOnly,
-              style: Theme.of(context).textTheme.bodySmall,
-            ),
-            OutlinedButton(
-              key: const Key('proposal-confirm-manual-city'),
-              onPressed:
-                  widget.enabled &&
-                      !_session.busy &&
-                      manualCityTextIsBroad(_query.text.trim())
-                  ? _manualCity
-                  : null,
-              child: Text(l10n.proposalUsePublicCity),
-            ),
-            TextButton(
-              key: const Key('proposal-cancel-place-edit'),
-              onPressed: widget.handle.restoreQuery,
-              child: Text(l10n.locationCancel),
-            ),
-          ] else if (exact != null) ...[
+          if (_dirty)
+            _searchPanel(context, l10n, search)
+          else if (exact != null) ...[
             Text(
               placeKindLabel(l10n, exact.kind),
               key: const Key('proposal-place-precision'),
@@ -435,20 +412,7 @@ class _ProposalLocationEditorState extends ConsumerState<ProposalLocationEditor>
               label: Text(l10n.proposalRemovePlace),
             ),
           ],
-          if (_session.problem ?? search?.problem case final problem?)
-            Semantics(
-              liveRegion: true,
-              child: Text(
-                locationProblemLabel(l10n, problem),
-                key: const Key('location-operation-error'),
-              ),
-            ),
-          if (_session.canRetry)
-            TextButton(
-              key: const Key('location-retry'),
-              onPressed: _session.retry,
-              child: Text(l10n.locationRetry),
-            ),
+          if (!_dirty) ..._operationFeedback(l10n, search),
           Semantics(
             expanded: expanded,
             child: ListTile(
@@ -480,6 +444,124 @@ class _ProposalLocationEditorState extends ConsumerState<ProposalLocationEditor>
     );
   }
 
+  List<Widget> _operationFeedback(
+    AppLocalizations l10n,
+    PlaceSearchController? search,
+  ) => [
+    if (_session.problem ?? search?.problem case final problem?)
+      Semantics(
+        liveRegion: true,
+        child: Text(
+          locationProblemLabel(l10n, problem),
+          key: const Key('location-operation-error'),
+        ),
+      ),
+    if (_session.canRetry)
+      TextButton(
+        key: const Key('location-retry'),
+        onPressed: _session.retry,
+        child: Text(l10n.locationRetry),
+      ),
+  ];
+
+  Widget _searchPanel(
+    BuildContext context,
+    AppLocalizations l10n,
+    PlaceSearchController? search,
+  ) {
+    final loading =
+        _debounce?.isActive == true ||
+        _session.busy ||
+        search?.phase == PlaceSearchPhase.waiting ||
+        search?.phase == PlaceSearchPhase.searching ||
+        search?.phase == PlaceSearchPhase.resolving ||
+        search?.phase == PlaceSearchPhase.selected;
+    final suggestions = search?.suggestions ?? <PlaceSuggestion>[];
+    final manualRelevant =
+        !loading && !_session.canRetry && _query.text.trim().isNotEmpty;
+    final broad = manualCityTextIsBroad(_query.text.trim());
+    return TextFieldTapRegion(
+      child: SizedBox(
+        key: const Key('proposal-location-results-panel'),
+        // Reserve the same space throughout a lookup. Results have their own
+        // scroll area (including at large text), so changes never resize the
+        // Project page. Use full screen size, independent of keyboard insets.
+        height: (MediaQuery.sizeOf(context).height * .32).clamp(160, 240),
+        child: Scrollbar(
+          controller: _resultsScroll,
+          child: SingleChildScrollView(
+            key: const Key('proposal-location-results-scroll'),
+            controller: _resultsScroll,
+            primary: false,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                SizedBox(
+                  height: 4,
+                  child: loading
+                      ? Semantics(
+                          label: l10n.locationLoading,
+                          child: const LinearProgressIndicator(),
+                        )
+                      : null,
+                ),
+                if (search?.phase == PlaceSearchPhase.results &&
+                    suggestions.isEmpty)
+                  Text(l10n.locationNoMatches),
+                for (final suggestion in suggestions)
+                  TextButton(
+                    key: Key('location-result-${suggestion.id}'),
+                    onPressed: loading || _session.canRetry
+                        ? null
+                        : () => _select(suggestion),
+                    child: Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        '${suggestion.label}\n${placeKindLabel(l10n, suggestion.kind)}',
+                      ),
+                    ),
+                  ),
+                ..._operationFeedback(l10n, search),
+                if (_preparationBlocked)
+                  Text(
+                    l10n.proposalPlacePreparationBlocked,
+                    key: const Key('proposal-location-preparation-blocked'),
+                  ),
+                if (manualRelevant &&
+                    suggestions.isNotEmpty &&
+                    broad &&
+                    !_manualExpanded)
+                  TextButton(
+                    key: const Key('proposal-manual-city-options'),
+                    onPressed: () => setState(() => _manualExpanded = true),
+                    child: Text(l10n.proposalPlaceNotFound),
+                  ),
+                if (manualRelevant &&
+                    (suggestions.isEmpty || _manualExpanded)) ...[
+                  Text(
+                    l10n.proposalManualCityOnly,
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                  if (broad)
+                    TextButton(
+                      key: const Key('proposal-confirm-manual-city'),
+                      onPressed: widget.enabled ? _manualCity : null,
+                      child: Text(l10n.proposalUsePublicCity),
+                    ),
+                ],
+                TextButton(
+                  key: const Key('proposal-cancel-place-edit'),
+                  onPressed: widget.handle.restoreQuery,
+                  child: Text(l10n.locationCancel),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
@@ -490,6 +572,8 @@ class _ProposalLocationEditorState extends ConsumerState<ProposalLocationEditor>
     widget.handle.unbind();
     _session.dispose();
     _query.dispose();
+    _queryFocus.dispose();
+    _resultsScroll.dispose();
     super.dispose();
   }
 }
