@@ -35,7 +35,7 @@ The attachment is the source; live Google Doc access is not a dependency.
   remains subject to erasure/restriction requests and validated legal grounds.
 - B9's applicable rights-response wording is preserved. Response timing is
   distinct from completion of erasure or backup purging.
-- POLICY01B updates only the factual storage descriptions in A1 and B10:
+- POLICY01B updates only the factual storage descriptions in A2 and B10:
   exact Auth account + bundle version + first server acceptance time. Acceptance
   is recognized across devices; historical local-only flags require a fresh
   explicit acceptance. No general processing/marketing consent or proof of
@@ -74,7 +74,7 @@ independent retention exemption or permanent blocker. Existing identity/audit
 constraints and the unimplemented deletion procedure are unchanged.
 
 Apply/review the additive migration on the intended backend before testing or
-releasing the new client there. Publish the factual A1/B10 site corrections before
+releasing the new client there. Publish the factual A2/B10 site corrections before
 that client reaches external users. PR merge alone deploys neither backend nor
 site; hosted migration, website publication and app distribution remain operator
 actions. Do not mask an old backend with a local acceptance fallback.

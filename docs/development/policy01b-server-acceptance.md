@@ -2,7 +2,7 @@
 
 The two supplied implementation prompts describe one feature and are delivered
 as one focused change, also covering the repository's POLICY02 plan. The pinned
-Terms/Rules bundle remains `POLICY01-2026-10-08-v1`. A1 and Privacy B10 receive
+Terms/Rules bundle remains `POLICY01-2026-10-08-v1`. A2 and Privacy B10 receive
 only factual storage corrections, without changing legal terms, legal basis,
 effective date or retention promises. Manual founder/device QA is not a merge
 gate for this task by the user's explicit instruction; automated checks remain.
@@ -80,7 +80,7 @@ Before external testing/releasing this client:
 
 1. Review/apply the additive migration to its intended backend through the normal
    separately authorized deployment process and verify both RPCs and grants.
-2. Publish the updated factual Terms A1 and Privacy B10 pages before the new client
+2. Publish the updated factual Terms A2 and Privacy B10 pages before the new client
    reaches external users. The legal bundle version is unchanged.
 3. Release/test the client against that migrated backend. Existing device-only
    acknowledgements require one explicit acceptance. Missing RPCs fail closed.
