@@ -34,7 +34,7 @@ void main() {
     expect(italian.settingsMessagesPreview, 'Anteprima Messaggi');
     expect(
       english.settingsPersistentTab('Browse'),
-      contains('Saved on this device'),
+      contains('Saved on device'),
     );
     expect(italian.settingsMessagesPreviewNotice, contains('inventate'));
     expect(english.settingsBottomRightTab, 'Bottom-right tab');
