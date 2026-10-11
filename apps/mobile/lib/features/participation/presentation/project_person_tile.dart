@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/widget_previews.dart';
 
+import '../../../core/theme/app_tokens.dart';
 import '../domain/project_people_models.dart';
 import '../../project_delegates/domain/project_delegate_models.dart';
 
@@ -10,26 +11,52 @@ class ProjectPersonTile extends StatelessWidget {
     required this.roleLabels,
     required this.onActions,
     required this.actionsLabel,
+    this.hasActions = true,
     super.key,
   });
   final ProjectPerson person;
   final List<String> roleLabels;
   final VoidCallback? onActions;
   final String actionsLabel;
+  final bool hasActions;
   @override
-  Widget build(BuildContext context) => ListTile(
+  Widget build(BuildContext context) => InkWell(
     key: Key('people-person-${person.profileId}'),
-    title: Text(person.displayName),
-    subtitle: Wrap(
-      spacing: 6,
-      children: [for (final role in roleLabels) Chip(label: Text(role))],
-    ),
-    onLongPress: onActions,
-    trailing: IconButton(
-      key: Key('people-actions-${person.profileId}'),
-      tooltip: actionsLabel,
-      icon: const Icon(Icons.more_horiz),
-      onPressed: onActions,
+    onLongPress: hasActions ? onActions : null,
+    child: Padding(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.medium,
+        vertical: AppSpacing.small,
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  person.displayName,
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+                Text(
+                  roleLabels.join(' · '),
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          if (hasActions)
+            IconButton(
+              key: Key('people-actions-${person.profileId}'),
+              tooltip: actionsLabel,
+              icon: const Icon(Icons.more_horiz),
+              onPressed: onActions,
+            ),
+        ],
+      ),
     ),
   );
 }

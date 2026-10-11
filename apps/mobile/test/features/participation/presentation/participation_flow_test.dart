@@ -209,16 +209,16 @@ void main() {
     await tester.pumpAndSettle();
     expect(people.calls, contains('step-down:user-2:authority'));
     expect(
-      find.textContaining(
-        'Increase capacity or explicitly change participation',
-      ),
-      findsOneWidget,
+      tester
+          .widget<Text>(find.byKey(const Key('creator-participation-error')))
+          .data,
+      contains('Increase capacity or explicitly change participation'),
     );
     await _scrollTo(
       tester,
       find.byKey(const Key('participation-member-current')),
     );
-    expect(find.text('Co-organizer'), findsOneWidget);
+    expect(find.text('Co-organizer · Participant'), findsOneWidget);
   });
   for (final participants in [1, 4]) {
     testWidgets(
@@ -285,11 +285,8 @@ void main() {
 
       app.read(appRouterProvider).go('/proposals/proposal-1/participants');
       await tester.pumpAndSettle();
-      expect(find.text(exact), findsOneWidget);
-      expect(
-        find.text('1 current memberships · 1 organizers · 1 / 20 spots used'),
-        findsOneWidget,
-      );
+      expect(find.text('1 / 20 spots used'), findsOneWidget);
+      expect(find.text('19 spots remaining · 1 organizer'), findsOneWidget);
     });
   }
 
@@ -305,6 +302,12 @@ void main() {
     final router = app.read(appRouterProvider);
     router.go('/proposals/proposal-1/join');
     await tester.pumpAndSettle();
+    expect(
+      find.text(
+        'Your display name is visible to current Project people when you join; photo privacy stays unchanged.',
+      ),
+      findsOneWidget,
+    );
     await tester.enterText(
       find.byKey(const Key('participation-message-field')),
       'I can help with painting.',
@@ -593,7 +596,7 @@ void main() {
     expect(accept.onPressed, isNull);
     expect(organizerAccept.onPressed, isNotNull);
     expect(reject.onPressed, isNotNull);
-    expect(find.text('No spots available.'), findsOneWidget);
+    expect(find.text('Full · 1 organizer'), findsOneWidget);
 
     participation.capacity = capacityFixture(registrationCapacity: 2);
     await app.read(projectPeopleProvider.notifier).load('user-1', 'proposal-1');
@@ -606,7 +609,7 @@ void main() {
           .onPressed,
       isNotNull,
     );
-    expect(find.text('No spots available.'), findsNothing);
+    expect(find.text('Full · 1 organizer'), findsNothing);
   });
 
   testWidgets('creator reviews private requests and current/history members', (

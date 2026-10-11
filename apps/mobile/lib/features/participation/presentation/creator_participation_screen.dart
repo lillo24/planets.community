@@ -18,12 +18,11 @@ import '../application/project_people_controller.dart';
 import '../data/project_people_gateway.dart';
 import '../data/participation_gateway.dart';
 import '../domain/participation_models.dart';
+import '../domain/project_capacity.dart';
 import '../domain/project_people_models.dart';
 import 'actual_contribution_sheet.dart';
 import 'join_acceptance_triage_sheet.dart';
 import 'membership_commitment_sheet.dart';
-import 'project_capacity_label.dart';
-import 'project_capacity_presentation.dart';
 import 'project_person_tile.dart';
 
 /// Legacy route/class name, now the single current-entitled Project People surface.
@@ -92,17 +91,7 @@ class _CreatorParticipationScreenState
       );
     }
     return Scaffold(
-      appBar: pageAppBar(
-        context,
-        title: Text(l10n.peopleTitle),
-        actions: [
-          if (state.role.isManager)
-            ParticipantLinkManagementButton(
-              projectId: widget.projectId,
-              kind: widget.projectKind,
-            ),
-        ],
-      ),
+      appBar: pageAppBar(context, title: Text(l10n.peopleTitle)),
       body: RefreshIndicator(
         onRefresh: _load,
         child: CustomScrollView(
@@ -133,39 +122,33 @@ class _CreatorParticipationScreenState
             if (state.capacity case final capacity?)
               SliverToBoxAdapter(
                 child: Padding(
-                  padding: const EdgeInsets.all(AppSpacing.medium),
-                  child: Card(
-                    key: const Key('creator-participation-capacity'),
-                    child: Padding(
-                      padding: const EdgeInsets.all(AppSpacing.medium),
-                      child: Column(
-                        children: [
-                          ProjectCapacityLabel(
-                            capacity: capacity,
-                            presentation:
-                                ProjectCapacityPresentation.managerExact,
-                          ),
-                          if (capacity.registrationCapacity
-                              case final registration?)
-                            Text(
-                              l10n.projectCapacityManagerSummary(
-                                capacity.currentParticipantCount,
-                                capacity.organizerCount,
-                                capacity.capacityUsedCount,
-                                registration,
-                              ),
-                            ),
-                          if (capacity.spotsRemaining case final remaining?)
-                            Text(l10n.projectCapacityRemaining(remaining)),
-                          if (capacity.isFull) Text(l10n.projectNoSpots),
-                        ],
-                      ),
+                  padding: const EdgeInsets.fromLTRB(
+                    AppSpacing.medium,
+                    AppSpacing.medium,
+                    AppSpacing.medium,
+                    AppSpacing.small,
+                  ),
+                  child: _CapacitySummary(capacity: capacity),
+                ),
+              ),
+            if (state.role.isManager)
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.medium,
+                    vertical: AppSpacing.small,
+                  ),
+                  child: Align(
+                    alignment: AlignmentDirectional.centerStart,
+                    child: ParticipantLinkManagementButton(
+                      projectId: widget.projectId,
+                      kind: widget.projectKind,
                     ),
                   ),
                 ),
               ),
             if (state.role.isManager) ...[
-              _heading(l10n.participationRequests),
+              _heading(l10n.participationRequests, state.requests),
               SliverList.builder(
                 itemCount: state.requests.items.length,
                 itemBuilder: (context, index) {
@@ -197,24 +180,16 @@ class _CreatorParticipationScreenState
                   );
                 },
               ),
-              _pageFooter(
-                state.requests,
-                PeopleSection.requests,
-                l10n.participationNoRequests,
-              ),
+              _pageFooter(state.requests, PeopleSection.requests),
             ],
-            _heading(l10n.peopleOffers),
+            _heading(l10n.peopleOffers, state.offers),
             SliverList.builder(
               itemCount: state.offers.items.length,
               itemBuilder: (context, index) =>
                   _offerCard(state.offers.items[index], state),
             ),
-            _pageFooter(
-              state.offers,
-              PeopleSection.offers,
-              l10n.peopleNoOffers,
-            ),
-            _heading(l10n.peopleTitle),
+            _pageFooter(state.offers, PeopleSection.offers),
+            _heading(l10n.peopleRoster, state.people),
             SliverList.builder(
               itemCount: state.people.items.length,
               itemBuilder: (context, index) {
@@ -232,6 +207,7 @@ class _CreatorParticipationScreenState
                         _role(l10n, role),
                       if (person.isParticipant) l10n.peopleParticipant,
                     ],
+                    hasActions: _hasMemberActions(person, state.role),
                     onActions: state.loading || state.mutating
                         ? null
                         : () => _memberActions(person, state.role),
@@ -242,10 +218,16 @@ class _CreatorParticipationScreenState
             _pageFooter(
               state.people,
               PeopleSection.people,
-              l10n.participationNoParticipants,
+              empty: l10n.participationNoParticipants,
             ),
-            if (state.role.isManager) ...[
-              _heading(l10n.peoplePastParticipants),
+            // Only a successful, exhausted first page proves empty history.
+            if (state.role.isManager &&
+                (state.loading ||
+                    state.history.loading ||
+                    state.history.failure != null ||
+                    state.history.hasMore ||
+                    state.history.items.isNotEmpty)) ...[
+              _heading(l10n.peoplePastParticipants, state.history),
               SliverList.builder(
                 itemCount: state.history.items.length,
                 itemBuilder: (context, index) {
@@ -266,17 +248,10 @@ class _CreatorParticipationScreenState
                   );
                 },
               ),
-              _pageFooter(
-                state.history,
-                PeopleSection.history,
-                l10n.participationNoParticipants,
-              ),
+              _pageFooter(state.history, PeopleSection.history),
             ],
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.all(AppSpacing.medium),
-                child: Text(l10n.peopleNameVisibility),
-              ),
+            const SliverToBoxAdapter(
+              child: SizedBox(height: AppSpacing.medium),
             ),
           ],
         ),
@@ -284,17 +259,43 @@ class _CreatorParticipationScreenState
     );
   }
 
-  Widget _heading(String title) => SliverToBoxAdapter(
-    child: Padding(
-      padding: const EdgeInsets.all(AppSpacing.medium),
-      child: Text(title, style: Theme.of(context).textTheme.titleLarge),
-    ),
-  );
+  Widget _heading<T>(String title, PeoplePage<T> page) {
+    final l10n = AppLocalizations.of(context);
+    // A keyset page is not a total. Errors/loading also cannot prove zero.
+    final label = page.loading || page.failure != null
+        ? title
+        : !page.hasMore
+        ? l10n.peopleSectionCount(title, page.items.length)
+        : page.items.isNotEmpty
+        ? l10n.peopleSectionLoaded(title, page.items.length)
+        : title;
+    return SliverToBoxAdapter(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.medium,
+          vertical: AppSpacing.small,
+        ),
+        child: Semantics(
+          header: true,
+          child: Text(label, style: Theme.of(context).textTheme.titleSmall),
+        ),
+      ),
+    );
+  }
+
+  bool _hasMemberActions(ProjectPerson person, ProjectManagementRole viewer) =>
+      person.profileId != _expectedProfileId ||
+      projectPersonActions(person, viewer, _expectedProfileId!).any(
+        (action) =>
+            action != PeopleAction.actualContributions ||
+            widget.projectKind == ProjectKind.oneTime,
+      );
+
   Widget _pageFooter<T>(
     PeoplePage<T> page,
-    PeopleSection section,
-    String empty,
-  ) {
+    PeopleSection section, {
+    String? empty,
+  }) {
     final l10n = AppLocalizations.of(context);
     return SliverToBoxAdapter(
       child: Column(
@@ -305,7 +306,11 @@ class _CreatorParticipationScreenState
               _error(l10n, failure),
               key: Key('people-page-error-${section.name}'),
             ),
-          if (!page.loading && page.items.isEmpty && page.failure == null)
+          if (empty != null &&
+              !page.loading &&
+              !page.hasMore &&
+              page.items.isEmpty &&
+              page.failure == null)
             Text(empty),
           if (!page.loading && page.hasMore && page.failure != null)
             TextButton(
@@ -333,60 +338,68 @@ class _CreatorParticipationScreenState
   Widget _offerCard(ProjectRoleOffer offer, ProjectPeopleState state) {
     final l10n = AppLocalizations.of(context);
     final own = offer.targetProfileId == _expectedProfileId;
-    return Card(
-      key: Key('people-offer-${offer.id}'),
-      child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.medium),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              l10n.peopleOfferDescription(
-                offer.issuerDisplayName,
-                offer.targetDisplayName,
-                _role(l10n, offer.role),
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.medium,
+        0,
+        AppSpacing.medium,
+        AppSpacing.small,
+      ),
+      child: Card(
+        key: Key('people-offer-${offer.id}'),
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpacing.medium),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                l10n.peopleOfferDescription(
+                  offer.issuerDisplayName,
+                  offer.targetDisplayName,
+                  _role(l10n, offer.role),
+                ),
               ),
-            ),
-            Text(
-              l10n.projectDelegateInviteDates(
-                _formatDate(context, offer.createdAt),
-                _formatDate(context, offer.expiresAt),
+              Text(
+                l10n.projectDelegateInviteDates(
+                  _formatDate(context, offer.createdAt),
+                  _formatDate(context, offer.expiresAt),
+                ),
               ),
-            ),
-            if (offer.role == ProjectDelegatedAuthorityRole.coCreator)
-              Text(l10n.peopleCoCreatorWarning),
-            Wrap(
-              children: [
-                if (own) ...[
-                  TextButton(
-                    key: Key('people-offer-decline-${offer.id}'),
-                    onPressed: state.mutating || state.loading
-                        ? null
-                        : () => _mutate(
-                            (profileId, projectId) => ref
-                                .read(projectPeopleGatewayProvider)
-                                .respond(profileId, offer.id, accept: false),
-                          ),
-                    child: Text(l10n.peopleDeclineOffer),
-                  ),
-                  FilledButton(
-                    key: Key('people-offer-accept-${offer.id}'),
-                    onPressed: state.mutating || state.loading
-                        ? null
-                        : () => _acceptOffer(offer),
-                    child: Text(l10n.peopleAcceptOffer),
-                  ),
-                ] else if (state.role.hasStructuralAuthority)
-                  TextButton(
-                    key: Key('people-offer-withdraw-${offer.id}'),
-                    onPressed: state.mutating || state.loading
-                        ? null
-                        : () => _withdrawOffer(offer),
-                    child: Text(l10n.peopleWithdrawOffer),
-                  ),
-              ],
-            ),
-          ],
+              if (offer.role == ProjectDelegatedAuthorityRole.coCreator)
+                Text(l10n.peopleCoCreatorWarning),
+              Wrap(
+                children: [
+                  if (own) ...[
+                    TextButton(
+                      key: Key('people-offer-decline-${offer.id}'),
+                      onPressed: state.mutating || state.loading
+                          ? null
+                          : () => _mutate(
+                              (profileId, projectId) => ref
+                                  .read(projectPeopleGatewayProvider)
+                                  .respond(profileId, offer.id, accept: false),
+                            ),
+                      child: Text(l10n.peopleDeclineOffer),
+                    ),
+                    FilledButton(
+                      key: Key('people-offer-accept-${offer.id}'),
+                      onPressed: state.mutating || state.loading
+                          ? null
+                          : () => _acceptOffer(offer),
+                      child: Text(l10n.peopleAcceptOffer),
+                    ),
+                  ] else if (state.role.hasStructuralAuthority)
+                    TextButton(
+                      key: Key('people-offer-withdraw-${offer.id}'),
+                      onPressed: state.mutating || state.loading
+                          ? null
+                          : () => _withdrawOffer(offer),
+                      child: Text(l10n.peopleWithdrawOffer),
+                    ),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -736,6 +749,58 @@ class _CreatorParticipationScreenState
   }
 }
 
+/// Manager-only summary; public capacity/social-proof labels stay independent.
+class _CapacitySummary extends StatelessWidget {
+  const _CapacitySummary({required this.capacity});
+  final ProjectCapacitySnapshot capacity;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final limit = capacity.registrationCapacity;
+    final secondary = <String>[
+      if (capacity.isFull)
+        l10n.peopleCapacityFull
+      else if (capacity.spotsRemaining case final remaining?)
+        l10n.projectCapacityRemaining(remaining),
+      // Ordinary participants exclude organizer/member overlap. Without a
+      // limit, show headcount rather than fabricating usage or remaining spots.
+      if (limit == null)
+        l10n.peopleOrdinaryParticipants(capacity.ordinaryParticipantCount),
+      capacity.countOrganizersTowardCapacity
+          ? l10n.peopleOrganizersIncluded(capacity.organizerCount)
+          : l10n.peopleOrganizers(capacity.organizerCount),
+    ];
+    return Card(
+      key: const Key('creator-participation-capacity'),
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.medium),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              limit == null
+                  ? l10n.projectCapacityNotSet
+                  : l10n.projectCapacityUsage(
+                      capacity.capacityUsedCount,
+                      limit,
+                    ),
+              style: Theme.of(context).textTheme.titleLarge,
+            ),
+            const SizedBox(height: AppSpacing.xSmall),
+            Text(
+              secondary.join(' · '),
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class _IdentityBoundOverlay extends ConsumerWidget {
   const _IdentityBoundOverlay({
     required this.expectedProfileId,
@@ -781,68 +846,74 @@ class _RequestCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    return Card(
-      key: Key('participation-request-${request.id}'),
-      child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.medium),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Row(
-              children: [
-                VisibleProfilePhotoAvatar(
-                  entry: photoEntry,
-                  imageSemanticsLabel: l10n.profilePhotoApplicantAvatarLabel,
-                  placeholderSemanticsLabel:
-                      l10n.profilePhotoApplicantAvatarLabel,
-                ),
-                const SizedBox(width: AppSpacing.medium),
-                Expanded(
-                  child: Text(
-                    request.requesterDisplayName,
-                    style: Theme.of(context).textTheme.titleMedium,
-                  ),
-                ),
-                BlockingActionButton(
-                  targetProfileId: request.requesterProfileId,
-                  targetDisplayName: request.requesterDisplayName,
-                  consequence: request.isPending
-                      ? BlockingContextConsequence.pendingRequest
-                      : BlockingContextConsequence.none,
-                  buttonKey: Key('participation-block-${request.id}'),
-                  compact: true,
-                  onChanged: (_) => onBlockingChanged(),
-                ),
-              ],
-            ),
-            const SizedBox(height: AppSpacing.xSmall),
-            Text(_requestStatusLabel(l10n, request.status)),
-            Text(
-              l10n.participationRequestedAt(
-                _formatDate(context, request.createdAt),
-              ),
-            ),
-            if (request.message case final message?) ...[
-              const SizedBox(height: AppSpacing.small),
-              Text(
-                message,
-                key: Key('participation-request-message-${request.id}'),
-              ),
-            ],
-            if (request.isPending) ...[
-              const SizedBox(height: AppSpacing.medium),
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.medium,
+        0,
+        AppSpacing.medium,
+        AppSpacing.small,
+      ),
+      child: Card(
+        key: Key('participation-request-${request.id}'),
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpacing.medium),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
               Row(
                 children: [
+                  VisibleProfilePhotoAvatar(
+                    entry: photoEntry,
+                    imageSemanticsLabel: l10n.profilePhotoApplicantAvatarLabel,
+                    placeholderSemanticsLabel:
+                        l10n.profilePhotoApplicantAvatarLabel,
+                  ),
+                  const SizedBox(width: AppSpacing.medium),
                   Expanded(
-                    child: OutlinedButton(
+                    child: Text(
+                      request.requesterDisplayName,
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                  ),
+                  BlockingActionButton(
+                    targetProfileId: request.requesterProfileId,
+                    targetDisplayName: request.requesterDisplayName,
+                    consequence: request.isPending
+                        ? BlockingContextConsequence.pendingRequest
+                        : BlockingContextConsequence.none,
+                    buttonKey: Key('participation-block-${request.id}'),
+                    compact: true,
+                    onChanged: (_) => onBlockingChanged(),
+                  ),
+                ],
+              ),
+              const SizedBox(height: AppSpacing.xSmall),
+              Text(_requestStatusLabel(l10n, request.status)),
+              Text(
+                l10n.participationRequestedAt(
+                  _formatDate(context, request.createdAt),
+                ),
+              ),
+              if (request.message case final message?) ...[
+                const SizedBox(height: AppSpacing.small),
+                Text(
+                  message,
+                  key: Key('participation-request-message-${request.id}'),
+                ),
+              ],
+              if (request.isPending) ...[
+                const SizedBox(height: AppSpacing.medium),
+                OverflowBar(
+                  alignment: MainAxisAlignment.end,
+                  spacing: AppSpacing.small,
+                  overflowSpacing: AppSpacing.small,
+                  children: [
+                    OutlinedButton(
                       key: Key('participation-reject-${request.id}'),
                       onPressed: enabled ? onReject : null,
                       child: Text(l10n.participationReject),
                     ),
-                  ),
-                  const SizedBox(width: AppSpacing.small),
-                  Expanded(
-                    child: FilledButton(
+                    FilledButton(
                       key: Key('participation-accept-${request.id}'),
                       onPressed: acceptEnabled ? onAccept : null,
                       child: isActing
@@ -852,11 +923,11 @@ class _RequestCard extends StatelessWidget {
                             )
                           : Text(l10n.participationAccept),
                     ),
-                  ),
-                ],
-              ),
+                  ],
+                ),
+              ],
             ],
-          ],
+          ),
         ),
       ),
     );
