@@ -28,6 +28,15 @@ void main() {
     expect(italian.navigationBrowse, 'Esplora');
     expect(english.settingsNavigation, 'Navigation');
     expect(italian.settingsNavigation, 'Navigazione');
+    expect(english.settingsAppSection, 'General');
+    expect(italian.settingsAppSection, 'Generale');
+    expect(english.settingsSandbox, 'Sandbox');
+    expect(italian.settingsMessagesPreview, 'Anteprima Messaggi');
+    expect(
+      english.settingsPersistentTab('Browse'),
+      contains('Saved on this device'),
+    );
+    expect(italian.settingsMessagesPreviewNotice, contains('inventate'));
     expect(english.settingsBottomRightTab, 'Bottom-right tab');
     expect(italian.settingsBottomRightTab, 'Scheda in basso a destra');
     expect(english.projectRegistrationCapacityLabel, 'Registration capacity');

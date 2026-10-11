@@ -73,6 +73,7 @@ import '../../features/resource_requests/presentation/resource_request_screen.da
 import '../../features/resource_saved_searches/presentation/resource_saved_search_routes.dart';
 import '../../features/resource_saved_searches/presentation/resource_saved_searches_screen.dart';
 import '../../features/settings/presentation/settings_screen.dart';
+import '../../features/settings/presentation/messages_preview_screen.dart';
 import '../../features/settings/presentation/navigation_selection_screen.dart';
 import '../../l10n/generated/app_localizations.dart';
 import '../foundation_screen.dart';
@@ -602,6 +603,10 @@ RoutingConfig _routingConfig(
                     path: 'navigation',
                     builder: (context, state) =>
                         const NavigationSelectionScreen(),
+                  ),
+                  GoRoute(
+                    path: 'messages-preview',
+                    builder: (context, state) => const MessagesPreviewScreen(),
                   ),
                 ],
               ),

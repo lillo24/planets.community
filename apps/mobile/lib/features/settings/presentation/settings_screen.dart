@@ -46,41 +46,62 @@ class SettingsScreen extends ConsumerWidget {
                     key: const Key('settings-language-row'),
                     leading: const Icon(Icons.translate),
                     title: Text(l10n.settingsLanguage),
-                    trailing: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(_preferenceLabel(l10n, preference)),
-                        const SizedBox(width: AppSpacing.small),
-                        const Icon(Icons.chevron_right),
-                      ],
-                    ),
+                    subtitle: Text(_preferenceLabel(l10n, preference)),
+                    trailing: const Icon(Icons.chevron_right),
                     onTap: () => context.push('/settings/language'),
                   ),
                 ),
                 const SizedBox(height: AppSpacing.large),
-                _SectionLabel(l10n.settingsNavigation),
+                _SectionLabel(l10n.settingsAccountSection),
+                Card(
+                  child: PolicyLinkAction(
+                    key: const Key('settings-privacy-policy-row'),
+                    asTile: true,
+                    label: l10n.policyPrivacy,
+                    uri: ref.watch(policyDocumentsProvider).privacy,
+                  ),
+                ),
+                if (showAccountSettings)
+                  Card(
+                    clipBehavior: Clip.antiAlias,
+                    child: ListTile(
+                      key: const Key('settings-notifications-row'),
+                      leading: const Icon(Icons.notifications_outlined),
+                      title: Text(l10n.notificationsTitle),
+                      trailing: const Icon(Icons.chevron_right),
+                      onTap: () => context.push('/notifications/preferences'),
+                    ),
+                  ),
+                const SizedBox(height: AppSpacing.large),
+                _SectionLabel(l10n.settingsSandbox),
+                Card(
+                  clipBehavior: Clip.antiAlias,
+                  child: ListTile(
+                    key: const Key('settings-messages-preview-row'),
+                    leading: const Icon(Icons.science_outlined),
+                    title: Text(l10n.settingsMessagesPreview),
+                    subtitle: Text(l10n.settingsMessagesPreviewHelp),
+                    trailing: const Icon(Icons.chevron_right),
+                    onTap: () => context.push('/settings/messages-preview'),
+                  ),
+                ),
                 Card(
                   clipBehavior: Clip.antiAlias,
                   child: ListTile(
                     key: const Key('settings-navigation-row'),
                     leading: const Icon(Icons.navigation_outlined),
                     title: Text(l10n.settingsBottomRightTab),
-                    subtitle: navigationPreference.restoreFailed
-                        ? Text(l10n.settingsNavigationRestoreError)
-                        : null,
-                    trailing: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          navigationPreference.destination ==
-                                  BottomTabDestination.messages
-                              ? l10n.messagesTitle
-                              : l10n.navigationBrowse,
-                        ),
-                        const SizedBox(width: AppSpacing.small),
-                        const Icon(Icons.chevron_right),
-                      ],
+                    subtitle: Text(
+                      navigationPreference.restoreFailed
+                          ? l10n.settingsNavigationRestoreError
+                          : l10n.settingsPersistentTab(
+                              navigationPreference.destination ==
+                                      BottomTabDestination.messages
+                                  ? l10n.messagesTitle
+                                  : l10n.navigationBrowse,
+                            ),
                     ),
+                    trailing: const Icon(Icons.chevron_right),
                     onTap: () => context.push('/settings/navigation'),
                   ),
                 ),
@@ -92,7 +113,7 @@ class SettingsScreen extends ConsumerWidget {
                       leading: const MessageUnreadBadge(
                         child: Icon(Icons.forum_outlined),
                       ),
-                      title: Text(l10n.messagesTitle),
+                      title: Text(l10n.settingsOpenMessages),
                       trailing: const Icon(Icons.chevron_right),
                       onTap: () => context.go('/messages'),
                     ),
@@ -115,46 +136,6 @@ class SettingsScreen extends ConsumerWidget {
                     },
                     child: Text(l10n.startupDevelopmentReset),
                   ),
-                Card(
-                  child: PolicyLinkAction(
-                    key: const Key('settings-privacy-policy-row'),
-                    asTile: true,
-                    label: l10n.policyPrivacy,
-                    uri: ref.watch(policyDocumentsProvider).privacy,
-                  ),
-                ),
-                if (showAccountSettings) ...[
-                  const SizedBox(height: AppSpacing.large),
-                  _SectionLabel(l10n.settingsAccountSection),
-                  Card(
-                    clipBehavior: Clip.antiAlias,
-                    child: Column(
-                      children: [
-                        ListTile(
-                          key: const Key('settings-notifications-row'),
-                          leading: const Icon(Icons.notifications_outlined),
-                          title: Text(l10n.notificationsTitle),
-                          trailing: const Icon(Icons.chevron_right),
-                          onTap: () =>
-                              context.push('/notifications/preferences'),
-                        ),
-                        const Divider(height: 1),
-                        ListTile(
-                          key: const Key('settings-profile-privacy-row'),
-                          leading: const Icon(Icons.manage_accounts_outlined),
-                          title: Text(l10n.settingsProfilePrivacy),
-                          trailing: const Icon(Icons.chevron_right),
-                          onTap: () => context.go(
-                            Uri(
-                              path: '/profile/edit',
-                              queryParameters: const {'returnTo': '/settings'},
-                            ).toString(),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
                 if (session.isAuthenticated) ...[
                   const SizedBox(height: AppSpacing.large),
                   const Divider(),
