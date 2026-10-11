@@ -65,7 +65,7 @@ class PolicyAcceptanceController extends Notifier<PolicyAcceptanceState> {
         state = PolicyAcceptanceState(
           account,
           version,
-          accepted
+          accepted != null
               ? PolicyAcceptancePhase.accepted
               : PolicyAcceptancePhase.required,
         );
@@ -110,9 +110,7 @@ class PolicyAcceptanceController extends Notifier<PolicyAcceptanceState> {
       PolicyAcceptancePhase.saving,
     );
     try {
-      await ref
-          .read(policyAcceptanceStoreProvider)
-          .write(account, version, DateTime.now());
+      await ref.read(policyAcceptanceStoreProvider).write(account, version);
       if (!_current(account, version, generation)) return false;
       state = PolicyAcceptanceState(
         account,

@@ -32,7 +32,16 @@ describe("public policy HTML", () => {
     expect(privacy).toContain("non stabilisce una conservazione indefinita");
     expect(privacy).toContain("30 giorni");
     expect(privacy).toContain("non un termine garantito");
-    expect(privacy).toContain("sul dispositivo");
+    expect(privacy).toContain("prima accettazione confermata dal server");
+    expect(privacy).toContain("anche su altri dispositivi");
+    expect(privacy).toContain("nuova accettazione esplicita");
+    expect(privacy).toContain("Non è un consenso generale");
+    expect(privacy).toContain("restano da validare");
+    for (const path of ["/privacy", "/terms"]) {
+      expect(renderPolicy(path)).not.toMatch(
+        /non è una registrazione sul server|o un registro sul server|ora locale dell’accettazione/,
+      );
+    }
     expect(privacy).toContain("La lista non viene attivata");
   });
   it("provides a reviewed manual mailto and instructions without sign-in", () => {
@@ -59,5 +68,10 @@ describe("public policy HTML", () => {
       "utf8",
     );
     expect(dart).toContain(`const policyBundleVersion = '${POLICY_VERSION}'`);
+    const migration = readFileSync(
+      "../../supabase/migrations/20261011082932_policy01b_account_acceptance.sql",
+      "utf8",
+    );
+    expect(migration).toContain(`values ('${POLICY_VERSION}')`);
   });
 });
