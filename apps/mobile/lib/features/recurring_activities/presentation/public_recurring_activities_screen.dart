@@ -96,8 +96,9 @@ class _PublicRecurringActivitiesScreenState
             padding: const EdgeInsets.all(AppSpacing.medium),
             children: [
               const BrowseActivitySwitcher(selected: BrowseActivityType.tavoli),
+              // Match the Project header's visible 16dp gaps (4dp tap inset).
+              const SizedBox(height: AppSpacing.medium - 4),
               MapViewButton(origin: MapDiscoveryOrigin.tavoli),
-              const SizedBox(height: 8),
               const SizedBox(height: AppSpacing.medium),
               Align(
                 alignment: Alignment.centerRight,
