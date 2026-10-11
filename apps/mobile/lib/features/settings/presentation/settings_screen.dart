@@ -39,6 +39,9 @@ class SettingsScreen extends ConsumerWidget {
             child: ListTileTheme.merge(
               minLeadingWidth: 24,
               horizontalTitleGap: AppSpacing.small,
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.small,
+              ),
               child: ListView(
                 padding: const EdgeInsets.all(AppSpacing.medium),
                 children: [
