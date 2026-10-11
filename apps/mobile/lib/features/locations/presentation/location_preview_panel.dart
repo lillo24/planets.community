@@ -538,6 +538,9 @@ class _LocationPreviewPanelState extends ConsumerState<LocationPreviewPanel>
     final showTiles =
         tiled && tileStore!.enabled && value != null && place != null;
     final showStatic = !tiled && value != null && _bytes != null;
+    // A canonical renewal is not imagery loading when rendering is disabled.
+    final loadingStatic =
+        !tiled && ref.watch(staticPreviewGatewayProvider).enabled && _loading;
     return Padding(
       key: _box,
       padding: const EdgeInsets.symmetric(vertical: AppSpacing.small),
@@ -594,7 +597,7 @@ class _LocationPreviewPanelState extends ConsumerState<LocationPreviewPanel>
             ),
           if (_failed) Text(l10n.locationPreviewImageFailed),
           if (!showTiles && !showStatic)
-            if (_loading && value?.place != null)
+            if (loadingStatic && value?.place != null)
               _pendingImage()
             else
               ?fallback,

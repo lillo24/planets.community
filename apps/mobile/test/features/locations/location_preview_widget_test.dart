@@ -80,6 +80,50 @@ Future<void> decodedPreview(WidgetTester t) async {
 }
 
 void main() {
+  for (final language in ['en', 'it']) {
+    testWidgets(
+      '$language disabled imagery keeps its action through a slow renewal and parent rebuild',
+      (t) async {
+        final gateway = FakePreviewGateway();
+        final renderer = FakeStaticPreviewGateway(enabled: false);
+        final c = setup(gateway, renderer, FakePreviewMapsLauncher());
+        addTearDown(c.dispose);
+        Widget body() => app(
+          c,
+          ListView(children: [panel(detail: true)]),
+          language: language,
+        );
+        await t.pumpWidget(body());
+        await settled(t);
+        expect(
+          find.byKey(const Key('location-open-maps-item')),
+          findsOneWidget,
+        );
+        final renewal = Completer<LocationPreview?>();
+        gateway.pending = (_, _) => renewal.future;
+        await t.pump(const Duration(seconds: 15));
+        expect(gateway.reads, 2);
+        await t.pumpWidget(body());
+        await t.pump();
+        expect(
+          find.byKey(const Key('location-open-maps-item')),
+          findsOneWidget,
+        );
+        expect(
+          find.byKey(const Key('location-map-pending-item')),
+          findsNothing,
+        );
+        expect(renderer.calls, 0);
+        renewal.complete(previewFixture(item));
+        await settled(t);
+        expect(
+          find.byKey(const Key('location-open-maps-item')),
+          findsOneWidget,
+        );
+        await t.pumpWidget(const SizedBox());
+      },
+    );
+  }
   testWidgets(
     'failed public renewal alone does not add provider credits to known matching manual text',
     (t) async {

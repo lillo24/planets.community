@@ -40,7 +40,9 @@ avoid reusing the already prepared code-7 artifact; recheck history before uploa
   mount the text Maps fallback. A decoded canvas is
   the single Maps action; disabled or settled unavailable imagery can offer the
   text action only with a canonical destination. Static imagery remains separately
-  disabled; failures never enable it.
+  disabled; failures never enable it. When imagery is disabled, slow canonical
+  renewals and parent rebuilds retain the text action rather than substituting
+  an imagery-loading label; Maps activation still performs its own fresh read.
 - Existing public lease/entitlement/inactive retention and synchronous private
   revocation remain in force. Join-request availability is not a location content
   version. Geometry/location changes, account switches, real backgrounding and
