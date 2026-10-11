@@ -191,6 +191,7 @@ void main() {
                   const Key('tavolo-urgency-badge'),
                 );
                 final requestedFinder = find.byType(RequestedBadge);
+                expect(cover.width / cover.height, closeTo(3 / 2, .001));
                 final urgency = tester.getRect(urgencyFinder);
                 final requested = tester.getRect(requestedFinder);
                 expect(urgency.left, closeTo(cover.left + 8, 0.1));

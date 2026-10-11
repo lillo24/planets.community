@@ -139,6 +139,90 @@ Future<void> query(WidgetTester tester, String value) async {
 }
 
 void main() {
+  for (final language in ['en', 'it']) {
+    for (final scale in [1.0, 2.0]) {
+      testWidgets(
+        '$language scale=$scale manual city is a secondary text-only fallback',
+        (tester) async {
+          tester.view.physicalSize = const Size(320, 740);
+          tester.view.devicePixelRatio = 1;
+          addTearDown(tester.view.resetPhysicalSize);
+          addTearDown(tester.view.resetDevicePixelRatio);
+          final db = FakeItemLocationGateway();
+          final factory = FakeEditorPlaceFactory();
+          final (_, state, handle, form) = await setup(
+            tester,
+            db,
+            factory,
+            language: language,
+            scale: scale,
+          );
+          await query(tester, 'Rovereto');
+          final panel = find.byKey(
+            const Key('proposal-location-results-panel'),
+          );
+          final height = tester.getSize(panel).height;
+          expect(
+            find.byKey(const Key('location-result-locality')),
+            findsOneWidget,
+          );
+          expect(
+            find.byKey(const Key('proposal-confirm-manual-city')),
+            findsNothing,
+          );
+          await tap(tester, 'proposal-manual-city-options');
+          expect(tester.getSize(panel).height, height);
+          expect(
+            find.text(
+              language == 'it'
+                  ? 'Usa questa città senza mappa'
+                  : 'Use this city without a map',
+            ),
+            findsOneWidget,
+          );
+          expect(
+            find.textContaining(
+              language == 'it'
+                  ? 'Non verrà creato un indicatore'
+                  : 'No map marker',
+            ),
+            findsOneWidget,
+          );
+          expect(state.city, 'Trento');
+          expect(form.currentState!.validate(), isFalse);
+          await tap(tester, 'proposal-confirm-manual-city');
+          expect(state.city, 'Rovereto');
+          expect(db.value.publicPlace, isNull);
+          expect(db.value.exactPlace, isNull);
+          expect(db.mutations, isEmpty);
+          expect(handle.pendingQuery!(), isEmpty);
+          expect(form.currentState!.validate(), isTrue);
+          final input = find.descendant(
+            of: find.byKey(const Key('proposal-public-location')),
+            matching: find.byType(EditableText),
+          );
+          expect(
+            tester.widget<EditableText>(input).focusNode.hasFocus,
+            isFalse,
+          );
+          await query(tester, 'Via privata 42');
+          expect(
+            find.byKey(const Key('proposal-manual-city-options')),
+            findsNothing,
+          );
+          expect(
+            find.byKey(const Key('proposal-confirm-manual-city')),
+            findsNothing,
+          );
+          await tap(tester, 'proposal-cancel-place-edit');
+          expect(state.city, 'Rovereto');
+          expect(handle.pendingQuery!(), isEmpty);
+          expect(tester.takeException(), isNull);
+        },
+      );
+    }
+  }
+
   testWidgets(
     'one inline input selects exact privately, publishes only by switch, directions separate',
     (tester) async {
@@ -188,12 +272,8 @@ void main() {
       expect(handle.pendingQuery!(), 'Via privata 42');
       expect(form.currentState!.validate(), isFalse);
       expect(
-        tester
-            .widget<OutlinedButton>(
-              find.byKey(const Key('proposal-confirm-manual-city')),
-            )
-            .onPressed,
-        isNull,
+        find.byKey(const Key('proposal-confirm-manual-city')),
+        findsNothing,
       );
       await query(tester, 'Rovereto');
       await tap(tester, 'proposal-confirm-manual-city');

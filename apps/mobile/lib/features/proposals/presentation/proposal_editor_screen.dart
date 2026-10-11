@@ -588,7 +588,11 @@ class _ProposalFormState extends ConsumerState<_ProposalForm>
     });
   }
 
-  Future<bool> _save({required bool publish, bool navigate = true}) async {
+  Future<bool> _save({
+    required bool publish,
+    bool navigate = true,
+    bool revealValidation = true,
+  }) async {
     _locationHandle.beforeContentSave();
     if (_saving ||
         ref.read(proposalEditorSessionProvider(widget.sessionId)).isBusy) {
@@ -597,8 +601,14 @@ class _ProposalFormState extends ConsumerState<_ProposalForm>
     final publishedEdit =
         widget.proposal?.lifecycle == ProposalLifecycle.published;
     final validateCompleteContent = (publish || publishedEdit) && !_ideaMode;
-    setState(() => _validatingPublish = validateCompleteContent);
-    final valid = _formKey.currentState?.validate() ?? false;
+    // Autocomplete must still save valid content before issuing a receipt, but
+    // background preparation must not paint errors or scroll to another field.
+    // Only deliberate Save/Publish/departure actions reveal form validation.
+    if (revealValidation) {
+      setState(() => _validatingPublish = validateCompleteContent);
+    }
+    final valid =
+        !revealValidation || (_formKey.currentState?.validate() ?? false);
     final captured = _snapshot();
     final input = captured.input;
     final capturedCover = _coverChange;
@@ -614,6 +624,7 @@ class _ProposalFormState extends ConsumerState<_ProposalForm>
       issues.add(AppLocalizations.of(context).proposalIdeaPurposeRequired);
     }
     if (!valid || issues.isNotEmpty) {
+      if (!revealValidation) return false;
       setState(() => _validationIssues = issues);
       await WidgetsBinding.instance.endOfFrame;
       if (mounted) {
@@ -637,7 +648,7 @@ class _ProposalFormState extends ConsumerState<_ProposalForm>
       }
       return false;
     }
-    if (_validationIssues.isNotEmpty) {
+    if (revealValidation && _validationIssues.isNotEmpty) {
       setState(() => _validationIssues = const []);
     }
     final identity = ref.read(authSessionProvider).identity;
@@ -1186,7 +1197,11 @@ class _ProposalFormState extends ConsumerState<_ProposalForm>
                       .proposal
                       ?.id,
                   savePending: () async =>
-                      await _save(publish: false, navigate: false)
+                      await _save(
+                        publish: false,
+                        navigate: false,
+                        revealValidation: false,
+                      )
                       ? ref
                             .read(
                               proposalEditorSessionProvider(widget.sessionId),
@@ -1491,7 +1506,7 @@ class _ProposalFormState extends ConsumerState<_ProposalForm>
       5000,
       required: true,
     );
-    if (_validateCapacity() != null) {
+    if (_validateCapacity(required: publish) != null) {
       issues.add(l10n.projectRegistrationCapacityLabel);
     }
     if ((publish && input.eventTimezone.trim().isEmpty) ||
@@ -1573,11 +1588,11 @@ class _ProposalFormState extends ConsumerState<_ProposalForm>
     return _exactLocationAnchor;
   }
 
-  String? _validateCapacity() {
+  String? _validateCapacity({bool? required}) {
     final l10n = AppLocalizations.of(context);
     final text = _capacity.text.trim();
     if (text.isEmpty) {
-      return _validatingPublish
+      return (required ?? _validatingPublish)
           ? l10n.projectRegistrationCapacityRequired
           : null;
     }

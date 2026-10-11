@@ -12,6 +12,7 @@ class ProjectCoverImage extends CoverImage {
     super.ownerProfileId,
     super.previewBytes,
     super.borderRadius = BorderRadius.zero,
+    super.aspectRatio,
     super.key,
   });
 }

@@ -57,6 +57,7 @@ class RecurringActivityCard extends StatelessWidget {
                   key: Key('tavolo-cover-${activity.id}'),
                   title: activity.title,
                   objectPath: activity.coverObjectPath,
+                  aspectRatio: 3 / 2,
                 ),
                 if (urgency != null || isRequested)
                   Positioned.fill(

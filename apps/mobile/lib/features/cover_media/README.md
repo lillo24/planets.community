@@ -24,6 +24,12 @@ lifecycle or the profile-photo trust gate.
 - `presentation/` owns the fixed 16:9 crop, local editor preview, and shared
   loading/fallback rendering widgets.
 
+`CoverImage.aspectRatio` controls display only and defaults to 16:9. Project
+and Tavolo discovery cards opt into 3:2 with `BoxFit.cover`, including loading
+and missing-image states. Details, owner lists, editors, templates and Resource
+cards keep their existing ratio. Upload cropping and stored dimensions are
+unchanged; the taller discovery frame crops the horizontal edges of 16:9 bytes.
+
 New-Project and new-Resource selection remains local until the parent draft has
 been created. Save and Publish reconcile the cover before any publish
 transition, so a cover failure leaves the same canonical draft available for

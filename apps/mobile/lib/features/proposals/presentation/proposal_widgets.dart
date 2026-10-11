@@ -94,6 +94,7 @@ class ProposalCard extends StatelessWidget {
                   key: Key('proposal-cover-${proposal.id}'),
                   title: proposal.title,
                   objectPath: proposal.coverObjectPath,
+                  aspectRatio: 3 / 2,
                 ),
                 if (isRequested)
                   const Positioned(
