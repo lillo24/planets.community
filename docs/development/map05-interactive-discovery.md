@@ -11,7 +11,15 @@ contracts. No provider, hosting, key, billing or policy publication is activated
 MAP-UX01 uses the same full-width equal-half List/Map selector in every feed
 and on Map, with selected semantics and keyboard access. The selected half does
 not navigate. The inactive List half pops the preserved route or falls back to
-the appropriate origin root for a directly opened map.
+the appropriate origin root for a directly opened map. UIFIX03 also reuses the
+Projects/Cultural Tables selector above List/Map. Changing activity family stays
+in Map and replaces the canonical origin route, without accumulating Map pages.
+Create, contextual Drafts and List/Back follow that origin. Same-origin return
+still preserves List scroll; switching family opens its List root and retains
+its keyword/skills/locality provider state. Each origin retains its own camera,
+radius and reference. All keeps the current origin as the Create/Drafts context,
+with neither single activity segment selected; Resources needs no activity toggle.
+All and Resources remain in the secondary Area & filters disclosure.
 
 Entry inherits Projects' keyword/locality/ANY skills, Tavoli's applied locality,
 and Resources' keyword/locality/Dona-or-Scambia selection. Each filter still
@@ -19,7 +27,15 @@ applies only to its original family when the map selects All. Map family choices
 never write List state. Return to List to edit those filters. Pushing Map retains
 the existing List route, scroll and controls; detail pushes use the existing
 `/proposals/:id`, `/tavoli/:id` and `/resources/:id` routes. Create and contextual
-My Drafts remain accessible from Map.
+My Drafts remain accessible from Map. Single-family queries omit unrelated
+family filters; All includes each source's own filters. The map appears before
+Area & filters, which contains category/radius, available place lookup and
+collapsed List filter details with an Edit in List action. The short reference
+label remains explicit about not being GPS. Unavailable lookup mounts no dead
+input. A concise notice over the canvas distinguishes unavailable/failed basemaps;
+no fixture/provider diagnostics, inherited-filter essay or permanent loaded-count
+paragraph is shown. Cluster chooser counts, error/empty/retry states and explicit
+pagination remain. Attribution links stay pinned in SafeArea.
 
 The initial Trento reference (46.0748, 11.1217, 5 km) is explicitly a search area,
 never GPS. Radius choices are 1/3/5/10/20/50/100 km. Moving/zooming changes only

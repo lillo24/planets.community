@@ -94,12 +94,18 @@ pumpMap(
       GoRoute(
         path: '/discover/map/:origin',
         builder: (context, state) => MapDiscoveryScreen(
+          key: ValueKey(state.pathParameters['origin']),
           origin: MapDiscoveryOrigin.values.byName(
             state.pathParameters['origin']!,
           ),
         ),
       ),
-      for (final path in ['/proposals/:id', '/tavoli/:id', '/resources/:id'])
+      for (final path in [
+        '/drafts',
+        '/proposals/:id',
+        '/tavoli/:id',
+        '/resources/:id',
+      ])
         GoRoute(
           path: path,
           builder: (context, state) => Scaffold(
@@ -153,13 +159,147 @@ Future<void> tapMapKey(WidgetTester tester, String key) async {
   await tester.pumpAndSettle();
 }
 
+Future<void> openMapOptions(WidgetTester tester) async {
+  if (find.byKey(const Key('map-family')).evaluate().isEmpty) {
+    await tapMapKey(tester, 'map-options');
+  }
+}
+
 Future<void> chooseFamily(WidgetTester tester, String label) async {
+  await openMapOptions(tester);
   await tapMapKey(tester, 'map-family');
   await tester.tap(find.text(label).last);
   await tester.pumpAndSettle();
 }
 
 void main() {
+  testWidgets(
+    'switching families scopes filters and restores each origin reference',
+    (tester) async {
+      final app = await pumpMap(tester, inheritedFilters: true);
+      final l = AppLocalizations.of(
+        tester.element(find.byKey(const Key('map-view-selector'))),
+      );
+      var query = app.geo.calls.last.query;
+      expect(query.proposalKeyword, 'garden');
+      expect(query.tavoloLocality, isNull);
+      expect(query.resourceKeyword, isNull);
+      final sessions = app.container.read(mapDiscoverySessionsProvider);
+      sessions.forOrigin(MapDiscoveryOrigin.tavoli).radiusKm = 20;
+      await chooseFamily(tester, l.tavoliTitle);
+      expect(app.router.routerDelegate.state.uri.path, '/discover/map/tavoli');
+      query = app.geo.calls.last.query;
+      expect(query.kinds, {GeoKind.recurring});
+      expect(query.tavoloLocality, 'Trento');
+      expect(query.proposalKeyword, isNull);
+      expect(query.proposalSkillIds, isEmpty);
+      expect(query.resourceMode, isNull);
+      expect((query.area as GeoRadius).radiusMeters, 20000);
+      await chooseFamily(tester, l.resourceTitle);
+      expect(
+        app.router.routerDelegate.state.uri.path,
+        '/discover/map/resources',
+      );
+      expect(find.byKey(const Key('browse-activity-switcher')), findsNothing);
+      query = app.geo.calls.last.query;
+      expect(query.kinds, {GeoKind.resource});
+      expect(query.resourceKeyword, 'tools');
+      expect(query.resourceMode, GeoResourceMode.exchange);
+      expect(query.proposalKeyword, isNull);
+      expect(query.tavoloLocality, isNull);
+      await chooseFamily(tester, l.mapAll);
+      query = app.geo.calls.last.query;
+      expect(query.kinds, GeoKind.values.toSet());
+      expect(query.proposalKeyword, 'garden');
+      expect(query.tavoloLocality, 'Trento');
+      expect(query.resourceKeyword, 'tools');
+      await chooseFamily(tester, l.proposalsTitle);
+      query = app.geo.calls.last.query;
+      expect(query.kinds, {GeoKind.oneTime});
+      expect((query.area as GeoRadius).radiusMeters, 5000);
+      expect(app.container.read(publicProposalsProvider).query, 'garden');
+      expect(
+        app.container.read(publicRecurringActivitiesProvider).locality,
+        'Trento',
+      );
+      expect(
+        app.container.read(publicResourceListingsProvider).modeFilter,
+        ResourceListingMode.exchange,
+      );
+    },
+  );
+
+  for (final family in ['Tavoli', 'Projects', 'Scambio-Dona']) {
+    testWidgets('$family Map Create and Drafts use the active family context', (
+      tester,
+    ) async {
+      final app = await pumpMap(tester);
+      final l = AppLocalizations.of(
+        tester.element(find.byKey(const Key('map-view-selector'))),
+      );
+      await chooseFamily(
+        tester,
+        family == 'Tavoli'
+            ? l.tavoliTitle
+            : family == 'Projects'
+            ? l.proposalsTitle
+            : l.resourceTitle,
+      );
+      final origin = family == 'Tavoli'
+          ? 'tavoli'
+          : family == 'Projects'
+          ? 'proposals'
+          : 'resources';
+      final types = family == 'Tavoli'
+          ? 'table'
+          : family == 'Projects'
+          ? 'project'
+          : 'donate,exchange';
+      await tapMapKey(tester, 'map-create');
+      expect(app.router.routerDelegate.state.uri.path, '/$origin/create');
+      app.router.pop();
+      await tester.pumpAndSettle();
+      await tapMapKey(tester, 'map-drafts');
+      expect(app.router.routerDelegate.state.uri.path, '/drafts');
+      expect(
+        app.router.routerDelegate.state.uri.queryParameters['types'],
+        types,
+      );
+    });
+  }
+
+  for (final width in [320.0, 390.0]) {
+    for (final locale in ['en', 'it']) {
+      testWidgets('$locale $width/2x exposes a useful map before scrolling', (
+        tester,
+      ) async {
+        tester.view.devicePixelRatio = 1;
+        tester.view.physicalSize = Size(width, 800);
+        addTearDown(tester.view.resetDevicePixelRatio);
+        addTearDown(tester.view.resetPhysicalSize);
+        await pumpMap(tester, locale: Locale(locale), scale: 2);
+        final viewport = tester.getRect(find.byKey(const Key('map-viewport')));
+        final credits = tester.getRect(find.byType(LocationAttribution));
+        // A substantial part of the map is exposed above the pinned credits,
+        // independent of exact font metrics or control pixel positions.
+        final visible = viewport.intersect(
+          Rect.fromLTRB(0, 0, width, credits.top),
+        );
+        expect(visible.height, greaterThan(viewport.height / 2));
+        expect(find.byKey(const Key('map-center-input')), findsNothing);
+        expect(find.byKey(const Key('map-family')), findsNothing);
+        final l = AppLocalizations.of(
+          tester.element(find.byKey(const Key('map-search-reference'))),
+        );
+        expect(find.text(l.mapPublicReference), findsNothing);
+        expect(find.text(l.mapFixtureTiles), findsNothing);
+        expect(find.text(l.mapInheritedFilters), findsNothing);
+        expect(find.text(l.mapListDifference), findsNothing);
+        expect(tester.takeException(), isNull);
+      });
+    }
+  }
+
   testWidgets(
     'large-text cluster chooser accommodates an open keyboard and credited links',
     (tester) async {
@@ -223,9 +363,15 @@ void main() {
       final geo = FixtureGeographicGateway(
         items: List.generate(21, (i) => mapFixtureItem(i + 1)),
       );
-      await pumpMap(tester, geographic: geo);
+      final app = await pumpMap(tester, geographic: geo);
       expect(geo.calls.length, 1);
-      expect(find.textContaining('20 loaded results.'), findsOneWidget);
+      expect(
+        app.container
+            .read(geographicDiscoveryProvider('map05:projects'))
+            .items
+            .length,
+        20,
+      );
       geo.loader = (_, _) async =>
           throw const GeoFailure(GeoFailureKind.unavailable);
       await tapMapKey(tester, 'map-load-more');
@@ -233,12 +379,24 @@ void main() {
         find.textContaining('Confirmed results remain visible'),
         findsOneWidget,
       );
-      expect(find.textContaining('20 loaded results.'), findsOneWidget);
+      expect(
+        app.container
+            .read(geographicDiscoveryProvider('map05:projects'))
+            .items
+            .length,
+        20,
+      );
       final cursor = geo.calls.last.cursor;
       geo.loader = null;
       await tapMapKey(tester, 'map-load-more');
       expect(geo.calls.last.cursor, same(cursor));
-      expect(find.textContaining('21 loaded results.'), findsOneWidget);
+      expect(
+        app.container
+            .read(geographicDiscoveryProvider('map05:projects'))
+            .items
+            .length,
+        21,
+      );
       expect(find.byKey(const Key('map-load-more')), findsNothing);
     },
   );
@@ -248,12 +406,18 @@ void main() {
       final geo = FixtureGeographicGateway(
         items: List.generate(21, (i) => mapFixtureItem(i + 1)),
       );
-      await pumpMap(tester, geographic: geo);
+      final app = await pumpMap(tester, geographic: geo);
       geo.loader = (_, _) async =>
           throw const GeoFailure(GeoFailureKind.expiredCursor);
       await tapMapKey(tester, 'map-load-more');
       expect(find.textContaining('This search expired.'), findsOneWidget);
-      expect(find.textContaining('20 loaded results.'), findsOneWidget);
+      expect(
+        app.container
+            .read(geographicDiscoveryProvider('map05:projects'))
+            .items
+            .length,
+        20,
+      );
       expect(find.byKey(const Key('map-load-more')), findsNothing);
       geo.loader = null;
       await tapMapKey(tester, 'map-refresh');
@@ -267,6 +431,7 @@ void main() {
       final delayed = Completer<MapSearchCenter>();
       final provider = FixtureMapProviderGateway()..resolveDelay = delayed;
       final app = await pumpMap(tester, provider: provider);
+      await openMapOptions(tester);
       await tester.enterText(
         find.byKey(const Key('map-center-input')),
         'Bolzano',
@@ -344,15 +509,11 @@ void main() {
       tilesEnabled: true,
     );
     await pumpMap(tester, provider: provider);
-    expect(
-      tester
-          .widget<TextField>(find.byKey(const Key('map-center-input')))
-          .enabled,
-      isFalse,
-    );
+    await openMapOptions(tester);
+    expect(find.byKey(const Key('map-center-input')), findsNothing);
     expect(provider.searches, isEmpty);
     expect(provider.tileCalls, isEmpty);
-    expect(find.textContaining('requires sign-in'), findsWidgets);
+    expect(find.textContaining('Basemap unavailable'), findsOneWidget);
   });
   for (final origin in MapDiscoveryOrigin.values) {
     testWidgets(
@@ -369,12 +530,8 @@ void main() {
         expect(radius.longitude, 11.1217);
         expect(radius.radiusMeters, 5000);
         expect(find.textContaining('Basemap unavailable'), findsOneWidget);
-        expect(
-          tester
-              .widget<TextField>(find.byKey(const Key('map-center-input')))
-              .enabled,
-          isFalse,
-        );
+        await openMapOptions(tester);
+        expect(find.byKey(const Key('map-center-input')), findsNothing);
         expect(find.byType(LocationAttribution), findsOneWidget);
         expect(tester.takeException(), isNull);
       },
@@ -406,6 +563,7 @@ void main() {
       await tapMapKey(tester, 'map-open-projects');
       expect(app.geo.calls.last.query.kinds, GeoKind.values.toSet());
       expect((app.geo.calls.last.query.area as GeoRadius).radiusMeters, 10000);
+      await openMapOptions(tester);
       expect(find.text('All'), findsOneWidget);
     },
   );
@@ -479,6 +637,7 @@ void main() {
     (tester) async {
       final provider = FixtureMapProviderGateway();
       final app = await pumpMap(tester, provider: provider);
+      await openMapOptions(tester);
       await tester.ensureVisible(find.byKey(const Key('map-center-input')));
       await tester.enterText(find.byKey(const Key('map-center-input')), 'Bol');
       await tester.pump(const Duration(milliseconds: 200));
@@ -504,6 +663,7 @@ void main() {
       final delayed = Completer<List<MapCenterSuggestion>>();
       final provider = FixtureMapProviderGateway()..searchDelay = delayed;
       final app = await pumpMap(tester, provider: provider);
+      await openMapOptions(tester);
       await tester.ensureVisible(find.byKey(const Key('map-center-input')));
       await tester.enterText(
         find.byKey(const Key('map-center-input')),

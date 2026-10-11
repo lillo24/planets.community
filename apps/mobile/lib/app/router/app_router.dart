@@ -687,7 +687,10 @@ RoutingConfig _routingConfig(
                       .firstOrNull;
                   return origin == null
                       ? const _UnknownRouteScreen()
-                      : MapDiscoveryScreen(origin: origin);
+                      : MapDiscoveryScreen(
+                          key: ValueKey(origin),
+                          origin: origin,
+                        );
                 },
               ),
               GoRoute(
