@@ -90,5 +90,6 @@ export function formatSchedule(proposal: PublicProposalSummary): string {
     timeStyle: "short",
     timeZone: proposal.event_timezone,
   });
-  return `${proposal.definition_phase === "idea" ? "Tentative: " : ""}${formatter.format(new Date(proposal.starts_at))} – ${formatter.format(new Date(proposal.ends_at))}`;
+  // CHECK01 public schedules are official, even while the Project is an Idea.
+  return `${formatter.format(new Date(proposal.starts_at))} – ${formatter.format(new Date(proposal.ends_at))}`;
 }

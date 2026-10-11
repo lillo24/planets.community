@@ -12,6 +12,7 @@ import '../../participation/domain/participation_models.dart';
 import '../../participation/presentation/participation_routes.dart';
 import '../../project_participant_invites/presentation/participant_link_management_screen.dart';
 import '../../project_workspace/presentation/project_workspace_widgets.dart';
+import '../../project_organization/presentation/project_organization_sheet.dart';
 import '../application/project_delegate_controllers.dart';
 import '../domain/project_delegate_models.dart';
 import 'project_delegate_routes.dart';
@@ -117,6 +118,15 @@ class _ProjectManageScreenState extends ConsumerState<ProjectManageScreen> {
                     projectId: widget.projectId,
                     projectKind: widget.projectKind,
                   ),
+                  if (widget.projectKind == ProjectKind.oneTime)
+                    ListTile(
+                      key: const Key('project-manage-organization'),
+                      leading: const Icon(Icons.checklist_outlined),
+                      title: Text(l10n.organizationTitle),
+                      trailing: const Icon(Icons.chevron_right),
+                      onTap: () =>
+                          showProjectOrganization(context, widget.projectId),
+                    ),
                   if (role.hasStructuralAuthority) ...[
                     const SizedBox(height: AppSpacing.small),
                     Card(

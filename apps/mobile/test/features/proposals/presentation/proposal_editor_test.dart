@@ -713,6 +713,42 @@ void main() {
     );
   });
 
+  testWidgets(
+    'published Idea edits preserve official logistics and separate protected directions',
+    (tester) async {
+      final proposal = ownProposalFixture(
+        lifecycle: ProposalLifecycle.published,
+        definitionPhase: ProposalDefinitionPhase.idea,
+      );
+      final gateway = await _pumpEditor(tester, null, proposal: proposal);
+      await _seek(tester, find.byKey(const Key('proposal-organization')));
+      expect(find.byKey(const Key('proposal-pick-start')), findsNothing);
+      expect(find.byKey(const Key('proposal-public-location')), findsNothing);
+      expect(
+        find.byKey(const Key('proposal-count-organizers-capacity')),
+        findsNothing,
+      );
+      await _seek(tester, find.byKey(const Key('proposal-exact-location')));
+      await tester.enterText(
+        find.byKey(const Key('proposal-exact-location')),
+        'Protected arrival directions',
+      );
+      await _tap(tester, find.byKey(const Key('proposal-save-changes')));
+      expect(gateway.lastInput!.locality, proposal.locality);
+      expect(gateway.lastInput!.startsAt, proposal.startsAt);
+      expect(
+        gateway.lastInput!.registrationCapacity,
+      proposal.capacity.registrationCapacity,
+      );
+      expect(
+        gateway.lastInput!.exactMeetingText,
+        'Protected arrival directions',
+      );
+      expect(gateway.calls, isNot(contains('publish-idea:proposal-1')));
+      expect(tester.takeException(), isNull);
+    },
+  );
+
   testWidgets('terminal proposal exposes no structural mutation controls', (
     tester,
   ) async {

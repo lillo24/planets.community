@@ -31,7 +31,8 @@ or project content.
 - `application/project_chat_refresh.dart` is the narrow cross-feature signal
   used after participation acceptance, leave, or removal.
 - `presentation/project_chat_screen.dart` renders human bubbles, structured
-  resurfacing cards, the current-member Needs/Workspace organization strip,
+  resurfacing cards, the current-member Needs/Organization/Workspace tools strip
+  (Organization is one-time only and owned by `../project_organization`),
   text/send-focused composer, former-member read-only state, and group-info
   entry point.
 - `presentation/project_needs_sheet.dart` renders the scroll-controlled current

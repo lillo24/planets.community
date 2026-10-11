@@ -17,6 +17,8 @@ import '../../moderation/presentation/moderation_routes.dart';
 import '../../project_workspace/application/project_workspace_controller.dart';
 import '../../project_workspace/domain/project_workspace_models.dart';
 import '../../project_workspace/presentation/project_workspace_widgets.dart';
+import '../../participation/domain/participation_models.dart';
+import '../../project_organization/presentation/project_organization_sheet.dart';
 import '../application/project_chat_controllers.dart';
 import '../application/project_needs_controller.dart';
 import '../domain/project_chat_models.dart';
@@ -291,6 +293,19 @@ class _ProjectChatScreenState extends ConsumerState<ProjectChatScreen>
                                     : 0,
                                 onPressed: _openNeeds,
                               ),
+                              if (summary?.projectKind ==
+                                  ProjectKind.oneTime) ...[
+                                const SizedBox(width: AppSpacing.small),
+                                TextButton.icon(
+                                  key: const Key('project-chat-organization'),
+                                  onPressed: () => showProjectOrganization(
+                                    context,
+                                    summary!.projectId,
+                                  ),
+                                  icon: const Icon(Icons.checklist_outlined),
+                                  label: Text(l10n.organizationTitle),
+                                ),
+                              ],
                               if (workspaceBelongs &&
                                   (workspaceState.phase ==
                                           ProjectWorkspacePhase.loading ||
