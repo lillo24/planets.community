@@ -44,6 +44,64 @@ import '../../../support/fake_resource_listing.dart';
 import '../../../support/fake_resource_request.dart';
 
 void main() {
+  for (final size in [const Size(320, 800), const Size(1200, 1600)]) {
+    testWidgets(
+      'AUTO02 Notifications 20-item pages and explicit failure retry $size',
+      (tester) async {
+        tester.view.physicalSize = size;
+        tester.view.devicePixelRatio = 1;
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
+        final notifications = FakeNotificationsGateway()
+          ..items = [
+            for (var i = 0; i < 65; i++) notificationFixture(index: i + 1),
+          ];
+        final app = await _pump(tester, notifications: notifications);
+        app.read(appRouterProvider).go('/notifications');
+        await tester.pumpAndSettle();
+        expect(notifications.requestedLimits, [20]);
+        final list = find.byKey(const Key('notifications-list'));
+        final position = tester
+            .state<ScrollableState>(
+              find
+                  .descendant(of: list, matching: find.byType(Scrollable))
+                  .first,
+            )
+            .position;
+        for (var i = 0; i < 3; i++) {
+          position.jumpTo(position.maxScrollExtent);
+          await tester.pumpAndSettle();
+        }
+        expect(notifications.requestedLimits, [20]);
+        expect(find.byKey(const Key('notifications-load-more')), findsNothing);
+        notifications.listError = StateError('offline');
+        await tester.drag(list, const Offset(0, -100));
+        await tester.pumpAndSettle();
+        expect(notifications.requestedLimits, [20, 20]);
+        expect(app.read(notificationsInboxProvider).items, hasLength(20));
+        await tester.drag(list, const Offset(0, -200));
+        await tester.pumpAndSettle();
+        expect(notifications.requestedLimits, [20, 20]);
+        notifications.listError = null;
+        await tester.scrollUntilVisible(
+          find.byKey(const Key('notifications-load-more')),
+          200,
+          scrollable: find
+              .descendant(of: list, matching: find.byType(Scrollable))
+              .first,
+        );
+        position.jumpTo(position.maxScrollExtent);
+        await tester.pumpAndSettle();
+        expect(find.text('Try again'), findsOneWidget);
+        await tester.tap(find.byKey(const Key('notifications-load-more')));
+        await tester.pumpAndSettle();
+        expect(notifications.requestedLimits, [20, 20, 20]);
+        expect(app.read(notificationsInboxProvider).items, hasLength(40));
+        expect(tester.takeException(), isNull);
+      },
+    );
+  }
+
   testWidgets(
     'Home keeps three tabs, Messages, and an accessible capped badge',
     (tester) async {

@@ -8,6 +8,8 @@ import '../../../core/theme/app_tokens.dart';
 import '../../../core/widgets/empty_state.dart';
 import '../../../core/widgets/error_state.dart';
 import '../../../core/widgets/loading_state.dart';
+import '../../../core/widgets/pagination_control.dart';
+import '../../../core/widgets/user_scroll_pagination.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../auth/application/auth_session_controller.dart';
 import '../application/notifications_controllers.dart';
@@ -172,63 +174,72 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
               )
             : RefreshIndicator(
                 onRefresh: _load,
-                child: ListView.builder(
-                  padding: const EdgeInsets.all(AppSpacing.medium),
-                  itemCount:
-                      items.length +
-                      (state.failure != null ? 1 : 0) +
-                      (state.hasMore ? 1 : 0),
-                  itemBuilder: (context, index) {
-                    if (state.failure != null && index == 0) {
+                child: UserScrollPagination(
+                  enabled:
+                      belongsToScreen &&
+                      ref.watch(authSessionProvider).identity?.id ==
+                          _expectedProfileId &&
+                      state.hasMore &&
+                      !state.isLoading &&
+                      state.failure == null,
+                  requestKey: (_expectedProfileId, items.length),
+                  onLoad: _loadMore,
+                  builder: (context, showFallback) => ListView.builder(
+                    key: const Key('notifications-list'),
+                    padding: const EdgeInsets.all(AppSpacing.medium),
+                    itemCount:
+                        items.length +
+                        (state.failure != null ? 1 : 0) +
+                        (state.hasMore ? 1 : 0),
+                    itemBuilder: (context, index) {
+                      if (state.failure != null && index == 0) {
+                        return Padding(
+                          padding: const EdgeInsets.only(
+                            bottom: AppSpacing.small,
+                          ),
+                          child: Semantics(
+                            liveRegion: true,
+                            child: Text(
+                              notificationsFailureMessage(l10n, state.failure!),
+                              key: const Key('notifications-inline-error'),
+                              style: TextStyle(
+                                color: Theme.of(context).colorScheme.error,
+                              ),
+                            ),
+                          ),
+                        );
+                      }
+                      final itemIndex = index - (state.failure != null ? 1 : 0);
+                      if (itemIndex == items.length) {
+                        return Padding(
+                          padding: const EdgeInsets.symmetric(
+                            vertical: AppSpacing.medium,
+                          ),
+                          child: PaginationControl(
+                            buttonKey: const Key('notifications-load-more'),
+                            loading: state.isLoading,
+                            failed: state.failure != null,
+                            showFallback: showFallback,
+                            onLoad: _loadMore,
+                            fallbackLabel: l10n.notificationsLoadMore,
+                          ),
+                        );
+                      }
+                      final item = items[itemIndex];
                       return Padding(
                         padding: const EdgeInsets.only(
                           bottom: AppSpacing.small,
                         ),
-                        child: Semantics(
-                          liveRegion: true,
-                          child: Text(
-                            notificationsFailureMessage(l10n, state.failure!),
-                            key: const Key('notifications-inline-error'),
-                            style: TextStyle(
-                              color: Theme.of(context).colorScheme.error,
-                            ),
+                        child: _NotificationCard(
+                          notification: item,
+                          isPending: state.pendingReadIds.contains(
+                            item.notificationId,
                           ),
+                          onTap: () => _openNotification(item),
                         ),
                       );
-                    }
-                    final itemIndex = index - (state.failure != null ? 1 : 0);
-                    if (itemIndex == items.length) {
-                      return Padding(
-                        padding: const EdgeInsets.symmetric(
-                          vertical: AppSpacing.medium,
-                        ),
-                        child: OutlinedButton(
-                          key: const Key('notifications-load-more'),
-                          onPressed: state.isLoading ? null : _loadMore,
-                          child:
-                              state.phase == NotificationsInboxPhase.loadingMore
-                              ? const SizedBox.square(
-                                  dimension: 20,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                  ),
-                                )
-                              : Text(l10n.notificationsLoadMore),
-                        ),
-                      );
-                    }
-                    final item = items[itemIndex];
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: AppSpacing.small),
-                      child: _NotificationCard(
-                        notification: item,
-                        isPending: state.pendingReadIds.contains(
-                          item.notificationId,
-                        ),
-                        onTap: () => _openNotification(item),
-                      ),
-                    );
-                  },
+                    },
+                  ),
                 ),
               ),
       ),

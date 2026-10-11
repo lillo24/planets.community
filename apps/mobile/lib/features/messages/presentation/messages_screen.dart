@@ -6,6 +6,8 @@ import '../../../core/theme/app_tokens.dart';
 import '../../../core/widgets/empty_state.dart';
 import '../../../core/widgets/error_state.dart';
 import '../../../core/widgets/loading_state.dart';
+import '../../../core/widgets/pagination_control.dart';
+import '../../../core/widgets/user_scroll_pagination.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../auth/application/auth_session_controller.dart';
 import '../../participation/domain/participation_models.dart';
@@ -208,92 +210,102 @@ class _ChatsTabState extends ConsumerState<_ChatsTab> {
                 )
               : RefreshIndicator(
                   onRefresh: widget.onRefresh,
-                  child: ListView.builder(
-                    key: const Key('message-chat-list'),
-                    padding: const EdgeInsets.all(AppSpacing.medium),
-                    itemCount:
-                        items.length +
-                        (state.failure != null ? 1 : 0) +
-                        (state.hasMore ? 1 : 0) +
-                        (state.hasConnectionIssue ? 1 : 0),
-                    itemBuilder: (context, index) {
-                      if (state.hasConnectionIssue && index == 0) {
+                  child: UserScrollPagination(
+                    enabled:
+                        belongs &&
+                        ref.watch(authSessionProvider).identity?.id ==
+                            widget.expectedProfileId &&
+                        state.hasMore &&
+                        !state.isBusy &&
+                        state.failure == null,
+                    requestKey: (scope, widget.expectedProfileId, items.length),
+                    onLoad: () => widget.onLoadMore(scope),
+                    builder: (context, showFallback) => ListView.builder(
+                      key: const Key('message-chat-list'),
+                      padding: const EdgeInsets.all(AppSpacing.medium),
+                      itemCount:
+                          items.length +
+                          (state.failure != null ? 1 : 0) +
+                          (state.hasMore ? 1 : 0) +
+                          (state.hasConnectionIssue ? 1 : 0),
+                      itemBuilder: (context, index) {
+                        if (state.hasConnectionIssue && index == 0) {
+                          return Padding(
+                            padding: const EdgeInsets.only(
+                              bottom: AppSpacing.small,
+                            ),
+                            child: Semantics(
+                              liveRegion: true,
+                              child: Text(
+                                l10n.resourceChatConnectionIssue,
+                                key: const Key(
+                                  'message-chat-list-connection-issue',
+                                ),
+                              ),
+                            ),
+                          );
+                        }
+                        var itemIndex =
+                            index - (state.hasConnectionIssue ? 1 : 0);
+                        if (state.failure != null && itemIndex == 0) {
+                          return Padding(
+                            padding: const EdgeInsets.only(
+                              bottom: AppSpacing.small,
+                            ),
+                            child: Semantics(
+                              liveRegion: true,
+                              child: Text(
+                                messageChatsFailureMessage(
+                                  l10n,
+                                  state.failure!,
+                                ),
+                                key: const Key(
+                                  'message-chat-list-inline-error',
+                                ),
+                                style: TextStyle(
+                                  color: Theme.of(context).colorScheme.error,
+                                ),
+                              ),
+                            ),
+                          );
+                        }
+                        itemIndex -= state.failure != null ? 1 : 0;
+                        if (itemIndex == items.length) {
+                          return Padding(
+                            padding: const EdgeInsets.symmetric(
+                              vertical: AppSpacing.medium,
+                            ),
+                            child: PaginationControl(
+                              buttonKey: const Key('message-chats-load-more'),
+                              loading: state.isBusy,
+                              failed: state.failure != null,
+                              showFallback: showFallback,
+                              onLoad: () => widget.onLoadMore(scope),
+                              fallbackLabel: l10n.messagesLoadMore,
+                            ),
+                          );
+                        }
                         return Padding(
                           padding: const EdgeInsets.only(
                             bottom: AppSpacing.small,
                           ),
-                          child: Semantics(
-                            liveRegion: true,
-                            child: Text(
-                              l10n.resourceChatConnectionIssue,
-                              key: const Key(
-                                'message-chat-list-connection-issue',
-                              ),
-                            ),
+                          child: _ChatCard(
+                            item: items[itemIndex],
+                            photoEntry: switch (items[itemIndex]) {
+                              ProjectRequestMessageChatItem item =>
+                                visiblePhotos.entryFor(
+                                  item.counterpartyProfileId,
+                                ),
+                              ResourceMessageChatItem item =>
+                                visiblePhotos.entryFor(
+                                  item.counterpartyProfileId,
+                                ),
+                              ProjectMessageChatItem() => null,
+                            },
                           ),
                         );
-                      }
-                      var itemIndex =
-                          index - (state.hasConnectionIssue ? 1 : 0);
-                      if (state.failure != null && itemIndex == 0) {
-                        return Padding(
-                          padding: const EdgeInsets.only(
-                            bottom: AppSpacing.small,
-                          ),
-                          child: Semantics(
-                            liveRegion: true,
-                            child: Text(
-                              messageChatsFailureMessage(l10n, state.failure!),
-                              key: const Key('message-chat-list-inline-error'),
-                              style: TextStyle(
-                                color: Theme.of(context).colorScheme.error,
-                              ),
-                            ),
-                          ),
-                        );
-                      }
-                      itemIndex -= state.failure != null ? 1 : 0;
-                      if (itemIndex == items.length) {
-                        return Padding(
-                          padding: const EdgeInsets.symmetric(
-                            vertical: AppSpacing.medium,
-                          ),
-                          child: OutlinedButton(
-                            key: const Key('message-chats-load-more'),
-                            onPressed: state.isBusy
-                                ? null
-                                : () => widget.onLoadMore(scope),
-                            child: state.phase == MessageChatsPhase.loadingMore
-                                ? const SizedBox.square(
-                                    dimension: 20,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                    ),
-                                  )
-                                : Text(l10n.messagesLoadMore),
-                          ),
-                        );
-                      }
-                      return Padding(
-                        padding: const EdgeInsets.only(
-                          bottom: AppSpacing.small,
-                        ),
-                        child: _ChatCard(
-                          item: items[itemIndex],
-                          photoEntry: switch (items[itemIndex]) {
-                            ProjectRequestMessageChatItem item =>
-                              visiblePhotos.entryFor(
-                                item.counterpartyProfileId,
-                              ),
-                            ResourceMessageChatItem item =>
-                              visiblePhotos.entryFor(
-                                item.counterpartyProfileId,
-                              ),
-                            ProjectMessageChatItem() => null,
-                          },
-                        ),
-                      );
-                    },
+                      },
+                    ),
                   ),
                 ),
         ),
@@ -503,47 +515,60 @@ class _RequestsTab extends ConsumerWidget {
     }
     return RefreshIndicator(
       onRefresh: onRefresh,
-      child: ListView.builder(
-        padding: const EdgeInsets.all(AppSpacing.medium),
-        itemCount:
-            items.length +
-            (state.failure != null ? 1 : 0) +
-            (state.hasMore ? 1 : 0),
-        itemBuilder: (context, index) {
-          if (state.failure != null && index == 0) {
+      child: UserScrollPagination(
+        enabled:
+            belongs &&
+            ref.watch(authSessionProvider).identity?.id == expectedProfileId &&
+            state.hasMore &&
+            !state.isBusy &&
+            state.failure == null,
+        requestKey: (expectedProfileId, items.length),
+        onLoad: onLoadMore,
+        builder: (context, showFallback) => ListView.builder(
+          key: const Key('messages-request-list'),
+          padding: const EdgeInsets.all(AppSpacing.medium),
+          itemCount:
+              items.length +
+              (state.failure != null ? 1 : 0) +
+              (state.hasMore ? 1 : 0),
+          itemBuilder: (context, index) {
+            if (state.failure != null && index == 0) {
+              return Padding(
+                padding: const EdgeInsets.only(bottom: AppSpacing.small),
+                child: Semantics(
+                  liveRegion: true,
+                  child: Text(
+                    messagesFailureMessage(l10n, state.failure!),
+                    key: const Key('messages-inline-error'),
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.error,
+                    ),
+                  ),
+                ),
+              );
+            }
+            final itemIndex = index - (state.failure != null ? 1 : 0);
+            if (itemIndex == items.length) {
+              return Padding(
+                padding: const EdgeInsets.symmetric(
+                  vertical: AppSpacing.medium,
+                ),
+                child: PaginationControl(
+                  buttonKey: const Key('messages-load-more'),
+                  loading: state.isBusy,
+                  failed: state.failure != null,
+                  showFallback: showFallback,
+                  onLoad: onLoadMore,
+                  fallbackLabel: l10n.messagesLoadMore,
+                ),
+              );
+            }
             return Padding(
               padding: const EdgeInsets.only(bottom: AppSpacing.small),
-              child: Semantics(
-                liveRegion: true,
-                child: Text(
-                  messagesFailureMessage(l10n, state.failure!),
-                  key: const Key('messages-inline-error'),
-                  style: TextStyle(color: Theme.of(context).colorScheme.error),
-                ),
-              ),
+              child: _StructuredRequestCard(item: items[itemIndex]),
             );
-          }
-          final itemIndex = index - (state.failure != null ? 1 : 0);
-          if (itemIndex == items.length) {
-            return Padding(
-              padding: const EdgeInsets.symmetric(vertical: AppSpacing.medium),
-              child: OutlinedButton(
-                key: const Key('messages-load-more'),
-                onPressed: state.isBusy ? null : onLoadMore,
-                child: state.phase == MessagesInboxPhase.loadingMore
-                    ? const SizedBox.square(
-                        dimension: 20,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : Text(l10n.messagesLoadMore),
-              ),
-            );
-          }
-          return Padding(
-            padding: const EdgeInsets.only(bottom: AppSpacing.small),
-            child: _StructuredRequestCard(item: items[itemIndex]),
-          );
-        },
+          },
+        ),
       ),
     );
   }

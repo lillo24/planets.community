@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 import '../../../core/widgets/page_app_bar.dart';
 import '../../../core/theme/app_tokens.dart';
 import '../../messages/presentation/message_read_viewport.dart';
+import '../../messages/presentation/conversation_history_list.dart';
 import '../../../core/widgets/empty_state.dart';
 import '../../../core/widgets/error_state.dart';
 import '../../../core/widgets/loading_state.dart';
@@ -117,23 +118,10 @@ class _ProjectChatScreenState extends ConsumerState<ProjectChatScreen>
   Future<void> _loadOlder() async {
     final profileId = _expectedProfileId;
     if (profileId == null || !_hasExpectedIdentity) return;
-    final oldExtent = _scrollController.hasClients
-        ? _scrollController.position.maxScrollExtent
-        : 0.0;
-    final oldOffset = _scrollController.hasClients
-        ? _scrollController.offset
-        : 0.0;
-    final loaded = await _detailController.loadOlder(
+    await _detailController.loadOlder(
       expectedProfileId: profileId,
       chatId: widget.chatId,
     );
-    if (!loaded || !mounted) return;
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted || !_scrollController.hasClients) return;
-      final addedExtent =
-          _scrollController.position.maxScrollExtent - oldExtent;
-      _scrollController.jumpTo(oldOffset + addedExtent);
-    });
   }
 
   Future<void> _send() async {
@@ -210,7 +198,8 @@ class _ProjectChatScreenState extends ConsumerState<ProjectChatScreen>
       boundary:
           belongs &&
               state.phase == ProjectChatDetailPhase.ready &&
-              state.failure == null
+              state.failure == null &&
+              !state.isLoadingOlder
           ? state.readBoundary
           : null,
       scrollController: _scrollController,
@@ -344,63 +333,44 @@ class _ProjectChatScreenState extends ConsumerState<ProjectChatScreen>
                                       ),
                                     ),
                               )
-                            : ListView.builder(
+                            : ConversationHistoryList<ProjectChatFeedItem>(
                                 key: const Key('project-chat-history'),
                                 controller: _scrollController,
-                                padding: const EdgeInsets.all(
-                                  AppSpacing.medium,
-                                ),
-                                itemCount:
-                                    feedItems.length +
-                                    (state.hasMoreOlder ? 1 : 0),
-                                itemBuilder: (context, index) {
-                                  if (state.hasMoreOlder && index == 0) {
-                                    return Center(
-                                      child: TextButton(
-                                        key: const Key(
-                                          'project-chat-load-older',
-                                        ),
-                                        onPressed: state.isLoadingOlder
-                                            ? null
-                                            : _loadOlder,
-                                        child: state.isLoadingOlder
-                                            ? const SizedBox.square(
-                                                dimension: 20,
-                                                child:
-                                                    CircularProgressIndicator(
-                                                      strokeWidth: 2,
-                                                    ),
-                                              )
-                                            : Text(l10n.projectChatLoadOlder),
-                                      ),
-                                    );
-                                  }
-                                  final itemIndex =
-                                      index - (state.hasMoreOlder ? 1 : 0);
-                                  final item = feedItems[itemIndex];
-                                  return switch (item) {
-                                    ProjectChatHumanMessage message =>
-                                      _MessageBubble(
-                                        message: message,
-                                        isMine:
-                                            message.senderProfileId ==
-                                            _expectedProfileId,
-                                        onReport:
-                                            message.senderProfileId ==
-                                                _expectedProfileId
-                                            ? null
-                                            : () => ModerationRoutes.openReport(
-                                                context,
-                                                projectMessageReportTarget(
-                                                  message.itemId,
-                                                  l10n.moderationProjectMessageTarget,
-                                                ),
+                                items: feedItems,
+                                itemKey: (item) => item.canonicalKey,
+                                itemBuilder: (context, item) => switch (item) {
+                                  ProjectChatHumanMessage message =>
+                                    _MessageBubble(
+                                      message: message,
+                                      isMine:
+                                          message.senderProfileId ==
+                                          _expectedProfileId,
+                                      onReport:
+                                          message.senderProfileId ==
+                                              _expectedProfileId
+                                          ? null
+                                          : () => ModerationRoutes.openReport(
+                                              context,
+                                              projectMessageReportTarget(
+                                                message.itemId,
+                                                l10n.moderationProjectMessageTarget,
                                               ),
-                                      ),
-                                    ProjectChatRequirementNeededAgain event =>
-                                      _RequirementNeededAgainCard(event: event),
-                                  };
+                                            ),
+                                    ),
+                                  ProjectChatRequirementNeededAgain event =>
+                                    _RequirementNeededAgainCard(event: event),
                                 },
+                                enabled:
+                                    belongs &&
+                                    summary != null &&
+                                    _hasExpectedIdentity,
+                                hasMore: state.hasMoreOlder,
+                                loading: state.isLoadingOlder,
+                                failed: state.failure != null,
+                                onLoadOlder: _loadOlder,
+                                fallbackLabel: l10n.projectChatLoadOlder,
+                                buttonKey: const Key('project-chat-load-older'),
+                                empty: const SizedBox.shrink(),
                               ),
                       ),
                     ),

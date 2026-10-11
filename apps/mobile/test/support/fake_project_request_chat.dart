@@ -6,6 +6,8 @@ class FakeProjectRequestChatGateway implements ProjectRequestChatGateway {
   ProjectRequestChatSummary summary = projectRequestChatSummaryFixture();
   List<ProjectRequestChatFeedItem> items = [projectRequestChatRequestFixture()];
   final List<String> calls = [];
+  final List<int> requestedLimits = [];
+  String? readBoundary;
   final List<FakeProjectRequestChatSubscription> subscriptions = [];
   Object? summaryError;
   Object? historyError;
@@ -62,6 +64,7 @@ class FakeProjectRequestChatGateway implements ProjectRequestChatGateway {
     bool onlyPending = false,
   }) async {
     calls.add('history:$chatId');
+    requestedLimits.add(limit);
     if (historyDelay case final delay?) await delay;
     if (historyError case final error?) throw error;
     final source = onlyPending
@@ -81,6 +84,7 @@ class FakeProjectRequestChatGateway implements ProjectRequestChatGateway {
     final safeStart = start < 0 ? 0 : start;
     final page = source.skip(safeStart).take(limit).toList(growable: false);
     return ProjectRequestChatFeedPage(
+      readBoundary: cursor == null ? readBoundary : null,
       items: page,
       hasMore: safeStart + page.length < source.length,
     );

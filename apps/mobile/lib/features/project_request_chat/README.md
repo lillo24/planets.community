@@ -52,3 +52,22 @@ Messages viewport acknowledges only foreground, unobscured latest content.
 Older/pending-only pages issue no boundary. Pair unread counts remain independent
 of pending totals and read-only/send entitlement. See the Messages feature and
 ADR 0008 for baseline, commit ordering and activity-alert separation.
+
+## Automatic history and pending paging (AUTO02)
+
+The timeline requests 30 recent and 30 older items, retaining canonical typed
+request/message ordering and deduplication. Genuine upward scrolling within one
+viewport of the top loads one page. The shared Messages lazy history list grows
+older slivers above a stable center, preserving the viewport without offset
+estimates. Programmatic open/send positioning, layout/keyboard and realtime do
+not page. Failed continuations retain history/cursor and require Retry or refresh;
+short/accessibility navigation retains a deliberate fallback. Older loading
+withholds newest-boundary acknowledgement, including readable read-only pairs.
+
+The expanded many-pending banner has its own height-bounded scroll surface. It
+pages independently toward its bottom using the same guarded user trigger and
+30-entry pending-only RPC pages. Expansion alone does not fetch. Appended pending
+rows are deduplicated, terminal `hasMore` stops fetching, and failed pages require
+Retry. The one-pending banner remains static. Neither pending pagination nor
+older timeline pagination issues a newest read boundary; no routine manual
+pagination exception is retained.

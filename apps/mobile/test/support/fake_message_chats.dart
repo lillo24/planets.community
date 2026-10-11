@@ -9,6 +9,7 @@ class FakeMessageChatsGateway implements MessageChatsGateway {
   Object? error;
   Future<void>? delay;
   final List<String> calls = [];
+  final List<int> requestedLimits = [];
   MessageChatCursor? lastCursor;
   MessageChatScope? lastScope;
 
@@ -20,6 +21,7 @@ class FakeMessageChatsGateway implements MessageChatsGateway {
     MessageChatCursor? cursor,
   }) async {
     calls.add('list');
+    requestedLimits.add(limit);
     lastScope = scope;
     lastCursor = cursor;
     if (delay case final wait?) await wait;

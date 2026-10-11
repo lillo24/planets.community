@@ -7,6 +7,8 @@ class FakeResourceChatGateway implements ResourceChatGateway {
   ResourceChatSummary summary = resourceChatSummaryFixture();
   final Map<String, List<ResourceChatMessage>> histories = {};
   final List<String> calls = [];
+  final List<int> requestedLimits = [];
+  String? readBoundary;
   final List<FakeResourceChatSubscription> subscriptions = [];
   Object? summaryError;
   Object? historyError;
@@ -39,6 +41,7 @@ class FakeResourceChatGateway implements ResourceChatGateway {
     ResourceChatMessageCursor? cursor,
   }) async {
     calls.add('history:$chatId');
+    requestedLimits.add(limit);
     lastCursor = cursor;
     if (historyDelay case final delay?) await delay;
     if (historyError case final error?) throw error;
@@ -49,6 +52,7 @@ class FakeResourceChatGateway implements ResourceChatGateway {
     final safeStart = start < 0 ? 0 : start;
     final page = source.skip(safeStart).take(limit).toList(growable: false);
     return ResourceChatMessagePage(
+      readBoundary: cursor == null ? readBoundary : null,
       items: page,
       hasMore: safeStart + page.length < source.length,
     );
