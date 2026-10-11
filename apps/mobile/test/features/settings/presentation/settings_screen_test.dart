@@ -2,7 +2,6 @@ import '../../../support/fake_policy.dart';
 
 import 'dart:async';
 import 'dart:io';
-import 'dart:typed_data';
 import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
