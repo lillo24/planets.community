@@ -654,6 +654,7 @@ class _DecisionEditor extends StatefulWidget {
 
 class _DecisionEditorState extends State<_DecisionEditor> {
   final _form = GlobalKey<FormState>();
+  bool _editCountry = false, _editTimezone = false;
   late final _text = TextEditingController(
     text: widget.value?['text'] as String?,
   );
@@ -686,6 +687,9 @@ class _DecisionEditorState extends State<_DecisionEditor> {
   Future<void> _pick(bool start) async {
     final zone = _timezone.text.trim();
     if (!isKnownProposalTimeZone(zone)) {
+      setState(() => _editTimezone = true);
+      await WidgetsBinding.instance.endOfFrame;
+      if (!mounted) return;
       _form.currentState!.validate();
       return;
     }
@@ -745,9 +749,31 @@ class _DecisionEditorState extends State<_DecisionEditor> {
               },
             ),
             if (!_suggestion)
+              Align(
+                alignment: Alignment.centerLeft,
+                child: TextButton.icon(
+                  key: const Key('organization-edit-country'),
+                  onPressed: () => setState(() => _editCountry = !_editCountry),
+                  icon: const Icon(Icons.edit_outlined, size: 18),
+                  label: Text(
+                    _country.text.trim().toUpperCase() == 'IT'
+                        ? l.organizationCountryEdit
+                        : l.organizationCountryValue(
+                            _country.text.trim().toUpperCase(),
+                          ),
+                  ),
+                ),
+              ),
+            // Keep the existing country even while its advanced field is hidden.
+            // New ordinary Italian cities need no second input or provider call.
+            if (!_suggestion && _editCountry)
               TextFormField(
+                key: const Key('organization-country'),
                 controller: _country,
-                onChanged: (_) => widget.onChanged(),
+                onChanged: (_) {
+                  setState(() {});
+                  widget.onChanged();
+                },
                 maxLength: 2,
                 textCapitalization: TextCapitalization.characters,
                 decoration: InputDecoration(labelText: l.organizationCountry),
@@ -785,19 +811,34 @@ class _DecisionEditorState extends State<_DecisionEditor> {
               ),
             ),
             const SizedBox(height: 12),
-            TextFormField(
-              controller: _timezone,
-              decoration: InputDecoration(
-                labelText: l.proposalTimezoneShortLabel,
+            Align(
+              alignment: Alignment.centerLeft,
+              child: TextButton.icon(
+                key: const Key('organization-edit-timezone'),
+                onPressed: () => setState(() => _editTimezone = !_editTimezone),
+                icon: const Icon(Icons.edit_outlined, size: 18),
+                label: Text(
+                  _timezone.text.trim() == 'Europe/Rome'
+                      ? l.proposalTimezoneShortLabel
+                      : l.tavoliTimezone(_timezone.text.trim()),
+                ),
               ),
-              onChanged: (_) {
-                setState(() {});
-                widget.onChanged();
-              },
-              validator: (v) => isKnownProposalTimeZone(v?.trim() ?? '')
-                  ? null
-                  : l.proposalTimezoneError,
             ),
+            if (_editTimezone)
+              TextFormField(
+                key: const Key('organization-timezone'),
+                controller: _timezone,
+                decoration: InputDecoration(
+                  labelText: l.proposalTimezoneShortLabel,
+                ),
+                onChanged: (_) {
+                  setState(() {});
+                  widget.onChanged();
+                },
+                validator: (v) => isKnownProposalTimeZone(v?.trim() ?? '')
+                    ? null
+                    : l.proposalTimezoneError,
+              ),
           ],
           if (widget.kind == OrganizationDecision.capacity) ...[
             ProposalCapacityControl(
@@ -827,6 +868,26 @@ class _DecisionEditorState extends State<_DecisionEditor> {
             child: FilledButton.tonal(
               key: Key('organization-save-${widget.kind.name}'),
               onPressed: () async {
+                // Re-open invalid advanced inputs before validation: hiding a
+                // field must never bypass its country/timezone contract.
+                final invalidCountry =
+                    !_suggestion &&
+                    !RegExp(r'^[A-Z]{2}$')
+                        .hasMatch(_country.text.trim().toUpperCase());
+                final invalidTimezone = !isKnownProposalTimeZone(
+                  _timezone.text.trim(),
+                );
+                if ((widget.kind == OrganizationDecision.location &&
+                        invalidCountry) ||
+                    (widget.kind == OrganizationDecision.schedule &&
+                        invalidTimezone)) {
+                  setState(() {
+                    _editCountry = invalidCountry;
+                    _editTimezone = invalidTimezone;
+                  });
+                  await WidgetsBinding.instance.endOfFrame;
+                  if (!mounted) return;
+                }
                 if (!_form.currentState!.validate()) return;
                 final value = switch (widget.kind) {
                   OrganizationDecision.location => {

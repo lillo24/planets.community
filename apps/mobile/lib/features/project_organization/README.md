@@ -14,3 +14,9 @@ owns rollout, permissions, revision/retry and archive semantics.
 
 Chat and one-time Project management open the same sheet. Published-Idea editing
 routes logistics here; it cannot publish tentative fields through the old editor.
+
+Expanded planning defaults to one city field with Italy (`IT`) managed internally.
+An optional country edit preserves international records; “Approximate area” still
+saves an unstructured, non-confirmable proposal. Schedule dates retain their saved
+timezone (default `Europe/Rome`), with the raw timezone field behind an edit control.
+These presentation defaults do not change RPC payloads or public confirmation.

@@ -6,6 +6,8 @@ ProjectOrganization organizationFixture({
   bool canPlan = true,
   bool canMutate = true,
   int revision = 1,
+  Map<String, dynamic>? locationValue,
+  Map<String, dynamic>? scheduleValue,
 }) {
   const location = {
     'text': 'Trento',
@@ -26,8 +28,8 @@ ProjectOrganization organizationFixture({
   };
   const capacity = {'limit': 12, 'count_organizers': false};
   final values = {
-    'location': location,
-    'schedule': schedule,
+    'location': locationValue ?? location,
+    'schedule': scheduleValue ?? schedule,
     'capacity': capacity,
   };
   return ProjectOrganization.parse({

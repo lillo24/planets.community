@@ -122,6 +122,15 @@ with its saved value in the original row, not a second value heading. Unsaved ed
 of the previous persisted proposal. Saving has no publication effect; the separate
 one-sentence confirmation dialog explains public officialization.
 
+Expanded city planning uses one text field and an internal Italian country default
+(`IT`). “Change country” opens the optional country field; international saved
+countries remain visible on that edit affordance and are preserved on save.
+“Approximate area” retains the unstructured private proposal contract. Schedule
+planning keeps its saved timezone (new values default to `Europe/Rome`), with the
+raw IANA input behind the timezone edit affordance. Hidden invalid advanced values
+reopen with validation instead of being saved. None of these presentation defaults
+changes the public confirmation boundary or uses a location provider.
+
 Private state is memory-only, identity/profile bound, cleared on failures, account
 change, background/inactive and close. Foreground polling every 20 seconds plus
 resume/manual reload is an authoritative role/readback, not another Realtime
@@ -168,5 +177,7 @@ test/features/project_organization/project_organization_test.dart` exercises the
 - `flutter run -d chrome --target=test_support/check01_previews.dart` runs the
   standalone data-free debug fixture, never the product backend or a live session.
 
-See the draft PR for exact final-head pass/fail/unrun evidence. No hosted database
-write, retained-demo reset, provider activation, distribution or merge is included.
+See PR #212 for exact final-head pass/fail/unrun evidence and the founder review.
+The follow-up request authorizes code merge after the review fixes and checks;
+hosted database rollout, retained-demo reset, provider activation and distribution
+remain separate and unauthorized.

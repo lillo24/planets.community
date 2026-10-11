@@ -2580,8 +2580,11 @@
   "organizationReadOnly": "This Project is read-only.",
   "organizationOfficialValue": "Currently public: {value}",
   "@organizationOfficialValue": {"placeholders": {"value": {"type": "String"}}},
-  "organizationSuggestionOnly": "Suggested area only (not a single city)",
-  "organizationCountry": "Country code",
+  "organizationSuggestionOnly": "Approximate area",
+  "organizationCountry": "Country (two letters)",
+  "organizationCountryEdit": "Change country",
+  "organizationCountryValue": "Country: {country}",
+  "@organizationCountryValue": { "placeholders": { "country": { "type": "String" } } },
   "organizationInvalid": "Check the city, dates or capacity. A suggestion alone cannot be confirmed.",
   "organizationChanged": "Organization changed. Reload before editing.",
   "organizationUnavailable": "Organization is unavailable. Reload to check current access and saved changes."

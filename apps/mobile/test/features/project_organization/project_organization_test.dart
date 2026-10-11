@@ -308,6 +308,179 @@ void main() {
     expect(confirm.onPressed, isNull);
     expect(tester.takeException(), isNull);
   });
+  for (final locale in ['en', 'it']) {
+    for (final scale in [1.0, 2.0]) {
+      testWidgets('$locale ${scale}x city stays simple and saves internal IT', (
+        tester,
+      ) async {
+        final commands = <Map<String, dynamic>>[];
+        await _pump(
+          tester,
+          organizationFixture(),
+          locale: locale,
+          scale: scale,
+          onCommand: (c) async {
+            commands.add(c);
+            return true;
+          },
+        );
+        await tester.tap(
+          find.byKey(const Key('organization-decision-location')),
+        );
+        await tester.pumpAndSettle();
+        expect(find.byType(TextFormField), findsOneWidget);
+        expect(find.byKey(const Key('organization-country')), findsNothing);
+        await tester.ensureVisible(
+          find.byKey(const Key('organization-save-location')),
+        );
+        await tester.tap(find.byKey(const Key('organization-save-location')));
+        await tester.pumpAndSettle();
+        expect(commands.single, {
+          'action': 'save_decision',
+          'kind': 'location',
+          'value': {
+            'text': 'Trento',
+            'locality': 'Trento',
+            'label': 'Trento',
+            'country_code': 'IT',
+          },
+        });
+        expect(tester.takeException(), isNull);
+      });
+    }
+  }
+  testWidgets(
+    'international country is preserved, editable, and still validated when hidden',
+    (tester) async {
+      final commands = <Map<String, dynamic>>[];
+      await _pump(
+        tester,
+        organizationFixture(
+          locationValue: {
+            'text': 'Lyon',
+            'locality': 'Lyon',
+            'label': 'Lyon',
+            'country_code': 'FR',
+          },
+        ),
+        onCommand: (c) async {
+          commands.add(c);
+          return true;
+        },
+      );
+      await tester.tap(find.byKey(const Key('organization-decision-location')));
+      await tester.pumpAndSettle();
+      expect(find.text('Country: FR'), findsOneWidget);
+      expect(find.byKey(const Key('organization-country')), findsNothing);
+      await tester.tap(find.byKey(const Key('organization-save-location')));
+      await tester.pumpAndSettle();
+      expect((commands.single['value'] as Map)['country_code'], 'FR');
+      commands.clear();
+      await tester.tap(find.byKey(const Key('organization-edit-country')));
+      await tester.pumpAndSettle();
+      await tester.enterText(
+        find.byKey(const Key('organization-country')),
+        'F',
+      );
+      await tester.tap(find.byKey(const Key('organization-edit-country')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('organization-save-location')));
+      await tester.pumpAndSettle();
+      expect(commands, isEmpty);
+      expect(find.byKey(const Key('organization-country')), findsOneWidget);
+      await tester.enterText(
+        find.byKey(const Key('organization-country')),
+        'de',
+      );
+      await tester.tap(find.byKey(const Key('organization-save-location')));
+      await tester.pumpAndSettle();
+      expect((commands.single['value'] as Map)['country_code'], 'DE');
+      expect(tester.takeException(), isNull);
+    },
+  );
+  testWidgets('approximate area remains an unstructured private proposal', (
+    tester,
+  ) async {
+    final commands = <Map<String, dynamic>>[];
+    await _pump(
+      tester,
+      organizationFixture(),
+      onCommand: (c) async {
+        commands.add(c);
+        return true;
+      },
+    );
+    await tester.tap(find.byKey(const Key('organization-decision-location')));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextFormField), 'Trento or Rovereto');
+    await tester.tap(find.text('Approximate area'));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('organization-edit-country')), findsNothing);
+    await tester.tap(find.byKey(const Key('organization-save-location')));
+    await tester.pumpAndSettle();
+    expect(commands.single, {
+      'action': 'save_decision',
+      'kind': 'location',
+      'value': {'text': 'Trento or Rovereto'},
+    });
+  });
+  for (final zone in ['Europe/Rome', 'America/New_York']) {
+    testWidgets('schedule preserves $zone behind optional timezone edit', (
+      tester,
+    ) async {
+      final commands = <Map<String, dynamic>>[];
+      final schedule = {
+        'starts_at': '2027-05-03T08:00:00Z',
+        'ends_at': '2027-05-05T16:00:00Z',
+        'timezone': zone,
+      };
+      await _pump(
+        tester,
+        organizationFixture(scheduleValue: schedule),
+        onCommand: (c) async {
+          commands.add(c);
+          return true;
+        },
+      );
+      await tester.tap(find.byKey(const Key('organization-decision-schedule')));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('organization-timezone')), findsNothing);
+      await tester.ensureVisible(
+        find.byKey(const Key('organization-save-schedule')),
+      );
+      await tester.tap(find.byKey(const Key('organization-save-schedule')));
+      await tester.pumpAndSettle();
+      expect(commands.single['value'], {
+        ...schedule,
+        'starts_at': '2027-05-03T08:00:00.000Z',
+        'ends_at': '2027-05-05T16:00:00.000Z',
+      });
+      commands.clear();
+      await tester.tap(find.byKey(const Key('organization-edit-timezone')));
+      await tester.pumpAndSettle();
+      await tester.enterText(
+        find.byKey(const Key('organization-timezone')),
+        'invalid-zone',
+      );
+      await tester.tap(find.byKey(const Key('organization-edit-timezone')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('organization-save-schedule')));
+      await tester.pumpAndSettle();
+      expect(commands, isEmpty);
+      expect(find.byKey(const Key('organization-timezone')), findsOneWidget);
+      await tester.enterText(
+        find.byKey(const Key('organization-timezone')),
+        'Europe/Paris',
+      );
+      await tester.ensureVisible(
+        find.byKey(const Key('organization-save-schedule')),
+      );
+      await tester.tap(find.byKey(const Key('organization-save-schedule')));
+      await tester.pumpAndSettle();
+      expect((commands.single['value'] as Map)['timezone'], 'Europe/Paris');
+      expect(tester.takeException(), isNull);
+    });
+  }
   testWidgets('same fictional planner before and after expansion', (
     tester,
   ) async {
@@ -430,6 +603,17 @@ void main() {
     );
     await tester.tap(find.byKey(const Key('organization-decision-schedule')));
     await tester.pumpAndSettle();
+    await tester.ensureVisible(
+      find.byKey(const Key('organization-edit-timezone')),
+    );
+    await tester.tap(find.byKey(const Key('organization-edit-timezone')));
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.byKey(const Key('organization-timezone')));
+    await tester.enterText(
+      find.byKey(const Key('organization-timezone')),
+      'America/Argentina/Buenos_Aires',
+    );
+    await tester.pumpAndSettle();
     await tester.scrollUntilVisible(
       find.byKey(const Key('organization-save-schedule')),
       150,
@@ -437,6 +621,40 @@ void main() {
     );
     expect(tester.takeException(), isNull);
   });
+
+  testWidgets(
+    'advanced country stays reachable at Italian 320dp/2x with keyboard',
+    (tester) async {
+      final semantics = tester.ensureSemantics();
+      await _pump(
+        tester,
+        organizationFixture(),
+        locale: 'it',
+        scale: 2,
+        inset: 260,
+      );
+      await tester.tap(find.byKey(const Key('organization-decision-location')));
+      await tester.pumpAndSettle();
+      final edit = find.byKey(const Key('organization-edit-country'));
+      await tester.ensureVisible(edit);
+      expect(tester.getSemantics(edit).label, contains('Cambia paese'));
+      await tester.tap(edit);
+      await tester.pumpAndSettle();
+      await tester.ensureVisible(find.byKey(const Key('organization-country')));
+      await tester.enterText(
+        find.byKey(const Key('organization-country')),
+        'FR',
+      );
+      await tester.pumpAndSettle();
+      await tester.scrollUntilVisible(
+        find.byKey(const Key('organization-save-location')),
+        150,
+        scrollable: find.byType(Scrollable).first,
+      );
+      expect(tester.takeException(), isNull);
+      semantics.dispose();
+    },
+  );
 
   for (final entry in [
     ('missing', 'it', 1.0, false, null),

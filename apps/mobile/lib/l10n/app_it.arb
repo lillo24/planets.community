@@ -1843,8 +1843,10 @@
   "organizationReadOnly": "Questo Progetto è in sola lettura.",
   "organizationOfficialValue": "Attualmente pubblico: {value}",
   "@organizationOfficialValue": {"placeholders": {"value": {"type": "String"}}},
-  "organizationSuggestionOnly": "Solo area proposta (non una singola città)",
-  "organizationCountry": "Codice del paese",
+  "organizationSuggestionOnly": "Area indicativa",
+  "organizationCountry": "Paese (due lettere)",
+  "organizationCountryEdit": "Cambia paese",
+  "organizationCountryValue": "Paese: {country}",
   "organizationInvalid": "Controlla città, date o capienza. Una semplice proposta di area non può essere confermata.",
   "organizationChanged": "L’organizzazione è cambiata. Ricarica prima di modificare.",
   "organizationUnavailable": "Organizzazione non disponibile. Ricarica per verificare accesso attuale e modifiche salvate."
