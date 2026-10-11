@@ -170,6 +170,10 @@
   "@retryAction": {
     "description": "Label for a retry action."
   },
+  "authGoogleAction": "Continue with Google",
+  "authSignInTitle": "Sign in",
+  "authSigningInWithGoogle": "Signing in with Google…",
+  "authProviderDivider": "or continue with email",
   "authRequestTitle": "Sign in with email",
   "@authRequestTitle": {
     "description": "Title for the email OTP request screen."

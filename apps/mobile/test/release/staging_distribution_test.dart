@@ -15,6 +15,47 @@ void main() {
     expect(() => validateStagingDistribution(validConfig()), returnsNormally);
   });
 
+  test('accepts omitted, empty and plausible public Google Web client ID', () {
+    for (final value in ['', '123456789-example.apps.googleusercontent.com']) {
+      expect(
+        () => validateStagingDistribution(
+          validConfig()..['GOOGLE_WEB_CLIENT_ID'] = value,
+        ),
+        returnsNormally,
+      );
+    }
+  });
+
+  test('rejects invalid Google values and secrets without echoing input', () {
+    for (final value in [
+      'secret-client-secret',
+      ' 123456789-example.apps.googleusercontent.com',
+      '123456789-example.apps.googleusercontent.com ',
+      '123456789-example.apps.googleusercontent.com.evil.test',
+      true,
+      null,
+    ]) {
+      expect(
+        () => validateStagingDistribution(
+          validConfig()..['GOOGLE_WEB_CLIENT_ID'] = value,
+        ),
+        throwsA(
+          isA<FormatException>().having(
+            (error) => error.toString(),
+            'safe diagnostic',
+            isNot(contains('$value')),
+          ),
+        ),
+      );
+    }
+    expect(
+      () => validateStagingDistribution(
+        validConfig()..['GOOGLE_CLIENT_SECRET'] = 'secret',
+      ),
+      throwsFormatException,
+    );
+  });
+
   test('rejects local, placeholder and malformed backend origins', () {
     for (final url in [
       'http://127.0.0.1:54321',

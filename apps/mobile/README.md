@@ -51,8 +51,11 @@ Project-resource management, participation review, Project management,
 Co-organizers, shared workspace, and Messages routes require a complete profile
 and route incomplete profiles to setup. Protected routes and invitation
 acceptance preserve exact sanitized internal `returnTo` intent through OTP and
-profile completion. Magic links, social providers, maps/media, and final branding
-remain deferred.
+profile completion. Google Android sign-in is configuration-gated behind the
+optional public `GOOGLE_WEB_CLIENT_ID`; empty/omitted config retains OTP-only UI
+and performs no Google SDK initialization. See the
+[code and activation runbook](../../docs/development/auth01b-google-android.md).
+Google iOS, Apple, magic links, and final branding remain deferred.
 
 Proposal date/time input is interpreted in an explicit IANA time zone with the bundled `timezone` data and sent to PostgreSQL as UTC instants. Draft/publish/update/cancel authorization and stored/derived lifecycle rules remain canonical database behavior. Public cards receive rough location only; detail shows exact meeting text only when the sanitized backend response marks it public.
 
