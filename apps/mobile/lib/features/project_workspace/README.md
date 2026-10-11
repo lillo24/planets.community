@@ -20,3 +20,11 @@ current-entitlement loss.
 
 External providers remain responsible for the contents and their permissions.
 PLANETS stores no OAuth tokens, provider identifiers, files, or attachments.
+
+ORG-UX01 adds opt-in `compact` presentation to the reusable Manage card and Info
+section. Manage composes a workspace destination into its navigation card,
+retaining loading and a labelled failure retry. Info omits a canonically empty
+workspace only for non-managers; managers keep Add/Edit, configured links keep
+the external-open confirmation, and loading/failures remain visible. Compact
+Edit sits below the hostname so large text can wrap. Defaults and the chat-strip
+control keep their existing behavior; no workspace domain or persistence changes.

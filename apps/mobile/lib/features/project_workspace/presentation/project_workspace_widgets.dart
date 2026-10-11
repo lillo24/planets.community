@@ -53,12 +53,16 @@ class ProjectWorkspaceManageCard extends ConsumerStatefulWidget {
     required this.expectedProfileId,
     required this.projectId,
     required this.projectKind,
+    this.compact = false,
     super.key,
   });
 
   final String expectedProfileId;
   final String projectId;
   final ProjectKind projectKind;
+
+  /// Organization hubs compose this destination into their own navigation card.
+  final bool compact;
 
   @override
   ConsumerState<ProjectWorkspaceManageCard> createState() =>
@@ -88,6 +92,42 @@ class _ProjectWorkspaceManageCardState
     final workspace = current ? state.workspace : null;
     final loading = !current || state.phase == ProjectWorkspacePhase.loading;
     final failed = current && state.phase == ProjectWorkspacePhase.failure;
+    if (widget.compact) {
+      return ListTile(
+        minLeadingWidth: 24,
+        horizontalTitleGap: 8,
+        key: const Key('project-manage-workspace'),
+        leading: const Icon(Icons.folder_shared_outlined),
+        title: Text(l10n.projectWorkspaceTitle),
+        subtitle: failed
+            ? Text(l10n.projectWorkspaceUnavailable)
+            : workspace == null
+            ? null
+            : Text(workspace.url.hostname),
+        trailing: loading
+            ? const SizedBox.square(
+                dimension: 20,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              )
+            : failed
+            ? IconButton(
+                tooltip: l10n.retryAction,
+                onPressed: _load,
+                icon: const Icon(Icons.refresh),
+              )
+            : const Icon(Icons.chevron_right),
+        onTap: loading
+            ? null
+            : failed
+            ? _load
+            : () => context.push(
+                ProjectWorkspaceRoutes.manage(
+                  widget.projectKind,
+                  widget.projectId,
+                ),
+              ),
+      );
+    }
     return Card(
       key: const Key('project-manage-workspace'),
       child: Padding(
@@ -175,6 +215,7 @@ class ProjectWorkspaceInfoSection extends ConsumerStatefulWidget {
     required this.projectId,
     required this.projectKind,
     required this.isManager,
+    this.compact = false,
     super.key,
   });
 
@@ -182,6 +223,9 @@ class ProjectWorkspaceInfoSection extends ConsumerStatefulWidget {
   final String projectId;
   final ProjectKind projectKind;
   final bool isManager;
+
+  /// Opt-in organization layout; keeps the workspace read and action boundary.
+  final bool compact;
 
   @override
   ConsumerState<ProjectWorkspaceInfoSection> createState() =>
@@ -209,28 +253,38 @@ class _ProjectWorkspaceInfoSectionState
     final state = ref.watch(projectWorkspaceProvider);
     final current = state.isFor(widget.expectedProfileId, widget.projectId);
     final workspace = current ? state.workspace : null;
+    if (widget.compact &&
+        current &&
+        state.phase == ProjectWorkspacePhase.ready &&
+        workspace == null &&
+        !widget.isManager) {
+      return const SizedBox.shrink();
+    }
     return Column(
       key: const Key('project-workspace-info-section'),
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        if (widget.compact) const SizedBox(height: AppSpacing.large),
         Text(
           l10n.projectWorkspaceTitle,
-          style: Theme.of(context).textTheme.titleLarge,
+          style: widget.compact
+              ? Theme.of(context).textTheme.titleMedium
+              : Theme.of(context).textTheme.titleLarge,
         ),
         const SizedBox(height: AppSpacing.small),
         if (!current || state.phase == ProjectWorkspacePhase.loading)
           const Center(child: CircularProgressIndicator())
         else if (state.phase == ProjectWorkspacePhase.failure)
-          Row(
+          OverflowBar(
             children: [
-              Expanded(child: Text(l10n.projectWorkspaceUnavailable)),
+              Text(l10n.projectWorkspaceUnavailable),
               TextButton(onPressed: _load, child: Text(l10n.retryAction)),
             ],
           )
         else if (workspace == null)
-          Row(
+          OverflowBar(
             children: [
-              Expanded(child: Text(l10n.projectWorkspaceNotConfigured)),
+              if (!widget.compact) Text(l10n.projectWorkspaceNotConfigured),
               if (widget.isManager)
                 TextButton(
                   key: const Key('project-workspace-info-add'),
@@ -251,7 +305,7 @@ class _ProjectWorkspaceInfoSectionState
             leading: const Icon(Icons.folder_shared_outlined),
             title: Text(workspace.url.hostname),
             subtitle: Text(l10n.projectWorkspaceExternalNotice),
-            trailing: widget.isManager
+            trailing: widget.isManager && !widget.compact
                 ? TextButton(
                     key: const Key('project-workspace-info-edit'),
                     onPressed: () => context.push(
@@ -265,6 +319,21 @@ class _ProjectWorkspaceInfoSectionState
                 : const Icon(Icons.open_in_new),
             onTap: () =>
                 confirmAndOpenProjectWorkspace(context, ref, workspace),
+          ),
+        if (widget.compact && workspace != null && widget.isManager)
+          Align(
+            alignment: AlignmentDirectional.centerStart,
+            child: TextButton.icon(
+              key: const Key('project-workspace-info-edit'),
+              onPressed: () => context.push(
+                ProjectWorkspaceRoutes.manage(
+                  widget.projectKind,
+                  widget.projectId,
+                ),
+              ),
+              icon: const Icon(Icons.edit_outlined),
+              label: Text(l10n.projectWorkspaceEditWorkspaceAction),
+            ),
           ),
       ],
     );

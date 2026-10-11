@@ -32,6 +32,48 @@ import '../../../support/fake_proposal.dart';
 import '../../../support/fake_recurring_activity.dart';
 
 void main() {
+  testWidgets('role details disappear on account change', (tester) async {
+    final gateway = FakeProjectDelegateGateway()
+      ..role = ProjectManagementRole.creator
+      ..delegates = [
+        ProjectDelegate(
+          id: 'delegate-1',
+          profileId: 'user-2',
+          displayName: 'Jordan',
+          delegatedAt: DateTime.utc(2030),
+          grantedByProfileId: 'user-1',
+          grantedByDisplayName: 'Alex',
+        ),
+      ];
+    final session = _readyContainer(gateway);
+    addTearDown(session.dispose);
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: session.container,
+        child: _localized(
+          const ProjectTeamScreen(
+            projectId: 'project-1',
+            projectKind: ProjectKind.oneTime,
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(
+      find.byKey(const Key('project-delegate-actions-delegate-1')),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Role details'));
+    await tester.pumpAndSettle();
+    expect(find.text('Added by Alex'), findsOneWidget);
+    session.container
+        .read(authSessionProvider.notifier)
+        .markProfileReady(const AuthIdentity(id: 'user-2'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(find.byKey(const Key('project-role-details')), findsNothing);
+    expect(find.text('Added by Alex'), findsNothing);
+  });
   testWidgets('Creator management hub shows Participation and Project team', (
     tester,
   ) async {
@@ -167,7 +209,17 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Jordan'), findsOneWidget);
     expect(find.text('Co-organizer'), findsNWidgets(3));
+    await tester.tap(
+      find.byKey(const Key('project-delegate-actions-delegate-1')),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Role details'));
+    await tester.pumpAndSettle();
     expect(find.text('Added by Alex'), findsOneWidget);
+    Navigator.of(tester.element(find.text('Added by Alex'))).pop();
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('project-invitation-invitation-1')));
+    await tester.pumpAndSettle();
     expect(find.text('Issued by Alex'), findsOneWidget);
     expect(
       find.byKey(const Key('project-invitation-invitation-1')),
@@ -203,6 +255,8 @@ void main() {
     );
     await tester.drag(find.byType(ListView), const Offset(0, -240));
     await tester.pumpAndSettle();
+    await tester.ensureVisible(revokeInvitation);
+    await tester.pumpAndSettle();
     await tester.tap(revokeInvitation);
     await tester.pumpAndSettle();
     await tester.tap(find.widgetWithText(FilledButton, 'Revoke'));
@@ -217,6 +271,10 @@ void main() {
       const Key('project-delegate-revoke-delegate-1'),
     );
     await tester.drag(find.byType(ListView), const Offset(0, 240));
+    await tester.pumpAndSettle();
+    await tester.tap(
+      find.byKey(const Key('project-delegate-actions-delegate-1')),
+    );
     await tester.pumpAndSettle();
     await tester.tap(revokeDelegate);
     await tester.pumpAndSettle();
@@ -358,14 +416,13 @@ void main() {
     expect(find.byKey(const Key('project-delegate-self-self')), findsOneWidget);
     expect(find.byKey(const Key('project-delegate-revoke-self')), findsNothing);
 
-    final promote = find.byKey(const Key('project-delegate-promote-operator'));
-    await tester.scrollUntilVisible(
-      promote,
-      200,
-      scrollable: find.byType(Scrollable).first,
+    final promoteMenu = find.byKey(
+      const Key('project-delegate-actions-operator'),
     );
+    await tester.ensureVisible(promoteMenu);
+    await tester.tap(promoteMenu);
     await tester.pumpAndSettle();
-    expect(promote, findsOneWidget);
+    final promote = find.byKey(const Key('project-delegate-promote-operator'));
     expect(promote.hitTestable(), findsOneWidget);
     await tester.tap(promote);
     await tester.pumpAndSettle();
@@ -379,14 +436,13 @@ void main() {
     await tester.pumpAndSettle();
     expect(gateway.calls, contains('change-role:user-1:operator:co_creator'));
 
-    final demote = find.byKey(const Key('project-delegate-demote-operator'));
-    await tester.scrollUntilVisible(
-      demote,
-      200,
-      scrollable: find.byType(Scrollable).first,
+    final demoteMenu = find.byKey(
+      const Key('project-delegate-actions-operator'),
     );
+    await tester.ensureVisible(demoteMenu);
+    await tester.tap(demoteMenu);
     await tester.pumpAndSettle();
-    expect(demote, findsOneWidget);
+    final demote = find.byKey(const Key('project-delegate-demote-operator'));
     expect(demote.hitTestable(), findsOneWidget);
     await tester.tap(demote);
     await tester.pumpAndSettle();
@@ -404,14 +460,13 @@ void main() {
     await tester.pumpAndSettle();
     expect(gateway.calls, contains('change-role:user-1:operator:co_organizer'));
 
-    final revoke = find.byKey(const Key('project-delegate-revoke-structural'));
-    await tester.scrollUntilVisible(
-      revoke,
-      200,
-      scrollable: find.byType(Scrollable).first,
+    final revokeMenu = find.byKey(
+      const Key('project-delegate-actions-structural'),
     );
+    await tester.ensureVisible(revokeMenu);
+    await tester.tap(revokeMenu);
     await tester.pumpAndSettle();
-    expect(revoke, findsOneWidget);
+    final revoke = find.byKey(const Key('project-delegate-revoke-structural'));
     expect(revoke.hitTestable(), findsOneWidget);
     await tester.tap(revoke);
     await tester.pumpAndSettle();
@@ -464,6 +519,10 @@ void main() {
       ..role = ProjectManagementRole.none
       ..mutationFailure = StateError('authority changed');
 
+    await tester.tap(
+      find.byKey(const Key('project-delegate-actions-delegate-1')),
+    );
+    await tester.pumpAndSettle();
     await tester.tap(
       find.byKey(const Key('project-delegate-promote-delegate-1')),
     );
