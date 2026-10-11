@@ -282,6 +282,13 @@ class _ProfileBody extends StatelessWidget {
               ),
               const SizedBox(height: AppSpacing.small),
               OutlinedButton.icon(
+                key: const Key('profile-own-groups-button'),
+                onPressed: () => context.push('/groups/mine'),
+                icon: const Icon(Icons.groups_outlined),
+                label: Text(l10n.groupsMy),
+              ),
+              const SizedBox(height: AppSpacing.small),
+              OutlinedButton.icon(
                 key: const Key('profile-blocked-users-button'),
                 onPressed: () => context.go(BlockingRoutes.blockedUsers),
                 icon: const Icon(Icons.person_off_outlined),

@@ -39,6 +39,9 @@ import '../../features/notifications/presentation/notification_routes.dart';
 import '../../features/notifications/presentation/notifications_screen.dart';
 import '../../features/profile/presentation/profile_edit_screen.dart';
 import '../../features/profile/presentation/profile_screen.dart';
+import '../../features/groups/presentation/group_directory_screen.dart';
+import '../../features/groups/presentation/group_detail_screen.dart';
+import '../../features/groups/presentation/group_editor_screen.dart';
 import '../../features/project_chat/presentation/project_chat_info_screen.dart';
 import '../../features/project_chat/presentation/project_chat_screen.dart';
 import '../../features/project_delegates/presentation/project_coorganizers_screen.dart';
@@ -217,6 +220,10 @@ RoutingConfig _routingConfig(
           path.startsWith('/profile/reports') ||
           path.startsWith('/profile/review-requests');
       final isProfileEditRoute = path == '/profile/edit';
+      final isGroupProtectedRoute =
+          path == '/groups/mine' ||
+          path == '/groups/create' ||
+          RegExp(r'^/groups/[^/]+/(edit|report)$').hasMatch(path);
       final isProposalManagementRoute =
           path == DraftRoutes.path ||
           path == WorkshopRoutes.catalog ||
@@ -260,7 +267,9 @@ RoutingConfig _routingConfig(
       }
 
       if (session.phase == AuthSessionPhase.signedOut &&
-          (isProfileEditRoute || isActivityManagementRoute)) {
+          (isProfileEditRoute ||
+              isActivityManagementRoute ||
+              isGroupProtectedRoute)) {
         return Uri(
           path: '/auth',
           queryParameters: {'returnTo': state.uri.toString()},
@@ -277,6 +286,8 @@ RoutingConfig _routingConfig(
             sanitizeReturnDestination(state.uri.queryParameters['returnTo']);
         final destinationPath = Uri.parse(destination).path;
         if (destinationPath == '/settings' ||
+            destinationPath == '/groups' ||
+            destinationPath.startsWith('/groups/') ||
             destinationPath == accountDeletionPath ||
             destinationPath == '/profile/blocked-users' ||
             destinationPath.startsWith('/profile/reports') ||
@@ -330,6 +341,14 @@ RoutingConfig _routingConfig(
               isProjectWorkspaceManagementRoute ||
               isMessagesRoute ||
               isNotificationsRoute)) {
+        return Uri(
+          path: '/profile/edit',
+          queryParameters: {'returnTo': state.uri.toString()},
+        ).toString();
+      }
+
+      if (session.phase == AuthSessionPhase.profileSetupRequired &&
+          isGroupProtectedRoute) {
         return Uri(
           path: '/profile/edit',
           queryParameters: {'returnTo': state.uri.toString()},
@@ -454,6 +473,43 @@ RoutingConfig _routingConfig(
       GoRoute(
         path: '/link-unavailable',
         builder: (context, state) => const _UnknownRouteScreen(),
+      ),
+      GoRoute(
+        path: '/groups',
+        builder: (context, state) => const GroupDirectoryScreen(),
+        routes: [
+          GoRoute(
+            path: 'mine',
+            builder: (context, state) => const OwnGroupsScreen(),
+          ),
+          GoRoute(
+            path: 'create',
+            onExit: draftDeparture?.onExit,
+            builder: (context, state) => GroupEditorScreen(key: state.pageKey),
+          ),
+          GoRoute(
+            path: ':groupId',
+            builder: (context, state) =>
+                GroupDetailScreen(id: state.pathParameters['groupId']!),
+            routes: [
+              GoRoute(
+                path: 'edit',
+                onExit: draftDeparture?.onExit,
+                builder: (context, state) => GroupEditorScreen(
+                  key: state.pageKey,
+                  id: state.pathParameters['groupId']!,
+                ),
+              ),
+              GoRoute(
+                path: 'report',
+                builder: (context, state) => GroupDetailScreen(
+                  id: state.pathParameters['groupId']!,
+                  report: true,
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
       GoRoute(
         path: AuthRoutes.entry,

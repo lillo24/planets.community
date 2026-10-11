@@ -18,37 +18,51 @@ class BrowseActivitySwitcher extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    return SizedBox(
-      width: double.infinity,
-      child: SegmentedButton<BrowseActivityType>(
-        key: const Key('browse-activity-switcher'),
-        segments: [
-          ButtonSegment(
-            value: BrowseActivityType.proposals,
-            label: Text(l10n.browseProposalsChoice),
-            icon: const Icon(Icons.event_outlined),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        SizedBox(
+          width: double.infinity,
+          child: SegmentedButton<BrowseActivityType>(
+            key: const Key('browse-activity-switcher'),
+            segments: [
+              ButtonSegment(
+                value: BrowseActivityType.proposals,
+                label: Text(l10n.browseProposalsChoice),
+                icon: const Icon(Icons.event_outlined),
+              ),
+              ButtonSegment(
+                value: BrowseActivityType.tavoli,
+                label: Text(l10n.browseTavoliChoice),
+                icon: const Icon(Icons.autorenew),
+              ),
+            ],
+            selected: {?selected},
+            emptySelectionAllowed: selected == null,
+            onSelectionChanged: (selection) {
+              if (onChanged != null) {
+                onChanged!(selection.single);
+                return;
+              }
+              switch (selection.single) {
+                case BrowseActivityType.proposals:
+                  context.go('/proposals');
+                case BrowseActivityType.tavoli:
+                  context.go('/tavoli');
+              }
+            },
           ),
-          ButtonSegment(
-            value: BrowseActivityType.tavoli,
-            label: Text(l10n.browseTavoliChoice),
-            icon: const Icon(Icons.autorenew),
+        ),
+        Align(
+          alignment: AlignmentDirectional.centerStart,
+          child: TextButton.icon(
+            key: const Key('browse-groups'),
+            onPressed: () => context.push('/groups'),
+            icon: const Icon(Icons.groups_outlined),
+            label: Text(l10n.groupsTitle),
           ),
-        ],
-        selected: {?selected},
-        emptySelectionAllowed: selected == null,
-        onSelectionChanged: (selection) {
-          if (onChanged != null) {
-            onChanged!(selection.single);
-            return;
-          }
-          switch (selection.single) {
-            case BrowseActivityType.proposals:
-              context.go('/proposals');
-            case BrowseActivityType.tavoli:
-              context.go('/tavoli');
-          }
-        },
-      ),
+        ),
+      ],
     );
   }
 }

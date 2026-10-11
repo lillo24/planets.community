@@ -9,9 +9,10 @@ import '../application/moderation_controllers.dart';
 import '../domain/moderation_models.dart';
 
 class ReportFormScreen extends ConsumerStatefulWidget {
-  const ReportFormScreen({required this.target, super.key});
+  const ReportFormScreen({required this.target, this.onClose, super.key});
 
   final ModerationReportTarget target;
+  final VoidCallback? onClose;
 
   @override
   ConsumerState<ReportFormScreen> createState() => _ReportFormScreenState();
@@ -62,7 +63,11 @@ class _ReportFormScreenState extends ConsumerState<ReportFormScreen> {
     final received =
         isCurrent && submission.phase == ModerationSubmissionPhase.received;
     return Scaffold(
-      appBar: pageAppBar(context, title: Text(l10n.moderationReportTitle)),
+      appBar: pageAppBar(
+        context,
+        title: Text(l10n.moderationReportTitle),
+        onClose: widget.onClose,
+      ),
       body: SafeArea(
         child: ListView(
           padding: const EdgeInsets.all(AppSpacing.large),

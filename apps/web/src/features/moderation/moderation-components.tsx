@@ -1,4 +1,5 @@
 import { TemplateRemovalForm } from "./template-removal-form";
+import { GroupReviewView } from "./group-review";
 import Link from "next/link";
 
 import { Badge } from "@/components/ui/badge";
@@ -138,6 +139,9 @@ export function ModerationCaseDetailView({
         </CardContent>
       </Card>
 
+      {detail.group ? (
+        <GroupReviewView group={detail.group} caseId={detail.caseId} />
+      ) : null}
       {detail.template ? (
         <Card>
           <CardHeader>

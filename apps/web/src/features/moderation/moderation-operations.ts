@@ -2,12 +2,66 @@ import {
   isTemplateVersion,
   parseTemplateRemovalReceipt,
 } from "./template-moderation-models";
+import {
+  groupVersion,
+  type GroupSuppressionInput,
+  type GroupSuppressionResult,
+} from "./group-moderation-models";
 import { isModerationState, isUuid } from "./moderation-models";
 import {
   requireModerationStaff,
   type ModerationServerClientFactory,
 } from "./moderation-server";
 
+export async function setGroupSuppression(
+  input: GroupSuppressionInput,
+  createClient?: ModerationServerClientFactory,
+): Promise<GroupSuppressionResult> {
+  if (
+    !isUuid(input.caseId) ||
+    !isUuid(input.groupId) ||
+    !isUuid(input.requestId) ||
+    !Number.isSafeInteger(input.version) ||
+    input.version < 1 ||
+    typeof input.suppressed !== "boolean" ||
+    typeof input.reason !== "string" ||
+    Array.from(input.reason.trim()).length < 10 ||
+    Array.from(input.reason.trim()).length > 4000
+  )
+    return { status: "invalid" };
+  const access = await requireModerationStaff(createClient);
+  if (!access) return { status: "denied" };
+  try {
+    const result = await access.client.rpc("set_group_directory_suppression", {
+      p_expected_staff_profile_id: access.profileId,
+      p_group_id: input.groupId,
+      p_client_request_id: input.requestId,
+      p_expected_version: input.version,
+      p_directory_suppressed: input.suppressed,
+      p_reason: input.reason.trim(),
+    });
+    if (result.error) {
+      const code =
+        typeof result.error === "object" && "code" in result.error
+          ? result.error.code
+          : null;
+      return {
+        status:
+          code === "42501"
+            ? "denied"
+            : code === "PT409"
+              ? "stale"
+              : code === "22023" || code === "55000"
+                ? "invalid"
+                : "error",
+      };
+    }
+    return { status: "accepted", version: groupVersion(result.data) };
+  } catch {
+    // Delivery or response parsing can fail after commit; retain exact intent.
+    return { status: "error" };
+  }
+}
 export async function addModerationNote(
   input: Readonly<{ caseId: string; body: string }>,
   createClient?: ModerationServerClientFactory,

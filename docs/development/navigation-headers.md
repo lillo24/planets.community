@@ -19,6 +19,8 @@ Flow-owned exits override the implied callback:
 | Help/contact/bug/person and policy/account pages | Close retains HelpScaffold's supplied callback or pop/fallback destination |
 | Project organizer / participant invitations and unavailable link | Close pops a retained stack or returns Home on direct entry |
 | Proposal scratch/edit | Close runs the same router-owned single draft departure coordinator as system Back |
+| Registered group editor | Close and Back use the shared departure coordinator with feature-owned Save/Discard/Stay; exact command recovery blocks departure until resolved |
+| Groups directory/detail/report | Textual Close pops the retained directory/context or returns to a public directory/detail on direct entry |
 | Tavolo / Resource editors, reports, joins, chats and other nested pages | Close uses the existing guarded route pop |
 | Cover / profile-photo crop | Existing footer Cancel/Apply remains; no duplicate header exit |
 | Tutorial custom registry | Close uses its original cancellation callback; bottom Previous stays |

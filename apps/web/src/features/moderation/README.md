@@ -41,3 +41,12 @@ source hiding, restoration, account sanction or deployment control. See the
 
 Duration parsing accepts finite positive fractional numeric seconds from the
 canonical schedule difference. Capacity and blueprint counts remain safe integers.
+
+## Registered group cases
+
+`group-moderation-models.ts` parses protected current group context and scalar
+version receipts. `group-review.tsx` presents report/current versions, current
+content, manager/provenance and latest private suppression context.
+`group-suppression-form.tsx` freezes Hide/Restore intent for exact retries.
+Server reads/actions revalidate active staff; case transitions remain separate.
+See `docs/development/grp02-groups-ui.md` for rollout and recovery boundaries.

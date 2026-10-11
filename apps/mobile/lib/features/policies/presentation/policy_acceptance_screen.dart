@@ -12,7 +12,11 @@ import '../application/policy_documents.dart';
 import 'policy_link_action.dart';
 
 class PolicyAcceptanceScreen extends ConsumerStatefulWidget {
-  const PolicyAcceptanceScreen({super.key});
+  const PolicyAcceptanceScreen({this.returnToPreviousPage = false, super.key});
+
+  /// Native action-bound review retains the editor underneath this page.
+  /// Global router gates continue to use their URL continuation by default.
+  final bool returnToPreviousPage;
   @override
   ConsumerState<PolicyAcceptanceScreen> createState() =>
       _PolicyAcceptanceScreenState();
@@ -21,10 +25,22 @@ class PolicyAcceptanceScreen extends ConsumerStatefulWidget {
 class _PolicyAcceptanceScreenState
     extends ConsumerState<PolicyAcceptanceScreen> {
   bool _checked = false;
+  bool _returning = false;
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final state = ref.watch(policyAcceptanceProvider);
+    if (widget.returnToPreviousPage &&
+        !_returning &&
+        state.allows(
+          ref.read(authSessionProvider).identity?.id,
+          ref.read(policyVersionProvider),
+        )) {
+      _returning = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) Navigator.of(context).pop();
+      });
+    }
     ref.listen(
       policyAcceptanceProvider.select((s) => (s.account, s.version)),
       (_, _) => setState(() => _checked = false),
@@ -34,14 +50,16 @@ class _PolicyAcceptanceScreenState
         state.phase == PolicyAcceptancePhase.required ||
         state.phase == PolicyAcceptancePhase.writeFailed;
     return PopScope(
-      canPop: false,
+      canPop: widget.returnToPreviousPage,
       onPopInvokedWithResult: (didPop, _) {
         if (!didPop) context.go('/');
       },
       child: HelpScaffold(
         title: l10n.policyAcceptanceTitle,
         fallback: '/',
-        onBack: () => context.go('/'),
+        onBack: widget.returnToPreviousPage
+            ? () => Navigator.of(context).maybePop()
+            : () => context.go('/'),
         children: [
           Text(l10n.policyAcceptanceExplanation),
           const SizedBox(height: AppSpacing.medium),

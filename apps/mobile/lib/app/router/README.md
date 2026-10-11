@@ -64,3 +64,14 @@ textual Close on pushed pages, and flow-owned Cancel/Close for Auth/Profile/Help
 Close uses the original guarded pop/cancel path, including Proposal departure.
 See [navigation headers](../../../../../docs/development/navigation-headers.md)
 for the audited inventory, direct-entry exits and large-text behavior.
+
+## Registered group routes
+
+Explore's compact Groups entry pushes `/groups`; public details use
+`/groups/:groupId`. Completed-profile routes are `/groups/mine`,
+`/groups/create`, `/groups/:groupId/edit` and `/groups/:groupId/report`.
+Management reads/reporting bypass the router's policy gate; group mutations
+apply the account/version-bound policy check at the action boundary.
+The report UUID survives OTP redirects in the path. Auth/profile cancellation
+returns to the public directory/detail. Editors register with the existing
+departure coordinator; no bottom branch or stored right-tab preference changes.

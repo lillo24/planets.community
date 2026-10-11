@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
+import { groupRow } from "./group-moderation-test-fixtures";
 
 import {
   readModerationCase,
@@ -123,9 +124,9 @@ describe("moderation server authorization", () => {
       status: "ready",
       detail: { targetKind: "group" },
     });
-    expect(staff.rpc).toHaveBeenCalledTimes(2);
+    expect(staff.rpc).toHaveBeenCalledTimes(3);
     expect(staff.rpc).toHaveBeenLastCalledWith(
-      "get_moderation_case_detail",
+      "get_moderation_case_group",
       expect.anything(),
     );
   });
@@ -239,6 +240,8 @@ function client({
       if (name === "get_moderation_case_counterstatement") {
         return { data: counterstatement, error: null };
       }
+      if (name === "get_moderation_case_group")
+        return { data: groupRow(), error: null };
       throw new Error(`Unexpected RPC: ${name}`);
     }),
   };
