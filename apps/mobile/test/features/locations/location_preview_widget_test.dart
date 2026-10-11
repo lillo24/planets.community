@@ -80,6 +80,66 @@ Future<void> decodedPreview(WidgetTester t) async {
 }
 
 void main() {
+  for (final language in ['en', 'it']) {
+    for (final imagery in ['disabled', 'loaded', 'failed']) {
+      testWidgets(
+        '$language verified area retains map semantics and provenance credits with $imagery imagery',
+        (t) async {
+          t.view.physicalSize = const Size(320, 740);
+          t.view.devicePixelRatio = 1;
+          addTearDown(t.view.resetPhysicalSize);
+          addTearDown(t.view.resetDevicePixelRatio);
+          final semantics = t.ensureSemantics();
+          try {
+            final g = FakePreviewGateway();
+            final r = FakeStaticPreviewGateway(enabled: imagery != 'disabled');
+            if (imagery == 'failed') {
+              r.pending = () => Future.error(PreviewUnavailable(false));
+            }
+            final c = setup(g, r, FakePreviewMapsLauncher());
+            addTearDown(c.dispose);
+            await t.pumpWidget(
+              app(
+                c,
+                ListView(children: [panel(detail: true)]),
+                language: language,
+                scale: 2,
+              ),
+            );
+            await settled(t);
+            if (imagery == 'loaded') await decodedPreview(t);
+            final l10n = AppLocalizations.of(t.element(find.byType(Scaffold)));
+            expect(find.text('Synthetic Trento area'), findsOneWidget);
+            expect(find.text(l10n.locationPreviewApproximate), findsNothing);
+            expect(find.byType(LocationAttribution), findsOneWidget);
+            expect(
+              find.byType(RawImage),
+              imagery == 'loaded' ? findsOneWidget : findsNothing,
+            );
+            if (imagery == 'loaded') {
+              expect(
+                t
+                    .getSemantics(
+                      find.byKey(const Key('location-map-action-item')),
+                    )
+                    .label,
+                contains(l10n.locationPreviewApproximate),
+              );
+            } else {
+              expect(
+                find.byKey(const Key('location-open-maps-item')),
+                findsOneWidget,
+              );
+            }
+            expect(t.takeException(), isNull);
+            await t.pumpWidget(const SizedBox());
+          } finally {
+            semantics.dispose();
+          }
+        },
+      );
+    }
+  }
   for (final kind in ProjectKind.values) {
     testWidgets(
       '$kind detail has one location unit and preserves meeting instructions',
@@ -426,12 +486,12 @@ void main() {
         if (type == 'proposal') {
           final p = proposalSummaryFixture();
           title = p.title;
-          location = p.publicLocationLabel!;
+          location = p.locality!;
           card = ProposalCard(proposal: p, onTap: () => taps++);
         } else if (type == 'recurring') {
           final p = publicRecurringSummaryFixture();
           title = p.title;
-          location = p.publicLocationLabel;
+          location = p.locality;
           card = RecurringActivityCard(activity: p, onTap: () => taps++);
         } else {
           final p = publicResourceListingFixture();

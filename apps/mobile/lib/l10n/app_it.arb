@@ -1758,7 +1758,6 @@
   "proposalSearchCity": "Cerca una città",
   "proposalOptionalExact": "Aggiungi luogo preciso (facoltativo)",
   "proposalRemoveExact": "Rimuovi dettagli precisi",
-  "proposalExactNotChosen": "Le istruzioni per il luogo preciso non sono ancora state aggiunte.",
   "proposalPhaseAll": "Tutti",
   "proposalPhaseIdea": "In definizione",
   "proposalPhaseDefined": "Definito",

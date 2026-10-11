@@ -6,6 +6,7 @@ import '../../../core/theme/app_tokens.dart';
 import '../../../core/widgets/requested_badge.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../cover_media/presentation/project_cover_image.dart';
+import '../../locations/presentation/public_location_label.dart';
 import '../../participation/presentation/project_capacity_label.dart';
 import '../../participation/presentation/project_capacity_presentation.dart';
 import '../domain/recurring_activity_models.dart';
@@ -101,7 +102,12 @@ class RecurringActivityCard extends StatelessWidget {
                   const SizedBox(height: AppSpacing.small),
                   _MetadataRow(
                     icon: Icons.location_on_outlined,
-                    text: activity.publicLocationLabel,
+                    text:
+                        shortPublicLocationLabel(
+                          activity.locality,
+                          activity.publicLocationLabel,
+                        ) ??
+                        l10n.proposalPlaceUndecided,
                     textKey: Key('tavolo-public-location-${activity.id}'),
                   ),
                   const SizedBox(height: AppSpacing.small),
