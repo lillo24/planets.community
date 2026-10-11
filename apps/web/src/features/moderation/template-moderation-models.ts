@@ -14,8 +14,8 @@ export type TemplateRemovalReceipt = Readonly<{
 }>;
 export type TemplateReview = Readonly<{
   templateId: string;
-  sourceProposalId: string;
-  originalCreatorProfileId: string;
+  sourceProposalId: string | null;
+  originalCreatorProfileId: string | null;
   reportContentVersion: string;
   currentContentVersion: string;
   contentChanged: boolean;
@@ -67,10 +67,15 @@ export function parseTemplateReview(data: unknown): TemplateReview {
   const c = record(r.content);
   const a = r.removal_action === null ? null : record(r.removal_action);
   if (!Array.isArray(c.skills)) throw malformed();
+  if (
+    (r.source_proposal_id === null) !==
+    (r.original_creator_profile_id === null)
+  )
+    throw malformed();
   return {
     templateId: uuid(r.template_id),
-    sourceProposalId: uuid(r.source_proposal_id),
-    originalCreatorProfileId: uuid(r.original_creator_profile_id),
+    sourceProposalId: nullable(r.source_proposal_id, uuid),
+    originalCreatorProfileId: nullable(r.original_creator_profile_id, uuid),
     reportContentVersion: version(r.report_content_version),
     currentContentVersion: version(r.current_content_version),
     contentChanged: boolean(r.content_changed),

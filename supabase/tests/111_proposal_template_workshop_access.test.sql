@@ -57,7 +57,7 @@ set local role authenticated;
 select throws_ok($$select public.publish_proposal('e1000000-0000-4000-8000-000000000001',current_setting('test.tw_source')::uuid)$$,
   'PT422',null,'publication still requires a canonical photo');
 reset role;
-select is((select count(*) from private.proposal_templates),0::bigint,'failed photo publication leaves no identity');
+select is((select count(*) from private.proposal_templates where template_kind='community'),0::bigint,'failed photo publication leaves no identity');
 insert into public.profile_photos(profile_id,object_path,audience)
 select id,id::text || '/e2000000-0000-4000-8000-000000000001.webp','interactions'
 from public.profiles where id::text like 'e1000000%';
@@ -77,7 +77,7 @@ select lives_ok($$select public.publish_proposal('e1000000-0000-4000-8000-000000
   'first publication succeeds');
 reset role;
 select set_config('test.tw_template',(select id::text from private.proposal_templates where source_proposal_id=current_setting('test.tw_source')::uuid),true);
-select is((select count(*) from private.proposal_templates),1::bigint,'first publication synchronously creates exactly one identity');
+select is((select count(*) from private.proposal_templates where template_kind='community'),1::bigint,'first publication synchronously creates exactly one identity');
 select is((select description from private.proposal_template_baselines), 'BOZZA_PRIVATE','baseline captures the last persisted draft');
 select is((select title from private.proposal_template_baselines),'Latest saved Bozza','baseline is latest saved text, not earliest idea');
 select is((select skill_selections->0->>'importance' from private.proposal_template_baselines),'required','saved draft selections are retained');
@@ -90,7 +90,7 @@ select throws_ok($$select public.get_own_proposal_template_baseline('e1000000-00
 reset role;
 select is((select count(*) from private.audit_events where action='proposal.published' and target_id=current_setting('test.tw_source')::uuid),1::bigint,'retry creates no duplicate audit event');
 select is((select count(*) from private.outbox_events where event_type='proposal.published' and payload->>'proposal_id'=current_setting('test.tw_source')),1::bigint,'retry creates no duplicate outbox event');
-select is((select count(*) from private.proposal_templates),1::bigint,'retry creates no second identity');
+select is((select count(*) from private.proposal_templates where template_kind='community'),1::bigint,'retry creates no second identity');
 select is((select to_jsonb(b)::text from private.proposal_template_baselines as b),current_setting('test.tw_baseline'),'retry does not overwrite baseline');
 set local role anon;
 select is((select count(*) from public.list_public_proposal_templates()),0::bigint,'publication alone does not expose the template');

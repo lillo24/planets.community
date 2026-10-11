@@ -10,6 +10,44 @@ import '../../../support/fake_template.dart';
 
 void main() {
   const parser = TemplateParser();
+  test('official provenance and bundled illustrations are strict and have no source', () {
+    final row = templateRowFixture()
+      ..['is_official'] = true
+      ..['source_proposal_id'] = null
+      ..['original_creator_profile_id'] = null
+      ..['creator_display_name'] = 'Planets Community Official'
+      ..['cover_asset_key'] = 'repair-cafe';
+    expect(parser.card(row).isOfficial, isTrue);
+    expect(parser.detail(row).sourceId, isNull);
+    expect(parser.detail(row).creatorId, isNull);
+    expect(parser.detail(row).coverAssetKey, 'repair-cafe');
+    expect(
+      () => parser.card({...row, 'source_proposal_id': templateSource}),
+      throwsFormatException,
+    );
+    expect(
+      () => parser.card({...row, 'creator_display_name': 'Fake official'}),
+      throwsFormatException,
+    );
+    expect(
+      () => parser.card({...row, 'cover_asset_key': '../unknown'}),
+      throwsFormatException,
+    );
+    expect(
+      () => parser.card({...row, 'is_official': false}),
+      throwsFormatException,
+    );
+    // Display-name edits alone never create an official designation.
+    expect(
+      parser
+          .card(
+            templateRowFixture()
+              ..['creator_display_name'] = 'Planets Community Official',
+          )
+          .isOfficial,
+      isFalse,
+    );
+  });
   test('narrow card projection needs no detail fields; globally private name stays absent', () {
     final row = templateRowFixture()
       ..remove('content_version')

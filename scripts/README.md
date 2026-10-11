@@ -6,6 +6,11 @@ domain verification and change-scoped validation tooling.
 - `generate-database-types.mjs` writes the canonical public TypeScript schema
   from the checkout's local Supabase stack. Never hand-edit its output.
 - `generate-*-local-config.mjs` prepares local client configuration.
+- `official-starter-inventory.mjs` emits read-only preflight/catalog-diff SQL
+  or verifies the actual anonymous public Workshop RPC. It has no mutation mode.
+  `verify-local-official-starter-templates.mjs` is the separate loopback-only
+  fixture/concurrency verifier composed by `proposal:verify:local`. See
+  [OST01 activation and ownership](../docs/development/official-starter-templates.md).
 - `verify-local-*.mjs` exercise each named domain against disposable synthetic
   local data. Root `package.json` maps commands; the
   [database guide](../docs/development/database.md) maps setup and checks.

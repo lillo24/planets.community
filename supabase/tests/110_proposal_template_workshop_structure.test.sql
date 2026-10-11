@@ -44,8 +44,8 @@ select ok(has_function_privilege('authenticated', 'public.get_own_proposal_templ
   'baseline has no anonymous or general staff/service path');
 select ok(to_regclass('private.proposal_templates_catalog_idx') is not null,
   'eligible catalog has an immutable paired keyset index');
-select is((select count(*) from pg_constraint where conrelid = 'private.proposal_templates'::regclass
-  and contype = 'u'), 1::bigint, 'source identity is unique');
+select ok(exists(select 1 from pg_constraint where conrelid = 'private.proposal_templates'::regclass
+  and contype = 'u' and conname='proposal_templates_source_proposal_id_key'), 'source identity is unique');
 select ok(not exists (select 1 from pg_constraint where conrelid in (
   'private.proposal_templates'::regclass, 'private.proposal_template_baselines'::regclass
 ) and contype = 'f' and confdeltype <> 'r'), 'existing restrictive retention is preserved');

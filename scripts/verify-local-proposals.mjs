@@ -18,6 +18,7 @@ const userBEmail = "proposal-integration-b@planets.invalid";
 await verifyProposals();
 await verifyProposalTemplateWorkshop();
 await verifyPublicIdeas();
+await import("./verify-local-official-starter-templates.mjs");
 
 async function verifyProposals() {
   const [userA, userB] = await Promise.all([

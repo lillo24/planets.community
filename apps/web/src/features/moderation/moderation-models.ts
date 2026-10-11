@@ -21,7 +21,7 @@ export type ModerationCaseSummary = Readonly<{
   targetKind: string;
   targetSummary: string;
   contextSummary: string | null;
-  subjectProfileId: string;
+  subjectProfileId: string | null;
   subjectDisplayName: string;
 }>;
 
@@ -86,7 +86,7 @@ export type ModerationCaseDetail = Readonly<{
   contextSummary: string | null;
   reporterProfileId: string;
   reporterDisplayName: string;
-  subjectProfileId: string;
+  subjectProfileId: string | null;
   subjectDisplayName: string;
   projectContextId: string | null;
   resourceListingContextId: string | null;
@@ -134,7 +134,10 @@ export function parseModerationQueue(data: unknown): ModerationCaseSummary[] {
       targetKind: bounded(row.target_kind, 80),
       targetSummary: bounded(row.target_summary, 200),
       contextSummary: optionalBounded(row.context_summary, 200),
-      subjectProfileId: uuid(row.subject_profile_id),
+      subjectProfileId:
+        row.target_kind === "proposal_template"
+          ? optionalUuid(row.subject_profile_id)
+          : uuid(row.subject_profile_id),
       subjectDisplayName: bounded(row.subject_display_name, 120),
     };
   });
@@ -159,7 +162,10 @@ export function parseModerationCase(
     contextSummary: optionalBounded(row.context_summary, 200),
     reporterProfileId: uuid(row.reporter_profile_id),
     reporterDisplayName: bounded(row.reporter_display_name, 120),
-    subjectProfileId: uuid(row.subject_profile_id),
+    subjectProfileId:
+      row.target_kind === "proposal_template"
+        ? optionalUuid(row.subject_profile_id)
+        : uuid(row.subject_profile_id),
     subjectDisplayName: bounded(row.subject_display_name, 120),
     projectContextId: optionalUuid(row.project_context_id),
     resourceListingContextId: optionalUuid(row.resource_listing_context_id),

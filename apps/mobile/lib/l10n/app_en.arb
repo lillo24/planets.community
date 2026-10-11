@@ -2076,7 +2076,10 @@
   "proposalDraftRecoveryError": "Draft recovery failed. Retry from My Proposals.",
   "workshopTitle": "Template Workshop",
   "workshopStartFromTemplate": "Start from a template",
-  "workshopContext": "Reuse ideas from completed one-time Proposals to start your own independent draft.",
+  "workshopContext": "Start your own independent draft from an official example or a completed community Proposal.",
+  "workshopDefault": "Default",
+  "workshopOfficialOrganization": "Organization · Planets Community Official",
+  "workshopOfficialExample": "An example by the Planets Community Official organization. Adapt it for your community; it does not represent a past activity.",
   "workshopCompleted": "From a completed Proposal",
   "workshopCreatorFallback": "Community creator",
   "workshopCreator": "Original creator: {name}",
@@ -2087,7 +2090,7 @@
       }
     }
   },
-  "workshopEmpty": "No completed Proposal templates are available yet.",
+  "workshopEmpty": "No templates are available right now.",
   "workshopNoMatches": "No templates match these filters.",
   "workshopReadError": "Templates could not be loaded. Retry to check availability.",
   "workshopLoadMore": "Load more",

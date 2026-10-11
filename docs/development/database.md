@@ -1,5 +1,10 @@
 # Database development
 
+[OST01](official-starter-templates.md) adds eight organization-owned examples
+through an additive migration, opt-in Workshop reads and the existing atomic
+application/reporting paths. Its operator inventory/readback tooling is
+read-only; shared activation remains a separately authorized action.
+
 The [POLICY01B acceptance contract](policy01b-server-acceptance.md) owns private
 Auth-account/version acknowledgements, registered bundles and authenticated
 read/explicit-accept RPCs. `policy:verify:local` exercises real profile-free OTP
