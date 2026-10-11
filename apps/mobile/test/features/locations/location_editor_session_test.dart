@@ -45,8 +45,9 @@ void main() {
             'p_expected_revision': 3,
             'p_city': 'Rovereto',
           });
-          if (scenario == 'denied')
+          if (scenario == 'denied') {
             throw const PostgrestException(message: 'Denied', code: '42501');
+          }
           return 4;
         });
         if (scenario == 'stale reread' || scenario == 'denied') {
