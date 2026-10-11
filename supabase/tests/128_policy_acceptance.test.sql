@@ -1,8 +1,8 @@
 begin;
 select no_plan();
 
-select has_table('private', 'policy_bundle_versions');
-select has_table('private', 'policy_acceptances');
+select has_table('private', 'policy_bundle_versions', 'private registry exists');
+select has_table('private', 'policy_acceptances', 'private acceptance records exist');
 select columns_are('private', 'policy_acceptances', array['account_id','bundle_version','accepted_at']);
 select ok((select relrowsecurity from pg_class where oid = 'private.policy_acceptances'::regclass), 'acceptances have RLS defense in depth');
 select ok((select relrowsecurity from pg_class where oid = 'private.policy_bundle_versions'::regclass), 'registry has RLS defense in depth');

@@ -56,8 +56,9 @@ void main() {
       'sb_publishable_synthetic_client',
       authOptions: const AuthClientOptions(autoRefreshToken: false),
       httpClient: MockClient((request) async {
-        if (!request.url.path.contains('/rpc/'))
+        if (!request.url.path.contains('/rpc/')) {
           return http.Response('{}', 200);
+        }
         requests.add(request);
         final response = await respond(request);
         return http.Response(
