@@ -239,9 +239,9 @@ void main() {
       );
       await tester.tap(find.byKey(const Key('nav-profile')));
       await tester.pumpAndSettle();
-      expect(router.routeInformationProvider.value.uri.path, '/profile');
+      expect(router.routerDelegate.state.uri.path, '/profile');
       await _tapVisible(tester, edit);
-      expect(router.routeInformationProvider.value.uri.path, '/profile/edit');
+      expect(router.routerDelegate.state.uri.path, '/profile/edit');
       expect(find.text(l10n.profileVisibilityTitle), findsOneWidget);
       for (final field in ProfileFieldKey.values) {
         expect(
