@@ -38,9 +38,14 @@ failure retains the authorized place with one fallback; denial erases it.
 Actual PNGs retain a 144dp detail height. No placeholder map is fabricated.
 
 Both List and Map use `MapViewButton`. List entry keeps prepare/unfocus/push;
-Map return keeps pop or the origin's existing List route fallback. Per-origin
-filters, scroll, family, reference, radius and camera ownership are unchanged.
-No new route branch is introduced.
+Map return keeps pop or the origin's existing List route fallback. UIFIX03
+adds the shared activity selector to Map and replaces the canonical origin when
+switching family. List/Create/Drafts/Back follow that selection without piling
+up Map pages. List filters and per-origin reference/radius/camera are preserved;
+normal same-origin List return also retains scroll. Area/filter detail is
+collapsed below the map, unavailable place inputs and diagnostic prose are
+absent, and concise basemap status plus pinned attribution remain visible.
+No new route branch or provider activation is introduced.
 
 ## Demo data and deferred work
 

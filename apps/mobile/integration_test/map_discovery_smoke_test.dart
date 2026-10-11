@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:planets_mobile/l10n/generated/app_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:planets_mobile/features/geographic_discovery/domain/geographic_discovery.dart';
@@ -54,7 +55,8 @@ void main() {
       await tapKey('map-open-projects');
       expect(app.geography.calls.single.query.kinds, {GeoKind.oneTime});
       expect(app.provider.tileCalls, isNotEmpty);
-      expect(find.textContaining('Synthetic tile fixture'), findsOneWidget);
+      expect(find.textContaining('Synthetic tile fixture'), findsNothing);
+      await capture('compact-project-map');
       await tapKey('map-pin-one_time:${mapFixtureId(1)}');
       expect(
         find.textContaining('Choose among 2 loaded results'),
@@ -66,6 +68,7 @@ void main() {
       expect(find.byType(ProposalDetailScreen), findsOneWidget);
       app.router.pop();
       await tester.pumpAndSettle();
+      await tapKey('map-options');
       await tapKey('map-family');
       await tester.tap(find.text('All').last);
       await tester.pumpAndSettle();
@@ -77,6 +80,7 @@ void main() {
         (app.geography.calls.last.query.area as GeoRadius).radiusMeters,
         10000,
       );
+      await tapKey('map-options');
       await tester.ensureVisible(find.byKey(const Key('public-point-map')));
       await tester.pumpAndSettle();
       final count = app.geography.calls.length;
@@ -90,6 +94,7 @@ void main() {
       expect(app.geography.calls.last.query.area, isA<GeoBounds>());
       await capture('all-viewport');
       await tapKey('map-back-radius');
+      await tapKey('map-options');
       await tester.ensureVisible(find.byKey(const Key('map-center-input')));
       await tester.pumpAndSettle();
       await tester.enterText(
@@ -115,8 +120,23 @@ void main() {
             .centerLabel,
         'Synthetic Bolzano',
       );
-      await tapKey('map-return-list');
-      app.router.go('/tavoli');
+      final switcher = find.byKey(const Key('browse-activity-switcher'));
+      final l = AppLocalizations.of(tester.element(switcher));
+      await tester.ensureVisible(switcher);
+      await tester.pumpAndSettle();
+      await tester.tap(
+        find.descendant(
+          of: switcher,
+          matching: find.text(l.browseTavoliChoice),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(app.router.routerDelegate.state.uri.path, '/discover/map/tavoli');
+      expect(app.geography.calls.last.query.kinds, {GeoKind.recurring});
+      await capture('map-family-switch');
+      await tester.binding.handlePopRoute();
+      await tester.pumpAndSettle();
+      expect(app.router.routerDelegate.state.uri.path, '/tavoli');
       app.locale.value = const Locale('it');
       await tester.pumpAndSettle();
       await tapKey('map-open-tavoli');
@@ -152,6 +172,11 @@ void main() {
         app.router.pop();
         await tester.pumpAndSettle();
       }
+      app.textScale = 2;
+      app.locale.value = const Locale('it');
+      app.router.go('/discover/map/projects');
+      await tester.pumpAndSettle();
+      await capture('compact-map-it-2x');
       expect(find.byType(LocationAttribution), findsOneWidget);
       expect(network.attempts, 0);
       expect(tester.takeException(), isNull);
