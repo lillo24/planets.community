@@ -1,5 +1,10 @@
 # Supabase database
 
+GRP01 adds private group identity/authority/receipts/suppression actions, narrow
+public/manager/staff RPCs and a genuine target in the existing reporting queue.
+See the [group contract](../docs/development/persistent-groups.md),
+`tests/129_persistent_groups.test.sql` and the focused HTTP/upgrade verifier.
+
 This folder owns the reproducible local PLANETS database and its security validation.
 
 IDEA01A adds a server-owned planning phase, deliberate public Idea publication,
@@ -164,7 +169,6 @@ transitions under the same validation rules as the Creator. Draft creation and
 publication remain original-Creator-only. Tests 068 and 069 cover the role
 model, provenance, stale issuer authority, lifecycle access, and participation
 independence.
-
 
 TW02 extends private moderation cases with a typed Proposal-template foreign
 key and separate immutable source/content-token provenance. The forward migration

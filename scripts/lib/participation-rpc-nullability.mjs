@@ -1,5 +1,5 @@
 // pg-meta cannot infer nullable RETURNS TABLE fields. Keep participation API
-// MSG01 typed-feed and opt-in Idea contracts accurate without changing unrelated records.
+// MSG01 typed-feed, opt-in Idea and group contracts accurate without changing unrelated records.
 const ideaLogistics = [
   "starts_at",
   "ends_at",
@@ -21,6 +21,11 @@ const ideaOwnFields = [
   "cancelled_at",
 ];
 export const participationRpcNullableFields = Object.freeze({
+  // GRP01 locality is optional in both public and owner projections.
+  get_public_group: ["locality"],
+  list_public_groups: ["locality"],
+  get_own_group: ["locality"],
+  list_own_groups: ["locality"],
   // OST01 organization provenance. Legacy public reads remain strict.
   list_public_proposal_templates_v2: [
     "source_proposal_id",

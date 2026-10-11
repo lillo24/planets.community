@@ -54,6 +54,16 @@ calls the existing real producer before that check; it does not manufacture
 events or weaken the assertion. Its short concurrency check is necessary to
 reproduce the TW05 defect on CI.
 
+GRP01 adds a populated upgrade rehearsal before clean replay and a focused
+group HTTP verifier after pgTAP. The rehearsal resets only the CI local stack,
+seeds existing fictional domains/reports and compares all old rows/columns after
+additive application; it is needed to cover the reporting constraint/function
+extension. The HTTP check covers concurrent retries, directory privacy and staff
+suppression. Both run in full `check:db`; the existing 25-minute budget, path
+classification, required-status aggregation and manual complete suite remain.
+Changes to shared package/workflow configuration select all four areas for this
+PR. No recurring deployment or hosted database job is introduced.
+
 # MAP01 location validation
 
 Database validation includes the authenticated location receipt/concurrency

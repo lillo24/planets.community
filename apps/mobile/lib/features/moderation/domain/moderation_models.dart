@@ -27,6 +27,7 @@ enum ModerationCategory {
 
 enum ModerationTargetKind {
   profile('profile'),
+  group('group'),
   project('project'),
   proposalTemplate('proposal_template'),
   projectChatMessage('project_chat_message'),
@@ -40,6 +41,7 @@ enum ModerationTargetKind {
 
   static ModerationTargetKind fromWire(String value) => switch (value) {
     'profile' => ModerationTargetKind.profile,
+    'group' => ModerationTargetKind.group,
     'project' => ModerationTargetKind.project,
     'proposal_template' => ModerationTargetKind.proposalTemplate,
     'project_chat_message' => ModerationTargetKind.projectChatMessage,
@@ -99,6 +101,7 @@ class ModerationReportTarget {
 
   bool get hasProjectContext =>
       kind != ModerationTargetKind.proposalTemplate &&
+      kind != ModerationTargetKind.group &&
       (kind == ModerationTargetKind.project ||
           kind == ModerationTargetKind.projectChatMessage ||
           contextKind == ModerationContextKind.project);
