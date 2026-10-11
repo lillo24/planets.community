@@ -45,6 +45,7 @@ class AppNavigationShell extends ConsumerWidget {
     final routeRoot = Uri(path: path).pathSegments.firstOrNull;
     final isBrowse = switch (routeRoot) {
       'proposals' || 'tavoli' || 'resources' || 'drafts' => true,
+      'discover' when path.startsWith('/discover/map/') => true,
       _ => false,
     };
     // The visible slot follows direct/pushed routes while active. Elsewhere it

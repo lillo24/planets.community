@@ -38,3 +38,21 @@ revocable protected scopes and lifecycle/auth invalidation), and
 presentation/read_only_basemap.dart (uncached native detail pixels/local overlays).
 The discovery GatewayTileProvider now shares compressed bytes while retaining
 route-owned ImageProvider resources. See [cache ownership and opt-in](../../../../../docs/development/map-cache01-shared-tiles.md).
+
+UIFIX03 keeps the shared Projects/Cultural Tables selector above List/Map on
+activity maps. Selecting a different family replaces the Browse location with
+its canonical origin; it does not stack Map routes. Create, Drafts, List and
+native Back then use that origin. The per-origin camera/reference/radius remain
+in RAM. Same-origin List return still pops and preserves scroll; family changes
+preserve List filter providers but open the selected family's List root. All
+uses every source's own filters and keeps its current origin for Create/Drafts;
+its activity selector has neither single family selected. Resources has no
+unrelated activity selector, and All/Resources remain available in Area & filters.
+
+The map precedes area/filter details. The disclosure contains radius, available
+place lookup, category and an applied-filter count/details with an Edit in List
+action. Unavailable place lookup mounts no input. Reference copy explicitly says
+not GPS. Basemap availability/failure is a concise, accessible notice over the
+canvas; fixture diagnostics, permanent result counts and explanatory essays are
+absent. Required attribution links stay pinned in SafeArea. Search this area,
+zoom, center, approximate pin labels, errors, Refresh and Load more are retained.
