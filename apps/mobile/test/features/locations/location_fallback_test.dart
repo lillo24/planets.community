@@ -145,7 +145,7 @@ void main() {
 
   for (final locale in ['en', 'it']) {
     testWidgets(
-      '$locale city-only public detail states absence without a hidden-place claim',
+      '$locale city-only public detail omits empty arrival instructions',
       (tester) async {
         final gateway = FakeProposalGateway()
           ..publicDetail = proposalDetailFixture(
@@ -166,15 +166,10 @@ void main() {
           ),
         );
         await tester.pumpAndSettle();
-        final message = find.byKey(
-          const Key('participation-public-meeting-proposal-1'),
-        );
-        await tester.scrollUntilVisible(message, 200);
+        await tester.scrollUntilVisible(find.byType(LocationPreviewPanel), 200);
         expect(
-          tester.widget<Text>(message).data,
-          locale == 'it'
-              ? 'Le istruzioni per il luogo preciso non sono ancora state aggiunte.'
-              : 'Precise meeting instructions have not been added yet.',
+          find.byKey(const Key('participation-public-meeting-proposal-1')),
+          findsNothing,
         );
         expect(
           find.byKey(const Key('participation-restricted-meeting-proposal-1')),

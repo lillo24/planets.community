@@ -648,8 +648,10 @@ void main() {
       await tester.pumpAndSettle();
       expect(
         find.text('Precise meeting instructions have not been added yet.'),
-        findsOneWidget,
+        findsNothing,
       );
+      expect(find.byKey(const Key('project-chat-meeting-text')), findsNothing);
+      expect(find.text('Meeting details'), findsNothing);
       expect(find.text('Meet beside the blue workshop door.'), findsNothing);
       expect(tester.takeException(), isNull);
     },

@@ -382,30 +382,26 @@ void main() {
     expect(participation.calls, contains('withdraw:request-1'));
   });
 
-  testWidgets(
-    'authorized point-only meeting shows absent instructions rather than a hidden-place promise',
-    (tester) async {
-      final participation = FakeParticipationGateway()
-        ..ownMemberships = [ownMembershipFixture()]
-        ..meetingDetails = meetingDetailsFixture(exactMeetingText: null);
-      final app = await _pump(tester, participation: participation);
-      app.read(appRouterProvider).go('/proposals/proposal-1');
-      await tester.pumpAndSettle();
-      final meeting = find.byKey(
-        const Key('participation-protected-meeting-proposal-1'),
-      );
-      await _scrollTo(tester, meeting);
-      expect(
-        tester.widget<Text>(meeting).data,
-        'Precise meeting instructions have not been added yet.',
-      );
-      expect(
-        find.byKey(const Key('participation-restricted-meeting-proposal-1')),
-        findsNothing,
-      );
-      expect(tester.takeException(), isNull);
-    },
-  );
+  testWidgets('authorized point-only meeting omits empty instructions', (
+    tester,
+  ) async {
+    final participation = FakeParticipationGateway()
+      ..ownMemberships = [ownMembershipFixture()]
+      ..meetingDetails = meetingDetailsFixture(exactMeetingText: null);
+    final app = await _pump(tester, participation: participation);
+    app.read(appRouterProvider).go('/proposals/proposal-1');
+    await tester.pumpAndSettle();
+    await _scrollTo(tester, find.text('You are participating'));
+    expect(
+      find.byKey(const Key('participation-protected-meeting-proposal-1')),
+      findsNothing,
+    );
+    expect(
+      find.byKey(const Key('participation-restricted-meeting-proposal-1')),
+      findsNothing,
+    );
+    expect(tester.takeException(), isNull);
+  });
 
   testWidgets('accepted member sees protected meeting data then can leave', (
     tester,

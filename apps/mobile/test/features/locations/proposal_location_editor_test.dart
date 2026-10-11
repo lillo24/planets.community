@@ -16,15 +16,22 @@ import 'package:planets_mobile/l10n/generated/app_localizations.dart';
 import '../../support/fake_location.dart';
 
 class Harness extends StatefulWidget {
-  const Harness({super.key, required this.handle, required this.formKey});
+  const Harness({
+    super.key,
+    required this.handle,
+    required this.formKey,
+    this.fresh = false,
+  });
   final LocationEditorHandle handle;
   final GlobalKey<FormState> formKey;
+  final bool fresh;
   @override
   State<Harness> createState() => HarnessState();
 }
 
 class HarnessState extends State<Harness> {
-  String city = 'Trento';
+  late String city = widget.fresh ? '' : 'Trento';
+  late String? savedId = widget.fresh ? null : 'proposal-1';
   final directions = TextEditingController();
   int saves = 0;
   @override
@@ -33,9 +40,10 @@ class HarnessState extends State<Harness> {
     child: SingleChildScrollView(
       child: ProposalLocationEditor(
         actorId: 'user-1',
-        itemId: () => 'proposal-1',
+        itemId: () => savedId,
         savePending: () async {
           saves++;
+          savedId = 'proposal-1';
           return 'proposal-1';
         },
         onCanonical: (value) => setState(() {
@@ -76,6 +84,7 @@ setup(
   FakeEditorPlaceFactory factory, {
   String language = 'en',
   double scale = 1,
+  bool fresh = false,
 }) async {
   final container = ProviderContainer(
     overrides: [
@@ -101,7 +110,7 @@ setup(
           child: child!,
         ),
         home: Scaffold(
-          body: Harness(handle: handle, formKey: formKey),
+          body: Harness(handle: handle, formKey: formKey, fresh: fresh),
         ),
       ),
     ),
@@ -139,6 +148,73 @@ Future<void> query(WidgetTester tester, String value) async {
 }
 
 void main() {
+  for (final language in ['en', 'it']) {
+    testWidgets(
+      '$language known manual authoring has no credits; provider results and retained labels do',
+      (tester) async {
+        tester.view.physicalSize = const Size(320, 740);
+        tester.view.devicePixelRatio = 1;
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
+        final db = FakeItemLocationGateway();
+        final factory = FakeEditorPlaceFactory()..gateway.available = false;
+        final (_, state, handle, _) = await setup(
+          tester,
+          db,
+          factory,
+          language: language,
+          fresh: true,
+        );
+        expect(find.byType(LocationAttribution), findsNothing);
+        await query(tester, 'Rovereto');
+        await tap(tester, 'proposal-confirm-manual-city');
+        expect(state.city, 'Rovereto');
+        expect(find.byType(LocationAttribution), findsNothing);
+        handle.contentSaved!();
+        await tester.pumpAndSettle();
+        expect(find.byType(LocationAttribution), findsNothing);
+        factory.gateway.available = true;
+        await query(tester, 'Trento');
+        expect(
+          find.byKey(const Key('location-result-locality')),
+          findsOneWidget,
+        );
+        expect(find.byType(LocationAttribution), findsOneWidget);
+        await tap(tester, 'proposal-cancel-place-edit');
+        expect(find.byType(LocationAttribution), findsNothing);
+        await query(tester, 'Trento');
+        await tap(tester, 'location-result-address');
+        expect(db.value.exactPlace, syntheticExact);
+        expect(find.byType(LocationAttribution), findsOneWidget);
+        await tap(tester, 'proposal-remove-exact');
+        expect(db.value.exactPlace, isNull);
+        expect(find.byType(LocationAttribution), findsOneWidget);
+        await query(tester, 'Rovereto');
+        await tap(tester, 'proposal-manual-city-options');
+        await tap(tester, 'proposal-confirm-manual-city');
+        expect(find.byType(LocationAttribution), findsOneWidget);
+        expect(tester.takeException(), isNull);
+        await tester.pumpWidget(const SizedBox());
+      },
+    );
+    testWidgets(
+      '$language restored text without coordinates retains ambiguous provenance credits',
+      (tester) async {
+        final factory = FakeEditorPlaceFactory()..gateway.available = false;
+        await setup(
+          tester,
+          FakeItemLocationGateway(),
+          factory,
+          language: language,
+        );
+        expect(find.byType(LocationAttribution), findsOneWidget);
+        await query(tester, 'Rovereto');
+        await tap(tester, 'proposal-confirm-manual-city');
+        expect(find.byType(LocationAttribution), findsOneWidget);
+        await tester.pumpWidget(const SizedBox());
+      },
+    );
+  }
   for (final language in ['en', 'it']) {
     for (final scale in [1.0, 2.0]) {
       testWidgets(

@@ -580,6 +580,11 @@ class _MeetingDetails extends ConsumerWidget {
     final l10n = AppLocalizations.of(context);
     final state = ref.watch(participantMeetingDetailsProvider);
     final belongs = state.projectId == summary.projectId;
+    final ready = belongs && state.phase == ParticipationLoadPhase.ready;
+    final instructions = ready ? state.details?.exactMeetingText?.trim() : null;
+    if (ready && (instructions == null || instructions.isEmpty)) {
+      return const SizedBox.shrink();
+    }
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -590,9 +595,9 @@ class _MeetingDetails extends ConsumerWidget {
         const SizedBox(height: AppSpacing.small),
         if (belongs && state.phase == ParticipationLoadPhase.loading)
           const Center(child: CircularProgressIndicator())
-        else if (belongs && state.phase == ParticipationLoadPhase.ready)
+        else if (ready)
           SelectableText(
-            state.details!.exactMeetingText ?? l10n.proposalExactNotChosen,
+            instructions!,
             key: const Key('project-chat-meeting-text'),
           )
         else ...[
