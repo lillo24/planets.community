@@ -535,6 +535,7 @@ class _MapDiscoveryScreenState extends ConsumerState<MapDiscoveryScreen>
               children: [
                 if (widget.origin != MapDiscoveryOrigin.resources) ...[
                   BrowseActivitySwitcher(
+                    showGroupsEntry: false,
                     selected: switch (_preferences.family) {
                       MapDiscoveryFamily.projects =>
                         BrowseActivityType.proposals,

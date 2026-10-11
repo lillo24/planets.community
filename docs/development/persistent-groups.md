@@ -1,7 +1,8 @@
 # GRP01 persistent groups backend
 
 GRP01 establishes durable registered group identities and canonical backend
-commands. Directory, registration and profile screens remain GRP02. Personal
+commands. GRP02 now supplies mobile directory, registration and profile screens,
+and protected web staff controls; see [the integration guide](grp02-groups-ui.md). Personal
 login, registered groups, Project participation and Project chats are separate.
 Groups may exist without Projects or members. Organization kind and volunteering
 focus are manager declarations, never accreditation or legal/ETS verification.
@@ -155,8 +156,8 @@ Other targets, including official templates without human subjects, are retained
 
 Mobile's exhaustive parser accepts `group` for own report history. Existing admin
 generic queue/detail accepts genuine group targets/subjects; separate protected
-RPCs supply group-specific inspection. GRP02 owns the public report entry point
-and additional group staff UI integration.
+RPCs supply group-specific inspection. GRP02 provides the public report entry
+point and protected group staff UI integration.
 
 Real creation, initial authority, loss of the manager reference, edits, lifecycle and suppression write
 identifier-only audit events (actor/group UUIDs and version). Group events keep

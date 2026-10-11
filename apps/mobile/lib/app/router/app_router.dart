@@ -7,6 +7,7 @@ import '../../core/widgets/page_app_bar.dart';
 import '../../features/geographic_discovery/domain/map_discovery.dart';
 import '../../features/geographic_discovery/presentation/map_discovery_screen.dart';
 import '../../features/auth/application/auth_command_controller.dart';
+import '../../features/auth/application/auth_routes.dart';
 import '../../features/auth/application/auth_session_controller.dart';
 import '../../features/auth/application/return_destination.dart';
 import '../../features/auth/domain/auth_models.dart';
@@ -17,6 +18,7 @@ import '../../features/policies/presentation/account_deletion_screen.dart';
 import '../../features/drafts/domain/draft_entry.dart';
 import '../../features/drafts/presentation/drafts_screen.dart';
 import '../../features/auth/presentation/request_code_screen.dart';
+import '../../features/auth/presentation/sign_in_screen.dart';
 import '../../features/auth/presentation/verify_code_screen.dart';
 import '../../features/blocking/presentation/blocked_users_screen.dart';
 import '../../features/help/presentation/bug_report_screen.dart';
@@ -37,6 +39,9 @@ import '../../features/notifications/presentation/notification_routes.dart';
 import '../../features/notifications/presentation/notifications_screen.dart';
 import '../../features/profile/presentation/profile_edit_screen.dart';
 import '../../features/profile/presentation/profile_screen.dart';
+import '../../features/groups/presentation/group_directory_screen.dart';
+import '../../features/groups/presentation/group_detail_screen.dart';
+import '../../features/groups/presentation/group_editor_screen.dart';
 import '../../features/project_chat/presentation/project_chat_info_screen.dart';
 import '../../features/project_chat/presentation/project_chat_screen.dart';
 import '../../features/project_delegates/presentation/project_coorganizers_screen.dart';
@@ -73,6 +78,7 @@ import '../../features/resource_requests/presentation/resource_request_screen.da
 import '../../features/resource_saved_searches/presentation/resource_saved_search_routes.dart';
 import '../../features/resource_saved_searches/presentation/resource_saved_searches_screen.dart';
 import '../../features/settings/presentation/settings_screen.dart';
+import '../../features/settings/presentation/messages_preview_screen.dart';
 import '../../features/settings/presentation/navigation_selection_screen.dart';
 import '../../l10n/generated/app_localizations.dart';
 import '../foundation_screen.dart';
@@ -144,8 +150,7 @@ RoutingConfig _routingConfig(
         }
         if (destination != null &&
             (current.uri.toString() == destination ||
-                ((current.uri.path == '/auth' ||
-                        current.uri.path == '/auth/verify' ||
+                ((AuthRoutes.isAuthPath(current.uri.path) ||
                         current.uri.path == '/profile/edit' ||
                         (current.uri.path == policyAcceptancePath &&
                             !(readPolicyAccepted?.call() ?? false))) &&
@@ -155,8 +160,7 @@ RoutingConfig _routingConfig(
         }
         if (cancelExternalAuth != null &&
             (pendingReader() != null ||
-                current.uri.path == '/auth' ||
-                current.uri.path == '/auth/verify')) {
+                AuthRoutes.isAuthPath(current.uri.path))) {
           committedNativeCancellation = cancelExternalAuth;
         }
       }
@@ -190,8 +194,7 @@ RoutingConfig _routingConfig(
         if (path != '/' &&
             path != '/welcome' &&
             path != '/intro' &&
-            path != '/auth' &&
-            path != '/auth/verify' &&
+            !AuthRoutes.isAuthPath(path) &&
             !startupFlow.hasEntered) {
           startupFlow.deferForExternalJourney();
         }
@@ -212,13 +215,16 @@ RoutingConfig _routingConfig(
           );
         }
       }
-      final isRequestRoute = path == '/auth';
       final isVerifyRoute = path == '/auth/verify';
-      final isAuthRoute = isRequestRoute || isVerifyRoute;
+      final isAuthRoute = AuthRoutes.isAuthPath(path);
       final isModerationRoute =
           path.startsWith('/profile/reports') ||
           path.startsWith('/profile/review-requests');
       final isProfileEditRoute = path == '/profile/edit';
+      final isGroupProtectedRoute =
+          path == '/groups/mine' ||
+          path == '/groups/create' ||
+          RegExp(r'^/groups/[^/]+/(edit|report)$').hasMatch(path);
       final isProposalManagementRoute =
           path == DraftRoutes.path ||
           path == WorkshopRoutes.catalog ||
@@ -262,7 +268,9 @@ RoutingConfig _routingConfig(
       }
 
       if (session.phase == AuthSessionPhase.signedOut &&
-          (isProfileEditRoute || isActivityManagementRoute)) {
+          (isProfileEditRoute ||
+              isActivityManagementRoute ||
+              isGroupProtectedRoute)) {
         return Uri(
           path: '/auth',
           queryParameters: {'returnTo': state.uri.toString()},
@@ -279,6 +287,8 @@ RoutingConfig _routingConfig(
             sanitizeReturnDestination(state.uri.queryParameters['returnTo']);
         final destinationPath = Uri.parse(destination).path;
         if (destinationPath == '/settings' ||
+            destinationPath == '/groups' ||
+            destinationPath.startsWith('/groups/') ||
             destinationPath == accountDeletionPath ||
             destinationPath == '/profile/blocked-users' ||
             destinationPath.startsWith('/profile/reports') ||
@@ -332,6 +342,14 @@ RoutingConfig _routingConfig(
               isProjectWorkspaceManagementRoute ||
               isMessagesRoute ||
               isNotificationsRoute)) {
+        return Uri(
+          path: '/profile/edit',
+          queryParameters: {'returnTo': state.uri.toString()},
+        ).toString();
+      }
+
+      if (session.phase == AuthSessionPhase.profileSetupRequired &&
+          isGroupProtectedRoute) {
         return Uri(
           path: '/profile/edit',
           queryParameters: {'returnTo': state.uri.toString()},
@@ -406,7 +424,7 @@ RoutingConfig _routingConfig(
           state.uri.queryParameters['returnTo'],
         );
         return Uri(
-          path: '/auth',
+          path: AuthRoutes.email,
           queryParameters: returnTo == '/' ? null : {'returnTo': returnTo},
         ).toString();
       }
@@ -458,8 +476,54 @@ RoutingConfig _routingConfig(
         builder: (context, state) => const _UnknownRouteScreen(),
       ),
       GoRoute(
-        path: '/auth',
+        path: '/groups',
+        builder: (context, state) => const GroupDirectoryScreen(),
+        routes: [
+          GoRoute(
+            path: 'mine',
+            builder: (context, state) => const OwnGroupsScreen(),
+          ),
+          GoRoute(
+            path: 'create',
+            onExit: draftDeparture?.onExit,
+            builder: (context, state) => GroupEditorScreen(key: state.pageKey),
+          ),
+          GoRoute(
+            path: ':groupId',
+            builder: (context, state) =>
+                GroupDetailScreen(id: state.pathParameters['groupId']!),
+            routes: [
+              GoRoute(
+                path: 'edit',
+                onExit: draftDeparture?.onExit,
+                builder: (context, state) => GroupEditorScreen(
+                  key: state.pageKey,
+                  id: state.pathParameters['groupId']!,
+                ),
+              ),
+              GoRoute(
+                path: 'report',
+                builder: (context, state) => GroupDetailScreen(
+                  id: state.pathParameters['groupId']!,
+                  report: true,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+      GoRoute(
+        path: AuthRoutes.entry,
+        builder: (context, state) => SignInScreen(
+          returnTo: sanitizeReturnDestination(
+            state.uri.queryParameters['returnTo'],
+          ),
+        ),
+      ),
+      GoRoute(
+        path: AuthRoutes.email,
         builder: (context, state) => RequestCodeScreen(
+          allowMethodBack: true,
           returnTo: sanitizeReturnDestination(
             state.uri.queryParameters['returnTo'],
           ),
@@ -602,6 +666,10 @@ RoutingConfig _routingConfig(
                     path: 'navigation',
                     builder: (context, state) =>
                         const NavigationSelectionScreen(),
+                  ),
+                  GoRoute(
+                    path: 'messages-preview',
+                    builder: (context, state) => const MessagesPreviewScreen(),
                   ),
                 ],
               ),

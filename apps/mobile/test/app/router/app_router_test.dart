@@ -71,38 +71,40 @@ void main() {
     expect(find.byKey(const Key('auth-email-field')), findsOneWidget);
   });
 
-  testWidgets('redirects an authenticated user away from auth routes', (
-    tester,
-  ) async {
-    final auth = FakeAuthGateway(
-      snapshot: const AuthSnapshot(identity: AuthIdentity(id: 'user-1')),
-    );
-    final profile = FakeProfileAnchorGateway()..exists = true;
-    addTearDown(auth.close);
-    final session = const AuthSessionState.ready(AuthIdentity(id: 'user-1'));
-    final router = createAppRouter(
-      readPolicyAccepted: () => true,
-      initialLocation: '/auth?returnTo=https://attacker.example',
-      readAuthSession: () => session,
-    );
-    addTearDown(router.dispose);
+  for (final path in ['/auth', '/auth/email']) {
+    testWidgets('redirects an authenticated user away from $path', (
+      tester,
+    ) async {
+      final auth = FakeAuthGateway(
+        snapshot: const AuthSnapshot(identity: AuthIdentity(id: 'user-1')),
+      );
+      final profile = FakeProfileAnchorGateway()..exists = true;
+      addTearDown(auth.close);
+      final session = const AuthSessionState.ready(AuthIdentity(id: 'user-1'));
+      final router = createAppRouter(
+        readPolicyAccepted: () => true,
+        initialLocation: '$path?returnTo=https://attacker.example',
+        readAuthSession: () => session,
+      );
+      addTearDown(router.dispose);
 
-    await tester.pumpWidget(
-      ProviderScope(
-        overrides: [
-          appConfigProvider.overrideWithValue(_testConfig()),
-          appRouterProvider.overrideWithValue(router),
-          authGatewayProvider.overrideWithValue(auth),
-          profileAnchorGatewayProvider.overrideWithValue(profile),
-        ],
-        child: const PlanetsApp(),
-      ),
-    );
-    await tester.pumpAndSettle();
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            appConfigProvider.overrideWithValue(_testConfig()),
+            appRouterProvider.overrideWithValue(router),
+            authGatewayProvider.overrideWithValue(auth),
+            profileAnchorGatewayProvider.overrideWithValue(profile),
+          ],
+          child: const PlanetsApp(),
+        ),
+      );
+      await tester.pumpAndSettle();
 
-    expect(find.byKey(const Key('home-planets-hero')), findsOneWidget);
-    expect(find.text('This page is not available.'), findsNothing);
-  });
+      expect(find.byKey(const Key('home-planets-hero')), findsOneWidget);
+      expect(find.text('This page is not available.'), findsNothing);
+    });
+  }
 
   testWidgets('requires Auth for profile editing with a safe return path', (
     tester,
@@ -173,49 +175,60 @@ void main() {
     );
   });
 
-  testWidgets('incomplete profile keeps the exact Messages completion path', (
-    tester,
-  ) async {
-    final auth = FakeAuthGateway(
-      snapshot: const AuthSnapshot(identity: AuthIdentity(id: 'user-1')),
-    );
-    final profile = FakeProfileAnchorGateway()
-      ..readiness = ProfileAnchorReadiness.incomplete;
-    addTearDown(auth.close);
-    const session = AuthSessionState.profileSetupRequired(
-      AuthIdentity(id: 'user-1'),
-      hasProfileAnchor: true,
-    );
-    const destination = '/messages/chats/chat-9';
-    final router = createAppRouter(
-      readPolicyAccepted: () => true,
-      initialLocation: destination,
-      readAuthSession: () => session,
-    );
-    addTearDown(router.dispose);
+  for (final emailEntry in [false, true]) {
+    testWidgets(
+      'incomplete profile keeps Messages completion: emailEntry=$emailEntry',
+      (tester) async {
+        final auth = FakeAuthGateway(
+          snapshot: const AuthSnapshot(identity: AuthIdentity(id: 'user-1')),
+        );
+        final profile = FakeProfileAnchorGateway()
+          ..readiness = ProfileAnchorReadiness.incomplete;
+        addTearDown(auth.close);
+        const session = AuthSessionState.profileSetupRequired(
+          AuthIdentity(id: 'user-1'),
+          hasProfileAnchor: true,
+        );
+        const destination = '/messages/chats/chat-9';
+        final router = createAppRouter(
+          readPolicyAccepted: () => true,
+          initialLocation: emailEntry
+              ? Uri(
+                  path: '/auth/email',
+                  queryParameters: {'returnTo': destination},
+                ).toString()
+              : destination,
+          readAuthSession: () => session,
+        );
+        addTearDown(router.dispose);
 
-    await tester.pumpWidget(
-      ProviderScope(
-        overrides: [
-          appConfigProvider.overrideWithValue(_testConfig()),
-          appRouterProvider.overrideWithValue(router),
-          authGatewayProvider.overrideWithValue(auth),
-          profileAnchorGatewayProvider.overrideWithValue(profile),
-          profileGatewayProvider.overrideWithValue(
-            FakeProfileGateway(data: profileFixture(complete: false)),
+        await tester.pumpWidget(
+          ProviderScope(
+            overrides: [
+              appConfigProvider.overrideWithValue(_testConfig()),
+              appRouterProvider.overrideWithValue(router),
+              authGatewayProvider.overrideWithValue(auth),
+              profileAnchorGatewayProvider.overrideWithValue(profile),
+              profileGatewayProvider.overrideWithValue(
+                FakeProfileGateway(data: profileFixture(complete: false)),
+              ),
+            ],
+            child: const PlanetsApp(),
           ),
-        ],
-        child: const PlanetsApp(),
-      ),
-    );
-    await tester.pumpAndSettle();
+        );
+        await tester.pumpAndSettle();
 
-    expect(find.byKey(const Key('profile-display-name-field')), findsOneWidget);
-    expect(
-      router.routeInformationProvider.value.uri.queryParameters['returnTo'],
-      destination,
+        expect(
+          find.byKey(const Key('profile-display-name-field')),
+          findsOneWidget,
+        );
+        expect(
+          router.routeInformationProvider.value.uri.queryParameters['returnTo'],
+          destination,
+        );
+      },
     );
-  });
+  }
 }
 
 AppConfig _testConfig() => AppConfig.fromValues(

@@ -209,3 +209,11 @@ That test-only flag selects the real launcher and expects a visible failure whil
 retaining the draft. Do not disable apps on the founder's retained demo device.
 Neither mode sends mail or proves delivery; native composer cancellation with a
 configured account and native iOS handoff still need their own device checks.
+
+## GRP02 registered groups
+
+The repeatable real local Auth/PostgREST journey and screenshot driver are
+documented in `docs/development/grp02-groups-ui.md` at the repository root.
+Use `prepare_groups_smoke.mjs`, `groups_smoke_test.dart` and
+`test_driver/groups_screenshots.dart` with a confirmed disposable loopback stack.
+Fixtures require no personal photo and never use a hosted account or service role.

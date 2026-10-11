@@ -191,8 +191,10 @@ class _ChatsTabState extends ConsumerState<_ChatsTab> {
                   child: LayoutBuilder(
                     builder: (context, constraints) => SingleChildScrollView(
                       physics: const AlwaysScrollableScrollPhysics(),
-                      child: SizedBox(
-                        height: constraints.maxHeight,
+                      child: ConstrainedBox(
+                        constraints: BoxConstraints(
+                          minHeight: constraints.maxHeight,
+                        ),
                         child: EmptyState(
                           title: scope == MessageChatScope.private
                               ? l10n.messageChatsPrivateEmptyTitle
@@ -501,8 +503,8 @@ class _RequestsTab extends ConsumerWidget {
         child: LayoutBuilder(
           builder: (context, constraints) => SingleChildScrollView(
             physics: const AlwaysScrollableScrollPhysics(),
-            child: SizedBox(
-              height: constraints.maxHeight,
+            child: ConstrainedBox(
+              constraints: BoxConstraints(minHeight: constraints.maxHeight),
               child: EmptyState(
                 title: l10n.messagesEmptyTitle,
                 message: l10n.messagesEmptyMessage,

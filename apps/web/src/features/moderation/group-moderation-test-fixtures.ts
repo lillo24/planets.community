@@ -1,0 +1,20 @@
+const id = "00000000-0000-4000-8000-000000000001";
+export const groupRow = () => ({
+  group_id: id,
+  name: "Fictional garden",
+  description: "A fictional shared garden.",
+  group_kind: "organization",
+  locality: null,
+  volunteering_focus: true,
+  publication_state: "published",
+  directory_suppressed: false,
+  publicly_available: true,
+  version: 3,
+  report_version: 1,
+  content_changed: true,
+  original_actor_id: id,
+  manager_profile_id: null,
+  created_at: "2026-10-11T10:00:00Z",
+  updated_at: "2026-10-11T10:00:00Z",
+  latest_suppression_action: null,
+});

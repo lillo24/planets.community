@@ -9,46 +9,66 @@ class BrowseActivitySwitcher extends StatelessWidget {
   const BrowseActivitySwitcher({
     required this.selected,
     this.onChanged,
+    this.showGroupsEntry = true,
     super.key,
   });
 
   final BrowseActivityType? selected;
   final ValueChanged<BrowseActivityType>? onChanged;
 
+  /// List Browse pages expose Groups; the contextual Map keeps its compact
+  /// family controls so large text still leaves a useful map visible.
+  final bool showGroupsEntry;
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    return SizedBox(
-      width: double.infinity,
-      child: SegmentedButton<BrowseActivityType>(
-        key: const Key('browse-activity-switcher'),
-        segments: [
-          ButtonSegment(
-            value: BrowseActivityType.proposals,
-            label: Text(l10n.browseProposalsChoice),
-            icon: const Icon(Icons.event_outlined),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        SizedBox(
+          width: double.infinity,
+          child: SegmentedButton<BrowseActivityType>(
+            key: const Key('browse-activity-switcher'),
+            segments: [
+              ButtonSegment(
+                value: BrowseActivityType.proposals,
+                label: Text(l10n.browseProposalsChoice),
+                icon: const Icon(Icons.event_outlined),
+              ),
+              ButtonSegment(
+                value: BrowseActivityType.tavoli,
+                label: Text(l10n.browseTavoliChoice),
+                icon: const Icon(Icons.autorenew),
+              ),
+            ],
+            selected: {?selected},
+            emptySelectionAllowed: selected == null,
+            onSelectionChanged: (selection) {
+              if (onChanged != null) {
+                onChanged!(selection.single);
+                return;
+              }
+              switch (selection.single) {
+                case BrowseActivityType.proposals:
+                  context.go('/proposals');
+                case BrowseActivityType.tavoli:
+                  context.go('/tavoli');
+              }
+            },
           ),
-          ButtonSegment(
-            value: BrowseActivityType.tavoli,
-            label: Text(l10n.browseTavoliChoice),
-            icon: const Icon(Icons.autorenew),
+        ),
+        if (showGroupsEntry)
+          Align(
+            alignment: AlignmentDirectional.centerStart,
+            child: TextButton.icon(
+              key: const Key('browse-groups'),
+              onPressed: () => context.push('/groups'),
+              icon: const Icon(Icons.groups_outlined),
+              label: Text(l10n.groupsTitle),
+            ),
           ),
-        ],
-        selected: {?selected},
-        emptySelectionAllowed: selected == null,
-        onSelectionChanged: (selection) {
-          if (onChanged != null) {
-            onChanged!(selection.single);
-            return;
-          }
-          switch (selection.single) {
-            case BrowseActivityType.proposals:
-              context.go('/proposals');
-            case BrowseActivityType.tavoli:
-              context.go('/tavoli');
-          }
-        },
-      ),
+      ],
     );
   }
 }

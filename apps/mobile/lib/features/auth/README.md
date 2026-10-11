@@ -22,7 +22,16 @@ feature never persists a parallel signed-in flag, email address, or OTP value.
   resend, provider, profile-retry, and sign-out commands. Its `_completeSignIn`
   routine owns shared profile-anchor/readiness completion.
 - `application/return_destination.dart` sanitizes optional in-app return paths.
-- `presentation/` contains the request, verification, and root status UI.
+- `application/auth_routes.dart` identifies the exact three Auth routes for
+  shared redirect, startup and native-link guards.
+- `presentation/sign_in_screen.dart` chooses methods only when Google is available;
+  otherwise it reuses the direct email form.
+- `presentation/google_sign_in_button.dart` owns the accessible localized Google
+  action, using the bundled official G and Google Sans Medium. See the
+  [asset provenance and license](../../../assets/brand/google/README.md).
+- `presentation/request_code_screen.dart` owns explicit email requests;
+  `verify_code_screen.dart` owns code entry and existing retry/resend behavior.
+- `presentation/auth_status.dart` owns session restoration and readiness status.
 - `presentation/account_sign_out_action.dart` is the shared destructive
   Profile/Settings action using the existing command busy/error state.
 
@@ -43,6 +52,19 @@ Auth owns readiness, not profile editing. Skeletal anchors continue to the
 Profile feature, while missing anchors retain the focused creation retry.
 
 ## Social sign-in readiness
+
+`/auth` is method choice only when the adapter exposes Google. Its email action
+opens `/auth/email` without calling Google or requesting a code. Without Google,
+`/auth` retains the direct OTP form; `/auth/email` also supports direct entry.
+Only explicit Send requests a code and opens `/auth/verify`. Verification Back
+and Use a different email reset pending OTP/cooldown and return to `/auth/email`,
+retaining the sanitized internal `returnTo` and any canonical session.
+Email Back returns to method choice when Google is available; otherwise it
+cancels to the existing safe public destination. Close always cancels there.
+All three routes share session, policy, profile and startup guards. Protected
+Project/participation, Messages and invitation continuations survive each step.
+Duplicate native links retain the current form; committed different links
+invalidate old requests, including before a pending OTP exists.
 
 AUTH01A prepared provider-neutral infrastructure. AUTH01B1 implements Android
 Google code with `google_sign_in 7.2.0`. **External Google activation remains
