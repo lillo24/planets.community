@@ -19,9 +19,14 @@ The five existing staging keys are still required by distribution preflight.
 
 `providerAuthAdapterProvider` exposes Google only on native Android with valid
 configuration. Apple, iOS, desktop and web remain unavailable. Availability never
-initializes the SDK or contacts a service. The request-code screen conditionally
-adds the localized Google action and separator, keeping the OTP form. It delegates
-to `AuthCommandController.signInWithProvider`; Supabase UUID, profile-anchor
+initializes the SDK or contacts a service. AUTH01B3 makes `/auth` a method chooser
+when Google is available, with a bundled official multicolor G and Google Sans
+Medium in the localized bordered button. Its email action opens `/auth/email`
+without sending a code. Without Google, `/auth` retains direct OTP entry.
+Verification Back returns to `/auth/email`; all three routes share existing
+session, policy, profile, startup and native-link guards and sanitized `returnTo`.
+See [asset provenance and license](../../apps/mobile/assets/brand/google/README.md).
+The Google action delegates to `AuthCommandController.signInWithProvider`; Supabase UUID, profile-anchor
 creation/readiness, policy/startup routing and protected `returnTo` use the shared
 completion path. No separate Google profile or signed-in flag is created.
 
@@ -76,10 +81,10 @@ session already established by Supabase; test native dismissal/late session even
 
 1. In Google Auth Platform, select the intended project and configure Branding,
    Audience/test users and the basic identity scopes above. Complete applicable
-   brand/audience verification before broader use. The current localized action
-   is text-only with no invented Google logo; review it against the
+   brand/audience verification before broader use. Review the bundled localized
+   button against the
    [current branding requirements](https://developers.google.com/identity/branding-guidelines)
-   and supply approved button assets/presentation before public activation.
+   before public activation; code/UI validation does not verify account state.
 2. Create an **Android OAuth client** for the permanent package
    **`community.planets.app`**. For Play-installed builds register the **Play App
    Signing app-signing certificate SHA-1**, obtained from Play Console's app

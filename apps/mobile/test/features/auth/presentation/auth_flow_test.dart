@@ -3,6 +3,7 @@ import '../../../support/fake_policy.dart';
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:planets_mobile/app/planets_app.dart';
@@ -14,51 +15,290 @@ import 'package:planets_mobile/features/auth/data/auth_gateway.dart';
 import 'package:planets_mobile/features/auth/data/provider_auth_adapter.dart';
 import 'package:planets_mobile/features/auth/domain/auth_models.dart';
 import 'package:planets_mobile/features/auth/domain/provider_auth.dart';
+import 'package:planets_mobile/features/auth/presentation/google_sign_in_button.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../support/fake_auth.dart';
 
 void main() {
-  testWidgets('Google action is accessible at 320dp with Italian large text', (
-    tester,
-  ) async {
-    tester.view.physicalSize = const Size(320, 800);
-    tester.view.devicePixelRatio = 1;
-    tester.platformDispatcher.textScaleFactorTestValue = 2;
-    tester.platformDispatcher.localesTestValue = const [Locale('it')];
-    addTearDown(tester.view.resetPhysicalSize);
-    addTearDown(tester.view.resetDevicePixelRatio);
-    addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
-    addTearDown(tester.platformDispatcher.clearLocalesTestValue);
-    final semantics = tester.ensureSemantics();
-    final auth = FakeAuthGateway();
-    addTearDown(auth.close);
-    await _pumpApp(
-      tester,
-      auth,
-      FakeProfileAnchorGateway(),
-      provider: FakeProviderAuthAdapter(),
-    );
-    await _openAuth(tester);
-    await tester.pumpAndSettle();
-    final button = find.byKey(const Key('auth-google-button'));
-    await tester.ensureVisible(button);
-    expect(find.text('Continua con Google'), findsOneWidget);
-    expect(
-      tester.getSemantics(button),
-      matchesSemantics(
-        label: 'Continua con Google',
-        isButton: true,
-        hasTapAction: true,
-        hasFocusAction: true,
-        hasEnabledState: true,
-        isEnabled: true,
-        isFocusable: true,
-      ),
-    );
-    expect(tester.takeException(), isNull);
-    semantics.dispose();
-  });
+  testWidgets(
+    'method choice uses bundled Google mark and explicit email navigation',
+    (tester) async {
+      final auth = FakeAuthGateway();
+      final provider = FakeProviderAuthAdapter();
+      addTearDown(auth.close);
+      final app = await _pumpApp(
+        tester,
+        auth,
+        FakeProfileAnchorGateway(),
+        provider: provider,
+      );
+      final router = app.read(appRouterProvider);
+      router.go('/auth?returnTo=%2Fmessages%2Fchats%2Fchat-9');
+      await tester.pumpAndSettle();
+      final mark = tester.widget<Image>(
+        find.descendant(
+          of: find.byKey(const Key('auth-google-button')),
+          matching: find.byType(Image),
+        ),
+      );
+      expect(
+        (mark.image as AssetImage).assetName,
+        GoogleSignInButton.markAsset,
+      );
+      expect(mark.width, 18);
+      expect(mark.height, 18);
+      expect(
+        tester.getSize(find.byKey(const Key('auth-google-button'))).height,
+        greaterThanOrEqualTo(48),
+      );
+      expect(find.byKey(const Key('auth-email-field')), findsNothing);
+      expect(find.byKey(const Key('auth-request-button')), findsNothing);
+      expect(find.textContaining('6-digit'), findsNothing);
+      await tester.tap(find.byKey(const Key('auth-email-method-button')));
+      await tester.pumpAndSettle();
+      expect(router.state.uri.path, '/auth/email');
+      expect(
+        router.state.uri.queryParameters['returnTo'],
+        '/messages/chats/chat-9',
+      );
+      expect(find.byKey(const Key('auth-email-field')), findsOneWidget);
+      expect(find.byKey(const Key('auth-google-button')), findsNothing);
+      expect(auth.requestCount, 0);
+      expect(provider.signInCount, 0);
+      await tester.binding.handlePopRoute();
+      await tester.pumpAndSettle();
+      expect(router.state.uri.path, '/auth');
+      expect(
+        router.state.uri.queryParameters['returnTo'],
+        '/messages/chats/chat-9',
+      );
+      await tester.tap(find.byKey(const Key('auth-close-button')));
+      await tester.pumpAndSettle();
+      expect(router.state.uri.path, '/messages');
+    },
+  );
+
+  for (final google in [false, true]) {
+    for (final systemBack in [false, true]) {
+      testWidgets(
+        'verify returns to email: Google=$google systemBack=$systemBack',
+        (tester) async {
+          final auth = FakeAuthGateway();
+          final provider = FakeProviderAuthAdapter();
+          addTearDown(auth.close);
+          final app = await _pumpApp(
+            tester,
+            auth,
+            FakeProfileAnchorGateway(),
+            provider: google ? provider : null,
+          );
+          final router = app.read(appRouterProvider);
+          router.go('/auth/email?returnTo=%2Fmessages%2Fchats%2Fchat-9');
+          await tester.pumpAndSettle();
+          expect(auth.requestCount, 0);
+          await tester.enterText(
+            find.byKey(const Key('auth-email-field')),
+            'synthetic@planets.invalid',
+          );
+          await tester.tap(find.byKey(const Key('auth-request-button')));
+          await tester.pumpAndSettle();
+          expect(router.state.uri.path, '/auth/verify');
+          expect(
+            app.read(pendingEmailOtpProvider)?.returnTo,
+            '/messages/chats/chat-9',
+          );
+          expect(app.read(authCommandProvider).resendAvailableAt, isNotNull);
+          if (systemBack) {
+            await tester.binding.handlePopRoute();
+          } else {
+            final back = find.byKey(const Key('auth-verify-back-button'));
+            await tester.ensureVisible(back);
+            await tester.tap(back);
+          }
+          await tester.pumpAndSettle();
+          expect(router.state.uri.path, '/auth/email');
+          expect(
+            router.state.uri.queryParameters['returnTo'],
+            '/messages/chats/chat-9',
+          );
+          expect(find.byKey(const Key('auth-email-field')), findsOneWidget);
+          expect(find.byKey(const Key('auth-google-button')), findsNothing);
+          expect(app.read(pendingEmailOtpProvider), isNull);
+          expect(app.read(authCommandProvider).resendAvailableAt, isNull);
+          expect(auth.requestCount, 1);
+          expect(auth.verifyCount, 0);
+          expect(provider.signInCount, 0);
+          await tester.tap(find.byKey(const Key('auth-close-button')));
+          await tester.pumpAndSettle();
+          expect(router.state.uri.path, '/messages');
+        },
+      );
+    }
+  }
+
+  testWidgets(
+    'email Back abandons in-flight request and ignores its late completion',
+    (tester) async {
+      final pending = Completer<void>();
+      final auth = FakeAuthGateway()..requestDelay = pending.future;
+      addTearDown(auth.close);
+      final app = await _pumpApp(
+        tester,
+        auth,
+        FakeProfileAnchorGateway(),
+        provider: FakeProviderAuthAdapter(),
+      );
+      final router = app.read(appRouterProvider);
+      router.go('/auth/email?returnTo=%2Fsettings');
+      await tester.pumpAndSettle();
+      await tester.enterText(
+        find.byKey(const Key('auth-email-field')),
+        'synthetic@planets.invalid',
+      );
+      await tester.tap(find.byKey(const Key('auth-request-button')));
+      await tester.pump();
+      await tester.binding.handlePopRoute();
+      await tester.pumpAndSettle();
+      expect(router.state.uri.path, '/auth');
+      pending.complete();
+      await tester.pumpAndSettle();
+      expect(router.state.uri.path, '/auth');
+      expect(app.read(pendingEmailOtpProvider), isNull);
+    },
+  );
+
+  testWidgets(
+    'OTP-only direct email Back cancels; hostile returnTo stays internal',
+    (tester) async {
+      final auth = FakeAuthGateway();
+      addTearDown(auth.close);
+      final app = await _pumpApp(tester, auth, FakeProfileAnchorGateway());
+      final router = app.read(appRouterProvider);
+      router.go('/auth/email?returnTo=https%3A%2F%2Fattacker.invalid');
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('auth-email-field')), findsOneWidget);
+      expect(find.byKey(const Key('auth-email-back-button')), findsNothing);
+      await tester.binding.handlePopRoute();
+      await tester.pumpAndSettle();
+      expect(router.state.uri.path, '/welcome');
+      expect(auth.requestCount, 0);
+    },
+  );
+
+  for (final language in ['en', 'it']) {
+    for (final brightness in Brightness.values) {
+      testWidgets('chooser is accessible at 320dp/2x: $language $brightness', (
+        tester,
+      ) async {
+        tester.view.physicalSize = const Size(320, 800);
+        tester.view.devicePixelRatio = 1;
+        tester.platformDispatcher.textScaleFactorTestValue = 2;
+        tester.platformDispatcher.localesTestValue = [Locale(language)];
+        tester.platformDispatcher.platformBrightnessTestValue = brightness;
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
+        addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+        addTearDown(tester.platformDispatcher.clearLocalesTestValue);
+        addTearDown(tester.platformDispatcher.clearPlatformBrightnessTestValue);
+        final semantics = tester.ensureSemantics();
+        final auth = FakeAuthGateway();
+        addTearDown(auth.close);
+        await _pumpApp(
+          tester,
+          auth,
+          FakeProfileAnchorGateway(),
+          provider: FakeProviderAuthAdapter(),
+        );
+        await _openAuth(tester);
+        await tester.pumpAndSettle();
+        final button = find.byKey(const Key('auth-google-button'));
+        await tester.ensureVisible(button);
+        final googleLabel = language == 'it'
+            ? 'Continua con Google'
+            : 'Continue with Google';
+        final emailLabel = language == 'it'
+            ? 'oppure accedi con email e codice OTP'
+            : 'or sign in with your email + OTP';
+        expect(find.text(googleLabel), findsOneWidget);
+        expect(
+          tester.getSemantics(button),
+          matchesSemantics(
+            label: googleLabel,
+            isButton: true,
+            hasTapAction: true,
+            hasFocusAction: true,
+            hasEnabledState: true,
+            isEnabled: true,
+            isFocusable: true,
+          ),
+        );
+        final email = find.byKey(const Key('auth-email-method-button'));
+        expect(tester.getSize(email).height, greaterThanOrEqualTo(48));
+        expect(
+          tester.getSemantics(email),
+          matchesSemantics(
+            label: emailLabel,
+            isButton: true,
+            hasTapAction: true,
+            hasFocusAction: true,
+            hasEnabledState: true,
+            isEnabled: true,
+            isFocusable: true,
+          ),
+        );
+        final mark = find.descendant(of: button, matching: find.byType(Image));
+        expect(tester.getSize(mark), const Size(18, 18));
+        expect(tester.getRect(button).left, greaterThanOrEqualTo(0));
+        expect(tester.getRect(button).right, lessThanOrEqualTo(320));
+        Focus.of(tester.element(find.text(googleLabel))).requestFocus();
+        await tester.pump();
+        await tester.sendKeyEvent(LogicalKeyboardKey.tab);
+        await tester.pump();
+        expect(
+          Focus.of(tester.element(find.text(emailLabel))).hasFocus,
+          isTrue,
+        );
+        await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+        await tester.pumpAndSettle();
+        expect(find.byKey(const Key('auth-email-field')), findsOneWidget);
+        final emailBack = find.byKey(const Key('auth-email-back-button'));
+        await tester.ensureVisible(emailBack);
+        await tester.pumpAndSettle();
+        await tester.tap(emailBack);
+        await tester.pumpAndSettle();
+        expect(find.byKey(const Key('auth-google-button')), findsOneWidget);
+        expect(auth.requestCount, 0);
+        expect(tester.takeException(), isNull);
+        semantics.dispose();
+      });
+    }
+  }
+
+  testWidgets(
+    'direct email waits for restoration recovery without starting auth',
+    (tester) async {
+      final auth = FakeAuthGateway()
+        ..snapshotError = StateError('synthetic restore failure');
+      addTearDown(auth.close);
+      final app = await _pumpApp(tester, auth, FakeProfileAnchorGateway());
+      final router = app.read(appRouterProvider);
+      router.go('/auth/email?returnTo=%2Fprofile%2Fedit');
+      await tester.pumpAndSettle();
+      expect(
+        app.read(authSessionProvider).phase,
+        AuthSessionPhase.restorationFailed,
+      );
+      expect(find.byKey(const Key('auth-email-field')), findsNothing);
+      auth.snapshotError = null;
+      await tester.tap(find.text('Try again'));
+      await tester.pumpAndSettle();
+      expect(router.state.uri.path, '/auth/email');
+      expect(router.state.uri.queryParameters['returnTo'], '/profile/edit');
+      expect(find.byKey(const Key('auth-email-field')), findsOneWidget);
+      expect(auth.requestCount, 0);
+    },
+  );
 
   testWidgets(
     'Google tap uses shared command; busy, cancellation and safe failure',
@@ -75,7 +315,9 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text('Continue with Google'), findsOneWidget);
       expect(find.textContaining('Apple'), findsNothing);
-      expect(find.text('or continue with email'), findsOneWidget);
+      expect(find.text('or sign in with your email + OTP'), findsOneWidget);
+      expect(find.byKey(const Key('auth-email-field')), findsNothing);
+      expect(find.byKey(const Key('auth-request-button')), findsNothing);
       final button = find.byKey(const Key('auth-google-button'));
       await tester.ensureVisible(button);
       await tester.tap(button);
@@ -84,13 +326,9 @@ void main() {
       expect(tester.widget<OutlinedButton>(button).onPressed, isNull);
       expect(
         tester
-            .widget<TextFormField>(find.byKey(const Key('auth-email-field')))
-            .enabled,
-        isFalse,
-      );
-      expect(
-        tester
-            .widget<FilledButton>(find.byKey(const Key('auth-request-button')))
+            .widget<TextButton>(
+              find.byKey(const Key('auth-email-method-button')),
+            )
             .onPressed,
         isNull,
       );
@@ -334,7 +572,7 @@ void main() {
 
     await tester.binding.handlePopRoute();
     await tester.pumpAndSettle();
-    expect(router.routeInformationProvider.value.uri.path, '/auth');
+    expect(router.routeInformationProvider.value.uri.path, '/auth/email');
     expect(
       router.routeInformationProvider.value.uri.queryParameters['returnTo'],
       '/profile/edit',

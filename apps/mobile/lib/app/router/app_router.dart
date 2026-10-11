@@ -7,6 +7,7 @@ import '../../core/widgets/page_app_bar.dart';
 import '../../features/geographic_discovery/domain/map_discovery.dart';
 import '../../features/geographic_discovery/presentation/map_discovery_screen.dart';
 import '../../features/auth/application/auth_command_controller.dart';
+import '../../features/auth/application/auth_routes.dart';
 import '../../features/auth/application/auth_session_controller.dart';
 import '../../features/auth/application/return_destination.dart';
 import '../../features/auth/domain/auth_models.dart';
@@ -17,6 +18,7 @@ import '../../features/policies/presentation/account_deletion_screen.dart';
 import '../../features/drafts/domain/draft_entry.dart';
 import '../../features/drafts/presentation/drafts_screen.dart';
 import '../../features/auth/presentation/request_code_screen.dart';
+import '../../features/auth/presentation/sign_in_screen.dart';
 import '../../features/auth/presentation/verify_code_screen.dart';
 import '../../features/blocking/presentation/blocked_users_screen.dart';
 import '../../features/help/presentation/bug_report_screen.dart';
@@ -144,8 +146,7 @@ RoutingConfig _routingConfig(
         }
         if (destination != null &&
             (current.uri.toString() == destination ||
-                ((current.uri.path == '/auth' ||
-                        current.uri.path == '/auth/verify' ||
+                ((AuthRoutes.isAuthPath(current.uri.path) ||
                         current.uri.path == '/profile/edit' ||
                         (current.uri.path == policyAcceptancePath &&
                             !(readPolicyAccepted?.call() ?? false))) &&
@@ -155,8 +156,7 @@ RoutingConfig _routingConfig(
         }
         if (cancelExternalAuth != null &&
             (pendingReader() != null ||
-                current.uri.path == '/auth' ||
-                current.uri.path == '/auth/verify')) {
+                AuthRoutes.isAuthPath(current.uri.path))) {
           committedNativeCancellation = cancelExternalAuth;
         }
       }
@@ -190,8 +190,7 @@ RoutingConfig _routingConfig(
         if (path != '/' &&
             path != '/welcome' &&
             path != '/intro' &&
-            path != '/auth' &&
-            path != '/auth/verify' &&
+            !AuthRoutes.isAuthPath(path) &&
             !startupFlow.hasEntered) {
           startupFlow.deferForExternalJourney();
         }
@@ -212,9 +211,8 @@ RoutingConfig _routingConfig(
           );
         }
       }
-      final isRequestRoute = path == '/auth';
       final isVerifyRoute = path == '/auth/verify';
-      final isAuthRoute = isRequestRoute || isVerifyRoute;
+      final isAuthRoute = AuthRoutes.isAuthPath(path);
       final isModerationRoute =
           path.startsWith('/profile/reports') ||
           path.startsWith('/profile/review-requests');
@@ -406,7 +404,7 @@ RoutingConfig _routingConfig(
           state.uri.queryParameters['returnTo'],
         );
         return Uri(
-          path: '/auth',
+          path: AuthRoutes.email,
           queryParameters: returnTo == '/' ? null : {'returnTo': returnTo},
         ).toString();
       }
@@ -458,8 +456,17 @@ RoutingConfig _routingConfig(
         builder: (context, state) => const _UnknownRouteScreen(),
       ),
       GoRoute(
-        path: '/auth',
+        path: AuthRoutes.entry,
+        builder: (context, state) => SignInScreen(
+          returnTo: sanitizeReturnDestination(
+            state.uri.queryParameters['returnTo'],
+          ),
+        ),
+      ),
+      GoRoute(
+        path: AuthRoutes.email,
         builder: (context, state) => RequestCodeScreen(
+          allowMethodBack: true,
           returnTo: sanitizeReturnDestination(
             state.uri.queryParameters['returnTo'],
           ),

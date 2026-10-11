@@ -16,6 +16,7 @@ void main() {
         '//example.com/private',
         r'\example.com\private',
         '/auth',
+        '/auth/email',
         '/auth/verify',
       ]) {
         expect(sanitizeReturnDestination(candidate), '/');

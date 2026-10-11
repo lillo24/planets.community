@@ -9,6 +9,7 @@ import '../../../core/widgets/page_app_bar.dart';
 import '../../../core/theme/app_tokens.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../application/auth_command_controller.dart';
+import '../application/auth_routes.dart';
 import '../application/auth_session_controller.dart';
 import '../application/return_destination.dart';
 import '../domain/auth_models.dart';
@@ -54,7 +55,7 @@ class _VerifyCodeScreenState extends ConsumerState<VerifyCodeScreen> {
     ref.read(authCommandProvider.notifier).resetFlow();
     context.go(
       Uri(
-        path: '/auth',
+        path: AuthRoutes.email,
         queryParameters: returnTo == '/' ? null : {'returnTo': returnTo},
       ).toString(),
     );
