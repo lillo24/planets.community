@@ -738,7 +738,7 @@ void main() {
       expect(gateway.lastInput!.startsAt, proposal.startsAt);
       expect(
         gateway.lastInput!.registrationCapacity,
-      proposal.capacity.registrationCapacity,
+        proposal.capacity.registrationCapacity,
       );
       expect(
         gateway.lastInput!.exactMeetingText,
