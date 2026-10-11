@@ -40,11 +40,13 @@ void main() {
           managerToken = String.fromEnvironment('GRP02_MANAGER_TOKEN');
       const reporter = String.fromEnvironment('GRP02_REPORTER_ID'),
           reporterToken = String.fromEnvironment('GRP02_REPORTER_TOKEN');
+      const publicId = String.fromEnvironment('GRP02_PUBLIC_GROUP_ID');
       if ([
         actor,
         managerToken,
         reporter,
         reporterToken,
+        publicId,
       ].any((v) => v.isEmpty)) {
         throw StateError('Prepare groups smoke defines first.');
       }
@@ -98,14 +100,7 @@ void main() {
       FocusManager.instance.primaryFocus?.unfocus();
       await SystemChannels.textInput.invokeMethod<void>('TextInput.hide');
       await tester.pump(const Duration(milliseconds: 500));
-      await reveal(
-        tester,
-        find.byKey(
-          const Key(
-            'group-card-' + String.fromEnvironment('GRP02_PUBLIC_GROUP_ID'),
-          ),
-        ),
-      );
+      await reveal(tester, find.byKey(const Key('group-card-$publicId')));
       await waitFor(tester, find.text('GRP02 fictional Riverside collective'));
       await binding.convertFlutterSurfaceToImage();
       await tester.pump(const Duration(milliseconds: 300));

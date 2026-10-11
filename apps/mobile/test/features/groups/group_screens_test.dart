@@ -424,8 +424,9 @@ void main() {
         gateway: GroupGateway((name, args) async {
           if (name == 'create_group_draft' ||
               name == 'update_group' ||
-              name == 'set_group_publication_state')
+              name == 'set_group_publication_state') {
             writes++;
+          }
           return [];
         }),
       );
