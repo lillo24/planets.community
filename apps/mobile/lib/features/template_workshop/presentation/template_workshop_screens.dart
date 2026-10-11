@@ -1,10 +1,12 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart' show ScrollCacheExtent;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/widgets/page_app_bar.dart';
+import '../../../core/widgets/user_scroll_pagination.dart';
 import '../../../core/theme/app_tokens.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../auth/application/auth_session_controller.dart';
@@ -164,143 +166,181 @@ class _TemplateWorkshopScreenState extends ConsumerState<TemplateWorkshopScreen>
       body: SafeArea(
         child: RefreshIndicator(
           onRefresh: _refresh,
-          child: ListView(
-            key: const PageStorageKey('template-catalog-scroll'),
-            padding: const EdgeInsets.all(AppSpacing.medium),
-            children: [
-              TextField(
-                key: const Key('template-query'),
-                controller: _query,
-                maxLength: 120,
-                decoration: InputDecoration(
-                  labelText: l.proposalSearchLabel,
-                  prefixIcon: const Icon(Icons.search),
-                  isDense: true,
-                  counterText: '',
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: AppSpacing.medium,
-                    vertical: AppSpacing.small,
-                  ),
-                  suffixIcon: state.query.isNotEmpty || state.skills.isNotEmpty
-                      ? IconButton(
-                          key: const Key('template-reset-filters'),
-                          tooltip: l.skillFilterClear,
-                          icon: const Icon(Icons.clear),
-                          onPressed: () {
-                            _query.clear();
-                            _filter(skills: {});
-                          },
-                        )
-                      : null,
-                ),
-                textInputAction: TextInputAction.search,
-                onChanged: (_) {
-                  _debounce?.cancel();
-                  _debounce = Timer(const Duration(milliseconds: 350), _filter);
-                },
-                onSubmitted: (_) => _filter(),
-              ),
-              if (state.categories.isNotEmpty) ...[
-                const SizedBox(height: AppSpacing.medium),
-                SkillFilter(
-                  categories: state.categories,
-                  selectedIds: state.skills,
-                  onApply: (ids) => _filter(skills: ids),
-                ),
-              ],
-              const SizedBox(height: AppSpacing.medium),
-              Text(l.workshopContext),
-              for (final attempt in attempts)
-                Card(
-                  margin: const EdgeInsets.only(bottom: AppSpacing.medium),
-                  child: ListTile(
-                    title: Text(
-                      attempt.destinationId == null
-                          ? l.workshopPending
-                          : l.workshopAccepted,
+          child: UserScrollPagination(
+            enabled: state.hasMore && !state.loading && !(state.failed),
+            requestKey: (
+              state.items.length,
+              (state.query, state.skills),
+              ref.watch(authSessionProvider).phase,
+              ref.watch(authSessionProvider).identity?.id,
+            ),
+            onLoad: () =>
+                ref.read(templateCatalogProvider.notifier).load(more: true),
+            builder: (context, showFallback) => ListView(
+              scrollCacheExtent: const ScrollCacheExtent.pixels(0),
+              key: const PageStorageKey('template-catalog-scroll'),
+              padding: const EdgeInsets.all(AppSpacing.medium),
+              children: [
+                TextField(
+                  key: const Key('template-query'),
+                  controller: _query,
+                  maxLength: 120,
+                  decoration: InputDecoration(
+                    labelText: l.proposalSearchLabel,
+                    prefixIcon: const Icon(Icons.search),
+                    isDense: true,
+                    counterText: '',
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.medium,
+                      vertical: AppSpacing.small,
                     ),
-                    subtitle: Text(l.workshopRecoveryLifetime),
-                    trailing: applications.busy.contains(attempt.requestId)
-                        ? const CircularProgressIndicator()
+                    suffixIcon:
+                        state.query.isNotEmpty || state.skills.isNotEmpty
+                        ? IconButton(
+                            key: const Key('template-reset-filters'),
+                            tooltip: l.skillFilterClear,
+                            icon: const Icon(Icons.clear),
+                            onPressed: () {
+                              _query.clear();
+                              _filter(skills: {});
+                            },
+                          )
                         : null,
-                    onTap: applications.busy.contains(attempt.requestId)
-                        ? null
-                        : () =>
-                              _visit(WorkshopRoutes.detail(attempt.templateId)),
                   ),
+                  textInputAction: TextInputAction.search,
+                  onChanged: (_) {
+                    _debounce?.cancel();
+                    _debounce = Timer(
+                      const Duration(milliseconds: 350),
+                      _filter,
+                    );
+                  },
+                  onSubmitted: (_) => _filter(),
                 ),
-              if (state.loading)
-                const Center(child: CircularProgressIndicator()),
-              if (state.failed)
-                _WorkshopError(
-                  message: l.workshopReadError,
-                  retry: () => ref
-                      .read(templateCatalogProvider.notifier)
-                      .load(more: state.items.isNotEmpty),
-                ),
-              if (!state.loading && !state.failed && state.items.isEmpty)
-                Padding(
-                  padding: const EdgeInsets.all(AppSpacing.large),
-                  child: Text(
-                    state.query.isEmpty && state.skills.isEmpty
-                        ? l.workshopEmpty
-                        : l.workshopNoMatches,
+                if (state.categories.isNotEmpty) ...[
+                  const SizedBox(height: AppSpacing.medium),
+                  SkillFilter(
+                    categories: state.categories,
+                    selectedIds: state.skills,
+                    onApply: (ids) => _filter(skills: ids),
                   ),
-                ),
-              for (final item in state.items)
-                Card(
-                  margin: const EdgeInsets.only(bottom: AppSpacing.medium),
-                  clipBehavior: Clip.antiAlias,
-                  child: InkWell(
-                    key: Key('template-card-${item.id}'),
-                    onTap: () => _visit(WorkshopRoutes.detail(item.id)),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        _TemplateCover(
-                          title: item.title,
-                          objectPath: item.coverPath,
-                          assetKey: item.coverAssetKey,
+                ],
+                const SizedBox(height: AppSpacing.medium),
+                Text(l.workshopContext),
+                for (final attempt in attempts)
+                  Builder(
+                    builder: (context) => Card(
+                      margin: const EdgeInsets.only(bottom: AppSpacing.medium),
+                      child: ListTile(
+                        title: Text(
+                          attempt.destinationId == null
+                              ? l.workshopPending
+                              : l.workshopAccepted,
                         ),
-                        Padding(
-                          padding: const EdgeInsets.all(AppSpacing.medium),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                item.title,
-                                style: Theme.of(context).textTheme.titleLarge,
+                        subtitle: Text(l.workshopRecoveryLifetime),
+                        trailing: applications.busy.contains(attempt.requestId)
+                            ? const CircularProgressIndicator()
+                            : null,
+                        onTap: applications.busy.contains(attempt.requestId)
+                            ? null
+                            : () => _visit(
+                                WorkshopRoutes.detail(attempt.templateId),
                               ),
-                              if (item.isOfficial)
-                                _DefaultBadge()
-                              else
-                                Text(l.workshopCompleted),
-                              Text(item.summary),
-                              Text(
-                                item.isOfficial
-                                    ? l.workshopOfficialOrganization
-                                    : l.workshopCreator(
-                                        item.creatorName ??
-                                            l.workshopCreatorFallback,
-                                      ),
-                              ),
-                              _TemplateSkills(skills: item.skills),
-                            ],
-                          ),
-                        ),
-                      ],
+                      ),
                     ),
                   ),
-                ),
-              if (state.hasMore && !state.loading && !state.failed)
-                TextButton(
-                  key: const Key('template-load-more'),
-                  onPressed: () => ref
-                      .read(templateCatalogProvider.notifier)
-                      .load(more: true),
-                  child: Text(l.workshopLoadMore),
-                ),
-            ],
+                if (state.loading && state.items.isEmpty)
+                  const Center(child: CircularProgressIndicator()),
+                if (state.failed && state.items.isEmpty)
+                  _WorkshopError(
+                    message: l.workshopReadError,
+                    retry: () =>
+                        ref.read(templateCatalogProvider.notifier).retry(),
+                  ),
+                if (!state.loading && !state.failed && state.items.isEmpty)
+                  Padding(
+                    padding: const EdgeInsets.all(AppSpacing.large),
+                    child: Text(
+                      state.query.isEmpty && state.skills.isEmpty
+                          ? l.workshopEmpty
+                          : l.workshopNoMatches,
+                    ),
+                  ),
+                for (final item in state.items)
+                  Builder(
+                    builder: (context) => Card(
+                      margin: const EdgeInsets.only(bottom: AppSpacing.medium),
+                      clipBehavior: Clip.antiAlias,
+                      child: InkWell(
+                        key: Key('template-card-${item.id}'),
+                        onTap: () => _visit(WorkshopRoutes.detail(item.id)),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            _TemplateCover(
+                              title: item.title,
+                              objectPath: item.coverPath,
+                              assetKey: item.coverAssetKey,
+                            ),
+                            Padding(
+                              padding: const EdgeInsets.all(AppSpacing.medium),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    item.title,
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .titleLarge,
+                                  ),
+                                  if (item.isOfficial)
+                                    _DefaultBadge()
+                                  else
+                                    Text(l.workshopCompleted),
+                                  Text(item.summary),
+                                  Text(
+                                    item.isOfficial
+                                        ? l.workshopOfficialOrganization
+                                        : l.workshopCreator(
+                                            item.creatorName ??
+                                                l.workshopCreatorFallback,
+                                          ),
+                                  ),
+                                  _TemplateSkills(skills: item.skills),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                if (state.failed && state.items.isNotEmpty)
+                  _WorkshopError(
+                    message: l.workshopReadError,
+                    retry: () =>
+                        ref.read(templateCatalogProvider.notifier).retry(),
+                  ),
+                if (state.loading && state.items.isNotEmpty)
+                  const Center(
+                    child: SizedBox.square(
+                      dimension: 20,
+                      child: CircularProgressIndicator(),
+                    ),
+                  ),
+                if (showFallback &&
+                    state.hasMore &&
+                    !state.loading &&
+                    !(state.failed))
+                  OutlinedButton(
+                    key: const Key('template-load-more'),
+                    onPressed: () => ref
+                        .read(templateCatalogProvider.notifier)
+                        .load(more: true),
+                    child: Text(l.workshopLoadMore),
+                  ),
+              ],
+            ),
           ),
         ),
       ),

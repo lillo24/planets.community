@@ -175,3 +175,7 @@ snapshot. Changed filters clear previous rows. Owner/delegated sources settle
 independently and clear private caches on readiness changes.
 The folder action opens `/drafts?types=table`; management/history remains reachable
 from the hub's menu.
+
+## Discovery pagination
+
+The feed requests 7 records, then 15, then 20 per successful page. Each user drag within one viewport of the bottom can request one continuation. Failed continuations retain records, cursor and limit and require explicit Retry. Refresh, filters and identity changes reset to 7. Cards construct lazily with zero offscreen cache; public covers retain immutable-path Riverpod caching. Short-content and accessibility navigation have deliberate fallback controls. Template detail return keeps its existing refresh/reset policy. Map search and blueprint paging retain separate behavior.

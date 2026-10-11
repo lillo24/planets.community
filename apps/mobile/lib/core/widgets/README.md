@@ -73,3 +73,17 @@ records a separate idle build/layout trace to audit this boundary.
   enlarged-text layouts. `PageAppBarScope` prevents embedded tutorial pages from
   borrowing the enclosing route's exit. See the navigation-header audit in
   `docs/development/navigation-headers.md`.
+
+- user_scroll_pagination.dart permits one continuation per deliberate drag
+  toward an edge, within one viewport of it (including the drag's ballistic
+  tail). Programmatic movement, restoration, layout and inactive/background
+  routes cannot initiate pages. Callers disable it while busy or failed and
+  include query, identity and loaded count in requestKey. Failures require
+  explicit Retry; short-content and accessible-navigation users get a deliberate
+  button. This fallback stays stable until the content key changes.
+- discovery_page_size.dart defines the per-query successful-page sequence
+  7, 15, 20, 20. Controllers retain cursor/stage on failed continuations and
+  reset on refresh/filter/identity changes. Discovery card constructors are
+  deferred through lazy list slots with zero offscreen cache extent, so page
+  records do not imply page-wide cover downloads. Immutable-path cover caching
+  and existing decoding/fallback behavior are unchanged.

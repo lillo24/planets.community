@@ -76,19 +76,22 @@ class FakeTemplateGateway implements TemplateGateway {
   TemplateReceipt? recovered;
   final calls = <String>[];
   final commands = <TemplateAttempt>[];
+  final limits = <int>[];
   final cursors = <TemplateCursor?>[];
   final pageTokens = <String>[];
   @override
   Future<List<TemplateCard>> list({
+    int limit = templatePageSize,
     TemplateCursor? cursor,
     String? query,
     Set<String>? skills,
   }) async {
     calls.add('list');
+    limits.add(limit);
     cursors.add(cursor);
     if (listError case final e?) throw e;
     return listLoader == null
-        ? cards
+        ? cards.take(limit).toList()
         : await listLoader!(cursor, query, skills);
   }
 

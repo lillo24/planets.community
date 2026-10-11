@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart' show ScrollCacheExtent;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/widgets/page_app_bar.dart';
+import '../../../core/widgets/user_scroll_pagination.dart';
 import '../../geographic_discovery/domain/map_discovery.dart';
 import '../../geographic_discovery/presentation/map_view_button.dart';
 import '../../locations/presentation/location_attribution.dart';
@@ -88,137 +90,166 @@ class _PublicRecurringActivitiesScreenState
       ),
       body: SafeArea(
         child: RefreshIndicator(
-          onRefresh: () =>
-              ref.read(publicRecurringActivitiesProvider.notifier).load(),
-          child: ListView(
-            physics: const AlwaysScrollableScrollPhysics(),
-            key: const PageStorageKey('public-tavoli-list'),
-            padding: const EdgeInsets.all(AppSpacing.medium),
-            children: [
-              const BrowseActivitySwitcher(selected: BrowseActivityType.tavoli),
-              // Match the Project header's visible 16dp gaps (4dp tap inset).
-              const SizedBox(height: AppSpacing.medium - 4),
-              MapViewButton(origin: MapDiscoveryOrigin.tavoli),
-              const SizedBox(height: AppSpacing.medium),
-              Align(
-                alignment: Alignment.centerRight,
-                child: BrowseFilterButton(
-                  key: const Key('tavoli-toggle-filters'),
-                  expanded: _filtersExpanded,
-                  hasActiveFilters: state.locality.trim().isNotEmpty,
-                  onPressed: () {
-                    FocusScope.of(context).unfocus();
-                    setState(() => _filtersExpanded = !_filtersExpanded);
-                  },
+          onRefresh: () => ref
+              .read(publicRecurringActivitiesProvider.notifier)
+              .load(force: true),
+          child: UserScrollPagination(
+            enabled:
+                state.hasMore &&
+                !state.isBusy &&
+                !(state.phase == RecurringActivityLoadPhase.failure),
+            requestKey: (
+              state.items.length,
+              state.locality,
+              ref.watch(authSessionProvider).phase,
+              ref.watch(authSessionProvider).identity?.id,
+            ),
+            onLoad: () => ref
+                .read(publicRecurringActivitiesProvider.notifier)
+                .load(reset: false),
+            builder: (context, showFallback) => ListView(
+              scrollCacheExtent: const ScrollCacheExtent.pixels(0),
+              physics: const AlwaysScrollableScrollPhysics(),
+              key: const PageStorageKey('public-tavoli-list'),
+              padding: const EdgeInsets.all(AppSpacing.medium),
+              children: [
+                const BrowseActivitySwitcher(
+                  selected: BrowseActivityType.tavoli,
                 ),
-              ),
-              if (_filtersExpanded) ...[
-                const SizedBox(height: AppSpacing.small),
-                TextField(
-                  key: const Key('tavoli-locality-filter'),
-                  controller: _localityController,
-                  decoration: InputDecoration(
-                    labelText: l10n.tavoliLocalityFilter,
-                    suffixIcon: IconButton(
-                      key: const Key('tavoli-apply-filter'),
-                      onPressed: state.isBusy
-                          ? null
-                          : () => ref
-                                .read(
-                                  publicRecurringActivitiesProvider.notifier,
-                                )
-                                .applyLocality(_localityController.text),
-                      icon: const Icon(Icons.search),
+                // Match the Project header's visible 16dp gaps (4dp tap inset).
+                const SizedBox(height: AppSpacing.medium - 4),
+                MapViewButton(origin: MapDiscoveryOrigin.tavoli),
+                const SizedBox(height: AppSpacing.medium),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: BrowseFilterButton(
+                    key: const Key('tavoli-toggle-filters'),
+                    expanded: _filtersExpanded,
+                    hasActiveFilters: state.locality.trim().isNotEmpty,
+                    onPressed: () {
+                      FocusScope.of(context).unfocus();
+                      setState(() => _filtersExpanded = !_filtersExpanded);
+                    },
+                  ),
+                ),
+                if (_filtersExpanded) ...[
+                  const SizedBox(height: AppSpacing.small),
+                  TextField(
+                    key: const Key('tavoli-locality-filter'),
+                    controller: _localityController,
+                    decoration: InputDecoration(
+                      labelText: l10n.tavoliLocalityFilter,
+                      suffixIcon: IconButton(
+                        key: const Key('tavoli-apply-filter'),
+                        onPressed: state.isBusy
+                            ? null
+                            : () => ref
+                                  .read(
+                                    publicRecurringActivitiesProvider.notifier,
+                                  )
+                                  .applyLocality(_localityController.text),
+                        icon: const Icon(Icons.search),
+                      ),
                     ),
                   ),
-                ),
-              ],
-              if (state.phase == RecurringActivityLoadPhase.loading &&
-                  !(state.items.isEmpty && state.requestedItems.isEmpty))
-                LinearProgressIndicator(semanticsLabel: l10n.tavoliLoading),
-              const SizedBox(height: AppSpacing.medium),
-              if ((state.phase == RecurringActivityLoadPhase.idle ||
-                      state.phase == RecurringActivityLoadPhase.loading) &&
-                  state.items.isEmpty &&
-                  state.requestedItems.isEmpty)
-                LoadingState(message: l10n.tavoliLoading)
-              else if (state.phase == RecurringActivityLoadPhase.failure &&
-                  state.items.isEmpty &&
-                  state.requestedItems.isEmpty)
-                ErrorState(
-                  message: l10n.tavoliSafeError,
-                  onRetry: () => ref
-                      .read(publicRecurringActivitiesProvider.notifier)
-                      .load(),
-                )
-              else if (state.items.isEmpty && state.requestedItems.isEmpty)
-                EmptyState(
-                  title: l10n.tavoliEmptyTitle,
-                  message: l10n.tavoliEmptyMessage,
-                  icon: Icons.autorenew,
-                )
-              else ...[
-                if (state.requestedItems.isNotEmpty) ...[
-                  Text(
-                    l10n.browseRequestedSection,
-                    key: const Key('tavolo-requested-section'),
-                    style: Theme.of(context).textTheme.titleLarge,
-                  ),
-                  const SizedBox(height: AppSpacing.small),
-                  for (final requested in state.requestedItems) ...[
-                    RecurringActivityCard(
-                      activity: requested.activity,
-                      isRequested: true,
-                      onTap: () =>
-                          context.push('/tavoli/${requested.activity.id}'),
+                ],
+                if (state.phase == RecurringActivityLoadPhase.loading &&
+                    !(state.items.isEmpty && state.requestedItems.isEmpty))
+                  LinearProgressIndicator(semanticsLabel: l10n.tavoliLoading),
+                const SizedBox(height: AppSpacing.medium),
+                if ((state.phase == RecurringActivityLoadPhase.idle ||
+                        state.phase == RecurringActivityLoadPhase.loading) &&
+                    state.items.isEmpty &&
+                    state.requestedItems.isEmpty)
+                  LoadingState(message: l10n.tavoliLoading)
+                else if (state.phase == RecurringActivityLoadPhase.failure &&
+                    state.items.isEmpty &&
+                    state.requestedItems.isEmpty)
+                  ErrorState(
+                    message: l10n.tavoliSafeError,
+                    onRetry: () => ref
+                        .read(publicRecurringActivitiesProvider.notifier)
+                        .retry(),
+                  )
+                else if (state.items.isEmpty && state.requestedItems.isEmpty)
+                  EmptyState(
+                    title: l10n.tavoliEmptyTitle,
+                    message: l10n.tavoliEmptyMessage,
+                    icon: Icons.autorenew,
+                  )
+                else ...[
+                  if (state.requestedItems.isNotEmpty) ...[
+                    Text(
+                      l10n.browseRequestedSection,
+                      key: const Key('tavolo-requested-section'),
+                      style: Theme.of(context).textTheme.titleLarge,
+                    ),
+                    const SizedBox(height: AppSpacing.small),
+                    for (final requested in state.requestedItems) ...[
+                      Builder(
+                        builder: (context) => RecurringActivityCard(
+                          activity: requested.activity,
+                          isRequested: true,
+                          onTap: () =>
+                              context.push('/tavoli/${requested.activity.id}'),
+                        ),
+                      ),
+                      const SizedBox(height: AppSpacing.medium),
+                    ],
+                  ],
+                  if (state.requestedItems.isNotEmpty &&
+                      state.ordinaryItems.isNotEmpty) ...[
+                    Text(
+                      l10n.browseOtherProjectsSection,
+                      key: const Key('tavolo-other-section'),
+                      style: Theme.of(context).textTheme.titleLarge,
+                    ),
+                    const SizedBox(height: AppSpacing.small),
+                  ],
+                  for (final activity in state.ordinaryItems) ...[
+                    Builder(
+                      builder: (context) => RecurringActivityCard(
+                        activity: activity,
+                        onTap: () => context.push('/tavoli/${activity.id}'),
+                      ),
                     ),
                     const SizedBox(height: AppSpacing.medium),
                   ],
                 ],
-                if (state.requestedItems.isNotEmpty &&
-                    state.ordinaryItems.isNotEmpty) ...[
-                  Text(
-                    l10n.browseOtherProjectsSection,
-                    key: const Key('tavolo-other-section'),
-                    style: Theme.of(context).textTheme.titleLarge,
+                if (state.phase == RecurringActivityLoadPhase.failure &&
+                    state.items.isNotEmpty)
+                  ErrorState(
+                    key: const Key('tavoli-safe-error'),
+                    message: l10n.tavoliSafeError,
+                    onRetry: () => ref
+                        .read(publicRecurringActivitiesProvider.notifier)
+                        .retry(),
                   ),
-                  const SizedBox(height: AppSpacing.small),
-                ],
-                for (final activity in state.ordinaryItems) ...[
-                  RecurringActivityCard(
-                    activity: activity,
-                    onTap: () => context.push('/tavoli/${activity.id}'),
+                if (state.phase == RecurringActivityLoadPhase.loadingMore)
+                  const Center(
+                    child: SizedBox.square(
+                      dimension: 20,
+                      child: CircularProgressIndicator(),
+                    ),
                   ),
-                  const SizedBox(height: AppSpacing.medium),
-                ],
+                if (showFallback &&
+                    state.hasMore &&
+                    !state.isBusy &&
+                    !(state.phase == RecurringActivityLoadPhase.failure))
+                  OutlinedButton(
+                    key: const Key('tavoli-load-more'),
+                    onPressed: () => ref
+                        .read(publicRecurringActivitiesProvider.notifier)
+                        .load(reset: false),
+                    child: Text(l10n.tavoliLoadMore),
+                  ),
+                // DTOs omit provider provenance; nonempty labels may be derived.
+                if (state.items.isNotEmpty || state.requestedItems.isNotEmpty)
+                  const LocationAttribution(),
+                // Let credit links scroll above the floating Create action.
+                const SizedBox(height: 80),
               ],
-              if (state.phase == RecurringActivityLoadPhase.failure &&
-                  state.items.isNotEmpty)
-                ErrorState(
-                  key: const Key('tavoli-safe-error'),
-                  message: l10n.tavoliSafeError,
-                  onRetry: () => ref
-                      .read(publicRecurringActivitiesProvider.notifier)
-                      .load(),
-                ),
-              if (state.items.isNotEmpty && state.hasMore)
-                OutlinedButton(
-                  key: const Key('tavoli-load-more'),
-                  onPressed: state.isBusy
-                      ? null
-                      : () => ref
-                            .read(publicRecurringActivitiesProvider.notifier)
-                            .load(reset: false),
-                  child: state.phase == RecurringActivityLoadPhase.loadingMore
-                      ? const CircularProgressIndicator()
-                      : Text(l10n.tavoliLoadMore),
-                ),
-              // DTOs omit provider provenance; nonempty labels may be derived.
-              if (state.items.isNotEmpty || state.requestedItems.isNotEmpty)
-                const LocationAttribution(),
-              // Let credit links scroll above the floating Create action.
-              const SizedBox(height: 80),
-            ],
+            ),
           ),
         ),
       ),

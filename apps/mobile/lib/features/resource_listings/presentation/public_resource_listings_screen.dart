@@ -1,10 +1,12 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart' show ScrollCacheExtent;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/widgets/page_app_bar.dart';
+import '../../../core/widgets/user_scroll_pagination.dart';
 import '../../geographic_discovery/domain/map_discovery.dart';
 import '../../geographic_discovery/presentation/map_view_button.dart';
 import '../../locations/presentation/location_attribution.dart';
@@ -139,222 +141,251 @@ class _PublicResourceListingsScreenState
           onRefresh: () => ref
               .read(publicResourceListingsProvider.notifier)
               .load(force: true),
-          child: ListView(
-            physics: const AlwaysScrollableScrollPhysics(),
-            padding: const EdgeInsets.all(AppSpacing.medium),
-            children: [
-              MapViewButton(
-                origin: MapDiscoveryOrigin.resources,
-                prepare: _flushFilters,
-              ),
-              const SizedBox(height: 8),
-              Semantics(
-                label: l10n.resourceModeFilterLabel,
-                child: SegmentedButton<ResourceListingMode>(
-                  key: const Key('resource-mode-filter'),
-                  multiSelectionEnabled: true,
-                  emptySelectionAllowed: true,
-                  selectedIcon: const Icon(Icons.check),
-                  segments: [
-                    ButtonSegment(
-                      value: ResourceListingMode.donate,
-                      label: Text(
-                        l10n.resourceModeDonate,
-                        key: const Key('resource-filter-mode-donate'),
-                      ),
-                    ),
-                    ButtonSegment(
-                      value: ResourceListingMode.exchange,
-                      label: Text(
-                        l10n.resourceModeExchange,
-                        key: const Key('resource-filter-mode-exchange'),
-                      ),
-                    ),
-                  ],
-                  selected: _modeFilter == null
-                      ? ResourceListingMode.values.toSet()
-                      : {_modeFilter!},
-                  onSelectionChanged: (selection) {
-                    setState(() {
-                      // Deselecting the last mode switches to the other
-                      // one, so an empty visual/filter state never exists.
-                      _modeFilter = selection.isEmpty
-                          ? (_modeFilter == ResourceListingMode.donate
-                                ? ResourceListingMode.exchange
-                                : ResourceListingMode.donate)
-                          : selection.length == 2
-                          ? null
-                          : selection.single;
-                    });
-                    _flushFilters();
-                  },
+          child: UserScrollPagination(
+            enabled:
+                state.hasMore &&
+                !state.isBusy &&
+                !(state.phase == ResourceListingLoadPhase.failure) &&
+                widget.tutorialPlaceholder == null &&
+                state.resultsMatchFilters,
+            requestKey: (
+              state.items.length,
+              (state.modeFilter, state.locality, state.query),
+              ref.watch(authSessionProvider).phase,
+              ref.watch(authSessionProvider).identity?.id,
+            ),
+            onLoad: () => ref
+                .read(publicResourceListingsProvider.notifier)
+                .load(reset: false),
+            builder: (context, showFallback) => ListView(
+              scrollCacheExtent: const ScrollCacheExtent.pixels(0),
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: const EdgeInsets.all(AppSpacing.medium),
+              children: [
+                MapViewButton(
+                  origin: MapDiscoveryOrigin.resources,
+                  prepare: _flushFilters,
                 ),
-              ),
-              const SizedBox(height: AppSpacing.medium),
-              Row(
-                children: [
-                  Expanded(
-                    child: TextField(
-                      key: const Key('resource-query-filter'),
-                      controller: _queryController,
-                      maxLength: 120,
-                      textInputAction: TextInputAction.search,
-                      decoration: InputDecoration(
-                        labelText: l10n.resourceSearchLabel,
-                        isDense: true,
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: AppSpacing.medium,
-                          vertical: AppSpacing.small,
+                const SizedBox(height: 8),
+                Semantics(
+                  label: l10n.resourceModeFilterLabel,
+                  child: SegmentedButton<ResourceListingMode>(
+                    key: const Key('resource-mode-filter'),
+                    multiSelectionEnabled: true,
+                    emptySelectionAllowed: true,
+                    selectedIcon: const Icon(Icons.check),
+                    segments: [
+                      ButtonSegment(
+                        value: ResourceListingMode.donate,
+                        label: Text(
+                          l10n.resourceModeDonate,
+                          key: const Key('resource-filter-mode-donate'),
                         ),
-                        counterText: '',
                       ),
-                      onChanged: (_) => _scheduleFilters(),
-                      onSubmitted: (_) => _flushFilters(),
-                    ),
-                  ),
-                  BrowseFilterButton(
-                    key: const Key('resource-toggle-filters'),
-                    expanded: _filtersExpanded,
-                    hasActiveFilters: state.locality.trim().isNotEmpty,
-                    onPressed: () {
-                      FocusManager.instance.primaryFocus?.unfocus();
-                      setState(() => _filtersExpanded = !_filtersExpanded);
-                    },
-                  ),
-                ],
-              ),
-              if (_filtersExpanded) ...[
-                const SizedBox(height: AppSpacing.small),
-                TextField(
-                  key: const Key('resource-locality-filter'),
-                  controller: _localityController,
-                  maxLength: 120,
-                  textInputAction: TextInputAction.search,
-                  decoration: InputDecoration(
-                    labelText: l10n.resourceLocalityLabel,
-                  ),
-                  onChanged: (_) => _scheduleFilters(),
-                  onSubmitted: (_) => _flushFilters(),
-                ),
-              ],
-              Wrap(
-                alignment: WrapAlignment.end,
-                spacing: AppSpacing.small,
-                runSpacing: AppSpacing.small,
-                children: [
-                  if (expectedProfileId != null)
-                    OutlinedButton.icon(
-                      key: const Key('resource-save-search'),
-                      onPressed:
-                          state.isBusy ||
-                              savedSearches.isActing ||
-                              !pendingInput.isValid
-                          ? null
-                          : () => _saveCurrentSearch(expectedProfileId),
-                      icon:
-                          savedSearches.action ==
-                              ResourceSavedSearchAction.creating
-                          ? const SizedBox.square(
-                              dimension: 18,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
-                          : const Icon(Icons.bookmark_add_outlined),
-                      label: Text(l10n.resourceSavedSearchSaveAction),
-                    ),
-                ],
-              ),
-              if (state.phase == ResourceListingLoadPhase.loading &&
-                  state.items.isNotEmpty)
-                Padding(
-                  padding: const EdgeInsets.only(top: AppSpacing.small),
-                  child: LinearProgressIndicator(
-                    key: const Key('resource-filter-progress'),
-                    semanticsLabel: l10n.resourceLoading,
-                  ),
-                ),
-              if (!state.resultsMatchFilters && state.items.isNotEmpty)
-                Text(
-                  l10n.browsePreviousResults,
-                  key: const Key('resource-previous-results'),
-                ),
-              const SizedBox(height: AppSpacing.medium),
-              if (widget.tutorialPlaceholder != null)
-                widget.tutorialPlaceholder!
-              else if ((state.phase == ResourceListingLoadPhase.idle ||
-                      state.phase == ResourceListingLoadPhase.loading) &&
-                  state.items.isEmpty)
-                LoadingState(message: l10n.resourceLoading)
-              else if (state.phase == ResourceListingLoadPhase.failure &&
-                  state.items.isEmpty)
-                ErrorState(
-                  message: resourceListingFailureMessage(l10n, state.failure),
-                  onRetry: () =>
-                      ref.read(publicResourceListingsProvider.notifier).load(),
-                )
-              else if (state.items.isEmpty)
-                EmptyState(
-                  title: state.hasFilters
-                      ? l10n.resourceFilteredEmptyTitle
-                      : l10n.resourceEmptyTitle,
-                  message: state.hasFilters
-                      ? l10n.resourceFilteredEmptyMessage
-                      : l10n.resourceEmptyMessage,
-                  icon: Icons.inventory_2_outlined,
-                )
-              else
-                for (final listing in state.items) ...[
-                  AbsorbPointer(
-                    absorbing: !state.resultsMatchFilters,
-                    child: PublicResourceListingCard(
-                      listing: listing,
-                      now: now,
-                      onTap: () => context.push('/resources/${listing.id}'),
-                    ),
-                  ),
-                  const SizedBox(height: AppSpacing.medium),
-                ],
-              if (state.phase == ResourceListingLoadPhase.failure &&
-                  state.items.isNotEmpty)
-                Padding(
-                  padding: const EdgeInsets.symmetric(
-                    vertical: AppSpacing.small,
-                  ),
-                  child: Column(
-                    children: [
-                      Text(
-                        resourceListingFailureMessage(l10n, state.failure),
-                        key: const Key('resource-partial-error'),
-                      ),
-                      TextButton(
-                        onPressed: () => ref
-                            .read(publicResourceListingsProvider.notifier)
-                            .load(force: true),
-                        child: Text(l10n.retryAction),
+                      ButtonSegment(
+                        value: ResourceListingMode.exchange,
+                        label: Text(
+                          l10n.resourceModeExchange,
+                          key: const Key('resource-filter-mode-exchange'),
+                        ),
                       ),
                     ],
+                    selected: _modeFilter == null
+                        ? ResourceListingMode.values.toSet()
+                        : {_modeFilter!},
+                    onSelectionChanged: (selection) {
+                      setState(() {
+                        // Deselecting the last mode switches to the other
+                        // one, so an empty visual/filter state never exists.
+                        _modeFilter = selection.isEmpty
+                            ? (_modeFilter == ResourceListingMode.donate
+                                  ? ResourceListingMode.exchange
+                                  : ResourceListingMode.donate)
+                            : selection.length == 2
+                            ? null
+                            : selection.single;
+                      });
+                      _flushFilters();
+                    },
                   ),
                 ),
-              if (state.items.isNotEmpty && state.hasMore)
-                OutlinedButton(
-                  key: const Key('resource-load-more'),
-                  onPressed: state.isBusy || !state.resultsMatchFilters
-                      ? null
-                      : () => ref
-                            .read(publicResourceListingsProvider.notifier)
-                            .load(reset: false),
-                  child: state.phase == ResourceListingLoadPhase.loadingMore
-                      ? const SizedBox.square(
-                          dimension: 20,
-                          child: CircularProgressIndicator(),
-                        )
-                      : Text(l10n.resourceLoadMore),
+                const SizedBox(height: AppSpacing.medium),
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        key: const Key('resource-query-filter'),
+                        controller: _queryController,
+                        maxLength: 120,
+                        textInputAction: TextInputAction.search,
+                        decoration: InputDecoration(
+                          labelText: l10n.resourceSearchLabel,
+                          isDense: true,
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: AppSpacing.medium,
+                            vertical: AppSpacing.small,
+                          ),
+                          counterText: '',
+                        ),
+                        onChanged: (_) => _scheduleFilters(),
+                        onSubmitted: (_) => _flushFilters(),
+                      ),
+                    ),
+                    BrowseFilterButton(
+                      key: const Key('resource-toggle-filters'),
+                      expanded: _filtersExpanded,
+                      hasActiveFilters: state.locality.trim().isNotEmpty,
+                      onPressed: () {
+                        FocusManager.instance.primaryFocus?.unfocus();
+                        setState(() => _filtersExpanded = !_filtersExpanded);
+                      },
+                    ),
+                  ],
                 ),
-              // DTOs omit provider provenance; retained labels may be derived.
-              if (widget.tutorialPlaceholder == null && state.items.isNotEmpty)
-                const LocationAttribution(),
-              // Let credit links scroll above the floating Create action.
-              const SizedBox(height: 80),
-            ],
+                if (_filtersExpanded) ...[
+                  const SizedBox(height: AppSpacing.small),
+                  TextField(
+                    key: const Key('resource-locality-filter'),
+                    controller: _localityController,
+                    maxLength: 120,
+                    textInputAction: TextInputAction.search,
+                    decoration: InputDecoration(
+                      labelText: l10n.resourceLocalityLabel,
+                    ),
+                    onChanged: (_) => _scheduleFilters(),
+                    onSubmitted: (_) => _flushFilters(),
+                  ),
+                ],
+                Wrap(
+                  alignment: WrapAlignment.end,
+                  spacing: AppSpacing.small,
+                  runSpacing: AppSpacing.small,
+                  children: [
+                    if (expectedProfileId != null)
+                      OutlinedButton.icon(
+                        key: const Key('resource-save-search'),
+                        onPressed:
+                            state.isBusy ||
+                                savedSearches.isActing ||
+                                !pendingInput.isValid
+                            ? null
+                            : () => _saveCurrentSearch(expectedProfileId),
+                        icon:
+                            savedSearches.action ==
+                                ResourceSavedSearchAction.creating
+                            ? const SizedBox.square(
+                                dimension: 18,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
+                              )
+                            : const Icon(Icons.bookmark_add_outlined),
+                        label: Text(l10n.resourceSavedSearchSaveAction),
+                      ),
+                  ],
+                ),
+                if (state.phase == ResourceListingLoadPhase.loading &&
+                    state.items.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.only(top: AppSpacing.small),
+                    child: LinearProgressIndicator(
+                      key: const Key('resource-filter-progress'),
+                      semanticsLabel: l10n.resourceLoading,
+                    ),
+                  ),
+                if (!state.resultsMatchFilters && state.items.isNotEmpty)
+                  Text(
+                    l10n.browsePreviousResults,
+                    key: const Key('resource-previous-results'),
+                  ),
+                const SizedBox(height: AppSpacing.medium),
+                if (widget.tutorialPlaceholder != null)
+                  widget.tutorialPlaceholder!
+                else if ((state.phase == ResourceListingLoadPhase.idle ||
+                        state.phase == ResourceListingLoadPhase.loading) &&
+                    state.items.isEmpty)
+                  LoadingState(message: l10n.resourceLoading)
+                else if (state.phase == ResourceListingLoadPhase.failure &&
+                    state.items.isEmpty)
+                  ErrorState(
+                    message: resourceListingFailureMessage(l10n, state.failure),
+                    onRetry: () => ref
+                        .read(publicResourceListingsProvider.notifier)
+                        .retry(),
+                  )
+                else if (state.items.isEmpty)
+                  EmptyState(
+                    title: state.hasFilters
+                        ? l10n.resourceFilteredEmptyTitle
+                        : l10n.resourceEmptyTitle,
+                    message: state.hasFilters
+                        ? l10n.resourceFilteredEmptyMessage
+                        : l10n.resourceEmptyMessage,
+                    icon: Icons.inventory_2_outlined,
+                  )
+                else
+                  for (final listing in state.items) ...[
+                    Builder(
+                      builder: (context) => AbsorbPointer(
+                        absorbing: !state.resultsMatchFilters,
+                        child: PublicResourceListingCard(
+                          listing: listing,
+                          now: now,
+                          onTap: () => context.push('/resources/${listing.id}'),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.medium),
+                  ],
+                if (state.phase == ResourceListingLoadPhase.failure &&
+                    state.items.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                      vertical: AppSpacing.small,
+                    ),
+                    child: Column(
+                      children: [
+                        Text(
+                          resourceListingFailureMessage(l10n, state.failure),
+                          key: const Key('resource-partial-error'),
+                        ),
+                        TextButton(
+                          onPressed: () => ref
+                              .read(publicResourceListingsProvider.notifier)
+                              .retry(),
+                          child: Text(l10n.retryAction),
+                        ),
+                      ],
+                    ),
+                  ),
+                if (state.phase == ResourceListingLoadPhase.loadingMore)
+                  const Center(
+                    child: SizedBox.square(
+                      dimension: 20,
+                      child: CircularProgressIndicator(),
+                    ),
+                  ),
+                if (showFallback &&
+                    state.hasMore &&
+                    !state.isBusy &&
+                    !(state.phase == ResourceListingLoadPhase.failure) &&
+                    widget.tutorialPlaceholder == null &&
+                    state.resultsMatchFilters)
+                  OutlinedButton(
+                    key: const Key('resource-load-more'),
+                    onPressed: () => ref
+                        .read(publicResourceListingsProvider.notifier)
+                        .load(reset: false),
+                    child: Text(l10n.resourceLoadMore),
+                  ),
+                // DTOs omit provider provenance; retained labels may be derived.
+                if (widget.tutorialPlaceholder == null &&
+                    state.items.isNotEmpty)
+                  const LocationAttribution(),
+                // Let credit links scroll above the floating Create action.
+                const SizedBox(height: 80),
+              ],
+            ),
           ),
         ),
       ),

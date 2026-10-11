@@ -1,10 +1,12 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart' show ScrollCacheExtent;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/widgets/page_app_bar.dart';
+import '../../../core/widgets/user_scroll_pagination.dart';
 import '../../geographic_discovery/domain/map_discovery.dart';
 import '../../geographic_discovery/presentation/map_view_button.dart';
 
@@ -107,208 +109,246 @@ class _PublicProposalsScreenState extends ConsumerState<PublicProposalsScreen> {
       ),
       body: SafeArea(
         child: RefreshIndicator(
-          onRefresh: () => ref.read(publicProposalsProvider.notifier).load(),
-          child: ListView(
-            key: const PageStorageKey('public-proposals-list'),
-            physics: const AlwaysScrollableScrollPhysics(),
-            padding: const EdgeInsets.all(AppSpacing.medium),
-            children: [
-              const BrowseActivitySwitcher(
-                selected: BrowseActivityType.proposals,
+          onRefresh: () =>
+              ref.read(publicProposalsProvider.notifier).load(force: true),
+          child: UserScrollPagination(
+            enabled:
+                state.hasMore &&
+                !state.isBusy &&
+                !(state.phase == ProposalLoadPhase.failure) &&
+                widget.tutorialPlaceholder == null,
+            requestKey: (
+              state.items.length,
+              (
+                state.query,
+                state.locality,
+                state.selectedSkillIds,
+                state.definitionPhase,
               ),
-              // The family control has 4dp of invisible tap padding per edge.
-              // Keep 16dp between its visible outline and the List/Map row.
-              const SizedBox(height: AppSpacing.medium - 4),
-              MapViewButton(
-                origin: MapDiscoveryOrigin.projects,
-                prepare: _flushQuery,
-              ),
-              const SizedBox(height: AppSpacing.medium),
-              Row(
-                children: [
-                  Expanded(
-                    child: TextField(
-                      key: const Key('proposal-query-filter'),
-                      controller: _queryController,
-                      maxLength: 120,
-                      textInputAction: TextInputAction.search,
-                      decoration: InputDecoration(
-                        labelText: l10n.proposalSearchLabel,
-                        prefixIcon: const Icon(Icons.search),
-                        isDense: true,
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: AppSpacing.medium,
-                          vertical: AppSpacing.small,
-                        ),
-                        counterText: '',
-                      ),
-                      onChanged: (_) => _scheduleQuery(),
-                      onSubmitted: (_) => _flushQuery(),
-                    ),
-                  ),
-                  const SizedBox(width: AppSpacing.small),
-                  BrowseFilterButton(
-                    key: const Key('proposal-toggle-filters'),
-                    expanded: _filtersExpanded,
-                    hasActiveFilters:
-                        state.locality.trim().isNotEmpty ||
-                        state.selectedSkillIds.isNotEmpty ||
-                        state.definitionPhase != null,
-                    onPressed: () {
-                      FocusScope.of(context).unfocus();
-                      setState(() => _filtersExpanded = !_filtersExpanded);
-                    },
-                  ),
-                ],
-              ),
-              if (_filtersExpanded) ...[
-                const SizedBox(height: AppSpacing.medium),
-                TextField(
-                  key: const Key('proposal-locality-filter'),
-                  controller: _localityController,
-                  decoration: InputDecoration(
-                    labelText: l10n.proposalLocalityFilter,
-                    suffixIcon: IconButton(
-                      key: const Key('proposal-apply-filters'),
-                      onPressed: state.isBusy ? null : _applyFilters,
-                      icon: const Icon(Icons.search),
-                    ),
-                  ),
+              ref.watch(authSessionProvider).phase,
+              ref.watch(authSessionProvider).identity?.id,
+            ),
+            onLoad: () =>
+                ref.read(publicProposalsProvider.notifier).load(reset: false),
+            builder: (context, showFallback) => ListView(
+              scrollCacheExtent: const ScrollCacheExtent.pixels(0),
+              key: const PageStorageKey('public-proposals-list'),
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: const EdgeInsets.all(AppSpacing.medium),
+              children: [
+                const BrowseActivitySwitcher(
+                  selected: BrowseActivityType.proposals,
                 ),
-                if (state.categories.isNotEmpty) ...[
-                  const SizedBox(height: AppSpacing.medium),
-                  SkillFilter(
-                    categories: state.categories,
-                    selectedIds: state.selectedSkillIds,
-                    enabled: !state.isBusy,
-                    onApply: (selection) => _applyFilters(skillIds: selection),
-                  ),
-                ],
-                Wrap(
-                  spacing: AppSpacing.small,
+                // The family control has 4dp of invisible tap padding per edge.
+                // Keep 16dp between its visible outline and the List/Map row.
+                const SizedBox(height: AppSpacing.medium - 4),
+                MapViewButton(
+                  origin: MapDiscoveryOrigin.projects,
+                  prepare: _flushQuery,
+                ),
+                const SizedBox(height: AppSpacing.medium),
+                Row(
                   children: [
-                    for (final phase in [
-                      null,
-                      ...ProposalDefinitionPhase.values,
-                    ])
-                      ChoiceChip(
-                        key: Key('proposal-phase-${phase?.wireValue ?? "all"}'),
-                        label: Text(
-                          phase == null
-                              ? l10n.proposalPhaseAll
-                              : phase == ProposalDefinitionPhase.idea
-                              ? l10n.proposalPhaseIdea
-                              : l10n.proposalPhaseDefined,
+                    Expanded(
+                      child: TextField(
+                        key: const Key('proposal-query-filter'),
+                        controller: _queryController,
+                        maxLength: 120,
+                        textInputAction: TextInputAction.search,
+                        decoration: InputDecoration(
+                          labelText: l10n.proposalSearchLabel,
+                          prefixIcon: const Icon(Icons.search),
+                          isDense: true,
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: AppSpacing.medium,
+                            vertical: AppSpacing.small,
+                          ),
+                          counterText: '',
                         ),
-                        selected: state.definitionPhase == phase,
-                        onSelected: state.isBusy
-                            ? null
-                            : (_) => ref
-                                  .read(publicProposalsProvider.notifier)
-                                  .applyFilters(
-                                    locality: state.locality,
-                                    skillIds: state.selectedSkillIds,
-                                    definitionPhase: phase,
-                                    changePhase: true,
-                                  ),
+                        onChanged: (_) => _scheduleQuery(),
+                        onSubmitted: (_) => _flushQuery(),
                       ),
+                    ),
+                    const SizedBox(width: AppSpacing.small),
+                    BrowseFilterButton(
+                      key: const Key('proposal-toggle-filters'),
+                      expanded: _filtersExpanded,
+                      hasActiveFilters:
+                          state.locality.trim().isNotEmpty ||
+                          state.selectedSkillIds.isNotEmpty ||
+                          state.definitionPhase != null,
+                      onPressed: () {
+                        FocusScope.of(context).unfocus();
+                        setState(() => _filtersExpanded = !_filtersExpanded);
+                      },
+                    ),
                   ],
                 ),
-                Text(
-                  l10n.proposalPublicationOrder,
-                  style: Theme.of(context).textTheme.bodySmall,
-                ),
-                const SizedBox(height: AppSpacing.small),
-              ],
-              if (state.phase == ProposalLoadPhase.loading &&
-                  !(state.items.isEmpty && state.visibleRequestedItems.isEmpty))
-                LinearProgressIndicator(semanticsLabel: l10n.proposalLoading),
-              const SizedBox(height: AppSpacing.medium),
-              if (widget.tutorialPlaceholder != null)
-                widget.tutorialPlaceholder!
-              else if ((state.phase == ProposalLoadPhase.idle ||
-                      state.phase == ProposalLoadPhase.loading) &&
-                  state.items.isEmpty &&
-                  state.visibleRequestedItems.isEmpty)
-                LoadingState(message: l10n.proposalLoading)
-              else if (state.phase == ProposalLoadPhase.failure &&
-                  state.items.isEmpty &&
-                  state.visibleRequestedItems.isEmpty)
-                ErrorState(
-                  message: l10n.proposalSafeError,
-                  onRetry: () =>
-                      ref.read(publicProposalsProvider.notifier).load(),
-                )
-              else if (state.items.isEmpty &&
-                  state.visibleRequestedItems.isEmpty)
-                EmptyState(
-                  title: l10n.proposalEmptyTitle,
-                  message: l10n.proposalEmptyMessage,
-                  icon: Icons.event_available_outlined,
-                )
-              else ...[
-                if (state.visibleRequestedItems.isNotEmpty) ...[
+                if (_filtersExpanded) ...[
+                  const SizedBox(height: AppSpacing.medium),
+                  TextField(
+                    key: const Key('proposal-locality-filter'),
+                    controller: _localityController,
+                    decoration: InputDecoration(
+                      labelText: l10n.proposalLocalityFilter,
+                      suffixIcon: IconButton(
+                        key: const Key('proposal-apply-filters'),
+                        onPressed: state.isBusy ? null : _applyFilters,
+                        icon: const Icon(Icons.search),
+                      ),
+                    ),
+                  ),
+                  if (state.categories.isNotEmpty) ...[
+                    const SizedBox(height: AppSpacing.medium),
+                    SkillFilter(
+                      categories: state.categories,
+                      selectedIds: state.selectedSkillIds,
+                      enabled: !state.isBusy,
+                      onApply: (selection) =>
+                          _applyFilters(skillIds: selection),
+                    ),
+                  ],
+                  Wrap(
+                    spacing: AppSpacing.small,
+                    children: [
+                      for (final phase in [
+                        null,
+                        ...ProposalDefinitionPhase.values,
+                      ])
+                        ChoiceChip(
+                          key: Key(
+                            'proposal-phase-${phase?.wireValue ?? "all"}',
+                          ),
+                          label: Text(
+                            phase == null
+                                ? l10n.proposalPhaseAll
+                                : phase == ProposalDefinitionPhase.idea
+                                ? l10n.proposalPhaseIdea
+                                : l10n.proposalPhaseDefined,
+                          ),
+                          selected: state.definitionPhase == phase,
+                          onSelected: state.isBusy
+                              ? null
+                              : (_) => ref
+                                    .read(publicProposalsProvider.notifier)
+                                    .applyFilters(
+                                      locality: state.locality,
+                                      skillIds: state.selectedSkillIds,
+                                      definitionPhase: phase,
+                                      changePhase: true,
+                                    ),
+                        ),
+                    ],
+                  ),
                   Text(
-                    l10n.browseRequestedSection,
-                    key: const Key('proposal-requested-section'),
-                    style: Theme.of(context).textTheme.titleLarge,
+                    l10n.proposalPublicationOrder,
+                    style: Theme.of(context).textTheme.bodySmall,
                   ),
                   const SizedBox(height: AppSpacing.small),
-                  for (final requested in state.visibleRequestedItems) ...[
-                    ProposalCard(
-                      proposal: requested.proposal,
-                      isRequested: true,
-                      onTap: () =>
-                          context.push('/proposals/${requested.proposal.id}'),
+                ],
+                if (state.phase == ProposalLoadPhase.loading &&
+                    !(state.items.isEmpty &&
+                        state.visibleRequestedItems.isEmpty))
+                  LinearProgressIndicator(semanticsLabel: l10n.proposalLoading),
+                const SizedBox(height: AppSpacing.medium),
+                if (widget.tutorialPlaceholder != null)
+                  widget.tutorialPlaceholder!
+                else if ((state.phase == ProposalLoadPhase.idle ||
+                        state.phase == ProposalLoadPhase.loading) &&
+                    state.items.isEmpty &&
+                    state.visibleRequestedItems.isEmpty)
+                  LoadingState(message: l10n.proposalLoading)
+                else if (state.phase == ProposalLoadPhase.failure &&
+                    state.items.isEmpty &&
+                    state.visibleRequestedItems.isEmpty)
+                  ErrorState(
+                    message: l10n.proposalSafeError,
+                    onRetry: () =>
+                        ref.read(publicProposalsProvider.notifier).retry(),
+                  )
+                else if (state.items.isEmpty &&
+                    state.visibleRequestedItems.isEmpty)
+                  EmptyState(
+                    title: l10n.proposalEmptyTitle,
+                    message: l10n.proposalEmptyMessage,
+                    icon: Icons.event_available_outlined,
+                  )
+                else ...[
+                  if (state.visibleRequestedItems.isNotEmpty) ...[
+                    Text(
+                      l10n.browseRequestedSection,
+                      key: const Key('proposal-requested-section'),
+                      style: Theme.of(context).textTheme.titleLarge,
+                    ),
+                    const SizedBox(height: AppSpacing.small),
+                    for (final requested in state.visibleRequestedItems) ...[
+                      Builder(
+                        builder: (context) => ProposalCard(
+                          proposal: requested.proposal,
+                          isRequested: true,
+                          onTap: () => context.push(
+                            '/proposals/${requested.proposal.id}',
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: AppSpacing.medium),
+                    ],
+                  ],
+                  if (state.visibleRequestedItems.isNotEmpty &&
+                      state.ordinaryItems.isNotEmpty) ...[
+                    Text(
+                      l10n.browseOtherProjectsSection,
+                      key: const Key('proposal-other-section'),
+                      style: Theme.of(context).textTheme.titleLarge,
+                    ),
+                    const SizedBox(height: AppSpacing.small),
+                  ],
+                  for (final proposal in state.ordinaryItems) ...[
+                    Builder(
+                      builder: (context) => ProposalCard(
+                        proposal: proposal,
+                        onTap: () => context.push('/proposals/${proposal.id}'),
+                      ),
                     ),
                     const SizedBox(height: AppSpacing.medium),
                   ],
                 ],
-                if (state.visibleRequestedItems.isNotEmpty &&
-                    state.ordinaryItems.isNotEmpty) ...[
-                  Text(
-                    l10n.browseOtherProjectsSection,
-                    key: const Key('proposal-other-section'),
-                    style: Theme.of(context).textTheme.titleLarge,
+                if (state.phase == ProposalLoadPhase.failure &&
+                    state.items.isNotEmpty)
+                  ErrorState(
+                    key: const Key('proposal-safe-error'),
+                    message: l10n.proposalSafeError,
+                    onRetry: () =>
+                        ref.read(publicProposalsProvider.notifier).retry(),
                   ),
-                  const SizedBox(height: AppSpacing.small),
-                ],
-                for (final proposal in state.ordinaryItems) ...[
-                  ProposalCard(
-                    proposal: proposal,
-                    onTap: () => context.push('/proposals/${proposal.id}'),
+                if (state.phase == ProposalLoadPhase.loadingMore)
+                  const Center(
+                    child: SizedBox.square(
+                      dimension: 20,
+                      child: CircularProgressIndicator(),
+                    ),
                   ),
-                  const SizedBox(height: AppSpacing.medium),
-                ],
+                if (showFallback &&
+                    state.hasMore &&
+                    !state.isBusy &&
+                    !(state.phase == ProposalLoadPhase.failure) &&
+                    widget.tutorialPlaceholder == null)
+                  OutlinedButton(
+                    key: const Key('proposal-load-more'),
+                    onPressed: () => ref
+                        .read(publicProposalsProvider.notifier)
+                        .load(reset: false),
+                    child: Text(l10n.proposalLoadMore),
+                  ),
+                // DTOs omit provider provenance; nonempty labels may be derived.
+                if (widget.tutorialPlaceholder == null &&
+                    (state.items.isNotEmpty ||
+                        state.visibleRequestedItems.isNotEmpty))
+                  const LocationAttribution(),
+                // Let credit links scroll above the floating Create action.
+                const SizedBox(height: 80),
               ],
-              if (state.phase == ProposalLoadPhase.failure &&
-                  state.items.isNotEmpty)
-                ErrorState(
-                  key: const Key('proposal-safe-error'),
-                  message: l10n.proposalSafeError,
-                  onRetry: () =>
-                      ref.read(publicProposalsProvider.notifier).load(),
-                ),
-              if (state.items.isNotEmpty && state.hasMore)
-                OutlinedButton(
-                  key: const Key('proposal-load-more'),
-                  onPressed: state.isBusy
-                      ? null
-                      : () => ref
-                            .read(publicProposalsProvider.notifier)
-                            .load(reset: false),
-                  child: state.phase == ProposalLoadPhase.loadingMore
-                      ? const CircularProgressIndicator()
-                      : Text(l10n.proposalLoadMore),
-                ),
-              // DTOs omit provider provenance; nonempty labels may be derived.
-              if (widget.tutorialPlaceholder == null &&
-                  (state.items.isNotEmpty ||
-                      state.visibleRequestedItems.isNotEmpty))
-                const LocationAttribution(),
-              // Let credit links scroll above the floating Create action.
-              const SizedBox(height: 80),
-            ],
+            ),
           ),
         ),
       ),

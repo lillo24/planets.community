@@ -61,7 +61,7 @@ void main() {
   });
   test('signed-out discovery applies backend filters and keyset dedupe', () async {
     final firstPage = List.generate(
-      resourceListingPageSize,
+      7,
       (index) => publicResourceListingFixture(
         id: '00000000-0000-4000-8000-${(index + 300).toString().padLeft(12, '0')}',
         publishedAt: DateTime.utc(
@@ -99,7 +99,7 @@ void main() {
 
     await controller.load(reset: false);
     final state = container.read(publicResourceListingsProvider);
-    expect(state.items, hasLength(resourceListingPageSize + 1));
+    expect(state.items, hasLength(7 + 1));
     expect(state.items.last.id, finalItem.id);
     expect(gateway.lastCursor?.id, firstPage.last.id);
     expect(state.cursor?.id, finalItem.id);
@@ -113,7 +113,12 @@ void main() {
 
   test('load-more failure preserves already loaded rows', () async {
     final gateway = FakeResourceListingGateway()
-      ..publicItems = [publicResourceListingFixture()];
+      ..publicItems = List.generate(
+        7,
+        (i) => publicResourceListingFixture(
+          id: i == 0 ? resourceListingId : 'item-$i',
+        ),
+      );
     final container = ProviderContainer(
       overrides: [resourceListingGatewayProvider.overrideWithValue(gateway)],
     );
@@ -124,7 +129,7 @@ void main() {
     await controller.load(reset: false);
 
     final state = container.read(publicResourceListingsProvider);
-    expect(state.items.single.id, resourceListingId);
+    expect(state.items.first.id, resourceListingId);
     expect(state.failure, ResourceListingFailureKind.unavailable);
   });
 

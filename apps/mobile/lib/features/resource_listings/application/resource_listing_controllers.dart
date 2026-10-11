@@ -4,6 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../../core/widgets/discovery_page_size.dart';
+
 import '../../auth/application/auth_session_controller.dart';
 import '../../auth/domain/auth_models.dart';
 import '../../cover_media/application/resource_listing_cover_reconciler.dart';
@@ -19,14 +21,41 @@ class PublicResourceListingsController
     extends Notifier<PublicResourceListingsState> {
   var _revision = 0;
 
+  int _successfulPages = 0;
+  bool _retryReset = true;
+
+  Future<void> retry() => load(reset: _retryReset);
+
   @override
   PublicResourceListingsState build() {
+    ref.listen(authSessionProvider.select((s) => (s.phase, s.identity?.id)), (
+      previous,
+      next,
+    ) {
+      if (previous?.$2 == next.$2 &&
+          (previous?.$1 == AuthSessionPhase.ready) ==
+              (next.$1 == AuthSessionPhase.ready)) {
+        return;
+      }
+      _revision++;
+      _successfulPages = 0;
+      state = PublicResourceListingsState(
+        modeFilter: state.modeFilter,
+        locality: state.locality,
+        query: state.query,
+      );
+      unawaited(load());
+    });
     ref.onDispose(() => _revision++);
     return const PublicResourceListingsState();
   }
 
   Future<void> load({bool reset = true, bool force = false}) async {
     if (state.isBusy && !force) return;
+    if (!reset && !state.hasMore) return;
+    if (reset) _successfulPages = 0;
+    _retryReset = reset;
+    final pageSize = discoveryPageSize(_successfulPages);
     final revision = ++_revision;
     final previousItems = state.items;
     final mode = state.modeFilter;
@@ -51,7 +80,7 @@ class PublicResourceListingsController
       final page = await ref
           .read(resourceListingGatewayProvider)
           .listPublicResourceListings(
-            limit: resourceListingPageSize,
+            limit: pageSize,
             cursor: cursor,
             mode: mode,
             locality: locality.isEmpty ? null : locality,
@@ -62,6 +91,7 @@ class PublicResourceListingsController
       final nextItems = reset
           ? List<PublicResourceListingSummary>.of(page)
           : _appendDeduplicated(previousItems, page);
+      _successfulPages++;
       state = PublicResourceListingsState(
         phase: ResourceListingLoadPhase.ready,
         items: List.unmodifiable(nextItems),
@@ -71,7 +101,7 @@ class PublicResourceListingsController
         cursor: page.isEmpty
             ? (reset ? null : previousCursor)
             : page.last.cursor,
-        hasMore: page.length == resourceListingPageSize,
+        hasMore: page.length == pageSize,
       );
     } catch (error) {
       if (_isCurrent(revision, mode, locality, query)) {

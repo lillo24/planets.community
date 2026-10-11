@@ -243,7 +243,10 @@ void main() {
 
   test('public filters and cursor pagination are preserved', () async {
     final gateway = FakeProposalGateway()
-      ..publicItems = [proposalSummaryFixture()];
+      ..publicItems = List.generate(
+        7,
+        (i) => proposalSummaryFixture(id: i == 6 ? 'proposal-1' : 'item-$i'),
+      );
     final container = ProviderContainer(
       overrides: [proposalGatewayProvider.overrideWithValue(gateway)],
     );
@@ -460,7 +463,7 @@ void main() {
     'later public pages dedupe Requested IDs but keep the raw tail cursor',
     () async {
       final firstPage = List.generate(
-        proposalPageSize,
+        7,
         (index) => proposalSummaryFixture(id: 'first-$index'),
       );
       final secondPage = [
