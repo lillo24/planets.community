@@ -33,6 +33,7 @@ import '../domain/similar_proposal.dart';
 import 'similar_proposal_suggestions.dart';
 import 'proposal_editor_controls.dart';
 import 'proposal_planning_review.dart';
+import '../../project_organization/presentation/project_organization_sheet.dart';
 
 class ProposalEditorScreen extends ConsumerStatefulWidget {
   const ProposalEditorScreen({
@@ -941,6 +942,10 @@ class _ProposalFormState extends ConsumerState<_ProposalForm>
     final isDraft =
         proposal == null || proposal.lifecycle == ProposalLifecycle.draft;
     final isPublished = proposal?.lifecycle == ProposalLifecycle.published;
+    // Published Ideas edit logistics through the revision-bound planner only.
+    // The ordinary form keeps canonical fields unchanged; old clients are also
+    // denied by database triggers if they attempt to bypass confirmation.
+    final ideaPlanning = isPublished && proposal!.isIdea;
     final canCancel = proposal?.canCancelAt(now) ?? false;
     Future<void>.microtask(_syncMatching);
     final readOnlyMessage = proposal == null || contentEditable
@@ -1095,171 +1100,208 @@ class _ProposalFormState extends ConsumerState<_ProposalForm>
                   Text(l10n.proposalIdeaPublicHelp),
                   const SizedBox(height: AppSpacing.large),
                 ],
-                Padding(
-                  key: _capacityAnchor,
-                  padding: const EdgeInsets.only(bottom: AppSpacing.medium),
-                  child: ProposalCapacityControl(
-                    controller: _capacity,
-                    enabled: !busy && contentEditable,
-                    validator: (_) => _validateCapacity(),
-                    onChanged: _refreshValidationSummary,
-                  ),
-                ),
-                SwitchListTile(
-                  key: const Key('proposal-count-organizers-capacity'),
-                  contentPadding: EdgeInsets.zero,
-                  title: Text(l10n.projectCountOrganizersCapacityLabel),
-                  value: _countOrganizersTowardCapacity,
-                  onChanged: busy || !contentEditable
-                      ? null
-                      : (value) => setState(
-                          () => _countOrganizersTowardCapacity = value,
-                        ),
-                ),
-                Text(
-                  l10n.proposalCapacityEditableLater,
-                  style: Theme.of(context).textTheme.bodySmall,
-                ),
-                const SizedBox(height: AppSpacing.large),
-                Container(
-                  key: _timezoneAnchor,
-                  child: _timezone.text != 'Europe/Rome'
-                      ? Padding(
-                          padding: const EdgeInsets.only(
-                            bottom: AppSpacing.medium,
-                          ),
-                          child: Text(
-                            l10n.proposalScheduleZone(_timezone.text),
-                            key: const Key('proposal-legacy-zone'),
-                          ),
-                        )
-                      : const SizedBox.shrink(),
-                ),
-                if (_ideaMode && (_startsAt != null || _endsAt != null))
-                  TextButton(
-                    key: const Key('proposal-clear-schedule'),
+                if (ideaPlanning)
+                  OutlinedButton.icon(
+                    key: const Key('proposal-organization'),
                     onPressed: busy
                         ? null
-                        : () => setState(() {
-                            _startsAt = null;
-                            _endsAt = null;
-                          }),
-                    child: Text(l10n.proposalClearSchedule),
+                        : () async {
+                            if (!await _save(publish: false, navigate: false) ||
+                                !context.mounted) {
+                              return;
+                            }
+                            await showProjectOrganization(context, proposal.id);
+                            if (context.mounted) {
+                              // Rebind the form after officialization rather than
+                              // accidentally resaving an old canonical snapshot.
+                              context.pop();
+                            }
+                          },
+                    icon: const Icon(Icons.checklist_outlined),
+                    label: Text(l10n.organizationTitle),
                   ),
-                ProposalControlPair(
-                  first: Container(
-                    key: _startAnchor,
-                    child: ProposalDateControl(
-                      label: l10n.proposalStartLabel,
-                      value: _startsAt,
-                      timezone: _timezone.text,
+                if (!ideaPlanning) ...[
+                  Padding(
+                    key: _capacityAnchor,
+                    padding: const EdgeInsets.only(bottom: AppSpacing.medium),
+                    child: ProposalCapacityControl(
+                      controller: _capacity,
                       enabled: !busy && contentEditable,
-                      onPick: () => _pickDateTime(start: true),
-                      fieldKey: const Key('proposal-start-field'),
-                      pickKey: const Key('proposal-pick-start'),
-                      validator: (_) => _validatingPublish && _startsAt == null
-                          ? l10n.proposalStartRequired
-                          : null,
+                      validator: (_) => _validateCapacity(),
+                      onChanged: _refreshValidationSummary,
                     ),
                   ),
-                  second: Container(
-                    key: _endAnchor,
-                    child: ProposalDateControl(
-                      label: l10n.proposalEndLabel,
-                      value: _endsAt,
-                      timezone: _timezone.text,
-                      enabled: !busy && contentEditable,
-                      onPick: () => _pickDateTime(start: false),
-                      fieldKey: const Key('proposal-end-field'),
-                      pickKey: const Key('proposal-pick-end'),
-                      validator: (_) {
-                        if (_validatingPublish && _endsAt == null) {
-                          return l10n.proposalEndRequired;
-                        }
-                        if (_startsAt != null &&
-                            _endsAt != null &&
-                            !_endsAt!.isAfter(_startsAt!)) {
-                          return l10n.proposalEndAfterStart;
-                        }
-                        return null;
-                      },
+                  SwitchListTile(
+                    key: const Key('proposal-count-organizers-capacity'),
+                    contentPadding: EdgeInsets.zero,
+                    title: Text(l10n.projectCountOrganizersCapacityLabel),
+                    value: _countOrganizersTowardCapacity,
+                    onChanged: busy || !contentEditable
+                        ? null
+                        : (value) => setState(
+                            () => _countOrganizersTowardCapacity = value,
+                          ),
+                  ),
+                  Text(
+                    l10n.proposalCapacityEditableLater,
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                  const SizedBox(height: AppSpacing.large),
+                  Container(
+                    key: _timezoneAnchor,
+                    child: _timezone.text != 'Europe/Rome'
+                        ? Padding(
+                            padding: const EdgeInsets.only(
+                              bottom: AppSpacing.medium,
+                            ),
+                            child: Text(
+                              l10n.proposalScheduleZone(_timezone.text),
+                              key: const Key('proposal-legacy-zone'),
+                            ),
+                          )
+                        : const SizedBox.shrink(),
+                  ),
+                  if (_ideaMode && (_startsAt != null || _endsAt != null))
+                    TextButton(
+                      key: const Key('proposal-clear-schedule'),
+                      onPressed: busy
+                          ? null
+                          : () => setState(() {
+                              _startsAt = null;
+                              _endsAt = null;
+                            }),
+                      child: Text(l10n.proposalClearSchedule),
+                    ),
+                  ProposalControlPair(
+                    first: Container(
+                      key: _startAnchor,
+                      child: ProposalDateControl(
+                        label: l10n.proposalStartLabel,
+                        value: _startsAt,
+                        timezone: _timezone.text,
+                        enabled: !busy && contentEditable,
+                        onPick: () => _pickDateTime(start: true),
+                        fieldKey: const Key('proposal-start-field'),
+                        pickKey: const Key('proposal-pick-start'),
+                        validator: (_) =>
+                            _validatingPublish && _startsAt == null
+                            ? l10n.proposalStartRequired
+                            : null,
+                      ),
+                    ),
+                    second: Container(
+                      key: _endAnchor,
+                      child: ProposalDateControl(
+                        label: l10n.proposalEndLabel,
+                        value: _endsAt,
+                        timezone: _timezone.text,
+                        enabled: !busy && contentEditable,
+                        onPick: () => _pickDateTime(start: false),
+                        fieldKey: const Key('proposal-end-field'),
+                        pickKey: const Key('proposal-pick-end'),
+                        validator: (_) {
+                          if (_validatingPublish && _endsAt == null) {
+                            return l10n.proposalEndRequired;
+                          }
+                          if (_startsAt != null &&
+                              _endsAt != null &&
+                              !_endsAt!.isAfter(_startsAt!)) {
+                            return l10n.proposalEndAfterStart;
+                          }
+                          return null;
+                        },
+                      ),
                     ),
                   ),
-                ),
-                const SizedBox(height: AppSpacing.large),
-                ProposalLocationEditor(
-                  key: _publicLocationAnchor,
-                  handle: _locationHandle,
-                  publicLabel: () => _publicLocation.text,
-                  actorId: widget.identityId,
-                  itemId: () => ref
-                      .read(proposalEditorSessionProvider(widget.sessionId))
-                      .proposal
-                      ?.id,
-                  savePending: () async =>
-                      await _save(
-                        publish: false,
-                        navigate: false,
-                        revealValidation: false,
-                      )
-                      ? ref
-                            .read(
-                              proposalEditorSessionProvider(widget.sessionId),
-                            )
-                            .proposal
-                            ?.id
-                      : null,
-                  enabled: contentEditable,
-                  exactIsPublic: _visibility == ExactLocationVisibility.public,
-                  contentControllers: [
-                    _title,
-                    _summary,
-                    _description,
-                    _capacity,
-                    _timezone,
-                    _country,
-                    _locality,
-                    _administrativeArea,
-                    _publicLocation,
-                    _exactLocation,
-                  ],
-                  contentVersion:
-                      '$_startsAt:$_endsAt:$_visibility:$_skills:$_coverRevision:$_countOrganizersTowardCapacity',
-                  onCanonical: (value) {
-                    _country.text = value.countryCode ?? _country.text;
-                    _locality.text =
-                        value.locality ??
-                        value.publicPlace?.locality ??
-                        _locality.text;
-                    _administrativeArea.text =
-                        value.administrativeArea ??
-                        value.publicPlace?.administrativeArea ??
-                        '';
-                    _publicLocation.text =
-                        value.publicLabel ??
-                        value.publicPlace?.label ??
-                        _publicLocation.text;
-                    if (value.exactIsPublic != null) {
-                      _visibility = value.exactIsPublic!
-                          ? ExactLocationVisibility.public
-                          : ExactLocationVisibility.participants;
-                    }
-                    _acknowledged = _snapshot();
-                  },
-                  onManualCity: (value) {
-                    if (_country.text.trim().isEmpty) _country.text = 'IT';
-                    _locality.text = value;
-                    _publicLocation.text = value;
-                    _administrativeArea.clear();
-                    _visibility = ExactLocationVisibility.participants;
-                    _refreshValidationSummary();
-                  },
-                  hasDirections: _exactLocation.text.trim().isNotEmpty,
-                  onClearDirections: () {
-                    _exactLocation.clear();
-                    _refreshValidationSummary();
-                  },
-                  directions: _field(
+                  const SizedBox(height: AppSpacing.large),
+                  ProposalLocationEditor(
+                    key: _publicLocationAnchor,
+                    handle: _locationHandle,
+                    publicLabel: () => _publicLocation.text,
+                    actorId: widget.identityId,
+                    itemId: () => ref
+                        .read(proposalEditorSessionProvider(widget.sessionId))
+                        .proposal
+                        ?.id,
+                    savePending: () async =>
+                        await _save(
+                          publish: false,
+                          navigate: false,
+                          revealValidation: false,
+                        )
+                        ? ref
+                              .read(
+                                proposalEditorSessionProvider(widget.sessionId),
+                              )
+                              .proposal
+                              ?.id
+                        : null,
+                    enabled: contentEditable,
+                    exactIsPublic:
+                        _visibility == ExactLocationVisibility.public,
+                    contentControllers: [
+                      _title,
+                      _summary,
+                      _description,
+                      _capacity,
+                      _timezone,
+                      _country,
+                      _locality,
+                      _administrativeArea,
+                      _publicLocation,
+                      _exactLocation,
+                    ],
+                    contentVersion:
+                        '$_startsAt:$_endsAt:$_visibility:$_skills:$_coverRevision:$_countOrganizersTowardCapacity',
+                    onCanonical: (value) {
+                      _country.text = value.countryCode ?? _country.text;
+                      _locality.text =
+                          value.locality ??
+                          value.publicPlace?.locality ??
+                          _locality.text;
+                      _administrativeArea.text =
+                          value.administrativeArea ??
+                          value.publicPlace?.administrativeArea ??
+                          '';
+                      _publicLocation.text =
+                          value.publicLabel ??
+                          value.publicPlace?.label ??
+                          _publicLocation.text;
+                      if (value.exactIsPublic != null) {
+                        _visibility = value.exactIsPublic!
+                            ? ExactLocationVisibility.public
+                            : ExactLocationVisibility.participants;
+                      }
+                      _acknowledged = _snapshot();
+                    },
+                    onManualCity: (value) {
+                      if (_country.text.trim().isEmpty) _country.text = 'IT';
+                      _locality.text = value;
+                      _publicLocation.text = value;
+                      _administrativeArea.clear();
+                      _visibility = ExactLocationVisibility.participants;
+                      _refreshValidationSummary();
+                    },
+                    hasDirections: _exactLocation.text.trim().isNotEmpty,
+                    onClearDirections: () {
+                      _exactLocation.clear();
+                      _refreshValidationSummary();
+                    },
+                    directions: _field(
+                      _exactLocation,
+                      l10n.proposalArrivalDirectionsLabel,
+                      1000,
+                      anchorKey: _exactLocationAnchor,
+                      fieldKey: const Key('proposal-exact-location'),
+                      lines: 3,
+                    ),
+                  ),
+                ],
+                if (ideaPlanning) ...[
+                  const SizedBox(height: AppSpacing.medium),
+                  // Directions remain separate protected content. An Idea's
+                  // city/schedule/capacity can only be officialized in Organization.
+                  _field(
                     _exactLocation,
                     l10n.proposalArrivalDirectionsLabel,
                     1000,
@@ -1267,7 +1309,7 @@ class _ProposalFormState extends ConsumerState<_ProposalForm>
                     fieldKey: const Key('proposal-exact-location'),
                     lines: 3,
                   ),
-                ),
+                ],
                 const SizedBox(height: AppSpacing.large),
                 Text(
                   l10n.proposalSkillsTitle,
