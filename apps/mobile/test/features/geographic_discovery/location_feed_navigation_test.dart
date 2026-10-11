@@ -8,6 +8,53 @@ import '../../../test_support/map05_app_fixture.dart';
 import '../../support/fake_location_preview.dart';
 
 void main() {
+  for (final route in ['proposals', 'tavoli']) {
+    for (final language in ['en', 'it']) {
+      for (final scale in [1.0, 2.0]) {
+        testWidgets('$route $language ${scale}x balanced visible header gaps', (
+          t,
+        ) async {
+          await t.binding.setSurfaceSize(const Size(320, 900));
+          t.platformDispatcher.textScaleFactorTestValue = scale;
+          addTearDown(() => t.binding.setSurfaceSize(null));
+          addTearDown(t.platformDispatcher.clearTextScaleFactorTestValue);
+          final fixture = Map05AppFixture();
+          fixture.locale.value = Locale(language);
+          fixture.router.go('/$route');
+          await t.pumpWidget(fixture.app);
+          await t.pumpAndSettle();
+
+          final family = t.getRect(
+            find.byKey(const Key('browse-activity-switcher')),
+          );
+          final selector = t.getRect(
+            find.byKey(const Key('map-view-selector')),
+          );
+          final nextRow = t.getRect(
+            find.byKey(
+              Key(
+                route == 'proposals'
+                    ? 'proposal-query-filter'
+                    : 'tavoli-toggle-filters',
+              ),
+            ),
+          );
+          // Material 3's family outline is inset 4dp within its tap target.
+          final gapAbove = selector.top - (family.bottom - 4);
+          final gapBelow = nextRow.top - selector.bottom;
+          expect(gapAbove, 16);
+          expect(gapBelow, gapAbove);
+          expect(selector.width, family.width);
+          expect(selector.center.dx, family.center.dx);
+          expect(selector.height, greaterThanOrEqualTo(48));
+          expect(t.takeException(), isNull);
+          await t.pumpWidget(const SizedBox());
+          await t.pump(const Duration(seconds: 1));
+          fixture.dispose();
+        });
+      }
+    }
+  }
   for (final origin in MapDiscoveryOrigin.values) {
     testWidgets(
       '$origin 320px/2x feed credits clear Create and Map return retains scroll',
