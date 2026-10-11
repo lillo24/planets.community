@@ -68,6 +68,10 @@ class _ProposalLocationEditorState extends ConsumerState<ProposalLocationEditor>
   bool _manualPendingSave = false, _settingQuery = false;
   bool _denied = false;
   bool _manualExpanded = false, _preparationBlocked = false;
+  // Only a fresh blank editor establishes manual authorship. Saved/restored
+  // text has unknown provenance; credits survive later geometry clear.
+  late bool _needsAttribution;
+  late String _lastPublicLabel;
   late String _lastQueryText;
   bool? _directionsExpanded;
   Timer? _debounce;
@@ -91,6 +95,9 @@ class _ProposalLocationEditorState extends ConsumerState<ProposalLocationEditor>
     WidgetsBinding.instance.addObserver(this);
     _factory = ref.read(editorPlaceGatewayFactoryProvider);
     _query = TextEditingController(text: widget.publicLabel());
+    _lastPublicLabel = widget.publicLabel();
+    _needsAttribution =
+        widget.itemId() != null || _lastPublicLabel.trim().isNotEmpty;
     _directionsExpanded = widget.hasDirections;
     _lastQueryText = _query.text;
     _query.addListener(_queryChanged);
@@ -117,6 +124,9 @@ class _ProposalLocationEditorState extends ConsumerState<ProposalLocationEditor>
         _applying = true;
         try {
           _location = value;
+          if (value.publicPlace != null || value.exactPlace != null) {
+            _needsAttribution = true;
+          }
           _dirty = false;
           _manualPendingSave = false;
           _setQuery(
@@ -126,6 +136,7 @@ class _ProposalLocationEditorState extends ConsumerState<ProposalLocationEditor>
                 widget.publicLabel(),
           );
           widget.onCanonical(value);
+          _lastPublicLabel = widget.publicLabel();
         } finally {
           _applying = false;
         }
@@ -155,6 +166,13 @@ class _ProposalLocationEditorState extends ConsumerState<ProposalLocationEditor>
   void _changed() {
     if (!mounted) return;
     final canonical = _session.canonical;
+    if (canonical != null &&
+        (canonical.publicPlace != null ||
+            canonical.exactPlace != null ||
+            (canonical.publicLabel?.isNotEmpty == true &&
+                canonical.publicLabel != widget.publicLabel()))) {
+      _needsAttribution = true;
+    }
     if (canonical != null && !_dirty && !_preparing && !_manualPendingSave) {
       _denied = false;
       _location = canonical;
@@ -181,6 +199,11 @@ class _ProposalLocationEditorState extends ConsumerState<ProposalLocationEditor>
   }
 
   void _contentChanged() {
+    final label = widget.publicLabel();
+    if (label != _lastPublicLabel && !_applying && !_preparing) {
+      _needsAttribution = true;
+    }
+    _lastPublicLabel = label;
     final next = widget.contentControllers.map((c) => c.text).toList();
     final different = !listEquals(_lastText, next);
     _lastText = next;
@@ -190,6 +213,11 @@ class _ProposalLocationEditorState extends ConsumerState<ProposalLocationEditor>
   @override
   void didUpdateWidget(ProposalLocationEditor oldWidget) {
     super.didUpdateWidget(oldWidget);
+    final label = widget.publicLabel();
+    if (label != _lastPublicLabel || oldWidget.actorId != widget.actorId) {
+      _needsAttribution = true;
+    }
+    _lastPublicLabel = label;
     if (oldWidget.contentVersion != widget.contentVersion &&
         !_applying &&
         !_preparing) {
@@ -200,6 +228,7 @@ class _ProposalLocationEditorState extends ConsumerState<ProposalLocationEditor>
     if (_knownId != id) {
       _knownId = id;
       if (!_session.busy) {
+        _needsAttribution = true;
         _cancel();
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (mounted) unawaited(_session.reload());
@@ -222,6 +251,7 @@ class _ProposalLocationEditorState extends ConsumerState<ProposalLocationEditor>
   }
 
   void _revoke() {
+    _needsAttribution = true;
     _cancel();
     _denied = true;
     _location = null;
@@ -326,6 +356,7 @@ class _ProposalLocationEditorState extends ConsumerState<ProposalLocationEditor>
     _applying = true;
     try {
       widget.onManualCity(value);
+      _lastPublicLabel = widget.publicLabel();
       _location = null;
       _dirty = false;
       _manualPendingSave = true;
@@ -437,8 +468,10 @@ class _ProposalLocationEditorState extends ConsumerState<ProposalLocationEditor>
                 label: Text(l10n.proposalClearDirections),
               ),
           ],
-          const SizedBox(height: AppSpacing.small),
-          const LocationAttribution(),
+          if (_needsAttribution) ...[
+            const SizedBox(height: AppSpacing.small),
+            const LocationAttribution(),
+          ],
         ],
       ),
     );
@@ -521,6 +554,10 @@ class _ProposalLocationEditorState extends ConsumerState<ProposalLocationEditor>
                       ),
                     ),
                   ),
+                // Keep result credits inside the already bounded panel; they
+                // do not resize the page or imply provenance for typed text.
+                if (!_needsAttribution && suggestions.isNotEmpty)
+                  const LocationAttribution(),
                 ..._operationFeedback(l10n, search),
                 if (_preparationBlocked)
                   Text(

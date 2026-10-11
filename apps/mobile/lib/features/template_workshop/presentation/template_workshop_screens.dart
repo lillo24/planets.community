@@ -257,9 +257,10 @@ class _TemplateWorkshopScreenState extends ConsumerState<TemplateWorkshopScreen>
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        ProjectCoverImage(
+                        _TemplateCover(
                           title: item.title,
                           objectPath: item.coverPath,
+                          assetKey: item.coverAssetKey,
                         ),
                         Padding(
                           padding: const EdgeInsets.all(AppSpacing.medium),
@@ -270,12 +271,18 @@ class _TemplateWorkshopScreenState extends ConsumerState<TemplateWorkshopScreen>
                                 item.title,
                                 style: Theme.of(context).textTheme.titleLarge,
                               ),
-                              Text(l.workshopCompleted),
+                              if (item.isOfficial)
+                                _DefaultBadge()
+                              else
+                                Text(l.workshopCompleted),
                               Text(item.summary),
                               Text(
-                                l.workshopCreator(
-                                  item.creatorName ?? l.workshopCreatorFallback,
-                                ),
+                                item.isOfficial
+                                    ? l.workshopOfficialOrganization
+                                    : l.workshopCreator(
+                                        item.creatorName ??
+                                            l.workshopCreatorFallback,
+                                      ),
                               ),
                               _TemplateSkills(skills: item.skills),
                             ],
@@ -482,20 +489,27 @@ class _TemplateWorkshopDetailScreenState
                 key: const Key('template-unavailable'),
               ),
             if (detail != null) ...[
-              ProjectCoverImage(
+              _TemplateCover(
                 key: const Key('template-detail-cover'),
                 title: detail.title,
                 objectPath: detail.coverPath,
+                assetKey: detail.coverAssetKey,
               ),
               Text(
                 detail.title,
                 style: Theme.of(context).textTheme.headlineSmall,
               ),
-              Text(l.workshopCompleted),
+              if (detail.isOfficial) ...[
+                _DefaultBadge(),
+                Text(l.workshopOfficialExample),
+              ] else
+                Text(l.workshopCompleted),
               Text(
-                l.workshopCreator(
-                  detail.creatorName ?? l.workshopCreatorFallback,
-                ),
+                detail.isOfficial
+                    ? l.workshopOfficialOrganization
+                    : l.workshopCreator(
+                        detail.creatorName ?? l.workshopCreatorFallback,
+                      ),
               ),
               const SizedBox(height: AppSpacing.medium),
               Text(detail.summary),
@@ -603,14 +617,15 @@ class _TemplateWorkshopDetailScreenState
                     : () => _report(detail),
                 child: Text(l.workshopReport),
               ),
-              TextButton(
-                key: const Key('template-source'),
-                onPressed: () async {
-                  await context.push('/proposals/${detail.sourceId}');
-                  if (mounted) await _refresh();
-                },
-                child: Text(l.workshopViewSource),
-              ),
+              if (detail.sourceId != null)
+                TextButton(
+                  key: const Key('template-source'),
+                  onPressed: () async {
+                    await context.push('/proposals/${detail.sourceId}');
+                    if (mounted) await _refresh();
+                  },
+                  child: Text(l.workshopViewSource),
+                ),
             ],
           ],
         ),
@@ -654,4 +669,48 @@ class _WorkshopError extends StatelessWidget {
       ),
     ],
   );
+}
+
+class _DefaultBadge extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Align(
+    alignment: AlignmentDirectional.centerStart,
+    child: Chip(
+      avatar: const Icon(Icons.auto_awesome_outlined, size: 16),
+      label: Text(AppLocalizations.of(context).workshopDefault),
+      visualDensity: VisualDensity.compact,
+    ),
+  );
+}
+
+/// Official covers are licensed bundled illustrations, never source activity media.
+class _TemplateCover extends StatelessWidget {
+  const _TemplateCover({
+    required this.title,
+    this.objectPath,
+    this.assetKey,
+    super.key,
+  });
+  final String title;
+  final String? objectPath, assetKey;
+  @override
+  Widget build(BuildContext context) {
+    final asset = assetKey;
+    if (asset == null) {
+      return ProjectCoverImage(title: title, objectPath: objectPath);
+    }
+    return Semantics(
+      image: true,
+      label: AppLocalizations.of(context).coverImageSemantics(title),
+      child: ExcludeSemantics(
+        child: AspectRatio(
+          aspectRatio: 16 / 9,
+          child: Image.asset(
+            'assets/official_templates/$asset.webp',
+            fit: BoxFit.cover,
+          ),
+        ),
+      ),
+    );
+  }
 }

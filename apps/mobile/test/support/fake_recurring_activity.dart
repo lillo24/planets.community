@@ -295,6 +295,8 @@ RecurringSchedule recurringScheduleFixture({
 PublicRecurringActivitySummary publicRecurringSummaryFixture({
   String id = 'tavolo-1',
   String title = 'Neighborhood philosophy table',
+  String locality = 'Bologna',
+  String publicLocationLabel = 'Central Bologna',
   RecurrenceType type = RecurrenceType.weekly,
   String? coverObjectPath,
   ProjectCapacitySnapshot? capacity,
@@ -304,9 +306,9 @@ PublicRecurringActivitySummary publicRecurringSummaryFixture({
   summary: 'A recurring conversation about ideas and local life.',
   topic: 'Philosophy',
   countryCode: 'IT',
-  locality: 'Bologna',
+  locality: locality,
   administrativeArea: 'Emilia-Romagna',
-  publicLocationLabel: 'Central Bologna',
+  publicLocationLabel: publicLocationLabel,
   nextOccurrence: RecurringActivityOccurrence(
     startsAt: DateTime.utc(2026, 9, 9, 17),
     endsAt: DateTime.utc(2026, 9, 9, 18, 30),

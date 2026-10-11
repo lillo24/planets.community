@@ -1,0 +1,274 @@
+[
+  {
+    "key": "repair",
+    "template_id": "ea56119c-ea7d-57a6-8347-45ee8525124d",
+    "content": {
+      "title": "Repair Café: una mattina per aggiustare piccoli oggetti",
+      "summary": "Accoglienza, piccoli controlli sicuri e un banco condiviso: un esempio da adattare al proprio quartiere.",
+      "description": "Accogliamo gli oggetti e decidiamo insieme quali controlli semplici possiamo fare. Separiamo le riparazioni alla nostra portata da quelle da affidare a un professionista; niente lavori su impianti o apparecchi alimentati. Organizziamo piccoli gruppi, annotiamo il prossimo passo e lasciamo puliti i tavoli. Questo esempio non garantisce la riuscita di una riparazione.",
+      "skill_selections": [
+        {
+          "slug": "basic-repairs",
+          "importance": "required"
+        },
+        {
+          "slug": "woodworking",
+          "importance": "useful"
+        }
+      ],
+      "registration_capacity_recommendation": 16,
+      "duration_seconds": 10800,
+      "cover_asset_key": "repair-cafe",
+      "resource_blueprints": [
+        {
+          "source_need_id": "0683568f-ae11-595f-85ad-5ecd93d5d5db",
+          "title": "Attrezzi manuali",
+          "details": "Cacciaviti, pinze e piccoli morsetti; condividiamo solo utensili adatti al lavoro."
+        },
+        {
+          "source_need_id": "660b360d-7068-541b-8c8d-db2b68b302d0",
+          "title": "Tavoli da lavoro",
+          "details": "Due superfici stabili e protezioni per appoggiare gli oggetti."
+        }
+      ]
+    }
+  },
+  {
+    "key": "mural",
+    "template_id": "643c276c-d176-5b6d-80b5-082b76d6d674",
+    "content": {
+      "title": "Murale di quartiere: prepariamo e dipingiamo insieme",
+      "summary": "Dal disegno condiviso alla pulizia finale, con ruoli anche per chi non dipinge.",
+      "description": "Concordiamo un disegno semplice e verifichiamo prima le autorizzazioni necessarie per la superficie scelta. Proteggiamo il pavimento, prepariamo il supporto e dividiamo il disegno in parti. Lavoriamo in piccoli gruppi con colori adatti; riordiniamo materiali e spazio senza promettere un risultato professionale.",
+      "skill_selections": [
+        {
+          "slug": "mural-painting",
+          "importance": "required"
+        },
+        {
+          "slug": "event-organization",
+          "importance": "useful"
+        }
+      ],
+      "registration_capacity_recommendation": 20,
+      "duration_seconds": 10800,
+      "cover_asset_key": "mural",
+      "resource_blueprints": [
+        {
+          "source_need_id": "69b57213-8f86-5a5e-8678-fc60e4f65a72",
+          "title": "Teli di protezione",
+          "details": "Teli riutilizzabili e nastro per proteggere le superfici vicine."
+        },
+        {
+          "source_need_id": "8ab561d3-f205-557b-89ab-f8a466be91bc",
+          "title": "Pennelli e rulli",
+          "details": "Pennelli di diverse misure e contenitori per lavaggio e riuso."
+        }
+      ]
+    }
+  },
+  {
+    "key": "flowerbed",
+    "template_id": "4e28f7c7-d532-5b5f-880f-5dddae174d91",
+    "content": {
+      "title": "Aiuola condivisa: piantiamo e curiamo uno spazio comune",
+      "summary": "Prepariamo il terreno, scegliamo piante adatte e concordiamo i turni di cura.",
+      "description": "Verifichiamo che lo spazio possa essere usato e scegliamo piante adatte al luogo. Prepariamo il terreno con attrezzi manuali, disponiamo le piante e annaffiamo. Concludiamo concordando chi potrà seguire la cura e quando rivedersi; il modello non certifica autorizzazioni o manutenzione futura.",
+      "skill_selections": [
+        {
+          "slug": "gardening",
+          "importance": "required"
+        },
+        {
+          "slug": "urban-gardening",
+          "importance": "useful"
+        }
+      ],
+      "registration_capacity_recommendation": 12,
+      "duration_seconds": 10800,
+      "cover_asset_key": "seedling-trays",
+      "resource_blueprints": [
+        {
+          "source_need_id": "cae43f71-11ed-5538-88fd-5147bcfbd57f",
+          "title": "Attrezzi da aiuola",
+          "details": "Palette, guanti e un piccolo rastrello da condividere."
+        },
+        {
+          "source_need_id": "444c0f23-ff07-5085-8661-b811bde7af46",
+          "title": "Annaffiatoi",
+          "details": "Annaffiatoi e acqua disponibile nel luogo concordato."
+        }
+      ]
+    }
+  },
+  {
+    "key": "concert",
+    "template_id": "2a9128ad-c37c-5880-8441-519fcdfa9489",
+    "content": {
+      "title": "Concerto acustico di quartiere: suoniamo e prepariamo lo spazio",
+      "summary": "Set brevi, allestimento semplice e tempo per riordinare insieme.",
+      "description": "Concordiamo brevi set acustici e controlliamo le condizioni d'uso dello spazio. Prepariamo posti a sedere e un passaggio libero; proviamo il volume senza disturbare. Alterniamo musica e pause, poi ritiriamo strumenti e sedie. Chi non suona può aiutare nell'allestimento.",
+      "skill_selections": [
+        {
+          "slug": "musician",
+          "importance": "required"
+        },
+        {
+          "slug": "audio-sound-setup",
+          "importance": "useful"
+        }
+      ],
+      "registration_capacity_recommendation": 24,
+      "duration_seconds": 10800,
+      "cover_asset_key": "acoustic-concert",
+      "resource_blueprints": [
+        {
+          "source_need_id": "29c5b82c-d80f-5af8-81e4-9e2829b5b42c",
+          "title": "Sedie pieghevoli",
+          "details": "Sedie stabili, con spazio per passaggi accessibili."
+        },
+        {
+          "source_need_id": "c9144037-fe9e-570b-8409-76bfdef4abfa",
+          "title": "Audio essenziale",
+          "details": "Un piccolo impianto solo se adatto allo spazio e gestito da chi lo conosce."
+        }
+      ]
+    }
+  },
+  {
+    "key": "trail",
+    "template_id": "9aabac0d-67ec-5d16-8aef-70a19c4756cc",
+    "content": {
+      "title": "Pulizia del sentiero: raccogliamo e separiamo i rifiuti",
+      "summary": "Un percorso breve con briefing, raccolta sicura e conferimento concordato.",
+      "description": "Scegliamo un percorso accessibile e verifichiamo come conferire i materiali. Spieghiamo quali rifiuti possiamo raccogliere: oggetti taglienti o sospetti restano a personale competente. In coppia raccogliamo e separiamo i materiali ordinari, poi portiamo i sacchi al punto concordato e riordiniamo gli attrezzi.",
+      "skill_selections": [
+        {
+          "slug": "event-organization",
+          "importance": "required"
+        },
+        {
+          "slug": "gardening",
+          "importance": "useful"
+        }
+      ],
+      "registration_capacity_recommendation": 18,
+      "duration_seconds": 10800,
+      "cover_asset_key": null,
+      "resource_blueprints": [
+        {
+          "source_need_id": "488defd9-fde0-5522-817a-b886149d4310",
+          "title": "Guanti da lavoro",
+          "details": "Guanti integri della misura adatta; niente raccolta a mani nude."
+        },
+        {
+          "source_need_id": "6e62e176-2663-5269-8134-53633f0d6790",
+          "title": "Sacchi per raccolta",
+          "details": "Sacchi distinti per i materiali ordinari e pinze manuali."
+        }
+      ]
+    }
+  },
+  {
+    "key": "books",
+    "template_id": "eb64ee8e-da21-57cb-876f-15aa6ff4387f",
+    "content": {
+      "title": "Scambio di libri: portane uno e scopri nuove letture",
+      "summary": "Esponiamo libri, scambiamo consigli e decidiamo la destinazione di quelli rimasti.",
+      "description": "Raccogliamo libri in buono stato e li ordiniamo su tavoli con etichette leggibili. Ognuno può proporre una lettura o scegliere un libro; concordiamo una regola semplice di scambio. Prima di chiudere decidiamo insieme dove lasciare i libri rimasti, senza promettere donazioni già autorizzate.",
+      "skill_selections": [
+        {
+          "slug": "facilitation",
+          "importance": "required"
+        },
+        {
+          "slug": "event-organization",
+          "importance": "useful"
+        }
+      ],
+      "registration_capacity_recommendation": 16,
+      "duration_seconds": 10800,
+      "cover_asset_key": "reading-group",
+      "resource_blueprints": [
+        {
+          "source_need_id": "47d292c0-8e07-5921-81fd-104e27a64351",
+          "title": "Tavoli espositivi",
+          "details": "Superfici asciutte e stabili per libri ed etichette."
+        },
+        {
+          "source_need_id": "fee7accb-6dda-56e6-853c-3cccdb657111",
+          "title": "Cartelli leggibili",
+          "details": "Cartoncini e pennarelli per orientarsi tra le letture."
+        }
+      ]
+    }
+  },
+  {
+    "key": "bookcase",
+    "template_id": "85825093-ef29-5d50-82f3-adafdce1f96b",
+    "content": {
+      "title": "Libreria di comunità: costruiamo un piccolo punto di scambio",
+      "summary": "Progetto semplice, assemblaggio e scelta sicura del posto per i libri.",
+      "description": "Disegniamo un piccolo mobile e verifichiamo materiale, stabilità e collocazione consentita. Prepariamo i pezzi con persone capaci di usare gli utensili e assembliamo in piccoli gruppi. Controlliamo bordi e fissaggio, poi concordiamo come mantenerlo e quali libri ospitare. Non sostituisce una verifica tecnica professionale.",
+      "skill_selections": [
+        {
+          "slug": "woodworking",
+          "importance": "required"
+        },
+        {
+          "slug": "practical-making",
+          "importance": "useful"
+        }
+      ],
+      "registration_capacity_recommendation": 10,
+      "duration_seconds": 10800,
+      "cover_asset_key": "makers-table",
+      "resource_blueprints": [
+        {
+          "source_need_id": "c32643b3-5975-50fc-8166-d8f3b61345b2",
+          "title": "Legno e ferramenta",
+          "details": "Pezzi integri di misura concordata, viti e protezioni adatte."
+        },
+        {
+          "source_need_id": "2c8fb1de-62bf-50d2-8650-3bf08342cd2e",
+          "title": "Utensili manuali",
+          "details": "Morsetti e attrezzi usati solo da chi sa gestirli in sicurezza."
+        }
+      ]
+    }
+  },
+  {
+    "key": "dinner",
+    "template_id": "0ee962fa-e447-5c21-8ea6-b0fce2079a7d",
+    "content": {
+      "title": "Cena di quartiere: prepariamo e condividiamo una tavolata",
+      "summary": "Coordiniamo preparazione, allestimento e riordino con informazioni chiare sugli alimenti.",
+      "description": "Concordiamo luogo e condizioni d'uso, poi dividiamo i compiti tra allestimento, preparazione condivisa e riordino. Ogni contributo alimentare indica ingredienti e allergeni, senza promettere assenza di contaminazioni. Disponiamo tavoli e passaggi comodi, condividiamo la cena e puliamo insieme.",
+      "skill_selections": [
+        {
+          "slug": "cooking",
+          "importance": "required"
+        },
+        {
+          "slug": "event-organization",
+          "importance": "useful"
+        }
+      ],
+      "registration_capacity_recommendation": 24,
+      "duration_seconds": 10800,
+      "cover_asset_key": null,
+      "resource_blueprints": [
+        {
+          "source_need_id": "1bebbe24-4a8f-5a9a-8f50-4be8f512581c",
+          "title": "Tavoli pieghevoli",
+          "details": "Tavoli stabili e tovaglie lavabili per lo spazio concordato."
+        },
+        {
+          "source_need_id": "0352f3df-c82b-5160-8169-fd4fc9684460",
+          "title": "Materiale per servire",
+          "details": "Piatti e utensili riutilizzabili, contenitori e cartelli degli ingredienti."
+        }
+      ]
+    }
+  }
+]

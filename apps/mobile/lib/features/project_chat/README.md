@@ -99,6 +99,14 @@ coverage, or attention state in the client.
 
 ## Navigation
 
+ORG-UX01 groups Project type and viewer role below the title and composes Open
+Project, People, and manager-only Participant Links as destination rows. Current
+entitlement and the existing `go`/`push` routes remain distinct. Section spacing
+belongs to rendered content, so absent workspace/manager-only commitments do not
+leave repeated gaps. Meeting instructions are still read only on Show details;
+empty authorized text stays omitted, while failures retain Retry. Former-member
+history remains read-only and performs no workspace or meeting read.
+
 The feature remains inside the existing Home branch:
 
 ```text

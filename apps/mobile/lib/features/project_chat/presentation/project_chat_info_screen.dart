@@ -9,7 +9,7 @@ import '../../../core/widgets/async_data_presentation.dart';
 import '../../../core/widgets/error_state.dart';
 import '../../../core/widgets/loading_state.dart';
 import '../../../l10n/generated/app_localizations.dart';
-import '../../project_participant_invites/presentation/participant_link_management_screen.dart';
+import '../../project_participant_invites/presentation/participant_invitation_routes.dart';
 import '../../auth/application/auth_session_controller.dart';
 import '../../participation/application/membership_commitment_controller.dart';
 import '../../participation/application/participation_controllers.dart';
@@ -130,72 +130,95 @@ class _ProjectChatInfoScreenState extends ConsumerState<ProjectChatInfoScreen> {
                     style: Theme.of(context).textTheme.headlineSmall,
                   ),
                   const SizedBox(height: AppSpacing.small),
-                  Text(_kindLabel(l10n, summary.projectKind)),
-                  const SizedBox(height: AppSpacing.small),
-                  Text(
-                    _roleLabel(l10n, summary.viewerRole),
-                    key: const Key('project-chat-viewer-role'),
+                  Wrap(
+                    spacing: AppSpacing.small,
+                    runSpacing: AppSpacing.xSmall,
+                    children: [
+                      Text(
+                        _kindLabel(l10n, summary.projectKind),
+                        style: Theme.of(context).textTheme.labelLarge,
+                      ),
+                      Text(
+                        _roleLabel(l10n, summary.viewerRole),
+                        key: const Key('project-chat-viewer-role'),
+                      ),
+                    ],
                   ),
                   if (summary.isReadOnly) ...[
                     const SizedBox(height: AppSpacing.medium),
                     Text(l10n.projectChatReadOnlyNotice),
                   ],
                   const SizedBox(height: AppSpacing.large),
-                  FilledButton.icon(
-                    key: const Key('project-chat-open-project'),
-                    onPressed: () => context.go(
-                      ParticipationRoutes.detail(
-                        summary.projectKind,
-                        summary.projectId,
-                      ),
-                    ),
-                    icon: const Icon(Icons.open_in_new),
-                    label: Text(l10n.projectChatOpenProject),
-                  ),
-                  if (summary.hasCurrentEntitlement) ...[
-                    const SizedBox(height: AppSpacing.small),
-                    OutlinedButton.icon(
-                      key: const Key('project-chat-manage-participation'),
-                      onPressed: () => context.go(
-                        ParticipationRoutes.participants(
-                          summary.projectKind,
-                          summary.projectId,
+                  Card(
+                    child: Column(
+                      children: [
+                        ListTile(
+                          minLeadingWidth: 24,
+                          horizontalTitleGap: 8,
+                          key: const Key('project-chat-open-project'),
+                          onTap: () => context.go(
+                            ParticipationRoutes.detail(
+                              summary.projectKind,
+                              summary.projectId,
+                            ),
+                          ),
+                          leading: const Icon(Icons.open_in_new),
+                          title: Text(l10n.projectChatOpenProject),
+                          trailing: const Icon(Icons.chevron_right),
                         ),
-                      ),
-                      icon: const Icon(Icons.group_outlined),
-                      label: Text(l10n.peopleTitle),
+                        if (summary.hasCurrentEntitlement) ...[
+                          ListTile(
+                            minLeadingWidth: 24,
+                            horizontalTitleGap: 8,
+                            key: const Key('project-chat-manage-participation'),
+                            onTap: () => context.go(
+                              ParticipationRoutes.participants(
+                                summary.projectKind,
+                                summary.projectId,
+                              ),
+                            ),
+                            leading: const Icon(Icons.group_outlined),
+                            title: Text(l10n.peopleTitle),
+                            trailing: const Icon(Icons.chevron_right),
+                          ),
+                          if (summary.isManager)
+                            ListTile(
+                              minLeadingWidth: 24,
+                              horizontalTitleGap: 8,
+                              key: const Key('participant-links-manage'),
+                              leading: const Icon(Icons.link),
+                              title: Text(l10n.organizationParticipantLinks),
+                              trailing: const Icon(Icons.chevron_right),
+                              onTap: () => context.push(
+                                ParticipantInvitationRoutes.manage(
+                                  summary.projectKind,
+                                  summary.projectId,
+                                ),
+                              ),
+                            ),
+                        ],
+                      ],
                     ),
-                  ],
+                  ),
                   if (summary.hasCurrentEntitlement &&
                       _expectedProfileId != null) ...[
-                    const SizedBox(height: AppSpacing.large),
                     ProjectWorkspaceInfoSection(
                       expectedProfileId: _expectedProfileId,
                       projectId: summary.projectId,
                       projectKind: summary.projectKind,
                       isManager: summary.isManager,
+                      compact: true,
                     ),
                   ],
-                  ...[
-                    const SizedBox(height: AppSpacing.large),
-                    _ParticipantCommitments(
-                      expectedProfileId: _expectedProfileId,
-                      summary: summary,
-                    ),
-                  ],
+                  _ParticipantCommitments(
+                    expectedProfileId: _expectedProfileId,
+                    summary: summary,
+                  ),
                   if (summary.hasCurrentEntitlement) ...[
-                    const SizedBox(height: AppSpacing.large),
                     _MeetingDetails(
                       summary: summary,
                       onLoad: () => _loadMeeting(summary),
                     ),
-                    if (summary.isManager) ...[
-                      const SizedBox(height: AppSpacing.large),
-                      ParticipantLinkManagementButton(
-                        projectId: summary.projectId,
-                        kind: summary.projectKind,
-                      ),
-                    ],
                   ],
                 ],
               ),
@@ -256,11 +279,12 @@ class _ParticipantCommitmentsState
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          const SizedBox(height: AppSpacing.large),
           Text(
             widget.summary.hasCurrentEntitlement
                 ? l10n.participationMyCommitments
                 : l10n.participationLastCommitments,
-            style: Theme.of(context).textTheme.titleLarge,
+            style: Theme.of(context).textTheme.titleMedium,
           ),
           const SizedBox(height: AppSpacing.small),
           const Center(child: CircularProgressIndicator()),
@@ -333,7 +357,7 @@ class _ParticipantActualContributions extends StatelessWidget {
       children: [
         Text(
           l10n.actualContributionsTitle,
-          style: Theme.of(context).textTheme.titleLarge,
+          style: Theme.of(context).textTheme.titleMedium,
         ),
         const SizedBox(height: AppSpacing.small),
         if (episodes.length == 1)
@@ -470,11 +494,12 @@ class _MembershipCommitmentsSectionState
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        const SizedBox(height: AppSpacing.large),
         Text(
           widget.editable
               ? l10n.participationMyCommitments
               : l10n.participationLastCommitments,
-          style: Theme.of(context).textTheme.titleLarge,
+          style: Theme.of(context).textTheme.titleMedium,
         ),
         const SizedBox(height: AppSpacing.small),
         if (!belongs ||
@@ -555,6 +580,7 @@ class _CommitmentSectionFailure extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        const SizedBox(height: AppSpacing.large),
         Semantics(
           liveRegion: true,
           child: Text(
@@ -580,19 +606,25 @@ class _MeetingDetails extends ConsumerWidget {
     final l10n = AppLocalizations.of(context);
     final state = ref.watch(participantMeetingDetailsProvider);
     final belongs = state.projectId == summary.projectId;
+    final ready = belongs && state.phase == ParticipationLoadPhase.ready;
+    final instructions = ready ? state.details?.exactMeetingText?.trim() : null;
+    if (ready && (instructions == null || instructions.isEmpty)) {
+      return const SizedBox.shrink();
+    }
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        const SizedBox(height: AppSpacing.large),
         Text(
           l10n.projectChatMeetingDetails,
-          style: Theme.of(context).textTheme.titleLarge,
+          style: Theme.of(context).textTheme.titleMedium,
         ),
         const SizedBox(height: AppSpacing.small),
         if (belongs && state.phase == ParticipationLoadPhase.loading)
           const Center(child: CircularProgressIndicator())
-        else if (belongs && state.phase == ParticipationLoadPhase.ready)
+        else if (ready)
           SelectableText(
-            state.details!.exactMeetingText ?? l10n.proposalExactNotChosen,
+            instructions!,
             key: const Key('project-chat-meeting-text'),
           )
         else ...[

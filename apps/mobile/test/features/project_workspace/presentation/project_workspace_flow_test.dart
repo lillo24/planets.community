@@ -141,7 +141,7 @@ void main() {
     },
   );
 
-  testWidgets('configured Project Manage card exposes Open and Edit', (
+  testWidgets('configured Project Manage exposes a workspace destination', (
     tester,
   ) async {
     final workspace = FakeProjectWorkspaceGateway()
@@ -164,13 +164,10 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('drive.google.com'), findsOneWidget);
-    expect(
-      find.byKey(const Key('project-manage-workspace-open')),
-      findsOneWidget,
-    );
+    expect(find.byKey(const Key('project-manage-workspace')), findsOneWidget);
     expect(
       find.byKey(const Key('project-manage-workspace-edit')),
-      findsOneWidget,
+      findsNothing,
     );
   });
 

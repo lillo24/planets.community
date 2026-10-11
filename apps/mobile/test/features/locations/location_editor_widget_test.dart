@@ -53,6 +53,28 @@ Future<void> select(WidgetTester tester, String id) async {
 }
 
 void main() {
+  for (final locale in ['en', 'it']) {
+    testWidgets('$locale fresh manual Tavolo text has no provider credits', (
+      tester,
+    ) async {
+      final harness = await pumpSection(
+        tester,
+        locale: locale,
+        disabled: true,
+        manualTavolo: true,
+      );
+      expect(find.byType(LocationAttribution), findsNothing);
+      await tester.enterText(
+        find.byKey(const Key('manual-test-field')),
+        'Rovereto',
+      );
+      await tester.pumpAndSettle();
+      expect(find.byType(LocationAttribution), findsNothing);
+      expect(harness.factory.scopes, isEmpty);
+      expect(harness.db.mutations, isEmpty);
+      await tester.pumpWidget(const SizedBox());
+    });
+  }
   for (final kind in ['one_time', 'recurring', 'resource']) {
     testWidgets(
       '$kind real editor bootstraps only on choice, preserves content, confirms and clears',
@@ -404,6 +426,7 @@ pumpSection(
   bool cityOnly = false,
   bool disabled = false,
   bool stored = false,
+  bool manualTavolo = false,
 }) async {
   final db = FakeItemLocationGateway(), factory = FakeEditorPlaceFactory();
   final controller = TextEditingController();
@@ -448,7 +471,7 @@ pumpSection(
             child: LocationEditorSection(
               proposalCityOnly: cityOnly,
               actorId: 'A',
-              itemKind: 'one_time',
+              itemKind: manualTavolo ? 'recurring' : 'one_time',
               itemId: () => id,
               savePending: () async {
                 saves++;
@@ -457,6 +480,7 @@ pumpSection(
               onCanonical: (ItemLocation _) {},
               contentControllers: [controller],
               contentVersion: 0,
+              manualPublicLabel: manualTavolo ? () => controller.text : null,
               manualChildren: [
                 TextFormField(
                   key: const Key('manual-test-field'),

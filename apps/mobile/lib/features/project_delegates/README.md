@@ -20,6 +20,15 @@ Manage project hub. It does not own Project authoring or lifecycle actions.
 
 ## Source map
 
+ORG-UX01 composes Manage Project destinations into one navigation card, using
+the existing permission and route checks. Team leads with Invite organizer;
+empty delegate/invitation sections are omitted only after a successful read.
+Delegate menus retain the protected role confirmations and expose dates/grantor
+in an identity/authority-scoped detail sheet. Invitation rows show expiry and
+expand to creation/issuer metadata and Revoke. One-time link and Co-creator
+warnings remain in confirmation/handoff; lost-link recovery advice lives there
+instead of permanently below an empty list. The handoff scrolls at large text.
+
 - `domain/project_delegate_models.dart` defines
   creator/co-creator/co-organizer/none roles,
   delegate and pending-invitation summaries, delegated Project cards, and the

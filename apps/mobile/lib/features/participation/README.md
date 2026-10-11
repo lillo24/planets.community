@@ -17,7 +17,19 @@ their existing features; participation uses only a project ID plus the narrow
   mutations. It never preloads commitments or attribution per row.
 - `presentation/project_person_tile.dart` is the compact previewable row; ellipsis
   and long press open the same identity-bound action sheet in
-  `creator_participation_screen.dart` (legacy route/class name).
+  `creator_participation_screen.dart` (legacy route/class name). Roles are
+  wrapping text on the same row; self has no menu when no applicable action exists.
+- `presentation/creator_participation_screen.dart` owns the shared People screen:
+  the guarded header, manager-only Participant Links content action, and exact
+  capacity summary use the existing role/snapshot contracts. Usage is canonical
+  `capacityUsedCount`; organizer/member overlap is never counted again. Unset
+  capacity shows ordinary participants and organizers without derived spots.
+  Section labels show totals only after an exhausted successful page; otherwise
+  nonempty pages say how many rows are loaded. Requests and offers remain separate
+  and visible without expansion. Enlarged request names use their own full-width
+  line below the existing avatar/safety tools; decision buttons wrap as needed. Successful empty history is omitted, while
+  loading, errors, retries and keyset pagination remain visible. The display-name
+  disclosure stays in `join_request_screen.dart` before submission.
 - `domain/participation_models.dart` defines strict project kinds, request and
   membership states, private read models, and project-specific state
   derivation.
@@ -363,3 +375,17 @@ meeting row. The gateway keeps recurring instructions strict. A denied read or
 missing row remains distinct from a successful row with absent instructions.
 Public absence copy is used only when the sanitized RPC reports no restricted
 exact content. No participation or authorization transition changes.
+
+## People UI widget evidence
+
+`test/features/participation/presentation/project_people_screen_test.dart` covers
+320dp EN/IT, light/dark, normal/2x text, canonical capacity/overlap, section paging
+and retries, role visibility, keyboard/semantics, refresh and guarded Close.
+Existing participation flow tests retain acceptance triage and contribution checks.
+
+From `apps/mobile`, add these flags to `flutter test` for that screen test to save
+readable PNGs: `--dart-define=PEOPLE_UI_CAPTURE_DIR=<absolute-output-directory>` and
+`--dart-define=PEOPLE_UI_FONT_DIR=<flutter-sdk>/bin/cache/artifacts/material_fonts`.
+The opt-in capture harness loads the SDK's Roboto/Material Icons fonts and restores
+painting debug settings after each capture. PNGs are local evidence, not generated
+application assets. Widget evidence does not replace native phone or TalkBack QA.

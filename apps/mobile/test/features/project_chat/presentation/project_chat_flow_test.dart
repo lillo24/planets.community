@@ -607,6 +607,10 @@ void main() {
         participation.calls.where((call) => call.startsWith('meeting:')),
         isEmpty,
       );
+      await tester.ensureVisible(
+        find.byKey(const Key('project-chat-load-meeting')),
+      );
+      await tester.pumpAndSettle();
       await tester.tap(find.byKey(const Key('project-chat-load-meeting')));
       await tester.pumpAndSettle();
       expect(find.text('Meet beside the blue workshop door.'), findsOneWidget);
@@ -644,12 +648,18 @@ void main() {
       );
       app.read(appRouterProvider).go('/messages/chats/chat-1/info');
       await tester.pumpAndSettle();
+      await tester.ensureVisible(
+        find.byKey(const Key('project-chat-load-meeting')),
+      );
+      await tester.pumpAndSettle();
       await tester.tap(find.byKey(const Key('project-chat-load-meeting')));
       await tester.pumpAndSettle();
       expect(
         find.text('Precise meeting instructions have not been added yet.'),
-        findsOneWidget,
+        findsNothing,
       );
+      expect(find.byKey(const Key('project-chat-meeting-text')), findsNothing);
+      expect(find.text('Meeting details'), findsNothing);
       expect(find.text('Meet beside the blue workshop door.'), findsNothing);
       expect(tester.takeException(), isNull);
     },

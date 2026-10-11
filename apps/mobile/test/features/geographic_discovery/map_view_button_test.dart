@@ -45,17 +45,33 @@ void expectSeparateOptions(
     find.descendant(of: selected, matching: find.byType(Material)),
     findsNothing,
   );
-  // No common painted wrapper, nor a selected-side fill/border.
+  // Only the selected slot has an outline; there is no common painted wrapper.
   expect(tester.widget(selector), isNot(isA<Material>()));
-  for (final type in [Ink, ColoredBox, DecoratedBox]) {
+  for (final type in [Ink, ColoredBox]) {
     expect(
       find.descendant(of: selector, matching: find.byType(type)),
       findsNothing,
     );
   }
+  final selectedOutline = find.descendant(
+    of: selected,
+    matching: find.byType(DecoratedBox),
+  );
+  expect(selectedOutline, findsOneWidget);
+  final decoration =
+      tester.widget<DecoratedBox>(selectedOutline).decoration
+          as ShapeDecoration;
+  final outline = (decoration.shape as OutlinedBorder).side;
+  expect(outline.style, BorderStyle.solid);
+  expect(outline.width, greaterThan(0));
+  expect(decoration.color, isNull);
+  expect(
+    find.descendant(of: alternate, matching: find.byType(DecoratedBox)),
+    findsNothing,
+  );
   final button = find.descendant(
     of: alternate,
-    matching: find.byType(OutlinedButton),
+    matching: find.byType(TextButton),
   );
   expect(button, findsOneWidget);
   expect(tester.getSize(button).height, greaterThanOrEqualTo(48));
@@ -66,9 +82,7 @@ void expectSeparateOptions(
     findsOneWidget,
   );
   final paintedButton = tester.widget<Material>(material);
-  final outline = (paintedButton.shape! as OutlinedBorder).side;
-  expect(outline.style, BorderStyle.solid);
-  expect(outline.width, greaterThan(0));
+  expect((paintedButton.shape! as OutlinedBorder).side, BorderSide.none);
   expect(paintedButton.color, Colors.transparent);
 
   expect(

@@ -368,8 +368,9 @@ List<ProposalSkillCategory> proposalCategoriesFixture() => const [
 ProposalSummary proposalSummaryFixture({
   String id = 'proposal-1',
   String title = 'Paint the square',
-  String locality = 'Bologna',
-  String publicLocationLabel = 'Central Bologna',
+  String? locality = 'Bologna',
+  String? publicLocationLabel = 'Central Bologna',
+  ProposalDefinitionPhase definitionPhase = ProposalDefinitionPhase.defined,
   ProposalStatus status = ProposalStatus.upcoming,
   List<ProposalSkill>? skills,
   String? coverObjectPath,
@@ -387,6 +388,7 @@ ProposalSummary proposalSummaryFixture({
   locality: locality,
   administrativeArea: 'Emilia-Romagna',
   publicLocationLabel: publicLocationLabel,
+  definitionPhase: definitionPhase,
   status: status,
   skills:
       skills ??

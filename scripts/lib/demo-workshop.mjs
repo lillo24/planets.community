@@ -3,7 +3,8 @@ import { createHash } from "node:crypto";
 import { isDeepStrictEqual } from "node:util";
 
 // Finite synthetic inventory, shared by seed, read-only verification and native QA.
-// No production starter-content exception: each source is an ordinary Proposal.
+// Each demo source remains an ordinary Proposal. OST01's permanent official
+// catalog is provisioned separately by its canonical migration, never this seeder.
 export const WORKSHOP_PERSONAS = Object.freeze({
   planets: Object.freeze({
     email: "demo-planets@planets.invalid",

@@ -1,8 +1,14 @@
 # Mobile Template Workshop
 
-This feature owns Completed one-time Proposal template discovery, reusable
-previews and independent draft application. It consumes TW01/TW03 RPCs; the
+This feature owns completed community and official starter template discovery,
+reusable previews and independent draft application. It consumes v2 Workshop reads and TW03 application RPCs; the
 database owns eligibility, copying, permissions and receipts.
+
+Official examples use server-controlled organization attribution and nullable
+source/Creator IDs, localized Default/Predefinito badges and bundled licensed
+illustrations. They expose no source-Project link or Completed claim. Legacy
+reads remain community-only for old clients. See
+[OST01](../../../../../docs/development/official-starter-templates.md).
 
 - `domain/template_models.dart`: narrow public cards/detail/blueprints and
   opaque frozen application intent. Numeric durations preserve fractions;

@@ -146,6 +146,15 @@ class ProjectParticipationSection extends ConsumerWidget {
     final protectedText = hasReadyMeeting
         ? meetingState.details?.exactMeetingText
         : null;
+    // Empty optional instructions render nothing. A restricted-place notice is
+    // useful only while the viewer lacks access, never as an empty-state label.
+    final meetingText = exactLocationRestricted
+        ? hasReadyMeeting
+              ? protectedText?.trim()
+              : !canReadProtectedMeeting
+              ? l10n.participationExactLocationRestricted
+              : null
+        : publicExactMeetingText?.trim();
     final command = ref.watch(participationCommandProvider);
     final commandForProject = command.projectId == projectId ? command : null;
     final blockingState = ref.watch(blockingProvider);
@@ -212,25 +221,19 @@ class ProjectParticipationSection extends ConsumerWidget {
           )
         else
           for (final line in publicLocationLines) Text(line),
-        const SizedBox(height: AppSpacing.small),
-        Text(
-          exactLocationRestricted
-              ? protectedText ??
-                    (hasReadyMeeting && projectKind == ProjectKind.oneTime
-                        ? l10n.proposalExactNotChosen
-                        : l10n.participationExactLocationRestricted)
-              : publicExactMeetingText ??
-                    (projectKind == ProjectKind.oneTime
-                        ? l10n.proposalExactNotChosen
-                        : l10n.participationExactLocationRestricted),
-          key: Key(
-            hasReadyMeeting
-                ? 'participation-protected-meeting-$projectId'
-                : exactLocationRestricted
-                ? 'participation-restricted-meeting-$projectId'
-                : 'participation-public-meeting-$projectId',
+        if (meetingText != null && meetingText.isNotEmpty) ...[
+          const SizedBox(height: AppSpacing.small),
+          Text(
+            meetingText,
+            key: Key(
+              hasReadyMeeting
+                  ? 'participation-protected-meeting-$projectId'
+                  : exactLocationRestricted
+                  ? 'participation-restricted-meeting-$projectId'
+                  : 'participation-public-meeting-$projectId',
+            ),
           ),
-        ),
+        ],
         if (canReadProtectedMeeting &&
             meetingState.projectId == projectId &&
             meetingState.phase == ParticipationLoadPhase.failure) ...[

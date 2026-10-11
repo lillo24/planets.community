@@ -800,6 +800,14 @@ The database stores canonical media metadata and authorization context. A storag
 
 ## Templates and community data
 
+OST01 adds a small canonical official-starter subtype alongside source-linked
+community templates. These organization-authored examples have no Auth/Profile,
+source Project, fabricated completion, participants or statistics. Opt-in v2
+Workshop reads unify both kinds while legacy clients retain their community
+projection. Copying, private receipts and attributable moderation use the
+existing domain paths; curated maintenance is database-owner only. See
+[the OST01 contract and activation runbook](../development/official-starter-templates.md).
+
 TW01 implements the backend foundation on its draft-review branch. First
 successful publication synchronously establishes one private linked identity
 per one-time Proposal and retains a narrow original-Creator-private last saved
