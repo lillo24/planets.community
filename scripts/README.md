@@ -1,5 +1,11 @@
 # Repository scripts
 
+- `verify-local-persistent-groups.mjs` owns GRP01 OTP, duplicate-command/report
+  concurrency, directory privacy/keysets, suppression and orphan tests. `--upgrade`
+  resets an explicitly disposable loopback stack to the predecessor and verifies
+  every existing column/row after additive migration application.
+  `fixtures/grp01-query-plan.sql` supplies rollback-only representative EXPLAINs.
+
 This folder owns reproducible configuration generation, local authenticated
 domain verification and change-scoped validation tooling.
 

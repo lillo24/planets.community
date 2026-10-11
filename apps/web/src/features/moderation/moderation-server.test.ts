@@ -102,6 +102,34 @@ describe("moderation server authorization", () => {
     }
   });
 
+  it("reads a group report without dispatching Project or Resource evidence", async () => {
+    const staff = client({
+      profileId,
+      staffRole: "moderator",
+      detail: [
+        {
+          ...moderationDetailRow(),
+          target_kind: "group",
+          target_summary: "Group",
+          project_context_id: null,
+          resource_listing_context_id: null,
+          resource_request_context_id: null,
+          resource_chat_context_id: null,
+        },
+      ],
+    });
+    const result = await readModerationCase(caseId, async () => staff);
+    expect(result).toMatchObject({
+      status: "ready",
+      detail: { targetKind: "group" },
+    });
+    expect(staff.rpc).toHaveBeenCalledTimes(2);
+    expect(staff.rpc).toHaveBeenLastCalledWith(
+      "get_moderation_case_detail",
+      expect.anything(),
+    );
+  });
+
   it("loads pending counterparty evidence only for a Resource request case", async () => {
     const staff = client({
       profileId,

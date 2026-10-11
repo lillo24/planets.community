@@ -3,6 +3,27 @@ import 'package:planets_mobile/features/moderation/domain/moderation_models.dart
 import 'package:planets_mobile/features/moderation/presentation/moderation_routes.dart';
 
 void main() {
+  test(
+    'registered group reports retain their own target and no Project evidence',
+    () {
+      expect(
+        ModerationTargetKind.fromWire('group'),
+        ModerationTargetKind.group,
+      );
+      const target = ModerationReportTarget(
+        kind: ModerationTargetKind.group,
+        id: '00000000-0000-4000-8000-000000000901',
+        label: 'Fictional group',
+      );
+      expect(target.submissionScope, startsWith('group:'));
+      expect(target.hasProjectContext, isFalse);
+      expect(
+        () => ModerationTargetKind.fromWire('verified_ets'),
+        throwsFormatException,
+      );
+    },
+  );
+
   test('explanations are trimmed and bounded', () {
     expect(isValidModerationExplanation(' short '), isFalse);
     expect(isValidModerationExplanation(' enough detail '), isTrue);

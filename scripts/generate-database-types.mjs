@@ -42,7 +42,7 @@ if (result.status !== 0) {
 } else {
   // The pg-meta process and shell redirection can differ by one terminal newline across hosts.
   // pg-meta omits RETURNS TABLE nullability; apply the documented participation
-  // and MSG01 result contracts, then normalize the terminal newline. Never hand-edit.
+  // MSG01 and GRP01 result contracts, then normalize the terminal newline. Never hand-edit.
   const generatedTypes = applyParticipationRpcNullability(
     result.stdout.trimEnd(),
   );

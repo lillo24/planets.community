@@ -1,5 +1,10 @@
 # Database development
 
+[GRP01 persistent groups](persistent-groups.md) owns durable group identity,
+personal-manager authority, versioned publication, bounded anonymous reads,
+independent staff suppression and genuine group reporting. Its focused HTTP and
+populated-upgrade verifiers run in Database CI/full `check:db`. Screens are GRP02.
+
 [OST01](official-starter-templates.md) adds eight organization-owned examples
 through an additive migration, opt-in Workshop reads and the existing atomic
 application/reporting paths. Its operator inventory/readback tooling is

@@ -14,6 +14,27 @@ import {
 } from "./moderation-test-fixtures";
 
 describe("moderation model parsing", () => {
+  it("keeps genuine group targets and their accountable human subjects", () => {
+    const group = { target_kind: "group", target_summary: "Group" };
+    expect(
+      parseModerationQueue([{ ...moderationQueueRow(), ...group }])[0],
+    ).toMatchObject({
+      targetKind: "group",
+      subjectProfileId: moderationQueueRow().subject_profile_id,
+    });
+    expect(
+      parseModerationCase([{ ...moderationDetailRow(), ...group }]),
+    ).toMatchObject({
+      targetKind: "group",
+      subjectProfileId: moderationDetailRow().subject_profile_id,
+    });
+    expect(() =>
+      parseModerationQueue([
+        { ...moderationQueueRow(), ...group, subject_profile_id: null },
+      ]),
+    ).toThrow("malformed");
+  });
+
   it("keeps organization template cases visible without weakening other subjects", () => {
     const organization = {
       target_kind: "proposal_template",

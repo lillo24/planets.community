@@ -29,6 +29,23 @@ test("already accurate generated results are unchanged", () => {
   assert.equal(applyParticipationRpcNullability(output), output);
 });
 
+test("group locality is nullable in every owner/public projection", () => {
+  for (const name of [
+    "get_public_group",
+    "list_public_groups",
+    "get_own_group",
+    "list_own_groups",
+  ])
+    assert.deepEqual(participationRpcNullableFields[name], ["locality"]);
+  const output = applyParticipationRpcNullability(fixture());
+  assert.equal(
+    (output.match(/locality: string \| null/g) ?? []).length,
+    Object.values(participationRpcNullableFields).filter((fields) =>
+      fields.includes("locality"),
+    ).length,
+  );
+});
+
 test("Idea logistics are nullable without weakening legacy event results", () => {
   const legacy =
     "      get_public_proposal: {\n        Returns: {\n          starts_at: string\n        }[]\n      }";
