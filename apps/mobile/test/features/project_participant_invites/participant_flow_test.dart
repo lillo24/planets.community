@@ -15,6 +15,7 @@ import 'package:planets_mobile/features/auth/application/auth_session_controller
 import 'package:planets_mobile/features/auth/application/auth_command_controller.dart';
 import 'package:planets_mobile/features/auth/application/return_destination.dart';
 import 'package:planets_mobile/features/auth/data/auth_gateway.dart';
+import 'package:planets_mobile/features/auth/data/provider_auth_adapter.dart';
 import 'package:planets_mobile/features/auth/domain/auth_models.dart';
 import 'package:planets_mobile/features/auth/presentation/request_code_screen.dart';
 import 'package:planets_mobile/features/blocking/data/blocking_gateway.dart';
@@ -213,6 +214,114 @@ void main() {
     expect(h.gateway.admissions, isEmpty);
     expect(tester.takeException(), isNull);
   });
+  testWidgets(
+    'native duplicates preserve separate email form; new link cancels late OTP',
+    (tester) async {
+      final provider = FakeProviderAuthAdapter();
+      final h = await _pump(
+        tester,
+        nativeInvite,
+        platformColdStart: true,
+        signedOut: true,
+        provider: provider,
+      );
+      final auth = h.container.read(authGatewayProvider) as FakeAuthGateway;
+      await tester.tap(find.byKey(const Key('participant-invite-sign-in')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('auth-email-method-button')));
+      await tester.pumpAndSettle();
+      await tester.enterText(
+        find.byKey(const Key('auth-email-field')),
+        'synthetic@planets.invalid',
+      );
+      await _deliver(tester, nativeInvite);
+      expect(h.router.state.uri.path, '/auth/email');
+      expect(
+        h.router.state.uri.queryParameters['returnTo'],
+        '/join/project/$token',
+      );
+      expect(
+        tester
+            .widget<TextFormField>(find.byKey(const Key('auth-email-field')))
+            .controller!
+            .text,
+        'synthetic@planets.invalid',
+      );
+      expect(auth.requestCount, 0);
+      expect(provider.signInCount, 0);
+      final pending = Completer<void>();
+      auth.requestDelay = pending.future;
+      await tester.tap(find.byKey(const Key('auth-request-button')));
+      await tester.pump();
+      await _deliver(tester, nativeInvite);
+      expect(h.router.state.uri.path, '/auth/email');
+      await _deliver(
+        tester,
+        'https://planets.community/join/project/${'B' * 43}',
+      );
+      pending.complete();
+      await tester.pumpAndSettle();
+      expect(h.router.state.uri.path, '/join/project/${'B' * 43}');
+      expect(h.container.read(pendingEmailOtpProvider), isNull);
+      expect(h.gateway.admissions, isEmpty);
+      expect(auth.requestCount, 1);
+      expect(provider.signInCount, 0);
+    },
+  );
+  for (final destination in [
+    '/invite/project/$token',
+    '/join/project/$token',
+    '/proposals/project-1/join',
+    '/tavoli/project-1/join',
+  ]) {
+    testWidgets(
+      'separate email retains Project continuation and safe Close: $destination',
+      (tester) async {
+        final h = await _pump(
+          tester,
+          Uri(
+            path: '/auth',
+            queryParameters: {'returnTo': destination},
+          ).toString(),
+          signedOut: true,
+          provider: FakeProviderAuthAdapter(),
+        );
+        await tester.tap(find.byKey(const Key('auth-email-method-button')));
+        await tester.pumpAndSettle();
+        expect(h.router.state.uri.path, '/auth/email');
+        expect(h.router.state.uri.queryParameters['returnTo'], destination);
+        await tester.enterText(
+          find.byKey(const Key('auth-email-field')),
+          'synthetic@planets.invalid',
+        );
+        await tester.tap(find.byKey(const Key('auth-request-button')));
+        await tester.pumpAndSettle();
+        expect(h.router.state.uri.path, '/auth/verify');
+        expect(
+          h.container.read(pendingEmailOtpProvider)?.returnTo,
+          destination,
+        );
+        await tester.binding.handlePopRoute();
+        await tester.pumpAndSettle();
+        expect(h.router.state.uri.path, '/auth/email');
+        expect(h.router.state.uri.queryParameters['returnTo'], destination);
+        await tester.tap(find.byKey(const Key('auth-close-button')));
+        await tester.pumpAndSettle();
+        expect(
+          h.router.state.uri.toString(),
+          destination.endsWith('/join')
+              ? destination.substring(0, destination.length - 5)
+              : destination,
+        );
+        expect(h.gateway.admissions, isEmpty);
+        expect(
+          h.participation.calls.where((call) => call.startsWith('request:')),
+          isEmpty,
+        );
+        expect(tester.takeException(), isNull);
+      },
+    );
+  }
   testWidgets('platform cold start previews; warm duplicates never Join', (
     tester,
   ) async {
@@ -911,6 +1020,7 @@ _pump(
   FakeProjectDelegateGateway? delegateGateway,
   bool startAuthInApp = false,
   FakeProposalGateway? drafts,
+  FakeProviderAuthAdapter? provider,
 }) async {
   if (platformColdStart) {
     tester.platformDispatcher.defaultRouteNameTestValue = location;
@@ -940,6 +1050,8 @@ _pump(
         ),
       ),
       authGatewayProvider.overrideWithValue(auth),
+      if (provider != null)
+        providerAuthAdapterProvider.overrideWithValue(provider),
       profileAnchorGatewayProvider.overrideWithValue(anchor),
       profileGatewayProvider.overrideWithValue(
         FakeProfileGateway(

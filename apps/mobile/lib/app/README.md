@@ -62,7 +62,14 @@ Home-owned Messages or Notifications route. Browse list-family switches use
 `go` to build canonical nested stacks, including when a guard redirects
 Create/My activity routes into a different branch.
 
-`/auth` and `/auth/verify` live outside the shell and have no bottom navigation.
+`/auth`, `/auth/email` and `/auth/verify` live outside the shell and have no bottom
+navigation. `/auth` offers Google plus an explicit email navigation action only
+when Google is available; otherwise it remains the direct OTP form. `/auth/email`
+reuses that form and sends only on explicit submission. Verification Back returns
+to `/auth/email`; email Back returns to the chooser when available, while Close
+cancels to a safe public destination. `AuthRoutes.isAuthPath` includes all three
+in session, policy, profile, startup and committed native-link handling. Every
+step preserves the sanitized protected or invitation `returnTo`.
 Home and Browse list/detail, including Scambio-Dona list/detail, remain public.
 Signed-out Profile shows a static, clearly labelled example without loading
 account data; its explicit call to action opens Auth with `/profile` as the
@@ -98,8 +105,8 @@ PI04 handles native absolute URLs through this same GoRouter boundary. Only the
 canonical host's exact participant/authority token and public UUID detail paths
 are allowed; unsafe origins/encoded separators/descendants show a generic error.
 Detail queries are preserved. Duplicate platform delivery retains the active
-Project or exact OTP/profile continuation and typed form; a different valid link
-cancels the old OTP attempt after navigation commits. Platform-message tests
+Project or exact Auth/email/OTP/profile continuation and typed form; a different
+valid link cancels the old OTP attempt after navigation commits. Platform-message tests
 exercise cold default routes and warm delivery without an internal `go` shortcut.
 The routing configuration exposes GoRouter 18's entry guard only while its
 existing provider holds an external URL. Internal navigation keeps the existing

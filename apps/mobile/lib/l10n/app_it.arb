@@ -125,7 +125,7 @@
   "authGoogleAction": "Continua con Google",
   "authSignInTitle": "Accedi",
   "authSigningInWithGoogle": "Accesso con Google…",
-  "authProviderDivider": "oppure continua con l’email",
+  "authEmailMethodAction": "oppure accedi con email e codice OTP",
   "authRequestTitle": "Accedi con l’email",
   "authRequestDescription": "Inserisci la tua email e ti invieremo un codice di accesso a 6 cifre. Il codice scade dopo un’ora.",
   "authEmailLabel": "Indirizzo email",
