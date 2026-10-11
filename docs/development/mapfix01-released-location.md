@@ -46,6 +46,12 @@ avoid reusing the already prepared code-7 artifact; recheck history before uploa
   version. Geometry/location changes, account switches, real backgrounding and
   private entitlement loss still invalidate the appropriate content. Each Maps
   activation retains a fresh canonical read.
+- Removing credits on manual-city confirmation can shrink the page extent and
+  clamp its bottom scroll position (32.8dp in the EN narrow parent regression).
+  That transition retains only the minimum empty space needed for the current
+  offset, without retaining attribution widgets/actions/semantics. Fresh or
+  reopened manual editors reserve nothing. Autocomplete result credits remain
+  inside the existing bounded panel.
 
 ## Durable public-text provenance
 
@@ -62,7 +68,9 @@ save timing. After successful ordinary Save/Publish, a separate idempotent
 rights, revision, exact saved city/locality, no selected public/exact geometry and
 the existing broad-city safeguards. It changes only provenance/revision, followed
 by a canonical reread. An attestation failure is visible and keeps the editor open
-for retry; already saved content is acknowledged. Cancellation revokes intent.
+for retry; already saved content is acknowledged. The location child adopts a
+freshly created draft ID before the parent's next frame, so ID hydration cannot
+cancel that read or erase its failure/retry feedback. Cancellation revokes intent.
 No receipt or raw autocomplete query enters this metadata.
 
 Preview JSON adds `public_label` and `text_source`; authorized editor JSON adds

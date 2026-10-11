@@ -62,14 +62,16 @@ class _ProposalLocationEditorState extends ConsumerState<ProposalLocationEditor>
   late final TextEditingController _query;
   final _queryFocus = FocusNode();
   final _resultsScroll = ScrollController();
+  final _attributionBox = GlobalKey();
+  double _manualFooterSpace = 0;
   late List<String> _lastText;
   ItemLocation? _location;
   bool _dirty = false, _preparing = false, _applying = false;
   bool _manualPendingSave = false, _settingQuery = false;
   bool _denied = false;
   bool _manualExpanded = false, _preparationBlocked = false;
-  // Only a fresh blank editor establishes manual authorship. Saved/restored
-  // text has unknown provenance; credits survive later geometry clear.
+  // Fresh blank input or canonical manual provenance establishes authorship.
+  // Unclassified saved/restored text stays unknown; geometry absence is no proof.
   late bool _needsAttribution;
   late String _lastPublicLabel;
   late String _lastQueryText;
@@ -206,8 +208,14 @@ class _ProposalLocationEditorState extends ConsumerState<ProposalLocationEditor>
     final owner = _actor(),
         id = widget.itemId(),
         city = widget.publicLabel().trim();
-    final generation = _generation;
     if (owner == null || id == null) return false;
+    if (_knownId == null) {
+      // Adopt the newly saved draft before the parent's next frame. Otherwise
+      // didUpdateWidget can cancel this read and erase its retry/error feedback.
+      _knownId = id;
+      _cancel();
+    }
+    final generation = _generation;
     try {
       final saved = await ref
           .read(itemLocationGatewayProvider)
@@ -398,6 +406,12 @@ class _ProposalLocationEditorState extends ConsumerState<ProposalLocationEditor>
     // Public city confirmation is deliberate, and obvious precise text stays
     // private even offline. This is a guard, not a geocoding claim.
     if (!manualCityTextIsBroad(value)) return;
+    final footer = _attributionBox.currentContext?.findRenderObject();
+    final position = Scrollable.maybeOf(context)?.position;
+    final offset = position?.pixels;
+    final footerHeight = footer is RenderBox && footer.hasSize
+        ? footer.size.height
+        : 0.0;
     _debounce?.cancel();
     final generation = ++_generation;
     final selected =
@@ -414,12 +428,31 @@ class _ProposalLocationEditorState extends ConsumerState<ProposalLocationEditor>
       _location = null;
       _dirty = false;
       _manualPendingSave = true;
+      _manualFooterSpace = position == null ? 0 : footerHeight;
       _needsAttribution = false;
       _setQuery(value);
     } finally {
       _applying = false;
     }
     setState(() {});
+    // Preserve only the space needed to avoid clamping the current page offset
+    // when credits disappear. Fresh/reopened manual editors reserve nothing.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted ||
+          !_manualPendingSave ||
+          _needsAttribution ||
+          position == null ||
+          offset == null ||
+          !position.hasContentDimensions) {
+        return;
+      }
+      final needed = (offset - (position.maxScrollExtent - _manualFooterSpace))
+          .clamp(0.0, _manualFooterSpace)
+          .toDouble();
+      if (needed != _manualFooterSpace) {
+        setState(() => _manualFooterSpace = needed);
+      }
+    });
   }
 
   @override
@@ -523,10 +556,14 @@ class _ProposalLocationEditorState extends ConsumerState<ProposalLocationEditor>
                 label: Text(l10n.proposalClearDirections),
               ),
           ],
-          if (_needsAttribution) ...[
-            const SizedBox(height: AppSpacing.small),
-            const LocationAttribution(),
-          ],
+          if (_needsAttribution)
+            Padding(
+              key: _attributionBox,
+              padding: const EdgeInsets.only(top: AppSpacing.small),
+              child: const LocationAttribution(),
+            )
+          else if (_manualFooterSpace > 0)
+            SizedBox(height: _manualFooterSpace),
         ],
       ),
     );
