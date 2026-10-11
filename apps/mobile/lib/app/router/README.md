@@ -22,17 +22,19 @@
 - `app_navigation_shell.dart` owns the stable Profile/Home/Browse branches and
   root Back. Its visible right tab follows main's device-local Messages/Browse
   preference and the actual active destination; editor departures still use
-  the single draft coordinator.
+  the single departure coordinator. Profile taps/reselects open `/profile`
+  rather than a retained nested editor; Browse retains its branch state.
 - Public `/messages` presents Chats without a leading toolbar Back. Its
   secondary Requests state consumes system Back or its textual Chats action;
   nested protected request/chat routes retain their router-owned Back stack.
   Presentation destination and scope survive Auth and profile completion.
-- `draft_departure_coordinator.dart` prepares the active Proposal editor before
+- `draft_departure_coordinator.dart` prepares the active Proposal or Profile editor before
   router transitions/pops and delivers confirmed destination feedback through
   the application's ScaffoldMessenger.
 
 The editor registers its identity-bound preparation callback; navigation does
-not own Proposal fields or persistence. See the
+not own editor fields or persistence. Profile uses explicit discard/keep
+confirmation for unsaved fields; Proposal retains its existing draft preparation. See the
 [draft-departure contract](../../../../../docs/development/proposal-draft-departure.md)
 for raw input, retry/cover outcomes, retained sessions and forced-auth behavior.
 
