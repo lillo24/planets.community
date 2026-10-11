@@ -393,7 +393,7 @@ void main() {
     },
   );
 
-  testWidgets('Project Manage card opens the existing collection route', (
+  testWidgets('Project Manage keeps the compact collection destination', (
     tester,
   ) async {
     final workspace = FakeProjectWorkspaceGateway()
@@ -415,9 +415,14 @@ void main() {
     );
     await tester.pumpAndSettle();
 
+    expect(find.text('drive.google.com'), findsOneWidget);
+    final destination = tester.widget<ListTile>(
+      find.byKey(const Key('project-manage-workspace')),
+    );
+    expect(destination.onTap, isNotNull);
     expect(
       find.byKey(const Key('project-manage-workspace-edit')),
-      findsOneWidget,
+      findsNothing,
     );
   });
 

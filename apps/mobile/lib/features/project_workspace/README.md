@@ -37,3 +37,10 @@ result so PostgREST's row limit cannot silently truncate a large collection.
 
 See [WORKSPACE02](../../../../../docs/development/workspace02-named-links.md)
 for migration compatibility, verification and native QA.
+
+The ORG-UX01 `compact` presentation remains opt-in: Manage composes the Workspace
+collection destination into its navigation card, with loading/failure status and
+a labelled retry. The destination stays usable during those states. Compact
+Group info uses the smaller section heading and omits a canonically empty
+collection only for non-managers; loading/failures and manager Add link remain
+visible. Both compact and standalone layouts reuse the same collection/editor.

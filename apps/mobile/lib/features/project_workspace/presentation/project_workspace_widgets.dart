@@ -71,19 +71,80 @@ Future<void> confirmAndOpenProjectWorkspace(
   }
 }
 
-class ProjectWorkspaceManageCard extends StatelessWidget {
+class ProjectWorkspaceManageCard extends ConsumerStatefulWidget {
   const ProjectWorkspaceManageCard({
     required this.expectedProfileId,
     required this.projectId,
     required this.projectKind,
+    this.compact = false,
     super.key,
   });
   final String expectedProfileId;
   final String projectId;
   final ProjectKind projectKind;
+
+  /// Organization hubs compose this destination into their navigation card.
+  final bool compact;
+
+  @override
+  ConsumerState<ProjectWorkspaceManageCard> createState() =>
+      _ProjectWorkspaceManageCardState();
+}
+
+class _ProjectWorkspaceManageCardState
+    extends ConsumerState<ProjectWorkspaceManageCard> {
+  @override
+  void initState() {
+    super.initState();
+    Future<void>.microtask(_load);
+  }
+
+  Future<void> _load() => ref
+      .read(projectWorkspaceProvider.notifier)
+      .load(
+        expectedProfileId: widget.expectedProfileId,
+        projectId: widget.projectId,
+      );
+
+  void _open() => context.push(
+    ProjectWorkspaceRoutes.manage(widget.projectKind, widget.projectId),
+  );
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
+    final state = ref.watch(projectWorkspaceProvider);
+    final current = state.isFor(widget.expectedProfileId, widget.projectId);
+    final loading = !current || state.phase == ProjectWorkspacePhase.loading;
+    final failed = current && state.phase == ProjectWorkspacePhase.failure;
+    if (widget.compact) {
+      return ListTile(
+        key: const Key('project-manage-workspace'),
+        minLeadingWidth: 24,
+        horizontalTitleGap: 8,
+        leading: const Icon(Icons.folder_shared_outlined),
+        title: Text(l10n.projectWorkspaceTitle),
+        subtitle: failed
+            ? Text(l10n.projectWorkspaceUnavailable)
+            : current && state.links.length == 1
+            ? Text(state.links.single.url.hostname)
+            : null,
+        trailing: loading
+            ? const SizedBox.square(
+                dimension: 20,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              )
+            : failed
+            ? IconButton(
+                tooltip: l10n.retryAction,
+                onPressed: _load,
+                icon: const Icon(Icons.refresh),
+              )
+            : const Icon(Icons.chevron_right),
+        // The collection owns empty/loading/error recovery as well as editing.
+        onTap: _open,
+      );
+    }
     return Card(
       key: const Key('project-manage-workspace'),
       child: Padding(
@@ -107,9 +168,7 @@ class ProjectWorkspaceManageCard extends StatelessWidget {
             Text(l10n.projectWorkspaceManageDescription),
             TextButton.icon(
               key: const Key('project-manage-workspace-edit'),
-              onPressed: () => context.push(
-                ProjectWorkspaceRoutes.manage(projectKind, projectId),
-              ),
+              onPressed: _open,
               icon: const Icon(Icons.folder_shared_outlined),
               label: Text(l10n.projectWorkspaceOpenWorkspaceAction),
             ),
@@ -126,12 +185,16 @@ class ProjectWorkspaceInfoSection extends ConsumerStatefulWidget {
     required this.projectId,
     required this.projectKind,
     required this.isManager,
+    this.compact = false,
     super.key,
   });
   final String expectedProfileId;
   final String projectId;
   final ProjectKind projectKind;
   final bool isManager;
+
+  /// Opt-in organization layout; collection behavior stays shared.
+  final bool compact;
   @override
   ConsumerState<ProjectWorkspaceInfoSection> createState() =>
       _ProjectWorkspaceInfoSectionState();
@@ -152,23 +215,36 @@ class _ProjectWorkspaceInfoSectionState
         projectId: widget.projectId,
       );
   @override
-  Widget build(BuildContext context) => Column(
-    key: const Key('project-workspace-info-section'),
-    crossAxisAlignment: CrossAxisAlignment.stretch,
-    children: [
-      Text(
-        AppLocalizations.of(context).projectWorkspaceTitle,
-        style: Theme.of(context).textTheme.titleLarge,
-      ),
-      const SizedBox(height: AppSpacing.small),
-      ProjectWorkspaceCollection(
-        expectedProfileId: widget.expectedProfileId,
-        projectId: widget.projectId,
-        isManager: widget.isManager,
-        onRetry: _load,
-      ),
-    ],
-  );
+  Widget build(BuildContext context) {
+    final state = ref.watch(projectWorkspaceProvider);
+    if (widget.compact &&
+        state.isFor(widget.expectedProfileId, widget.projectId) &&
+        state.phase == ProjectWorkspacePhase.ready &&
+        state.links.isEmpty &&
+        !widget.isManager) {
+      return const SizedBox.shrink();
+    }
+    return Column(
+      key: const Key('project-workspace-info-section'),
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        if (widget.compact) const SizedBox(height: AppSpacing.large),
+        Text(
+          AppLocalizations.of(context).projectWorkspaceTitle,
+          style: widget.compact
+              ? Theme.of(context).textTheme.titleMedium
+              : Theme.of(context).textTheme.titleLarge,
+        ),
+        const SizedBox(height: AppSpacing.small),
+        ProjectWorkspaceCollection(
+          expectedProfileId: widget.expectedProfileId,
+          projectId: widget.projectId,
+          isManager: widget.isManager,
+          onRetry: _load,
+        ),
+      ],
+    );
+  }
 }
 
 class ProjectWorkspaceChatControl extends StatelessWidget {

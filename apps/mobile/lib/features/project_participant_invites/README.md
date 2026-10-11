@@ -42,6 +42,15 @@ membership rules remain in `participation` and the canonical database.
 
 ## URL and retry contracts
 
+ORG-UX01 emphasizes the current link's existing Copy/Share boundary, or Create
+when no link exists. One visible direct-admission warning stays above disclosure;
+Help retains lifecycle/capacity/no-fixed-expiry detail. Replace/Revoke live in
+Link actions and keep their explicit confirmations. History defaults collapsed,
+appears for records or `hasMore`, and retains chronology and explicit paging.
+Retry appears only for read/mutation/preview failures. Disclosure is still
+revalidated by `ShareLinkButtons`; no token is copied into widget state or a new
+cache, and changing account/authority continues to remove the controls.
+
 Ordinary HTTPS links are `/proposals/<id>?intent=join` and
 `/tavoli/<id>?intent=join` on `planets.community`. Exactly one `intent=join`
 enables the dismissible existing request intent; duplicate or other values do

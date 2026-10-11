@@ -10,7 +10,7 @@ import '../../../l10n/generated/app_localizations.dart';
 import '../../auth/application/auth_session_controller.dart';
 import '../../participation/domain/participation_models.dart';
 import '../../participation/presentation/participation_routes.dart';
-import '../../project_participant_invites/presentation/participant_link_management_screen.dart';
+import '../../project_participant_invites/presentation/participant_invitation_routes.dart';
 import '../../project_workspace/presentation/project_workspace_widgets.dart';
 import '../application/project_delegate_controllers.dart';
 import '../domain/project_delegate_models.dart';
@@ -90,67 +90,78 @@ class _ProjectManageScreenState extends ConsumerState<ProjectManageScreen> {
             : ListView(
                 padding: const EdgeInsets.all(AppSpacing.medium),
                 children: [
-                  ParticipantLinkManagementButton(
-                    projectId: widget.projectId,
-                    kind: widget.projectKind,
-                  ),
                   Card(
-                    child: ListTile(
-                      key: const Key('project-manage-participation'),
-                      leading: const Icon(Icons.groups_outlined),
-                      title: Text(l10n.peopleTitle),
-                      subtitle: Text(
-                        l10n.projectManageParticipationDescription,
-                      ),
-                      trailing: const Icon(Icons.chevron_right),
-                      onTap: () => context.push(
-                        ParticipationRoutes.participants(
-                          widget.projectKind,
-                          widget.projectId,
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: AppSpacing.small),
-                  ProjectWorkspaceManageCard(
-                    expectedProfileId: profileId,
-                    projectId: widget.projectId,
-                    projectKind: widget.projectKind,
-                  ),
-                  if (role.hasStructuralAuthority) ...[
-                    const SizedBox(height: AppSpacing.small),
-                    Card(
-                      child: ListTile(
-                        key: const Key('project-manage-structural-edit'),
-                        leading: const Icon(Icons.edit_outlined),
-                        title: Text(l10n.projectManageStructuralTitle),
-                        subtitle: Text(l10n.projectManageStructuralDescription),
-                        trailing: const Icon(Icons.chevron_right),
-                        onTap: () => context.push(
-                          ProjectDelegateRoutes.edit(
-                            widget.projectKind,
-                            widget.projectId,
+                    child: Column(
+                      children: [
+                        ListTile(
+                          minLeadingWidth: 24,
+                          horizontalTitleGap: 8,
+                          key: const Key('project-manage-participation'),
+                          leading: const Icon(Icons.groups_outlined),
+                          title: Text(l10n.peopleTitle),
+                          trailing: const Icon(Icons.chevron_right),
+                          onTap: () => context.push(
+                            ParticipationRoutes.participants(
+                              widget.projectKind,
+                              widget.projectId,
+                            ),
                           ),
                         ),
-                      ),
-                    ),
-                    const SizedBox(height: AppSpacing.small),
-                    Card(
-                      child: ListTile(
-                        key: const Key('project-manage-team'),
-                        leading: const Icon(Icons.supervisor_account_outlined),
-                        title: Text(l10n.projectCoorganizersTitle),
-                        subtitle: Text(l10n.projectCoorganizersDescription),
-                        trailing: const Icon(Icons.chevron_right),
-                        onTap: () => context.push(
-                          ProjectDelegateRoutes.team(
-                            widget.projectKind,
-                            widget.projectId,
+                        ListTile(
+                          minLeadingWidth: 24,
+                          horizontalTitleGap: 8,
+                          key: const Key('participant-links-manage'),
+                          leading: const Icon(Icons.link),
+                          title: Text(l10n.organizationParticipantLinks),
+                          trailing: const Icon(Icons.chevron_right),
+                          onTap: () => context.push(
+                            ParticipantInvitationRoutes.manage(
+                              widget.projectKind,
+                              widget.projectId,
+                            ),
                           ),
                         ),
-                      ),
+                        if (role.hasStructuralAuthority) ...[
+                          ListTile(
+                            minLeadingWidth: 24,
+                            horizontalTitleGap: 8,
+                            key: const Key('project-manage-team'),
+                            leading: const Icon(
+                              Icons.supervisor_account_outlined,
+                            ),
+                            title: Text(l10n.projectCoorganizersTitle),
+                            trailing: const Icon(Icons.chevron_right),
+                            onTap: () => context.push(
+                              ProjectDelegateRoutes.team(
+                                widget.projectKind,
+                                widget.projectId,
+                              ),
+                            ),
+                          ),
+                          ListTile(
+                            minLeadingWidth: 24,
+                            horizontalTitleGap: 8,
+                            key: const Key('project-manage-structural-edit'),
+                            leading: const Icon(Icons.edit_outlined),
+                            title: Text(l10n.projectManageStructuralTitle),
+                            trailing: const Icon(Icons.chevron_right),
+                            onTap: () => context.push(
+                              ProjectDelegateRoutes.edit(
+                                widget.projectKind,
+                                widget.projectId,
+                              ),
+                            ),
+                          ),
+                        ],
+                        ProjectWorkspaceManageCard(
+                          expectedProfileId: profileId,
+                          projectId: widget.projectId,
+                          projectKind: widget.projectKind,
+                          compact: true,
+                        ),
+                      ],
                     ),
-                  ],
+                  ),
                 ],
               ),
       ),
