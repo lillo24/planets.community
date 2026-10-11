@@ -33,6 +33,12 @@ class _Locations implements ItemLocationGateway {
   Future<ItemLocation> read(String actor, String kind, String item) =>
       stores[kind]!.read(actor, kind, item);
   @override
+  Future<ItemLocation> confirmManualText(
+    String actor,
+    String item,
+    String city,
+  ) => stores['one_time']!.confirmManualText(actor, item, city);
+  @override
   Future<int> apply(
     PlaceSearchScope scope, {
     required String requestId,

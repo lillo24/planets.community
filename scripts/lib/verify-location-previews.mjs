@@ -43,6 +43,10 @@ export async function verifyLocationPreviews({
     const args = { p_kind: "one_time", p_item: id, p_view: "card" };
     const card = await rpc(anonymous, "get_location_preview_v1", args);
     check(
+      card.text_source === "geoapify" && card.place.locality === area.locality,
+      "MAPFIX01 provider public text keeps structured locality and credit provenance",
+    );
+    check(
       card.scope === "area" &&
         card.place.latitude === 45 &&
         !JSON.stringify(card).includes("SECRET"),
@@ -229,6 +233,31 @@ export async function verifyLocationPreviews({
         })
       ).scope === "area",
       "MAP03 public precision revoked",
+    );
+    await db.unsafe(
+      "update public.proposals set selected_public_place=null,approximate_location=null where id=$1",
+      [id],
+    );
+    const retained = await rpc(anonymous, "get_location_preview_v1", {
+      ...args,
+      p_view: "public_detail",
+    });
+    check(
+      retained.place === null && retained.text_source === "geoapify",
+      "MAPFIX01 provider text retains credits after geometry clear",
+    );
+    await db.unsafe(
+      "update public.proposals set locality='New legacy city',public_location_label='New legacy city' where id=$1",
+      [id],
+    );
+    check(
+      (
+        await rpc(anonymous, "get_location_preview_v1", {
+          ...args,
+          p_view: "public_detail",
+        })
+      ).text_source === "unknown",
+      "MAPFIX01 ordinary edits cannot falsely attest manual authorship",
     );
   } finally {
     await db.unsafe(

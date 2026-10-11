@@ -12,6 +12,7 @@ import 'package:planets_mobile/features/auth/domain/auth_models.dart';
 import 'package:planets_mobile/features/cover_media/application/project_cover_reconciler.dart';
 import 'package:planets_mobile/features/cover_media/domain/cover_media_models.dart';
 import 'package:planets_mobile/features/cover_media/presentation/cover_editor_section.dart';
+import 'package:planets_mobile/features/locations/data/item_location_gateway.dart';
 import 'package:planets_mobile/features/proposals/application/proposal_controllers.dart';
 import 'package:planets_mobile/features/proposals/application/proposal_draft_session.dart';
 import 'package:planets_mobile/features/proposals/data/proposal_gateway.dart';
@@ -22,6 +23,7 @@ import 'package:planets_mobile/l10n/generated/app_localizations.dart';
 
 import '../../../support/fake_auth.dart';
 import '../../../support/fake_cover_media.dart';
+import '../../../support/fake_location.dart';
 import '../../../support/fake_proposal.dart';
 import '../../../support/fake_similar_proposal.dart';
 
@@ -665,6 +667,9 @@ pumpEditor(
         FakeProfileAnchorGateway()..readiness = ProfileAnchorReadiness.complete,
       ),
       proposalGatewayProvider.overrideWithValue(gateway),
+      // Content saves now perform a canonical manual-origin read/attestation.
+      // Keep this navigation fixture independent of an initialized Supabase app.
+      itemLocationGatewayProvider.overrideWithValue(FakeItemLocationGateway()),
       similarProposalGatewayProvider.overrideWithValue(
         similar ?? FakeSimilarProposalGateway(),
       ),

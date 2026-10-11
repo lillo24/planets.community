@@ -2753,6 +2753,15 @@ export type Database = {
         Args: { p_expected_owner_profile_id: string; p_listing_id: string }
         Returns: string
       }
+      confirm_manual_proposal_location_text_v1: {
+        Args: {
+          p_city: string
+          p_expected_profile_id: string
+          p_expected_revision: number
+          p_item: string
+        }
+        Returns: number
+      }
       create_editor_proposal_draft: {
         Args: {
           p_administrative_area: string

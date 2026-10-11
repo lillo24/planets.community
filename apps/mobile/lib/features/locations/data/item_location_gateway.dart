@@ -14,6 +14,14 @@ import 'server_place_search_gateway.dart';
 
 abstract interface class ItemLocationGateway {
   Future<ItemLocation> read(String actor, String kind, String item);
+
+  /// Attest an explicitly confirmed manual city AFTER ordinary content saved.
+  /// Older servers keep unknown provenance and need no additional mutation.
+  Future<ItemLocation> confirmManualText(
+    String actor,
+    String item,
+    String city,
+  );
   Future<int> apply(
     PlaceSearchScope scope, {
     required String requestId,
@@ -62,6 +70,36 @@ class RpcItemLocationGateway implements ItemLocationGateway {
           }) as Map,
         ),
       );
+  @override
+  Future<ItemLocation> confirmManualText(
+    String actor,
+    String item,
+    String city,
+  ) async {
+    final current = await read(actor, 'one_time', item);
+    if (current.publicLabel != city ||
+        current.publicPlace != null ||
+        current.exactPlace != null) {
+      throw const PlaceSearchFailure(PlaceSearchProblem.stale);
+    }
+    if (!current.supportsTextProvenance) return current;
+    final revision = await _call('confirm_manual_proposal_location_text_v1', {
+      'p_expected_profile_id': actor,
+      'p_item': item,
+      'p_expected_revision': current.revision,
+      'p_city': city,
+    });
+    final saved = await read(actor, 'one_time', item);
+    if (saved.revision != revision ||
+        saved.publicTextSource != 'manual' ||
+        saved.publicLabel != city ||
+        saved.publicPlace != null ||
+        saved.exactPlace != null) {
+      throw const PlaceSearchFailure(PlaceSearchProblem.stale);
+    }
+    return saved;
+  }
+
   @override
   Future<int> apply(
     PlaceSearchScope scope, {

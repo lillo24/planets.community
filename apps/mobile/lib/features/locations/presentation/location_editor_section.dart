@@ -23,7 +23,7 @@ class LocationEditorHandle {
   VoidCallback? _beforeSave;
   String Function()? pendingQuery;
   VoidCallback? restoreQuery;
-  VoidCallback? contentSaved;
+  Future<bool> Function()? contentSaved;
   void beforeContentSave() => _beforeSave?.call();
 
   void bind(VoidCallback callback) => _beforeSave = callback;

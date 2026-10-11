@@ -716,7 +716,6 @@ class _ProposalFormState extends ConsumerState<_ProposalForm>
       return false;
     }
     if (id != null && mounted) {
-      _locationHandle.contentSaved?.call();
       setState(() {
         _acknowledged = captured;
         if (_coverRevision == captured.coverRevision) {
@@ -726,6 +725,16 @@ class _ProposalFormState extends ConsumerState<_ProposalForm>
       });
       ref.invalidate(ownProposalsProvider);
       ref.invalidate(publicProposalsProvider);
+      // Content is acknowledged even if its separate, optional provenance
+      // attestation fails. Stay in the editor with the location error for retry.
+      setState(() => _saving = true);
+      final locationSaved = await _locationHandle.contentSaved?.call() ?? true;
+      if (!mounted ||
+          ref.read(authSessionProvider).identity?.id != widget.identityId) {
+        return false;
+      }
+      setState(() => _saving = false);
+      if (!locationSaved) return false;
       if (navigate) {
         if (widget.returnToHub && context.canPop()) {
           context.pop();

@@ -28,6 +28,29 @@ import '../../../support/fake_profile_photo.dart';
 
 void main() {
   testWidgets(
+    'failed manual provenance keeps saved draft open and retries without duplicate creation',
+    (tester) async {
+      final locations = FakeItemLocationGateway();
+      final gateway = await _pumpEditor(tester, null, locations: locations);
+      final city = find.byKey(const Key('proposal-public-location'));
+      await _reveal(tester, city);
+      await tester.enterText(city, 'Trento');
+      await _tap(tester, find.byKey(const Key('proposal-confirm-manual-city')));
+      locations.applyFailure = PlaceSearchProblem.offline;
+      await _tap(tester, find.byKey(const Key('proposal-save-draft')));
+      expect(gateway.calls.where((call) => call == 'create'), hasLength(1));
+      expect(gateway.lastInput!.publicLocationLabel, 'Trento');
+      expect(find.byType(ProposalEditorScreen), findsOneWidget);
+      expect(find.text('Saved proposal'), findsNothing);
+      await _seek(tester, find.byKey(const Key('location-operation-error')));
+      expect(find.byKey(const Key('location-operation-error')), findsOneWidget);
+      locations.applyFailure = null;
+      await _tap(tester, find.byKey(const Key('proposal-save-draft')));
+      expect(gateway.calls.where((call) => call == 'create'), hasLength(1));
+      expect(find.text('Saved proposal'), findsOneWidget);
+    },
+  );
+  testWidgets(
     'autocomplete preparation never scrolls to an unrelated invalid field',
     (tester) async {
       tester.view.physicalSize = const Size(320, 740);
@@ -826,8 +849,9 @@ Future<FakeProposalGateway> _pumpEditor(
         FakeProfileAnchorGateway()..readiness = ProfileAnchorReadiness.complete,
       ),
       proposalGatewayProvider.overrideWithValue(gateway),
-      if (locations != null)
-        itemLocationGatewayProvider.overrideWithValue(locations),
+      itemLocationGatewayProvider.overrideWithValue(
+        locations ?? FakeItemLocationGateway(),
+      ),
       if (placeFactory != null)
         editorPlaceGatewayFactoryProvider.overrideWithValue(placeFactory),
       profilePhotoGatewayProvider.overrideWithValue(photoGateway),

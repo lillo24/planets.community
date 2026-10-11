@@ -20,6 +20,7 @@ class ReadOnlyBasemap extends StatefulWidget {
     required this.failureLabel,
     this.imageBuilder,
     this.fallback,
+    this.pending,
     this.decode = decodeBasemapImage,
     super.key,
   });
@@ -31,6 +32,9 @@ class ReadOnlyBasemap extends StatefulWidget {
   /// Only an actually decoded canvas is wrapped as an action by the detail UI.
   final Widget Function(Widget canvas)? imageBuilder;
   final Widget? fallback;
+
+  /// Loading is not failure: never expose the eventual text action mid-decode.
+  final Widget? pending;
   final Future<ui.Image> Function(Uint8List bytes) decode;
   @override
   State<ReadOnlyBasemap> createState() => ReadOnlyBasemapState();
@@ -159,9 +163,8 @@ class ReadOnlyBasemapState extends State<ReadOnlyBasemap> {
           children: [Text(widget.failureLabel), ?widget.fallback],
         );
       }
-      if (!_ready || _revoked) {
-        return widget.fallback ?? const SizedBox.shrink();
-      }
+      if (_revoked) return const SizedBox.shrink();
+      if (!_ready) return widget.pending ?? const SizedBox.shrink();
       final canvas = Semantics(
         image: true,
         label: widget.semanticLabel,

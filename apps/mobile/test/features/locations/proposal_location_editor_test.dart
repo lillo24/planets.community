@@ -150,6 +150,51 @@ Future<void> query(WidgetTester tester, String value) async {
 void main() {
   for (final language in ['en', 'it']) {
     testWidgets(
+      '$language manual city saves provenance and reopened editor has no provider credit',
+      (tester) async {
+        final db = FakeItemLocationGateway();
+        final factory = FakeEditorPlaceFactory()..gateway.available = false;
+        final (_, _, handle, _) = await setup(
+          tester,
+          db,
+          factory,
+          language: language,
+        );
+        await query(tester, 'Rovereto');
+        await tap(tester, 'proposal-confirm-manual-city');
+        handle.beforeContentSave();
+        expect(await handle.contentSaved!(), true);
+        expect(db.value.publicTextSource, 'manual');
+        expect(db.value.publicPlace, isNull);
+        await tester.pumpWidget(const SizedBox());
+        await setup(tester, db, factory, language: language);
+        expect(find.byType(LocationAttribution), findsNothing);
+        expect(tester.takeException(), isNull);
+        await tester.pumpWidget(const SizedBox());
+      },
+    );
+  }
+  testWidgets(
+    'manual provenance failure is explicit and retries only after another content save',
+    (tester) async {
+      final db = FakeItemLocationGateway();
+      final factory = FakeEditorPlaceFactory()..gateway.available = false;
+      final (_, _, handle, _) = await setup(tester, db, factory);
+      await query(tester, 'Rovereto');
+      await tap(tester, 'proposal-confirm-manual-city');
+      db.applyFailure = PlaceSearchProblem.offline;
+      handle.beforeContentSave();
+      expect(await handle.contentSaved!(), false);
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('location-operation-error')), findsOneWidget);
+      db.applyFailure = null;
+      handle.beforeContentSave();
+      expect(await handle.contentSaved!(), true);
+      await tester.pumpWidget(const SizedBox());
+    },
+  );
+  for (final language in ['en', 'it']) {
+    testWidgets(
       '$language known manual authoring has no credits; provider results and retained labels do',
       (tester) async {
         tester.view.physicalSize = const Size(320, 740);
@@ -170,7 +215,8 @@ void main() {
         await tap(tester, 'proposal-confirm-manual-city');
         expect(state.city, 'Rovereto');
         expect(find.byType(LocationAttribution), findsNothing);
-        handle.contentSaved!();
+        state.savedId = 'proposal-1';
+        await handle.contentSaved!();
         await tester.pumpAndSettle();
         expect(find.byType(LocationAttribution), findsNothing);
         factory.gateway.available = true;
@@ -192,7 +238,7 @@ void main() {
         await query(tester, 'Rovereto');
         await tap(tester, 'proposal-manual-city-options');
         await tap(tester, 'proposal-confirm-manual-city');
-        expect(find.byType(LocationAttribution), findsOneWidget);
+        expect(find.byType(LocationAttribution), findsNothing);
         expect(tester.takeException(), isNull);
         await tester.pumpWidget(const SizedBox());
       },
@@ -210,7 +256,7 @@ void main() {
         expect(find.byType(LocationAttribution), findsOneWidget);
         await query(tester, 'Rovereto');
         await tap(tester, 'proposal-confirm-manual-city');
-        expect(find.byType(LocationAttribution), findsOneWidget);
+        expect(find.byType(LocationAttribution), findsNothing);
         await tester.pumpWidget(const SizedBox());
       },
     );
@@ -552,7 +598,7 @@ void main() {
             .text,
         'Rovereto',
       );
-      handle.contentSaved!();
+      await handle.contentSaved!();
     },
   );
 
