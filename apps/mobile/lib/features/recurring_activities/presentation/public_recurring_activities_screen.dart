@@ -116,8 +116,8 @@ class _PublicRecurringActivitiesScreenState
                 const BrowseActivitySwitcher(
                   selected: BrowseActivityType.tavoli,
                 ),
-                // Match the Project header's visible 16dp gaps (4dp tap inset).
-                const SizedBox(height: AppSpacing.medium - 4),
+                // Match the Project gap below the complete Browse block.
+                const SizedBox(height: AppSpacing.medium),
                 MapViewButton(origin: MapDiscoveryOrigin.tavoli),
                 const SizedBox(height: AppSpacing.medium),
                 Align(
