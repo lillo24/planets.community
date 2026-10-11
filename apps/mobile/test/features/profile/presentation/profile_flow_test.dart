@@ -18,6 +18,7 @@ import 'package:planets_mobile/features/auth/domain/auth_models.dart';
 import 'package:planets_mobile/features/auth/presentation/request_code_screen.dart';
 import 'package:planets_mobile/features/profile/data/profile_gateway.dart';
 import 'package:planets_mobile/features/profile/domain/profile_models.dart';
+import 'package:planets_mobile/features/profile/presentation/profile_edit_screen.dart';
 import 'package:planets_mobile/features/profile_photo/data/profile_photo_gateway.dart';
 import 'package:planets_mobile/l10n/generated/app_localizations.dart';
 
@@ -658,6 +659,75 @@ void main() {
     expect(find.textContaining(rawFailure), findsNothing);
     expect(find.byKey(const Key('profile-save-button')), findsOneWidget);
   });
+
+  for (final save in [false, true]) {
+    testWidgets(
+      'native photo-prompt Profile editor protects Back and resumes Save=$save',
+      (tester) async {
+        final auth = FakeAuthGateway(
+          snapshot: const AuthSnapshot(identity: AuthIdentity(id: 'user-1')),
+        );
+        addTearDown(auth.close);
+        final profile = FakeProfileGateway(
+          data: profileFixture(complete: true),
+        );
+        final app = await _pumpApp(
+          tester,
+          auth,
+          FakeProfileAnchorGateway()
+            ..readiness = ProfileAnchorReadiness.complete,
+          profile,
+        );
+        final router = app.read(appRouterProvider);
+        router.go('/profile');
+        await tester.pumpAndSettle();
+        unawaited(
+          Navigator.of(
+            tester.element(find.byKey(const Key('profile-edit-button'))),
+          ).push<void>(
+            MaterialPageRoute<void>(
+              builder: (_) => const ProfileEditScreen(
+                returnByPop: true,
+                returnTo: '/settings',
+              ),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+        await tester.enterText(
+          find.byKey(const Key('profile-display-name-field')),
+          'Native edited name',
+        );
+        if (save) {
+          await tester.tap(find.byKey(const Key('profile-save-button')));
+          await tester.pumpAndSettle();
+          expect(router.routerDelegate.state.uri.path, '/settings');
+          expect(profile.updateCount, 1);
+          expect(
+            find.byKey(const Key('profile-display-name-field')),
+            findsNothing,
+          );
+        } else {
+          await tester.binding.handlePopRoute();
+          await tester.pumpAndSettle();
+          expect(find.byKey(const Key('profile-keep-editing')), findsOneWidget);
+          await tester.tap(find.byKey(const Key('profile-keep-editing')));
+          await tester.pumpAndSettle();
+          expect(find.text('Native edited name'), findsOneWidget);
+          await tester.binding.handlePopRoute();
+          await tester.pumpAndSettle();
+          await tester.tap(find.byKey(const Key('profile-discard-changes')));
+          await tester.pumpAndSettle();
+          expect(
+            find.byKey(const Key('profile-display-name-field')),
+            findsNothing,
+          );
+          expect(find.byKey(const Key('profile-display-name')), findsOneWidget);
+          expect(profile.updateCount, 0);
+        }
+      },
+    );
+  }
 
   for (final fail in [false, true]) {
     testWidgets('pending Profile Save blocks departure; failure=$fail', (

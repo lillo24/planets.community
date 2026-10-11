@@ -61,3 +61,7 @@ uses a mixed public/private visibility example, and remains local until Save.
 Profile also links to the independently owned `blocking` feature's outbound
 `Blocked users` management screen. No inbound/reciprocal state is part of the
 Profile model.
+
+Photo trust prompts reuse the editor in a native Material route. That route
+guards Back/Cancel locally; router pages use the shared departure hook. Native
+photo-prompt Back waits for Keep editing/Discard before popping the form.

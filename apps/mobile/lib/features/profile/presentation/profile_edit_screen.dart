@@ -112,7 +112,9 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
     return PopScope(
       canPop: widget.returnByPop,
       onPopInvokedWithResult: (didPop, _) {
-        if (!didPop) _cancel();
+        // An async route onExit may decline the first pop while preparing.
+        // Only synthesize Cancel for routes that cannot return by popping.
+        if (!didPop && !widget.returnByPop) _cancel();
       },
       child: Scaffold(
         appBar: pageAppBar(
@@ -172,6 +174,7 @@ class _ProfileEditFormState extends ConsumerState<_ProfileEditForm> {
   late final DraftDepartureCoordinator _departure;
   DraftDepartureOwner? _departureOwner;
   bool _saving = false;
+  bool _routerManaged = true;
 
   @override
   void initState() {
@@ -191,9 +194,15 @@ class _ProfileEditFormState extends ConsumerState<_ProfileEditForm> {
   void didChangeDependencies() {
     super.didChangeDependencies();
     if (_departureOwner != null) return;
+    final route = ModalRoute.of(context)!;
+    final settings = route.settings;
+    _routerManaged = settings is Page;
+    // Photo trust prompts also mount this form in a native MaterialPageRoute.
+    // GoRouterState.of cannot resolve that non-router route; its pop is guarded
+    // locally while router-owned pages use the shared onExit hook.
     _departureOwner = DraftDepartureOwner(
       actorId: widget.identityId,
-      pageKey: GoRouterState.of(context).pageKey,
+      pageKey: (settings is Page ? settings.key : null) ?? ObjectKey(route),
       isActive: () =>
           mounted &&
           TickerMode.valuesOf(context).enabled &&
@@ -291,7 +300,12 @@ class _ProfileEditFormState extends ConsumerState<_ProfileEditForm> {
     }
   }
 
-  void _cancel() {
+  Future<void> _cancel() async {
+    final owner = _departureOwner;
+    if (!_routerManaged && owner != null) {
+      final outcome = await _departure.prepare(owner);
+      if (outcome == DraftDepartureOutcome.blocked || !mounted) return;
+    }
     if (widget.returnByPop && context.canPop()) {
       context.pop();
     } else {
@@ -306,9 +320,11 @@ class _ProfileEditFormState extends ConsumerState<_ProfileEditForm> {
     final error = state.failure;
 
     return PopScope(
-      canPop: widget.returnByPop,
+      canPop: _routerManaged && widget.returnByPop,
       onPopInvokedWithResult: (didPop, _) {
-        if (!didPop) _cancel();
+        // An async route onExit may decline the first pop while preparing.
+        // Only synthesize Cancel for routes that cannot return by popping.
+        if (!didPop && (!_routerManaged || !widget.returnByPop)) _cancel();
       },
       child: Scaffold(
         appBar: pageAppBar(
