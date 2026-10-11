@@ -1,5 +1,10 @@
 # Moderation reporting
 
+GRP01 adds genuine `group` wire targets so own-report history remains readable.
+Group reports have no Project context and use standard disclosure; the public
+entry point belongs to GRP02. See the
+[backend contract](../../../../../docs/development/persistent-groups.md).
+
 This feature owns the authenticated reporter experience. `domain/` defines the
 bounded report vocabulary and safe reporter projection, `data/` owns the narrow
 Supabase RPC contract, `application/` protects identity changes and duplicate
