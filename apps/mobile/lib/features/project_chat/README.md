@@ -165,3 +165,15 @@ action.
 A successful authorized one-time meeting read with null instructions renders
 localized absence copy. Read errors/denials retain their existing failure states.
 No chat creation, membership, admission or history rule changes.
+
+## Automatic history paging (AUTO02)
+
+Opening still requests the newest 30 feed items. A deliberate upward drag within
+one viewport of the top requests one older 30-item page. The shared Messages
+`ConversationHistoryList` lazily renders human messages and system cards in
+canonical order around a stable center sliver; prepends preserve the viewport
+without an estimated-height jump. Open/send-to-bottom, realtime and keyboard
+changes do not authorize paging. Failures keep history/cursor and require Retry
+(or explicit refresh); short/accessibility navigation retains a fallback. Older
+loading withholds read acknowledgement. Former-member readable history keeps
+its existing authorization and read-only controls.

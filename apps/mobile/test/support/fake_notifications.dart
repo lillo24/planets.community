@@ -22,6 +22,7 @@ class FakeNotificationsGateway implements NotificationsGateway {
   Future<void>? mutationDelay;
   Future<void>? preferenceDelay;
   final List<String> calls = [];
+  final List<int> requestedLimits = [];
   NotificationCursor? lastCursor;
   String? lastExpectedProfileId;
   bool? lastInAppEnabled;
@@ -35,6 +36,7 @@ class FakeNotificationsGateway implements NotificationsGateway {
     NotificationCursor? cursor,
   }) async {
     calls.add('list');
+    requestedLimits.add(limit);
     lastExpectedProfileId = expectedProfileId;
     lastCursor = cursor;
     if (listDelay case final delay?) await delay;

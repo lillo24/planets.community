@@ -136,3 +136,12 @@ The shared event resolver, suppressed receipts, push preferences and supported
 push jobs remain intact. Human-message attention belongs to Messages unread.
 Device registration, FCM/APNs, permission timing, and safe provider previews
 remain 06C2B. Native QA remains deferred to the consolidated Plan 12 pass.
+
+## Automatic pagination (AUTO02)
+
+The inbox retains 20-entry initial and continuation pages. One deliberate drag
+within one viewport of the bottom loads one page; rebuilds, restoration and
+programmatic movement do not. Failures retain rows/cursor and require explicit
+Retry or refresh before automatic paging resumes. Short-content/accessibility
+navigation offers a deliberate fallback. Count reconciliation, read mutations
+and destination navigation retain their separate owners.

@@ -1,3 +1,5 @@
+import 'package:planets_mobile/features/auth/application/auth_session_controller.dart';
+
 import '../../../support/fake_policy.dart';
 
 import 'dart:async';
@@ -47,6 +49,117 @@ import '../../../support/fake_recurring_activity.dart';
 import '../../../support/fake_resource_chat.dart';
 
 void main() {
+  testWidgets(
+    'AUTO02 failed older page pauses, retries its cursor and rejects late account work',
+    (tester) async {
+      final chats = FakeProjectChatGateway()
+        ..summaries = [projectChatSummaryFixture()]
+        ..histories['chat-1'] = [
+          for (var i = 94; i >= 0; i--)
+            projectChatMessageFixture(
+              messageId: 'message-$i',
+              body: 'History $i',
+              createdAt: DateTime.utc(2026, 9, 1, 0, i),
+            ),
+        ];
+      final app = await _pump(tester, chats: chats);
+      app.read(appRouterProvider).go('/messages/chats/chat-1');
+      await tester.pumpAndSettle();
+      final history = find.byKey(const Key('project-chat-history'));
+      final position = tester
+          .state<ScrollableState>(
+            find
+                .descendant(of: history, matching: find.byType(Scrollable))
+                .first,
+          )
+          .position;
+      position.jumpTo(position.minScrollExtent + 50);
+      await tester.pumpAndSettle();
+      chats.historyError = StateError('offline');
+      await tester.drag(history, const Offset(0, 40));
+      await tester.pumpAndSettle();
+      final cursor = chats.lastFeedCursor;
+      expect(chats.requestedLimits, [30, 30]);
+      expect(app.read(projectChatDetailProvider).feedItems, hasLength(30));
+      await tester.drag(history, const Offset(0, 80));
+      await tester.pumpAndSettle();
+      expect(chats.requestedLimits, [30, 30]);
+      position.jumpTo(position.minScrollExtent);
+      await tester.pumpAndSettle();
+      chats.historyError = null;
+      expect(find.text('Try again'), findsOneWidget);
+      await tester.tap(find.byKey(const Key('project-chat-load-older')));
+      await tester.pumpAndSettle();
+      expect(chats.requestedLimits, [30, 30, 30]);
+      expect(chats.lastFeedCursor!.itemId, cursor!.itemId);
+      expect(app.read(projectChatDetailProvider).feedItems, hasLength(60));
+      final pending = Completer<void>();
+      chats.historyDelay = pending.future;
+      position.jumpTo(position.minScrollExtent + 50);
+      await tester.pumpAndSettle();
+      await tester.drag(history, const Offset(0, 40));
+      await tester.pump();
+      expect(chats.requestedLimits, [30, 30, 30, 30]);
+      final auth = app.read(authGatewayProvider) as FakeAuthGateway;
+      auth.snapshot = const AuthSnapshot(identity: AuthIdentity(id: 'user-2'));
+      auth.emit(auth.snapshot);
+      await tester.pump();
+      expect(app.read(authSessionProvider).identity?.id, 'user-2');
+      pending.complete();
+      await tester.pumpAndSettle();
+      expect(app.read(projectChatDetailProvider).expectedProfileId, 'user-2');
+      expect(app.read(projectChatDetailProvider).feedItems, hasLength(30));
+      expect(chats.lastExpectedProfileId, 'user-2');
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  testWidgets(
+    'AUTO02 Project history opens at 30 and prepends 30 without offset correction',
+    (tester) async {
+      final chats = FakeProjectChatGateway()
+        ..summaries = [projectChatSummaryFixture()]
+        ..histories['chat-1'] = [
+          for (var i = 124; i >= 0; i--)
+            projectChatMessageFixture(
+              messageId: 'message-$i',
+              body: 'History $i',
+              createdAt: DateTime.utc(2026, 9, 1, 0, i),
+            ),
+        ];
+      final app = await _pump(tester, chats: chats);
+      app.read(appRouterProvider).go('/messages/chats/chat-1');
+      await tester.pumpAndSettle();
+      expect(chats.requestedLimits, [30]);
+      final history = find.byKey(const Key('project-chat-history'));
+      final position = tester
+          .state<ScrollableState>(
+            find
+                .descendant(of: history, matching: find.byType(Scrollable))
+                .first,
+          )
+          .position;
+      expect(position.extentAfter, lessThanOrEqualTo(1));
+      for (var page = 0; page < 4; page++) {
+        position.jumpTo(position.minScrollExtent + 50);
+        await tester.pumpAndSettle();
+        expect(chats.requestedLimits, hasLength(page + 1));
+        final pending = Completer<void>();
+        chats.historyDelay = pending.future;
+        await tester.drag(history, const Offset(0, 40));
+        await tester.pump();
+        expect(chats.requestedLimits, [for (var j = 0; j < page + 2; j++) 30]);
+        final offset = position.pixels;
+        pending.complete();
+        await tester.pumpAndSettle();
+        expect(position.pixels, closeTo(offset, .01));
+      }
+      expect(app.read(projectChatDetailProvider).feedItems, hasLength(125));
+      expect(app.read(projectChatDetailProvider).hasMoreOlder, isFalse);
+      expect(tester.takeException(), isNull);
+    },
+  );
+
   testWidgets('Project chat idle and loading render loading', (tester) async {
     final pending = Completer<void>();
     final chats = FakeProjectChatGateway()

@@ -239,3 +239,25 @@ tour teach Private then Groups without changing the ordinary remembered scope.
 Examples belong only to `controlsOnly` tutorial previews. Ordinary signed-out
 Chats retain their selectors and login context without fictional rows; setup,
 ready accounts and identity transitions never substitute examples for real data.
+
+## Automatic pagination (AUTO02)
+
+Private, Groups and Requests retain independent 20-entry pages and canonical
+cursors. One deliberate drag within one viewport of the bottom requests at most
+one continuation, including its ballistic tail. Rebuilds, programmatic movement,
+inactive routes and background lifecycle states do not page. A failed page keeps
+loaded rows/cursor and pauses scrolling requests until explicit Retry succeeds
+(or an explicit refresh resets the failure). Short lists and accessible navigation
+retain a deliberate fallback. Existing loaded-pair subscriptions and per-batch
+counterparty photo loading stay bounded to the loaded scopes.
+
+`presentation/conversation_history_list.dart` owns shared lazy chronological
+history layout. Its two sliver lists have a stable center at the first rendered
+page: older records grow above that center, keeping the visible anchor without
+estimated-height offset correction. The existing scroll controller still owns
+open/send-to-bottom and latest-viewport read checks. Genuine upward scrolling
+within one viewport of the top loads one older page; initial positioning,
+keyboard/layout changes and realtime updates never authorize history fetches.
+Older loading temporarily withholds the newest read boundary from the viewport.
+Short-content/accessibility fallback controls sit above the history viewport so
+they remain reachable without first scrolling into negative sliver offsets.

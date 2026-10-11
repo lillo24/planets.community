@@ -8,6 +8,7 @@ class FakeProjectChatGateway implements ProjectChatGateway {
   List<ProjectChatSummary> summaries = [];
   final Map<String, List<ProjectChatFeedItem>> histories = {};
   final List<String> calls = [];
+  final List<int> requestedLimits = [];
   final List<FakeProjectChatSubscription> subscriptions = [];
   bool emitDisconnectedOnClose = false;
   Future<void>? listDelay;
@@ -51,6 +52,7 @@ class FakeProjectChatGateway implements ProjectChatGateway {
     ProjectChatFeedCursor? cursor,
   }) async {
     calls.add('history:$chatId');
+    requestedLimits.add(limit);
     lastExpectedProfileId = expectedProfileId;
     lastFeedCursor = cursor;
     if (historyDelay case final delay?) await delay;

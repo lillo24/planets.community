@@ -87,3 +87,5 @@ records a separate idle build/layout trace to audit this boundary.
   deferred through lazy list slots with zero offscreen cache extent, so page
   records do not imply page-wide cover downloads. Immutable-path cover caching
   and existing decoding/fallback behavior are unchanged.
+
+`pagination_control.dart` renders compact continuation progress, localized explicit Retry, and a deliberate short-content/accessibility fallback. The scroll trigger remains in `user_scroll_pagination.dart`; it never loads from metrics or programmatic movement.

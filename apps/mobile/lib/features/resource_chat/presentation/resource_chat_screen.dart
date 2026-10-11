@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import '../../../core/widgets/page_app_bar.dart';
 import '../../../core/theme/app_tokens.dart';
 import '../../messages/presentation/message_read_viewport.dart';
+import '../../messages/presentation/conversation_history_list.dart';
 import '../../../core/widgets/error_state.dart';
 import '../../../core/widgets/loading_state.dart';
 import '../../../l10n/generated/app_localizations.dart';
@@ -103,23 +104,10 @@ class _ResourceChatScreenState extends ConsumerState<ResourceChatScreen>
   Future<void> _loadOlder() async {
     final profileId = _expectedProfileId;
     if (profileId == null || !_hasExpectedIdentity) return;
-    final oldExtent = _scrollController.hasClients
-        ? _scrollController.position.maxScrollExtent
-        : 0.0;
-    final oldOffset = _scrollController.hasClients
-        ? _scrollController.offset
-        : 0.0;
-    final loaded = await _controller.loadOlder(
+    await _controller.loadOlder(
       expectedProfileId: profileId,
       chatId: widget.chatId,
     );
-    if (!loaded || !mounted) return;
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted || !_scrollController.hasClients) return;
-      final addedExtent =
-          _scrollController.position.maxScrollExtent - oldExtent;
-      _scrollController.jumpTo(oldOffset + addedExtent);
-    });
   }
 
   Future<void> _send() async {
@@ -174,7 +162,8 @@ class _ResourceChatScreenState extends ConsumerState<ResourceChatScreen>
       boundary:
           belongs &&
               state.phase == ResourceChatDetailPhase.ready &&
-              state.failure == null
+              state.failure == null &&
+              !state.isLoadingOlder
           ? state.readBoundary
           : null,
       scrollController: _scrollController,
@@ -239,74 +228,59 @@ class _ResourceChatScreenState extends ConsumerState<ResourceChatScreen>
                     Expanded(
                       child: RefreshIndicator(
                         onRefresh: _refresh,
-                        child: ListView(
+                        child: ConversationHistoryList<ResourceChatMessage>(
                           key: const Key('resource-chat-history'),
                           controller: _scrollController,
-                          physics: const AlwaysScrollableScrollPhysics(),
-                          padding: const EdgeInsets.all(AppSpacing.medium),
-                          children: [
-                            if (state.hasMoreOlder)
-                              Center(
-                                child: OutlinedButton(
-                                  key: const Key('resource-chat-load-older'),
-                                  onPressed: state.isLoadingOlder
-                                      ? null
-                                      : _loadOlder,
-                                  child: state.isLoadingOlder
-                                      ? const SizedBox.square(
-                                          dimension: 20,
-                                          child: CircularProgressIndicator(
-                                            strokeWidth: 2,
-                                          ),
-                                        )
-                                      : Text(l10n.resourceChatLoadOlder),
-                                ),
-                              ),
-                            if (messages.isEmpty)
-                              Padding(
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: AppSpacing.xLarge,
-                                ),
-                                child: Column(
-                                  children: [
-                                    Text(
-                                      l10n.resourceChatNoMessages,
-                                      key: const Key('resource-chat-empty'),
-                                      style: Theme.of(context)
-                                          .textTheme
-                                          .titleMedium,
+                          items: messages,
+                          itemKey: (item) => item.messageId,
+                          itemBuilder: (context, message) => _MessageBubble(
+                            message: message,
+                            isMine:
+                                message.senderProfileId == _expectedProfileId,
+                            onReport:
+                                message.senderProfileId == _expectedProfileId
+                                ? null
+                                : () => ModerationRoutes.openReport(
+                                    context,
+                                    resourceMessageReportTarget(
+                                      message.messageId,
+                                      l10n.moderationResourceMessageTarget,
                                     ),
-                                    if (summary?.hasSendEntitlement ==
-                                        true) ...[
-                                      const SizedBox(height: AppSpacing.small),
-                                      Text(
-                                        l10n.resourceChatEmptyGuidance,
-                                        textAlign: TextAlign.center,
-                                      ),
-                                    ],
-                                  ],
+                                  ),
+                          ),
+                          enabled:
+                              belongs &&
+                              summary != null &&
+                              _hasExpectedIdentity,
+                          hasMore: state.hasMoreOlder,
+                          loading: state.isLoadingOlder,
+                          failed: state.failure != null,
+                          onLoadOlder: _loadOlder,
+                          fallbackLabel: l10n.resourceChatLoadOlder,
+                          buttonKey: const Key('resource-chat-load-older'),
+                          empty: Padding(
+                            padding: const EdgeInsets.symmetric(
+                              vertical: AppSpacing.xLarge,
+                            ),
+                            child: Column(
+                              children: [
+                                Text(
+                                  l10n.resourceChatNoMessages,
+                                  key: const Key('resource-chat-empty'),
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .titleMedium,
                                 ),
-                              )
-                            else
-                              for (final message in messages)
-                                _MessageBubble(
-                                  message: message,
-                                  isMine:
-                                      message.senderProfileId ==
-                                      _expectedProfileId,
-                                  onReport:
-                                      message.senderProfileId ==
-                                          _expectedProfileId
-                                      ? null
-                                      : () => ModerationRoutes.openReport(
-                                          context,
-                                          resourceMessageReportTarget(
-                                            message.messageId,
-                                            l10n.moderationResourceMessageTarget,
-                                          ),
-                                        ),
-                                ),
-                          ],
+                                if (summary?.hasSendEntitlement == true) ...[
+                                  const SizedBox(height: AppSpacing.small),
+                                  Text(
+                                    l10n.resourceChatEmptyGuidance,
+                                    textAlign: TextAlign.center,
+                                  ),
+                                ],
+                              ],
+                            ),
+                          ),
                         ),
                       ),
                     ),

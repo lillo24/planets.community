@@ -1,3 +1,8 @@
+import 'package:planets_mobile/features/project_request_chat/application/project_request_chat_controller.dart';
+import 'package:planets_mobile/features/resource_chat/application/resource_chat_controller.dart';
+import 'package:planets_mobile/features/messages/application/messages_controllers.dart';
+import 'package:planets_mobile/features/messages/application/message_chats_controller.dart';
+
 import '../../../support/fake_policy.dart';
 
 import 'dart:async';
@@ -60,6 +65,203 @@ import '../../../support/fake_resource_exchange.dart';
 import 'package:planets_mobile/l10n/generated/app_localizations.dart';
 
 void main() {
+  testWidgets(
+    'AUTO02 expanded pending requests page independently of history',
+    (tester) async {
+      final pending = [
+        for (var i = 64; i >= 0; i--)
+          projectRequestChatRequestFixture(requestId: 'request-$i'),
+      ];
+      final requests = FakeProjectRequestChatGateway()
+        ..summary = projectRequestChatSummaryFixture(
+          pendingCount: 65,
+          pendingRequests: pending.take(30).toList(),
+        )
+        ..items = pending;
+      final app = await _pump(
+        tester,
+        messages: FakeMessagesGateway(),
+        identityId: '00000000-0000-4000-8000-000000000101',
+        projectRequestChats: requests,
+      );
+      app
+          .read(appRouterProvider)
+          .go('/messages/chats/request/00000000-0000-4000-8000-000000000311');
+      await tester.pumpAndSettle();
+      expect(requests.requestedLimits, [30]);
+      await tester.tap(
+        find.byKey(const Key('project-request-chat-status-banner')),
+      );
+      await tester.pumpAndSettle();
+      expect(requests.requestedLimits, [30]);
+      await _autoBottom(tester, const Key('pair-pending-list'));
+      await tester.pumpAndSettle();
+      expect(requests.requestedLimits, [30, 30]);
+      expect(app.read(projectRequestChatProvider).items, hasLength(30));
+      expect(app.read(projectRequestChatProvider).summary!.pendingCount, 65);
+      expect(find.byKey(const Key('pair-pending-load-more')), findsNothing);
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  for (final size in [const Size(320, 800), const Size(1200, 1600)]) {
+    testWidgets('AUTO02 scopes and Requests page only on user drag $size', (
+      tester,
+    ) async {
+      tester.view.physicalSize = size;
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      final chats = FakeMessageChatsGateway()
+        ..items = [
+          for (var i = 0; i < 65; i++)
+            resourceMessageChatFixture(chatId: 'private-$i'),
+          for (var i = 0; i < 65; i++)
+            projectMessageChatFixture(chatId: 'group-$i'),
+        ];
+      final requests = FakeMessagesGateway()
+        ..items = [
+          for (var i = 0; i < 65; i++)
+            messageItemFixture(requestId: 'request-$i'),
+        ];
+      final app = await _pump(tester, chats: chats, messages: requests);
+      app.read(appRouterProvider).go('/messages');
+      await tester.pumpAndSettle();
+      expect(chats.requestedLimits, [20, 20]);
+      expect(requests.requestedLimits, [20]);
+      expect(find.byKey(const Key('message-chats-load-more')), findsNothing);
+      final privatePending = Completer<void>();
+      chats.delay = privatePending.future;
+      await _autoBottom(tester, const Key('message-chat-list'));
+      expect(chats.requestedLimits, [20, 20, 20]);
+      await tester.drag(
+        find.byKey(const Key('message-chat-list')),
+        const Offset(0, -300),
+      );
+      await tester.pump();
+      expect(chats.requestedLimits, hasLength(3));
+      chats.delay = null;
+      privatePending.complete();
+      await tester.pumpAndSettle();
+      expect(app.read(messageChatsProvider).items, hasLength(40));
+      expect(app.read(groupMessageChatsProvider).items, hasLength(20));
+      await tester.tap(find.byKey(const Key('message-chat-scope-groups')));
+      await tester.pumpAndSettle();
+      expect(chats.requestedLimits, hasLength(3));
+      await _autoBottom(tester, const Key('message-chat-list'));
+      expect(chats.requestedLimits, [20, 20, 20, 20]);
+      expect(app.read(groupMessageChatsProvider).items, hasLength(40));
+      await tester.tap(find.byKey(const Key('messages-requests-action')));
+      await tester.pumpAndSettle();
+      expect(chats.requestedLimits, hasLength(4));
+      await _autoBottom(tester, const Key('messages-request-list'));
+      expect(requests.requestedLimits, [20, 20]);
+      expect(app.read(messagesInboxProvider).items, hasLength(40));
+      expect(tester.takeException(), isNull);
+    });
+
+    for (final pair in [false, true]) {
+      testWidgets(
+        'AUTO02 ${pair ? 'pair' : 'Resource'} history pages 30 on upward drag $size',
+        (tester) async {
+          tester.view.physicalSize = size;
+          tester.view.devicePixelRatio = 1;
+          addTearDown(tester.view.resetPhysicalSize);
+          addTearDown(tester.view.resetDevicePixelRatio);
+          final resource = FakeResourceChatGateway()
+            ..readBoundary = 'newest-resource'
+            ..summary = resourceChatSummaryFixture(hasSendEntitlement: false)
+            ..histories['00000000-0000-4000-8000-000000000401'] = [
+              for (var i = 94; i >= 0; i--)
+                resourceChatMessageFixture(
+                  messageId: 'message-$i',
+                  body: 'History $i',
+                  createdAt: DateTime.utc(2026, 9, 1, 0, i),
+                ),
+            ];
+          final requests = FakeProjectRequestChatGateway()
+            ..readBoundary = 'newest-pair'
+            ..summary = projectRequestChatSummaryFixture(
+              status: JoinRequestStatus.accepted,
+            )
+            ..items = [
+              for (var i = 94; i >= 0; i--)
+                projectRequestChatMessageFixture(
+                  itemId: 'message-$i',
+                  body: 'History $i',
+                  createdAt: DateTime.utc(2026, 9, 1, 0, i),
+                ),
+            ];
+          final unread = _UnreadFixture(
+            const MessageUnreadSummary(total: 1, private: 1, groups: 0),
+          );
+          final app = await _pump(
+            tester,
+            unread: unread,
+            messages: FakeMessagesGateway(),
+            identityId: '00000000-0000-4000-8000-000000000101',
+            resourceChats: resource,
+            projectRequestChats: requests,
+          );
+          app
+              .read(appRouterProvider)
+              .go(
+                pair
+                    ? '/messages/chats/request/00000000-0000-4000-8000-000000000311'
+                    : '/messages/chats/resource/00000000-0000-4000-8000-000000000401',
+              );
+          await tester.pumpAndSettle();
+          final limits = pair
+              ? requests.requestedLimits
+              : resource.requestedLimits;
+          expect(limits, [30]);
+          final history = find.byKey(
+            Key(
+              pair ? 'project-request-chat-history' : 'resource-chat-history',
+            ),
+          );
+          final scroll = tester
+              .state<ScrollableState>(
+                find
+                    .descendant(of: history, matching: find.byType(Scrollable))
+                    .first,
+              )
+              .position;
+          expect(scroll.extentAfter, lessThanOrEqualTo(1));
+          await tester.pump(const Duration(milliseconds: 400));
+          expect(unread.acknowledgements, 1);
+          scroll.jumpTo(scroll.minScrollExtent + 50);
+          await tester.pumpAndSettle();
+          expect(limits, [30]);
+          final beforeReads = unread.acknowledgements;
+          final pending = Completer<void>();
+          if (pair) {
+            requests.historyDelay = pending.future;
+          } else {
+            resource.historyDelay = pending.future;
+          }
+          await tester.drag(history, const Offset(0, 40));
+          await tester.pump();
+          expect(limits, [30, 30]);
+          final offset = scroll.pixels;
+          pending.complete();
+          await tester.pumpAndSettle();
+          expect(scroll.pixels, closeTo(offset, .01));
+          await tester.pump(const Duration(milliseconds: 400));
+          expect(unread.acknowledgements, beforeReads);
+          expect(limits, [30, 30]);
+          expect(
+            pair
+                ? app.read(projectRequestChatProvider).items.length
+                : app.read(resourceChatDetailProvider).messages.length,
+            60,
+          );
+          expect(tester.takeException(), isNull);
+        },
+      );
+    }
+  }
+
   testWidgets(
     'private preview preserves legacy third-party attribution and labels own messages',
     (tester) async {
@@ -2904,4 +3106,19 @@ Future<void> _expectViewProject(
   await tester.tap(find.byKey(const Key('message-view-project')).hitTestable());
   await tester.pumpAndSettle();
   expect(router.routeInformationProvider.value.uri.path, expectedPath);
+}
+
+Future<void> _autoBottom(WidgetTester tester, Key key) async {
+  final list = find.byKey(key);
+  final position = tester
+      .state<ScrollableState>(
+        find.descendant(of: list, matching: find.byType(Scrollable)).first,
+      )
+      .position;
+  for (var i = 0; i < 3; i++) {
+    position.jumpTo(position.maxScrollExtent);
+    await tester.pumpAndSettle();
+  }
+  await tester.drag(list, const Offset(0, -80));
+  await tester.pump();
 }

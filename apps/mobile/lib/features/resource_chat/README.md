@@ -50,3 +50,14 @@ relationship-authorized avatar.
 09B2 adds confirmed Block/Unblock beside the canonical counterparty. The action
 invalidates that person's cached photo but never makes accepted/open chat
 read-only; ordinary agreement lifecycle still owns send availability.
+
+## Automatic history paging (AUTO02)
+
+History retains 30 recent items on opening and 30 older items per genuine upward
+drag near the top (within one viewport). The shared Messages history list uses
+lazy slivers with a stable center, preserving visible variable-height messages
+when older records arrive. Open/send positioning, keyboard/layout and realtime
+updates cannot drain history. Failure retains entries/cursor and pauses paging
+until explicit Retry or refresh; short/accessibility navigation offers a
+fallback. Older loading withholds the newest read boundary. Read-only history,
+interaction restrictions, exchange state and canonical unread rules are unchanged.

@@ -6,6 +6,9 @@ import 'package:intl/intl.dart';
 import '../../../core/widgets/page_app_bar.dart';
 import '../../../core/theme/app_tokens.dart';
 import '../../messages/presentation/message_read_viewport.dart';
+import '../../messages/presentation/conversation_history_list.dart';
+import '../../../core/widgets/user_scroll_pagination.dart';
+import '../../../core/widgets/pagination_control.dart';
 import '../../../core/widgets/error_state.dart';
 import '../../../core/widgets/loading_state.dart';
 import '../../../l10n/generated/app_localizations.dart';
@@ -114,25 +117,10 @@ class _ProjectRequestChatScreenState
   Future<void> _loadOlder() async {
     final profileId = _expectedProfileId;
     if (profileId == null || !_hasExpectedIdentity) return;
-    final oldExtent = _scrollController.hasClients
-        ? _scrollController.position.maxScrollExtent
-        : 0.0;
-    final oldOffset = _scrollController.hasClients
-        ? _scrollController.offset
-        : 0.0;
-    final loaded = await _controller.loadOlder(
+    await _controller.loadOlder(
       expectedProfileId: profileId,
       requestId: widget.requestId,
     );
-    if (!loaded || !mounted || !_hasExpectedIdentity) return;
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted || !_hasExpectedIdentity || !_scrollController.hasClients) {
-        return;
-      }
-      final addedExtent =
-          _scrollController.position.maxScrollExtent - oldExtent;
-      _scrollController.jumpTo(oldOffset + addedExtent);
-    });
   }
 
   Future<void> _send() async {
@@ -263,7 +251,8 @@ class _ProjectRequestChatScreenState
       boundary:
           belongs &&
               state.phase == ProjectRequestChatPhase.ready &&
-              state.failure == null
+              state.failure == null &&
+              !state.isLoadingOlder
           ? state.readBoundary
           : null,
       scrollController: _scrollController,
@@ -359,35 +348,62 @@ class _ProjectRequestChatScreenState
                       Expanded(
                         child: RefreshIndicator(
                           onRefresh: _refresh,
-                          child: ListView(
-                            key: const Key('project-request-chat-history'),
-                            controller: _scrollController,
-                            physics: const AlwaysScrollableScrollPhysics(),
-                            padding: const EdgeInsets.all(AppSpacing.medium),
-                            children: [
-                              if (state.hasMoreOlder)
-                                Center(
-                                  child: OutlinedButton(
-                                    key: const Key(
-                                      'project-request-chat-load-older',
+                          child:
+                              ConversationHistoryList<
+                                ProjectRequestChatFeedItem
+                              >(
+                                key: const Key('project-request-chat-history'),
+                                controller: _scrollController,
+                                items: items,
+                                itemKey: (item) => item.canonicalKey,
+                                itemBuilder: (context, item) => switch (item) {
+                                  ProjectRequestChatRequestItem request =>
+                                    _StructuredRequestCard(
+                                      key: ValueKey(request.canonicalKey),
+                                      item: request,
+                                      isMine:
+                                          request.requesterProfileId ==
+                                          _expectedProfileId,
+                                      highlighted:
+                                          request.requestId == widget.requestId,
+                                      onOpenDetails: () =>
+                                          _showDetails(request.requestId),
+                                      onOpenGroup: (chatId) {
+                                        if (_hasExpectedIdentity) {
+                                          context.push(
+                                            projectChatRoute(chatId),
+                                          );
+                                        }
+                                      },
                                     ),
-                                    onPressed: state.isLoadingOlder
-                                        ? null
-                                        : _loadOlder,
-                                    child: state.isLoadingOlder
-                                        ? const SizedBox.square(
-                                            dimension: 20,
-                                            child: CircularProgressIndicator(
-                                              strokeWidth: 2,
-                                            ),
-                                          )
-                                        : Text(
-                                            l10n.projectRequestChatLoadOlder,
-                                          ),
-                                  ),
+                                  ProjectRequestChatHumanMessage message =>
+                                    _MessageBubble(
+                                      key: ValueKey(message.canonicalKey),
+                                      message: message,
+                                      onOpenDetails: () {
+                                        if (message.requestId
+                                            case final requestId?) {
+                                          _showDetails(requestId);
+                                        }
+                                      },
+                                      isMine:
+                                          message.senderProfileId ==
+                                          _expectedProfileId,
+                                    ),
+                                },
+                                enabled:
+                                    belongs &&
+                                    summary != null &&
+                                    _hasExpectedIdentity,
+                                hasMore: state.hasMoreOlder,
+                                loading: state.isLoadingOlder,
+                                failed: state.failure != null,
+                                onLoadOlder: _loadOlder,
+                                fallbackLabel: l10n.projectRequestChatLoadOlder,
+                                buttonKey: const Key(
+                                  'project-request-chat-load-older',
                                 ),
-                              if (items.isEmpty)
-                                Padding(
+                                empty: Padding(
                                   padding: const EdgeInsets.symmetric(
                                     vertical: AppSpacing.xLarge,
                                   ),
@@ -395,47 +411,8 @@ class _ProjectRequestChatScreenState
                                     l10n.projectRequestChatEmpty,
                                     textAlign: TextAlign.center,
                                   ),
-                                )
-                              else
-                                for (final item in items)
-                                  switch (item) {
-                                    ProjectRequestChatRequestItem request =>
-                                      _StructuredRequestCard(
-                                        key: ValueKey(request.canonicalKey),
-                                        item: request,
-                                        isMine:
-                                            request.requesterProfileId ==
-                                            _expectedProfileId,
-                                        highlighted:
-                                            request.requestId ==
-                                            widget.requestId,
-                                        onOpenDetails: () =>
-                                            _showDetails(request.requestId),
-                                        onOpenGroup: (chatId) {
-                                          if (_hasExpectedIdentity) {
-                                            context.push(
-                                              projectChatRoute(chatId),
-                                            );
-                                          }
-                                        },
-                                      ),
-                                    ProjectRequestChatHumanMessage message =>
-                                      _MessageBubble(
-                                        key: ValueKey(message.canonicalKey),
-                                        message: message,
-                                        onOpenDetails: () {
-                                          if (message.requestId
-                                              case final requestId?) {
-                                            _showDetails(requestId);
-                                          }
-                                        },
-                                        isMine:
-                                            message.senderProfileId ==
-                                            _expectedProfileId,
-                                      ),
-                                  },
-                            ],
-                          ),
+                                ),
+                              ),
                         ),
                       ),
                       ConstrainedBox(
@@ -510,6 +487,7 @@ class _RequestStatusBannerState extends ConsumerState<_RequestStatusBanner> {
   List<ProjectRequestChatRequestItem> _older = const [];
   bool _loading = false;
   bool _failed = false;
+  bool? _hasMore;
   int _revision = 0;
   @override
   void didUpdateWidget(covariant _RequestStatusBanner oldWidget) {
@@ -520,6 +498,7 @@ class _RequestStatusBannerState extends ConsumerState<_RequestStatusBanner> {
       _older = const [];
       _loading = false;
       _failed = false;
+      _hasMore = null;
     }
   }
 
@@ -562,10 +541,14 @@ class _RequestStatusBannerState extends ConsumerState<_RequestStatusBanner> {
         throw const FormatException('Invalid pending requests page.');
       }
       setState(() {
+        final known = {for (final item in items) item.canonicalKey};
         _older = [
           ..._older,
-          ...page.items.cast<ProjectRequestChatRequestItem>(),
+          ...page.items.cast<ProjectRequestChatRequestItem>().where(
+            (item) => known.add(item.canonicalKey),
+          ),
         ];
+        _hasMore = page.hasMore;
       });
     } catch (_) {
       if (mounted &&
@@ -582,8 +565,9 @@ class _RequestStatusBannerState extends ConsumerState<_RequestStatusBanner> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final items = [...widget.summary.pendingRequests, ..._older];
+    final hasMore = _hasMore ?? items.length < widget.summary.pendingCount;
     if (widget.summary.pendingCount == 0) return const SizedBox.shrink();
-    final content = Column(
+    Widget content(bool showFallback) => Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         for (final item in items)
@@ -632,12 +616,14 @@ class _RequestStatusBannerState extends ConsumerState<_RequestStatusBanner> {
               ],
             ),
           ),
-        if (items.length < widget.summary.pendingCount)
-          TextButton(
-            onPressed: _loading ? null : _loadMore,
-            child: Text(
-              _failed ? l10n.retryAction : l10n.projectRequestChatLoadOlder,
-            ),
+        if (hasMore)
+          PaginationControl(
+            buttonKey: const Key('pair-pending-load-more'),
+            loading: _loading,
+            failed: _failed,
+            showFallback: showFallback,
+            onLoad: _loadMore,
+            fallbackLabel: l10n.projectRequestChatLoadOlder,
           ),
       ],
     );
@@ -653,7 +639,7 @@ class _RequestStatusBannerState extends ConsumerState<_RequestStatusBanner> {
                     l10n.pairPendingRequests(widget.summary.pendingCount),
                     key: const Key('project-request-chat-status-banner'),
                   ),
-                  content,
+                  content(true),
                 ],
               ),
             )
@@ -665,7 +651,24 @@ class _RequestStatusBannerState extends ConsumerState<_RequestStatusBanner> {
               children: [
                 ConstrainedBox(
                   constraints: const BoxConstraints(maxHeight: 220),
-                  child: SingleChildScrollView(child: content),
+                  child: UserScrollPagination(
+                    enabled:
+                        !_loading &&
+                        !_failed &&
+                        hasMore &&
+                        ref.watch(authSessionProvider).identity?.id ==
+                            widget.expectedProfileId,
+                    requestKey: (
+                      widget.expectedProfileId,
+                      widget.summary.chatId,
+                      items.length,
+                    ),
+                    onLoad: _loadMore,
+                    builder: (context, showFallback) => SingleChildScrollView(
+                      key: const Key('pair-pending-list'),
+                      child: content(showFallback),
+                    ),
+                  ),
                 ),
               ],
             ),

@@ -18,6 +18,7 @@ class FakeMessagesGateway implements MessagesGateway {
   Object? mutationError;
   void Function(JoinRequestStatus status)? onParticipationResolved;
   final List<String> calls = [];
+  final List<int> requestedLimits = [];
   MessageCursor? lastCursor;
   String? lastExpectedProfileId;
 
@@ -28,6 +29,7 @@ class FakeMessagesGateway implements MessagesGateway {
     MessageCursor? cursor,
   }) async {
     calls.add('list');
+    requestedLimits.add(limit);
     lastExpectedProfileId = expectedProfileId;
     lastCursor = cursor;
     if (listDelay case final delay?) await delay;
