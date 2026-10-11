@@ -19,6 +19,14 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../test_support/check01_fixture.dart';
 import '../../support/fake_auth.dart';
 
+// Behavior/layout tests also support Flutter's standard test fonts. Pixel
+// baselines remain Windows-only because font rasterizers differ across hosts.
+const _useReviewFonts = bool.fromEnvironment(
+  'CHECK01_REVIEW_FONTS',
+  defaultValue: true,
+);
+final _compareReviewPixels = Platform.isWindows && _useReviewFonts;
+
 class _Gateway implements ProjectOrganizationGateway {
   ProjectOrganization snapshot = organizationFixture();
   Completer<ProjectOrganization>? pending;
@@ -49,12 +57,14 @@ class _Gateway implements ProjectOrganizationGateway {
 
 void main() {
   setUpAll(() async {
+    if (!_useReviewFonts) return;
     // Licensed SDK Roboto instead of the test framework's Ahem rectangles.
     final loader = FontLoader('Roboto');
-    for (final style in ['regular', 'medium', 'bold']) {
+    // Preserve the SDK archive's filename case for case-sensitive hosts.
+    for (final style in ['Regular', 'Medium', 'Bold']) {
       final font = File.fromUri(
         Uri.file(Platform.resolvedExecutable)
-            .resolve('../../material_fonts/roboto-$style.ttf'),
+            .resolve('../../material_fonts/Roboto-$style.ttf'),
       );
       loader.addFont(
         Future.value(ByteData.sublistView(await font.readAsBytes())),
@@ -67,7 +77,7 @@ void main() {
         ByteData.sublistView(
           await File.fromUri(
             Uri.file(Platform.resolvedExecutable)
-                .resolve('../../material_fonts/materialicons-regular.otf'),
+                .resolve('../../material_fonts/MaterialIcons-Regular.otf'),
           ).readAsBytes(),
         ),
       ),
@@ -211,6 +221,16 @@ void main() {
             );
             expect(find.byType(OrganizationDecisionRow), findsNWidgets(3));
             expect(find.byType(ListTile), findsNothing);
+            for (final kind in OrganizationDecision.values) {
+              expect(
+                tester
+                    .getSize(
+                      find.byKey(Key('organization-decision-${kind.name}')),
+                    )
+                    .height,
+                56,
+              );
+            }
             expect(
               find.text(state == 'confirmed' ? 'Trento' : 'Rovereto'),
               findsNothing,
@@ -292,7 +312,7 @@ void main() {
     tester,
   ) async {
     await _pump(tester, organizationFixture(state: 'proposed'), locale: 'it');
-    if (Platform.isWindows) {
+    if (_compareReviewPixels) {
       await expectLater(
         find.byKey(const Key('organization-review-image')),
         matchesGoldenFile('goldens/proposed-it-1.0-false.png'),
@@ -300,7 +320,7 @@ void main() {
     }
     await tester.tap(find.byKey(const Key('organization-decision-location')));
     await tester.pumpAndSettle();
-    if (Platform.isWindows) {
+    if (_compareReviewPixels) {
       await expectLater(
         find.byKey(const Key('organization-review-image')),
         matchesGoldenFile('goldens/proposed-it-expanded.png'),
@@ -442,7 +462,7 @@ void main() {
           );
           await tester.pumpAndSettle();
         }
-        if (Platform.isWindows) {
+        if (_compareReviewPixels) {
           await expectLater(
             find.byKey(const Key('organization-review-image')),
             matchesGoldenFile(

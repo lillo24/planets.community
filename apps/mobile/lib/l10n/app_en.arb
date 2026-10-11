@@ -2532,7 +2532,7 @@
   "organizationSchedule": "Agree date and time",
   "organizationCapacity": "Set participant limit",
   "organizationLocationCompact": "Place",
-  "organizationScheduleCompact": "Date/time",
+  "organizationScheduleCompact": "Date",
   "organizationCapacityCompact": "Limit",
   "organizationMissing": "To decide",
   "organizationProposed": "Proposed",

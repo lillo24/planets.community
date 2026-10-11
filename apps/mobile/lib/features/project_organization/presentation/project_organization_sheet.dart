@@ -508,36 +508,49 @@ class _OrganizationDecisionRowState extends State<OrganizationDecisionRow> {
             onTap: () => setState(() => _expanded = !_expanded),
             child: ConstrainedBox(
               constraints: const BoxConstraints(minHeight: 56),
-              child: Row(
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.only(right: 8),
-                    child: Icon(
-                      confirmed
-                          ? Icons.check_circle_outline
-                          : Icons.help_outline,
-                      color: confirmed
-                          ? Theme.of(context).colorScheme.primary
-                          : Theme.of(context).colorScheme.onSurfaceVariant,
-                      size: 20,
+              child: LayoutBuilder(
+                builder: (context, constraints) => Row(
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.only(right: 8),
+                      child: Icon(
+                        confirmed
+                            ? Icons.check_circle_outline
+                            : Icons.help_outline,
+                        color: confirmed
+                            ? Theme.of(context).colorScheme.primary
+                            : Theme.of(context).colorScheme.onSurfaceVariant,
+                        size: 20,
+                      ),
                     ),
-                  ),
-                  Expanded(
-                    child: Text(
-                      visibleLabel,
-                      style: Theme.of(context).textTheme.bodyMedium,
+                    Expanded(
+                      child: Text(
+                        visibleLabel,
+                        maxLines: _expanded && !widget.canPlan ? null : 1,
+                        overflow: _expanded && !widget.canPlan
+                            ? null
+                            : TextOverflow.ellipsis,
+                        style: Theme.of(context).textTheme.bodyMedium,
+                      ),
                     ),
-                  ),
-                  const SizedBox(width: 8),
-                  if (pending || stale || confirmed)
-                    Text(
-                      status,
-                      textAlign: TextAlign.end,
-                      style: Theme.of(context).textTheme.labelMedium,
-                    ),
-                  const SizedBox(width: 8),
-                  Icon(_expanded ? Icons.expand_less : Icons.chevron_right),
-                ],
+                    const SizedBox(width: 8),
+                    if (pending || stale || confirmed)
+                      ConstrainedBox(
+                        constraints: BoxConstraints(
+                          maxWidth: constraints.maxWidth * .45,
+                        ),
+                        child: Text(
+                          status,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          textAlign: TextAlign.end,
+                          style: Theme.of(context).textTheme.labelMedium,
+                        ),
+                      ),
+                    const SizedBox(width: 8),
+                    Icon(_expanded ? Icons.expand_less : Icons.chevron_right),
+                  ],
+                ),
               ),
             ),
           ),

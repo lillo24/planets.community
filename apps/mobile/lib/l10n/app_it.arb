@@ -1800,7 +1800,7 @@
   "organizationSchedule": "Definire data e orario",
   "organizationCapacity": "Stabilire i partecipanti",
   "organizationLocationCompact": "Luogo",
-  "organizationScheduleCompact": "Data e ora",
+  "organizationScheduleCompact": "Data",
   "organizationCapacityCompact": "Limite",
   "organizationMissing": "Da decidere",
   "organizationProposed": "Proposto",

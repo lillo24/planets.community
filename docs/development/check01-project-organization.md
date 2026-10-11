@@ -115,7 +115,9 @@ Three compact action/status rows, no value subtitle/second heading. Missing uses
 neutral question/chevron; Proposed is explicit and never checked. Only official
 current values are checked. Expanded pending replacements retain the currently
 public value for comparison. Large text uses short visible labels with full
-screen-reader action/status labels. Read-only expansion replaces the action text
+screen-reader action/status labels. Collapsed labels stay on one line and trailing
+status takes at most 45% of the row; extreme font widths may ellipsize visible text,
+never the full semantic label. Read-only expansion replaces the action text
 with its saved value in the original row, not a second value heading. Unsaved editor changes disable confirmation
 of the previous persisted proposal. Saving has no publication effect; the separate
 one-sentence confirmation dialog explains public officialization.
@@ -131,9 +133,11 @@ Review PNGs in `apps/mobile/test/features/project_organization/goldens/` cover
 missing/proposed/confirmed, expanded replacement, nested tasks, EN/IT, 320dp,
 1x/2x and light/dark. They are rendered Flutter widget evidence, **not native
 emulator screenshots or physical-phone/TalkBack qualification**. Roboto and
-MaterialIcons load from the installed Flutter SDK; pixel baselines are Windows-only
-to avoid pretending cross-platform font rasterizers are identical. Layout and
-interaction assertions still run on every platform. `proposed-it-1.0-false.png`
+MaterialIcons load from the installed Flutter SDK using the archive's canonical,
+case-sensitive filenames. Pixel baselines are Windows-only to avoid pretending
+cross-platform font rasterizers are identical. Layout and interaction assertions
+still run on every platform and are also checked with Flutter's standard test
+fonts. `proposed-it-1.0-false.png`
 and `proposed-it-expanded.png` show the same fixture before/after row expansion.
 Native fixture/physical-device review remains unrun. No protected live data
 appears in images.
@@ -157,6 +161,10 @@ repository configuration change or disabled TLS verification.
 - `npm run check:mobile`, `npm run check:web`, `npm run check:site`.
 - `flutter test test/features/project_organization/project_organization_test.dart
 --update-goldens` (from mobile) deliberately regenerates review images.
+- `flutter test --dart-define=CHECK01_REVIEW_FONTS=false
+test/features/project_organization/project_organization_test.dart` exercises the
+  standard-font layout/interaction mode on any host, including Windows. This
+  test-only switch disables pixel comparisons, not behavior tests.
 - `flutter run -d chrome --target=test_support/check01_previews.dart` runs the
   standalone data-free debug fixture, never the product backend or a live session.
 
