@@ -41,8 +41,13 @@ successful save/reload marks the current identity ready and returns to Profile.
 When setup was entered through a guarded Proposal/Tavolo Join route, Save keeps
 that Join continuation while AppBar/system Back cancel to the public parent
 detail. Both destinations are derived from sanitized internal routes.
-Switching tabs preserves the unsaved form; changing identity clears both the
-retained form and controller state. Late load/save completions cannot publish
+The Profile tab always opens the read-only root, including tab reselects.
+For profile-ready actors, leaving an unsaved editor offers Keep editing or
+Discard through the shared departure coordinator (tabs, routes, Cancel and
+native Back). Discard resets only local name/bio/skills/visibility; photo
+changes already committed independently remain. Clean/successfully saved forms
+leave without confirmation. Required setup and sanitized return destinations
+are unchanged. Changing identity clears both the retained form and controller state. Late load/save completions cannot publish
 old data or mark a previous session ready, even after signing back in as the same ID.
 
 Display name is the only required field. A photo remains optional. Location,

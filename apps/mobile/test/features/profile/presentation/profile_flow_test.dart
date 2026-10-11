@@ -26,6 +26,139 @@ import '../../../support/fake_profile.dart';
 import '../../../support/fake_profile_photo.dart';
 
 void main() {
+  for (final destination in ['nav-profile', 'nav-home', 'back']) {
+    testWidgets(
+      'unsaved Profile protects $destination departure and returns to read-only Profile',
+      (tester) async {
+        final auth = FakeAuthGateway(
+          snapshot: const AuthSnapshot(identity: AuthIdentity(id: 'user-1')),
+        );
+        addTearDown(auth.close);
+        final profile = FakeProfileGateway(
+          data: profileFixture(complete: true),
+        );
+        final app = await _pumpApp(
+          tester,
+          auth,
+          FakeProfileAnchorGateway()
+            ..readiness = ProfileAnchorReadiness.complete,
+          profile,
+        );
+        final router = app.read(appRouterProvider);
+        router.go('/profile');
+        await tester.pumpAndSettle();
+        await _tapVisible(tester, find.byKey(const Key('profile-edit-button')));
+        await tester.ensureVisible(find.byKey(const Key('profile-bio-field')));
+        await tester.pumpAndSettle();
+        await tester.enterText(
+          find.byKey(const Key('profile-bio-field')),
+          'Unsaved biography',
+        );
+        Future<void> leave() async {
+          if (destination == 'back') {
+            await tester.binding.handlePopRoute();
+          } else {
+            await tester.tap(find.byKey(Key(destination)));
+          }
+          await tester.pumpAndSettle();
+        }
+
+        await leave();
+        expect(find.byKey(const Key('profile-keep-editing')), findsOneWidget);
+        await tester.tap(find.byKey(const Key('profile-keep-editing')));
+        await tester.pumpAndSettle();
+        expect(router.routerDelegate.state.uri.path, '/profile/edit');
+        expect(
+          tester
+              .widget<TextFormField>(find.byKey(const Key('profile-bio-field')))
+              .controller!
+              .text,
+          'Unsaved biography',
+        );
+        await leave();
+        await tester.tap(find.byKey(const Key('profile-discard-changes')));
+        await tester.pumpAndSettle();
+        if (destination == 'nav-home') {
+          expect(router.routerDelegate.state.uri.path, '/');
+          await tester.tap(find.byKey(const Key('nav-profile')));
+          await tester.pumpAndSettle();
+        }
+        expect(router.routerDelegate.state.uri.path, '/profile');
+        expect(find.byKey(const Key('profile-display-name')), findsOneWidget);
+        expect(
+          find.byKey(const Key('profile-display-name-field')),
+          findsNothing,
+        );
+        expect(profile.updateCount, 0);
+      },
+    );
+  }
+  testWidgets(
+    'clean Profile editor reselect returns without discard confirmation',
+    (tester) async {
+      final auth = FakeAuthGateway(
+        snapshot: const AuthSnapshot(identity: AuthIdentity(id: 'user-1')),
+      );
+      addTearDown(auth.close);
+      final app = await _pumpApp(
+        tester,
+        auth,
+        FakeProfileAnchorGateway()..readiness = ProfileAnchorReadiness.complete,
+        FakeProfileGateway(data: profileFixture(complete: true)),
+      );
+      final router = app.read(appRouterProvider);
+      router.go('/profile/edit');
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('nav-profile')));
+      await tester.pumpAndSettle();
+      expect(router.routerDelegate.state.uri.path, '/profile');
+      expect(find.byKey(const Key('profile-keep-editing')), findsNothing);
+    },
+  );
+
+  for (final save in [true, false]) {
+    testWidgets(
+      'legacy Settings editor ${save ? "Save" : "Cancel"} then Profile opens read-only root',
+      (tester) async {
+        final auth = FakeAuthGateway(
+          snapshot: const AuthSnapshot(identity: AuthIdentity(id: 'user-1')),
+        );
+        addTearDown(auth.close);
+        final profile = FakeProfileGateway(
+          data: profileFixture(complete: true),
+        );
+        final app = await _pumpApp(
+          tester,
+          auth,
+          FakeProfileAnchorGateway()
+            ..readiness = ProfileAnchorReadiness.complete,
+          profile,
+        );
+        final router = app.read(appRouterProvider);
+        router.go('/settings');
+        await tester.pumpAndSettle();
+        // Keep coverage after Settings removes its legacy editor shortcut.
+        router.go('/profile/edit?returnTo=/settings');
+        await tester.pumpAndSettle();
+        await tester.tap(
+          find.byKey(
+            Key(save ? 'profile-save-button' : 'profile-cancel-button'),
+          ),
+        );
+        await tester.pumpAndSettle();
+        expect(router.routerDelegate.state.uri.path, '/settings');
+        await tester.tap(find.byKey(const Key('nav-profile')));
+        await tester.pumpAndSettle();
+        expect(router.routerDelegate.state.uri.path, '/profile');
+        expect(find.byKey(const Key('profile-display-name')), findsOneWidget);
+        expect(
+          find.byKey(const Key('profile-display-name-field')),
+          findsNothing,
+        );
+        expect(profile.updateCount, save ? 1 : 0);
+      },
+    );
+  }
   testWidgets(
     'Profile edit input and competence picker stay separated at 360px and 2x text',
     (tester) async {
@@ -525,6 +658,103 @@ void main() {
     expect(find.textContaining(rawFailure), findsNothing);
     expect(find.byKey(const Key('profile-save-button')), findsOneWidget);
   });
+
+  for (final fail in [false, true]) {
+    testWidgets('pending Profile Save blocks departure; failure=$fail', (
+      tester,
+    ) async {
+      final pending = Completer<void>();
+      final auth = FakeAuthGateway(
+        snapshot: const AuthSnapshot(identity: AuthIdentity(id: 'user-1')),
+      );
+      addTearDown(auth.close);
+      final profile = FakeProfileGateway(data: profileFixture(complete: true))
+        ..updateDelay = pending.future
+        ..updateError = fail ? StateError('private save error') : null;
+      final app = await _pumpApp(
+        tester,
+        auth,
+        FakeProfileAnchorGateway()..readiness = ProfileAnchorReadiness.complete,
+        profile,
+      );
+      final router = app.read(appRouterProvider);
+      router.go('/profile/edit?returnTo=/settings');
+      await tester.pumpAndSettle();
+      await tester.enterText(
+        find.byKey(const Key('profile-display-name-field')),
+        'New name',
+      );
+      await tester.tap(find.byKey(const Key('profile-save-button')));
+      await tester.pump();
+      await tester.tap(find.byKey(const Key('nav-profile')));
+      await tester.pump(const Duration(milliseconds: 100));
+      expect(router.routerDelegate.state.uri.path, '/profile/edit');
+      expect(find.byKey(const Key('profile-keep-editing')), findsNothing);
+      pending.complete();
+      await tester.pumpAndSettle();
+      expect(profile.updateCount, 1);
+      if (fail) {
+        expect(router.routerDelegate.state.uri.path, '/profile/edit');
+        expect(find.byKey(const Key('profile-safe-error')), findsOneWidget);
+        await tester.tap(find.byKey(const Key('nav-profile')));
+        await tester.pumpAndSettle();
+        expect(find.byKey(const Key('profile-keep-editing')), findsOneWidget);
+        await tester.tap(find.byKey(const Key('profile-keep-editing')));
+        await tester.pumpAndSettle();
+        expect(
+          tester
+              .widget<TextFormField>(
+                find.byKey(const Key('profile-display-name-field')),
+              )
+              .controller!
+              .text,
+          'New name',
+        );
+      } else {
+        expect(router.routerDelegate.state.uri.path, '/settings');
+        await tester.tap(find.byKey(const Key('nav-profile')));
+        await tester.pumpAndSettle();
+        expect(find.text('New name'), findsOneWidget);
+        expect(find.byKey(const Key('profile-keep-editing')), findsNothing);
+      }
+    });
+  }
+
+  testWidgets(
+    'account switch clears unsaved Profile without a discard prompt',
+    (tester) async {
+      final auth = FakeAuthGateway(
+        snapshot: const AuthSnapshot(identity: AuthIdentity(id: 'user-1')),
+      );
+      addTearDown(auth.close);
+      final profile = FakeProfileGateway()
+        ..loadData = (id) => profileFixture(
+          complete: true,
+          id: id,
+          displayName: id == 'user-1' ? 'Casey' : 'Jordan',
+        );
+      final app = await _pumpApp(
+        tester,
+        auth,
+        FakeProfileAnchorGateway()..readiness = ProfileAnchorReadiness.complete,
+        profile,
+      );
+      app.read(appRouterProvider).go('/profile/edit');
+      await tester.pumpAndSettle();
+      await tester.enterText(
+        find.byKey(const Key('profile-display-name-field')),
+        'Private unsaved name',
+      );
+      auth.emit(const AuthSnapshot(identity: AuthIdentity(id: 'user-2')));
+      await tester.pumpAndSettle();
+      expect(
+        find.text('Private unsaved name', skipOffstage: false),
+        findsNothing,
+      );
+      expect(find.byKey(const Key('profile-keep-editing')), findsNothing);
+      expect(profile.updateCount, 0);
+    },
+  );
 
   testWidgets('saved skill state restores and can be deselected', (
     tester,

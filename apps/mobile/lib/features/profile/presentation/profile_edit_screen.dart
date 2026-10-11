@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -12,6 +13,7 @@ import '../../../devtools/demo/demo_widgets.dart';
 import '../../../core/widgets/tag_multi_select.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../../app/startup/startup_flow.dart';
+import '../../../app/router/draft_departure_coordinator.dart';
 import '../../auth/application/auth_session_controller.dart';
 import '../../profile_photo/application/profile_photo_controller.dart';
 import '../../profile_photo/presentation/profile_photo_section.dart';
@@ -166,6 +168,10 @@ class _ProfileEditFormState extends ConsumerState<_ProfileEditForm> {
   late final TextEditingController _bioController;
   late final Set<String> _selectedSkillIds;
   late final Map<ProfileFieldKey, ProfileAudience> _visibility;
+  late ProfileUpdate _acknowledged;
+  late final DraftDepartureCoordinator _departure;
+  DraftDepartureOwner? _departureOwner;
+  bool _saving = false;
 
   @override
   void initState() {
@@ -177,10 +183,81 @@ class _ProfileEditFormState extends ConsumerState<_ProfileEditForm> {
     _bioController = TextEditingController(text: profile.bio ?? '');
     _selectedSkillIds = {...profile.selectedSkillIds};
     _visibility = {...profile.visibility};
+    _acknowledged = _input();
+    _departure = ref.read(draftDepartureProvider);
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_departureOwner != null) return;
+    _departureOwner = DraftDepartureOwner(
+      actorId: widget.identityId,
+      pageKey: GoRouterState.of(context).pageKey,
+      isActive: () =>
+          mounted &&
+          TickerMode.valuesOf(context).enabled &&
+          (ModalRoute.of(context)?.isCurrent ?? false),
+      prepare: _prepareDeparture,
+    );
+    _departure.register(_departureOwner!);
+  }
+
+  ProfileUpdate _input() => ProfileUpdate(
+    displayName: _displayNameController.text.trim(),
+    bio: _bioController.text.trim(),
+    selectedSkillIds: {..._selectedSkillIds},
+    visibility: {..._visibility},
+  );
+
+  Future<DraftDepartureOutcome> _prepareDeparture() async {
+    if (_saving) return DraftDepartureOutcome.blocked;
+    final input = _input();
+    if (input.displayName == _acknowledged.displayName &&
+        input.bio == _acknowledged.bio &&
+        setEquals(input.selectedSkillIds, _acknowledged.selectedSkillIds) &&
+        mapEquals(input.visibility, _acknowledged.visibility)) {
+      return DraftDepartureOutcome.noChange;
+    }
+    final l10n = AppLocalizations.of(context);
+    final discard = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(l10n.profileDiscardTitle),
+        content: Text(l10n.profileDiscardMessage),
+        actions: [
+          TextButton(
+            key: const Key('profile-keep-editing'),
+            onPressed: () => Navigator.pop(context, false),
+            child: Text(l10n.proposalDraftKeepEditing),
+          ),
+          FilledButton(
+            key: const Key('profile-discard-changes'),
+            onPressed: () => Navigator.pop(context, true),
+            child: Text(l10n.proposalDraftDiscard),
+          ),
+        ],
+      ),
+    );
+    if (discard != true || !mounted) return DraftDepartureOutcome.blocked;
+    // Branch navigators may retain the form after departure. Discard resets
+    // local fields too; photos already committed through their own flow stay.
+    setState(() {
+      _displayNameController.text = _acknowledged.displayName;
+      _bioController.text = _acknowledged.bio;
+      _selectedSkillIds
+        ..clear()
+        ..addAll(_acknowledged.selectedSkillIds);
+      _visibility
+        ..clear()
+        ..addAll(_acknowledged.visibility);
+    });
+    return DraftDepartureOutcome.discarded;
   }
 
   @override
   void dispose() {
+    if (_departureOwner case final owner?) _departure.unregister(owner);
     _displayNameController.dispose();
     _bioController.dispose();
     super.dispose();
@@ -194,18 +271,21 @@ class _ProfileEditFormState extends ConsumerState<_ProfileEditForm> {
     if (identity == null || identity.id != widget.identityId) {
       return;
     }
+    final input = _input();
+    _saving = true;
     final saved = await ref
         .read(profileProvider.notifier)
-        .save(
-          identity,
-          ProfileUpdate(
-            displayName: _displayNameController.text.trim(),
-            bio: _bioController.text.trim(),
-            selectedSkillIds: {..._selectedSkillIds},
-            visibility: {..._visibility},
-          ),
-        );
+        .save(identity, input);
+    _saving = false;
     if (saved && mounted) {
+      _acknowledged = input;
+      // markProfileReady refreshes the router before save's Future completes.
+      // Let that guard settle before issuing this explicit continuation.
+      await _departure.whenPrepared;
+      if (!mounted ||
+          ref.read(authSessionProvider).identity?.id != identity.id) {
+        return;
+      }
       // Save resumes the authorized action; pop belongs exclusively to Cancel.
       context.go(ref.read(startupFlowProvider).continueTo(widget.returnTo));
     }

@@ -156,6 +156,8 @@
   "authSignOutAction": "Esci",
   "profileTitle": "Il tuo profilo",
   "profileSetupTitle": "Configura il tuo profilo",
+  "profileDiscardTitle": "Scartare le modifiche al profilo?",
+  "profileDiscardMessage": "Le modifiche non salvate al profilo andranno perse. Le modifiche alla foto già salvate rimarranno.",
   "profileEditTitle": "Modifica il tuo profilo",
   "profileSetupDescription": "Aggiungi il nome che vuoi mostrare agli altri. Biografia e competenze sono facoltative: scegli tu cosa rendere pubblico.",
   "profileEditDescription": "Aggiorna i dati del profilo, le competenze e la visibilità.",

@@ -107,10 +107,11 @@ class AppNavigationShell extends ConsumerWidget {
             } else {
               navigationShell.goBranch(AppBranch.browse.index);
             }
-          } else if (index != selectedIndex) {
-            // Profile and Browse retain their nested state across tab switches.
+          } else if (index == AppBranch.profile.index) {
+            // Profile is a top-level destination, including tab reselects.
+            // The active editor's departure owner protects unsaved changes.
             FocusManager.instance.primaryFocus?.unfocus();
-            navigationShell.goBranch(index);
+            navigationShell.goBranch(index, initialLocation: true);
           }
         },
         destinations: [
