@@ -237,8 +237,12 @@ Copy `apps/mobile/config/staging.example.json` to ignored `staging.json`. Supply
 the **actual new project's** HTTPS URL and its `sb_publishable_` key from Project
 Settings > API Keys. Keep `APP_ENV` as `"staging"`, `ENABLE_DEMO_TOOLS` as the
 **string** `"false"`, and `SENTRY_DSN` empty unless a real staging DSN exists.
-Only those five string keys are accepted by the distribution command. Never add
-a service-role/secret key, database password, management token or SMTP secret.
+Those five string keys remain required. The only additional accepted key is the
+optional public `GOOGLE_WEB_CLIENT_ID`: omit it or leave it empty to retain OTP-only
+login. A valid Web OAuth client ID enables the Android Google code path; provider
+activation and device QA are separate steps in the
+[Google Android runbook](auth01b-google-android.md). Never add a Google client
+secret, service-role/secret key, database password, management token or SMTP secret.
 
 From `apps/mobile`, the obvious closed-test command is:
 

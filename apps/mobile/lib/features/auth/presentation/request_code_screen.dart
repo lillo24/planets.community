@@ -8,6 +8,8 @@ import '../../../l10n/generated/app_localizations.dart';
 import '../application/auth_command_controller.dart';
 import '../application/auth_session_controller.dart';
 import '../domain/auth_models.dart';
+import '../domain/provider_auth.dart';
+import '../data/provider_auth_adapter.dart';
 import 'auth_status.dart';
 import '../application/return_destination.dart';
 import 'auth_failure_message.dart';
@@ -67,13 +69,20 @@ class _RequestCodeScreenState extends ConsumerState<RequestCodeScreen> {
     }
     final command = ref.watch(authCommandProvider);
     final error = command.failure;
+    final googleAvailable = ref
+        .watch(providerAuthAdapterProvider)
+        .isAvailable(AuthProvider.google);
+    final signingInWithGoogle =
+        command.phase == AuthCommandPhase.signingInWithProvider;
 
     final scaffold = Scaffold(
       appBar: pageAppBar(
         context,
         closeKey: const Key('auth-close-button'),
         onClose: _closeAuth,
-        title: Text(l10n.authRequestTitle),
+        title: Text(
+          googleAvailable ? l10n.authSignInTitle : l10n.authRequestTitle,
+        ),
       ),
       body: SafeArea(
         child: Center(
@@ -89,6 +98,31 @@ class _RequestCodeScreenState extends ConsumerState<RequestCodeScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
+                      if (googleAvailable) ...[
+                        OutlinedButton(
+                          key: const Key('auth-google-button'),
+                          onPressed: command.isBusy
+                              ? null
+                              : () => ref
+                                    .read(authCommandProvider.notifier)
+                                    .signInWithProvider(AuthProvider.google),
+                          child: Semantics(
+                            liveRegion: signingInWithGoogle,
+                            child: Text(
+                              signingInWithGoogle
+                                  ? l10n.authSigningInWithGoogle
+                                  : l10n.authGoogleAction,
+                              textAlign: TextAlign.center,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: AppSpacing.medium),
+                        Text(
+                          l10n.authProviderDivider,
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: AppSpacing.medium),
+                      ],
                       Icon(
                         Icons.mark_email_unread_outlined,
                         size: 56,
@@ -145,7 +179,7 @@ class _RequestCodeScreenState extends ConsumerState<RequestCodeScreen> {
                       FilledButton(
                         key: const Key('auth-request-button'),
                         onPressed: command.isBusy ? null : _requestCode,
-                        child: command.isBusy
+                        child: command.phase == AuthCommandPhase.requestingCode
                             ? Semantics(
                                 key: const Key('auth-request-progress'),
                                 container: true,

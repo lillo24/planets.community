@@ -10,8 +10,11 @@ feature never persists a parallel signed-in flag, email address, or OTP value.
   success, cancellation, and safe failure results without SDK objects.
 - `data/auth_gateway.dart` adapts Supabase Auth and the existing `profiles`
   table without leaking SDK objects into application or presentation code.
-- `data/provider_auth_adapter.dart` owns the injectable future native-provider
-  boundary and the default adapter that makes both providers unavailable.
+- `data/provider_auth_adapter.dart` owns the provider boundary, configuration-gated
+  Android Google adapter and canonical Supabase ID-token exchange. The fallback
+  makes both providers unavailable.
+- `data/google_native_client.dart` owns process-wide lazy SDK initialization and
+  Google 7.x ID/access token acquisition with identity scopes only.
 - `application/auth_session_controller.dart` restores and observes sessions,
   then distinguishes a missing anchor, an incomplete display name, and a
   completed profile.
@@ -41,14 +44,14 @@ Profile feature, while missing anchors retain the focused creation retry.
 
 ## Social sign-in readiness
 
-AUTH01A prepared provider-neutral infrastructure. **Google and Apple are not
-configured or active and are intentionally unavailable by default.** Email OTP
-remains the only user-facing sign-in path. No provider SDK, credentials, or
-additional setup is installed or required for current development and tests;
-the auth screen exposes no provider buttons.
+AUTH01A prepared provider-neutral infrastructure. AUTH01B1 implements Android
+Google code with `google_sign_in 7.2.0`. **External Google activation remains
+unverified; empty/omitted `GOOGLE_WEB_CLIENT_ID` retains OTP-only UI and no SDK
+initialization.** Apple and non-Android platforms remain unavailable. The optional
+ID is public, shape-validated compile-time configuration, never a client secret.
+No credentials are required for development and fake-based tests.
 
-Future AUTH01B/01C work should replace `providerAuthAdapterProvider` with a real
-`ProviderAuthAdapter`. The adapter owns native credential acquisition followed
+The adapter owns native credential acquisition followed
 by Supabase credential exchange; it must return `ProviderAuthSuccess` only for
 the established Supabase session's `AuthIdentity`. Native tokens, nonce handling,
 vendor IDs, and SDK exceptions stay behind that data-layer boundary. Availability
@@ -70,10 +73,13 @@ Only a current successful explicit sign-out sets `AuthCommandState.didSignOut`.
 Application routing consumes this completion to reopen Welcome; passive session
 loss, failed sign-out and abandoned late completions cannot produce it.
 
-Permanent Android/iOS identifiers, external provider configuration, real
-adapters, account-linking validation, and device QA remain deferred. See the
-[AUTH01A status and activation checklists](../../../../../docs/development/auth01a-provider-ready-auth-infrastructure.md)
-before starting Google or Apple activation.
+Android's permanent ID is `community.planets.app`; package/signing settings stay
+unchanged. External provider configuration, identity-composition validation and
+device QA remain deferred. See the
+[Google Android runbook](../../../../../docs/development/auth01b-google-android.md)
+for the exact 7.x token path, initialization/error caveats and activation steps,
+and [AUTH01A checklists](../../../../../docs/development/auth01a-provider-ready-auth-infrastructure.md)
+for deferred iOS/Apple work.
 
 Session restoration has an explicit `restorationFailed` phase. Snapshot or
 subscription failures show recovery and cannot impersonate signed-out entry.

@@ -3,7 +3,7 @@ import 'dart:io';
 
 import 'staging_distribution.dart';
 
-/// Explicit, staging-only native QA build. Keep staging.json's five-key contract.
+/// Explicit, staging-only native QA build. Keep staging.json's documented contract.
 Future<void> main(List<String> arguments) async {
   try {
     if (arguments.length != 2 ||

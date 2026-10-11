@@ -1,11 +1,14 @@
 // Distribution preflight owns stricter closed-test rules than runtime config.
 // Never include configuration values in errors: input may contain a secret.
+import 'package:planets_mobile/core/config/google_auth_config.dart';
+
 const _allowedKeys = {
   'APP_ENV',
   'SUPABASE_URL',
   'SUPABASE_PUBLISHABLE_KEY',
   'SENTRY_DSN',
   'ENABLE_DEMO_TOOLS',
+  'GOOGLE_WEB_CLIENT_ID',
 };
 
 void validateStagingDistribution(Object? value) {
@@ -13,9 +16,10 @@ void validateStagingDistribution(Object? value) {
       value.keys.any((key) => !_allowedKeys.contains(key)) ||
       value.values.any((item) => item is! String)) {
     throw const FormatException(
-      'Staging config must contain only the five documented string keys.',
+      'Staging config must contain only documented string keys.',
     );
   }
+  parseGoogleWebClientId(value['GOOGLE_WEB_CLIENT_ID'] as String? ?? '');
   if (value['APP_ENV'] != 'staging' || value['ENABLE_DEMO_TOOLS'] != 'false') {
     throw const FormatException(
       'Closed testing requires APP_ENV=staging and ENABLE_DEMO_TOOLS="false".',
