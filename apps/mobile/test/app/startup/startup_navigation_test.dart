@@ -31,6 +31,31 @@ import '../../support/fake_notifications.dart';
 import '../../support/fake_profile.dart';
 
 void main() {
+  testWidgets(
+    'direct email entry retains first-run tutorial and exact continuation',
+    (tester) async {
+      tester.platformDispatcher.defaultRouteNameTestValue =
+          '/auth/email?returnTo=%2Fmessages%2Fchats%2Fchat-9';
+      addTearDown(tester.platformDispatcher.clearDefaultRouteNameTestValue);
+      final app = await _pump(
+        tester,
+        registry: _pages(),
+        anchor: FakeProfileAnchorGateway()
+          ..readiness = ProfileAnchorReadiness.complete,
+      );
+      final router = app.read(appRouterProvider);
+      expect(router.state.uri.path, '/auth/email');
+      expect(app.read(startupFlowProvider).tutorialDeferred, isFalse);
+      expect(find.byKey(const Key('auth-email-field')), findsOneWidget);
+      await _otp(tester);
+      expect(router.state.uri.path, '/intro');
+      expect(
+        router.state.uri.queryParameters['returnTo'],
+        '/messages/chats/chat-9',
+      );
+      expect(app.read(authSessionProvider).phase, AuthSessionPhase.ready);
+    },
+  );
   for (final origin in ['/', '/settings', '/profile']) {
     testWidgets('explicit logout from $origin returns to Welcome once', (
       tester,

@@ -19,6 +19,49 @@ import '../../support/fake_policy.dart';
 import '../../support/help_test_harness.dart';
 
 void main() {
+  for (final readiness in [
+    ProfileAnchorReadiness.complete,
+    ProfileAnchorReadiness.incomplete,
+    ProfileAnchorReadiness.missing,
+  ]) {
+    testWidgets(
+      'direct email entry preserves policy/profile continuation: $readiness',
+      (tester) async {
+        final store = FakePolicyAcceptanceStore();
+        final app = await pumpHelp(
+          tester,
+          auth: FakeAuthGateway(
+            snapshot: const AuthSnapshot(identity: AuthIdentity(id: 'alice')),
+          ),
+          policyStore: store,
+          readiness: readiness,
+        );
+        final router = app.read(appRouterProvider);
+        final destination = '/join/project/${'d' * 43}';
+        router.go(
+          Uri(
+            path: '/auth/email',
+            queryParameters: {'returnTo': destination},
+          ).toString(),
+        );
+        await tester.pumpAndSettle();
+        expect(router.state.uri.path, policyAcceptancePath);
+        final continuation = router.state.uri.queryParameters['returnTo'];
+        if (readiness == ProfileAnchorReadiness.complete) {
+          expect(continuation, destination);
+        } else {
+          expect(Uri.parse(continuation!).path, '/profile/edit');
+          expect(
+            Uri.parse(continuation).queryParameters['returnTo'],
+            destination,
+          );
+        }
+        expect(find.byKey(const Key('auth-email-field')), findsNothing);
+        expect(store.writes, 0);
+        expect(tester.takeException(), isNull);
+      },
+    );
+  }
   setUp(() {
     String? clipboard;
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger

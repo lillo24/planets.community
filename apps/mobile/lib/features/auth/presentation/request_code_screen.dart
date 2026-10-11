@@ -6,6 +6,7 @@ import '../../../core/widgets/page_app_bar.dart';
 import '../../../core/theme/app_tokens.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../application/auth_command_controller.dart';
+import '../application/auth_routes.dart';
 import '../application/auth_session_controller.dart';
 import '../domain/auth_models.dart';
 import '../domain/provider_auth.dart';
@@ -15,9 +16,14 @@ import '../application/return_destination.dart';
 import 'auth_failure_message.dart';
 
 class RequestCodeScreen extends ConsumerStatefulWidget {
-  const RequestCodeScreen({required this.returnTo, super.key});
+  const RequestCodeScreen({
+    required this.returnTo,
+    this.allowMethodBack = false,
+    super.key,
+  });
 
   final String returnTo;
+  final bool allowMethodBack;
 
   @override
   ConsumerState<RequestCodeScreen> createState() => _RequestCodeScreenState();
@@ -38,6 +44,25 @@ class _RequestCodeScreenState extends ConsumerState<RequestCodeScreen> {
     context.go(authCancelDestination(widget.returnTo));
   }
 
+  void _back() {
+    if (widget.allowMethodBack &&
+        ref
+            .read(providerAuthAdapterProvider)
+            .isAvailable(AuthProvider.google)) {
+      ref.read(authCommandProvider.notifier).cancelFlow();
+      context.go(
+        Uri(
+          path: AuthRoutes.entry,
+          queryParameters: widget.returnTo == '/'
+              ? null
+              : {'returnTo': widget.returnTo},
+        ).toString(),
+      );
+    } else {
+      _closeAuth();
+    }
+  }
+
   Future<void> _requestCode() async {
     if (!(_formKey.currentState?.validate() ?? false)) {
       return;
@@ -47,7 +72,7 @@ class _RequestCodeScreenState extends ConsumerState<RequestCodeScreen> {
         .requestCode(email: _emailController.text, returnTo: widget.returnTo);
     if (sent && mounted) {
       final location = Uri(
-        path: '/auth/verify',
+        path: AuthRoutes.verify,
         queryParameters: widget.returnTo == '/'
             ? null
             : {'returnTo': widget.returnTo},
@@ -69,20 +94,16 @@ class _RequestCodeScreenState extends ConsumerState<RequestCodeScreen> {
     }
     final command = ref.watch(authCommandProvider);
     final error = command.failure;
-    final googleAvailable = ref
-        .watch(providerAuthAdapterProvider)
-        .isAvailable(AuthProvider.google);
-    final signingInWithGoogle =
-        command.phase == AuthCommandPhase.signingInWithProvider;
+    final canReturnToMethods =
+        widget.allowMethodBack &&
+        ref.watch(providerAuthAdapterProvider).isAvailable(AuthProvider.google);
 
     final scaffold = Scaffold(
       appBar: pageAppBar(
         context,
         closeKey: const Key('auth-close-button'),
         onClose: _closeAuth,
-        title: Text(
-          googleAvailable ? l10n.authSignInTitle : l10n.authRequestTitle,
-        ),
+        title: Text(l10n.authRequestTitle),
       ),
       body: SafeArea(
         child: Center(
@@ -98,31 +119,6 @@ class _RequestCodeScreenState extends ConsumerState<RequestCodeScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      if (googleAvailable) ...[
-                        OutlinedButton(
-                          key: const Key('auth-google-button'),
-                          onPressed: command.isBusy
-                              ? null
-                              : () => ref
-                                    .read(authCommandProvider.notifier)
-                                    .signInWithProvider(AuthProvider.google),
-                          child: Semantics(
-                            liveRegion: signingInWithGoogle,
-                            child: Text(
-                              signingInWithGoogle
-                                  ? l10n.authSigningInWithGoogle
-                                  : l10n.authGoogleAction,
-                              textAlign: TextAlign.center,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: AppSpacing.medium),
-                        Text(
-                          l10n.authProviderDivider,
-                          textAlign: TextAlign.center,
-                        ),
-                        const SizedBox(height: AppSpacing.medium),
-                      ],
                       Icon(
                         Icons.mark_email_unread_outlined,
                         size: 56,
@@ -212,6 +208,16 @@ class _RequestCodeScreenState extends ConsumerState<RequestCodeScreen> {
                         textAlign: TextAlign.center,
                         style: Theme.of(context).textTheme.bodySmall,
                       ),
+                      if (canReturnToMethods) ...[
+                        const SizedBox(height: AppSpacing.small),
+                        TextButton(
+                          key: const Key('auth-email-back-button'),
+                          onPressed: command.isBusy ? null : _back,
+                          child: Text(
+                            MaterialLocalizations.of(context).backButtonTooltip,
+                          ),
+                        ),
+                      ],
                     ],
                   ),
                 ),
@@ -225,7 +231,7 @@ class _RequestCodeScreenState extends ConsumerState<RequestCodeScreen> {
       canPop: false,
       onPopInvokedWithResult: (didPop, _) {
         if (!didPop) {
-          _closeAuth();
+          _back();
         }
       },
       child: scaffold,

@@ -17,8 +17,11 @@ void main() {
     expect(italian.authGoogleAction, 'Continua con Google');
     expect(english.authSigningInWithGoogle, 'Signing in with Google…');
     expect(italian.authSigningInWithGoogle, 'Accesso con Google…');
-    expect(english.authProviderDivider, 'or continue with email');
-    expect(italian.authProviderDivider, 'oppure continua con l’email');
+    expect(english.authEmailMethodAction, 'or sign in with your email + OTP');
+    expect(
+      italian.authEmailMethodAction,
+      'oppure accedi con email e codice OTP',
+    );
 
     expect(AppLocalizations.supportedLocales, const [
       Locale('en'),
