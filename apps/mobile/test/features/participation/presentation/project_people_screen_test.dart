@@ -151,16 +151,20 @@ void main() {
             expect(
               find.text(
                 language == 'it'
-                    ? '0 / 5 posti utilizzati'
-                    : '0 / 5 spots used',
+                    ? '${populated ? 1 : 0} / 5 posti utilizzati'
+                    : '${populated ? 1 : 0} / 5 spots used',
               ),
               findsOneWidget,
             );
             expect(
               find.text(
                 language == 'it'
-                    ? '5 posti disponibili · 1 organizzatore'
-                    : '5 spots remaining · 1 organizer',
+                    ? (populated
+                          ? '4 posti disponibili · 2 organizzatori'
+                          : '5 posti disponibili · 1 organizzatore')
+                    : (populated
+                          ? '4 spots remaining · 2 organizers'
+                          : '5 spots remaining · 1 organizer'),
               ),
               findsOneWidget,
             );
@@ -249,8 +253,9 @@ void main() {
           if (FocusManager.instance.primaryFocus?.context
                   ?.findAncestorWidgetOfExactType<IconButton>()
                   ?.key ==
-              const Key('people-actions-user-2'))
+              const Key('people-actions-user-2')) {
             break;
+          }
         }
         expect(
           FocusManager.instance.primaryFocus?.context

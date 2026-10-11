@@ -26,7 +26,8 @@ their existing features; participation uses only a project ID plus the narrow
   capacity shows ordinary participants and organizers without derived spots.
   Section labels show totals only after an exhausted successful page; otherwise
   nonempty pages say how many rows are loaded. Requests and offers remain separate
-  and visible without expansion. Successful empty history is omitted, while
+  and visible without expansion. Enlarged request names use their own full-width
+  line below the existing avatar/safety tools; decision buttons wrap as needed. Successful empty history is omitted, while
   loading, errors, retries and keyset pagination remain visible. The display-name
   disclosure stays in `join_request_screen.dart` before submission.
 - `domain/participation_models.dart` defines strict project kinds, request and

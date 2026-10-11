@@ -860,22 +860,19 @@ class _RequestCard extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Row(
-                children: [
-                  VisibleProfilePhotoAvatar(
+              LayoutBuilder(
+                builder: (context, constraints) {
+                  final avatar = VisibleProfilePhotoAvatar(
                     entry: photoEntry,
                     imageSemanticsLabel: l10n.profilePhotoApplicantAvatarLabel,
                     placeholderSemanticsLabel:
                         l10n.profilePhotoApplicantAvatarLabel,
-                  ),
-                  const SizedBox(width: AppSpacing.medium),
-                  Expanded(
-                    child: Text(
-                      request.requesterDisplayName,
-                      style: Theme.of(context).textTheme.titleMedium,
-                    ),
-                  ),
-                  BlockingActionButton(
+                  );
+                  final name = Text(
+                    request.requesterDisplayName,
+                    style: Theme.of(context).textTheme.titleMedium,
+                  );
+                  final block = BlockingActionButton(
                     targetProfileId: request.requesterProfileId,
                     targetDisplayName: request.requesterDisplayName,
                     consequence: request.isPending
@@ -884,8 +881,33 @@ class _RequestCard extends StatelessWidget {
                     buttonKey: Key('participation-block-${request.id}'),
                     compact: true,
                     onChanged: (_) => onBlockingChanged(),
-                  ),
-                ],
+                  );
+                  // At enlarged text, keep the name out of the narrow gap
+                  // between the existing applicant avatar and safety action.
+                  if (constraints.maxWidth < 360 &&
+                      MediaQuery.textScalerOf(context).scale(16) > 24) {
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [avatar, block],
+                        ),
+                        const SizedBox(height: AppSpacing.small),
+                        name,
+                      ],
+                    );
+                  }
+                  return Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      avatar,
+                      const SizedBox(width: AppSpacing.medium),
+                      Expanded(child: name),
+                      block,
+                    ],
+                  );
+                },
               ),
               const SizedBox(height: AppSpacing.xSmall),
               Text(_requestStatusLabel(l10n, request.status)),
