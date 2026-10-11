@@ -198,8 +198,9 @@ npx supabase migration up --local
 node scripts/verify-local-official-starter-upgrade.mjs --after
 ```
 
-The real pre-OST01 main upgrade preserved every existing row across **98**
-domain tables, including private application receipts and moderation removals;
+The populated upgrade from baseline `20261010173000` (before POLICY01B)
+preserved every existing row across **98** domain tables, including private
+application receipts and moderation removals;
 only new subtype metadata and eight official entries were introduced. Existing
 community rows are compared across their original columns, never dropped from
 the preservation check. The checkpoint contains counts/digests, not row bodies.
@@ -227,3 +228,7 @@ image loading, source-link omission, editable-draft navigation and unavailable
 states at 320dp/2x in Italian and English. The existing community, retries,
 reporting, blueprint paging and editor-departure tests remain active. Admin web
 parsers accept organization provenance without inventing a human subject.
+
+Selected [rendered widget evidence](evidence/ost01/README.md) records the
+production themes, decoded cover and reviewed content at narrow/wide widths.
+It is separate from physical-device and shared-environment verification.

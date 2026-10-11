@@ -524,6 +524,7 @@ pumpWorkshop(
   List<ProposalSkillCategory> categories = const [],
   FakeSimilarProposalGateway? similar,
   FakeTemplateGateway? templateOverride,
+  ThemeData? themeOverride,
 }) async {
   final templates = templateOverride ?? FakeTemplateGateway();
   final proposals = FakeProposalGateway()
@@ -637,7 +638,7 @@ pumpWorkshop(
         routerConfig: router,
         scaffoldMessengerKey: guard.messengerKey,
         locale: Locale(locale),
-        theme: ThemeData(brightness: brightness),
+        theme: themeOverride ?? ThemeData(brightness: brightness),
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
         builder: (context, child) => MediaQuery(
