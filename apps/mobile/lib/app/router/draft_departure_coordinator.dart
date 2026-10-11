@@ -33,6 +33,11 @@ class DraftDepartureCoordinator {
   final messengerKey = GlobalKey<ScaffoldMessengerState>();
   final _owners = <DraftDepartureOwner>[];
   bool preparing = false;
+  Completer<void>? _preparation;
+
+  /// A successful explicit save can wait for an overlapping refresh guard
+  /// before issuing its own continuation, rather than competing with it.
+  Future<void> get whenPrepared => _preparation?.future ?? Future<void>.value();
   int _epoch = 0;
   bool _competingRequest = false;
   ({
@@ -69,6 +74,7 @@ class DraftDepartureCoordinator {
     if (preparing) return DraftDepartureOutcome.blocked;
     final epoch = _epoch;
     preparing = true;
+    final preparation = _preparation = Completer<void>();
     try {
       final outcome = await owner.prepare();
       return epoch == _epoch && _authorized(owner)
@@ -76,6 +82,8 @@ class DraftDepartureCoordinator {
           : DraftDepartureOutcome.blocked;
     } finally {
       if (epoch == _epoch) preparing = false;
+      preparation.complete();
+      if (identical(_preparation, preparation)) _preparation = null;
     }
   }
 

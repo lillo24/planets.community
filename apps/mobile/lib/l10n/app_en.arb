@@ -361,6 +361,8 @@
   "@profileSetupTitle": {
     "description": "Title for first-time basic profile setup."
   },
+  "profileDiscardTitle": "Discard profile changes?",
+  "profileDiscardMessage": "Your unsaved profile changes will be lost. Saved photo changes will remain.",
   "profileEditTitle": "Edit your profile",
   "@profileEditTitle": {
     "description": "Title for editing a completed profile."
