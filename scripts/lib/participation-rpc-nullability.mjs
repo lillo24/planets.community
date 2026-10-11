@@ -21,6 +21,29 @@ const ideaOwnFields = [
   "cancelled_at",
 ];
 export const participationRpcNullableFields = Object.freeze({
+  // OST01 organization provenance. Legacy public reads remain strict.
+  list_public_proposal_templates_v2: [
+    "source_proposal_id",
+    "original_creator_profile_id",
+    "creator_display_name",
+    "cover_object_path",
+    "cover_asset_key",
+  ],
+  get_public_proposal_template_v2: [
+    "source_proposal_id",
+    "original_creator_profile_id",
+    "creator_display_name",
+    "cover_object_path",
+    "cover_asset_key",
+  ],
+  create_proposal_draft_from_template: ["source_proposal_id"],
+  get_own_proposal_template_application: ["source_proposal_id"],
+  get_moderation_case_template: [
+    "source_proposal_id",
+    "original_creator_profile_id",
+  ],
+  list_moderation_cases: ["subject_profile_id"],
+  get_moderation_case_detail: ["subject_profile_id"],
   // IDEA01A opts in explicitly. Never widen the legacy strict event projections.
   get_public_proposal_v2: [
     ...ideaLogistics,
@@ -114,6 +137,7 @@ export const participationRpcNullableFields = Object.freeze({
 });
 
 export const participationRpcNullableNumberFields = Object.freeze({
+  get_public_proposal_template_v2: ["registration_capacity_recommendation"],
   list_own_scoped_conversation_items: ["pending_count"],
 });
 

@@ -33,6 +33,104 @@ import '../../../support/fake_similar_proposal.dart';
 import '../../../support/fake_template.dart';
 
 void main() {
+  for (final locale in ['it', 'en']) {
+    testWidgets(
+      'official examples have localized badge and honest provenance at 320dp $locale',
+      (tester) async {
+        tester.view.physicalSize = const Size(320, 1000);
+        tester.view.devicePixelRatio = 1;
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
+        final row = templateRowFixture()
+          ..['is_official'] = true
+          ..['source_proposal_id'] = null
+          ..['original_creator_profile_id'] = null
+          ..['creator_display_name'] = 'Planets Community Official'
+          ..['cover_asset_key'] = 'repair-cafe'
+          ..['resource_blueprint_count'] = 2
+          ..['skills'] = [
+            {
+              'id': needId(1),
+              'slug': 'basic-repairs',
+              'label': 'Basic repairs',
+              'category_id': needId(3),
+              'category_slug': 'practical',
+              'category_label': 'Practical',
+              'importance': 'required',
+            },
+            {
+              'id': needId(2),
+              'slug': 'woodworking',
+              'label': 'Woodworking',
+              'category_id': needId(3),
+              'category_slug': 'practical',
+              'category_label': 'Practical',
+              'importance': 'useful',
+            },
+          ];
+        const parser = TemplateParser();
+        final gateway = FakeTemplateGateway()
+          ..cards = [parser.card(row)]
+          ..value = parser.detail(row)
+          ..pageLoader = (_, _) async => [
+            parser.blueprint({
+              'source_need_id': needId(8),
+              'title': 'Attrezzi manuali',
+              'details': 'Cacciaviti e piccoli morsetti.',
+            }),
+            parser.blueprint({
+              'source_need_id': needId(9),
+              'title': 'Tavoli da lavoro',
+              'details': 'Due superfici stabili.',
+            }),
+          ];
+        final app = await pumpWorkshop(
+          tester,
+          locale: locale,
+          scale: 2,
+          templateOverride: gateway,
+        );
+        final badge = locale == 'it' ? 'Predefinito' : 'Default';
+        await reveal(tester, find.text(badge));
+        expect(find.text(badge), findsOneWidget);
+        expect(tester.takeException(), isNull);
+        await tester.tap(find.byKey(Key('template-card-$templateId')));
+        await tester.pumpAndSettle();
+        final image = tester.widget<Image>(find.byType(Image).first);
+        expect(
+          (image.image as AssetImage).assetName,
+          'assets/official_templates/repair-cafe.webp',
+        );
+        await reveal(tester, find.text(badge));
+        expect(find.text(badge), findsOneWidget);
+        expect(find.byKey(const Key('template-source')), findsNothing);
+        expect(find.textContaining('Planets Community Official'), findsWidgets);
+        expect(
+          find.text(
+            locale == 'it'
+                ? 'Da una Proposta conclusa'
+                : 'From a completed Proposal',
+          ),
+          findsNothing,
+        );
+        expect(tester.takeException(), isNull);
+        await reveal(tester, find.text('Attrezzi manuali'));
+        expect(find.text('Attrezzi manuali'), findsOneWidget);
+        await reveal(tester, find.byKey(const Key('template-use')));
+        await tester.tap(find.byKey(const Key('template-use')));
+        await tester.pumpAndSettle();
+        expect(find.byType(ProposalEditorScreen), findsOneWidget);
+        expect(find.text('Copied draft'), findsOneWidget);
+        expect(app.templates.commands, hasLength(1));
+        app.templates.value = null;
+        app.router.pop();
+        await tester.pumpAndSettle();
+        expect(find.byKey(const Key('template-unavailable')), findsOneWidget);
+        expect(find.text(badge), findsNothing);
+      },
+    );
+  }
+
   testWidgets('guest catalog explains login without reading or showing empty', (
     tester,
   ) async {
@@ -425,8 +523,9 @@ pumpWorkshop(
   bool ready = true,
   List<ProposalSkillCategory> categories = const [],
   FakeSimilarProposalGateway? similar,
+  FakeTemplateGateway? templateOverride,
 }) async {
-  final templates = FakeTemplateGateway();
+  final templates = templateOverride ?? FakeTemplateGateway();
   final proposals = FakeProposalGateway()
     ..createdId = 'old-draft'
     ..categories = categories;

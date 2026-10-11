@@ -1,5 +1,10 @@
 # Database development
 
+[OST01](official-starter-templates.md) adds eight organization-owned examples
+through an additive migration, opt-in Workshop reads and the existing atomic
+application/reporting paths. Its operator inventory/readback tooling is
+read-only; shared activation remains a separately authorized action.
+
 The [SIM01 matching contract](similar-active-proposals.md) owns the narrow
 authenticated upcoming-Proposal idea lookup, lexical admission/ranking and
 query-plan evidence. `proposal:similar:verify:local` is an explicit Database CI

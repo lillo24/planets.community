@@ -48,6 +48,14 @@ function client(
   } satisfies ModerationServerClient;
 }
 describe("template moderation contracts", () => {
+  it("reviews official organization examples without a fictional source or creator", () => {
+    const row = templateReviewRow();
+    const parsed = parseTemplateReview([
+      { ...row, source_proposal_id: null, original_creator_profile_id: null },
+    ]);
+    expect(parsed.sourceProposalId).toBeNull();
+    expect(parsed.originalCreatorProfileId).toBeNull();
+  });
   it("preserves fractional duration without weakening integer counts", () => {
     const row = templateReviewRow();
     const parsed = parseTemplateReview([

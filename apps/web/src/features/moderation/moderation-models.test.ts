@@ -14,6 +14,26 @@ import {
 } from "./moderation-test-fixtures";
 
 describe("moderation model parsing", () => {
+  it("keeps organization template cases visible without weakening other subjects", () => {
+    const organization = {
+      target_kind: "proposal_template",
+      subject_profile_id: null,
+      subject_display_name: "Planets Community Official",
+    };
+    expect(
+      parseModerationQueue([{ ...moderationQueueRow(), ...organization }])[0]
+        .subjectProfileId,
+    ).toBeNull();
+    expect(
+      parseModerationCase([{ ...moderationDetailRow(), ...organization }])
+        ?.subjectDisplayName,
+    ).toBe("Planets Community Official");
+    expect(() =>
+      parseModerationQueue([
+        { ...moderationQueueRow(), subject_profile_id: null },
+      ]),
+    ).toThrow("malformed");
+  });
   it("parses a bounded queue row and round-trips its cursor", () => {
     const row = moderationQueueRow();
     const parsed = parseModerationQueue([row]);

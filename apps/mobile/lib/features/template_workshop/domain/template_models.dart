@@ -18,8 +18,13 @@ class TemplateCard {
     required this.creatorId,
     this.creatorName,
     this.coverPath,
+    this.isOfficial = false,
+    this.coverAssetKey,
   });
-  final String id, sourceId, title, summary, creatorId;
+  final String id, title, summary;
+  final String? sourceId, creatorId;
+  final bool isOfficial;
+  final String? coverAssetKey;
   final DateTime linkedAt;
   final List<ProposalSkill> skills;
   final String? creatorName, coverPath;
@@ -40,9 +45,14 @@ class TemplateDetail {
     required this.blueprintCount,
     this.creatorName,
     this.coverPath,
+    this.isOfficial = false,
+    this.coverAssetKey,
     this.capacity,
   });
-  final String id, sourceId, token, title, summary, description, creatorId;
+  final String id, token, title, summary, description;
+  final String? sourceId, creatorId;
+  final bool isOfficial;
+  final String? coverAssetKey;
   final List<ProposalSkill> skills;
   final String? creatorName, coverPath;
   final int? capacity;
@@ -90,7 +100,8 @@ class TemplateReceipt {
     required this.acceptedAt,
     this.capacity,
   });
-  final String requestId, destinationId, templateId, sourceId, token;
+  final String requestId, destinationId, templateId, token;
+  final String? sourceId;
   final bool prefillCapacity;
   final int? capacity;
   final num durationSeconds;

@@ -29,21 +29,23 @@ class TemplateParser {
   const TemplateParser();
   TemplateCard card(Map<String, dynamic> row) => TemplateCard(
     id: uuid(row, 'template_id'),
-    sourceId: uuid(row, 'source_proposal_id'),
+    sourceId: provenance(row, 'source_proposal_id'),
     linkedAt: date(row, 'linked_at'),
     title: text(row, 'title'),
     summary: text(row, 'summary'),
     skills: List.unmodifiable(
       const ProposalPayloadParser().skills(row['skills']),
     ),
-    creatorId: uuid(row, 'original_creator_profile_id'),
+    creatorId: provenance(row, 'original_creator_profile_id'),
     creatorName: optionalText(row, 'creator_display_name'),
     coverPath: cover(row),
+    isOfficial: official(row),
+    coverAssetKey: asset(row),
   );
 
   TemplateDetail detail(Map<String, dynamic> row) => TemplateDetail(
     id: uuid(row, 'template_id'),
-    sourceId: uuid(row, 'source_proposal_id'),
+    sourceId: provenance(row, 'source_proposal_id'),
     token: token(row, 'content_version'),
     title: text(row, 'title'),
     summary: text(row, 'summary'),
@@ -51,9 +53,11 @@ class TemplateParser {
     skills: List.unmodifiable(
       const ProposalPayloadParser().skills(row['skills']),
     ),
-    creatorId: uuid(row, 'original_creator_profile_id'),
+    creatorId: provenance(row, 'original_creator_profile_id'),
     creatorName: optionalText(row, 'creator_display_name'),
     coverPath: cover(row),
+    isOfficial: official(row),
+    coverAssetKey: asset(row),
     capacity: capacity(row, 'registration_capacity_recommendation'),
     durationSeconds: duration(row),
     blueprintCount: integer(row, 'resource_blueprint_count', min: 0),
@@ -69,13 +73,45 @@ class TemplateParser {
     requestId: uuid(row, 'request_id'),
     destinationId: uuid(row, 'proposal_id'),
     templateId: uuid(row, 'template_id'),
-    sourceId: uuid(row, 'source_proposal_id'),
+    sourceId: row['source_proposal_id'] == null
+        ? null
+        : uuid(row, 'source_proposal_id'),
     token: token(row, 'accepted_content_version'),
     prefillCapacity: boolean(row, 'prefill_capacity'),
     capacity: capacity(row, 'capacity_recommendation'),
     durationSeconds: duration(row),
     acceptedAt: date(row, 'accepted_at'),
   );
+
+  bool official(Map<String, dynamic> row) =>
+      row['is_official'] == null ? false : boolean(row, 'is_official');
+  String? provenance(Map<String, dynamic> row, String key) {
+    if (!official(row)) return uuid(row, key);
+    if (row[key] != null ||
+        row['creator_display_name'] != 'Planets Community Official') {
+      throw const FormatException(
+        'Official template must have organization provenance.',
+      );
+    }
+    return null;
+  }
+
+  String? asset(Map<String, dynamic> row) {
+    final value = optionalText(row, 'cover_asset_key');
+    if (value == null) return null;
+    if (!official(row) ||
+        !const {
+          'repair-cafe',
+          'mural',
+          'seedling-trays',
+          'acoustic-concert',
+          'reading-group',
+          'makers-table',
+        }.contains(value)) {
+      throw const FormatException('Unknown official template cover asset.');
+    }
+    return value;
+  }
 
   String text(Map<String, dynamic> row, String key) {
     final value = row[key];
@@ -146,11 +182,21 @@ class TemplateParser {
     return value;
   }
 
-  String? cover(Map<String, dynamic> row) => parseCoverObjectPath(
-    row['cover_object_path'],
-    parentId: uuid(row, 'source_proposal_id'),
-    parentSegment: 'projects',
-  );
+  String? cover(Map<String, dynamic> row) {
+    if (official(row)) {
+      if (row['cover_object_path'] != null) {
+        throw const FormatException(
+          'Official cover must be a bundled illustration.',
+        );
+      }
+      return null;
+    }
+    return parseCoverObjectPath(
+      row['cover_object_path'],
+      parentId: uuid(row, 'source_proposal_id'),
+      parentSegment: 'projects',
+    );
+  }
 }
 
 class SupabaseTemplateGateway implements TemplateGateway {
@@ -186,7 +232,7 @@ class SupabaseTemplateGateway implements TemplateGateway {
     Set<String>? skills,
   }) async => rows(
     await _rpc(
-      'list_public_proposal_templates',
+      'list_public_proposal_templates_v2',
       params: {
         'p_limit': templatePageSize,
         'p_cursor_linked_at': cursor?.linkedAt.toUtc().toIso8601String(),
@@ -199,7 +245,10 @@ class SupabaseTemplateGateway implements TemplateGateway {
   @override
   Future<TemplateDetail?> detail(String id) async {
     final row = one(
-      await _rpc('get_public_proposal_template', params: {'p_template_id': id}),
+      await _rpc(
+        'get_public_proposal_template_v2',
+        params: {'p_template_id': id},
+      ),
     );
     return row == null ? null : parser.detail(row);
   }
@@ -211,7 +260,7 @@ class SupabaseTemplateGateway implements TemplateGateway {
     String? cursor,
   }) async => rows(
     await _rpc(
-      'list_public_proposal_template_resource_blueprints',
+      'list_public_proposal_template_resource_blueprints_v2',
       params: {
         'p_template_id': id,
         'p_content_version': token,

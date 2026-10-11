@@ -2936,7 +2936,7 @@ export type Database = {
           prefill_capacity: boolean
           proposal_id: string
           request_id: string
-          source_proposal_id: string
+          source_proposal_id: string | null
           template_id: string
         }[]
       }
@@ -3127,7 +3127,7 @@ export type Database = {
           state: string
           state_version: number
           subject_display_name: string
-          subject_profile_id: string
+          subject_profile_id: string | null
           target_kind: string
           target_summary: string
         }[]
@@ -3138,13 +3138,13 @@ export type Database = {
           content: Json
           content_changed: boolean
           current_content_version: string
-          original_creator_profile_id: string
+          original_creator_profile_id: string | null
           publicly_available: boolean
           removal_action: Json
           removed_at: string
           report_content_version: string
           resource_blueprint_count: number
-          source_proposal_id: string
+          source_proposal_id: string | null
           template_id: string
         }[]
       }
@@ -3386,7 +3386,7 @@ export type Database = {
           prefill_capacity: boolean
           proposal_id: string
           request_id: string
-          source_proposal_id: string
+          source_proposal_id: string | null
           template_id: string
         }[]
       }
@@ -3695,6 +3695,26 @@ export type Database = {
           title: string
         }[]
       }
+      get_public_proposal_template_v2: {
+        Args: { p_template_id: string }
+        Returns: {
+          content_version: string
+          cover_asset_key: string | null
+          cover_object_path: string | null
+          creator_display_name: string | null
+          description: string
+          duration_seconds: number
+          is_official: boolean
+          original_creator_profile_id: string | null
+          registration_capacity_recommendation: number | null
+          resource_blueprint_count: number
+          skills: Json
+          source_proposal_id: string | null
+          summary: string
+          template_id: string
+          title: string
+        }[]
+      }
       get_public_proposal_v2: {
         Args: { p_proposal_id: string }
         Returns: {
@@ -3878,7 +3898,7 @@ export type Database = {
           state: string
           state_version: number
           subject_display_name: string
-          subject_profile_id: string
+          subject_profile_id: string | null
           target_kind: string
           target_summary: string
         }[]
@@ -4922,6 +4942,19 @@ export type Database = {
           title: string
         }[]
       }
+      list_public_proposal_template_resource_blueprints_v2: {
+        Args: {
+          p_content_version: string
+          p_cursor_need_id?: string
+          p_limit?: number
+          p_template_id: string
+        }
+        Returns: {
+          details: string
+          source_need_id: string
+          title: string
+        }[]
+      }
       list_public_proposal_templates: {
         Args: {
           p_cursor_id?: string
@@ -4937,6 +4970,28 @@ export type Database = {
           original_creator_profile_id: string
           skills: Json
           source_proposal_id: string
+          summary: string
+          template_id: string
+          title: string
+        }[]
+      }
+      list_public_proposal_templates_v2: {
+        Args: {
+          p_cursor_id?: string
+          p_cursor_linked_at?: string
+          p_limit?: number
+          p_query?: string
+          p_skill_ids?: string[]
+        }
+        Returns: {
+          cover_asset_key: string | null
+          cover_object_path: string | null
+          creator_display_name: string | null
+          is_official: boolean
+          linked_at: string
+          original_creator_profile_id: string | null
+          skills: Json
+          source_proposal_id: string | null
           summary: string
           template_id: string
           title: string
