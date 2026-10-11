@@ -19,6 +19,14 @@ insert into public.proposal_meeting_details(proposal_id,exact_location_visibilit
 update public.proposals set lifecycle_state='published',published_at=now()-interval '1 hour',
  definition_phase=case when right(id::text,1)::int<=2 then 'defined' else 'idea' end
  where id::text like 'fa031000-%';
+-- CHECK01: confirm the complete fixture, keeping the other Ideas undecided.
+select set_config('request.jwt.claim.sub','fa030000-0000-4000-8000-000000000001',true);
+do $$ declare snapshot jsonb; kind text; item uuid:='fa031000-0000-4000-8000-000000000003'; begin
+ foreach kind in array array['location','schedule','capacity'] loop
+  snapshot:=public.get_project_organization_v1(auth.uid(),item);
+  perform public.mutate_project_organization_v1(auth.uid(),item,(snapshot->>'revision')::bigint,gen_random_uuid(),jsonb_build_object('action','confirm_decision','kind',kind));
+ end loop;
+end $$;
 insert into public.proposal_skills(proposal_id,skill_id,importance)
  select 'fa031000-0000-4000-8000-000000000003',id,'required' from public.skills order by id limit 1;
 select set_config('test.idea_reference',(now()-interval '30 minutes')::text,true);
@@ -42,9 +50,12 @@ select throws_ok($$select * from public.list_public_proposals_v2(p_skill_ids=>ar
 select throws_ok($$select * from public.list_public_proposals_v2(p_query=>repeat('x',121))$$,'22023',null,'keyword bound enforced');
 
 -- Real future geometry is still excluded from the installed event Map and SIM01.
+-- Trusted fixture only: supported clients cannot bypass the planner with a pin.
+insert into private.project_organization_official_writes values('fa031000-0000-4000-8000-000000000003',txid_current());
 update public.proposals set selected_public_place='{"provider":"geoapify","kind":"locality","result_type":"city","label":"Trento","country_code":"IT","locality":"Trento","latitude":46.07,"longitude":11.12,"source":"openstreetmap","attribution":"Powered by Geoapify | © OpenStreetMap contributors","source_license":"https://www.openstreetmap.org/copyright","verified_at":"2026-10-01T00:00:00Z"}'::jsonb,
  approximate_location=extensions.st_setsrid(extensions.st_makepoint(11.12,46.07),4326)::extensions.geography
  where id='fa031000-0000-4000-8000-000000000003';
+delete from private.project_organization_official_writes where project_id='fa031000-0000-4000-8000-000000000003';
 select is((select count(*) from private.geo_public_candidates_v1('{"mode":"radius","latitude":46.07,"longitude":11.12,"radius_m":5000,"kinds":["one_time"],"proposal_skill_ids":[]}'::jsonb,now(),null,null) where item_id='fa031000-0000-4000-8000-000000000003'),0::bigint,'radius Map excludes even geocoded future Idea');
 select is((select count(*) from private.geo_public_candidates_v1('{"mode":"bounds","west":11,"south":46,"east":12,"north":47,"kinds":["one_time"],"proposal_skill_ids":[]}'::jsonb,now(),null,null) where item_id='fa031000-0000-4000-8000-000000000003'),0::bigint,'bounds Map excludes Idea');
 set local role authenticated;

@@ -40,6 +40,17 @@ begin
 end;
 $$;
 grant execute on function pg_temp.idea_draft(text),pg_temp.idea_edit(uuid,jsonb) to authenticated;
+-- CHECK01 changes edit-to-public semantics. Fixtures use explicit confirmation.
+create function pg_temp.plan_decision(kind text,value jsonb,confirm boolean default false)
+returns jsonb language plpgsql as $$
+declare snapshot jsonb; item uuid:=current_setting('test.idea')::uuid;
+begin
+ snapshot:=public.get_project_organization_v1(auth.uid(),item);
+ snapshot:=public.mutate_project_organization_v1(auth.uid(),item,(snapshot->>'revision')::bigint,gen_random_uuid(),jsonb_build_object('action','save_decision','kind',kind,'value',value));
+ if confirm then snapshot:=public.mutate_project_organization_v1(auth.uid(),item,(snapshot->>'revision')::bigint,gen_random_uuid(),jsonb_build_object('action','confirm_decision','kind',kind)); end if;
+ return snapshot;
+end $$;
+grant execute on function pg_temp.plan_decision(text,jsonb,boolean) to authenticated;
 set local role authenticated;
 select set_config('request.jwt.claim.sub','fa020000-0000-4000-8000-000000000001',true);
 select set_config('test.idea',pg_temp.idea_draft()::text,true);
@@ -59,8 +70,8 @@ select is((select count(*) from public.get_own_proposal('fa020000-0000-4000-8000
 select is((select count(*) from public.list_own_proposals_v2('fa020000-0000-4000-8000-000000000001') where proposal_id=current_setting('test.idea')::uuid),1::bigint,'new own List includes Idea');
 select is((select definition_phase from public.get_own_proposal_v2('fa020000-0000-4000-8000-000000000001',current_setting('test.idea')::uuid)),'idea','new owner detail is phase-aware');
 select throws_ok($$select public.publish_proposal('fa020000-0000-4000-8000-000000000001',current_setting('test.idea')::uuid)$$,'55000',null,'ordinary publish never silently promotes');
-select throws_ok($$select pg_temp.idea_edit(current_setting('test.idea')::uuid,'{"event_timezone":"Not/AZone"}')$$,'22023',null,'invalid optional timezone rejected');
-select throws_ok($$select pg_temp.idea_edit(current_setting('test.idea')::uuid,'{"starts_at":"infinity"}')$$,'22023',null,'infinite tentative date rejected');
+select throws_ok($$select pg_temp.idea_edit(current_setting('test.idea')::uuid,'{"event_timezone":"Not/AZone"}')$$,'PT409',null,'old clients cannot bypass schedule confirmation');
+select throws_ok($$select pg_temp.idea_edit(current_setting('test.idea')::uuid,'{"starts_at":"infinity"}')$$,'PT409',null,'old clients cannot write dates directly');
 select throws_ok($$select pg_temp.idea_edit(current_setting('test.idea')::uuid,'{"country_code":"ITA"}')$$,'22023',null,'optional country bounds retained');
 select throws_ok($$select public.promote_proposal_idea('fa020000-0000-4000-8000-000000000001',current_setting('test.idea')::uuid)$$,'PT422',null,'promotion rejects missing planning fields atomically');
 select lives_ok($$select pg_temp.idea_edit(current_setting('test.idea')::uuid,'{"exact_meeting_text":"PRIVATE arrival directions","exact_location_visibility":"public"}')$$,'legacy direction visibility does not publish free text');
@@ -89,7 +100,7 @@ select is((select count(*) from public.get_own_project_group_chat('fa020000-0000
 select is((select count(*) from public.get_project_participant_meeting_details('fa020000-0000-4000-8000-000000000002',current_setting('test.idea')::uuid) where exact_meeting_text is null),1::bigint,'admitted participant can read successful null meeting row');
 
 select set_config('request.jwt.claim.sub','fa020000-0000-4000-8000-000000000001',true);
-select lives_ok($$select pg_temp.idea_edit(current_setting('test.idea')::uuid,jsonb_build_object('starts_at',statement_timestamp()-interval '5 days','ends_at',statement_timestamp()-interval '4 days'))$$,'past tentative dates do not freeze public Idea edits');
+select lives_ok($$select pg_temp.plan_decision('schedule',jsonb_build_object('starts_at',statement_timestamp()-interval '5 days','ends_at',statement_timestamp()-interval '4 days','timezone','Europe/Rome'))$$,'past group suggestion does not freeze public Idea edits');
 select is((select derived_status from public.get_public_proposal_v2(current_setting('test.idea')::uuid)),null::text,'past tentative Idea never derives Completed');
 select is((select count(*) from public.list_public_proposals_v2(p_definition_phase=>'idea') where proposal_id=current_setting('test.idea')::uuid),1::bigint,'past tentative Idea remains in public Idea List');
 reset role;
@@ -100,9 +111,9 @@ select ok(private.is_project_cover_editable(current_setting('test.idea')::uuid,'
 select lives_ok($$select * from private.lock_project_for_resource_need_mutation(current_setting('test.idea')::uuid)$$,'past tentative Idea retains resource need editing');
 select lives_ok($$select * from private.lock_project_for_membership_commitment_mutation(current_setting('test.idea')::uuid)$$,'past tentative Idea retains membership commitments');
 set local role authenticated;
-select lives_ok($$select pg_temp.idea_edit(current_setting('test.idea')::uuid,'{"registration_capacity":1}')$$,'finite cap can be configured using real current usage');
+select lives_ok($$select pg_temp.plan_decision('capacity','{"limit":1,"count_organizers":false}',true)$$,'finite cap explicitly confirmed using real current usage');
 select throws_ok($$select pg_temp.idea_edit(current_setting('test.idea')::uuid,'{"registration_capacity":0}')$$,'22023',null,'invalid finite capacity rejected');
-select lives_ok($$select pg_temp.idea_edit(current_setting('test.idea')::uuid,'{"registration_capacity":null}')$$,'explicit undecided capacity allowed only during Idea phase');
+select throws_ok($$select pg_temp.idea_edit(current_setting('test.idea')::uuid,'{"registration_capacity":null}')$$,'PT409',null,'old editor cannot erase a confirmed capacity');
 
 reset role;
 select is((select count(*) from private.proposal_templates where source_proposal_id=current_setting('test.idea')::uuid),1::bigint,'one template identity at first Idea publication');
@@ -117,7 +128,10 @@ select set_config('test.template',(select id::text from private.proposal_templat
 
 set local role authenticated;
 select set_config('request.jwt.claim.sub','fa020000-0000-4000-8000-000000000001',true);
-select lives_ok($$select pg_temp.idea_edit(current_setting('test.idea')::uuid,jsonb_build_object('description','A complete planned activity.','starts_at',statement_timestamp()+interval '3 days','ends_at',statement_timestamp()+interval '5 days','event_timezone','Europe/Rome','country_code','IT','locality','Trento','public_location_label','Trento','registration_capacity',3))$$,'Idea retains supplied multi-day planning values');
+select lives_ok($$select pg_temp.idea_edit(current_setting('test.idea')::uuid,'{"description":"A complete planned activity."}')$$,'ordinary Idea content edits remain available');
+select lives_ok($$select pg_temp.plan_decision('schedule',jsonb_build_object('starts_at',statement_timestamp()+interval '3 days','ends_at',statement_timestamp()+interval '5 days','timezone','Europe/Rome'),true)$$,'explicitly confirm multi-day schedule');
+select lives_ok($$select pg_temp.plan_decision('location','{"text":"Trento","country_code":"IT","locality":"Trento","label":"Trento"}',true)$$,'explicitly confirm public city');
+select lives_ok($$select pg_temp.plan_decision('capacity','{"limit":3,"count_organizers":false}',true)$$,'explicitly confirm capacity');
 select is((public.get_proposal_promotion_requirements('fa020000-0000-4000-8000-000000000001',current_setting('test.idea')::uuid)->>'can_promote')::boolean,true,'complete Idea preview is promotable');
 select lives_ok($$select public.promote_proposal_idea('fa020000-0000-4000-8000-000000000001',current_setting('test.idea')::uuid)$$,'explicit atomic promotion');
 select lives_ok($$select public.promote_proposal_idea('fa020000-0000-4000-8000-000000000001',current_setting('test.idea')::uuid)$$,'promotion retry is idempotent');
