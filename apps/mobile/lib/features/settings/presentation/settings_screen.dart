@@ -36,140 +36,130 @@ class SettingsScreen extends ConsumerWidget {
           alignment: Alignment.topCenter,
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: AppBreakpoints.compact),
-            child: ListView(
-              padding: const EdgeInsets.all(AppSpacing.medium),
-              children: [
-                _SectionLabel(l10n.settingsAppSection),
-                Card(
-                  clipBehavior: Clip.antiAlias,
-                  child: ListTile(
-                    key: const Key('settings-language-row'),
-                    leading: const Icon(Icons.translate),
-                    title: Text(l10n.settingsLanguage),
-                    trailing: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(_preferenceLabel(l10n, preference)),
-                        const SizedBox(width: AppSpacing.small),
-                        const Icon(Icons.chevron_right),
-                      ],
-                    ),
-                    onTap: () => context.push('/settings/language'),
-                  ),
-                ),
-                const SizedBox(height: AppSpacing.large),
-                _SectionLabel(l10n.settingsNavigation),
-                Card(
-                  clipBehavior: Clip.antiAlias,
-                  child: ListTile(
-                    key: const Key('settings-navigation-row'),
-                    leading: const Icon(Icons.navigation_outlined),
-                    title: Text(l10n.settingsBottomRightTab),
-                    subtitle: navigationPreference.restoreFailed
-                        ? Text(l10n.settingsNavigationRestoreError)
-                        : null,
-                    trailing: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          navigationPreference.destination ==
-                                  BottomTabDestination.messages
-                              ? l10n.messagesTitle
-                              : l10n.navigationBrowse,
-                        ),
-                        const SizedBox(width: AppSpacing.small),
-                        const Icon(Icons.chevron_right),
-                      ],
-                    ),
-                    onTap: () => context.push('/settings/navigation'),
-                  ),
-                ),
-                if (navigationPreference.destination ==
-                    BottomTabDestination.browse)
+            child: ListTileTheme.merge(
+              minLeadingWidth: 24,
+              horizontalTitleGap: AppSpacing.small,
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.small,
+              ),
+              child: ListView(
+                padding: const EdgeInsets.all(AppSpacing.medium),
+                children: [
+                  _SectionLabel(l10n.settingsAppSection),
                   Card(
+                    clipBehavior: Clip.antiAlias,
                     child: ListTile(
-                      key: const Key('settings-messages-row'),
-                      leading: const MessageUnreadBadge(
-                        child: Icon(Icons.forum_outlined),
-                      ),
-                      title: Text(l10n.messagesTitle),
+                      key: const Key('settings-language-row'),
+                      leading: const Icon(Icons.translate),
+                      title: Text(l10n.settingsLanguage),
+                      subtitle: Text(_preferenceLabel(l10n, preference)),
                       trailing: const Icon(Icons.chevron_right),
-                      onTap: () => context.go('/messages'),
+                      onTap: () => context.push('/settings/language'),
                     ),
                   ),
-                if (kDebugMode)
-                  TextButton(
-                    key: const Key('startup-development-reset'),
-                    onPressed: () async {
-                      final reset = await ref
-                          .read(startupFlowProvider)
-                          .resetForDevelopment();
-                      if (!context.mounted) return;
-                      if (reset) {
-                        context.go('/');
-                      } else {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text(l10n.startupPreferenceError)),
-                        );
-                      }
-                    },
-                    child: Text(l10n.startupDevelopmentReset),
-                  ),
-                Card(
-                  child: PolicyLinkAction(
-                    key: const Key('settings-privacy-policy-row'),
-                    asTile: true,
-                    label: l10n.policyPrivacy,
-                    uri: ref.watch(policyDocumentsProvider).privacy,
-                  ),
-                ),
-                if (showAccountSettings) ...[
                   const SizedBox(height: AppSpacing.large),
                   _SectionLabel(l10n.settingsAccountSection),
                   Card(
-                    clipBehavior: Clip.antiAlias,
-                    child: Column(
-                      children: [
-                        ListTile(
-                          key: const Key('settings-notifications-row'),
-                          leading: const Icon(Icons.notifications_outlined),
-                          title: Text(l10n.notificationsTitle),
-                          trailing: const Icon(Icons.chevron_right),
-                          onTap: () =>
-                              context.push('/notifications/preferences'),
-                        ),
-                        const Divider(height: 1),
-                        ListTile(
-                          key: const Key('settings-profile-privacy-row'),
-                          leading: const Icon(Icons.manage_accounts_outlined),
-                          title: Text(l10n.settingsProfilePrivacy),
-                          trailing: const Icon(Icons.chevron_right),
-                          onTap: () => context.go(
-                            Uri(
-                              path: '/profile/edit',
-                              queryParameters: const {'returnTo': '/settings'},
-                            ).toString(),
-                          ),
-                        ),
-                      ],
+                    child: PolicyLinkAction(
+                      key: const Key('settings-privacy-policy-row'),
+                      asTile: true,
+                      label: l10n.policyPrivacy,
+                      uri: ref.watch(policyDocumentsProvider).privacy,
                     ),
                   ),
-                ],
-                if (session.isAuthenticated) ...[
+                  if (showAccountSettings)
+                    Card(
+                      clipBehavior: Clip.antiAlias,
+                      child: ListTile(
+                        key: const Key('settings-notifications-row'),
+                        leading: const Icon(Icons.notifications_outlined),
+                        title: Text(l10n.notificationsTitle),
+                        trailing: const Icon(Icons.chevron_right),
+                        onTap: () => context.push('/notifications/preferences'),
+                      ),
+                    ),
                   const SizedBox(height: AppSpacing.large),
-                  const Divider(),
-                  const SizedBox(height: AppSpacing.medium),
-                  const AccountSignOutAction(),
-                  const SizedBox(height: AppSpacing.medium),
-                  const Divider(),
-                  ListTile(
-                    key: const Key('settings-delete-account-row'),
-                    leading: const Icon(Icons.person_remove_outlined),
-                    title: Text(l10n.policyDeleteAccount),
-                    onTap: () => context.push(accountDeletionPath),
+                  _SectionLabel(l10n.settingsSandbox),
+                  Card(
+                    clipBehavior: Clip.antiAlias,
+                    child: ListTile(
+                      key: const Key('settings-messages-preview-row'),
+                      leading: const Icon(Icons.science_outlined),
+                      title: Text(l10n.settingsMessagesPreview),
+                      subtitle: Text(l10n.settingsMessagesPreviewHelp),
+                      trailing: const Icon(Icons.chevron_right),
+                      onTap: () => context.push('/settings/messages-preview'),
+                    ),
                   ),
+                  Card(
+                    clipBehavior: Clip.antiAlias,
+                    child: ListTile(
+                      key: const Key('settings-navigation-row'),
+                      leading: const Icon(Icons.navigation_outlined),
+                      title: Text(l10n.settingsBottomRightTab),
+                      subtitle: Text(
+                        navigationPreference.restoreFailed
+                            ? l10n.settingsNavigationRestoreError
+                            : l10n.settingsPersistentTab(
+                                navigationPreference.destination ==
+                                        BottomTabDestination.messages
+                                    ? l10n.messagesTitle
+                                    : l10n.navigationBrowse,
+                              ),
+                      ),
+                      trailing: const Icon(Icons.chevron_right),
+                      onTap: () => context.push('/settings/navigation'),
+                    ),
+                  ),
+                  if (navigationPreference.destination ==
+                      BottomTabDestination.browse)
+                    Card(
+                      child: ListTile(
+                        key: const Key('settings-messages-row'),
+                        leading: const MessageUnreadBadge(
+                          child: Icon(Icons.forum_outlined),
+                        ),
+                        title: Text(l10n.settingsOpenMessages),
+                        trailing: const Icon(Icons.chevron_right),
+                        onTap: () => context.go('/messages'),
+                      ),
+                    ),
+                  if (kDebugMode)
+                    TextButton(
+                      key: const Key('startup-development-reset'),
+                      onPressed: () async {
+                        final reset = await ref
+                            .read(startupFlowProvider)
+                            .resetForDevelopment();
+                        if (!context.mounted) return;
+                        if (reset) {
+                          context.go('/');
+                        } else {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(l10n.startupPreferenceError),
+                            ),
+                          );
+                        }
+                      },
+                      child: Text(l10n.startupDevelopmentReset),
+                    ),
+                  if (session.isAuthenticated) ...[
+                    const SizedBox(height: AppSpacing.large),
+                    const Divider(),
+                    const SizedBox(height: AppSpacing.medium),
+                    const AccountSignOutAction(),
+                    const SizedBox(height: AppSpacing.medium),
+                    const Divider(),
+                    ListTile(
+                      key: const Key('settings-delete-account-row'),
+                      leading: const Icon(Icons.person_remove_outlined),
+                      title: Text(l10n.policyDeleteAccount),
+                      onTap: () => context.push(accountDeletionPath),
+                    ),
+                  ],
                 ],
-              ],
+              ),
             ),
           ),
         ),
