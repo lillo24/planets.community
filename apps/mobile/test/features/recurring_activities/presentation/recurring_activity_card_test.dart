@@ -84,7 +84,8 @@ void main() {
         expect(title, findsOneWidget);
         expect(find.text(activity.summary), findsOneWidget);
         expect(find.text(activity.topic!), findsNothing);
-        expect(find.text(activity.publicLocationLabel), findsOneWidget);
+        expect(find.text(activity.locality), findsOneWidget);
+        expect(find.text(activity.publicLocationLabel), findsNothing);
         expect(
           find.text('${activity.publicLocationLabel} · ${activity.locality}'),
           findsNothing,
@@ -99,7 +100,7 @@ void main() {
         expect(find.byIcon(Icons.groups_outlined), findsOneWidget);
         expect(
           tester.getRect(schedule).top,
-          lessThan(tester.getRect(find.text(activity.publicLocationLabel)).top),
+          lessThan(tester.getRect(find.text(activity.locality)).top),
         );
         final capacity = tester.widget<ProjectCapacityLabel>(
           find.byType(ProjectCapacityLabel),

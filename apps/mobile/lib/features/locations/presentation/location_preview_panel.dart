@@ -518,11 +518,6 @@ class _LocationPreviewPanelState extends ConsumerState<LocationPreviewPanel>
               ),
             ],
           ),
-          if (place?.isArea == true)
-            Text(
-              l10n.locationPreviewApproximate,
-              style: Theme.of(context).textTheme.bodySmall,
-            ),
           if (showTiles)
             ReadOnlyBasemap(
               key: _tiles,

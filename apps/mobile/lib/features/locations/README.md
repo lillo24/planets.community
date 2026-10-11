@@ -48,8 +48,15 @@ RPCs are documented in the [MAP01 contract](../../../../../docs/development/map0
 Short-lived receipt objects must not enter draft snapshots. The transient
 controller is wired through a **disabled production factory**. Actor/form
 generations, readiness, entitlement denials and expiry revoke transient work.
-Credits stay visible after clear and in manual mode because derived ordinary
-text may survive geometry. MAP03 credits relevant public surfaces; provider activation still requires owner review. A native fake does not prove live provider authorization.
+Credits are suppressed only for known manual text in a fresh blank Project/Tavolo
+authoring session. Provider results carry credits while displayed. Selecting a
+verified place makes credits persist through geometry clear and manual mode:
+derived ordinary text may survive. Saved/restored text has ambiguous provenance
+and keeps credits; neither missing coordinates nor unavailable imagery proves
+manual authorship. Public detail projections currently lack durable text
+provenance, so their credits remain conservative. MAP03 credits relevant public
+surfaces; provider activation still requires owner review. A native fake does not
+prove live provider authorization.
 
 Projects choose an independent public locality and optional exact address/venue;
 instructions and Participants/Public remain separate. Resources have one public
@@ -73,11 +80,23 @@ and one fallback on rendering failure. A decoded map is itself the action; only
 unavailable imagery uses a compact text action with a valid canonical destination.
 Centered small detail credits follow the image with independent 48dp links.
 Denial still revokes protected state.
+Verified locality maps keep approximate-area semantics for screen readers without
+a visible area/no-pin banner. Empty optional arrival instructions render nothing;
+canonical authorized instructions and useful restricted-place notices remain.
+Unverified Project text never invents coordinates or a Maps destination.
+The provider's geocoding label/results require credits independently of imagery:
+see [Geoapify geocoding attribution](https://www.geoapify.com/geocoding-api/)
+and [OpenStreetMap copyright](https://www.openstreetmap.org/copyright).
 location_attribution is the compact labelSmall linked credit atom shared with
 editors, detail, Map and List footers, retaining 48dp keyboard/tap targets.
 The old location_fallbacks map
 remains a compatibility widget; real detail now uses the shared panel.
 See [MAP03](../../../../../docs/development/map03-location-previews.md).
+
+`presentation/public_location_label.dart` owns compact Project/Tavolo card text:
+prefer the public structured locality, then the unchanged public label for legacy
+records, then the caller's localized undecided state. It never parses provider
+labels or consumes protected exact-place fields. Details retain the full label.
 
 MAP04 public radius/bounds queries live in the separate geographic_discovery
 feature. It never uses editor receipts or protected preview reads. MAP05 must

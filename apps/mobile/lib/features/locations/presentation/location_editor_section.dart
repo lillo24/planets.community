@@ -87,6 +87,9 @@ class _LocationEditorSectionState extends ConsumerState<LocationEditorSection>
   bool _manual = false, _applyingCanonical = false;
   bool _preparing = false, _hasOperation = false, _removingExact = false;
   bool? _routeCurrent, _exactExpanded;
+  // No durable provenance exists for legacy manual labels. Suppress credits
+  // only for a fresh blank authoring session until it displays selected data.
+  late bool _needsAttribution;
   late List<String> _lastText;
   String? _knownId;
   final _returnFocus = FocusNode();
@@ -105,6 +108,11 @@ class _LocationEditorSectionState extends ConsumerState<LocationEditorSection>
     WidgetsBinding.instance.addObserver(this);
     _factory = ref.read(editorPlaceGatewayFactoryProvider);
     _knownId = widget.itemId();
+    _needsAttribution =
+        widget.itemKind == 'resource' ||
+        _knownId != null ||
+        widget.manualPublicLabel == null ||
+        widget.manualPublicLabel!().trim().isNotEmpty;
     _lastText = widget.contentControllers.map((c) => c.text).toList();
     _session = LocationEditorSession(
       actor: _actor,
@@ -139,6 +147,10 @@ class _LocationEditorSectionState extends ConsumerState<LocationEditorSection>
       }
     };
     _session.addListener(() {
+      if (_session.canonical?.publicPlace != null ||
+          _session.canonical?.exactPlace != null) {
+        _needsAttribution = true;
+      }
       if (_session.problem == PlaceSearchProblem.unauthorized ||
           _session.problem == PlaceSearchProblem.stale ||
           _session.problem == PlaceSearchProblem.expired) {
@@ -196,6 +208,7 @@ class _LocationEditorSectionState extends ConsumerState<LocationEditorSection>
     if (oldWidget.actorId != widget.actorId ||
         oldWidget.itemKind != widget.itemKind ||
         (!widget.enabled && oldWidget.enabled)) {
+      _needsAttribution = true;
       _removingExact = false;
       _session.invalidateContent();
       _dismiss();
@@ -208,6 +221,7 @@ class _LocationEditorSectionState extends ConsumerState<LocationEditorSection>
       _knownId = id;
       // Bootstrap itself binds the new ID after saving; don't interrupt it.
       if (!_session.busy) {
+        _needsAttribution = true;
         _session.invalidateContent();
         _dismiss();
         WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -298,6 +312,7 @@ class _LocationEditorSectionState extends ConsumerState<LocationEditorSection>
       _,
       next,
     ) {
+      _needsAttribution = true;
       _removingExact = false;
       _session.cancel(eraseCanonical: true);
       _dismiss();
@@ -385,8 +400,8 @@ class _LocationEditorSectionState extends ConsumerState<LocationEditorSection>
                     onPressed: _session.retry,
                     child: Text(l10n.locationRetry),
                   ),
-                // Credits also cover provider-derived manual text retained after clear.
-                const LocationAttribution(),
+                // Credits also cover derived text retained after clear.
+                if (_needsAttribution) const LocationAttribution(),
               ],
             ),
     );
@@ -458,7 +473,7 @@ class _LocationEditorSectionState extends ConsumerState<LocationEditorSection>
             child: Text(l10n.locationRetry),
           ),
         // Manual text can retain provider derivation after selection is cleared.
-        const LocationAttribution(),
+        if (_needsAttribution) const LocationAttribution(),
       ],
     );
   }

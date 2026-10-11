@@ -90,6 +90,16 @@ targets. They remain near text/fallback after failure or geometry clear because
 ordinary text may retain provider provenance. Other attribution surfaces keep their
 existing layout.
 
+Location display cleanup removes the visible approximate-area/no-meeting-pin
+banner, retaining that distinction in the canvas/action screen-reader semantics.
+Verified locality/area coordinates still render maps; unverified manual Project
+text still has no invented point or destination. Empty optional arrival
+instructions render nothing. This presentation change does not alter the
+canonical authorization, lease, tap reauthorization or cache ownership paths.
+Attribution follows data provenance, including unavailable imagery. Public
+detail DTOs do not expose durable manual/provider text provenance, so unknown
+stored text retains credits even without geometry.
+
 Tests exercise public and private 15-second renewal, route/TickerMode/scroll return,
 inactive and real background transitions, in-flight tiles and delayed native decode,
 account ABA/sign-out, membership/role/meeting denial, content changes and shutdown.

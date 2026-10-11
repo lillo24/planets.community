@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../core/theme/app_tokens.dart';
 import '../../locations/presentation/location_attribution.dart';
+import '../../locations/presentation/public_location_label.dart';
 
 import '../../../core/widgets/requested_badge.dart';
 import '../../../l10n/generated/app_localizations.dart';
@@ -74,6 +75,10 @@ class ProposalCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final location = shortPublicLocationLabel(
+      proposal.locality,
+      proposal.publicLocationLabel,
+    );
     return Card(
       clipBehavior: Clip.antiAlias,
       shape: isRequested
@@ -134,11 +139,11 @@ class ProposalCard extends StatelessWidget {
                   ),
                   const SizedBox(height: AppSpacing.small),
                   _IconText(
-                    icon: proposal.publicLocationLabel == null
+                    icon: location == null
                         ? Icons.help_outline
                         : Icons.location_on_outlined,
                     text:
-                        proposal.publicLocationLabel ??
+                        location ??
                         AppLocalizations.of(context).proposalPlaceUndecided,
                   ),
                   const SizedBox(height: AppSpacing.small),
@@ -196,6 +201,9 @@ class ProposalLocation extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
+    final instructions = detail.exactLocationRestricted
+        ? l10n.proposalExactLocationRestricted
+        : detail.exactMeetingText?.trim();
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -205,17 +213,17 @@ class ProposalLocation extends StatelessWidget {
         ),
         const SizedBox(height: AppSpacing.small),
         Text(detail.summary.publicLocationLabel ?? l10n.proposalPlaceUndecided),
-        const SizedBox(height: AppSpacing.small),
-        Text(
-          detail.exactLocationRestricted
-              ? l10n.proposalExactLocationRestricted
-              : detail.exactMeetingText ?? l10n.proposalExactNotChosen,
-          key: Key(
-            detail.exactLocationRestricted
-                ? 'proposal-location-restricted'
-                : 'proposal-location-public',
+        if (instructions != null && instructions.isNotEmpty) ...[
+          const SizedBox(height: AppSpacing.small),
+          Text(
+            instructions,
+            key: Key(
+              detail.exactLocationRestricted
+                  ? 'proposal-location-restricted'
+                  : 'proposal-location-public',
+            ),
           ),
-        ),
+        ],
         const LocationAttribution(),
       ],
     );
