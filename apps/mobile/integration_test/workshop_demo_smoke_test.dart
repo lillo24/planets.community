@@ -380,10 +380,11 @@ class _LostResponseGateway implements TemplateGateway {
   int applyCalls = 0;
   @override
   Future<List<TemplateCard>> list({
+    int limit = templatePageSize,
     TemplateCursor? cursor,
     String? query,
     Set<String>? skills,
-  }) => inner.list(cursor: cursor, query: query, skills: skills);
+  }) => inner.list(limit: limit, cursor: cursor, query: query, skills: skills);
   @override
   Future<TemplateDetail?> detail(String id) => inner.detail(id);
   @override

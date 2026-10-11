@@ -11,6 +11,7 @@ const blueprintPageSize = 50;
 
 abstract interface class TemplateGateway {
   Future<List<TemplateCard>> list({
+    int limit = templatePageSize,
     TemplateCursor? cursor,
     String? query,
     Set<String>? skills,
@@ -227,6 +228,7 @@ class SupabaseTemplateGateway implements TemplateGateway {
 
   @override
   Future<List<TemplateCard>> list({
+    int limit = templatePageSize,
     TemplateCursor? cursor,
     String? query,
     Set<String>? skills,
@@ -234,7 +236,7 @@ class SupabaseTemplateGateway implements TemplateGateway {
     await _rpc(
       'list_public_proposal_templates_v2',
       params: {
-        'p_limit': templatePageSize,
+        'p_limit': limit,
         'p_cursor_linked_at': cursor?.linkedAt.toUtc().toIso8601String(),
         'p_cursor_id': cursor?.id,
         'p_query': query?.trim(),

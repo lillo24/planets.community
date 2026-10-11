@@ -47,7 +47,7 @@ void main() {
       var now = DateTime.utc(2026, 9, 4, 10);
       final gateway = FakeRecurringActivityGateway()
         ..publicItems = List.generate(
-          recurringActivityPageSize,
+          7,
           (index) => publicRecurringSummaryFixture(id: 'tavolo-$index'),
         );
       final container = ProviderContainer(
@@ -69,7 +69,7 @@ void main() {
       await controller.load();
       final failed = container.read(publicRecurringActivitiesProvider);
       expect(failed.phase, RecurringActivityLoadPhase.failure);
-      expect(failed.items, hasLength(recurringActivityPageSize));
+      expect(failed.items, hasLength(7));
       expect(failed.referenceTime, snapshot);
       gateway.error = null;
       await controller.load(reset: false);
@@ -81,7 +81,7 @@ void main() {
       );
       expect(
         container.read(publicRecurringActivitiesProvider).items,
-        hasLength(recurringActivityPageSize),
+        hasLength(7),
       );
     },
   );
@@ -89,7 +89,7 @@ void main() {
     var clock = DateTime.utc(2026, 9, 4, 10);
     final gateway = FakeRecurringActivityGateway()
       ..publicItems = List.generate(
-        recurringActivityPageSize,
+        7,
         (index) => publicRecurringSummaryFixture(id: 'tavolo-$index'),
       );
     final container = ProviderContainer(
@@ -105,7 +105,7 @@ void main() {
         .read(publicRecurringActivitiesProvider.notifier)
         .load(reset: false);
     expect(gateway.referenceTimes, everyElement(DateTime.utc(2026, 9, 4, 10)));
-    expect(gateway.lastCursor?.id, 'tavolo-19');
+    expect(gateway.lastCursor?.id, 'tavolo-6');
     expect(
       gateway.lastCursor?.nextStartsAt,
       publicRecurringSummaryFixture().nextOccurrence.startsAt,
@@ -236,7 +236,7 @@ void main() {
 
   test('later Tavolo pages dedupe without changing the raw cursor', () async {
     final firstPage = List.generate(
-      recurringActivityPageSize,
+      7,
       (index) => publicRecurringSummaryFixture(id: 'first-$index'),
     );
     final secondPage = [

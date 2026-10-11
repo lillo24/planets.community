@@ -4,6 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../../core/widgets/discovery_page_size.dart';
+
 import '../../auth/application/auth_session_controller.dart';
 import '../../auth/domain/auth_models.dart';
 import '../../cover_media/application/project_cover_reconciler.dart';
@@ -22,18 +24,32 @@ class PublicRecurringActivitiesController
   var _publicRevision = 0;
   var _requestedRevision = 0;
 
+  RecurringActivityCursor? _cursor;
+  int _successfulPages = 0;
+  bool _retryReset = true;
+
+  Future<void> retry() => load(reset: _retryReset);
+
   @override
   PublicRecurringActivitiesState build() {
     ref.listen(
       authSessionProvider.select(
         (session) => (session.phase, session.identity?.id),
       ),
-      (_, next) {
-        _requestedRevision++;
-        state = _stateWithRequested(const []);
-        if (next.$1 == AuthSessionPhase.ready && next.$2 != null) {
-          unawaited(refreshRequested());
+      (previous, next) {
+        // Anonymous startup phase changes keep the same public query.
+        if (previous?.$2 == next.$2 &&
+            (previous?.$1 == AuthSessionPhase.ready) ==
+                (next.$1 == AuthSessionPhase.ready)) {
+          return;
         }
+
+        _requestedRevision++;
+        _publicRevision++;
+        _successfulPages = 0;
+        _cursor = null;
+        state = PublicRecurringActivitiesState(locality: state.locality);
+        unawaited(load());
       },
     );
     ref.listen(ownParticipationProvider, (_, next) {
@@ -49,8 +65,15 @@ class PublicRecurringActivitiesController
     return const PublicRecurringActivitiesState();
   }
 
-  Future<void> load({bool reset = true}) async {
-    if (state.isBusy) return;
+  Future<void> load({bool reset = true, bool force = false}) async {
+    if (state.isBusy && !force) return;
+    if (!reset && !state.hasMore) return;
+    if (reset) {
+      _successfulPages = 0;
+      _cursor = null;
+    }
+    _retryReset = reset;
+    final pageSize = discoveryPageSize(_successfulPages);
     final revision = ++_publicRevision;
     final currentItems = state.items;
     final appendedItems = reset
@@ -78,10 +101,10 @@ class PublicRecurringActivitiesController
       final results = await Future.wait<dynamic>([
         gateway.listPublicActivities(
           referenceTime: referenceTime,
-          limit: recurringActivityPageSize,
+          limit: pageSize,
           cursor: reset || currentItems.isEmpty
               ? null
-              : currentItems.last.cursor,
+              : (_cursor ?? currentItems.last.cursor),
           locality: locality.isEmpty ? null : locality,
         ),
         if (profileId != null)
@@ -95,7 +118,8 @@ class PublicRecurringActivitiesController
         else
           Future.value(const <RequestedRecurringActivitySummary>[]),
       ]);
-      if (revision != _publicRevision ||
+      if (!ref.mounted ||
+          revision != _publicRevision ||
           state.referenceTime != referenceTime ||
           state.locality != locality) {
         return;
@@ -106,18 +130,25 @@ class PublicRecurringActivitiesController
           reset &&
           requestedRevision == _requestedRevision &&
           _readyProfileId() == profileId;
+      // A terminal page does not need a continuation cursor.
+      if (page.length == pageSize) _cursor = page.last.cursor;
+      _successfulPages++;
       state = PublicRecurringActivitiesState(
         phase: RecurringActivityLoadPhase.ready,
-        items: List.unmodifiable([...appendedItems, ...page]),
+        items: List.unmodifiable(
+          {
+            for (final item in [...appendedItems, ...page]) item.id: item,
+          }.values,
+        ),
         requestedItems: acceptRequested
             ? List.unmodifiable(requested)
             : state.requestedItems,
         locality: locality,
         referenceTime: referenceTime,
-        hasMore: page.length == recurringActivityPageSize,
+        hasMore: page.length == pageSize,
       );
     } catch (error) {
-      if (revision == _publicRevision) {
+      if (ref.mounted && revision == _publicRevision) {
         state = PublicRecurringActivitiesState(
           phase: RecurringActivityLoadPhase.failure,
           items: currentItems,

@@ -4,6 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
 
+import '../../../core/widgets/discovery_page_size.dart';
+
 import '../../auth/application/auth_session_controller.dart';
 import '../../auth/domain/auth_models.dart';
 import '../../cover_media/application/project_cover_reconciler.dart';
@@ -23,18 +25,38 @@ class PublicProposalsController extends Notifier<PublicProposalsState> {
   var _publicRevision = 0;
   var _requestedRevision = 0;
 
+  ProposalCursor? _cursor;
+  int _successfulPages = 0;
+  bool _retryReset = true;
+
+  Future<void> retry() => load(reset: _retryReset);
+
   @override
   PublicProposalsState build() {
     ref.listen(
       authSessionProvider.select(
         (session) => (session.phase, session.identity?.id),
       ),
-      (_, next) {
-        _requestedRevision++;
-        state = _stateWithRequested(const []);
-        if (next.$1 == AuthSessionPhase.ready && next.$2 != null) {
-          unawaited(refreshRequested());
+      (previous, next) {
+        // Anonymous startup phase changes keep the same public query.
+        if (previous?.$2 == next.$2 &&
+            (previous?.$1 == AuthSessionPhase.ready) ==
+                (next.$1 == AuthSessionPhase.ready)) {
+          return;
         }
+
+        _requestedRevision++;
+        _publicRevision++;
+        _successfulPages = 0;
+        _cursor = null;
+        state = PublicProposalsState(
+          query: state.query,
+          locality: state.locality,
+          categories: state.categories,
+          selectedSkillIds: state.selectedSkillIds,
+          definitionPhase: state.definitionPhase,
+        );
+        unawaited(load());
       },
     );
     ref.listen(ownParticipationProvider, (_, next) {
@@ -50,10 +72,15 @@ class PublicProposalsController extends Notifier<PublicProposalsState> {
     return const PublicProposalsState();
   }
 
-  Future<void> load({bool reset = true}) async {
-    if (state.isBusy) {
-      return;
+  Future<void> load({bool reset = true, bool force = false}) async {
+    if (state.isBusy && !force) return;
+    if (!reset && !state.hasMore) return;
+    if (reset) {
+      _successfulPages = 0;
+      _cursor = null;
     }
+    _retryReset = reset;
+    final pageSize = discoveryPageSize(_successfulPages);
     final revision = ++_publicRevision;
     final currentItems = state.items;
     final appendedItems = reset ? const <ProposalSummary>[] : currentItems;
@@ -78,10 +105,10 @@ class PublicProposalsController extends Notifier<PublicProposalsState> {
       final gateway = ref.read(proposalGatewayProvider);
       final cursor = reset || currentItems.isEmpty
           ? null
-          : currentItems.last.cursor;
+          : (_cursor ?? currentItems.last.cursor);
       final results = await Future.wait<dynamic>([
         gateway.listPublicProposals(
-          limit: proposalPageSize,
+          limit: pageSize,
           cursor: cursor,
           query: query.isEmpty ? null : query,
           locality: locality.isEmpty ? null : locality,
@@ -114,9 +141,16 @@ class PublicProposalsController extends Notifier<PublicProposalsState> {
           reset &&
           requestedRevision == _requestedRevision &&
           _readyProfileId() == profileId;
+      // A terminal page does not need a continuation cursor.
+      if (page.length == pageSize) _cursor = page.last.cursor;
+      _successfulPages++;
       state = PublicProposalsState(
         phase: ProposalLoadPhase.ready,
-        items: List.unmodifiable([...appendedItems, ...page]),
+        items: List.unmodifiable(
+          {
+            for (final item in [...appendedItems, ...page]) item.id: item,
+          }.values,
+        ),
         requestedItems: acceptRequested
             ? List.unmodifiable(requested)
             : state.requestedItems,
@@ -125,7 +159,7 @@ class PublicProposalsController extends Notifier<PublicProposalsState> {
         locality: locality,
         selectedSkillIds: skillIds,
         definitionPhase: state.definitionPhase,
-        hasMore: page.length == proposalPageSize,
+        hasMore: page.length == pageSize,
       );
     } catch (error) {
       if (_isPublicCurrent(revision, query, locality, skillIds)) {

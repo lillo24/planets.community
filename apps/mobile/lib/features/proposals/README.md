@@ -222,3 +222,7 @@ real actions, confirms overwriting meaningful input and never submits itself.
 Only the informational publication-notice copy was removed; policy is unchanged.
 Typed hub entry returns to its filters on a successful save; ordinary entry
 retains My Proposals as the save destination. Location fields remain manual.
+
+## Discovery pagination
+
+The feed requests 7 records, then 15, then 20 per successful page. Each user drag within one viewport of the bottom can request one continuation. Failed continuations retain records, cursor and limit and require explicit Retry. Refresh, filters and identity changes reset to 7. Cards construct lazily with zero offscreen cache; public covers retain immutable-path Riverpod caching. Short-content and accessibility navigation have deliberate fallback controls. Template detail return keeps its existing refresh/reset policy. Map search and blueprint paging retain separate behavior.

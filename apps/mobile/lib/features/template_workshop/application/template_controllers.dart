@@ -4,6 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
 
+import '../../../core/widgets/discovery_page_size.dart';
+
 import '../../auth/application/auth_session_controller.dart';
 import '../../auth/domain/auth_models.dart';
 import '../../proposals/application/proposal_controllers.dart';
@@ -33,6 +35,9 @@ class TemplateCatalogState {
 
 class TemplateCatalogController extends Notifier<TemplateCatalogState> {
   int _revision = 0;
+  int _successfulPages = 0;
+  bool _retryMore = false;
+  Future<void> retry() => load(more: _retryMore);
   @override
   TemplateCatalogState build() {
     ref.listen(authSessionProvider.select((s) => (s.phase, s.identity?.id)), (
@@ -73,6 +78,9 @@ class TemplateCatalogController extends Notifier<TemplateCatalogState> {
     final session = ref.read(authSessionProvider);
     if (session.phase != AuthSessionPhase.ready) return;
     final revision = ++_revision;
+    if (!more) _successfulPages = 0;
+    _retryMore = more;
+    final pageSize = discoveryPageSize(_successfulPages);
     final before = state;
     final items = more ? before.items : const <TemplateCard>[];
     state = TemplateCatalogState(
@@ -89,6 +97,7 @@ class TemplateCatalogController extends Notifier<TemplateCatalogState> {
         ref
             .read(templateGatewayProvider)
             .list(
+              limit: pageSize,
               cursor: more ? before.cursor : null,
               query: before.query.isEmpty ? null : before.query,
               skills: before.skills.isEmpty ? null : before.skills,
@@ -107,6 +116,7 @@ class TemplateCatalogController extends Notifier<TemplateCatalogState> {
       if (more && page.isNotEmpty && cursor!.id == before.cursor?.id) {
         throw const FormatException('Template catalog cursor did not advance.');
       }
+      _successfulPages++;
       state = TemplateCatalogState(
         items: List.unmodifiable(byId.values),
         categories: List.unmodifiable(
@@ -114,7 +124,7 @@ class TemplateCatalogController extends Notifier<TemplateCatalogState> {
         ),
         query: before.query,
         skills: before.skills,
-        hasMore: page.length == templatePageSize,
+        hasMore: page.length == pageSize,
         cursor: cursor,
       );
     } catch (_) {

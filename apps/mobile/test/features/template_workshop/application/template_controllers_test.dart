@@ -43,6 +43,34 @@ void main() {
     c.dispose();
     await auth.close();
   });
+
+  test('60 templates use 7/15/20/20 and retry the failed 15', () async {
+    final rows = List.generate(60, (i) => templateCardFixture(id: needId(i)));
+    g.listLoader = (cursor, _, _) async {
+      final start = cursor == null
+          ? 0
+          : rows.indexWhere((e) => e.id == cursor.id) + 1;
+      return rows.skip(start).take(g.limits.last).toList();
+    };
+    final ctrl = c.read(templateCatalogProvider.notifier);
+    await ctrl.load();
+    g.listError = Exception('offline');
+    await ctrl.load(more: true);
+    expect(c.read(templateCatalogProvider).items, hasLength(7));
+    g.listError = null;
+    await ctrl.retry();
+    await ctrl.load(more: true);
+    await ctrl.load(more: true);
+    expect(g.limits, [7, 15, 15, 20, 20]);
+    expect(
+      c.read(templateCatalogProvider).items.map((e) => e.id),
+      rows.map((e) => e.id),
+    );
+    expect(c.read(templateCatalogProvider).hasMore, isFalse);
+    await ctrl.filter('reset', {});
+    expect(g.limits.last, 7);
+    expect(g.cursors.last, isNull);
+  });
   test(
     'newest filters replace a pending request and ignore its response',
     () async {
@@ -61,18 +89,18 @@ void main() {
   );
   test('raw last row owns paired cursor, append deduplicates and retries a failed page', () async {
     final ctrl = c.read(templateCatalogProvider.notifier);
-    g.cards = List.generate(20, (i) => templateCardFixture(id: needId(i)));
+    g.cards = List.generate(7, (i) => templateCardFixture(id: needId(i)));
     await ctrl.load();
     g.listError = Exception('offline');
     await ctrl.load(more: true);
-    expect(c.read(templateCatalogProvider).items, hasLength(20));
+    expect(c.read(templateCatalogProvider).items, hasLength(7));
     expect(c.read(templateCatalogProvider).failed, isTrue);
     g.listError = null;
-    g.cards = [templateCardFixture(id: needId(19)), templateCardFixture()];
+    g.cards = [templateCardFixture(id: needId(6)), templateCardFixture()];
     await ctrl.load(more: true);
-    expect(g.cursors.last!.id, needId(19));
+    expect(g.cursors.last!.id, needId(6));
     expect(g.cursors.last!.linkedAt, DateTime.utc(2026, 1, 1));
-    expect(c.read(templateCatalogProvider).items, hasLength(21));
+    expect(c.read(templateCatalogProvider).items, hasLength(8));
     expect(c.read(templateCatalogProvider).hasMore, isFalse);
   });
   test(
