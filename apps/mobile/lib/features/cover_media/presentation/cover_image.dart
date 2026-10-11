@@ -14,6 +14,7 @@ class CoverImage extends ConsumerWidget {
     this.ownerProfileId,
     this.previewBytes,
     this.borderRadius = BorderRadius.zero,
+    this.aspectRatio = 16 / 9,
     super.key,
   });
 
@@ -22,6 +23,9 @@ class CoverImage extends ConsumerWidget {
   final String? ownerProfileId;
   final Uint8List? previewBytes;
   final BorderRadius borderRadius;
+
+  /// Display crop only; normalization and stored image dimensions stay 16:9.
+  final double aspectRatio;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -63,7 +67,7 @@ class CoverImage extends ConsumerWidget {
         child: ClipRRect(
           borderRadius: borderRadius,
           child: AspectRatio(
-            aspectRatio: 16 / 9,
+            aspectRatio: aspectRatio,
             child: ColoredBox(
               color: Theme.of(context).colorScheme.surfaceContainerHighest,
               child: content,

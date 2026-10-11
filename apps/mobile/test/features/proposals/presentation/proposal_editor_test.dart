@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -17,6 +19,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:planets_mobile/features/locations/data/item_location_gateway.dart';
 import 'package:planets_mobile/features/locations/domain/item_location.dart';
+import 'package:planets_mobile/features/locations/domain/place_search.dart';
 
 import '../../../support/fake_location.dart';
 import '../../../support/fake_auth.dart';
@@ -24,6 +27,177 @@ import '../../../support/fake_proposal.dart';
 import '../../../support/fake_profile_photo.dart';
 
 void main() {
+  testWidgets(
+    'autocomplete preparation never scrolls to an unrelated invalid field',
+    (tester) async {
+      tester.view.physicalSize = const Size(320, 740);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      final factory = FakeEditorPlaceFactory();
+      final gateway = await _pumpEditor(
+        tester,
+        proposalInputFixture(title: 'X'),
+        locations: FakeItemLocationGateway(),
+        placeFactory: factory,
+      );
+      final city = find.byKey(const Key('proposal-public-location'));
+      await _reveal(tester, city);
+      await tester.enterText(city, 'Rovereto');
+      await tester.pump(const Duration(milliseconds: 100));
+      final position = Scrollable.of(tester.element(city)).position;
+      final before = position.pixels;
+      await tester.pump(const Duration(milliseconds: 350));
+      await tester.pumpAndSettle();
+      expect(position.pixels, closeTo(before, 1));
+      expect(
+        find.byKey(const Key('proposal-validation-summary')),
+        findsNothing,
+      );
+      expect(factory.gateway.requests, isEmpty);
+      expect(gateway.calls.where((c) => c.startsWith('save')), isEmpty);
+      expect(
+        find.byKey(const Key('proposal-location-preparation-blocked')),
+        findsOneWidget,
+      );
+      // Deliberate Save still reveals and scrolls to the title error.
+      await _tap(tester, find.byKey(const Key('proposal-cancel-place-edit')));
+      await _tap(tester, find.byKey(const Key('proposal-save-draft')));
+      expect(
+        find.byKey(const Key('proposal-validation-summary')),
+        findsOneWidget,
+      );
+      expect(position.pixels, lessThan(100));
+    },
+  );
+
+  for (final language in ['en', 'it']) {
+    for (final keyboard in [false, true]) {
+      for (final scale in [1.0, 2.0]) {
+        testWidgets(
+          '$language scale=$scale keyboard=$keyboard autocomplete preserves page scroll and focus',
+          (tester) async {
+            tester.view.physicalSize = const Size(320, 740);
+            tester.view.devicePixelRatio = 1;
+            addTearDown(tester.view.resetPhysicalSize);
+            addTearDown(tester.view.resetDevicePixelRatio);
+            addTearDown(tester.view.resetViewInsets);
+            final locations = FakeItemLocationGateway();
+            final factory = FakeEditorPlaceFactory();
+            final pending = Completer<List<PlaceSuggestion>>();
+            factory.gateway.searchReply = pending.future;
+            final gateway = await _pumpEditor(
+              tester,
+              proposalInputFixture(exactMeetingText: ''),
+              locations: locations,
+              placeFactory: factory,
+              locale: language,
+              scale: scale,
+            );
+            final city = find.byKey(const Key('proposal-public-location'));
+            await _reveal(tester, city);
+            if (keyboard) tester.view.viewInsets = FakeViewPadding(bottom: 280);
+            await tester.enterText(city, 'Rovereto');
+            await tester.pump(const Duration(milliseconds: 100));
+            final position = Scrollable.of(tester.element(city)).position;
+            final before = position.pixels;
+            final inputFocus = tester
+                .widget<EditableText>(
+                  find.descendant(
+                    of: city,
+                    matching: find.byType(EditableText),
+                  ),
+                )
+                .focusNode;
+            expect(inputFocus.hasFocus, isTrue);
+            final panel = find.byKey(
+              const Key('proposal-location-results-panel'),
+            );
+            final panelHeight = tester.getSize(panel).height;
+            await tester.pump(const Duration(milliseconds: 350));
+            await tester.pump(const Duration(milliseconds: 350));
+            await tester.pump();
+            expect(factory.gateway.requests, hasLength(1));
+            expect(position.pixels, closeTo(before, 1));
+            pending.complete([
+              for (var i = 0; i < 5; i++)
+                PlaceSuggestion(
+                  id: i == 0 ? 'address' : 'venue-$i',
+                  label: 'Synthetic venue $i, Rovereto',
+                  countryCode: 'IT',
+                  kind: PlaceKind.address,
+                  expiresAt: DateTime.now().add(const Duration(minutes: 5)),
+                ),
+            ]);
+            await tester.pumpAndSettle();
+            expect(tester.getSize(panel).height, panelHeight);
+            expect(position.pixels, closeTo(before, 1));
+            expect(inputFocus.hasFocus, isTrue);
+            expect(
+              find.byKey(const Key('proposal-confirm-manual-city')),
+              findsNothing,
+            );
+            expect(find.byKey(const Key('location-confirm')), findsNothing);
+            // Deliberately reveal the result before measuring commit movement.
+            final result = find.byKey(const Key('location-result-address'));
+            await tester.ensureVisible(result);
+            await tester.pumpAndSettle();
+            final beforeSelection = position.pixels;
+            await tester.tap(result);
+            await tester.pumpAndSettle();
+            expect(position.pixels, closeTo(beforeSelection, 1));
+            expect(inputFocus.hasFocus, isFalse);
+            expect(locations.value.exactPlace, syntheticExact);
+            expect(locations.value.exactIsPublic, isFalse);
+            expect(locations.mutations.single.$4, 'address');
+            expect(
+              gateway.lastInput!.publicLocationLabel,
+              proposalInputFixture().publicLocationLabel,
+            );
+            tester.view.resetViewInsets();
+            await tester.pumpAndSettle();
+            expect(position.pixels, closeTo(beforeSelection, 1));
+            expect(inputFocus.hasFocus, isFalse);
+            expect(tester.takeException(), isNull);
+
+            await tester.enterText(city, 'Rovereto');
+            await tester.pump(const Duration(milliseconds: 350));
+            await tester.pump(const Duration(milliseconds: 350));
+            await tester.pumpAndSettle();
+            final manualOptions = find.byKey(
+              const Key('proposal-manual-city-options'),
+            );
+            await tester.ensureVisible(manualOptions);
+            await tester.pumpAndSettle();
+            await tester.tap(manualOptions);
+            await tester.pumpAndSettle();
+            final manual = find.byKey(
+              const Key('proposal-confirm-manual-city'),
+            );
+            await tester.ensureVisible(manual);
+            await tester.pumpAndSettle();
+            final beforeManual = position.pixels;
+            await tester.tap(manual);
+            await tester.pumpAndSettle();
+            expect(position.pixels, closeTo(beforeManual, 1));
+            expect(locations.value.exactPlace, isNull);
+            expect(locations.value.publicPlace, isNull);
+            expect(
+              tester.widget<TextFormField>(city).controller!.text,
+              'Rovereto',
+            );
+            for (final input in tester.widgetList<EditableText>(
+              find.byType(EditableText),
+            )) {
+              expect(input.focusNode.hasFocus, isFalse);
+            }
+            expect(tester.takeException(), isNull);
+          },
+        );
+      }
+    }
+  }
+
   for (final language in ['en', 'it']) {
     for (final scale in [1.0, 2.0]) {
       testWidgets(
@@ -587,6 +761,7 @@ Future<FakeProposalGateway> _pumpEditor(
   bool hasPhoto = true,
   OwnProposal? proposal,
   ItemLocationGateway? locations,
+  FakeEditorPlaceFactory? placeFactory,
   String locale = 'en',
   double scale = 1,
 }) async {
@@ -617,6 +792,8 @@ Future<FakeProposalGateway> _pumpEditor(
       proposalGatewayProvider.overrideWithValue(gateway),
       if (locations != null)
         itemLocationGatewayProvider.overrideWithValue(locations),
+      if (placeFactory != null)
+        editorPlaceGatewayFactoryProvider.overrideWithValue(placeFactory),
       profilePhotoGatewayProvider.overrideWithValue(photoGateway),
       proposalClockProvider.overrideWithValue(() => DateTime.utc(2026, 9, 3)),
     ],

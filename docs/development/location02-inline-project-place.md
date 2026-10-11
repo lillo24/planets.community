@@ -8,7 +8,11 @@ resolves and applies a receipt after the ordinary draft save and authorized
 revision read. No second search dialog or address field appears in directions.
 Tavolo and Resource editors retain their existing flows.
 
-The disabled/offline/manual path requires **Use as public city** confirmation.
+The disabled/offline/manual path requires **Use this city without a map**.
+With normal results it is behind **Can't find the place?**; empty/failed/disabled
+search shows the secondary action directly. The action is hidden during lookup,
+receipt resolution/retry and for precise-looking text. Selecting a verified
+suggestion immediately resolves and commits it without another confirmation.
 It creates text only, with no geometry, geocoding claim or Maps destination.
 Obvious address-shaped text (digits, street prefixes, newlines) is rejected by
 the manual-city affordance; this is a conservative UI guard, not a geocoder.
@@ -67,6 +71,19 @@ success until its canonical revision is read. Query and draft snapshots contain
 no receipt or provider identifier. Actor/readiness changes, edits, expiry,
 departure and backgrounding invalidate transient work. Confirmed unsaved manual
 city text survives foreground rereads until its ordinary save acknowledgement.
+
+Autocomplete preparation validates the same content requirements without
+calling `Form.validate`, painting a validation summary or scrolling to an error.
+Invalid content blocks search with a local explanation; deliberate Save/Publish
+still reveals field errors and scrolls to the first invalid section. The previous
+shared save path could scroll from the location field to an invalid title on
+every debounced search. The dirty query now reserves a bounded 160–240dp results
+area with its own scroll view; loading, results, errors and manual options do not
+resize the surrounding page. Large text remains scrollable within that panel.
+Unchanged canonical text does not reset the caret, and selection/manual commit
+releases only the location input's focus before replacing its text. Ordinary
+keyboard visibility and user scrolling remain Flutter-owned; no page-offset
+restoration or Map Search camera changes are introduced.
 
 Arrival directions use a neutral disclosure, collapsed for new content and
 expanded when saved text exists. The exact-place switch and directions clearing

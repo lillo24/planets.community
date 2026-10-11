@@ -65,6 +65,13 @@ void main() {
             final status = find.byType(ProposalStatusBadge);
             final title = find.text(_longTitle);
             final coverRect = tester.getRect(cover);
+            expect(coverRect.width / coverRect.height, closeTo(3 / 2, .001));
+            if (hasImage) {
+              expect(
+                tester.widget<Image>(find.byType(Image)).fit,
+                BoxFit.cover,
+              );
+            }
             final badgeRect = tester.getRect(badge);
             expect(badgeRect.left, greaterThanOrEqualTo(coverRect.left));
             expect(badgeRect.bottom, lessThanOrEqualTo(coverRect.bottom));
