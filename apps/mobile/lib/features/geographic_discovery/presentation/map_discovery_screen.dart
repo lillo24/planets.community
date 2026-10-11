@@ -8,6 +8,7 @@ import 'package:go_router/go_router.dart';
 import 'package:latlong2/latlong.dart';
 
 import '../../../core/widgets/page_app_bar.dart';
+import '../../../app/router/browse_activity_switcher.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../auth/application/auth_session_controller.dart';
 import '../../auth/domain/auth_models.dart';
@@ -93,6 +94,16 @@ class _MapDiscoveryScreenState extends ConsumerState<MapDiscoveryScreen>
         _preferences.longitude,
         _preferences.radiusKm * 1000,
       );
+  bool get _projects =>
+      _preferences.family == MapDiscoveryFamily.all ||
+      _preferences.family == MapDiscoveryFamily.projects;
+  bool get _tavoli =>
+      _preferences.family == MapDiscoveryFamily.all ||
+      _preferences.family == MapDiscoveryFamily.tavoli;
+  bool get _resources =>
+      _preferences.family == MapDiscoveryFamily.all ||
+      _preferences.family == MapDiscoveryFamily.resources;
+
   GeoQuery get _query => GeoQuery(
     area: _area,
     kinds: switch (_preferences.family) {
@@ -101,13 +112,13 @@ class _MapDiscoveryScreenState extends ConsumerState<MapDiscoveryScreen>
       MapDiscoveryFamily.tavoli => {GeoKind.recurring},
       MapDiscoveryFamily.resources => {GeoKind.resource},
     },
-    proposalKeyword: _filters.proposalKeyword,
-    proposalLocality: _filters.proposalLocality,
-    proposalSkillIds: _filters.proposalSkillIds,
-    tavoloLocality: _filters.tavoloLocality,
-    resourceKeyword: _filters.resourceKeyword,
-    resourceLocality: _filters.resourceLocality,
-    resourceMode: _filters.resourceMode,
+    proposalKeyword: _projects ? _filters.proposalKeyword : null,
+    proposalLocality: _projects ? _filters.proposalLocality : null,
+    proposalSkillIds: _projects ? _filters.proposalSkillIds : const [],
+    tavoloLocality: _tavoli ? _filters.tavoloLocality : null,
+    resourceKeyword: _resources ? _filters.resourceKeyword : null,
+    resourceLocality: _resources ? _filters.resourceLocality : null,
+    resourceMode: _resources ? _filters.resourceMode : null,
   );
 
   @override
@@ -193,6 +204,36 @@ class _MapDiscoveryScreenState extends ConsumerState<MapDiscoveryScreen>
     _camera.dispose();
     _placeInput.dispose();
     super.dispose();
+  }
+
+  void _family(MapDiscoveryFamily family) {
+    if (_preferences.family == family) return;
+    final origin = switch (family) {
+      MapDiscoveryFamily.all => widget.origin,
+      MapDiscoveryFamily.projects => MapDiscoveryOrigin.projects,
+      MapDiscoveryFamily.tavoli => MapDiscoveryOrigin.tavoli,
+      MapDiscoveryFamily.resources => MapDiscoveryOrigin.resources,
+    };
+    ref.read(mapDiscoverySessionsProvider).forOrigin(origin).family = family;
+    if (origin == widget.origin) {
+      _search();
+    } else {
+      // Replace the Browse location rather than stacking successive Maps. The
+      // canonical origin also owns List, Create, Drafts and session preferences.
+      context.go('/discover/map/${origin.name}');
+    }
+  }
+
+  void _returnToList() {
+    if (context.canPop()) {
+      context.pop();
+    } else {
+      context.go(switch (widget.origin) {
+        MapDiscoveryOrigin.projects => '/proposals',
+        MapDiscoveryOrigin.tavoli => '/tavoli',
+        MapDiscoveryOrigin.resources => '/resources',
+      });
+    }
   }
 
   void _search() {
@@ -424,363 +465,444 @@ class _MapDiscoveryScreenState extends ConsumerState<MapDiscoveryScreen>
     final viewport = _viewport;
     final usable = viewport != null && isUsableMapViewport(viewport);
     final filterLabels = [
-      if (_filters.proposalKeyword?.isNotEmpty == true)
-        '${l10n.proposalsTitle}: ${_filters.proposalKeyword}',
-      if (_filters.proposalLocality?.isNotEmpty == true)
-        '${l10n.proposalsTitle}: ${_filters.proposalLocality}',
-      if (_filters.proposalSkillIds.isNotEmpty)
-        l10n.mapSkills(_filters.proposalSkillIds.length),
-      if (_filters.tavoloLocality?.isNotEmpty == true)
-        '${l10n.tavoliTitle}: ${_filters.tavoloLocality}',
-      if (_filters.resourceKeyword?.isNotEmpty == true)
-        '${l10n.resourceTitle}: ${_filters.resourceKeyword}',
-      if (_filters.resourceLocality?.isNotEmpty == true)
-        '${l10n.resourceTitle}: ${_filters.resourceLocality}',
-      if (_filters.resourceMode != null)
-        _filters.resourceMode == GeoResourceMode.donate
+      if (_query.proposalKeyword?.isNotEmpty == true)
+        '${l10n.proposalsTitle}: ${_query.proposalKeyword}',
+      if (_query.proposalLocality?.isNotEmpty == true)
+        '${l10n.proposalsTitle}: ${_query.proposalLocality}',
+      if (_query.proposalSkillIds.isNotEmpty)
+        l10n.mapSkills(_query.proposalSkillIds.length),
+      if (_query.tavoloLocality?.isNotEmpty == true)
+        '${l10n.tavoliTitle}: ${_query.tavoloLocality}',
+      if (_query.resourceKeyword?.isNotEmpty == true)
+        '${l10n.resourceTitle}: ${_query.resourceKeyword}',
+      if (_query.resourceLocality?.isNotEmpty == true)
+        '${l10n.resourceTitle}: ${_query.resourceLocality}',
+      if (_query.resourceMode != null)
+        _query.resourceMode == GeoResourceMode.donate
             ? l10n.resourceModeDonate
             : l10n.resourceModeExchange,
     ];
-    return Scaffold(
-      appBar: pageAppBar(
-        context,
-        title: Text(l10n.mapView),
-        actions: [
-          IconButton(
-            tooltip: l10n.draftsTitle,
-            icon: const Icon(Icons.folder_outlined),
-            onPressed: () => context.push(
-              DraftRoutes.contextual(switch (widget.origin) {
-                MapDiscoveryOrigin.projects => {DraftKind.project},
-                MapDiscoveryOrigin.tavoli => {DraftKind.table},
-                MapDiscoveryOrigin.resources => {
-                  DraftKind.donate,
-                  DraftKind.exchange,
-                },
-              }),
-            ),
-          ),
-          IconButton(
-            tooltip: l10n.mapCreate,
-            icon: const Icon(Icons.add),
-            onPressed: () => context.push(
-              '${switch (widget.origin) {
-                MapDiscoveryOrigin.projects => '/proposals',
-                MapDiscoveryOrigin.tavoli => '/tavoli',
-                MapDiscoveryOrigin.resources => '/resources',
-              }}/create',
-            ),
-          ),
-        ],
-      ),
-      bottomNavigationBar: const SafeArea(child: LocationAttribution()),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
-          // Keep one map/controller mounted while its controls and card scroll.
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              MapViewButton(origin: widget.origin, mapSelected: true),
-              Text(l10n.mapPublicReference),
-              const SizedBox(height: 12),
-              DropdownButtonFormField<MapDiscoveryFamily>(
-                key: const Key('map-family'),
-                initialValue: _preferences.family,
-                isExpanded: true,
-                decoration: InputDecoration(labelText: l10n.mapFamily),
-                items: [
-                  for (final family in MapDiscoveryFamily.values)
-                    DropdownMenuItem(
-                      value: family,
-                      child: Text(switch (family) {
-                        MapDiscoveryFamily.all => l10n.mapAll,
-                        MapDiscoveryFamily.projects => l10n.proposalsTitle,
-                        MapDiscoveryFamily.tavoli => l10n.tavoliTitle,
-                        MapDiscoveryFamily.resources => l10n.resourceTitle,
-                      }, overflow: TextOverflow.ellipsis),
-                    ),
-                ],
-                onChanged: (family) {
-                  if (family != null) {
-                    _preferences.family = family;
-                    _search();
-                  }
-                },
+    return PopScope(
+      canPop: context.canPop(),
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) _returnToList();
+      },
+      child: Scaffold(
+        appBar: pageAppBar(
+          context,
+          // List is the visible exit; keep the two icon actions in one toolbar.
+          automaticallyImplyClose: false,
+          title: Text(l10n.mapView),
+          actions: [
+            IconButton(
+              key: const Key('map-drafts'),
+              tooltip: l10n.draftsTitle,
+              icon: const Icon(Icons.folder_outlined),
+              onPressed: () => context.push(
+                DraftRoutes.contextual(switch (widget.origin) {
+                  MapDiscoveryOrigin.projects => {DraftKind.project},
+                  MapDiscoveryOrigin.tavoli => {DraftKind.table},
+                  MapDiscoveryOrigin.resources => {
+                    DraftKind.donate,
+                    DraftKind.exchange,
+                  },
+                }),
               ),
-              if (filterLabels.isNotEmpty) ...[
+            ),
+            IconButton(
+              key: const Key('map-create'),
+              tooltip: l10n.mapCreate,
+              icon: const Icon(Icons.add),
+              onPressed: () => context.push(
+                '${switch (widget.origin) {
+                  MapDiscoveryOrigin.projects => '/proposals',
+                  MapDiscoveryOrigin.tavoli => '/tavoli',
+                  MapDiscoveryOrigin.resources => '/resources',
+                }}/create',
+              ),
+            ),
+          ],
+        ),
+        bottomNavigationBar: const SafeArea(
+          child: IntrinsicHeight(child: LocationAttribution(centered: true)),
+        ),
+        body: SafeArea(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(16),
+            // Keep one map/controller mounted while its controls and card scroll.
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                if (widget.origin != MapDiscoveryOrigin.resources) ...[
+                  BrowseActivitySwitcher(
+                    selected: switch (_preferences.family) {
+                      MapDiscoveryFamily.projects =>
+                        BrowseActivityType.proposals,
+                      MapDiscoveryFamily.tavoli => BrowseActivityType.tavoli,
+                      _ => null,
+                    },
+                    onChanged: (type) => _family(
+                      type == BrowseActivityType.proposals
+                          ? MapDiscoveryFamily.projects
+                          : MapDiscoveryFamily.tavoli,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                ],
+                MapViewButton(origin: widget.origin, mapSelected: true),
                 const SizedBox(height: 8),
-                Text(l10n.mapInheritedFilters),
-                for (final label in filterLabels) Text(label),
-              ],
-              const SizedBox(height: 12),
-              TextField(
-                key: const Key('map-center-input'),
-                controller: _placeInput,
-                enabled: canSearchCenter,
-                maxLength: 160,
-                maxLines: 1,
-                decoration: InputDecoration(
-                  labelText: l10n.mapSearchPlace,
-                  counterText: '',
-                  suffixIcon: _centerBusy
-                      ? const Padding(
-                          padding: EdgeInsets.all(12),
-                          child: SizedBox.square(
-                            dimension: 20,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          ),
-                        )
-                      : null,
-                ),
-                onChanged: _placeChanged,
-              ),
-              if (!canSearchCenter)
-                Text(
-                  gateway.centerEnabled
-                      ? l10n.mapGuestLookupDisabled
-                      : l10n.mapLookupDisabled,
-                ),
-              if (_centerError != null)
-                Semantics(
-                  liveRegion: true,
-                  child: Text(
-                    _centerError == 'expired'
-                        ? l10n.mapCenterExpired
-                        : l10n.mapCenterFailed,
-                  ),
-                ),
-              for (final suggestion in _suggestions)
-                ListTile(
-                  key: Key('map-suggestion-${suggestion.id}'),
-                  title: Text(suggestion.label),
-                  trailing: const Icon(Icons.north_west),
-                  onTap: () => _chooseCenter(suggestion),
-                ),
-              const SizedBox(height: 12),
-              DropdownButtonFormField<double>(
-                key: const Key('map-radius'),
-                initialValue: _preferences.radiusKm,
-                isExpanded: true,
-                decoration: InputDecoration(labelText: l10n.mapRadius),
-                items: [
-                  for (final km in [1.0, 3.0, 5.0, 10.0, 20.0, 50.0, 100.0])
-                    DropdownMenuItem(
-                      value: km,
-                      child: Text('${km.toInt()} km'),
-                    ),
-                ],
-                onChanged: (km) {
-                  if (km != null) _radius(km);
-                },
-              ),
-              const SizedBox(height: 8),
-              Text(
-                _preferences.searchedBounds == null
-                    ? l10n.mapRadiusMode
-                    : l10n.mapBoundsMode,
-              ),
-              if (gateway.isFixture) Text(l10n.mapFixtureTiles),
-              if (_tiles == null)
-                Semantics(
-                  liveRegion: true,
-                  child: Text(
-                    _tileFailed
-                        ? l10n.mapBasemapFailed
-                        : l10n.mapBasemapDisabled,
-                  ),
-                ),
-              const SizedBox(height: 8),
-              SizedBox(
-                height: 340,
-                child: _active
-                    ? PublicPointMap(
-                        controller: _camera,
-                        preferences: _preferences,
-                        clusters: clusterPublicPoints(
-                          state.items,
-                          _preferences.zoom,
-                        ),
-                        tileProvider: _tiles,
-                        onCamera: _cameraChanged,
-                        onCluster: _cluster,
-                        markerLabel: (item) =>
-                            '${_kind(item, l10n)}: ${item.title}. ${item.isApproximate ? l10n.mapApproximate : l10n.mapPrecise}',
-                        clusterLabel: l10n.mapClusterLoaded,
-                        onTileError: () {
-                          if (_tileFailed || !_active) return;
-                          _tileFailed = true;
-                          _tiles?.dispose();
-                          WidgetsBinding.instance.addPostFrameCallback((_) {
-                            if (mounted) setState(() => _tiles = null);
-                          });
-                        },
-                      )
-                    : const Center(child: CircularProgressIndicator()),
-              ),
-              Wrap(
-                spacing: 8,
-                children: [
-                  IconButton(
-                    key: const Key('map-zoom-in'),
-                    tooltip: l10n.mapZoomIn,
-                    onPressed: !_active
-                        ? null
-                        : () {
-                            _dirty = true;
-                            _camera.move(
-                              _camera.camera.center,
-                              (_camera.camera.zoom + 1).clamp(7, 18).toDouble(),
-                            );
-                          },
-                    icon: const Icon(Icons.add),
-                  ),
-                  IconButton(
-                    key: const Key('map-zoom-out'),
-                    tooltip: l10n.mapZoomOut,
-                    onPressed: !_active
-                        ? null
-                        : () {
-                            _dirty = true;
-                            _camera.move(
-                              _camera.camera.center,
-                              (_camera.camera.zoom - 1).clamp(7, 18).toDouble(),
-                            );
-                          },
-                    icon: const Icon(Icons.remove),
-                  ),
-                  if (_dirty && usable)
-                    FilledButton(
-                      key: const Key('map-search-area'),
-                      child: Text(l10n.mapSearchArea),
-                      onPressed: () {
-                        _preferences.searchedBounds = viewport;
-                        _search();
-                      },
-                    ),
-                  if (_preferences.searchedBounds != null)
-                    OutlinedButton(
-                      key: const Key('map-back-radius'),
-                      onPressed: () => _radius(_preferences.radiusKm),
-                      child: Text(l10n.mapBackRadius),
-                    ),
-                  OutlinedButton(
-                    key: const Key('map-use-center'),
-                    onPressed: !_active
-                        ? null
-                        : () {
-                            _centerEpoch++;
-                            _suggestions = const [];
-                            _centerError = null;
-                            _centerBusy = false;
-                            _preferences.latitude = _preferences.cameraLatitude;
-                            _preferences.longitude =
-                                _preferences.cameraLongitude;
-                            _preferences.centerLabel =
-                                l10n.mapSelectedReference;
-                            _placeInput.text = _preferences.centerLabel;
-                            _radius(_preferences.radiusKm, move: false);
-                          },
-                    child: Text(l10n.mapUseCenter),
-                  ),
-                ],
-              ),
-              if (_dirty && !usable) Text(l10n.mapZoomInRequired),
-              if (state.phase == GeoPhase.loading)
-                LinearProgressIndicator(semanticsLabel: l10n.mapLoading),
-              if (state.phase == GeoPhase.ready && state.items.isEmpty)
-                Text(l10n.mapEmpty),
-              if (state.phase == GeoPhase.failure)
-                Semantics(
-                  liveRegion: true,
-                  child: Text(switch (state.failure) {
-                    GeoFailureKind.tooBroad => l10n.mapTooBroad,
-                    GeoFailureKind.malformed => l10n.mapMalformed,
-                    GeoFailureKind.expiredCursor => l10n.mapCursorExpired,
-                    GeoFailureKind.invalidInput => l10n.mapInvalidArea,
-                    _ =>
-                      state.items.isNotEmpty
-                          ? l10n.mapAdditionalPageFailed
-                          : l10n.mapSearchFailed,
-                  }),
-                ),
-              Text(l10n.mapLoaded(state.items.length)),
-              Text(l10n.mapListDifference),
-              if (selected != null)
-                Card(
-                  key: _cardKey,
-                  child: Padding(
-                    padding: const EdgeInsets.all(12),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        if (selected.coverObjectPath != null)
-                          SizedBox(
-                            height: 100,
-                            child: Center(
-                              child: CoverImage(
-                                title: selected.title,
-                                objectPath: selected.coverObjectPath,
+                SizedBox(
+                  key: const Key('map-viewport'),
+                  height: 340,
+                  child: Stack(
+                    children: [
+                      Positioned.fill(
+                        child: _active
+                            ? PublicPointMap(
+                                controller: _camera,
+                                preferences: _preferences,
+                                clusters: clusterPublicPoints(
+                                  state.items,
+                                  _preferences.zoom,
+                                ),
+                                tileProvider: _tiles,
+                                onCamera: _cameraChanged,
+                                onCluster: _cluster,
+                                markerLabel: (item) =>
+                                    '${_kind(item, l10n)}: ${item.title}. ${item.isApproximate ? l10n.mapApproximate : l10n.mapPrecise}',
+                                clusterLabel: l10n.mapClusterLoaded,
+                                onTileError: () {
+                                  if (_tileFailed || !_active) return;
+                                  _tileFailed = true;
+                                  _tiles?.dispose();
+                                  WidgetsBinding.instance.addPostFrameCallback((
+                                    _,
+                                  ) {
+                                    if (mounted) setState(() => _tiles = null);
+                                  });
+                                },
+                              )
+                            : const Center(child: CircularProgressIndicator()),
+                      ),
+                      if (_tiles == null)
+                        Positioned(
+                          top: 8,
+                          left: 8,
+                          right: 8,
+                          child: IgnorePointer(
+                            child: Material(
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .surfaceContainerHigh,
+                              borderRadius: BorderRadius.circular(8),
+                              child: Padding(
+                                padding: const EdgeInsets.all(8),
+                                child: Semantics(
+                                  liveRegion: true,
+                                  child: Text(
+                                    _tileFailed
+                                        ? l10n.mapBasemapFailed
+                                        : l10n.mapBasemapDisabled,
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .labelSmall,
+                                  ),
+                                ),
                               ),
                             ),
                           ),
-                        Text(_kind(selected, l10n)),
-                        Text(
-                          selected.title,
-                          key: const Key('map-selected-title'),
-                          style: Theme.of(context).textTheme.titleLarge,
                         ),
-                        Text(selected.locationLabel),
-                        Text(
-                          selected.isApproximate
-                              ? l10n.mapApproximate
-                              : l10n.mapPrecise,
-                        ),
-                        if (selected.startsAt != null &&
-                            selected.eventTimezone != null)
-                          Text(
-                            formatProposalDateTime(
-                              selected.startsAt!,
-                              selected.eventTimezone!,
-                              l10n.localeName,
-                            ),
-                          ),
-                        FilledButton(
-                          key: const Key('map-open-detail'),
-                          child: Text(l10n.mapOpenDetail),
-                          onPressed: () =>
-                              context.push(mapItemDetailPath(selected)),
-                        ),
-                      ],
-                    ),
+                    ],
                   ),
                 ),
-              Wrap(
-                spacing: 8,
-                children: [
-                  if (state.page?.hasMore == true &&
-                      state.failure != GeoFailureKind.expiredCursor)
-                    FilledButton(
-                      key: const Key('map-load-more'),
-                      onPressed: state.loadingMore
+                Wrap(
+                  spacing: 8,
+                  children: [
+                    IconButton(
+                      key: const Key('map-zoom-in'),
+                      tooltip: l10n.mapZoomIn,
+                      onPressed: !_active
                           ? null
-                          : () => _discovery.loadMore(),
-                      child: Text(
-                        state.loadingMore
-                            ? l10n.mapLoading
-                            : state.phase == GeoPhase.failure
-                            ? l10n.retryAction
-                            : l10n.mapLoadMore,
+                          : () {
+                              _dirty = true;
+                              _camera.move(
+                                _camera.camera.center,
+                                (_camera.camera.zoom + 1)
+                                    .clamp(7, 18)
+                                    .toDouble(),
+                              );
+                            },
+                      icon: const Icon(Icons.add),
+                    ),
+                    IconButton(
+                      key: const Key('map-zoom-out'),
+                      tooltip: l10n.mapZoomOut,
+                      onPressed: !_active
+                          ? null
+                          : () {
+                              _dirty = true;
+                              _camera.move(
+                                _camera.camera.center,
+                                (_camera.camera.zoom - 1)
+                                    .clamp(7, 18)
+                                    .toDouble(),
+                              );
+                            },
+                      icon: const Icon(Icons.remove),
+                    ),
+                    if (_dirty && usable)
+                      FilledButton(
+                        key: const Key('map-search-area'),
+                        child: Text(l10n.mapSearchArea),
+                        onPressed: () {
+                          _preferences.searchedBounds = viewport;
+                          _search();
+                        },
+                      ),
+                    if (_preferences.searchedBounds != null)
+                      OutlinedButton(
+                        key: const Key('map-back-radius'),
+                        onPressed: () => _radius(_preferences.radiusKm),
+                        child: Text(l10n.mapBackRadius),
+                      ),
+                    OutlinedButton(
+                      key: const Key('map-use-center'),
+                      onPressed: !_active
+                          ? null
+                          : () {
+                              _centerEpoch++;
+                              _suggestions = const [];
+                              _centerError = null;
+                              _centerBusy = false;
+                              _preferences.latitude =
+                                  _preferences.cameraLatitude;
+                              _preferences.longitude =
+                                  _preferences.cameraLongitude;
+                              _preferences.centerLabel =
+                                  l10n.mapSelectedReference;
+                              _placeInput.text = _preferences.centerLabel;
+                              _radius(_preferences.radiusKm, move: false);
+                            },
+                      child: Text(l10n.mapUseCenter),
+                    ),
+                  ],
+                ),
+                Text(
+                  l10n.mapSearchReference(_preferences.centerLabel),
+                  key: const Key('map-search-reference'),
+                  style: Theme.of(context).textTheme.labelSmall,
+                ),
+                ExpansionTile(
+                  key: const Key('map-options'),
+                  tilePadding: EdgeInsets.zero,
+                  title: Text(
+                    l10n.mapOptions,
+                    style: Theme.of(context).textTheme.labelLarge,
+                  ),
+                  children: [
+                    DropdownButtonFormField<MapDiscoveryFamily>(
+                      key: const Key('map-family'),
+                      initialValue: _preferences.family,
+                      isExpanded: true,
+                      decoration: InputDecoration(labelText: l10n.mapFamily),
+                      items: [
+                        for (final family in MapDiscoveryFamily.values)
+                          DropdownMenuItem(
+                            value: family,
+                            child: Text(switch (family) {
+                              MapDiscoveryFamily.all => l10n.mapAll,
+                              MapDiscoveryFamily.projects =>
+                                l10n.proposalsTitle,
+                              MapDiscoveryFamily.tavoli => l10n.tavoliTitle,
+                              MapDiscoveryFamily.resources =>
+                                l10n.resourceTitle,
+                            }, overflow: TextOverflow.ellipsis),
+                          ),
+                      ],
+                      onChanged: (family) {
+                        if (family != null) {
+                          _family(family);
+                        }
+                      },
+                    ),
+                    if (filterLabels.isNotEmpty) ...[
+                      const SizedBox(height: 8),
+                      ExpansionTile(
+                        title: Text(
+                          l10n.mapAppliedFilters(filterLabels.length),
+                        ),
+                        children: [
+                          for (final label in filterLabels) Text(label),
+                          TextButton(
+                            onPressed: _returnToList,
+                            child: Text(l10n.mapEditListFilters),
+                          ),
+                        ],
+                      ),
+                    ],
+                    const SizedBox(height: 12),
+                    if (canSearchCenter)
+                      TextField(
+                        key: const Key('map-center-input'),
+                        controller: _placeInput,
+                        enabled: canSearchCenter,
+                        maxLength: 160,
+                        maxLines: 1,
+                        decoration: InputDecoration(
+                          labelText: l10n.mapSearchPlace,
+                          counterText: '',
+                          suffixIcon: _centerBusy
+                              ? const Padding(
+                                  padding: EdgeInsets.all(12),
+                                  child: SizedBox.square(
+                                    dimension: 20,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                    ),
+                                  ),
+                                )
+                              : null,
+                        ),
+                        onChanged: _placeChanged,
+                      ),
+                    if (_centerError != null)
+                      Semantics(
+                        liveRegion: true,
+                        child: Text(
+                          _centerError == 'expired'
+                              ? l10n.mapCenterExpired
+                              : l10n.mapCenterFailed,
+                        ),
+                      ),
+                    for (final suggestion in _suggestions)
+                      ListTile(
+                        key: Key('map-suggestion-${suggestion.id}'),
+                        title: Text(suggestion.label),
+                        trailing: const Icon(Icons.north_west),
+                        onTap: () => _chooseCenter(suggestion),
+                      ),
+                    const SizedBox(height: 12),
+                    DropdownButtonFormField<double>(
+                      key: const Key('map-radius'),
+                      initialValue: _preferences.radiusKm,
+                      isExpanded: true,
+                      decoration: InputDecoration(labelText: l10n.mapRadius),
+                      items: [
+                        for (final km in [
+                          1.0,
+                          3.0,
+                          5.0,
+                          10.0,
+                          20.0,
+                          50.0,
+                          100.0,
+                        ])
+                          DropdownMenuItem(
+                            value: km,
+                            child: Text('${km.toInt()} km'),
+                          ),
+                      ],
+                      onChanged: (km) {
+                        if (km != null) _radius(km);
+                      },
+                    ),
+                  ],
+                ),
+                if (_dirty && !usable) Text(l10n.mapZoomInRequired),
+                if (state.phase == GeoPhase.loading)
+                  LinearProgressIndicator(semanticsLabel: l10n.mapLoading),
+                if (state.phase == GeoPhase.ready && state.items.isEmpty)
+                  Text(l10n.mapEmpty),
+                if (state.phase == GeoPhase.failure)
+                  Semantics(
+                    liveRegion: true,
+                    child: Text(switch (state.failure) {
+                      GeoFailureKind.tooBroad => l10n.mapTooBroad,
+                      GeoFailureKind.malformed => l10n.mapMalformed,
+                      GeoFailureKind.expiredCursor => l10n.mapCursorExpired,
+                      GeoFailureKind.invalidInput => l10n.mapInvalidArea,
+                      _ =>
+                        state.items.isNotEmpty
+                            ? l10n.mapAdditionalPageFailed
+                            : l10n.mapSearchFailed,
+                    }),
+                  ),
+                if (selected != null)
+                  Card(
+                    key: _cardKey,
+                    child: Padding(
+                      padding: const EdgeInsets.all(12),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          if (selected.coverObjectPath != null)
+                            SizedBox(
+                              height: 100,
+                              child: Center(
+                                child: CoverImage(
+                                  title: selected.title,
+                                  objectPath: selected.coverObjectPath,
+                                ),
+                              ),
+                            ),
+                          Text(_kind(selected, l10n)),
+                          Text(
+                            selected.title,
+                            key: const Key('map-selected-title'),
+                            style: Theme.of(context).textTheme.titleLarge,
+                          ),
+                          Text(selected.locationLabel),
+                          Text(
+                            selected.isApproximate
+                                ? l10n.mapApproximate
+                                : l10n.mapPrecise,
+                          ),
+                          if (selected.startsAt != null &&
+                              selected.eventTimezone != null)
+                            Text(
+                              formatProposalDateTime(
+                                selected.startsAt!,
+                                selected.eventTimezone!,
+                                l10n.localeName,
+                              ),
+                            ),
+                          FilledButton(
+                            key: const Key('map-open-detail'),
+                            child: Text(l10n.mapOpenDetail),
+                            onPressed: () =>
+                                context.push(mapItemDetailPath(selected)),
+                          ),
+                        ],
                       ),
                     ),
-                  OutlinedButton(
-                    key: const Key('map-refresh'),
-                    onPressed: !_active ? null : _search,
-                    child: Text(l10n.mapRefresh),
                   ),
-                ],
-              ),
-            ],
+                Wrap(
+                  spacing: 8,
+                  children: [
+                    if (state.page?.hasMore == true &&
+                        state.failure != GeoFailureKind.expiredCursor)
+                      FilledButton(
+                        key: const Key('map-load-more'),
+                        onPressed: state.loadingMore
+                            ? null
+                            : () => _discovery.loadMore(),
+                        child: Text(
+                          state.loadingMore
+                              ? l10n.mapLoading
+                              : state.phase == GeoPhase.failure
+                              ? l10n.retryAction
+                              : l10n.mapLoadMore,
+                        ),
+                      ),
+                    OutlinedButton(
+                      key: const Key('map-refresh'),
+                      onPressed: !_active ? null : _search,
+                      child: Text(l10n.mapRefresh),
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
         ),
       ),

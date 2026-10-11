@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:planets_mobile/l10n/generated/app_localizations.dart';
+import 'package:planets_mobile/app/router/browse_activity_switcher.dart';
+import 'package:planets_mobile/features/geographic_discovery/domain/geographic_discovery.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:planets_mobile/features/geographic_discovery/domain/map_discovery.dart';
 import 'package:planets_mobile/features/locations/data/location_preview_gateway.dart';
@@ -8,6 +11,81 @@ import '../../../test_support/map05_app_fixture.dart';
 import '../../support/fake_location_preview.dart';
 
 void main() {
+  for (final start in ['proposals', 'tavoli']) {
+    testWidgets(
+      '$start Map keeps activity selection and switches without leaving Map',
+      (t) async {
+        final fixture = Map05AppFixture();
+        addTearDown(() async {
+          await t.pumpWidget(const SizedBox());
+          await t.pump(const Duration(seconds: 1));
+          fixture.dispose();
+        });
+        fixture.router.go('/$start');
+        await t.pumpWidget(fixture.app);
+        await t.pumpAndSettle();
+        await t.tap(
+          find.byKey(
+            Key('map-open-${start == 'proposals' ? 'projects' : 'tavoli'}'),
+          ),
+        );
+        await t.pumpAndSettle();
+        final switcher = find.byKey(const Key('browse-activity-switcher'));
+        expect(switcher, findsOneWidget);
+        final l = AppLocalizations.of(t.element(switcher));
+        final target = start == 'proposals'
+            ? l.browseTavoliChoice
+            : l.browseProposalsChoice;
+        await t.tap(find.descendant(of: switcher, matching: find.text(target)));
+        await t.pumpAndSettle();
+        final origin = start == 'proposals' ? 'tavoli' : 'projects';
+        expect(
+          fixture.router.routerDelegate.state.uri.path,
+          '/discover/map/$origin',
+        );
+        expect(
+          fixture.geography.calls.last.query.kinds,
+          start == 'proposals' ? {GeoKind.recurring} : {GeoKind.oneTime},
+        );
+        expect(
+          t.widget<SegmentedButton<BrowseActivityType>>(switcher).selected,
+          {
+            start == 'proposals'
+                ? BrowseActivityType.tavoli
+                : BrowseActivityType.proposals,
+          },
+        );
+        expect(find.byKey(const Key('map-map-selected')), findsOneWidget);
+        await t.tap(find.byKey(const Key('map-return-list')));
+        await t.pumpAndSettle();
+        expect(
+          fixture.router.routerDelegate.state.uri.path,
+          start == 'proposals' ? '/tavoli' : '/proposals',
+        );
+        await t.tap(find.byKey(Key('map-open-$origin')));
+        await t.pumpAndSettle();
+        final reverse = start == 'proposals'
+            ? l.browseProposalsChoice
+            : l.browseTavoliChoice;
+        await t.tap(
+          find.descendant(of: switcher, matching: find.text(reverse)),
+        );
+        await t.pumpAndSettle();
+        await t.tap(find.descendant(of: switcher, matching: find.text(target)));
+        await t.pumpAndSettle();
+        await t.binding.handlePopRoute();
+        await t.pumpAndSettle();
+        expect(
+          fixture.router.routerDelegate.state.uri.path,
+          start == 'proposals' ? '/tavoli' : '/proposals',
+        );
+        expect(fixture.router.canPop(), isFalse);
+        await t.pumpWidget(const SizedBox());
+        await t.pump(const Duration(seconds: 1));
+      },
+    );
+  }
+
   for (final route in ['proposals', 'tavoli']) {
     for (final language in ['en', 'it']) {
       for (final scale in [1.0, 2.0]) {

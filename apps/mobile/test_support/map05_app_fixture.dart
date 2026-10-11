@@ -109,6 +109,7 @@ class Map05AppFixture {
   final resources = FakeResourceListingGateway();
   final geography = FixtureGeographicGateway();
   final provider = FixtureMapProviderGateway(tilesEnabled: true);
+  double? textScale;
   final locale = ValueNotifier(const Locale('en'));
   late final ProviderContainer container;
   late final GoRouter router;
@@ -118,6 +119,13 @@ class Map05AppFixture {
       valueListenable: locale,
       builder: (_, language, _) => MaterialApp.router(
         theme: AppTheme.light,
+        builder: (context, child) => MediaQuery(
+          data: textScale == null
+              ? MediaQuery.of(context)
+              : MediaQuery.of(context)
+                    .copyWith(textScaler: TextScaler.linear(textScale!)),
+          child: child!,
+        ),
         routerConfig: router,
         locale: language,
         localizationsDelegates: AppLocalizations.localizationsDelegates,

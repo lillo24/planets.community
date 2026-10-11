@@ -16,6 +16,7 @@ import 'package:planets_mobile/features/auth/application/auth_session_controller
 import 'package:planets_mobile/features/auth/data/auth_gateway.dart';
 import 'package:planets_mobile/features/auth/domain/auth_models.dart';
 import 'package:planets_mobile/features/messages/data/messages_gateway.dart';
+import 'package:planets_mobile/features/geographic_discovery/data/geographic_discovery_gateway.dart';
 import 'package:planets_mobile/features/messages/data/message_chats_gateway.dart';
 import 'package:planets_mobile/features/moderation/data/corroboration_gateway.dart';
 import 'package:planets_mobile/features/moderation/data/counterstatement_gateway.dart';
@@ -50,8 +51,32 @@ import '../../support/fake_resource_listing.dart';
 import '../../support/fake_settings.dart';
 import '../../support/fake_messages.dart';
 import '../../support/fake_message_chats.dart';
+import '../../../test_support/map_discovery_fixture.dart';
 
 void main() {
+  testWidgets(
+    'Map family replacement keeps Browse selected and Back opens its List',
+    (tester) async {
+      final app = await _pump(tester);
+      final router = app.read(appRouterProvider);
+      router.go('/proposals');
+      await tester.pumpAndSettle();
+      await _tap(tester, 'map-open-projects');
+      await tester.tap(find.text('Cultural Tables').first);
+      await tester.pumpAndSettle();
+      expect(router.routerDelegate.state.uri.path, '/discover/map/tavoli');
+      expect(
+        tester.widget<NavigationBar>(find.byType(NavigationBar)).selectedIndex,
+        2,
+      );
+      await tester.binding.handlePopRoute();
+      await tester.pumpAndSettle();
+      expect(router.routerDelegate.state.uri.path, '/tavoli');
+      expect(router.canPop(), isFalse);
+      expect(tester.takeException(), isNull);
+    },
+  );
+
   testWidgets(
     'protected creation return opens the chooser before scratch and never creates on sign-in',
     (tester) async {
@@ -1555,6 +1580,9 @@ Future<ProviderContainer> _pump(
     ProviderScope(
       overrides: [
         preacceptedPolicyFixture,
+        geographicDiscoveryGatewayProvider.overrideWithValue(
+          FixtureGeographicGateway(),
+        ),
         // Feature fixtures begin after onboarding; startup tests own first-run.
         initialStartupPreferenceProvider.overrideWithValue(
           StartupPreference(completedVersion: productionTutorial.version),
