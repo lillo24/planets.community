@@ -611,6 +611,8 @@ void main() {
       await tester.tap(find.byKey(const Key('project-share-copy')));
       await tester.pumpAndSettle();
       expect(h.sharing.copied, 'https://planets.community/join/project/$token');
+      await tester.tap(find.byKey(const Key('participant-link-actions')));
+      await tester.pumpAndSettle();
       await tester.tap(find.byKey(const Key('participant-link-revoke')));
       await tester.pumpAndSettle();
       expect(h.gateway.calls.where((s) => s.startsWith('revoke')), isEmpty);

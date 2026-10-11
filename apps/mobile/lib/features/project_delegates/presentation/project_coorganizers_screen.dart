@@ -77,35 +77,42 @@ class _ProjectTeamScreenState extends ConsumerState<ProjectTeamScreen> {
                 child: ListView(
                   padding: const EdgeInsets.all(AppSpacing.medium),
                   children: [
-                    Text(l10n.projectTeamIntro),
-                    const SizedBox(height: AppSpacing.medium),
                     Text(
-                      l10n.projectDelegateInviteRoleTitle,
+                      l10n.organizationInviteOrganizer,
                       style: Theme.of(context).textTheme.titleMedium,
                     ),
                     const SizedBox(height: AppSpacing.small),
-                    SegmentedButton<ProjectDelegatedAuthorityRole>(
-                      segments: [
-                        ButtonSegment(
-                          value: ProjectDelegatedAuthorityRole.coOrganizer,
-                          label: Text(
-                            l10n.projectInviteCoOrganizerRole,
-                            key: const Key('project-team-role-co-organizer'),
+                    RadioGroup<ProjectDelegatedAuthorityRole>(
+                      groupValue: _inviteRole,
+                      onChanged: (role) {
+                        if (!state.mutating && role != null) {
+                          setState(() => _inviteRole = role);
+                        }
+                      },
+                      child: Column(
+                        children: [
+                          RadioListTile<ProjectDelegatedAuthorityRole>(
+                            contentPadding: EdgeInsets.zero,
+                            enabled: !state.mutating,
+                            value: ProjectDelegatedAuthorityRole.coOrganizer,
+                            title: Text(
+                              l10n.projectInviteCoOrganizerRole,
+                              key: const Key('project-team-role-co-organizer'),
+                              style: Theme.of(context).textTheme.bodyMedium,
+                            ),
                           ),
-                        ),
-                        ButtonSegment(
-                          value: ProjectDelegatedAuthorityRole.coCreator,
-                          label: Text(
-                            l10n.projectInviteCoCreatorRole,
-                            key: const Key('project-team-role-co-creator'),
+                          RadioListTile<ProjectDelegatedAuthorityRole>(
+                            contentPadding: EdgeInsets.zero,
+                            enabled: !state.mutating,
+                            value: ProjectDelegatedAuthorityRole.coCreator,
+                            title: Text(
+                              l10n.projectInviteCoCreatorRole,
+                              key: const Key('project-team-role-co-creator'),
+                              style: Theme.of(context).textTheme.bodyMedium,
+                            ),
                           ),
-                        ),
-                      ],
-                      selected: {_inviteRole},
-                      onSelectionChanged: state.mutating
-                          ? null
-                          : (selection) =>
-                                setState(() => _inviteRole = selection.single),
+                        ],
+                      ),
                     ),
                     const SizedBox(height: AppSpacing.xSmall),
                     Text(
@@ -132,15 +139,13 @@ class _ProjectTeamScreenState extends ConsumerState<ProjectTeamScreen> {
                         ),
                       ),
                     ],
-                    const SizedBox(height: AppSpacing.large),
-                    Text(
-                      l10n.projectDelegateActiveTitle,
-                      style: Theme.of(context).textTheme.titleLarge,
-                    ),
-                    const SizedBox(height: AppSpacing.small),
-                    if (state.delegates.isEmpty)
-                      Text(l10n.projectDelegateActiveEmpty)
-                    else
+                    if (state.delegates.isNotEmpty) ...[
+                      const SizedBox(height: AppSpacing.large),
+                      Text(
+                        l10n.organizationTeamRoles,
+                        style: Theme.of(context).textTheme.titleMedium,
+                      ),
+                      const SizedBox(height: AppSpacing.small),
                       for (final delegate in state.delegates)
                         _delegateCard(
                           context,
@@ -148,23 +153,28 @@ class _ProjectTeamScreenState extends ConsumerState<ProjectTeamScreen> {
                           isCurrentUser: delegate.profileId == profileId,
                           mutating: state.mutating,
                         ),
-                    const SizedBox(height: AppSpacing.large),
-                    Text(
-                      l10n.projectDelegatePendingTitle,
-                      style: Theme.of(context).textTheme.titleLarge,
-                    ),
-                    const SizedBox(height: AppSpacing.small),
-                    if (state.invitations.isEmpty)
-                      Text(l10n.projectDelegatePendingEmpty)
-                    else
+                    ],
+                    if (state.invitations.isNotEmpty) ...[
+                      const SizedBox(height: AppSpacing.large),
+                      Text(
+                        l10n.projectDelegatePendingTitle,
+                        style: Theme.of(context).textTheme.titleMedium,
+                      ),
+                      const SizedBox(height: AppSpacing.small),
                       for (final invitation in state.invitations)
                         _invitationCard(
                           context,
                           invitation,
                           mutating: state.mutating,
                         ),
-                    const SizedBox(height: AppSpacing.medium),
-                    Text(l10n.projectDelegateLostLinkHelp),
+                    ],
+                    if (state.phase == ProjectDelegateLoadPhase.loading)
+                      const LinearProgressIndicator(),
+                    if (state.failure != null)
+                      TextButton(
+                        onPressed: _load,
+                        child: Text(l10n.retryAction),
+                      ),
                   ],
                 ),
               ),
@@ -179,81 +189,128 @@ class _ProjectTeamScreenState extends ConsumerState<ProjectTeamScreen> {
     required bool mutating,
   }) {
     final l10n = AppLocalizations.of(context);
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.only(bottom: AppSpacing.small),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            ListTile(
-              key: Key('project-delegate-${delegate.id}'),
-              title: Text(delegate.displayName),
-              trailing: Chip(
-                label: Text(_roleLabel(l10n, delegate.authorityRole)),
-              ),
-              subtitle: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    l10n.projectDelegateAcceptedDate(
-                      _formatDate(context, delegate.delegatedAt),
-                    ),
-                  ),
-                  Text(
-                    l10n.projectDelegateAddedBy(delegate.grantedByDisplayName),
-                  ),
-                  if (isCurrentUser)
-                    Text(
-                      l10n.projectDelegateCurrentUser,
-                      key: Key('project-delegate-self-${delegate.id}'),
-                    ),
-                ],
-              ),
-            ),
-            if (!isCurrentUser)
-              Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: AppSpacing.small,
-                ),
-                child: Wrap(
-                  alignment: WrapAlignment.end,
-                  spacing: AppSpacing.xSmall,
-                  children: [
-                    if (delegate.authorityRole ==
-                        ProjectDelegatedAuthorityRole.coOrganizer)
-                      TextButton(
-                        key: Key('project-delegate-promote-${delegate.id}'),
-                        onPressed: mutating
-                            ? null
-                            : () => _changeRole(
-                                delegate,
-                                ProjectDelegatedAuthorityRole.coCreator,
+    return ListTile(
+      contentPadding: EdgeInsets.zero,
+      key: Key('project-delegate-${delegate.id}'),
+      title: Text(delegate.displayName),
+      trailing: PopupMenuButton<String>(
+        key: Key('project-delegate-actions-${delegate.id}'),
+        tooltip: l10n.peopleActions,
+        enabled: !mutating,
+        onSelected: (action) {
+          if (action == 'details') {
+            final expectedProfileId = ref
+                .read(authSessionProvider)
+                .identity
+                ?.id;
+            showModalBottomSheet<void>(
+              context: context,
+              isScrollControlled: true,
+              builder: (context) => Consumer(
+                builder: (context, ref, _) {
+                  final identity = ref.watch(authSessionProvider).identity?.id;
+                  final team = ref.watch(projectTeamProvider);
+                  final allowed =
+                      expectedProfileId != null &&
+                      identity == expectedProfileId &&
+                      team.isFor(
+                        expectedProfileId,
+                        widget.projectId,
+                        widget.projectKind,
+                      ) &&
+                      team.actorRole?.hasStructuralAuthority == true &&
+                      team.delegates.any((person) => person.id == delegate.id);
+                  if (!allowed) {
+                    final route = ModalRoute.of(context);
+                    Future<void>.microtask(() {
+                      if (context.mounted && route?.isCurrent == true) {
+                        Navigator.of(context).pop();
+                      }
+                    });
+                    return const SizedBox.shrink();
+                  }
+                  return SafeArea(
+                    key: const Key('project-role-details'),
+                    child: SingleChildScrollView(
+                      child: Padding(
+                        padding: const EdgeInsets.all(AppSpacing.large),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            Text(
+                              delegate.displayName,
+                              style: Theme.of(context).textTheme.titleMedium,
+                            ),
+                            Text(_roleLabel(l10n, delegate.authorityRole)),
+                            Text(
+                              l10n.projectDelegateAcceptedDate(
+                                _formatDate(context, delegate.delegatedAt),
                               ),
-                        child: Text(l10n.projectDelegatePromoteAction),
-                      )
-                    else
-                      TextButton(
-                        key: Key('project-delegate-demote-${delegate.id}'),
-                        onPressed: mutating
-                            ? null
-                            : () => _changeRole(
-                                delegate,
-                                ProjectDelegatedAuthorityRole.coOrganizer,
+                            ),
+                            Text(
+                              l10n.projectDelegateAddedBy(
+                                delegate.grantedByDisplayName,
                               ),
-                        child: Text(l10n.projectDelegateDemoteAction),
+                            ),
+                          ],
+                        ),
                       ),
-                    TextButton(
-                      key: Key('project-delegate-revoke-${delegate.id}'),
-                      onPressed: mutating
-                          ? null
-                          : () => _removeDelegate(delegate),
-                      child: Text(l10n.projectDelegateRemoveAction),
                     ),
-                  ],
-                ),
+                  );
+                },
               ),
+            );
+          } else if (!isCurrentUser) {
+            if (action == 'revoke') {
+              _removeDelegate(delegate);
+            } else {
+              _changeRole(
+                delegate,
+                action == 'promote'
+                    ? ProjectDelegatedAuthorityRole.coCreator
+                    : ProjectDelegatedAuthorityRole.coOrganizer,
+              );
+            }
+          }
+        },
+        itemBuilder: (_) => [
+          PopupMenuItem(
+            value: 'details',
+            child: Text(l10n.organizationRoleDetails),
+          ),
+          if (!isCurrentUser) ...[
+            if (delegate.authorityRole ==
+                ProjectDelegatedAuthorityRole.coOrganizer)
+              PopupMenuItem(
+                key: Key('project-delegate-promote-${delegate.id}'),
+                value: 'promote',
+                child: Text(l10n.projectDelegatePromoteAction),
+              )
+            else
+              PopupMenuItem(
+                key: Key('project-delegate-demote-${delegate.id}'),
+                value: 'demote',
+                child: Text(l10n.projectDelegateDemoteAction),
+              ),
+            PopupMenuItem(
+              key: Key('project-delegate-revoke-${delegate.id}'),
+              value: 'revoke',
+              child: Text(l10n.projectDelegateRemoveAction),
+            ),
           ],
-        ),
+        ],
+      ),
+      subtitle: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(_roleLabel(l10n, delegate.authorityRole)),
+          if (isCurrentUser)
+            Text(
+              l10n.projectDelegateCurrentUser,
+              key: Key('project-delegate-self-${delegate.id}'),
+            ),
+        ],
       ),
     );
   }
@@ -265,11 +322,23 @@ class _ProjectTeamScreenState extends ConsumerState<ProjectTeamScreen> {
   }) {
     final l10n = AppLocalizations.of(context);
     return Card(
-      child: ListTile(
-        key: Key('project-invitation-${invitation.id}'),
-        title: Text(_roleLabel(l10n, invitation.requestedAuthorityRole)),
-        subtitle: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+      child: ListTileTheme.merge(
+        horizontalTitleGap: AppSpacing.small,
+        child: ExpansionTile(
+          tilePadding: const EdgeInsets.symmetric(horizontal: 12),
+          key: Key('project-invitation-${invitation.id}'),
+          title: Text(
+            _roleLabel(l10n, invitation.requestedAuthorityRole),
+            style: Theme.of(context).textTheme.bodyMedium,
+          ),
+          subtitle: Text(
+            l10n.organizationInvitationExpiry(
+              DateFormat.yMMMd(Localizations.localeOf(context).toLanguageTag())
+                  .format(invitation.expiresAt.toLocal()),
+            ),
+          ),
+          childrenPadding: const EdgeInsets.all(AppSpacing.medium),
+          expandedCrossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Text(
               l10n.projectDelegateInviteDates(
@@ -278,12 +347,13 @@ class _ProjectTeamScreenState extends ConsumerState<ProjectTeamScreen> {
               ),
             ),
             Text(l10n.projectDelegateIssuedBy(invitation.issuerDisplayName)),
+            TextButton.icon(
+              key: Key('project-invitation-revoke-${invitation.id}'),
+              onPressed: mutating ? null : () => _revokeInvitation(invitation),
+              label: Text(l10n.projectDelegateRevokeAction),
+              icon: const Icon(Icons.link_off),
+            ),
           ],
-        ),
-        trailing: TextButton(
-          key: Key('project-invitation-revoke-${invitation.id}'),
-          onPressed: mutating ? null : () => _revokeInvitation(invitation),
-          child: Text(l10n.projectDelegateRevokeAction),
         ),
       ),
     );
@@ -300,9 +370,7 @@ class _ProjectTeamScreenState extends ConsumerState<ProjectTeamScreen> {
       _inviteRole == ProjectDelegatedAuthorityRole.coCreator
           ? l10n.projectDelegateHighPrivilegeConfirmTitle
           : l10n.projectDelegateInviteAction,
-      _inviteRole == ProjectDelegatedAuthorityRole.coCreator
-          ? l10n.projectDelegateHighPrivilegeConfirmMessage
-          : l10n.projectDelegateCapacityImplication,
+      '${_inviteRole == ProjectDelegatedAuthorityRole.coCreator ? l10n.projectDelegateHighPrivilegeConfirmMessage : l10n.projectDelegateCapacityImplication}\n\n${l10n.projectDelegateLostLinkHelp}',
       l10n.projectDelegateInviteAction,
     );
     if (!confirmed || !mounted) return;
@@ -422,59 +490,65 @@ class _InvitationResultSheet extends ConsumerWidget {
     return SafeArea(
       child: Padding(
         padding: const EdgeInsets.all(AppSpacing.large),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Text(
-              l10n.projectDelegateCreatedTitle,
-              style: Theme.of(context).textTheme.titleLarge,
-            ),
-            const SizedBox(height: AppSpacing.small),
-            Text(l10n.projectDelegateCreatedRole(role)),
-            const SizedBox(height: AppSpacing.small),
-            SelectableText(result.url, key: const Key('delegate-invite-url')),
-            const SizedBox(height: AppSpacing.small),
-            Text(l10n.projectDelegateCreatedSecurity),
-            const SizedBox(height: AppSpacing.medium),
-            Wrap(
-              spacing: AppSpacing.small,
-              children: [
-                OutlinedButton.icon(
-                  key: const Key('delegate-invite-copy'),
-                  onPressed: () async {
-                    await ref
-                        .read(projectInviteSharingProvider)
-                        .copy(result.url);
-                    if (context.mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text(l10n.projectDelegateCopied)),
-                      );
-                    }
-                  },
-                  icon: const Icon(Icons.copy_outlined),
-                  label: Text(l10n.projectDelegateCopyAction),
-                ),
-                Builder(
-                  builder: (buttonContext) => FilledButton.icon(
-                    key: const Key('delegate-invite-share'),
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(
+                l10n.projectDelegateCreatedTitle,
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+              const SizedBox(height: AppSpacing.small),
+              Text(l10n.projectDelegateCreatedRole(role)),
+              const SizedBox(height: AppSpacing.small),
+              SelectableText(result.url, key: const Key('delegate-invite-url')),
+              const SizedBox(height: AppSpacing.small),
+              Text(l10n.projectDelegateCreatedSecurity),
+              if (result.requestedAuthorityRole ==
+                  ProjectDelegatedAuthorityRole.coCreator)
+                Text(l10n.projectDelegateCoCreatorDescription),
+              Text(l10n.projectDelegateLostLinkHelp),
+              const SizedBox(height: AppSpacing.medium),
+              Wrap(
+                spacing: AppSpacing.small,
+                children: [
+                  OutlinedButton.icon(
+                    key: const Key('delegate-invite-copy'),
                     onPressed: () async {
-                      final box =
-                          buttonContext.findRenderObject() as RenderBox?;
-                      final origin = box == null
-                          ? null
-                          : box.localToGlobal(Offset.zero) & box.size;
                       await ref
                           .read(projectInviteSharingProvider)
-                          .share(shareText, origin: origin);
+                          .copy(result.url);
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text(l10n.projectDelegateCopied)),
+                        );
+                      }
                     },
-                    icon: const Icon(Icons.share_outlined),
-                    label: Text(l10n.projectDelegateShareAction),
+                    icon: const Icon(Icons.copy_outlined),
+                    label: Text(l10n.projectDelegateCopyAction),
                   ),
-                ),
-              ],
-            ),
-          ],
+                  Builder(
+                    builder: (buttonContext) => FilledButton.icon(
+                      key: const Key('delegate-invite-share'),
+                      onPressed: () async {
+                        final box =
+                            buttonContext.findRenderObject() as RenderBox?;
+                        final origin = box == null
+                            ? null
+                            : box.localToGlobal(Offset.zero) & box.size;
+                        await ref
+                            .read(projectInviteSharingProvider)
+                            .share(shareText, origin: origin);
+                      },
+                      icon: const Icon(Icons.share_outlined),
+                      label: Text(l10n.projectDelegateShareAction),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );

@@ -48,6 +48,7 @@ class ParticipantLinkManagementScreen extends ConsumerStatefulWidget {
 class _ParticipantLinkManagementScreenState
     extends ConsumerState<ParticipantLinkManagementScreen> {
   late final String? _account;
+  bool _historyExpanded = false;
   @override
   void initState() {
     super.initState();
@@ -145,12 +146,41 @@ class _ParticipantLinkManagementScreenState
         _account != null &&
         state.isFor(_account, widget.projectId, widget.kind);
     final ready = belongs && state.ready && state.role.isManager;
+    final help = IconButton(
+      key: const Key('participant-link-help'),
+      tooltip: l10n.organizationLinkHelp,
+      icon: const Icon(Icons.help_outline),
+      onPressed: () => showDialog<void>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: Text(l10n.organizationLinkHelp),
+          content: Text(l10n.participantLinkNotJoinable),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text(l10n.projectShareClose),
+            ),
+          ],
+        ),
+      ),
+    );
     return Scaffold(
       appBar: pageAppBar(context, title: Text(l10n.participantLinksTitle)),
       body: SafeArea(
         child: ListView(
           padding: const EdgeInsets.all(AppSpacing.large),
           children: [
+            if (ready) ...[
+              Text(
+                state.link == null
+                    ? l10n.organizationNoParticipantLink
+                    : l10n.organizationReusableLink,
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+              const SizedBox(height: AppSpacing.small),
+              Text(l10n.organizationDirectAdmissionWarning),
+              const SizedBox(height: AppSpacing.medium),
+            ],
             // Preserve the disclosure boundary while its fresh canonical read
             // temporarily hides the management controls.
             Visibility(
@@ -191,88 +221,104 @@ class _ParticipantLinkManagementScreenState
                 key: const Key('participant-link-error'),
               ),
             if (ready) ...[
-              Text(l10n.projectShareSpecialExplanation),
-              Text(l10n.participantLinkNotJoinable),
               if (state.joinable == false)
                 Text(l10n.participantInviteUnavailable),
               if (state.previewFailure != null)
                 Text(
                   participantInviteFailureMessage(l10n, state.previewFailure!),
                 ),
-              if (state.link != null) ...[
-                Text(
-                  l10n.participantLinkCurrent,
-                  style: Theme.of(context).textTheme.titleLarge,
-                ),
-                OutlinedButton(
-                  key: const Key('participant-link-revoke'),
-                  onPressed: state.busy
-                      ? null
-                      : () => _confirm(ParticipantLinkOperation.revoke),
-                  child: Text(l10n.participantLinkRevoke),
-                ),
-              ] else
-                Text(l10n.participantLinkNone),
-              FilledButton(
-                key: const Key('participant-link-regenerate'),
-                onPressed: state.busy
-                    ? null
-                    : state.link == null
-                    ? () => ref
-                          .read(participantLinkManagerProvider.notifier)
-                          .mutate(
-                            _account,
-                            widget.projectId,
-                            widget.kind,
-                            ParticipantLinkOperation.create,
-                          )
-                    : () => _confirm(ParticipantLinkOperation.regenerate),
-                child: Text(
-                  state.link == null
-                      ? l10n.participantLinkCreate
-                      : l10n.participantLinkRegenerate,
-                ),
-              ),
-              Text(
-                l10n.participantLinkHistory,
-                style: Theme.of(context).textTheme.titleLarge,
-              ),
-              for (final generation in state.history)
-                ListTile(
-                  key: ValueKey(generation.id),
-                  title: Text(
-                    generation.reason == 'revoked'
-                        ? l10n.participantLinkRevoked
-                        : generation.reason == 'replaced'
-                        ? l10n.participantLinkReplaced
-                        : l10n.participantLinkActive,
-                  ),
-                  subtitle: Text(
-                    DateFormat.yMMMd(
-                      Localizations.localeOf(context).toLanguageTag(),
-                    ).add_jm().format(generation.createdAt.toLocal()),
-                  ),
-                ),
-              if (state.hasMore)
-                TextButton(
-                  key: const Key('participant-link-history-more'),
+              if (state.link == null)
+                FilledButton(
+                  key: const Key('participant-link-regenerate'),
                   onPressed: state.busy
                       ? null
                       : () => ref
                             .read(participantLinkManagerProvider.notifier)
-                            .load(
+                            .mutate(
                               _account,
                               widget.projectId,
                               widget.kind,
-                              more: true,
+                              ParticipantLinkOperation.create,
                             ),
-                  child: Text(l10n.participantLinkMore),
+                  child: Text(
+                    l10n.participantLinkCreate,
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+              Wrap(
+                alignment: WrapAlignment.end,
+                children: [
+                  help,
+                  if (state.link != null)
+                    PopupMenuButton<ParticipantLinkOperation>(
+                      key: const Key('participant-link-actions'),
+                      tooltip: l10n.organizationLinkActions,
+                      enabled: !state.busy,
+                      onSelected: _confirm,
+                      itemBuilder: (_) => [
+                        PopupMenuItem(
+                          key: const Key('participant-link-regenerate'),
+                          value: ParticipantLinkOperation.regenerate,
+                          child: Text(l10n.participantLinkRegenerate),
+                        ),
+                        PopupMenuItem(
+                          key: const Key('participant-link-revoke'),
+                          value: ParticipantLinkOperation.revoke,
+                          child: Text(l10n.participantLinkRevoke),
+                        ),
+                      ],
+                    ),
+                ],
+              ),
+              if (state.history.isNotEmpty || state.hasMore)
+                ExpansionTile(
+                  key: const Key('participant-link-history'),
+                  initiallyExpanded: _historyExpanded,
+                  onExpansionChanged: (expanded) => _historyExpanded = expanded,
+                  tilePadding: EdgeInsets.zero,
+                  title: Text(l10n.participantLinkHistory),
+                  children: [
+                    for (final generation in state.history)
+                      ListTile(
+                        key: ValueKey(generation.id),
+                        title: Text(
+                          generation.reason == 'revoked'
+                              ? l10n.participantLinkRevoked
+                              : generation.reason == 'replaced'
+                              ? l10n.participantLinkReplaced
+                              : l10n.participantLinkActive,
+                        ),
+                        subtitle: Text(
+                          DateFormat.yMMMd(
+                            Localizations.localeOf(context).toLanguageTag(),
+                          ).add_jm().format(generation.createdAt.toLocal()),
+                        ),
+                      ),
+                    if (state.hasMore)
+                      TextButton(
+                        key: const Key('participant-link-history-more'),
+                        onPressed: state.busy
+                            ? null
+                            : () => ref
+                                  .read(participantLinkManagerProvider.notifier)
+                                  .load(
+                                    _account,
+                                    widget.projectId,
+                                    widget.kind,
+                                    more: true,
+                                  ),
+                        child: Text(l10n.participantLinkMore),
+                      ),
+                  ],
                 ),
             ],
-            TextButton(
-              onPressed: _current && !state.busy ? _load : null,
-              child: Text(l10n.retryAction),
-            ),
+            if (belongs &&
+                (state.failure != null || state.previewFailure != null))
+              TextButton(
+                key: const Key('participant-link-retry'),
+                onPressed: _current && !state.busy ? _load : null,
+                child: Text(l10n.retryAction),
+              ),
           ],
         ),
       ),
