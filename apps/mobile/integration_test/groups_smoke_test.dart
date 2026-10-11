@@ -134,8 +134,12 @@ void main() {
       );
       await reveal(tester, find.byKey(const Key('group-save')));
       await tester.tap(find.byKey(const Key('group-save')));
+      await waitUntil(tester, () => creates == 1);
+      await reveal(tester, find.text('Retry same command'));
       await waitFor(tester, find.text('Retry same command'));
       await tester.tap(find.text('Retry same command'));
+      await waitFor(tester, find.text('Draft'));
+      await reveal(tester, find.byKey(const Key('group-publish')));
       await waitFor(tester, find.byKey(const Key('group-publish')));
       expect(creates, 1);
       final after = await gateway.ownPage(actor, null);
@@ -248,16 +252,14 @@ Future<void> waitUntil(WidgetTester tester, bool Function() ready) async {
 Future<void> waitFor(WidgetTester tester, Finder finder) =>
     waitUntil(tester, () => finder.evaluate().isNotEmpty);
 Future<void> reveal(WidgetTester tester, Finder finder) async {
-  await tester.scrollUntilVisible(
-    finder,
-    250,
-    scrollable: find
-        .descendant(
-          of: find.byType(ListView),
-          matching: find.byType(Scrollable),
-        )
-        .first,
-  );
+  final scrollable = find
+      .descendant(of: find.byType(ListView), matching: find.byType(Scrollable))
+      .first;
+  // A long directory can dispose the header above the viewport. Start from a
+  // known edge before scrolling toward either an earlier or later lazy child.
+  tester.state<ScrollableState>(scrollable).position.jumpTo(0);
+  await tester.pump(const Duration(milliseconds: 300));
+  await tester.scrollUntilVisible(finder, 250, scrollable: scrollable);
   await tester.pump(const Duration(milliseconds: 300));
 }
 
