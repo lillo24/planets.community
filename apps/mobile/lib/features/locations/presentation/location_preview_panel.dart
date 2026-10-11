@@ -481,9 +481,10 @@ class _LocationPreviewPanelState extends ConsumerState<LocationPreviewPanel>
     ),
   );
 
-  Widget _pendingImage() => SizedBox(
+  Widget _pendingImage() => ConstrainedBox(
     key: Key('location-map-pending-${widget.item.id}'),
-    height: 48,
+    // Let localized loading text wrap at accessibility sizes without clipping.
+    constraints: const BoxConstraints(minHeight: 48),
     child: Align(
       alignment: Alignment.centerLeft,
       child: Text(AppLocalizations.of(context).locationLoading),

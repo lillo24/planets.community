@@ -75,7 +75,8 @@ disabled static factory and launcher. public_preview_batch owns bounded
 public-only read/image caches. location_preview_panel owns laziness, generations,
 leases, uncached native decoding and one freshly reauthorized Maps action.
 MAP-UX01 removes preview panels from feed cards. Detail panels show authorized
-text immediately, no image space when disabled, a modest 48dp pending label
+text immediately, no image space when disabled, a modest pending label with a
+48dp minimum that grows for localized accessibility text
 during tile transport/native decode, a 144dp decoded map, and one fallback on
 settled rendering failure. Pending imagery never mounts a text Maps action. A decoded map is itself the action; only
 unavailable imagery uses a compact text action with a valid canonical destination.

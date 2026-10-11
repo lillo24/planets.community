@@ -35,8 +35,9 @@ avoid reusing the already prepared code-7 artifact; recheck history before uploa
   suffixes offer a narrow legacy fallback. Unknown international/manual comma
   names remain intact. Authorized exact labels and coordinate destinations do
   not undergo city formatting.
-- Tile transport and native PNG decode have a modest, noninteractive 48dp
-  pending label. They never mount the text Maps fallback. A decoded canvas is
+- Tile transport and native PNG decode have a modest, noninteractive pending
+  label (48dp minimum, growing for localized accessibility text). They never
+  mount the text Maps fallback. A decoded canvas is
   the single Maps action; disabled or settled unavailable imagery can offer the
   text action only with a canonical destination. Static imagery remains separately
   disabled; failures never enable it.

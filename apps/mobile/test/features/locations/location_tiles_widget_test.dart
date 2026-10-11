@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -181,6 +182,54 @@ class _MutableMeeting extends ParticipantMeetingDetailsController {
 }
 
 void main() {
+  for (final language in ['en', 'it']) {
+    testWidgets('$language pending map label fits narrow 2x text', (t) async {
+      t.view.physicalSize = const Size(320, 800);
+      t.view.devicePixelRatio = 1;
+      addTearDown(t.view.resetPhysicalSize);
+      addTearDown(t.view.resetDevicePixelRatio);
+      final tiles = DelayedTiles();
+      final previews = FakePreviewGateway()
+        ..pending = (item, _) async => projection(item);
+      final c = setup(tiles, previews, FakeStaticPreviewGateway());
+      addTearDown(c.dispose);
+      await t.pumpWidget(
+        shell(
+          c,
+          ListView(
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(24),
+                child: panel(const PreviewItem('one_time', 'A')),
+              ),
+            ],
+          ),
+          language: language,
+          scale: 2,
+        ),
+      );
+      await t.pumpAndSettle();
+      final pending = find.byKey(const Key('location-map-pending-A'));
+      final text = find.descendant(
+        of: pending,
+        matching: find.byType(RichText),
+      );
+      final paragraph = t.renderObject<RenderParagraph>(text);
+      expect(
+        t.getSize(pending).height,
+        greaterThanOrEqualTo(
+          paragraph.getMaxIntrinsicHeight(t.getSize(pending).width),
+        ),
+      );
+      final size = t.getSize(pending);
+      await t.pump(const Duration(milliseconds: 500));
+      expect(t.getSize(pending), size);
+      expect(find.byKey(const Key('location-open-maps-A')), findsNothing);
+      expect(t.takeException(), isNull);
+      await t.pumpWidget(const SizedBox());
+      c.read(sharedBasemapTilesProvider).clear();
+    });
+  }
   testWidgets(
     'join availability changes do not restart an unchanged public location',
     (t) async {
