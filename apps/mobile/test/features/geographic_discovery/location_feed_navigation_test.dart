@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:planets_mobile/l10n/generated/app_localizations.dart';
-import 'package:planets_mobile/app/router/browse_activity_switcher.dart';
 import 'package:planets_mobile/features/geographic_discovery/domain/geographic_discovery.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:planets_mobile/app/router/browse_activity_switcher.dart';

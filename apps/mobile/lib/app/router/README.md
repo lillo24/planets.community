@@ -67,7 +67,9 @@ for the audited inventory, direct-entry exits and large-text behavior.
 
 ## Registered group routes
 
-Explore's compact Groups entry pushes `/groups`; public details use
+Explore's compact Groups entry on list Browse pages pushes `/groups`; the
+contextual Map disables that entry to retain its large-text viewport space.
+Public details use
 `/groups/:groupId`. Completed-profile routes are `/groups/mine`,
 `/groups/create`, `/groups/:groupId/edit` and `/groups/:groupId/report`.
 Management reads/reporting bypass the router's policy gate; group mutations
