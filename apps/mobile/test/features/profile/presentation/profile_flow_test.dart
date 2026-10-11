@@ -194,7 +194,7 @@ void main() {
     },
   );
   testWidgets(
-    'visibility stays in Edit Profile and the Settings privacy entry',
+    'visibility stays in Profile editing while Settings exposes legal privacy only',
     (tester) async {
       final auth = FakeAuthGateway(
         snapshot: const AuthSnapshot(identity: AuthIdentity(id: 'user-1')),
@@ -229,19 +229,19 @@ void main() {
       }
       router.go('/settings');
       await tester.pumpAndSettle();
-      final privacy = find.byKey(const Key('settings-profile-privacy-row'));
-      await tester.scrollUntilVisible(
-        privacy,
-        250,
-        scrollable: find.byType(Scrollable).hitTestable().first,
-      );
-      await tester.tap(privacy);
-      await tester.pumpAndSettle();
-      expect(router.routeInformationProvider.value.uri.path, '/profile/edit');
       expect(
-        router.routeInformationProvider.value.uri.queryParameters['returnTo'],
-        '/settings',
+        find.byKey(const Key('settings-profile-privacy-row')),
+        findsNothing,
       );
+      expect(
+        find.byKey(const Key('settings-privacy-policy-row')),
+        findsOneWidget,
+      );
+      await tester.tap(find.byKey(const Key('nav-profile')));
+      await tester.pumpAndSettle();
+      expect(router.routeInformationProvider.value.uri.path, '/profile');
+      await _tapVisible(tester, edit);
+      expect(router.routeInformationProvider.value.uri.path, '/profile/edit');
       expect(find.text(l10n.profileVisibilityTitle), findsOneWidget);
       for (final field in ProfileFieldKey.values) {
         expect(
