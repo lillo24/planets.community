@@ -34,7 +34,7 @@ class BrowseActivitySwitcher extends StatelessWidget {
             icon: const Icon(Icons.autorenew),
           ),
         ],
-        selected: {if (selected != null) selected!},
+        selected: {?selected},
         emptySelectionAllowed: selected == null,
         onSelectionChanged: (selection) {
           if (onChanged != null) {
