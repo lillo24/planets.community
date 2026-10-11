@@ -103,7 +103,6 @@ void main() {
       await t.binding.setSurfaceSize(const Size(320, 700));
       addTearDown(() => t.binding.setSurfaceSize(null));
       final semantics = t.ensureSemantics();
-      addTearDown(semantics.dispose);
       await t.pumpWidget(
         MaterialApp(
           theme: AppTheme.light,
@@ -132,6 +131,8 @@ void main() {
         mapSelected: mapSelected,
       );
       expect(t.takeException(), isNull);
+      semantics.dispose();
+      await t.pumpWidget(const SizedBox());
     });
   }
   for (final origin in MapDiscoveryOrigin.values) {
