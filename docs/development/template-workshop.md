@@ -1,5 +1,9 @@
 # Source-linked Template Workshop (TW01/TW02/TW03)
 
+[OST01 official starter templates](official-starter-templates.md) extends this
+contract with organization-owned examples and v2 reads. The community rules
+below remain unchanged; examples have no source Project or human Profile.
+
 SIM01's separate [similar upcoming Proposal contract](similar-active-proposals.md)
 is implemented on the TW04 draft base. It admits future public one-time sources
 by title evidence and returns bounded capacity/location reasons. Completed

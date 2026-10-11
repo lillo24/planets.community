@@ -151,9 +151,12 @@ export function ModerationCaseDetailView({
             <p className="font-mono text-xs">
               Template {detail.template.templateId}
               <br />
-              Source Proposal {detail.template.sourceProposalId}
+              Source Proposal{" "}
+              {detail.template.sourceProposalId ?? "None · official example"}
               <br />
-              Original Creator {detail.template.originalCreatorProfileId}
+              Original Creator{" "}
+              {detail.template.originalCreatorProfileId ??
+                "Planets Community Official (organization)"}
             </p>
             <p>
               {detail.template.removedAt

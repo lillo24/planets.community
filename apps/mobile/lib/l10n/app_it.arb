@@ -1351,7 +1351,10 @@
   "proposalDraftRecoveryError": "Recupero della bozza non riuscito. Riprova da Le mie proposte.",
   "workshopTitle": "Laboratorio dei modelli",
   "workshopStartFromTemplate": "Crea da un modello",
-  "workshopContext": "Riusa idee di Proposte singole concluse per iniziare una tua bozza indipendente.",
+  "workshopContext": "Inizia una tua bozza indipendente da un esempio ufficiale o da una Proposta conclusa della comunità.",
+  "workshopDefault": "Predefinito",
+  "workshopOfficialOrganization": "Organizzazione · Planets Community Official",
+  "workshopOfficialExample": "Un esempio dell’organizzazione Planets Community Official. Adattalo alla tua comunità: non rappresenta un’attività già svolta.",
   "workshopCompleted": "Da una Proposta conclusa",
   "workshopCreatorFallback": "Persona della comunità",
   "workshopCreator": "Creatore originale: {name}",
@@ -1362,7 +1365,7 @@
       }
     }
   },
-  "workshopEmpty": "Non ci sono ancora modelli di Proposte concluse disponibili.",
+  "workshopEmpty": "Al momento non ci sono modelli disponibili.",
   "workshopNoMatches": "Nessun modello corrisponde a questi filtri.",
   "workshopReadError": "Impossibile caricare i modelli. Riprova per verificarne la disponibilità.",
   "workshopLoadMore": "Carica altri",
