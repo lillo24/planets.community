@@ -3631,6 +3631,10 @@ export type Database = {
           superseded_by_membership_id: string | null
         }[]
       }
+      get_project_organization_v1: {
+        Args: { p_expected_profile_id: string; p_project_id: string }
+        Returns: Json
+      }
       get_project_participant_invitation_preview: {
         Args: { p_token: string }
         Returns: {
@@ -5213,6 +5217,16 @@ export type Database = {
       mark_notification_read: {
         Args: { p_expected_profile_id: string; p_notification_id: string }
         Returns: string
+      }
+      mutate_project_organization_v1: {
+        Args: {
+          p_command: Json
+          p_expected_profile_id: string
+          p_expected_revision: number
+          p_project_id: string
+          p_request_id: string
+        }
+        Returns: Json
       }
       page_project_history_for_manager: {
         Args: {

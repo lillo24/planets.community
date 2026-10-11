@@ -6,6 +6,23 @@ import type { PublicProposalSummary } from "./proposal-models";
 
 describe("proposal presentation", () => {
   afterEach(cleanup);
+  it("presents an explicitly confirmed Idea schedule without a tentative label or operational phase", () => {
+    render(
+      <ProposalCard
+        proposal={{
+          ...summary,
+          definition_phase: "idea",
+          derived_status: null,
+        }}
+      />,
+    );
+    expect(screen.getByText("In definition")).toBeInTheDocument();
+    expect(screen.queryByText(/Tentative:/)).not.toBeInTheDocument();
+    expect(
+      screen.queryByText("Date to decide together"),
+    ).not.toBeInTheDocument();
+    expect(screen.queryByText("Upcoming")).not.toBeInTheDocument();
+  });
   it("renders an Idea with no invented schedule, city or event status", () => {
     render(
       <ProposalCard

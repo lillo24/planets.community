@@ -1,5 +1,11 @@
 # IDEA01B: public Idea clients
 
+CHECK01 replaces public tentative logistics with private proposed values and
+explicit individual officialization. Its public clients no longer label canonical
+Idea dates tentative, and published-Idea logistics editing uses Organization.
+See [CHECK01](check01-project-organization.md); the remaining IDEA01B implementation
+and validation history below is predecessor evidence, not current CHECK01 proof.
+
 ## Dependency and integration order
 
 The final integration also includes main `3a10035` (#203, LOCATION02) through
@@ -64,8 +70,8 @@ reset pagination. Phase/lifecycle/authorization filters remain live. Requested
 rows retain their own ordering and deduplicate against raw public pages without
 changing those pages' cursor. Retained app tab state preserves scroll/filters.
 Web links use a versioned publication cursor; old schedule cursors reset to the
-first page. Unknown logistics show honest undecided text, optional dates are
-tentative, and Ideas remain List-only without requesting a map preview.
+first page. Unknown logistics show honest undecided text, canonical dates are
+explicitly confirmed, and Ideas remain List-only without requesting a map preview.
 
 Legacy RPCs continue excluding Ideas. An installed old app opening an Idea link
 gets its existing unavailable state, not unsupported null schedule fields.

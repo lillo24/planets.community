@@ -101,5 +101,9 @@ lookup; historical international records retain metadata. Precise content stays
 independently protected. Manual-only cities appear in List without invented pins
 or Maps destinations. Tavoli/Scambio publication semantics remain unchanged.
 
-Public **In definizione / Idea**, absent city/date, lifecycle promotion and a
-collaborative Project chat checklist require separate plans.
+IDEA01 implements public **In definizione / Idea** and explicit promotion.
+CHECK01's draft proposes the separate one-time Organization checklist: group-only
+saved logistics, individually confirmed canonical public values, then separate
+promotion. Needs/coverage stays independent. Its exact UX, officialization and
+legacy-data rollout policy require founder review before merge; see
+[CHECK01](../development/check01-project-organization.md).

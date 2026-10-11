@@ -247,7 +247,7 @@ class _IconText extends StatelessWidget {
   );
 }
 
-/// Idea dates stay tentative; absent values never become an event schedule.
+/// Idea dates are official only after confirmation; phase stays non-operational.
 String proposalScheduleText(BuildContext context, ProposalSummary proposal) {
   final l10n = AppLocalizations.of(context);
   final start = proposal.startsAt;
@@ -259,5 +259,6 @@ String proposalScheduleText(BuildContext context, ProposalSummary proposal) {
   final locale = Localizations.localeOf(context).toLanguageTag();
   final schedule =
       '${formatProposalDateTime(start, zone, locale)} – ${formatProposalDateTime(end, zone, locale)}';
-  return proposal.isIdea ? l10n.proposalTentativeSchedule(schedule) : schedule;
+  // CHECK01: only explicitly confirmed canonical schedules reach public reads.
+  return schedule;
 }

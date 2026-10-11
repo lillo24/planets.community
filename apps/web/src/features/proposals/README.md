@@ -11,7 +11,8 @@ the canonical public RPC returns it; otherwise it explains restricted access.
 - `proposal-server.ts` calls canonical v2 RPCs with phase, keyword, city and skill
   filters. Missing pagination anchors and backend failures remain errors.
 - `proposal-components.tsx` renders cards, phase/status badges and truthful
-  schedule/place text; tentative dates do not become operational event status.
+  schedule/place text; confirmed Idea dates do not become operational event status.
+  CHECK01's private proposed values never enter these canonical public readers.
 - Matching tests cover parsing, privacy, cursor forwarding and presentation.
 
 The public routes compose these modules with existing app handoff behavior.

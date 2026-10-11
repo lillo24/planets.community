@@ -86,16 +86,82 @@ export async function verifyPublicIdeas() {
   };
   const draft = (user, fields) =>
     call(user, "create_proposal_draft", input(user, fields));
+  const plan = async (user, id, kind, value, confirm = true) => {
+    let snapshot = await call(user, "get_project_organization_v1", {
+      p_expected_profile_id: user.id,
+      p_project_id: id,
+    });
+    for (const command of [
+      { action: "save_decision", kind, value },
+      ...(confirm ? [{ action: "confirm_decision", kind }] : []),
+    ]) {
+      snapshot = await call(user, "mutate_project_organization_v1", {
+        p_expected_profile_id: user.id,
+        p_project_id: id,
+        p_expected_revision: snapshot.revision,
+        p_request_id: randomUUID(),
+        p_command: command,
+      });
+    }
+  };
+  const confirmComplete = async (user, id, fields) => {
+    await plan(user, id, "location", {
+      text: fields.p_public_location_label,
+      country_code: fields.p_country_code,
+      locality: fields.p_locality,
+      label: fields.p_public_location_label,
+    });
+    await plan(user, id, "schedule", {
+      starts_at: fields.p_starts_at,
+      ends_at: fields.p_ends_at,
+      timezone: fields.p_event_timezone,
+    });
+    await plan(user, id, "capacity", {
+      limit: fields.p_registration_capacity,
+      count_organizers: false,
+    });
+  };
   const idea = async (user, fields) => {
     const id = await draft(user, fields);
     await call(user, "publish_proposal_idea", publication(user, id));
+    if (
+      fields?.p_starts_at &&
+      fields?.p_locality &&
+      fields?.p_registration_capacity
+    )
+      await confirmComplete(user, id, fields);
     return id;
   };
-  const edit = (user, id, fields) =>
-    call(user, "update_own_proposal", {
-      ...input(user, fields),
+  const edit = async (user, id, fields) => {
+    const [current] = await call(
+      user,
+      "get_own_proposal_v2",
+      publication(user, id),
+    );
+    const canonical = {};
+    for (const key of [
+      "starts_at",
+      "ends_at",
+      "event_timezone",
+      "country_code",
+      "locality",
+      "administrative_area",
+      "public_location_label",
+      "description",
+    ])
+      canonical[`p_${key}`] = current[key];
+    const [cap] = await call(user, "list_public_project_capacity_statuses", {
+      p_project_ids: [id],
+    });
+    return call(user, "update_own_proposal", {
+      ...input(user, {
+        ...canonical,
+        p_registration_capacity: cap.registration_capacity,
+        ...fields,
+      }),
       p_proposal_id: id,
     });
+  };
   const publicDetail = async (id) =>
     (
       await call({ client: anonymous }, "get_public_proposal_v2", {
@@ -239,16 +305,24 @@ export async function verifyPublicIdeas() {
         (await publicDetail(id)).exact_location_restricted,
       "LOCATION02 keeps legacy-public arrival text protected in Idea v2 detail",
     );
-    await edit(owner, id, {
-      p_starts_at: new Date(Date.now() - 5 * 86400000).toISOString(),
-      p_ends_at: new Date(Date.now() - 4 * 86400000).toISOString(),
-    });
+    await plan(
+      owner,
+      id,
+      "schedule",
+      {
+        starts_at: new Date(Date.now() - 5 * 86400000).toISOString(),
+        ends_at: new Date(Date.now() - 4 * 86400000).toISOString(),
+        timezone: "Europe/Rome",
+      },
+      false,
+    );
     check(
       (await publicDetail(id)).derived_status === null,
       "tentative past dates do not complete Idea",
     );
 
-    await edit(owner, id, complete);
+    await confirmComplete(owner, id, complete);
+    await edit(owner, id, { p_description: complete.p_description });
     for (const field of [
       "description",
       "starts_at",
@@ -259,7 +333,26 @@ export async function verifyPublicIdeas() {
       "public_location_label",
       "registration_capacity",
     ]) {
-      await edit(owner, id, { ...complete, [`p_${field}`]: null });
+      // Canonical promotion validation remains independently tested for every
+      // missing field. These are explicit trusted disposable fixture edits, NOT
+      // proof that old clients may clear confirmed fields (CHECK01 denies that).
+      await db.begin(async (tx) => {
+        await tx`insert into private.project_organization_official_writes values(${id},txid_current())`;
+        const row = Object.fromEntries(
+          [
+            "description",
+            "starts_at",
+            "ends_at",
+            "event_timezone",
+            "country_code",
+            "locality",
+            "public_location_label",
+          ].map((key) => [key, field === key ? null : complete[`p_${key}`]]),
+        );
+        await tx`update public.proposals set ${tx(row)} where id=${id}`;
+        await tx`update public.projects set registration_capacity=${field === "registration_capacity" ? null : complete.p_registration_capacity} where id=${id}`;
+        await tx`delete from private.project_organization_official_writes where project_id=${id}`;
+      });
       const preview = await call(
         owner,
         "get_proposal_promotion_requirements",
@@ -281,7 +374,8 @@ export async function verifyPublicIdeas() {
         `atomic promotion rejects missing ${missing}`,
       );
     }
-    await edit(owner, id, complete);
+    await confirmComplete(owner, id, complete);
+    await edit(owner, id, { p_description: complete.p_description });
     const coId = await delegate(owner, coCreator, id, "co_creator");
     await delegate(owner, organizer, id, "co_organizer");
     await denied(
@@ -428,7 +522,7 @@ export async function verifyPublicIdeas() {
       ]);
       check(
         outcomes.every(
-          (r) => !r.error || ["PT422", "22023"].includes(r.error.code),
+          (r) => !r.error || ["PT422", "22023", "PT409"].includes(r.error.code),
         ),
         "promotion/capacity-clear race has canonical validation outcomes",
       );

@@ -137,6 +137,10 @@ void main() {
         tester,
       ) async {
         final h = await _pump(tester, 'manage', role: role, kind: kind);
+        expect(
+          find.byKey(const Key('project-manage-organization')),
+          kind == ProjectKind.oneTime ? findsOneWidget : findsNothing,
+        );
         final prefix = kind == ProjectKind.oneTime
             ? '/proposals/project-1'
             : '/tavoli/project-1';
