@@ -28,8 +28,7 @@ void main() {
     await tester.tap(find.byKey(const Key('people-actions-sara')));
     await tester.longPress(find.text('Sara'));
     expect(calls, 2);
-    expect(find.text('Co-creator'), findsOneWidget);
-    expect(find.text('Participant'), findsOneWidget);
+    expect(find.text('Co-creator · Participant'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 }
