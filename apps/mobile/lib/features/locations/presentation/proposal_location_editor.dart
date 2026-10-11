@@ -147,9 +147,10 @@ class _ProposalLocationEditorState extends ConsumerState<ProposalLocationEditor>
       if (!_preparing) _cancel();
     });
     widget.handle.pendingQuery = () => _dirty && !_preparing ? _query.text : '';
-    widget.handle.contentSaved = () => _manualPendingSave = false;
+    widget.handle.contentSaved = _contentSaved;
     widget.handle.restoreQuery = () {
       _cancel();
+      _manualPendingSave = false;
       _dirty = false;
       _queryFocus.unfocus();
       _setQuery(_location?.exactPlace?.label ?? widget.publicLabel());
@@ -174,6 +175,11 @@ class _ProposalLocationEditorState extends ConsumerState<ProposalLocationEditor>
       _needsAttribution = true;
     }
     if (canonical != null && !_dirty && !_preparing && !_manualPendingSave) {
+      _needsAttribution =
+          canonical.publicPlace != null ||
+          canonical.exactPlace != null ||
+          ((canonical.publicLabel ?? widget.publicLabel()).trim().isNotEmpty &&
+              canonical.publicTextSource != 'manual');
       _denied = false;
       _location = canonical;
       _setQuery(
@@ -190,6 +196,54 @@ class _ProposalLocationEditorState extends ConsumerState<ProposalLocationEditor>
       _dirty = false;
     }
     setState(() {});
+  }
+
+  Future<bool> _contentSaved() async {
+    if (!_manualPendingSave || widget.publicLabel().trim().isEmpty) {
+      _manualPendingSave = false;
+      return true;
+    }
+    final owner = _actor(),
+        id = widget.itemId(),
+        city = widget.publicLabel().trim();
+    final generation = _generation;
+    if (owner == null || id == null) return false;
+    try {
+      final saved = await ref
+          .read(itemLocationGatewayProvider)
+          .confirmManualText(owner, id, city);
+      if (!mounted ||
+          generation != _generation ||
+          _actor() != owner ||
+          widget.itemId() != id ||
+          widget.publicLabel().trim() != city) {
+        return false;
+      }
+      _manualPendingSave = false;
+      _location = saved;
+      _session.canonical = saved;
+      _session.problem = null;
+      _needsAttribution =
+          saved.publicPlace != null ||
+          saved.exactPlace != null ||
+          (saved.supportsTextProvenance && saved.publicTextSource != 'manual');
+      setState(() {});
+      return true;
+    } on PlaceSearchFailure catch (error) {
+      if (mounted && generation == _generation && _actor() == owner) {
+        _session.problem = error.problem;
+        setState(() {});
+      }
+      return false;
+    } catch (_) {
+      // UI boundary: invalid/unavailable canonical metadata is an explicit
+      // location error, never a successful manual-origin attestation.
+      if (mounted && generation == _generation && _actor() == owner) {
+        _session.problem = PlaceSearchProblem.provider;
+        setState(() {});
+      }
+      return false;
+    }
   }
 
   void _cancel() {
@@ -360,6 +414,7 @@ class _ProposalLocationEditorState extends ConsumerState<ProposalLocationEditor>
       _location = null;
       _dirty = false;
       _manualPendingSave = true;
+      _needsAttribution = false;
       _setQuery(value);
     } finally {
       _applying = false;

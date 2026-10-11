@@ -17,6 +17,7 @@ import '../application/public_preview_batch.dart';
 import '../data/location_preview_gateway.dart';
 import '../domain/location_preview.dart';
 import 'location_attribution.dart';
+import 'public_location_label.dart';
 
 /// A location panel with validated tiles or explicitly selected static imagery.
 /// All outbound Maps actions perform a fresh canonical read.
@@ -55,6 +56,7 @@ class _LocationPreviewPanelState extends ConsumerState<LocationPreviewPanel>
   Timer? _lease;
   Completer<void>? _abort;
   LocationPreview? _preview;
+  String? _manualPublicLabel;
   Uint8List? _bytes;
   String? _imageKey;
   int? _imageRevision;
@@ -139,6 +141,7 @@ class _LocationPreviewPanelState extends ConsumerState<LocationPreviewPanel>
   }
 
   void _invalidate() {
+    _manualPublicLabel = null;
     _revoke();
     ref.read(publicPreviewBatchProvider).clear();
     _scheduleVisibility();
@@ -178,6 +181,8 @@ class _LocationPreviewPanelState extends ConsumerState<LocationPreviewPanel>
         oldWidget.detail != widget.detail ||
         oldWidget.allowLegacyAreaSearch != widget.allowLegacyAreaSearch ||
         oldWidget.publicLabel != widget.publicLabel ||
+        oldWidget.legacy.locality != widget.legacy.locality ||
+        oldWidget.legacy.countryCode != widget.legacy.countryCode ||
         oldWidget.contentVersion != widget.contentVersion) {
       _invalidate();
     }
@@ -276,6 +281,14 @@ class _LocationPreviewPanelState extends ConsumerState<LocationPreviewPanel>
       // Authorized text/action need not wait for optional image rendering.
       setState(() {
         _preview = value;
+        // Only independently public, matching text can keep its known manual
+        // origin through a failed renewal. Never retain protected provenance.
+        _manualPublicLabel =
+            !value.isProtected &&
+                value.textSource == 'manual' &&
+                value.publicLabel == widget.publicLabel
+            ? value.publicLabel
+            : null;
         _failed = false;
       });
       if (_imageKey != value.imageKey ||
@@ -468,6 +481,15 @@ class _LocationPreviewPanelState extends ConsumerState<LocationPreviewPanel>
     ),
   );
 
+  Widget _pendingImage() => SizedBox(
+    key: Key('location-map-pending-${widget.item.id}'),
+    height: 48,
+    child: Align(
+      alignment: Alignment.centerLeft,
+      child: Text(AppLocalizations.of(context).locationLoading),
+    ),
+  );
+
   @override
   Widget build(BuildContext context) {
     ref.listen(
@@ -489,7 +511,25 @@ class _LocationPreviewPanelState extends ConsumerState<LocationPreviewPanel>
     final value = _preview, place = value?.place;
     final tiled = widget.detail && ref.watch(detailBasemapEnabledProvider);
     final tileStore = tiled ? ref.watch(sharedBasemapTilesProvider) : null;
-    final label = place?.label ?? widget.publicLabel;
+    final textSource =
+        value?.textSource ??
+        (_manualPublicLabel != null && _manualPublicLabel == widget.publicLabel
+            ? 'manual'
+            : 'unknown');
+    final label = widget.item.kind == 'resource'
+        ? (place?.label ?? value?.publicLabel ?? widget.publicLabel)
+        : place != null && !place.isArea
+        ? place.label
+        : shortPublicLocationLabel(
+                place?.locality?.trim().isNotEmpty == true
+                    ? place!.locality
+                    : value?.legacy.locality.trim().isNotEmpty == true
+                    ? value!.legacy.locality
+                    : widget.legacy.locality,
+                value?.publicLabel ?? place?.label ?? widget.publicLabel,
+                manual: textSource == 'manual',
+              ) ??
+              '';
     // Only a current canonical projection can offer an outbound destination.
     // Revocation removes the action together with protected labels and pixels.
     final hasDestination = value != null && _mapsDestination(value) != null;
@@ -532,6 +572,7 @@ class _LocationPreviewPanelState extends ConsumerState<LocationPreviewPanel>
               failureLabel: l10n.locationPreviewImageFailed,
               imageBuilder: (canvas) => _mapAction(canvas, value),
               fallback: fallback,
+              pending: _pendingImage(),
             ),
           // Disabled imagery has no reserved space or availability boilerplate.
           if (showStatic)
@@ -540,6 +581,7 @@ class _LocationPreviewPanelState extends ConsumerState<LocationPreviewPanel>
               bytes: _bytes!,
               failureLabel: l10n.locationPreviewImageFailed,
               fallback: fallback,
+              pending: _pendingImage(),
               imageBuilder: (image) => _mapAction(
                 SizedBox(
                   height: widget.detail ? 144 : 80,
@@ -550,9 +592,15 @@ class _LocationPreviewPanelState extends ConsumerState<LocationPreviewPanel>
               ),
             ),
           if (_failed) Text(l10n.locationPreviewImageFailed),
-          if (!showTiles && !showStatic) ?fallback,
-          // Text may remain provider-derived after clear or template reuse.
-          LocationAttribution(centered: widget.detail),
+          if (!showTiles && !showStatic)
+            if (_loading && value?.place != null)
+              _pendingImage()
+            else
+              ?fallback,
+          // Known manual text alone needs no credit. Unknown legacy text stays
+          // conservative; provider text still needs credit after image failure.
+          if (place != null || (label.isNotEmpty && textSource != 'manual'))
+            LocationAttribution(centered: widget.detail),
         ],
       ),
     );
@@ -579,12 +627,14 @@ class _UncachedPreviewImage extends StatefulWidget {
     required this.failureLabel,
     required this.imageBuilder,
     this.fallback,
+    required this.pending,
     super.key,
   });
   final Uint8List bytes;
   final String failureLabel;
   final Widget Function(Widget image) imageBuilder;
   final Widget? fallback;
+  final Widget pending;
   @override
   State<_UncachedPreviewImage> createState() => _UncachedPreviewImageState();
 }
@@ -647,7 +697,7 @@ class _UncachedPreviewImageState extends State<_UncachedPreviewImage> {
         children: [Text(widget.failureLabel), ?widget.fallback],
       );
     }
-    if (_image == null) return widget.fallback ?? const SizedBox.shrink();
+    if (_image == null) return widget.pending;
     return widget.imageBuilder(
       ExcludeSemantics(
         child: RawImage(image: _image, fit: BoxFit.contain),

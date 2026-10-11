@@ -11,6 +11,77 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../support/fake_location.dart';
 
 void main() {
+  for (final scenario in [
+    'supported',
+    'older server',
+    'stale reread',
+    'denied',
+  ]) {
+    test(
+      'manual provenance gateway uses canonical revision and verifies reopen: $scenario',
+      () async {
+        var reads = 0;
+        final calls = <String>[];
+        final gateway = RpcItemLocationGateway((name, args) async {
+          calls.add(name);
+          if (name == 'get_authorized_item_location_v1') {
+            reads++;
+            return {
+              'revision': reads == 1
+                  ? 3
+                  : scenario == 'stale reread'
+                  ? 5
+                  : 4,
+              'public_label': 'Rovereto',
+              'public_place': null,
+              'exact_place': null,
+              if (scenario != 'older server')
+                'public_text_source': reads == 1 ? 'unknown' : 'manual',
+            };
+          }
+          expect(args, {
+            'p_expected_profile_id': 'A',
+            'p_item': 'id',
+            'p_expected_revision': 3,
+            'p_city': 'Rovereto',
+          });
+          if (scenario == 'denied')
+            throw const PostgrestException(message: 'Denied', code: '42501');
+          return 4;
+        });
+        if (scenario == 'stale reread' || scenario == 'denied') {
+          await expectLater(
+            gateway.confirmManualText('A', 'id', 'Rovereto'),
+            throwsA(
+              isA<PlaceSearchFailure>().having(
+                (e) => e.problem,
+                'problem',
+                scenario == 'denied'
+                    ? PlaceSearchProblem.unauthorized
+                    : PlaceSearchProblem.stale,
+              ),
+            ),
+          );
+        } else {
+          final value = await gateway.confirmManualText('A', 'id', 'Rovereto');
+          expect(
+            value.publicTextSource,
+            scenario == 'older server' ? 'unknown' : 'manual',
+          );
+          expect(
+            calls,
+            scenario == 'older server'
+                ? ['get_authorized_item_location_v1']
+                : [
+                    'get_authorized_item_location_v1',
+                    'confirm_manual_proposal_location_text_v1',
+                    'get_authorized_item_location_v1',
+                  ],
+          );
+        }
+      },
+    );
+  }
   testWidgets(
     'receipt expiry revokes a pending ambiguous write and late result',
     (tester) async {

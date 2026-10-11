@@ -146,24 +146,257 @@ class DelayedTiles extends FixtureMapProviderGateway {
 }
 
 class _MutableParticipation extends OwnParticipationController {
+  void loading() => state = const OwnParticipationState(
+    phase: ParticipationLoadPhase.loading,
+  );
+  void ready() =>
+      state = const OwnParticipationState(phase: ParticipationLoadPhase.ready);
   void withdraw() => state = const OwnParticipationState(
     phase: ParticipationLoadPhase.failure,
   );
 }
 
 class _MutableRole extends ProjectManagementRoleController {
+  void loading() => state = const ProjectManagementRoleState(
+    phase: ProjectDelegateLoadPhase.loading,
+  );
+  void ready() => state = const ProjectManagementRoleState(
+    phase: ProjectDelegateLoadPhase.ready,
+  );
   void withdraw() => state = const ProjectManagementRoleState(
     phase: ProjectDelegateLoadPhase.failure,
   );
 }
 
 class _MutableMeeting extends ParticipantMeetingDetailsController {
+  void loading() => state = const ParticipantMeetingDetailsState(
+    phase: ParticipationLoadPhase.loading,
+  );
+  void ready() => state = const ParticipantMeetingDetailsState(
+    phase: ParticipationLoadPhase.ready,
+  );
   void withdraw() => state = const ParticipantMeetingDetailsState(
     phase: ParticipationLoadPhase.failure,
   );
 }
 
 void main() {
+  testWidgets(
+    'join availability changes do not restart an unchanged public location',
+    (t) async {
+      final tiles = FixtureMapProviderGateway(tilesEnabled: true);
+      final previews = FakePreviewGateway()
+        ..pending = (item, _) async => projection(item);
+      final c = setup(tiles, previews, FakeStaticPreviewGateway());
+      addTearDown(c.dispose);
+      Widget section(bool accepts) => ProjectParticipationSection(
+        projectId: 'A',
+        projectKind: ProjectKind.oneTime,
+        creatorProfileId: 'creator',
+        acceptsNewRequests: accepts,
+        publicLocationLines: const ['Trento'],
+        publicExactMeetingText: null,
+        exactLocationRestricted: false,
+        capacity: capacityFixture(),
+        previewArea: const LegacyPreviewArea('Trento', 'IT'),
+      );
+      await t.pumpWidget(shell(c, ListView(children: [section(true)])));
+      await settle(t);
+      final state = t.state<ReadOnlyBasemapState>(find.byType(ReadOnlyBasemap));
+      final images = state.debugImages;
+      final reads = previews.reads;
+      await t.pumpWidget(shell(c, ListView(children: [section(false)])));
+      await t.pump();
+      expect(
+        t.state<ReadOnlyBasemapState>(find.byType(ReadOnlyBasemap)),
+        same(state),
+      );
+      expect(images.every((image) => !image.debugDisposed), true);
+      expect(previews.reads, reads);
+      expect(find.byKey(const Key('location-open-maps-A')), findsNothing);
+      await t.pumpWidget(const SizedBox());
+      c.read(sharedBasemapTilesProvider).clear();
+    },
+  );
+  for (final language in ['en', 'it']) {
+    testWidgets(
+      '$language slow public Trento preview has no transient Maps action or long label',
+      (t) async {
+        final tiles = DelayedTiles();
+        final pending = Completer<LocationPreview?>();
+        const item = PreviewItem('one_time', 'A');
+        final previews = FakePreviewGateway()
+          ..pending = (_, _) => pending.future;
+        final c = setup(tiles, previews, FakeStaticPreviewGateway());
+        addTearDown(c.dispose);
+        await t.pumpWidget(
+          shell(
+            c,
+            ListView(
+              children: [
+                const LocationPreviewPanel(
+                  item: item,
+                  legacy: LegacyPreviewArea('Trento', 'IT'),
+                  publicLabel: 'Trento, Provincia di Trento, Trentino – Alto Adige/Südtirol, Italy',
+                  detail: true,
+                ),
+              ],
+            ),
+            language: language,
+            scale: 2,
+          ),
+        );
+        await t.pump();
+        expect(find.text('Trento'), findsOneWidget);
+        expect(find.byKey(const Key('location-open-maps-A')), findsNothing);
+        pending.complete(
+          LocationPreview.fromJson({
+            'item_kind': 'one_time',
+            'item_id': 'A',
+            'revision': 7,
+            'scope': 'area',
+            'audience': 'public',
+            'image_key': 'a' * 64,
+            'place': {
+              'kind': 'locality',
+              'label': 'Trento, Provincia di Trento, Trentino – Alto Adige/Südtirol, Italy',
+              'locality': 'Trento',
+              'latitude': 46.0879835,
+              'longitude': 11.1098388,
+            },
+            'legacy': {'locality': 'Trento', 'country_code': 'IT'},
+          }),
+        );
+        await t.pump();
+        await t.pump();
+        final size = t.getSize(find.byType(LocationPreviewPanel));
+        for (var n = 0; n < 6; n++) {
+          await t.pump(const Duration(milliseconds: 100));
+          expect(find.text('Trento'), findsOneWidget);
+          expect(
+            find.byKey(const Key('location-map-pending-A')),
+            findsOneWidget,
+          );
+          expect(find.byKey(const Key('location-open-maps-A')), findsNothing);
+          expect(find.byKey(const Key('location-map-action-A')), findsNothing);
+          expect(t.getSize(find.byType(LocationPreviewPanel)), size);
+        }
+        await tiles.finish();
+        await settle(t);
+        expect(find.byKey(const Key('location-map-pending-A')), findsNothing);
+        expect(find.byKey(const Key('location-open-maps-A')), findsNothing);
+        expect(find.byKey(const Key('location-map-action-A')), findsOneWidget);
+        expect(find.text('Trento'), findsOneWidget);
+        expect(find.byType(LocationAttribution), findsOneWidget);
+        expect(t.takeException(), isNull);
+        await t.pumpWidget(const SizedBox());
+        c.read(sharedBasemapTilesProvider).clear();
+      },
+    );
+  }
+  testWidgets(
+    'delayed native decode stays pending until the single decoded canvas action is ready',
+    (t) async {
+      final tileBytes = await FixtureMapProviderGateway().tile(12, 2174, 1456);
+      final store = SharedBasemapTiles(
+        allowed: () => true,
+        load: (_, _) async => Uint8List.fromList(tileBytes),
+      );
+      addTearDown(store.dispose);
+      final decoding = <Completer<ui.Image>>[];
+      await t.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: ReadOnlyBasemap(
+              store: store,
+              latitude: 46,
+              longitude: 11,
+              protected: false,
+              approximate: true,
+              semanticLabel: 'Area',
+              failureLabel: 'Unavailable',
+              pending: const SizedBox(key: Key('pending'), height: 48),
+              fallback: const Text('Maps fallback'),
+              imageBuilder: (canvas) => Semantics(
+                key: const Key('decoded-action'),
+                button: true,
+                child: canvas,
+              ),
+              decode: (_) {
+                decoding.add(Completer<ui.Image>());
+                return decoding.last.future;
+              },
+            ),
+          ),
+        ),
+      );
+      await t.pumpAndSettle();
+      expect(decoding, isNotEmpty);
+      for (var n = 0; n < 5; n++) {
+        await t.pump(const Duration(milliseconds: 100));
+        expect(find.byKey(const Key('pending')), findsOneWidget);
+        expect(find.text('Maps fallback'), findsNothing);
+        expect(find.byKey(const Key('decoded-action')), findsNothing);
+      }
+      await t.runAsync(() async {
+        for (final pending in decoding) {
+          pending.complete(await decodeBasemapImage(tileBytes));
+        }
+      });
+      await t.pumpAndSettle();
+      expect(find.byKey(const Key('decoded-action')), findsOneWidget);
+      expect(find.text('Maps fallback'), findsNothing);
+      await t.pumpWidget(const SizedBox());
+      store.clear();
+    },
+  );
+  testWidgets(
+    'initial manager/member/meeting loads and unchanged emissions retain public pixels',
+    (t) async {
+      final tiles = FixtureMapProviderGateway(tilesEnabled: true);
+      final previews = FakePreviewGateway()
+        ..pending = (item, _) async => projection(item);
+      final c = setup(tiles, previews, FakeStaticPreviewGateway());
+      addTearDown(c.dispose);
+      await t.pumpWidget(
+        shell(
+          c,
+          ListView(children: [panel(const PreviewItem('one_time', 'A'))]),
+        ),
+      );
+      await settle(t);
+      final state = t.state<ReadOnlyBasemapState>(find.byType(ReadOnlyBasemap));
+      final images = state.debugImages;
+      final participation =
+          c.read(ownParticipationProvider.notifier) as _MutableParticipation;
+      final role =
+          c.read(projectManagementRoleProvider.notifier) as _MutableRole;
+      final meeting =
+          c.read(participantMeetingDetailsProvider.notifier) as _MutableMeeting;
+      for (final emit in [
+        participation.loading,
+        role.loading,
+        meeting.loading,
+        participation.ready,
+        role.ready,
+        meeting.ready,
+        role.ready,
+      ]) {
+        emit();
+        await t.pump();
+        expect(find.byKey(const Key('location-map-action-A')), findsOneWidget);
+        expect(find.byKey(const Key('location-open-maps-A')), findsNothing);
+        await settle(t);
+        expect(
+          t.state<ReadOnlyBasemapState>(find.byType(ReadOnlyBasemap)),
+          same(state),
+        );
+        expect(images.every((image) => !image.debugDisposed), true);
+      }
+      await t.pumpWidget(const SizedBox());
+      c.read(sharedBasemapTilesProvider).clear();
+    },
+  );
   setUp(
     () => TestWidgetsFlutterBinding.ensureInitialized()
         .handleAppLifecycleStateChanged(AppLifecycleState.resumed),
@@ -1040,7 +1273,7 @@ void main() {
       final calls = tiles.tileCalls.length;
       expect(calls, greaterThan(0));
       expect(find.byKey(const Key('location-map-action-A')), findsNothing);
-      expect(find.byKey(const Key('location-open-maps-A')), findsOneWidget);
+      expect(find.byKey(const Key('location-open-maps-A')), findsNothing);
       t.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
       await tiles.finish();
       await settle(t);

@@ -48,11 +48,15 @@ class ItemLocation {
     this.countryCode,
     this.administrativeArea,
     this.exactIsPublic,
+    this.publicTextSource = 'unknown',
+    this.supportsTextProvenance = false,
   });
   final int revision;
   final StoredPlace? publicPlace, exactPlace;
   final String? publicLabel, locality, countryCode, administrativeArea;
   final bool? exactIsPublic;
+  final String publicTextSource;
+  final bool supportsTextProvenance;
   factory ItemLocation.fromJson(Map<String, dynamic> value) => ItemLocation(
     (value['revision'] as num).toInt(),
     publicLabel: value['public_label'] as String?,
@@ -60,6 +64,11 @@ class ItemLocation {
     countryCode: value['country_code'] as String?,
     administrativeArea: value['administrative_area'] as String?,
     exactIsPublic: value['exact_is_public'] as bool?,
+    publicTextSource:
+        ['manual', 'geoapify'].contains(value['public_text_source'])
+        ? value['public_text_source'] as String
+        : 'unknown',
+    supportsTextProvenance: value.containsKey('public_text_source'),
     publicPlace: value['public_place'] == null
         ? null
         : StoredPlace.fromJson(

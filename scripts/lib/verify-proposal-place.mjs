@@ -70,6 +70,79 @@ export async function verifyProposalPlace({
       [id],
     );
     let current = await read();
+    const manualArgs = {
+      p_expected_profile_id: owner.id,
+      p_item: id,
+      p_expected_revision: current.revision,
+      p_city: "Trento",
+    };
+    check(
+      current.public_text_source === "unknown",
+      "MAPFIX01 preexisting text is unknown without a manual attestation",
+    );
+    for (const client of [anonymous, server, peer.client]) {
+      await denied(
+        client,
+        "confirm_manual_proposal_location_text_v1",
+        manualArgs,
+        "42501",
+      );
+    }
+    await denied(
+      owner.client,
+      "confirm_manual_proposal_location_text_v1",
+      { ...manualArgs, p_expected_revision: current.revision + 1 },
+      "40001",
+    );
+    await denied(
+      owner.client,
+      "confirm_manual_proposal_location_text_v1",
+      { ...manualArgs, p_city: "Via Roma" },
+      "22023",
+    );
+    await denied(
+      owner.client,
+      "confirm_manual_proposal_location_text_v1",
+      { ...manualArgs, p_city: "Rovereto" },
+      "40001",
+    );
+    const manualRevision = await rpc(
+      owner.client,
+      "confirm_manual_proposal_location_text_v1",
+      manualArgs,
+    );
+    current = await read();
+    check(
+      current.revision === manualRevision &&
+        current.public_text_source === "manual" &&
+        current.public_place === null &&
+        current.exact_place === null,
+      "MAPFIX01 confirmed manual text survives canonical editor reopen without geometry",
+    );
+    check(
+      (await rpc(owner.client, "confirm_manual_proposal_location_text_v1", {
+        ...manualArgs,
+        p_expected_revision: manualRevision,
+      })) === manualRevision,
+      "MAPFIX01 same-city attestation is idempotent",
+    );
+    const manualPreview = await rpc(anonymous, "get_location_preview_v1", {
+      p_kind: "one_time",
+      p_item: id,
+      p_view: "public_detail",
+    });
+    check(
+      manualPreview.text_source === "manual" &&
+        manualPreview.public_label === "Trento" &&
+        manualPreview.place === null,
+      "MAPFIX01 anonymous canonical manual provenance contains no invented pin",
+    );
+    await db`update public.proposals set title='MAPFIX01 unrelated title edit' where id=${id}`;
+    current = await read();
+    check(
+      current.public_text_source === "manual",
+      "MAPFIX01 unrelated edits preserve matching public text provenance",
+    );
     const receipt = await issue(current.revision, "Synthetic exact venue A");
     await rpc(
       owner.client,
@@ -77,6 +150,16 @@ export async function verifyProposalPlace({
       mutation(current.revision, "replace", receipt),
     );
     current = await read();
+    const publicAfterExact = await rpc(anonymous, "get_location_preview_v1", {
+      p_kind: "one_time",
+      p_item: id,
+      p_view: "public_detail",
+    });
+    check(
+      publicAfterExact.text_source === "unknown" &&
+        !JSON.stringify(publicAfterExact).includes("Synthetic exact venue"),
+      "MAPFIX01 private exact selection does not disclose exact provenance or labels through public metadata",
+    );
     check(
       current.exact_is_public === false &&
         current.exact_place.label === "Synthetic exact venue A",

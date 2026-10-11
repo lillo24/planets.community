@@ -213,11 +213,8 @@ class ProjectParticipationSection extends ConsumerWidget {
                 projectKind != ProjectKind.oneTime ||
                 exactLocationRestricted ||
                 publicExactMeetingText != null,
-            contentVersion: (
-              exactLocationRestricted,
-              publicExactMeetingText,
-              acceptsNewRequests,
-            ),
+            // Joining availability does not change the canonical location.
+            contentVersion: (exactLocationRestricted, publicExactMeetingText),
           )
         else
           for (final line in publicLocationLines) Text(line),

@@ -7,8 +7,15 @@ class PreviewItem {
 }
 
 class PreviewPlace {
-  const PreviewPlace(this.kind, this.label, this.latitude, this.longitude);
+  const PreviewPlace(
+    this.kind,
+    this.label,
+    this.latitude,
+    this.longitude, {
+    this.locality,
+  });
   final String kind, label;
+  final String? locality;
   final double latitude, longitude;
   bool get isArea => kind == 'locality';
   factory PreviewPlace.fromJson(Map<String, dynamic> json) {
@@ -26,7 +33,20 @@ class PreviewPlace {
         longitude.abs() > 180) {
       throw const FormatException('Invalid location preview.');
     }
-    return PreviewPlace(kind as String, label, latitude, longitude);
+    final locality = json['locality'];
+    if (locality != null &&
+        (locality is! String ||
+            locality.length > 120 ||
+            RegExp(r'[<>\x00-\x1f]').hasMatch(locality))) {
+      throw const FormatException('Invalid preview locality.');
+    }
+    return PreviewPlace(
+      kind as String,
+      label,
+      latitude,
+      longitude,
+      locality: locality as String?,
+    );
   }
 }
 
@@ -38,6 +58,8 @@ class LocationPreview {
     this.place,
     this.imageKey,
     this.legacy = const LegacyPreviewArea('', ''),
+    this.publicLabel,
+    this.textSource = 'unknown',
   });
   final PreviewItem item;
   final int revision;
@@ -45,6 +67,10 @@ class LocationPreview {
   final PreviewPlace? place;
   final String? imageKey;
   final LegacyPreviewArea legacy;
+  final String? publicLabel;
+
+  /// Missing metadata from older servers remains conservatively unknown.
+  final String textSource;
   bool get cacheable => !isProtected && place?.isArea == true;
 
   /// Compare canonical content independently of the audience of the RPC.
@@ -55,10 +81,13 @@ class LocationPreview {
       imageKey == other.imageKey &&
       place?.kind == other.place?.kind &&
       place?.label == other.place?.label &&
+      place?.locality == other.place?.locality &&
       place?.latitude == other.place?.latitude &&
       place?.longitude == other.place?.longitude &&
       legacy.locality == other.legacy.locality &&
-      legacy.countryCode == other.legacy.countryCode;
+      legacy.countryCode == other.legacy.countryCode &&
+      publicLabel == other.publicLabel &&
+      textSource == other.textSource;
   factory LocationPreview.fromJson(Map<String, dynamic> json) {
     final place = json['place'] == null
         ? null
@@ -83,6 +112,10 @@ class LocationPreview {
       isProtected: json['audience'] == 'protected',
       place: place,
       imageKey: json['image_key'] as String?,
+      publicLabel: json['public_label'] as String?,
+      textSource: ['manual', 'geoapify'].contains(json['text_source'])
+          ? json['text_source'] as String
+          : 'unknown',
       legacy: LegacyPreviewArea(
         json['legacy']['locality'] as String? ?? '',
         json['legacy']['country_code'] as String? ?? '',

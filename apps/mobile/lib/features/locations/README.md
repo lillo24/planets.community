@@ -48,15 +48,15 @@ RPCs are documented in the [MAP01 contract](../../../../../docs/development/map0
 Short-lived receipt objects must not enter draft snapshots. The transient
 controller is wired through a **disabled production factory**. Actor/form
 generations, readiness, entitlement denials and expiry revoke transient work.
-Credits are suppressed only for known manual text in a fresh blank Project/Tavolo
-authoring session. Provider results carry credits while displayed. Selecting a
-verified place makes credits persist through geometry clear and manual mode:
-derived ordinary text may survive. Saved/restored text has ambiguous provenance
-and keeps credits; neither missing coordinates nor unavailable imagery proves
-manual authorship. Public detail projections currently lack durable text
-provenance, so their credits remain conservative. MAP03 credits relevant public
-surfaces; provider activation still requires owner review. A native fake does not
-prove live provider authorization.
+MAPFIX01 credits follow displayed content. Verified provider labels/maps retain
+credits even on image failure. Explicit Project manual-city confirmation attests
+only the matching saved public text, through a revision-bound canonical RPC and
+reread; reopening then suppresses credits. Unknown legacy/template text and the
+older Tavolo/resource manual save paths retain conservative credits. No geometry
+absence is treated as evidence of manual authorship. The additive provenance
+migration is required for durable classification; older servers remain readable
+and manual content saves still work with unknown provenance. Nothing is backfilled.
+A native fake does not prove live provider authorization.
 
 Projects choose an independent public locality and optional exact address/venue;
 instructions and Participants/Public remain separate. Resources have one public
@@ -75,8 +75,9 @@ disabled static factory and launcher. public_preview_batch owns bounded
 public-only read/image caches. location_preview_panel owns laziness, generations,
 leases, uncached native decoding and one freshly reauthorized Maps action.
 MAP-UX01 removes preview panels from feed cards. Detail panels show authorized
-text immediately, no image space when disabled, a 144dp actual PNG when enabled,
-and one fallback on rendering failure. A decoded map is itself the action; only
+text immediately, no image space when disabled, a modest 48dp pending label
+during tile transport/native decode, a 144dp decoded map, and one fallback on
+settled rendering failure. Pending imagery never mounts a text Maps action. A decoded map is itself the action; only
 unavailable imagery uses a compact text action with a valid canonical destination.
 Centered small detail credits follow the image with independent 48dp links.
 Denial still revokes protected state.
@@ -93,10 +94,13 @@ The old location_fallbacks map
 remains a compatibility widget; real detail now uses the shared panel.
 See [MAP03](../../../../../docs/development/map03-location-previews.md).
 
-`presentation/public_location_label.dart` owns compact Project/Tavolo card text:
-prefer the public structured locality, then the unchanged public label for legacy
-records, then the caller's localized undecided state. It never parses provider
-labels or consumes protected exact-place fields. Details retain the full label.
+`presentation/public_location_label.dart` owns compact Project/Tavolo card and
+area-detail text: prefer canonical public structured locality (including async
+preview locality), then a narrowly recognized Italian province/region suffix,
+then the unchanged ambiguous/manual public label or localized undecided state.
+It never consumes protected exact-place fields. Authorized exact labels and Maps
+coordinates retain their original meaning. `PreviewPlace` preserves the RPC's
+structured locality instead of replacing a short city with a full provider label.
 
 MAP04 public radius/bounds queries live in the separate geographic_discovery
 feature. It never uses editor receipts or protected preview reads. MAP05 must
@@ -128,3 +132,11 @@ directions. City-only Projects still have no invented map point/destination.
 The former `proposalCityOnly` adapter remains compatible for older consumers,
 but the one-time editor now uses this component. See the
 [LOCATION02 contract and staging handoff](../../../../../docs/development/location02-inline-project-place.md).
+
+## Released-build diagnosis (MAPFIX01)
+
+Source merge, staging geometry, compiled flags and installed distribution are
+separate evidence. Ordinary staging builds keep maps disabled; use the existing
+`tool/build_map_live_staging.dart` for an explicitly map-enabled staging artifact.
+Do not change hosted records/configuration to compensate for an older binary.
+See [MAPFIX01 evidence and handoff](../../../../../docs/development/mapfix01-released-location.md).

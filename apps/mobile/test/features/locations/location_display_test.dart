@@ -38,7 +38,7 @@ Widget shell(String language, Widget body, {ProviderContainer? container}) {
 
 void main() {
   test(
-    'compact labels use public structured fields without parsing labels',
+    'compact labels prefer public structure and preserve ambiguous comma names',
     () {
       expect(
         shortPublicLocationLabel(' Trento ', 'Trento, Provincia, Italia'),
@@ -54,6 +54,24 @@ void main() {
       );
       expect(shortPublicLocationLabel(null, null), isNull);
       expect(shortPublicLocationLabel('', '  '), isNull);
+      for (final suffix in [
+        'Trento, Provincia di Trento, Trentino – Alto Adige/Südtirol, Italy',
+        'Trento, Provincia autonoma di Trento, Italia',
+      ]) {
+        expect(shortPublicLocationLabel(null, suffix), 'Trento');
+        expect(shortPublicLocationLabel(null, suffix, manual: true), suffix);
+      }
+      expect(
+        shortPublicLocationLabel('', 'Rovereto, Trentino-Alto Adige, Italia'),
+        'Rovereto',
+      );
+      for (final text in [
+        'Washington, D.C.',
+        'Boca Chica, Santo Domingo',
+        'Via Roma, Provincia di Trento, Italia',
+      ]) {
+        expect(shortPublicLocationLabel(null, text), text);
+      }
     },
   );
   for (final language in ['en', 'it']) {
@@ -67,6 +85,11 @@ void main() {
         for (final sample in [
           ('Trento', 'Trento, Provincia autonoma di Trento, Italia', 'Trento'),
           ('Rovereto', 'Rovereto, Trentino-Alto Adige, Italia', 'Rovereto'),
+          (
+            '',
+            'Trento, Provincia di Trento, Trentino – Alto Adige/Südtirol, Italy',
+            'Trento',
+          ),
           ('', 'Legacy town, Region, Italia', 'Legacy town, Region, Italia'),
           (
             '',

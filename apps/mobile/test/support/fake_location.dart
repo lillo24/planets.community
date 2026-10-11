@@ -28,6 +28,26 @@ class FakeItemLocationGateway implements ItemLocationGateway {
   Future<void>? readDelay, applyDelay;
   bool loseNextResponse = false;
   @override
+  Future<ItemLocation> confirmManualText(
+    String actor,
+    String item,
+    String city,
+  ) async {
+    calls.add('manual:$actor:$item:$city');
+    if (applyFailure case final failure?) throw PlaceSearchFailure(failure);
+    value = ItemLocation(
+      value.revision + 1,
+      publicLabel: city,
+      locality: city,
+      countryCode: 'IT',
+      exactIsPublic: false,
+      publicTextSource: 'manual',
+      supportsTextProvenance: true,
+    );
+    return value;
+  }
+
+  @override
   Future<ItemLocation> read(String actor, String kind, String item) async {
     calls.add('read:$actor:$kind:$item');
     if (readDelay case final delay?) await delay;
