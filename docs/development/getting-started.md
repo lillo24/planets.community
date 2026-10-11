@@ -156,17 +156,22 @@ No remote Supabase project is linked. The committed migrations establish the dat
 
 ## Mobile configuration
 
-The Flutter app accepts compile-time values through `--dart-define-from-file`. Its required keys are:
+The Flutter app accepts compile-time values through `--dart-define-from-file`. Its configuration keys are:
 
-| Key                        | Purpose                                                                               |
-| -------------------------- | ------------------------------------------------------------------------------------- |
-| `APP_ENV`                  | Exactly `local`, `staging`, or `production`                                           |
-| `SUPABASE_URL`             | Canonical Supabase API URL; staging and production require HTTPS                      |
-| `SUPABASE_PUBLISHABLE_KEY` | Client-safe Supabase publishable key (the local CLI may still call this the anon key) |
-| `SENTRY_DSN`               | Optional client DSN; an empty value keeps Sentry disabled                             |
-| `ENABLE_DEMO_TOOLS`        | Optional exact `true`/`false` switch for local-only form presets and shell marker     |
+| Key                        | Purpose                                                                                   |
+| -------------------------- | ----------------------------------------------------------------------------------------- |
+| `APP_ENV`                  | Exactly `local`, `staging`, or `production`                                               |
+| `SUPABASE_URL`             | Canonical Supabase API URL; staging and production require HTTPS                          |
+| `SUPABASE_PUBLISHABLE_KEY` | Client-safe Supabase publishable key (the local CLI may still call this the anon key)     |
+| `SENTRY_DSN`               | Optional client DSN; an empty value keeps Sentry disabled                                 |
+| `ENABLE_DEMO_TOOLS`        | Optional exact `true`/`false` switch for local-only form presets and shell marker         |
+| `GOOGLE_WEB_CLIENT_ID`     | Optional public Google Web OAuth client ID; empty/omitted disables Android Google sign-in |
 
 Committed examples live in `apps/mobile/config/*.example.json`. Actual `local.json`, `staging.json`, and `production.json` files are ignored. Never put a Supabase service-role key in a mobile config file.
+
+Google configuration rejects padding and malformed client IDs. The ID alone does
+not configure Google or Supabase; follow the [Android activation runbook](auth01b-google-android.md).
+No Google client secret belongs in mobile config.
 
 With local Supabase running, generate `apps/mobile/config/local.json` from the CLI's authoritative status output:
 

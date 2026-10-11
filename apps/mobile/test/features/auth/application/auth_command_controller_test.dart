@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:planets_mobile/core/config/app_config.dart';
 import 'package:planets_mobile/features/auth/application/auth_command_controller.dart';
 import 'package:planets_mobile/features/auth/application/auth_session_controller.dart';
 import 'package:planets_mobile/features/auth/data/auth_gateway.dart';
@@ -146,9 +147,19 @@ void main() {
   }
 
   test(
-    'both providers are unavailable by default without backend startup',
+    'both providers are unavailable without Google config or backend startup',
     () async {
-      final container = ProviderContainer();
+      final container = ProviderContainer(
+        overrides: [
+          appConfigProvider.overrideWithValue(
+            AppConfig.fromValues(
+              appEnvironment: 'local',
+              supabaseUrl: 'http://127.0.0.1:54321',
+              supabasePublishableKey: 'synthetic',
+            ),
+          ),
+        ],
+      );
       addTearDown(container.dispose);
       final adapter = container.read(providerAuthAdapterProvider);
       for (final provider in AuthProvider.values) {

@@ -1,8 +1,10 @@
 # AUTH01A — Provider-ready authentication infrastructure
 
-**Status: Google/Apple sign-in infrastructure is prepared; external configuration
-and real provider integrations are not implemented or enabled. Email OTP remains
-the only user-facing sign-in method.**
+**Status: AUTH01A's shared infrastructure is implemented. AUTH01B1 adds the
+configuration-gated Google Android code path; external provider activation and
+real-device QA remain separate. Empty/missing Google config keeps OTP-only UI.
+Apple and Google on iOS remain unavailable.** See the
+[Google Android code/activation runbook](auth01b-google-android.md).
 
 ## Implemented in AUTH01A
 
@@ -12,22 +14,22 @@ maps the extension points:
 - `domain/provider_auth.dart`: app-owned Google/Apple identifiers and sealed
   success, cancellation, and safe failure results.
 - `data/provider_auth_adapter.dart`: `ProviderAuthAdapter` and its Riverpod
-  injection point. The default adapter reports both providers unavailable and
-  returns an explicit safe failure for direct sign-in calls. It has no backend
-  dependency or startup initialization. Availability must mean configured and
-  supported on the current platform; the command checks it before calling sign-in.
+  injection point. AUTH01B1 now selects the real Android Google adapter only
+  with a validated public Web client ID; otherwise both providers are unavailable.
+  Availability performs no SDK initialization or network work. The command checks
+  it before sign-in; native initialization remains lazy on an explicit tap.
 - `application/auth_command_controller.dart`: `signInWithProvider` accepts
   adapter results. `_completeSignIn` is the single owner of profile-anchor
   creation, readiness resolution, safe setup failure, and temporary OTP cleanup
   for OTP, provider success, and profile retry. Session restoration stays with
   `AuthSessionController`; profile persistence stays with `ProfileAnchorGateway`.
 
-The future data-layer adapter acquires native credentials, then exchanges them
+The data-layer adapter acquires native credentials, then exchanges them
 with Supabase. Its success identity must be the established Supabase session's
 identity; a vendor account ID or native token alone is not authentication success
 for PLANETS. Credentials and SDK objects never enter application/presentation
-code. The actual native credential and exchange implementations remain future
-provider work; no token shape or vendor error codes are prescribed here.
+code. AUTH01B1 implements Google's current 7.x ID-token and identity-scope
+authorization APIs followed by Supabase exchange; Apple remains future work.
 
 Provider cancellation preserves any pending OTP flow and cooldown without an
 error banner. Failures use existing `AuthFailureKind` values; anchor/readiness
@@ -40,35 +42,36 @@ Sign-out continues through the canonical `AuthGateway`, with no provider logout.
 
 Tests inject `FakeProviderAuthAdapter` through `providerAuthAdapterProvider` and
 reuse the existing fake auth/profile gateways. No provider account, credentials,
-network request, or changed OTP QA procedure is required. Normal UI stays OTP-only.
+network request, or changed OTP QA procedure is required. Without Google config,
+normal UI stays OTP-only; AUTH01B1 tests also cover the conditional Google action.
 
 ## Intentionally not implemented
 
-- Google/Apple SDKs, real native adapters, OAuth credentials, secrets, dashboard
-  setup, or provider enablement in Supabase.
-- Final Android/iOS identifiers, Apple capabilities, signing changes, or release
-  configuration. The current bootstrap IDs remain
-  `community.planets.bootstrap.planets_mobile` (Android) and
-  `community.planets.bootstrap.planetsMobile` (iOS); **verify/finalize permanent
-  IDs before creating final OAuth credentials**.
+- External Google/Apple OAuth credentials, secrets, dashboard setup, or hosted
+  provider enablement. Google Android SDK/adapter code is now implemented.
+- Google iOS and Apple adapters/capabilities. Android's permanent application ID
+  is **`community.planets.app`**, with the existing upload-key/Play App Signing
+  workflow. AUTH01B1 changes neither. iOS still uses bootstrap
+  `community.planets.bootstrap.planetsMobile`; finalize it in separate iOS work.
 - Real device/provider QA, manual account-linking UI or policy, production
   deployment, or database migrations. `supabase/config.toml` stays unchanged:
   Apple is disabled and no Google provider is enabled.
 
 ## AUTH01B — Google activation checklist
 
-1. Verify/finalize the Android application ID and iOS bundle ID before final
-   credentials; confirm target platforms and signing identities.
-2. Select a provider SDK compatible with the then-resolved Flutter/dependency
-   versions. Account owners must create the required Google OAuth clients and
-   register signing fingerprints where required.
+1. For Android, use permanent `community.planets.app` and the **Play App Signing
+   app-signing certificate SHA-1** for Play-installed builds. The upload-key
+   certificate alone is insufficient. iOS remains separate and deferred.
+2. AUTH01B1 pins `google_sign_in 7.2.0` with the resolved Android implementation
+   and Supabase versions recorded in its runbook. Account owners must create the
+   required Google OAuth clients and register signing fingerprints.
 3. Configure the relevant Supabase Google settings through the supported
    local/managed/self-hosted configuration, keeping secrets outside Git.
-4. Implement native credential acquisition and Supabase exchange behind
-   `ProviderAuthAdapter`; return the canonical identity and map dismissal and
-   failures to the app-owned results. Reuse the existing completion command.
-5. Replace the default injection only when configuration/platform checks prove
-   availability. Add a localized Google button only on available surfaces.
+4. AUTH01B1 implements native credential acquisition and Supabase exchange behind
+   `ProviderAuthAdapter`, returning the canonical identity and mapping dismissal
+   and failures to app-owned results through the existing completion command.
+5. AUTH01B1 gates the adapter and localized Google button by Android platform and
+   validated `GOOGLE_WEB_CLIENT_ID`; empty/omitted values keep login dormant.
 6. Validate new users, existing OTP users, incomplete/missing profiles, retry,
    cancellation and late session events, sign-out/sign-in, and Android/iOS as
    applicable. Validate account composition separately; do not silently invent
@@ -98,8 +101,9 @@ network request, or changed OTP QA procedure is required. Normal UI stays OTP-on
 Use the repository's mobile validation (`npm run check:mobile`) after dependency
 restore. Focused auth, Profile, and Settings tests exercise the shared completion
 path and existing account exits. Formatting/static analysis and the full mobile
-suite are required before merge. Real Google/Apple integration QA belongs to
-AUTH01B/01C and is intentionally deferred.
+suite are required before merge. AUTH01B1 also requires an Android compile for the
+plugin. Real Google/Apple integration QA belongs to external activation and is
+intentionally deferred until account-owner configuration exists.
 
 AUTH01A local validation on 2026-10-06 against the initial `6713302` base used
 Flutter 3.47.2 / Dart 3.13.2:

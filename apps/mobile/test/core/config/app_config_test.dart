@@ -16,6 +16,38 @@ void main() {
       expect(config.sentryDsn, isNull);
       expect(config.monitoringEnabled, isFalse);
       expect(config.demoToolsEnabled, isTrue);
+      expect(config.googleWebClientId, isNull);
+    });
+
+    test(
+      'empty Google config disables; a plausible Web client ID is accepted',
+      () {
+        expect(_config(googleWebClientId: '').googleWebClientId, isNull);
+        const id = '123456789-example.apps.googleusercontent.com';
+        expect(_config(googleWebClientId: id).googleWebClientId, id);
+      },
+    );
+
+    test('rejects malformed Google config without echoing its value', () {
+      for (final value in [
+        ' 123456789-example.apps.googleusercontent.com',
+        '123456789-example.apps.googleusercontent.com ',
+        '123456789-example.apps.googleusercontent.com\n',
+        '123456789-example.apps.googleusercontent.com.evil.test',
+        'https://123456789-example.apps.googleusercontent.com',
+        'secret-client-secret',
+      ]) {
+        expect(
+          () => _config(googleWebClientId: value),
+          throwsA(
+            isA<AppConfigException>().having(
+              (error) => error.toString(),
+              'safe diagnostic',
+              isNot(contains(value)),
+            ),
+          ),
+        );
+      }
     });
 
     test('parses staging HTTPS and a Sentry DSN', () {
@@ -188,10 +220,12 @@ AppConfig _config({
   String supabasePublishableKey = 'test-key',
   String sentryDsn = '',
   String enableDemoTools = '',
+  String googleWebClientId = '',
 }) => AppConfig.fromValues(
   appEnvironment: appEnvironment,
   supabaseUrl: supabaseUrl,
   supabasePublishableKey: supabasePublishableKey,
   sentryDsn: sentryDsn,
   enableDemoTools: enableDemoTools,
+  googleWebClientId: googleWebClientId,
 );

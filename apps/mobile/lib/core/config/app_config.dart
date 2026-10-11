@@ -1,5 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'google_auth_config.dart';
+
 enum AppEnvironment {
   local('local'),
   staging('staging'),
@@ -28,6 +30,7 @@ final class AppConfig {
     required this.supabasePublishableKey,
     required this.sentryDsn,
     required this.demoToolsEnabled,
+    required this.googleWebClientId,
   });
 
   factory AppConfig.fromCompileTime() {
@@ -39,6 +42,7 @@ final class AppConfig {
       ),
       sentryDsn: const String.fromEnvironment('SENTRY_DSN'),
       enableDemoTools: const String.fromEnvironment('ENABLE_DEMO_TOOLS'),
+      googleWebClientId: const String.fromEnvironment('GOOGLE_WEB_CLIENT_ID'),
     );
   }
 
@@ -48,6 +52,7 @@ final class AppConfig {
     required String supabasePublishableKey,
     String sentryDsn = '',
     String enableDemoTools = '',
+    String googleWebClientId = '',
   }) {
     final environment = AppEnvironment.parse(
       _requireUnpaddedValue('APP_ENV', appEnvironment),
@@ -77,6 +82,12 @@ final class AppConfig {
       environment,
       enableDemoTools,
     );
+    final String? parsedGoogleWebClientId;
+    try {
+      parsedGoogleWebClientId = parseGoogleWebClientId(googleWebClientId);
+    } on FormatException catch (error) {
+      throw AppConfigException(error.message);
+    }
 
     return AppConfig._(
       environment: environment,
@@ -84,6 +95,7 @@ final class AppConfig {
       supabasePublishableKey: publishableKey,
       sentryDsn: parsedSentryDsn,
       demoToolsEnabled: demoToolsEnabled,
+      googleWebClientId: parsedGoogleWebClientId,
     );
   }
 
@@ -92,6 +104,7 @@ final class AppConfig {
   final String supabasePublishableKey;
   final Uri? sentryDsn;
   final bool demoToolsEnabled;
+  final String? googleWebClientId;
 
   bool get monitoringEnabled => sentryDsn != null;
 
