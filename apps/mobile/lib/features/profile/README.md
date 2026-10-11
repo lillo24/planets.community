@@ -31,7 +31,8 @@ headings and removal/selector actions belong only to Edit Profile. With no
 selected competences, Profile keeps the localized `profileNoSkills` message.
 Profile leaves a large spacing token between those labels and its actions.
 Field-level visibility controls stay in Edit Profile, also reached through
-Settings' Profile & privacy entry; Profile omits the visibility summary.
+Profile > Edit profile; Settings exposes the legal Privacy Policy link and no
+profile editor shortcut. Profile omits the visibility summary.
 
 Setup and edit share one canonical Save handler. Its AppBar action remains
 visible while scrolling, disables during requests and shows save progress.
