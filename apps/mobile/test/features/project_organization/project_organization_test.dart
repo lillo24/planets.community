@@ -606,6 +606,7 @@ void main() {
     await tester.ensureVisible(
       find.byKey(const Key('organization-edit-timezone')),
     );
+    await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('organization-edit-timezone')));
     await tester.pumpAndSettle();
     await tester.ensureVisible(find.byKey(const Key('organization-timezone')));
@@ -637,6 +638,7 @@ void main() {
       await tester.pumpAndSettle();
       final edit = find.byKey(const Key('organization-edit-country'));
       await tester.ensureVisible(edit);
+      await tester.pumpAndSettle();
       expect(tester.getSemantics(edit).label, contains('Cambia paese'));
       await tester.tap(edit);
       await tester.pumpAndSettle();
