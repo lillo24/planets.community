@@ -112,6 +112,7 @@ ProjectRequestMessageChatItem projectRequestMessageChatFixture({
 
 ProjectMessageChatItem projectMessageChatFixture({
   String? latestSystemEventLabel,
+  String? coverObjectPath,
   int unreadCount = 0,
   String chatId = '00000000-0000-4000-8000-000000000601',
   String projectId = '00000000-0000-4000-8000-000000000701',
@@ -126,6 +127,7 @@ ProjectMessageChatItem projectMessageChatFixture({
   final messageAt = messageId == null ? null : DateTime.utc(2026, 9, 20, 10);
   return ProjectMessageChatItem(
     latestSystemEventLabel: latestSystemEventLabel,
+    coverObjectPath: coverObjectPath,
     unreadCount: unreadCount,
     chatId: chatId,
     activityAt: activityAt ?? messageAt ?? DateTime.utc(2026, 9, 19, 10),

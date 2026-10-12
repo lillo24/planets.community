@@ -22,6 +22,15 @@ its 93 API checks were local only. Verify coverage from final-head step logs,
 not a passing job name. Trigger boundaries and required-check behavior remain
 unchanged. The full manual database command is `npm run check:db`.
 
+GROUPCOVER01 adds the existing `cover:verify:local` command explicitly after
+profile verification. It was previously present only in local `check:db`.
+The bounded synthetic Auth/Storage fixture now verifies immutable uploads,
+current cover replacement/removal, public lifecycle denial and v4/v5 chat-list
+projection through real HTTP. This short verifier runs with every Database job
+because the projection and Storage authorization share canonical database rules;
+it uses small fixed images and cleans up its Storage objects. Trigger boundaries
+and required checks stay unchanged; workflow edits select the complete suite.
+
 MSG02 adds `messages:unread:upgrade:verify:local` after the populated pair
 upgrade and before fresh replay, plus `messages:unread:verify:local` after
 structured Messages. These bounded checks prove baseline preservation,

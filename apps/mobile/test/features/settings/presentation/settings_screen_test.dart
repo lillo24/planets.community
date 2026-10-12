@@ -21,6 +21,8 @@ import 'package:planets_mobile/features/notifications/data/notifications_gateway
 import 'package:planets_mobile/features/profile/data/profile_gateway.dart';
 import 'package:planets_mobile/features/profile/data/profile_visibility_gateway.dart';
 import 'package:planets_mobile/features/profile/domain/profile_models.dart';
+import 'package:planets_mobile/features/policies/application/policy_documents.dart';
+import 'package:planets_mobile/features/policies/data/policy_acceptance_store.dart';
 import 'package:planets_mobile/features/messages/data/messages_gateway.dart';
 import 'package:planets_mobile/features/messages/data/message_chats_gateway.dart';
 import 'package:planets_mobile/l10n/generated/app_localizations.dart';
@@ -66,6 +68,52 @@ void main() {
         ))
         .load();
   });
+
+  testWidgets(
+    'visibility relocation retains the profile policy guard before reads or writes',
+    (tester) async {
+      final store = FakePolicyAcceptanceStore();
+      final visibility = FakeProfileVisibilityGateway();
+      final app = await _pump(
+        tester,
+        visibility: visibility,
+        policyStore: store,
+      );
+      final router = app.read(appRouterProvider);
+      router.go('/settings');
+      await tester.pumpAndSettle();
+      expect(_path(app), '/settings');
+      await _tapSettings(tester, 'settings-profile-privacy-row');
+      expect(_path(app), policyAcceptancePath);
+      expect(
+        router.state.uri.queryParameters['returnTo'],
+        '/settings/profile-visibility',
+      );
+      expect(visibility.loads, isEmpty);
+      expect(visibility.writes, isEmpty);
+      expect(store.writes, 0);
+
+      router.go('/settings/profile-visibility');
+      await tester.pumpAndSettle();
+      expect(_path(app), policyAcceptancePath);
+      expect(visibility.loads, isEmpty);
+      final checkbox = find.byKey(const Key('policy-acceptance-checkbox'));
+      await tester.ensureVisible(checkbox);
+      await tester.pumpAndSettle();
+      await tester.tap(checkbox);
+      await tester.pumpAndSettle();
+      final accept = find.byKey(const Key('policy-acceptance-continue'));
+      await tester.ensureVisible(accept);
+      await tester.pumpAndSettle();
+      await tester.tap(accept);
+      await tester.pumpAndSettle();
+      expect(_path(app), '/settings/profile-visibility');
+      expect(store.writes, 1);
+      expect(visibility.loads, ['user-1']);
+      expect(visibility.writes, isEmpty);
+      expect(tester.takeException(), isNull);
+    },
+  );
 
   for (final phase in ['guest', 'incomplete', 'ready']) {
     testWidgets(
@@ -578,6 +626,7 @@ Future<ProviderContainer> _pump(
   FakeMessagesGateway? messages,
   FakeMessageChatsGateway? chats,
   FakeProfileVisibilityGateway? visibility,
+  FakePolicyAcceptanceStore? policyStore,
   LanguagePreference initial = LanguagePreference.system,
   FakeLanguagePreferenceStore? store,
   FakeNavigationPreferenceStore? navigationStore,
@@ -596,7 +645,10 @@ Future<ProviderContainer> _pump(
   await tester.pumpWidget(
     ProviderScope(
       overrides: [
-        preacceptedPolicyFixture,
+        if (policyStore == null)
+          preacceptedPolicyFixture
+        else
+          policyAcceptanceStoreProvider.overrideWithValue(policyStore),
         blockingGatewayProvider.overrideWithValue(FakeBlockingGateway()),
         moderationGatewayProvider.overrideWithValue(FakeModerationGateway()),
         messagesGatewayProvider.overrideWithValue(

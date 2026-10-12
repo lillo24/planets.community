@@ -2659,5 +2659,7 @@
   "groupsPolicySave": "Acknowledge Terms and Rules before saving. Your input stays in this editor.",
   "groupsPolicyAction": "Review Terms and Rules",
   "groupsManageError": "Manager access could not be checked. Retry loading this page.",
-  "groupsLimit": "Maximum 120 Unicode characters."
+  "groupsLimit": "Maximum 120 Unicode characters.",
+  "messageGroupCoverPlaceholder": "No group cover for {title}",
+  "@messageGroupCoverPlaceholder": {"description": "Accessible empty/loading/unavailable group cover thumbnail.", "placeholders": {"title": {"type": "String"}}}
 }

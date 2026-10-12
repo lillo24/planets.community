@@ -1921,5 +1921,7 @@
   "groupsPolicySave": "Accetta Termini e Regole prima di salvare. Il testo resta in questo editor.",
   "groupsPolicyAction": "Leggi Termini e Regole",
   "groupsManageError": "Impossibile verificare l’accesso del gestore. Riprova a caricare questa pagina.",
-  "groupsLimit": "Massimo 120 caratteri Unicode."
+  "groupsLimit": "Massimo 120 caratteri Unicode.",
+  "messageGroupCoverPlaceholder": "Nessuna copertina del gruppo per {title}",
+  "@messageGroupCoverPlaceholder": {"description": "Accessible empty/loading/unavailable group cover thumbnail.", "placeholders": {"title": {"type": "String"}}}
 }
