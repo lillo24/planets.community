@@ -130,6 +130,24 @@ async function verify() {
   const resourceId = (
     await sql`select id from public.resource_request_chats where request_id=${rr}`
   )[0].id;
+  const imageProjection = await rpc(
+    reader,
+    "list_own_scoped_conversation_items_v5",
+    {
+      p_expected_profile_id: reader.id,
+      p_scope: "private",
+      p_limit: 50,
+    },
+  );
+  assert.ok(
+    imageProjection.some(
+      (row) => row.item_kind === resource && row.chat_id === resourceId,
+    ),
+  );
+  assert.ok(
+    imageProjection.every((row) => row.group_cover_object_path === null),
+    "Private Resource/pair rows never project group covers",
+  );
   await send(owner, resource, resourceId, "Synthetic Resource one");
   await send(owner, resource, resourceId, "Synthetic Resource two");
   assert.deepEqual(await summary(reader), { total: 3, private: 2, groups: 1 });

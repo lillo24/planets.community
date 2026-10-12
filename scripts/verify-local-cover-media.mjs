@@ -214,12 +214,21 @@ async function verifyCoverMedia() {
       ),
     ]);
 
+    await verifyChatCoverProjection(
+      userA,
+      userB,
+      anonymous,
+      proposalId,
+      proposalPaths[0],
+    );
+
     await upload(userA, proposalPaths[1]);
     const replacement = await setProjectCover(
       userA,
       proposalId,
       proposalPaths[1],
     );
+    await assertChatCover(userB, proposalId, proposalPaths[1]);
     if (replacement.previous_object_path !== proposalPaths[0]) {
       throw new Error(
         "Project cover replacement did not return the prior path.",
@@ -264,6 +273,22 @@ async function verifyCoverMedia() {
       "download a cleared cover anonymously",
     );
 
+    await assertChatCover(userB, proposalId, null);
+    // A terminal chat may remain readable; this never grants its protected
+    // source a public Storage image. Reattach only while still editable.
+    await setProjectCover(userA, proposalId, proposalPaths[1]);
+    const cancelled = await userA.client.rpc("cancel_proposal", {
+      p_expected_creator_profile_id: userA.id,
+      p_proposal_id: proposalId,
+    });
+    if (cancelled.error)
+      throw safeDatabaseFailure("cancel cover source", cancelled.error);
+    await assertChatCover(userB, proposalId, null);
+    await expectStorageFailure(
+      anonymous.storage.from(bucket).download(proposalPaths[1]),
+      "download protected cancelled chat cover",
+    );
+
     const { error: closeError } = await userA.client.rpc(
       "close_resource_listing",
       {
@@ -283,7 +308,7 @@ async function verifyCoverMedia() {
 
     await remove(userA, cleanupPaths);
     console.log(
-      "Confirmed local cover WebP/size limits, immutable owner paths, canonical attach/replace/clear, public lifecycle reads, stale denial, tenant isolation, and Storage cleanup.",
+      "Confirmed local cover WebP/size limits, immutable owner paths, canonical attach/replace/clear, public lifecycle reads, stale denial, tenant isolation, Storage cleanup, and v4/v5 chat cover authorization, replacement, removal and pagination.",
     );
   } finally {
     await userA.client.rpc("clear_own_project_cover", {
@@ -292,6 +317,93 @@ async function verifyCoverMedia() {
     });
     await cleanup(userA, cleanupPaths);
   }
+}
+
+async function chatList(user, scope, version = 5, extra = {}) {
+  const { data, error } = await user.client.rpc(
+    `list_own_scoped_conversation_items_v${version}`,
+    {
+      p_expected_profile_id: user.id,
+      p_scope: scope,
+      p_limit: 50,
+      ...extra,
+    },
+  );
+  if (error) throw safeDatabaseFailure("read chat cover list", error);
+  if (!Array.isArray(data))
+    throw new Error("Chat cover list was not an array.");
+  return data;
+}
+async function assertChatCover(user, projectId, expected) {
+  const rows = await chatList(user, "groups");
+  const row = rows.find((item) => item.project_id === projectId);
+  // Existing source/entitlement rules may omit a terminal chat entirely.
+  if (
+    (!row && expected !== null) ||
+    (row && row.group_cover_object_path !== expected)
+  ) {
+    throw new Error("Chat did not project the current authorized cover.");
+  }
+}
+async function verifyChatCoverProjection(
+  owner,
+  member,
+  anonymous,
+  projectId,
+  expectedPath,
+) {
+  const request = await member.client.rpc("request_to_join_project", {
+    p_expected_requester_profile_id: member.id,
+    p_project_id: projectId,
+    p_request_message: "Synthetic cover-list membership",
+    p_skill_ids: [],
+    p_resource_need_ids: [],
+  });
+  if (request.error)
+    throw safeDatabaseFailure("request cover-list membership", request.error);
+  const accepted = await owner.client.rpc("accept_project_join_request", {
+    p_expected_creator_profile_id: owner.id,
+    p_request_id: request.data,
+  });
+  if (accepted.error)
+    throw safeDatabaseFailure("accept cover-list membership", accepted.error);
+  await assertChatCover(owner, projectId, expectedPath);
+  await assertChatCover(member, projectId, expectedPath);
+  const old = await chatList(member, "groups", 4),
+    current = await chatList(member, "groups");
+  const stripped = current.map(({ group_cover_object_path, ...row }) => row);
+  if (JSON.stringify(old) !== JSON.stringify(stripped))
+    throw new Error("v5 changed v4 ordering, unread or metadata.");
+  if (
+    (await chatList(member, "private")).some(
+      (row) => row.group_cover_object_path !== null,
+    )
+  )
+    throw new Error("Private row exposed a group cover.");
+  const first = (await chatList(member, "groups", 5, { p_limit: 1 }))[0];
+  const tail = await chatList(member, "groups", 5, {
+    p_cursor_activity_at: first.activity_at,
+    p_cursor_item_kind: first.item_kind,
+    p_cursor_chat_id: first.chat_id,
+  });
+  if (
+    tail.some((row) => row.chat_id === first.chat_id) ||
+    tail.length !== current.length - 1
+  )
+    throw new Error("Cover projection broke pagination.");
+  const foreign = await member.client.rpc(
+    "list_own_scoped_conversation_items_v5",
+    { p_expected_profile_id: owner.id, p_scope: "groups", p_limit: 50 },
+  );
+  if (foreign.error?.code !== "42501")
+    throw new Error("Foreign owner chat-cover read was accepted.");
+  const anon = await anonymous.rpc("list_own_scoped_conversation_items_v5", {
+    p_expected_profile_id: owner.id,
+    p_scope: "groups",
+    p_limit: 50,
+  });
+  if (!anon.error)
+    throw new Error("Anonymous chat-cover metadata read was accepted.");
 }
 
 async function ensureCompleteProfile(user, displayName) {
