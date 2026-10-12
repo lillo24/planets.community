@@ -211,12 +211,22 @@ begin
   loop perform private.audit_group_relationship('group.authority_invitation_revoked',p_actor,p_group,invitation); end loop;
 end;
 $$;
+create function private.group_can_read_relationship_history(p_group uuid,p_actor uuid,p_structural boolean) returns boolean
+language sql stable security definer set search_path='' as $$
+  select coalesce(private.group_authority_role(p_group,p_actor) is not null
+    and (not p_structural or private.group_authority_role(p_group,p_actor) in ('creator','co_creator'))
+    and exists(select 1 from private.community_groups where id=p_group
+      and (publication_state<>'draft' or private.group_authority_role(p_group,p_actor)='creator')),false);
+$$;
 create function private.group_relationship_result(p_result jsonb,p_replayed boolean) returns jsonb
 language sql volatile security definer set search_path='' as $$
   select p_result || jsonb_build_object('replayed',p_replayed,'current_status',case p_result->>'relationship_kind'
-    when 'membership' then (select coalesce(end_reason,'current') from private.group_memberships where id=(p_result->>'relationship_id')::uuid)
-    when 'request' then (select status from private.group_join_requests where id=(p_result->>'relationship_id')::uuid)
-    when 'delegate' then (select case when revoked_at is null then delegate_role else 'revoked' end from private.group_delegates where id=(p_result->>'relationship_id')::uuid)
+    when 'membership' then (select coalesce(end_reason,'current') from private.group_memberships where id=(p_result->>'relationship_id')::uuid
+      and (profile_id=auth.uid() or private.group_can_read_relationship_history(group_id,auth.uid(),false)))
+    when 'request' then (select status from private.group_join_requests where id=(p_result->>'relationship_id')::uuid
+      and (requester_id=auth.uid() or private.group_can_read_relationship_history(group_id,auth.uid(),false)))
+    when 'delegate' then (select case when revoked_at is null then delegate_role else 'revoked' end from private.group_delegates where id=(p_result->>'relationship_id')::uuid
+      and (profile_id=auth.uid() or private.group_can_read_relationship_history(group_id,auth.uid(),true)))
     when 'authority_invitation' then (select case when status='pending' and expires_at<=clock_timestamp() then 'expired' else status end from private.group_authority_invitations where id=(p_result->>'relationship_id')::uuid)
     else null end);
 $$;

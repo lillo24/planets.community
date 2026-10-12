@@ -323,7 +323,7 @@ declare actor uuid:=private.require_group_identity(p_expected_profile_id);
 begin
   perform private.validate_group_page(p_limit,p_before_created_at,p_before_id);
   
-  return query select r.id,r.group_id,r.requester_id,p.display_name,r.note,r.status,r.created_at,r.resolved_at,r.resolved_by,r.resolution_reason,r.superseded_by_membership_id
+  return query select r.id,r.group_id,r.requester_id,p.display_name,r.note,r.status,r.created_at,r.resolved_at,r.resolved_by,case when r.resolution_reason='blocking' then case when r.status='rejected' then 'review' else 'withdrawal' end else r.resolution_reason end,r.superseded_by_membership_id
     from private.group_join_requests r left join public.profiles p on p.id=r.requester_id
     where r.requester_id=actor and (p_before_id is null or (r.created_at,r.id)<(p_before_created_at,p_before_id))
     order by r.created_at desc,r.id desc limit p_limit;
@@ -351,7 +351,7 @@ declare actor uuid:=private.require_group_identity(p_expected_profile_id);
 begin
   perform private.validate_group_page(p_limit,p_before_created_at,p_before_id);
   perform private.require_group_manager(p_group_id,actor);
-  return query select r.id,r.group_id,r.requester_id,p.display_name,r.note,r.status,r.created_at,r.resolved_at,r.resolved_by,r.resolution_reason,r.superseded_by_membership_id
+  return query select r.id,r.group_id,r.requester_id,p.display_name,r.note,r.status,r.created_at,r.resolved_at,r.resolved_by,case when r.resolution_reason='blocking' then case when r.status='rejected' then 'review' else 'withdrawal' end else r.resolution_reason end,r.superseded_by_membership_id
     from private.group_join_requests r left join public.profiles p on p.id=r.requester_id
     where r.group_id=p_group_id and (p_before_id is null or (r.created_at,r.id)<(p_before_created_at,p_before_id))
     order by r.created_at desc,r.id desc limit p_limit;

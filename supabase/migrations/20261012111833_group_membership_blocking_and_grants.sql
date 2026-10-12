@@ -43,7 +43,7 @@ begin
   for object in select p.oid::regprocedure as signature from pg_proc p join pg_namespace n on n.oid=p.pronamespace
     where n.nspname='private' and p.proname in ('protect_group_relationship_provenance','require_group_identity',
       'group_has_accountable_identity','group_authority_role','current_group_manager_profile_ids','require_group_manager',
-      'lock_group_interactions','audit_group_relationship','invalidate_group_authority_invitations','group_relationship_result',
+      'lock_group_interactions','audit_group_relationship','invalidate_group_authority_invitations','group_relationship_result','group_can_read_relationship_history',
       'group_relationship_command','read_group_participant_link','validate_group_page','require_group_people_viewer',
       'group_structural_command','close_pending_direct_requests_for_user_block','close_pending_project_resource_requests_for_user_block')
   loop execute format('revoke all on function %s from public,anon,authenticated,service_role',object.signature); end loop;

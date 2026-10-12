@@ -154,7 +154,11 @@ operations, independent of GRP01 content commands. The hash includes exact
 operation, group and supplied intent (tokens are represented only by digest).
 Changed intent is `PT409`. Exact accepted receipts are recovery, never current
 authorization or evidence of a current relationship. No raw secret is persisted
-in a receipt. Structural commands share the existing GRP01 actor/key namespace,
+in a receipt. Recovery of a manager's original action remains account-bound;
+current status for another person's relationship becomes null when the caller
+loses the corresponding live history permission. Own episode/role status remains
+available through its original action.
+Structural commands share the existing GRP01 actor/key namespace,
 content versions and `22023` changed-intent behavior. Only content/publication/
 staff suppression changes affect content version; relationship activity does not.
 
@@ -176,6 +180,8 @@ leaves that boundary. Existing accepted memberships/roles are retained. Canonica
 then visits group pending requests in group/ID order: manager blocks requester
 → rejected; requester blocks manager → withdrawn. No failure reveals block
 direction or a private manager identity. Private notes never enter generic audit.
+Request projections use the ordinary review/withdrawal resolution reason for
+block convergence, so they do not disclose a separate inbound-block cause.
 
 ## GRP03B integration and validation
 

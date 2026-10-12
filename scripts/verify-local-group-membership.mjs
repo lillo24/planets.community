@@ -691,17 +691,30 @@ async function verify() {
         p_expected_blocker_profile_id: blocker.id,
         p_blocked_profile_id: blocked.id,
       });
+      const resolved = (
+        await rpc(
+          applicant,
+          "list_own_group_join_requests",
+          expected(applicant),
+        )
+      ).find((row) => row.request_id === pendingRequest.relationship_id);
       equal(
-        (
-          await rpc(
-            applicant,
-            "list_own_group_join_requests",
-            expected(applicant),
-          )
-        ).find((row) => row.request_id === pendingRequest.relationship_id)
-          .status,
+        resolved.status,
         inbound ? "rejected" : "withdrawn",
         "Direction-safe pending convergence",
+      );
+      equal(
+        resolved.resolution_reason,
+        inbound ? "review" : "withdrawal",
+        "Own request history does not label blocking",
+      );
+      equal(
+        (
+          await rpc(creator, "list_group_join_requests", args(creator, id))
+        ).find((row) => row.request_id === pendingRequest.relationship_id)
+          .resolution_reason,
+        inbound ? "review" : "withdrawal",
+        "Manager request history does not label inbound blocking",
       );
       await denied(
         applicant,
@@ -1138,6 +1151,53 @@ async function verify() {
     ...key(),
     p_delegate_id: editorDelegate.accepted.relationship_id,
   });
+  // A former manager may recover their original action, never later private
+  // state for somebody else after their history permission has ended.
+  const recoveryGroup = await group(creator);
+  const formerManager = await invite(creator, organizer, recoveryGroup);
+  const reviewedRequest = await request(other, recoveryGroup);
+  const reviewedKey = key();
+  const [reviewedEpisode] = await rpc(organizer, "accept_group_join_request", {
+    ...expected(organizer),
+    ...reviewedKey,
+    p_request_id: reviewedRequest.relationship_id,
+  });
+  await rpc(creator, "revoke_group_delegate", {
+    ...expected(creator),
+    ...key(),
+    p_delegate_id: formerManager.accepted.relationship_id,
+  });
+  await rpc(other, "leave_group", {
+    ...expected(other),
+    ...key(),
+    p_membership_id: reviewedEpisode.relationship_id,
+  });
+  const [formerRecovery] = await rpc(
+    organizer,
+    "recover_group_relationship_command",
+    { ...expected(organizer), ...reviewedKey },
+  );
+  equal(
+    formerRecovery.relationship_id,
+    reviewedEpisode.relationship_id,
+    "Former manager recovers original relationship ID",
+  );
+  equal(
+    formerRecovery.current_status,
+    null,
+    "Former manager receipt hides another person's later state",
+  );
+  equal(
+    (
+      await rpc(organizer, "accept_group_join_request", {
+        ...expected(organizer),
+        ...reviewedKey,
+        p_request_id: reviewedRequest.relationship_id,
+      })
+    )[0].current_status,
+    null,
+    "Exact replay does not widen revoked manager reads",
+  );
   // Orphaned accountable identity fails closed despite active delegates.
   const orphanCreator = await user("orphan-creator");
   const orphan = await group(orphanCreator);
