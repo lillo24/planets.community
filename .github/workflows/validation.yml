@@ -194,6 +194,9 @@ jobs:
       - name: Verify profile ownership and mixed visibility
         run: npm run profile:verify:local
 
+      - name: Verify public cover Storage and scoped chat image authorization
+        run: npm run cover:verify:local
+
       - name: Verify proposal ownership, lifecycle, and public privacy
         run: npm run proposal:verify:local
 
