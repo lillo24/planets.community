@@ -138,6 +138,26 @@ void main() {
             const Size(40, 40),
           );
         }
+        for (final element
+            in find
+                .byWidgetPredicate(
+                  (w) =>
+                      w is Text &&
+                      w.key is ValueKey<String> &&
+                      (w.key as ValueKey<String>).value.startsWith(
+                        'chat-time-',
+                      ),
+                )
+                .evaluate()) {
+          final paragraph = tester.renderObject<RenderParagraph>(
+            find.byWidget(element.widget),
+          );
+          expect(
+            paragraph.didExceedMaxLines,
+            isFalse,
+            reason: 'The complete activity date must remain readable.',
+          );
+        }
         expect(tester.takeException(), isNull);
       }
 

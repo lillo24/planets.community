@@ -267,6 +267,8 @@ Protected-list lifecycle and loaded-window invariants are documented in [MSGREFR
 ## Chat image slots (GROUPCOVER01)
 
 Every Private and Groups row reserves the same 40dp leading slot and spacing.
+On narrow layouts with expanded text, timestamp and unread move under the
+preview so they remain readable alongside the fixed image.
 Private reuses the authorized batched visible-photo controller/cache and its
 person-outline fallback. Groups never use a member portrait.
 `presentation/chat_cover_thumbnail.dart` reuses the public cover byte provider,

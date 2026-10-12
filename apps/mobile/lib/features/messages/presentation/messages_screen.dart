@@ -423,82 +423,105 @@ class _ChatCard extends ConsumerWidget {
           child: Padding(
             padding: const EdgeInsets.all(AppSpacing.small),
             child: LayoutBuilder(
-              builder: (context, constraints) => Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  SizedBox.square(
-                    key: Key('chat-thumbnail-${item.compositeId}'),
-                    dimension: ChatCoverThumbnail.size,
-                    child: item is ProjectMessageChatItem
-                        ? ChatCoverThumbnail(
-                            key: Key('project-chat-cover-${item.chatId}'),
-                            projectId:
-                                (item as ProjectMessageChatItem).projectId,
-                            title: title,
-                            objectPath: (item as ProjectMessageChatItem)
-                                .coverObjectPath,
-                          )
-                        : VisibleProfilePhotoAvatar(
-                            key: Key(
-                              '${item.kind == MessageChatItemKind.resourceChat ? 'resource' : 'project-request'}-chat-photo-${item.chatId}',
+              builder: (context, constraints) {
+                final stackMetadata =
+                    constraints.maxWidth < 480 &&
+                    MediaQuery.textScalerOf(context).scale(14) > 20;
+                final activityChildren = <Widget>[
+                  Text(
+                    messageActivityDate(context, item.activityAt),
+                    key: Key('chat-time-${item.compositeId}'),
+                    maxLines: stackMetadata ? null : 1,
+                    overflow: stackMetadata
+                        ? TextOverflow.clip
+                        : TextOverflow.ellipsis,
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                  if (item.unreadCount > 0) ...[
+                    if (!stackMetadata)
+                      const SizedBox(height: AppSpacing.xSmall),
+                    MessageInlineCount(
+                      count: item.unreadCount,
+                      label: l10n.messageUnreadMessages(item.unreadCount),
+                    ),
+                  ],
+                ];
+                final activity = stackMetadata
+                    ? Wrap(
+                        spacing: AppSpacing.small,
+                        runSpacing: AppSpacing.xSmall,
+                        crossAxisAlignment: WrapCrossAlignment.center,
+                        children: activityChildren,
+                      )
+                    : ConstrainedBox(
+                        constraints: BoxConstraints(
+                          maxWidth: constraints.maxWidth * .29,
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          mainAxisSize: MainAxisSize.min,
+                          children: activityChildren,
+                        ),
+                      );
+                return Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    SizedBox.square(
+                      key: Key('chat-thumbnail-${item.compositeId}'),
+                      dimension: ChatCoverThumbnail.size,
+                      child: item is ProjectMessageChatItem
+                          ? ChatCoverThumbnail(
+                              key: Key('project-chat-cover-${item.chatId}'),
+                              projectId:
+                                  (item as ProjectMessageChatItem).projectId,
+                              title: title,
+                              objectPath: (item as ProjectMessageChatItem)
+                                  .coverObjectPath,
+                            )
+                          : VisibleProfilePhotoAvatar(
+                              key: Key(
+                                '${item.kind == MessageChatItemKind.resourceChat ? 'resource' : 'project-request'}-chat-photo-${item.chatId}',
+                              ),
+                              entry: photoEntry,
+                              imageSemanticsLabel: l10n
+                                  .resourceChatCounterpartyPhotoLabel(title),
+                              placeholderSemanticsLabel: l10n
+                                  .resourceChatCounterpartyPhotoLabel(title),
+                              radius: ChatCoverThumbnail.size / 2,
                             ),
-                            entry: photoEntry,
-                            imageSemanticsLabel: l10n
-                                .resourceChatCounterpartyPhotoLabel(title),
-                            placeholderSemanticsLabel: l10n
-                                .resourceChatCounterpartyPhotoLabel(title),
-                            radius: ChatCoverThumbnail.size / 2,
+                    ),
+                    const SizedBox(width: AppSpacing.small),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            title,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: Theme.of(context).textTheme.titleMedium,
                           ),
-                  ),
-                  const SizedBox(width: AppSpacing.small),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          title,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: Theme.of(context).textTheme.titleMedium,
-                        ),
-                        const SizedBox(height: AppSpacing.xSmall),
-                        Text(
-                          preview,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: Theme.of(context).textTheme.bodyMedium,
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(width: AppSpacing.small),
-                  ConstrainedBox(
-                    constraints: BoxConstraints(
-                      maxWidth: constraints.maxWidth * .29,
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          messageActivityDate(context, item.activityAt),
-                          key: Key('chat-time-${item.compositeId}'),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: Theme.of(context).textTheme.bodySmall,
-                        ),
-                        if (item.unreadCount > 0) ...[
                           const SizedBox(height: AppSpacing.xSmall),
-                          MessageInlineCount(
-                            count: item.unreadCount,
-                            label: l10n.messageUnreadMessages(item.unreadCount),
+                          Text(
+                            preview,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: Theme.of(context).textTheme.bodyMedium,
                           ),
+                          if (stackMetadata) ...[
+                            const SizedBox(height: AppSpacing.small),
+                            activity,
+                          ],
                         ],
-                      ],
+                      ),
                     ),
-                  ),
-                ],
-              ),
+                    if (!stackMetadata) ...[
+                      const SizedBox(width: AppSpacing.small),
+                      activity,
+                    ],
+                  ],
+                );
+              },
             ),
           ),
         ),
