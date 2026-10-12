@@ -94,6 +94,7 @@ sealed class MessageChatItem {
         item.projectKind,
         item.viewerRole,
         item.latestSystemEventLabel,
+        item.coverObjectPath,
       ),
       ResourceMessageChatItem item => (
         item.requestId,
@@ -138,6 +139,7 @@ final class ProjectMessageChatItem extends MessageChatItem {
     required super.lastVisibleSenderProfileId,
     required super.lastVisibleSenderDisplayName,
     this.latestSystemEventLabel,
+    this.coverObjectPath,
     required this.projectId,
     required this.projectKind,
     required this.viewerRole,
@@ -147,6 +149,7 @@ final class ProjectMessageChatItem extends MessageChatItem {
   final ProjectKind projectKind;
   final ProjectChatViewerRole viewerRole;
   final String? latestSystemEventLabel;
+  final String? coverObjectPath;
 
   bool get isCreator => viewerRole == ProjectChatViewerRole.creator;
   bool get isDelegate => viewerRole == ProjectChatViewerRole.delegate;

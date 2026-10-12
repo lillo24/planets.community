@@ -6,6 +6,16 @@ import 'package:planets_mobile/features/messages/application/message_chats_contr
 import '../../../support/fake_policy.dart';
 
 import 'dart:async';
+import 'dart:io';
+import 'dart:ui' as ui;
+
+import 'package:flutter/rendering.dart';
+import 'package:flutter/services.dart';
+
+import 'package:planets_mobile/features/cover_media/data/cover_media_gateway.dart';
+import 'package:planets_mobile/features/messages/presentation/chat_cover_thumbnail.dart';
+
+import '../../../support/fake_cover_media.dart';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -65,6 +75,120 @@ import '../../../support/fake_resource_exchange.dart';
 import 'package:planets_mobile/l10n/generated/app_localizations.dart';
 
 void main() {
+  setUpAll(() async {
+    final fonts = Platform.environment['GROUPCOVER01_CAPTURE_FONTS'];
+    if (fonts == null) return;
+    for (final family in ['Roboto', 'Ahem']) {
+      await (FontLoader(family)..addFont(
+            File('$fonts/roboto-regular.ttf')
+                .readAsBytes()
+                .then(ByteData.sublistView),
+          ))
+          .load();
+    }
+    await (FontLoader('MaterialIcons')..addFont(
+          File('$fonts/MaterialIcons-Regular.otf')
+              .readAsBytes()
+              .then(ByteData.sublistView),
+        ))
+        .load();
+  });
+
+  testWidgets(
+    '25 mixed Private and 25 Group rows retain identical 40dp slots at 320dp/2x',
+    (tester) async {
+      tester.view.devicePixelRatio = 1;
+      tester.view.physicalSize = const Size(320, 900);
+      tester.platformDispatcher.textScaleFactorTestValue = 2;
+      addTearDown(tester.view.resetDevicePixelRatio);
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+      final chats = FakeMessageChatsGateway()
+        ..items = [
+          for (var i = 0; i < 25; i++) ...[
+            i.isEven
+                ? projectRequestMessageChatFixture(chatId: 'private-$i')
+                : resourceMessageChatFixture(chatId: 'private-$i'),
+            projectMessageChatFixture(
+              chatId: 'group-$i',
+              projectKind: i.isEven
+                  ? ProjectKind.oneTime
+                  : ProjectKind.recurring,
+            ),
+          ],
+        ];
+      final app = await _pump(
+        tester,
+        messages: FakeMessagesGateway(),
+        chats: chats,
+      );
+      app.read(appRouterProvider).go('/messages');
+      await tester.pumpAndSettle();
+      void assertSlots() {
+        final slots = find.byWidgetPredicate(
+          (w) =>
+              w is SizedBox &&
+              w.key is ValueKey<String> &&
+              (w.key as ValueKey<String>).value.startsWith('chat-thumbnail-'),
+        );
+        expect(slots, findsWidgets);
+        for (final element in slots.evaluate()) {
+          expect(
+            tester.getSize(find.byWidget(element.widget)),
+            const Size(40, 40),
+          );
+        }
+        for (final element
+            in find
+                .byWidgetPredicate(
+                  (w) =>
+                      w is Text &&
+                      w.key is ValueKey<String> &&
+                      (w.key as ValueKey<String>).value.startsWith(
+                        'chat-time-',
+                      ),
+                )
+                .evaluate()) {
+          final paragraph = tester.renderObject<RenderParagraph>(
+            find.byWidget(element.widget),
+          );
+          expect(
+            paragraph.didExceedMaxLines,
+            isFalse,
+            reason: 'The complete activity date must remain readable.',
+          );
+        }
+        expect(tester.takeException(), isNull);
+      }
+
+      assertSlots();
+      await _captureChatRows(tester, 'private-320-2x');
+      await _autoBottom(tester, const Key('message-chat-list'));
+      expect(app.read(messageChatsProvider).items, hasLength(25));
+      assertSlots();
+      await tester.tap(find.byKey(const Key('message-chat-scope-groups')));
+      await tester.pumpAndSettle();
+      assertSlots();
+      expect(find.byType(ChatCoverThumbnail), findsWidgets);
+      await _captureChatRows(tester, 'groups-320-2x');
+      expect(
+        find.descendant(
+          of: find.byKey(const Key('message-chat-list')),
+          matching: find.byIcon(Icons.person_outline),
+        ),
+        findsNothing,
+      );
+      await _autoBottom(tester, const Key('message-chat-list'));
+      expect(app.read(groupMessageChatsProvider).items, hasLength(25));
+      assertSlots();
+      await app
+          .read(groupMessageChatsProvider.notifier)
+          .load('user-1', refresh: true);
+      await tester.pumpAndSettle();
+      assertSlots();
+    },
+  );
+
   testWidgets(
     'AUTO02 expanded pending requests page independently of history',
     (tester) async {
@@ -2964,6 +3088,7 @@ Future<ProviderContainer> _pump(
   FakeResourceLoanGateway? resourceLoans,
   FakeProjectRequestChatGateway? projectRequestChats,
   FakeProfilePhotoGateway? profilePhoto,
+  FakeCoverMediaGateway? cover,
   MessageUnreadGateway? unread,
 }) async {
   final auth = FakeAuthGateway(
@@ -2974,6 +3099,9 @@ Future<ProviderContainer> _pump(
     ProviderScope(
       overrides: [
         preacceptedPolicyFixture,
+        coverMediaGatewayProvider.overrideWithValue(
+          cover ?? FakeCoverMediaGateway(),
+        ),
         appConfigProvider.overrideWithValue(
           AppConfig.fromValues(
             appEnvironment: 'local',
@@ -3033,7 +3161,10 @@ Future<ProviderContainer> _pump(
             ..publicDetail = publicRecurringDetailFixture(),
         ),
       ],
-      child: const PlanetsApp(),
+      child: const RepaintBoundary(
+        key: Key('groupcover-capture'),
+        child: PlanetsApp(),
+      ),
     ),
   );
   await tester.pumpAndSettle();
@@ -3121,4 +3252,20 @@ Future<void> _autoBottom(WidgetTester tester, Key key) async {
   }
   await tester.drag(list, const Offset(0, -80));
   await tester.pump();
+}
+
+// Optional rendered review; ordinary CI writes no image files.
+Future<void> _captureChatRows(WidgetTester tester, String name) async {
+  final directory = Platform.environment['GROUPCOVER01_CAPTURE_DIR'];
+  if (directory == null) return;
+  final boundary = tester.renderObject<RenderRepaintBoundary>(
+    find.byKey(const Key('groupcover-capture')),
+  );
+  await tester.runAsync(() async {
+    final image = await boundary.toImage();
+    final data = await image.toByteData(format: ui.ImageByteFormat.png);
+    image.dispose();
+    await Directory(directory).create(recursive: true);
+    await File('$directory/$name.png').writeAsBytes(data!.buffer.asUint8List());
+  });
 }
