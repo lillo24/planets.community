@@ -803,7 +803,13 @@ class ProposalEditorController extends Notifier<ProposalEditorState> {
             !existingProposal.isEditableAt(ref.read(proposalClockProvider)())) {
           throw const ProposalInvalidStateException();
         }
-        await gateway.updateOwnProposal(expectedCreatorId, proposalId, input);
+        await gateway.updateOwnProposal(
+          expectedCreatorId,
+          proposalId,
+          input,
+          preserveSkills:
+              existingProposal?.lifecycle == ProposalLifecycle.published,
+        );
         if (!_isCurrent(revision)) return null;
       }
       persistedProposalId = proposalId;

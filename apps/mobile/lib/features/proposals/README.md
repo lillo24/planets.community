@@ -1,5 +1,16 @@
 # Proposals feature
 
+UI02 moves published structural skill editing to `presentation/proposal_needs_screen.dart`.
+It composes `ProposalSkillsControl` with the existing resource-management screen
+for Creators, and public material needs with an explicit ownership explanation
+for Co-creators. `application/proposal_skills_controller.dart` binds state to the
+rendered actor and Proposal, retains dirty edits on failure/foreground refresh,
+and uses the expected skill collection in a narrow canonical write. The shared
+departure coordinator guards unsaved navigation. Create/draft editors keep their
+skill selectors; published details saves request server-side skill preservation.
+See [UI02 contract](../../../../../docs/development/ui02-skills-resources.md).
+
+
 IDEA01B opts public/own/requested reads into the v2 phase-aware contract and
 delegated reads into the matching sibling gateway. Published Ideas have nullable
 logistics and no event status; Defined parsing stays strict. Browse phase filters

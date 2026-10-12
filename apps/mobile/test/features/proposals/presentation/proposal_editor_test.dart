@@ -13,6 +13,7 @@ import 'package:planets_mobile/features/proposals/application/proposal_controlle
 import 'package:planets_mobile/features/proposals/data/proposal_gateway.dart';
 import 'package:planets_mobile/features/proposals/domain/proposal_models.dart';
 import 'package:planets_mobile/features/proposals/presentation/proposal_editor_screen.dart';
+import 'package:planets_mobile/features/proposals/presentation/proposal_editor_controls.dart';
 import 'package:planets_mobile/features/profile/presentation/profile_edit_screen.dart';
 import 'package:planets_mobile/features/profile_photo/data/profile_photo_gateway.dart';
 import 'package:planets_mobile/l10n/generated/app_localizations.dart';
@@ -30,6 +31,46 @@ import '../../../support/rendered_evidence.dart';
 
 void main() {
   setUpAll(RenderedEvidence.loadFonts);
+  for (final lifecycle in [
+    null,
+    ProposalLifecycle.draft,
+    ProposalLifecycle.published,
+  ]) {
+    testWidgets(
+      'UI02 skills stay in create/draft and leave published editor $lifecycle',
+      (tester) async {
+        final gateway = await _pumpEditor(
+          tester,
+          null,
+          proposal: lifecycle == null
+              ? null
+              : ownProposalFixture(lifecycle: lifecycle),
+        );
+        final scroll = tester.state<ScrollableState>(
+          find
+              .descendant(
+                of: find.byType(ListView),
+                matching: find.byType(Scrollable),
+              )
+              .first,
+        );
+        scroll.position.jumpTo(scroll.position.maxScrollExtent);
+        await tester.pumpAndSettle();
+        if (lifecycle != ProposalLifecycle.published) {
+          await _seek(tester, find.byType(ProposalSkillsControl));
+        }
+        // Selecting initial skills remains available even when the new record has no selection.
+        expect(
+          find.byType(ProposalSkillsControl),
+          lifecycle == ProposalLifecycle.published
+              ? findsNothing
+              : findsOneWidget,
+        );
+        expect(gateway.calls.where((c) => c.startsWith('skills:')), isEmpty);
+      },
+    );
+  }
+
   for (final width in [320.0, 800.0]) {
     for (final locale in ['en', 'it']) {
       for (final dark in [false, true]) {
@@ -804,6 +845,7 @@ void main() {
     await _tap(tester, find.byKey(const Key('proposal-save-changes')));
 
     expect(gateway.calls, contains('update:proposal-1'));
+    expect(gateway.lastPreserveSkills, isTrue);
     expect(gateway.calls, isNot(contains('publish:proposal-1')));
     expect(find.text('Saved proposal'), findsOneWidget);
   });

@@ -31,6 +31,9 @@ class FakeProposalGateway implements ProposalGateway {
   Object? ownReadError;
   String createdId = 'new-draft';
   Object? mutationError;
+  bool lastPreserveSkills = false;
+  Map<String, ProposalSkillImportance>? lastSkills;
+  Map<String, ProposalSkillImportance>? lastExpectedSkills;
   Object? requestedError;
   RequestedProposalLoader? requestedLoader;
   PublicProposalLoader? publicLoader;
@@ -181,8 +184,10 @@ class FakeProposalGateway implements ProposalGateway {
   Future<void> updateOwnProposal(
     String expectedCreatorId,
     String proposalId,
-    ProposalInput input,
-  ) async {
+    ProposalInput input, {
+    bool preserveSkills = false,
+  }) async {
+    lastPreserveSkills = preserveSkills;
     _throwIfNeeded();
     calls.add('update:$proposalId');
     _throwMutationIfNeeded();
@@ -195,6 +200,44 @@ class FakeProposalGateway implements ProposalGateway {
           _copyProposal(proposal, input: input)
         else
           proposal,
+    ];
+  }
+
+  @override
+  Future<void> updateProposalSkills(
+    String expectedProfileId,
+    String proposalId, {
+    required Map<String, ProposalSkillImportance> expectedSkills,
+    required Map<String, ProposalSkillImportance> skills,
+  }) async {
+    calls.add('skills:$proposalId');
+    _throwMutationIfNeeded();
+    if (mutationDelay case final delay?) await delay;
+    lastExpectedIdentity = expectedProfileId;
+    lastExpectedSkills = Map.of(expectedSkills);
+    lastSkills = Map.of(skills);
+    ownItems = [
+      for (final proposal in ownItems)
+        if (proposal.id != proposalId)
+          proposal
+        else
+          _copyProposal(
+            proposal,
+            skills: [
+              for (final category in categories)
+                for (final skill in category.skills)
+                  if (skills[skill.id] case final importance?)
+                    ProposalSkill(
+                      id: skill.id,
+                      slug: skill.slug,
+                      label: skill.label,
+                      categoryId: category.id,
+                      categorySlug: category.slug,
+                      categoryLabel: category.label,
+                      importance: importance,
+                    ),
+            ],
+          ),
     ];
   }
 
@@ -304,6 +347,7 @@ OwnProposal _copyProposal(
   ProposalLifecycle? lifecycle,
   ProposalStatus? status,
   ProposalDefinitionPhase? definitionPhase,
+  List<ProposalSkill>? skills,
 }) => OwnProposal(
   id: proposal.id,
   definitionPhase: definitionPhase ?? proposal.definitionPhase,
@@ -324,7 +368,7 @@ OwnProposal _copyProposal(
           lifecycle == ProposalLifecycle.cancelled
       ? null
       : status ?? proposal.status,
-  skills: proposal.skills,
+  skills: skills ?? proposal.skills,
   exactMeetingText: input?.exactMeetingText ?? proposal.exactMeetingText,
   exactLocationVisibility:
       input?.exactLocationVisibility ?? proposal.exactLocationVisibility,
@@ -485,6 +529,7 @@ OwnProposal ownProposalFixture({
   DateTime? startsAt,
   DateTime? endsAt,
   ProjectCapacitySnapshot? capacity,
+  List<ProposalSkill>? skills,
 }) {
   final value = input ?? proposalInputFixture();
   return OwnProposal(
@@ -506,7 +551,7 @@ OwnProposal ownProposalFixture({
         : lifecycle == ProposalLifecycle.published
         ? status ?? ProposalStatus.upcoming
         : null,
-    skills: proposalSummaryFixture().skills,
+    skills: skills ?? proposalSummaryFixture().skills,
     exactMeetingText: value.exactMeetingText,
     exactLocationVisibility: value.exactLocationVisibility,
     createdAt: DateTime.utc(2026, 9, 1),
