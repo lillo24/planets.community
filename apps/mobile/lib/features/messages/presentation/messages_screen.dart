@@ -8,6 +8,7 @@ import '../../../core/widgets/error_state.dart';
 import '../../../core/widgets/loading_state.dart';
 import '../../../core/widgets/pagination_control.dart';
 import '../../../core/widgets/user_scroll_pagination.dart';
+import '../../../core/widgets/stable_list_view.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../auth/application/auth_session_controller.dart';
 import '../../participation/domain/participation_models.dart';
@@ -222,14 +223,41 @@ class _ChatsTabState extends ConsumerState<_ChatsTab> {
                         state.failure == null,
                     requestKey: (scope, widget.expectedProfileId, items.length),
                     onLoad: () => widget.onLoadMore(scope),
-                    builder: (context, showFallback) => ListView.builder(
+                    builder: (context, showFallback) => StableListView(
                       key: const Key('message-chat-list'),
+                      storageKey: (
+                        'message-chat-list',
+                        widget.expectedProfileId,
+                        scope,
+                      ),
+                      rowIds: [
+                        if (state.hasConnectionIssue) 'connection',
+                        if (state.failure != null) 'error',
+                        for (final item in items) item.compositeId,
+                        if (state.hasMore) 'more',
+                      ],
+                      rowValues: [
+                        if (state.hasConnectionIssue) state.hasConnectionIssue,
+                        if (state.failure != null) state.failure,
+                        for (final item in items)
+                          (
+                            item,
+                            switch (item) {
+                              ProjectRequestMessageChatItem item =>
+                                visiblePhotos.entryFor(
+                                  item.counterpartyProfileId,
+                                ),
+                              ResourceMessageChatItem item =>
+                                visiblePhotos.entryFor(
+                                  item.counterpartyProfileId,
+                                ),
+                              ProjectMessageChatItem() => null,
+                            },
+                          ),
+                        if (state.hasMore)
+                          (state.phase, state.failure, showFallback),
+                      ],
                       padding: const EdgeInsets.all(AppSpacing.medium),
-                      itemCount:
-                          items.length +
-                          (state.failure != null ? 1 : 0) +
-                          (state.hasMore ? 1 : 0) +
-                          (state.hasConnectionIssue ? 1 : 0),
                       itemBuilder: (context, index) {
                         if (state.hasConnectionIssue && index == 0) {
                           return Padding(
@@ -526,13 +554,20 @@ class _RequestsTab extends ConsumerWidget {
             state.failure == null,
         requestKey: (expectedProfileId, items.length),
         onLoad: onLoadMore,
-        builder: (context, showFallback) => ListView.builder(
+        builder: (context, showFallback) => StableListView(
           key: const Key('messages-request-list'),
+          storageKey: ('messages-request-list', expectedProfileId),
+          rowIds: [
+            if (state.failure != null) 'error',
+            for (final item in items) item.compositeId,
+            if (state.hasMore) 'more',
+          ],
+          rowValues: [
+            if (state.failure != null) state.failure,
+            ...items,
+            if (state.hasMore) (state.phase, state.failure, showFallback),
+          ],
           padding: const EdgeInsets.all(AppSpacing.medium),
-          itemCount:
-              items.length +
-              (state.failure != null ? 1 : 0) +
-              (state.hasMore ? 1 : 0),
           itemBuilder: (context, index) {
             if (state.failure != null && index == 0) {
               return Padding(

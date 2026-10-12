@@ -14,3 +14,4 @@ This folder owns small backend-facing primitives shared across mobile features.
 - `cover_media_path.dart` validates nullable, provider-independent cover object
   paths and binds each path to the parent Project or Resource identity returned
   by a canonical RPC.
+- `revalidate_window.dart` atomically rereads a loaded canonical keyset range, reusing unchanged immutable rows and rejecting nonadvancing cursors.

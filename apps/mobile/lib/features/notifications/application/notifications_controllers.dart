@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../../core/backend/revalidate_window.dart';
 import '../../auth/application/auth_session_controller.dart';
 import '../../auth/domain/auth_models.dart';
 import '../data/notifications_gateway.dart';
@@ -34,14 +35,17 @@ class NotificationsUnreadController extends Notifier<NotificationsUnreadState> {
 
   @override
   NotificationsUnreadState build() {
-    ref.listen(authSessionProvider.select((session) => session.identity?.id), (
-      _,
-      _,
-    ) {
-      _identityRevision++;
-      _loadRevision++;
-      state = const NotificationsUnreadState();
-    });
+    ref.listen(
+      authSessionProvider.select(
+        (session) =>
+            (session.identity?.id, session.phase == AuthSessionPhase.ready),
+      ),
+      (_, _) {
+        _identityRevision++;
+        _loadRevision++;
+        state = const NotificationsUnreadState();
+      },
+    );
     ref.onDispose(() {
       _identityRevision++;
       _loadRevision++;
@@ -49,7 +53,25 @@ class NotificationsUnreadController extends Notifier<NotificationsUnreadState> {
     return const NotificationsUnreadState();
   }
 
+  Future<bool>? _activeLoad;
+  int? _activeRevision;
   Future<bool> load(String expectedProfileId, {bool refresh = false}) async {
+    if (_activeLoad != null &&
+        _activeRevision == _loadRevision &&
+        state.expectedProfileId == expectedProfileId) {
+      return _activeLoad!;
+    }
+    final pending = _load(expectedProfileId, refresh: refresh);
+    _activeLoad = pending;
+    _activeRevision = _loadRevision;
+    try {
+      return await pending;
+    } finally {
+      if (identical(_activeLoad, pending)) _activeLoad = null;
+    }
+  }
+
+  Future<bool> _load(String expectedProfileId, {bool refresh = false}) async {
     if (state.phase == NotificationsUnreadPhase.loading && !refresh) {
       return false;
     }
@@ -81,6 +103,7 @@ class NotificationsUnreadController extends Notifier<NotificationsUnreadState> {
       state = NotificationsUnreadState(
         phase: NotificationsUnreadPhase.failure,
         expectedProfileId: expectedProfileId,
+        count: state.count,
         failure: mapNotificationsFailure(error),
       );
       return false;
@@ -88,6 +111,7 @@ class NotificationsUnreadController extends Notifier<NotificationsUnreadState> {
   }
 
   void noteOneRead(String expectedProfileId) {
+    _loadRevision++;
     if (state.expectedProfileId != expectedProfileId || state.count == null) {
       return;
     }
@@ -99,6 +123,7 @@ class NotificationsUnreadController extends Notifier<NotificationsUnreadState> {
   }
 
   void noteAllRead(String expectedProfileId) {
+    _loadRevision++;
     if (state.expectedProfileId != expectedProfileId) return;
     state = NotificationsUnreadState(
       phase: NotificationsUnreadPhase.ready,
@@ -128,7 +153,14 @@ final notificationsUnreadProvider =
       NotificationsUnreadController.new,
     );
 
-enum NotificationsInboxPhase { idle, loading, ready, loadingMore, failure }
+enum NotificationsInboxPhase {
+  idle,
+  loading,
+  refreshing,
+  ready,
+  loadingMore,
+  failure,
+}
 
 class NotificationsInboxState {
   const NotificationsInboxState({
@@ -151,6 +183,7 @@ class NotificationsInboxState {
 
   bool get isLoading =>
       phase == NotificationsInboxPhase.loading ||
+      phase == NotificationsInboxPhase.refreshing ||
       phase == NotificationsInboxPhase.loadingMore;
   bool get hasUnread => items.any((item) => item.isUnread);
 }
@@ -164,15 +197,20 @@ class NotificationsInboxController extends Notifier<NotificationsInboxState> {
 
   @override
   NotificationsInboxState build() {
-    ref.listen(authSessionProvider.select((session) => session.identity?.id), (
-      _,
-      _,
-    ) {
-      _identityRevision++;
-      _loadRevision++;
-      _pendingReadIds.clear();
-      state = const NotificationsInboxState();
-    });
+    ref.listen(
+      authSessionProvider.select(
+        (session) =>
+            (session.identity?.id, session.phase == AuthSessionPhase.ready),
+      ),
+      (_, _) {
+        _identityRevision++;
+        _activeRefresh = null;
+        _activeMore = null;
+        _loadRevision++;
+        _pendingReadIds.clear();
+        state = const NotificationsInboxState();
+      },
+    );
     ref.onDispose(() {
       _identityRevision++;
       _loadRevision++;
@@ -181,33 +219,97 @@ class NotificationsInboxController extends Notifier<NotificationsInboxState> {
     return const NotificationsInboxState();
   }
 
+  Future<bool>? _activeRefresh;
+  Future<bool>? _activeMore;
+
   Future<bool> load(String expectedProfileId, {bool refresh = false}) async {
-    if (state.isMarkingAll || (state.isLoading && !refresh)) return false;
+    final active = _activeRefresh;
+    if (active != null && state.expectedProfileId == expectedProfileId) {
+      return active;
+    }
+    final more = _activeMore;
+    if (more != null && state.expectedProfileId == expectedProfileId) {
+      await more;
+    }
+    final queued = _activeRefresh;
+    if (queued != null && state.expectedProfileId == expectedProfileId) {
+      return queued;
+    }
+    if (!ref.mounted ||
+        ref.read(authSessionProvider).identity?.id != expectedProfileId) {
+      return false;
+    }
+    final pending = _load(expectedProfileId, refresh: refresh);
+    _activeRefresh = pending;
+    try {
+      return await pending;
+    } finally {
+      if (identical(_activeRefresh, pending)) _activeRefresh = null;
+    }
+  }
+
+  Future<bool> _load(String expectedProfileId, {bool refresh = false}) async {
+    if (state.isMarkingAll ||
+        _pendingReadIds.isNotEmpty ||
+        (state.isLoading && !refresh)) {
+      return false;
+    }
     final identityRevision = _identityRevision;
     final loadRevision = ++_loadRevision;
     final preserve = state.expectedProfileId == expectedProfileId;
     state = NotificationsInboxState(
-      phase: NotificationsInboxPhase.loading,
+      phase:
+          preserve &&
+              (state.items.isNotEmpty ||
+                  state.phase == NotificationsInboxPhase.ready ||
+                  state.phase == NotificationsInboxPhase.refreshing)
+          ? NotificationsInboxPhase.refreshing
+          : NotificationsInboxPhase.loading,
       expectedProfileId: expectedProfileId,
       items: preserve ? state.items : const [],
       hasMore: preserve && state.hasMore,
       pendingReadIds: Set.unmodifiable(_pendingReadIds),
     );
+    final previous = state.items;
     try {
       _requireReadyIdentity(expectedProfileId);
-      final page = await ref
-          .read(notificationsGatewayProvider)
-          .listNotifications(
-            expectedProfileId: expectedProfileId,
-            limit: notificationsPageSize,
-          );
+      final page = await revalidateWindow(
+        previous: previous,
+        id: (item) => item.notificationId,
+        value: (item) => item.refreshValue,
+        compare: (a, b) => compareDescendingKey(
+          a.createdAt,
+          a.notificationId,
+          b.createdAt,
+          b.notificationId,
+        ),
+        isCurrent: () =>
+            _isCurrentLoad(identityRevision, loadRevision, expectedProfileId),
+        fetch: (item) async {
+          final page = await ref
+              .read(notificationsGatewayProvider)
+              .listNotifications(
+                expectedProfileId: expectedProfileId,
+
+                limit: notificationsPageSize,
+                cursor: item == null
+                    ? null
+                    : NotificationCursor(
+                        createdAt: item.createdAt,
+                        notificationId: item.notificationId,
+                      ),
+              );
+          return (items: page.items, hasMore: page.hasMore);
+        },
+      );
+      if (page == null) return false;
       if (!_isCurrentLoad(identityRevision, loadRevision, expectedProfileId)) {
         return false;
       }
       state = NotificationsInboxState(
         phase: NotificationsInboxPhase.ready,
         expectedProfileId: expectedProfileId,
-        items: List.unmodifiable(page.items),
+        items: page.items,
         hasMore: page.hasMore,
         pendingReadIds: Set.unmodifiable(_pendingReadIds),
       );
@@ -232,6 +334,17 @@ class NotificationsInboxController extends Notifier<NotificationsInboxState> {
   }
 
   Future<bool> loadMore(String expectedProfileId) async {
+    if (_activeRefresh != null || _activeMore != null) return false;
+    final pending = _loadMore(expectedProfileId);
+    _activeMore = pending;
+    try {
+      return await pending;
+    } finally {
+      if (identical(_activeMore, pending)) _activeMore = null;
+    }
+  }
+
+  Future<bool> _loadMore(String expectedProfileId) async {
     if (state.isLoading ||
         state.isMarkingAll ||
         state.expectedProfileId != expectedProfileId ||
@@ -282,10 +395,18 @@ class NotificationsInboxController extends Notifier<NotificationsInboxState> {
         return false;
       }
       state = NotificationsInboxState(
-        phase: NotificationsInboxPhase.ready,
+        phase:
+            mapNotificationsFailure(error) == NotificationsFailureKind.forbidden
+            ? NotificationsInboxPhase.failure
+            : NotificationsInboxPhase.ready,
         expectedProfileId: expectedProfileId,
-        items: existing,
-        hasMore: true,
+        items:
+            mapNotificationsFailure(error) == NotificationsFailureKind.forbidden
+            ? const []
+            : existing,
+        hasMore:
+            mapNotificationsFailure(error) !=
+            NotificationsFailureKind.forbidden,
         pendingReadIds: Set.unmodifiable(_pendingReadIds),
         failure: mapNotificationsFailure(error),
       );
@@ -350,7 +471,15 @@ class NotificationsInboxController extends Notifier<NotificationsInboxState> {
       }
       _pendingReadIds.remove(notification.notificationId);
       state = _currentStateWith(
-        items: originalItems,
+        items: [
+          for (final item in state.items)
+            if (item.notificationId == notification.notificationId)
+              originalItems.firstWhere(
+                (original) => original.notificationId == item.notificationId,
+              )
+            else
+              item,
+        ],
         failure: mapNotificationsFailure(error),
       );
       unawaited(
@@ -366,6 +495,7 @@ class NotificationsInboxController extends Notifier<NotificationsInboxState> {
 
   Future<bool> markAllRead(String expectedProfileId) async {
     if (state.isMarkingAll ||
+        _pendingReadIds.isNotEmpty ||
         state.expectedProfileId != expectedProfileId ||
         !_hasReadyIdentity(expectedProfileId)) {
       return false;
@@ -505,14 +635,17 @@ class NotificationPreferencesController
 
   @override
   NotificationPreferencesState build() {
-    ref.listen(authSessionProvider.select((session) => session.identity?.id), (
-      _,
-      _,
-    ) {
-      _identityRevision++;
-      _operationRevision++;
-      state = const NotificationPreferencesState();
-    });
+    ref.listen(
+      authSessionProvider.select(
+        (session) =>
+            (session.identity?.id, session.phase == AuthSessionPhase.ready),
+      ),
+      (_, _) {
+        _identityRevision++;
+        _operationRevision++;
+        state = const NotificationPreferencesState();
+      },
+    );
     ref.onDispose(() {
       _identityRevision++;
       _operationRevision++;

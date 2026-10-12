@@ -100,7 +100,12 @@ class MessagesFrame extends ConsumerWidget {
                   ),
                 ],
         ),
-        body: SafeArea(child: requestsOpen ? requests : chats),
+        body: SafeArea(
+          child: IndexedStack(
+            index: requestsOpen ? 1 : 0,
+            children: [chats, requests],
+          ),
+        ),
       ),
     );
   }

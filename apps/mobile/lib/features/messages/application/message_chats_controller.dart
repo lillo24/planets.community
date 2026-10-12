@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../../core/backend/revalidate_window.dart';
 import '../../auth/application/auth_session_controller.dart';
 import '../../auth/domain/auth_models.dart';
 import '../../project_chat/application/project_chat_refresh.dart';
@@ -22,7 +23,14 @@ const messageChatsPageSize = 20;
 
 enum MessageChatsFailureKind { invalidInput, forbidden, notFound, unavailable }
 
-enum MessageChatsPhase { idle, loading, ready, loadingMore, failure }
+enum MessageChatsPhase {
+  idle,
+  loading,
+  refreshing,
+  ready,
+  loadingMore,
+  failure,
+}
 
 class MessageChatsState {
   const MessageChatsState({
@@ -43,6 +51,7 @@ class MessageChatsState {
 
   bool get isBusy =>
       phase == MessageChatsPhase.loading ||
+      phase == MessageChatsPhase.refreshing ||
       phase == MessageChatsPhase.loadingMore;
 }
 
@@ -61,16 +70,21 @@ class MessageChatsController extends Notifier<MessageChatsState> {
 
   @override
   MessageChatsState build() {
-    ref.listen(authSessionProvider.select((session) => session.identity?.id), (
-      _,
-      _,
-    ) {
-      _revision++;
-      _signalsEnabled = false;
-      _refreshTimer?.cancel();
-      _closeAllSubscriptions();
-      state = const MessageChatsState();
-    });
+    ref.listen(
+      authSessionProvider.select(
+        (session) =>
+            (session.identity?.id, session.phase == AuthSessionPhase.ready),
+      ),
+      (_, _) {
+        _revision++;
+        _activeRefresh = null;
+        _activeMore = null;
+        _signalsEnabled = false;
+        _refreshTimer?.cancel();
+        _closeAllSubscriptions();
+        state = const MessageChatsState();
+      },
+    );
     ref.listen(projectChatRefreshProvider, (_, _) => _scheduleCurrentRefresh());
     ref.listen(
       messageChatsRefreshProvider,
@@ -84,32 +98,93 @@ class MessageChatsController extends Notifier<MessageChatsState> {
     return const MessageChatsState();
   }
 
+  Future<bool>? _activeRefresh;
+  Future<bool>? _activeMore;
+
   Future<bool> load(String expectedProfileId, {bool refresh = false}) async {
+    final active = _activeRefresh;
+    if (active != null && state.expectedProfileId == expectedProfileId) {
+      return active;
+    }
+    final more = _activeMore;
+    if (more != null && state.expectedProfileId == expectedProfileId) {
+      await more;
+    }
+    final queued = _activeRefresh;
+    if (queued != null && state.expectedProfileId == expectedProfileId) {
+      return queued;
+    }
+    if (!ref.mounted ||
+        ref.read(authSessionProvider).identity?.id != expectedProfileId) {
+      return false;
+    }
+    final pending = _load(expectedProfileId, refresh: refresh);
+    _activeRefresh = pending;
+    try {
+      return await pending;
+    } finally {
+      if (identical(_activeRefresh, pending)) _activeRefresh = null;
+    }
+  }
+
+  Future<bool> _load(String expectedProfileId, {bool refresh = false}) async {
     if (state.isBusy && !refresh) return false;
     final revision = ++_revision;
     final preserve = state.expectedProfileId == expectedProfileId;
     final hadItems = preserve && state.items.isNotEmpty;
     state = MessageChatsState(
-      phase: MessageChatsPhase.loading,
+      phase:
+          preserve &&
+              (state.items.isNotEmpty ||
+                  state.phase == MessageChatsPhase.ready ||
+                  state.phase == MessageChatsPhase.refreshing)
+          ? MessageChatsPhase.refreshing
+          : MessageChatsPhase.loading,
       expectedProfileId: expectedProfileId,
       items: preserve ? state.items : const [],
       hasMore: preserve && state.hasMore,
       hasConnectionIssue: preserve && state.hasConnectionIssue,
     );
+    final previous = state.items;
     try {
       _requireReadyIdentity(expectedProfileId);
-      final page = await ref
-          .read(messageChatsGatewayProvider)
-          .listItems(
-            expectedProfileId: expectedProfileId,
-            scope: scope,
-            limit: messageChatsPageSize,
-          );
+      final page = await revalidateWindow(
+        previous: previous,
+        id: (item) => item.compositeId,
+        value: (item) => item.refreshValue,
+        compare: (a, b) => compareDescendingKey(
+          a.activityAt,
+          a.compositeId,
+          b.activityAt,
+          b.compositeId,
+          aKind: a.kind.index,
+          bKind: b.kind.index,
+        ),
+        isCurrent: () => _isCurrent(revision, expectedProfileId),
+        fetch: (item) async {
+          final page = await ref
+              .read(messageChatsGatewayProvider)
+              .listItems(
+                expectedProfileId: expectedProfileId,
+                scope: scope,
+                limit: messageChatsPageSize,
+                cursor: item == null
+                    ? null
+                    : MessageChatCursor(
+                        activityAt: item.activityAt,
+                        itemKind: item.kind,
+                        chatId: item.chatId,
+                      ),
+              );
+          return (items: page.items, hasMore: page.hasMore);
+        },
+      );
+      if (page == null) return false;
       if (!_isCurrent(revision, expectedProfileId)) return false;
       state = MessageChatsState(
         phase: MessageChatsPhase.ready,
         expectedProfileId: expectedProfileId,
-        items: List.unmodifiable(_dedupe(page.items)),
+        items: page.items,
         hasMore: page.hasMore,
         hasConnectionIssue: state.hasConnectionIssue,
       );
@@ -121,7 +196,13 @@ class MessageChatsController extends Notifier<MessageChatsState> {
       state = MessageChatsState(
         phase: MessageChatsPhase.failure,
         expectedProfileId: expectedProfileId,
-        items: state.items,
+        items:
+            mapMessageChatsFailure(error) ==
+                    MessageChatsFailureKind.forbidden ||
+                mapMessageChatsFailure(error) ==
+                    MessageChatsFailureKind.notFound
+            ? const []
+            : state.items,
         hasMore: state.hasMore,
         failure: mapMessageChatsFailure(error),
         hasConnectionIssue: state.hasConnectionIssue,
@@ -131,6 +212,17 @@ class MessageChatsController extends Notifier<MessageChatsState> {
   }
 
   Future<bool> loadMore(String expectedProfileId) async {
+    if (_activeRefresh != null || _activeMore != null) return false;
+    final pending = _loadMore(expectedProfileId);
+    _activeMore = pending;
+    try {
+      return await pending;
+    } finally {
+      if (identical(_activeMore, pending)) _activeMore = null;
+    }
+  }
+
+  Future<bool> _loadMore(String expectedProfileId) async {
     if (state.isBusy ||
         state.expectedProfileId != expectedProfileId ||
         !state.hasMore ||
@@ -175,10 +267,17 @@ class MessageChatsController extends Notifier<MessageChatsState> {
     } catch (error) {
       if (!_isCurrent(revision, expectedProfileId)) return false;
       state = MessageChatsState(
-        phase: MessageChatsPhase.ready,
+        phase:
+            mapMessageChatsFailure(error) == MessageChatsFailureKind.forbidden
+            ? MessageChatsPhase.failure
+            : MessageChatsPhase.ready,
         expectedProfileId: expectedProfileId,
-        items: existing,
-        hasMore: true,
+        items:
+            mapMessageChatsFailure(error) == MessageChatsFailureKind.forbidden
+            ? const []
+            : existing,
+        hasMore:
+            mapMessageChatsFailure(error) != MessageChatsFailureKind.forbidden,
         failure: mapMessageChatsFailure(error),
         hasConnectionIssue: state.hasConnectionIssue,
       );
@@ -193,7 +292,6 @@ class MessageChatsController extends Notifier<MessageChatsState> {
   }
 
   void stopSignals() {
-    _revision++;
     _signalsEnabled = false;
     _refreshTimer?.cancel();
     _refreshTimer = null;
@@ -403,7 +501,20 @@ class MessageChatsController extends Notifier<MessageChatsState> {
       if (ref.mounted &&
           _signalsEnabled &&
           _isReadyIdentity(expectedProfileId)) {
-        unawaited(load(expectedProfileId, refresh: true));
+        final active = _activeRefresh ?? _activeMore;
+        if (active != null) {
+          unawaited(
+            active.then((_) {
+              if (ref.mounted &&
+                  _signalsEnabled &&
+                  _isReadyIdentity(expectedProfileId)) {
+                _scheduleRefresh(expectedProfileId);
+              }
+            }),
+          );
+        } else {
+          unawaited(load(expectedProfileId, refresh: true));
+        }
       }
     });
   }

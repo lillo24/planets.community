@@ -76,7 +76,7 @@ class _ProjectChatScreenState extends ConsumerState<ProjectChatScreen>
   Future<void> _load() async {
     final profileId = _expectedProfileId;
     if (profileId == null || !_hasExpectedIdentity) return;
-    await _detailController.load(
+    await _detailController.refresh(
       expectedProfileId: profileId,
       chatId: widget.chatId,
     );

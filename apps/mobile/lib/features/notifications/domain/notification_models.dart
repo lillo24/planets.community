@@ -241,6 +241,32 @@ class AppNotification {
   final ResourceNotificationEventKind? resourceExchangeEventKind;
   final ResourceNotificationLegKind? resourceExchangeLegKind;
 
+  Object get refreshValue => (
+    notificationId,
+    category,
+    kind,
+    createdAt,
+    readAt,
+    destinationKind,
+    projectId,
+    projectKind,
+    projectTitle,
+    requestId,
+    chatId,
+    messageId,
+    actorProfileId,
+    actorDisplayName,
+    resourceListingId,
+    resourceListingTitle,
+    resourceRequestId,
+    resourceChatId,
+    resourceChatMessageId,
+    resourceAgreementId,
+    resourceAgreementEventId,
+    resourceExchangeEventKind,
+    resourceExchangeLegKind,
+  );
+
   bool get isUnread => readAt == null;
 
   AppNotification withReadAt(DateTime value) => AppNotification(

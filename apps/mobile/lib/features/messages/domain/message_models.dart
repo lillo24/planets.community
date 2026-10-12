@@ -89,6 +89,41 @@ sealed class StructuredRequestMessageItem {
   final DateTime? resolvedAt;
   final DateTime activityAt;
 
+  Object get refreshValue => (
+    (
+      kind,
+      requestId,
+      viewerRole,
+      requesterProfileId,
+      requesterDisplayName,
+      requestMessage,
+      createdAt,
+      resolvedAt,
+      activityAt,
+    ),
+    switch (this) {
+      ParticipationRequestMessageItem item => (
+        item.projectId,
+        item.projectKind,
+        item.projectTitle,
+        item.creatorProfileId,
+        item.creatorDisplayName,
+        item.status,
+      ),
+      ResourceRequestMessageItem item => (
+        item.listingId,
+        item.listingMode,
+        item.listingTitle,
+        item.listingLifecycle,
+        item.ownerProfileId,
+        item.ownerDisplayName,
+        item.status,
+        item.chatId,
+        item.agreementId,
+        item.coordinationClosedAt,
+      ),
+    },
+  );
   String get compositeId => '${kind.wireValue}:$requestId';
 }
 

@@ -89,3 +89,5 @@ records a separate idle build/layout trace to audit this boundary.
   and existing decoding/fallback behavior are unchanged.
 
 `pagination_control.dart` renders compact continuation progress, localized explicit Retry, and a deliberate short-content/accessibility fallback. The scroll trigger remains in `user_scroll_pagination.dart`; it never loads from metrics or programmatic movement.
+
+`stable_list_view.dart` owns lazy keyed row reuse and same-account visible-anchor preservation during canonical list reconciliation.
