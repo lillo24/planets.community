@@ -212,7 +212,7 @@ begin
 end;
 $$;
 create function private.group_relationship_result(p_result jsonb,p_replayed boolean) returns jsonb
-language sql stable security definer set search_path='' as $$
+language sql volatile security definer set search_path='' as $$
   select p_result || jsonb_build_object('replayed',p_replayed,'current_status',case p_result->>'relationship_kind'
     when 'membership' then (select coalesce(end_reason,'current') from private.group_memberships where id=(p_result->>'relationship_id')::uuid)
     when 'request' then (select status from private.group_join_requests where id=(p_result->>'relationship_id')::uuid)
@@ -236,7 +236,6 @@ declare
   participant_link private.group_participant_invitations%rowtype;
   relationship uuid := (p_arguments->>'id')::uuid;
   subject uuid;
-  authority text;
   offered_role text := p_arguments->>'role';
   note text := nullif(regexp_replace(p_arguments->>'note','^[[:space:]]+|[[:space:]]+$','','g'),'');
   secret text;

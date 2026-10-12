@@ -172,7 +172,7 @@ $$;
 
 create function public.recover_group_relationship_command(p_expected_profile_id uuid,p_client_request_id uuid)
 returns table(group_id uuid,relationship_id uuid,relationship_kind text,outcome text,current_status text,replayed boolean,expires_at timestamptz)
-language plpgsql stable security definer set search_path='' as $$
+language plpgsql volatile security definer set search_path='' as $$
 declare actor uuid:=private.require_group_identity(p_expected_profile_id); result jsonb;
 begin
   select private.group_relationship_result(c.result,true) into result from private.group_relationship_receipts c
@@ -256,7 +256,7 @@ language sql stable security definer set search_path='' as $$
   select g.id is not null,g.id,g.name,g.group_kind,g.offered_role,g.expires_at from (select 1) seed left join
     (select c.id,c.name,c.group_kind,i.offered_role,i.expires_at from private.group_authority_invitations i join private.community_groups c on c.id=i.group_id
       where p_token ~ '^[A-Za-z0-9_-]{43}$' and i.token_digest=encode(extensions.digest(p_token,'sha256'),'hex')
-        and i.status='pending' and i.expires_at>clock_timestamp() and private.group_is_public(c.id)
+        and i.status='pending' and i.expires_at>statement_timestamp() and private.group_is_public(c.id)
         and private.group_authority_role(c.id,i.issuer_id) in ('creator','co_creator')) g on true;
 $$;
 -- Bounded context reads use relationship IDs and immutable timestamp/UUID cursors.
@@ -407,7 +407,7 @@ begin
   perform private.validate_group_page(p_limit,p_before_created_at,p_before_id);
   perform private.require_group_manager(p_group_id,actor,true);
   return query select i.id,i.group_id,i.issuer_id,i.offered_role,i.target_profile_id,i.target_membership_id,
-    case when i.status='pending' and i.expires_at<=clock_timestamp() then 'expired' else i.status end,
+    case when i.status='pending' and i.expires_at<=statement_timestamp() then 'expired' else i.status end,
     i.created_at,i.expires_at,i.resolved_at,i.resolved_by,i.accepted_delegate_id
     from private.group_authority_invitations i where i.group_id=p_group_id
       and (p_before_id is null or (i.created_at,i.id)<(p_before_created_at,p_before_id))
@@ -423,7 +423,7 @@ begin
   perform private.validate_group_page(p_limit,p_before_created_at,p_before_id);
   
   return query select i.id,i.group_id,i.issuer_id,i.offered_role,i.target_profile_id,i.target_membership_id,
-    case when i.status='pending' and i.expires_at<=clock_timestamp() then 'expired' else i.status end,
+    case when i.status='pending' and i.expires_at<=statement_timestamp() then 'expired' else i.status end,
     i.created_at,i.expires_at,i.resolved_at,i.resolved_by,i.accepted_delegate_id
     from private.group_authority_invitations i where i.target_profile_id=actor
       and (p_before_id is null or (i.created_at,i.id)<(p_before_created_at,p_before_id))
