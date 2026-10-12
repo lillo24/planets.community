@@ -60,6 +60,8 @@ class _ProposalNeedsScreenState extends ConsumerState<ProposalNeedsScreen>
           TickerMode.valuesOf(context).enabled &&
           (ModalRoute.of(context)?.isCurrent ?? false),
       prepare: _prepareDeparture,
+      savedMessage: (context) =>
+          AppLocalizations.of(context).proposalSkillsSaved,
     );
     _departure.register(_owner!);
   }

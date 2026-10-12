@@ -14,7 +14,8 @@ original materials/history/add/edit/close/matching presentation and controllers.
 Co-creators receive public open needs and an ownership explanation. Materials
 failure does not disable skills. Foreground refresh rechecks roles and preserves
 unsaved skills; explicit reload asks before discarding. Navigation uses the
-existing departure coordinator's keep/discard/save guard. Failed saves retain
+existing departure coordinator's keep/discard/save guard with verified skills-save
+feedback instead of draft-specific copy. Failed saves retain
 edits; an acknowledged save with failed reread blocks duplicate submission until
 verification. Identity replacement clears state and ignores late completions.
 

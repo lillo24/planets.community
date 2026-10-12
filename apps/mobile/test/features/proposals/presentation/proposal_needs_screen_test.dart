@@ -164,6 +164,10 @@ void main() {
         h.proposals.calls.where((c) => c.startsWith('skills:')).length,
         choice == 'save' ? 1 : 0,
       );
+      if (choice == 'save') {
+        expect(find.text('Skills saved.'), findsOneWidget);
+        expect(find.text('Draft saved'), findsNothing);
+      }
       if (choice == 'stay') {
         expect(
           h.container.read(proposalSkillsProvider('proposal-1')).dirty,
@@ -365,6 +369,7 @@ pump(
       container: container,
       child: MaterialApp.router(
         debugShowCheckedModeBanner: false,
+        scaffoldMessengerKey: coordinator.messengerKey,
         theme: AppTheme.light,
         darkTheme: AppTheme.dark,
         themeMode: dark ? ThemeMode.dark : ThemeMode.light,
