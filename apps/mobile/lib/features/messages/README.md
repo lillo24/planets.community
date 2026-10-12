@@ -272,7 +272,9 @@ preview so they remain readable alongside the fixed image.
 Private reuses the authorized batched visible-photo controller/cache and its
 person-outline fallback. Groups never use a member portrait.
 `presentation/chat_cover_thumbnail.dart` reuses the public cover byte provider,
-crops to the same slot and limits decoding to its physical pixel dimensions.
+crops to the same slot and bounds both decode dimensions near its physical
+pixel size using aspect-preserving fit (at 2x: at most 143x80 pixels). This also
+bounds unusually wide source bytes without stretching them.
 Null, invalid, loading, failed/denied or removed media retain a neutral landscape
 placeholder and accessible no-cover label. A new path replaces the provider/key
 immediately with no gapless old-image playback; null removes the image even if

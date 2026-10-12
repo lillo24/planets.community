@@ -58,13 +58,17 @@ class ChatCoverThumbnail extends ConsumerWidget {
             : ref
                   .watch(publicCoverBytesProvider(path))
                   .when(
-                    data: (bytes) => Image.memory(
-                      bytes,
+                    data: (bytes) => Image(
+                      image: ResizeImage(
+                        MemoryImage(bytes),
+                        // Bound both dimensions, including noncanonical aspect
+                        // ratios, without stretching before the square crop.
+                        width: (decodeSize * 16 / 9).ceil(),
+                        height: decodeSize,
+                        policy: ResizeImagePolicy.fit,
+                      ),
                       key: ValueKey(path),
                       fit: BoxFit.cover,
-                      // Canonical covers are 16:9. Height-only decoding keeps
-                      // their aspect ratio before the square display crop.
-                      cacheHeight: decodeSize,
                       gaplessPlayback: false,
                       frameBuilder: (context, child, frame, synchronous) =>
                           frame == null

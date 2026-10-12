@@ -118,7 +118,8 @@ void main() {
       await pump(_path);
       final image = tester.widget<Image>(find.byType(Image));
       expect((image.image as ResizeImage).height, 80);
-      expect((image.image as ResizeImage).width, isNull);
+      expect((image.image as ResizeImage).width, 143);
+      expect((image.image as ResizeImage).policy, ResizeImagePolicy.fit);
       expect(image.gaplessPlayback, isFalse);
       await pump(_path);
       expect(gateway.calls, ['download:$_path']);
