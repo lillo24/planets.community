@@ -428,7 +428,8 @@ async function verify() {
     "left",
     "Retry after leave recovers ended interval",
   );
-  const reentered = await join(other, sharing);
+  const reentryKey = key();
+  const reentered = await join(other, sharing, reentryKey);
   assert.notEqual(reentered.relationship_id, otherEpisode);
   const removeKey = key();
   await Promise.all([
@@ -437,10 +438,7 @@ async function verify() {
       ...removeKey,
       p_membership_id: reentered.relationship_id,
     }),
-    rpc(other, "recover_group_relationship_command", {
-      ...expected(other),
-      ...directKey,
-    }),
+    join(other, sharing, reentryKey),
   ]);
   equal(
     (
@@ -452,6 +450,11 @@ async function verify() {
     )[0].current_status,
     "removed",
     "Removal retry cannot recreate membership",
+  );
+  equal(
+    (await join(other, sharing, reentryKey)).current_status,
+    "removed",
+    "Direct admission retry after removal recovers the removed interval",
   );
   const organizerMember = await join(organizer, sharing);
   await denied(organizer, "remove_group_member", {
@@ -938,6 +941,27 @@ async function verify() {
     new Set(freshActions.map((row) => row.relationship_id)).size,
     1,
     "Independent simultaneous actions share one current episode",
+  );
+  const requestRaceGroup = await group(creator);
+  const requestRace = await Promise.all(
+    Array.from({ length: 2 }, () =>
+      attempt(other, "create_group_join_request", {
+        ...args(other, requestRaceGroup),
+        ...key(),
+      }),
+    ),
+  );
+  equal(
+    requestRace.filter((result) => !result.error).length,
+    1,
+    "Independent concurrent request actions admit one pending attempt",
+  );
+  equal(
+    (
+      await sql`select count(*)::int as n from private.group_join_requests where group_id=${requestRaceGroup}::uuid and requester_id=${other.id}::uuid and status='pending'`
+    )[0].n,
+    1,
+    "Pending-request uniqueness survives distinct action keys",
   );
   const oldAction = key(),
     oldAdmission = await join(applicant, editorLink, oldAction);
