@@ -2,8 +2,10 @@
 
 ## Finding, 2026-10-12
 
-The missing map in the Play-installed app is **not yet a confirmed application
-defect**. An ordinary/map-disabled build reproduces the reported text/Google Maps
+The missing map is **not a confirmed renderer defect**. The owner identified the
+last release as **0.1.5+9**; its local compiled libraries strongly support disabled
+server tile transport. The owner requested the replacement candidate **0.1.6+10**.
+An ordinary/map-disabled build reproduces the reported text/Google Maps
 presentation. The current renderer decodes and paints synthetic tiles on Android
 when both compile-time gates are enabled. The installed binary's gates and an
 authenticated live tile/render remain unverified.
@@ -11,8 +13,9 @@ authenticated live tile/render remain unverified.
 Source investigation started from clean, fetched `origin/main`
 `012f49564bffa79477d7947e7c58a6fdb415f512`, including UI01/UI02 and GRP03A.
 This change adds offline native diagnosis coverage and this report; shipping
-application code, default flags, provider configuration and authorization are
-unchanged. An old binary does not acquire new Dart defines when GitHub or staging
+application logic, default flags, provider configuration and authorization are
+unchanged. The owner-requested version metadata is now `0.1.6+10`.
+An old binary does not acquire new Dart defines when GitHub or staging
 changes.
 
 | Evidence                                                                                                      | Classification                     | Consequence                                                                              |
@@ -33,6 +36,31 @@ changes.
 compiled flags and signed-in session are not established. Network/provider/decode failures
 also legitimately fall back; they cannot be ruled out without its authenticated
 runtime. No speculative client/server patch or global activation is justified.
+
+## Additional code-9 binary evidence
+
+Additional read-only inspection found the primary checkout's existing
+`apps/mobile/build/app/outputs/bundle/release/app-release.aab` was inspected:
+
+- Package `community.planets.app`, version **0.1.5+9**.
+- SHA-256 `76592a7bba14408b567b2ffba037bcbcc777cad14d80bee9c5165910b596d696`.
+- Upload signer SHA-256
+  `F9362ED9F6F7BE7C59A6EACFD8AAE99426AF98935FF1197F65E8207CC0FD22C0`.
+- All three AOT ABIs contain the staging backend and `DisabledMapProviderGateway`
+  markers; none contains `ServerMapProviderGateway`. The renderer itself remains
+  present, demonstrating why renderer presence alone does not establish transport.
+
+**Inference:** this binary lacks the server map gateway selected by the compiled
+transport flags. It closely explains the reported fallback despite valid geometry.
+The owner answered the artifact-identification question affirmatively and confirmed
+0.1.5/code 9 as the last release. This is owner correlation, not independent Play
+artifact or installed-phone verification. Its source SHA/exact command and detail
+flag remain unverified. Retained Gradle history contains map opt-ins from other
+build inputs and cannot be used as this AAB's build manifest.
+
+The Downloads copy of `app-release.aab` is a different 0.1.3+7 artifact. It is not
+code 9. The replacement uses the existing explicit builder and the owner-requested
+repository version **0.1.6+10**; do not infer release identity from generic filenames.
 
 ## Read-only staging checks
 
@@ -107,8 +135,9 @@ were corrected; they were not application defects or passing evidence.
 The ignored local configuration was verified as `APP_ENV=staging`,
 `ENABLE_DEMO_TOOLS=false`, backend `cllpvruvrrvxczjitlqd`. Existing signing inputs
 are available and retained. No key values, JWTs or passwords enter this report.
-Local prepared AAB inventory had no code above 8; the owner's highest-code answer
-is 9. Code 10 is therefore a candidate based on owner-reported history, requiring
+The initial named release inventory ended at code 8; the additional primary
+checkout artifact is code 9, matching the owner's last-release answer.
+Code 10 is therefore a candidate based on owner-reported history, requiring
 a final Console recheck before upload. It is not independently submission-ready.
 
 Build from then-current main with:
@@ -129,10 +158,10 @@ distribution. Leave staging credentials and OTP entry with the owner.
 
 If that confirms a map-disabled/outdated build, after backend compatibility and
 version/signing review the owner can select Planets Community in Play Console,
-open **Test and release â†’ Testing â†’ Closed testing**, select the existing track,
+open **Test and release ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ Testing ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ Closed testing**, select the existing track,
 create a release using the exact verified local AAB, review it and roll out to
 that track. The tester then updates through Google Play without uninstalling or
-clearing data, signs into the staging account, and opens **mappa test â†’ Proposal
+clearing data, signs into the staging account, and opens **mappa test ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ Proposal
 details**. Verify actual map pixels, approximate area, attribution and Maps
 activation. If flags are enabled and tiles fail, capture the classified runtime
 failure before making a code/provider change. Never use an upload-key APK to
