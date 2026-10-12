@@ -55,8 +55,7 @@ Review checks: identity before lookup, authorization/lifecycle under activity
 locks, no direct client writes/service-role grant, original resource ownership,
 original detail/capacity/private meeting validation, narrow audit payload, both
 save orders, expected-collection conflicts and revocation during lock waits.
-The direct user request authorizes validated merge of both plans. Hosted schema
-activation remains a separate owner action; deploy this migration before using
+Hosted schema activation remains a separate owner action; deploy this migration before using
 the updated client against any shared environment.
 
 ## Validation and evidence
