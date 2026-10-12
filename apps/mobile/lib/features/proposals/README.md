@@ -226,3 +226,5 @@ retains My Proposals as the save destination. Location fields remain manual.
 ## Discovery pagination
 
 The feed requests 7 records, then 15, then 20 per successful page. Each user drag within one viewport of the bottom can request one continuation. Failed continuations retain records, cursor and limit and require explicit Retry. Refresh, filters and identity changes reset to 7. Cards construct lazily with zero offscreen cache; public covers retain immutable-path Riverpod caching. Short-content and accessibility navigation have deliberate fallback controls. Template detail return keeps its existing refresh/reset policy. Map search and blueprint paging retain separate behavior.
+
+UI01 separates capacity from the applicable Time & Place controls. Arrival directions are always visible with one optional heading and a short input hint; the 1000-character validation, protected visibility, clear action, draft persistence and disabled lifecycle rules are unchanged. Published Ideas keep their existing Organization logistics boundary.

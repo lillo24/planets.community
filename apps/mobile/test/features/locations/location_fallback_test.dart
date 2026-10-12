@@ -75,12 +75,7 @@ void main() {
         find.byKey(const Key('proposal-title')),
         'Manual draft',
       );
-      await draft.reveal(
-        tester,
-        find.byKey(const Key('proposal-optional-exact')),
-      );
-      await tester.tap(find.byKey(const Key('proposal-optional-exact')));
-      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('proposal-optional-exact')), findsNothing);
       for (final entry in {
         'proposal-public-location': 'User-authored city centre',
         'proposal-exact-location': 'Side entrance, bell 4',

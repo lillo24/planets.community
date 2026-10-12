@@ -1,4 +1,7 @@
 {
+  "projectManagementSection": "Project management",
+  "projectManagementChecklist": "Checklist",
+  "proposalTimePlaceTitle": "Time & Place",
   "organizationInviteOrganizer": "Invite organizer",
   "organizationTeamRoles": "Organizers",
   "organizationParticipantLinks": "Participant links",
@@ -1936,7 +1939,7 @@
   "projectManageParticipationDescription": "Review requests and manage participants",
   "projectManageStructuralTitle": "Project details & lifecycle",
   "projectManageStructuralDescription": "Edit Project details and use the lifecycle actions available now",
-  "projectCoorganizersTitle": "Project team",
+  "projectCoorganizersTitle": "Manage organizers",
   "projectCoorganizersDescription": "Invite people and manage delegated Project roles",
   "projectManageUnavailable": "Project management is unavailable.",
   "projectTeamIntro": "Creators and Co-creators can manage this team. Co-organizers can help with participation but cannot change Project structure or roles.",
