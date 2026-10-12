@@ -7,6 +7,15 @@ Android journey and rejects any network attempt; `test_driver/map05_driver.dart`
 exports screenshots to an explicitly selected host directory. Production imports
 none of these harnesses. See [MAP05](../../../docs/development/map05-interactive-discovery.md).
 
+`integration_test/map_detail_smoke_test.dart` reuses that fixture and screenshot
+driver for the actual Proposal detail screen. Its synthetic transport follows
+the compiled tile flag; the production detail flag is not overridden. Run with
+both flags enabled, with neither, and with each flag enabled alone. It checks
+decoded 144dp approximate imagery, text fallback, IT/dark/2x text, budget failure
+and manual-only geometry without network IO or static preview calls. The fixture
+constructor's optional tile switch and theme mode retain existing defaults.
+See [MAPFIX02](../../../docs/development/mapfix02-project-detail-map.md).
+
 `map02_rehearsal.dart` is a debug-only, explicitly opted-in
 (`MAP02_REHEARSAL=true`) harness for the real Proposal/Tavolo/Resource editors.
 All domain/location gateways are deterministic fakes with a reserved `.invalid`
