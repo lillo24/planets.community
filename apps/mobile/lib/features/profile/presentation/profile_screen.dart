@@ -14,7 +14,6 @@ import '../../auth/application/auth_session_controller.dart';
 import '../../auth/domain/auth_models.dart';
 import '../../auth/presentation/auth_status.dart';
 import '../../auth/presentation/account_sign_out_action.dart';
-import '../../blocking/presentation/blocking_routes.dart';
 import '../../moderation/presentation/moderation_routes.dart';
 import '../../profile_photo/application/profile_photo_controller.dart';
 import '../../profile_photo/presentation/profile_photo_avatar.dart';
@@ -79,7 +78,20 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     );
 
     return Scaffold(
-      appBar: pageAppBar(context, title: Text(l10n.profileTitle)),
+      appBar: pageAppBar(
+        context,
+        title: Text(l10n.profileTitle),
+        actions: [
+          if (session.phase == AuthSessionPhase.ready &&
+              data?.profile.isComplete == true)
+            IconButton(
+              key: const Key('profile-edit-button'),
+              tooltip: l10n.profileEditAction,
+              onPressed: () => context.push('/profile/edit'),
+              icon: const Icon(Icons.edit_outlined),
+            ),
+        ],
+      ),
       body: SafeArea(
         child: userId == null
             ? const _ExampleProfile()
@@ -263,36 +275,18 @@ class _ProfileBody extends StatelessWidget {
                   ],
                 ),
               const SizedBox(height: AppSpacing.large),
-              FilledButton.icon(
-                key: const Key('profile-edit-button'),
-                onPressed: () => context.push('/profile/edit'),
-                icon: const Icon(Icons.edit_outlined),
-                label: Text(
-                  profile.isComplete
-                      ? l10n.profileEditAction
-                      : l10n.profileSetupAction,
+              if (!profile.isComplete)
+                FilledButton.icon(
+                  key: const Key('profile-setup-button'),
+                  onPressed: () => context.push('/profile/edit'),
+                  icon: const Icon(Icons.edit_outlined),
+                  label: Text(l10n.profileSetupAction),
                 ),
-              ),
-              const SizedBox(height: AppSpacing.small),
-              OutlinedButton.icon(
-                key: const Key('profile-own-reports-button'),
-                onPressed: () => context.go(ModerationRoutes.ownReports),
-                icon: const Icon(Icons.flag_outlined),
-                label: Text(l10n.moderationOwnReportsAction),
-              ),
-              const SizedBox(height: AppSpacing.small),
               OutlinedButton.icon(
                 key: const Key('profile-own-groups-button'),
                 onPressed: () => context.push('/groups/mine'),
                 icon: const Icon(Icons.groups_outlined),
                 label: Text(l10n.groupsMy),
-              ),
-              const SizedBox(height: AppSpacing.small),
-              OutlinedButton.icon(
-                key: const Key('profile-blocked-users-button'),
-                onPressed: () => context.go(BlockingRoutes.blockedUsers),
-                icon: const Icon(Icons.person_off_outlined),
-                label: Text(l10n.blockingBlockedUsersAction),
               ),
               const SizedBox(height: AppSpacing.small),
               OutlinedButton.icon(

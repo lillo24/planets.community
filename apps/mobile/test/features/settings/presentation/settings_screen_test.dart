@@ -21,7 +21,6 @@ import 'package:planets_mobile/features/notifications/data/notifications_gateway
 import 'package:planets_mobile/features/profile/data/profile_gateway.dart';
 import 'package:planets_mobile/features/messages/data/messages_gateway.dart';
 import 'package:planets_mobile/features/messages/data/message_chats_gateway.dart';
-import 'package:planets_mobile/features/messages/presentation/messages_navigation.dart';
 import 'package:planets_mobile/l10n/generated/app_localizations.dart';
 import 'package:planets_mobile/features/settings/application/language_preference_controller.dart';
 import 'package:planets_mobile/features/settings/data/language_preference_store.dart';
@@ -31,6 +30,12 @@ import 'package:planets_mobile/features/settings/data/navigation_preference_stor
 import 'package:planets_mobile/features/settings/domain/navigation_preference.dart';
 
 import '../../../support/fake_auth.dart';
+import '../../../support/fake_blocking.dart';
+import '../../../support/fake_moderation.dart';
+
+import 'package:planets_mobile/features/blocking/data/blocking_gateway.dart';
+import 'package:planets_mobile/features/moderation/data/moderation_gateway.dart';
+
 import '../../../support/fake_notifications.dart';
 import '../../../support/fake_profile.dart';
 import '../../../support/fake_settings.dart';
@@ -61,7 +66,7 @@ void main() {
 
   for (final phase in ['guest', 'incomplete', 'ready']) {
     testWidgets(
-      '$phase has public Account policy and an isolated Messages preview',
+      '$phase has public Account policy and only the navigation experiment',
       (tester) async {
         final messages = FakeMessagesGateway()
           ..error = StateError('Private reads forbidden');
@@ -91,52 +96,64 @@ void main() {
           phase == 'ready' ? findsOneWidget : findsNothing,
         );
         expect(find.text('Navigation'), findsNothing);
-        app.read(messagesNavigationProvider.notifier).selectTab(1);
-        final original = app.read(messagesNavigationProvider);
-        await _tapSettings(tester, 'settings-messages-preview-row');
-        expect(_path(app), '/settings/messages-preview');
         expect(
-          find.byKey(const Key('settings-messages-preview-notice')),
-          findsOneWidget,
+          find.byKey(const Key('settings-messages-preview-row')),
+          findsNothing,
+        );
+        expect(find.byKey(const Key('settings-messages-row')), findsNothing);
+        expect(
+          find.byKey(const Key('settings-reports-row')),
+          phase == 'ready' ? findsOneWidget : findsNothing,
         );
         expect(
-          find.byKey(const Key('messages-example-private')),
-          findsOneWidget,
+          find.byKey(const Key('settings-blocked-users-row')),
+          phase == 'ready' ? findsOneWidget : findsNothing,
         );
-        await tester.tap(find.byKey(const Key('message-chat-scope-groups')));
-        await tester.pumpAndSettle();
-        expect(
-          find.byKey(const Key('messages-example-groups')),
-          findsOneWidget,
-        );
-        expect(app.read(messagesNavigationProvider), same(original));
-        expect(messages.calls, isEmpty);
-        expect(chats.calls, isEmpty);
-        await tester.binding.handlePopRoute();
-        await tester.pumpAndSettle();
-        expect(_path(app), '/settings');
-        await _tapSettings(tester, 'settings-messages-preview-row');
-        expect(
-          find.byKey(const Key('messages-example-private')),
-          findsOneWidget,
-        );
-        await tester.tap(find.byKey(const Key('page-close')));
-        await tester.pumpAndSettle();
-        expect(_path(app), '/settings');
         expect(messages.calls, isEmpty);
         expect(chats.calls, isEmpty);
       },
     );
   }
 
+  testWidgets('Account destinations return to Settings with Back and Close', (
+    tester,
+  ) async {
+    final app = await _pump(tester);
+    app.read(appRouterProvider).go('/settings');
+    await tester.pumpAndSettle();
+    for (final entry in {
+      'reports': '/profile/reports',
+      'blocked-users': '/profile/blocked-users',
+    }.entries) {
+      await _tapSettings(tester, 'settings-${entry.key}-row');
+      expect(_path(app), entry.value);
+      await tester.binding.handlePopRoute();
+      await tester.pumpAndSettle();
+      expect(_path(app), '/settings');
+      await _tapSettings(tester, 'settings-${entry.key}-row');
+      await tester.tap(find.byKey(const Key('page-close')).hitTestable());
+      await tester.pumpAndSettle();
+      expect(_path(app), '/settings');
+    }
+    app.read(appRouterProvider).go('/profile');
+    await tester.pumpAndSettle();
+    expect(
+      find.descendant(
+        of: find.byType(AppBar),
+        matching: find.byKey(const Key('profile-edit-button')),
+      ),
+      findsOneWidget,
+    );
+    expect(find.byKey(const Key('profile-own-reports-button')), findsNothing);
+    expect(find.byKey(const Key('profile-blocked-users-button')), findsNothing);
+  });
+
   for (final width in [320.0, 390.0]) {
     for (final language in [
       LanguagePreference.english,
       LanguagePreference.italian,
     ]) {
-      testWidgets('$language $width/2x Settings and preview remain usable', (
-        tester,
-      ) async {
+      testWidgets('$language $width/2x Settings remain usable', (tester) async {
         tester.view.devicePixelRatio = 1;
         tester.view.physicalSize = Size(width, 800);
         tester.platformDispatcher.textScaleFactorTestValue = 2;
@@ -151,34 +168,19 @@ void main() {
         );
         expect(find.text(l.settingsAppSection), findsOneWidget);
         await _capture(tester, 'settings-${language.name}-${width.toInt()}');
-        await _revealSettings(tester, 'settings-messages-preview-row');
+        await _revealSettings(tester, 'settings-navigation-row');
         await _capture(tester, 'sandbox-${language.name}-${width.toInt()}');
-        await _tapSettings(tester, 'settings-messages-preview-row');
-        await tester.tap(find.byKey(const Key('message-chat-scope-groups')));
-        await tester.pumpAndSettle();
-        await tester.ensureVisible(
-          find.byKey(const Key('messages-example-label')),
-        );
-        await tester.pumpAndSettle();
-        await _capture(tester, 'preview-${language.name}-${width.toInt()}');
-        expect(tester.takeException(), isNull);
-        await tester.binding.handlePopRoute();
-        await tester.pumpAndSettle();
         await _tapSettings(tester, 'settings-navigation-row');
         await _tapSettings(tester, 'navigation-browse-option');
         expect(
           app.read(navigationPreferenceProvider).destination,
           BottomTabDestination.browse,
         );
-        await _tapSettings(tester, 'settings-messages-row');
-        expect(_path(app), '/messages');
-        expect(find.byKey(const Key('messages-example-label')), findsNothing);
-        expect(tester.takeException(), isNull);
-        await tester.tap(find.byKey(const Key('message-chat-scope-groups')));
-        await tester.pumpAndSettle();
-        expect(tester.takeException(), isNull);
-        await tester.tap(find.byKey(const Key('messages-requests-action')));
-        await tester.pumpAndSettle();
+        expect(
+          find.byKey(const Key('settings-messages-preview-row')),
+          findsNothing,
+        );
+        expect(find.byKey(const Key('settings-messages-row')), findsNothing);
         expect(tester.takeException(), isNull);
       });
     }
@@ -221,14 +223,9 @@ void main() {
         );
         expect(
           find.byKey(const Key('settings-messages-preview-row')),
-          findsOneWidget,
+          findsNothing,
         );
-        expect(
-          find.byKey(const Key('settings-messages-row')),
-          destination == BottomTabDestination.browse
-              ? findsOneWidget
-              : findsNothing,
-        );
+        expect(find.byKey(const Key('settings-messages-row')), findsNothing);
         await tester.pumpWidget(const SizedBox.shrink());
       }
     },
@@ -247,6 +244,8 @@ void main() {
       250,
       scrollable: find.byType(Scrollable).hitTestable().first,
     );
+    await tester.ensureVisible(action);
+    await tester.pumpAndSettle();
     await tester.tap(action);
     await tester.pumpAndSettle();
     expect(app.read(authSessionProvider).isAuthenticated, isFalse);
@@ -273,6 +272,8 @@ void main() {
           250,
           scrollable: find.byType(Scrollable).hitTestable().first,
         );
+        await tester.ensureVisible(action);
+        await tester.pumpAndSettle();
         await tester.tap(action);
         await tester.pumpAndSettle();
         expect(auth.signOutCount, 1);
@@ -304,9 +305,13 @@ void main() {
         250,
         scrollable: find.byType(Scrollable).hitTestable().first,
       );
+      await tester.ensureVisible(action);
+      await tester.pumpAndSettle();
       await tester.tap(action);
       await tester.pump();
       expect(tester.widget<FilledButton>(action).onPressed, isNull);
+      await tester.ensureVisible(action);
+      await tester.pumpAndSettle();
       await tester.tap(action);
       expect(auth.signOutCount, 1);
       pending.complete();
@@ -316,6 +321,8 @@ void main() {
       expect(app.read(authSessionProvider).isAuthenticated, isTrue);
       expect(tester.widget<FilledButton>(action).onPressed, isNotNull);
       auth.signOutError = null;
+      await tester.ensureVisible(action);
+      await tester.pumpAndSettle();
       await tester.tap(action);
       await tester.pumpAndSettle();
       expect(auth.signOutCount, 2);
@@ -519,6 +526,8 @@ Future<ProviderContainer> _pump(
     ProviderScope(
       overrides: [
         preacceptedPolicyFixture,
+        blockingGatewayProvider.overrideWithValue(FakeBlockingGateway()),
+        moderationGatewayProvider.overrideWithValue(FakeModerationGateway()),
         messagesGatewayProvider.overrideWithValue(
           messages ?? FakeMessagesGateway(),
         ),

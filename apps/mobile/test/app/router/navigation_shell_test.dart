@@ -1071,19 +1071,13 @@ void main() {
     expect(router.routeInformationProvider.value.uri.path, '/profile');
   });
 
-  testWidgets('Profile moderation siblings pop directly back to Profile', (
+  testWidgets('Profile review requests pop directly back to Profile', (
     tester,
   ) async {
     final app = await _pump(tester);
     final router = app.read(appRouterProvider);
     router.go('/profile');
     await tester.pumpAndSettle();
-
-    await _tap(tester, 'profile-own-reports-button');
-    expect(router.routeInformationProvider.value.uri.path, '/profile/reports');
-    await tester.binding.handlePopRoute();
-    await tester.pumpAndSettle();
-    expect(router.routeInformationProvider.value.uri.path, '/profile');
 
     await _tap(tester, 'profile-moderation-review-requests-button');
     expect(

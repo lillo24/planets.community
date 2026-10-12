@@ -213,11 +213,10 @@ void main() {
       expect(find.text(l10n.profileVisibilityTitle), findsNothing);
       expect(find.text(l10n.profileAudiencePublic), findsNothing);
       expect(find.text(l10n.profileAudiencePrivate), findsNothing);
-      final collection = find.byKey(const Key('profile-competence-labels'));
       final edit = find.byKey(const Key('profile-edit-button'));
       expect(
-        tester.getTopLeft(edit).dy - tester.getBottomLeft(collection).dy,
-        greaterThanOrEqualTo(AppSpacing.large),
+        find.ancestor(of: edit, matching: find.byType(AppBar)),
+        findsOneWidget,
       );
       await _tapVisible(tester, edit);
       expect(find.text(l10n.profileVisibilityTitle), findsOneWidget);
@@ -592,10 +591,7 @@ void main() {
     expect(find.byKey(const Key('profile-display-name')), findsOneWidget);
     expect(find.text('Casey'), findsOneWidget);
     expect(find.text('Mural painting'), findsOneWidget);
-    expect(
-      find.byKey(const Key('profile-blocked-users-button')),
-      findsOneWidget,
-    );
+    expect(find.byKey(const Key('profile-blocked-users-button')), findsNothing);
   });
 
   testWidgets('invalid display name and oversized bio stay in the form', (

@@ -6,7 +6,8 @@ import 'package:go_router/go_router.dart';
 import '../../../core/widgets/page_app_bar.dart';
 import '../../../core/theme/app_tokens.dart';
 import '../../../app/startup/startup_flow.dart';
-import '../../messages/presentation/message_unread_badge.dart';
+import '../../blocking/presentation/blocking_routes.dart';
+import '../../moderation/presentation/moderation_routes.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../auth/application/auth_session_controller.dart';
 import '../../auth/domain/auth_models.dart';
@@ -78,19 +79,28 @@ class SettingsScreen extends ConsumerWidget {
                         onTap: () => context.push('/notifications/preferences'),
                       ),
                     ),
+                  if (showAccountSettings)
+                    Card(
+                      child: ListTile(
+                        key: const Key('settings-reports-row'),
+                        leading: const Icon(Icons.flag_outlined),
+                        title: Text(l10n.moderationOwnReportsAction),
+                        trailing: const Icon(Icons.chevron_right),
+                        onTap: () => context.push(ModerationRoutes.ownReports),
+                      ),
+                    ),
+                  if (showAccountSettings)
+                    Card(
+                      child: ListTile(
+                        key: const Key('settings-blocked-users-row'),
+                        leading: const Icon(Icons.person_off_outlined),
+                        title: Text(l10n.blockingBlockedUsersAction),
+                        trailing: const Icon(Icons.chevron_right),
+                        onTap: () => context.push(BlockingRoutes.blockedUsers),
+                      ),
+                    ),
                   const SizedBox(height: AppSpacing.large),
                   _SectionLabel(l10n.settingsSandbox),
-                  Card(
-                    clipBehavior: Clip.antiAlias,
-                    child: ListTile(
-                      key: const Key('settings-messages-preview-row'),
-                      leading: const Icon(Icons.science_outlined),
-                      title: Text(l10n.settingsMessagesPreview),
-                      subtitle: Text(l10n.settingsMessagesPreviewHelp),
-                      trailing: const Icon(Icons.chevron_right),
-                      onTap: () => context.push('/settings/messages-preview'),
-                    ),
-                  ),
                   Card(
                     clipBehavior: Clip.antiAlias,
                     child: ListTile(
@@ -111,19 +121,6 @@ class SettingsScreen extends ConsumerWidget {
                       onTap: () => context.push('/settings/navigation'),
                     ),
                   ),
-                  if (navigationPreference.destination ==
-                      BottomTabDestination.browse)
-                    Card(
-                      child: ListTile(
-                        key: const Key('settings-messages-row'),
-                        leading: const MessageUnreadBadge(
-                          child: Icon(Icons.forum_outlined),
-                        ),
-                        title: Text(l10n.settingsOpenMessages),
-                        trailing: const Icon(Icons.chevron_right),
-                        onTap: () => context.go('/messages'),
-                      ),
-                    ),
                   if (kDebugMode)
                     TextButton(
                       key: const Key('startup-development-reset'),
