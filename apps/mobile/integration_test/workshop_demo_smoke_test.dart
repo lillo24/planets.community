@@ -449,12 +449,18 @@ class _FailOnceUpdateGateway extends SupabaseProposalGateway {
   Future<void> updateOwnProposal(
     String actor,
     String id,
-    ProposalInput input,
-  ) async {
+    ProposalInput input, {
+    bool preserveSkills = false,
+  }) async {
     if (failNextUpdate) {
       failNextUpdate = false;
       throw const SocketException('Controlled TW05 pre-commit save failure.');
     }
-    await super.updateOwnProposal(actor, id, input);
+    await super.updateOwnProposal(
+      actor,
+      id,
+      input,
+      preserveSkills: preserveSkills,
+    );
   }
 }

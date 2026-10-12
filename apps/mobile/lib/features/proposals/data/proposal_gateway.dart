@@ -51,8 +51,17 @@ abstract interface class ProposalGateway {
   Future<void> updateOwnProposal(
     String expectedCreatorId,
     String proposalId,
-    ProposalInput input,
-  );
+    ProposalInput input, {
+    bool preserveSkills = false,
+  });
+
+  /// Replaces only skills; expectedSkills detects another manager's skill edit.
+  Future<void> updateProposalSkills(
+    String expectedProfileId,
+    String proposalId, {
+    required Map<String, ProposalSkillImportance> expectedSkills,
+    required Map<String, ProposalSkillImportance> skills,
+  });
 
   Future<void> publishProposal(String expectedCreatorId, String proposalId);
 
@@ -428,13 +437,41 @@ class SupabaseProposalGateway implements ProposalGateway {
   Future<void> updateOwnProposal(
     String expectedCreatorId,
     String proposalId,
-    ProposalInput input,
-  ) async {
+    ProposalInput input, {
+    bool preserveSkills = false,
+  }) async {
     await _client.rpc<void>(
       'update_own_proposal',
       params: {
         ..._contentParams(expectedCreatorId, input),
         'p_proposal_id': proposalId,
+        // Null/null preserves current canonical skills under the content lock.
+        if (preserveSkills) 'p_skill_ids': null,
+        if (preserveSkills) 'p_skill_importances': null,
+      },
+    );
+  }
+
+  @override
+  Future<void> updateProposalSkills(
+    String expectedProfileId,
+    String proposalId, {
+    required Map<String, ProposalSkillImportance> expectedSkills,
+    required Map<String, ProposalSkillImportance> skills,
+  }) async {
+    final entries = skills.entries.toList(growable: false);
+    await _client.rpc<void>(
+      'update_proposal_skills',
+      params: {
+        'p_expected_structural_profile_id': expectedProfileId,
+        'p_proposal_id': proposalId,
+        'p_expected_skills': expectedSkills.map(
+          (id, importance) => MapEntry(id, importance.wireValue),
+        ),
+        'p_skill_ids': entries.map((entry) => entry.key).toList(),
+        'p_skill_importances': entries
+            .map((entry) => entry.value.wireValue)
+            .toList(),
       },
     );
   }

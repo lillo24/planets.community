@@ -6,9 +6,15 @@ import '../../../l10n/generated/app_localizations.dart';
 import '../application/project_resource_needs_controllers.dart';
 
 class ProjectResourceNeedsSection extends ConsumerStatefulWidget {
-  const ProjectResourceNeedsSection({required this.projectId, super.key});
+  const ProjectResourceNeedsSection({
+    required this.projectId,
+    this.showHeading = true,
+    this.showEmpty = false,
+    super.key,
+  });
 
   final String projectId;
+  final bool showHeading, showEmpty;
 
   @override
   ConsumerState<ProjectResourceNeedsSection> createState() =>
@@ -39,7 +45,9 @@ class _ProjectResourceNeedsSectionState
     );
     if (state.phase == PublicProjectResourceNeedsPhase.ready &&
         state.items.isEmpty) {
-      return const SizedBox.shrink();
+      return widget.showEmpty
+          ? Text(l10n.projectResourcesEmptyTitle)
+          : const SizedBox.shrink();
     }
 
     return Padding(
@@ -48,11 +56,12 @@ class _ProjectResourceNeedsSectionState
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            l10n.projectResourcesNeededTitle,
-            style: Theme.of(context).textTheme.titleLarge,
-          ),
-          Text(l10n.projectResourcesHint),
+          if (widget.showHeading)
+            Text(
+              l10n.projectResourcesNeededTitle,
+              style: Theme.of(context).textTheme.titleLarge,
+            ),
+          if (widget.showHeading) Text(l10n.projectResourcesHint),
           const SizedBox(height: AppSpacing.small),
           if (state.phase == PublicProjectResourceNeedsPhase.loading &&
               state.items.isEmpty)

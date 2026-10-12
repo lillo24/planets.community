@@ -6120,6 +6120,16 @@ export type Database = {
         }
         Returns: string
       }
+      update_proposal_skills: {
+        Args: {
+          p_expected_skills: Json
+          p_expected_structural_profile_id: string
+          p_proposal_id: string
+          p_skill_ids: string[]
+          p_skill_importances: string[]
+        }
+        Returns: string
+      }
       update_resource_saved_search: {
         Args: {
           p_expected_profile_id: string

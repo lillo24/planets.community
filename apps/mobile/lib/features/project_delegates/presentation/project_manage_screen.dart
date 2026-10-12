@@ -12,6 +12,7 @@ import '../../participation/domain/participation_models.dart';
 import '../../participation/presentation/participation_routes.dart';
 import '../../project_participant_invites/presentation/participant_invitation_routes.dart';
 import '../../project_workspace/presentation/project_workspace_widgets.dart';
+import '../../project_resource_needs/presentation/project_resource_need_routes.dart';
 import '../../project_organization/presentation/project_organization_sheet.dart';
 import '../application/project_delegate_controllers.dart';
 import '../domain/project_delegate_models.dart';
@@ -175,6 +176,32 @@ class _ProjectManageScreenState extends ConsumerState<ProjectManageScreen> {
                           onTap: () => showProjectOrganization(
                             context,
                             widget.projectId,
+                          ),
+                        ),
+                      if ((widget.projectKind == ProjectKind.oneTime &&
+                              role.hasStructuralAuthority) ||
+                          (widget.projectKind == ProjectKind.recurring &&
+                              role == ProjectManagementRole.creator))
+                        ListTile(
+                          minLeadingWidth: 24,
+                          horizontalTitleGap: 8,
+                          key: const Key('project-manage-needs'),
+                          leading: const Icon(Icons.handyman_outlined),
+                          title: Text(
+                            widget.projectKind == ProjectKind.oneTime
+                                ? l10n.proposalNeedsManageTitle
+                                : l10n.projectResourcesManageTitle,
+                          ),
+                          trailing: chevron,
+                          onTap: () => context.push(
+                            widget.projectKind == ProjectKind.oneTime
+                                ? ProjectResourceNeedRoutes.skillsAndResources(
+                                    widget.projectId,
+                                  )
+                                : ProjectResourceNeedRoutes.manage(
+                                    widget.projectKind,
+                                    widget.projectId,
+                                  ),
                           ),
                         ),
                       ProjectWorkspaceManageCard(

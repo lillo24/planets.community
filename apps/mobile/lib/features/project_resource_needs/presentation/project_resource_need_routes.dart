@@ -1,6 +1,8 @@
 import '../../participation/domain/participation_models.dart';
 
 abstract final class ProjectResourceNeedRoutes {
+  static String skillsAndResources(String projectId) =>
+      '/proposals/$projectId/needs';
   static String manage(ProjectKind projectKind, String projectId) =>
       switch (projectKind) {
         ProjectKind.oneTime => '/proposals/$projectId/resources',
@@ -26,7 +28,10 @@ abstract final class ProjectResourceNeedRoutes {
         (segments.first != 'proposals' && segments.first != 'tavoli')) {
       return false;
     }
-    return (segments.length == 3 && segments.last == 'resources') ||
+    return (segments.length == 3 &&
+            segments.first == 'proposals' &&
+            segments.last == 'needs') ||
+        (segments.length == 3 && segments.last == 'resources') ||
         (segments.length == 5 &&
             segments[2] == 'resources' &&
             segments.last == 'matches');

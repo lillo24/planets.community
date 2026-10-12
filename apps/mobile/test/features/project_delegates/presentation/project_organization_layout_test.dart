@@ -137,6 +137,9 @@ void main() {
         tester,
       ) async {
         final h = await _pump(tester, 'manage', role: role, kind: kind);
+        final hasNeeds = kind == ProjectKind.oneTime
+            ? role.hasStructuralAuthority
+            : role == ProjectManagementRole.creator;
         final groups = find.byType(Card);
         expect(groups, findsNWidgets(2));
         expect(find.text('Project management'), findsOneWidget);
@@ -159,11 +162,38 @@ void main() {
           find.byType(Divider),
           findsNWidgets(
             (role.hasStructuralAuthority ? 3 : 1) +
-                (kind == ProjectKind.oneTime ? 1 : 0),
+                (kind == ProjectKind.oneTime ? 1 : 0) +
+                (hasNeeds ? 1 : 0),
           ),
         );
         if (role.hasStructuralAuthority) {
           expect(find.text('Manage organizers'), findsOneWidget);
+        }
+        expect(
+          find.byKey(const Key('project-manage-needs')),
+          hasNeeds ? findsOneWidget : findsNothing,
+        );
+        if (hasNeeds && kind == ProjectKind.oneTime) {
+          expect(
+            tester
+                .getTopLeft(
+                  find.byKey(const Key('project-manage-organization')),
+                )
+                .dy,
+            lessThan(
+              tester
+                  .getTopLeft(find.byKey(const Key('project-manage-needs')))
+                  .dy,
+            ),
+          );
+          expect(
+            tester.getTopLeft(find.byKey(const Key('project-manage-needs'))).dy,
+            lessThan(
+              tester
+                  .getTopLeft(find.byKey(const Key('project-manage-workspace')))
+                  .dy,
+            ),
+          );
         }
         expect(
           find.byKey(const Key('project-manage-organization')),
@@ -179,6 +209,9 @@ void main() {
             'project-manage-team': '$prefix/co-organizers',
             'project-manage-structural-edit': '$prefix/edit',
           },
+          if (hasNeeds)
+            'project-manage-needs':
+                '$prefix/${kind == ProjectKind.oneTime ? 'needs' : 'resources'}',
           'project-manage-workspace': '$prefix/workspace',
         };
         if (!role.hasStructuralAuthority) {
@@ -602,6 +635,8 @@ _pump(
         '$prefix/participants',
         '$prefix/edit',
         '$prefix/workspace',
+        '$prefix/needs',
+        '$prefix/resources',
         prefix,
       ])
         GoRoute(path: destination, builder: (_, _) => const Scaffold()),

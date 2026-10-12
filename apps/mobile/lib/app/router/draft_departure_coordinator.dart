@@ -16,12 +16,16 @@ class DraftDepartureOwner {
     required this.pageKey,
     required this.isActive,
     required this.prepare,
+    this.savedMessage,
   });
 
   final String actorId;
   final LocalKey pageKey;
   final bool Function() isActive;
   final Future<DraftDepartureOutcome> Function() prepare;
+
+  /// Non-draft editors can reuse the guard with their own verified-save copy.
+  final String Function(BuildContext context)? savedMessage;
 }
 
 /// Guards router transitions and page pops before the editor is removed.
@@ -194,7 +198,7 @@ class DraftDepartureCoordinator {
         SnackBar(
           content: Text(
             outcome == DraftDepartureOutcome.saved
-                ? l10n.proposalDraftSaved
+                ? owner.savedMessage?.call(context) ?? l10n.proposalDraftSaved
                 : l10n.proposalDraftImageNotSaved,
           ),
         ),
