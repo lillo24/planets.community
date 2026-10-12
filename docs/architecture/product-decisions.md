@@ -4,6 +4,17 @@
 
 ## Ordinary sharing and special participant links
 
+Persistent groups adopt the implemented Project membership/role model under
+the founder's GRP03A instruction: "Use the same rule that we have for a project
+group, it's basically the same." Accepted participation and delegated authority
+are independent; current participants/managers see contextual People names.
+Ordinary requests require a canonical photo; reusable direct participant links
+require completed non-photo profile fields. Co-creators have structural powers
+on published pages; Creator drafts remain private. Co-organizers have operational
+powers. No Creator membership row, ownership transfer, permanent-group chat or
+Project authority inheritance is implied. See the canonical
+[GRP03A contract](../development/group-membership-and-roles.md).
+
 PI01's founder-approved policy distinguishes ordinary public sharing/approved
 requests from reusable special links issued and managed by the current Creator,
 Co-creators and Co-organizers. Explicit special-link acceptance creates participant

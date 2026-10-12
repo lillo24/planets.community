@@ -65,8 +65,35 @@ test("schema/type drift fails with the owning RPC and column", () => {
   assert.throws(
     () =>
       applyParticipationRpcNullability(
-        fixture().replace("membership_id: string", "membership_id: number"),
+        fixture().replace(
+          "\n          membership_id: string",
+          "\n          membership_id: number",
+        ),
       ),
     /accept_project_participant_invitation.*membership_id/,
+  );
+});
+
+test("group recovery and contextual People preserve absent relationships", () => {
+  const output = applyParticipationRpcNullability(fixture());
+  for (const field of [
+    "relationship_id",
+    "current_status",
+    "expires_at",
+    "authority_role",
+    "delegate_id",
+    "current_membership_id",
+    "invite_token",
+  ])
+    assert.ok(output.includes(`${field}: string | null`));
+  assert.ok(
+    participationRpcNullableFields.accept_group_participant_invitation.includes(
+      "relationship_id",
+    ),
+  );
+  assert.ok(
+    participationRpcNullableFields.create_group_authority_invitation.includes(
+      "invite_token",
+    ),
   );
 });

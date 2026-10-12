@@ -1,5 +1,11 @@
 # Repository scripts
 
+- `verify-local-group-membership.mjs` owns GRP03A genuine Auth/PostgREST
+  relationship, role, block, retry and observed multi-connection lock races.
+  `--upgrade` resets an explicitly disposable loopback stack, populates GRP01,
+  Project delegates/invitations/memberships/chats and policy history, then checks
+  every existing table/column/row after both migration applications.
+
 - `verify-local-persistent-groups.mjs` owns GRP01 OTP, duplicate-command/report
   concurrency, directory privacy/keysets, suppression and orphan tests. `--upgrade`
   resets an explicitly disposable loopback stack to the predecessor and verifies

@@ -1,4 +1,10 @@
-# GRP01 persistent groups backend
+# Persistent groups backend
+
+GRP03A adds canonical membership, direct participant links and independent
+Co-creator/Co-organizer roles using the accepted Project rules. The complete
+operation/state/privacy/recovery contract and GRP03B handoff are in
+[group membership and roles](group-membership-and-roles.md). The GRP01 Creator
+RPCs and GRP02 screens below retain their original ownership contracts.
 
 GRP01 establishes durable registered group identities and canonical backend
 commands. GRP02 now supplies mobile directory, registration and profile screens,

@@ -2526,6 +2526,70 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      accept_group_authority_invitation: {
+        Args: {
+          p_client_request_id: string
+          p_expected_profile_id: string
+          p_token: string
+        }
+        Returns: {
+          current_status: string | null
+          expires_at: string | null
+          group_id: string
+          outcome: string
+          relationship_id: string | null
+          relationship_kind: string
+          replayed: boolean
+        }[]
+      }
+      accept_group_join_request: {
+        Args: {
+          p_client_request_id: string
+          p_expected_profile_id: string
+          p_request_id: string
+        }
+        Returns: {
+          current_status: string | null
+          expires_at: string | null
+          group_id: string
+          outcome: string
+          relationship_id: string | null
+          relationship_kind: string
+          replayed: boolean
+        }[]
+      }
+      accept_group_participant_invitation: {
+        Args: {
+          p_client_request_id: string
+          p_expected_profile_id: string
+          p_token: string
+        }
+        Returns: {
+          current_status: string | null
+          expires_at: string | null
+          group_id: string
+          outcome: string
+          relationship_id: string | null
+          relationship_kind: string
+          replayed: boolean
+        }[]
+      }
+      accept_group_role_offer: {
+        Args: {
+          p_client_request_id: string
+          p_expected_profile_id: string
+          p_offer_id: string
+        }
+        Returns: {
+          current_status: string | null
+          expires_at: string | null
+          group_id: string
+          outcome: string
+          relationship_id: string | null
+          relationship_kind: string
+          replayed: boolean
+        }[]
+      }
       accept_policy_bundle: {
         Args: { p_bundle_version: string; p_expected_account_id: string }
         Returns: {
@@ -2698,6 +2762,23 @@ export type Database = {
         Args: { p_agreement_id: string; p_expected_profile_id: string }
         Returns: string
       }
+      change_group_delegate_role: {
+        Args: {
+          p_client_request_id: string
+          p_delegate_id: string
+          p_expected_profile_id: string
+          p_role: string
+        }
+        Returns: {
+          current_status: string | null
+          expires_at: string | null
+          group_id: string
+          outcome: string
+          relationship_id: string | null
+          relationship_kind: string
+          replayed: boolean
+        }[]
+      }
       change_project_delegate_role: {
         Args: {
           p_authority_role: string
@@ -2825,6 +2906,24 @@ export type Database = {
         }
         Returns: string
       }
+      create_group_authority_invitation: {
+        Args: {
+          p_client_request_id: string
+          p_expected_profile_id: string
+          p_group_id: string
+          p_role: string
+        }
+        Returns: {
+          current_status: string | null
+          expires_at: string | null
+          group_id: string
+          invite_token: string | null
+          outcome: string
+          relationship_id: string | null
+          relationship_kind: string
+          replayed: boolean
+        }[]
+      }
       create_group_draft: {
         Args: {
           p_client_request_id: string
@@ -2832,6 +2931,54 @@ export type Database = {
           p_expected_profile_id: string
         }
         Returns: string
+      }
+      create_group_join_request: {
+        Args: {
+          p_client_request_id: string
+          p_expected_profile_id: string
+          p_group_id: string
+          p_note?: string
+        }
+        Returns: {
+          current_status: string | null
+          expires_at: string | null
+          group_id: string
+          outcome: string
+          relationship_id: string | null
+          relationship_kind: string
+          replayed: boolean
+        }[]
+      }
+      create_group_participant_invitation: {
+        Args: {
+          p_client_request_id: string
+          p_expected_profile_id: string
+          p_group_id: string
+        }
+        Returns: {
+          created_at: string
+          invitation_id: string
+          invite_token: string | null
+          revoked_at: string | null
+        }[]
+      }
+      create_group_role_offer: {
+        Args: {
+          p_client_request_id: string
+          p_expected_profile_id: string
+          p_group_id: string
+          p_membership_id: string
+          p_role: string
+        }
+        Returns: {
+          current_status: string | null
+          expires_at: string | null
+          group_id: string
+          outcome: string
+          relationship_id: string | null
+          relationship_kind: string
+          replayed: boolean
+        }[]
       }
       create_project_delegate_invitation:
         | {
@@ -3060,6 +3207,22 @@ export type Database = {
         }
         Returns: string
       }
+      decline_group_role_offer: {
+        Args: {
+          p_client_request_id: string
+          p_expected_profile_id: string
+          p_offer_id: string
+        }
+        Returns: {
+          current_status: string | null
+          expires_at: string | null
+          group_id: string
+          outcome: string
+          relationship_id: string | null
+          relationship_kind: string
+          replayed: boolean
+        }[]
+      }
       decline_project_role_offer: {
         Args: { p_expected_profile_id: string; p_offer_id: string }
         Returns: string
@@ -3092,6 +3255,15 @@ export type Database = {
         Args: { p_expected_profile_id: string; p_item: string; p_kind: string }
         Returns: Json
       }
+      get_current_group_participant_invitation: {
+        Args: { p_expected_profile_id: string; p_group_id: string }
+        Returns: {
+          created_at: string
+          invitation_id: string
+          invite_token: string | null
+          revoked_at: string | null
+        }[]
+      }
       get_current_project_participant_invitation: {
         Args: { p_expected_profile_id: string; p_project_id: string }
         Returns: {
@@ -3100,9 +3272,45 @@ export type Database = {
           invite_token: string
         }[]
       }
+      get_group_authority_invitation_preview: {
+        Args: { p_token: string }
+        Returns: {
+          available: boolean
+          expires_at: string | null
+          group_id: string | null
+          group_kind: string | null
+          group_name: string | null
+          offered_role: string | null
+        }[]
+      }
+      get_group_participant_invitation_preview: {
+        Args: { p_token: string }
+        Returns: {
+          available: boolean
+          group_id: string | null
+          group_kind: string | null
+          group_name: string | null
+        }[]
+      }
       get_group_staff_context: {
         Args: { p_expected_staff_profile_id: string; p_group_id: string }
         Returns: Json
+      }
+      get_group_structural_context: {
+        Args: { p_expected_profile_id: string; p_group_id: string }
+        Returns: {
+          created_at: string
+          description: string
+          directory_suppressed: boolean
+          group_id: string
+          group_kind: string
+          locality: string | null
+          name: string
+          publication_state: string
+          updated_at: string
+          version: number
+          volunteering_focus: boolean
+        }[]
       }
       get_location_preview_v1: {
         Args: {
@@ -3225,6 +3433,15 @@ export type Database = {
           response_explanation: string
           target_kind: string
           target_summary: string
+        }[]
+      }
+      get_own_group_role: {
+        Args: { p_expected_profile_id: string; p_group_id: string }
+        Returns: {
+          authority_role: string | null
+          current_membership_id: string | null
+          delegate_id: string | null
+          membership_status: string | null
         }[]
       }
       get_own_message_feed_page: {
@@ -3917,12 +4134,47 @@ export type Database = {
         Args: { p_batch: string; p_places: Json }
         Returns: Json
       }
+      leave_group: {
+        Args: {
+          p_client_request_id: string
+          p_expected_profile_id: string
+          p_membership_id: string
+        }
+        Returns: {
+          current_status: string | null
+          expires_at: string | null
+          group_id: string
+          outcome: string
+          relationship_id: string | null
+          relationship_kind: string
+          replayed: boolean
+        }[]
+      }
       leave_project: {
         Args: {
           p_expected_participant_profile_id: string
           p_membership_id: string
         }
         Returns: string
+      }
+      list_current_group_people: {
+        Args: {
+          p_after_profile_id?: string
+          p_after_role_rank?: number
+          p_expected_profile_id: string
+          p_group_id: string
+          p_limit?: number
+        }
+        Returns: {
+          authority_role: string | null
+          current_membership_id: string | null
+          delegate_id: string | null
+          display_name: string | null
+          is_creator: boolean
+          joined_at: string | null
+          profile_id: string
+          role_rank: number
+        }[]
       }
       list_current_project_people: {
         Args: {
@@ -3941,6 +4193,142 @@ export type Database = {
           joined_at: string
           profile_id: string
           role_rank: number
+        }[]
+      }
+      list_group_authority_invitations: {
+        Args: {
+          p_before_created_at?: string
+          p_before_id?: string
+          p_expected_profile_id: string
+          p_group_id: string
+          p_limit?: number
+        }
+        Returns: {
+          accepted_delegate_id: string | null
+          created_at: string
+          expires_at: string
+          group_id: string
+          invitation_id: string
+          issuer_profile_id: string
+          offered_role: string
+          resolved_at: string | null
+          resolved_by_profile_id: string | null
+          status: string
+          target_membership_id: string | null
+          target_profile_id: string | null
+        }[]
+      }
+      list_group_delegate_role_history: {
+        Args: {
+          p_before_created_at?: string
+          p_before_id?: string
+          p_expected_profile_id: string
+          p_group_id: string
+          p_limit?: number
+        }
+        Returns: {
+          actor_profile_id: string
+          change_id: string
+          created_at: string
+          delegate_id: string
+          from_role: string
+          to_role: string
+        }[]
+      }
+      list_group_delegates: {
+        Args: {
+          p_before_granted_at?: string
+          p_before_id?: string
+          p_expected_profile_id: string
+          p_group_id: string
+          p_limit?: number
+        }
+        Returns: {
+          delegate_id: string
+          delegate_role: string
+          display_name: string | null
+          granted_at: string
+          granted_by_profile_id: string
+          initial_role: string
+          profile_id: string
+          revoked_at: string | null
+          revoked_by_profile_id: string | null
+        }[]
+      }
+      list_group_join_requests: {
+        Args: {
+          p_before_created_at?: string
+          p_before_id?: string
+          p_expected_profile_id: string
+          p_group_id: string
+          p_limit?: number
+        }
+        Returns: {
+          created_at: string
+          group_id: string
+          note: string | null
+          request_id: string
+          requester_display_name: string | null
+          requester_profile_id: string
+          resolution_reason: string | null
+          resolved_at: string | null
+          resolved_by_profile_id: string | null
+          status: string
+          superseded_by_membership_id: string | null
+        }[]
+      }
+      list_group_membership_history: {
+        Args: {
+          p_before_id?: string
+          p_before_joined_at?: string
+          p_expected_profile_id: string
+          p_group_id: string
+          p_limit?: number
+        }
+        Returns: {
+          admitted_by_profile_id: string
+          display_name: string | null
+          ended_at: string | null
+          ended_by_profile_id: string | null
+          group_id: string
+          joined_at: string
+          membership_id: string
+          membership_status: string
+          originating_request_id: string | null
+          profile_id: string
+        }[]
+      }
+      list_group_participant_invitation_history: {
+        Args: {
+          p_before_created_at?: string
+          p_before_id?: string
+          p_expected_profile_id: string
+          p_group_id: string
+          p_limit?: number
+        }
+        Returns: {
+          created_at: string
+          invitation_id: string
+          issuer_profile_id: string
+          revoked_at: string | null
+          revoked_by_profile_id: string | null
+        }[]
+      }
+      list_managed_groups: {
+        Args: {
+          p_before_created_at?: string
+          p_before_id?: string
+          p_expected_profile_id: string
+          p_limit?: number
+        }
+        Returns: {
+          authority_role: string
+          created_at: string
+          directory_suppressed: boolean
+          group_id: string
+          group_kind: string
+          name: string
+          publication_state: string
         }[]
       }
       list_moderation_case_template_blueprints: {
@@ -4033,6 +4421,69 @@ export type Database = {
           response_choice: string
           target_kind: string
           target_summary: string
+        }[]
+      }
+      list_own_group_join_requests: {
+        Args: {
+          p_before_created_at?: string
+          p_before_id?: string
+          p_expected_profile_id: string
+          p_limit?: number
+        }
+        Returns: {
+          created_at: string
+          group_id: string
+          note: string | null
+          request_id: string
+          requester_display_name: string | null
+          requester_profile_id: string
+          resolution_reason: string | null
+          resolved_at: string | null
+          resolved_by_profile_id: string | null
+          status: string
+          superseded_by_membership_id: string | null
+        }[]
+      }
+      list_own_group_memberships: {
+        Args: {
+          p_before_id?: string
+          p_before_joined_at?: string
+          p_expected_profile_id: string
+          p_limit?: number
+        }
+        Returns: {
+          admitted_by_profile_id: string
+          display_name: string | null
+          ended_at: string | null
+          ended_by_profile_id: string | null
+          group_id: string
+          joined_at: string
+          membership_id: string
+          membership_status: string
+          originating_request_id: string | null
+          profile_id: string
+        }[]
+      }
+      list_own_group_role_offers: {
+        Args: {
+          p_before_created_at?: string
+          p_before_id?: string
+          p_expected_profile_id: string
+          p_limit?: number
+        }
+        Returns: {
+          accepted_delegate_id: string | null
+          created_at: string
+          expires_at: string
+          group_id: string
+          invitation_id: string
+          issuer_profile_id: string
+          offered_role: string
+          resolved_at: string | null
+          resolved_by_profile_id: string | null
+          status: string
+          target_membership_id: string | null
+          target_profile_id: string | null
         }[]
       }
       list_own_groups: {
@@ -5500,6 +5951,38 @@ export type Database = {
           group_id: string
         }[]
       }
+      recover_group_relationship_command: {
+        Args: { p_client_request_id: string; p_expected_profile_id: string }
+        Returns: {
+          current_status: string | null
+          expires_at: string | null
+          group_id: string
+          outcome: string
+          relationship_id: string | null
+          relationship_kind: string
+          replayed: boolean
+        }[]
+      }
+      recover_group_structural_command: {
+        Args: { p_client_request_id: string; p_expected_profile_id: string }
+        Returns: {
+          accepted_version: number
+          group_id: string
+        }[]
+      }
+      regenerate_group_participant_invitation: {
+        Args: {
+          p_client_request_id: string
+          p_expected_profile_id: string
+          p_group_id: string
+        }
+        Returns: {
+          created_at: string
+          invitation_id: string
+          invite_token: string | null
+          revoked_at: string | null
+        }[]
+      }
       regenerate_project_participant_invitation: {
         Args: { p_expected_profile_id: string; p_project_id: string }
         Returns: {
@@ -5522,6 +6005,22 @@ export type Database = {
           provider: string
         }[]
       }
+      reject_group_join_request: {
+        Args: {
+          p_client_request_id: string
+          p_expected_profile_id: string
+          p_request_id: string
+        }
+        Returns: {
+          current_status: string | null
+          expires_at: string | null
+          group_id: string
+          outcome: string
+          relationship_id: string | null
+          relationship_kind: string
+          replayed: boolean
+        }[]
+      }
       reject_project_join_request: {
         Args: { p_expected_creator_profile_id: string; p_request_id: string }
         Returns: string
@@ -5541,6 +6040,22 @@ export type Database = {
       reject_resource_listing_request: {
         Args: { p_expected_owner_profile_id: string; p_request_id: string }
         Returns: string
+      }
+      remove_group_member: {
+        Args: {
+          p_client_request_id: string
+          p_expected_profile_id: string
+          p_membership_id: string
+        }
+        Returns: {
+          current_status: string | null
+          expires_at: string | null
+          group_id: string
+          outcome: string
+          relationship_id: string | null
+          relationship_kind: string
+          replayed: boolean
+        }[]
       }
       remove_moderation_case_template: {
         Args: {
@@ -5665,6 +6180,52 @@ export type Database = {
         }
         Returns: string
       }
+      revoke_group_authority_invitation: {
+        Args: {
+          p_client_request_id: string
+          p_expected_profile_id: string
+          p_invitation_id: string
+        }
+        Returns: {
+          current_status: string | null
+          expires_at: string | null
+          group_id: string
+          outcome: string
+          relationship_id: string | null
+          relationship_kind: string
+          replayed: boolean
+        }[]
+      }
+      revoke_group_delegate: {
+        Args: {
+          p_client_request_id: string
+          p_delegate_id: string
+          p_expected_profile_id: string
+        }
+        Returns: {
+          current_status: string | null
+          expires_at: string | null
+          group_id: string
+          outcome: string
+          relationship_id: string | null
+          relationship_kind: string
+          replayed: boolean
+        }[]
+      }
+      revoke_group_participant_invitation: {
+        Args: {
+          p_client_request_id: string
+          p_expected_profile_id: string
+          p_group_id: string
+          p_invitation_id: string
+        }
+        Returns: {
+          created_at: string
+          invitation_id: string
+          invite_token: string | null
+          revoked_at: string | null
+        }[]
+      }
       revoke_project_delegate: {
         Args: { p_delegate_id: string; p_expected_owner_profile_id: string }
         Returns: string
@@ -5762,6 +6323,16 @@ export type Database = {
         }
         Returns: number
       }
+      set_managed_group_publication_state: {
+        Args: {
+          p_client_request_id: string
+          p_expected_profile_id: string
+          p_expected_version: number
+          p_group_id: string
+          p_publication_state: string
+        }
+        Returns: number
+      }
       set_own_notification_preference: {
         Args: {
           p_category_slug: string
@@ -5849,6 +6420,22 @@ export type Database = {
           workspace_url: string
         }[]
       }
+      step_down_group_authority: {
+        Args: {
+          p_client_request_id: string
+          p_delegate_id: string
+          p_expected_profile_id: string
+        }
+        Returns: {
+          current_status: string | null
+          expires_at: string | null
+          group_id: string
+          outcome: string
+          relationship_id: string | null
+          relationship_kind: string
+          replayed: boolean
+        }[]
+      }
       step_down_project_authority: {
         Args: { p_delegate_id: string; p_expected_profile_id: string }
         Returns: string
@@ -5924,6 +6511,16 @@ export type Database = {
         Returns: boolean
       }
       update_group: {
+        Args: {
+          p_client_request_id: string
+          p_content: Json
+          p_expected_profile_id: string
+          p_expected_version: number
+          p_group_id: string
+        }
+        Returns: number
+      }
+      update_managed_group: {
         Args: {
           p_client_request_id: string
           p_content: Json
@@ -6139,6 +6736,22 @@ export type Database = {
           p_saved_search_id: string
         }
         Returns: string
+      }
+      withdraw_group_join_request: {
+        Args: {
+          p_client_request_id: string
+          p_expected_profile_id: string
+          p_request_id: string
+        }
+        Returns: {
+          current_status: string | null
+          expires_at: string | null
+          group_id: string
+          outcome: string
+          relationship_id: string | null
+          relationship_kind: string
+          replayed: boolean
+        }[]
       }
       withdraw_project_join_request: {
         Args: { p_expected_requester_profile_id: string; p_request_id: string }
