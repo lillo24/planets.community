@@ -13,6 +13,7 @@ import '../../../l10n/generated/app_localizations.dart';
 import '../../auth/application/auth_session_controller.dart';
 import '../../participation/domain/participation_models.dart';
 import '../../project_delegates/domain/project_delegate_models.dart';
+import '../../project_resource_needs/application/project_resource_needs_controllers.dart';
 import '../../project_resource_needs/presentation/project_resource_needs_screen.dart';
 import '../../project_resource_needs/presentation/project_resource_needs_section.dart';
 import '../application/proposal_controllers.dart';
@@ -145,6 +146,21 @@ class _ProposalNeedsScreenState extends ConsumerState<ProposalNeedsScreen>
     if (_actor != null) await _controller.load(_actor, discardEdits: true);
   }
 
+  Future<void> _refreshPublicMaterials() async {
+    await _reload();
+    if (!mounted || ref.read(authSessionProvider).identity?.id != _actor) {
+      return;
+    }
+    final state = ref.read(proposalSkillsProvider(widget.projectId));
+    if (state.role != ProjectManagementRole.coCreator ||
+        state.failure == ProposalSkillsFailure.forbidden) {
+      return;
+    }
+    await ref
+        .read(publicProjectResourceNeedsProvider(widget.projectId).notifier)
+        .load();
+  }
+
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
@@ -178,7 +194,7 @@ class _ProposalNeedsScreenState extends ConsumerState<ProposalNeedsScreen>
       appBar: pageAppBar(context, title: Text(l.proposalNeedsManageTitle)),
       body: SafeArea(
         child: RefreshIndicator(
-          onRefresh: _reload,
+          onRefresh: _refreshPublicMaterials,
           child: ListView(
             physics: const AlwaysScrollableScrollPhysics(),
             padding: const EdgeInsets.all(AppSpacing.large),

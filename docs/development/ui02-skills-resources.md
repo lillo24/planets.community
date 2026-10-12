@@ -2,7 +2,7 @@
 
 Base: UI01 merged at `6f558233f45d4a669148aa3f9c208aa22253569e`.
 Plans: `PLANETS_UI02_manage_skills_resources.md` and UI01 predecessor.
-Integrated newer main `07fa92f13af972ec5c3c93d89c78a63b8aa5c2b0` before validation.
+Integrated chat-cover main `07fa92f13af972ec5c3c93d89c78a63b8aa5c2b0`, then profile-policy guard main `86cc81d85aa5e8954ca38588b3dc93512a1eb733` before final CI.
 
 Manage Project's Organization group orders Checklist, Manage skills & resources,
 Shared workspace for one-time Projects. Creator and Co-creator structural actors
@@ -62,7 +62,7 @@ the updated client against any shared environment.
 
 ## Validation and evidence
 
-- `npm run check:mobile`: passed formatting/analyzer; 2,652 tests passed, two existing skips.
+- `npm run check:mobile`: passed formatting/analyzer; 2,653 tests passed, two existing skips before the final profile-guard integration; exact final-head results are in PR #233 checks.
 - `npm run check:web`: passed 97 Node tests, 355 Vitest tests (two existing skips), typecheck/lint, Next production and invitation builds.
 - `node --check scripts/verify-local-proposal-skills.mjs`.
 - Disposable CI: canonical migration replay, db lint/advisors, pgTAP including

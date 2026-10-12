@@ -24,9 +24,10 @@ flutter test --no-pub --dart-define=UI_POLISH_CAPTURE_DIR=C:/path/evidence/needs
 flutter test --no-pub --dart-define=ORG_UX01_CAPTURE_DIR=C:/path/evidence/manage test/features/project_delegates/presentation/project_organization_layout_test.dart --plain-name 'manage '
 ```
 
-Results: 42 needs tests and 16 rendered menu tests passed with real fonts.
-Normal full mobile validation: 2,652 passed, two existing skips, format/analyzer
-clean. Full web validation: 355 Vitest tests passed, two existing skips, 97
+Results: 43 needs tests and 16 rendered menu tests passed with real fonts.
+Local full mobile validation before final profile-guard main integration:
+2,653 passed, two existing skips, format/analyzer clean. PR #233 checks record
+the final integrated head. Full web validation: 355 Vitest tests passed, two existing skips, 97
 Node tests passed, typecheck/lint/Next and invitation builds passed.
 
 A separate task-owned synthetic Chrome harness compiled and was hot reloaded.

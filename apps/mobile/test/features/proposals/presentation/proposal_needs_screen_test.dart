@@ -233,6 +233,26 @@ void main() {
       expect(h.resources.calls, isEmpty);
     });
   }
+  testWidgets(
+    'Co-creator refresh loads updated public materials without ownership reads',
+    (tester) async {
+      final h = await pump(tester, role: ProjectManagementRole.coCreator);
+      h.resources.publicItems = [
+        publicProjectResourceNeedFixture(id: 'new', title: 'New wooden boards'),
+      ];
+      await tester
+          .widget<RefreshIndicator>(find.byType(RefreshIndicator))
+          .onRefresh();
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('public-resource-need-new')), findsOneWidget);
+      expect(find.text('New wooden boards'), findsWidgets);
+      expect(
+        h.resources.calls.where((c) => c.startsWith('list-own:')),
+        isEmpty,
+      );
+      expect(h.proposals.calls.where((c) => c.startsWith('skills:')), isEmpty);
+    },
+  );
   testWidgets('identity replacement clears skill and resource data', (
     tester,
   ) async {
