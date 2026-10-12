@@ -2,6 +2,7 @@
 
 Base: UI01 merged at `6f558233f45d4a669148aa3f9c208aa22253569e`.
 Plans: `PLANETS_UI02_manage_skills_resources.md` and UI01 predecessor.
+Integrated newer main `07fa92f13af972ec5c3c93d89c78a63b8aa5c2b0` before validation.
 
 Manage Project's Organization group orders Checklist, Manage skills & resources,
 Shared workspace for one-time Projects. Creator and Co-creator structural actors
@@ -60,8 +61,8 @@ the updated client against any shared environment.
 
 ## Validation and evidence
 
-- `npm run check:mobile`: formatting, analyzer and full Flutter suite.
-- `npm run check:web`: generated type consumers, tests, lint, production build.
+- `npm run check:mobile`: passed formatting/analyzer; 2,652 tests passed, two existing skips.
+- `npm run check:web`: passed 97 Node tests, 355 Vitest tests (two existing skips), typecheck/lint, Next production and invitation builds.
 - `node --check scripts/verify-local-proposal-skills.mjs`.
 - Disposable CI: canonical migration replay, db lint/advisors, pgTAP including
   `135_proposal_skills_management.test.sql`, `proposal:verify:local` (real queued
